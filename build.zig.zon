@@ -1,8 +1,7 @@
 .{
-    .name = .gcraft,
+    .name = "gcraft",
     .version = "0.0.0",
-    .fingerprint = 0x964d23d84ab6e8b7,
-    .minimum_zig_version = "0.15.0",
+    .minimum_zig_version = "0.14.0",
     .dependencies = .{},
     .paths = .{
         "build.zig",

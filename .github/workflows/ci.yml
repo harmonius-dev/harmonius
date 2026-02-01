@@ -18,7 +18,7 @@ jobs:
       - name: Setup Zig
         uses: mlugg/setup-zig@v1
         with:
-          version: master
+          version: 0.14.0
 
       - name: Build Library
         run: zig build --summary all
@@ -37,7 +37,7 @@ jobs:
       - name: Setup Zig
         uses: mlugg/setup-zig@v1
         with:
-          version: master
+          version: 0.14.0
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -123,7 +123,7 @@ jobs:
       - name: Setup Zig
         uses: mlugg/setup-zig@v1
         with:
-          version: master
+          version: 0.14.0
 
       - name: Check Zig Format
         run: zig fmt --check src/

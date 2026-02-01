@@ -4,16 +4,17 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const root_module = b.addModule("gcraft", .{
+    const lib = b.addStaticLibrary(.{
+        .name = "gcraft",
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
-    root_module.addIncludePath(b.path("src/platform/include"));
+    lib.addIncludePath(b.path("src/platform/include"));
 
     if (target.result.os.tag.isDarwin()) {
-        root_module.addIncludePath(b.path("src/platform/metal"));
-        root_module.addCSourceFiles(.{
+        lib.addIncludePath(b.path("src/platform/metal"));
+        lib.addCSourceFiles(.{
             .root = b.path("src/platform/metal"),
             .files = &.{
                 "enthrall_command.m",
@@ -25,11 +26,15 @@ pub fn build(b: *std.Build) void {
                 "enthrall_resource.m",
                 "enthrall_sync.m",
             },
-            .language = .objective_c,
+            .flags = &.{"-fobjc-arc"},
         });
+        lib.linkFramework("Metal");
+        lib.linkFramework("QuartzCore");
+        lib.linkFramework("Foundation");
+        lib.linkFramework("AppKit");
     } else if (target.result.os.tag == .windows) {
-        root_module.addIncludePath(b.path("src/platform/d3d12"));
-        root_module.addCSourceFiles(.{
+        lib.addIncludePath(b.path("src/platform/d3d12"));
+        lib.addCSourceFiles(.{
             .root = b.path("src/platform/d3d12"),
             .files = &.{
                 "enthrall_command.cpp",
@@ -41,7 +46,6 @@ pub fn build(b: *std.Build) void {
                 "enthrall_resource.cpp",
                 "enthrall_sync.cpp",
             },
-            .language = .cpp,
             .flags = &.{
                 "-std=c++20",
                 "-DUNICODE",
@@ -50,47 +54,28 @@ pub fn build(b: *std.Build) void {
                 "-DNOMINMAX",
             },
         });
-        // Link Windows SDK libraries for D3D12, DXGI, DirectStorage
-        root_module.linkSystemLibrary("d3d12", .{});
-        root_module.linkSystemLibrary("dxgi", .{});
-        root_module.linkSystemLibrary("d3dcompiler", .{});
-        root_module.linkSystemLibrary("dxcompiler", .{});
-        root_module.linkSystemLibrary("dstorage", .{});
-        root_module.linkSystemLibrary("kernel32", .{});
-        root_module.linkSystemLibrary("user32", .{});
-        root_module.linkSystemLibrary("ole32", .{});
-    } else {
-        root_module.addIncludePath(b.path("src/platform/vulkan"));
-        root_module.addCSourceFiles(.{
-            .root = b.path("src/platform/vulkan"),
-            .files = &.{
-                "enthrall_command.c",
-                "enthrall_descriptor.c",
-                "enthrall_device.c",
-                "enthrall_instance.c",
-                "enthrall_internal.c",
-                "enthrall_pipeline.c",
-                "enthrall_resource.c",
-                "enthrall_sync.c",
-            },
-            .language = .c,
-        });
+        lib.linkSystemLibrary("d3d12");
+        lib.linkSystemLibrary("dxgi");
+        lib.linkSystemLibrary("d3dcompiler");
+        lib.linkSystemLibrary("dxcompiler");
+        lib.linkSystemLibrary("dstorage");
+        lib.linkSystemLibrary("kernel32");
+        lib.linkSystemLibrary("user32");
+        lib.linkSystemLibrary("ole32");
     }
 
-    const root_library = b.addLibrary(.{
-        .name = "gcraft",
-        .linkage = .static,
-        .root_module = root_module,
-    });
-    b.installArtifact(root_library);
+    b.installArtifact(lib);
 
-    const root_mod_tests = b.addTest(.{
-        .root_module = root_library.root_module,
+    // Zig module tests
+    const lib_unit_tests = b.addTest(.{
+        .root_source_file = b.path("src/root.zig"),
+        .target = target,
+        .optimize = optimize,
     });
-    const run_root_mod_tests = b.addRunArtifact(root_mod_tests);
+    const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
-    const test_step = b.step("test", "Run tests");
-    test_step.dependOn(&run_root_mod_tests.step);
+    const test_step = b.step("test", "Run unit tests");
+    test_step.dependOn(&run_lib_unit_tests.step);
 
     // Metal integration tests (macOS/iOS only)
     if (target.result.os.tag.isDarwin()) {
@@ -162,7 +147,6 @@ pub fn build(b: *std.Build) void {
         d3d12_test_exe.addIncludePath(b.path("src/platform/include"));
         d3d12_test_exe.addIncludePath(b.path("src/platform/d3d12"));
 
-        // Add all D3D12 source files plus the test file
         d3d12_test_exe.addCSourceFiles(.{
             .root = b.path("src/platform/d3d12"),
             .files = &.{
@@ -185,7 +169,6 @@ pub fn build(b: *std.Build) void {
             },
         });
 
-        // Link Windows SDK libraries
         d3d12_test_exe.linkSystemLibrary("d3d12");
         d3d12_test_exe.linkSystemLibrary("dxgi");
         d3d12_test_exe.linkSystemLibrary("d3dcompiler");
@@ -201,8 +184,5 @@ pub fn build(b: *std.Build) void {
         const run_d3d12_tests = b.addRunArtifact(d3d12_test_exe);
         const d3d12_test_step = b.step("test-d3d12", "Run D3D12 backend tests");
         d3d12_test_step.dependOn(&run_d3d12_tests.step);
-
-        // Also make the main test step depend on D3D12 tests on Windows
-        test_step.dependOn(&run_d3d12_tests.step);
     }
 }
