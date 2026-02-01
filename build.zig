@@ -42,7 +42,23 @@ pub fn build(b: *std.Build) void {
                 "enthrall_sync.cpp",
             },
             .language = .cpp,
+            .flags = &.{
+                "-std=c++20",
+                "-DUNICODE",
+                "-D_UNICODE",
+                "-DWIN32_LEAN_AND_MEAN",
+                "-DNOMINMAX",
+            },
         });
+        // Link Windows SDK libraries for D3D12, DXGI, DirectStorage
+        root_module.linkSystemLibrary("d3d12", .{});
+        root_module.linkSystemLibrary("dxgi", .{});
+        root_module.linkSystemLibrary("d3dcompiler", .{});
+        root_module.linkSystemLibrary("dxcompiler", .{});
+        root_module.linkSystemLibrary("dstorage", .{});
+        root_module.linkSystemLibrary("kernel32", .{});
+        root_module.linkSystemLibrary("user32", .{});
+        root_module.linkSystemLibrary("ole32", .{});
     } else {
         root_module.addIncludePath(b.path("src/platform/vulkan"));
         root_module.addCSourceFiles(.{
@@ -133,5 +149,60 @@ pub fn build(b: *std.Build) void {
 
         const test_metal_step = b.step("test-metal", "Run Metal integration tests");
         test_metal_step.dependOn(&run_metal_tests.step);
+    }
+
+    // D3D12 backend C++ tests (Windows only)
+    if (target.result.os.tag == .windows) {
+        const d3d12_test_exe = b.addExecutable(.{
+            .name = "enthrall_d3d12_test",
+            .target = target,
+            .optimize = optimize,
+        });
+
+        d3d12_test_exe.addIncludePath(b.path("src/platform/include"));
+        d3d12_test_exe.addIncludePath(b.path("src/platform/d3d12"));
+
+        // Add all D3D12 source files plus the test file
+        d3d12_test_exe.addCSourceFiles(.{
+            .root = b.path("src/platform/d3d12"),
+            .files = &.{
+                "enthrall_command.cpp",
+                "enthrall_descriptor.cpp",
+                "enthrall_device.cpp",
+                "enthrall_instance.cpp",
+                "enthrall_internal.cpp",
+                "enthrall_pipeline.cpp",
+                "enthrall_resource.cpp",
+                "enthrall_sync.cpp",
+                "enthrall_test.cpp",
+            },
+            .flags = &.{
+                "-std=c++20",
+                "-DUNICODE",
+                "-D_UNICODE",
+                "-DWIN32_LEAN_AND_MEAN",
+                "-DNOMINMAX",
+            },
+        });
+
+        // Link Windows SDK libraries
+        d3d12_test_exe.linkSystemLibrary("d3d12");
+        d3d12_test_exe.linkSystemLibrary("dxgi");
+        d3d12_test_exe.linkSystemLibrary("d3dcompiler");
+        d3d12_test_exe.linkSystemLibrary("dxcompiler");
+        d3d12_test_exe.linkSystemLibrary("dstorage");
+        d3d12_test_exe.linkSystemLibrary("kernel32");
+        d3d12_test_exe.linkSystemLibrary("user32");
+        d3d12_test_exe.linkSystemLibrary("ole32");
+        d3d12_test_exe.linkLibCpp();
+
+        b.installArtifact(d3d12_test_exe);
+
+        const run_d3d12_tests = b.addRunArtifact(d3d12_test_exe);
+        const d3d12_test_step = b.step("test-d3d12", "Run D3D12 backend tests");
+        d3d12_test_step.dependOn(&run_d3d12_tests.step);
+
+        // Also make the main test step depend on D3D12 tests on Windows
+        test_step.dependOn(&run_d3d12_tests.step);
     }
 }

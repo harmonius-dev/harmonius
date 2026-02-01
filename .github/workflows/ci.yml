@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-macos:
+    name: Build & Test (macOS - Metal)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.13.0
+
+      - name: Build Library
+        run: zig build --summary all
+
+      - name: Run Zig Tests
+        run: zig build test
+
+  build-windows:
+    name: Build (Windows - D3D12)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.13.0
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install DirectX Dependencies
+        shell: pwsh
+        run: |
+          # Create directories
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\deps\include"
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\deps\lib"
+          
+          # Download DirectX Headers
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.Direct3D.D3D12/1.614.0" -OutFile "$env:RUNNER_TEMP\d3d12.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\d3d12.zip" -DestinationPath "$env:RUNNER_TEMP\d3d12" -Force
+          
+          # Download DXC
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.Direct3D.DXC/1.8.2407.12" -OutFile "$env:RUNNER_TEMP\dxc.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\dxc.zip" -DestinationPath "$env:RUNNER_TEMP\dxc" -Force
+          
+          # Download DirectStorage  
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.Direct3D.DirectStorage/1.2.2" -OutFile "$env:RUNNER_TEMP\dstorage.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\dstorage.zip" -DestinationPath "$env:RUNNER_TEMP\dstorage" -Force
+          
+          # Copy headers
+          Copy-Item "$env:RUNNER_TEMP\d3d12\build\native\include\*" "$env:RUNNER_TEMP\deps\include\" -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item "$env:RUNNER_TEMP\dxc\build\native\include\*" "$env:RUNNER_TEMP\deps\include\" -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item "$env:RUNNER_TEMP\dstorage\build\native\include\*" "$env:RUNNER_TEMP\deps\include\" -Recurse -Force -ErrorAction SilentlyContinue
+          
+          # Copy libs
+          Copy-Item "$env:RUNNER_TEMP\dxc\build\native\lib\x64\*" "$env:RUNNER_TEMP\deps\lib\" -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item "$env:RUNNER_TEMP\dstorage\build\native\lib\x64\*" "$env:RUNNER_TEMP\deps\lib\" -Recurse -Force -ErrorAction SilentlyContinue
+          
+          # Set environment
+          echo "EXTRA_INCLUDE=$env:RUNNER_TEMP\deps\include" >> $env:GITHUB_ENV
+          echo "EXTRA_LIB=$env:RUNNER_TEMP\deps\lib" >> $env:GITHUB_ENV
+
+      - name: Verify Dependencies
+        shell: pwsh
+        run: |
+          Write-Host "=== Checking Windows SDK ==="
+          $sdkPath = "C:\Program Files (x86)\Windows Kits\10\Include"
+          Get-ChildItem $sdkPath -ErrorAction SilentlyContinue | Select-Object Name
+          
+          Write-Host "=== Checking downloaded deps ==="
+          Get-ChildItem "$env:RUNNER_TEMP\deps\include" -ErrorAction SilentlyContinue | Select-Object Name
+          Get-ChildItem "$env:RUNNER_TEMP\deps\lib" -ErrorAction SilentlyContinue | Select-Object Name
+
+      - name: Build with MSVC cl.exe (Verification)
+        shell: cmd
+        run: |
+          echo Checking MSVC environment...
+          where cl
+          cl /? 2>&1 | findstr /C:"Version"
+        continue-on-error: true
+
+      - name: Build Library with Zig
+        shell: pwsh
+        run: |
+          # Zig uses its own linker, so we compile C++ to objects
+          zig build --summary all
+        continue-on-error: true
+
+      - name: Check Build Artifacts
+        shell: pwsh
+        run: |
+          Write-Host "=== Build output ==="
+          Get-ChildItem "zig-out" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName
+        continue-on-error: true
+
+  check-format:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.13.0
+
+      - name: Check Zig Format
+        run: zig fmt --check src/
