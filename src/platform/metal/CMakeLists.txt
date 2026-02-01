@@ -10,7 +10,7 @@ else()
     GIT_TAG main
     GIT_SHALLOW TRUE
   )
-  FetchContent_Populate(metal-cpp)
+  FetchContent_MakeAvailable(metal-cpp)
   set(METAL_CPP_DIR "${metal-cpp_SOURCE_DIR}" CACHE PATH "Metal-cpp headers")
 endif()
 

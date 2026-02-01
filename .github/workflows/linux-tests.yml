@@ -4,17 +4,17 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/**'
-      - 'CMakeLists.txt'
-      - 'CMakePresets.json'
-      - '.github/workflows/linux-tests.yml'
+      - "src/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - ".github/workflows/linux-tests.yml"
   pull_request:
     branches: [main]
     paths:
-      - 'src/**'
-      - 'CMakeLists.txt'
-      - 'CMakePresets.json'
-      - '.github/workflows/linux-tests.yml'
+      - "src/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - ".github/workflows/linux-tests.yml"
 
 jobs:
   test-linux:
