@@ -27,6 +27,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install D3D12 dependencies
+        run: |
+          nuget install Microsoft.Direct3D.DXC -OutputDirectory packages
+          nuget install Microsoft.Direct3D.DirectStorage -OutputDirectory packages
+          # Find and export library paths
+          $dxcPath = (Get-ChildItem -Path packages -Filter "Microsoft.Direct3D.DXC*" -Directory | Select-Object -First 1).FullName
+          $dstoragePath = (Get-ChildItem -Path packages -Filter "Microsoft.Direct3D.DirectStorage*" -Directory | Select-Object -First 1).FullName
+          echo "DXC_LIB_PATH=$dxcPath\bin\x64" >> $env:GITHUB_ENV
+          echo "DSTORAGE_LIB_PATH=$dstoragePath\native\lib\x64" >> $env:GITHUB_ENV
+
       - name: Setup Zig
         run: |
           curl -L https://ziglang.org/download/0.15.2/zig-x86_64-windows-0.15.2.zip -o zig.zip
@@ -35,3 +45,5 @@ jobs:
 
       - name: Build and run D3D12 tests
         run: zig build test-d3d12
+        env:
+          LIB: ${{ env.DXC_LIB_PATH }};${{ env.DSTORAGE_LIB_PATH }}
