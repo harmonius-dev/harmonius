@@ -6,16 +6,16 @@ on:
     paths:
       - 'src/platform/metal/**'
       - 'src/platform/include/**'
-      - 'build.zig'
-      - 'build.zig.zon'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
       - '.github/workflows/metal-tests.yml'
   pull_request:
     branches: [main]
     paths:
       - 'src/platform/metal/**'
       - 'src/platform/include/**'
-      - 'build.zig'
-      - 'build.zig.zon'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
       - '.github/workflows/metal-tests.yml'
 
 jobs:
@@ -27,11 +27,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Zig
-        run: |
-          curl -L https://ziglang.org/download/0.15.2/zig-aarch64-macos-0.15.2.tar.xz -o zig.tar.xz
-          tar xf zig.tar.xz
-          echo "$PWD/zig-aarch64-macos-0.15.2" >> $GITHUB_PATH
+      - name: Configure (Ninja)
+        run: cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build and run Metal tests
-        run: zig build test-metal
+        run: |
+          cmake --build build
+          ctest --test-dir build -R test-metal --output-on-failure

@@ -5,31 +5,35 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'build.zig'
-      - 'build.zig.zon'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
       - '.github/workflows/linux-tests.yml'
   pull_request:
     branches: [main]
     paths:
       - 'src/**'
-      - 'build.zig'
-      - 'build.zig.zon'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
       - '.github/workflows/linux-tests.yml'
 
 jobs:
   test-linux:
-    name: Linux Unit Tests
+    name: Linux (Vulkan backend build + test)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Zig
+      - name: Install Vulkan SDK
         run: |
-          curl -L https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz -o zig.tar.xz
-          tar xf zig.tar.xz
-          echo "$PWD/zig-x86_64-linux-0.15.2" >> $GITHUB_PATH
+          sudo apt-get update
+          sudo apt-get install -y libvulkan-dev vulkan-tools
 
-      - name: Run unit tests
-        run: zig build test
+      - name: Configure (Ninja)
+        run: cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build and run Vulkan tests
+        run: |
+          cmake --build build
+          ctest --test-dir build -R test-vulkan --output-on-failure

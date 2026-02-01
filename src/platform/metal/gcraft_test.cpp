@@ -1,13 +1,11 @@
-// test_metal_integration.m - Integration tests for Metal backend
-// Run: zig build test-metal
-// These tests exercise the actual Metal API without any mocking
+// test_metal_integration.cpp - Integration tests for Metal backend (C++)
+// Run: ctest -R test-metal or ./test_metal_integration
 
-#import <Metal/Metal.h>
-#import <Foundation/Foundation.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
+#include <cmath>
 
 #include "gcraft_instance.h"
 #include "gcraft_device.h"
@@ -90,7 +88,7 @@ static int setup_test_context(TestContext *ctx) {
     err = GCInstanceEnumerateAdapters(ctx->instance, &adapter_count, NULL);
     if (err.code != GC_E_OK || adapter_count == 0) return -1;
     
-    GCAdapterPtr *adapters = malloc(adapter_count * sizeof(GCAdapterPtr));
+    GCAdapterPtr *adapters = static_cast<GCAdapterPtr*>(malloc(adapter_count * sizeof(GCAdapterPtr)));
     err = GCInstanceEnumerateAdapters(ctx->instance, &adapter_count, adapters);
     if (err.code != GC_E_OK) {
         free(adapters);
@@ -168,7 +166,7 @@ static int test_instance_enumerate_adapters(void) {
     TEST_ASSERT(count > 0, "should have at least one Metal adapter");
     
     // Second call: get adapters
-    GCAdapterPtr *adapters = malloc(count * sizeof(GCAdapterPtr));
+    GCAdapterPtr *adapters = static_cast<GCAdapterPtr*>(malloc(count * sizeof(GCAdapterPtr)));
     err = GCInstanceEnumerateAdapters(instance, &count, adapters);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(adapters[0] != NULL, "first adapter should not be NULL");
@@ -257,7 +255,7 @@ static int test_buffer_create_host_visible(void) {
     
     GCBufferDesc desc = {
         .size = 1024,
-        .usage = GC_BUFFER_USAGE_UNIFORM_BIT | GC_BUFFER_USAGE_STORAGE_BIT,
+        .usage = static_cast<GCBufferUsageFlags>(GC_BUFFER_USAGE_UNIFORM_BIT | GC_BUFFER_USAGE_STORAGE_BIT),
         .host_visible = true,
     };
     
@@ -283,7 +281,7 @@ static int test_buffer_create_device_local(void) {
     
     GCBufferDesc desc = {
         .size = 4096,
-        .usage = GC_BUFFER_USAGE_STORAGE_BIT | GC_BUFFER_USAGE_TRANSFER_DST_BIT,
+        .usage = static_cast<GCBufferUsageFlags>(GC_BUFFER_USAGE_STORAGE_BIT | GC_BUFFER_USAGE_TRANSFER_DST_BIT),
         .host_visible = false,
     };
     
@@ -348,7 +346,7 @@ static int test_texture_create_2d(void) {
         .depth = 1,
         .mip_levels = 1,
         .array_layers = 1,
-        .usage = GC_TEXTURE_USAGE_SAMPLED_BIT | GC_TEXTURE_USAGE_STORAGE_BIT,
+        .usage = static_cast<GCTextureUsageFlags>(GC_TEXTURE_USAGE_SAMPLED_BIT | GC_TEXTURE_USAGE_STORAGE_BIT),
     };
     
     GCTexturePtr texture = NULL;
@@ -379,7 +377,7 @@ static int test_texture_create_depth(void) {
         .depth = 1,
         .mip_levels = 1,
         .array_layers = 1,
-        .usage = GC_TEXTURE_USAGE_DEPTH_ATTACHMENT_BIT | GC_TEXTURE_USAGE_SAMPLED_BIT,
+        .usage = static_cast<GCTextureUsageFlags>(GC_TEXTURE_USAGE_DEPTH_ATTACHMENT_BIT | GC_TEXTURE_USAGE_SAMPLED_BIT),
     };
     
     GCTexturePtr texture = NULL;
@@ -619,8 +617,8 @@ static int test_descriptor_set_layout_create(void) {
     }
     
     // Create layout with one binding
-    GCDescriptorSetLayoutDesc *desc = malloc(
-        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *desc = static_cast<GCDescriptorSetLayoutDesc*>(malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc)));
     desc->binding_count = 1;
     desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
@@ -651,8 +649,8 @@ static int test_descriptor_set_create_and_update(void) {
     }
     
     // Create layout
-    GCDescriptorSetLayoutDesc *layout_desc = malloc(
-        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *layout_desc = static_cast<GCDescriptorSetLayoutDesc*>(malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc)));
     layout_desc->binding_count = 1;
     layout_desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
@@ -704,8 +702,8 @@ static int test_pipeline_layout_create(void) {
     }
     
     // Create descriptor set layout
-    GCDescriptorSetLayoutDesc *layout_desc = malloc(
-        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *layout_desc = static_cast<GCDescriptorSetLayoutDesc*>(malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc)));
     layout_desc->binding_count = 1;
     layout_desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
@@ -719,8 +717,8 @@ static int test_pipeline_layout_create(void) {
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    GCPipelineLayoutDesc *pipe_desc = malloc(
-        sizeof(GCPipelineLayoutDesc) + 1 * sizeof(GCDescriptorSetLayoutPtr));
+    GCPipelineLayoutDesc *pipe_desc = static_cast<GCPipelineLayoutDesc*>(malloc(
+        sizeof(GCPipelineLayoutDesc) + 1 * sizeof(GCDescriptorSetLayoutPtr)));
     pipe_desc->set_layout_count = 1;
     pipe_desc->push_constant_size = 64;
     pipe_desc->push_constant_stages = GC_STAGE_COMPUTE_BIT;
@@ -766,10 +764,10 @@ static int test_compute_pipeline_create(void) {
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    GCPipelineLayoutDesc *layout_desc = malloc(sizeof(GCPipelineLayoutDesc));
+    GCPipelineLayoutDesc *layout_desc = static_cast<GCPipelineLayoutDesc*>(malloc(sizeof(GCPipelineLayoutDesc)));
     layout_desc->set_layout_count = 0;
     layout_desc->push_constant_size = 0;
-    layout_desc->push_constant_stages = 0;
+    layout_desc->push_constant_stages = static_cast<GCShaderStageFlags>(0);
     
     GCPipelineLayoutPtr layout = NULL;
     err = GCPipelineLayoutCreate(ctx.device, layout_desc, &layout);
@@ -818,10 +816,10 @@ static int test_render_pipeline_create(void) {
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    GCPipelineLayoutDesc *layout_desc = malloc(sizeof(GCPipelineLayoutDesc));
+    GCPipelineLayoutDesc *layout_desc = static_cast<GCPipelineLayoutDesc*>(malloc(sizeof(GCPipelineLayoutDesc)));
     layout_desc->set_layout_count = 0;
     layout_desc->push_constant_size = 0;
-    layout_desc->push_constant_stages = 0;
+    layout_desc->push_constant_stages = static_cast<GCShaderStageFlags>(0);
     
     GCPipelineLayoutPtr layout = NULL;
     err = GCPipelineLayoutCreate(ctx.device, layout_desc, &layout);
@@ -837,7 +835,7 @@ static int test_render_pipeline_create(void) {
         .color_formats = {GC_FORMAT_RGBA8_UNORM},
         .color_format_count = 1,
         .depth_format = GC_FORMAT_D32_FLOAT,
-        .stencil_format = 0,
+        .stencil_format = static_cast<GCTextureFormat>(0),
         .attributes = NULL,
         .attribute_count = 0,
         .bindings = NULL,
@@ -1050,27 +1048,15 @@ static int test_compute_execution_verify_output(void) {
     err = GCBufferCreate(ctx.device, &buf_desc, &buffer);
     TEST_ASSERT_OK(err);
     
-    // Write initial data to buffer - we need to access the internal Metal buffer
-    // This test requires access to the underlying MTLBuffer to write data
-    // For now, we use a workaround by accessing the internal structure
-    {
-        @autoreleasepool {
-            // Access internal buffer (this is an integration test, so we can peek)
-            struct GCBuffer {
-                void *ep_device;
-                id<MTLBuffer> mtl_buffer;
-                uint64_t size;
-                uint32_t usage;
-                bool host_visible;
-            };
-            struct GCBuffer *buf = (struct GCBuffer *)buffer;
-            
-            float *data = [buf->mtl_buffer contents];
-            for (uint32_t i = 0; i < element_count; i++) {
-                data[i] = (float)i;  // 0, 1, 2, 3, ...
-            }
-        }
+    // Write initial data to buffer via public API (host_visible buffer)
+    void *mapped = nullptr;
+    err = GCBufferMap(buffer, &mapped);
+    TEST_ASSERT_OK(err);
+    float *data = static_cast<float*>(mapped);
+    for (uint32_t i = 0; i < element_count; i++) {
+        data[i] = (float)i;  // 0, 1, 2, 3, ...
     }
+    GCBufferUnmap(buffer);
     
     // Create shader library
     GCShaderLibraryDesc lib_desc = {
@@ -1084,8 +1070,8 @@ static int test_compute_execution_verify_output(void) {
     TEST_ASSERT_OK(err);
     
     // Create descriptor set layout
-    GCDescriptorSetLayoutDesc *layout_desc = malloc(
-        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *layout_desc = static_cast<GCDescriptorSetLayoutDesc*>(malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc)));
     layout_desc->binding_count = 1;
     layout_desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
@@ -1098,11 +1084,11 @@ static int test_compute_execution_verify_output(void) {
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    GCPipelineLayoutDesc *pipe_layout_desc = malloc(
-        sizeof(GCPipelineLayoutDesc) + sizeof(GCDescriptorSetLayoutPtr));
+    GCPipelineLayoutDesc *pipe_layout_desc = static_cast<GCPipelineLayoutDesc*>(malloc(
+        sizeof(GCPipelineLayoutDesc) + sizeof(GCDescriptorSetLayoutPtr)));
     pipe_layout_desc->set_layout_count = 1;
     pipe_layout_desc->push_constant_size = 0;
-    pipe_layout_desc->push_constant_stages = 0;
+    pipe_layout_desc->push_constant_stages = static_cast<GCShaderStageFlags>(0);
     pipe_layout_desc->set_layouts[0] = set_layout;
     GCPipelineLayoutPtr pipe_layout = NULL;
     err = GCPipelineLayoutCreate(ctx.device, pipe_layout_desc, &pipe_layout);
@@ -1174,29 +1160,20 @@ static int test_compute_execution_verify_output(void) {
     TEST_ASSERT_OK(err);
     
     // Verify output data
-    {
-        @autoreleasepool {
-            struct GCBuffer {
-                void *ep_device;
-                id<MTLBuffer> mtl_buffer;
-                uint64_t size;
-                uint32_t usage;
-                bool host_visible;
-            };
-            struct GCBuffer *buf = (struct GCBuffer *)buffer;
-            
-            float *data = [buf->mtl_buffer contents];
-            bool all_correct = true;
-            for (uint32_t i = 0; i < element_count; i++) {
-                float expected = (float)i * 2.0f;  // Should be doubled
-                if (fabsf(data[i] - expected) > 0.0001f) {
-                    printf("\n  Mismatch at [%u]: expected %f, got %f", i, expected, data[i]);
-                    all_correct = false;
-                }
-            }
-            TEST_ASSERT(all_correct, "compute output data should be doubled");
+    mapped = nullptr;
+    err = GCBufferMap(buffer, &mapped);
+    TEST_ASSERT_OK(err);
+    data = static_cast<float*>(mapped);
+    bool all_correct = true;
+    for (uint32_t i = 0; i < element_count; i++) {
+        float expected = (float)i * 2.0f;  // Should be doubled
+        if (fabsf(data[i] - expected) > 0.0001f) {
+            printf("\n  Mismatch at [%u]: expected %f, got %f", i, expected, data[i]);
+            all_correct = false;
         }
     }
+    GCBufferUnmap(buffer);
+    TEST_ASSERT(all_correct, "compute output data should be doubled");
     
     // Cleanup
     GCFenceDestroy(fence);
@@ -1248,24 +1225,15 @@ static int test_compute_with_push_constants(void) {
     err = GCBufferCreate(ctx.device, &buf_desc, &buffer);
     TEST_ASSERT_OK(err);
     
-    // Initialize buffer
-    {
-        @autoreleasepool {
-            struct GCBuffer {
-                void *ep_device;
-                id<MTLBuffer> mtl_buffer;
-                uint64_t size;
-                uint32_t usage;
-                bool host_visible;
-            };
-            struct GCBuffer *buf = (struct GCBuffer *)buffer;
-            
-            float *data = [buf->mtl_buffer contents];
-            for (uint32_t i = 0; i < element_count; i++) {
-                data[i] = (float)i;
-            }
-        }
+    // Initialize buffer via public API
+    void *mapped2 = nullptr;
+    err = GCBufferMap(buffer, &mapped2);
+    TEST_ASSERT_OK(err);
+    float *data2 = static_cast<float*>(mapped2);
+    for (uint32_t i = 0; i < element_count; i++) {
+        data2[i] = (float)i;
     }
+    GCBufferUnmap(buffer);
     
     // Create shader
     GCShaderLibraryDesc lib_desc = {
@@ -1279,8 +1247,8 @@ static int test_compute_with_push_constants(void) {
     TEST_ASSERT_OK(err);
     
     // Create descriptor set layout
-    GCDescriptorSetLayoutDesc *layout_desc = malloc(
-        sizeof(GCDescriptorSetLayoutDesc) + sizeof(GCDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *layout_desc = static_cast<GCDescriptorSetLayoutDesc*>(malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + sizeof(GCDescriptorBindingDesc)));
     layout_desc->binding_count = 1;
     layout_desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
@@ -1293,8 +1261,8 @@ static int test_compute_with_push_constants(void) {
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout with push constants
-    GCPipelineLayoutDesc *pipe_layout_desc = malloc(
-        sizeof(GCPipelineLayoutDesc) + sizeof(GCDescriptorSetLayoutPtr));
+    GCPipelineLayoutDesc *pipe_layout_desc = static_cast<GCPipelineLayoutDesc*>(malloc(
+        sizeof(GCPipelineLayoutDesc) + sizeof(GCDescriptorSetLayoutPtr)));
     pipe_layout_desc->set_layout_count = 1;
     pipe_layout_desc->push_constant_size = sizeof(float);
     pipe_layout_desc->push_constant_stages = GC_STAGE_COMPUTE_BIT;
@@ -1361,29 +1329,20 @@ static int test_compute_with_push_constants(void) {
     TEST_ASSERT_OK(err);
     
     // Verify results
-    {
-        @autoreleasepool {
-            struct GCBuffer {
-                void *ep_device;
-                id<MTLBuffer> mtl_buffer;
-                uint64_t size;
-                uint32_t usage;
-                bool host_visible;
-            };
-            struct GCBuffer *buf = (struct GCBuffer *)buffer;
-            
-            float *data = [buf->mtl_buffer contents];
-            bool all_correct = true;
-            for (uint32_t i = 0; i < element_count; i++) {
-                float expected = (float)i + add_value;
-                if (fabsf(data[i] - expected) > 0.0001f) {
-                    printf("\n  Mismatch at [%u]: expected %f, got %f", i, expected, data[i]);
-                    all_correct = false;
-                }
-            }
-            TEST_ASSERT(all_correct, "compute output should have constant added");
+    mapped2 = nullptr;
+    err = GCBufferMap(buffer, &mapped2);
+    TEST_ASSERT_OK(err);
+    data2 = static_cast<float*>(mapped2);
+    bool all_correct = true;
+    for (uint32_t i = 0; i < element_count; i++) {
+        float expected = (float)i + add_value;
+        if (fabsf(data2[i] - expected) > 0.0001f) {
+            printf("\n  Mismatch at [%u]: expected %f, got %f", i, expected, data2[i]);
+            all_correct = false;
         }
     }
+    GCBufferUnmap(buffer);
+    TEST_ASSERT(all_correct, "compute output should have constant added");
     
     // Cleanup
     GCFenceDestroy(fence);
@@ -1539,7 +1498,7 @@ static int test_render_pass_begin_end(void) {
         .clear_stencil = 0,
     };
     
-    GCRenderPassDesc *pass_desc = malloc(sizeof(GCRenderPassDesc) + sizeof(GCRenderPassColorAttachment));
+    GCRenderPassDesc *pass_desc = static_cast<GCRenderPassDesc*>(malloc(sizeof(GCRenderPassDesc) + sizeof(GCRenderPassColorAttachment)));
     pass_desc->color_attachment_count = 1;
     pass_desc->depth_attachment = &depth_attach;
     pass_desc->color_attachments[0] = (GCRenderPassColorAttachment){
@@ -1701,10 +1660,10 @@ static int test_invalid_shader_entry_point(void) {
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    GCPipelineLayoutDesc *layout_desc = malloc(sizeof(GCPipelineLayoutDesc));
+    GCPipelineLayoutDesc *layout_desc = static_cast<GCPipelineLayoutDesc*>(malloc(sizeof(GCPipelineLayoutDesc)));
     layout_desc->set_layout_count = 0;
     layout_desc->push_constant_size = 0;
-    layout_desc->push_constant_stages = 0;
+    layout_desc->push_constant_stages = static_cast<GCShaderStageFlags>(0);
     GCPipelineLayoutPtr layout = NULL;
     err = GCPipelineLayoutCreate(ctx.device, layout_desc, &layout);
     TEST_ASSERT_OK(err);
@@ -1733,7 +1692,7 @@ static int test_invalid_shader_entry_point(void) {
 // =============================================================================
 
 int main(int argc, const char *argv[]) {
-    @autoreleasepool {
+    {
         printf("=== Gcraft Metal Backend Integration Tests ===\n\n");
         
         // Instance tests

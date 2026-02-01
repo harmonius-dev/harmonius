@@ -6,16 +6,16 @@ on:
     paths:
       - "src/platform/d3d12/**"
       - "src/platform/include/**"
-      - "build.zig"
-      - "build.zig.zon"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
       - ".github/workflows/d3d12-tests.yml"
   pull_request:
     branches: [main]
     paths:
       - "src/platform/d3d12/**"
       - "src/platform/include/**"
-      - "build.zig"
-      - "build.zig.zon"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
       - ".github/workflows/d3d12-tests.yml"
 
 jobs:
@@ -30,11 +30,10 @@ jobs:
       - name: Install D3D12 dependencies
         run: .\scripts\fetch-d3d12-deps.ps1
 
-      - name: Setup Zig
-        run: |
-          curl -L https://ziglang.org/download/0.15.2/zig-x86_64-windows-0.15.2.zip -o zig.zip
-          Expand-Archive zig.zip -DestinationPath .
-          echo "$PWD\zig-x86_64-windows-0.15.2" >> $env:GITHUB_PATH
+      - name: Configure (Ninja)
+        run: cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build and run D3D12 tests
-        run: zig build test-d3d12
+        run: |
+          cmake --build build
+          ctest --test-dir build -R test-d3d12 --output-on-failure
