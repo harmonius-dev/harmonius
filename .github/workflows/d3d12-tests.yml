@@ -4,19 +4,19 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/platform/d3d12/**'
-      - 'src/platform/include/**'
-      - 'build.zig'
-      - 'build.zig.zon'
-      - '.github/workflows/d3d12-tests.yml'
+      - "src/platform/d3d12/**"
+      - "src/platform/include/**"
+      - "build.zig"
+      - "build.zig.zon"
+      - ".github/workflows/d3d12-tests.yml"
   pull_request:
     branches: [main]
     paths:
-      - 'src/platform/d3d12/**'
-      - 'src/platform/include/**'
-      - 'build.zig'
-      - 'build.zig.zon'
-      - '.github/workflows/d3d12-tests.yml'
+      - "src/platform/d3d12/**"
+      - "src/platform/include/**"
+      - "build.zig"
+      - "build.zig.zon"
+      - ".github/workflows/d3d12-tests.yml"
 
 jobs:
   test-d3d12:
@@ -34,7 +34,8 @@ jobs:
           # Find and export library paths
           $dxcPath = (Get-ChildItem -Path packages -Filter "Microsoft.Direct3D.DXC*" -Directory | Select-Object -First 1).FullName
           $dstoragePath = (Get-ChildItem -Path packages -Filter "Microsoft.Direct3D.DirectStorage*" -Directory | Select-Object -First 1).FullName
-          echo "DXC_LIB_PATH=$dxcPath\bin\x64" >> $env:GITHUB_ENV
+          # DXC has .lib files in lib\x64, DirectStorage has them in native\lib\x64
+          echo "DXC_LIB_PATH=$dxcPath\lib\x64" >> $env:GITHUB_ENV
           echo "DSTORAGE_LIB_PATH=$dstoragePath\native\lib\x64" >> $env:GITHUB_ENV
 
       - name: Setup Zig
@@ -44,6 +45,4 @@ jobs:
           echo "$PWD\zig-x86_64-windows-0.15.2" >> $env:GITHUB_PATH
 
       - name: Build and run D3D12 tests
-        run: zig build test-d3d12
-        env:
-          LIB: ${{ env.DXC_LIB_PATH }};${{ env.DSTORAGE_LIB_PATH }}
+        run: zig build test-d3d12 -Ddxc-lib-path="${{ env.DXC_LIB_PATH }}" -Ddstorage-lib-path="${{ env.DSTORAGE_LIB_PATH }}"

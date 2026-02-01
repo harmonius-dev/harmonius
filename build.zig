@@ -11,6 +11,11 @@ pub fn build(b: *std.Build) void {
     const vulkan_sdk = b.option([]const u8, "vulkan-sdk", "Path to Vulkan SDK") orelse
         std.process.getEnvVarOwned(b.allocator, "VULKAN_SDK") catch "";
 
+    // D3D12 SDK paths (Windows only):
+    // For DXC (DirectX Shader Compiler) and DirectStorage
+    const dxc_lib_path = b.option([]const u8, "dxc-lib-path", "Path to DXC library directory") orelse "";
+    const dstorage_lib_path = b.option([]const u8, "dstorage-lib-path", "Path to DirectStorage library directory") orelse "";
+
     // =========================================================================
     // Metal backend (macOS/iOS)
     // =========================================================================
@@ -60,6 +65,15 @@ pub fn build(b: *std.Build) void {
         });
         d3d12_module.addIncludePath(b.path("src/platform/include"));
         d3d12_module.addIncludePath(b.path("src/platform/d3d12"));
+
+        // Add DXC and DirectStorage library paths if provided
+        if (dxc_lib_path.len > 0) {
+            d3d12_module.addLibraryPath(.{ .cwd_relative = dxc_lib_path });
+        }
+        if (dstorage_lib_path.len > 0) {
+            d3d12_module.addLibraryPath(.{ .cwd_relative = dstorage_lib_path });
+        }
+
         d3d12_module.addCSourceFiles(.{
             .root = b.path("src/platform/d3d12"),
             .files = &.{
@@ -284,6 +298,14 @@ pub fn build(b: *std.Build) void {
 
         d3d12_test_mod.addIncludePath(b.path("src/platform/include"));
         d3d12_test_mod.addIncludePath(b.path("src/platform/d3d12"));
+
+        // Add DXC and DirectStorage library paths if provided
+        if (dxc_lib_path.len > 0) {
+            d3d12_test_mod.addLibraryPath(.{ .cwd_relative = dxc_lib_path });
+        }
+        if (dstorage_lib_path.len > 0) {
+            d3d12_test_mod.addLibraryPath(.{ .cwd_relative = dstorage_lib_path });
+        }
 
         d3d12_test_mod.addCSourceFiles(.{
             .root = b.path("src/platform/d3d12"),
