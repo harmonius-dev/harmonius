@@ -96,18 +96,21 @@ jobs:
         continue-on-error: true
 
       - name: Build Library with Zig
-        shell: pwsh
-        run: |
-          # Zig uses its own linker, so we compile C++ to objects
-          zig build --summary all
-        continue-on-error: true
+        run: zig build --summary all
+
+      - name: Build D3D12 Tests
+        run: zig build test-d3d12 --summary all
+        continue-on-error: true  # May fail to link without full Windows SDK
+
+      - name: Run Zig Module Tests
+        run: zig build test
+        continue-on-error: true  # D3D12 tests need GPU hardware
 
       - name: Check Build Artifacts
         shell: pwsh
         run: |
           Write-Host "=== Build output ==="
           Get-ChildItem "zig-out" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName
-        continue-on-error: true
 
   check-format:
     name: Check Formatting
