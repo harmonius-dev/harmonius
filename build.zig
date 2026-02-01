@@ -11,10 +11,20 @@ pub fn build(b: *std.Build) void {
     const vulkan_sdk = b.option([]const u8, "vulkan-sdk", "Path to Vulkan SDK") orelse
         std.process.getEnvVarOwned(b.allocator, "VULKAN_SDK") catch "";
 
-    // D3D12 dependencies (fetched automatically from NuGet via build.zig.zon)
-    const d3d12_dep = if (target.result.os.tag == .windows) b.lazyDependency("d3d12", .{}) else null;
-    const dxc_dep = if (target.result.os.tag == .windows) b.lazyDependency("dxc", .{}) else null;
-    const dstorage_dep = if (target.result.os.tag == .windows) b.lazyDependency("directstorage", .{}) else null;
+    // D3D12 dependencies (from NuGet packages via environment variables)
+    // These are set by the CI workflow or by the developer locally
+    const d3d12_path = if (target.result.os.tag == .windows)
+        std.process.getEnvVarOwned(b.allocator, "D3D12_SDK_PATH") catch null
+    else
+        null;
+    const dxc_path = if (target.result.os.tag == .windows)
+        std.process.getEnvVarOwned(b.allocator, "DXC_PATH") catch null
+    else
+        null;
+    const dstorage_path = if (target.result.os.tag == .windows)
+        std.process.getEnvVarOwned(b.allocator, "DSTORAGE_PATH") catch null
+    else
+        null;
 
     // =========================================================================
     // Metal backend (macOS/iOS)
@@ -67,25 +77,17 @@ pub fn build(b: *std.Build) void {
         d3d12_module.addIncludePath(b.path("src/platform/d3d12"));
 
         // Add NuGet package include paths (D3D12, DXC, DirectStorage)
-        if (d3d12_dep) |dep| {
-            d3d12_module.addIncludePath(dep.path("build/native/include"));
+        if (d3d12_path) |p| {
+            d3d12_module.addIncludePath(.{ .cwd_relative = b.fmt("{s}/build/native/include", .{p}) });
+            d3d12_module.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/build/native/bin/x64", .{p}) });
         }
-        if (dxc_dep) |dep| {
-            d3d12_module.addIncludePath(dep.path("build/native/include"));
+        if (dxc_path) |p| {
+            d3d12_module.addIncludePath(.{ .cwd_relative = b.fmt("{s}/build/native/include", .{p}) });
+            d3d12_module.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/build/native/lib/x64", .{p}) });
         }
-        if (dstorage_dep) |dep| {
-            d3d12_module.addIncludePath(dep.path("native/include"));
-        }
-
-        // Add NuGet package library paths
-        if (d3d12_dep) |dep| {
-            d3d12_module.addLibraryPath(dep.path("build/native/bin/x64"));
-        }
-        if (dxc_dep) |dep| {
-            d3d12_module.addLibraryPath(dep.path("build/native/lib/x64"));
-        }
-        if (dstorage_dep) |dep| {
-            d3d12_module.addLibraryPath(dep.path("native/lib/x64"));
+        if (dstorage_path) |p| {
+            d3d12_module.addIncludePath(.{ .cwd_relative = b.fmt("{s}/native/include", .{p}) });
+            d3d12_module.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/native/lib/x64", .{p}) });
         }
 
         d3d12_module.addCSourceFiles(.{
@@ -315,25 +317,17 @@ pub fn build(b: *std.Build) void {
         d3d12_test_mod.addIncludePath(b.path("src/platform/d3d12"));
 
         // Add NuGet package include paths (D3D12, DXC, DirectStorage)
-        if (d3d12_dep) |dep| {
-            d3d12_test_mod.addIncludePath(dep.path("build/native/include"));
+        if (d3d12_path) |p| {
+            d3d12_test_mod.addIncludePath(.{ .cwd_relative = b.fmt("{s}/build/native/include", .{p}) });
+            d3d12_test_mod.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/build/native/bin/x64", .{p}) });
         }
-        if (dxc_dep) |dep| {
-            d3d12_test_mod.addIncludePath(dep.path("build/native/include"));
+        if (dxc_path) |p| {
+            d3d12_test_mod.addIncludePath(.{ .cwd_relative = b.fmt("{s}/build/native/include", .{p}) });
+            d3d12_test_mod.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/build/native/lib/x64", .{p}) });
         }
-        if (dstorage_dep) |dep| {
-            d3d12_test_mod.addIncludePath(dep.path("native/include"));
-        }
-
-        // Add NuGet package library paths
-        if (d3d12_dep) |dep| {
-            d3d12_test_mod.addLibraryPath(dep.path("build/native/bin/x64"));
-        }
-        if (dxc_dep) |dep| {
-            d3d12_test_mod.addLibraryPath(dep.path("build/native/lib/x64"));
-        }
-        if (dstorage_dep) |dep| {
-            d3d12_test_mod.addLibraryPath(dep.path("native/lib/x64"));
+        if (dstorage_path) |p| {
+            d3d12_test_mod.addIncludePath(.{ .cwd_relative = b.fmt("{s}/native/include", .{p}) });
+            d3d12_test_mod.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/native/lib/x64", .{p}) });
         }
 
         d3d12_test_mod.addCSourceFiles(.{

@@ -27,6 +27,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install D3D12 dependencies
+        run: |
+          nuget install Microsoft.Direct3D.D3D12 -Version 1.615.1 -OutputDirectory packages
+          nuget install Microsoft.Direct3D.DXC -Version 1.8.2505.32 -OutputDirectory packages
+          nuget install Microsoft.Direct3D.DirectStorage -Version 1.3.0 -OutputDirectory packages
+          
+          # Set environment variables for build.zig
+          echo "D3D12_SDK_PATH=$PWD\packages\Microsoft.Direct3D.D3D12.1.615.1" >> $env:GITHUB_ENV
+          echo "DXC_PATH=$PWD\packages\Microsoft.Direct3D.DXC.1.8.2505.32" >> $env:GITHUB_ENV
+          echo "DSTORAGE_PATH=$PWD\packages\Microsoft.Direct3D.DirectStorage.1.3.0" >> $env:GITHUB_ENV
+
       - name: Setup Zig
         run: |
           curl -L https://ziglang.org/download/0.15.2/zig-x86_64-windows-0.15.2.zip -o zig.zip
