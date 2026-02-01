@@ -35,6 +35,3 @@ jobs:
 
       - name: Build and run D3D12 tests
         run: zig build test-d3d12
-
-      - name: Build library
-        run: zig build

@@ -35,6 +35,3 @@ jobs:
 
       - name: Build and run Metal tests
         run: zig build test-metal
-
-      - name: Build library
-        run: zig build

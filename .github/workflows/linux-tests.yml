@@ -33,6 +33,3 @@ jobs:
 
       - name: Run unit tests
         run: zig build test
-
-      - name: Build library
-        run: zig build

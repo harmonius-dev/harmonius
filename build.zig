@@ -212,7 +212,6 @@ pub fn build(b: *std.Build) void {
         b.installArtifact(metal_test_exe);
 
         const run_metal_tests = b.addRunArtifact(metal_test_exe);
-        run_metal_tests.step.dependOn(b.getInstallStep());
 
         const test_metal_step = b.step("test-metal", "Run Metal integration tests");
         test_metal_step.dependOn(&run_metal_tests.step);
