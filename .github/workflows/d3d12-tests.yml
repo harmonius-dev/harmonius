@@ -1,29 +1,27 @@
-name: Metal Backend Tests
+name: D3D12 Backend Tests
 
 on:
   push:
     branches: [main]
     paths:
-      - 'src/platform/metal/**'
+      - 'src/platform/d3d12/**'
       - 'src/platform/include/**'
-      - 'tests/test_metal_integration.m'
       - 'build.zig'
       - 'build.zig.zon'
-      - '.github/workflows/metal-tests.yml'
+      - '.github/workflows/d3d12-tests.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'src/platform/metal/**'
+      - 'src/platform/d3d12/**'
       - 'src/platform/include/**'
-      - 'tests/test_metal_integration.m'
       - 'build.zig'
       - 'build.zig.zon'
-      - '.github/workflows/metal-tests.yml'
+      - '.github/workflows/d3d12-tests.yml'
 
 jobs:
-  test-metal:
-    name: Metal Integration Tests
-    runs-on: macos-26-xlarge
+  test-d3d12:
+    name: D3D12 Integration Tests
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
@@ -34,8 +32,8 @@ jobs:
         with:
           version: 0.15.1
 
-      - name: Build and run Metal tests
-        run: zig build test-metal
+      - name: Build and run D3D12 tests
+        run: zig build test-d3d12
 
       - name: Build library
         run: zig build

@@ -1,0 +1,37 @@
+name: Linux Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'build.zig'
+      - 'build.zig.zon'
+      - '.github/workflows/linux-tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'build.zig'
+      - 'build.zig.zon'
+      - '.github/workflows/linux-tests.yml'
+
+jobs:
+  test-linux:
+    name: Linux Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.15.1
+
+      - name: Run unit tests
+        run: zig build test
+
+      - name: Build library
+        run: zig build
