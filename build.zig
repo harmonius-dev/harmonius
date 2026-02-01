@@ -99,6 +99,8 @@ pub fn build(b: *std.Build) void {
             },
             .flags = &.{
                 "-std=c++20",
+                "-fms-extensions", // Enable MSVC extensions for __declspec(uuid())
+                "-Wno-ignored-attributes", // Suppress warnings about ignored uuid attributes
                 "-DUNICODE",
                 "-D_UNICODE",
                 "-DWIN32_LEAN_AND_MEAN",
@@ -337,6 +339,8 @@ pub fn build(b: *std.Build) void {
             },
             .flags = &.{
                 "-std=c++20",
+                "-fms-extensions", // Enable MSVC extensions for __declspec(uuid())
+                "-Wno-ignored-attributes", // Suppress warnings about ignored uuid attributes
                 "-DUNICODE",
                 "-D_UNICODE",
                 "-DWIN32_LEAN_AND_MEAN",
