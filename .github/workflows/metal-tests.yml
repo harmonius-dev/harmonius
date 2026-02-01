@@ -6,7 +6,6 @@ on:
     paths:
       - 'src/platform/metal/**'
       - 'src/platform/include/**'
-      - 'tests/test_metal_integration.m'
       - 'build.zig'
       - 'build.zig.zon'
       - '.github/workflows/metal-tests.yml'
@@ -15,7 +14,6 @@ on:
     paths:
       - 'src/platform/metal/**'
       - 'src/platform/include/**'
-      - 'tests/test_metal_integration.m'
       - 'build.zig'
       - 'build.zig.zon'
       - '.github/workflows/metal-tests.yml'

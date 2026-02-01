@@ -188,7 +188,7 @@ pub fn build(b: *std.Build) void {
 
         // Add test file
         metal_test_mod.addCSourceFiles(.{
-            .root = b.path("tests"),
+            .root = b.path("src/platform/metal"),
             .files = &.{"test_metal_integration.m"},
             .flags = &.{"-fno-objc-arc"},
         });
