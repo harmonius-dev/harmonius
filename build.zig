@@ -11,13 +11,10 @@ pub fn build(b: *std.Build) void {
     const vulkan_sdk = b.option([]const u8, "vulkan-sdk", "Path to Vulkan SDK") orelse
         std.process.getEnvVarOwned(b.allocator, "VULKAN_SDK") catch "";
 
-    // D3D12 SDK paths (Windows only):
-    // For DXC (DirectX Shader Compiler), DirectStorage, and Windows SDK
-    const dxc_lib_path = b.option([]const u8, "dxc-lib-path", "Path to DXC library directory") orelse "";
-    const dxc_include_path = b.option([]const u8, "dxc-include-path", "Path to DXC include directory") orelse "";
-    const dstorage_lib_path = b.option([]const u8, "dstorage-lib-path", "Path to DirectStorage library directory") orelse "";
-    const dstorage_include_path = b.option([]const u8, "dstorage-include-path", "Path to DirectStorage include directory") orelse "";
-    const winsdk_lib_path = b.option([]const u8, "winsdk-lib-path", "Path to Windows SDK um/x64 library directory") orelse "";
+    // D3D12 dependencies (fetched automatically from NuGet via build.zig.zon)
+    const d3d12_dep = if (target.result.os.tag == .windows) b.lazyDependency("d3d12", .{}) else null;
+    const dxc_dep = if (target.result.os.tag == .windows) b.lazyDependency("dxc", .{}) else null;
+    const dstorage_dep = if (target.result.os.tag == .windows) b.lazyDependency("directstorage", .{}) else null;
 
     // =========================================================================
     // Metal backend (macOS/iOS)
@@ -69,23 +66,26 @@ pub fn build(b: *std.Build) void {
         d3d12_module.addIncludePath(b.path("src/platform/include"));
         d3d12_module.addIncludePath(b.path("src/platform/d3d12"));
 
-        // Add include paths if provided (DXC, DirectStorage headers)
-        if (dxc_include_path.len > 0) {
-            d3d12_module.addIncludePath(.{ .cwd_relative = dxc_include_path });
+        // Add NuGet package include paths (D3D12, DXC, DirectStorage)
+        if (d3d12_dep) |dep| {
+            d3d12_module.addIncludePath(dep.path("build/native/include"));
         }
-        if (dstorage_include_path.len > 0) {
-            d3d12_module.addIncludePath(.{ .cwd_relative = dstorage_include_path });
+        if (dxc_dep) |dep| {
+            d3d12_module.addIncludePath(dep.path("build/native/include"));
+        }
+        if (dstorage_dep) |dep| {
+            d3d12_module.addIncludePath(dep.path("native/include"));
         }
 
-        // Add library paths if provided (Windows SDK, DXC, DirectStorage)
-        if (winsdk_lib_path.len > 0) {
-            d3d12_module.addLibraryPath(.{ .cwd_relative = winsdk_lib_path });
+        // Add NuGet package library paths
+        if (d3d12_dep) |dep| {
+            d3d12_module.addLibraryPath(dep.path("build/native/bin/x64"));
         }
-        if (dxc_lib_path.len > 0) {
-            d3d12_module.addLibraryPath(.{ .cwd_relative = dxc_lib_path });
+        if (dxc_dep) |dep| {
+            d3d12_module.addLibraryPath(dep.path("build/native/lib/x64"));
         }
-        if (dstorage_lib_path.len > 0) {
-            d3d12_module.addLibraryPath(.{ .cwd_relative = dstorage_lib_path });
+        if (dstorage_dep) |dep| {
+            d3d12_module.addLibraryPath(dep.path("native/lib/x64"));
         }
 
         d3d12_module.addCSourceFiles(.{
@@ -109,11 +109,12 @@ pub fn build(b: *std.Build) void {
             },
         });
 
+        // Link D3D12 libraries from NuGet packages
         d3d12_module.linkSystemLibrary("d3d12", .{});
         d3d12_module.linkSystemLibrary("dxgi", .{});
-        d3d12_module.linkSystemLibrary("d3dcompiler", .{});
         d3d12_module.linkSystemLibrary("dxcompiler", .{});
         d3d12_module.linkSystemLibrary("dstorage", .{});
+        // Windows system libraries
         d3d12_module.linkSystemLibrary("kernel32", .{});
         d3d12_module.linkSystemLibrary("user32", .{});
         d3d12_module.linkSystemLibrary("ole32", .{});
@@ -313,23 +314,26 @@ pub fn build(b: *std.Build) void {
         d3d12_test_mod.addIncludePath(b.path("src/platform/include"));
         d3d12_test_mod.addIncludePath(b.path("src/platform/d3d12"));
 
-        // Add include paths if provided (DXC, DirectStorage headers)
-        if (dxc_include_path.len > 0) {
-            d3d12_test_mod.addIncludePath(.{ .cwd_relative = dxc_include_path });
+        // Add NuGet package include paths (D3D12, DXC, DirectStorage)
+        if (d3d12_dep) |dep| {
+            d3d12_test_mod.addIncludePath(dep.path("build/native/include"));
         }
-        if (dstorage_include_path.len > 0) {
-            d3d12_test_mod.addIncludePath(.{ .cwd_relative = dstorage_include_path });
+        if (dxc_dep) |dep| {
+            d3d12_test_mod.addIncludePath(dep.path("build/native/include"));
+        }
+        if (dstorage_dep) |dep| {
+            d3d12_test_mod.addIncludePath(dep.path("native/include"));
         }
 
-        // Add library paths if provided (Windows SDK, DXC, DirectStorage)
-        if (winsdk_lib_path.len > 0) {
-            d3d12_test_mod.addLibraryPath(.{ .cwd_relative = winsdk_lib_path });
+        // Add NuGet package library paths
+        if (d3d12_dep) |dep| {
+            d3d12_test_mod.addLibraryPath(dep.path("build/native/bin/x64"));
         }
-        if (dxc_lib_path.len > 0) {
-            d3d12_test_mod.addLibraryPath(.{ .cwd_relative = dxc_lib_path });
+        if (dxc_dep) |dep| {
+            d3d12_test_mod.addLibraryPath(dep.path("build/native/lib/x64"));
         }
-        if (dstorage_lib_path.len > 0) {
-            d3d12_test_mod.addLibraryPath(.{ .cwd_relative = dstorage_lib_path });
+        if (dstorage_dep) |dep| {
+            d3d12_test_mod.addLibraryPath(dep.path("native/lib/x64"));
         }
 
         d3d12_test_mod.addCSourceFiles(.{
@@ -354,11 +358,12 @@ pub fn build(b: *std.Build) void {
             },
         });
 
+        // Link D3D12 libraries from NuGet packages
         d3d12_test_mod.linkSystemLibrary("d3d12", .{});
         d3d12_test_mod.linkSystemLibrary("dxgi", .{});
-        d3d12_test_mod.linkSystemLibrary("d3dcompiler", .{});
         d3d12_test_mod.linkSystemLibrary("dxcompiler", .{});
         d3d12_test_mod.linkSystemLibrary("dstorage", .{});
+        // Windows system libraries
         d3d12_test_mod.linkSystemLibrary("kernel32", .{});
         d3d12_test_mod.linkSystemLibrary("user32", .{});
         d3d12_test_mod.linkSystemLibrary("ole32", .{});

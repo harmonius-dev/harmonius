@@ -3,7 +3,23 @@
     .version = "0.0.0",
     .fingerprint = 0x964d23d8103974ef,
     .minimum_zig_version = "0.15.2",
-    .dependencies = .{},
+    .dependencies = .{
+        // D3D12 Agility SDK - provides d3d12.h, d3d12.lib, dxgi headers, etc.
+        .d3d12 = .{
+            .url = "https://api.nuget.org/v3-flatcontainer/microsoft.direct3d.d3d12/1.615.1/microsoft.direct3d.d3d12.1.615.1.nupkg",
+            .hash = "12205b73f68a35b1b6f09a41f59af06d78d66d59a1f68e4ab1dd3c41e90ce3dce0eb",
+        },
+        // DirectX Shader Compiler (DXC) - provides dxcompiler.lib/dll
+        .dxc = .{
+            .url = "https://api.nuget.org/v3-flatcontainer/microsoft.direct3d.dxc/1.8.2505.32/microsoft.direct3d.dxc.1.8.2505.32.nupkg",
+            .hash = "1220de1058b6f5adf424217d71f5f30c8cebb28e939af83c25e5f8ced7d65412ce1d",
+        },
+        // DirectStorage - provides dstorage.lib/dll and dstorage.h
+        .directstorage = .{
+            .url = "https://api.nuget.org/v3-flatcontainer/microsoft.direct3d.directstorage/1.3.0/microsoft.direct3d.directstorage.1.3.0.nupkg",
+            .hash = "122045d80e1dab0214d2b2cd88b99f49ba35fdbc14e6d8c2d12f8be9ebe76c9b0f90",
+        },
+    },
     .paths = .{
         "build.zig",
         "build.zig.zon",
