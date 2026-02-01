@@ -1,6 +1,5 @@
 zig-*/
 .zig-*/
-test_metal_integration
 
 # NuGet packages (downloaded by scripts/fetch-d3d12-deps.ps1)
 packages/
