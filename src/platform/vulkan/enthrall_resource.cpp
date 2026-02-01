@@ -27,7 +27,8 @@ extern "C" EPError EPBufferCreate(EPDevicePtr device_ptr, const EPBufferDesc* de
     };
 
     VmaAllocationCreateInfo alloc_info{
-        .flags = desc->host_visible ? VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT : 0u,
+        // Use RANDOM_BIT to support both read and write access on host-visible buffers
+        .flags = desc->host_visible ? VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT : 0u,
         .usage = desc->host_visible ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST : VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
     };
 
@@ -62,7 +63,13 @@ extern "C" EPError EPBufferMap(EPBufferPtr buffer_ptr, void** out_data) {
     }
 
     VkResult result = vmaMapMemory(buffer->device->allocator.get(), buffer->allocation, out_data);
-    return from_vk_result(static_cast<::vk::Result>(result));
+    if (result != VK_SUCCESS) {
+        return from_vk_result(static_cast<::vk::Result>(result));
+    }
+
+    // Invalidate to ensure GPU writes are visible to CPU (for non-coherent memory)
+    vmaInvalidateAllocation(buffer->device->allocator.get(), buffer->allocation, 0, VK_WHOLE_SIZE);
+    return ok();
 }
 
 extern "C" EPError EPBufferUnmap(EPBufferPtr buffer_ptr) {
@@ -73,6 +80,8 @@ extern "C" EPError EPBufferUnmap(EPBufferPtr buffer_ptr) {
         return invalid_argument("buffer is not host-visible");
     }
 
+    // Flush to ensure CPU writes are visible to GPU (for non-coherent memory)
+    vmaFlushAllocation(buffer->device->allocator.get(), buffer->allocation, 0, VK_WHOLE_SIZE);
     vmaUnmapMemory(buffer->device->allocator.get(), buffer->allocation);
     return ok();
 }

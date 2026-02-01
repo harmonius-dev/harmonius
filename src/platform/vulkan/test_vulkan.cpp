@@ -947,8 +947,8 @@ void setup_global_state() {
     EXPECT_OK(EPInstanceEnumerateAdapters(g_instance, &adapter_count, &g_adapter));
     
     if (adapter_count == 0) {
-        printf("No Vulkan adapters found! Tests cannot run.\n");
-        exit(1);
+        printf("SKIP: No Vulkan adapters found; tests will not run.\n");
+        exit(77);  // 77 is the autotools convention for skipped tests
     }
     
     EPAdapterProperties props{};

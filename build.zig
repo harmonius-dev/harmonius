@@ -4,13 +4,12 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Vulkan SDK path (used on macOS and optionally on other platforms)
-    const vulkan_sdk = std.process.getEnvVarOwned(b.allocator, "VULKAN_SDK") catch blk: {
-        if (target.result.os.tag.isDarwin()) {
-            break :blk b.allocator.dupe(u8, "/Users/cjhowe/VulkanSDK/1.4.335.1/macOS") catch "";
-        }
-        break :blk "";
-    };
+    // Vulkan SDK path resolution:
+    // 1. Build option: -Dvulkan-sdk=/path/to/sdk
+    // 2. Environment variable: VULKAN_SDK
+    // 3. Fallback: empty (no SDK configured)
+    const vulkan_sdk = b.option([]const u8, "vulkan-sdk", "Path to Vulkan SDK") orelse
+        std.process.getEnvVarOwned(b.allocator, "VULKAN_SDK") catch "";
 
     // =========================================================================
     // Metal backend (macOS/iOS)
