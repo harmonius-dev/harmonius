@@ -11,12 +11,10 @@ pub fn build(b: *std.Build) void {
     const vulkan_sdk = b.option([]const u8, "vulkan-sdk", "Path to Vulkan SDK") orelse
         std.process.getEnvVarOwned(b.allocator, "VULKAN_SDK") catch "";
 
-    // D3D12 dependencies (from NuGet packages via environment variables)
-    // These are set by the CI workflow or by the developer locally
-    const d3d12_path = if (target.result.os.tag == .windows)
-        std.process.getEnvVarOwned(b.allocator, "D3D12_SDK_PATH") catch null
-    else
-        null;
+    // D3D12 dependencies:
+    // - D3D12/DXGI: Use Windows SDK (already on system)
+    // - DXC: From NuGet package (DXC_PATH env var)
+    // - DirectStorage: From NuGet package (DSTORAGE_PATH env var)
     const dxc_path = if (target.result.os.tag == .windows)
         std.process.getEnvVarOwned(b.allocator, "DXC_PATH") catch null
     else
@@ -76,11 +74,8 @@ pub fn build(b: *std.Build) void {
         d3d12_module.addIncludePath(b.path("src/platform/include"));
         d3d12_module.addIncludePath(b.path("src/platform/d3d12"));
 
-        // Add NuGet package include paths (D3D12, DXC, DirectStorage)
-        if (d3d12_path) |p| {
-            d3d12_module.addIncludePath(.{ .cwd_relative = b.fmt("{s}/build/native/include", .{p}) });
-            d3d12_module.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/build/native/bin/x64", .{p}) });
-        }
+        // Add NuGet package paths for DXC and DirectStorage
+        // (D3D12/DXGI headers come from Windows SDK which is already on the system)
         if (dxc_path) |p| {
             d3d12_module.addIncludePath(.{ .cwd_relative = b.fmt("{s}/build/native/include", .{p}) });
             d3d12_module.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/build/native/lib/x64", .{p}) });
@@ -316,11 +311,8 @@ pub fn build(b: *std.Build) void {
         d3d12_test_mod.addIncludePath(b.path("src/platform/include"));
         d3d12_test_mod.addIncludePath(b.path("src/platform/d3d12"));
 
-        // Add NuGet package include paths (D3D12, DXC, DirectStorage)
-        if (d3d12_path) |p| {
-            d3d12_test_mod.addIncludePath(.{ .cwd_relative = b.fmt("{s}/build/native/include", .{p}) });
-            d3d12_test_mod.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/build/native/bin/x64", .{p}) });
-        }
+        // Add NuGet package paths for DXC and DirectStorage
+        // (D3D12/DXGI headers come from Windows SDK which is already on the system)
         if (dxc_path) |p| {
             d3d12_test_mod.addIncludePath(.{ .cwd_relative = b.fmt("{s}/build/native/include", .{p}) });
             d3d12_test_mod.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/build/native/lib/x64", .{p}) });
