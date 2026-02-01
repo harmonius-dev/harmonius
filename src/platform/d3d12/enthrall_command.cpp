@@ -241,24 +241,76 @@ extern "C" EPError EPCommandBindDescriptorSet(EPCommandBufferPtr command_buffer,
                                               EPPipelineLayoutPtr layout,
                                               uint32_t set_index,
                                               EPDescriptorSetPtr set) {
-    if (!command_buffer || !set) 
-        return ep_invalid_argument("command_buffer or set is NULL");
+    if (!command_buffer || !layout || !set) 
+        return ep_invalid_argument("command_buffer, layout, or set is NULL");
     
-    // In D3D12, we bind descriptor tables to root parameters
-    // The root parameter index corresponds to the set index
+    if (set_index >= layout->set_layouts.size()) {
+        return ep_invalid_argument("set_index out of range");
+    }
     
-    // For now, use a simplified model where each set maps to a root parameter
-    // containing a descriptor table
+    // Calculate root parameter index accounting for push constants
+    // Push constants (if present) take the first root parameter
+    // Then descriptor tables follow
+    UINT root_param_index = layout->first_set_root_index + set_index;
     
-    // Calculate GPU descriptor handle for this set
-    D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle = 
+    // For each descriptor in the set, we need to bind to the correct offset
+    // in the shader-visible heap. Get the base GPU descriptor handle for the set.
+    D3D12_GPU_DESCRIPTOR_HANDLE cbv_srv_uav_gpu_handle = 
         command_buffer->ep_device->cbv_srv_uav_heap->GetGPUDescriptorHandleForHeapStart();
+    D3D12_GPU_DESCRIPTOR_HANDLE sampler_gpu_handle = 
+        command_buffer->ep_device->sampler_heap->GetGPUDescriptorHandleForHeapStart();
     
-    // This is a simplified binding - real implementation would track descriptor offsets
-    if (command_buffer->in_render_pass) {
-        command_buffer->list->SetGraphicsRootDescriptorTable(set_index, gpu_handle);
-    } else {
-        command_buffer->list->SetComputeRootDescriptorTable(set_index, gpu_handle);
+    // Find the first descriptor index in this set to compute the table start
+    // For simplicity, we use the first buffer/texture entry's heap index
+    bool has_cbv_srv_uav = false;
+    bool has_samplers = false;
+    UINT first_cbv_srv_uav_index = 0;
+    UINT first_sampler_index = 0;
+    
+    for (const auto &entry : set->entries) {
+        if (entry.type == EP_DESCRIPTOR_SAMPLER) {
+            if (!has_samplers) {
+                first_sampler_index = entry.value.sampler_info.heap_index;
+                has_samplers = true;
+            }
+        } else if (entry.type == EP_DESCRIPTOR_UNIFORM_BUFFER || 
+                   entry.type == EP_DESCRIPTOR_STORAGE_BUFFER) {
+            if (!has_cbv_srv_uav) {
+                first_cbv_srv_uav_index = entry.value.buffer_info.heap_index;
+                has_cbv_srv_uav = true;
+            }
+        } else if (entry.type == EP_DESCRIPTOR_SAMPLED_TEXTURE ||
+                   entry.type == EP_DESCRIPTOR_STORAGE_TEXTURE) {
+            if (!has_cbv_srv_uav) {
+                first_cbv_srv_uav_index = entry.value.texture_info.heap_index;
+                has_cbv_srv_uav = true;
+            }
+        }
+    }
+    
+    // Bind CBV/SRV/UAV descriptor table if there are any such descriptors
+    if (has_cbv_srv_uav) {
+        cbv_srv_uav_gpu_handle.ptr += first_cbv_srv_uav_index * 
+            command_buffer->ep_device->cbv_srv_uav_descriptor_size;
+        
+        if (command_buffer->in_render_pass) {
+            command_buffer->list->SetGraphicsRootDescriptorTable(root_param_index, cbv_srv_uav_gpu_handle);
+        } else {
+            command_buffer->list->SetComputeRootDescriptorTable(root_param_index, cbv_srv_uav_gpu_handle);
+        }
+        root_param_index++;
+    }
+    
+    // Bind sampler descriptor table if there are any samplers
+    if (has_samplers) {
+        sampler_gpu_handle.ptr += first_sampler_index * 
+            command_buffer->ep_device->sampler_descriptor_size;
+        
+        if (command_buffer->in_render_pass) {
+            command_buffer->list->SetGraphicsRootDescriptorTable(root_param_index, sampler_gpu_handle);
+        } else {
+            command_buffer->list->SetComputeRootDescriptorTable(root_param_index, sampler_gpu_handle);
+        }
     }
     
     return ep_ok();
@@ -268,19 +320,29 @@ extern "C" EPError EPCommandPushConstants(EPCommandBufferPtr command_buffer,
                                           EPPipelineLayoutPtr layout,
                                           EPShaderStageFlags stages,
                                           const uint8_t *data, uint32_t size) {
-    if (!command_buffer || !data) 
-        return ep_invalid_argument("command_buffer or data is NULL");
+    if (!command_buffer || !layout || !data) 
+        return ep_invalid_argument("command_buffer, layout, or data is NULL");
+    
+    // Validate that the requested push constant size fits the layout
+    if (size > layout->push_constant_size) {
+        return ep_invalid_argument("push constant size exceeds pipeline layout limit");
+    }
+    
+    if (layout->push_constant_size == 0) {
+        return ep_invalid_argument("pipeline layout has no push constants");
+    }
     
     // Push constants in D3D12 are implemented via root constants
-    // Typically at root parameter 0
+    // Use the root parameter index assigned by EPPipelineLayoutCreate
     UINT num_32bit_values = (size + 3) / 4;
+    UINT root_param_index = layout->push_constant_root_index;
     
     if (command_buffer->in_render_pass) {
         command_buffer->list->SetGraphicsRoot32BitConstants(
-            0, num_32bit_values, data, 0);
+            root_param_index, num_32bit_values, data, 0);
     } else {
         command_buffer->list->SetComputeRoot32BitConstants(
-            0, num_32bit_values, data, 0);
+            root_param_index, num_32bit_values, data, 0);
     }
     
     return ep_ok();
@@ -366,19 +428,15 @@ extern "C" EPError EPCommandDispatchRays(EPCommandBufferPtr command_buffer,
                                          uint32_t width, uint32_t height, uint32_t depth) {
     if (!command_buffer) return ep_invalid_argument("command_buffer is NULL");
     
-    // Need to have a ray tracing pipeline bound
-    // This is a simplified implementation
-    D3D12_DISPATCH_RAYS_DESC dispatch_desc = {};
-    dispatch_desc.Width = width;
-    dispatch_desc.Height = height;
-    dispatch_desc.Depth = depth;
+    // Ray tracing dispatch requires properly configured shader tables (raygen, miss,
+    // hit group, callable) from a bound ray tracing pipeline. Full shader table
+    // management is not yet implemented, so reject the call rather than issuing
+    // an invalid DispatchRays that would cause D3D12 validation errors or GPU faults.
+    (void)width;
+    (void)height;
+    (void)depth;
     
-    // Shader table addresses would need to be set from the bound pipeline
-    // For now, this is a placeholder
-    
-    command_buffer->list->DispatchRays(&dispatch_desc);
-    
-    return ep_ok();
+    return ep_invalid_state("DispatchRays is not supported: ray tracing shader tables are not configured");
 }
 
 // ============================================================================

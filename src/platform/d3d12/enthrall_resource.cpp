@@ -102,15 +102,28 @@ extern "C" EPError EPTextureCreate(EPDevicePtr device, const EPTextureDesc *desc
     
     texture->ep_device = device;
     texture->desc = *desc;
+    texture->srv_heap_index = UINT_MAX;
+    texture->uav_heap_index = UINT_MAX;
     
     D3D12_RESOURCE_DESC resource_desc = {};
     resource_desc.Dimension = ep_to_d3d12_dimension(desc->dimension);
     resource_desc.Alignment = 0;
     resource_desc.Width = desc->width;
     resource_desc.Height = desc->height;
-    resource_desc.DepthOrArraySize = (desc->dimension == EP_TEXTURE_DIM_3D)
-        ? static_cast<UINT16>(desc->depth)
-        : static_cast<UINT16>(desc->array_layers > 0 ? desc->array_layers : 1);
+    
+    // Calculate DepthOrArraySize based on dimension
+    UINT16 depth_or_array_size = 0;
+    if (desc->dimension == EP_TEXTURE_DIM_3D) {
+        depth_or_array_size = static_cast<UINT16>(desc->depth);
+    } else if (desc->dimension == EP_TEXTURE_DIM_CUBE) {
+        // Cube textures need 6 faces per array layer
+        UINT cube_layers = desc->array_layers > 0 ? desc->array_layers : 1;
+        depth_or_array_size = static_cast<UINT16>(cube_layers * 6);
+    } else {
+        depth_or_array_size = static_cast<UINT16>(desc->array_layers > 0 ? desc->array_layers : 1);
+    }
+    resource_desc.DepthOrArraySize = depth_or_array_size;
+    
     resource_desc.MipLevels = static_cast<UINT16>(desc->mip_levels > 0 ? desc->mip_levels : 1);
     resource_desc.Format = ep_to_dxgi_format(desc->format);
     resource_desc.SampleDesc.Count = 1;
@@ -166,7 +179,7 @@ extern "C" EPError EPTextureCreate(EPDevicePtr device, const EPTextureDesc *desc
     
     texture->current_state = initial_state;
     
-    // Create views
+    // Create RTV - dimension-aware
     if (desc->usage & EP_TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
         UINT rtv_offset = device->rtv_heap_offset.fetch_add(1);
         texture->rtv = device->rtv_heap->GetCPUDescriptorHandleForHeapStart();
@@ -174,12 +187,43 @@ extern "C" EPError EPTextureCreate(EPDevicePtr device, const EPTextureDesc *desc
         
         D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
         rtv_desc.Format = resource_desc.Format;
-        rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-        rtv_desc.Texture2D.MipSlice = 0;
+        
+        switch (desc->dimension) {
+            case EP_TEXTURE_DIM_1D:
+                if (resource_desc.DepthOrArraySize > 1) {
+                    rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
+                    rtv_desc.Texture1DArray.MipSlice = 0;
+                    rtv_desc.Texture1DArray.FirstArraySlice = 0;
+                    rtv_desc.Texture1DArray.ArraySize = resource_desc.DepthOrArraySize;
+                } else {
+                    rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
+                    rtv_desc.Texture1D.MipSlice = 0;
+                }
+                break;
+            case EP_TEXTURE_DIM_2D:
+            case EP_TEXTURE_DIM_CUBE:
+                if (resource_desc.DepthOrArraySize > 1) {
+                    rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+                    rtv_desc.Texture2DArray.MipSlice = 0;
+                    rtv_desc.Texture2DArray.FirstArraySlice = 0;
+                    rtv_desc.Texture2DArray.ArraySize = resource_desc.DepthOrArraySize;
+                } else {
+                    rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+                    rtv_desc.Texture2D.MipSlice = 0;
+                }
+                break;
+            case EP_TEXTURE_DIM_3D:
+                rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
+                rtv_desc.Texture3D.MipSlice = 0;
+                rtv_desc.Texture3D.FirstWSlice = 0;
+                rtv_desc.Texture3D.WSize = resource_desc.DepthOrArraySize;
+                break;
+        }
         
         device->device->CreateRenderTargetView(texture->resource.Get(), &rtv_desc, texture->rtv);
     }
     
+    // Create DSV - dimension-aware
     if (desc->usage & EP_TEXTURE_USAGE_DEPTH_ATTACHMENT_BIT) {
         UINT dsv_offset = device->dsv_heap_offset.fetch_add(1);
         texture->dsv = device->dsv_heap->GetCPUDescriptorHandleForHeapStart();
@@ -187,16 +231,43 @@ extern "C" EPError EPTextureCreate(EPDevicePtr device, const EPTextureDesc *desc
         
         D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
         dsv_desc.Format = resource_desc.Format;
-        dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-        dsv_desc.Texture2D.MipSlice = 0;
+        
+        switch (desc->dimension) {
+            case EP_TEXTURE_DIM_1D:
+                if (resource_desc.DepthOrArraySize > 1) {
+                    dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
+                    dsv_desc.Texture1DArray.MipSlice = 0;
+                    dsv_desc.Texture1DArray.FirstArraySlice = 0;
+                    dsv_desc.Texture1DArray.ArraySize = resource_desc.DepthOrArraySize;
+                } else {
+                    dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
+                    dsv_desc.Texture1D.MipSlice = 0;
+                }
+                break;
+            case EP_TEXTURE_DIM_2D:
+            case EP_TEXTURE_DIM_CUBE:
+            case EP_TEXTURE_DIM_3D:  // 3D depth not typically supported, but handle as 2D array
+                if (resource_desc.DepthOrArraySize > 1) {
+                    dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+                    dsv_desc.Texture2DArray.MipSlice = 0;
+                    dsv_desc.Texture2DArray.FirstArraySlice = 0;
+                    dsv_desc.Texture2DArray.ArraySize = resource_desc.DepthOrArraySize;
+                } else {
+                    dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+                    dsv_desc.Texture2D.MipSlice = 0;
+                }
+                break;
+        }
         
         device->device->CreateDepthStencilView(texture->resource.Get(), &dsv_desc, texture->dsv);
     }
     
+    // Create SRV - dimension-aware
     if (desc->usage & EP_TEXTURE_USAGE_SAMPLED_BIT) {
         UINT srv_offset = device->cbv_srv_uav_heap_offset.fetch_add(1);
         texture->srv = device->cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
         texture->srv.ptr += srv_offset * device->cbv_srv_uav_descriptor_size;
+        texture->srv_heap_index = srv_offset;
         
         D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
         srv_desc.Format = resource_desc.Format;
@@ -204,35 +275,87 @@ extern "C" EPError EPTextureCreate(EPDevicePtr device, const EPTextureDesc *desc
         
         switch (desc->dimension) {
             case EP_TEXTURE_DIM_1D:
-                srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
-                srv_desc.Texture1D.MipLevels = resource_desc.MipLevels;
+                if (resource_desc.DepthOrArraySize > 1) {
+                    srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+                    srv_desc.Texture1DArray.MipLevels = resource_desc.MipLevels;
+                    srv_desc.Texture1DArray.FirstArraySlice = 0;
+                    srv_desc.Texture1DArray.ArraySize = resource_desc.DepthOrArraySize;
+                } else {
+                    srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+                    srv_desc.Texture1D.MipLevels = resource_desc.MipLevels;
+                }
                 break;
             case EP_TEXTURE_DIM_2D:
-                srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srv_desc.Texture2D.MipLevels = resource_desc.MipLevels;
+                if (resource_desc.DepthOrArraySize > 1) {
+                    srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+                    srv_desc.Texture2DArray.MipLevels = resource_desc.MipLevels;
+                    srv_desc.Texture2DArray.FirstArraySlice = 0;
+                    srv_desc.Texture2DArray.ArraySize = resource_desc.DepthOrArraySize;
+                } else {
+                    srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+                    srv_desc.Texture2D.MipLevels = resource_desc.MipLevels;
+                }
                 break;
             case EP_TEXTURE_DIM_3D:
                 srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
                 srv_desc.Texture3D.MipLevels = resource_desc.MipLevels;
                 break;
             case EP_TEXTURE_DIM_CUBE:
-                srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-                srv_desc.TextureCube.MipLevels = resource_desc.MipLevels;
+                if (desc->array_layers > 1) {
+                    srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
+                    srv_desc.TextureCubeArray.MipLevels = resource_desc.MipLevels;
+                    srv_desc.TextureCubeArray.NumCubes = desc->array_layers;
+                } else {
+                    srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+                    srv_desc.TextureCube.MipLevels = resource_desc.MipLevels;
+                }
                 break;
         }
         
         device->device->CreateShaderResourceView(texture->resource.Get(), &srv_desc, texture->srv);
     }
     
+    // Create UAV - dimension-aware
     if (desc->usage & EP_TEXTURE_USAGE_STORAGE_BIT) {
         UINT uav_offset = device->cbv_srv_uav_heap_offset.fetch_add(1);
         texture->uav = device->cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
         texture->uav.ptr += uav_offset * device->cbv_srv_uav_descriptor_size;
+        texture->uav_heap_index = uav_offset;
         
         D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
         uav_desc.Format = resource_desc.Format;
-        uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-        uav_desc.Texture2D.MipSlice = 0;
+        
+        switch (desc->dimension) {
+            case EP_TEXTURE_DIM_1D:
+                if (resource_desc.DepthOrArraySize > 1) {
+                    uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1DARRAY;
+                    uav_desc.Texture1DArray.MipSlice = 0;
+                    uav_desc.Texture1DArray.FirstArraySlice = 0;
+                    uav_desc.Texture1DArray.ArraySize = resource_desc.DepthOrArraySize;
+                } else {
+                    uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
+                    uav_desc.Texture1D.MipSlice = 0;
+                }
+                break;
+            case EP_TEXTURE_DIM_2D:
+            case EP_TEXTURE_DIM_CUBE:  // Cube UAV treated as 2D array
+                if (resource_desc.DepthOrArraySize > 1) {
+                    uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+                    uav_desc.Texture2DArray.MipSlice = 0;
+                    uav_desc.Texture2DArray.FirstArraySlice = 0;
+                    uav_desc.Texture2DArray.ArraySize = resource_desc.DepthOrArraySize;
+                } else {
+                    uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+                    uav_desc.Texture2D.MipSlice = 0;
+                }
+                break;
+            case EP_TEXTURE_DIM_3D:
+                uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+                uav_desc.Texture3D.MipSlice = 0;
+                uav_desc.Texture3D.FirstWSlice = 0;
+                uav_desc.Texture3D.WSize = resource_desc.DepthOrArraySize;
+                break;
+        }
         
         device->device->CreateUnorderedAccessView(texture->resource.Get(), nullptr,
                                                    &uav_desc, texture->uav);
@@ -286,6 +409,7 @@ extern "C" EPError EPSamplerCreate(EPDevicePtr device, const EPSamplerDesc *desc
     UINT sampler_offset = device->sampler_heap_offset.fetch_add(1);
     sampler->sampler = device->sampler_heap->GetCPUDescriptorHandleForHeapStart();
     sampler->sampler.ptr += sampler_offset * device->sampler_descriptor_size;
+    sampler->heap_index = sampler_offset;
     
     device->device->CreateSampler(&sampler_desc, sampler->sampler);
     
@@ -343,12 +467,11 @@ extern "C" EPError EPShaderLibraryCreate(EPDevicePtr device, const EPShaderLibra
             return ep_from_hresult(hr, "failed to create source blob");
         }
         
-        // Compile arguments
+        // Compile arguments - lib_* targets don't require entry point
         std::vector<LPCWSTR> args;
         args.push_back(L"-T");
         args.push_back(L"lib_6_6"); // Library target for SM 6.6
-        args.push_back(L"-E");
-        args.push_back(L"main");
+        // Note: Don't specify -E for library targets as they export multiple entry points
         
         if (device->debug_names_enabled) {
             args.push_back(L"-Zi"); // Debug info

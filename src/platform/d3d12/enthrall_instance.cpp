@@ -99,7 +99,14 @@ extern "C" EPError EPInstanceEnumerateAdapters(EPInstancePtr instance, uint32_t 
     
     for (uint32_t i = 0; i < count; i++) {
         EPAdapter *adapter = new (std::nothrow) EPAdapter{};
-        if (!adapter) return ep_out_of_memory();
+        if (!adapter) {
+            // Clean up any adapters that were successfully allocated in previous iterations
+            for (uint32_t j = 0; j < i; ++j) {
+                delete out_adapters[j];
+                out_adapters[j] = nullptr;
+            }
+            return ep_out_of_memory();
+        }
         
         adapter->adapter = instance->adapters[i];
         adapter->adapter->GetDesc3(&adapter->desc);

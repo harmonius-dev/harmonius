@@ -27,6 +27,8 @@ using Microsoft::WRL::ComPtr;
 #include <condition_variable>
 #include <vector>
 #include <atomic>
+#include <string>
+#include <new>
 
 extern "C" {
 #include "enthrall_types.h"
@@ -73,6 +75,10 @@ inline EPError ep_from_hresult(HRESULT hr, const char *msg) {
     if (hr == E_OUTOFMEMORY) return ep_out_of_memory();
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
         return ep_device_lost(msg);
+    return ep_error(EP_E_INVALID_STATE, msg);
+}
+
+inline EPError ep_invalid_state(const char *msg) {
     return ep_error(EP_E_INVALID_STATE, msg);
 }
 
@@ -190,6 +196,9 @@ struct EPTexture {
     D3D12_CPU_DESCRIPTOR_HANDLE dsv;
     D3D12_CPU_DESCRIPTOR_HANDLE srv;
     D3D12_CPU_DESCRIPTOR_HANDLE uav;
+    // Heap indices for shader-visible descriptors
+    UINT srv_heap_index;
+    UINT uav_heap_index;
     EPTextureDesc desc;
     D3D12_RESOURCE_STATES current_state;
 };
@@ -197,6 +206,7 @@ struct EPTexture {
 struct EPSampler {
     EPDevice *ep_device;
     D3D12_CPU_DESCRIPTOR_HANDLE sampler;
+    UINT heap_index;
     D3D12_SAMPLER_DESC desc;
 };
 
@@ -223,9 +233,14 @@ union EPDescriptorValue {
         ID3D12Resource *buffer;
         uint64_t offset;
         uint64_t range;
+        UINT heap_index;  // Index in CBV/SRV/UAV heap
     } buffer_info;
-    D3D12_CPU_DESCRIPTOR_HANDLE texture;
-    D3D12_CPU_DESCRIPTOR_HANDLE sampler;
+    struct {
+        UINT heap_index;  // Index in CBV/SRV/UAV heap for SRV/UAV
+    } texture_info;
+    struct {
+        UINT heap_index;  // Index in sampler heap
+    } sampler_info;
     D3D12_GPU_VIRTUAL_ADDRESS accel;
 };
 
@@ -246,6 +261,8 @@ struct EPPipelineLayout {
     std::vector<EPDescriptorSetLayout *> set_layouts;
     uint32_t push_constant_size;
     EPShaderStageFlags push_constant_stages;
+    UINT push_constant_root_index;  // Root parameter index for push constants
+    UINT first_set_root_index;      // Root parameter index for first descriptor set
 };
 
 struct EPRenderPipeline {

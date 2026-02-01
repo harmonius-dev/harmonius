@@ -307,8 +307,17 @@ extern "C" EPError EPSwapchainPresent(EPSwapchainPtr swapchain,
         swapchain->ep_device->graphics_queue->Wait(wait_semaphore->fence.Get(), wait_value);
     }
     
-    UINT sync_interval = 1; // VSync on
+    // Default to VSync on
+    UINT sync_interval = 1;
     UINT present_flags = 0;
+    
+    // If the swapchain was created with tearing allowed, present without VSync
+    DXGI_SWAP_CHAIN_DESC1 desc = {};
+    if (SUCCEEDED(swapchain->swapchain->GetDesc1(&desc)) &&
+        (desc.Flags & DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING) != 0) {
+        sync_interval = 0;
+        present_flags = DXGI_PRESENT_ALLOW_TEARING;
+    }
     
     HRESULT hr = swapchain->swapchain->Present(sync_interval, present_flags);
     if (FAILED(hr)) return ep_from_hresult(hr, "present failed");

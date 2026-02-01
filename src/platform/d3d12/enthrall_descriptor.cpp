@@ -74,25 +74,52 @@ extern "C" EPError EPDescriptorSetUpdateBuffer(EPDescriptorSetPtr set, uint32_t 
     
     for (size_t i = 0; i < set->layout->bindings.size(); i++) {
         if (set->layout->bindings[i].binding == binding) {
-            set->entries[i].type = set->layout->bindings[i].type;
-            set->entries[i].value.buffer_info.buffer = buffer->resource.Get();
-            set->entries[i].value.buffer_info.offset = offset;
-            set->entries[i].value.buffer_info.range = range;
-            
-            // Create CBV/SRV/UAV as appropriate
             EPDevice *device = set->ep_device;
             
-            D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle = 
-                device->cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
-            UINT offset_idx = device->cbv_srv_uav_heap_offset.fetch_add(1);
-            cpu_handle.ptr += offset_idx * device->cbv_srv_uav_descriptor_size;
-            
             if (set->layout->bindings[i].type == EP_DESCRIPTOR_UNIFORM_BUFFER) {
+                // D3D12 requires constant buffer offsets to be 256-byte aligned
+                if ((offset % 256) != 0) {
+                    return ep_invalid_argument("constant buffer offset must be 256-byte aligned");
+                }
+                if (offset + range > buffer->size) {
+                    return ep_invalid_argument("constant buffer range exceeds buffer size");
+                }
+                
+                // Allocate descriptor in heap
+                UINT heap_idx = device->cbv_srv_uav_heap_offset.fetch_add(1);
+                D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle = 
+                    device->cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
+                cpu_handle.ptr += heap_idx * device->cbv_srv_uav_descriptor_size;
+                
                 D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc = {};
                 cbv_desc.BufferLocation = buffer->gpu_address + offset;
-                cbv_desc.SizeInBytes = static_cast<UINT>((range + 255) & ~255); // 256-byte aligned
+                cbv_desc.SizeInBytes = static_cast<UINT>((range + 255) & ~255); // 256-byte aligned size
                 device->device->CreateConstantBufferView(&cbv_desc, cpu_handle);
+                
+                set->entries[i].type = EP_DESCRIPTOR_UNIFORM_BUFFER;
+                set->entries[i].value.buffer_info.buffer = buffer->resource.Get();
+                set->entries[i].value.buffer_info.offset = offset;
+                set->entries[i].value.buffer_info.range = range;
+                set->entries[i].value.buffer_info.heap_index = heap_idx;
+                
             } else if (set->layout->bindings[i].type == EP_DESCRIPTOR_STORAGE_BUFFER) {
+                // Raw UAV buffers require offset and range to be multiples of 4
+                if ((offset % 4) != 0) {
+                    return ep_invalid_argument("storage buffer offset must be 4-byte aligned");
+                }
+                if ((range % 4) != 0) {
+                    return ep_invalid_argument("storage buffer range must be a multiple of 4");
+                }
+                if (offset + range > buffer->size) {
+                    return ep_invalid_argument("storage buffer range exceeds buffer size");
+                }
+                
+                // Allocate descriptor in heap
+                UINT heap_idx = device->cbv_srv_uav_heap_offset.fetch_add(1);
+                D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle = 
+                    device->cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
+                cpu_handle.ptr += heap_idx * device->cbv_srv_uav_descriptor_size;
+                
                 D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
                 uav_desc.Format = DXGI_FORMAT_R32_TYPELESS;
                 uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -101,6 +128,12 @@ extern "C" EPError EPDescriptorSetUpdateBuffer(EPDescriptorSetPtr set, uint32_t 
                 uav_desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
                 device->device->CreateUnorderedAccessView(
                     buffer->resource.Get(), nullptr, &uav_desc, cpu_handle);
+                
+                set->entries[i].type = EP_DESCRIPTOR_STORAGE_BUFFER;
+                set->entries[i].value.buffer_info.buffer = buffer->resource.Get();
+                set->entries[i].value.buffer_info.offset = offset;
+                set->entries[i].value.buffer_info.range = range;
+                set->entries[i].value.buffer_info.heap_index = heap_idx;
             }
             
             return ep_ok();
@@ -118,10 +151,11 @@ extern "C" EPError EPDescriptorSetUpdateTexture(EPDescriptorSetPtr set, uint32_t
         if (set->layout->bindings[i].binding == binding) {
             if (set->layout->bindings[i].type == EP_DESCRIPTOR_SAMPLED_TEXTURE) {
                 set->entries[i].type = EP_DESCRIPTOR_SAMPLED_TEXTURE;
-                set->entries[i].value.texture = texture->srv;
+                // Store the heap index for shader binding, not the CPU handle
+                set->entries[i].value.texture_info.heap_index = texture->srv_heap_index;
             } else if (set->layout->bindings[i].type == EP_DESCRIPTOR_STORAGE_TEXTURE) {
                 set->entries[i].type = EP_DESCRIPTOR_STORAGE_TEXTURE;
-                set->entries[i].value.texture = texture->uav;
+                set->entries[i].value.texture_info.heap_index = texture->uav_heap_index;
             }
             return ep_ok();
         }
@@ -137,7 +171,8 @@ extern "C" EPError EPDescriptorSetUpdateSampler(EPDescriptorSetPtr set, uint32_t
     for (size_t i = 0; i < set->layout->bindings.size(); i++) {
         if (set->layout->bindings[i].binding == binding) {
             set->entries[i].type = EP_DESCRIPTOR_SAMPLER;
-            set->entries[i].value.sampler = sampler->sampler;
+            // Store the sampler's heap index for shader binding
+            set->entries[i].value.sampler_info.heap_index = sampler->heap_index;
             return ep_ok();
         }
     }
@@ -182,6 +217,10 @@ static D3D12_DESCRIPTOR_RANGE_TYPE ep_to_d3d12_range_type(EPDescriptorType type)
     }
 }
 
+static bool is_sampler_type(EPDescriptorType type) {
+    return type == EP_DESCRIPTOR_SAMPLER;
+}
+
 extern "C" EPError EPPipelineLayoutCreate(EPDevicePtr device,
                                           const EPPipelineLayoutDesc *desc,
                                           EPPipelineLayoutPtr *out_layout) {
@@ -194,13 +233,20 @@ extern "C" EPError EPPipelineLayoutCreate(EPDevicePtr device,
     layout->ep_device = device;
     layout->push_constant_size = desc->push_constant_size;
     layout->push_constant_stages = desc->push_constant_stages;
+    layout->push_constant_root_index = 0;
+    layout->first_set_root_index = 0;
     
     // Build root signature
     std::vector<D3D12_ROOT_PARAMETER1> root_params;
-    std::vector<std::vector<D3D12_DESCRIPTOR_RANGE1>> all_ranges;
+    std::vector<std::vector<D3D12_DESCRIPTOR_RANGE1>> all_cbv_srv_uav_ranges;
+    std::vector<std::vector<D3D12_DESCRIPTOR_RANGE1>> all_sampler_ranges;
+    
+    UINT current_root_index = 0;
     
     // Root constants for push constants
     if (desc->push_constant_size > 0) {
+        layout->push_constant_root_index = current_root_index;
+        
         D3D12_ROOT_PARAMETER1 param = {};
         param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
         param.Constants.ShaderRegister = 0;
@@ -208,17 +254,22 @@ extern "C" EPError EPPipelineLayoutCreate(EPDevicePtr device,
         param.Constants.Num32BitValues = (desc->push_constant_size + 3) / 4;
         param.ShaderVisibility = ep_to_d3d12_visibility(desc->push_constant_stages);
         root_params.push_back(param);
+        current_root_index++;
     }
     
-    // Descriptor tables for each set
+    layout->first_set_root_index = current_root_index;
+    
+    // Descriptor tables for each set - separate CBV/SRV/UAV from samplers
     for (uint32_t set_idx = 0; set_idx < desc->set_layout_count; set_idx++) {
         EPDescriptorSetLayout *set_layout = desc->set_layouts[set_idx];
         if (!set_layout) continue;
         
         layout->set_layouts.push_back(set_layout);
         
-        // Create descriptor ranges for this set
-        std::vector<D3D12_DESCRIPTOR_RANGE1> ranges;
+        // Separate CBV/SRV/UAV bindings from sampler bindings
+        std::vector<D3D12_DESCRIPTOR_RANGE1> cbv_srv_uav_ranges;
+        std::vector<D3D12_DESCRIPTOR_RANGE1> sampler_ranges;
+        
         for (const auto &binding : set_layout->bindings) {
             D3D12_DESCRIPTOR_RANGE1 range = {};
             range.RangeType = ep_to_d3d12_range_type(binding.type);
@@ -227,19 +278,40 @@ extern "C" EPError EPPipelineLayoutCreate(EPDevicePtr device,
             range.RegisterSpace = set_idx;
             range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
             range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-            ranges.push_back(range);
+            
+            if (is_sampler_type(binding.type)) {
+                sampler_ranges.push_back(range);
+            } else {
+                cbv_srv_uav_ranges.push_back(range);
+            }
         }
         
-        if (!ranges.empty()) {
-            all_ranges.push_back(std::move(ranges));
+        // Add CBV/SRV/UAV descriptor table if there are any
+        if (!cbv_srv_uav_ranges.empty()) {
+            all_cbv_srv_uav_ranges.push_back(std::move(cbv_srv_uav_ranges));
             
             D3D12_ROOT_PARAMETER1 param = {};
             param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
             param.DescriptorTable.NumDescriptorRanges = 
-                static_cast<UINT>(all_ranges.back().size());
-            param.DescriptorTable.pDescriptorRanges = all_ranges.back().data();
+                static_cast<UINT>(all_cbv_srv_uav_ranges.back().size());
+            param.DescriptorTable.pDescriptorRanges = all_cbv_srv_uav_ranges.back().data();
             param.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
             root_params.push_back(param);
+            current_root_index++;
+        }
+        
+        // Add sampler descriptor table if there are any (samplers use separate heap)
+        if (!sampler_ranges.empty()) {
+            all_sampler_ranges.push_back(std::move(sampler_ranges));
+            
+            D3D12_ROOT_PARAMETER1 param = {};
+            param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+            param.DescriptorTable.NumDescriptorRanges = 
+                static_cast<UINT>(all_sampler_ranges.back().size());
+            param.DescriptorTable.pDescriptorRanges = all_sampler_ranges.back().data();
+            param.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+            root_params.push_back(param);
+            current_root_index++;
         }
     }
     

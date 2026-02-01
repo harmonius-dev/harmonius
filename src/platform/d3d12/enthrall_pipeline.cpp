@@ -246,6 +246,15 @@ extern "C" EPError EPComputePipelineDestroy(EPComputePipelinePtr pipeline) {
 // Mesh Pipeline (DirectX 12 Ultimate)
 // ============================================================================
 
+// Pipeline state stream subobject types for mesh shaders (plain D3D12 structs)
+// These replace the CD3DX12 helpers that require d3dx12.h
+
+template<typename T, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE Type>
+struct alignas(void*) PipelineStateStreamSubobject {
+    D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type = Type;
+    T value = {};
+};
+
 extern "C" EPError EPMeshPipelineCreate(EPDevicePtr device,
                                         const EPMeshPipelineDesc *desc,
                                         EPMeshPipelinePtr *out_pipeline) {
@@ -278,82 +287,68 @@ extern "C" EPError EPMeshPipelineCreate(EPDevicePtr device,
         }
     }
     
-    // Use pipeline state stream for mesh shaders
-    struct PSO_STREAM {
-        CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
-        CD3DX12_PIPELINE_STATE_STREAM_AS AS;
-        CD3DX12_PIPELINE_STATE_STREAM_MS MS;
-        CD3DX12_PIPELINE_STATE_STREAM_PS PS;
-        CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER Rasterizer;
-        CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC Blend;
-        CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL DepthStencil;
-        CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTFormats;
-        CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT DSFormat;
-        CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC SampleDesc;
+    // Use pipeline state stream for mesh shaders using plain D3D12 structures
+    struct alignas(void*) PSO_STREAM {
+        PipelineStateStreamSubobject<ID3D12RootSignature*, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_ROOT_SIGNATURE> pRootSignature;
+        PipelineStateStreamSubobject<D3D12_SHADER_BYTECODE, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_AS> AS;
+        PipelineStateStreamSubobject<D3D12_SHADER_BYTECODE, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_MS> MS;
+        PipelineStateStreamSubobject<D3D12_SHADER_BYTECODE, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PS> PS;
+        PipelineStateStreamSubobject<D3D12_RASTERIZER_DESC, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RASTERIZER> Rasterizer;
+        PipelineStateStreamSubobject<D3D12_BLEND_DESC, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_BLEND> Blend;
+        PipelineStateStreamSubobject<D3D12_DEPTH_STENCIL_DESC, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL> DepthStencil;
+        PipelineStateStreamSubobject<D3D12_RT_FORMAT_ARRAY, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RENDER_TARGET_FORMATS> RTFormats;
+        PipelineStateStreamSubobject<DXGI_FORMAT, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL_FORMAT> DSFormat;
+        PipelineStateStreamSubobject<DXGI_SAMPLE_DESC, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_DESC> SampleDesc;
     } pso_stream = {};
     
-    pso_stream.pRootSignature = pipeline->root_signature.Get();
+    pso_stream.pRootSignature.value = pipeline->root_signature.Get();
     
     // Mesh shader
     if (!desc->library->bytecode.empty()) {
-        D3D12_SHADER_BYTECODE ms = {};
-        ms.pShaderBytecode = desc->library->bytecode.data();
-        ms.BytecodeLength = desc->library->bytecode.size();
-        pso_stream.MS = ms;
+        pso_stream.MS.value.pShaderBytecode = desc->library->bytecode.data();
+        pso_stream.MS.value.BytecodeLength = desc->library->bytecode.size();
     }
     
     // Amplification/task shader (optional)
     if (desc->task_entry && !desc->library->bytecode.empty()) {
-        D3D12_SHADER_BYTECODE as = {};
-        as.pShaderBytecode = desc->library->bytecode.data();
-        as.BytecodeLength = desc->library->bytecode.size();
-        pso_stream.AS = as;
+        pso_stream.AS.value.pShaderBytecode = desc->library->bytecode.data();
+        pso_stream.AS.value.BytecodeLength = desc->library->bytecode.size();
     }
     
     // Pixel shader
     if (desc->fragment_entry && !desc->library->bytecode.empty()) {
-        D3D12_SHADER_BYTECODE ps = {};
-        ps.pShaderBytecode = desc->library->bytecode.data();
-        ps.BytecodeLength = desc->library->bytecode.size();
-        pso_stream.PS = ps;
+        pso_stream.PS.value.pShaderBytecode = desc->library->bytecode.data();
+        pso_stream.PS.value.BytecodeLength = desc->library->bytecode.size();
     }
     
     // Rasterizer
-    D3D12_RASTERIZER_DESC raster = {};
-    raster.FillMode = D3D12_FILL_MODE_SOLID;
-    raster.CullMode = D3D12_CULL_MODE_BACK;
-    raster.DepthClipEnable = TRUE;
-    pso_stream.Rasterizer = raster;
+    pso_stream.Rasterizer.value.FillMode = D3D12_FILL_MODE_SOLID;
+    pso_stream.Rasterizer.value.CullMode = D3D12_CULL_MODE_BACK;
+    pso_stream.Rasterizer.value.DepthClipEnable = TRUE;
     
     // Blend
-    D3D12_BLEND_DESC blend = {};
-    blend.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-    pso_stream.Blend = blend;
+    pso_stream.Blend.value.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
     
     // Depth stencil
-    D3D12_DEPTH_STENCIL_DESC depth_stencil = {};
-    depth_stencil.DepthEnable = desc->raster_state.depth_test_enable;
-    depth_stencil.DepthWriteMask = desc->raster_state.depth_write_enable
+    pso_stream.DepthStencil.value.DepthEnable = desc->raster_state.depth_test_enable;
+    pso_stream.DepthStencil.value.DepthWriteMask = desc->raster_state.depth_write_enable
         ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
-    depth_stencil.DepthFunc = ep_to_d3d12_compare(desc->raster_state.depth_compare);
-    pso_stream.DepthStencil = depth_stencil;
+    pso_stream.DepthStencil.value.DepthFunc = ep_to_d3d12_compare(desc->raster_state.depth_compare);
     
     // Render targets
-    D3D12_RT_FORMAT_ARRAY rt_formats = {};
-    rt_formats.NumRenderTargets = desc->color_format_count;
+    pso_stream.RTFormats.value.NumRenderTargets = desc->color_format_count;
     for (uint32_t i = 0; i < desc->color_format_count && i < 8; i++) {
-        rt_formats.RTFormats[i] = ep_to_dxgi_format(desc->color_formats[i]);
+        pso_stream.RTFormats.value.RTFormats[i] = ep_to_dxgi_format(desc->color_formats[i]);
     }
-    pso_stream.RTFormats = rt_formats;
     
     // Depth format
     if (desc->depth_format == EP_FORMAT_D24S8 || desc->depth_format == EP_FORMAT_D32_FLOAT) {
-        pso_stream.DSFormat = ep_to_dxgi_format(desc->depth_format);
+        pso_stream.DSFormat.value = ep_to_dxgi_format(desc->depth_format);
     }
     
     // Sample desc
-    DXGI_SAMPLE_DESC sample_desc = {1, 0};
-    pso_stream.SampleDesc = sample_desc;
+    pso_stream.SampleDesc.value.Count = 1;
+    pso_stream.SampleDesc.value.Quality = 0;
     
     D3D12_PIPELINE_STATE_STREAM_DESC stream_desc = {};
     stream_desc.SizeInBytes = sizeof(pso_stream);
