@@ -31,12 +31,29 @@ jobs:
         run: |
           nuget install Microsoft.Direct3D.DXC -OutputDirectory packages
           nuget install Microsoft.Direct3D.DirectStorage -OutputDirectory packages
-          # Find and export library paths
+          
+          # Debug: Show package contents
           $dxcPath = (Get-ChildItem -Path packages -Filter "Microsoft.Direct3D.DXC*" -Directory | Select-Object -First 1).FullName
           $dstoragePath = (Get-ChildItem -Path packages -Filter "Microsoft.Direct3D.DirectStorage*" -Directory | Select-Object -First 1).FullName
-          # DXC has .lib files in lib\x64, DirectStorage has them in native\lib\x64
-          echo "DXC_LIB_PATH=$dxcPath\lib\x64" >> $env:GITHUB_ENV
+          Write-Host "DXC Package contents:"
+          Get-ChildItem -Path $dxcPath -Recurse | ForEach-Object { Write-Host $_.FullName }
+          Write-Host "DirectStorage Package contents:"
+          Get-ChildItem -Path $dstoragePath -Recurse | ForEach-Object { Write-Host $_.FullName }
+          
+          # Find actual lib paths - DXC has libs in build/native/lib/x64
+          $dxcLibPath = "$dxcPath\build\native\lib\x64"
+          if (!(Test-Path $dxcLibPath)) {
+            $dxcLibPath = "$dxcPath\lib\native\x64"
+          }
+          if (!(Test-Path $dxcLibPath)) {
+            # Fallback to bin path for DLLs
+            $dxcLibPath = "$dxcPath\bin\x64"
+          }
+          
+          echo "DXC_LIB_PATH=$dxcLibPath" >> $env:GITHUB_ENV
           echo "DSTORAGE_LIB_PATH=$dstoragePath\native\lib\x64" >> $env:GITHUB_ENV
+          Write-Host "DXC_LIB_PATH=$dxcLibPath"
+          Write-Host "DSTORAGE_LIB_PATH=$dstoragePath\native\lib\x64"
 
       - name: Setup Zig
         run: |
