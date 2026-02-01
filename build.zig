@@ -14,7 +14,9 @@ pub fn build(b: *std.Build) void {
     // D3D12 SDK paths (Windows only):
     // For DXC (DirectX Shader Compiler), DirectStorage, and Windows SDK
     const dxc_lib_path = b.option([]const u8, "dxc-lib-path", "Path to DXC library directory") orelse "";
+    const dxc_include_path = b.option([]const u8, "dxc-include-path", "Path to DXC include directory") orelse "";
     const dstorage_lib_path = b.option([]const u8, "dstorage-lib-path", "Path to DirectStorage library directory") orelse "";
+    const dstorage_include_path = b.option([]const u8, "dstorage-include-path", "Path to DirectStorage include directory") orelse "";
     const winsdk_lib_path = b.option([]const u8, "winsdk-lib-path", "Path to Windows SDK um/x64 library directory") orelse "";
 
     // =========================================================================
@@ -66,6 +68,14 @@ pub fn build(b: *std.Build) void {
         });
         d3d12_module.addIncludePath(b.path("src/platform/include"));
         d3d12_module.addIncludePath(b.path("src/platform/d3d12"));
+
+        // Add include paths if provided (DXC, DirectStorage headers)
+        if (dxc_include_path.len > 0) {
+            d3d12_module.addIncludePath(.{ .cwd_relative = dxc_include_path });
+        }
+        if (dstorage_include_path.len > 0) {
+            d3d12_module.addIncludePath(.{ .cwd_relative = dstorage_include_path });
+        }
 
         // Add library paths if provided (Windows SDK, DXC, DirectStorage)
         if (winsdk_lib_path.len > 0) {
@@ -302,6 +312,14 @@ pub fn build(b: *std.Build) void {
 
         d3d12_test_mod.addIncludePath(b.path("src/platform/include"));
         d3d12_test_mod.addIncludePath(b.path("src/platform/d3d12"));
+
+        // Add include paths if provided (DXC, DirectStorage headers)
+        if (dxc_include_path.len > 0) {
+            d3d12_test_mod.addIncludePath(.{ .cwd_relative = dxc_include_path });
+        }
+        if (dstorage_include_path.len > 0) {
+            d3d12_test_mod.addIncludePath(.{ .cwd_relative = dstorage_include_path });
+        }
 
         // Add library paths if provided (Windows SDK, DXC, DirectStorage)
         if (winsdk_lib_path.len > 0) {
