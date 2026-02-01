@@ -75,4 +75,63 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run tests");
     test_step.dependOn(&run_root_mod_tests.step);
+
+    // Metal integration tests (macOS/iOS only)
+    if (target.result.os.tag.isDarwin()) {
+        const metal_test_mod = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+        });
+
+        // Add include paths
+        metal_test_mod.addIncludePath(b.path("src/platform/include"));
+        metal_test_mod.addIncludePath(b.path("src/platform/metal"));
+
+        // Add Metal backend source files (uses manual retain/release, not ARC)
+        metal_test_mod.addCSourceFiles(.{
+            .root = b.path("src/platform/metal"),
+            .files = &.{
+                "enthrall_command.m",
+                "enthrall_descriptor.m",
+                "enthrall_device.m",
+                "enthrall_instance.m",
+                "enthrall_internal.m",
+                "enthrall_pipeline.m",
+                "enthrall_resource.m",
+                "enthrall_sync.m",
+            },
+            .flags = &.{"-fno-objc-arc"},
+        });
+
+        // Add test file
+        metal_test_mod.addCSourceFiles(.{
+            .root = b.path("tests"),
+            .files = &.{"test_metal_integration.m"},
+            .flags = &.{"-fno-objc-arc"},
+        });
+
+        // Link frameworks
+        metal_test_mod.linkFramework("Metal", .{});
+        metal_test_mod.linkFramework("Foundation", .{});
+        metal_test_mod.linkFramework("QuartzCore", .{});
+        if (target.result.os.tag == .macos) {
+            metal_test_mod.linkFramework("AppKit", .{});
+        } else {
+            metal_test_mod.linkFramework("UIKit", .{});
+        }
+        metal_test_mod.linkSystemLibrary("c", .{});
+
+        const metal_test_exe = b.addExecutable(.{
+            .name = "test_metal_integration",
+            .root_module = metal_test_mod,
+        });
+
+        b.installArtifact(metal_test_exe);
+
+        const run_metal_tests = b.addRunArtifact(metal_test_exe);
+        run_metal_tests.step.dependOn(b.getInstallStep());
+
+        const test_metal_step = b.step("test-metal", "Run Metal integration tests");
+        test_metal_step.dependOn(&run_metal_tests.step);
+    }
 }
