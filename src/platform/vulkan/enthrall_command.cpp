@@ -14,7 +14,7 @@ extern "C" EPError EPCommandBufferCreate(EPDevicePtr device_ptr, EPCommandBuffer
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
     auto cmd = std::make_unique<CommandBuffer>();
-    cmd->device = std::shared_ptr<Device>(device, [](Device*){});
+    cmd->device = device->shared_from_this();
 
     auto [result, buffers] = device->device->allocateCommandBuffersUnique(::vk::CommandBufferAllocateInfo{
         .commandPool = device->graphics_pool.get(),

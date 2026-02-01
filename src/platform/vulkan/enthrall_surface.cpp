@@ -39,7 +39,9 @@ extern "C" EPError EPSwapchainCreate(EPDevicePtr device_ptr, const EPSwapchainDe
     auto* surface = reinterpret_cast<Surface*>(desc->surface);
 
     auto swapchain = std::make_unique<Swapchain>();
-    swapchain->device = std::shared_ptr<Device>(device, [](Device*){});
+    swapchain->device = device->shared_from_this();
+    // Surface doesn't need shared ownership, just raw pointer in shared_ptr wrapper
+    // The user is responsible for keeping Surface alive while Swapchain exists
     swapchain->surface = std::shared_ptr<Surface>(surface, [](Surface*){});
     swapchain->width = desc->width;
     swapchain->height = desc->height;

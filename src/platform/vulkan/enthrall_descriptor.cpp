@@ -14,8 +14,9 @@ extern "C" EPError EPDescriptorSetLayoutCreate(EPDevicePtr device_ptr, const EPD
 
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
-    auto layout = std::make_unique<DescriptorSetLayout>();
-    layout->device = std::shared_ptr<Device>(device, [](Device*){});
+    auto layout = std::make_shared<DescriptorSetLayout>();
+    layout->prevent_destroy = layout;  // Keep alive until destroy
+    layout->device = device->shared_from_this();
 
     std::vector<::vk::DescriptorSetLayoutBinding> vk_bindings;
     vk_bindings.reserve(desc->binding_count);
@@ -48,12 +49,15 @@ extern "C" EPError EPDescriptorSetLayoutCreate(EPDevicePtr device_ptr, const EPD
     }
 
     layout->layout = std::move(vk_layout);
-    *out_layout = reinterpret_cast<EPDescriptorSetLayoutPtr>(layout.release());
+    *out_layout = reinterpret_cast<EPDescriptorSetLayoutPtr>(layout.get());
     return ok();
 }
 
-extern "C" EPError EPDescriptorSetLayoutDestroy(EPDescriptorSetLayoutPtr layout) {
-    delete reinterpret_cast<DescriptorSetLayout*>(layout);
+extern "C" EPError EPDescriptorSetLayoutDestroy(EPDescriptorSetLayoutPtr layout_ptr) {
+    if (layout_ptr) {
+        auto* layout = reinterpret_cast<DescriptorSetLayout*>(layout_ptr);
+        layout->prevent_destroy.reset();  // Allow destruction
+    }
     return ok();
 }
 
@@ -69,8 +73,8 @@ extern "C" EPError EPDescriptorSetCreate(EPDevicePtr device_ptr, EPDescriptorSet
     auto* layout = reinterpret_cast<DescriptorSetLayout*>(layout_ptr);
 
     auto set = std::make_unique<DescriptorSet>();
-    set->device = std::shared_ptr<Device>(device, [](Device*){});
-    set->layout = std::shared_ptr<DescriptorSetLayout>(layout, [](DescriptorSetLayout*){});
+    set->device = device->shared_from_this();
+    set->layout = layout->shared_from_this();
 
     ::vk::DescriptorSetLayout layouts[] = {layout->layout.get()};
     auto [result, sets] = device->device->allocateDescriptorSets(::vk::DescriptorSetAllocateInfo{
@@ -227,7 +231,7 @@ extern "C" EPError EPPipelineLayoutCreate(EPDevicePtr device_ptr, const EPPipeli
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
     auto layout = std::make_unique<PipelineLayout>();
-    layout->device = std::shared_ptr<Device>(device, [](Device*){});
+    layout->device = device->shared_from_this();
     layout->push_constant_size = desc->push_constant_size;
     layout->push_constant_stages = desc->push_constant_stages;
 
@@ -235,7 +239,7 @@ extern "C" EPError EPPipelineLayoutCreate(EPDevicePtr device_ptr, const EPPipeli
     for (uint32_t i = 0; i < desc->set_layout_count; i++) {
         auto* set_layout = reinterpret_cast<DescriptorSetLayout*>(desc->set_layouts[i]);
         vk_layouts.push_back(set_layout->layout.get());
-        layout->set_layouts.push_back(std::shared_ptr<DescriptorSetLayout>(set_layout, [](DescriptorSetLayout*){}));
+        layout->set_layouts.push_back(set_layout->shared_from_this());
     }
 
     ::vk::PushConstantRange push_range;

@@ -358,7 +358,10 @@ struct Platform {
     // volk is initialized globally, no per-platform state needed
 };
 
-struct Instance {
+// Instance uses enable_shared_from_this so Adapters can hold owning references
+// The 'prevent_destroy' member keeps the object alive until explicitly destroyed
+struct Instance : public std::enable_shared_from_this<Instance> {
+    std::shared_ptr<Instance> prevent_destroy;  // Self-reference for C API lifetime
     ::vk::UniqueInstance instance;
     std::vector<::vk::PhysicalDevice> physical_devices;
     EPBackendFlags enabled_backends = static_cast<EPBackendFlags>(0);
@@ -366,8 +369,10 @@ struct Instance {
     bool debug_names_enabled = false;
 };
 
-struct Adapter {
-    std::shared_ptr<Instance> instance;
+// Adapter uses enable_shared_from_this so Devices can hold owning references
+struct Adapter : public std::enable_shared_from_this<Adapter> {
+    std::shared_ptr<Adapter> prevent_destroy;  // Self-reference for C API lifetime
+    std::shared_ptr<Instance> instance;  // Keeps Instance alive
     ::vk::PhysicalDevice physical_device;
     ::vk::PhysicalDeviceProperties properties;
     ::vk::PhysicalDeviceFeatures features;
@@ -382,8 +387,10 @@ struct Adapter {
     bool has_dynamic_rendering = false;
 };
 
-struct Device {
-    std::shared_ptr<Adapter> adapter;
+// Device uses enable_shared_from_this so child objects can hold owning references
+struct Device : public std::enable_shared_from_this<Device> {
+    std::shared_ptr<Device> prevent_destroy;  // Self-reference for C API lifetime
+    std::shared_ptr<Adapter> adapter;  // Keeps Adapter alive
     ::vk::UniqueDevice device;
     UniqueVmaAllocator allocator;
     ::vk::Queue graphics_queue;
@@ -461,7 +468,9 @@ struct DescriptorBindingInfo {
     EPShaderStageFlags stages = static_cast<EPShaderStageFlags>(0);
 };
 
-struct DescriptorSetLayout {
+// DescriptorSetLayout uses enable_shared_from_this so DescriptorSets can hold owning references
+struct DescriptorSetLayout : public std::enable_shared_from_this<DescriptorSetLayout> {
+    std::shared_ptr<DescriptorSetLayout> prevent_destroy;  // Self-reference for C API lifetime
     std::shared_ptr<Device> device;
     ::vk::UniqueDescriptorSetLayout layout;
     std::vector<DescriptorBindingInfo> bindings;

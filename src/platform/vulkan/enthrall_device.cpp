@@ -19,7 +19,8 @@ extern "C" EPError EPDeviceCreate(EPAdapterPtr adapter_ptr, const EPDeviceDesc* 
         return unsupported("required features not available");
     }
 
-    auto device = std::make_unique<Device>();
+    auto device = std::make_shared<Device>();
+    device->prevent_destroy = device;  // Keep alive until EPDeviceDestroy
     device->features = static_cast<EPFeatureFlags>(
         static_cast<uint32_t>(adapter->ep_properties.features) &
         (static_cast<uint32_t>(desc->required_features) | static_cast<uint32_t>(desc->optional_features)));
@@ -244,18 +245,18 @@ extern "C" EPError EPDeviceCreate(EPAdapterPtr adapter_ptr, const EPDeviceDesc* 
     }
     device->allocator.reset(allocator);
 
-    // Store adapter reference
-    device->adapter = std::shared_ptr<Adapter>(reinterpret_cast<Adapter*>(adapter_ptr), [](Adapter*){});
+    // Store adapter reference (proper owning reference)
+    device->adapter = adapter->shared_from_this();
 
-    *out_device = reinterpret_cast<EPDevicePtr>(device.release());
+    *out_device = reinterpret_cast<EPDevicePtr>(device.get());
     return ok();
 }
 
-extern "C" EPError EPDeviceDestroy(EPDevicePtr device) {
-    if (device) {
-        auto* dev = reinterpret_cast<Device*>(device);
-        dev->device->waitIdle();
-        delete dev;
+extern "C" EPError EPDeviceDestroy(EPDevicePtr device_ptr) {
+    if (device_ptr) {
+        auto* device = reinterpret_cast<Device*>(device_ptr);
+        device->device->waitIdle();
+        device->prevent_destroy.reset();  // Allow destruction
     }
     return ok();
 }
@@ -268,7 +269,7 @@ extern "C" EPError EPDeviceGetQueue(EPDevicePtr device_ptr, EPQueueType type, ui
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
     auto queue = std::make_unique<Queue>();
-    queue->device = std::shared_ptr<Device>(device, [](Device*){});
+    queue->device = device->shared_from_this();  // Proper owning reference
     queue->type = type;
 
     switch (type) {

@@ -40,7 +40,8 @@ extern "C" EPError EPPlatformDestroy(EPPlatformPtr platform) {
 extern "C" EPError EPInstanceCreate(const EPInstanceDesc* desc, EPInstancePtr* out_instance) {
     if (!desc || !out_instance) return invalid_argument("desc or out_instance is NULL");
 
-    auto instance = std::make_unique<Instance>();
+    auto instance = std::make_shared<Instance>();
+    instance->prevent_destroy = instance;  // Keep alive until EPInstanceDestroy
     instance->enabled_backends = desc->enable_backends;
     instance->validation_enabled = desc->enable_validation;
     instance->debug_names_enabled = desc->enable_debug_names;
@@ -131,12 +132,15 @@ extern "C" EPError EPInstanceCreate(const EPInstanceDesc* desc, EPInstancePtr* o
     }
     instance->physical_devices = std::move(devices);
 
-    *out_instance = reinterpret_cast<EPInstancePtr>(instance.release());
+    *out_instance = reinterpret_cast<EPInstancePtr>(instance.get());
     return ok();
 }
 
-extern "C" EPError EPInstanceDestroy(EPInstancePtr instance) {
-    delete reinterpret_cast<Instance*>(instance);
+extern "C" EPError EPInstanceDestroy(EPInstancePtr instance_ptr) {
+    if (instance_ptr) {
+        auto* inst = reinterpret_cast<Instance*>(instance_ptr);
+        inst->prevent_destroy.reset();  // Allow destruction
+    }
     return ok();
 }
 
@@ -154,8 +158,9 @@ extern "C" EPError EPInstanceEnumerateAdapters(EPInstancePtr instance, uint32_t*
     uint32_t count = std::min(*io_count, static_cast<uint32_t>(inst->physical_devices.size()));
 
     for (uint32_t i = 0; i < count; i++) {
-        auto adapter = std::make_unique<Adapter>();
-        adapter->instance = std::shared_ptr<Instance>(inst, [](Instance*){});  // Non-owning reference
+        auto adapter = std::make_shared<Adapter>();
+        adapter->prevent_destroy = adapter;  // Keep alive until user destroys it
+        adapter->instance = inst->shared_from_this();  // Proper owning reference
         adapter->physical_device = inst->physical_devices[i];
         adapter->properties = adapter->physical_device.getProperties();
         adapter->features = adapter->physical_device.getFeatures();
@@ -214,7 +219,7 @@ extern "C" EPError EPInstanceEnumerateAdapters(EPInstancePtr instance, uint32_t*
         adapter->ep_properties.limits.max_push_constants_size = limits.maxPushConstantsSize;
         adapter->ep_properties.limits.max_threads_per_threadgroup = limits.maxComputeWorkGroupInvocations;
 
-        out_adapters[i] = reinterpret_cast<EPAdapterPtr>(adapter.release());
+        out_adapters[i] = reinterpret_cast<EPAdapterPtr>(adapter.get());
     }
 
     *io_count = count;

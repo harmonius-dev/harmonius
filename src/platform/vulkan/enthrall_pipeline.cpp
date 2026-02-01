@@ -17,7 +17,7 @@ extern "C" EPError EPRenderPipelineCreate(EPDevicePtr device_ptr, const EPRender
     auto* shader = reinterpret_cast<ShaderLibrary*>(desc->library);
 
     auto pipeline = std::make_unique<RenderPipeline>();
-    pipeline->device = std::shared_ptr<Device>(device, [](Device*){});
+    pipeline->device = device->shared_from_this();
 
     if (desc->layout) {
         pipeline->layout = std::shared_ptr<PipelineLayout>(
@@ -178,7 +178,7 @@ extern "C" EPError EPComputePipelineCreate(EPDevicePtr device_ptr, const EPCompu
     auto* shader = reinterpret_cast<ShaderLibrary*>(desc->library);
 
     auto pipeline = std::make_unique<ComputePipeline>();
-    pipeline->device = std::shared_ptr<Device>(device, [](Device*){});
+    pipeline->device = device->shared_from_this();
 
     if (desc->layout) {
         pipeline->layout = std::shared_ptr<PipelineLayout>(
@@ -227,7 +227,7 @@ extern "C" EPError EPMeshPipelineCreate(EPDevicePtr device_ptr, const EPMeshPipe
     auto* shader = reinterpret_cast<ShaderLibrary*>(desc->library);
 
     auto pipeline = std::make_unique<MeshPipeline>();
-    pipeline->device = std::shared_ptr<Device>(device, [](Device*){});
+    pipeline->device = device->shared_from_this();
 
     if (desc->layout) {
         pipeline->layout = std::shared_ptr<PipelineLayout>(
@@ -361,7 +361,7 @@ extern "C" EPError EPRayTracingPipelineCreate(EPDevicePtr device_ptr, const EPRa
     auto* shader = reinterpret_cast<ShaderLibrary*>(desc->library);
 
     auto pipeline = std::make_unique<RayTracingPipeline>();
-    pipeline->device = std::shared_ptr<Device>(device, [](Device*){});
+    pipeline->device = device->shared_from_this();
     pipeline->max_recursion_depth = desc->max_recursion_depth;
 
     if (desc->layout) {
@@ -490,7 +490,7 @@ extern "C" EPError EPAccelerationStructureCreate(EPDevicePtr device_ptr, const E
     }
 
     auto as = std::make_unique<AccelerationStructure>();
-    as->device = std::shared_ptr<Device>(device, [](Device*){});
+    as->device = device->shared_from_this();
     as->top_level = desc->top_level;
 
     // Build geometry info

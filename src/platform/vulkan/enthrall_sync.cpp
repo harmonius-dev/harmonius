@@ -14,7 +14,7 @@ extern "C" EPError EPFenceCreate(EPDevicePtr device_ptr, uint64_t initial_value,
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
     auto fence = std::make_unique<Fence>();
-    fence->device = std::shared_ptr<Device>(device, [](Device*){});
+    fence->device = device->shared_from_this();
     fence->value = initial_value;
 
     ::vk::SemaphoreTypeCreateInfo type_info{
@@ -93,7 +93,7 @@ extern "C" EPError EPTimelineSemaphoreCreate(EPDevicePtr device_ptr, uint64_t in
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
     auto semaphore = std::make_unique<TimelineSemaphore>();
-    semaphore->device = std::shared_ptr<Device>(device, [](Device*){});
+    semaphore->device = device->shared_from_this();
 
     ::vk::SemaphoreTypeCreateInfo type_info{
         .semaphoreType = ::vk::SemaphoreType::eTimeline,

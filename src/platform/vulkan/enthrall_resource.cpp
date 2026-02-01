@@ -14,7 +14,7 @@ extern "C" EPError EPBufferCreate(EPDevicePtr device_ptr, const EPBufferDesc* de
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
     auto buffer = std::make_unique<Buffer>();
-    buffer->device = std::shared_ptr<Device>(device, [](Device*){});
+    buffer->device = device->shared_from_this();
     buffer->size = desc->size;
     buffer->usage = desc->usage;
     buffer->host_visible = desc->host_visible;
@@ -96,7 +96,7 @@ extern "C" EPError EPTextureCreate(EPDevicePtr device_ptr, const EPTextureDesc* 
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
     auto texture = std::make_unique<Texture>();
-    texture->device = std::shared_ptr<Device>(device, [](Device*){});
+    texture->device = device->shared_from_this();
     texture->desc = *desc;
 
     bool is_cube = desc->dimension == EP_TEXTURE_DIM_CUBE;
@@ -181,7 +181,7 @@ extern "C" EPError EPSamplerCreate(EPDevicePtr device_ptr, const EPSamplerDesc* 
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
     auto sampler = std::make_unique<Sampler>();
-    sampler->device = std::shared_ptr<Device>(device, [](Device*){});
+    sampler->device = device->shared_from_this();
 
     auto [result, vk_sampler] = device->device->createSamplerUnique(::vk::SamplerCreateInfo{
         .magFilter = to_vk_filter(desc->mag_filter),
@@ -226,7 +226,7 @@ extern "C" EPError EPShaderLibraryCreate(EPDevicePtr device_ptr, const EPShaderL
     auto* device = reinterpret_cast<Device*>(device_ptr);
 
     auto library = std::make_unique<ShaderLibrary>();
-    library->device = std::shared_ptr<Device>(device, [](Device*){});
+    library->device = device->shared_from_this();
 
     // Copy SPIR-V data
     library->spirv_data.assign(desc->data, desc->data + desc->size);
