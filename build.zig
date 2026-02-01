@@ -148,11 +148,12 @@ pub fn build(b: *std.Build) void {
     // =========================================================================
     // Zig unit tests
     // =========================================================================
-    const lib_unit_tests = b.addTest(.{
+    const test_mod = b.createModule(.{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
+    const lib_unit_tests = b.addTest(.{ .root_module = test_mod });
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_unit_tests.step);
@@ -277,16 +278,15 @@ pub fn build(b: *std.Build) void {
     // D3D12 tests (Windows)
     // =========================================================================
     if (target.result.os.tag == .windows) {
-        const d3d12_test_exe = b.addExecutable(.{
-            .name = "enthrall_d3d12_test",
+        const d3d12_test_mod = b.createModule(.{
             .target = target,
             .optimize = optimize,
         });
 
-        d3d12_test_exe.addIncludePath(b.path("src/platform/include"));
-        d3d12_test_exe.addIncludePath(b.path("src/platform/d3d12"));
+        d3d12_test_mod.addIncludePath(b.path("src/platform/include"));
+        d3d12_test_mod.addIncludePath(b.path("src/platform/d3d12"));
 
-        d3d12_test_exe.addCSourceFiles(.{
+        d3d12_test_mod.addCSourceFiles(.{
             .root = b.path("src/platform/d3d12"),
             .files = &.{
                 "enthrall_command.cpp",
@@ -308,15 +308,20 @@ pub fn build(b: *std.Build) void {
             },
         });
 
-        d3d12_test_exe.linkSystemLibrary("d3d12");
-        d3d12_test_exe.linkSystemLibrary("dxgi");
-        d3d12_test_exe.linkSystemLibrary("d3dcompiler");
-        d3d12_test_exe.linkSystemLibrary("dxcompiler");
-        d3d12_test_exe.linkSystemLibrary("dstorage");
-        d3d12_test_exe.linkSystemLibrary("kernel32");
-        d3d12_test_exe.linkSystemLibrary("user32");
-        d3d12_test_exe.linkSystemLibrary("ole32");
-        d3d12_test_exe.linkLibCpp();
+        d3d12_test_mod.linkSystemLibrary("d3d12", .{});
+        d3d12_test_mod.linkSystemLibrary("dxgi", .{});
+        d3d12_test_mod.linkSystemLibrary("d3dcompiler", .{});
+        d3d12_test_mod.linkSystemLibrary("dxcompiler", .{});
+        d3d12_test_mod.linkSystemLibrary("dstorage", .{});
+        d3d12_test_mod.linkSystemLibrary("kernel32", .{});
+        d3d12_test_mod.linkSystemLibrary("user32", .{});
+        d3d12_test_mod.linkSystemLibrary("ole32", .{});
+        d3d12_test_mod.linkSystemLibrary("c++", .{});
+
+        const d3d12_test_exe = b.addExecutable(.{
+            .name = "enthrall_d3d12_test",
+            .root_module = d3d12_test_mod,
+        });
 
         b.installArtifact(d3d12_test_exe);
 
