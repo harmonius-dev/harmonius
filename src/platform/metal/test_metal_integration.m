@@ -9,13 +9,13 @@
 #include <string.h>
 #include <assert.h>
 
-#include "enthrall_instance.h"
-#include "enthrall_device.h"
-#include "enthrall_resource.h"
-#include "enthrall_command.h"
-#include "enthrall_descriptor.h"
-#include "enthrall_pipeline.h"
-#include "enthrall_sync.h"
+#include "gcraft_instance.h"
+#include "gcraft_device.h"
+#include "gcraft_resource.h"
+#include "gcraft_command.h"
+#include "gcraft_descriptor.h"
+#include "gcraft_pipeline.h"
+#include "gcraft_sync.h"
 
 // =============================================================================
 // Test Utilities
@@ -29,7 +29,7 @@
 } while (0)
 
 #define TEST_ASSERT_OK(err) do { \
-    if ((err).code != EP_E_OK) { \
+    if ((err).code != GC_E_OK) { \
         fprintf(stderr, "FAIL: %s (line %d): error %d: %s\n", \
                 __func__, __LINE__, (err).code, (err).message ? (err).message : "null"); \
         return 1; \
@@ -66,33 +66,33 @@ static int tests_failed = 0;
 // =============================================================================
 
 typedef struct {
-    EPInstancePtr instance;
-    EPAdapterPtr adapter;
-    EPDevicePtr device;
-    EPQueuePtr graphics_queue;
-    EPQueuePtr compute_queue;
+    GCInstancePtr instance;
+    GCAdapterPtr adapter;
+    GCDevicePtr device;
+    GCQueuePtr graphics_queue;
+    GCQueuePtr compute_queue;
 } TestContext;
 
 static int setup_test_context(TestContext *ctx) {
-    EPError err;
+    GCError err;
     
     // Create instance
-    EPInstanceDesc inst_desc = {
-        .enable_backends = EP_BACKEND_METAL_BIT,
+    GCInstanceDesc inst_desc = {
+        .enable_backends = GC_BACKEND_METAL_BIT,
         .enable_validation = true,
         .enable_debug_names = true,
     };
-    err = EPInstanceCreate(&inst_desc, &ctx->instance);
-    if (err.code != EP_E_OK) return -1;
+    err = GCInstanceCreate(&inst_desc, &ctx->instance);
+    if (err.code != GC_E_OK) return -1;
     
     // Enumerate adapters
     uint32_t adapter_count = 0;
-    err = EPInstanceEnumerateAdapters(ctx->instance, &adapter_count, NULL);
-    if (err.code != EP_E_OK || adapter_count == 0) return -1;
+    err = GCInstanceEnumerateAdapters(ctx->instance, &adapter_count, NULL);
+    if (err.code != GC_E_OK || adapter_count == 0) return -1;
     
-    EPAdapterPtr *adapters = malloc(adapter_count * sizeof(EPAdapterPtr));
-    err = EPInstanceEnumerateAdapters(ctx->instance, &adapter_count, adapters);
-    if (err.code != EP_E_OK) {
+    GCAdapterPtr *adapters = malloc(adapter_count * sizeof(GCAdapterPtr));
+    err = GCInstanceEnumerateAdapters(ctx->instance, &adapter_count, adapters);
+    if (err.code != GC_E_OK) {
         free(adapters);
         return -1;
     }
@@ -100,28 +100,28 @@ static int setup_test_context(TestContext *ctx) {
     free(adapters);
     
     // Create device
-    EPDeviceDesc dev_desc = {
-        .preferred_backend = EP_BACKEND_METAL,
-        .required_features = EP_FEATURE_COMPUTE_BIT,
+    GCDeviceDesc dev_desc = {
+        .preferred_backend = GC_BACKEND_METAL,
+        .required_features = GC_FEATURE_COMPUTE_BIT,
         .enable_validation = true,
         .enable_debug_names = true,
     };
-    err = EPDeviceCreate(ctx->adapter, &dev_desc, &ctx->device);
-    if (err.code != EP_E_OK) return -1;
+    err = GCDeviceCreate(ctx->adapter, &dev_desc, &ctx->device);
+    if (err.code != GC_E_OK) return -1;
     
     // Get queues
-    err = EPDeviceGetQueue(ctx->device, EP_QUEUE_GRAPHICS, 0, &ctx->graphics_queue);
-    if (err.code != EP_E_OK) return -1;
+    err = GCDeviceGetQueue(ctx->device, GC_QUEUE_GRAPHICS, 0, &ctx->graphics_queue);
+    if (err.code != GC_E_OK) return -1;
     
-    err = EPDeviceGetQueue(ctx->device, EP_QUEUE_COMPUTE, 0, &ctx->compute_queue);
-    if (err.code != EP_E_OK) return -1;
+    err = GCDeviceGetQueue(ctx->device, GC_QUEUE_COMPUTE, 0, &ctx->compute_queue);
+    if (err.code != GC_E_OK) return -1;
     
     return 0;
 }
 
 static void teardown_test_context(TestContext *ctx) {
-    if (ctx->device) EPDeviceDestroy(ctx->device);
-    if (ctx->instance) EPInstanceDestroy(ctx->instance);
+    if (ctx->device) GCDeviceDestroy(ctx->device);
+    if (ctx->instance) GCInstanceDestroy(ctx->instance);
 }
 
 // =============================================================================
@@ -129,71 +129,71 @@ static void teardown_test_context(TestContext *ctx) {
 // =============================================================================
 
 static int test_instance_create_destroy(void) {
-    EPError err;
-    EPInstancePtr instance = NULL;
+    GCError err;
+    GCInstancePtr instance = NULL;
     
-    EPInstanceDesc desc = {
-        .enable_backends = EP_BACKEND_METAL_BIT,
+    GCInstanceDesc desc = {
+        .enable_backends = GC_BACKEND_METAL_BIT,
         .enable_validation = true,
         .enable_debug_names = true,
     };
     
-    err = EPInstanceCreate(&desc, &instance);
+    err = GCInstanceCreate(&desc, &instance);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(instance != NULL, "instance should not be NULL");
     
-    err = EPInstanceDestroy(instance);
+    err = GCInstanceDestroy(instance);
     TEST_ASSERT_OK(err);
     
     return 0;
 }
 
 static int test_instance_enumerate_adapters(void) {
-    EPError err;
-    EPInstancePtr instance = NULL;
+    GCError err;
+    GCInstancePtr instance = NULL;
     
-    EPInstanceDesc desc = {
-        .enable_backends = EP_BACKEND_METAL_BIT,
+    GCInstanceDesc desc = {
+        .enable_backends = GC_BACKEND_METAL_BIT,
         .enable_validation = false,
         .enable_debug_names = false,
     };
     
-    err = EPInstanceCreate(&desc, &instance);
+    err = GCInstanceCreate(&desc, &instance);
     TEST_ASSERT_OK(err);
     
     // First call: get count
     uint32_t count = 0;
-    err = EPInstanceEnumerateAdapters(instance, &count, NULL);
+    err = GCInstanceEnumerateAdapters(instance, &count, NULL);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(count > 0, "should have at least one Metal adapter");
     
     // Second call: get adapters
-    EPAdapterPtr *adapters = malloc(count * sizeof(EPAdapterPtr));
-    err = EPInstanceEnumerateAdapters(instance, &count, adapters);
+    GCAdapterPtr *adapters = malloc(count * sizeof(GCAdapterPtr));
+    err = GCInstanceEnumerateAdapters(instance, &count, adapters);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(adapters[0] != NULL, "first adapter should not be NULL");
     
     free(adapters);
-    EPInstanceDestroy(instance);
+    GCInstanceDestroy(instance);
     return 0;
 }
 
 static int test_adapter_properties(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPAdapterProperties props;
-    err = EPAdapterGetProperties(ctx.adapter, &props);
+    GCAdapterProperties props;
+    err = GCAdapterGetProperties(ctx.adapter, &props);
     TEST_ASSERT_OK(err);
     
     // Verify properties are populated
     TEST_ASSERT(strlen(props.name) > 0, "adapter name should not be empty");
-    TEST_ASSERT(props.backends & EP_BACKEND_METAL_BIT, "should report Metal support");
-    TEST_ASSERT(props.features & EP_FEATURE_COMPUTE_BIT, "should support compute");
+    TEST_ASSERT(props.backends & GC_BACKEND_METAL_BIT, "should report Metal support");
+    TEST_ASSERT(props.features & GC_FEATURE_COMPUTE_BIT, "should support compute");
     TEST_ASSERT(props.limits.max_texture_dimension_2d > 0, "max texture 2D should be > 0");
     TEST_ASSERT(props.limits.max_threads_per_threadgroup > 0, "max threads should be > 0");
     
@@ -210,7 +210,7 @@ static int test_adapter_properties(void) {
 // =============================================================================
 
 static int test_device_create_destroy(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -226,7 +226,7 @@ static int test_device_create_destroy(void) {
 }
 
 static int test_device_queues(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -234,8 +234,8 @@ static int test_device_queues(void) {
     }
     
     // Get transfer queue
-    EPQueuePtr transfer_queue;
-    err = EPDeviceGetQueue(ctx.device, EP_QUEUE_TRANSFER, 0, &transfer_queue);
+    GCQueuePtr transfer_queue;
+    err = GCDeviceGetQueue(ctx.device, GC_QUEUE_TRANSFER, 0, &transfer_queue);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(transfer_queue != NULL, "transfer queue should not be NULL");
     
@@ -248,25 +248,25 @@ static int test_device_queues(void) {
 // =============================================================================
 
 static int test_buffer_create_host_visible(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPBufferDesc desc = {
+    GCBufferDesc desc = {
         .size = 1024,
-        .usage = EP_BUFFER_USAGE_UNIFORM_BIT | EP_BUFFER_USAGE_STORAGE_BIT,
+        .usage = GC_BUFFER_USAGE_UNIFORM_BIT | GC_BUFFER_USAGE_STORAGE_BIT,
         .host_visible = true,
     };
     
-    EPBufferPtr buffer = NULL;
-    err = EPBufferCreate(ctx.device, &desc, &buffer);
+    GCBufferPtr buffer = NULL;
+    err = GCBufferCreate(ctx.device, &desc, &buffer);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(buffer != NULL, "buffer should not be NULL");
     
-    err = EPBufferDestroy(buffer);
+    err = GCBufferDestroy(buffer);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -274,25 +274,25 @@ static int test_buffer_create_host_visible(void) {
 }
 
 static int test_buffer_create_device_local(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPBufferDesc desc = {
+    GCBufferDesc desc = {
         .size = 4096,
-        .usage = EP_BUFFER_USAGE_STORAGE_BIT | EP_BUFFER_USAGE_TRANSFER_DST_BIT,
+        .usage = GC_BUFFER_USAGE_STORAGE_BIT | GC_BUFFER_USAGE_TRANSFER_DST_BIT,
         .host_visible = false,
     };
     
-    EPBufferPtr buffer = NULL;
-    err = EPBufferCreate(ctx.device, &desc, &buffer);
+    GCBufferPtr buffer = NULL;
+    err = GCBufferCreate(ctx.device, &desc, &buffer);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(buffer != NULL, "buffer should not be NULL");
     
-    err = EPBufferDestroy(buffer);
+    err = GCBufferDestroy(buffer);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -300,7 +300,7 @@ static int test_buffer_create_device_local(void) {
 }
 
 static int test_buffer_various_sizes(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -310,17 +310,17 @@ static int test_buffer_various_sizes(void) {
     // Test various buffer sizes
     uint64_t sizes[] = {1, 256, 4096, 65536, 1024 * 1024};
     for (int i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
-        EPBufferDesc desc = {
+        GCBufferDesc desc = {
             .size = sizes[i],
-            .usage = EP_BUFFER_USAGE_STORAGE_BIT,
+            .usage = GC_BUFFER_USAGE_STORAGE_BIT,
             .host_visible = true,
         };
         
-        EPBufferPtr buffer = NULL;
-        err = EPBufferCreate(ctx.device, &desc, &buffer);
+        GCBufferPtr buffer = NULL;
+        err = GCBufferCreate(ctx.device, &desc, &buffer);
         TEST_ASSERT_OK(err);
         
-        err = EPBufferDestroy(buffer);
+        err = GCBufferDestroy(buffer);
         TEST_ASSERT_OK(err);
     }
     
@@ -333,30 +333,30 @@ static int test_buffer_various_sizes(void) {
 // =============================================================================
 
 static int test_texture_create_2d(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPTextureDesc desc = {
-        .dimension = EP_TEXTURE_DIM_2D,
-        .format = EP_FORMAT_RGBA8_UNORM,
+    GCTextureDesc desc = {
+        .dimension = GC_TEXTURE_DIM_2D,
+        .format = GC_FORMAT_RGBA8_UNORM,
         .width = 512,
         .height = 512,
         .depth = 1,
         .mip_levels = 1,
         .array_layers = 1,
-        .usage = EP_TEXTURE_USAGE_SAMPLED_BIT | EP_TEXTURE_USAGE_STORAGE_BIT,
+        .usage = GC_TEXTURE_USAGE_SAMPLED_BIT | GC_TEXTURE_USAGE_STORAGE_BIT,
     };
     
-    EPTexturePtr texture = NULL;
-    err = EPTextureCreate(ctx.device, &desc, &texture);
+    GCTexturePtr texture = NULL;
+    err = GCTextureCreate(ctx.device, &desc, &texture);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(texture != NULL, "texture should not be NULL");
     
-    err = EPTextureDestroy(texture);
+    err = GCTextureDestroy(texture);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -364,30 +364,30 @@ static int test_texture_create_2d(void) {
 }
 
 static int test_texture_create_depth(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPTextureDesc desc = {
-        .dimension = EP_TEXTURE_DIM_2D,
-        .format = EP_FORMAT_D32_FLOAT,
+    GCTextureDesc desc = {
+        .dimension = GC_TEXTURE_DIM_2D,
+        .format = GC_FORMAT_D32_FLOAT,
         .width = 1024,
         .height = 1024,
         .depth = 1,
         .mip_levels = 1,
         .array_layers = 1,
-        .usage = EP_TEXTURE_USAGE_DEPTH_ATTACHMENT_BIT | EP_TEXTURE_USAGE_SAMPLED_BIT,
+        .usage = GC_TEXTURE_USAGE_DEPTH_ATTACHMENT_BIT | GC_TEXTURE_USAGE_SAMPLED_BIT,
     };
     
-    EPTexturePtr texture = NULL;
-    err = EPTextureCreate(ctx.device, &desc, &texture);
+    GCTexturePtr texture = NULL;
+    err = GCTextureCreate(ctx.device, &desc, &texture);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(texture != NULL, "texture should not be NULL");
     
-    err = EPTextureDestroy(texture);
+    err = GCTextureDestroy(texture);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -395,7 +395,7 @@ static int test_texture_create_depth(void) {
 }
 
 static int test_texture_create_cube(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -403,23 +403,23 @@ static int test_texture_create_cube(void) {
     }
     
     // Note: Metal cube textures have implicit 6 faces, array_layers should be 1
-    EPTextureDesc desc = {
-        .dimension = EP_TEXTURE_DIM_CUBE,
-        .format = EP_FORMAT_RGBA16_FLOAT,
+    GCTextureDesc desc = {
+        .dimension = GC_TEXTURE_DIM_CUBE,
+        .format = GC_FORMAT_RGBA16_FLOAT,
         .width = 256,
         .height = 256,
         .depth = 1,
         .mip_levels = 1,
         .array_layers = 1,  // Metal: 6 faces are implicit for cube type
-        .usage = EP_TEXTURE_USAGE_SAMPLED_BIT,
+        .usage = GC_TEXTURE_USAGE_SAMPLED_BIT,
     };
     
-    EPTexturePtr texture = NULL;
-    err = EPTextureCreate(ctx.device, &desc, &texture);
+    GCTexturePtr texture = NULL;
+    err = GCTextureCreate(ctx.device, &desc, &texture);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(texture != NULL, "texture should not be NULL");
     
-    err = EPTextureDestroy(texture);
+    err = GCTextureDestroy(texture);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -427,30 +427,30 @@ static int test_texture_create_cube(void) {
 }
 
 static int test_texture_create_3d(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPTextureDesc desc = {
-        .dimension = EP_TEXTURE_DIM_3D,
-        .format = EP_FORMAT_RGBA8_UNORM,
+    GCTextureDesc desc = {
+        .dimension = GC_TEXTURE_DIM_3D,
+        .format = GC_FORMAT_RGBA8_UNORM,
         .width = 64,
         .height = 64,
         .depth = 64,
         .mip_levels = 1,
         .array_layers = 1,
-        .usage = EP_TEXTURE_USAGE_STORAGE_BIT,
+        .usage = GC_TEXTURE_USAGE_STORAGE_BIT,
     };
     
-    EPTexturePtr texture = NULL;
-    err = EPTextureCreate(ctx.device, &desc, &texture);
+    GCTexturePtr texture = NULL;
+    err = GCTextureCreate(ctx.device, &desc, &texture);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(texture != NULL, "texture should not be NULL");
     
-    err = EPTextureDestroy(texture);
+    err = GCTextureDestroy(texture);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -462,29 +462,29 @@ static int test_texture_create_3d(void) {
 // =============================================================================
 
 static int test_sampler_create(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPSamplerDesc desc = {
-        .min_filter = EP_FILTER_LINEAR,
-        .mag_filter = EP_FILTER_LINEAR,
-        .address_u = EP_ADDRESS_REPEAT,
-        .address_v = EP_ADDRESS_REPEAT,
-        .address_w = EP_ADDRESS_CLAMP_TO_EDGE,
-        .compare_op = EP_COMPARE_NEVER,
+    GCSamplerDesc desc = {
+        .min_filter = GC_FILTER_LINEAR,
+        .mag_filter = GC_FILTER_LINEAR,
+        .address_u = GC_ADDRESS_REPEAT,
+        .address_v = GC_ADDRESS_REPEAT,
+        .address_w = GC_ADDRESS_CLAMP_TO_EDGE,
+        .compare_op = GC_COMPARE_NEVER,
         .max_anisotropy = 1.0f,
     };
     
-    EPSamplerPtr sampler = NULL;
-    err = EPSamplerCreate(ctx.device, &desc, &sampler);
+    GCSamplerPtr sampler = NULL;
+    err = GCSamplerCreate(ctx.device, &desc, &sampler);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(sampler != NULL, "sampler should not be NULL");
     
-    err = EPSamplerDestroy(sampler);
+    err = GCSamplerDestroy(sampler);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -492,29 +492,29 @@ static int test_sampler_create(void) {
 }
 
 static int test_sampler_anisotropic(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPSamplerDesc desc = {
-        .min_filter = EP_FILTER_LINEAR,
-        .mag_filter = EP_FILTER_LINEAR,
-        .address_u = EP_ADDRESS_REPEAT,
-        .address_v = EP_ADDRESS_REPEAT,
-        .address_w = EP_ADDRESS_REPEAT,
-        .compare_op = EP_COMPARE_NEVER,
+    GCSamplerDesc desc = {
+        .min_filter = GC_FILTER_LINEAR,
+        .mag_filter = GC_FILTER_LINEAR,
+        .address_u = GC_ADDRESS_REPEAT,
+        .address_v = GC_ADDRESS_REPEAT,
+        .address_w = GC_ADDRESS_REPEAT,
+        .compare_op = GC_COMPARE_NEVER,
         .max_anisotropy = 16.0f,
     };
     
-    EPSamplerPtr sampler = NULL;
-    err = EPSamplerCreate(ctx.device, &desc, &sampler);
+    GCSamplerPtr sampler = NULL;
+    err = GCSamplerCreate(ctx.device, &desc, &sampler);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(sampler != NULL, "sampler should not be NULL");
     
-    err = EPSamplerDestroy(sampler);
+    err = GCSamplerDestroy(sampler);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -556,26 +556,26 @@ static const char *invalid_shader =
     "}\n";
 
 static int test_shader_library_create(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPShaderLibraryDesc desc = {
-        .format = EP_SHADER_MSL,
+    GCShaderLibraryDesc desc = {
+        .format = GC_SHADER_MSL,
         .data = (const uint8_t *)simple_compute_shader,
         .size = strlen(simple_compute_shader),
         .label = "test_compute_shader",
     };
     
-    EPShaderLibraryPtr library = NULL;
-    err = EPShaderLibraryCreate(ctx.device, &desc, &library);
+    GCShaderLibraryPtr library = NULL;
+    err = GCShaderLibraryCreate(ctx.device, &desc, &library);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(library != NULL, "library should not be NULL");
     
-    err = EPShaderLibraryDestroy(library);
+    err = GCShaderLibraryDestroy(library);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -583,24 +583,24 @@ static int test_shader_library_create(void) {
 }
 
 static int test_shader_library_invalid(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPShaderLibraryDesc desc = {
-        .format = EP_SHADER_MSL,
+    GCShaderLibraryDesc desc = {
+        .format = GC_SHADER_MSL,
         .data = (const uint8_t *)invalid_shader,
         .size = strlen(invalid_shader),
         .label = "invalid_shader",
     };
     
-    EPShaderLibraryPtr library = NULL;
-    err = EPShaderLibraryCreate(ctx.device, &desc, &library);
+    GCShaderLibraryPtr library = NULL;
+    err = GCShaderLibraryCreate(ctx.device, &desc, &library);
     // Should fail due to invalid shader syntax
-    TEST_ASSERT(err.code != EP_E_OK, "should fail for invalid shader");
+    TEST_ASSERT(err.code != GC_E_OK, "should fail for invalid shader");
     
     teardown_test_context(&ctx);
     return 0;
@@ -611,7 +611,7 @@ static int test_shader_library_invalid(void) {
 // =============================================================================
 
 static int test_descriptor_set_layout_create(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -619,22 +619,22 @@ static int test_descriptor_set_layout_create(void) {
     }
     
     // Create layout with one binding
-    EPDescriptorSetLayoutDesc *desc = malloc(
-        sizeof(EPDescriptorSetLayoutDesc) + 1 * sizeof(EPDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *desc = malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc));
     desc->binding_count = 1;
-    desc->bindings[0] = (EPDescriptorBindingDesc){
+    desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
-        .type = EP_DESCRIPTOR_STORAGE_BUFFER,
+        .type = GC_DESCRIPTOR_STORAGE_BUFFER,
         .count = 1,
-        .stages = EP_STAGE_COMPUTE_BIT,
+        .stages = GC_STAGE_COMPUTE_BIT,
     };
     
-    EPDescriptorSetLayoutPtr layout = NULL;
-    err = EPDescriptorSetLayoutCreate(ctx.device, desc, &layout);
+    GCDescriptorSetLayoutPtr layout = NULL;
+    err = GCDescriptorSetLayoutCreate(ctx.device, desc, &layout);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(layout != NULL, "layout should not be NULL");
     
-    err = EPDescriptorSetLayoutDestroy(layout);
+    err = GCDescriptorSetLayoutDestroy(layout);
     TEST_ASSERT_OK(err);
     
     free(desc);
@@ -643,7 +643,7 @@ static int test_descriptor_set_layout_create(void) {
 }
 
 static int test_descriptor_set_create_and_update(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -651,44 +651,44 @@ static int test_descriptor_set_create_and_update(void) {
     }
     
     // Create layout
-    EPDescriptorSetLayoutDesc *layout_desc = malloc(
-        sizeof(EPDescriptorSetLayoutDesc) + 1 * sizeof(EPDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *layout_desc = malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc));
     layout_desc->binding_count = 1;
-    layout_desc->bindings[0] = (EPDescriptorBindingDesc){
+    layout_desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
-        .type = EP_DESCRIPTOR_STORAGE_BUFFER,
+        .type = GC_DESCRIPTOR_STORAGE_BUFFER,
         .count = 1,
-        .stages = EP_STAGE_COMPUTE_BIT,
+        .stages = GC_STAGE_COMPUTE_BIT,
     };
     
-    EPDescriptorSetLayoutPtr layout = NULL;
-    err = EPDescriptorSetLayoutCreate(ctx.device, layout_desc, &layout);
+    GCDescriptorSetLayoutPtr layout = NULL;
+    err = GCDescriptorSetLayoutCreate(ctx.device, layout_desc, &layout);
     TEST_ASSERT_OK(err);
     
     // Create descriptor set
-    EPDescriptorSetPtr set = NULL;
-    err = EPDescriptorSetCreate(ctx.device, layout, &set);
+    GCDescriptorSetPtr set = NULL;
+    err = GCDescriptorSetCreate(ctx.device, layout, &set);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(set != NULL, "set should not be NULL");
     
     // Create buffer to bind
-    EPBufferDesc buf_desc = {
+    GCBufferDesc buf_desc = {
         .size = 1024,
-        .usage = EP_BUFFER_USAGE_STORAGE_BIT,
+        .usage = GC_BUFFER_USAGE_STORAGE_BIT,
         .host_visible = true,
     };
-    EPBufferPtr buffer = NULL;
-    err = EPBufferCreate(ctx.device, &buf_desc, &buffer);
+    GCBufferPtr buffer = NULL;
+    err = GCBufferCreate(ctx.device, &buf_desc, &buffer);
     TEST_ASSERT_OK(err);
     
     // Update descriptor set
-    err = EPDescriptorSetUpdateBuffer(set, 0, buffer, 0, 1024);
+    err = GCDescriptorSetUpdateBuffer(set, 0, buffer, 0, 1024);
     TEST_ASSERT_OK(err);
     
     // Cleanup
-    EPBufferDestroy(buffer);
-    EPDescriptorSetDestroy(set);
-    EPDescriptorSetLayoutDestroy(layout);
+    GCBufferDestroy(buffer);
+    GCDescriptorSetDestroy(set);
+    GCDescriptorSetLayoutDestroy(layout);
     free(layout_desc);
     
     teardown_test_context(&ctx);
@@ -696,7 +696,7 @@ static int test_descriptor_set_create_and_update(void) {
 }
 
 static int test_pipeline_layout_create(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -704,36 +704,36 @@ static int test_pipeline_layout_create(void) {
     }
     
     // Create descriptor set layout
-    EPDescriptorSetLayoutDesc *layout_desc = malloc(
-        sizeof(EPDescriptorSetLayoutDesc) + 1 * sizeof(EPDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *layout_desc = malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc));
     layout_desc->binding_count = 1;
-    layout_desc->bindings[0] = (EPDescriptorBindingDesc){
+    layout_desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
-        .type = EP_DESCRIPTOR_STORAGE_BUFFER,
+        .type = GC_DESCRIPTOR_STORAGE_BUFFER,
         .count = 1,
-        .stages = EP_STAGE_COMPUTE_BIT,
+        .stages = GC_STAGE_COMPUTE_BIT,
     };
     
-    EPDescriptorSetLayoutPtr set_layout = NULL;
-    err = EPDescriptorSetLayoutCreate(ctx.device, layout_desc, &set_layout);
+    GCDescriptorSetLayoutPtr set_layout = NULL;
+    err = GCDescriptorSetLayoutCreate(ctx.device, layout_desc, &set_layout);
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    EPPipelineLayoutDesc *pipe_desc = malloc(
-        sizeof(EPPipelineLayoutDesc) + 1 * sizeof(EPDescriptorSetLayoutPtr));
+    GCPipelineLayoutDesc *pipe_desc = malloc(
+        sizeof(GCPipelineLayoutDesc) + 1 * sizeof(GCDescriptorSetLayoutPtr));
     pipe_desc->set_layout_count = 1;
     pipe_desc->push_constant_size = 64;
-    pipe_desc->push_constant_stages = EP_STAGE_COMPUTE_BIT;
+    pipe_desc->push_constant_stages = GC_STAGE_COMPUTE_BIT;
     pipe_desc->set_layouts[0] = set_layout;
     
-    EPPipelineLayoutPtr pipe_layout = NULL;
-    err = EPPipelineLayoutCreate(ctx.device, pipe_desc, &pipe_layout);
+    GCPipelineLayoutPtr pipe_layout = NULL;
+    err = GCPipelineLayoutCreate(ctx.device, pipe_desc, &pipe_layout);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(pipe_layout != NULL, "pipeline layout should not be NULL");
     
     // Cleanup
-    EPPipelineLayoutDestroy(pipe_layout);
-    EPDescriptorSetLayoutDestroy(set_layout);
+    GCPipelineLayoutDestroy(pipe_layout);
+    GCDescriptorSetLayoutDestroy(set_layout);
     free(pipe_desc);
     free(layout_desc);
     
@@ -746,7 +746,7 @@ static int test_pipeline_layout_create(void) {
 // =============================================================================
 
 static int test_compute_pipeline_create(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -754,43 +754,43 @@ static int test_compute_pipeline_create(void) {
     }
     
     // Create shader library
-    EPShaderLibraryDesc lib_desc = {
-        .format = EP_SHADER_MSL,
+    GCShaderLibraryDesc lib_desc = {
+        .format = GC_SHADER_MSL,
         .data = (const uint8_t *)simple_compute_shader,
         .size = strlen(simple_compute_shader),
         .label = "compute_test",
     };
     
-    EPShaderLibraryPtr library = NULL;
-    err = EPShaderLibraryCreate(ctx.device, &lib_desc, &library);
+    GCShaderLibraryPtr library = NULL;
+    err = GCShaderLibraryCreate(ctx.device, &lib_desc, &library);
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    EPPipelineLayoutDesc *layout_desc = malloc(sizeof(EPPipelineLayoutDesc));
+    GCPipelineLayoutDesc *layout_desc = malloc(sizeof(GCPipelineLayoutDesc));
     layout_desc->set_layout_count = 0;
     layout_desc->push_constant_size = 0;
     layout_desc->push_constant_stages = 0;
     
-    EPPipelineLayoutPtr layout = NULL;
-    err = EPPipelineLayoutCreate(ctx.device, layout_desc, &layout);
+    GCPipelineLayoutPtr layout = NULL;
+    err = GCPipelineLayoutCreate(ctx.device, layout_desc, &layout);
     TEST_ASSERT_OK(err);
     
     // Create compute pipeline
-    EPComputePipelineDesc pipe_desc = {
+    GCComputePipelineDesc pipe_desc = {
         .library = library,
         .entry = "main_kernel",
         .layout = layout,
     };
     
-    EPComputePipelinePtr pipeline = NULL;
-    err = EPComputePipelineCreate(ctx.device, &pipe_desc, &pipeline);
+    GCComputePipelinePtr pipeline = NULL;
+    err = GCComputePipelineCreate(ctx.device, &pipe_desc, &pipeline);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(pipeline != NULL, "pipeline should not be NULL");
     
     // Cleanup
-    EPComputePipelineDestroy(pipeline);
-    EPPipelineLayoutDestroy(layout);
-    EPShaderLibraryDestroy(library);
+    GCComputePipelineDestroy(pipeline);
+    GCPipelineLayoutDestroy(layout);
+    GCShaderLibraryDestroy(library);
     free(layout_desc);
     
     teardown_test_context(&ctx);
@@ -798,7 +798,7 @@ static int test_compute_pipeline_create(void) {
 }
 
 static int test_render_pipeline_create(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -806,37 +806,37 @@ static int test_render_pipeline_create(void) {
     }
     
     // Create shader library
-    EPShaderLibraryDesc lib_desc = {
-        .format = EP_SHADER_MSL,
+    GCShaderLibraryDesc lib_desc = {
+        .format = GC_SHADER_MSL,
         .data = (const uint8_t *)simple_vertex_fragment_shader,
         .size = strlen(simple_vertex_fragment_shader),
         .label = "render_test",
     };
     
-    EPShaderLibraryPtr library = NULL;
-    err = EPShaderLibraryCreate(ctx.device, &lib_desc, &library);
+    GCShaderLibraryPtr library = NULL;
+    err = GCShaderLibraryCreate(ctx.device, &lib_desc, &library);
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    EPPipelineLayoutDesc *layout_desc = malloc(sizeof(EPPipelineLayoutDesc));
+    GCPipelineLayoutDesc *layout_desc = malloc(sizeof(GCPipelineLayoutDesc));
     layout_desc->set_layout_count = 0;
     layout_desc->push_constant_size = 0;
     layout_desc->push_constant_stages = 0;
     
-    EPPipelineLayoutPtr layout = NULL;
-    err = EPPipelineLayoutCreate(ctx.device, layout_desc, &layout);
+    GCPipelineLayoutPtr layout = NULL;
+    err = GCPipelineLayoutCreate(ctx.device, layout_desc, &layout);
     TEST_ASSERT_OK(err);
     
     // Create render pipeline
-    EPRenderPipelineDesc pipe_desc = {
+    GCRenderPipelineDesc pipe_desc = {
         .library = library,
         .vertex_entry = "vertex_main",
         .fragment_entry = "fragment_main",
         .mesh_entry = NULL,
         .task_entry = NULL,
-        .color_formats = {EP_FORMAT_RGBA8_UNORM},
+        .color_formats = {GC_FORMAT_RGBA8_UNORM},
         .color_format_count = 1,
-        .depth_format = EP_FORMAT_D32_FLOAT,
+        .depth_format = GC_FORMAT_D32_FLOAT,
         .stencil_format = 0,
         .attributes = NULL,
         .attribute_count = 0,
@@ -845,20 +845,20 @@ static int test_render_pipeline_create(void) {
         .raster_state = {
             .depth_test_enable = true,
             .depth_write_enable = true,
-            .depth_compare = EP_COMPARE_LESS,
+            .depth_compare = GC_COMPARE_LESS,
         },
         .layout = layout,
     };
     
-    EPRenderPipelinePtr pipeline = NULL;
-    err = EPRenderPipelineCreate(ctx.device, &pipe_desc, &pipeline);
+    GCRenderPipelinePtr pipeline = NULL;
+    err = GCRenderPipelineCreate(ctx.device, &pipe_desc, &pipeline);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(pipeline != NULL, "pipeline should not be NULL");
     
     // Cleanup
-    EPRenderPipelineDestroy(pipeline);
-    EPPipelineLayoutDestroy(layout);
-    EPShaderLibraryDestroy(library);
+    GCRenderPipelineDestroy(pipeline);
+    GCPipelineLayoutDestroy(layout);
+    GCShaderLibraryDestroy(library);
     free(layout_desc);
     
     teardown_test_context(&ctx);
@@ -870,19 +870,19 @@ static int test_render_pipeline_create(void) {
 // =============================================================================
 
 static int test_command_buffer_create(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPCommandBufferPtr cmd = NULL;
-    err = EPCommandBufferCreate(ctx.device, &cmd);
+    GCCommandBufferPtr cmd = NULL;
+    err = GCCommandBufferCreate(ctx.device, &cmd);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(cmd != NULL, "command buffer should not be NULL");
     
-    err = EPCommandBufferDestroy(cmd);
+    err = GCCommandBufferDestroy(cmd);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -890,24 +890,24 @@ static int test_command_buffer_create(void) {
 }
 
 static int test_command_buffer_begin_end(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPCommandBufferPtr cmd = NULL;
-    err = EPCommandBufferCreate(ctx.device, &cmd);
+    GCCommandBufferPtr cmd = NULL;
+    err = GCCommandBufferCreate(ctx.device, &cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferBegin(cmd);
+    err = GCCommandBufferBegin(cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferEnd(cmd);
+    err = GCCommandBufferEnd(cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferDestroy(cmd);
+    err = GCCommandBufferDestroy(cmd);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -919,19 +919,19 @@ static int test_command_buffer_begin_end(void) {
 // =============================================================================
 
 static int test_fence_create_destroy(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPFencePtr fence = NULL;
-    err = EPFenceCreate(ctx.device, 0, &fence);
+    GCFencePtr fence = NULL;
+    err = GCFenceCreate(ctx.device, 0, &fence);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(fence != NULL, "fence should not be NULL");
     
-    err = EPFenceDestroy(fence);
+    err = GCFenceDestroy(fence);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -939,26 +939,26 @@ static int test_fence_create_destroy(void) {
 }
 
 static int test_fence_signal_wait(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPFencePtr fence = NULL;
-    err = EPFenceCreate(ctx.device, 0, &fence);
+    GCFencePtr fence = NULL;
+    err = GCFenceCreate(ctx.device, 0, &fence);
     TEST_ASSERT_OK(err);
     
     // Signal the fence from CPU
-    err = EPFenceSignal(fence, 1);
+    err = GCFenceSignal(fence, 1);
     TEST_ASSERT_OK(err);
     
     // Wait should return immediately
-    err = EPFenceWait(fence, 1, 1000000000); // 1 second timeout
+    err = GCFenceWait(fence, 1, 1000000000); // 1 second timeout
     TEST_ASSERT_OK(err);
     
-    err = EPFenceDestroy(fence);
+    err = GCFenceDestroy(fence);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -966,19 +966,19 @@ static int test_fence_signal_wait(void) {
 }
 
 static int test_timeline_semaphore_create_destroy(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPTimelineSemaphorePtr sem = NULL;
-    err = EPTimelineSemaphoreCreate(ctx.device, 0, &sem);
+    GCTimelineSemaphorePtr sem = NULL;
+    err = GCTimelineSemaphoreCreate(ctx.device, 0, &sem);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(sem != NULL, "semaphore should not be NULL");
     
-    err = EPTimelineSemaphoreDestroy(sem);
+    err = GCTimelineSemaphoreDestroy(sem);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -986,31 +986,31 @@ static int test_timeline_semaphore_create_destroy(void) {
 }
 
 static int test_timeline_semaphore_get_value(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPTimelineSemaphorePtr sem = NULL;
-    err = EPTimelineSemaphoreCreate(ctx.device, 42, &sem);
+    GCTimelineSemaphorePtr sem = NULL;
+    err = GCTimelineSemaphoreCreate(ctx.device, 42, &sem);
     TEST_ASSERT_OK(err);
     
     uint64_t value = 0;
-    err = EPTimelineSemaphoreGetValue(sem, &value);
+    err = GCTimelineSemaphoreGetValue(sem, &value);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(value == 42, "initial value should be 42");
     
     // Signal to a new value
-    err = EPTimelineSemaphoreSignal(sem, 100);
+    err = GCTimelineSemaphoreSignal(sem, 100);
     TEST_ASSERT_OK(err);
     
-    err = EPTimelineSemaphoreGetValue(sem, &value);
+    err = GCTimelineSemaphoreGetValue(sem, &value);
     TEST_ASSERT_OK(err);
     TEST_ASSERT(value == 100, "value should be 100 after signal");
     
-    err = EPTimelineSemaphoreDestroy(sem);
+    err = GCTimelineSemaphoreDestroy(sem);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -1030,7 +1030,7 @@ static const char *double_values_shader =
     "}\n";
 
 static int test_compute_execution_verify_output(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -1041,13 +1041,13 @@ static int test_compute_execution_verify_output(void) {
     const uint64_t buffer_size = element_count * sizeof(float);
     
     // Create host-visible buffer with test data
-    EPBufferDesc buf_desc = {
+    GCBufferDesc buf_desc = {
         .size = buffer_size,
-        .usage = EP_BUFFER_USAGE_STORAGE_BIT,
+        .usage = GC_BUFFER_USAGE_STORAGE_BIT,
         .host_visible = true,
     };
-    EPBufferPtr buffer = NULL;
-    err = EPBufferCreate(ctx.device, &buf_desc, &buffer);
+    GCBufferPtr buffer = NULL;
+    err = GCBufferCreate(ctx.device, &buf_desc, &buffer);
     TEST_ASSERT_OK(err);
     
     // Write initial data to buffer - we need to access the internal Metal buffer
@@ -1056,14 +1056,14 @@ static int test_compute_execution_verify_output(void) {
     {
         @autoreleasepool {
             // Access internal buffer (this is an integration test, so we can peek)
-            struct EPBuffer {
+            struct GCBuffer {
                 void *ep_device;
                 id<MTLBuffer> mtl_buffer;
                 uint64_t size;
                 uint32_t usage;
                 bool host_visible;
             };
-            struct EPBuffer *buf = (struct EPBuffer *)buffer;
+            struct GCBuffer *buf = (struct GCBuffer *)buffer;
             
             float *data = [buf->mtl_buffer contents];
             for (uint32_t i = 0; i < element_count; i++) {
@@ -1073,89 +1073,89 @@ static int test_compute_execution_verify_output(void) {
     }
     
     // Create shader library
-    EPShaderLibraryDesc lib_desc = {
-        .format = EP_SHADER_MSL,
+    GCShaderLibraryDesc lib_desc = {
+        .format = GC_SHADER_MSL,
         .data = (const uint8_t *)double_values_shader,
         .size = strlen(double_values_shader),
         .label = "double_values",
     };
-    EPShaderLibraryPtr library = NULL;
-    err = EPShaderLibraryCreate(ctx.device, &lib_desc, &library);
+    GCShaderLibraryPtr library = NULL;
+    err = GCShaderLibraryCreate(ctx.device, &lib_desc, &library);
     TEST_ASSERT_OK(err);
     
     // Create descriptor set layout
-    EPDescriptorSetLayoutDesc *layout_desc = malloc(
-        sizeof(EPDescriptorSetLayoutDesc) + 1 * sizeof(EPDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *layout_desc = malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + 1 * sizeof(GCDescriptorBindingDesc));
     layout_desc->binding_count = 1;
-    layout_desc->bindings[0] = (EPDescriptorBindingDesc){
+    layout_desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
-        .type = EP_DESCRIPTOR_STORAGE_BUFFER,
+        .type = GC_DESCRIPTOR_STORAGE_BUFFER,
         .count = 1,
-        .stages = EP_STAGE_COMPUTE_BIT,
+        .stages = GC_STAGE_COMPUTE_BIT,
     };
-    EPDescriptorSetLayoutPtr set_layout = NULL;
-    err = EPDescriptorSetLayoutCreate(ctx.device, layout_desc, &set_layout);
+    GCDescriptorSetLayoutPtr set_layout = NULL;
+    err = GCDescriptorSetLayoutCreate(ctx.device, layout_desc, &set_layout);
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    EPPipelineLayoutDesc *pipe_layout_desc = malloc(
-        sizeof(EPPipelineLayoutDesc) + sizeof(EPDescriptorSetLayoutPtr));
+    GCPipelineLayoutDesc *pipe_layout_desc = malloc(
+        sizeof(GCPipelineLayoutDesc) + sizeof(GCDescriptorSetLayoutPtr));
     pipe_layout_desc->set_layout_count = 1;
     pipe_layout_desc->push_constant_size = 0;
     pipe_layout_desc->push_constant_stages = 0;
     pipe_layout_desc->set_layouts[0] = set_layout;
-    EPPipelineLayoutPtr pipe_layout = NULL;
-    err = EPPipelineLayoutCreate(ctx.device, pipe_layout_desc, &pipe_layout);
+    GCPipelineLayoutPtr pipe_layout = NULL;
+    err = GCPipelineLayoutCreate(ctx.device, pipe_layout_desc, &pipe_layout);
     TEST_ASSERT_OK(err);
     
     // Create descriptor set
-    EPDescriptorSetPtr desc_set = NULL;
-    err = EPDescriptorSetCreate(ctx.device, set_layout, &desc_set);
+    GCDescriptorSetPtr desc_set = NULL;
+    err = GCDescriptorSetCreate(ctx.device, set_layout, &desc_set);
     TEST_ASSERT_OK(err);
     
     // Update descriptor set with buffer
-    err = EPDescriptorSetUpdateBuffer(desc_set, 0, buffer, 0, buffer_size);
+    err = GCDescriptorSetUpdateBuffer(desc_set, 0, buffer, 0, buffer_size);
     TEST_ASSERT_OK(err);
     
     // Create compute pipeline
-    EPComputePipelineDesc pipe_desc = {
+    GCComputePipelineDesc pipe_desc = {
         .library = library,
         .entry = "double_values",
         .layout = pipe_layout,
     };
-    EPComputePipelinePtr pipeline = NULL;
-    err = EPComputePipelineCreate(ctx.device, &pipe_desc, &pipeline);
+    GCComputePipelinePtr pipeline = NULL;
+    err = GCComputePipelineCreate(ctx.device, &pipe_desc, &pipeline);
     TEST_ASSERT_OK(err);
     
     // Create command buffer and record
-    EPCommandBufferPtr cmd = NULL;
-    err = EPCommandBufferCreate(ctx.device, &cmd);
+    GCCommandBufferPtr cmd = NULL;
+    err = GCCommandBufferCreate(ctx.device, &cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferBegin(cmd);
+    err = GCCommandBufferBegin(cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBindComputePipeline(cmd, pipeline);
+    err = GCCommandBindComputePipeline(cmd, pipeline);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBindDescriptorSet(cmd, pipe_layout, 0, desc_set);
+    err = GCCommandBindDescriptorSet(cmd, pipe_layout, 0, desc_set);
     TEST_ASSERT_OK(err);
     
     // Dispatch: element_count / 32 (assuming threadgroup size 32)
     uint32_t groups = (element_count + 31) / 32;
-    err = EPCommandDispatch(cmd, groups, 1, 1);
+    err = GCCommandDispatch(cmd, groups, 1, 1);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferEnd(cmd);
+    err = GCCommandBufferEnd(cmd);
     TEST_ASSERT_OK(err);
     
     // Create fence for synchronization
-    EPFencePtr fence = NULL;
-    err = EPFenceCreate(ctx.device, 0, &fence);
+    GCFencePtr fence = NULL;
+    err = GCFenceCreate(ctx.device, 0, &fence);
     TEST_ASSERT_OK(err);
     
     // Submit
-    EPSubmitInfo submit = {
+    GCSubmitInfo submit = {
         .command_buffers = &cmd,
         .command_buffer_count = 1,
         .wait_semaphores = NULL,
@@ -1166,24 +1166,24 @@ static int test_compute_execution_verify_output(void) {
         .signal_count = 0,
         .fence = fence,
     };
-    err = EPQueueSubmit(ctx.compute_queue, &submit);
+    err = GCQueueSubmit(ctx.compute_queue, &submit);
     TEST_ASSERT_OK(err);
     
     // Wait for completion
-    err = EPFenceWait(fence, 1, 5000000000); // 5 second timeout
+    err = GCFenceWait(fence, 1, 5000000000); // 5 second timeout
     TEST_ASSERT_OK(err);
     
     // Verify output data
     {
         @autoreleasepool {
-            struct EPBuffer {
+            struct GCBuffer {
                 void *ep_device;
                 id<MTLBuffer> mtl_buffer;
                 uint64_t size;
                 uint32_t usage;
                 bool host_visible;
             };
-            struct EPBuffer *buf = (struct EPBuffer *)buffer;
+            struct GCBuffer *buf = (struct GCBuffer *)buffer;
             
             float *data = [buf->mtl_buffer contents];
             bool all_correct = true;
@@ -1199,14 +1199,14 @@ static int test_compute_execution_verify_output(void) {
     }
     
     // Cleanup
-    EPFenceDestroy(fence);
-    EPCommandBufferDestroy(cmd);
-    EPComputePipelineDestroy(pipeline);
-    EPDescriptorSetDestroy(desc_set);
-    EPPipelineLayoutDestroy(pipe_layout);
-    EPDescriptorSetLayoutDestroy(set_layout);
-    EPShaderLibraryDestroy(library);
-    EPBufferDestroy(buffer);
+    GCFenceDestroy(fence);
+    GCCommandBufferDestroy(cmd);
+    GCComputePipelineDestroy(pipeline);
+    GCDescriptorSetDestroy(desc_set);
+    GCPipelineLayoutDestroy(pipe_layout);
+    GCDescriptorSetLayoutDestroy(set_layout);
+    GCShaderLibraryDestroy(library);
+    GCBufferDestroy(buffer);
     free(pipe_layout_desc);
     free(layout_desc);
     
@@ -1227,7 +1227,7 @@ static const char *add_constant_shader =
     "}\n";
 
 static int test_compute_with_push_constants(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -1239,26 +1239,26 @@ static int test_compute_with_push_constants(void) {
     const float add_value = 10.0f;
     
     // Create buffer
-    EPBufferDesc buf_desc = {
+    GCBufferDesc buf_desc = {
         .size = buffer_size,
-        .usage = EP_BUFFER_USAGE_STORAGE_BIT,
+        .usage = GC_BUFFER_USAGE_STORAGE_BIT,
         .host_visible = true,
     };
-    EPBufferPtr buffer = NULL;
-    err = EPBufferCreate(ctx.device, &buf_desc, &buffer);
+    GCBufferPtr buffer = NULL;
+    err = GCBufferCreate(ctx.device, &buf_desc, &buffer);
     TEST_ASSERT_OK(err);
     
     // Initialize buffer
     {
         @autoreleasepool {
-            struct EPBuffer {
+            struct GCBuffer {
                 void *ep_device;
                 id<MTLBuffer> mtl_buffer;
                 uint64_t size;
                 uint32_t usage;
                 bool host_visible;
             };
-            struct EPBuffer *buf = (struct EPBuffer *)buffer;
+            struct GCBuffer *buf = (struct GCBuffer *)buffer;
             
             float *data = [buf->mtl_buffer contents];
             for (uint32_t i = 0; i < element_count; i++) {
@@ -1268,109 +1268,109 @@ static int test_compute_with_push_constants(void) {
     }
     
     // Create shader
-    EPShaderLibraryDesc lib_desc = {
-        .format = EP_SHADER_MSL,
+    GCShaderLibraryDesc lib_desc = {
+        .format = GC_SHADER_MSL,
         .data = (const uint8_t *)add_constant_shader,
         .size = strlen(add_constant_shader),
         .label = "add_constant",
     };
-    EPShaderLibraryPtr library = NULL;
-    err = EPShaderLibraryCreate(ctx.device, &lib_desc, &library);
+    GCShaderLibraryPtr library = NULL;
+    err = GCShaderLibraryCreate(ctx.device, &lib_desc, &library);
     TEST_ASSERT_OK(err);
     
     // Create descriptor set layout
-    EPDescriptorSetLayoutDesc *layout_desc = malloc(
-        sizeof(EPDescriptorSetLayoutDesc) + sizeof(EPDescriptorBindingDesc));
+    GCDescriptorSetLayoutDesc *layout_desc = malloc(
+        sizeof(GCDescriptorSetLayoutDesc) + sizeof(GCDescriptorBindingDesc));
     layout_desc->binding_count = 1;
-    layout_desc->bindings[0] = (EPDescriptorBindingDesc){
+    layout_desc->bindings[0] = (GCDescriptorBindingDesc){
         .binding = 0,
-        .type = EP_DESCRIPTOR_STORAGE_BUFFER,
+        .type = GC_DESCRIPTOR_STORAGE_BUFFER,
         .count = 1,
-        .stages = EP_STAGE_COMPUTE_BIT,
+        .stages = GC_STAGE_COMPUTE_BIT,
     };
-    EPDescriptorSetLayoutPtr set_layout = NULL;
-    err = EPDescriptorSetLayoutCreate(ctx.device, layout_desc, &set_layout);
+    GCDescriptorSetLayoutPtr set_layout = NULL;
+    err = GCDescriptorSetLayoutCreate(ctx.device, layout_desc, &set_layout);
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout with push constants
-    EPPipelineLayoutDesc *pipe_layout_desc = malloc(
-        sizeof(EPPipelineLayoutDesc) + sizeof(EPDescriptorSetLayoutPtr));
+    GCPipelineLayoutDesc *pipe_layout_desc = malloc(
+        sizeof(GCPipelineLayoutDesc) + sizeof(GCDescriptorSetLayoutPtr));
     pipe_layout_desc->set_layout_count = 1;
     pipe_layout_desc->push_constant_size = sizeof(float);
-    pipe_layout_desc->push_constant_stages = EP_STAGE_COMPUTE_BIT;
+    pipe_layout_desc->push_constant_stages = GC_STAGE_COMPUTE_BIT;
     pipe_layout_desc->set_layouts[0] = set_layout;
-    EPPipelineLayoutPtr pipe_layout = NULL;
-    err = EPPipelineLayoutCreate(ctx.device, pipe_layout_desc, &pipe_layout);
+    GCPipelineLayoutPtr pipe_layout = NULL;
+    err = GCPipelineLayoutCreate(ctx.device, pipe_layout_desc, &pipe_layout);
     TEST_ASSERT_OK(err);
     
     // Create descriptor set
-    EPDescriptorSetPtr desc_set = NULL;
-    err = EPDescriptorSetCreate(ctx.device, set_layout, &desc_set);
+    GCDescriptorSetPtr desc_set = NULL;
+    err = GCDescriptorSetCreate(ctx.device, set_layout, &desc_set);
     TEST_ASSERT_OK(err);
-    err = EPDescriptorSetUpdateBuffer(desc_set, 0, buffer, 0, buffer_size);
+    err = GCDescriptorSetUpdateBuffer(desc_set, 0, buffer, 0, buffer_size);
     TEST_ASSERT_OK(err);
     
     // Create pipeline
-    EPComputePipelineDesc pipe_desc = {
+    GCComputePipelineDesc pipe_desc = {
         .library = library,
         .entry = "add_constant",
         .layout = pipe_layout,
     };
-    EPComputePipelinePtr pipeline = NULL;
-    err = EPComputePipelineCreate(ctx.device, &pipe_desc, &pipeline);
+    GCComputePipelinePtr pipeline = NULL;
+    err = GCComputePipelineCreate(ctx.device, &pipe_desc, &pipeline);
     TEST_ASSERT_OK(err);
     
     // Record and submit
-    EPCommandBufferPtr cmd = NULL;
-    err = EPCommandBufferCreate(ctx.device, &cmd);
+    GCCommandBufferPtr cmd = NULL;
+    err = GCCommandBufferCreate(ctx.device, &cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferBegin(cmd);
+    err = GCCommandBufferBegin(cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBindComputePipeline(cmd, pipeline);
+    err = GCCommandBindComputePipeline(cmd, pipeline);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBindDescriptorSet(cmd, pipe_layout, 0, desc_set);
+    err = GCCommandBindDescriptorSet(cmd, pipe_layout, 0, desc_set);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandPushConstants(cmd, pipe_layout, EP_STAGE_COMPUTE_BIT, 
+    err = GCCommandPushConstants(cmd, pipe_layout, GC_STAGE_COMPUTE_BIT, 
                                  (const uint8_t *)&add_value, sizeof(add_value));
     TEST_ASSERT_OK(err);
     
-    err = EPCommandDispatch(cmd, (element_count + 31) / 32, 1, 1);
+    err = GCCommandDispatch(cmd, (element_count + 31) / 32, 1, 1);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferEnd(cmd);
+    err = GCCommandBufferEnd(cmd);
     TEST_ASSERT_OK(err);
     
     // Submit with fence
-    EPFencePtr fence = NULL;
-    err = EPFenceCreate(ctx.device, 0, &fence);
+    GCFencePtr fence = NULL;
+    err = GCFenceCreate(ctx.device, 0, &fence);
     TEST_ASSERT_OK(err);
     
-    EPSubmitInfo submit = {
+    GCSubmitInfo submit = {
         .command_buffers = &cmd,
         .command_buffer_count = 1,
         .fence = fence,
     };
-    err = EPQueueSubmit(ctx.compute_queue, &submit);
+    err = GCQueueSubmit(ctx.compute_queue, &submit);
     TEST_ASSERT_OK(err);
     
-    err = EPFenceWait(fence, 1, 5000000000);
+    err = GCFenceWait(fence, 1, 5000000000);
     TEST_ASSERT_OK(err);
     
     // Verify results
     {
         @autoreleasepool {
-            struct EPBuffer {
+            struct GCBuffer {
                 void *ep_device;
                 id<MTLBuffer> mtl_buffer;
                 uint64_t size;
                 uint32_t usage;
                 bool host_visible;
             };
-            struct EPBuffer *buf = (struct EPBuffer *)buffer;
+            struct GCBuffer *buf = (struct GCBuffer *)buffer;
             
             float *data = [buf->mtl_buffer contents];
             bool all_correct = true;
@@ -1386,14 +1386,14 @@ static int test_compute_with_push_constants(void) {
     }
     
     // Cleanup
-    EPFenceDestroy(fence);
-    EPCommandBufferDestroy(cmd);
-    EPComputePipelineDestroy(pipeline);
-    EPDescriptorSetDestroy(desc_set);
-    EPPipelineLayoutDestroy(pipe_layout);
-    EPDescriptorSetLayoutDestroy(set_layout);
-    EPShaderLibraryDestroy(library);
-    EPBufferDestroy(buffer);
+    GCFenceDestroy(fence);
+    GCCommandBufferDestroy(cmd);
+    GCComputePipelineDestroy(pipeline);
+    GCDescriptorSetDestroy(desc_set);
+    GCPipelineLayoutDestroy(pipe_layout);
+    GCDescriptorSetLayoutDestroy(set_layout);
+    GCShaderLibraryDestroy(library);
+    GCBufferDestroy(buffer);
     free(pipe_layout_desc);
     free(layout_desc);
     
@@ -1406,42 +1406,42 @@ static int test_compute_with_push_constants(void) {
 // =============================================================================
 
 static int test_queue_submit_empty(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
         return 1;
     }
     
-    EPCommandBufferPtr cmd = NULL;
-    err = EPCommandBufferCreate(ctx.device, &cmd);
+    GCCommandBufferPtr cmd = NULL;
+    err = GCCommandBufferCreate(ctx.device, &cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferBegin(cmd);
+    err = GCCommandBufferBegin(cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferEnd(cmd);
+    err = GCCommandBufferEnd(cmd);
     TEST_ASSERT_OK(err);
     
-    EPSubmitInfo submit = {
+    GCSubmitInfo submit = {
         .command_buffers = &cmd,
         .command_buffer_count = 1,
         .fence = NULL,
     };
     
-    err = EPQueueSubmit(ctx.graphics_queue, &submit);
+    err = GCQueueSubmit(ctx.graphics_queue, &submit);
     TEST_ASSERT_OK(err);
     
-    err = EPQueueWaitIdle(ctx.graphics_queue);
+    err = GCQueueWaitIdle(ctx.graphics_queue);
     TEST_ASSERT_OK(err);
     
-    EPCommandBufferDestroy(cmd);
+    GCCommandBufferDestroy(cmd);
     teardown_test_context(&ctx);
     return 0;
 }
 
 static int test_queue_wait_idle(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -1450,29 +1450,29 @@ static int test_queue_wait_idle(void) {
     
     // Submit multiple command buffers
     for (int i = 0; i < 5; i++) {
-        EPCommandBufferPtr cmd = NULL;
-        err = EPCommandBufferCreate(ctx.device, &cmd);
+        GCCommandBufferPtr cmd = NULL;
+        err = GCCommandBufferCreate(ctx.device, &cmd);
         TEST_ASSERT_OK(err);
         
-        err = EPCommandBufferBegin(cmd);
+        err = GCCommandBufferBegin(cmd);
         TEST_ASSERT_OK(err);
-        err = EPCommandBufferEnd(cmd);
+        err = GCCommandBufferEnd(cmd);
         TEST_ASSERT_OK(err);
         
-        EPSubmitInfo submit = {
+        GCSubmitInfo submit = {
             .command_buffers = &cmd,
             .command_buffer_count = 1,
             .fence = NULL,
         };
         
-        err = EPQueueSubmit(ctx.graphics_queue, &submit);
+        err = GCQueueSubmit(ctx.graphics_queue, &submit);
         TEST_ASSERT_OK(err);
         
-        EPCommandBufferDestroy(cmd);
+        GCCommandBufferDestroy(cmd);
     }
     
     // Wait for all to complete
-    err = EPQueueWaitIdle(ctx.graphics_queue);
+    err = GCQueueWaitIdle(ctx.graphics_queue);
     TEST_ASSERT_OK(err);
     
     teardown_test_context(&ctx);
@@ -1484,7 +1484,7 @@ static int test_queue_wait_idle(void) {
 // =============================================================================
 
 static int test_render_pass_begin_end(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -1492,97 +1492,97 @@ static int test_render_pass_begin_end(void) {
     }
     
     // Create color attachment texture
-    EPTextureDesc tex_desc = {
-        .dimension = EP_TEXTURE_DIM_2D,
-        .format = EP_FORMAT_RGBA8_UNORM,
+    GCTextureDesc tex_desc = {
+        .dimension = GC_TEXTURE_DIM_2D,
+        .format = GC_FORMAT_RGBA8_UNORM,
         .width = 256,
         .height = 256,
         .depth = 1,
         .mip_levels = 1,
         .array_layers = 1,
-        .usage = EP_TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
+        .usage = GC_TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
     };
-    EPTexturePtr color_tex = NULL;
-    err = EPTextureCreate(ctx.device, &tex_desc, &color_tex);
+    GCTexturePtr color_tex = NULL;
+    err = GCTextureCreate(ctx.device, &tex_desc, &color_tex);
     TEST_ASSERT_OK(err);
     
     // Create depth texture
-    EPTextureDesc depth_desc = {
-        .dimension = EP_TEXTURE_DIM_2D,
-        .format = EP_FORMAT_D32_FLOAT,
+    GCTextureDesc depth_desc = {
+        .dimension = GC_TEXTURE_DIM_2D,
+        .format = GC_FORMAT_D32_FLOAT,
         .width = 256,
         .height = 256,
         .depth = 1,
         .mip_levels = 1,
         .array_layers = 1,
-        .usage = EP_TEXTURE_USAGE_DEPTH_ATTACHMENT_BIT,
+        .usage = GC_TEXTURE_USAGE_DEPTH_ATTACHMENT_BIT,
     };
-    EPTexturePtr depth_tex = NULL;
-    err = EPTextureCreate(ctx.device, &depth_desc, &depth_tex);
+    GCTexturePtr depth_tex = NULL;
+    err = GCTextureCreate(ctx.device, &depth_desc, &depth_tex);
     TEST_ASSERT_OK(err);
     
     // Create command buffer
-    EPCommandBufferPtr cmd = NULL;
-    err = EPCommandBufferCreate(ctx.device, &cmd);
+    GCCommandBufferPtr cmd = NULL;
+    err = GCCommandBufferCreate(ctx.device, &cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferBegin(cmd);
+    err = GCCommandBufferBegin(cmd);
     TEST_ASSERT_OK(err);
     
     // Begin render pass
-    EPRenderPassDepthAttachment depth_attach = {
+    GCRenderPassDepthAttachment depth_attach = {
         .texture = depth_tex,
-        .layout = EP_TEXTURE_LAYOUT_DEPTH_STENCIL,
-        .load_op = EP_LOAD_OP_CLEAR,
-        .store_op = EP_STORE_OP_STORE,
+        .layout = GC_TEXTURE_LAYOUT_DEPTH_STENCIL,
+        .load_op = GC_LOAD_OP_CLEAR,
+        .store_op = GC_STORE_OP_STORE,
         .clear_depth = 1.0f,
         .clear_stencil = 0,
     };
     
-    EPRenderPassDesc *pass_desc = malloc(sizeof(EPRenderPassDesc) + sizeof(EPRenderPassColorAttachment));
+    GCRenderPassDesc *pass_desc = malloc(sizeof(GCRenderPassDesc) + sizeof(GCRenderPassColorAttachment));
     pass_desc->color_attachment_count = 1;
     pass_desc->depth_attachment = &depth_attach;
-    pass_desc->color_attachments[0] = (EPRenderPassColorAttachment){
+    pass_desc->color_attachments[0] = (GCRenderPassColorAttachment){
         .texture = color_tex,
-        .layout = EP_TEXTURE_LAYOUT_COLOR_ATTACHMENT,
-        .load_op = EP_LOAD_OP_CLEAR,
-        .store_op = EP_STORE_OP_STORE,
+        .layout = GC_TEXTURE_LAYOUT_COLOR_ATTACHMENT,
+        .load_op = GC_LOAD_OP_CLEAR,
+        .store_op = GC_STORE_OP_STORE,
         .clear_color = {0.2f, 0.3f, 0.4f, 1.0f},
     };
     
-    err = EPCommandBeginRenderPass(cmd, pass_desc);
+    err = GCCommandBeginRenderPass(cmd, pass_desc);
     TEST_ASSERT_OK(err);
     
     // Set viewport and scissor
-    err = EPCommandSetViewport(cmd, 0, 0, 256, 256, 0, 1);
+    err = GCCommandSetViewport(cmd, 0, 0, 256, 256, 0, 1);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandSetScissor(cmd, 0, 0, 256, 256);
+    err = GCCommandSetScissor(cmd, 0, 0, 256, 256);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandEndRenderPass(cmd);
+    err = GCCommandEndRenderPass(cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferEnd(cmd);
+    err = GCCommandBufferEnd(cmd);
     TEST_ASSERT_OK(err);
     
     // Submit
-    EPSubmitInfo submit = {
+    GCSubmitInfo submit = {
         .command_buffers = &cmd,
         .command_buffer_count = 1,
         .fence = NULL,
     };
-    err = EPQueueSubmit(ctx.graphics_queue, &submit);
+    err = GCQueueSubmit(ctx.graphics_queue, &submit);
     TEST_ASSERT_OK(err);
     
-    err = EPQueueWaitIdle(ctx.graphics_queue);
+    err = GCQueueWaitIdle(ctx.graphics_queue);
     TEST_ASSERT_OK(err);
     
     // Cleanup
     free(pass_desc);
-    EPCommandBufferDestroy(cmd);
-    EPTextureDestroy(depth_tex);
-    EPTextureDestroy(color_tex);
+    GCCommandBufferDestroy(cmd);
+    GCTextureDestroy(depth_tex);
+    GCTextureDestroy(color_tex);
     
     teardown_test_context(&ctx);
     return 0;
@@ -1593,7 +1593,7 @@ static int test_render_pass_begin_end(void) {
 // =============================================================================
 
 static int test_resource_barrier(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -1601,62 +1601,62 @@ static int test_resource_barrier(void) {
     }
     
     // Create buffer
-    EPBufferDesc buf_desc = {
+    GCBufferDesc buf_desc = {
         .size = 1024,
-        .usage = EP_BUFFER_USAGE_STORAGE_BIT,
+        .usage = GC_BUFFER_USAGE_STORAGE_BIT,
         .host_visible = true,
     };
-    EPBufferPtr buffer = NULL;
-    err = EPBufferCreate(ctx.device, &buf_desc, &buffer);
+    GCBufferPtr buffer = NULL;
+    err = GCBufferCreate(ctx.device, &buf_desc, &buffer);
     TEST_ASSERT_OK(err);
     
     // Create command buffer
-    EPCommandBufferPtr cmd = NULL;
-    err = EPCommandBufferCreate(ctx.device, &cmd);
+    GCCommandBufferPtr cmd = NULL;
+    err = GCCommandBufferCreate(ctx.device, &cmd);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferBegin(cmd);
+    err = GCCommandBufferBegin(cmd);
     TEST_ASSERT_OK(err);
     
     // Issue barrier
-    EPBufferBarrier buf_barrier = {
+    GCBufferBarrier buf_barrier = {
         .buffer = buffer,
         .offset = 0,
         .size = 1024,
-        .src_access = EP_ACCESS_SHADER_WRITE_BIT,
-        .dst_access = EP_ACCESS_SHADER_READ_BIT,
+        .src_access = GC_ACCESS_SHADER_WRITE_BIT,
+        .dst_access = GC_ACCESS_SHADER_READ_BIT,
     };
     
-    EPBarrierDesc barrier_desc = {
-        .src_stage = EP_STAGE_COMPUTE_SHADER_BIT,
-        .dst_stage = EP_STAGE_COMPUTE_SHADER_BIT,
+    GCBarrierDesc barrier_desc = {
+        .src_stage = GC_STAGE_COMPUTE_SHADER_BIT,
+        .dst_stage = GC_STAGE_COMPUTE_SHADER_BIT,
         .buffer_barriers = &buf_barrier,
         .buffer_barrier_count = 1,
         .texture_barriers = NULL,
         .texture_barrier_count = 0,
     };
     
-    err = EPCommandResourceBarrier(cmd, &barrier_desc);
+    err = GCCommandResourceBarrier(cmd, &barrier_desc);
     TEST_ASSERT_OK(err);
     
-    err = EPCommandBufferEnd(cmd);
+    err = GCCommandBufferEnd(cmd);
     TEST_ASSERT_OK(err);
     
     // Submit
-    EPSubmitInfo submit = {
+    GCSubmitInfo submit = {
         .command_buffers = &cmd,
         .command_buffer_count = 1,
         .fence = NULL,
     };
-    err = EPQueueSubmit(ctx.compute_queue, &submit);
+    err = GCQueueSubmit(ctx.compute_queue, &submit);
     TEST_ASSERT_OK(err);
     
-    err = EPQueueWaitIdle(ctx.compute_queue);
+    err = GCQueueWaitIdle(ctx.compute_queue);
     TEST_ASSERT_OK(err);
     
     // Cleanup
-    EPCommandBufferDestroy(cmd);
-    EPBufferDestroy(buffer);
+    GCCommandBufferDestroy(cmd);
+    GCBufferDestroy(buffer);
     
     teardown_test_context(&ctx);
     return 0;
@@ -1667,22 +1667,22 @@ static int test_resource_barrier(void) {
 // =============================================================================
 
 static int test_null_argument_handling(void) {
-    EPError err;
+    GCError err;
     
     // Test NULL instance output
-    err = EPInstanceCreate(NULL, NULL);
-    TEST_ASSERT_ERR(err, EP_E_INVALID_ARGUMENT);
+    err = GCInstanceCreate(NULL, NULL);
+    TEST_ASSERT_ERR(err, GC_E_INVALID_ARGUMENT);
     
     // Test NULL adapter
-    EPAdapterProperties props;
-    err = EPAdapterGetProperties(NULL, &props);
-    TEST_ASSERT_ERR(err, EP_E_INVALID_ARGUMENT);
+    GCAdapterProperties props;
+    err = GCAdapterGetProperties(NULL, &props);
+    TEST_ASSERT_ERR(err, GC_E_INVALID_ARGUMENT);
     
     return 0;
 }
 
 static int test_invalid_shader_entry_point(void) {
-    EPError err;
+    GCError err;
     TestContext ctx = {0};
     
     if (setup_test_context(&ctx) != 0) {
@@ -1690,38 +1690,38 @@ static int test_invalid_shader_entry_point(void) {
     }
     
     // Create valid shader library
-    EPShaderLibraryDesc lib_desc = {
-        .format = EP_SHADER_MSL,
+    GCShaderLibraryDesc lib_desc = {
+        .format = GC_SHADER_MSL,
         .data = (const uint8_t *)simple_compute_shader,
         .size = strlen(simple_compute_shader),
         .label = "test",
     };
-    EPShaderLibraryPtr library = NULL;
-    err = EPShaderLibraryCreate(ctx.device, &lib_desc, &library);
+    GCShaderLibraryPtr library = NULL;
+    err = GCShaderLibraryCreate(ctx.device, &lib_desc, &library);
     TEST_ASSERT_OK(err);
     
     // Create pipeline layout
-    EPPipelineLayoutDesc *layout_desc = malloc(sizeof(EPPipelineLayoutDesc));
+    GCPipelineLayoutDesc *layout_desc = malloc(sizeof(GCPipelineLayoutDesc));
     layout_desc->set_layout_count = 0;
     layout_desc->push_constant_size = 0;
     layout_desc->push_constant_stages = 0;
-    EPPipelineLayoutPtr layout = NULL;
-    err = EPPipelineLayoutCreate(ctx.device, layout_desc, &layout);
+    GCPipelineLayoutPtr layout = NULL;
+    err = GCPipelineLayoutCreate(ctx.device, layout_desc, &layout);
     TEST_ASSERT_OK(err);
     
     // Try to create pipeline with non-existent entry point
-    EPComputePipelineDesc pipe_desc = {
+    GCComputePipelineDesc pipe_desc = {
         .library = library,
         .entry = "nonexistent_function",
         .layout = layout,
     };
-    EPComputePipelinePtr pipeline = NULL;
-    err = EPComputePipelineCreate(ctx.device, &pipe_desc, &pipeline);
-    TEST_ASSERT(err.code != EP_E_OK, "should fail for invalid entry point");
+    GCComputePipelinePtr pipeline = NULL;
+    err = GCComputePipelineCreate(ctx.device, &pipe_desc, &pipeline);
+    TEST_ASSERT(err.code != GC_E_OK, "should fail for invalid entry point");
     
     // Cleanup
-    EPPipelineLayoutDestroy(layout);
-    EPShaderLibraryDestroy(library);
+    GCPipelineLayoutDestroy(layout);
+    GCShaderLibraryDestroy(library);
     free(layout_desc);
     
     teardown_test_context(&ctx);
@@ -1734,7 +1734,7 @@ static int test_invalid_shader_entry_point(void) {
 
 int main(int argc, const char *argv[]) {
     @autoreleasepool {
-        printf("=== Enthrall Metal Backend Integration Tests ===\n\n");
+        printf("=== Gcraft Metal Backend Integration Tests ===\n\n");
         
         // Instance tests
         printf("--- Instance Tests ---\n");

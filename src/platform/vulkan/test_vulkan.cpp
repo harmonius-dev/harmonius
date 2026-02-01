@@ -1,7 +1,7 @@
 // test_vulkan.cpp - Tests for Vulkan backend
-// These tests verify core functionality of the enthrall Vulkan implementation
+// These tests verify core functionality of the gcraft Vulkan implementation
 
-#include "enthrall_internal.h"
+#include "gcraft_internal.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -15,8 +15,8 @@
 } while(0)
 
 #define EXPECT_OK(expr) do { \
-    EPError err = (expr); \
-    if (err.code != EP_E_OK) { \
+    GCError err = (expr); \
+    if (err.code != GC_E_OK) { \
         printf("FAILED: %s returned error %d: %s\n", #expr, err.code, err.message ? err.message : "no message"); \
         abort(); \
     } \
@@ -30,20 +30,20 @@
 } while(0)
 
 // Global state for tests
-static EPPlatformPtr g_platform = nullptr;
-static EPInstancePtr g_instance = nullptr;
-static EPAdapterPtr g_adapter = nullptr;
-static EPDevicePtr g_device = nullptr;
+static GCPlatformPtr g_platform = nullptr;
+static GCInstancePtr g_instance = nullptr;
+static GCAdapterPtr g_adapter = nullptr;
+static GCDevicePtr g_device = nullptr;
 
 // ============================================================================
 // Platform Tests
 // ============================================================================
 
 TEST(platform_create_destroy) {
-    EPPlatformPtr platform = nullptr;
-    EXPECT_OK(EPPlatformCreate(&platform));
+    GCPlatformPtr platform = nullptr;
+    EXPECT_OK(GCPlatformCreate(&platform));
     EXPECT_NOT_NULL(platform);
-    EXPECT_OK(EPPlatformDestroy(platform));
+    EXPECT_OK(GCPlatformDestroy(platform));
 }
 
 // ============================================================================
@@ -51,46 +51,46 @@ TEST(platform_create_destroy) {
 // ============================================================================
 
 TEST(instance_create_destroy) {
-    EPInstanceDesc desc{
-        .enable_backends = EP_BACKEND_VULKAN_BIT,
+    GCInstanceDesc desc{
+        .enable_backends = GC_BACKEND_VULKAN_BIT,
         .enable_validation = false,
         .enable_debug_names = false,
     };
     
-    EPInstancePtr instance = nullptr;
-    EXPECT_OK(EPInstanceCreate(&desc, &instance));
+    GCInstancePtr instance = nullptr;
+    EXPECT_OK(GCInstanceCreate(&desc, &instance));
     EXPECT_NOT_NULL(instance);
-    EXPECT_OK(EPInstanceDestroy(instance));
+    EXPECT_OK(GCInstanceDestroy(instance));
 }
 
 TEST(instance_enumerate_adapters) {
-    EPInstanceDesc desc{
-        .enable_backends = EP_BACKEND_VULKAN_BIT,
+    GCInstanceDesc desc{
+        .enable_backends = GC_BACKEND_VULKAN_BIT,
         .enable_validation = false,
         .enable_debug_names = false,
     };
     
-    EPInstancePtr instance = nullptr;
-    EXPECT_OK(EPInstanceCreate(&desc, &instance));
+    GCInstancePtr instance = nullptr;
+    EXPECT_OK(GCInstanceCreate(&desc, &instance));
     
     uint32_t count = 0;
-    EXPECT_OK(EPInstanceEnumerateAdapters(instance, &count, nullptr));
+    EXPECT_OK(GCInstanceEnumerateAdapters(instance, &count, nullptr));
     printf("(found %u adapters) ", count);
     
     if (count > 0) {
-        EPAdapterPtr* adapters = new EPAdapterPtr[count];
-        EXPECT_OK(EPInstanceEnumerateAdapters(instance, &count, adapters));
+        GCAdapterPtr* adapters = new GCAdapterPtr[count];
+        EXPECT_OK(GCInstanceEnumerateAdapters(instance, &count, adapters));
         
         for (uint32_t i = 0; i < count; i++) {
-            EPAdapterProperties props{};
-            EXPECT_OK(EPAdapterGetProperties(adapters[i], &props));
+            GCAdapterProperties props{};
+            EXPECT_OK(GCAdapterGetProperties(adapters[i], &props));
             printf("\n    Adapter %u: %s (vendor: 0x%04x) ", i, props.name, props.vendor_id);
         }
         
         delete[] adapters;
     }
     
-    EXPECT_OK(EPInstanceDestroy(instance));
+    EXPECT_OK(GCInstanceDestroy(instance));
 }
 
 // ============================================================================
@@ -99,27 +99,27 @@ TEST(instance_enumerate_adapters) {
 
 TEST(device_create_destroy) {
     // Use global adapter
-    EPDeviceDesc desc{
-        .required_features = EP_FEATURE_COMPUTE_BIT,
-        .optional_features = static_cast<EPFeatureFlags>(0),
+    GCDeviceDesc desc{
+        .required_features = GC_FEATURE_COMPUTE_BIT,
+        .optional_features = static_cast<GCFeatureFlags>(0),
         .enable_validation = false,
         .enable_debug_names = false,
     };
     
-    EPDevicePtr device = nullptr;
-    EXPECT_OK(EPDeviceCreate(g_adapter, &desc, &device));
+    GCDevicePtr device = nullptr;
+    EXPECT_OK(GCDeviceCreate(g_adapter, &desc, &device));
     EXPECT_NOT_NULL(device);
-    EXPECT_OK(EPDeviceDestroy(device));
+    EXPECT_OK(GCDeviceDestroy(device));
 }
 
 TEST(device_get_queues) {
-    EPQueuePtr graphics_queue = nullptr;
-    EPQueuePtr compute_queue = nullptr;
+    GCQueuePtr graphics_queue = nullptr;
+    GCQueuePtr compute_queue = nullptr;
     
-    EXPECT_OK(EPDeviceGetQueue(g_device, EP_QUEUE_GRAPHICS, 0, &graphics_queue));
+    EXPECT_OK(GCDeviceGetQueue(g_device, GC_QUEUE_GRAPHICS, 0, &graphics_queue));
     EXPECT_NOT_NULL(graphics_queue);
     
-    EXPECT_OK(EPDeviceGetQueue(g_device, EP_QUEUE_COMPUTE, 0, &compute_queue));
+    EXPECT_OK(GCDeviceGetQueue(g_device, GC_QUEUE_COMPUTE, 0, &compute_queue));
     EXPECT_NOT_NULL(compute_queue);
 }
 
@@ -128,38 +128,38 @@ TEST(device_get_queues) {
 // ============================================================================
 
 TEST(buffer_create_destroy) {
-    EPBufferDesc desc{
+    GCBufferDesc desc{
         .size = 1024,
-        .usage = EP_BUFFER_USAGE_UNIFORM_BIT,
+        .usage = GC_BUFFER_USAGE_UNIFORM_BIT,
         .host_visible = true,
     };
     
-    EPBufferPtr buffer = nullptr;
-    EXPECT_OK(EPBufferCreate(g_device, &desc, &buffer));
+    GCBufferPtr buffer = nullptr;
+    EXPECT_OK(GCBufferCreate(g_device, &desc, &buffer));
     EXPECT_NOT_NULL(buffer);
-    EXPECT_OK(EPBufferDestroy(buffer));
+    EXPECT_OK(GCBufferDestroy(buffer));
 }
 
 TEST(buffer_various_usages) {
-    EPBufferUsageFlags usages[] = {
-        EP_BUFFER_USAGE_VERTEX_BIT,
-        EP_BUFFER_USAGE_INDEX_BIT,
-        EP_BUFFER_USAGE_UNIFORM_BIT,
-        EP_BUFFER_USAGE_STORAGE_BIT,
-        static_cast<EPBufferUsageFlags>(EP_BUFFER_USAGE_TRANSFER_SRC_BIT | EP_BUFFER_USAGE_TRANSFER_DST_BIT),
+    GCBufferUsageFlags usages[] = {
+        GC_BUFFER_USAGE_VERTEX_BIT,
+        GC_BUFFER_USAGE_INDEX_BIT,
+        GC_BUFFER_USAGE_UNIFORM_BIT,
+        GC_BUFFER_USAGE_STORAGE_BIT,
+        static_cast<GCBufferUsageFlags>(GC_BUFFER_USAGE_TRANSFER_SRC_BIT | GC_BUFFER_USAGE_TRANSFER_DST_BIT),
     };
     
     for (auto usage : usages) {
-        EPBufferDesc desc{
+        GCBufferDesc desc{
             .size = 256,
             .usage = usage,
             .host_visible = false,
         };
         
-        EPBufferPtr buffer = nullptr;
-        EXPECT_OK(EPBufferCreate(g_device, &desc, &buffer));
+        GCBufferPtr buffer = nullptr;
+        EXPECT_OK(GCBufferCreate(g_device, &desc, &buffer));
         EXPECT_NOT_NULL(buffer);
-        EXPECT_OK(EPBufferDestroy(buffer));
+        EXPECT_OK(GCBufferDestroy(buffer));
     }
 }
 
@@ -168,67 +168,67 @@ TEST(buffer_various_usages) {
 // ============================================================================
 
 TEST(texture_create_destroy) {
-    EPTextureDesc desc{
-        .dimension = EP_TEXTURE_DIM_2D,
-        .format = EP_FORMAT_RGBA8_UNORM,
+    GCTextureDesc desc{
+        .dimension = GC_TEXTURE_DIM_2D,
+        .format = GC_FORMAT_RGBA8_UNORM,
         .width = 256,
         .height = 256,
         .depth = 1,
         .mip_levels = 1,
         .array_layers = 1,
-        .usage = static_cast<EPTextureUsageFlags>(EP_TEXTURE_USAGE_SAMPLED_BIT | EP_TEXTURE_USAGE_TRANSFER_DST_BIT),
+        .usage = static_cast<GCTextureUsageFlags>(GC_TEXTURE_USAGE_SAMPLED_BIT | GC_TEXTURE_USAGE_TRANSFER_DST_BIT),
     };
     
-    EPTexturePtr texture = nullptr;
-    EXPECT_OK(EPTextureCreate(g_device, &desc, &texture));
+    GCTexturePtr texture = nullptr;
+    EXPECT_OK(GCTextureCreate(g_device, &desc, &texture));
     EXPECT_NOT_NULL(texture);
-    EXPECT_OK(EPTextureDestroy(texture));
+    EXPECT_OK(GCTextureDestroy(texture));
 }
 
 TEST(texture_various_formats) {
-    EPTextureFormat formats[] = {
-        EP_FORMAT_RGBA8_UNORM,
-        EP_FORMAT_BGRA8_UNORM,
-        EP_FORMAT_RGBA16_FLOAT,
-        EP_FORMAT_RGBA32_FLOAT,
+    GCTextureFormat formats[] = {
+        GC_FORMAT_RGBA8_UNORM,
+        GC_FORMAT_BGRA8_UNORM,
+        GC_FORMAT_RGBA16_FLOAT,
+        GC_FORMAT_RGBA32_FLOAT,
     };
     
     for (auto format : formats) {
-        EPTextureDesc desc{
-            .dimension = EP_TEXTURE_DIM_2D,
+        GCTextureDesc desc{
+            .dimension = GC_TEXTURE_DIM_2D,
             .format = format,
             .width = 64,
             .height = 64,
             .depth = 1,
             .mip_levels = 1,
             .array_layers = 1,
-            .usage = EP_TEXTURE_USAGE_SAMPLED_BIT,
+            .usage = GC_TEXTURE_USAGE_SAMPLED_BIT,
         };
         
-        EPTexturePtr texture = nullptr;
-        EXPECT_OK(EPTextureCreate(g_device, &desc, &texture));
+        GCTexturePtr texture = nullptr;
+        EXPECT_OK(GCTextureCreate(g_device, &desc, &texture));
         EXPECT_NOT_NULL(texture);
-        EXPECT_OK(EPTextureDestroy(texture));
+        EXPECT_OK(GCTextureDestroy(texture));
     }
 }
 
 TEST(texture_depth_formats) {
     // D32_FLOAT is widely supported; D24S8 may not be on Apple Silicon
-    EPTextureDesc desc{
-        .dimension = EP_TEXTURE_DIM_2D,
-        .format = EP_FORMAT_D32_FLOAT,
+    GCTextureDesc desc{
+        .dimension = GC_TEXTURE_DIM_2D,
+        .format = GC_FORMAT_D32_FLOAT,
         .width = 512,
         .height = 512,
         .depth = 1,
         .mip_levels = 1,
         .array_layers = 1,
-        .usage = EP_TEXTURE_USAGE_DEPTH_ATTACHMENT_BIT,
+        .usage = GC_TEXTURE_USAGE_DEPTH_ATTACHMENT_BIT,
     };
     
-    EPTexturePtr texture = nullptr;
-    EXPECT_OK(EPTextureCreate(g_device, &desc, &texture));
+    GCTexturePtr texture = nullptr;
+    EXPECT_OK(GCTextureCreate(g_device, &desc, &texture));
     EXPECT_NOT_NULL(texture);
-    EXPECT_OK(EPTextureDestroy(texture));
+    EXPECT_OK(GCTextureDestroy(texture));
 }
 
 // ============================================================================
@@ -236,37 +236,37 @@ TEST(texture_depth_formats) {
 // ============================================================================
 
 TEST(sampler_create_destroy) {
-    EPSamplerDesc desc{
-        .min_filter = EP_FILTER_LINEAR,
-        .mag_filter = EP_FILTER_LINEAR,
-        .address_u = EP_ADDRESS_REPEAT,
-        .address_v = EP_ADDRESS_REPEAT,
-        .address_w = EP_ADDRESS_REPEAT,
-        .compare_op = EP_COMPARE_ALWAYS,
+    GCSamplerDesc desc{
+        .min_filter = GC_FILTER_LINEAR,
+        .mag_filter = GC_FILTER_LINEAR,
+        .address_u = GC_ADDRESS_REPEAT,
+        .address_v = GC_ADDRESS_REPEAT,
+        .address_w = GC_ADDRESS_REPEAT,
+        .compare_op = GC_COMPARE_ALWAYS,
         .max_anisotropy = 1.0f,
     };
     
-    EPSamplerPtr sampler = nullptr;
-    EXPECT_OK(EPSamplerCreate(g_device, &desc, &sampler));
+    GCSamplerPtr sampler = nullptr;
+    EXPECT_OK(GCSamplerCreate(g_device, &desc, &sampler));
     EXPECT_NOT_NULL(sampler);
-    EXPECT_OK(EPSamplerDestroy(sampler));
+    EXPECT_OK(GCSamplerDestroy(sampler));
 }
 
 TEST(sampler_anisotropic) {
-    EPSamplerDesc desc{
-        .min_filter = EP_FILTER_LINEAR,
-        .mag_filter = EP_FILTER_LINEAR,
-        .address_u = EP_ADDRESS_REPEAT,
-        .address_v = EP_ADDRESS_REPEAT,
-        .address_w = EP_ADDRESS_REPEAT,
-        .compare_op = EP_COMPARE_ALWAYS,
+    GCSamplerDesc desc{
+        .min_filter = GC_FILTER_LINEAR,
+        .mag_filter = GC_FILTER_LINEAR,
+        .address_u = GC_ADDRESS_REPEAT,
+        .address_v = GC_ADDRESS_REPEAT,
+        .address_w = GC_ADDRESS_REPEAT,
+        .compare_op = GC_COMPARE_ALWAYS,
         .max_anisotropy = 16.0f,
     };
     
-    EPSamplerPtr sampler = nullptr;
-    EXPECT_OK(EPSamplerCreate(g_device, &desc, &sampler));
+    GCSamplerPtr sampler = nullptr;
+    EXPECT_OK(GCSamplerCreate(g_device, &desc, &sampler));
     EXPECT_NOT_NULL(sampler);
-    EXPECT_OK(EPSamplerDestroy(sampler));
+    EXPECT_OK(GCSamplerDestroy(sampler));
 }
 
 // ============================================================================
@@ -274,20 +274,20 @@ TEST(sampler_anisotropic) {
 // ============================================================================
 
 TEST(command_buffer_create_destroy) {
-    EPCommandBufferPtr cmd = nullptr;
-    EXPECT_OK(EPCommandBufferCreate(g_device, &cmd));
+    GCCommandBufferPtr cmd = nullptr;
+    EXPECT_OK(GCCommandBufferCreate(g_device, &cmd));
     EXPECT_NOT_NULL(cmd);
-    EXPECT_OK(EPCommandBufferDestroy(cmd));
+    EXPECT_OK(GCCommandBufferDestroy(cmd));
 }
 
 TEST(command_buffer_begin_end) {
-    EPCommandBufferPtr cmd = nullptr;
-    EXPECT_OK(EPCommandBufferCreate(g_device, &cmd));
+    GCCommandBufferPtr cmd = nullptr;
+    EXPECT_OK(GCCommandBufferCreate(g_device, &cmd));
     
-    EXPECT_OK(EPCommandBufferBegin(cmd));
-    EXPECT_OK(EPCommandBufferEnd(cmd));
+    EXPECT_OK(GCCommandBufferBegin(cmd));
+    EXPECT_OK(GCCommandBufferEnd(cmd));
     
-    EXPECT_OK(EPCommandBufferDestroy(cmd));
+    EXPECT_OK(GCCommandBufferDestroy(cmd));
 }
 
 // ============================================================================
@@ -295,23 +295,23 @@ TEST(command_buffer_begin_end) {
 // ============================================================================
 
 TEST(fence_create_destroy) {
-    EPFencePtr fence = nullptr;
-    EXPECT_OK(EPFenceCreate(g_device, 0, &fence));
+    GCFencePtr fence = nullptr;
+    EXPECT_OK(GCFenceCreate(g_device, 0, &fence));
     EXPECT_NOT_NULL(fence);
-    EXPECT_OK(EPFenceDestroy(fence));
+    EXPECT_OK(GCFenceDestroy(fence));
 }
 
 TEST(fence_signal_wait) {
-    EPFencePtr fence = nullptr;
-    EXPECT_OK(EPFenceCreate(g_device, 0, &fence));
+    GCFencePtr fence = nullptr;
+    EXPECT_OK(GCFenceCreate(g_device, 0, &fence));
     
     // Signal from CPU
-    EXPECT_OK(EPFenceSignal(fence, 1));
+    EXPECT_OK(GCFenceSignal(fence, 1));
     
     // Wait should complete immediately since we just signaled
-    EXPECT_OK(EPFenceWait(fence, 1, 1000000000)); // 1 second timeout
+    EXPECT_OK(GCFenceWait(fence, 1, 1000000000)); // 1 second timeout
     
-    EXPECT_OK(EPFenceDestroy(fence));
+    EXPECT_OK(GCFenceDestroy(fence));
 }
 
 // ============================================================================
@@ -319,25 +319,25 @@ TEST(fence_signal_wait) {
 // ============================================================================
 
 TEST(timeline_semaphore_create_destroy) {
-    EPTimelineSemaphorePtr sem = nullptr;
-    EXPECT_OK(EPTimelineSemaphoreCreate(g_device, 0, &sem));
+    GCTimelineSemaphorePtr sem = nullptr;
+    EXPECT_OK(GCTimelineSemaphoreCreate(g_device, 0, &sem));
     EXPECT_NOT_NULL(sem);
-    EXPECT_OK(EPTimelineSemaphoreDestroy(sem));
+    EXPECT_OK(GCTimelineSemaphoreDestroy(sem));
 }
 
 TEST(timeline_semaphore_signal_wait) {
-    EPTimelineSemaphorePtr sem = nullptr;
-    EXPECT_OK(EPTimelineSemaphoreCreate(g_device, 0, &sem));
+    GCTimelineSemaphorePtr sem = nullptr;
+    EXPECT_OK(GCTimelineSemaphoreCreate(g_device, 0, &sem));
     
-    EXPECT_OK(EPTimelineSemaphoreSignal(sem, 5));
+    EXPECT_OK(GCTimelineSemaphoreSignal(sem, 5));
     
     uint64_t value = 0;
-    EXPECT_OK(EPTimelineSemaphoreGetValue(sem, &value));
+    EXPECT_OK(GCTimelineSemaphoreGetValue(sem, &value));
     assert(value == 5);
     
-    EXPECT_OK(EPTimelineSemaphoreWait(sem, 5, 1000000000));
+    EXPECT_OK(GCTimelineSemaphoreWait(sem, 5, 1000000000));
     
-    EXPECT_OK(EPTimelineSemaphoreDestroy(sem));
+    EXPECT_OK(GCTimelineSemaphoreDestroy(sem));
 }
 
 // ============================================================================
@@ -347,12 +347,12 @@ TEST(timeline_semaphore_signal_wait) {
 // Helper to create descriptor set layout desc with flexible array
 struct DescSetLayoutDesc2 {
     uint32_t binding_count;
-    EPDescriptorBindingDesc bindings[2];
+    GCDescriptorBindingDesc bindings[2];
 };
 
 struct DescSetLayoutDesc1 {
     uint32_t binding_count;
-    EPDescriptorBindingDesc bindings[1];
+    GCDescriptorBindingDesc bindings[1];
 };
 
 TEST(descriptor_set_layout_create_destroy) {
@@ -361,23 +361,23 @@ TEST(descriptor_set_layout_create_destroy) {
         .bindings = {
             {
                 .binding = 0,
-                .type = EP_DESCRIPTOR_UNIFORM_BUFFER,
+                .type = GC_DESCRIPTOR_UNIFORM_BUFFER,
                 .count = 1,
-                .stages = EP_STAGE_VERTEX_BIT,
+                .stages = GC_STAGE_VERTEX_BIT,
             },
             {
                 .binding = 1,
-                .type = EP_DESCRIPTOR_SAMPLED_TEXTURE,
+                .type = GC_DESCRIPTOR_SAMPLED_TEXTURE,
                 .count = 1,
-                .stages = EP_STAGE_FRAGMENT_BIT,
+                .stages = GC_STAGE_FRAGMENT_BIT,
             },
         },
     };
     
-    EPDescriptorSetLayoutPtr layout = nullptr;
-    EXPECT_OK(EPDescriptorSetLayoutCreate(g_device, reinterpret_cast<EPDescriptorSetLayoutDesc*>(&desc), &layout));
+    GCDescriptorSetLayoutPtr layout = nullptr;
+    EXPECT_OK(GCDescriptorSetLayoutCreate(g_device, reinterpret_cast<GCDescriptorSetLayoutDesc*>(&desc), &layout));
     EXPECT_NOT_NULL(layout);
-    EXPECT_OK(EPDescriptorSetLayoutDestroy(layout));
+    EXPECT_OK(GCDescriptorSetLayoutDestroy(layout));
 }
 
 // ============================================================================
@@ -388,8 +388,8 @@ TEST(descriptor_set_layout_create_destroy) {
 struct PipelineLayoutDesc1 {
     uint32_t set_layout_count;
     uint32_t push_constant_size;
-    EPShaderStageFlags push_constant_stages;
-    EPDescriptorSetLayoutPtr set_layouts[1];
+    GCShaderStageFlags push_constant_stages;
+    GCDescriptorSetLayoutPtr set_layouts[1];
 };
 
 TEST(pipeline_layout_create_destroy) {
@@ -398,29 +398,29 @@ TEST(pipeline_layout_create_destroy) {
         .bindings = {
             {
                 .binding = 0,
-                .type = EP_DESCRIPTOR_UNIFORM_BUFFER,
+                .type = GC_DESCRIPTOR_UNIFORM_BUFFER,
                 .count = 1,
-                .stages = static_cast<EPShaderStageFlags>(EP_STAGE_VERTEX_BIT | EP_STAGE_FRAGMENT_BIT),
+                .stages = static_cast<GCShaderStageFlags>(GC_STAGE_VERTEX_BIT | GC_STAGE_FRAGMENT_BIT),
             },
         },
     };
     
-    EPDescriptorSetLayoutPtr set_layout = nullptr;
-    EXPECT_OK(EPDescriptorSetLayoutCreate(g_device, reinterpret_cast<EPDescriptorSetLayoutDesc*>(&set_desc), &set_layout));
+    GCDescriptorSetLayoutPtr set_layout = nullptr;
+    EXPECT_OK(GCDescriptorSetLayoutCreate(g_device, reinterpret_cast<GCDescriptorSetLayoutDesc*>(&set_desc), &set_layout));
     
     PipelineLayoutDesc1 desc{
         .set_layout_count = 1,
         .push_constant_size = 64,
-        .push_constant_stages = static_cast<EPShaderStageFlags>(EP_STAGE_VERTEX_BIT | EP_STAGE_FRAGMENT_BIT),
+        .push_constant_stages = static_cast<GCShaderStageFlags>(GC_STAGE_VERTEX_BIT | GC_STAGE_FRAGMENT_BIT),
         .set_layouts = {set_layout},
     };
     
-    EPPipelineLayoutPtr pipeline_layout = nullptr;
-    EXPECT_OK(EPPipelineLayoutCreate(g_device, reinterpret_cast<EPPipelineLayoutDesc*>(&desc), &pipeline_layout));
+    GCPipelineLayoutPtr pipeline_layout = nullptr;
+    EXPECT_OK(GCPipelineLayoutCreate(g_device, reinterpret_cast<GCPipelineLayoutDesc*>(&desc), &pipeline_layout));
     EXPECT_NOT_NULL(pipeline_layout);
     
-    EXPECT_OK(EPPipelineLayoutDestroy(pipeline_layout));
-    EXPECT_OK(EPDescriptorSetLayoutDestroy(set_layout));
+    EXPECT_OK(GCPipelineLayoutDestroy(pipeline_layout));
+    EXPECT_OK(GCDescriptorSetLayoutDestroy(set_layout));
 }
 
 // ============================================================================
@@ -433,36 +433,36 @@ TEST(descriptor_set_create_update_destroy) {
         .bindings = {
             {
                 .binding = 0,
-                .type = EP_DESCRIPTOR_UNIFORM_BUFFER,
+                .type = GC_DESCRIPTOR_UNIFORM_BUFFER,
                 .count = 1,
-                .stages = EP_STAGE_VERTEX_BIT,
+                .stages = GC_STAGE_VERTEX_BIT,
             },
         },
     };
     
-    EPDescriptorSetLayoutPtr layout = nullptr;
-    EXPECT_OK(EPDescriptorSetLayoutCreate(g_device, reinterpret_cast<EPDescriptorSetLayoutDesc*>(&layout_desc), &layout));
+    GCDescriptorSetLayoutPtr layout = nullptr;
+    EXPECT_OK(GCDescriptorSetLayoutCreate(g_device, reinterpret_cast<GCDescriptorSetLayoutDesc*>(&layout_desc), &layout));
     
-    EPDescriptorSetPtr set = nullptr;
-    EXPECT_OK(EPDescriptorSetCreate(g_device, layout, &set));
+    GCDescriptorSetPtr set = nullptr;
+    EXPECT_OK(GCDescriptorSetCreate(g_device, layout, &set));
     EXPECT_NOT_NULL(set);
     
     // Create a buffer to bind
-    EPBufferDesc buffer_desc{
+    GCBufferDesc buffer_desc{
         .size = 256,
-        .usage = EP_BUFFER_USAGE_UNIFORM_BIT,
+        .usage = GC_BUFFER_USAGE_UNIFORM_BIT,
         .host_visible = true,
     };
     
-    EPBufferPtr buffer = nullptr;
-    EXPECT_OK(EPBufferCreate(g_device, &buffer_desc, &buffer));
+    GCBufferPtr buffer = nullptr;
+    EXPECT_OK(GCBufferCreate(g_device, &buffer_desc, &buffer));
     
     // Update descriptor
-    EXPECT_OK(EPDescriptorSetUpdateBuffer(set, 0, buffer, 0, 256));
+    EXPECT_OK(GCDescriptorSetUpdateBuffer(set, 0, buffer, 0, 256));
     
-    EXPECT_OK(EPBufferDestroy(buffer));
-    EXPECT_OK(EPDescriptorSetDestroy(set));
-    EXPECT_OK(EPDescriptorSetLayoutDestroy(layout));
+    EXPECT_OK(GCBufferDestroy(buffer));
+    EXPECT_OK(GCDescriptorSetDestroy(set));
+    EXPECT_OK(GCDescriptorSetLayoutDestroy(layout));
 }
 
 // ============================================================================
@@ -470,17 +470,17 @@ TEST(descriptor_set_create_update_destroy) {
 // ============================================================================
 
 TEST(queue_submit_empty) {
-    EPQueuePtr queue = nullptr;
-    EXPECT_OK(EPDeviceGetQueue(g_device, EP_QUEUE_GRAPHICS, 0, &queue));
+    GCQueuePtr queue = nullptr;
+    EXPECT_OK(GCDeviceGetQueue(g_device, GC_QUEUE_GRAPHICS, 0, &queue));
     
-    EPCommandBufferPtr cmd = nullptr;
-    EXPECT_OK(EPCommandBufferCreate(g_device, &cmd));
+    GCCommandBufferPtr cmd = nullptr;
+    EXPECT_OK(GCCommandBufferCreate(g_device, &cmd));
     
-    EXPECT_OK(EPCommandBufferBegin(cmd));
-    EXPECT_OK(EPCommandBufferEnd(cmd));
+    EXPECT_OK(GCCommandBufferBegin(cmd));
+    EXPECT_OK(GCCommandBufferEnd(cmd));
     
-    EPCommandBufferPtr cmds[] = {cmd};
-    EPSubmitInfo submit{
+    GCCommandBufferPtr cmds[] = {cmd};
+    GCSubmitInfo submit{
         .command_buffers = cmds,
         .command_buffer_count = 1,
         .wait_semaphores = nullptr,
@@ -492,27 +492,27 @@ TEST(queue_submit_empty) {
         .fence = nullptr,
     };
     
-    EXPECT_OK(EPQueueSubmit(queue, &submit));
-    EXPECT_OK(EPQueueWaitIdle(queue));
+    EXPECT_OK(GCQueueSubmit(queue, &submit));
+    EXPECT_OK(GCQueueWaitIdle(queue));
     
-    EXPECT_OK(EPCommandBufferDestroy(cmd));
+    EXPECT_OK(GCCommandBufferDestroy(cmd));
 }
 
 TEST(queue_submit_with_fence) {
-    EPQueuePtr queue = nullptr;
-    EXPECT_OK(EPDeviceGetQueue(g_device, EP_QUEUE_GRAPHICS, 0, &queue));
+    GCQueuePtr queue = nullptr;
+    EXPECT_OK(GCDeviceGetQueue(g_device, GC_QUEUE_GRAPHICS, 0, &queue));
     
-    EPFencePtr fence = nullptr;
-    EXPECT_OK(EPFenceCreate(g_device, 0, &fence));
+    GCFencePtr fence = nullptr;
+    EXPECT_OK(GCFenceCreate(g_device, 0, &fence));
     
-    EPCommandBufferPtr cmd = nullptr;
-    EXPECT_OK(EPCommandBufferCreate(g_device, &cmd));
+    GCCommandBufferPtr cmd = nullptr;
+    EXPECT_OK(GCCommandBufferCreate(g_device, &cmd));
     
-    EXPECT_OK(EPCommandBufferBegin(cmd));
-    EXPECT_OK(EPCommandBufferEnd(cmd));
+    EXPECT_OK(GCCommandBufferBegin(cmd));
+    EXPECT_OK(GCCommandBufferEnd(cmd));
     
-    EPCommandBufferPtr cmds[] = {cmd};
-    EPSubmitInfo submit{
+    GCCommandBufferPtr cmds[] = {cmd};
+    GCSubmitInfo submit{
         .command_buffers = cmds,
         .command_buffer_count = 1,
         .wait_semaphores = nullptr,
@@ -524,11 +524,11 @@ TEST(queue_submit_with_fence) {
         .fence = fence,
     };
     
-    EXPECT_OK(EPQueueSubmit(queue, &submit));
-    EXPECT_OK(EPFenceWait(fence, 1, 5000000000)); // 5 second timeout
+    EXPECT_OK(GCQueueSubmit(queue, &submit));
+    EXPECT_OK(GCFenceWait(fence, 1, 5000000000)); // 5 second timeout
     
-    EXPECT_OK(EPCommandBufferDestroy(cmd));
-    EXPECT_OK(EPFenceDestroy(fence));
+    EXPECT_OK(GCCommandBufferDestroy(cmd));
+    EXPECT_OK(GCFenceDestroy(fence));
 }
 
 // ============================================================================
@@ -619,18 +619,18 @@ TEST(buffer_data_roundtrip) {
     const uint32_t num_values = 256;
     const uint64_t buffer_size = num_values * sizeof(uint32_t);
 
-    EPBufferDesc desc{
+    GCBufferDesc desc{
         .size = buffer_size,
-        .usage = EP_BUFFER_USAGE_STORAGE_BIT,
+        .usage = GC_BUFFER_USAGE_STORAGE_BIT,
         .host_visible = true,
     };
 
-    EPBufferPtr buffer = nullptr;
-    EXPECT_OK(EPBufferCreate(g_device, &desc, &buffer));
+    GCBufferPtr buffer = nullptr;
+    EXPECT_OK(GCBufferCreate(g_device, &desc, &buffer));
 
     // Map and write data
     void* mapped = nullptr;
-    EXPECT_OK(EPBufferMap(buffer, &mapped));
+    EXPECT_OK(GCBufferMap(buffer, &mapped));
     EXPECT_NOT_NULL(mapped);
 
     uint32_t* data = static_cast<uint32_t*>(mapped);
@@ -638,11 +638,11 @@ TEST(buffer_data_roundtrip) {
         data[i] = i * 3 + 7;  // Some non-trivial pattern
     }
 
-    EXPECT_OK(EPBufferUnmap(buffer));
+    EXPECT_OK(GCBufferUnmap(buffer));
 
     // Map again and verify data
     mapped = nullptr;
-    EXPECT_OK(EPBufferMap(buffer, &mapped));
+    EXPECT_OK(GCBufferMap(buffer, &mapped));
     data = static_cast<uint32_t*>(mapped);
 
     for (uint32_t i = 0; i < num_values; i++) {
@@ -653,8 +653,8 @@ TEST(buffer_data_roundtrip) {
         }
     }
 
-    EXPECT_OK(EPBufferUnmap(buffer));
-    EXPECT_OK(EPBufferDestroy(buffer));
+    EXPECT_OK(GCBufferUnmap(buffer));
+    EXPECT_OK(GCBufferDestroy(buffer));
 }
 
 TEST(buffer_copy_roundtrip) {
@@ -663,70 +663,70 @@ TEST(buffer_copy_roundtrip) {
     const uint64_t buffer_size = num_values * sizeof(uint32_t);
 
     // Create host-visible staging buffer
-    EPBufferDesc staging_desc{
+    GCBufferDesc staging_desc{
         .size = buffer_size,
-        .usage = static_cast<EPBufferUsageFlags>(EP_BUFFER_USAGE_TRANSFER_SRC_BIT | EP_BUFFER_USAGE_TRANSFER_DST_BIT),
+        .usage = static_cast<GCBufferUsageFlags>(GC_BUFFER_USAGE_TRANSFER_SRC_BIT | GC_BUFFER_USAGE_TRANSFER_DST_BIT),
         .host_visible = true,
     };
-    EPBufferPtr staging = nullptr;
-    EXPECT_OK(EPBufferCreate(g_device, &staging_desc, &staging));
+    GCBufferPtr staging = nullptr;
+    EXPECT_OK(GCBufferCreate(g_device, &staging_desc, &staging));
 
     // Create device-local buffer
-    EPBufferDesc device_desc{
+    GCBufferDesc device_desc{
         .size = buffer_size,
-        .usage = static_cast<EPBufferUsageFlags>(EP_BUFFER_USAGE_TRANSFER_SRC_BIT | EP_BUFFER_USAGE_TRANSFER_DST_BIT),
+        .usage = static_cast<GCBufferUsageFlags>(GC_BUFFER_USAGE_TRANSFER_SRC_BIT | GC_BUFFER_USAGE_TRANSFER_DST_BIT),
         .host_visible = false,
     };
-    EPBufferPtr device_buffer = nullptr;
-    EXPECT_OK(EPBufferCreate(g_device, &device_desc, &device_buffer));
+    GCBufferPtr device_buffer = nullptr;
+    EXPECT_OK(GCBufferCreate(g_device, &device_desc, &device_buffer));
 
     // Write test data to staging buffer
     void* mapped = nullptr;
-    EXPECT_OK(EPBufferMap(staging, &mapped));
+    EXPECT_OK(GCBufferMap(staging, &mapped));
     uint32_t* data = static_cast<uint32_t*>(mapped);
     for (uint32_t i = 0; i < num_values; i++) {
         data[i] = i * 5 + 13;
     }
-    EXPECT_OK(EPBufferUnmap(staging));
+    EXPECT_OK(GCBufferUnmap(staging));
 
     // Get queue and create command buffer
-    EPQueuePtr queue = nullptr;
-    EXPECT_OK(EPDeviceGetQueue(g_device, EP_QUEUE_GRAPHICS, 0, &queue));
+    GCQueuePtr queue = nullptr;
+    EXPECT_OK(GCDeviceGetQueue(g_device, GC_QUEUE_GRAPHICS, 0, &queue));
 
-    EPCommandBufferPtr cmd = nullptr;
-    EXPECT_OK(EPCommandBufferCreate(g_device, &cmd));
+    GCCommandBufferPtr cmd = nullptr;
+    EXPECT_OK(GCCommandBufferCreate(g_device, &cmd));
 
     // Record: copy staging -> device -> staging
-    EXPECT_OK(EPCommandBufferBegin(cmd));
-    EXPECT_OK(EPCommandCopyBuffer(cmd, staging, 0, device_buffer, 0, buffer_size));
+    EXPECT_OK(GCCommandBufferBegin(cmd));
+    EXPECT_OK(GCCommandCopyBuffer(cmd, staging, 0, device_buffer, 0, buffer_size));
 
     // Barrier: transfer write -> transfer read
-    EPBufferBarrier barrier1{
+    GCBufferBarrier barrier1{
         .buffer = device_buffer,
         .offset = 0,
         .size = buffer_size,
-        .src_access = EP_ACCESS_TRANSFER_WRITE_BIT,
-        .dst_access = EP_ACCESS_TRANSFER_READ_BIT,
+        .src_access = GC_ACCESS_TRANSFER_WRITE_BIT,
+        .dst_access = GC_ACCESS_TRANSFER_READ_BIT,
     };
-    EPBarrierDesc barrier_desc1{
-        .src_stage = EP_STAGE_TRANSFER_BIT,
-        .dst_stage = EP_STAGE_TRANSFER_BIT,
+    GCBarrierDesc barrier_desc1{
+        .src_stage = GC_STAGE_TRANSFER_BIT,
+        .dst_stage = GC_STAGE_TRANSFER_BIT,
         .buffer_barriers = &barrier1,
         .buffer_barrier_count = 1,
         .texture_barriers = nullptr,
         .texture_barrier_count = 0,
     };
-    EXPECT_OK(EPCommandResourceBarrier(cmd, &barrier_desc1));
+    EXPECT_OK(GCCommandResourceBarrier(cmd, &barrier_desc1));
 
-    EXPECT_OK(EPCommandCopyBuffer(cmd, device_buffer, 0, staging, 0, buffer_size));
-    EXPECT_OK(EPCommandBufferEnd(cmd));
+    EXPECT_OK(GCCommandCopyBuffer(cmd, device_buffer, 0, staging, 0, buffer_size));
+    EXPECT_OK(GCCommandBufferEnd(cmd));
 
     // Submit and wait
-    EPFencePtr fence = nullptr;
-    EXPECT_OK(EPFenceCreate(g_device, 0, &fence));
+    GCFencePtr fence = nullptr;
+    EXPECT_OK(GCFenceCreate(g_device, 0, &fence));
 
-    EPCommandBufferPtr cmds[] = {cmd};
-    EPSubmitInfo submit{
+    GCCommandBufferPtr cmds[] = {cmd};
+    GCSubmitInfo submit{
         .command_buffers = cmds,
         .command_buffer_count = 1,
         .wait_semaphores = nullptr,
@@ -737,11 +737,11 @@ TEST(buffer_copy_roundtrip) {
         .signal_count = 0,
         .fence = fence,
     };
-    EXPECT_OK(EPQueueSubmit(queue, &submit));
-    EXPECT_OK(EPFenceWait(fence, 1, 5000000000));
+    EXPECT_OK(GCQueueSubmit(queue, &submit));
+    EXPECT_OK(GCFenceWait(fence, 1, 5000000000));
 
     // Read back and verify
-    EXPECT_OK(EPBufferMap(staging, &mapped));
+    EXPECT_OK(GCBufferMap(staging, &mapped));
     data = static_cast<uint32_t*>(mapped);
     for (uint32_t i = 0; i < num_values; i++) {
         uint32_t expected = i * 5 + 13;
@@ -750,13 +750,13 @@ TEST(buffer_copy_roundtrip) {
             abort();
         }
     }
-    EXPECT_OK(EPBufferUnmap(staging));
+    EXPECT_OK(GCBufferUnmap(staging));
 
     // Cleanup
-    EXPECT_OK(EPFenceDestroy(fence));
-    EXPECT_OK(EPCommandBufferDestroy(cmd));
-    EXPECT_OK(EPBufferDestroy(device_buffer));
-    EXPECT_OK(EPBufferDestroy(staging));
+    EXPECT_OK(GCFenceDestroy(fence));
+    EXPECT_OK(GCCommandBufferDestroy(cmd));
+    EXPECT_OK(GCBufferDestroy(device_buffer));
+    EXPECT_OK(GCBufferDestroy(staging));
 }
 
 TEST(compute_shader_execution) {
@@ -765,32 +765,32 @@ TEST(compute_shader_execution) {
     const uint64_t buffer_size = num_values * sizeof(uint32_t);
 
     // Create host-visible storage buffer
-    EPBufferDesc buffer_desc{
+    GCBufferDesc buffer_desc{
         .size = buffer_size,
-        .usage = EP_BUFFER_USAGE_STORAGE_BIT,
+        .usage = GC_BUFFER_USAGE_STORAGE_BIT,
         .host_visible = true,
     };
-    EPBufferPtr buffer = nullptr;
-    EXPECT_OK(EPBufferCreate(g_device, &buffer_desc, &buffer));
+    GCBufferPtr buffer = nullptr;
+    EXPECT_OK(GCBufferCreate(g_device, &buffer_desc, &buffer));
 
     // Write initial data: 1, 2, 3, ...
     void* mapped = nullptr;
-    EXPECT_OK(EPBufferMap(buffer, &mapped));
+    EXPECT_OK(GCBufferMap(buffer, &mapped));
     uint32_t* data = static_cast<uint32_t*>(mapped);
     for (uint32_t i = 0; i < num_values; i++) {
         data[i] = i + 1;
     }
-    EXPECT_OK(EPBufferUnmap(buffer));
+    EXPECT_OK(GCBufferUnmap(buffer));
 
     // Create shader library from SPIR-V
-    EPShaderLibraryDesc shader_desc{
-        .format = EP_SHADER_SPIRV,
+    GCShaderLibraryDesc shader_desc{
+        .format = GC_SHADER_SPIRV,
         .data = multiply_shader_spirv,
         .size = multiply_shader_spirv_size,
         .label = "multiply_shader",
     };
-    EPShaderLibraryPtr shader = nullptr;
-    EXPECT_OK(EPShaderLibraryCreate(g_device, &shader_desc, &shader));
+    GCShaderLibraryPtr shader = nullptr;
+    EXPECT_OK(GCShaderLibraryCreate(g_device, &shader_desc, &shader));
 
     // Create descriptor set layout with one storage buffer binding
     DescSetLayoutDesc1 layout_desc{
@@ -798,97 +798,97 @@ TEST(compute_shader_execution) {
         .bindings = {
             {
                 .binding = 0,
-                .type = EP_DESCRIPTOR_STORAGE_BUFFER,
+                .type = GC_DESCRIPTOR_STORAGE_BUFFER,
                 .count = 1,
-                .stages = EP_STAGE_COMPUTE_BIT,
+                .stages = GC_STAGE_COMPUTE_BIT,
             },
         },
     };
-    EPDescriptorSetLayoutPtr set_layout = nullptr;
-    EXPECT_OK(EPDescriptorSetLayoutCreate(g_device, reinterpret_cast<EPDescriptorSetLayoutDesc*>(&layout_desc), &set_layout));
+    GCDescriptorSetLayoutPtr set_layout = nullptr;
+    EXPECT_OK(GCDescriptorSetLayoutCreate(g_device, reinterpret_cast<GCDescriptorSetLayoutDesc*>(&layout_desc), &set_layout));
 
     // Create pipeline layout
     PipelineLayoutDesc1 pipe_layout_desc{
         .set_layout_count = 1,
         .push_constant_size = 0,
-        .push_constant_stages = static_cast<EPShaderStageFlags>(0),
+        .push_constant_stages = static_cast<GCShaderStageFlags>(0),
         .set_layouts = {set_layout},
     };
-    EPPipelineLayoutPtr pipeline_layout = nullptr;
-    EXPECT_OK(EPPipelineLayoutCreate(g_device, reinterpret_cast<EPPipelineLayoutDesc*>(&pipe_layout_desc), &pipeline_layout));
+    GCPipelineLayoutPtr pipeline_layout = nullptr;
+    EXPECT_OK(GCPipelineLayoutCreate(g_device, reinterpret_cast<GCPipelineLayoutDesc*>(&pipe_layout_desc), &pipeline_layout));
 
     // Create compute pipeline
-    EPComputePipelineDesc compute_desc{
+    GCComputePipelineDesc compute_desc{
         .library = shader,
         .entry = "main",
         .layout = pipeline_layout,
     };
-    EPComputePipelinePtr pipeline = nullptr;
-    EXPECT_OK(EPComputePipelineCreate(g_device, &compute_desc, &pipeline));
+    GCComputePipelinePtr pipeline = nullptr;
+    EXPECT_OK(GCComputePipelineCreate(g_device, &compute_desc, &pipeline));
 
     // Create descriptor set and bind buffer
-    EPDescriptorSetPtr desc_set = nullptr;
-    EXPECT_OK(EPDescriptorSetCreate(g_device, set_layout, &desc_set));
-    EXPECT_OK(EPDescriptorSetUpdateBuffer(desc_set, 0, buffer, 0, buffer_size));
+    GCDescriptorSetPtr desc_set = nullptr;
+    EXPECT_OK(GCDescriptorSetCreate(g_device, set_layout, &desc_set));
+    EXPECT_OK(GCDescriptorSetUpdateBuffer(desc_set, 0, buffer, 0, buffer_size));
 
     // Get queue and create command buffer
-    EPQueuePtr queue = nullptr;
-    EXPECT_OK(EPDeviceGetQueue(g_device, EP_QUEUE_COMPUTE, 0, &queue));
+    GCQueuePtr queue = nullptr;
+    EXPECT_OK(GCDeviceGetQueue(g_device, GC_QUEUE_COMPUTE, 0, &queue));
 
-    EPCommandBufferPtr cmd = nullptr;
-    EXPECT_OK(EPCommandBufferCreate(g_device, &cmd));
+    GCCommandBufferPtr cmd = nullptr;
+    EXPECT_OK(GCCommandBufferCreate(g_device, &cmd));
 
     // Record compute dispatch
-    EXPECT_OK(EPCommandBufferBegin(cmd));
+    EXPECT_OK(GCCommandBufferBegin(cmd));
 
     // Barrier: host write -> shader read
-    EPBufferBarrier barrier_pre{
+    GCBufferBarrier barrier_pre{
         .buffer = buffer,
         .offset = 0,
         .size = buffer_size,
-        .src_access = EP_ACCESS_HOST_WRITE_BIT,
-        .dst_access = EP_ACCESS_SHADER_READ_BIT,
+        .src_access = GC_ACCESS_HOST_WRITE_BIT,
+        .dst_access = GC_ACCESS_SHADER_READ_BIT,
     };
-    EPBarrierDesc barrier_desc_pre{
-        .src_stage = EP_STAGE_TOP_OF_PIPE_BIT,
-        .dst_stage = EP_STAGE_COMPUTE_SHADER_BIT,
+    GCBarrierDesc barrier_desc_pre{
+        .src_stage = GC_STAGE_TOP_OF_PIPE_BIT,
+        .dst_stage = GC_STAGE_COMPUTE_SHADER_BIT,
         .buffer_barriers = &barrier_pre,
         .buffer_barrier_count = 1,
         .texture_barriers = nullptr,
         .texture_barrier_count = 0,
     };
-    EXPECT_OK(EPCommandResourceBarrier(cmd, &barrier_desc_pre));
+    EXPECT_OK(GCCommandResourceBarrier(cmd, &barrier_desc_pre));
 
-    EXPECT_OK(EPCommandBindComputePipeline(cmd, pipeline));
-    EXPECT_OK(EPCommandBindDescriptorSet(cmd, pipeline_layout, 0, desc_set));
-    EXPECT_OK(EPCommandDispatch(cmd, 4, 1, 1));  // 4 * 64 = 256 invocations
+    EXPECT_OK(GCCommandBindComputePipeline(cmd, pipeline));
+    EXPECT_OK(GCCommandBindDescriptorSet(cmd, pipeline_layout, 0, desc_set));
+    EXPECT_OK(GCCommandDispatch(cmd, 4, 1, 1));  // 4 * 64 = 256 invocations
 
     // Barrier: shader write -> host read
-    EPBufferBarrier barrier_post{
+    GCBufferBarrier barrier_post{
         .buffer = buffer,
         .offset = 0,
         .size = buffer_size,
-        .src_access = EP_ACCESS_SHADER_WRITE_BIT,
-        .dst_access = EP_ACCESS_HOST_READ_BIT,
+        .src_access = GC_ACCESS_SHADER_WRITE_BIT,
+        .dst_access = GC_ACCESS_HOST_READ_BIT,
     };
-    EPBarrierDesc barrier_desc_post{
-        .src_stage = EP_STAGE_COMPUTE_SHADER_BIT,
-        .dst_stage = EP_STAGE_BOTTOM_OF_PIPE_BIT,
+    GCBarrierDesc barrier_desc_post{
+        .src_stage = GC_STAGE_COMPUTE_SHADER_BIT,
+        .dst_stage = GC_STAGE_BOTTOM_OF_PIPE_BIT,
         .buffer_barriers = &barrier_post,
         .buffer_barrier_count = 1,
         .texture_barriers = nullptr,
         .texture_barrier_count = 0,
     };
-    EXPECT_OK(EPCommandResourceBarrier(cmd, &barrier_desc_post));
+    EXPECT_OK(GCCommandResourceBarrier(cmd, &barrier_desc_post));
 
-    EXPECT_OK(EPCommandBufferEnd(cmd));
+    EXPECT_OK(GCCommandBufferEnd(cmd));
 
     // Submit and wait
-    EPFencePtr fence = nullptr;
-    EXPECT_OK(EPFenceCreate(g_device, 0, &fence));
+    GCFencePtr fence = nullptr;
+    EXPECT_OK(GCFenceCreate(g_device, 0, &fence));
 
-    EPCommandBufferPtr cmds[] = {cmd};
-    EPSubmitInfo submit{
+    GCCommandBufferPtr cmds[] = {cmd};
+    GCSubmitInfo submit{
         .command_buffers = cmds,
         .command_buffer_count = 1,
         .wait_semaphores = nullptr,
@@ -899,11 +899,11 @@ TEST(compute_shader_execution) {
         .signal_count = 0,
         .fence = fence,
     };
-    EXPECT_OK(EPQueueSubmit(queue, &submit));
-    EXPECT_OK(EPFenceWait(fence, 1, 5000000000));
+    EXPECT_OK(GCQueueSubmit(queue, &submit));
+    EXPECT_OK(GCFenceWait(fence, 1, 5000000000));
 
     // Read back and verify: each value should be doubled
-    EXPECT_OK(EPBufferMap(buffer, &mapped));
+    EXPECT_OK(GCBufferMap(buffer, &mapped));
     data = static_cast<uint32_t*>(mapped);
     for (uint32_t i = 0; i < num_values; i++) {
         uint32_t expected = (i + 1) * 2;
@@ -912,19 +912,19 @@ TEST(compute_shader_execution) {
             abort();
         }
     }
-    EXPECT_OK(EPBufferUnmap(buffer));
+    EXPECT_OK(GCBufferUnmap(buffer));
 
     printf("(verified %u computed values) ", num_values);
 
     // Cleanup
-    EXPECT_OK(EPFenceDestroy(fence));
-    EXPECT_OK(EPCommandBufferDestroy(cmd));
-    EXPECT_OK(EPComputePipelineDestroy(pipeline));
-    EXPECT_OK(EPDescriptorSetDestroy(desc_set));
-    EXPECT_OK(EPPipelineLayoutDestroy(pipeline_layout));
-    EXPECT_OK(EPDescriptorSetLayoutDestroy(set_layout));
-    EXPECT_OK(EPShaderLibraryDestroy(shader));
-    EXPECT_OK(EPBufferDestroy(buffer));
+    EXPECT_OK(GCFenceDestroy(fence));
+    EXPECT_OK(GCCommandBufferDestroy(cmd));
+    EXPECT_OK(GCComputePipelineDestroy(pipeline));
+    EXPECT_OK(GCDescriptorSetDestroy(desc_set));
+    EXPECT_OK(GCPipelineLayoutDestroy(pipeline_layout));
+    EXPECT_OK(GCDescriptorSetLayoutDestroy(set_layout));
+    EXPECT_OK(GCShaderLibraryDestroy(shader));
+    EXPECT_OK(GCBufferDestroy(buffer));
 }
 
 // ============================================================================
@@ -934,52 +934,52 @@ TEST(compute_shader_execution) {
 void setup_global_state() {
     printf("Setting up global test state...\n");
     
-    EXPECT_OK(EPPlatformCreate(&g_platform));
+    EXPECT_OK(GCPlatformCreate(&g_platform));
     
-    EPInstanceDesc instance_desc{
-        .enable_backends = EP_BACKEND_VULKAN_BIT,
+    GCInstanceDesc instance_desc{
+        .enable_backends = GC_BACKEND_VULKAN_BIT,
         .enable_validation = false,
         .enable_debug_names = false,
     };
-    EXPECT_OK(EPInstanceCreate(&instance_desc, &g_instance));
+    EXPECT_OK(GCInstanceCreate(&instance_desc, &g_instance));
     
     uint32_t adapter_count = 1;
-    EXPECT_OK(EPInstanceEnumerateAdapters(g_instance, &adapter_count, &g_adapter));
+    EXPECT_OK(GCInstanceEnumerateAdapters(g_instance, &adapter_count, &g_adapter));
     
     if (adapter_count == 0) {
         printf("SKIP: No Vulkan adapters found; tests will not run.\n");
         exit(77);  // 77 is the autotools convention for skipped tests
     }
     
-    EPAdapterProperties props{};
-    EXPECT_OK(EPAdapterGetProperties(g_adapter, &props));
+    GCAdapterProperties props{};
+    EXPECT_OK(GCAdapterGetProperties(g_adapter, &props));
     printf("Using adapter: %s\n", props.name);
     
-    EPDeviceDesc device_desc{
-        .required_features = EP_FEATURE_COMPUTE_BIT,
-        .optional_features = static_cast<EPFeatureFlags>(
-            EP_FEATURE_TIMELINE_SEMAPHORE_BIT |
-            EP_FEATURE_MESH_SHADER_BIT |
-            EP_FEATURE_RAY_TRACING_BIT
+    GCDeviceDesc device_desc{
+        .required_features = GC_FEATURE_COMPUTE_BIT,
+        .optional_features = static_cast<GCFeatureFlags>(
+            GC_FEATURE_TIMELINE_SEMAPHORE_BIT |
+            GC_FEATURE_MESH_SHADER_BIT |
+            GC_FEATURE_RAY_TRACING_BIT
         ),
         .enable_validation = false,
         .enable_debug_names = false,
     };
-    EXPECT_OK(EPDeviceCreate(g_adapter, &device_desc, &g_device));
+    EXPECT_OK(GCDeviceCreate(g_adapter, &device_desc, &g_device));
     
     printf("Global state ready.\n\n");
 }
 
 void teardown_global_state() {
     printf("\nTearing down global test state...\n");
-    EXPECT_OK(EPDeviceDestroy(g_device));
-    EXPECT_OK(EPInstanceDestroy(g_instance));
-    EXPECT_OK(EPPlatformDestroy(g_platform));
+    EXPECT_OK(GCDeviceDestroy(g_device));
+    EXPECT_OK(GCInstanceDestroy(g_instance));
+    EXPECT_OK(GCPlatformDestroy(g_platform));
     printf("Done.\n");
 }
 
 int main() {
-    printf("=== Enthrall Vulkan Backend Tests ===\n\n");
+    printf("=== Gcraft Vulkan Backend Tests ===\n\n");
     
     setup_global_state();
     
