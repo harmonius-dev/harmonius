@@ -30,9 +30,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Zig
-        uses: mlugg/setup-zig@v1
-        with:
-          version: 0.15.2
+        run: |
+          curl -L https://ziglang.org/download/0.15.2/zig-aarch64-macos-0.15.2.tar.xz -o zig.tar.xz
+          tar xf zig.tar.xz
+          echo "$PWD/zig-aarch64-macos-0.15.2" >> $GITHUB_PATH
 
       - name: Build and run Metal tests
         run: zig build test-metal
