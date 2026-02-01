@@ -165,6 +165,10 @@ EPError EPCommandDispatchRays(EPCommandBufferPtr command_buffer,
                               uint32_t width, uint32_t height, uint32_t depth);
 EPError EPCommandResourceBarrier(EPCommandBufferPtr command_buffer,
                                  const EPBarrierDesc *desc);
+EPError EPCommandCopyBuffer(EPCommandBufferPtr command_buffer,
+                            EPBufferPtr src, uint64_t src_offset,
+                            EPBufferPtr dst, uint64_t dst_offset,
+                            uint64_t size);
 
 #ifdef __cplusplus
 }

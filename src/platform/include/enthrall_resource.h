@@ -120,6 +120,8 @@ typedef struct EPShaderLibraryDesc {
 EPError EPBufferCreate(EPDevicePtr device, const EPBufferDesc *desc,
                        EPBufferPtr *out_buffer);
 EPError EPBufferDestroy(EPBufferPtr buffer);
+EPError EPBufferMap(EPBufferPtr buffer, void **out_data);
+EPError EPBufferUnmap(EPBufferPtr buffer);
 
 EPError EPTextureCreate(EPDevicePtr device, const EPTextureDesc *desc,
                         EPTexturePtr *out_texture);
