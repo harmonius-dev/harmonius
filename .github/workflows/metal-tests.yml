@@ -1,0 +1,41 @@
+name: Metal Backend Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/platform/metal/**'
+      - 'src/platform/include/**'
+      - 'tests/test_metal_integration.m'
+      - 'build.zig'
+      - 'build.zig.zon'
+      - '.github/workflows/metal-tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/platform/metal/**'
+      - 'src/platform/include/**'
+      - 'tests/test_metal_integration.m'
+      - 'build.zig'
+      - 'build.zig.zon'
+      - '.github/workflows/metal-tests.yml'
+
+jobs:
+  test-metal:
+    name: Metal Integration Tests
+    runs-on: macos-26-xlarge
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.13.0
+
+      - name: Build and run Metal tests
+        run: zig build test-metal
+
+      - name: Build library
+        run: zig build

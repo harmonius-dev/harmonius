@@ -34,7 +34,7 @@ pub fn build(b: *std.Build) void {
                 "enthrall_resource.m",
                 "enthrall_sync.m",
             },
-            .language = .objective_c,
+            .flags = &.{"-fno-objc-arc"},
         });
 
         metal_module.linkFramework("Metal", .{});
@@ -131,17 +131,32 @@ pub fn build(b: *std.Build) void {
     }
 
     // =========================================================================
-    // Zig unit tests (runs tests from the Metal module on macOS)
+    // Zig unit tests
+    // =========================================================================
+    const root_mod = b.createModule(.{
+        .root_source_file = b.path("src/root.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const root_mod_tests = b.addTest(.{ .root_module = root_mod });
+    const run_root_mod_tests = b.addRunArtifact(root_mod_tests);
+    const test_step = b.step("test", "Run tests");
+    test_step.dependOn(&run_root_mod_tests.step);
+
+    // =========================================================================
+    // Metal integration tests (macOS/iOS)
     // =========================================================================
     if (target.result.os.tag.isDarwin()) {
-        const test_module = b.addModule("test_mod", .{
-            .root_source_file = b.path("src/root.zig"),
+        const metal_test_mod = b.createModule(.{
             .target = target,
             .optimize = optimize,
         });
-        test_module.addIncludePath(b.path("src/platform/include"));
-        test_module.addIncludePath(b.path("src/platform/metal"));
-        test_module.addCSourceFiles(.{
+
+        metal_test_mod.addIncludePath(b.path("src/platform/include"));
+        metal_test_mod.addIncludePath(b.path("src/platform/metal"));
+
+        // Add Metal backend source files (uses manual retain/release, not ARC)
+        metal_test_mod.addCSourceFiles(.{
             .root = b.path("src/platform/metal"),
             .files = &.{
                 "enthrall_command.m",
@@ -153,17 +168,39 @@ pub fn build(b: *std.Build) void {
                 "enthrall_resource.m",
                 "enthrall_sync.m",
             },
-            .language = .objective_c,
+            .flags = &.{"-fno-objc-arc"},
         });
 
-        test_module.linkFramework("Metal", .{});
-        test_module.linkFramework("Foundation", .{});
-        test_module.linkFramework("QuartzCore", .{});
+        // Add test file
+        metal_test_mod.addCSourceFiles(.{
+            .root = b.path("tests"),
+            .files = &.{"test_metal_integration.m"},
+            .flags = &.{"-fno-objc-arc"},
+        });
 
-        const unit_tests = b.addTest(.{ .root_module = test_module });
-        const run_unit_tests = b.addRunArtifact(unit_tests);
-        const test_step = b.step("test", "Run Zig unit tests");
-        test_step.dependOn(&run_unit_tests.step);
+        // Link frameworks
+        metal_test_mod.linkFramework("Metal", .{});
+        metal_test_mod.linkFramework("Foundation", .{});
+        metal_test_mod.linkFramework("QuartzCore", .{});
+        if (target.result.os.tag == .macos) {
+            metal_test_mod.linkFramework("AppKit", .{});
+        } else {
+            metal_test_mod.linkFramework("UIKit", .{});
+        }
+        metal_test_mod.linkSystemLibrary("c", .{});
+
+        const metal_test_exe = b.addExecutable(.{
+            .name = "test_metal_integration",
+            .root_module = metal_test_mod,
+        });
+
+        b.installArtifact(metal_test_exe);
+
+        const run_metal_tests = b.addRunArtifact(metal_test_exe);
+        run_metal_tests.step.dependOn(b.getInstallStep());
+
+        const test_metal_step = b.step("test-metal", "Run Metal integration tests");
+        test_metal_step.dependOn(&run_metal_tests.step);
     }
 
     // =========================================================================
