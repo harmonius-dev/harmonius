@@ -29,7 +29,7 @@ impl TestVulkanContext {
     /// Try to create a Vulkan test context. Returns `None` if Vulkan is
     /// unavailable (no driver, no GPU, etc.).
     pub fn try_new() -> Option<Self> {
-        // Load Vulkan entry point.
+        // SAFETY: Test harness. Vulkan loader contract; entry is used to create instance only.
         let entry = unsafe { ash::Entry::load() }.ok()?;
 
         // Create instance with Vulkan 1.3.
@@ -42,16 +42,20 @@ impl TestVulkanContext {
 
         let create_info = vk::InstanceCreateInfo::default().application_info(&app_info);
 
+        // SAFETY: Test harness. Valid create_info; instance destroyed on drop or on error path.
         let instance = unsafe { entry.create_instance(&create_info, None) }.ok()?;
 
         // Pick first physical device that supports Vulkan 1.3.
+        // SAFETY: Test harness. Instance valid; enumerate returns owned handles.
         let physical_devices = unsafe { instance.enumerate_physical_devices() }.ok()?;
         if physical_devices.is_empty() {
+            // SAFETY: Instance valid; cleanup on early return.
             unsafe { instance.destroy_instance(None) };
             return None;
         }
 
         // Prefer a discrete GPU, fall back to any 1.3-capable device.
+        // SAFETY: Test harness. Instance and pd valid; read-only property query.
         let physical_device = physical_devices
             .iter()
             .find(|&&pd| {
@@ -70,12 +74,14 @@ impl TestVulkanContext {
         let physical_device = match physical_device {
             Some(pd) => pd,
             None => {
+                // SAFETY: Instance valid; cleanup on early return.
                 unsafe { instance.destroy_instance(None) };
                 return None;
             }
         };
 
         // Find graphics queue family.
+        // SAFETY: Test harness. Instance and physical_device valid; read-only query.
         let queue_families =
             unsafe { instance.get_physical_device_queue_family_properties(physical_device) };
 
@@ -88,6 +94,7 @@ impl TestVulkanContext {
         let graphics_family = match graphics_family {
             Some(f) => f,
             None => {
+                // SAFETY: Instance valid; cleanup on early return.
                 unsafe { instance.destroy_instance(None) };
                 return None;
             }
@@ -108,23 +115,28 @@ impl TestVulkanContext {
             .queue_create_infos(&queue_create_infos)
             .push_next(&mut features_13);
 
+        // SAFETY: Test harness. Valid device_create_info; device destroyed on error or drop.
         let device = match unsafe {
             instance.create_device(physical_device, &device_create_info, None)
         } {
             Ok(d) => d,
             Err(_) => {
+                // SAFETY: Instance valid; cleanup on early return.
                 unsafe { instance.destroy_instance(None) };
                 return None;
             }
         };
 
+        // SAFETY: Test harness. Device valid; graphics_family from enumerate; queue index 0.
         let graphics_queue = unsafe { device.get_device_queue(graphics_family, 0) };
 
         // Create VMA allocator.
+        // SAFETY: Test harness. instance, device, physical_device valid (S6-style); allocator destroyed before device in Drop.
         let allocator_ci = vk_mem::AllocatorCreateInfo::new(&instance, &device, physical_device);
         let allocator = match unsafe { vk_mem::Allocator::new(allocator_ci) } {
             Ok(a) => a,
             Err(_) => {
+                // SAFETY: Device and instance valid; cleanup on early return (allocator not created).
                 unsafe {
                     device.destroy_device(None);
                     instance.destroy_instance(None);
@@ -147,6 +159,7 @@ impl TestVulkanContext {
 
 impl Drop for TestVulkanContext {
     fn drop(&mut self) {
+        // SAFETY: Test harness. Device/instance/allocator valid; destroy order: idle → allocator → device → instance (no use-after-free).
         unsafe {
             self.device.device_wait_idle().ok();
             // Drop the allocator first (before destroying the device).

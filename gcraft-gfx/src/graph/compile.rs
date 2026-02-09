@@ -24,7 +24,7 @@ use crate::graph::pass::{
     AttachmentInfo, PassCondition, PassNode, QueueType, RecordedCommand, ResourceAccess,
 };
 use crate::graph::resource::{
-    BufferInfo, FlagInfo, GraphError, ImageInfo, ResourceKind,
+    BufferInfo, BufferHandle, FlagInfo, GraphError, ImageInfo, ResourceKind,
 };
 
 // ---------------------------------------------------------------------------
@@ -132,6 +132,13 @@ pub(crate) fn compile(
     // -- Step 1: Splice draw slot commands -----------------------------------
 
     let mut all_commands = splice_draw_slots(passes, &active, draw_slot_commands)?;
+
+    // -- Deferred validation (command-resource, queue, usage, duplicate writes)
+
+    validate_command_resources(passes, &active, &all_commands, &pass_accesses, buffers)?;
+    validate_command_queue(passes, &active, &all_commands)?;
+    validate_usage_flags(&pass_accesses, passes, &active, images, buffers)?;
+    validate_duplicate_writes(&pass_accesses, passes, &active, images, buffers)?;
 
     // -- Step 2: Build DAG edges ---------------------------------------------
 
@@ -859,6 +866,298 @@ fn build_batches(pass_order: &[usize], passes: &[PassNode]) -> Vec<SubmissionBat
 // Utility helpers
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Deferred validation (GraphError)
+// ---------------------------------------------------------------------------
+
+/// Required access kind for a buffer referenced by a command.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum BufferAccessKind {
+    Read,
+    ReadIndirect,
+    Write,
+}
+
+/// Collect all buffer handles and their required access from a command list.
+fn buffers_used_by_commands(commands: &[RecordedCommand]) -> Vec<(BufferHandle, BufferAccessKind)> {
+    let mut out = Vec::new();
+    for cmd in commands {
+        match cmd {
+            RecordedCommand::DrawIndirect { buffer, .. }
+            | RecordedCommand::DrawIndexedIndirect { buffer, .. } => {
+                out.push((*buffer, BufferAccessKind::ReadIndirect));
+            }
+            RecordedCommand::DrawIndirectCount {
+                command_buffer,
+                count_buffer,
+                ..
+            } => {
+                out.push((*command_buffer, BufferAccessKind::ReadIndirect));
+                out.push((*count_buffer, BufferAccessKind::ReadIndirect));
+            }
+            RecordedCommand::DrawIndexedIndirectCount {
+                command_buffer,
+                count_buffer,
+                ..
+            } => {
+                out.push((*command_buffer, BufferAccessKind::ReadIndirect));
+                out.push((*count_buffer, BufferAccessKind::ReadIndirect));
+            }
+            RecordedCommand::DispatchIndirect { buffer, .. } => {
+                out.push((*buffer, BufferAccessKind::Read));
+            }
+            RecordedCommand::FillBuffer { buffer, .. } => {
+                out.push((*buffer, BufferAccessKind::Write));
+            }
+            RecordedCommand::CopyBuffer { src, dst, .. } => {
+                out.push((*src, BufferAccessKind::Read));
+                out.push((*dst, BufferAccessKind::Write));
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
+/// Command-resource consistency: every buffer used in a pass's commands must
+/// be declared in the pass's resource accesses with the correct read/write.
+fn validate_command_resources(
+    passes: &[PassNode],
+    active: &[bool],
+    all_commands: &[Vec<RecordedCommand>],
+    pass_accesses: &[SmallVec<[ResourceAccess; 8]>],
+    buffers: &[BufferInfo],
+) -> Result<(), GraphError> {
+    let num_buffers = buffers.len() as u16;
+    for (i, pass) in passes.iter().enumerate() {
+        if !active[i] {
+            continue;
+        }
+        let commands = &all_commands[i];
+        let accesses = &pass_accesses[i];
+        for (handle, required) in buffers_used_by_commands(commands) {
+            if handle.index >= num_buffers {
+                return Err(GraphError::UndeclaredCommandResource {
+                    pass: pass.name,
+                    resource: format!("buffer#{}", handle.index),
+                });
+            }
+            let declared_write = accesses
+                .iter()
+                .any(|a| !access_is_image(a) && a.resource_index == handle.index && a.version_write.is_some());
+            let declared_read = accesses
+                .iter()
+                .any(|a| !access_is_image(a) && a.resource_index == handle.index && a.version_read.is_some());
+            let ok = match required {
+                BufferAccessKind::Write => declared_write,
+                BufferAccessKind::Read | BufferAccessKind::ReadIndirect => declared_read || declared_write,
+            };
+            if !ok {
+                return Err(GraphError::UndeclaredCommandResource {
+                    pass: pass.name,
+                    resource: buffers[handle.index as usize].resource.name.to_string(),
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Classify a command as graphics, compute, transfer, or state-only.
+fn command_queue_class(cmd: &RecordedCommand) -> Option<QueueType> {
+    use RecordedCommand::*;
+    match cmd {
+        Draw { .. } | DrawIndexed { .. }
+        | DrawIndirect { .. } | DrawIndexedIndirect { .. }
+        | DrawIndirectCount { .. } | DrawIndexedIndirectCount { .. }
+        | BindGraphicsPipeline(_) | SetViewport { .. } | SetScissor { .. } => Some(QueueType::Graphics),
+        Dispatch { .. } | DispatchIndirect { .. } | BindComputePipeline(_) => Some(QueueType::AsyncCompute),
+        FillBuffer { .. } | CopyBuffer { .. } => Some(QueueType::Transfer),
+        BindDescriptorSets { .. } | BindVertexBuffers { .. } | BindIndexBuffer { .. }
+        | PushConstants { .. } | DrawSlotPlaceholder(_) => None, // state_bind
+    }
+}
+
+/// Command-queue compatibility: transfer pass only transfer+state_bind;
+/// compute only compute+transfer+state_bind; graphics all.
+fn validate_command_queue(
+    passes: &[PassNode],
+    active: &[bool],
+    all_commands: &[Vec<RecordedCommand>],
+) -> Result<(), GraphError> {
+    for (i, pass) in passes.iter().enumerate() {
+        if !active[i] {
+            continue;
+        }
+        let commands = &all_commands[i];
+        for cmd in commands {
+            let Some(cmd_queue) = command_queue_class(cmd) else { continue };
+            let allowed = match pass.queue {
+                QueueType::Transfer => cmd_queue == QueueType::Transfer,
+                QueueType::AsyncCompute => {
+                    cmd_queue == QueueType::AsyncCompute || cmd_queue == QueueType::Transfer
+                }
+                QueueType::Graphics => true,
+            };
+            if !allowed {
+                return Err(GraphError::CommandQueueMismatch {
+                    pass: pass.name,
+                    queue: format!("{:?}", pass.queue),
+                    command: cmd_command_name(cmd),
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+fn cmd_command_name(cmd: &RecordedCommand) -> &'static str {
+    match cmd {
+        RecordedCommand::Draw { .. } => "Draw",
+        RecordedCommand::DrawIndexed { .. } => "DrawIndexed",
+        RecordedCommand::DrawIndirect { .. } => "DrawIndirect",
+        RecordedCommand::DrawIndexedIndirect { .. } => "DrawIndexedIndirect",
+        RecordedCommand::DrawIndirectCount { .. } => "DrawIndirectCount",
+        RecordedCommand::DrawIndexedIndirectCount { .. } => "DrawIndexedIndirectCount",
+        RecordedCommand::Dispatch { .. } => "Dispatch",
+        RecordedCommand::DispatchIndirect { .. } => "DispatchIndirect",
+        RecordedCommand::FillBuffer { .. } => "FillBuffer",
+        RecordedCommand::CopyBuffer { .. } => "CopyBuffer",
+        RecordedCommand::BindGraphicsPipeline(_) => "BindGraphicsPipeline",
+        RecordedCommand::BindComputePipeline(_) => "BindComputePipeline",
+        _ => "command",
+    }
+}
+
+/// Usage flag consistency: each resource access must have the descriptor
+/// usage flags required for that access type.
+fn validate_usage_flags(
+    pass_accesses: &[SmallVec<[ResourceAccess; 8]>],
+    _passes: &[PassNode],
+    active: &[bool],
+    images: &[ImageInfo],
+    buffers: &[BufferInfo],
+) -> Result<(), GraphError> {
+    use ash::vk::{ImageUsageFlags, BufferUsageFlags};
+    for (i, accesses) in pass_accesses.iter().enumerate() {
+        if !active[i] {
+            continue;
+        }
+        for access in accesses.iter() {
+            if access_is_image(access) {
+                let idx = access.resource_index as usize;
+                let Some(info) = images.get(idx) else { continue };
+                let usage = info.desc.usage;
+                if access.layout == vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL
+                    && !usage.contains(ImageUsageFlags::COLOR_ATTACHMENT)
+                {
+                    return Err(GraphError::MissingUsageFlags {
+                        resource: info.resource.name.to_string(),
+                        usage: "color_attachment",
+                    });
+                }
+                if access.layout == vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                    && !usage.contains(ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT)
+                {
+                    return Err(GraphError::MissingUsageFlags {
+                        resource: info.resource.name.to_string(),
+                        usage: "depth_attachment",
+                    });
+                }
+                if access.layout == vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL
+                    && !usage.contains(ImageUsageFlags::SAMPLED)
+                {
+                    return Err(GraphError::MissingUsageFlags {
+                        resource: info.resource.name.to_string(),
+                        usage: "sample_image",
+                    });
+                }
+                if access.layout == vk::ImageLayout::GENERAL
+                    && access.access.contains(vk::AccessFlags2::SHADER_WRITE)
+                    && !usage.contains(ImageUsageFlags::STORAGE)
+                {
+                    return Err(GraphError::MissingUsageFlags {
+                        resource: info.resource.name.to_string(),
+                        usage: "write_storage_image",
+                    });
+                }
+            } else {
+                let idx = access.resource_index as usize;
+                let Some(info) = buffers.get(idx) else { continue };
+                let usage = info.desc.usage;
+                if access.access.contains(vk::AccessFlags2::INDIRECT_COMMAND_READ)
+                    && !usage.contains(BufferUsageFlags::INDIRECT_BUFFER)
+                {
+                    return Err(GraphError::MissingUsageFlags {
+                        resource: info.resource.name.to_string(),
+                        usage: "read_indirect_buffer",
+                    });
+                }
+                if access.access.contains(vk::AccessFlags2::SHADER_WRITE)
+                    && !usage.contains(BufferUsageFlags::STORAGE_BUFFER)
+                {
+                    return Err(GraphError::MissingUsageFlags {
+                        resource: info.resource.name.to_string(),
+                        usage: "write_storage_buffer",
+                    });
+                }
+                if (access.access.contains(vk::AccessFlags2::SHADER_READ)
+                    || access.access.contains(vk::AccessFlags2::UNIFORM_READ))
+                    && !usage.contains(BufferUsageFlags::STORAGE_BUFFER)
+                    && !usage.contains(BufferUsageFlags::UNIFORM_BUFFER)
+                {
+                    return Err(GraphError::MissingUsageFlags {
+                        resource: info.resource.name.to_string(),
+                        usage: "read_buffer",
+                    });
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Duplicate writes: a pass must not declare two writes to the same
+/// (resource_index, version) (same resource version).
+fn validate_duplicate_writes(
+    pass_accesses: &[SmallVec<[ResourceAccess; 8]>],
+    passes: &[PassNode],
+    active: &[bool],
+    images: &[ImageInfo],
+    buffers: &[BufferInfo],
+) -> Result<(), GraphError> {
+    for (i, accesses) in pass_accesses.iter().enumerate() {
+        if !active[i] {
+            continue;
+        }
+        let pass = &passes[i];
+        let mut written: HashMap<(u16, bool, u16), ()> = HashMap::new();
+        for access in accesses.iter() {
+            let Some(ver) = access.version_write else { continue };
+            let is_img = access_is_image(access);
+            let key = (access.resource_index, is_img, ver);
+            if written.insert(key, ()).is_some() {
+                let name = if is_img {
+                    images
+                        .get(access.resource_index as usize)
+                        .map(|x| x.resource.name)
+                        .unwrap_or("?")
+                } else {
+                    buffers
+                        .get(access.resource_index as usize)
+                        .map(|x| x.resource.name)
+                        .unwrap_or("?")
+                };
+                return Err(GraphError::DuplicateWrite {
+                    pass: pass.name,
+                    resource: name.to_string(),
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
 fn check_duplicate_names(passes: &[PassNode]) {
     let mut seen = HashSet::new();
     for pass in passes {
@@ -959,8 +1258,20 @@ mod tests {
     }
 
     fn make_image(name: &'static str, kind: ResourceKind) -> ImageInfo {
+        make_image_with_usage(name, kind, vk::ImageUsageFlags::COLOR_ATTACHMENT)
+    }
+
+    /// Image with usage flags suitable for both color attachment and sampled read.
+    fn make_image_with_usage(
+        name: &'static str,
+        kind: ResourceKind,
+        usage: vk::ImageUsageFlags,
+    ) -> ImageInfo {
         ImageInfo {
-            desc: ImageDesc::default(),
+            desc: ImageDesc {
+                usage,
+                ..ImageDesc::default()
+            },
             resource: ResourceInfo {
                 name,
                 kind,
@@ -1103,7 +1414,11 @@ mod tests {
         // p0 writes img0 v1, p1 reads v1 and writes v2, p2 reads v2 and
         // writes img1 v1 (imported → output, so it survives dead-pass elim).
         let images = vec![
-            make_image("img", ResourceKind::Imported),
+            make_image_with_usage(
+                "img",
+                ResourceKind::Imported,
+                vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::SAMPLED,
+            ),
             make_image("out", ResourceKind::Imported),
         ];
         let buffers: Vec<BufferInfo> = Vec::new();
@@ -1172,7 +1487,11 @@ mod tests {
         // p0 writes transient img1 v1, p1 reads img1 v1 and writes imported img0 v1.
         let images = vec![
             make_image("output", ResourceKind::Imported),
-            make_image("temp", ResourceKind::Transient),
+            make_image_with_usage(
+                "temp",
+                ResourceKind::Transient,
+                vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::SAMPLED,
+            ),
         ];
         let passes = vec![
             pass_with("p0", &[img_write(1, 0, 1)]),
@@ -1246,7 +1565,11 @@ mod tests {
         // writer writes img0 v1.  reader reads img0 v1 and writes img1 v1
         // (imported → output so it survives dead-pass elimination).
         let images = vec![
-            make_image("img", ResourceKind::Imported),
+            make_image_with_usage(
+                "img",
+                ResourceKind::Imported,
+                vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::SAMPLED,
+            ),
             make_image("out", ResourceKind::Imported),
         ];
 
@@ -1282,7 +1605,11 @@ mod tests {
         // Two readers of the same version with the same layout.  Each also
         // writes a separate imported image so neither is dead-eliminated.
         let images = vec![
-            make_image("img", ResourceKind::Imported),
+            make_image_with_usage(
+                "img",
+                ResourceKind::Imported,
+                vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::SAMPLED,
+            ),
             make_image("out_a", ResourceKind::Imported),
             make_image("out_b", ResourceKind::Imported),
         ];
@@ -1320,7 +1647,11 @@ mod tests {
     #[test]
     fn single_queue_produces_single_batch() {
         let images = vec![
-            make_image("img", ResourceKind::Imported),
+            make_image_with_usage(
+                "img",
+                ResourceKind::Imported,
+                vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::SAMPLED,
+            ),
             make_image("out", ResourceKind::Imported),
         ];
         let passes = vec![

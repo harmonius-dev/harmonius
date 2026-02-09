@@ -373,10 +373,12 @@ mod tests {
             usage: vk_mem::MemoryUsage::AutoPreferDevice,
             ..Default::default()
         };
+        // SAFETY: Test only. Allocator valid (S6-style); image not used on GPU.
         let (image, mut allocation) = unsafe {
             ctx.allocator.create_image(&image_ci, &alloc_ci).unwrap()
         };
         assert_ne!(image, vk::Image::null());
+        // SAFETY: Test only. Image just created and not submitted; allocator valid.
         unsafe {
             ctx.allocator.destroy_image(image, &mut allocation);
         }

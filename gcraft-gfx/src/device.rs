@@ -115,8 +115,9 @@ mod tests {
             queue: ctx.graphics_queue,
             family_index: ctx.graphics_family,
         };
-        // SAFETY: we bitwise-copy the allocator but wrap the whole DeviceContext
-        // in ManuallyDrop so it is never dropped (no double-free).
+        // SAFETY: Allocator is bitwise-copied once; DeviceContext is wrapped in ManuallyDrop
+        // so the allocator is never dropped by DeviceContext (no double-free). Drop order
+        // in tests is under test control; production DeviceContext is not built this way.
         let allocator = unsafe { std::ptr::read(&*ctx.allocator) };
         ManuallyDrop::new(DeviceContext {
             instance: ctx.instance.clone(),

@@ -4,6 +4,8 @@ pub mod compile;
 pub mod barrier;
 pub mod execute;
 
+pub use compile::CompiledGraph;
+
 use resource::{
     BufferDesc, BufferHandle, ConditionFlag, DrawSlot, ImageDesc, ImageHandle, SubresourceRange,
     BufferInfo, FlagInfo, ImageInfo, ResourceInfo, ResourceKind,
