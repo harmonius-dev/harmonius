@@ -46,28 +46,20 @@ jobs:
           echo "VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d" >> $GITHUB_ENV
           echo "$VULKAN_SDK/bin" >> $GITHUB_PATH
 
-      - name: Install Ninja
-        run: brew install ninja
+      - name: Install Ninja and LLVM 20
+        run: brew install ninja cmake llvm@20 && brew link llvm@20
 
-      - name: Configure (Ninja)
+      - name: Configure and build Vulkan tests
         run: |
-          cmake --preset ninja-release
+          cmake --preset ninja-debug && cmake --build --preset ninja-debug
         env:
           VULKAN_SDK: ${{ env.VULKAN_SDK }}
           VK_ICD_FILENAMES: ${{ env.VK_ICD_FILENAMES }}
           VK_LAYER_PATH: ${{ env.VK_LAYER_PATH }}
 
-      - name: Build
-        run: cmake --build build/release
-
       - name: Run Vulkan tests
         run: |
-          # List available ICD files to verify KosmicKrisp is present
-          echo "Available Vulkan ICD drivers:"
-          ls -la $VULKAN_SDK/share/vulkan/icd.d/ || true
-
-          # Run tests - SDK should automatically use KosmicKrisp
-          ctest --test-dir build/release -R test-vulkan --output-on-failure
+          ctest --test-dir build/debug -R test-vulkan --output-on-failure
         env:
           VULKAN_SDK: ${{ env.VULKAN_SDK }}
           VK_ICD_FILENAMES: ${{ env.VK_ICD_FILENAMES }}

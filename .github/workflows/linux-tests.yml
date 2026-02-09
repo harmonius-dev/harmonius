@@ -24,19 +24,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Vulkan SDK
         run: |
           sudo apt-get update
-          sudo apt-get install -y libvulkan-dev vulkan-tools
+          sudo apt-get install -y libvulkan-dev vulkan-tools ninja cmake
 
-      - name: Configure (Ninja)
+      - name: Configure and build Vulkan tests
         run: |
-          cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vendor/vcpkg/scripts/buildsystems/vcpkg.cmake \
-            -DVCPKG_INSTALL_OPTIONS=--allow-unsupported
+          cmake --preset ninja-debug && cmake --build --preset ninja-debug
 
-      - name: Build and run Vulkan tests
-        run: |
-          cmake --build build
-          ctest --test-dir build -R test-vulkan --output-on-failure
+      - name: Run Vulkan tests
+        run: ctest --test-dir build/debug -R test-vulkan --output-on-failure
