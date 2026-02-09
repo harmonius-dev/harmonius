@@ -3,18 +3,8 @@ name: Linux Tests
 on:
   push:
     branches: [main]
-    paths:
-      - "src/**"
-      - "CMakeLists.txt"
-      - "CMakePresets.json"
-      - ".github/workflows/linux-tests.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "src/**"
-      - "CMakeLists.txt"
-      - "CMakePresets.json"
-      - ".github/workflows/linux-tests.yml"
 
 jobs:
   test-linux:
@@ -32,9 +22,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libvulkan-dev vulkan-tools ninja cmake
 
-      - name: Configure and build Vulkan tests
+      - name: Configure and build
         run: |
           cmake --preset ninja-debug && cmake --build --preset ninja-debug
 
-      - name: Run Vulkan tests
+      - name: Run tests
         run: ctest --test-dir build/debug -R test-vulkan --output-on-failure

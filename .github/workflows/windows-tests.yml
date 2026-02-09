@@ -1,0 +1,24 @@
+name: Windows Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-windows:
+    name: Windows (D3D12 backend)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure and build
+        run: cmake --preset ninja-debug && cmake --build --preset ninja-debug
+
+      - name: Run tests
+        run: ctest --test-dir build/debug -R test-d3d12 --output-on-failure

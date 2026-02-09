@@ -3,18 +3,8 @@ name: macOS Tests
 on:
   push:
     branches: [main]
-    paths:
-      - "src/**"
-      - "CMakeLists.txt"
-      - "CMakePresets.json"
-      - ".github/workflows/macos-tests.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "src/**"
-      - "CMakeLists.txt"
-      - "CMakePresets.json"
-      - ".github/workflows/macos-tests.yml"
 
 jobs:
   test-macos:
@@ -49,7 +39,7 @@ jobs:
       - name: Install Ninja and LLVM 20
         run: brew install ninja cmake llvm@20 && brew link llvm@20
 
-      - name: Configure and build Vulkan tests
+      - name: Configure and build
         run: |
           cmake --preset ninja-debug && cmake --build --preset ninja-debug
         env:
@@ -57,7 +47,7 @@ jobs:
           VK_ICD_FILENAMES: ${{ env.VK_ICD_FILENAMES }}
           VK_LAYER_PATH: ${{ env.VK_LAYER_PATH }}
 
-      - name: Run Vulkan tests
+      - name: Run tests
         run: |
           ctest --test-dir build/debug -R test-vulkan --output-on-failure
         env:
