@@ -27,7 +27,7 @@ jobs:
             --accept-licenses \
             --default-answer \
             --confirm-command install
-          rm vulkansdk-macOS-1.4.341.0.app vulkansdk-macOS-1.4.341.0.zip
+          rm -rf vulkansdk-macOS-1.4.341.0.app vulkansdk-macOS-1.4.341.0.zip
 
           # Set up environment
           VULKAN_SDK=$HOME/VulkanSDK/1.4.341.0/macOS
