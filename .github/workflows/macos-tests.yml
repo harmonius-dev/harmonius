@@ -22,7 +22,7 @@ jobs:
           # Download and install LunarG Vulkan SDK 1.4.341.0
           curl -L -o vulkan-sdk.zip https://sdk.lunarg.com/sdk/download/1.4.341.0/mac/vulkansdk-macos-1.4.341.0.zip
           unzip vulkan-sdk.zip
-          sudo open -a ./vulkansdk-macOS-1.4.341.0.app --args
+          sudo open -a $PWD/vulkansdk-macOS-1.4.341.0.app --args
             --root ~/VulkanSDK/1.4.341.0 \
             --accept-licenses \
             --default-answer \
