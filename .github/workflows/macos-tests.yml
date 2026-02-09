@@ -1,0 +1,74 @@
+name: macOS Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - ".github/workflows/macos-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - ".github/workflows/macos-tests.yml"
+
+jobs:
+  test-macos:
+    name: macOS (Vulkan backend with KosmicKrisp)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install LunarG Vulkan SDK
+        run: |
+          # Download and install LunarG Vulkan SDK 1.4.341.0
+          curl -L -o vulkan-sdk.dmg https://sdk.lunarg.com/sdk/download/1.4.341.0/mac/vulkansdk-macos-1.4.341.0.zip
+          unzip vulkan-sdk.zip
+          sudo open -a vulkansdk-macOS-1.4.341.0.app --args
+            --root ~/VulkanSDK/1.4.341.0 \
+            --accept-licenses \
+            --default-answer \
+            --confirm-command install
+          rm vulkansdk-macOS-1.4.341.0.app vulkansdk-macOS-1.4.341.0.zip
+
+          # Set up environment
+          VULKAN_SDK=$HOME/VulkanSDK/1.4.341.0/macOS
+          echo "VULKAN_SDK=$VULKAN_SDK" >> $GITHUB_ENV
+          echo "VK_ICD_FILENAMES=$VULKAN_SDK/share/vulkan/icd.d/libkosmickrisp_icd.json" >> $GITHUB_ENV
+          echo "VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d" >> $GITHUB_ENV
+          echo "$VULKAN_SDK/bin" >> $GITHUB_PATH
+
+      - name: Install Ninja
+        run: brew install ninja
+
+      - name: Configure (Ninja)
+        run: |
+          cmake --preset ninja-release
+        env:
+          VULKAN_SDK: ${{ env.VULKAN_SDK }}
+          VK_ICD_FILENAMES: ${{ env.VK_ICD_FILENAMES }}
+          VK_LAYER_PATH: ${{ env.VK_LAYER_PATH }}
+
+      - name: Build
+        run: cmake --build build/release
+
+      - name: Run Vulkan tests
+        run: |
+          # List available ICD files to verify KosmicKrisp is present
+          echo "Available Vulkan ICD drivers:"
+          ls -la $VULKAN_SDK/share/vulkan/icd.d/ || true
+
+          # Run tests - SDK should automatically use KosmicKrisp
+          ctest --test-dir build/release -R test-vulkan --output-on-failure
+        env:
+          VULKAN_SDK: ${{ env.VULKAN_SDK }}
+          VK_ICD_FILENAMES: ${{ env.VK_ICD_FILENAMES }}
+          VK_LAYER_PATH: ${{ env.VK_LAYER_PATH }}
