@@ -310,3 +310,180 @@ pub(crate) struct FlagInfo {
     /// Current value of the flag.
     pub value: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // -----------------------------------------------------------------------
+    // ImageDesc::default
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn image_desc_default_has_expected_values() {
+        let desc = ImageDesc::default();
+        assert_eq!(desc.format, vk::Format::R8G8B8A8_UNORM);
+        assert_eq!(desc.extent.width, 1);
+        assert_eq!(desc.extent.height, 1);
+        assert_eq!(desc.extent.depth, 1);
+        assert_eq!(desc.mip_levels, 1);
+        assert_eq!(desc.array_layers, 1);
+        assert_eq!(desc.samples, vk::SampleCountFlags::TYPE_1);
+        assert_eq!(desc.usage, vk::ImageUsageFlags::COLOR_ATTACHMENT);
+    }
+
+    // -----------------------------------------------------------------------
+    // SubresourceRange::full
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn subresource_range_full_covers_entire_image() {
+        let desc = ImageDesc {
+            mip_levels: 5,
+            array_layers: 12,
+            ..Default::default()
+        };
+        let range = SubresourceRange::full(&desc);
+        assert_eq!(range.base_mip_level, 0);
+        assert_eq!(range.mip_count, 5);
+        assert_eq!(range.base_array_layer, 0);
+        assert_eq!(range.layer_count, 12);
+    }
+
+    // -----------------------------------------------------------------------
+    // SubresourceRange -> vk::ImageSubresourceRange conversion
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn subresource_range_converts_to_vk_with_color_aspect() {
+        let range = SubresourceRange {
+            base_mip_level: 2,
+            mip_count: 3,
+            base_array_layer: 1,
+            layer_count: 4,
+        };
+        let vk_range: vk::ImageSubresourceRange = range.into();
+        assert_eq!(vk_range.aspect_mask, vk::ImageAspectFlags::COLOR);
+        assert_eq!(vk_range.base_mip_level, 2);
+        assert_eq!(vk_range.level_count, 3);
+        assert_eq!(vk_range.base_array_layer, 1);
+        assert_eq!(vk_range.layer_count, 4);
+    }
+
+    // -----------------------------------------------------------------------
+    // GraphError Display formatting
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn graph_error_display_read_of_unwritten_resource() {
+        let err = GraphError::ReadOfUnwrittenResource {
+            pass: "lighting",
+            resource: "gbuffer_normal".into(),
+            version: 3,
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("lighting"));
+        assert!(msg.contains("gbuffer_normal"));
+        assert!(msg.contains("version 3"));
+        assert!(msg.contains("never written"));
+    }
+
+    #[test]
+    fn graph_error_display_orphan_write() {
+        let err = GraphError::OrphanWrite {
+            resource: "temp_buffer".into(),
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("temp_buffer"));
+        assert!(msg.contains("never read"));
+    }
+
+    #[test]
+    fn graph_error_display_stale_handle() {
+        let err = GraphError::StaleHandle {
+            handle_gen: 1,
+            graph_gen: 5,
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("generation 1"));
+        assert!(msg.contains("generation") && msg.contains("5"));
+    }
+
+    #[test]
+    fn graph_error_display_no_graphics_queue() {
+        let err = GraphError::NoGraphicsQueue;
+        assert_eq!(err.to_string(), "no graphics queue available");
+    }
+
+    // -----------------------------------------------------------------------
+    // ImageHandle equality
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn image_handle_eq_same_fields() {
+        let a = ImageHandle { index: 1, version: 2, generation: 10 };
+        let b = ImageHandle { index: 1, version: 2, generation: 10 };
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn image_handle_ne_different_generation() {
+        let a = ImageHandle { index: 1, version: 2, generation: 10 };
+        let b = ImageHandle { index: 1, version: 2, generation: 11 };
+        assert_ne!(a, b);
+    }
+
+    // -----------------------------------------------------------------------
+    // BufferHandle equality
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn buffer_handle_eq_same_fields() {
+        let a = BufferHandle { index: 3, version: 0, generation: 7 };
+        let b = BufferHandle { index: 3, version: 0, generation: 7 };
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn buffer_handle_ne_different_generation() {
+        let a = BufferHandle { index: 3, version: 0, generation: 7 };
+        let b = BufferHandle { index: 3, version: 0, generation: 8 };
+        assert_ne!(a, b);
+    }
+
+    // -----------------------------------------------------------------------
+    // ConditionFlag equality
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn condition_flag_eq_same_fields() {
+        let a = ConditionFlag { index: 0, generation: 42 };
+        let b = ConditionFlag { index: 0, generation: 42 };
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn condition_flag_ne_different_generation() {
+        let a = ConditionFlag { index: 0, generation: 42 };
+        let b = ConditionFlag { index: 0, generation: 43 };
+        assert_ne!(a, b);
+    }
+
+    // -----------------------------------------------------------------------
+    // DrawSlot equality
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn draw_slot_eq_same_fields() {
+        let a = DrawSlot { pass_index: 1, slot_index: 2, generation: 99 };
+        let b = DrawSlot { pass_index: 1, slot_index: 2, generation: 99 };
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn draw_slot_ne_different_generation() {
+        let a = DrawSlot { pass_index: 1, slot_index: 2, generation: 99 };
+        let b = DrawSlot { pass_index: 1, slot_index: 2, generation: 100 };
+        assert_ne!(a, b);
+    }
+}

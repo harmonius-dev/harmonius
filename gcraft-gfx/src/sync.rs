@@ -127,3 +127,107 @@ impl FrameSync {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::require_vulkan;
+    use ash::vk;
+
+    #[test]
+    fn new_creates_correct_number_of_fences_and_semaphores() {
+        let ctx = require_vulkan!();
+        let sync = super::FrameSync::new(&ctx.device, 2);
+
+        assert_eq!(sync.fences.len(), 2);
+        assert_eq!(sync.image_available.len(), 2);
+        assert_eq!(sync.render_finished.len(), 2);
+        assert_eq!(sync.frame_index, 0);
+        assert_eq!(sync.timeline_value, 0);
+
+        for &fence in &sync.fences {
+            assert_ne!(fence, vk::Fence::null());
+        }
+        for &sem in &sync.image_available {
+            assert_ne!(sem, vk::Semaphore::null());
+        }
+        for &sem in &sync.render_finished {
+            assert_ne!(sem, vk::Semaphore::null());
+        }
+        assert_ne!(sync.timeline_semaphore, vk::Semaphore::null());
+
+        sync.destroy(&ctx.device);
+    }
+
+    #[test]
+    fn wait_for_frame_and_reset_does_not_deadlock() {
+        let ctx = require_vulkan!();
+        let sync = super::FrameSync::new(&ctx.device, 2);
+
+        // Fences are created signaled, so waiting should return immediately.
+        sync.wait_for_frame(&ctx.device);
+
+        sync.destroy(&ctx.device);
+    }
+
+    #[test]
+    fn advance_frame_wraps_around() {
+        let ctx = require_vulkan!();
+        let mut sync = super::FrameSync::new(&ctx.device, 2);
+
+        assert_eq!(sync.frame_index, 0);
+        sync.advance_frame();
+        assert_eq!(sync.frame_index, 1);
+        sync.advance_frame();
+        assert_eq!(sync.frame_index, 0);
+        sync.advance_frame();
+        assert_eq!(sync.frame_index, 1);
+
+        sync.destroy(&ctx.device);
+    }
+
+    #[test]
+    fn next_timeline_value_increments() {
+        let ctx = require_vulkan!();
+        let mut sync = super::FrameSync::new(&ctx.device, 2);
+
+        assert_eq!(sync.next_timeline_value(), 1);
+        assert_eq!(sync.next_timeline_value(), 2);
+        assert_eq!(sync.next_timeline_value(), 3);
+
+        sync.destroy(&ctx.device);
+    }
+
+    #[test]
+    fn current_accessors_return_correct_frame() {
+        let ctx = require_vulkan!();
+        let mut sync = super::FrameSync::new(&ctx.device, 3);
+
+        // Frame 0
+        assert_eq!(sync.current_fence(), sync.fences[0]);
+        assert_eq!(sync.current_image_available(), sync.image_available[0]);
+        assert_eq!(sync.current_render_finished(), sync.render_finished[0]);
+
+        sync.advance_frame();
+
+        // Frame 1
+        assert_eq!(sync.current_fence(), sync.fences[1]);
+        assert_eq!(sync.current_image_available(), sync.image_available[1]);
+        assert_eq!(sync.current_render_finished(), sync.render_finished[1]);
+
+        sync.advance_frame();
+
+        // Frame 2
+        assert_eq!(sync.current_fence(), sync.fences[2]);
+        assert_eq!(sync.current_image_available(), sync.image_available[2]);
+        assert_eq!(sync.current_render_finished(), sync.render_finished[2]);
+
+        sync.destroy(&ctx.device);
+    }
+
+    #[test]
+    fn destroy_cleans_up_without_errors() {
+        let ctx = require_vulkan!();
+        let sync = super::FrameSync::new(&ctx.device, 2);
+        sync.destroy(&ctx.device);
+    }
+}
