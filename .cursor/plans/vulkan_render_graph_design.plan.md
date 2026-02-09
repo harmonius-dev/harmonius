@@ -145,7 +145,7 @@ log = "0.4"
 
 ## Module Structure
 
-```
+```txt
 gcraft-gfx/src/
   lib.rs                   # Public API re-exports
   device.rs                # DeviceContext: ash device + queues + VMA allocator
