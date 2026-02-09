@@ -27,9 +27,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install D3D12 dependencies
-        run: .\scripts\fetch-d3d12-deps.ps1
-
       - name: Configure (Ninja)
         run: cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release
 

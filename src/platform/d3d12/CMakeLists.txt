@@ -34,15 +34,6 @@ target_link_libraries(gcraft_d3d12 PUBLIC
   ole32
 )
 
-if(DEFINED ENV{DXC_PATH})
-  target_include_directories(gcraft_d3d12 PRIVATE "$ENV{DXC_PATH}/build/native/include")
-  target_link_directories(gcraft_d3d12 PRIVATE "$ENV{DXC_PATH}/build/native/lib/x64")
-endif()
-if(DEFINED ENV{DSTORAGE_PATH})
-  target_include_directories(gcraft_d3d12 PRIVATE "$ENV{DSTORAGE_PATH}/native/include")
-  target_link_directories(gcraft_d3d12 PRIVATE "$ENV{DSTORAGE_PATH}/native/lib/x64")
-endif()
-
 # D3D12 test executable
 add_executable(gcraft_d3d12_test gcraft_test.cpp)
 target_include_directories(gcraft_d3d12_test PRIVATE ${GCRAFT_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})

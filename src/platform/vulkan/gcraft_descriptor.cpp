@@ -96,7 +96,10 @@ extern "C" GCError GCDescriptorSetDestroy(GCDescriptorSetPtr set) {
     if (set) {
         auto* s = reinterpret_cast<DescriptorSet*>(set);
         // Free from pool
-        s->device->device->freeDescriptorSets(s->device->descriptor_pool.get(), s->set);
+        if (auto result = s->device->device->freeDescriptorSets(s->device->descriptor_pool.get(), s->set); result != vk::Result::eSuccess) {
+            delete s;
+            return from_vk_result(result);
+        }
         delete s;
     }
     return ok();

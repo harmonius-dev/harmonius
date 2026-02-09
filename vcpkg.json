@@ -2,5 +2,12 @@
   "name": "gcraft",
   "version": "0.0.0",
   "description": "Cross-platform graphics abstraction",
-  "dependencies": []
+  "dependencies": [
+    "directx-dxc",
+    { "name": "directx-headers", "platform": "windows" },
+    { "name": "directx12-agility", "platform": "windows" },
+    "volk",
+    "vulkan",
+    "vulkan-memory-allocator"
+  ]
 }

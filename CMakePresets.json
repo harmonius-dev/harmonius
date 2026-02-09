@@ -2,34 +2,30 @@
   "version": 3,
   "configurePresets": [
     {
-      "name": "vcpkg",
+      "name": "ninja",
+      "generator": "Ninja",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-      }
-    },
-    {
-      "name": "ninja-default",
-      "inherits": "vcpkg",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported"
       }
     },
     {
       "name": "ninja-debug",
-      "inherits": "vcpkg",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-debug",
+      "displayName": "Ninja (Debug)",
+      "inherits": "ninja",
+      "binaryDir": "${sourceDir}/build/debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     },
     {
-      "name": "ninja-default-no-vcpkg",
+      "name": "ninja-release",
+      "displayName": "Ninja (Release)",
+      "inherits": "ninja",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
+      "binaryDir": "${sourceDir}/build/release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
@@ -37,16 +33,14 @@
   ],
   "buildPresets": [
     {
-      "name": "ninja-default",
-      "configurePreset": "ninja-default"
-    },
-    {
       "name": "ninja-debug",
+      "displayName": "Ninja (Debug)",
       "configurePreset": "ninja-debug"
     },
     {
-      "name": "ninja-default-no-vcpkg",
-      "configurePreset": "ninja-default-no-vcpkg"
+      "name": "ninja-release",
+      "displayName": "Ninja (Release)",
+      "configurePreset": "ninja-release"
     }
   ]
 }

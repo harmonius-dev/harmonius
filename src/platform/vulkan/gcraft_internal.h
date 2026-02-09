@@ -5,7 +5,7 @@
 #define GCRAFT_VULKAN_INTERNAL_H
 
 // Configure volk before vulkan headers (implementation in gcraft_instance.cpp)
-#include <volk/volk.h>
+#include <volk.h>
 
 // Configure vulkan-hpp for no-exceptions mode and dynamic dispatch
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -18,7 +18,7 @@
 // Configure VMA
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
-#include <vma/vk_mem_alloc.h>
+#include <vk_mem_alloc.h>
 
 #include <memory>
 #include <vector>
@@ -27,8 +27,6 @@
 #include <array>
 #include <cstring>
 
-// C API headers
-extern "C" {
 #include "gcraft_types.h"
 #include "gcraft_command.h"
 #include "gcraft_descriptor.h"
@@ -38,7 +36,6 @@ extern "C" {
 #include "gcraft_resource.h"
 #include "gcraft_surface.h"
 #include "gcraft_sync.h"
-}
 
 namespace ep::vk {
 

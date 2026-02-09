@@ -1,7 +1,7 @@
 // gcraft_instance.cpp - Platform, instance, and adapter implementation
 
 #define VOLK_IMPLEMENTATION
-#include <volk/volk.h>
+#include <volk.h>
 #include "gcraft_internal.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE

@@ -31,7 +31,10 @@ jobs:
           sudo apt-get install -y libvulkan-dev vulkan-tools
 
       - name: Configure (Ninja)
-        run: cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vendor/vcpkg/scripts/buildsystems/vcpkg.cmake \
+            -DVCPKG_INSTALL_OPTIONS=--allow-unsupported
 
       - name: Build and run Vulkan tests
         run: |

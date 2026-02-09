@@ -1,18 +1,11 @@
-# Metal backend using Metal-cpp (Apple C++ Metal API).
-# Set METAL_CPP_PATH to the directory containing Foundation/, Metal/, QuartzCore/
-# from Apple's metal-cpp zip (https://developer.apple.com/metal/cpp/).
-if(DEFINED ENV{METAL_CPP_PATH})
-  set(METAL_CPP_DIR "$ENV{METAL_CPP_PATH}" CACHE PATH "Metal-cpp headers (Apple zip)")
-else()
-  include(FetchContent)
-  FetchContent_Declare(metal-cpp
-    GIT_REPOSITORY https://github.com/jevinskie/metal-cpp-mirror
-    GIT_TAG main
-    GIT_SHALLOW TRUE
-  )
-  FetchContent_MakeAvailable(metal-cpp)
-  set(METAL_CPP_DIR "${metal-cpp_SOURCE_DIR}" CACHE PATH "Metal-cpp headers")
-endif()
+include(FetchContent)
+FetchContent_Declare(metal-cpp
+  GIT_REPOSITORY https://github.com/jevinskie/metal-cpp-mirror
+  GIT_TAG main
+  GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(metal-cpp)
+set(METAL_CPP_DIR "${metal-cpp_SOURCE_DIR}" CACHE PATH "Metal-cpp headers")
 
 set(GCRAFT_METAL_SOURCES
   gcraft_metal_impl.cpp

@@ -1,7 +1,5 @@
 # CMake / Ninja
 build/
-build-*/
-out/
 .cmake/
 CMakeCache.txt
 CMakeFiles/
@@ -12,6 +10,3 @@ cmake_install.cmake
 
 # vcpkg
 vcpkg_installed/
-
-# NuGet packages (downloaded by scripts/fetch-d3d12-deps.ps1)
-packages/

@@ -255,7 +255,9 @@ extern "C" GCError GCDeviceCreate(GCAdapterPtr adapter_ptr, const GCDeviceDesc* 
 extern "C" GCError GCDeviceDestroy(GCDevicePtr device_ptr) {
     if (device_ptr) {
         auto* device = reinterpret_cast<Device*>(device_ptr);
-        device->device->waitIdle();
+        if (auto result = device->device->waitIdle(); result != vk::Result::eSuccess) {
+            return from_vk_result(result);
+        }
         device->prevent_destroy.reset();  // Allow destruction
     }
     return ok();
