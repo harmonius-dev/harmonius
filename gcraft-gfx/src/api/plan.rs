@@ -3,7 +3,7 @@ use derive_more::{Display, Error, From};
 use crate::RenderGraph;
 
 /// An efficient plan to execute a render graph with minimal overhead.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ExecutionPlan {
     graph: RenderGraph,
 }
