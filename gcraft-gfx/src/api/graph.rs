@@ -1,7 +1,6 @@
 use derive_more::{Display, From};
-use smallvec::SmallVec;
 
-use crate::{BufferHandle, Format, ImageHandle, PipelineHandle};
+use crate::{Format, PipelineHandle};
 
 // ── Graph-local handles ─────────────────────────────────────────────
 
@@ -54,48 +53,51 @@ pub enum ResourceDescriptor {
     },
 }
 
-/// A slab of memory allocated for a resource from a buffer.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct BufferSlab {
-    buffer: BufferHandle,
-    offset: u64,
-    size: u32,
-    stride: u32,
-}
+// ── Pass dispatch ───────────────────────────────────────────────────
 
-/// A slot containing a buffer
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct ResourceSlot {
-    slot: u32,
-    descriptor: ResourceDescriptor,
-}
-
-// ── Draw commands ───────────────────────────────────────────────────
-
-/// A single platform-independent draw command issued by a render pass.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum DrawCommand {
-    BindPipeline(PipelineHandle),
-    BindBuffer(ResourceSlot, BufferSlab),
-    BindImage(ResourceSlot, ImageHandle),
-    Draw,
-    DrawIndexed {
-        index_slab: BufferSlab,
+/// How a pass dispatches GPU work.
+///
+/// Mesh shader variants map to `vkCmdDrawMeshTasksEXT` and friends.
+/// Compute variants map to `vkCmdDispatch` and friends.
+/// Indirect command/count buffers are automatically tracked as read
+/// dependencies when set through the [`PassBuilder`].
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub enum PassDispatch {
+    /// No dispatch specified.
+    #[default]
+    None,
+    /// Dispatch mesh shader work groups directly.
+    MeshDirect {
+        group_count: [u32; 3],
     },
-    DrawIndirect {
-        command_slab: BufferSlab,
-        draw_slab: BufferSlab,
+    /// Draw via mesh shaders from an indirect command buffer.
+    ///
+    /// Each entry in the buffer is a `DrawMeshTasksIndirectCommandEXT`
+    /// (groupCountX, groupCountY, groupCountZ).
+    MeshIndirect {
+        /// Buffer of `DrawMeshTasksIndirectCommandEXT` entries.
+        commands: VirtualResourceId,
+        /// Maximum number of draws the GPU may issue.
+        max_draw_count: u32,
     },
-    DrawIndexedIndirect {
-        command_slab: BufferSlab,
-        draw_slab: BufferSlab,
+    /// Draw via mesh shaders with a GPU-driven draw count.
+    MeshIndirectCount {
+        /// Buffer of `DrawMeshTasksIndirectCommandEXT` entries.
+        commands: VirtualResourceId,
+        /// Buffer containing the actual draw count (`u32`).
+        count: VirtualResourceId,
+        /// Maximum number of draws the GPU may issue.
+        max_draw_count: u32,
     },
-}
-
-/// A bundle of draw commands issued by a render pass, used for sorting and batching draw calls.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct DrawCommandBundle {
-    commands: SmallVec<[DrawCommand; 8]>,
+    /// Dispatch compute work groups directly.
+    Compute {
+        group_count: [u32; 3],
+    },
+    /// Dispatch compute work groups from an indirect command buffer.
+    ComputeIndirect {
+        /// Buffer of `DispatchIndirectCommand` entries.
+        commands: VirtualResourceId,
+    },
 }
 
 // ── Graph internals ─────────────────────────────────────────────────
@@ -109,6 +111,8 @@ enum VirtualResource {
     ImportedImage,
     /// An externally-owned buffer imported into the graph.
     ImportedBuffer,
+    /// A buffer filled from CPU data before graph execution (host → device transfer).
+    Upload { size: u32 },
 }
 
 impl VirtualResource {
@@ -120,6 +124,7 @@ impl VirtualResource {
             },
             VirtualResource::ImportedImage => ResourceSlotType::Image,
             VirtualResource::ImportedBuffer => ResourceSlotType::Buffer,
+            VirtualResource::Upload { .. } => ResourceSlotType::Buffer,
         }
     }
 }
@@ -131,10 +136,12 @@ struct PassSlot {
     access: ResourceAccess,
 }
 
-/// A purely declarative pass: just its ordered resource bindings.
-#[derive(Debug, Clone, Default)]
+/// A purely declarative pass: resource bindings, pipeline, and dispatch.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 struct PassData {
     slots: Vec<PassSlot>,
+    pipeline: Option<PipelineHandle>,
+    dispatch: PassDispatch,
 }
 
 // ── RenderGraph ─────────────────────────────────────────────────────
@@ -146,22 +153,43 @@ struct PassData {
 /// ```ignore
 /// let mut graph = RenderGraph::new();
 ///
-/// let albedo = graph.create_transient(albedo_desc);
-/// let depth  = graph.create_transient(depth_desc);
-/// let output = graph.import_image();
+/// // CPU → GPU: scene object list uploaded each frame
+/// let scene_objects = graph.upload(max_objects * OBJECT_STRIDE);
 ///
-/// let gbuffer = graph.add_pass()
-///     .write(albedo)
-///     .write(depth)
+/// // Transient GPU resources
+/// let draw_cmds  = graph.create_transient(indirect_buf_desc);
+/// let draw_count = graph.create_transient(count_buf_desc);
+/// let albedo     = graph.create_transient(albedo_desc);
+/// let depth      = graph.create_transient(depth_desc);
+/// let output     = graph.import_image(); // swapchain
+///
+/// // GPU culling — reads scene objects, fills indirect draw buffer
+/// let _cull = graph.add_pass()
+///     .read(scene_objects)
+///     .write(draw_cmds)
+///     .write(draw_count)
+///     .pipeline(cull_pipeline)
+///     .compute([num_groups, 1, 1])
 ///     .build();
 ///
-/// let lighting = graph.add_pass()
+/// // G-buffer — mesh shader indirect with GPU-driven count
+/// let _gbuffer = graph.add_pass()
+///     .write(albedo)
+///     .write(depth)
+///     .pipeline(gbuffer_pipeline)
+///     .mesh_indirect_count(draw_cmds, draw_count, MAX_DRAWS)
+///     .build();
+///
+/// // Lighting — fullscreen mesh shader triangle
+/// let _lighting = graph.add_pass()
 ///     .read(albedo)
 ///     .read(depth)
 ///     .write(output)
+///     .pipeline(lighting_pipeline)
+///     .mesh_direct([1, 1, 1])
 ///     .build();
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RenderGraph {
     passes: Vec<PassData>,
     resources: Vec<VirtualResource>,
@@ -203,6 +231,17 @@ impl RenderGraph {
         id
     }
 
+    /// Declare a buffer that will be filled from CPU data at execution time.
+    ///
+    /// The executor handles the host-to-device transfer before any pass that
+    /// reads from this resource. Use this for per-frame scene data (object
+    /// lists, transforms, etc.) that originates on the CPU.
+    pub fn upload(&mut self, size: u32) -> VirtualResourceId {
+        let id = VirtualResourceId(self.resources.len() as u32);
+        self.resources.push(VirtualResource::Upload { size });
+        id
+    }
+
     /// Begin declaring a new render pass.
     ///
     /// Use the returned [`PassBuilder`] to declare which resources the pass
@@ -232,11 +271,11 @@ impl Default for RenderGraph {
 
 // ── PassBuilder ─────────────────────────────────────────────────────
 
-/// Builder for declaring a render pass's resource bindings.
+/// Builder for declaring a render pass's resource bindings and dispatch.
 ///
 /// Obtained from [`RenderGraph::add_pass`]. Chain `.read()`, `.write()`,
-/// and `.read_write()` calls to declare resource access, then call
-/// `.build()` to finalize the pass.
+/// `.read_write()` to declare resource access, set a `.pipeline()` and
+/// dispatch method, then call `.build()` to finalize.
 pub struct PassBuilder<'a> {
     graph: &'a mut RenderGraph,
     pass: PassId,
@@ -258,6 +297,59 @@ impl<'a> PassBuilder<'a> {
         self.push_slot(resource, ResourceAccess::ReadWrite)
     }
 
+    /// Set the pipeline for this pass.
+    pub fn pipeline(self, pipeline: PipelineHandle) -> Self {
+        self.graph.passes[self.pass.0 as usize].pipeline = Some(pipeline);
+        self
+    }
+
+    /// Dispatch mesh shader work groups directly.
+    pub fn mesh_direct(self, group_count: [u32; 3]) -> Self {
+        self.set_dispatch(PassDispatch::MeshDirect { group_count })
+    }
+
+    /// Draw via mesh shaders from an indirect command buffer.
+    ///
+    /// Implicitly adds a read dependency on `commands`.
+    pub fn mesh_indirect(self, commands: VirtualResourceId, max_draw_count: u32) -> Self {
+        self.push_slot(commands, ResourceAccess::Read)
+            .set_dispatch(PassDispatch::MeshIndirect {
+                commands,
+                max_draw_count,
+            })
+    }
+
+    /// Draw via mesh shaders with a GPU-driven draw count.
+    ///
+    /// Implicitly adds read dependencies on `commands` and `count`.
+    pub fn mesh_indirect_count(
+        self,
+        commands: VirtualResourceId,
+        count: VirtualResourceId,
+        max_draw_count: u32,
+    ) -> Self {
+        self.push_slot(commands, ResourceAccess::Read)
+            .push_slot(count, ResourceAccess::Read)
+            .set_dispatch(PassDispatch::MeshIndirectCount {
+                commands,
+                count,
+                max_draw_count,
+            })
+    }
+
+    /// Dispatch compute work groups directly.
+    pub fn compute(self, group_count: [u32; 3]) -> Self {
+        self.set_dispatch(PassDispatch::Compute { group_count })
+    }
+
+    /// Dispatch compute work groups from an indirect command buffer.
+    ///
+    /// Implicitly adds a read dependency on `commands`.
+    pub fn compute_indirect(self, commands: VirtualResourceId) -> Self {
+        self.push_slot(commands, ResourceAccess::Read)
+            .set_dispatch(PassDispatch::ComputeIndirect { commands })
+    }
+
     /// Finalize the pass and return its [`PassId`].
     pub fn build(self) -> PassId {
         self.pass
@@ -267,6 +359,11 @@ impl<'a> PassBuilder<'a> {
         self.graph.passes[self.pass.0 as usize]
             .slots
             .push(PassSlot { resource, access });
+        self
+    }
+
+    fn set_dispatch(self, dispatch: PassDispatch) -> Self {
+        self.graph.passes[self.pass.0 as usize].dispatch = dispatch;
         self
     }
 }

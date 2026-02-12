@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{BufferHandle, DrawCommandBundle, ShaderHandle};
+use crate::{BufferHandle, ExecutionPlan, ShaderHandle};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ResourceData {
@@ -18,5 +18,5 @@ pub struct ShaderData {
 pub enum BackendMessage {
     LoadResourceData(ResourceData),
     PrepareShaderData(ShaderData),
-    SubmitFrame(Vec<DrawCommandBundle>),
+    SubmitFrame(ExecutionPlan),
 }
