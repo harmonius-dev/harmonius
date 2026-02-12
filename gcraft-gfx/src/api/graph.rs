@@ -17,7 +17,7 @@ pub struct PassId(u32);
 
 // ── Resource access ─────────────────────────────────────────────────
 
-/// How a render pass accesses a resource through a slot.
+/// How a render pass accesses a resource.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ResourceAccess {
     /// The pass only reads from the resource.
@@ -28,15 +28,6 @@ pub enum ResourceAccess {
     ReadWrite,
 }
 
-/// Describes a single resource slot exposed by a [`RenderPassNode`].
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SlotDescriptor {
-    /// The kind of resource this slot accepts.
-    pub slot_type: ResourceSlotType,
-    /// How the pass accesses the resource through this slot.
-    pub access: ResourceAccess,
-}
-
 // ── Resource slot types ─────────────────────────────────────────────
 
 /// The type of a resource slot.
@@ -44,19 +35,6 @@ pub struct SlotDescriptor {
 pub enum ResourceSlotType {
     Image,
     Buffer,
-}
-
-// ── Render pass trait ───────────────────────────────────────────────
-
-/// A node in the render graph that represents a single render pass.
-///
-/// Implementors declare their resource slots (with types and access modes).
-/// The [`RenderGraph`] builder wires these slots to virtual resources.
-pub trait RenderPassNode {
-    /// Declares this pass's resource slots with their types and access modes.
-    ///
-    /// Slot indices correspond to positions in the returned [`Vec`].
-    fn slots(&self) -> Vec<SlotDescriptor>;
 }
 
 // ── Resource descriptors ────────────────────────────────────────────
@@ -146,29 +124,47 @@ impl VirtualResource {
     }
 }
 
-/// Binds a pass's slot to a virtual resource.
+/// A resource binding within a pass: which resource and how it's accessed.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-struct SlotBinding {
-    pass: PassId,
-    slot: u32,
+struct PassSlot {
     resource: VirtualResourceId,
+    access: ResourceAccess,
 }
 
-/// Storage for a pass added to the graph.
-struct PassEntry {
-    node: Box<dyn RenderPassNode>,
+/// A purely declarative pass: just its ordered resource bindings.
+#[derive(Debug, Clone, Default)]
+struct PassData {
+    slots: Vec<PassSlot>,
 }
 
 // ── RenderGraph ─────────────────────────────────────────────────────
 
 /// A multi-stage rendering operation that is compiled into an efficient execution plan.
 ///
-/// Use the builder methods to declare resources, add passes, and bind
-/// pass slots to resources.
+/// # Example
+///
+/// ```ignore
+/// let mut graph = RenderGraph::new();
+///
+/// let albedo = graph.create_transient(albedo_desc);
+/// let depth  = graph.create_transient(depth_desc);
+/// let output = graph.import_image();
+///
+/// let gbuffer = graph.add_pass()
+///     .write(albedo)
+///     .write(depth)
+///     .build();
+///
+/// let lighting = graph.add_pass()
+///     .read(albedo)
+///     .read(depth)
+///     .write(output)
+///     .build();
+/// ```
+#[derive(Debug, Clone)]
 pub struct RenderGraph {
-    passes: Vec<PassEntry>,
+    passes: Vec<PassData>,
     resources: Vec<VirtualResource>,
-    bindings: Vec<SlotBinding>,
 }
 
 impl RenderGraph {
@@ -177,7 +173,6 @@ impl RenderGraph {
         Self {
             passes: Vec::new(),
             resources: Vec::new(),
-            bindings: Vec::new(),
         }
     }
 
@@ -208,62 +203,14 @@ impl RenderGraph {
         id
     }
 
-    /// Add a render pass node to the graph.
+    /// Begin declaring a new render pass.
     ///
-    /// Returns a [`PassId`] used to bind the pass's slots to virtual resources.
-    pub fn add_pass(&mut self, node: impl RenderPassNode + 'static) -> PassId {
+    /// Use the returned [`PassBuilder`] to declare which resources the pass
+    /// reads and writes, then call [`.build()`](PassBuilder::build) to finalize.
+    pub fn add_pass(&mut self) -> PassBuilder<'_> {
         let id = PassId(self.passes.len() as u32);
-        self.passes.push(PassEntry {
-            node: Box::new(node),
-        });
-        id
-    }
-
-    /// Bind a pass's slot to a virtual resource.
-    ///
-    /// `slot` is the index into the [`Vec`] returned by [`RenderPassNode::slots()`].
-    /// The resource type must match the slot's declared [`ResourceSlotType`].
-    pub fn bind(
-        &mut self,
-        pass: PassId,
-        slot: u32,
-        resource: VirtualResourceId,
-    ) -> Result<(), RenderGraphError> {
-        let entry = self
-            .passes
-            .get(pass.0 as usize)
-            .ok_or(RenderGraphError::InvalidPassId(pass))?;
-
-        let virt = self
-            .resources
-            .get(resource.0 as usize)
-            .ok_or(RenderGraphError::InvalidResourceId(resource))?;
-
-        let slots = entry.node.slots();
-        let slot_desc = slots
-            .get(slot as usize)
-            .ok_or(RenderGraphError::SlotIndexOutOfBounds {
-                pass,
-                slot,
-                slot_count: slots.len() as u32,
-            })?;
-
-        let resource_type = virt.slot_type();
-        if slot_desc.slot_type != resource_type {
-            return Err(RenderGraphError::TypeMismatch {
-                pass,
-                slot,
-                expected: slot_desc.slot_type,
-                actual: resource_type,
-            });
-        }
-
-        self.bindings.push(SlotBinding {
-            pass,
-            slot,
-            resource,
-        });
-        Ok(())
+        self.passes.push(PassData::default());
+        PassBuilder { graph: self, pass: id }
     }
 
     /// Returns the number of passes in the graph.
@@ -283,13 +230,44 @@ impl Default for RenderGraph {
     }
 }
 
-impl std::fmt::Debug for RenderGraph {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("RenderGraph")
-            .field("passes", &self.passes.len())
-            .field("resources", &self.resources.len())
-            .field("bindings", &self.bindings.len())
-            .finish()
+// ── PassBuilder ─────────────────────────────────────────────────────
+
+/// Builder for declaring a render pass's resource bindings.
+///
+/// Obtained from [`RenderGraph::add_pass`]. Chain `.read()`, `.write()`,
+/// and `.read_write()` calls to declare resource access, then call
+/// `.build()` to finalize the pass.
+pub struct PassBuilder<'a> {
+    graph: &'a mut RenderGraph,
+    pass: PassId,
+}
+
+impl<'a> PassBuilder<'a> {
+    /// Declare that this pass reads from `resource`.
+    pub fn read(self, resource: VirtualResourceId) -> Self {
+        self.push_slot(resource, ResourceAccess::Read)
+    }
+
+    /// Declare that this pass writes to `resource`.
+    pub fn write(self, resource: VirtualResourceId) -> Self {
+        self.push_slot(resource, ResourceAccess::Write)
+    }
+
+    /// Declare that this pass both reads from and writes to `resource`.
+    pub fn read_write(self, resource: VirtualResourceId) -> Self {
+        self.push_slot(resource, ResourceAccess::ReadWrite)
+    }
+
+    /// Finalize the pass and return its [`PassId`].
+    pub fn build(self) -> PassId {
+        self.pass
+    }
+
+    fn push_slot(self, resource: VirtualResourceId, access: ResourceAccess) -> Self {
+        self.graph.passes[self.pass.0 as usize]
+            .slots
+            .push(PassSlot { resource, access });
+        self
     }
 }
 
@@ -302,19 +280,6 @@ pub enum RenderGraphError {
     InvalidPassId(PassId),
     #[display("invalid resource id: {_0:?}")]
     InvalidResourceId(VirtualResourceId),
-    #[display("slot index {slot} out of bounds for pass {pass:?} (has {slot_count} slots)")]
-    SlotIndexOutOfBounds {
-        pass: PassId,
-        slot: u32,
-        slot_count: u32,
-    },
-    #[display("type mismatch on pass {pass:?} slot {slot}: expected {expected:?}, got {actual:?}")]
-    TypeMismatch {
-        pass: PassId,
-        slot: u32,
-        expected: ResourceSlotType,
-        actual: ResourceSlotType,
-    },
 }
 
 impl std::error::Error for RenderGraphError {}
