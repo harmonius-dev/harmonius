@@ -53,6 +53,41 @@ pub enum ResourceDescriptor {
     },
 }
 
+// ── Upload sorting ──────────────────────────────────────────────────
+
+/// Data type of a sort key within an upload buffer element.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum SortKeyType {
+    F32,
+    U32,
+    I32,
+}
+
+/// Sort direction.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum SortOrder {
+    Ascending,
+    Descending,
+}
+
+/// Describes a CPU-side sort applied to upload buffer elements before GPU transfer.
+///
+/// The executor sorts elements in-place before the host-to-device copy.
+/// This is the practical path for moderate datasets (e.g. a few thousand
+/// transparent objects sorted by distance). For massive datasets, a GPU
+/// radix sort can be expressed as a regular compute pass instead.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct UploadSort {
+    /// Byte stride between consecutive elements.
+    pub stride: u32,
+    /// Byte offset of the sort key within each element.
+    pub key_offset: u32,
+    /// Data type of the sort key.
+    pub key_type: SortKeyType,
+    /// Sort direction.
+    pub order: SortOrder,
+}
+
 // ── Pass dispatch ───────────────────────────────────────────────────
 
 /// How a pass dispatches GPU work.
@@ -112,7 +147,7 @@ enum VirtualResource {
     /// An externally-owned buffer imported into the graph.
     ImportedBuffer,
     /// A buffer filled from CPU data before graph execution (host → device transfer).
-    Upload { size: u32 },
+    Upload { size: u32, sort: Option<UploadSort> },
 }
 
 impl VirtualResource {
@@ -238,7 +273,18 @@ impl RenderGraph {
     /// lists, transforms, etc.) that originates on the CPU.
     pub fn upload(&mut self, size: u32) -> VirtualResourceId {
         let id = VirtualResourceId(self.resources.len() as u32);
-        self.resources.push(VirtualResource::Upload { size });
+        self.resources.push(VirtualResource::Upload { size, sort: None });
+        id
+    }
+
+    /// Declare a buffer filled from CPU data that is sorted before GPU transfer.
+    ///
+    /// The executor sorts the buffer's elements according to `sort` before the
+    /// host-to-device copy. Use this when draw order matters (e.g. back-to-front
+    /// for blending) or when batching by a key improves GPU throughput.
+    pub fn upload_sorted(&mut self, size: u32, sort: UploadSort) -> VirtualResourceId {
+        let id = VirtualResourceId(self.resources.len() as u32);
+        self.resources.push(VirtualResource::Upload { size, sort: Some(sort) });
         id
     }
 
