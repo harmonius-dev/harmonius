@@ -57,30 +57,19 @@ pub enum ResourceDescriptor {
 
 /// How a pass dispatches GPU work.
 ///
-/// Mesh shader variants map to `vkCmdDrawMeshTasksEXT` and friends.
-/// Compute variants map to `vkCmdDispatch` and friends.
-/// Indirect command/count buffers are automatically tracked as read
-/// dependencies when set through the [`PassBuilder`].
+/// Only dispatch types needed for a GPU-driven pipeline are provided.
+/// Mesh shader draws are always indirect with a GPU-written count buffer.
+/// Compute passes support both direct dispatch (to kick off the chain)
+/// and indirect dispatch (for GPU-driven chaining).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum PassDispatch {
     /// No dispatch specified.
     #[default]
     None,
-    /// Dispatch mesh shader work groups directly.
-    MeshDirect {
-        group_count: [u32; 3],
-    },
-    /// Draw via mesh shaders from an indirect command buffer.
-    ///
-    /// Each entry in the buffer is a `DrawMeshTasksIndirectCommandEXT`
-    /// (groupCountX, groupCountY, groupCountZ).
-    MeshIndirect {
-        /// Buffer of `DrawMeshTasksIndirectCommandEXT` entries.
-        commands: VirtualResourceId,
-        /// Maximum number of draws the GPU may issue.
-        max_draw_count: u32,
-    },
     /// Draw via mesh shaders with a GPU-driven draw count.
+    ///
+    /// Maps to `vkCmdDrawMeshTasksIndirectCountEXT`. The GPU writes both
+    /// the command buffer and the draw count.
     MeshIndirectCount {
         /// Buffer of `DrawMeshTasksIndirectCommandEXT` entries.
         commands: VirtualResourceId,
@@ -180,13 +169,13 @@ struct PassData {
 ///     .mesh_indirect_count(draw_cmds, draw_count, MAX_DRAWS)
 ///     .build();
 ///
-/// // Lighting — fullscreen mesh shader triangle
+/// // Lighting — fullscreen compute pass
 /// let _lighting = graph.add_pass()
 ///     .read(albedo)
 ///     .read(depth)
 ///     .write(output)
 ///     .pipeline(lighting_pipeline)
-///     .mesh_direct([1, 1, 1])
+///     .compute([ceil_div(width, 8), ceil_div(height, 8), 1])
 ///     .build();
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -301,22 +290,6 @@ impl<'a> PassBuilder<'a> {
     pub fn pipeline(self, pipeline: PipelineHandle) -> Self {
         self.graph.passes[self.pass.0 as usize].pipeline = Some(pipeline);
         self
-    }
-
-    /// Dispatch mesh shader work groups directly.
-    pub fn mesh_direct(self, group_count: [u32; 3]) -> Self {
-        self.set_dispatch(PassDispatch::MeshDirect { group_count })
-    }
-
-    /// Draw via mesh shaders from an indirect command buffer.
-    ///
-    /// Implicitly adds a read dependency on `commands`.
-    pub fn mesh_indirect(self, commands: VirtualResourceId, max_draw_count: u32) -> Self {
-        self.push_slot(commands, ResourceAccess::Read)
-            .set_dispatch(PassDispatch::MeshIndirect {
-                commands,
-                max_draw_count,
-            })
     }
 
     /// Draw via mesh shaders with a GPU-driven draw count.
