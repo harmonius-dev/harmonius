@@ -73,4 +73,4 @@ Create the following documents using concise structured text and Mermaid diagram
 Don't write backend implementation code yet. Use nested subagents to preserve
 context and ensure exhaustiveness and correctness. Verify no legacy features
 are included. Focus on requirements, architecture, design, and software
-engineering best practices.
+engineering best practices. Use a task list to guarantee exhaustive completion.
