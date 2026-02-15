@@ -4,8 +4,9 @@ include the project goals, overview, and roadmap, module responsibilities,
 features and assumptions documents, requirements tables, high level architecture
 designs, attached diagrams and flowcharts, internal documentation pages, and
 implementation plans. Use mermaid diagrams and structured text to communicate
-key details concisely and quickly. Do not generate long prose or redundant text.
-Do not write any code whatsoever during this session.
+key details concisely and quickly. Diagrams must be legible, organized, and
+separated into manageably-sized figures. Do not generate long prose or redundant
+text. Do not write any code whatsoever during this session.
 
 This library is an ambitious render graph project to build a production-grade
 cross-platform renderer for high performance desktop games. The user-facing API
@@ -178,18 +179,10 @@ the I/O threads. This includes the entire Rust<->C++ bridge code and the C++
 implementation code for each backend. The Rust API is just a declarative
 description of what the executor will dispatch to the render and I/O threads.
 
-❯ Don't make any code changes actually. Read this entire conversation and
-produce an updated README that just covers the project overview and goals.
-Create a features and requirements document that covers every feature that was
-said in this conversation, and every requirement that was mentioned or is
-derived from those features. The latest 3-6 messages I sent are the most
-relevant, so do not miss any details from those messages.
-
-Create an architecture document that covers the high level architecture, how
-each capability in the render graph implements the requirements I brought up,
-and why each of these requirements is necessary for the requested feature set.
-Use mermaid diagrams that are legible, organized, and separated into manageable
-pieces to illustrate the high level architecture. Do not write any code in this
+Create a high level architecture documents that covers the high level design,
+including how each capability in the render graph implements the requirements I
+brought up, and why each design decision is necessary for requested features.
+Do not write any code in this
 document, but do use visuals and technical writing to explain things visually.
 Do not use ASCII art. Generate Mermaid diagrams instead, or else generate an
 image directly.
