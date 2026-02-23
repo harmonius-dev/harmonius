@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "mdtree@harmonius": true
+  },
+  "extraKnownMarketplaces": {
+    "harmonius": {
+      "source": {
+        "source": "directory",
+        "path": "./"
+      }
+    }
+  }
+}
