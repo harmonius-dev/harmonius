@@ -1,0 +1,27 @@
+{
+  "description": "Loads mdtree format conventions when creating or renaming files matching numbered hierarchy patterns",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if the file path in $TOOL_INPUT matches a hierarchical numbered markdown tree pattern. Match if ANY of these are true:\n\n1. The path contains a folder named like `{number}-{name}/` (e.g., `3-geometry/`, `1-rendering/`)\n2. The path contains a file named like `{N.M}-{name}.md` (e.g., `1.1-core-rendering.md`, `2.3-data-constraints.md`)\n3. The file content contains headings with numbered items like `## 1.1.1` or `## F-1.1.1`\n\nIf the path or content matches, respond with a systemMessage reminding Claude to follow mdtree format conventions: use sequential numbering, kebab-case names, proper heading format, and update the root README if adding new files or sections. If it does not match, respond with no systemMessage.",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if the bash command in $TOOL_INPUT is creating or renaming directories/files that match a hierarchical numbered markdown tree pattern (e.g., `mkdir 3-geometry`, `mv 1-rendering 1-core-rendering`). Match if the command involves mkdir, mv, or cp with paths containing `{number}-{name}` or `{N.M}-{name}.md` patterns.\n\nIf matched, respond with a systemMessage reminding Claude to follow mdtree conventions: sequential numbering, kebab-case names, and update the root README. If not matched, respond with no systemMessage.",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

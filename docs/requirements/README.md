@@ -1,6 +1,6 @@
 # Requirements
 
-Hierarchical requirements for the hybrid render graph library. Each requirement has a unique identifier (e.g., `1.1.3` is the third requirement in section 1.1).
+Hierarchical requirements for the hybrid render graph library. Each requirement has a unique identifier (e.g., `R-1.1.3` is the third requirement in section 1.1).
 
 ## Sections
 

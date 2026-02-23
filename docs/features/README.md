@@ -1,6 +1,6 @@
 # Features
 
-Hierarchical feature specification for the hybrid render graph library. Each feature has a unique identifier (e.g., `F-2.1.3` is the third feature in section 2.1). Features reference requirements from [docs/requirements/](../requirements/) by ID.
+Hierarchical feature specification for the hybrid render graph library. Each feature has a unique identifier (e.g., `F-2.1.3` is the third feature in section 2.1). Features reference requirements from [docs/requirements/](../requirements/) by ID (e.g., `R-1.1.2`).
 
 ## Sections
 

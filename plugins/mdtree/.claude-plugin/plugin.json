@@ -1,0 +1,5 @@
+{
+  "name": "mdtree",
+  "version": "0.1.0",
+  "description": "Hierarchical sequentially numbered markdown document trees with cross-references"
+}
