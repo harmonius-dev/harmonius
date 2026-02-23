@@ -19,10 +19,10 @@ Hierarchical feature specification for the hybrid render graph library. Each fea
 ### 3 Geometry
 - [3.1 Meshlet Pipeline](3-geometry/3.1-meshlet-pipeline.md) — virtualized geometry, mesh shaders, tessellation, visibility buffer, VRS
 - [3.2 Worlds and Terrain](3-geometry/3.2-worlds-and-terrain.md) — streaming, voxels, terrain, HLOD, procedural generation
-- [3.3 Foliage and Vegetation](3-geometry/3.3-foliage-and-vegetation.md) — hierarchical instancing, wind, procedural placement, grass
+- [3.3 Foliage and Vegetation](3-geometry/3.3-foliage-and-vegetation.md) — hierarchical instancing, wind, fade, transmission
 
 ### 4 Animation
-- [4.1 Animation](4-animation/4.1-animation.md) — skeletal, morph targets, state machines, IK, cloth, destruction, hair
+- [4.1 Animation](4-animation/4.1-animation.md) — skeletal, morph targets, state machines, IK, cloth, hair
 
 ### 5 UI and 2D
 - [5.1 UI and 2D](5-ui-and-2d/5.1-ui-and-2d.md) — vector/bitmap UI, sprites, tilemaps, isometric
