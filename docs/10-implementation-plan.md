@@ -1074,8 +1074,9 @@ graph TD
 The critical path runs through every mandatory foundation milestone and then
 through Vulkan before reaching the full test suite:
 
-```
-M1 → M2 → M3 → M4 → M5 → M11 → M12 → M16 → M17 → M18
+```mermaid
+graph LR
+    M1 --> M2 --> M3 --> M4 --> M5 --> M11 --> M12 --> M16 --> M17 --> M18
 ```
 
 This chain has 10 sequential milestones. No amount of parallel work can

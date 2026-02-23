@@ -1928,18 +1928,15 @@ No object is shared concurrently without explicit documentation below.
 
 ### 5.2 Init / Destroy Ordering
 
-```
-Main Thread
-  │
-  ├── BackendDevice::init()                  (once at startup)
-  ├── BackendResourceAllocator::ctor()       (once at startup)
-  ├── BackendIOManager::ctor()               (once at startup)
-  │
-  │   [Render/IO/Compute threads spawned]
-  │
-  ├── BackendDevice::destroy()               (once at shutdown, after all threads joined)
-  ├── BackendResourceAllocator::dtor()       (after destroy())
-  └── BackendIOManager::dtor()               (after destroy())
+```mermaid
+graph TB
+    MT["Main Thread"] --> init1["BackendDevice::init()\n<i>once at startup</i>"]
+    init1 --> init2["BackendResourceAllocator::ctor()\n<i>once at startup</i>"]
+    init2 --> init3["BackendIOManager::ctor()\n<i>once at startup</i>"]
+    init3 --> spawn["Render / IO / Compute threads spawned"]
+    spawn --> destroy1["BackendDevice::destroy()\n<i>once at shutdown, after all threads joined</i>"]
+    destroy1 --> destroy2["BackendResourceAllocator::dtor()\n<i>after destroy()</i>"]
+    destroy2 --> destroy3["BackendIOManager::dtor()\n<i>after destroy()</i>"]
 ```
 
 Calling `destroy()` while render or IO threads hold references to device
@@ -1948,19 +1945,18 @@ joined and all in-flight fences are waited before the device is released.
 
 ### 5.3 Command Buffer Lifecycle
 
-```
-Render Thread N
-  │
-  ├── backend_alloc_command_buffer()         -- allocates from per-thread pool
-  ├── backend_reset_command_buffer()         -- returns to recording state
-  ├── backend_cmd_begin_render_pass()
-  ├── backend_cmd_set_pipeline()
-  ├── backend_cmd_draw_mesh_indirect()
-  ├── backend_cmd_end_render_pass()
-  └── backend_submit()                       -- hands ownership to the GPU
-          └── [GPU executes]
-                  └── fence signalled
-                          └── backend_reset_command_buffer() (next frame)
+```mermaid
+graph TB
+    RT["Render Thread N"] --> alloc["backend_alloc_command_buffer()\n<i>allocates from per-thread pool</i>"]
+    alloc --> reset["backend_reset_command_buffer()\n<i>returns to recording state</i>"]
+    reset --> begin["backend_cmd_begin_render_pass()"]
+    begin --> pipe["backend_cmd_set_pipeline()"]
+    pipe --> draw["backend_cmd_draw_mesh_indirect()"]
+    draw --> endrp["backend_cmd_end_render_pass()"]
+    endrp --> submit["backend_submit()\n<i>hands ownership to the GPU</i>"]
+    submit --> gpu["GPU executes"]
+    gpu --> fence["Fence signalled"]
+    fence --> reset2["backend_reset_command_buffer()\n<i>next frame</i>"]
 ```
 
 Command buffers are **never** touched from the Rust side after `backend_submit`

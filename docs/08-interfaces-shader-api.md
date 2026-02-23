@@ -1841,15 +1841,15 @@ back to a placeholder PSO for the current frame only.
 
 ## Appendix: Crate Dependency Summary
 
-```
-harmonius-shaders
-    ├── naga               (shader IR + MSL/HLSL/SPIR-V backends)
-    ├── uuid               (node and graph UUIDs)
-    ├── serde              (serialization traits)
-    ├── rmp-serde          (MessagePack format)
-    ├── bitflags           (PermutationKey, CompileFeatureFlags)
-    ├── thiserror          (CompileError)
-    └── harmonius-types    (shared enums: TextureFormat, etc.)
+```mermaid
+graph TB
+    HS["harmonius-shaders"] --> naga["naga\n<i>shader IR + MSL/HLSL/SPIR-V backends</i>"]
+    HS --> uuid["uuid\n<i>node and graph UUIDs</i>"]
+    HS --> serde["serde\n<i>serialization traits</i>"]
+    HS --> rmp["rmp-serde\n<i>MessagePack format</i>"]
+    HS --> bitflags["bitflags\n<i>PermutationKey, CompileFeatureFlags</i>"]
+    HS --> thiserror["thiserror\n<i>CompileError</i>"]
+    HS --> types["harmonius-types\n<i>shared enums: TextureFormat, etc.</i>"]
 ```
 
 `harmonius-shaders` has no dependency on any of the backend crates

@@ -45,50 +45,23 @@ Direct3D 12.
 
 ## Tech Stack
 
-```
-User Code (Safe Rust)
-        │
-        ▼
-┌─────────────────────────┐
-│  Harmonius Public API   │  100% Safe Rust
-│  (Declarative Render    │  Structs, Traits, Enums
-│   Graph Builder)        │
-└────────────┬────────────┘
-             │
-        ▼
-┌─────────────────────────┐
-│  Execution Planner      │  Safe Rust
-│  (Graph Compiler &      │  Compiles graph → optimized
-│   Resource Scheduler)   │  execution plan
-└────────────┬────────────┘
-             │  cxx.rs bridge
-             ▼
-┌─────────────────────────┐
-│  C++ Backend            │  Unsafe, background threads
-│  Metal / Vulkan / D3D12 │  Command encoding, resource
-│  (metal-hpp/vulkan-hpp) │  management, IO dispatch
-└─────────────────────────┘
+```mermaid
+graph TB
+    A["User Code (Safe Rust)"] --> B
+    B["Harmonius Public API\n(Declarative Render Graph Builder)\n<i>100% Safe Rust — Structs, Traits, Enums</i>"] --> C
+    C["Execution Planner\n(Graph Compiler & Resource Scheduler)\n<i>Safe Rust — Compiles graph → optimized execution plan</i>"] -- "cxx.rs bridge" --> D
+    D["C++ Backend\nMetal / Vulkan / D3D12\n(metal-hpp / vulkan-hpp)\n<i>Unsafe, background threads — Command encoding,\nresource management, IO dispatch</i>"]
 ```
 
 ### Shader Pipeline
 
-```
-Shader Graph File (Serialized)
-        │
-        ▼
-┌─────────────────────────┐
-│  Shader Graph Compiler  │  Public Rust crate
-│  (harmonius-shaders)    │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  Naga IR                │  Platform-neutral shader AST
-└────────────┬────────────┘
-             │
-     ┌───────┼───────┐
-     ▼       ▼       ▼
-   MSL     HLSL    SPIR-V
+```mermaid
+graph TB
+    A["Shader Graph File (Serialized)"] --> B
+    B["Shader Graph Compiler\n(harmonius-shaders)\n<i>Public Rust crate</i>"] --> C
+    C["Naga IR\n<i>Platform-neutral shader AST</i>"] --> D["MSL"]
+    C --> E["HLSL"]
+    C --> F["SPIR-V"]
 ```
 
 ## High-Level Architecture
