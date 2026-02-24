@@ -31,8 +31,10 @@ Before creating a tree, collect:
 1. **Tree name** — the root directory name (kebab-case, e.g., `features`, `api-docs`)
 2. **Parent path** — where to create it (e.g., `docs/`)
 3. **Sections** — numbered categories, each with a title and list of subsections
-4. **Item prefix** (required) — a short uppercase prefix, e.g., `F-` for features, `R-` for requirements, `API-` for API docs
-5. **Cross-references** (optional) — which other mdtree(s) this tree references, and the label to use (e.g., "Requirements")
+4. **Item prefix** (required) — a short uppercase prefix, e.g., `F-` for
+   features, `R-` for requirements, `API-` for API docs
+5. **Cross-references** (optional) — which other mdtree(s) this tree
+   references, and the label to use (e.g., "Requirements")
 
 ## Scaffolding Process
 
@@ -40,7 +42,7 @@ Before creating a tree, collect:
 
 For each section N with subsections, create:
 
-```
+```text
 {parent-path}/{tree-name}/
 ├── README.md
 ├── {N}-{section-kebab}/
@@ -68,6 +70,7 @@ Follow this template:
 ```
 
 If cross-references are configured, add a note:
+
 ```markdown
 {Item type}s reference {target tree} from [{path}]({relative-path}) by ID.
 ```
@@ -89,6 +92,7 @@ Only include one placeholder item per file. The user will fill in real content.
 ### Step 4: Verify
 
 After scaffolding, verify:
+
 - All folders numbered sequentially starting at 1
 - All files within each folder numbered sequentially (N.1, N.2, ...)
 - README links resolve correctly
@@ -119,7 +123,7 @@ the requirements tree."
 
 Result:
 
-```
+```text
 docs/api-docs/
 ├── README.md
 ├── 1-authentication/
@@ -134,6 +138,7 @@ docs/api-docs/
 ```
 
 README excerpt:
+
 ```markdown
 # API Documentation
 

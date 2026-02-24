@@ -20,15 +20,17 @@ files, each holding sequentially numbered items.
 
 ## Three-Tier Numbering
 
-```
+```text
 Tier 1 (Section):    N           → folder:  N-{kebab-name}/
 Tier 2 (Subsection): N.M         → file:    N.M-{kebab-name}.md
 Tier 3 (Item):       N.M.K       → heading: ## PREFIX-N.M.K {Title}
 ```
 
 - Numbering is sequential within each tier (1, 2, 3... never skip)
-- Files inside folder `N-name/` always start with `N.` (e.g., folder `2-advanced/` contains `2.1-foo.md`, `2.2-bar.md`)
-- Item headings inside file `N.M-name.md` always start with `PREFIX-N.M.` (e.g., file `3.1-meshlet.md` contains `## F-3.1.1`, `## F-3.1.2`)
+- Files inside folder `N-name/` always start with `N.` (e.g., folder
+  `2-advanced/` contains `2.1-foo.md`, `2.2-bar.md`)
+- Item headings inside file `N.M-name.md` always start with `PREFIX-N.M.`
+  (e.g., file `3.1-meshlet.md` contains `## F-3.1.1`, `## F-3.1.2`)
 
 ## Item Prefix
 
@@ -39,7 +41,7 @@ prefix: `## PREFIX-N.M.K {Title}`.
 
 ## Folder Naming
 
-```
+```text
 {N}-{kebab-case-name}/
 ```
 
@@ -47,7 +49,7 @@ Examples: `1-rendering/`, `2-advanced-rendering/`, `3-quality/`
 
 ## File Naming
 
-```
+```text
 {N.M}-{kebab-case-name}.md
 ```
 
@@ -90,19 +92,23 @@ Each `.md` file contains a title heading and sequentially numbered items:
 Trees may reference items in other trees using inline markdown links:
 
 ```markdown
-- **{Label}:** [{ID}](../../{other-tree}/{section-folder}/{file}.md) {description}
+- **{Label}:** [{ID}](../../{other-tree}/{section-folder}/{file}.md)
+  {description}
 ```
 
 Example from a features tree referencing requirements:
 
 ```markdown
-- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven rendering
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md)
+  GPU-driven rendering
 ```
 
 Multiple references are comma-separated:
 
 ```markdown
-- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven, [R-2.2.1](../../requirements/2-nonfunctional/2.2-hardware.md) bindless
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md)
+  GPU-driven, [R-2.2.1](../../requirements/2-nonfunctional/2.2-hardware.md)
+  bindless
 ```
 
 ## Adding Content
@@ -132,4 +138,5 @@ from other files).
 ## Reference
 
 For a complete worked example of an mdtree hierarchy, see:
+
 - **`references/example-tree.md`** — full directory listing and sample content

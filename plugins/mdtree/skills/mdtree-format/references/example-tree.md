@@ -4,7 +4,7 @@ A concrete example of a complete mdtree hierarchy.
 
 ## Directory Structure
 
-```
+```text
 features/
 ├── README.md
 ├── 1-rendering/
@@ -38,13 +38,18 @@ requirements from [docs/requirements/](../requirements/) by ID.
 ## Sections
 
 ### 1 Rendering
-- [1.1 Core Rendering](1-rendering/1.1-core-rendering.md) — culling, projection, instancing
-- [1.2 Lighting and Materials](1-rendering/1.2-lighting-and-materials.md) — forward+, deferred, PBR
-- [1.3 Shadows and Effects](1-rendering/1.3-shadows-and-effects.md) — shadow maps, AO, SSS
+- [1.1 Core Rendering](1-rendering/1.1-core-rendering.md) — culling,
+  projection, instancing
+- [1.2 Lighting and Materials](1-rendering/1.2-lighting-and-materials.md) —
+  forward+, deferred, PBR
+- [1.3 Shadows and Effects](1-rendering/1.3-shadows-and-effects.md) —
+  shadow maps, AO, SSS
 
 ### 2 Advanced Rendering
-- [2.1 Ray Tracing](2-advanced-rendering/2.1-ray-tracing.md) — acceleration structures, RT reflections
-- [2.2 Environment](2-advanced-rendering/2.2-environment.md) — sky, volumetrics, clouds, fog
+- [2.1 Ray Tracing](2-advanced-rendering/2.1-ray-tracing.md) — acceleration
+  structures, RT reflections
+- [2.2 Environment](2-advanced-rendering/2.2-environment.md) — sky,
+  volumetrics, clouds, fog
 ```
 
 ## Document File
@@ -56,13 +61,16 @@ requirements from [docs/requirements/](../requirements/) by ID.
 
 Point, spot, and directional light evaluation with physically-based attenuation.
 
-- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven rendering
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md)
+  GPU-driven rendering
 
 ## F-1.1.2 GPU Frustum Culling
 
 Meshlet-level frustum culling on the GPU via a compute pass.
 
-- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven, [R-1.1.3](../../requirements/1-architecture/1.1-core-constraints.md) mesh shaders
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md)
+  GPU-driven, [R-1.1.3](../../requirements/1-architecture/1.1-core-constraints.md)
+  mesh shaders
 ```
 
 ## Example With R- Prefix (Requirements)
@@ -83,7 +91,7 @@ All rendering SHALL be GPU-driven.
 
 Features referencing requirements from a sibling tree:
 
-```
+```text
 docs/
 ├── features/           ← source tree (has prefix F-)
 │   └── 1-rendering/
@@ -94,6 +102,8 @@ docs/
 ```
 
 Link format from features to requirements:
+
 ```markdown
-- **Requirements:** [R-{req-id}](../../requirements/{section-folder}/{file}.md) {description}
+- **Requirements:** [R-{req-id}](../../requirements/{section-folder}/{file}.md)
+  {description}
 ```
