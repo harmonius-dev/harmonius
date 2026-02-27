@@ -44,6 +44,8 @@
 | R-2.3.11 | Enable Contact Shadows | RG-1.1, RG-1.10 |
 | R-2.3.12 | Enable Distance Field Shadows | RG-1.1, RG-6.1 |
 | R-2.3.13 | Enable Capsule Shadows | RG-1.1 |
+| R-2.3.14 | Enable Order-Independent Transparency | RG-1.1, RG-1.3, RG-1.4, RG-2.1, RG-5.3 |
+| R-2.3.15 | Enable Volumetric Shadow Maps | RG-1.1, RG-2.1, RG-3.1 |
 | R-2.4.1 | Create PBR Materials | No graph impact — CPU-side only |
 | R-2.4.2 | Configure Extended BSDF Layers | No graph impact — CPU-side only |
 | R-2.4.3 | Configure SSS Profiles | RG-1.4, RG-6.3 |
@@ -67,6 +69,16 @@
 | R-2.5.8 | Enable RT Global Illumination | RG-1.3, RG-1.6, RG-2.4, RG-2.6 |
 | R-2.5.9 | Enable Path Tracing | RG-1.4, RG-2.4, RG-2.19, RG-13.5 |
 | R-2.5.10 | Enable RT Subsurface Transmission | RG-1.1, RG-3.6 |
+| R-2.5.11 | Enable Surfel-Based GI | RG-1.1, RG-2.2, RG-2.4, RG-3.1, RG-4.2 |
+| R-2.5.12 | Enable ReSTIR Sampling | RG-1.1, RG-2.4, RG-3.1 |
+| R-2.5.13 | Enable Real-Time Production Path Tracing | RG-1.1, RG-1.4, RG-2.4, RG-2.18, RG-2.19, RG-3.1 |
+| R-2.5.14 | Enable Opacity Micromaps | RG-2.18, RG-2.25 |
+| R-2.5.15 | Enable Shader Execution Reordering | No graph impact — GPU pipeline config only |
+| R-2.5.16 | Configure Neural Denoising | RG-1.3, RG-1.4, RG-2.4 |
+| R-2.5.17 | Enable RT Lens Flare | RG-1.1, RG-2.18, RG-3.1 |
+| R-2.5.18 | Enable Voxel-Based GI | RG-1.1, RG-2.2, RG-3.1, RG-4.2 |
+| R-2.5.19 | Enable Neural Radiance Cache | RG-1.1, RG-2.2, RG-2.4, RG-4.2 |
+| R-2.5.20 | Enable Stochastic SSR | RG-1.1, RG-2.4, RG-3.1 |
 | R-2.6.1 | Configure Procedural Sky | RG-1.1, RG-14.2 |
 | R-2.6.2 | Configure Atmosphere LUT Resolution | RG-2.20 |
 | R-2.6.3 | Enable Volumetric Fog | RG-1.1, RG-1.6, RG-6.1 |
@@ -78,6 +90,9 @@
 | R-2.6.9 | Set Distance Fog Parameters | RG-1.1 |
 | R-2.6.10 | Animate Environment Parameters | RG-14.2 |
 | R-2.6.11 | Import Heterogeneous Volumes | RG-1.1 |
+| R-2.6.12 | Enable Voxel-Based Volumetric Clouds | RG-1.1, RG-1.6, RG-2.4, RG-2.5, RG-2.19 |
+| R-2.6.13 | Configure Breaking Waves | RG-1.1, RG-1.3, RG-2.2 |
+| R-2.6.14 | Configure Weather System | No graph impact — CPU-side only |
 | R-2.7.1 | Add Mesh Entities | RG-1.1, RG-6.1, RG-6.2, RG-6.4 |
 | R-2.7.2 | Configure Meshlet LOD | No graph impact — CPU-side only |
 | R-2.7.3 | Instance Mesh Entities | RG-1.1, RG-2.13 |
@@ -89,6 +104,9 @@
 | R-2.7.9 | Configure Dynamic Tessellation | No graph impact — CPU-side only |
 | R-2.7.10 | Enable Visibility Buffer | RG-1.1, RG-1.3, RG-2.1, RG-2.16, RG-3.1, RG-3.3, RG-3.6, RG-5.1, RG-6.1, RG-6.2, RG-6.4, RG-8.1, RG-8.2 |
 | R-2.7.11 | Configure Variable Rate Shading | RG-1.1, RG-2.1, RG-2.12, RG-3.1, RG-3.3, RG-3.6, RG-5.1, RG-6.1, RG-6.2, RG-6.4, RG-8.1, RG-8.2, RG-13.4 |
+| R-2.7.12 | Enable Meshlet Compression | No graph impact — GPU pipeline config only |
+| R-2.7.13 | Enable GPU Work Graphs | RG-1.1, RG-1.13 |
+| R-2.7.14 | Enable Concurrent Binary Tree Tessellation | RG-1.1, RG-2.2, RG-2.13 |
 | R-2.8.1 | Configure Streaming World | RG-2.8, RG-2.9, RG-11.1, RG-11.5, RG-13.6 |
 | R-2.8.2 | Register World Chunk Sources | RG-11.1, RG-11.4 |
 | R-2.8.3 | Configure Voxel World | RG-2.8, RG-2.9, RG-11.5, RG-13.6 |
@@ -100,6 +118,10 @@
 | R-2.8.9 | Configure HLOD Generation | RG-2.2, RG-4.2 |
 | R-2.8.10 | Configure Landscape Material Layers | RG-2.6, RG-14.2 |
 | R-2.8.11 | Configure Virtual Heightfield Mesh | RG-1.1, RG-6.1, RG-6.3 |
+| R-2.8.12 | Enable Procedural Terrain Splatting | RG-1.1 |
+| R-2.8.13 | Enable Surface Deformation | RG-1.1, RG-2.2 |
+| R-2.8.14 | Enable GPU-Driven Procedural Placement | RG-1.1, RG-2.2, RG-2.13 |
+| R-2.8.15 | Configure Clipmap Terrain | RG-1.1, RG-2.2 |
 | R-2.9.1 | Attach Skeleton to Mesh | RG-1.1, RG-2.2, RG-3.1, RG-14.2 |
 | R-2.9.2 | Play Animation Clips | No graph impact — CPU-side only |
 | R-2.9.3 | Blend Animation Clips | No graph impact — CPU-side only |
@@ -113,6 +135,8 @@
 | R-2.9.11 | Register Custom Animation Evaluators | No graph impact — CPU-side only |
 | R-2.9.12 | Enable Cloth Simulation | RG-1.3, RG-1.6, RG-4.2, RG-5.3 |
 | R-2.9.13 | Enable Hair/Fur Simulation | RG-1.6, RG-4.2 |
+| R-2.9.14 | Enable Motion Matching | No graph impact — CPU-side only |
+| R-2.9.15 | Enable Muscle Deformation | RG-1.1 |
 | R-2.10.1 | Create Vector UI Elements | RG-1.1, RG-14.5 |
 | R-2.10.2 | Create Bitmap UI Elements | RG-2.3, RG-14.2 |
 | R-2.10.3 | Layout UI with Flexbox | No graph impact — CPU-side only |
@@ -129,6 +153,9 @@
 | R-2.11.6 | Declare Custom Render Passes | RG-1.1, RG-1.2, RG-3.1, RG-4.1, RG-5.1, RG-5.7, RG-13.1, RG-13.2, RG-13.4 |
 | R-2.11.7 | Extend Material Models | No graph impact — CPU-side only |
 | R-2.11.8 | Validate Shader Graphs | No graph impact — CPU-side only |
+| R-2.11.9 | Author Domain-Specific Shader Language | No graph impact — CPU-side only |
+| R-2.11.10 | Enable Neural Texture Compression | No graph impact — GPU pipeline config only |
+| R-2.11.11 | Enable Neural Materials | No graph impact — GPU pipeline config only |
 | R-2.12.1 | Configure Streaming Priorities | RG-5.5, RG-7.2, RG-7.3, RG-11.6, RG-13.2, RG-13.3 |
 | R-2.12.2 | Configure Streaming Pool Budgets | RG-2.2, RG-2.8, RG-7.2, RG-7.3, RG-7.5, RG-8.2, RG-8.3, RG-11.5, RG-13.3 |
 | R-2.12.3 | Enable Tile Streaming | RG-1.1, RG-1.7, RG-2.4, RG-2.9, RG-2.10, RG-3.3, RG-4.3, RG-4.6, RG-5.5, RG-6.1, RG-6.3, RG-6.4, RG-7.3, RG-8.4, RG-8.5, RG-10.2, RG-10.5, RG-11.1, RG-11.2, RG-11.3, RG-11.4, RG-11.6, RG-13.3, RG-13.6, RG-14.1, RG-14.2, RG-14.6, RG-14.7, RG-14.8 |
@@ -137,6 +164,8 @@
 | R-2.12.6 | Synchronize Cross-Queue Resources | RG-3.4, RG-4.1, RG-4.3, RG-4.4, RG-4.5, RG-4.6, RG-6.5, RG-10.2, RG-10.6, RG-11.2, RG-13.4 |
 | R-2.12.7 | Configure Split-Screen Views | RG-2.11, RG-3.5, RG-5.2, RG-5.6, RG-9.1, RG-9.2, RG-9.3, RG-9.5, RG-10.1, RG-10.3, RG-10.4, RG-10.7, RG-13.1, RG-13.4, RG-14.3 |
 | R-2.12.8 | Monitor IO Throughput | RG-1.8, RG-8.6, RG-12.1, RG-12.3, RG-12.4, RG-12.7 |
+| R-2.12.9 | Enable GPU Decompression | RG-1.1, RG-2.10, RG-4.2 |
+| R-2.12.10 | Configure Bindless Resource Management | RG-2.15 |
 | R-2.13.1 | Configure Bloom | RG-1.1, RG-1.3, RG-1.6, RG-2.5, RG-2.22, RG-3.1, RG-3.3, RG-3.6, RG-5.1, RG-8.1, RG-8.2, RG-13.3, RG-14.5 |
 | R-2.13.2 | Configure Depth of Field | RG-1.1, RG-1.3, RG-1.6, RG-2.5, RG-3.1, RG-8.1, RG-8.2, RG-14.5 |
 | R-2.13.3 | Configure Motion Blur | RG-1.1, RG-1.6, RG-3.1, RG-14.5 |
@@ -154,6 +183,10 @@
 | R-2.14.3 | Enable FXAA Fallback | RG-1.4, RG-1.6, RG-6.3 |
 | R-2.14.4 | Enable Forward-Path MSAA | RG-1.1, RG-1.4, RG-2.21, RG-3.1, RG-3.3, RG-6.1, RG-6.7 |
 | R-2.14.5 | Select Anti-Aliasing Mode | RG-1.4, RG-1.12, RG-2.7, RG-6.3, RG-13.7 |
+| R-2.14.6 | Enable Checkerboard Rendering | RG-1.14, RG-2.4, RG-2.5 |
+| R-2.14.7 | Integrate Third-Party Upscalers | RG-1.4, RG-2.4, RG-2.5, RG-2.20 |
+| R-2.14.8 | Enable Frame Generation | RG-2.4, RG-2.24 |
+| R-2.14.9 | Enable Latency Reduction | No graph impact — API-level only |
 | R-2.15.1 | Configure Strand Hair | RG-6.1, RG-6.4 |
 | R-2.15.2 | Configure Card-Based Hair | No graph impact — CPU-side only |
 | R-2.15.3 | Configure Hair LOD | RG-1.4, RG-6.3, RG-13.5 |
@@ -162,11 +195,17 @@
 | R-2.15.6 | Configure Skin Rendering | RG-1.1, RG-3.1 |
 | R-2.15.7 | Assign Deep Opacity Maps | RG-1.1, RG-1.6, RG-1.10, RG-2.6, RG-3.1, RG-7.3, RG-9.1, RG-14.5 |
 | R-2.15.8 | Select Character Shading Quality | RG-1.4, RG-6.3, RG-13.5 |
+| R-2.15.9 | Enable Compute Software Rasterized Hair | RG-1.1, RG-2.1, RG-3.1 |
+| R-2.15.10 | Enable Peach Fuzz Rendering | RG-1.1, RG-2.1 |
+| R-2.15.11 | Configure Biometric Skin Model | No graph impact — CPU-side only |
 | R-2.16.1 | Configure Hierarchical Instanced Foliage | RG-1.1, RG-2.2, RG-2.13, RG-3.1, RG-4.4 |
 | R-2.16.2 | Configure Foliage Wind | RG-2.2, RG-14.2 |
 | R-2.16.3 | Configure Per-Instance Fade | No graph impact — CPU-side only |
 | R-2.16.4 | Enable Two-Sided Foliage Transmission | No graph impact — CPU-side only |
 | R-2.16.5 | Configure Foliage LOD | RG-1.3, RG-1.6, RG-2.13, RG-14.5 |
+| R-2.16.6 | Enable GPU Vegetation Skinning | RG-1.1, RG-2.2 |
+| R-2.16.7 | Enable Interactive Vegetation | RG-1.1, RG-2.2 |
+| R-2.16.8 | Enable Deferred Texturing for Vegetation | RG-1.1, RG-2.1 |
 | R-2.17.1 | Create GPU Particle Emitters | RG-1.1, RG-1.6, RG-2.2, RG-2.13, RG-3.1, RG-4.2, RG-4.4, RG-7.3, RG-14.2, RG-14.5 |
 | R-2.17.2 | Configure Sprite Particles | No graph impact — CPU-side only |
 | R-2.17.3 | Configure Mesh Particles | No graph impact — CPU-side only |
@@ -177,6 +216,7 @@
 | R-2.17.8 | Configure Particle Data Interfaces | No graph impact — CPU-side only |
 | R-2.17.9 | Configure Particle Warm-Up | No graph impact — CPU-side only |
 | R-2.17.10 | Configure Particle LOD | RG-1.4, RG-1.6, RG-6.3, RG-14.5 |
+| R-2.17.11 | Enable Destruction System | RG-1.1, RG-1.6, RG-2.2 |
 
 ## Reverse Mapping: Render Graph → High-Level
 
@@ -194,6 +234,8 @@
 | RG-1.10 | Per-Instance Conditional Enable on Sub-Graph Instances | R-2.3.7, R-2.3.11, R-2.15.7 |
 | RG-1.11 | Variable-Count Sub-Graph Instantiation | R-2.3.10 |
 | RG-1.12 | Per-Instance Variant Parameter on Sub-Graph | R-2.14.5 |
+| RG-1.13 | GPU Work Graph Pass | R-2.7.13 |
+| RG-1.14 | Checkerboard Resolve Pass | R-2.14.6 |
 | RG-2.1 | Transient Resource Declaration | R-2.1.6, R-2.1.8, R-2.1.10, R-2.7.10, R-2.7.11 |
 | RG-2.2 | Persistent Resource Declaration | R-2.1.7, R-2.6.6, R-2.7.5, R-2.8.5, R-2.8.9, R-2.9.1, R-2.9.9, R-2.12.2, R-2.16.1, R-2.16.2, R-2.17.1, R-2.17.6 |
 | RG-2.3 | Imported External Resource Declaration | R-2.1.4, R-2.10.2, R-2.10.5, R-2.11.4, R-2.11.5 |
@@ -217,6 +259,8 @@
 | RG-2.21 | Multi-Sample Render Target Resource Declaration | R-2.14.4 |
 | RG-2.22 | Mip-Level Sub-Resource Targeting | R-2.13.1 |
 | RG-2.23 | Fixed-Capacity Persistent Texture with Runtime Active Extent | R-2.2.10, R-2.8.7 |
+| RG-2.24 | Multi-Frame History Chain | R-2.14.8 |
+| RG-2.25 | Opacity Micromap Resource Annotation | R-2.5.14 |
 | RG-3.1 | Automatic Read-After-Write Barriers | R-2.1.6, R-2.1.10, R-2.1.12, R-2.2.5, R-2.3.8, R-2.4.12, R-2.5.2, R-2.5.3, R-2.7.10, R-2.7.11, R-2.8.4, R-2.9.1, R-2.11.5, R-2.11.6, R-2.13.1, R-2.13.2, R-2.13.3, R-2.13.4, R-2.13.5, R-2.13.6, R-2.13.7, R-2.13.8, R-2.13.9, R-2.13.12, R-2.14.1, R-2.14.4, R-2.15.6, R-2.15.7, R-2.16.1, R-2.17.1, R-2.17.7 |
 | RG-3.2 | Automatic Write-After-Write Barriers | R-2.1.7 |
 | RG-3.3 | Automatic Layout Transition Tracking | R-2.1.6, R-2.1.7, R-2.1.10, R-2.5.2, R-2.5.3, R-2.7.10, R-2.7.11, R-2.12.3, R-2.12.4, R-2.13.1, R-2.14.4 |
@@ -302,11 +346,11 @@
 
 | Metric | Count |
 |---|---|
-| Total high-level requirements (R-2.x.y) | 173 |
-| Requirements with graph impact | 127 |
-| Requirements without graph impact (CPU-only) | 46 |
-| Total render graph requirements (RG-x.y) | 115 |
-| Average deduplication ratio (high-level with impact : RG) | 1.10:1 |
+| Total high-level requirements (R-2.x.y) | 213 |
+| Requirements with graph impact | 158 |
+| Requirements without graph impact (CPU-only) | 55 |
+| Total render graph requirements (RG-x.y) | 119 |
+| Average deduplication ratio (high-level with impact : RG) | 1.33:1 |
 
 ### CPU-Only Requirements (No Graph Impact)
 
@@ -330,16 +374,20 @@
 | R-2.4.10 | Create Material Instances |
 | R-2.4.11 | Configure Material Layers |
 | R-2.5.7 | Mark Entities for RT Participation |
+| R-2.5.15 | Enable Shader Execution Reordering |
 | R-2.6.4 | Place Fog Volumes |
+| R-2.6.14 | Configure Weather System |
 | R-2.7.2 | Configure Meshlet LOD |
 | R-2.7.4 | Create GPU Splines |
 | R-2.7.9 | Configure Dynamic Tessellation |
+| R-2.7.12 | Enable Meshlet Compression |
 | R-2.9.2 | Play Animation Clips |
 | R-2.9.3 | Blend Animation Clips |
 | R-2.9.4 | Define Animation State Machines |
 | R-2.9.5 | Drive State Machine Parameters |
 | R-2.9.10 | Define Custom Animation Curves |
 | R-2.9.11 | Register Custom Animation Evaluators |
+| R-2.9.14 | Enable Motion Matching |
 | R-2.10.3 | Layout UI with Flexbox |
 | R-2.10.4 | Update UI Incrementally |
 | R-2.10.7 | Configure Isometric Rendering |
@@ -348,9 +396,14 @@
 | R-2.11.3 | Register Custom Shader Nodes |
 | R-2.11.7 | Extend Material Models |
 | R-2.11.8 | Validate Shader Graphs |
+| R-2.11.9 | Author Domain-Specific Shader Language |
+| R-2.11.10 | Enable Neural Texture Compression |
+| R-2.11.11 | Enable Neural Materials |
+| R-2.14.9 | Enable Latency Reduction |
 | R-2.15.2 | Configure Card-Based Hair |
 | R-2.15.4 | Configure Eye Rendering |
 | R-2.15.5 | Configure Cloth Shading |
+| R-2.15.11 | Configure Biometric Skin Model |
 | R-2.16.3 | Configure Per-Instance Fade |
 | R-2.16.4 | Enable Two-Sided Foliage Transmission |
 | R-2.17.2 | Configure Sprite Particles |
