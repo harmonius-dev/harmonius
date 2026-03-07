@@ -33,9 +33,10 @@ These requirements do not apply to this framework. For details about this, see
 - [2.6 Environment and Atmosphere](2-renderer/2.6-environment-and-atmosphere.md)
   — sky, fog, clouds, ocean, volumes
 - [2.7 Geometry and Meshes](2-renderer/2.7-geometry-and-meshes.md) — meshlets,
-  instancing, splines, tessellation, visibility buffer, VRS
+  instancing, splines, tessellation, visibility buffer, VRS, LOD generation,
+  LOD blending, skinned mesh LOD, static mesh merging
 - [2.8 Worlds and Terrain](2-renderer/2.8-worlds-and-terrain.md) — streaming,
-  voxels, heightmap terrain, HLOD, virtual textures
+  voxels, heightmap terrain, HLOD, virtual textures, voxel LOD
 - [2.9 Animation](2-renderer/2.9-animation.md) — skeletal, morph, state
   machines, IK, ragdoll, cloth, hair
 - [2.10 UI and 2D](2-renderer/2.10-ui-and-2d.md) — vector/bitmap UI, sprites,

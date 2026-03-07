@@ -17,7 +17,7 @@ Hierarchical feature specification for the hybrid render graph library. Each fea
 - [2.3 Hair and Character Rendering](2-advanced-rendering/2.3-hair-and-characters.md) — strand hair, card hair, compute raster hair, eye, cloth, skin, peach fuzz, biometric skin
 
 ### 3 Geometry
-- [3.1 Meshlet Pipeline](3-geometry/3.1-meshlet-pipeline.md) — virtualized geometry, mesh shaders, tessellation, visibility buffer, VRS, meshlet compression, GPU work graphs, CBT
+- [3.1 Meshlet Pipeline](3-geometry/3.1-meshlet-pipeline.md) — virtualized geometry, mesh shaders, tessellation, visibility buffer, VRS, meshlet compression, GPU work graphs, CBT, LOD generation, LOD blending, skinned mesh LOD, static mesh merging
 - [3.2 Worlds and Terrain](3-geometry/3.2-worlds-and-terrain.md) — streaming, voxels, terrain, HLOD, procedural generation, terrain splatting, surface deformation, procedural placement, clipmap terrain
 - [3.3 Foliage and Vegetation](3-geometry/3.3-foliage-and-vegetation.md) — hierarchical instancing, wind, fade, transmission, GPU vegetation skinning, interactive vegetation, deferred texturing
 

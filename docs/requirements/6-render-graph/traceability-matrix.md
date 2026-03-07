@@ -107,6 +107,10 @@
 | R-2.7.12 | Enable Meshlet Compression | No graph impact — GPU pipeline config only |
 | R-2.7.13 | Enable GPU Work Graphs | RG-1.1, RG-1.13 |
 | R-2.7.14 | Enable Concurrent Binary Tree Tessellation | RG-1.1, RG-2.2, RG-2.13 |
+| R-2.7.15 | Configure LOD Generation | No graph impact — CPU-side only |
+| R-2.7.16 | Configure LOD Blending | No graph impact — CPU-side only |
+| R-2.7.17 | Configure Skinned Mesh LOD | No graph impact — CPU-side only |
+| R-2.7.18 | Configure Static Mesh Merging | RG-2.2, RG-2.13 |
 | R-2.8.1 | Configure Streaming World | RG-2.8, RG-2.9, RG-11.1, RG-11.5, RG-13.6 |
 | R-2.8.2 | Register World Chunk Sources | RG-11.1, RG-11.4 |
 | R-2.8.3 | Configure Voxel World | RG-2.8, RG-2.9, RG-11.5, RG-13.6 |
@@ -122,6 +126,7 @@
 | R-2.8.13 | Enable Surface Deformation | RG-1.1, RG-2.2 |
 | R-2.8.14 | Enable GPU-Driven Procedural Placement | RG-1.1, RG-2.2, RG-2.13 |
 | R-2.8.15 | Configure Clipmap Terrain | RG-1.1, RG-2.2 |
+| R-2.8.16 | Configure Voxel World LOD | No graph impact — CPU-side only |
 | R-2.9.1 | Attach Skeleton to Mesh | RG-1.1, RG-2.2, RG-3.1, RG-14.2 |
 | R-2.9.2 | Play Animation Clips | No graph impact — CPU-side only |
 | R-2.9.3 | Blend Animation Clips | No graph impact — CPU-side only |
@@ -237,7 +242,7 @@
 | RG-1.13 | GPU Work Graph Pass | R-2.7.13 |
 | RG-1.14 | Checkerboard Resolve Pass | R-2.14.6 |
 | RG-2.1 | Transient Resource Declaration | R-2.1.6, R-2.1.8, R-2.1.10, R-2.7.10, R-2.7.11 |
-| RG-2.2 | Persistent Resource Declaration | R-2.1.7, R-2.6.6, R-2.7.5, R-2.8.5, R-2.8.9, R-2.9.1, R-2.9.9, R-2.12.2, R-2.16.1, R-2.16.2, R-2.17.1, R-2.17.6 |
+| RG-2.2 | Persistent Resource Declaration | R-2.1.7, R-2.6.6, R-2.7.5, R-2.7.18, R-2.8.5, R-2.8.9, R-2.9.1, R-2.9.9, R-2.12.2, R-2.16.1, R-2.16.2, R-2.17.1, R-2.17.6 |
 | RG-2.3 | Imported External Resource Declaration | R-2.1.4, R-2.10.2, R-2.10.5, R-2.11.4, R-2.11.5 |
 | RG-2.4 | History Resource Declaration | R-2.5.6, R-2.5.8, R-2.5.9, R-2.6.5, R-2.12.3, R-2.12.4, R-2.13.4, R-2.13.11, R-2.14.1, R-2.14.2, R-2.17.6 |
 | RG-2.5 | Resolution-Scaled Resource Dimensions | R-2.1.11, R-2.13.1, R-2.13.2, R-2.13.11, R-2.14.2 |
@@ -248,7 +253,7 @@
 | RG-2.10 | Staging Buffer Resource Declaration | R-2.11.5, R-2.12.3, R-2.12.4, R-2.12.5 |
 | RG-2.11 | Shared vs. Exclusive Resource Annotation | R-2.1.5, R-2.1.7, R-2.12.7 |
 | RG-2.12 | Shading Rate Image Resource | R-2.7.11 |
-| RG-2.13 | Indirect Argument Buffer Resource | R-2.7.3, R-2.7.5, R-2.9.9, R-2.16.1, R-2.16.5, R-2.17.1 |
+| RG-2.13 | Indirect Argument Buffer Resource | R-2.7.3, R-2.7.5, R-2.7.18, R-2.9.9, R-2.16.1, R-2.16.5, R-2.17.1 |
 | RG-2.14 | Ring Buffer Resource Declaration | R-2.7.5 |
 | RG-2.15 | Bindless Heap Resource Registration | R-2.11.4 |
 | RG-2.16 | 64-Bit-Per-Pixel Render Target Format | R-2.7.10 |
@@ -346,9 +351,9 @@
 
 | Metric | Count |
 |---|---|
-| Total high-level requirements (R-2.x.y) | 213 |
-| Requirements with graph impact | 158 |
-| Requirements without graph impact (CPU-only) | 55 |
+| Total high-level requirements (R-2.x.y) | 218 |
+| Requirements with graph impact | 159 |
+| Requirements without graph impact (CPU-only) | 59 |
 | Total render graph requirements (RG-x.y) | 119 |
 | Average deduplication ratio (high-level with impact : RG) | 1.33:1 |
 
@@ -381,6 +386,10 @@
 | R-2.7.4 | Create GPU Splines |
 | R-2.7.9 | Configure Dynamic Tessellation |
 | R-2.7.12 | Enable Meshlet Compression |
+| R-2.7.15 | Configure LOD Generation |
+| R-2.7.16 | Configure LOD Blending |
+| R-2.7.17 | Configure Skinned Mesh LOD |
+| R-2.8.16 | Configure Voxel World LOD |
 | R-2.9.2 | Play Animation Clips |
 | R-2.9.3 | Blend Animation Clips |
 | R-2.9.4 | Define Animation State Machines |
