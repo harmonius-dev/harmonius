@@ -35,32 +35,25 @@ Companion to [render-graph-design.md](render-graph-design.md).
 
 ```mermaid
 classDiagram
-    class PassHandle {
-        <<enum class : uint32_t>>
+    class PassHandle["PassHandle «enumeration»"] {
         invalid
     }
-    class ResourceHandle {
-        <<enum class : uint32_t>>
+    class ResourceHandle["ResourceHandle «enumeration»"] {
         invalid
     }
-    class SubGraphHandle {
-        <<enum class : uint32_t>>
+    class SubGraphHandle["SubGraphHandle «enumeration»"] {
         invalid
     }
-    class GateHandle {
-        <<enum class : uint32_t>>
+    class GateHandle["GateHandle «enumeration»"] {
         invalid
     }
-    class ChainHandle {
-        <<enum class : uint32_t>>
+    class ChainHandle["ChainHandle «enumeration»"] {
         invalid
     }
-    class VariantSlotHandle {
-        <<enum class : uint32_t>>
+    class VariantSlotHandle["VariantSlotHandle «enumeration»"] {
         invalid
     }
-    class PassType {
-        <<enum class>>
+    class PassType["PassType «enumeration»"] {
         rasterization
         compute
         ray_tracing_dispatch
@@ -72,14 +65,12 @@ classDiagram
         work_graph
         checkerboard_resolve
     }
-    class AccessMode {
-        <<enum class>>
+    class AccessMode["AccessMode «enumeration»"] {
         read
         write
         read_write
     }
-    class UsageType {
-        <<enum class>>
+    class UsageType["UsageType «enumeration»"] {
         color_attachment
         depth_attachment
         shader_read
@@ -88,18 +79,30 @@ classDiagram
         shading_rate_attachment
         indirect_argument
         acceleration_structure_read
+        acceleration_structure_build_write
         transfer_src
         transfer_dst
         present
     }
-    class QueueAffinity {
-        <<enum class>>
+    class QueueAffinity["QueueAffinity «enumeration»"] {
         graphics
         async_compute
         transfer
         any
     }
-    class ResourceBinding {
+    class ResourceCategory["ResourceCategory «enumeration»"] {
+        transient
+        persistent
+        imported
+        history
+        multi_frame_history
+        sparse
+        pool_backed
+        staging
+        atlas
+        acceleration_structure
+    }
+    class ResourceBinding["ResourceBinding «struct»"] {
         +ResourceHandle resource
         +AccessMode access
         +UsageType usage
@@ -107,18 +110,33 @@ classDiagram
         +uint32_t mip_level
         +bool is_history
     }
-    class ValidationError {
+    class ValidationErrorKind["ValidationErrorKind «enumeration»"] {
+        cycle_detected
+        type_mismatch
+        undeclared_resource
+        queue_incompatibility
+        single_writer_violation
+        variant_ambiguity
+        instance_count_mismatch
+        hard_gate_unsatisfied
+    }
+    class ValidationError["ValidationError «struct»"] {
         +ValidationErrorKind kind
         +PassHandle pass
         +ResourceHandle resource
         +string message
     }
+    class CompileError["CompileError «struct»"] {
+        +vector~ValidationError~ errors
+    }
 
     ResourceBinding --> ResourceHandle
     ResourceBinding --> AccessMode
     ResourceBinding --> UsageType
+    ValidationError --> ValidationErrorKind
     ValidationError --> PassHandle
     ValidationError --> ResourceHandle
+    CompileError --> ValidationError
 ```
 
 ### 2. Graph Builder
@@ -141,12 +159,19 @@ classDiagram
         +declare_persistent(PersistentResourceDesc) ResourceHandle
         +declare_imported(ImportedResourceDesc) ResourceHandle
         +declare_history(HistoryResourceDesc) ResourceHandle
+        +declare_multi_frame_history(MultiFrameHistoryDesc) ResourceHandle
+        +declare_sparse(SparseResourceDesc) ResourceHandle
+        +declare_pool(PoolResourceDesc) ResourceHandle
+        +declare_staging(StagingBufferDesc) ResourceHandle
         +declare_atlas(AtlasResourceDesc) ResourceHandle
         +declare_acceleration_structure(AccelStructDesc) ResourceHandle
         +attach_capability_gate(PassHandle, CapabilityGateDesc) GateHandle
         +attach_budget_gate(PassHandle, BudgetGateDesc) GateHandle
         +declare_fallback_chain(string_view, span) GateHandle
         +add_ordering_edge(PassHandle, PassHandle) void
+        +attach_timestamp_query(PassHandle, string_view) void
+        +attach_statistics_query(PassHandle, string_view) void
+        +mark_debug_overlay(PassHandle) void
         +build() expected~DeclaredGraph, CompileError~
     }
     class DeclaredGraph {
@@ -163,6 +188,7 @@ classDiagram
         +vector~ResourceBinding~ outputs
         +bool conditional
         +optional~RenderArea~ render_area
+        +vector~string_view~ tags
         +float estimated_cost_ms
         +uint32_t priority
         +move_only_function execute
@@ -183,20 +209,111 @@ classDiagram
         +Format format
         +uint32_t width
         +uint32_t height
+        +uint32_t depth
         +uint32_t mip_levels
         +uint32_t array_layers
         +SampleCount samples
         +optional~string_view~ resolution_param
+    }
+    class PersistentResourceDesc {
+        +string_view name
+        +Format format
+        +uint32_t width
+        +uint32_t height
+        +uint32_t depth
+        +uint32_t array_layers
+        +optional~ActiveExtentDesc~ active_extent
+    }
+    class HistoryResourceDesc {
+        +string_view name
+        +Format format
+        +uint32_t width
+        +uint32_t height
+        +optional~string_view~ resolution_param
+    }
+    class MultiFrameHistoryDesc {
+        +string_view name
+        +Format format
+        +uint32_t width
+        +uint32_t height
+        +uint32_t history_depth
+        +optional~string_view~ resolution_param
+    }
+    class ImportedResourceDesc {
+        +string_view name
+        +gpu_ResourceHandle external_handle
+        +AccessMode initial_access
+        +UsageType initial_usage
+    }
+    class SparseResourceDesc {
+        +string_view name
+        +Format format
+        +uint32_t width
+        +uint32_t height
+        +uint32_t tile_width
+        +uint32_t tile_height
+    }
+    class PoolResourceDesc {
+        +string_view name
+        +Format format
+        +uint32_t element_width
+        +uint32_t element_height
+        +uint32_t max_elements
+        +move_only_function eviction_callback
+    }
+    class StagingBufferDesc {
+        +string_view name
+        +uint64_t size_bytes
+    }
+    class AtlasResourceDesc {
+        +string_view name
+        +Format format
+        +uint32_t width
+        +uint32_t height
+        +uint32_t tile_size
+    }
+    class AccelStructDesc {
+        +string_view name
+        +ResourceCategory category
+        +bool has_opacity_micromap
+    }
+    class ActiveExtentDesc {
+        +uint32_t max_layers
+        +uint32_t max_width
+        +uint32_t max_height
+    }
+    class SubGraphParamSlot {
+        +string_view name
+        +bool is_shared
+    }
+    class RenderArea {
+        +uint32_t x
+        +uint32_t y
+        +uint32_t width
+        +uint32_t height
+        +bool is_per_frame_binding
     }
 
     GraphBuilder --> DeclaredGraph : produces
     GraphBuilder --> PassDescriptor : accepts
     GraphBuilder --> SubGraphDescriptor : accepts
     GraphBuilder --> TransientResourceDesc : accepts
+    GraphBuilder --> PersistentResourceDesc : accepts
+    GraphBuilder --> ImportedResourceDesc : accepts
+    GraphBuilder --> HistoryResourceDesc : accepts
+    GraphBuilder --> MultiFrameHistoryDesc : accepts
+    GraphBuilder --> SparseResourceDesc : accepts
+    GraphBuilder --> PoolResourceDesc : accepts
+    GraphBuilder --> StagingBufferDesc : accepts
+    GraphBuilder --> AtlasResourceDesc : accepts
+    GraphBuilder --> AccelStructDesc : accepts
     DeclaredGraph *-- PassDescriptor
     PassDescriptor --> ResourceBinding
+    PassDescriptor --> RenderArea
     SubGraphDescriptor *-- PassDescriptor
     SubGraphDescriptor *-- SubGraphParamSlot
+    PersistentResourceDesc --> ActiveExtentDesc
+    AccelStructDesc --> ResourceCategory
 ```
 
 ### 3. Graph Compiler
@@ -255,6 +372,18 @@ classDiagram
         +bool enable_statistics_queries
         +bool enable_debug_overlays
     }
+    class FenceCoordination {
+        +QueueAffinity source_queue
+        +QueueAffinity dest_queue
+        +uint64_t signal_value
+        +uint64_t wait_value
+    }
+    class ResolutionParam {
+        +string_view name
+        +float default_scale
+        +float min_scale
+        +float max_scale
+    }
 
     GraphCompiler --> ExecutionPlan : produces
     GraphCompiler --> DeclaredGraph : consumes
@@ -262,7 +391,10 @@ classDiagram
     ExecutionPlan *-- ScheduledPass
     ExecutionPlan *-- EncodingGroup
     ExecutionPlan *-- QueueSubmission
+    ExecutionPlan *-- FenceCoordination
+    ExecutionPlan *-- ResolutionParam
     ExecutionPlan --> AliasingMap
+    QueueSubmission *-- FenceCoordination
 ```
 
 ### 4. Resource System
@@ -310,6 +442,17 @@ classDiagram
         +uint64_t size_bytes
         +HeapType heap_type
     }
+    class ResidencyEntry {
+        +uint32_t tile_x
+        +uint32_t tile_y
+        +uint8_t resident
+    }
+    class ResidencyChange {
+        +ResourceHandle resource
+        +uint32_t tile_x
+        +uint32_t tile_y
+        +bool now_resident
+    }
 
     AliasingSolver --> AliasingMap : produces
     AliasingSolver --> LifetimeInterval : reads
@@ -353,11 +496,12 @@ classDiagram
         +QueueAffinity dst_queue
         +uint32_t mip_level
         +uint32_t array_layer
+        +uint32_t mip_count
+        +uint32_t layer_count
         +bool is_split_begin
         +bool is_split_end
     }
-    class BarrierType {
-        <<enum class>>
+    class BarrierType["BarrierType «enumeration»"] {
         memory
         layout_transition
         ownership_release
@@ -403,10 +547,19 @@ classDiagram
         +float threshold_ms
         +uint32_t priority
     }
+    class PoolUtilizationGateDesc {
+        +ResourceHandle pool
+        +float utilization_threshold
+        +uint32_t priority
+    }
     class FallbackEntry {
         +PassHandle pass
         +optional~CapabilityGateDesc~ capability_gate
         +optional~BudgetGateDesc~ budget_gate
+    }
+    class PathConditionedGateDesc {
+        +VariantSlotHandle variant_slot
+        +string_view required_variant
     }
 
     GateEvaluator --> CapabilityDescriptor : reads
@@ -443,6 +596,7 @@ classDiagram
         -vector~CommandBufferPool~ cmd_pools_
         -RingAllocator ring_allocator_
         -uint64_t frame_index_
+        -uint32_t frame_count_
     }
     class PassContext {
         +cmd() CommandBuffer
@@ -502,6 +656,23 @@ classDiagram
         +uint64_t end_ns
         +duration_ms() double
     }
+    class PipelineStatistics {
+        +vector~Entry~ entries
+    }
+    class PipelineStatisticsEntry {
+        +string_view pass_name
+        +uint64_t primitives_count
+        +uint64_t invocations_count
+    }
+    class TransferStatistics {
+        +vector~Entry~ entries
+        +uint64_t total_bytes_per_frame
+    }
+    class TransferStatisticsEntry {
+        +string_view pass_name
+        +uint64_t bytes_transferred
+        +double latency_ms
+    }
     class MemoryDiagnostics {
         +uint64_t peak_aliased_bytes
         +uint64_t total_allocated_bytes
@@ -509,11 +680,21 @@ classDiagram
         +uint32_t active_pool_count
         +uint32_t total_pool_capacity
     }
+    class ReadbackRequest {
+        +gpu_ResourceHandle src_buffer
+        +uint64_t offset
+        +uint64_t size
+    }
 
     DiagnosticsCollector --> TimestampResults : produces
+    DiagnosticsCollector --> PipelineStatistics : produces
+    DiagnosticsCollector --> TransferStatistics : produces
     DiagnosticsCollector --> MemoryDiagnostics : produces
+    DiagnosticsCollector --> ReadbackRequest : accepts
     DiagnosticsCollector --> Device : uses
     TimestampResults *-- TimestampEntry
+    PipelineStatistics *-- PipelineStatisticsEntry
+    TransferStatistics *-- TransferStatisticsEntry
 ```
 
 ### 9. GPU Backend
@@ -531,8 +712,7 @@ per binary. See the dedicated GPU backend design documents:
 
 ```mermaid
 classDiagram
-    class GpuDevice {
-        <<concept>>
+    class GpuDevice["GpuDevice «concept»"] {
         +capabilities() DeviceCapabilities
         +create_texture(TextureDesc) expected~TextureHandle~
         +create_buffer(BufferDesc) expected~BufferHandle~
@@ -566,8 +746,7 @@ classDiagram
         +map(BufferHandle) void_ptr
         +unmap(BufferHandle) void
     }
-    class GpuCommandBuffer {
-        <<concept>>
+    class GpuCommandBuffer["GpuCommandBuffer «concept»"] {
         +begin() void
         +end() void
         +barrier(BarrierDesc) void
@@ -596,8 +775,7 @@ classDiagram
         +begin_debug_label(name) void
         +end_debug_label() void
     }
-    class GpuCommandPool {
-        <<concept>>
+    class GpuCommandPool["GpuCommandPool «concept»"] {
         +allocate_command_buffer() CommandBuffer
         +reset() void
         +allocated_count() uint32_t
@@ -687,51 +865,21 @@ How the nine modules depend on each other at the class level.
 
 ```mermaid
 classDiagram
-    class GraphBuilder {
-        <<builder>>
-    }
-    class DeclaredGraph {
-        <<builder>>
-    }
-    class GraphCompiler {
-        <<compiler>>
-    }
-    class ExecutionPlan {
-        <<compiler>>
-    }
-    class GateEvaluator {
-        <<gate>>
-    }
-    class BarrierScheduler {
-        <<sync>>
-    }
-    class AliasingSolver {
-        <<resource>>
-    }
-    class Executor {
-        <<exec>>
-    }
-    class TimelineFenceManager {
-        <<sync>>
-    }
-    class CommandBufferPool {
-        <<exec>>
-    }
-    class RingAllocator {
-        <<resource>>
-    }
-    class PoolAllocator {
-        <<resource>>
-    }
-    class DiagnosticsCollector {
-        <<diag>>
-    }
-    class Device {
-        <<gpu>>
-    }
-    class DeviceCapabilities {
-        <<gpu>>
-    }
+    class GraphBuilder["GraphBuilder «builder»"]
+    class DeclaredGraph["DeclaredGraph «builder»"]
+    class GraphCompiler["GraphCompiler «compiler»"]
+    class ExecutionPlan["ExecutionPlan «compiler»"]
+    class GateEvaluator["GateEvaluator «gate»"]
+    class BarrierScheduler["BarrierScheduler «sync»"]
+    class AliasingSolver["AliasingSolver «resource»"]
+    class Executor["Executor «exec»"]
+    class TimelineFenceManager["TimelineFenceManager «sync»"]
+    class CommandBufferPool["CommandBufferPool «exec»"]
+    class RingAllocator["RingAllocator «resource»"]
+    class PoolAllocator["PoolAllocator «resource»"]
+    class DiagnosticsCollector["DiagnosticsCollector «diag»"]
+    class Device["Device «gpu»"]
+    class DeviceCapabilities["DeviceCapabilities «gpu»"]
 
     GraphBuilder --> DeclaredGraph : produces
     GraphCompiler --> DeclaredGraph : consumes

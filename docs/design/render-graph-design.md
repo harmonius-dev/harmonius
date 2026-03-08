@@ -3,7 +3,7 @@
 Detailed module design for the Harmonius render graph library. Covers module decomposition,
 responsibilities, C++26 API surfaces, build system, and shader toolchain. Derived from the 119
 requirements in [RG-1 through RG-14](../requirements/6-render-graph/README.md) and the system
-architecture in [render-graph-architecture.md](render-graph-architecture.md).
+architecture in [architecture.md](../architecture.md).
 
 ## Contents
 
