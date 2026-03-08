@@ -3,7 +3,7 @@
 Detailed module design for the Harmonius render graph library. Covers module decomposition,
 responsibilities, C++26 API surfaces, build system, and shader toolchain. Derived from the 119
 requirements in [RG-1 through RG-14](../requirements/6-render-graph/README.md) and the system
-architecture in [architecture.md](../architecture.md).
+architecture in [render-graph-architecture.md](render-graph-architecture.md).
 
 ## Contents
 
@@ -61,8 +61,6 @@ architecture in [architecture.md](../architecture.md).
   - [8. Diagnostics — `harmonius::rg::diag`](#8-diagnostics--harmoniusrgdiag)
     - [Diagnostics API](#diagnostics-api)
   - [9. GPU Backend Abstraction — `harmonius::gpu`](#9-gpu-backend-abstraction--harmoniusgpu)
-    - [Device Interface](#device-interface)
-    - [Backend Implementations](#backend-implementations)
 
 ---
 
@@ -134,7 +132,7 @@ flowchart LR
     METALIR["Metal IR<br/>Metal 4"]
 
     HLSL --> DXC
-    DXC -->|"Shader Model 6.8"| DXIL
+    DXC -->|"Shader Model 6.9"| DXIL
     DXC -->|"-spirv flag"| SPIRV
     DXIL --> MSC --> METALIR
 ```
@@ -149,18 +147,18 @@ function(harmonius_compile_shaders TARGET)
 
         # DXIL output (D3D12)
         add_custom_command(OUTPUT ${NAME}.dxil
-            COMMAND dxc -T cs_6_8 -Fo ${NAME}.dxil ${SHADER}
+            COMMAND dxc -T cs_6_9 -Fo ${NAME}.dxil ${SHADER}
             DEPENDS ${SHADER})
 
         # SPIR-V output (Vulkan)
         add_custom_command(OUTPUT ${NAME}.spv
-            COMMAND dxc -T cs_6_8 -spirv
+            COMMAND dxc -T cs_6_9 -spirv
                 -fspv-target-env=vulkan1.3 -Fo ${NAME}.spv ${SHADER}
             DEPENDS ${SHADER})
 
         # Metal IR output (Metal)
         add_custom_command(OUTPUT ${NAME}.metallib
-            COMMAND dxc -T cs_6_8 -Fo ${NAME}.dxil ${SHADER}
+            COMMAND dxc -T cs_6_9 -Fo ${NAME}.dxil ${SHADER}
             COMMAND metal-shaderconverter ${NAME}.dxil -o ${NAME}.metallib
             DEPENDS ${SHADER})
     endforeach()
@@ -223,8 +221,9 @@ graph TD
 
 ### Library Targets
 
-Each module compiles to a static library. GPU backends compile to shared libraries for runtime
-selection.
+Each module compiles to a static library. The GPU backend is selected at build time via CMake
+and statically linked — only one backend exists per binary (see
+[gpu-backend-interface.md](gpu-backend-interface.md) for rationale).
 
 ```mermaid
 flowchart TD
@@ -385,29 +384,18 @@ struct ResourceBinding {
 } // namespace harmonius::rg
 ```
 
-### Format Enumeration
+### Format and Sample Count
+
+`Format` and `SampleCount` are defined canonically in `harmonius::gpu` (see
+[gpu-backend-interface.md](gpu-backend-interface.md#format-mapping)) and re-exported into
+`harmonius::rg`:
 
 ```cpp
 namespace harmonius::rg {
 
-enum class Format : uint16_t {
-    unknown,
-    r8_unorm, rg8_unorm, rgba8_unorm, rgba8_srgb,
-    r16_float, rg16_float, rgba16_float,
-    r32_float, rg32_float, rgba32_float,
-    r32_uint, rg32_uint, rgba32_uint,
-    rg64_uint,                 // RG-2.16: 64-bit visibility buffer
-    d32_float,                 // depth
-    d32_float_s8_uint,         // depth-stencil
-    bc1_unorm, bc3_unorm, bc5_unorm, bc7_unorm, // block compressed
-    // ... additional formats as needed
-};
-
-enum class SampleCount : uint8_t {
-    x1 = 1,
-    x2 = 2,  // RG-2.21
-    x4 = 4,
-};
+// Re-exported from harmonius::gpu — single canonical definition
+using gpu::Format;
+using gpu::SampleCount;
 
 } // namespace harmonius::rg
 ```
@@ -1576,151 +1564,17 @@ public:
 ## 9. GPU Backend Abstraction — `harmonius::gpu`
 
 **Responsibility:** Provides a thin abstraction over Direct3D 12, Vulkan 1.4, and Metal 4. The
-render graph modules use this interface exclusively — no direct API calls. Each backend is a
-shared library loaded at runtime based on platform.
+render graph modules use this interface exclusively — no direct API calls. The backend is selected
+at build time via CMake and statically linked into the binary. All dispatch is static — no vtables,
+no virtual methods, no shared libraries.
 
 **Requirements covered:** R-1.1.5 (native backends), R-1.2.1–1.2.3 (platform support).
 
-### Device Interface
+The GPU backend interface, types, cross-backend compatibility shims, and the three backend
+implementations are defined in their own dedicated documents:
 
-```cpp
-namespace harmonius::gpu {
-
-enum class Backend : uint8_t {
-    d3d12,    // R-1.2.2: Direct3D 12 with Agility SDK
-    vulkan,   // R-1.2.3: Vulkan 1.4 with extensions
-    metal,    // R-1.2.1: Metal 4 on Apple Silicon
-};
-
-enum class HeapType : uint8_t {
-    device_local,
-    host_visible,
-    host_cached,
-};
-
-// Opaque handles — backend-specific payloads
-enum class ResourceHandle : uint64_t { invalid = 0 };
-enum class FenceHandle    : uint64_t { invalid = 0 };
-
-struct DeviceCapabilities {
-    bool mesh_shaders;
-    bool ray_tracing;
-    bool sparse_textures;
-    bool async_compute_queue;
-    bool transfer_queue;
-    bool shading_rate_images;
-    bool sixty_four_bit_atomics;
-    bool gpu_work_graphs;
-    bool opacity_micromaps;
-    bool split_barriers;
-    uint32_t max_texture_dimension;
-    uint32_t max_buffer_size;
-};
-
-class CommandBuffer {
-public:
-    virtual ~CommandBuffer() = default;
-
-    // Barrier commands
-    virtual void barrier(std::span<const rg::sync::BarrierDesc> barriers) = 0;
-
-    // Draw/dispatch commands
-    virtual void draw_mesh(uint32_t group_x, uint32_t group_y, uint32_t group_z) = 0;
-    virtual void dispatch(uint32_t x, uint32_t y, uint32_t z) = 0;
-    virtual void dispatch_rays(uint32_t width, uint32_t height, uint32_t depth) = 0;
-    virtual void dispatch_indirect(ResourceHandle args_buffer, uint64_t offset) = 0;
-
-    // Transfer commands
-    virtual void copy_buffer(ResourceHandle src, ResourceHandle dst,
-                             uint64_t src_offset, uint64_t dst_offset,
-                             uint64_t size) = 0;
-    virtual void copy_texture(ResourceHandle src, ResourceHandle dst) = 0;
-
-    // Render pass management
-    virtual void begin_render_pass(const RenderPassDesc& desc) = 0;
-    virtual void end_render_pass() = 0;
-
-    // Debug markers (RG-1.8)
-    virtual void begin_debug_label(std::string_view name) = 0;
-    virtual void end_debug_label() = 0;
-
-    // Timestamp queries (RG-12.1)
-    virtual void write_timestamp(uint32_t query_index) = 0;
-};
-
-struct RenderPassDesc {
-    std::span<const ResourceHandle> color_attachments;
-    std::optional<ResourceHandle>   depth_attachment;
-    std::optional<ResourceHandle>   shading_rate_attachment;
-    rg::builder::RenderArea         render_area;
-};
-
-class Device {
-public:
-    virtual ~Device() = default;
-
-    [[nodiscard]] virtual Backend backend() const = 0;
-    [[nodiscard]] virtual DeviceCapabilities capabilities() const = 0;
-
-    // Resource creation
-    [[nodiscard]] virtual ResourceHandle create_texture(
-        const rg::builder::TransientResourceDesc& desc) = 0;
-    [[nodiscard]] virtual ResourceHandle create_buffer(
-        uint64_t size, HeapType heap) = 0;
-
-    virtual void destroy_resource(ResourceHandle handle) = 0;
-
-    // Memory mapping (for staging/ring buffers)
-    [[nodiscard]] virtual void* map(ResourceHandle handle) = 0;
-    virtual void unmap(ResourceHandle handle) = 0;
-
-    // Heap allocation for aliased resources (RG-8.2)
-    [[nodiscard]] virtual ResourceHandle create_heap(
-        uint64_t size, HeapType type) = 0;
-    [[nodiscard]] virtual ResourceHandle create_placed_resource(
-        ResourceHandle heap, uint64_t offset,
-        const rg::builder::TransientResourceDesc& desc) = 0;
-
-    // Fence management (RG-10.6)
-    [[nodiscard]] virtual FenceHandle create_timeline_fence(uint64_t initial = 0) = 0;
-    virtual void signal_fence(FenceHandle fence, uint64_t value) = 0;
-    virtual void wait_fence(FenceHandle fence, uint64_t value) = 0;
-    [[nodiscard]] virtual uint64_t get_fence_value(FenceHandle fence) const = 0;
-
-    // Command buffer pool
-    [[nodiscard]] virtual CommandBuffer* acquire_command_buffer(
-        rg::QueueAffinity queue) = 0;
-    virtual void submit(rg::QueueAffinity queue,
-                        std::span<CommandBuffer*> cmd_buffers) = 0;
-
-    // Query pools (RG-12.1, RG-12.2)
-    virtual void create_query_pool(uint32_t count) = 0;
-    [[nodiscard]] virtual std::span<const uint64_t> read_query_results() = 0;
-};
-
-// Backend factory — loaded from shared library
-[[nodiscard]]
-std::unique_ptr<Device> create_device(Backend backend);
-
-} // namespace harmonius::gpu
-```
-
-### Backend Implementations
-
-Each backend is a separate shared library implementing the `Device` and `CommandBuffer`
-interfaces:
-
-| Backend                | Library                        | API         | Platform       |
-| ---------------------- | ------------------------------ | ----------- | -------------- |
-| `harmonius-gpu-d3d12`  | `harmonius_gpu_d3d12.dll`      | Direct3D 12 | Windows        |
-| `harmonius-gpu-vulkan` | `libharmonius_gpu_vulkan.so`   | Vulkan 1.4  | Windows, Linux |
-| `harmonius-gpu-metal`  | `libharmonius_gpu_metal.dylib` | Metal 4     | macOS          |
-
-Backend-specific details:
-
-- **D3D12:** Uses Agility SDK, D3D12MemoryAllocator for heap management, ID3D12Fence for
-  timeline fences, ID3D12GraphicsCommandList7 for mesh shader dispatch
-- **Vulkan:** Uses VulkanMemoryAllocator, VK_KHR_timeline_semaphore for fences,
-  VK_EXT_mesh_shader for mesh dispatch, VK_KHR_acceleration_structure for RT
-- **Metal:** Uses MTLHeap for aliased allocation, MTLSharedEvent for timeline fences,
-  MTLMeshRenderPipelineDescriptor for mesh dispatch, Metal ray tracing API
+- [gpu-backend-interface.md](gpu-backend-interface.md) — abstract interface, types, and
+  cross-backend compatibility
+- [gpu-backend-d3d12.md](gpu-backend-d3d12.md) — Direct3D 12 (Agility SDK 1.619+, SM 6.9)
+- [gpu-backend-vulkan.md](gpu-backend-vulkan.md) — Vulkan 1.4
+- [gpu-backend-metal.md](gpu-backend-metal.md) — Metal 4

@@ -225,7 +225,7 @@ flowchart LR
 
     SG_IR -->|"generate_hlsl()"| HLSL
     HLSL --> DXC
-    DXC -->|"SM 6.8"| DXIL
+    DXC -->|"SM 6.9"| DXIL
     DXC -->|"-spirv"| SPIRV
     DXIL --> MSC --> MetalIR
     DXIL --> DiskCache

@@ -101,7 +101,7 @@ struct CookedMetadata {
     uint32_t triangle_count  = 0;
 
     // Texture metadata
-    rg::Format format        = rg::Format::unknown;
+    rg::Format format        = rg::Format::undefined;
     uint32_t   width         = 0;
     uint32_t   height        = 0;
     uint32_t   mip_levels    = 0;

@@ -116,7 +116,7 @@ public:
 private:
     ComPtr<IDXGIFactory7>                factory_;
     ComPtr<IDXGIAdapter4>                adapter_;
-    ComPtr<ID3D12Device14>               device_;
+    ComPtr<ID3D12Device16>               device_;
     ComPtr<D3D12MA::Allocator>           allocator_;
 
     struct QueueSet {
@@ -922,7 +922,7 @@ dred_data->GetAutoBreadcrumbsOutput1(&breadcrumbs);
 ```mermaid
 classDiagram
     class D3D12Device {
-        -ID3D12Device14 device_
+        -ID3D12Device16 device_
         -D3D12MA::Allocator allocator_
         -ID3D12CommandQueue graphics_queue_
         -ID3D12CommandQueue compute_queue_
