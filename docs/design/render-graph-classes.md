@@ -1,0 +1,866 @@
+# Render Graph Class and Sequence Diagrams
+
+Class diagrams for each module and sequence diagrams showing inter-module interactions.
+Companion to [render-graph-design.md](render-graph-design.md).
+
+---
+
+## Contents
+
+- [Module Class Diagrams](#module-class-diagrams)
+  - [1. Core Types](#1-core-types)
+  - [2. Graph Builder](#2-graph-builder)
+  - [3. Graph Compiler](#3-graph-compiler)
+  - [4. Resource System](#4-resource-system)
+  - [5. Synchronization Engine](#5-synchronization-engine)
+  - [6. Gating System](#6-gating-system)
+  - [7. Execution Engine](#7-execution-engine)
+  - [8. Diagnostics](#8-diagnostics)
+  - [9. GPU Backend](#9-gpu-backend)
+- [Cross-Module Relationships](#cross-module-relationships)
+- [Sequence Diagrams](#sequence-diagrams)
+  - [Full Lifecycle](#full-lifecycle)
+  - [Compilation Pipeline](#compilation-pipeline)
+  - [Per-Frame Execution](#per-frame-execution)
+  - [Parallel Encoding](#parallel-encoding)
+  - [Streaming Fault Resolution](#streaming-fault-resolution)
+
+---
+
+## Module Class Diagrams
+
+### 1. Core Types
+
+`harmonius::rg` — Shared vocabulary types with no business logic.
+
+```mermaid
+classDiagram
+    class PassHandle {
+        <<enum class : uint32_t>>
+        invalid
+    }
+    class ResourceHandle {
+        <<enum class : uint32_t>>
+        invalid
+    }
+    class SubGraphHandle {
+        <<enum class : uint32_t>>
+        invalid
+    }
+    class GateHandle {
+        <<enum class : uint32_t>>
+        invalid
+    }
+    class ChainHandle {
+        <<enum class : uint32_t>>
+        invalid
+    }
+    class VariantSlotHandle {
+        <<enum class : uint32_t>>
+        invalid
+    }
+    class PassType {
+        <<enum class>>
+        rasterization
+        compute
+        ray_tracing_dispatch
+        acceleration_structure_build
+        transfer
+        msaa_resolve
+        present
+        host_callback
+        work_graph
+        checkerboard_resolve
+    }
+    class AccessMode {
+        <<enum class>>
+        read
+        write
+        read_write
+    }
+    class UsageType {
+        <<enum class>>
+        color_attachment
+        depth_attachment
+        shader_read
+        storage_read
+        storage_write
+        shading_rate_attachment
+        indirect_argument
+        acceleration_structure_read
+        transfer_src
+        transfer_dst
+        present
+    }
+    class QueueAffinity {
+        <<enum class>>
+        graphics
+        async_compute
+        transfer
+        any
+    }
+    class ResourceBinding {
+        +ResourceHandle resource
+        +AccessMode access
+        +UsageType usage
+        +uint32_t array_layer
+        +uint32_t mip_level
+        +bool is_history
+    }
+    class ValidationError {
+        +ValidationErrorKind kind
+        +PassHandle pass
+        +ResourceHandle resource
+        +string message
+    }
+
+    ResourceBinding --> ResourceHandle
+    ResourceBinding --> AccessMode
+    ResourceBinding --> UsageType
+    ValidationError --> PassHandle
+    ValidationError --> ResourceHandle
+```
+
+### 2. Graph Builder
+
+`harmonius::rg::builder` — Declarative graph construction.
+
+```mermaid
+classDiagram
+    class GraphBuilder {
+        +GraphBuilder(CapabilityDescriptor caps)
+        +add_pass(PassDescriptor) PassHandle
+        +begin_chain(string_view) ChainHandle
+        +add_chain_step(ChainHandle, PassDescriptor) PassHandle
+        +end_chain(ChainHandle) void
+        +declare_variant_slot(string_view) VariantSlotHandle
+        +add_variant(VariantSlotHandle, string_view, PassDescriptor) PassHandle
+        +declare_subgraph_template(string_view, SubGraphDescriptor) SubGraphHandle
+        +instantiate_subgraph(SubGraphHandle, uint32_t, span) void
+        +declare_transient(TransientResourceDesc) ResourceHandle
+        +declare_persistent(PersistentResourceDesc) ResourceHandle
+        +declare_imported(ImportedResourceDesc) ResourceHandle
+        +declare_history(HistoryResourceDesc) ResourceHandle
+        +declare_atlas(AtlasResourceDesc) ResourceHandle
+        +declare_acceleration_structure(AccelStructDesc) ResourceHandle
+        +attach_capability_gate(PassHandle, CapabilityGateDesc) GateHandle
+        +attach_budget_gate(PassHandle, BudgetGateDesc) GateHandle
+        +declare_fallback_chain(string_view, span) GateHandle
+        +add_ordering_edge(PassHandle, PassHandle) void
+        +build() expected~DeclaredGraph, CompileError~
+    }
+    class DeclaredGraph {
+        +passes() span~PassDescriptor~
+        +pass_count() uint32_t
+        +resource_count() uint32_t
+        -Impl impl_
+    }
+    class PassDescriptor {
+        +string_view name
+        +PassType type
+        +QueueAffinity queue
+        +vector~ResourceBinding~ inputs
+        +vector~ResourceBinding~ outputs
+        +bool conditional
+        +optional~RenderArea~ render_area
+        +float estimated_cost_ms
+        +uint32_t priority
+        +move_only_function execute
+    }
+    class SubGraphDescriptor {
+        +string_view name
+        +uint32_t max_instances
+        +vector~PassDescriptor~ passes
+        +vector~SubGraphParamSlot~ param_slots
+    }
+    class SubGraphBindings {
+        +vector~ResourceHandle~ exclusive_resources
+        +vector~ResourceHandle~ shared_resources
+        +uint32_t target_array_layer
+    }
+    class TransientResourceDesc {
+        +string_view name
+        +Format format
+        +uint32_t width
+        +uint32_t height
+        +uint32_t mip_levels
+        +uint32_t array_layers
+        +SampleCount samples
+        +optional~string_view~ resolution_param
+    }
+
+    GraphBuilder --> DeclaredGraph : produces
+    GraphBuilder --> PassDescriptor : accepts
+    GraphBuilder --> SubGraphDescriptor : accepts
+    GraphBuilder --> TransientResourceDesc : accepts
+    DeclaredGraph *-- PassDescriptor
+    PassDescriptor --> ResourceBinding
+    SubGraphDescriptor *-- PassDescriptor
+    SubGraphDescriptor *-- SubGraphParamSlot
+```
+
+### 3. Graph Compiler
+
+`harmonius::rg::compiler` — Nine-stage DAG optimization pipeline.
+
+```mermaid
+classDiagram
+    class GraphCompiler {
+        +compile(DeclaredGraph, CapabilityDescriptor, CompileOptions) expected~ExecutionPlan, CompileError~
+        +recompile_residency(ExecutionPlan, span~ResidencyChange~) expected~ExecutionPlan, CompileError~
+        -validate(DeclaredGraph) vector~ValidationError~
+        -evaluate_gates(DeclaredGraph, CapabilityDescriptor) vector~PassHandle~
+        -eliminate_dead_passes(DeclaredGraph) void
+        -topological_sort() void
+        -compute_barriers() BarrierSchedule
+        -compute_aliasing() AliasingMap
+        -partition_queues() void
+        -plan_encoding() void
+        -merge_instances() void
+    }
+    class ExecutionPlan {
+        +passes() span~ScheduledPass~
+        +queue_submissions() span~QueueSubmission~
+        +encoding_groups() span~EncodingGroup~
+        +aliasing_map() AliasingMap
+        +fence_points() span~FenceCoordination~
+        +transfer_injection_index() uint32_t
+        +active_pass_count() uint32_t
+        +conditional_passes() span~PassHandle~
+        +resolution_params() span~ResolutionParam~
+        -Impl impl_
+    }
+    class ScheduledPass {
+        +PassHandle handle
+        +uint32_t execution_order
+        +QueueAffinity queue
+        +span~BarrierDesc~ pre_barriers
+        +span~BarrierDesc~ post_barriers
+        +uint32_t encoding_group
+        +bool is_conditional
+    }
+    class EncodingGroup {
+        +uint32_t group_id
+        +vector~PassHandle~ passes
+        +bool parallel
+    }
+    class QueueSubmission {
+        +QueueAffinity queue
+        +vector~PassHandle~ passes
+        +vector~FenceCoordination~ fence_ops
+    }
+    class CompileOptions {
+        +unordered_map variant_selections
+        +bool enable_timestamp_queries
+        +bool enable_statistics_queries
+        +bool enable_debug_overlays
+    }
+
+    GraphCompiler --> ExecutionPlan : produces
+    GraphCompiler --> DeclaredGraph : consumes
+    GraphCompiler --> CompileOptions : reads
+    ExecutionPlan *-- ScheduledPass
+    ExecutionPlan *-- EncodingGroup
+    ExecutionPlan *-- QueueSubmission
+    ExecutionPlan --> AliasingMap
+```
+
+### 4. Resource System
+
+`harmonius::rg::resource` — Lifetime analysis, aliasing, pools, ring buffers.
+
+```mermaid
+classDiagram
+    class AliasingSolver {
+        +solve(span~LifetimeInterval~, span~ResourceSizeInfo~) AliasingMap
+    }
+    class AliasingMap {
+        +assignments() span~AliasingAssignment~
+        +peak_memory_bytes() uint64_t
+        +total_logical_bytes() uint64_t
+        +aliasing_efficiency() float
+    }
+    class PoolAllocator {
+        +PoolAllocator(PoolResourceDesc, Device)
+        +allocate() expected~ResourceHandle, PoolError~
+        +release(ResourceHandle) void
+        +utilization() float
+        +capacity() uint32_t
+        +active_count() uint32_t
+    }
+    class RingAllocator {
+        +RingAllocator(uint64_t slot_size, uint32_t frame_count, Device)
+        +allocate(uint64_t size, uint64_t alignment) optional~Allocation~
+        +advance_frame(uint32_t frame_index) void
+        +buffer() gpu_ResourceHandle
+    }
+    class LifetimeInterval {
+        +ResourceHandle resource
+        +uint32_t first_write
+        +uint32_t last_read
+    }
+    class AliasingAssignment {
+        +ResourceHandle resource
+        +uint32_t heap_offset
+        +uint32_t heap_size
+        +uint32_t heap_index
+    }
+    class ResourceSizeInfo {
+        +ResourceHandle resource
+        +uint64_t size_bytes
+        +HeapType heap_type
+    }
+
+    AliasingSolver --> AliasingMap : produces
+    AliasingSolver --> LifetimeInterval : reads
+    AliasingSolver --> ResourceSizeInfo : reads
+    AliasingMap *-- AliasingAssignment
+    PoolAllocator --> Device : uses
+    RingAllocator --> Device : uses
+```
+
+### 5. Synchronization Engine
+
+`harmonius::rg::sync` — Barriers, layout transitions, timeline fences.
+
+```mermaid
+classDiagram
+    class BarrierScheduler {
+        +compute(span~ScheduledPass~, DeclaredGraph) BarrierSchedule
+        -merge_barriers(vector~BarrierDesc~) void
+        -apply_split_barriers(BarrierSchedule, DeviceCapabilities) void
+    }
+    class BarrierSchedule {
+        +vector~vector~BarrierDesc~~ pre_pass_barriers
+        +vector~vector~BarrierDesc~~ post_pass_barriers
+    }
+    class TimelineFenceManager {
+        +TimelineFenceManager(Device)
+        +signal(QueueAffinity, uint64_t) void
+        +wait(QueueAffinity, uint64_t) void
+        +is_complete(QueueAffinity, uint64_t) bool
+        +wait_cpu(QueueAffinity, uint64_t) void
+        +current_value(QueueAffinity) uint64_t
+        +advance_frame() void
+        -array~PerQueueFence, 3~ fences_
+    }
+    class BarrierDesc {
+        +BarrierType type
+        +ResourceHandle resource
+        +UsageType src_usage
+        +UsageType dst_usage
+        +QueueAffinity src_queue
+        +QueueAffinity dst_queue
+        +uint32_t mip_level
+        +uint32_t array_layer
+        +bool is_split_begin
+        +bool is_split_end
+    }
+    class BarrierType {
+        <<enum class>>
+        memory
+        layout_transition
+        ownership_release
+        ownership_acquire
+        aliasing
+    }
+
+    BarrierScheduler --> BarrierSchedule : produces
+    BarrierSchedule *-- BarrierDesc
+    BarrierDesc --> BarrierType
+    TimelineFenceManager --> Device : uses
+```
+
+### 6. Gating System
+
+`harmonius::rg::gate` — Compile-time and runtime pass gating.
+
+```mermaid
+classDiagram
+    class GateEvaluator {
+        +evaluate_compile_time(DeclaredGraph, CapabilityDescriptor) expected~vector~PassHandle~, CompileError~
+        +evaluate_runtime(ExecutionPlan, TimestampResults, span~PoolAllocator~) vector~PassHandle~
+    }
+    class CapabilityDescriptor {
+        +bool mesh_shaders
+        +bool ray_tracing
+        +bool sparse_textures
+        +bool async_compute_queue
+        +bool transfer_queue
+        +bool shading_rate_images
+        +bool sixty_four_bit_atomics
+        +bool gpu_work_graphs
+        +bool opacity_micromaps
+        +bool split_barriers
+        +has(string_view) bool
+    }
+    class CapabilityGateDesc {
+        +string_view required_capability
+        +bool hard
+    }
+    class BudgetGateDesc {
+        +string_view timestamp_query_name
+        +float threshold_ms
+        +uint32_t priority
+    }
+    class FallbackEntry {
+        +PassHandle pass
+        +optional~CapabilityGateDesc~ capability_gate
+        +optional~BudgetGateDesc~ budget_gate
+    }
+
+    GateEvaluator --> CapabilityDescriptor : reads
+    GateEvaluator --> FallbackEntry : evaluates
+    FallbackEntry --> CapabilityGateDesc
+    FallbackEntry --> BudgetGateDesc
+```
+
+### 7. Execution Engine
+
+`harmonius::rg::exec` — Per-frame binding, encoding, submission.
+
+```mermaid
+classDiagram
+    class Executor {
+        +Executor(Device, uint32_t frame_count)
+        +bind_resource(ResourceHandle, gpu_ResourceHandle) void
+        +bind_subgraph_params(SubGraphHandle, uint32_t, span) void
+        +set_resolution_scale(string_view, float) void
+        +set_pass_active(PassHandle, bool) void
+        +set_instance_active(SubGraphHandle, uint32_t, bool) void
+        +invalidate_history(ResourceHandle) void
+        +inject_transfer(TransferPassDesc) void
+        +bind_residency_map(ResourceHandle, gpu_ResourceHandle) void
+        +set_budget_threshold(GateHandle, float) void
+        +execute(ExecutionPlan) void
+        +frame_index() uint64_t
+        -evaluate_budget_gates() void
+        -dispatch_encoding_groups(ExecutionPlan) void
+        -submit_command_buffers(ExecutionPlan) void
+        -advance_frame() void
+        -Device device_
+        -TimelineFenceManager fence_manager_
+        -vector~CommandBufferPool~ cmd_pools_
+        -RingAllocator ring_allocator_
+        -uint64_t frame_index_
+    }
+    class PassContext {
+        +cmd() CommandBuffer
+        +resolve(ResourceHandle) gpu_ResourceHandle
+        +allocate_constants(uint64_t, uint64_t) Allocation
+        +frame_index() uint64_t
+        +render_area() RenderArea
+    }
+    class CommandBufferPool {
+        +CommandBufferPool(Device, QueueAffinity)
+        +acquire() CommandBuffer
+        +release(CommandBuffer) void
+        +reset_frame(uint32_t) void
+    }
+    class TransferPassDesc {
+        +gpu_ResourceHandle src_staging
+        +gpu_ResourceHandle dst_resource
+        +uint64_t src_offset
+        +uint64_t dst_offset
+        +uint64_t size_bytes
+        +int32_t priority
+    }
+
+    Executor --> ExecutionPlan : reads
+    Executor --> TimelineFenceManager : owns
+    Executor *-- CommandBufferPool
+    Executor --> RingAllocator : owns
+    Executor --> PassContext : creates
+    Executor --> Device : uses
+    PassContext --> CommandBuffer : wraps
+    PassContext --> RingAllocator : allocates from
+```
+
+### 8. Diagnostics
+
+`harmonius::rg::diag` — GPU profiling and memory metrics.
+
+```mermaid
+classDiagram
+    class DiagnosticsCollector {
+        +DiagnosticsCollector(Device)
+        +read_timestamps() TimestampResults
+        +read_statistics() PipelineStatistics
+        +read_transfer_stats() TransferStatistics
+        +read_memory_stats() MemoryDiagnostics
+        +queue_depth(QueueAffinity) uint32_t
+        +request_readback(ReadbackRequest) void
+        +read_readback() span~uint8_t~
+    }
+    class TimestampResults {
+        +vector~Entry~ entries
+        +find(string_view) optional~Entry~
+    }
+    class TimestampEntry {
+        +string_view pass_name
+        +uint64_t begin_ns
+        +uint64_t end_ns
+        +duration_ms() double
+    }
+    class MemoryDiagnostics {
+        +uint64_t peak_aliased_bytes
+        +uint64_t total_allocated_bytes
+        +float aliasing_efficiency
+        +uint32_t active_pool_count
+        +uint32_t total_pool_capacity
+    }
+
+    DiagnosticsCollector --> TimestampResults : produces
+    DiagnosticsCollector --> MemoryDiagnostics : produces
+    DiagnosticsCollector --> Device : uses
+    TimestampResults *-- TimestampEntry
+```
+
+### 9. GPU Backend
+
+`harmonius::gpu` — Abstract device and command buffer with three native implementations.
+
+```mermaid
+classDiagram
+    class Device {
+        <<abstract>>
+        +backend() Backend
+        +capabilities() DeviceCapabilities
+        +create_texture(TransientResourceDesc) ResourceHandle
+        +create_buffer(uint64_t, HeapType) ResourceHandle
+        +destroy_resource(ResourceHandle) void
+        +map(ResourceHandle) void_ptr
+        +unmap(ResourceHandle) void
+        +create_heap(uint64_t, HeapType) ResourceHandle
+        +create_placed_resource(ResourceHandle, uint64_t, TransientResourceDesc) ResourceHandle
+        +create_timeline_fence(uint64_t) FenceHandle
+        +signal_fence(FenceHandle, uint64_t) void
+        +wait_fence(FenceHandle, uint64_t) void
+        +acquire_command_buffer(QueueAffinity) CommandBuffer_ptr
+        +submit(QueueAffinity, span~CommandBuffer~) void
+    }
+    class CommandBuffer {
+        <<abstract>>
+        +barrier(span~BarrierDesc~) void
+        +draw_mesh(uint32_t, uint32_t, uint32_t) void
+        +dispatch(uint32_t, uint32_t, uint32_t) void
+        +dispatch_rays(uint32_t, uint32_t, uint32_t) void
+        +dispatch_indirect(ResourceHandle, uint64_t) void
+        +copy_buffer(ResourceHandle, ResourceHandle, uint64_t, uint64_t, uint64_t) void
+        +begin_render_pass(RenderPassDesc) void
+        +end_render_pass() void
+        +begin_debug_label(string_view) void
+        +end_debug_label() void
+        +write_timestamp(uint32_t) void
+    }
+    class D3D12Device {
+        -ID3D12Device14 device_
+        -D3D12MA_Allocator allocator_
+    }
+    class VulkanDevice {
+        -VkDevice device_
+        -VmaAllocator allocator_
+    }
+    class MetalDevice {
+        -MTLDevice device_
+    }
+    class D3D12CommandBuffer {
+        -ID3D12GraphicsCommandList10 list_
+    }
+    class VulkanCommandBuffer {
+        -VkCommandBuffer buffer_
+    }
+    class MetalCommandBuffer {
+        -MTLCommandBuffer buffer_
+    }
+    class DeviceCapabilities {
+        +bool mesh_shaders
+        +bool ray_tracing
+        +bool sparse_textures
+        +bool async_compute_queue
+        +bool gpu_work_graphs
+        +uint32_t max_texture_dimension
+    }
+
+    Device <|-- D3D12Device
+    Device <|-- VulkanDevice
+    Device <|-- MetalDevice
+    CommandBuffer <|-- D3D12CommandBuffer
+    CommandBuffer <|-- VulkanCommandBuffer
+    CommandBuffer <|-- MetalCommandBuffer
+    Device --> CommandBuffer : creates
+    Device --> DeviceCapabilities : exposes
+```
+
+---
+
+## Cross-Module Relationships
+
+How the nine modules depend on each other at the class level.
+
+```mermaid
+classDiagram
+    class GraphBuilder {
+        <<builder>>
+    }
+    class DeclaredGraph {
+        <<builder>>
+    }
+    class GraphCompiler {
+        <<compiler>>
+    }
+    class ExecutionPlan {
+        <<compiler>>
+    }
+    class GateEvaluator {
+        <<gate>>
+    }
+    class BarrierScheduler {
+        <<sync>>
+    }
+    class AliasingSolver {
+        <<resource>>
+    }
+    class Executor {
+        <<exec>>
+    }
+    class TimelineFenceManager {
+        <<sync>>
+    }
+    class CommandBufferPool {
+        <<exec>>
+    }
+    class RingAllocator {
+        <<resource>>
+    }
+    class PoolAllocator {
+        <<resource>>
+    }
+    class DiagnosticsCollector {
+        <<diag>>
+    }
+    class Device {
+        <<gpu>>
+    }
+
+    GraphBuilder --> DeclaredGraph : produces
+    GraphCompiler --> DeclaredGraph : consumes
+    GraphCompiler --> GateEvaluator : delegates to
+    GraphCompiler --> BarrierScheduler : delegates to
+    GraphCompiler --> AliasingSolver : delegates to
+    GraphCompiler --> ExecutionPlan : produces
+    Executor --> ExecutionPlan : reads
+    Executor --> TimelineFenceManager : owns
+    Executor --> CommandBufferPool : owns
+    Executor --> RingAllocator : owns
+    Executor --> Device : submits to
+    DiagnosticsCollector --> Executor : reads metrics from
+    DiagnosticsCollector --> Device : queries
+    PoolAllocator --> Device : allocates via
+    GateEvaluator --> DiagnosticsCollector : reads timing from
+```
+
+---
+
+## Sequence Diagrams
+
+### Full Lifecycle
+
+Build, compile, then execute across multiple frames.
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant GB as GraphBuilder
+    participant GC as GraphCompiler
+    participant Exec as Executor
+    participant GPU
+
+    Note over App,GPU: Phase 1 - Build (once)
+    App->>GB: add_pass(), declare_transient(), attach_gate()
+    App->>GB: declare_subgraph_template(), instantiate()
+    App->>GB: build()
+    GB-->>App: DeclaredGraph
+
+    Note over App,GPU: Phase 2 - Compile (once)
+    App->>GC: compile(DeclaredGraph, capabilities)
+    GC->>GC: validate
+    GC->>GC: evaluate gates
+    GC->>GC: dead-pass elimination
+    GC->>GC: topological sort
+    GC->>GC: barrier schedule
+    GC->>GC: resource aliasing
+    GC->>GC: queue partitioning
+    GC->>GC: encoding plan
+    GC->>GC: instance merge
+    GC-->>App: ExecutionPlan
+
+    Note over App,GPU: Phase 3 - Execute (every frame)
+    loop Every Frame
+        App->>Exec: bind_frame_data()
+        App->>Exec: set_activation_flags()
+        App->>Exec: set_resolution_scale()
+        Exec->>Exec: evaluate budget gates
+        Exec->>GPU: parallel encode + submit
+        GPU-->>Exec: fence signals
+        Exec->>Exec: advance frame index
+    end
+```
+
+### Compilation Pipeline
+
+Internal detail of the nine compiler stages.
+
+```mermaid
+sequenceDiagram
+    participant GC as GraphCompiler
+    participant Val as Validator
+    participant GE as GateEvaluator
+    participant DPE as DeadPassEliminator
+    participant TS as TopologicalSorter
+    participant BS as BarrierScheduler
+    participant AS as AliasingSolver
+    participant QP as QueuePartitioner
+    participant EP as EncodingPlanner
+    participant IM as InstanceMerger
+
+    GC->>Val: validate(declared_graph)
+    Val-->>GC: errors or ok
+    GC->>GE: evaluate_compile_time(graph, caps)
+    GE-->>GC: pruned pass set
+    GC->>DPE: eliminate(graph, pruned)
+    DPE-->>GC: minimal graph
+    GC->>TS: sort(minimal_graph)
+    TS-->>GC: sorted passes
+    GC->>BS: compute(sorted_passes, graph)
+    BS-->>GC: barrier schedule
+    GC->>AS: solve(lifetimes, sizes)
+    AS-->>GC: aliasing map
+    GC->>QP: partition(sorted_passes, affinities)
+    QP-->>GC: queue submissions
+    GC->>EP: plan(sorted_passes, dependencies)
+    EP-->>GC: encoding groups
+    GC->>IM: merge(instances, shared_resources)
+    IM-->>GC: unified DAG
+    GC-->>GC: assemble ExecutionPlan
+```
+
+### Per-Frame Execution
+
+Detailed frame execution showing parallel encoding and submission.
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Exec as Executor
+    participant BG as BudgetGateEval
+    participant Pool as CommandBufferPool
+    participant T0 as Thread 0
+    participant T1 as Thread 1
+    participant Ring as RingAllocator
+    participant GPU
+
+    App->>Exec: bind_resource(slot, handle)
+    App->>Exec: set_pass_active(bloom, false)
+    App->>Exec: set_resolution_scale("render", 0.75)
+    App->>Exec: inject_transfer(upload_desc)
+
+    Exec->>BG: evaluate(timing_results, pools)
+    BG-->>Exec: culled passes
+
+    Note over T0,T1: Encoding Group 0 (parallel)
+    Exec->>Pool: acquire(graphics)
+    Pool-->>T0: cmd_buf_0
+    Pool-->>T1: cmd_buf_1
+    par Thread 0
+        T0->>T0: encode shadow cascade 0
+        T0->>Ring: allocate_constants(256)
+        Ring-->>T0: offset + mapped_ptr
+    and Thread 1
+        T1->>T1: encode shadow cascade 1
+        T1->>Ring: allocate_constants(256)
+        Ring-->>T1: offset + mapped_ptr
+    end
+    T0-->>Exec: cmd_buf_0
+    T1-->>Exec: cmd_buf_1
+
+    Note over Exec,GPU: Submit in topological order
+    Exec->>GPU: submit(graphics, [cmd_buf_0, cmd_buf_1])
+    Exec->>GPU: signal(graphics_fence, frame_N)
+    GPU-->>Exec: fence signal
+    Exec->>Exec: advance_frame()
+    Exec->>Ring: advance_frame(frame_index)
+```
+
+### Parallel Encoding
+
+How encoding groups map to threads.
+
+```mermaid
+sequenceDiagram
+    participant Sched as EncodingScheduler
+    participant T0 as Thread 0
+    participant T1 as Thread 1
+    participant T2 as Thread 2
+    participant Pool as CmdBufferPool
+
+    Note over Sched,Pool: Group 0 - 3 parallel passes
+    Sched->>T0: encode(cascade_0)
+    Sched->>T1: encode(cascade_1)
+    Sched->>T2: encode(cascade_2)
+    T0->>Pool: acquire()
+    T1->>Pool: acquire()
+    T2->>Pool: acquire()
+    T0-->>Sched: done
+    T1-->>Sched: done
+    T2-->>Sched: done
+
+    Note over Sched,Pool: Group 1 - 1 serial pass
+    Sched->>T0: encode(gbuffer)
+    T0->>Pool: acquire()
+    T0-->>Sched: done
+
+    Note over Sched,Pool: Group 2 - 1 serial pass
+    Sched->>T0: encode(lighting)
+    T0-->>Sched: done
+
+    Note over Sched,Pool: Group 3 - 3 parallel passes
+    Sched->>T0: encode(bloom)
+    Sched->>T1: encode(ao)
+    Sched->>T2: encode(volumetrics)
+    T0-->>Sched: done
+    T1-->>Sched: done
+    T2-->>Sched: done
+
+    Sched->>Sched: reorder to topological order
+```
+
+### Streaming Fault Resolution
+
+How a residency fault flows through the system across two frames.
+
+```mermaid
+sequenceDiagram
+    participant Renderer
+    participant IO as IO System
+    participant Exec as Executor
+    participant TX as Transfer Queue
+    participant GFX as Graphics Queue
+    participant Diag as Diagnostics
+
+    Note over Renderer,Diag: Frame N - fault detected
+    GFX->>Renderer: page fault (tile not resident)
+    Renderer->>IO: request_tile(page_id, priority=critical)
+    IO->>IO: read from disk (platform-native IO)
+    IO-->>Exec: staging buffer ready
+
+    Note over Renderer,Diag: Frame N+1 - upload injected
+    Exec->>Exec: inject_transfer(staging, dest, priority)
+    Exec->>TX: upload pass
+    TX->>TX: copy staging to device-local
+    TX-->>Exec: completion fence signal
+    Exec->>Exec: update residency map
+    Exec->>GFX: bind updated residency map
+    GFX->>GFX: consuming pass reads new tile
+    Diag->>Diag: record transfer throughput
+```
