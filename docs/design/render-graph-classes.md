@@ -518,43 +518,55 @@ classDiagram
 
 ### 9. GPU Backend
 
-`harmonius::gpu` — Abstract device and command buffer with three native implementations.
+`harmonius::gpu` — Concrete device and command buffer types selected at compile time. No virtual
+dispatch. One backend is compiled per binary. See the dedicated GPU backend design documents:
+
+- [gpu-backend-interface.md](gpu-backend-interface.md) — shared interface, types, and
+  cross-backend compatibility
+- [gpu-backend-d3d12.md](gpu-backend-d3d12.md) — Direct3D 12 (Agility SDK 1.619+, SM 6.9)
+- [gpu-backend-vulkan.md](gpu-backend-vulkan.md) — Vulkan 1.4
+- [gpu-backend-metal.md](gpu-backend-metal.md) — Metal 4
 
 ```mermaid
 classDiagram
     class Device {
-        <<abstract>>
-        +backend() Backend
+        <<concept - compile-time alias>>
         +capabilities() DeviceCapabilities
-        +create_texture(TransientResourceDesc) ResourceHandle
-        +create_buffer(uint64_t, HeapType) ResourceHandle
-        +destroy_resource(ResourceHandle) void
-        +map(ResourceHandle) void_ptr
-        +unmap(ResourceHandle) void
-        +create_heap(uint64_t, HeapType) ResourceHandle
-        +create_placed_resource(ResourceHandle, uint64_t, TransientResourceDesc) ResourceHandle
-        +create_timeline_fence(uint64_t) FenceHandle
-        +signal_fence(FenceHandle, uint64_t) void
-        +wait_fence(FenceHandle, uint64_t) void
-        +acquire_command_buffer(QueueAffinity) CommandBuffer_ptr
-        +submit(QueueAffinity, span~CommandBuffer~) void
+        +create_texture(TextureDesc) TextureHandle
+        +create_buffer(BufferDesc) BufferHandle
+        +create_heap(HeapDesc) HeapHandle
+        +create_placed_texture(HeapHandle, uint64_t, TextureDesc) TextureHandle
+        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) BufferHandle
+        +create_fence(uint64_t) FenceHandle
+        +create_mesh_render_pipeline(MeshRenderPipelineDesc) PipelineHandle
+        +create_compute_pipeline(ComputePipelineDesc) PipelineHandle
+        +create_ray_tracing_pipeline(RayTracingPipelineDesc) PipelineHandle
+        +create_work_graph(WorkGraphDesc) WorkGraphHandle
+        +create_descriptor_heap(DescriptorHeapDesc) DescriptorHeapHandle
+        +submit(QueueType, cmd_bufs, signals, waits) void
+        +set_name(TextureHandle, string_view) void
     }
     class CommandBuffer {
-        <<abstract>>
-        +barrier(span~BarrierDesc~) void
-        +draw_mesh(uint32_t, uint32_t, uint32_t) void
-        +dispatch(uint32_t, uint32_t, uint32_t) void
-        +dispatch_rays(uint32_t, uint32_t, uint32_t) void
-        +dispatch_indirect(ResourceHandle, uint64_t) void
-        +copy_buffer(ResourceHandle, ResourceHandle, uint64_t, uint64_t, uint64_t) void
+        <<concept - compile-time alias>>
+        +barrier(BarrierDesc) void
         +begin_render_pass(RenderPassDesc) void
         +end_render_pass() void
-        +begin_debug_label(string_view) void
+        +set_pipeline(PipelineHandle) void
+        +dispatch_mesh(x, y, z) void
+        +dispatch_mesh_indirect(buf, offset, count, stride) void
+        +dispatch_mesh_indirect_count(args...) void
+        +dispatch(x, y, z) void
+        +dispatch_indirect(buf, offset) void
+        +trace_rays(TraceRaysDesc) void
+        +build_acceleration_structure(BuildDesc) void
+        +copy_buffer(src, src_off, dst, dst_off, size) void
+        +push_constants(data, size) void
+        +write_timestamp(pool, index) void
+        +begin_debug_label(name) void
         +end_debug_label() void
-        +write_timestamp(uint32_t) void
     }
     class D3D12Device {
-        -ID3D12Device14 device_
+        -ID3D12Device16 device_
         -D3D12MA_Allocator allocator_
     }
     class VulkanDevice {
@@ -563,6 +575,7 @@ classDiagram
     }
     class MetalDevice {
         -MTLDevice device_
+        -MTLResidencySet residency_set_
     }
     class D3D12CommandBuffer {
         -ID3D12GraphicsCommandList10 list_
@@ -571,23 +584,30 @@ classDiagram
         -VkCommandBuffer buffer_
     }
     class MetalCommandBuffer {
-        -MTLCommandBuffer buffer_
+        -MTL4CommandBuffer cmd_
     }
     class DeviceCapabilities {
         +bool mesh_shaders
+        +bool bindless_resources
+        +bool timeline_fences
         +bool ray_tracing
+        +bool ray_tracing_inline
+        +bool opacity_micromaps
         +bool sparse_textures
+        +bool int64_atomics
         +bool async_compute_queue
-        +bool gpu_work_graphs
-        +uint32_t max_texture_dimension
+        +bool transfer_queue
+        +bool variable_rate_shading
+        +bool work_graphs
+        +bool split_barriers
     }
 
-    Device <|-- D3D12Device
-    Device <|-- VulkanDevice
-    Device <|-- MetalDevice
-    CommandBuffer <|-- D3D12CommandBuffer
-    CommandBuffer <|-- VulkanCommandBuffer
-    CommandBuffer <|-- MetalCommandBuffer
+    Device ..> D3D12Device : compile-time alias
+    Device ..> VulkanDevice : compile-time alias
+    Device ..> MetalDevice : compile-time alias
+    CommandBuffer ..> D3D12CommandBuffer : compile-time alias
+    CommandBuffer ..> VulkanCommandBuffer : compile-time alias
+    CommandBuffer ..> MetalCommandBuffer : compile-time alias
     Device --> CommandBuffer : creates
     Device --> DeviceCapabilities : exposes
 ```
