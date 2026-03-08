@@ -98,24 +98,32 @@ add_subdirectory(src/gpu/metal)
 
 ### vcpkg Dependencies
 
-```json
-{
-  "name": "harmonius",
-  "version-semver": "0.1.0",
-  "dependencies": [
-    "vulkan-headers",
-    "vulkan-memory-allocator",
-    "directx-headers",
-    "d3d12-memory-allocator",
-    "directx-shader-compiler"
-  ]
-}
-```
+**Core dependencies** (all platforms):
 
-Platform-specific dependencies:
-- **Windows:** `directx-headers`, `d3d12-memory-allocator`, Agility SDK (vendored)
-- **Linux/SteamOS:** `vulkan-headers`, `vulkan-memory-allocator`
-- **macOS:** Metal framework (system), `metal-shaderconverter` (vendored SDK)
+| Package | Purpose |
+|---------|---------|
+| `alembic` | Alembic (`.abc`) animated mesh and scene data parsing |
+| `cgltf` | Lightweight glTF 2.0 parsing |
+| `draco` | Mesh geometry compression |
+| `libexif` | Image metadata extraction (orientation, color space) |
+| `libpng` | PNG image parsing |
+| `meshoptimizer` | Mesh optimization, meshlet generation, LOD generation |
+| `openexr` | EXR image parsing |
+| `zstd` | General-purpose compression for asset bundle chunks |
+
+**Platform-specific dependencies:**
+
+| Platform | Package | Purpose |
+|----------|---------|---------|
+| Windows | `directx-headers` | D3D12 API headers |
+| Windows | `unofficial-d3d12-memory-allocator` | GPU memory management, allocation tracking, defragmentation |
+| Windows | `directx-dxc` | DXC shader compiler |
+| Windows | Agility SDK (vendored) | Latest D3D12 runtime |
+| Linux/SteamOS | `vulkan` | Vulkan API headers and loader |
+| Linux/SteamOS | `vulkan-memory-allocator` | GPU memory management, allocation tracking, defragmentation |
+| macOS | `vulkan-memory-allocator` | VMA virtualized mode for Metal sub-allocation and defragmentation |
+| macOS | Metal framework (system) | Metal API |
+| macOS | `metal-shaderconverter` (vendored) | DXIL → Metal IR conversion |
 
 ### Shader Compilation Pipeline
 

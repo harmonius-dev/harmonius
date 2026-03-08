@@ -5,30 +5,33 @@ This handbook provides guidelines and best practices for agents working on the H
 ## Rulebook
 
 - Put all documentation in the `docs/` directory. Use Markdown format for all documentation.
-- Never create ASCII diagrams. Instead, create Mermaid diagrams. Always render Mermaid diagrams with
-  the MCP to ensure correctness and readability.
+- Never create ASCII diagrams. Instead, create Mermaid diagrams. Always render Mermaid diagrams with the MCP to ensure
+  correctness and readability.
+- Always limit lines to 120 characters for all code, configuration, documentation, and comments. The limit may be
+  exceeded if the line cannot be split without changing semantics.
+- Always sort JSON documents by keys in lexicographical order. Do not sort JSON arrays, only JSON objects.
 
 ## Design guidelines
 
 - Design abstractions to be modular and reusable. Separate concerns between components and modules.
-- Use domain-driven design to model the problem space and create a ubiquitous language. Define clear
-  boundaries between domains and use interfaces to decouple them.
-- Seek approval before adding or changing any dependencies.
-- Always use the latest versions of dependencies and tools. Use the package manager CLI to install
-  dependencies with the latest version automatically.
-- Write multiplatform code that works consistently across supported operating systems. Use
-  platform-agnostic libraries and tools when possible. Ensure all cross-platform interfaces are
-  compatible with each supported platform, or use gating to expose platform-specific functionality.
+- Use domain-driven design to model the problem space and create a ubiquitous language. Define clear boundaries between
+  domains and use interfaces to decouple them.
+- Seek approval before adding or changing any dependencies. If you need to add a dependency, propose a low-level
+  library that is well supported and maintained, and can be accessed through vcpkg. Avoid using any frameworks.
+- Always use the latest versions of dependencies and tools. Use the package manager CLI to install dependencies with the
+  latest version automatically.
+- Write multiplatform code that works consistently across supported operating systems. Use platform-agnostic libraries
+  and tools when possible. Ensure all cross-platform interfaces are compatible with each supported platform, or use
+  gating to expose platform-specific functionality.
 
 ## Development guidelines
 
-- Write implementation comments sparingly. Always write documentation comments and generate an API
-  reference from them. Use implementation comments only for complex algorithms or non-obvious code.
-- Use test-driven development to ensure code quality and correctness. Write unit tests, integration
-  tests, and end-to-end tests to cover all aspects of the codebase. Use continuous integration to
-  run tests automatically on every commit.
-- Ensure all code is memory-safe and free of undefined behavior. Use safe concurrency and
-  multithreading patterns when accessing shared data.
+- Write implementation comments sparingly. Always write documentation comments and generate an API reference from them.
+  Use implementation comments only for complex algorithms or non-obvious code.
+- Use test-driven development to ensure code quality and correctness. Write unit tests, integration tests, and
+  end-to-end tests to cover all aspects of the codebase. Use continuous integration to run tests automatically on every
+  commit.
+- Ensure all code is memory-safe and free of undefined behavior. Use safe concurrency and multithreading patterns when
+  accessing shared data.
 - Use functional programming and immutable data structures when feasible and performant.
-- Always minimize mutable state and isolate it as much as possible. Avoid using mutable shared
-  state.
+- Always minimize mutable state and isolate it as much as possible. Avoid using mutable shared state.

@@ -121,6 +121,7 @@ private:
     id<MTLBuffer>          argument_buffer_;      // bindless resource table
     id<MTLResidencySet>    residency_set_;         // Metal 4 residency
     MTL4Compiler*          compiler_;              // Metal 4 shader compiler
+    VmaVirtualBlock        virtual_block_;          // VMA virtualized mode for sub-allocation
 
     // Per-queue shared events used by wait_idle() to drain all queues.
     id<MTLSharedEvent>     graphics_event_;
@@ -265,6 +266,27 @@ id<MTLResidencySet> residency_set = [device_ newResidencySetWithDescriptor:rs_de
 // Make individual resources resident
 [encoder useResource:texture usage:MTLResourceUsageRead];
 ```
+
+---
+
+### Memory Allocator
+
+The Metal backend uses [Vulkan Memory Allocator (VMA)](https://gpuopen.com/vulkan-memory-allocator/) in
+**virtualized mode** for GPU memory management, allocation tracking, and memory defragmentation. VMA's
+virtual block feature (`VmaVirtualBlock`) provides sub-allocation and defragmentation algorithms without
+requiring a real Vulkan device — it operates as a pure CPU-side allocator that tracks offset/size pairs.
+The actual Metal allocations (`MTLHeap`, `MTLBuffer`, `MTLTexture`) are performed through Metal APIs, but
+VMA manages the logical address space and provides unified allocation tracking across all platforms.
+
+| VMA Virtual Block Feature | Metal Usage |
+|---------------------------|-------------|
+| Virtual sub-allocation | Offset management within `MTLHeap` placement heaps |
+| Virtual block defragmentation | Compaction of persistent resources across heaps |
+| Allocation tracking | Unified memory diagnostics across all backends |
+| Budget tracking | Memory pressure monitoring via `MTLDevice.currentAllocatedSize` |
+
+This approach provides consistent memory management APIs and defragmentation strategies across
+D3D12 (via D3D12MA), Vulkan (via VMA native mode), and Metal (via VMA virtualized mode).
 
 ---
 
@@ -988,6 +1010,7 @@ Key architectural differences that affect the backend implementation:
 | Aspect | D3D12 / Vulkan | Metal |
 |--------|---------------|-------|
 | Memory model | Discrete GPU: separate device/host memory | Unified memory: single address space |
+| Memory allocator | D3D12MA / VMA (native) | VMA virtualized mode (`VmaVirtualBlock`) + MTLHeap |
 | Image layouts | Explicit layout transitions required | Automatic — Metal manages internally |
 | Queue ownership | Explicit release/acquire barrier pairs | Not required — unified memory |
 | Split barriers | Supported (enhanced barriers / events) | Not supported — immediate barriers |
@@ -1012,6 +1035,7 @@ classDiagram
         -MTLBuffer argument_buffer_
         -MTLResidencySet residency_set_
         -MTL4Compiler compiler_
+        -VmaVirtualBlock virtual_block_
         -MTLSharedEvent graphics_event_
         -MTLSharedEvent compute_event_
         -MTLSharedEvent copy_event_

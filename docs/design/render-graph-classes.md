@@ -618,6 +618,7 @@ classDiagram
         -MTLDevice device_
         -MTLResidencySet residency_set_
         -MTL4Compiler compiler_
+        -VmaVirtualBlock virtual_block_
     }
     class D3D12CommandBuffer {
         -ID3D12GraphicsCommandList10 list_

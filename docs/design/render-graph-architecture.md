@@ -257,20 +257,21 @@ resources.
 ```mermaid
 gantt
     title Lifetime Intervals & Aliased Heap
-    dateFormat X
-    axisFormat %s
+    dateFormat YYYY-MM-DD
+    axisFormat %d
+    tickInterval 1day
 
     section Lifetimes
-    GBuffer   :gbuf, 0, 3
-    Depth     :depth, 1, 3
-    Bloom     :bloom, 4, 6
-    DOF       :dof, 3, 5
-    Final     :final, 5, 7
+    GBuffer   :gbuf, 2024-01-01, 3d
+    Depth     :depth, 2024-01-02, 2d
+    Bloom     :bloom, 2024-01-05, 2d
+    DOF       :dof, 2024-01-04, 2d
+    Final     :final, 2024-01-06, 2d
 
     section Aliased Heap
-    GBuffer / Bloom (shared slot) :alias1, 0, 7
-    Depth / DOF (shared slot)     :alias2, 0, 4
-    Final (shared slot)           :alias3, 4, 7
+    GBuffer / Bloom (shared slot) :alias1, 2024-01-01, 6d
+    Depth / DOF (shared slot)     :alias2, 2024-01-02, 4d
+    Final (shared slot)           :alias3, 2024-01-06, 2d
 ```
 
 Rules:
@@ -399,22 +400,22 @@ and mutable per-frame data (bound each frame):
 #### Parallel encoding (RG-10.1–10.7)
 
 ```mermaid
-block-beta
-    columns 5
-
-    block:G0["Group 0 — parallel"]:5
-        SC0["Shadow cascade 0"] SC1["Shadow cascade 1"] SC2["Shadow cascade 2"]
+flowchart TD
+    subgraph G0 ["Group 0 - parallel"]
+        direction LR
+        SC0["Shadow cascade 0"] ~~~ SC1["Shadow cascade 1"] ~~~ SC2["Shadow cascade 2"]
     end
-    block:G1["Group 1 — serial"]:5
+    subgraph G1 ["Group 1 - serial"]
         GB["GBuffer (reads shadows)"]
     end
-    block:G2["Group 2 — serial"]:5
+    subgraph G2 ["Group 2 - serial"]
         LT["Lighting (reads GBuffer)"]
     end
-    block:G3["Group 3 — parallel"]:5
-        BL["Bloom extract"] AO["AO"] VOL["Volumetrics"]
+    subgraph G3 ["Group 3 - parallel"]
+        direction LR
+        BL["Bloom extract"] ~~~ AO["AO"] ~~~ VOL["Volumetrics"]
     end
-    block:G4["Group 4 — serial"]:5
+    subgraph G4 ["Group 4 - serial"]
         COMP["Composite"]
     end
 
@@ -423,11 +424,11 @@ block-beta
 
 **Thread pool assignment:**
 
-| Thread   | Encoding sequence                                         |
-| -------- | --------------------------------------------------------- |
-| Thread 0 | cascade 0 → GBuffer → Bloom extract                      |
-| Thread 1 | cascade 1 → *(idle)* → AO                                |
-| Thread 2 | cascade 2 → *(idle)* → Volumetrics                       |
+| Thread   | Encoding sequence                   |
+| -------- | ----------------------------------- |
+| Thread 0 | cascade 0 → GBuffer → Bloom extract |
+| Thread 1 | cascade 1 → *(idle)* → AO           |
+| Thread 2 | cascade 2 → *(idle)* → Volumetrics  |
 
 Submission: reorder to topological order regardless of encoding order (RG-10.7)
 
@@ -439,23 +440,24 @@ constants and staging allocations come from lock-free ring buffers (RG-10.5).
 ```mermaid
 gantt
     title Triple-Buffered Frame Pipeline
-    dateFormat X
-    axisFormat %s
+    dateFormat YYYY-MM-DD
+    axisFormat %d
+    tickInterval 1day
 
     section Frame N
-    CPU Build    :f0cpu, 0, 1
-    GPU Encode   :f0enc, 1, 2
-    GPU Execute  :f0exe, 2, 3
+    CPU Build    :f0cpu, 2024-01-01, 1d
+    GPU Encode   :f0enc, 2024-01-02, 1d
+    GPU Execute  :f0exe, 2024-01-03, 1d
 
     section Frame N+1
-    CPU Build    :f1cpu, 1, 2
-    GPU Encode   :f1enc, 2, 3
-    GPU Execute  :f1exe, 3, 4
+    CPU Build    :f1cpu, 2024-01-02, 1d
+    GPU Encode   :f1enc, 2024-01-03, 1d
+    GPU Execute  :f1exe, 2024-01-04, 1d
 
     section Frame N+2
-    CPU Build    :f2cpu, 2, 3
-    GPU Encode   :f2enc, 3, 4
-    GPU Execute  :f2exe, 4, 5
+    CPU Build    :f2cpu, 2024-01-03, 1d
+    GPU Encode   :f2enc, 2024-01-04, 1d
+    GPU Execute  :f2exe, 2024-01-05, 1d
 ```
 
 Timeline fences (RG-10.6) ensure frame N+2's encoding does not begin until frame

@@ -328,7 +328,7 @@ vkQueueBindSparse(queues_.graphics, 1, &sparse_bind, VK_NULL_HANDLE);
 ### Memory Allocator
 
 The Vulkan backend uses [Vulkan Memory Allocator (VMA)](https://gpuopen.com/vulkan-memory-allocator/)
-for sub-allocation, aliasing pools, and budget tracking.
+for GPU memory management, allocation tracking, and memory defragmentation.
 
 | VMA Feature | Usage |
 |------------|-------|
@@ -336,6 +336,7 @@ for sub-allocation, aliasing pools, and budget tracking.
 | Virtual blocks | Ring buffer sub-allocation |
 | Budget queries | `VK_EXT_memory_budget` via VMA |
 | Defragmentation | Background compaction of persistent resources |
+| Allocation tracking | Per-allocation metadata for diagnostics |
 
 ---
 

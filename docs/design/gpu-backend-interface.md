@@ -1570,7 +1570,7 @@ enum class Format : uint32_t {
 | `create_heap` | `CreateHeap` | `vkAllocateMemory` (dedicated) | `newHeapWithDescriptor` |
 | `create_placed_texture` | `CreatePlacedResource2` | `vkCreateImage` + `vkBindImageMemory2` (at offset) | `newTextureWithDescriptor:offset:` on heap |
 | `create_sparse_texture` | `CreateReservedResource2` | `vkCreateImage` with `VK_IMAGE_CREATE_SPARSE_BINDING_BIT` | `newTextureWithDescriptor` with sparse options |
-| Allocator | D3D12MA (`D3D12MemoryAllocator`) | VMA (`VulkanMemoryAllocator`) | MTLHeap sub-allocation |
+| Allocator | D3D12MA (`D3D12MemoryAllocator`) | VMA (`VulkanMemoryAllocator`) | VMA virtualized (`VmaVirtualBlock`) + MTLHeap |
 
 ### Device Lifecycle
 

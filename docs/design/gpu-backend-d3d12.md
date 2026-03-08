@@ -244,7 +244,7 @@ queue->UpdateTileMappings(sparse_texture, 1, &coord, &region,
 ### Memory Allocator
 
 The D3D12 backend uses [D3D12 Memory Allocator (D3D12MA)](https://gpuopen.com/d3d12-memory-allocator/)
-for sub-allocation, defragmentation, and budget tracking.
+for GPU memory management, allocation tracking, and memory defragmentation.
 
 | D3D12MA Feature | Usage |
 |----------------|-------|
@@ -252,6 +252,7 @@ for sub-allocation, defragmentation, and budget tracking.
 | Virtual blocks | Ring buffer sub-allocation for staging |
 | Budget queries | `IDXGIAdapter3::QueryVideoMemoryInfo` |
 | Defragmentation | Background defrag of persistent resources |
+| Allocation tracking | Per-allocation metadata for diagnostics |
 
 ---
 

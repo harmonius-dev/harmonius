@@ -23,27 +23,101 @@ budgets), F-6.1.5 (asset import), F-6.2.1–F-6.2.9 (IO/streaming features).
 
 ## Asset Transformation Pipeline
 
-Raw assets (glTF, images, shader graphs) pass through an offline cook pipeline that produces
-GPU-optimized, platform-specific bundles. No raw asset parsing occurs at runtime.
+Source assets originate in DCC (digital content creation) tools and are automatically exported to
+interchange formats whenever they change. The cook pipeline then parses, optimizes, and packs
+assets into GPU-ready bundles. No raw asset parsing occurs at runtime.
+
+### Source Asset Integration
+
+| DCC Tool | Export Format | Watcher Mechanism |
+|----------|--------------|-------------------|
+| Blender | glTF 2.0 (`.glb`) | Blender CLI (`blender --background --python export.py`) |
+| Maya | Alembic (`.abc`) | Maya standalone (`mayapy export.py`) |
+| Photoshop | PNG / EXR (`.png`, `.exr`) | Photoshop Generator or ExtendScript |
+| Substance Designer/Painter | PNG / EXR (`.png`, `.exr`) | Substance Automation Toolkit CLI |
+
+A **file watcher daemon** monitors DCC project directories for modified source files. On change,
+it invokes the corresponding DCC tool's headless export to produce an interchange format asset in
+the cook pipeline's input directory. The watcher is a development-time tool; shipping builds use
+pre-exported assets only.
+
+### Cook Pipeline
+
+Interchange-format assets are parsed using low-level libraries, optimized, and packed into
+platform-specific bundles.
+
+**Parsing dependencies:**
+
+| Format | Library | Purpose |
+|--------|---------|---------|
+| PNG | libpng | Lossless image parsing |
+| EXR | OpenEXR | EXR image parsing (high dynamic range, multi-channel) |
+| EXIF | libexif | Image metadata extraction (orientation, color space) |
+| Alembic (`.abc`) | Alembic (libalembic) | Animated mesh and scene data from Maya |
+| glTF 2.0 | cgltf | Lightweight glTF parsing |
+
+**Optimization and compression dependencies:**
+
+| Library | Purpose |
+|---------|---------|
+| meshoptimizer | Meshlet generation, mesh optimization, LOD generation, vertex cache optimization |
+| Draco | Mesh geometry compression for storage and streaming |
+| zstd | General-purpose compression for asset bundle chunks |
+
+**Pipeline flow:** Source assets are parsed from their interchange formats, then meshes are
+optimized (vertex cache, overdraw, fetch optimization) and meshletized via meshoptimizer.
+Mesh data is compressed with Draco for storage. glTF is used only as an interchange format
+for optimized meshes when exporting from the cook pipeline — it is not the primary input
+format for raw DCC data. Texture data is block-compressed (BC7/BC5/BC1) and mip-mapped.
+All cooked chunks are compressed with zstd before packing into asset bundles. Asset bundles
+are compressed during transit and storage; at startup they are decompressed on the CPU and
+cached locally so that subsequent loads use zero-copy memory-mapped reads with no runtime
+decompression overhead.
 
 ```mermaid
 flowchart TD
-    subgraph raw["Raw Assets"]
-        GLTF["glTF 2.0<br/>meshes, materials, textures"]
-        IMG["Images<br/>PNG, EXR, HDR"]
-        SG["Shader Graphs<br/>binary DAGs"]
+    subgraph source["Source Assets (DCC Tools)"]
+        BL["Blender<br/>scenes, meshes, rigs"]
+        MY["Maya<br/>animated meshes, scenes"]
+        PS["Photoshop<br/>textures, UI art"]
+        SB["Substance<br/>PBR texture sets"]
+    end
+
+    subgraph watcher["File Watcher Daemon"]
+        FW["Detect changes → invoke headless export"]
+    end
+
+    subgraph interchange["Interchange Formats"]
+        GLB["glTF 2.0 (.glb)<br/>meshes, materials"]
+        ABC["Alembic (.abc)<br/>animated meshes"]
+        PNG_EXR["PNG / EXR<br/>textures"]
+        SG["Shader Graphs<br/>textual DAGs"]
         HMAP["Heightmaps<br/>terrain tiles"]
     end
 
-    subgraph cook["Offline Cook Pipeline"]
-        MI["Mesh Import<br/>extract primitives"]
-        ML["Meshletize<br/>128V/128T clusters"]
+    subgraph parse["Parse (low-level libraries)"]
+        P_GLTF["cgltf<br/>parse glTF"]
+        P_ABC["libalembic<br/>parse Alembic"]
+        P_IMG["libpng / OpenEXR / libexif<br/>parse images + metadata"]
+    end
+
+    subgraph optimize["Optimize"]
+        MO["meshoptimizer<br/>vertex cache, overdraw,<br/>fetch optimization,<br/>meshletize 128V/128T"]
+        LOD["meshoptimizer<br/>LOD generation<br/>(simplify)"]
+        DC["Draco<br/>mesh compression"]
         TC["Texture Compress<br/>BC7, BC5, BC1"]
         MIP["Mip Generation<br/>Kaiser filter"]
-        SC["Shader Compile<br/>DXC to DXIL/SPIR-V/Metal IR"]
-        MAT["Material Convert<br/>PBR to shader graph"]
+    end
+
+    subgraph compile["Compile"]
+        SC["Shader Compile<br/>DXC → DXIL/SPIR-V/Metal IR"]
+        MAT["Material Convert<br/>PBR → shader graph"]
         TERR["Terrain Tile<br/>page table generation"]
-        PACK["Bundle Packer<br/>combine + align"]
+    end
+
+    subgraph pack["Pack"]
+        ZSTD["zstd compress<br/>all chunks"]
+        PACK["Bundle Packer<br/>combine + align 64KB"]
     end
 
     subgraph output["Cooked Output"]
@@ -52,11 +126,22 @@ flowchart TD
         PSO_Cache["PSO Cache<br/>(.hpso)"]
     end
 
-    GLTF --> MI --> ML --> PACK
-    IMG --> TC --> MIP --> PACK
-    SG --> SC --> PACK
-    SG --> MAT --> PACK
-    HMAP --> TERR --> PACK
+    BL --> FW
+    MY --> FW
+    PS --> FW
+    SB --> FW
+    FW --> GLB
+    FW --> ABC
+    FW --> PNG_EXR
+
+    GLB --> P_GLTF --> MO
+    ABC --> P_ABC --> MO
+    PNG_EXR --> P_IMG --> TC --> MIP --> ZSTD
+    MO --> LOD --> DC --> ZSTD
+    SG --> SC --> ZSTD
+    SG --> MAT --> ZSTD
+    HMAP --> TERR --> ZSTD
+    ZSTD --> PACK
     PACK --> Bundle
     PACK --> Manifest
     SC --> PSO_Cache
@@ -135,21 +220,24 @@ public:
 
 ### Mesh Cooking: Meshletization
 
-Meshes are decomposed into meshlet clusters of at most 128 vertices and 128 triangles
-(R-3.4.1, F-3.1.1). The output is a tightly packed buffer of meshlet descriptors, vertex
-data, and triangle index data.
+Meshes are first optimized using [meshoptimizer](https://github.com/zeux/meshoptimizer) for vertex
+cache, overdraw, and vertex fetch efficiency. Then they are decomposed into meshlet clusters of at
+most 128 vertices and 128 triangles (R-3.4.1, F-3.1.1) using `meshopt_buildMeshlets`. LOD chains
+are generated via `meshopt_simplify` with quadric error metrics. The output is a tightly packed
+buffer of meshlet descriptors, vertex data, and triangle index data. Mesh data is then compressed
+with [Draco](https://github.com/google/draco) for on-disk storage and streaming.
 
 ```cpp
 namespace harmonius::asset {
 
 struct MeshletData {
-    // Per-meshlet descriptor
+    // Per-meshlet descriptor (maps to meshopt_Meshlet output)
     struct Meshlet {
         uint32_t vertex_offset;
         uint32_t triangle_offset;
         uint8_t  vertex_count;     // max 128
         uint8_t  triangle_count;   // max 128
-        float    bounding_sphere[4]; // xyz center + radius
+        float    bounding_sphere[4]; // xyz center + radius (meshopt_computeMeshletBounds)
         float    normal_cone[4];     // xyz axis + cutoff (backface culling)
     };
 
@@ -161,10 +249,23 @@ struct MeshletData {
 
 class MeshletBuilder {
 public:
+    /// Optimizes the input mesh (vertex cache, overdraw, vertex fetch) using meshoptimizer,
+    /// then builds meshlets via meshopt_buildMeshlets and computes per-meshlet bounding
+    /// spheres and normal cones via meshopt_computeMeshletBounds.
     [[nodiscard]]
     MeshletData build(std::span<const float> positions,
                       std::span<const uint32_t> indices,
                       uint32_t vertex_stride);
+
+    /// Generates LOD chain using meshopt_simplify with quadric error metrics.
+    /// Returns meshlet data for each LOD level with screen-space error bounds.
+    [[nodiscard]]
+    std::vector<MeshletData> build_lod_chain(
+        std::span<const float> positions,
+        std::span<const uint32_t> indices,
+        uint32_t vertex_stride,
+        uint32_t lod_count
+    );
 };
 
 } // namespace harmonius::asset
@@ -462,26 +563,39 @@ class IoUringBackend : public IOBackend {
 } // namespace harmonius::asset
 ```
 
-### GPU Decompression (R-2.12.9, F-6.2.8)
+### Zero-Copy Bundle Loading (R-2.12.9, F-6.2.8)
 
-Asset chunks are stored compressed on disk. A compute pass decompresses them in GPU memory
-after the transfer queue uploads the compressed data:
+Asset bundles are compressed with zstd during the cook pipeline for efficient storage and network
+transit. At application startup (or when a bundle is first needed), compressed bundles are
+decompressed on the CPU and cached to a local platform-specific directory. Subsequent loads
+memory-map the decompressed cache file directly, providing zero-copy access to GPU-ready data
+with no per-frame decompression overhead.
 
 ```mermaid
 sequenceDiagram
-    participant Disk
+    participant Disk as Compressed Bundle (.hab)
+    participant CPU as CPU Decompression
+    participant Cache as Local Cache (decompressed)
     participant Staging as Staging Buffer
     participant TX as Transfer Queue
-    participant CS as Compute Queue
     participant Device as Device-Local Memory
 
-    Disk->>Staging: io_uring / DirectStorage read
-    TX->>Device: copy compressed data
-    TX-->>CS: fence signal
-    CS->>CS: decompress compute pass
-    CS-->>Device: decompressed data ready
-    CS->>CS: signal completion fence
+    Note over Disk,Device: First load (cold cache)
+    Disk->>CPU: read compressed bundle
+    CPU->>Cache: zstd decompress → write decompressed file
+    Cache->>Staging: memory-map cached file (zero-copy)
+    TX->>Device: DMA upload (64KB-aligned pages)
+
+    Note over Disk,Device: Subsequent loads (warm cache)
+    Cache->>Staging: memory-map cached file (zero-copy)
+    TX->>Device: DMA upload (64KB-aligned pages)
 ```
+
+**Cache management:**
+- Decompressed bundles are stored in a platform-specific cache directory
+- Cache entries are keyed by bundle content hash to detect stale data
+- Cache eviction follows LRU policy with a configurable maximum cache size
+- Shipping builds may include pre-decompressed bundles, eliminating the first-load penalty
 
 ---
 

@@ -1,0 +1,38 @@
+{
+  "dependencies": [
+    "alembic",
+    "cgltf",
+    "draco",
+    "libexif",
+    "libpng",
+    "meshoptimizer",
+    "openexr",
+    "zstd"
+  ],
+  "description": "Modern cross-platform GPU graphics framework",
+  "features": {
+    "d3d12": {
+      "dependencies": [
+        "directx-dxc",
+        "directx-headers",
+        "unofficial-d3d12-memory-allocator"
+      ],
+      "description": "Direct3D 12 backend"
+    },
+    "metal": {
+      "dependencies": [
+        "vulkan-memory-allocator"
+      ],
+      "description": "Metal backend (uses VMA in virtualized mode)"
+    },
+    "vulkan": {
+      "dependencies": [
+        "vulkan",
+        "vulkan-memory-allocator"
+      ],
+      "description": "Vulkan 1.4 backend"
+    }
+  },
+  "name": "harmonius",
+  "version-semver": "0.1.0"
+}
