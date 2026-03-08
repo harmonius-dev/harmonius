@@ -3,7 +3,6 @@
     "alembic",
     "cgltf",
     "draco",
-    "libexif",
     "libpng",
     "meshoptimizer",
     "openexr",

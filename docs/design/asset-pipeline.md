@@ -52,7 +52,6 @@ platform-specific bundles.
 | ---------------- | -------------------- | ----------------------------------------------------- |
 | PNG              | libpng               | Lossless image parsing                                |
 | EXR              | OpenEXR              | EXR image parsing (high dynamic range, multi-channel) |
-| EXIF             | libexif              | Image metadata extraction (orientation, color space)  |
 | Alembic (`.abc`) | Alembic (libalembic) | Animated mesh and scene data from Maya                |
 | glTF 2.0         | cgltf                | Lightweight glTF parsing                              |
 
@@ -98,7 +97,7 @@ flowchart TD
     subgraph parse["Parse (low-level libraries)"]
         P_GLTF["cgltf<br/>parse glTF"]
         P_ABC["libalembic<br/>parse Alembic"]
-        P_IMG["libpng / OpenEXR / libexif<br/>parse images + metadata"]
+        P_IMG["libpng / OpenEXR<br/>parse images"]
     end
 
     subgraph optimize["Optimize"]

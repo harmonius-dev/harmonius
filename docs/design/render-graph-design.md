@@ -105,7 +105,6 @@ add_subdirectory(src/gpu/metal)
 | `alembic`       | Alembic (`.abc`) animated mesh and scene data parsing |
 | `cgltf`         | Lightweight glTF 2.0 parsing                          |
 | `draco`         | Mesh geometry compression                             |
-| `libexif`       | Image metadata extraction (orientation, color space)  |
 | `libpng`        | PNG image parsing                                     |
 | `meshoptimizer` | Mesh optimization, meshlet generation, LOD generation |
 | `openexr`       | EXR image parsing                                     |
