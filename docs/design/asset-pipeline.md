@@ -29,12 +29,12 @@ assets into GPU-ready bundles. No raw asset parsing occurs at runtime.
 
 ### Source Asset Integration
 
-| DCC Tool | Export Format | Watcher Mechanism |
-|----------|--------------|-------------------|
-| Blender | glTF 2.0 (`.glb`) | Blender CLI (`blender --background --python export.py`) |
-| Maya | Alembic (`.abc`) | Maya standalone (`mayapy export.py`) |
-| Photoshop | PNG / EXR (`.png`, `.exr`) | Photoshop Generator or ExtendScript |
-| Substance Designer/Painter | PNG / EXR (`.png`, `.exr`) | Substance Automation Toolkit CLI |
+| DCC Tool                   | Export Format              | Watcher Mechanism                                       |
+| -------------------------- | -------------------------- | ------------------------------------------------------- |
+| Blender                    | glTF 2.0 (`.glb`)          | Blender CLI (`blender --background --python export.py`) |
+| Maya                       | Alembic (`.abc`)           | Maya standalone (`mayapy export.py`)                    |
+| Photoshop                  | PNG / EXR (`.png`, `.exr`) | Photoshop Generator or ExtendScript                     |
+| Substance Designer/Painter | PNG / EXR (`.png`, `.exr`) | Substance Automation Toolkit CLI                        |
 
 A **file watcher daemon** monitors DCC project directories for modified source files. On change,
 it invokes the corresponding DCC tool's headless export to produce an interchange format asset in
@@ -48,21 +48,21 @@ platform-specific bundles.
 
 **Parsing dependencies:**
 
-| Format | Library | Purpose |
-|--------|---------|---------|
-| PNG | libpng | Lossless image parsing |
-| EXR | OpenEXR | EXR image parsing (high dynamic range, multi-channel) |
-| EXIF | libexif | Image metadata extraction (orientation, color space) |
-| Alembic (`.abc`) | Alembic (libalembic) | Animated mesh and scene data from Maya |
-| glTF 2.0 | cgltf | Lightweight glTF parsing |
+| Format           | Library              | Purpose                                               |
+| ---------------- | -------------------- | ----------------------------------------------------- |
+| PNG              | libpng               | Lossless image parsing                                |
+| EXR              | OpenEXR              | EXR image parsing (high dynamic range, multi-channel) |
+| EXIF             | libexif              | Image metadata extraction (orientation, color space)  |
+| Alembic (`.abc`) | Alembic (libalembic) | Animated mesh and scene data from Maya                |
+| glTF 2.0         | cgltf                | Lightweight glTF parsing                              |
 
 **Optimization and compression dependencies:**
 
-| Library | Purpose |
-|---------|---------|
+| Library       | Purpose                                                                          |
+| ------------- | -------------------------------------------------------------------------------- |
 | meshoptimizer | Meshlet generation, mesh optimization, LOD generation, vertex cache optimization |
-| Draco | Mesh geometry compression for storage and streaming |
-| zstd | General-purpose compression for asset bundle chunks |
+| Draco         | Mesh geometry compression for storage and streaming                              |
+| zstd          | General-purpose compression for asset bundle chunks                              |
 
 **Pipeline flow:** Source assets are parsed from their interchange formats, then meshes are
 optimized (vertex cache, overdraw, fetch optimization) and meshletized via meshoptimizer.
@@ -794,14 +794,14 @@ sequenceDiagram
 
 ### Addressing Summary
 
-| Layer             | Handle Type              | Scope              | Lifetime            |
-| ----------------- | ------------------------ | ------------------ | ------------------- |
-| Asset identity    | `AssetId` (uint64_t)     | Global, stable     | Permanent           |
-| Asset instance    | `AssetHandle` (gen+idx)  | Per-session        | Until evicted       |
-| GPU resource      | `gpu::ResourceHandle`    | Per-device         | Until destroyed     |
-| Descriptor index  | `uint32_t`               | Per-heap           | Until freed         |
-| Render graph slot | `rg::ResourceHandle`     | Per-graph          | Until graph rebuilt  |
-| Shader access     | `uint32_t` push constant | Per-draw           | Single draw call    |
+| Layer             | Handle Type              | Scope          | Lifetime            |
+| ----------------- | ------------------------ | -------------- | ------------------- |
+| Asset identity    | `AssetId` (uint64_t)     | Global, stable | Permanent           |
+| Asset instance    | `AssetHandle` (gen+idx)  | Per-session    | Until evicted       |
+| GPU resource      | `gpu::ResourceHandle`    | Per-device     | Until destroyed     |
+| Descriptor index  | `uint32_t`               | Per-heap       | Until freed         |
+| Render graph slot | `rg::ResourceHandle`     | Per-graph      | Until graph rebuilt |
+| Shader access     | `uint32_t` push constant | Per-draw       | Single draw call    |
 
 ### Render Graph Resource Binding Flow
 

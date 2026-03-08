@@ -100,30 +100,30 @@ add_subdirectory(src/gpu/metal)
 
 **Core dependencies** (all platforms):
 
-| Package | Purpose |
-|---------|---------|
-| `alembic` | Alembic (`.abc`) animated mesh and scene data parsing |
-| `cgltf` | Lightweight glTF 2.0 parsing |
-| `draco` | Mesh geometry compression |
-| `libexif` | Image metadata extraction (orientation, color space) |
-| `libpng` | PNG image parsing |
+| Package         | Purpose                                               |
+| --------------- | ----------------------------------------------------- |
+| `alembic`       | Alembic (`.abc`) animated mesh and scene data parsing |
+| `cgltf`         | Lightweight glTF 2.0 parsing                          |
+| `draco`         | Mesh geometry compression                             |
+| `libexif`       | Image metadata extraction (orientation, color space)  |
+| `libpng`        | PNG image parsing                                     |
 | `meshoptimizer` | Mesh optimization, meshlet generation, LOD generation |
-| `openexr` | EXR image parsing |
-| `zstd` | General-purpose compression for asset bundle chunks |
+| `openexr`       | EXR image parsing                                     |
+| `zstd`          | General-purpose compression for asset bundle chunks   |
 
 **Platform-specific dependencies:**
 
-| Platform | Package | Purpose |
-|----------|---------|---------|
-| Windows | `directx-headers` | D3D12 API headers |
-| Windows | `unofficial-d3d12-memory-allocator` | GPU memory management, allocation tracking, defragmentation |
-| Windows | `directx-dxc` | DXC shader compiler |
-| Windows | Agility SDK (vendored) | Latest D3D12 runtime |
-| Linux/SteamOS | `vulkan` | Vulkan API headers and loader |
-| Linux/SteamOS | `vulkan-memory-allocator` | GPU memory management, allocation tracking, defragmentation |
-| macOS | `vulkan-memory-allocator` | VMA virtualized mode for Metal sub-allocation and defragmentation |
-| macOS | Metal framework (system) | Metal API |
-| macOS | `metal-shaderconverter` (vendored) | DXIL → Metal IR conversion |
+| Platform      | Package                             | Purpose                                                           |
+| ------------- | ----------------------------------- | ----------------------------------------------------------------- |
+| Windows       | `directx-headers`                   | D3D12 API headers                                                 |
+| Windows       | `unofficial-d3d12-memory-allocator` | GPU memory management, allocation tracking, defragmentation       |
+| Windows       | `directx-dxc`                       | DXC shader compiler                                               |
+| Windows       | Agility SDK (vendored)              | Latest D3D12 runtime                                              |
+| Linux/SteamOS | `vulkan`                            | Vulkan API headers and loader                                     |
+| Linux/SteamOS | `vulkan-memory-allocator`           | GPU memory management, allocation tracking, defragmentation       |
+| macOS         | `vulkan-memory-allocator`           | VMA virtualized mode for Metal sub-allocation and defragmentation |
+| macOS         | Metal framework (system)            | Metal API                                                         |
+| macOS         | `metal-shaderconverter` (vendored)  | DXIL → Metal IR conversion                                        |
 
 ### Shader Compilation Pipeline
 
@@ -1056,19 +1056,19 @@ struct ResidencyChange {
 The resource system is the primary consumer of the GPU backend's resource creation and memory
 management APIs. All GPU memory allocation flows through `gpu::Device`.
 
-| Resource System Operation | GPU Backend API | Notes |
-|--------------------------|----------------|-------|
-| Transient texture allocation | `gpu::Device::create_placed_texture()` | Placed in aliasing heap at computed offset |
-| Transient buffer allocation | `gpu::Device::create_placed_buffer()` | Placed in aliasing heap at computed offset |
-| Persistent texture allocation | `gpu::Device::create_texture()` | Committed resource with own memory |
-| Persistent buffer allocation | `gpu::Device::create_buffer()` | Committed resource with own memory |
-| Aliasing heap creation | `gpu::Device::create_heap()` | One heap per type class (RG-8.5) |
-| Size/alignment query | `gpu::Device::query_texture_allocation_info()` | Feeds aliasing solver packing |
-| Size/alignment query | `gpu::Device::query_buffer_allocation_info()` | Feeds aliasing solver packing |
-| Sparse texture creation | `gpu::Device::create_sparse_texture()` | Reserved/sparse-bound resource |
-| Sparse tile binding update | `gpu::Device::update_sparse_bindings()` | Maps/unmaps tiles per residency |
-| Staging buffer mapping | `gpu::Device::map()` / `unmap()` | Ring allocator's upload buffer |
-| Resource naming | `gpu::Device::set_name()` | Debug names from resource descriptors |
+| Resource System Operation     | GPU Backend API                                | Notes                                      |
+| ----------------------------- | ---------------------------------------------- | ------------------------------------------ |
+| Transient texture allocation  | `gpu::Device::create_placed_texture()`         | Placed in aliasing heap at computed offset |
+| Transient buffer allocation   | `gpu::Device::create_placed_buffer()`          | Placed in aliasing heap at computed offset |
+| Persistent texture allocation | `gpu::Device::create_texture()`                | Committed resource with own memory         |
+| Persistent buffer allocation  | `gpu::Device::create_buffer()`                 | Committed resource with own memory         |
+| Aliasing heap creation        | `gpu::Device::create_heap()`                   | One heap per type class (RG-8.5)           |
+| Size/alignment query          | `gpu::Device::query_texture_allocation_info()` | Feeds aliasing solver packing              |
+| Size/alignment query          | `gpu::Device::query_buffer_allocation_info()`  | Feeds aliasing solver packing              |
+| Sparse texture creation       | `gpu::Device::create_sparse_texture()`         | Reserved/sparse-bound resource             |
+| Sparse tile binding update    | `gpu::Device::update_sparse_bindings()`        | Maps/unmaps tiles per residency            |
+| Staging buffer mapping        | `gpu::Device::map()` / `unmap()`               | Ring allocator's upload buffer             |
+| Resource naming               | `gpu::Device::set_name()`                      | Debug names from resource descriptors      |
 
 **Aliasing heap optimization:** The aliasing solver computes non-overlapping lifetime intervals
 and packs resources into the minimum number of heaps. The resource system calls
@@ -1221,18 +1221,18 @@ calls. This translation is the critical path for GPU synchronization correctness
 `gpu::PipelineStage`, `gpu::ResourceAccess`, and `gpu::TextureLayout` types before calling
 `gpu::CommandBuffer::barrier()`.
 
-| `rg::UsageType` | `gpu::PipelineStage` | `gpu::ResourceAccess` | `gpu::TextureLayout` |
-|-----------------|---------------------|----------------------|---------------------|
-| `color_attachment` | `color_output` | `color_attachment_write` | `color_attachment` |
-| `depth_attachment` | `depth_stencil` | `depth_stencil_write` | `depth_stencil_attachment` |
-| `shader_read` | `fragment_shader \| compute_shader` | `shader_read` | `shader_read_only` |
-| `storage_read` | `compute_shader` | `shader_read` | `general` |
-| `storage_write` | `compute_shader` | `shader_write` | `general` |
-| `shading_rate_attachment` | `shading_rate` | `shading_rate_read` | `shading_rate` |
-| `indirect_argument` | `indirect_argument` | `indirect_read` | N/A (buffer only) |
-| `transfer_src` | `transfer` | `transfer_read` | `transfer_src` |
-| `transfer_dst` | `transfer` | `transfer_write` | `transfer_dst` |
-| `present` | `none` | `present` | `present` |
+| `rg::UsageType`           | `gpu::PipelineStage`                | `gpu::ResourceAccess`    | `gpu::TextureLayout`       |
+| ------------------------- | ----------------------------------- | ------------------------ | -------------------------- |
+| `color_attachment`        | `color_output`                      | `color_attachment_write` | `color_attachment`         |
+| `depth_attachment`        | `depth_stencil`                     | `depth_stencil_write`    | `depth_stencil_attachment` |
+| `shader_read`             | `fragment_shader \| compute_shader` | `shader_read`            | `shader_read_only`         |
+| `storage_read`            | `compute_shader`                    | `shader_read`            | `general`                  |
+| `storage_write`           | `compute_shader`                    | `shader_write`           | `general`                  |
+| `shading_rate_attachment` | `shading_rate`                      | `shading_rate_read`      | `shading_rate`             |
+| `indirect_argument`       | `indirect_argument`                 | `indirect_read`          | N/A (buffer only)          |
+| `transfer_src`            | `transfer`                          | `transfer_read`          | `transfer_src`             |
+| `transfer_dst`            | `transfer`                          | `transfer_write`         | `transfer_dst`             |
+| `present`                 | `none`                              | `present`                | `present`                  |
 
 **Barrier batching optimization:** The barrier scheduler merges compatible barriers at the same
 synchronization point into a single `gpu::BarrierDesc` containing arrays of
@@ -1258,11 +1258,11 @@ producing and consuming passes are separated by other work. The split begin is p
 the producer; the split end is placed before the consumer. The GPU can overlap the transition
 with intervening work:
 
-| Barrier Type | D3D12 | Vulkan |
-|-------------|-------|--------|
-| Split begin | `gpu::PipelineStage::split_begin` → `D3D12_TEXTURE_BARRIER` with `SyncAfter = SPLIT` | `vkCmdSetEvent2` with src stages |
-| Split end | `gpu::PipelineStage::split_end` → `D3D12_TEXTURE_BARRIER` with `SyncBefore = SPLIT` | `vkCmdWaitEvents2` with dst stages |
-| Immediate (Metal) | N/A | N/A — collapsed to single barrier at consumer |
+| Barrier Type      | D3D12                                                                                | Vulkan                                        |
+| ----------------- | ------------------------------------------------------------------------------------ | --------------------------------------------- |
+| Split begin       | `gpu::PipelineStage::split_begin` → `D3D12_TEXTURE_BARRIER` with `SyncAfter = SPLIT` | `vkCmdSetEvent2` with src stages              |
+| Split end         | `gpu::PipelineStage::split_end` → `D3D12_TEXTURE_BARRIER` with `SyncBefore = SPLIT`  | `vkCmdWaitEvents2` with dst stages            |
+| Immediate (Metal) | N/A                                                                                  | N/A — collapsed to single barrier at consumer |
 
 **Cross-queue ownership transfers:** When a barrier's `src_queue` differs from `dst_queue`, the
 synchronization engine emits a release barrier on the source queue and an acquire barrier on the
@@ -1273,14 +1273,14 @@ destination queue. This maps to:
 
 **Timeline fence GPU API mapping:**
 
-| `TimelineFenceManager` method | GPU Backend API |
-|------------------------------|----------------|
-| Constructor | `gpu::Device::create_fence(0)` — one per queue |
-| `signal(queue, value)` | Included in `gpu::Device::submit()` via `gpu::FenceSignal` |
-| `wait(queue, value)` | Included in `gpu::Device::submit()` via `gpu::FenceWait` |
-| `is_complete(queue, value)` | `gpu::Device::fence_completed_value(fence)` ≥ value |
-| `wait_cpu(queue, value)` | `gpu::Device::wait_fence_cpu(fence, value)` |
-| Destructor | `gpu::Device::destroy_fence()` |
+| `TimelineFenceManager` method | GPU Backend API                                            |
+| ----------------------------- | ---------------------------------------------------------- |
+| Constructor                   | `gpu::Device::create_fence(0)` — one per queue             |
+| `signal(queue, value)`        | Included in `gpu::Device::submit()` via `gpu::FenceSignal` |
+| `wait(queue, value)`          | Included in `gpu::Device::submit()` via `gpu::FenceWait`   |
+| `is_complete(queue, value)`   | `gpu::Device::fence_completed_value(fence)` ≥ value        |
+| `wait_cpu(queue, value)`      | `gpu::Device::wait_fence_cpu(fence, value)`                |
+| Destructor                    | `gpu::Device::destroy_fence()`                             |
 
 ---
 
@@ -1634,29 +1634,29 @@ sequenceDiagram
 
 **Command pool lifecycle mapping:**
 
-| Execution Engine Operation | GPU Backend API | Frequency |
-|---------------------------|----------------|-----------|
-| Pool creation (init) | `gpu::Device::create_command_pool(queue_type)` | Once per (queue, thread) pair |
-| Pool reset | `gpu::CommandPool::reset()` | Once per pool per frame |
-| Buffer allocation | `gpu::CommandPool::allocate_command_buffer()` | Once per pass per frame |
-| Begin recording | `gpu::CommandBuffer::begin()` | Once per command buffer |
-| End recording | `gpu::CommandBuffer::end()` | Once per command buffer |
-| Submit to GPU | `gpu::Device::submit(queue, bufs, signals, waits)` | Once per queue per frame |
+| Execution Engine Operation | GPU Backend API                                    | Frequency                     |
+| -------------------------- | -------------------------------------------------- | ----------------------------- |
+| Pool creation (init)       | `gpu::Device::create_command_pool(queue_type)`     | Once per (queue, thread) pair |
+| Pool reset                 | `gpu::CommandPool::reset()`                        | Once per pool per frame       |
+| Buffer allocation          | `gpu::CommandPool::allocate_command_buffer()`      | Once per pass per frame       |
+| Begin recording            | `gpu::CommandBuffer::begin()`                      | Once per command buffer       |
+| End recording              | `gpu::CommandBuffer::end()`                        | Once per command buffer       |
+| Submit to GPU              | `gpu::Device::submit(queue, bufs, signals, waits)` | Once per queue per frame      |
 
 **Pass type to GPU command mapping:**
 
-| `rg::PassType` | GPU Commands Emitted |
-|----------------|---------------------|
-| `rasterization` | `begin_render_pass` → `set_pipeline` → `dispatch_mesh` / `dispatch_mesh_indirect_count` → `end_render_pass` |
-| `compute` | `set_pipeline` → `push_constants` → `dispatch` / `dispatch_indirect` |
-| `ray_tracing_dispatch` | `set_pipeline` → `trace_rays` / `trace_rays_indirect` |
-| `acceleration_structure_build` | `build_acceleration_structure` |
-| `transfer` | `copy_buffer` / `copy_buffer_to_texture` / `copy_texture_to_buffer` |
-| `msaa_resolve` | `begin_render_pass` with `resolve_texture` set → `end_render_pass` |
-| `present` | `gpu::Device::present(swapchain)` |
-| `host_callback` | No GPU commands — CPU-only execution after fence wait |
-| `work_graph` | `set_work_graph` → `dispatch_graph` |
-| `checkerboard_resolve` | `set_pipeline(resolve_compute_pso)` → `dispatch` (compute-based reconstruction) |
+| `rg::PassType`                 | GPU Commands Emitted                                                                                        |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `rasterization`                | `begin_render_pass` → `set_pipeline` → `dispatch_mesh` / `dispatch_mesh_indirect_count` → `end_render_pass` |
+| `compute`                      | `set_pipeline` → `push_constants` → `dispatch` / `dispatch_indirect`                                        |
+| `ray_tracing_dispatch`         | `set_pipeline` → `trace_rays` / `trace_rays_indirect`                                                       |
+| `acceleration_structure_build` | `build_acceleration_structure`                                                                              |
+| `transfer`                     | `copy_buffer` / `copy_buffer_to_texture` / `copy_texture_to_buffer`                                         |
+| `msaa_resolve`                 | `begin_render_pass` with `resolve_texture` set → `end_render_pass`                                          |
+| `present`                      | `gpu::Device::present(swapchain)`                                                                           |
+| `host_callback`                | No GPU commands — CPU-only execution after fence wait                                                       |
+| `work_graph`                   | `set_work_graph` → `dispatch_graph`                                                                         |
+| `checkerboard_resolve`         | `set_pipeline(resolve_compute_pso)` → `dispatch` (compute-based reconstruction)                             |
 
 **Barrier emission:** The executor iterates the `ScheduledPass::pre_barriers` and
 `ScheduledPass::post_barriers` from the execution plan. Each barrier set is translated to a
@@ -1798,16 +1798,16 @@ sequenceDiagram
     Diag->>Dev: unmap(readback_buf)
 ```
 
-| Diagnostics Operation | GPU Backend API | Backend Mapping |
-|----------------------|----------------|-----------------|
-| Create query pool | `gpu::Device::create_query_pool()` | D3D12: `CreateQueryHeap`; Vulkan: `vkCreateQueryPool`; Metal: `MTLCounterSampleBuffer` |
-| Write timestamp | `gpu::CommandBuffer::write_timestamp()` | D3D12: `EndQuery(TIMESTAMP)`; Vulkan: `vkCmdWriteTimestamp2`; Metal: `sampleCounters` |
-| Resolve queries | `gpu::CommandBuffer::resolve_query_pool()` | D3D12: `ResolveQueryData`; Vulkan: `vkCmdCopyQueryPoolResults`; Metal: `resolveCounters` |
-| Get timestamp period | `gpu::Device::timestamp_period_ns()` | D3D12: `GetTimestampFrequency` → 1e9/freq; Vulkan: `timestampPeriod`; Metal: `sampleTimestamps` delta |
-| Read results | `gpu::Device::map()` on readback buffer | Standard buffer mapping |
-| Begin debug label | `gpu::CommandBuffer::begin_debug_label()` | D3D12: PIX `BeginEvent`; Vulkan: `vkCmdBeginDebugUtilsLabelEXT`; Metal: `pushDebugGroup` |
-| End debug label | `gpu::CommandBuffer::end_debug_label()` | D3D12: PIX `EndEvent`; Vulkan: `vkCmdEndDebugUtilsLabelEXT`; Metal: `popDebugGroup` |
-| Name resource | `gpu::Device::set_name()` | D3D12: `SetName`; Vulkan: `vkSetDebugUtilsObjectNameEXT`; Metal: `.label` |
+| Diagnostics Operation | GPU Backend API                            | Backend Mapping                                                                                       |
+| --------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Create query pool     | `gpu::Device::create_query_pool()`         | D3D12: `CreateQueryHeap`; Vulkan: `vkCreateQueryPool`; Metal: `MTLCounterSampleBuffer`                |
+| Write timestamp       | `gpu::CommandBuffer::write_timestamp()`    | D3D12: `EndQuery(TIMESTAMP)`; Vulkan: `vkCmdWriteTimestamp2`; Metal: `sampleCounters`                 |
+| Resolve queries       | `gpu::CommandBuffer::resolve_query_pool()` | D3D12: `ResolveQueryData`; Vulkan: `vkCmdCopyQueryPoolResults`; Metal: `resolveCounters`              |
+| Get timestamp period  | `gpu::Device::timestamp_period_ns()`       | D3D12: `GetTimestampFrequency` → 1e9/freq; Vulkan: `timestampPeriod`; Metal: `sampleTimestamps` delta |
+| Read results          | `gpu::Device::map()` on readback buffer    | Standard buffer mapping                                                                               |
+| Begin debug label     | `gpu::CommandBuffer::begin_debug_label()`  | D3D12: PIX `BeginEvent`; Vulkan: `vkCmdBeginDebugUtilsLabelEXT`; Metal: `pushDebugGroup`              |
+| End debug label       | `gpu::CommandBuffer::end_debug_label()`    | D3D12: PIX `EndEvent`; Vulkan: `vkCmdEndDebugUtilsLabelEXT`; Metal: `popDebugGroup`                   |
+| Name resource         | `gpu::Device::set_name()`                  | D3D12: `SetName`; Vulkan: `vkSetDebugUtilsObjectNameEXT`; Metal: `.label`                             |
 
 **GPU readback:** The `request_readback` method enqueues a `copy_buffer` from device-local to
 a readback-heap buffer via `gpu::CommandBuffer::copy_buffer()`. After the frame fence signals,
