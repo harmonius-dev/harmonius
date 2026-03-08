@@ -16,6 +16,9 @@ This handbook provides guidelines and best practices for agents working on the H
 - Seek approval before adding or changing any dependencies.
 - Always use the latest versions of dependencies and tools. Use the package manager CLI to install
   dependencies with the latest version automatically.
+- Write multiplatform code that works consistently across supported operating systems. Use
+  platform-agnostic libraries and tools when possible. Ensure all cross-platform interfaces are
+  compatible with each supported platform, or use gating to expose platform-specific functionality.
 
 ## Development guidelines
 
