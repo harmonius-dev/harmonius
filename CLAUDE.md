@@ -13,7 +13,10 @@ This handbook provides guidelines and best practices for agents working on the H
 
 ## Design guidelines
 
-- Design abstractions to be modular and reusable. Separate concerns between components and modules.
+- Design abstractions to be modular and reusable. Separate concerns between components and modules. Prefer composition
+  over inheritance.
+- Always prefer static dispatch via C++20 concepts. Do not use virtual methods, vtables, abstract base classes, or
+  dynamic dispatch unless necessary for runtime polymorphism.
 - Use domain-driven design to model the problem space and create a ubiquitous language. Define clear boundaries between
   domains and use interfaces to decouple them.
 - Seek approval before adding or changing any dependencies. If you need to add a dependency, propose a low-level
@@ -35,3 +38,4 @@ This handbook provides guidelines and best practices for agents working on the H
   accessing shared data.
 - Use functional programming and immutable data structures when feasible and performant.
 - Always minimize mutable state and isolate it as much as possible. Avoid using mutable shared state.
+- Whenever making a change to a code file, make sure the associated documentation is updated, and vice versa.

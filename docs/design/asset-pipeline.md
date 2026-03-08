@@ -507,8 +507,11 @@ public:
     [[nodiscard]] bool is_resident(AssetId id) const;
     [[nodiscard]] float residency_ratio() const; // fraction of requested assets loaded
 
-    // Platform-native IO backend
-    void set_io_backend(std::unique_ptr<IOBackend> backend);
+    // Access the platform IO backend (compile-time selected)
+    [[nodiscard]] IOBackend& io_backend();
+
+private:
+    IOBackend io_backend_;
 };
 
 } // namespace harmonius::asset
@@ -516,28 +519,12 @@ public:
 
 ### Platform-Native IO
 
-Each platform uses its native high-performance IO path (R-1.2.4):
+Each platform uses its native high-performance IO path (R-1.2.4). The IO backend follows the
+same concept-based static dispatch pattern as the GPU backend — one IO backend is compiled per
+binary, selected at build time via CMake. No virtual methods, no vtables, no dynamic dispatch.
 
 ```cpp
 namespace harmonius::asset {
-
-class IOBackend {
-public:
-    virtual ~IOBackend() = default;
-
-    // Submit async read from file to staging buffer
-    virtual void submit_read(
-        std::string_view path,
-        uint64_t file_offset,
-        uint64_t size,
-        gpu::ResourceHandle staging_buffer,
-        uint64_t buffer_offset
-    ) = 0;
-
-    // Poll for completed reads
-    [[nodiscard]]
-    virtual std::vector<IOCompletion> poll_completions() = 0;
-};
 
 struct IOCompletion {
     AssetId             asset_id;
@@ -547,18 +534,59 @@ struct IOCompletion {
     bool                success;
 };
 
-// Platform implementations
-class MetalIOBackend : public IOBackend {
+/// Concept defining the IO backend interface contract.
+/// Each platform provides a concrete class satisfying this concept.
+template<typename B>
+concept IOBackendConcept = requires(B b, const B cb,
+    std::string_view path,
+    uint64_t offset, uint64_t size,
+    gpu::ResourceHandle staging, uint64_t buf_offset) {
+
+    // Submit async read from file to staging buffer
+    { b.submit_read(path, offset, size, staging, buf_offset) } -> std::same_as<void>;
+
+    // Poll for completed reads
+    { b.poll_completions() } -> std::same_as<std::vector<IOCompletion>>;
+};
+
+// Platform implementations — plain concrete classes, no base class
+class MetalIOBackend {
     // Uses MTLIOCommandBuffer for GPU-direct file reads
+public:
+    void submit_read(std::string_view path, uint64_t file_offset,
+        uint64_t size, gpu::ResourceHandle staging_buffer,
+        uint64_t buffer_offset);
+    [[nodiscard]] std::vector<IOCompletion> poll_completions();
 };
 
-class DirectStorageBackend : public IOBackend {
+class DirectStorageBackend {
     // Uses DirectStorage for GPU decompression pipeline
+public:
+    void submit_read(std::string_view path, uint64_t file_offset,
+        uint64_t size, gpu::ResourceHandle staging_buffer,
+        uint64_t buffer_offset);
+    [[nodiscard]] std::vector<IOCompletion> poll_completions();
 };
 
-class IoUringBackend : public IOBackend {
+class IoUringBackend {
     // Uses io_uring for async file reads on Linux
+public:
+    void submit_read(std::string_view path, uint64_t file_offset,
+        uint64_t size, gpu::ResourceHandle staging_buffer,
+        uint64_t buffer_offset);
+    [[nodiscard]] std::vector<IOCompletion> poll_completions();
 };
+
+// Build-time selection — CMake aliases the concrete type
+#if defined(HARMONIUS_BACKEND_METAL)
+using IOBackend = MetalIOBackend;
+#elif defined(HARMONIUS_BACKEND_D3D12)
+using IOBackend = DirectStorageBackend;
+#elif defined(HARMONIUS_BACKEND_VULKAN)
+using IOBackend = IoUringBackend;
+#endif
+
+static_assert(IOBackendConcept<IOBackend>);
 
 } // namespace harmonius::asset
 ```
