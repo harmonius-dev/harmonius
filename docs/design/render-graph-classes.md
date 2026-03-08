@@ -518,36 +518,58 @@ classDiagram
 
 ### 9. GPU Backend
 
-`harmonius::gpu` — Concrete device and command buffer types selected at compile time. No virtual
-dispatch. One backend is compiled per binary. See the dedicated GPU backend design documents:
+`harmonius::gpu` — Concrete device, command buffer, and command pool types selected at compile
+time. Interface contracts are defined as C++20 concepts (`GpuDevice`, `GpuCommandBuffer`,
+`GpuCommandPool`) and enforced via `static_assert`. No virtual dispatch — one backend is compiled
+per binary. See the dedicated GPU backend design documents:
 
-- [gpu-backend-interface.md](gpu-backend-interface.md) — shared interface, types, and
-  cross-backend compatibility
+- [gpu-backend-interface.md](gpu-backend-interface.md) — concepts, types, and cross-backend
+  compatibility
 - [gpu-backend-d3d12.md](gpu-backend-d3d12.md) — Direct3D 12 (Agility SDK 1.619+, SM 6.9)
 - [gpu-backend-vulkan.md](gpu-backend-vulkan.md) — Vulkan 1.4
 - [gpu-backend-metal.md](gpu-backend-metal.md) — Metal 4
 
 ```mermaid
 classDiagram
-    class Device {
-        <<concept - compile-time alias>>
+    class GpuDevice {
+        <<concept>>
         +capabilities() DeviceCapabilities
-        +create_texture(TextureDesc) TextureHandle
-        +create_buffer(BufferDesc) BufferHandle
-        +create_heap(HeapDesc) HeapHandle
-        +create_placed_texture(HeapHandle, uint64_t, TextureDesc) TextureHandle
-        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) BufferHandle
-        +create_fence(uint64_t) FenceHandle
-        +create_mesh_render_pipeline(MeshRenderPipelineDesc) PipelineHandle
-        +create_compute_pipeline(ComputePipelineDesc) PipelineHandle
-        +create_ray_tracing_pipeline(RayTracingPipelineDesc) PipelineHandle
-        +create_work_graph(WorkGraphDesc) WorkGraphHandle
-        +create_descriptor_heap(DescriptorHeapDesc) DescriptorHeapHandle
+        +create_texture(TextureDesc) expected~TextureHandle~
+        +create_buffer(BufferDesc) expected~BufferHandle~
+        +create_heap(HeapDesc) expected~HeapHandle~
+        +create_placed_texture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
+        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
+        +create_sparse_texture(SparseTextureDesc) expected~TextureHandle~
+        +update_sparse_bindings(TextureHandle, span) void
+        +query_texture_allocation_info(TextureDesc) AllocationInfo
+        +query_buffer_allocation_info(BufferDesc) AllocationInfo
+        +create_fence(uint64_t) expected~FenceHandle~
+        +fence_completed_value(FenceHandle) uint64_t
+        +wait_fence_cpu(FenceHandle, uint64_t) void
+        +create_command_pool(QueueType) CommandPool
         +submit(QueueType, cmd_bufs, signals, waits) void
-        +set_name(TextureHandle, string_view) void
+        +create_mesh_render_pipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
+        +create_compute_pipeline(ComputePipelineDesc) expected~PipelineHandle~
+        +create_ray_tracing_pipeline(RayTracingPipelineDesc) expected~PipelineHandle~
+        +create_work_graph(WorkGraphDesc) expected~WorkGraphHandle~
+        +create_descriptor_heap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
+        +create_query_pool(QueryPoolDesc) expected~QueryPoolHandle~
+        +timestamp_period_ns() double
+        +create_swapchain(SwapchainDesc) expected~SwapchainHandle~
+        +acquire_next_image(SwapchainHandle) expected~TextureHandle~
+        +present(SwapchainHandle) void
+        +resize_swapchain(SwapchainHandle, uint32_t, uint32_t) void
+        +create_pipeline_cache(PipelineCacheDesc) expected~PipelineCacheHandle~
+        +serialize_pipeline_cache(PipelineCacheHandle) vector~uint8_t~
+        +wait_idle() void
+        +set_name(handle, string_view) void
+        +map(BufferHandle) void_ptr
+        +unmap(BufferHandle) void
     }
-    class CommandBuffer {
-        <<concept - compile-time alias>>
+    class GpuCommandBuffer {
+        <<concept>>
+        +begin() void
+        +end() void
         +barrier(BarrierDesc) void
         +begin_render_pass(RenderPassDesc) void
         +end_render_pass() void
@@ -558,24 +580,44 @@ classDiagram
         +dispatch(x, y, z) void
         +dispatch_indirect(buf, offset) void
         +trace_rays(TraceRaysDesc) void
+        +trace_rays_indirect(buf, offset) void
         +build_acceleration_structure(BuildDesc) void
+        +set_work_graph(WorkGraphHandle) void
+        +dispatch_graph(DispatchGraphDesc) void
         +copy_buffer(src, src_off, dst, dst_off, size) void
-        +push_constants(data, size) void
+        +copy_buffer_to_texture(args...) void
+        +copy_texture_to_buffer(args...) void
+        +set_viewport(Viewport) void
+        +set_scissor(Scissor) void
+        +push_constants(data, size, offset) void
+        +bind_descriptor_heap(DescriptorHeapHandle) void
         +write_timestamp(pool, index) void
+        +resolve_query_pool(pool, first, count, dst, offset) void
         +begin_debug_label(name) void
         +end_debug_label() void
+    }
+    class GpuCommandPool {
+        <<concept>>
+        +allocate_command_buffer() CommandBuffer
+        +reset() void
+        +allocated_count() uint32_t
     }
     class D3D12Device {
         -ID3D12Device16 device_
         -D3D12MA_Allocator allocator_
+        -ID3D12DescriptorHeap cbv_srv_uav_heap_
+        -ID3D12RootSignature global_root_signature_
     }
     class VulkanDevice {
         -VkDevice device_
         -VmaAllocator allocator_
+        -VkDescriptorPool bindless_pool_
+        -VkPipelineLayout global_layout_
     }
     class MetalDevice {
         -MTLDevice device_
         -MTLResidencySet residency_set_
+        -MTL4Compiler compiler_
     }
     class D3D12CommandBuffer {
         -ID3D12GraphicsCommandList10 list_
@@ -585,6 +627,17 @@ classDiagram
     }
     class MetalCommandBuffer {
         -MTL4CommandBuffer cmd_
+    }
+    class D3D12CommandPool {
+        -ID3D12CommandAllocator allocator_
+        -vector cached_lists_
+    }
+    class VulkanCommandPool {
+        -VkCommandPool pool_
+        -vector cached_buffers_
+    }
+    class MetalCommandPool {
+        -MTL4CommandAllocator allocator_
     }
     class DeviceCapabilities {
         +bool mesh_shaders
@@ -600,16 +653,29 @@ classDiagram
         +bool variable_rate_shading
         +bool work_graphs
         +bool split_barriers
+        +bool shader_function_linking
+        +uint32_t max_push_constants_bytes
+        +uint64_t device_local_memory_bytes
     }
 
-    Device ..> D3D12Device : compile-time alias
-    Device ..> VulkanDevice : compile-time alias
-    Device ..> MetalDevice : compile-time alias
-    CommandBuffer ..> D3D12CommandBuffer : compile-time alias
-    CommandBuffer ..> VulkanCommandBuffer : compile-time alias
-    CommandBuffer ..> MetalCommandBuffer : compile-time alias
-    Device --> CommandBuffer : creates
-    Device --> DeviceCapabilities : exposes
+    GpuDevice ..> D3D12Device : satisfied by
+    GpuDevice ..> VulkanDevice : satisfied by
+    GpuDevice ..> MetalDevice : satisfied by
+    GpuCommandBuffer ..> D3D12CommandBuffer : satisfied by
+    GpuCommandBuffer ..> VulkanCommandBuffer : satisfied by
+    GpuCommandBuffer ..> MetalCommandBuffer : satisfied by
+    GpuCommandPool ..> D3D12CommandPool : satisfied by
+    GpuCommandPool ..> VulkanCommandPool : satisfied by
+    GpuCommandPool ..> MetalCommandPool : satisfied by
+    D3D12Device --> D3D12CommandPool : creates
+    VulkanDevice --> VulkanCommandPool : creates
+    MetalDevice --> MetalCommandPool : creates
+    D3D12CommandPool --> D3D12CommandBuffer : allocates
+    VulkanCommandPool --> VulkanCommandBuffer : allocates
+    MetalCommandPool --> MetalCommandBuffer : allocates
+    D3D12Device --> DeviceCapabilities : exposes
+    VulkanDevice --> DeviceCapabilities : exposes
+    MetalDevice --> DeviceCapabilities : exposes
 ```
 
 ---
@@ -662,6 +728,9 @@ classDiagram
     class Device {
         <<gpu>>
     }
+    class DeviceCapabilities {
+        <<gpu>>
+    }
 
     GraphBuilder --> DeclaredGraph : produces
     GraphCompiler --> DeclaredGraph : consumes
@@ -673,12 +742,33 @@ classDiagram
     Executor --> TimelineFenceManager : owns
     Executor --> CommandBufferPool : owns
     Executor --> RingAllocator : owns
-    Executor --> Device : submits to
+    Executor --> Device : "submit(), present(), wait_idle()"
     DiagnosticsCollector --> Executor : reads metrics from
-    DiagnosticsCollector --> Device : queries
-    PoolAllocator --> Device : allocates via
+    DiagnosticsCollector --> Device : "create_query_pool(), timestamp_period_ns()"
+    PoolAllocator --> Device : "create_texture(), create_buffer()"
+    RingAllocator --> Device : "create_buffer(upload), map()"
+    AliasingSolver --> Device : "query_allocation_info()"
+    BarrierScheduler --> DeviceCapabilities : "split_barriers check"
     GateEvaluator --> DiagnosticsCollector : reads timing from
+    GateEvaluator --> DeviceCapabilities : "capability checks"
+    CommandBufferPool --> Device : "create_command_pool()"
+    TimelineFenceManager --> Device : "create_fence(), fence_completed_value()"
 ```
+
+### Render Graph to GPU Backend Type Mapping
+
+How render graph types translate into GPU backend types at the boundary between the two layers.
+
+| Render Graph Type | GPU Backend Type | Translation Point |
+|------------------|-----------------|-------------------|
+| `rg::QueueAffinity` | `gpu::QueueType` | Direct 1:1 enum mapping (`graphics` → `graphics`, etc.) |
+| `rg::UsageType` | `gpu::PipelineStage` + `gpu::ResourceAccess` + `gpu::TextureLayout` | `BarrierScheduler` performs the multi-field translation |
+| `rg::sync::BarrierDesc` | `gpu::BarrierDesc` (containing `gpu::TextureBarrier` / `gpu::BufferBarrier` / `gpu::GlobalBarrier`) | Synchronization engine translates at compile time |
+| `rg::builder::TransientResourceDesc` | `gpu::TextureDesc` or `gpu::BufferDesc` | Resource system maps format, dimensions, usage flags |
+| `rg::builder::PassDescriptor` (execute callback) | `gpu::CommandBuffer` method calls | `PassContext::cmd()` exposes the command buffer |
+| `rg::compiler::FenceCoordination` | `gpu::FenceSignal` + `gpu::FenceWait` in `gpu::Device::submit()` | `TimelineFenceManager` translates fence operations |
+| `rg::resource::AliasingAssignment` | `gpu::Device::create_placed_texture()` / `create_placed_buffer()` at heap offset | Resource system creates placed resources from assignments |
+| `rg::gate::CapabilityDescriptor` | `gpu::DeviceCapabilities` | 1:1 field mapping — populated from `gpu::Device::capabilities()` at init |
 
 ---
 

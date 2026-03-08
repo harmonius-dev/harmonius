@@ -104,8 +104,13 @@ public:
 
     [[nodiscard]] DeviceCapabilities capabilities() const;
 
-    // All gpu::Device concept methods implemented as concrete (non-virtual) methods.
-    // See gpu-backend-interface.md for the full method list.
+    /// Waits for all in-flight command buffers to complete by waiting on
+    /// MTLSharedEvent timeline values for each queue. Used at shutdown and
+    /// before pipeline recompilation.
+    void wait_idle();
+
+    // All remaining GpuDevice concept methods — see gpu-backend-interface.md
+    // for the full method list.
 
 private:
     id<MTLDevice>          device_;
@@ -116,7 +121,15 @@ private:
     id<MTLBuffer>          argument_buffer_;      // bindless resource table
     id<MTLResidencySet>    residency_set_;         // Metal 4 residency
     MTL4Compiler*          compiler_;              // Metal 4 shader compiler
+
+    // Per-queue shared events used by wait_idle() to drain all queues.
+    id<MTLSharedEvent>     graphics_event_;
+    id<MTLSharedEvent>     compute_event_;
+    id<MTLSharedEvent>     copy_event_;
+    uint64_t               next_idle_value_ = 0;
 };
+
+static_assert(GpuDevice<MetalDevice>);
 
 } // namespace harmonius::gpu::metal
 ```
@@ -276,6 +289,67 @@ MTL4CommandBuffer* cmd = [allocator commandBuffer];
 [cmd commitToQueue:graphics_queue_];
 ```
 
+**Command pool implementation class:**
+
+```cpp
+namespace harmonius::gpu::metal {
+
+class MetalCommandPool {
+public:
+    MetalCommandPool(id<MTLDevice> device, QueueType queue_type);
+    ~MetalCommandPool();
+
+    /// Creates an MTL4CommandBuffer from the allocator. The returned buffer is
+    /// lightweight and pool-backed. Metal command buffers are recording-ready
+    /// from allocation — no separate begin() call is needed.
+    MetalCommandBuffer allocate_command_buffer();
+
+    /// Calls [allocator_ reset] to recycle all backing memory. All command
+    /// buffers previously allocated from this pool become invalid.
+    void reset();
+
+    uint32_t allocated_count() const;
+
+private:
+    MTL4CommandAllocator* allocator_;   // Metal 4 command allocator (wraps pool memory)
+    QueueType             queue_type_;
+    uint32_t              allocated_count_ = 0;
+};
+
+static_assert(GpuCommandPool<MetalCommandPool>);
+
+} // namespace harmonius::gpu::metal
+```
+
+**Command buffer implementation class:**
+
+```cpp
+namespace harmonius::gpu::metal {
+
+class MetalCommandBuffer {
+public:
+    explicit MetalCommandBuffer(MTL4CommandBuffer* cmd);
+
+    /// No-op — Metal command buffers are recording-ready from allocation.
+    void begin();
+
+    /// Calls [encoder endEncoding] on the active encoder, if any.
+    void end();
+
+    // All remaining GpuCommandBuffer concept methods — see
+    // gpu-backend-interface.md for the full method list.
+
+private:
+    MTL4CommandBuffer*             cmd_;
+    id<MTLRenderCommandEncoder>    active_render_encoder_;
+    id<MTLComputeCommandEncoder>   active_compute_encoder_;
+};
+
+static_assert(GpuCommandBuffer<MetalCommandBuffer>);
+
+} // namespace harmonius::gpu::metal
+```
+
 ### Render Command Encoding
 
 ```objc
@@ -341,6 +415,23 @@ id<MTLBlitCommandEncoder> blit = [cmd blitCommandEncoder];
        destinationOrigin:origin];
 
 [blit endEncoding];
+```
+
+### Swapchain Resize
+
+Metal resizes by setting `CAMetalLayer.drawableSize` — the next `nextDrawable` call returns a
+correctly sized drawable automatically. No explicit destruction or recreation of swapchain images
+is required (unlike Vulkan's `vkCreateSwapchainKHR` or D3D12's `ResizeBuffers`).
+
+```objc
+// After a window resize event (caller must wait on all in-flight fences first)
+CAMetalLayer* layer = /* ... */;
+layer.drawableSize = CGSizeMake(new_width, new_height);
+
+// Next frame — drawable is already the correct size
+id<CAMetalDrawable> drawable = [layer nextDrawable];
+id<MTLTexture> backbuffer = drawable.texture;
+// backbuffer.width == new_width, backbuffer.height == new_height
 ```
 
 ---
@@ -730,21 +821,135 @@ id<MTLRenderPipelineState> flexible_pso = [device_ newRenderPipelineStateWithMes
 
 ### Binary Archives
 
-Metal's equivalent of pipeline caching:
+`MTLBinaryArchive` is Metal's pipeline cache mechanism — the equivalent of D3D12's pipeline
+state cache or Vulkan's `VkPipelineCache`. It stores pre-compiled pipeline binaries on disk so
+that subsequent launches skip shader compilation entirely.
 
 ```objc
-// Create binary archive
+// --- Creation ---
+// Create a new (empty) binary archive, or load an existing one from disk.
 MTLBinaryArchiveDescriptor* archive_desc = [MTLBinaryArchiveDescriptor new];
-archive_desc.url = cache_file_url;
+archive_desc.url = cache_file_url;  // nil for a fresh archive; file URL to load existing
 id<MTLBinaryArchive> archive = [device_ newBinaryArchiveWithDescriptor:archive_desc
                                                                  error:nil];
 
-// Add a pipeline to the archive
+// --- Adding pipelines ---
+// Each addXxxFunctionsWithDescriptor: call records the compiled binary for the given
+// pipeline descriptor. Call once per unique pipeline permutation.
+[archive addRenderPipelineFunctionsWithDescriptor:render_desc error:nil];
 [archive addMeshRenderPipelineFunctionsWithDescriptor:mesh_desc error:nil];
+[archive addComputePipelineFunctionsWithDescriptor:compute_desc error:nil];
 
-// Serialize to disk
+// --- Serialization ---
+// Write the archive to disk. On the next launch, loading the archive via the
+// descriptor URL skips all shader compilation for the recorded pipelines.
 [archive serializeToURL:cache_file_url error:nil];
+
+// --- Using the archive at pipeline creation ---
+// Pass the archive in the pipeline descriptor so Metal can look up the pre-compiled
+// binary instead of recompiling.
+mesh_desc.binaryArchives = @[archive];
+id<MTLRenderPipelineState> pso =
+    [device_ newRenderPipelineStateWithMeshDescriptor:mesh_desc
+                                              options:0
+                                           reflection:nil
+                                                error:nil];
 ```
+
+### Function Stitching (Shader Function Linking)
+
+Metal's `MTLStitchedLibrary` provides native support for composing shader functions at runtime.
+This maps directly to the Harmonius stitching graph: each `StitchNode` becomes an
+`MTLFunctionStitchingFunctionNode`, and each `StitchEdge` becomes a connection between node
+arguments.
+
+```objc
+// --- Step 1: Load fragment functions from a compiled Metal library ---
+id<MTLLibrary> fragment_lib = [device_ newLibraryWithURL:fragment_lib_url error:nil];
+
+// Get individual fragment functions (visible functions in the library)
+id<MTLFunction> surface_fn  = [fragment_lib newFunctionWithName:@"pbr_standard"];
+id<MTLFunction> coat_fn     = [fragment_lib newFunctionWithName:@"bsdf_clearcoat"];
+id<MTLFunction> lighting_fn = [fragment_lib newFunctionWithName:@"lighting_deferred"];
+
+// --- Step 2: Build the stitching graph ---
+// Input node receives interpolated data from the mesh shader
+MTLFunctionStitchingInputNode* input =
+    [[MTLFunctionStitchingInputNode alloc] initWithArgumentIndex:0];
+
+// Surface evaluation: receives material params, outputs SurfaceData
+MTLFunctionStitchingFunctionNode* surface_node =
+    [[MTLFunctionStitchingFunctionNode alloc] initWithName:@"pbr_standard"
+                                                 arguments:@[input]];
+
+// BSDF layer: receives SurfaceData, outputs modified SurfaceData
+MTLFunctionStitchingFunctionNode* coat_node =
+    [[MTLFunctionStitchingFunctionNode alloc] initWithName:@"bsdf_clearcoat"
+                                                 arguments:@[surface_node]];
+
+// Lighting: receives SurfaceData, outputs radiance
+MTLFunctionStitchingFunctionNode* lighting_node =
+    [[MTLFunctionStitchingFunctionNode alloc] initWithName:@"lighting_deferred"
+                                                 arguments:@[coat_node]];
+
+// Assemble the stitching graph
+MTLFunctionStitchingGraph* stitch_graph =
+    [[MTLFunctionStitchingGraph alloc]
+        initWithFunctionName:@"material_main"
+                       nodes:@[surface_node, coat_node, lighting_node]
+                  outputNode:lighting_node
+                  attributes:@[]];
+
+// --- Step 3: Create the stitched library ---
+MTLStitchedLibraryDescriptor* stitch_desc = [MTLStitchedLibraryDescriptor new];
+stitch_desc.functionGraphs = @[stitch_graph];
+stitch_desc.functions = @[surface_fn, coat_fn, lighting_fn];
+
+NSError* error = nil;
+id<MTLLibrary> stitched_lib =
+    [device_ newLibraryWithStitchedDescriptor:stitch_desc error:&error];
+
+// --- Step 4: Get the stitched function and create the pipeline ---
+// Apply function constants (specialization) to the stitched function
+MTLFunctionConstantValues* constants = [MTLFunctionConstantValues new];
+uint32_t shadow_quality = 1;  // PCSS
+uint32_t quality_tier = 2;    // high
+[constants setConstantValue:&shadow_quality type:MTLDataTypeUInt atIndex:0];
+[constants setConstantValue:&quality_tier   type:MTLDataTypeUInt atIndex:1];
+
+id<MTLFunction> material_fn =
+    [stitched_lib newFunctionWithName:@"material_main"
+                       constantValues:constants
+                                error:&error];
+
+// Use in mesh render pipeline descriptor
+MTLMeshRenderPipelineDescriptor* pipeline_desc = [MTLMeshRenderPipelineDescriptor new];
+pipeline_desc.objectFunction   = object_fn;   // monolithic task shader
+pipeline_desc.meshFunction     = mesh_fn;     // monolithic mesh shader
+pipeline_desc.fragmentFunction = material_fn; // stitched + specialized fragment
+pipeline_desc.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA16Float;
+pipeline_desc.depthAttachmentPixelFormat      = MTLPixelFormatDepth32Float;
+
+id<MTLRenderPipelineState> pso =
+    [device_ newRenderPipelineStateWithMeshDescriptor:pipeline_desc
+                                              options:0
+                                           reflection:nil
+                                                error:&error];
+```
+
+**Stitched pipeline caching:** Stitched pipelines are cached in `MTLBinaryArchive` like any
+other pipeline. On subsequent loads, the archive provides the pre-compiled binary without
+re-stitching:
+
+```objc
+// Add stitched pipeline to archive
+pipeline_desc.binaryArchives = @[archive];
+[archive addMeshRenderPipelineFunctionsWithDescriptor:pipeline_desc error:nil];
+```
+
+**Flexible pipeline state (Metal 4):** Combined with `supportRenderTargetReassignment`, a
+stitched pipeline can be specialized for different render target configurations without
+re-stitching or recompilation, further reducing the effective PSO count.
 
 ---
 
@@ -799,6 +1004,7 @@ Key architectural differences that affect the backend implementation:
 ```mermaid
 classDiagram
     class MetalDevice {
+        <<satisfies GpuDevice>>
         -MTLDevice device_
         -MTLCommandQueue graphics_queue_
         -MTLCommandQueue compute_queue_
@@ -806,6 +1012,11 @@ classDiagram
         -MTLBuffer argument_buffer_
         -MTLResidencySet residency_set_
         -MTL4Compiler compiler_
+        -MTLSharedEvent graphics_event_
+        -MTLSharedEvent compute_event_
+        -MTLSharedEvent copy_event_
+        +capabilities() DeviceCapabilities
+        +wait_idle() void
         +create_texture(TextureDesc) TextureHandle
         +create_buffer(BufferDesc) BufferHandle
         +create_heap(HeapDesc) HeapHandle
@@ -816,9 +1027,23 @@ classDiagram
         +set_name(TextureHandle, string_view) void
     }
 
-    class MetalCommandBuffer {
-        -MTL4CommandBuffer cmd_
+    class MetalCommandPool {
+        <<satisfies GpuCommandPool>>
         -MTL4CommandAllocator allocator_
+        -QueueType queue_type_
+        -uint32_t allocated_count_
+        +allocate_command_buffer() MetalCommandBuffer
+        +reset() void
+        +allocated_count() uint32_t
+    }
+
+    class MetalCommandBuffer {
+        <<satisfies GpuCommandBuffer>>
+        -MTL4CommandBuffer cmd_
+        -MTLRenderCommandEncoder active_render_encoder_
+        -MTLComputeCommandEncoder active_compute_encoder_
+        +begin() void
+        +end() void
         +barrier(BarrierDesc) void
         +begin_render_pass(RenderPassDesc) void
         +end_render_pass() void
@@ -842,6 +1067,7 @@ classDiagram
         +wait_cpu(value) void
     }
 
-    MetalDevice --> MetalCommandBuffer : creates
+    MetalDevice --> MetalCommandPool : creates
+    MetalCommandPool --> MetalCommandBuffer : allocates
     MetalDevice --> MetalFence : creates
 ```

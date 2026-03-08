@@ -49,9 +49,11 @@ and resource binding using the latest D3D12 API surface.
   - [Descriptor Heaps](#descriptor-heaps)
   - [Root Signature](#root-signature)
   - [Bindless Access (SM 6.6)](#bindless-access-sm-66)
+- [Swapchain](#swapchain)
 - [Pipeline State](#pipeline-state)
   - [Stream-Based PSO Creation](#stream-based-pso-creation)
   - [Pipeline Library Caching](#pipeline-library-caching)
+  - [Pipeline Cache Serialization](#pipeline-cache-serialization)
 - [Diagnostics](#diagnostics)
 - [Class Diagram](#class-diagram)
 
@@ -110,7 +112,10 @@ public:
 
     [[nodiscard]] DeviceCapabilities capabilities() const;
 
-    // All gpu::Device concept methods implemented as concrete (non-virtual) methods.
+    // Drains all queues and blocks until the GPU is idle.
+    // Signals each queue's fence and waits on the CPU for completion.
+    void wait_idle();
+
     // See gpu-backend-interface.md for the full method list.
 
 private:
@@ -132,6 +137,8 @@ private:
     uint32_t cbv_srv_uav_increment_ = 0;
     uint32_t sampler_increment_     = 0;
 };
+
+static_assert(GpuDevice<D3D12Device>);
 
 } // namespace harmonius::gpu::d3d12
 ```
@@ -277,6 +284,61 @@ cmd_list->Close();
 // Submit
 ID3D12CommandList* lists[] = {cmd_list};
 queue->ExecuteCommandLists(1, lists);
+```
+
+**D3D12CommandPool** satisfies the `GpuCommandPool` concept. It owns one
+`ID3D12CommandAllocator` and maintains a cache of `ID3D12GraphicsCommandList10` objects for reuse:
+
+```cpp
+class D3D12CommandPool {
+public:
+    D3D12CommandPool(ID3D12Device16* device, D3D12_COMMAND_LIST_TYPE type);
+
+    // Reuse a cached command list or create a new one.
+    // The returned list is in a non-recording state — call begin() to start.
+    [[nodiscard]] D3D12CommandBuffer allocate_command_buffer();
+
+    // Reset the underlying ID3D12CommandAllocator and return all command
+    // lists to the cache. Must only be called once the GPU has finished
+    // executing all previously submitted command buffers from this pool.
+    void reset();
+
+    [[nodiscard]] uint32_t allocated_count() const { return allocated_; }
+
+private:
+    ComPtr<ID3D12CommandAllocator>                        allocator_;
+    std::vector<ComPtr<ID3D12GraphicsCommandList10>>      cached_lists_;
+    uint32_t                                              allocated_ = 0;
+    D3D12_COMMAND_LIST_TYPE                               type_;
+};
+
+static_assert(GpuCommandPool<D3D12CommandPool>);
+```
+
+**D3D12CommandBuffer** satisfies the `GpuCommandBuffer` concept. It wraps
+a single `ID3D12GraphicsCommandList10`:
+
+```cpp
+class D3D12CommandBuffer {
+public:
+    explicit D3D12CommandBuffer(ComPtr<ID3D12GraphicsCommandList10> list);
+
+    // Reset the command list with the given allocator, entering the recording state.
+    // Calls list_->Reset(allocator, nullptr).
+    void begin();
+
+    // Finalize the command list for submission.
+    // Calls list_->Close().
+    void end();
+
+    // ... remaining methods (barrier, dispatch_mesh, etc.)
+
+private:
+    ComPtr<ID3D12GraphicsCommandList10>  list_;
+    ID3D12CommandAllocator*              current_allocator_ = nullptr;
+};
+
+static_assert(GpuCommandBuffer<D3D12CommandBuffer>);
 ```
 
 ### Command List Capabilities
@@ -844,6 +906,44 @@ aliasing heaps (RG-8.1).
 
 ---
 
+## Swapchain
+
+The D3D12 backend creates an `IDXGISwapChain4` via `IDXGIFactory7::CreateSwapChainForHwnd`
+(or `CreateSwapChainForCoreWindow` on Xbox). The swapchain uses the `FLIP_DISCARD` model
+with 2–3 back buffers.
+
+**Resize** is handled in-place via `IDXGISwapChain4::ResizeBuffers` — no destroy/recreate cycle
+is needed (unlike Vulkan). All references to back buffer resources must be released before calling
+`ResizeBuffers`:
+
+```cpp
+void D3D12Device::resize_swapchain(SwapchainHandle handle,
+                                   uint32_t width, uint32_t height) {
+    auto& sc = get_swapchain(handle);
+
+    // Release all back buffer references so ResizeBuffers can succeed.
+    for (auto& rt : sc.back_buffers) {
+        rt.Reset();
+    }
+
+    HRESULT hr = sc.swapchain->ResizeBuffers(
+        0,           // keep current buffer count
+        width,
+        height,
+        DXGI_FORMAT_UNKNOWN,  // keep current format
+        sc.flags
+    );
+    check_hresult(hr);
+
+    // Re-acquire back buffer resources and recreate RTVs.
+    for (uint32_t i = 0; i < sc.buffer_count; ++i) {
+        sc.swapchain->GetBuffer(i, IID_PPV_ARGS(&sc.back_buffers[i]));
+    }
+}
+```
+
+---
+
 ## Pipeline State
 
 ### Stream-Based PSO Creation
@@ -858,24 +958,103 @@ This allows mixing and matching sub-objects for different pipeline configuration
 | Ray tracing | State object (DXIL libraries, hit groups, shader config, pipeline config, root signatures) |
 | Work graph | State object (DXIL libraries, work graph subobject, entry points) |
 
+### Shader Function Linking
+
+D3D12 supports dynamic shader composition through `ID3D12FunctionLinkingGraph`, which links
+independently compiled DXIL library functions into a single shader module. Fragments are compiled
+with `dxc -T lib_6_9` to produce DXIL library targets.
+
+```cpp
+// Compile fragment HLSL to DXIL library (offline, via DXC)
+// dxc -T lib_6_9 -Fo pbr_standard.dxil pbr_standard.hlsl
+// dxc -T lib_6_9 -Fo lighting_deferred.dxil lighting_deferred.hlsl
+
+// Create function linking graph
+ComPtr<ID3D12FunctionLinkingGraph> flg;
+D3DCreateFunctionLinkingGraph(0, &flg);
+
+// Define input signature (data from mesh shader)
+D3D12_PARAMETER_DESC input_params[] = { /* position, UV, tangent frame */ };
+ID3D12LinkingNode* input_node;
+flg->SetInputSignature(input_params, _countof(input_params), &input_node);
+
+// Add fragment function nodes from DXIL libraries
+ID3D12LinkingNode* surface_node;
+flg->CallFunction("", surface_library, "pbr_standard", &surface_node);
+
+ID3D12LinkingNode* lighting_node;
+flg->CallFunction("", lighting_library, "lighting_deferred", &lighting_node);
+
+// Connect: input -> surface -> lighting -> output
+flg->PassValue(input_node, 0, surface_node, 0);
+flg->PassValue(surface_node, 0, lighting_node, 0);
+
+ID3D12LinkingNode* output_node;
+flg->SetOutputSignature(output_params, _countof(output_params), &output_node);
+flg->PassValue(lighting_node, 0, output_node, 0);
+
+// Link into a module and use in stream-based PSO creation
+ComPtr<ID3D12ModuleInstance> linked_module;
+flg->CreateModuleInstance(nullptr, &linked_module);
+```
+
+**SM 6.8 specialization constants:** On SM 6.8+ hardware, specialization constants are baked into
+the linked shader at PSO creation time. On older hardware, the fallback uses root constants with
+the function linking graph inserting load instructions for the constant values.
+
 ### Pipeline Library Caching
 
 ```cpp
-// Save compiled PSOs to a pipeline library
+// Save compiled PSOs to a pipeline library (includes linked PSOs)
 ComPtr<ID3D12PipelineLibrary1> library;
 device_->CreatePipelineLibrary(nullptr, 0, IID_PPV_ARGS(&library));
 
 // Store a PSO
 library->StorePipeline(L"gbuffer_mesh", pso);
+library->StorePipeline(L"material_coated_metal_deferred", linked_pso);
 
-// Load a PSO (fast path — no recompilation)
-library->LoadPipeline(L"gbuffer_mesh", &stream_desc, IID_PPV_ARGS(&pso));
+// Load a PSO (fast path — no recompilation or re-linking)
+library->LoadPipeline(L"material_coated_metal_deferred", &stream_desc, IID_PPV_ARGS(&pso));
 
 // Serialize library to disk
 SIZE_T size = library->GetSerializedSize();
 std::vector<uint8_t> blob(size);
 library->Serialize(blob.data(), size);
 ```
+
+### Pipeline Cache Serialization
+
+`ID3D12PipelineLibrary` acts as a pipeline cache. On startup, the backend loads a previously
+serialized blob to avoid redundant shader compilation:
+
+```cpp
+// Load pipeline library from a previously saved blob
+std::vector<uint8_t> blob = load_file("pipeline_cache.bin");
+ComPtr<ID3D12PipelineLibrary1> library;
+HRESULT hr = device_->CreatePipelineLibrary(
+    blob.data(), blob.size(), IID_PPV_ARGS(&library));
+
+if (hr == D3D12_ERROR_DRIVER_VERSION_MISMATCH ||
+    hr == D3D12_ERROR_ADAPTER_NOT_FOUND ||
+    hr == DXGI_ERROR_UNSUPPORTED) {
+    // Blob is stale — create a fresh library
+    device_->CreatePipelineLibrary(nullptr, 0, IID_PPV_ARGS(&library));
+}
+
+// Store PSOs in the library as they are created
+library->StorePipeline(L"gbuffer_mesh", gbuffer_pso);
+library->StorePipeline(L"shadow_mesh",  shadow_pso);
+library->StorePipeline(L"lighting_cs",  lighting_pso);
+
+// At shutdown, serialize the library to disk for the next session
+SIZE_T cache_size = library->GetSerializedSize();
+std::vector<uint8_t> cache(cache_size);
+library->Serialize(cache.data(), cache_size);
+save_file("pipeline_cache.bin", cache);
+```
+
+The pipeline library blob is invalidated by driver updates or adapter changes. The backend
+detects these conditions via `HRESULT` and rebuilds the cache transparently.
 
 ---
 
@@ -930,6 +1109,8 @@ classDiagram
         -ID3D12DescriptorHeap cbv_srv_uav_heap_
         -ID3D12DescriptorHeap sampler_heap_
         -ID3D12RootSignature global_root_signature_
+        +capabilities() DeviceCapabilities
+        +wait_idle() void
         +create_texture(TextureDesc) TextureHandle
         +create_buffer(BufferDesc) BufferHandle
         +create_heap(HeapDesc) HeapHandle
@@ -938,12 +1119,26 @@ classDiagram
         +create_mesh_render_pipeline(MeshRenderPipelineDesc) PipelineHandle
         +create_ray_tracing_pipeline(RayTracingPipelineDesc) PipelineHandle
         +create_work_graph(WorkGraphDesc) WorkGraphHandle
+        +resize_swapchain(SwapchainHandle, w, h) void
         +submit(QueueType, cmd_bufs, signals, waits) void
+        +create_command_pool(QueueType) D3D12CommandPool
+    }
+
+    class D3D12CommandPool {
+        -ID3D12CommandAllocator allocator_
+        -vector~ID3D12GraphicsCommandList10~ cached_lists_
+        -uint32_t allocated_
+        -D3D12_COMMAND_LIST_TYPE type_
+        +allocate_command_buffer() D3D12CommandBuffer
+        +reset() void
+        +allocated_count() uint32_t
     }
 
     class D3D12CommandBuffer {
         -ID3D12GraphicsCommandList10 list_
-        -ID3D12CommandAllocator allocator_
+        -ID3D12CommandAllocator* current_allocator_
+        +begin() void
+        +end() void
         +barrier(BarrierDesc) void
         +begin_render_pass(RenderPassDesc) void
         +end_render_pass() void
@@ -969,6 +1164,10 @@ classDiagram
         +completed_value() uint64_t
     }
 
-    D3D12Device --> D3D12CommandBuffer : creates
+    D3D12Device ..|> GpuDevice : satisfies
+    D3D12CommandPool ..|> GpuCommandPool : satisfies
+    D3D12CommandBuffer ..|> GpuCommandBuffer : satisfies
+    D3D12Device --> D3D12CommandPool : creates
+    D3D12CommandPool --> D3D12CommandBuffer : allocates
     D3D12Device --> D3D12Fence : creates
 ```

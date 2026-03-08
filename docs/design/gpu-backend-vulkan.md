@@ -39,6 +39,7 @@ dynamic rendering, maintenance4, push descriptors).
 - [Command Recording](#command-recording)
   - [Command Pools and Buffers](#command-pools-and-buffers)
   - [Dynamic Rendering](#dynamic-rendering)
+  - [Swapchain Resize](#swapchain-resize)
 - [Synchronization](#synchronization)
   - [Pipeline Barriers (Synchronization2)](#pipeline-barriers-synchronization2)
   - [Timeline Semaphores](#timeline-semaphores)
@@ -115,10 +116,14 @@ public:
 
     [[nodiscard]] DeviceCapabilities capabilities() const;
 
-    // All gpu::Device concept methods implemented as concrete (non-virtual) methods.
-    // See gpu-backend-interface.md for the full method list.
+    /// Drains all queues — maps to vkDeviceWaitIdle.
+    /// Used at shutdown and before pipeline recompilation.
+    void wait_idle() { vkDeviceWaitIdle(device_); }
+
+    // Remaining methods — see gpu-backend-interface.md for the full list.
 
 private:
+    // --- Vulkan handles ---
     VkInstance                    instance_         = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT     debug_messenger_  = VK_NULL_HANDLE;
     VkPhysicalDevice             physical_device_  = VK_NULL_HANDLE;
@@ -140,6 +145,8 @@ private:
     VkPipelineLayout             global_layout_    = VK_NULL_HANDLE;
     VkSampler                    immutable_samplers_[16] = {};
 };
+
+static_assert(GpuDevice<VulkanDevice>);
 
 } // namespace harmonius::gpu::vulkan
 ```
@@ -336,6 +343,70 @@ for sub-allocation, aliasing pools, and budget tracking.
 
 ### Command Pools and Buffers
 
+**VulkanCommandPool** satisfies the `GpuCommandPool` concept. Each pool holds
+a `VkCommandPool` plus a cache of previously allocated `VkCommandBuffer` handles. When the render
+graph requests a new command buffer, `allocate_command_buffer()` first checks the cache and
+reuses a buffer if available; otherwise it calls `vkAllocateCommandBuffers`. Resetting the pool
+via `reset()` calls `vkResetCommandPool` and returns all buffers to the cache.
+
+```cpp
+class VulkanCommandPool {
+public:
+    VulkanCommandPool(VkDevice device, uint32_t queue_family);
+    ~VulkanCommandPool();
+
+    /// Allocate a command buffer. Reuses a cached buffer when available,
+    /// otherwise calls vkAllocateCommandBuffers with the pool.
+    VulkanCommandBuffer allocate_command_buffer();
+
+    /// Reset the pool — calls vkResetCommandPool (recycles all memory)
+    /// and moves all outstanding buffers back into the free cache.
+    void reset();
+
+    [[nodiscard]] uint32_t allocated_count() const { return allocated_count_; }
+
+private:
+    // --- Vulkan handles ---
+    VkDevice        device_          = VK_NULL_HANDLE;
+    VkCommandPool   pool_            = VK_NULL_HANDLE;
+    uint32_t        allocated_count_ = 0;
+
+    // Cache of previously allocated VkCommandBuffers ready for reuse.
+    std::vector<VkCommandBuffer> free_buffers_;
+};
+
+static_assert(GpuCommandPool<VulkanCommandPool>);
+```
+
+**VulkanCommandBuffer** satisfies the `GpuCommandBuffer` concept.
+`begin()` calls `vkBeginCommandBuffer` and `end()` calls `vkEndCommandBuffer`.
+
+```cpp
+class VulkanCommandBuffer {
+public:
+    explicit VulkanCommandBuffer(VkCommandBuffer cmd) : cmd_(cmd) {}
+
+    void begin() {
+        VkCommandBufferBeginInfo begin_info = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        };
+        vkBeginCommandBuffer(cmd_, &begin_info);
+    }
+
+    void end() { vkEndCommandBuffer(cmd_); }
+
+    // Remaining methods — see gpu-backend-interface.md for the full list.
+
+private:
+    VkCommandBuffer cmd_ = VK_NULL_HANDLE;
+};
+
+static_assert(GpuCommandBuffer<VulkanCommandBuffer>);
+```
+
+**Pool creation and command buffer allocation (raw Vulkan calls):**
+
 ```cpp
 // One pool per queue family per thread — allows lock-free allocation
 VkCommandPoolCreateInfo pool_info = {
@@ -416,6 +487,54 @@ vkCmdBeginRendering(cmd, &rendering_info);
 **Image view caching:** `VkImageView` objects are required for rendering attachments. The backend
 maintains a frame-ringed cache keyed by (VkImage, format, mip, layer, aspect). Views are destroyed
 when the frame they were used in completes (tracked via timeline semaphore).
+
+### Swapchain Resize
+
+Vulkan requires destroying and recreating the `VkSwapchainKHR` when the surface dimensions change
+(e.g., window resize). The old swapchain handle is passed as `oldSwapchain` in
+`VkSwapchainCreateInfoKHR`, which allows the driver to recycle internal resources instead of
+allocating from scratch. The caller must ensure all in-flight frames referencing the old swapchain
+images have completed (wait on all timeline fences) before destroying it.
+
+```cpp
+void VulkanDevice::resize_swapchain(SwapchainHandle handle,
+                                         uint32_t width, uint32_t height) {
+    auto& sc = swapchains_[handle];
+
+    // Wait for all in-flight frames to finish using old images
+    wait_idle();
+
+    VkSwapchainCreateInfoKHR create_info = {
+        .sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .surface          = sc.surface,
+        .minImageCount    = sc.image_count,
+        .imageFormat      = sc.format,
+        .imageColorSpace  = sc.color_space,
+        .imageExtent      = {width, height},
+        .imageArrayLayers = 1,
+        .imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .preTransform     = sc.pre_transform,
+        .compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode      = sc.present_mode,
+        .clipped          = VK_TRUE,
+        .oldSwapchain     = sc.swapchain,  // pass old for resource recycling
+    };
+
+    VkSwapchainKHR new_swapchain;
+    vkCreateSwapchainKHR(device_, &create_info, nullptr, &new_swapchain);
+
+    // Destroy old swapchain — driver recycles what it can via oldSwapchain
+    vkDestroySwapchainKHR(device_, sc.swapchain, nullptr);
+    sc.swapchain = new_swapchain;
+
+    // Re-acquire swapchain images (handles change after recreation)
+    uint32_t count = 0;
+    vkGetSwapchainImagesKHR(device_, sc.swapchain, &count, nullptr);
+    sc.images.resize(count);
+    vkGetSwapchainImagesKHR(device_, sc.swapchain, &count, sc.images.data());
+}
+```
 
 ---
 
@@ -905,8 +1024,15 @@ vkCreateComputePipelines(device_, cache, 1, &compute_info, nullptr, &pipeline);
 
 ### Pipeline Cache
 
+The pipeline cache stores compiled pipeline state so that subsequent runs (or pipeline
+recompilation within the same session) can skip shader compilation. The cache is created from
+previously serialized data on startup, passed to every pipeline creation call, and serialized back
+to disk on shutdown.
+
 ```cpp
-// Create pipeline cache
+// --- 1. Create pipeline cache from initial data ---
+// On first run, saved_cache_data is nullptr and saved_cache_size is 0.
+// On subsequent runs, the blob is loaded from disk.
 VkPipelineCacheCreateInfo cache_info = {
     .sType           = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
     .initialDataSize = saved_cache_size,
@@ -914,12 +1040,137 @@ VkPipelineCacheCreateInfo cache_info = {
 };
 vkCreatePipelineCache(device_, &cache_info, nullptr, &pipeline_cache_);
 
-// Serialize to disk
+// --- 2. Pass cache to all pipeline creation calls ---
+// Graphics (mesh shader) pipeline
+vkCreateGraphicsPipelines(device_, pipeline_cache_, 1, &graphics_info, nullptr, &gfx_pipeline);
+
+// Compute pipeline
+vkCreateComputePipelines(device_, pipeline_cache_, 1, &compute_info, nullptr, &cs_pipeline);
+
+// Ray tracing pipeline
+vkCreateRayTracingPipelinesKHR(device_, VK_NULL_HANDLE, pipeline_cache_,
+    1, &rt_info, nullptr, &rt_pipeline);
+
+// --- 3. Serialize cache to disk via vkGetPipelineCacheData ---
+// Called at shutdown or periodically to persist compiled state.
 size_t size = 0;
 vkGetPipelineCacheData(device_, pipeline_cache_, &size, nullptr);
 std::vector<uint8_t> data(size);
 vkGetPipelineCacheData(device_, pipeline_cache_, &size, data.data());
+// Write `data` to disk — the blob includes a vendor-specific header that
+// Vulkan validates on load; mismatched drivers/hardware cause a clean miss.
 ```
+
+### Graphics Pipeline Library (Shader Function Linking)
+
+`VK_EXT_graphics_pipeline_library` enables splitting a graphics pipeline into independently
+compiled library objects that are linked at PSO creation time. Combined with
+`VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT`, the driver performs dead code elimination
+and constant folding across linked libraries, recovering monolithic shader performance.
+
+Harmonius splits mesh render pipelines into three pipeline library objects:
+
+| Library part       | Flag                                                        | Contents                                |
+| ------------------ | ----------------------------------------------------------- | --------------------------------------- |
+| Pre-rasterization  | `VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT` | Task shader, mesh shader, viewport state |
+| Fragment shader    | `VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT`      | Linked pixel shader (from stitching)    |
+| Fragment output    | `VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT` | Blend state, RT formats, sample count   |
+
+```cpp
+// --- Step 1: Compile pre-rasterization library (reused across materials) ---
+VkGraphicsPipelineLibraryCreateInfoEXT pre_raster_lib_info = {
+    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT,
+    .flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT,
+};
+VkGraphicsPipelineCreateInfo pre_raster_ci = {
+    .sType  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+    .pNext  = &pre_raster_lib_info,
+    .flags  = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR
+            | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT,
+    .stageCount = 2,
+    .pStages    = task_mesh_stages,  // task + mesh shader stages
+    .layout     = global_layout_,
+};
+VkPipeline pre_raster_lib;
+vkCreateGraphicsPipelines(device_, cache, 1, &pre_raster_ci, nullptr, &pre_raster_lib);
+
+// --- Step 2: Compile fragment shader library (per-material, from stitched SPIR-V) ---
+VkSpecializationMapEntry spec_entries[] = {
+    {0, 0, sizeof(uint32_t)},  // shadow_quality
+    {1, 4, sizeof(uint32_t)},  // quality_tier
+};
+uint32_t spec_values[] = {1 /* PCSS */, 2 /* high */};
+VkSpecializationInfo spec_info = {
+    .mapEntryCount = 2,
+    .pMapEntries   = spec_entries,
+    .dataSize      = sizeof(spec_values),
+    .pData         = spec_values,
+};
+
+VkPipelineShaderStageCreateInfo fragment_stage = {
+    .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+    .stage  = VK_SHADER_STAGE_FRAGMENT_BIT,
+    .module = linked_fragment_module,  // stitched fragment SPIR-V
+    .pName  = "main",
+    .pSpecializationInfo = &spec_info,
+};
+
+VkGraphicsPipelineLibraryCreateInfoEXT frag_lib_info = {
+    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT,
+    .flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT,
+};
+VkGraphicsPipelineCreateInfo frag_ci = {
+    .sType  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+    .pNext  = &frag_lib_info,
+    .flags  = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR
+            | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT,
+    .stageCount = 1,
+    .pStages    = &fragment_stage,
+    .layout     = global_layout_,
+};
+VkPipeline frag_lib;
+vkCreateGraphicsPipelines(device_, cache, 1, &frag_ci, nullptr, &frag_lib);
+
+// --- Step 3: Compile fragment output library (reused across materials) ---
+VkGraphicsPipelineLibraryCreateInfoEXT output_lib_info = {
+    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT,
+    .flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT,
+};
+VkGraphicsPipelineCreateInfo output_ci = {
+    .sType  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+    .pNext  = &output_lib_info,
+    .flags  = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR,
+    .pColorBlendState    = &blend_state,
+    .pMultisampleState   = &multisample_state,
+};
+VkPipeline output_lib;
+vkCreateGraphicsPipelines(device_, cache, 1, &output_ci, nullptr, &output_lib);
+
+// --- Step 4: Link all libraries with LTO ---
+VkPipeline libraries[] = {pre_raster_lib, frag_lib, output_lib};
+VkPipelineLibraryCreateInfoKHR link_info = {
+    .sType        = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR,
+    .libraryCount = 3,
+    .pLibraries   = libraries,
+};
+VkGraphicsPipelineCreateInfo linked_ci = {
+    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+    .pNext = &link_info,
+    .flags = VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT,
+    .layout = global_layout_,
+};
+vkCreateGraphicsPipelines(device_, cache, 1, &linked_ci, nullptr, &final_pipeline);
+```
+
+The pre-rasterization and fragment output libraries are compiled once and shared across all
+materials that use the same mesh shader and render target configuration. Only the fragment
+shader library varies per material, reducing the effective linking cost to a single library
+substitution.
+
+**Fast linking (without LTO):** For async warmup or when a PSO is needed immediately, omit
+`VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT` to get a fast-linked pipeline. The fast
+path skips cross-library optimization but produces a valid pipeline in microseconds instead of
+milliseconds. The optimized pipeline can be compiled in the background and swapped in later.
 
 ---
 
@@ -944,6 +1195,7 @@ vkGetPipelineCacheData(device_, pipeline_cache_, &size, data.data());
 ```mermaid
 classDiagram
     class VulkanDevice {
+        <<satisfies GpuDevice>>
         -VkInstance instance_
         -VkDevice device_
         -VkPhysicalDevice physical_device_
@@ -953,6 +1205,10 @@ classDiagram
         -VkQueue transfer_queue_
         -VkDescriptorSet bindless_set_
         -VkPipelineLayout global_layout_
+        -VkPipelineCache pipeline_cache_
+        +capabilities() DeviceCapabilities
+        +wait_idle() void
+        +resize_swapchain(SwapchainHandle, w, h) void
         +create_texture(TextureDesc) TextureHandle
         +create_buffer(BufferDesc) BufferHandle
         +create_heap(HeapDesc) HeapHandle
@@ -964,9 +1220,22 @@ classDiagram
         +set_name(TextureHandle, string_view) void
     }
 
-    class VulkanCommandBuffer {
-        -VkCommandBuffer cmd_
+    class VulkanCommandPool {
+        <<satisfies GpuCommandPool>>
+        -VkDevice device_
         -VkCommandPool pool_
+        -uint32_t allocated_count_
+        -vector~VkCommandBuffer~ free_buffers_
+        +allocate_command_buffer() VulkanCommandBuffer
+        +reset() void
+        +allocated_count() uint32_t
+    }
+
+    class VulkanCommandBuffer {
+        <<satisfies GpuCommandBuffer>>
+        -VkCommandBuffer cmd_
+        +begin() void
+        +end() void
         +barrier(BarrierDesc) void
         +begin_render_pass(RenderPassDesc) void
         +end_render_pass() void
@@ -992,6 +1261,7 @@ classDiagram
         +wait_cpu(value) void
     }
 
-    VulkanDevice --> VulkanCommandBuffer : creates
+    VulkanDevice --> VulkanCommandPool : creates
+    VulkanCommandPool --> VulkanCommandBuffer : allocates
     VulkanDevice --> VulkanFence : creates
 ```

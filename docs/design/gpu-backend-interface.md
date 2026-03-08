@@ -82,7 +82,7 @@ R-1.2.1–R-1.2.5 (platform support), R-3.2.1–R-3.2.7 (hardware requirements).
 | Principle | Rationale |
 |-----------|-----------|
 | Thin abstraction | The interface adds no policy or caching — the render graph owns scheduling, aliasing, and barriers |
-| Zero virtual dispatch | All types are concrete; the backend is selected at compile time via CMake; no vtables anywhere |
+| C++20 concepts | Interface contracts are defined as concepts and enforced via `static_assert` — zero overhead, no vtables, no CRTP |
 | Static linkage only | The GPU backend is statically linked into the render graph library — no shared/dynamic libraries |
 | No legacy paths | No vertex/geometry/tessellation stages; mesh shaders are the sole geometry pipeline (R-1.1.3) |
 | Native backends only | No translation layers (R-1.1.5); each backend maps directly to the native API |
@@ -93,7 +93,7 @@ R-1.2.1–R-1.2.5 (platform support), R-3.2.1–R-3.2.7 (hardware requirements).
 ## Backend Selection
 
 The backend is selected at **build time** via a CMake option. Only one backend is compiled into a
-given binary — there is no runtime backend switching and no virtual dispatch.
+given binary — there is no runtime backend switching.
 
 ```cmake
 # CMakeLists.txt — select exactly one backend
@@ -104,13 +104,22 @@ option(HARMONIUS_GPU_BACKEND "GPU backend" "")
 #   macOS   → metal
 ```
 
-The interface types are defined as type aliases to the concrete backend types:
+### Concept-Based Static Dispatch
+
+Interface contracts are defined as **C++20 concepts** (`GpuDevice`, `GpuCommandBuffer`,
+`GpuCommandPool`) that constrain the concrete backend types. Each backend is a plain concrete
+class — no base classes, no CRTP, no vtables. The concepts enforce method signatures at the
+`static_assert` site, catching interface violations at compile time. Since only one backend is
+compiled per binary, all calls resolve to direct method calls that the compiler can inline
+through LTO. Each concept is defined in its respective section below:
+- [`GpuDevice`](#device-creation) — resource creation, submission, synchronization
+- [`GpuCommandPool`](#command-pool) — command buffer memory management
+- [`GpuCommandBuffer`](#command-buffer) — recording commands
+
+The build-time backend selection aliases the concrete types and verifies them against the concepts:
 
 ```cpp
 namespace harmonius::gpu {
-
-// Build-time backend selection — exactly one is active per binary.
-// The preprocessor selects the concrete types; all dispatch is static.
 
 #if defined(HARMONIUS_BACKEND_D3D12)
     using Device        = d3d12::D3D12Device;
@@ -128,13 +137,25 @@ namespace harmonius::gpu {
     #error "No GPU backend selected. Set HARMONIUS_GPU_BACKEND in CMake."
 #endif
 
+// Compile-time verification — if a backend is missing any required method,
+// the static_assert fires with a clear concept-violation diagnostic.
+static_assert(GpuDevice<Device>);
+static_assert(GpuCommandBuffer<CommandBuffer>);
+static_assert(GpuCommandPool<CommandPool>);
+
 } // namespace harmonius::gpu
 ```
 
-**Why no virtual dispatch:** The render graph records thousands of commands per frame across
-multiple threads. Virtual method calls on `CommandBuffer` would add vtable indirection on every
-draw, dispatch, barrier, and copy call. Since only one backend exists per binary, all calls resolve
-statically and can be inlined by the compiler.
+**Why concepts over CRTP:** C++20 concepts define the interface contract without requiring base
+classes or `impl_*` method naming conventions. Each backend is a plain concrete class — no
+inheritance hierarchy, no template machinery, no forwarding boilerplate. The `static_assert`
+at the type alias site catches missing or mistyped methods with clear diagnostics. The generated
+code is identical to direct method calls on the concrete type.
+
+**Why concepts over virtual dispatch:** The render graph records thousands of commands per frame
+across multiple threads. Virtual method calls on `CommandBuffer` would add vtable indirection on
+every draw, dispatch, barrier, and copy call. With concepts, all calls resolve to direct calls
+on the concrete type. LTO can inline across the render graph and backend boundary.
 
 **Why no shared library:** The GPU backend is tightly coupled to the render graph — they share
 handle types, barrier descriptors, and pipeline state. A shared library boundary would force stable
@@ -156,110 +177,129 @@ struct DeviceDesc {
     uint32_t frame_count    = 3;       // triple buffering (R-3.1.7)
 };
 
-/// Device concept — each backend provides a concrete class satisfying this interface.
-/// The active backend is selected at compile time; `gpu::Device` is a type alias to
-/// the concrete class. All calls are statically dispatched — no vtables, no virtual.
-///
-/// The concept is documented below. Each backend implements it as a concrete class
-/// (e.g., `d3d12::D3D12Device`). The render graph and all consumers use `gpu::Device`
-/// which resolves to the concrete type at compile time.
-///
-/// Device methods are categorized:
-///   - Resource creation (not hot path — called during init and recompilation)
-///   - Submission (moderate path — called once per queue per frame)
-///   - Query (cold path — called at init or for diagnostics)
-///
-/// All hot-path recording goes through CommandBuffer (see below).
+} // namespace harmonius::gpu
+```
 
-// -- Documented interface (concept-style) --
-// Each backend provides all of these as concrete (non-virtual) methods.
-//
-// DeviceCapabilities capabilities() const;
-// uint32_t queue_count(QueueType type) const;
-//
-// --- Resource creation ---
-// std::expected<TextureHandle, ResourceError> create_texture(const TextureDesc&);
-// std::expected<BufferHandle, ResourceError>  create_buffer(const BufferDesc&);
-// void destroy_texture(TextureHandle);
-// void destroy_buffer(BufferHandle);
-//
-// --- Heap management ---
-// std::expected<HeapHandle, ResourceError> create_heap(const HeapDesc&);
-// std::expected<TextureHandle, ResourceError>
-//     create_placed_texture(HeapHandle, uint64_t offset, const TextureDesc&);
-// std::expected<BufferHandle, ResourceError>
-//     create_placed_buffer(HeapHandle, uint64_t offset, const BufferDesc&);
-// void destroy_heap(HeapHandle);
-//
-// --- Sparse / tiled resources ---
-// std::expected<TextureHandle, ResourceError>
-//     create_sparse_texture(const SparseTextureDesc&);
-// void update_sparse_bindings(TextureHandle, std::span<const SparseTileBinding>);
-//
-// --- Buffer mapping ---
-// void* map(BufferHandle);
-// void  unmap(BufferHandle);
-//
-// --- Acceleration structures ---
-// std::expected<AccelerationStructureHandle, ResourceError>
-//     create_acceleration_structure(const AccelerationStructureDesc&);
-// AccelerationStructureSizes
-//     query_acceleration_structure_sizes(const AccelerationStructureDesc&) const;
-// void destroy_acceleration_structure(AccelerationStructureHandle);
-//
-// --- Synchronization ---
-// std::expected<FenceHandle, DeviceError> create_fence(uint64_t initial_value = 0);
-// void     destroy_fence(FenceHandle);
-// uint64_t fence_completed_value(FenceHandle) const;
-// void     wait_fence_cpu(FenceHandle, uint64_t value);
-//
-// --- Command pool ---
-// CommandPool create_command_pool(QueueType type);
-// void        destroy_command_pool(CommandPool&);
-// void        reset_command_pool(CommandPool&);
-//
-// --- Submission ---
-// void submit(QueueType, std::span<CommandBuffer*>, std::span<const FenceSignal>,
-//             std::span<const FenceWait>);
-//
-// --- Pipeline state ---
-// std::expected<PipelineHandle, PipelineError>
-//     create_mesh_render_pipeline(const MeshRenderPipelineDesc&);
-// std::expected<PipelineHandle, PipelineError>
-//     create_compute_pipeline(const ComputePipelineDesc&);
-// std::expected<PipelineHandle, PipelineError>
-//     create_ray_tracing_pipeline(const RayTracingPipelineDesc&);
-// std::expected<WorkGraphHandle, PipelineError>
-//     create_work_graph(const WorkGraphDesc&);
-// void destroy_pipeline(PipelineHandle);
-// void destroy_work_graph(WorkGraphHandle);
-//
-// --- Descriptor heap ---
-// std::expected<DescriptorHeapHandle, DeviceError>
-//     create_descriptor_heap(const DescriptorHeapDesc&);
-// void write_descriptor(DescriptorHeapHandle, uint32_t index, const DescriptorWrite&);
-// void destroy_descriptor_heap(DescriptorHeapHandle);
-//
-// --- Timestamp queries ---
-// std::expected<QueryPoolHandle, DeviceError>
-//     create_query_pool(const QueryPoolDesc&);
-// void   destroy_query_pool(QueryPoolHandle);
-// double timestamp_period_ns() const;
-//
-// --- Swapchain ---
-// std::expected<SwapchainHandle, DeviceError>
-//     create_swapchain(const SwapchainDesc&);
-// std::expected<TextureHandle, DeviceError>
-//     acquire_next_image(SwapchainHandle);
-// void present(SwapchainHandle);
-// void destroy_swapchain(SwapchainHandle);
-//
-// --- Debug labeling ---
-// void set_name(TextureHandle, std::string_view);
-// void set_name(BufferHandle, std::string_view);
-// void set_name(AccelerationStructureHandle, std::string_view);
-// void set_name(PipelineHandle, std::string_view);
-// void set_name(FenceHandle, std::string_view);
+The `GpuDevice` concept defines the full Device interface. Each backend provides a plain concrete
+class satisfying this concept. Device methods are categorized:
+- Resource creation (not hot path — called during init and recompilation)
+- Submission (moderate path — called once per queue per frame)
+- Query (cold path — called at init or for diagnostics)
+
+All hot-path recording goes through CommandBuffer (see below).
+
+```cpp
+namespace harmonius::gpu {
+
+template <typename D>
+concept GpuDevice = requires(D d, const D cd,
+        const TextureDesc& td, const BufferDesc& bd,
+        const HeapDesc& hd, const SparseTextureDesc& stexd,
+        const AccelerationStructureDesc& asd,
+        const MeshRenderPipelineDesc& mrpd,
+        const ComputePipelineDesc& cpd,
+        const RayTracingPipelineDesc& rtpd,
+        const WorkGraphDesc& wgd,
+        const DescriptorHeapDesc& dhd,
+        const QueryPoolDesc& qpd,
+        const SwapchainDesc& scd,
+        const PipelineCacheDesc& pcached,
+        TextureHandle th, BufferHandle bh, HeapHandle hh,
+        AccelerationStructureHandle ash,
+        FenceHandle fh, PipelineHandle ph,
+        WorkGraphHandle wgh, DescriptorHeapHandle dhh,
+        QueryPoolHandle qph, SwapchainHandle swh,
+        PipelineCacheHandle pch, QueueType qt) {
+
+    { cd.capabilities() } -> std::same_as<DeviceCapabilities>;
+    { cd.queue_count(qt) } -> std::same_as<uint32_t>;
+
+    { d.create_texture(td) }
+        -> std::same_as<std::expected<TextureHandle, ResourceError>>;
+    { d.create_buffer(bd) }
+        -> std::same_as<std::expected<BufferHandle, ResourceError>>;
+    { d.destroy_texture(th) } -> std::same_as<void>;
+    { d.destroy_buffer(bh) } -> std::same_as<void>;
+
+    { d.create_heap(hd) }
+        -> std::same_as<std::expected<HeapHandle, ResourceError>>;
+    { d.create_placed_texture(hh, uint64_t{}, td) }
+        -> std::same_as<std::expected<TextureHandle, ResourceError>>;
+    { d.create_placed_buffer(hh, uint64_t{}, bd) }
+        -> std::same_as<std::expected<BufferHandle, ResourceError>>;
+    { d.destroy_heap(hh) } -> std::same_as<void>;
+
+    { d.create_sparse_texture(stexd) }
+        -> std::same_as<std::expected<TextureHandle, ResourceError>>;
+    { d.update_sparse_bindings(th, std::span<const SparseTileBinding>{}) }
+        -> std::same_as<void>;
+
+    { d.map(bh) } -> std::same_as<void*>;
+    { d.unmap(bh) } -> std::same_as<void>;
+
+    { d.create_acceleration_structure(asd) }
+        -> std::same_as<std::expected<AccelerationStructureHandle, ResourceError>>;
+    { cd.query_acceleration_structure_sizes(asd) }
+        -> std::same_as<AccelerationStructureSizes>;
+    { d.destroy_acceleration_structure(ash) } -> std::same_as<void>;
+
+    { d.create_fence(uint64_t{}) }
+        -> std::same_as<std::expected<FenceHandle, DeviceError>>;
+    { d.destroy_fence(fh) } -> std::same_as<void>;
+    { cd.fence_completed_value(fh) } -> std::same_as<uint64_t>;
+    { d.wait_fence_cpu(fh, uint64_t{}) } -> std::same_as<void>;
+
+    { d.create_command_pool(qt) };
+    requires GpuCommandPool<decltype(d.create_command_pool(qt))>;
+
+    { d.submit(qt,
+               std::span<typename D::CommandBufferType*>{},
+               std::span<const FenceSignal>{},
+               std::span<const FenceWait>{}) } -> std::same_as<void>;
+
+    { d.create_mesh_render_pipeline(mrpd) }
+        -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
+    { d.create_compute_pipeline(cpd) }
+        -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
+    { d.create_ray_tracing_pipeline(rtpd) }
+        -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
+    { d.create_work_graph(wgd) }
+        -> std::same_as<std::expected<WorkGraphHandle, PipelineError>>;
+    { d.destroy_pipeline(ph) } -> std::same_as<void>;
+    { d.destroy_work_graph(wgh) } -> std::same_as<void>;
+
+    { d.create_descriptor_heap(dhd) }
+        -> std::same_as<std::expected<DescriptorHeapHandle, DeviceError>>;
+    { d.write_descriptor(dhh, uint32_t{}, DescriptorWrite{}) }
+        -> std::same_as<void>;
+    { d.destroy_descriptor_heap(dhh) } -> std::same_as<void>;
+
+    { d.create_query_pool(qpd) }
+        -> std::same_as<std::expected<QueryPoolHandle, DeviceError>>;
+    { d.destroy_query_pool(qph) } -> std::same_as<void>;
+    { cd.timestamp_period_ns() } -> std::same_as<double>;
+
+    { d.create_swapchain(scd) }
+        -> std::same_as<std::expected<SwapchainHandle, DeviceError>>;
+    { d.acquire_next_image(swh) }
+        -> std::same_as<std::expected<TextureHandle, DeviceError>>;
+    { d.present(swh) } -> std::same_as<void>;
+    { d.resize_swapchain(swh, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
+    { d.destroy_swapchain(swh) } -> std::same_as<void>;
+
+    { d.set_name(th, std::string_view{}) } -> std::same_as<void>;
+    { d.set_name(bh, std::string_view{}) } -> std::same_as<void>;
+    { d.set_name(ash, std::string_view{}) } -> std::same_as<void>;
+    { d.set_name(ph, std::string_view{}) } -> std::same_as<void>;
+    { d.set_name(fh, std::string_view{}) } -> std::same_as<void>;
+
+    { d.wait_idle() } -> std::same_as<void>;
+
+    { d.create_pipeline_cache(pcached) }
+        -> std::same_as<std::expected<PipelineCacheHandle, DeviceError>>;
+    { d.serialize_pipeline_cache(pch) } -> std::same_as<std::vector<uint8_t>>;
+    { d.destroy_pipeline_cache(pch) } -> std::same_as<void>;
+};
 
 } // namespace harmonius::gpu
 ```
@@ -288,6 +328,9 @@ struct DeviceCapabilities {
     bool variable_rate_shading    = false;
     bool work_graphs              = false;
     bool split_barriers           = false;
+    bool shader_function_linking  = false;  // D3D12: ID3D12FunctionLinkingGraph,
+                                            // Vulkan: VK_EXT_graphics_pipeline_library,
+                                            // Metal: MTLStitchedLibrary
 
     // --- Limits ---
     uint32_t max_texture_dimension_2d     = 0;
@@ -591,6 +634,8 @@ struct AccelerationStructureInstance {
 ### Command Pool
 
 One pool per queue type per thread. The render graph's `CommandBufferPool` (RG-10.2) wraps this.
+The pool owns all backing memory for its command buffers — resetting the pool recycles all memory
+in a single operation, avoiding per-buffer deallocation.
 
 ```cpp
 namespace harmonius::gpu {
@@ -598,92 +643,150 @@ namespace harmonius::gpu {
 enum class CommandPoolHandle : uint64_t { invalid = 0 };
 enum class CommandBufferHandle : uint64_t { invalid = 0 };
 
+template <typename P>
+concept GpuCommandPool = requires(P p, const P cp) {
+    { p.allocate_command_buffer() };
+    { p.reset() } -> std::same_as<void>;
+    { cp.allocated_count() } -> std::convertible_to<uint32_t>;
+};
+
 } // namespace harmonius::gpu
 ```
+
+Each backend provides a concrete pool class satisfying `GpuCommandPool`:
+
+```cpp
+// D3D12 example — plain concrete class, no base class:
+class D3D12CommandPool {
+public:
+    D3D12CommandBuffer allocate_command_buffer();
+    void reset();
+    uint32_t allocated_count() const;
+
+private:
+    ComPtr<ID3D12CommandAllocator> allocator_;
+    std::vector<ComPtr<ID3D12GraphicsCommandList10>> cached_lists_;
+    uint32_t next_free_ = 0;
+};
+static_assert(GpuCommandPool<D3D12CommandPool>);
+```
+
+**Memory management strategy:** Each pool maintains a cache of previously created command buffers.
+`allocate_command_buffer()` returns a cached buffer when available, or creates a new one if the
+cache is exhausted. `reset()` resets the underlying allocator memory and returns all buffers to
+the cache. This avoids per-frame allocation and deallocation overhead.
+
+```mermaid
+flowchart LR
+    subgraph pool["CommandPool (per-thread, per-queue)"]
+        Alloc["Backing Memory<br/>(allocator)"]
+        Cache["Command Buffer Cache<br/>[cb0, cb1, cb2, ...]"]
+    end
+
+    Alloc -->|"reset()"| Cache
+    Cache -->|"allocate_command_buffer()"| CB["CommandBuffer"]
+    CB -->|"begin() → record → end()"| Submit["Device::submit()"]
+    Submit -->|"next frame reset()"| Alloc
+```
+
+| Backend | Pool Creation | Buffer Allocation | Pool Reset |
+|---------|--------------|-------------------|------------|
+| D3D12 | `CreateCommandAllocator(type)` | Reuse cached `ID3D12GraphicsCommandList10` or `CreateCommandList1(type, nullptr)` (closed state) | `ID3D12CommandAllocator::Reset()` — recycles all GPU-side memory; cached lists remain valid |
+| Vulkan | `vkCreateCommandPool(poolInfo)` with `RESET_COMMAND_BUFFER_BIT` | `vkAllocateCommandBuffers` from pool, or reuse cached | `vkResetCommandPool(pool, 0)` — all buffers return to initial state |
+| Metal | Create `MTL4CommandAllocator` from device | `[allocator commandBuffer]` — lightweight, pool-backed | `[allocator reset]` — recycles all command buffer memory |
+
+**Thread safety:** Each pool is **single-threaded by design**. The render graph assigns one pool
+per (queue type, thread) pair. No locking is needed within a pool. The execution engine dispatches
+encoding groups to threads, each thread uses its own pool, and the main thread resets all pools
+after the frame fence signals completion.
 
 ### Command Buffer
 
 The command buffer is the **hottest path** in the renderer — called thousands of times per frame
-across multiple threads. It must use static dispatch.
+across multiple threads. All dispatch is static — no vtables, no indirection.
 
-Like `Device`, `CommandBuffer` is a concrete class selected at compile time via the backend type
-alias (`gpu::CommandBuffer`). All methods are non-virtual and can be inlined by the compiler and
-LTO. The render graph's `PassContext::cmd()` returns a `gpu::CommandBuffer&` — a direct reference
-to the concrete backend type.
+Each backend provides a concrete class satisfying the `GpuCommandBuffer` concept.
+`gpu::CommandBuffer` is a type alias to the concrete backend class. The render graph's
+`PassContext::cmd()` returns a `gpu::CommandBuffer&` — a direct reference to the concrete
+type. All calls are direct method calls that the compiler and LTO can inline.
 
 ```cpp
-/// CommandBuffer concept — each backend provides a concrete class.
-/// `gpu::CommandBuffer` is a type alias to the backend's concrete class.
-/// All methods are non-virtual — statically dispatched.
-///
-/// -- Documented interface --
-///
-/// // --- Barriers ---
-/// void barrier(const BarrierDesc& barriers);
-///
-/// // --- Render pass ---
-/// void begin_render_pass(const RenderPassDesc& desc);
-/// void end_render_pass();
-///
-/// // --- Pipeline binding ---
-/// void set_pipeline(PipelineHandle pipeline);
-///
-/// // --- Mesh shader dispatch (R-1.1.3) ---
-/// void dispatch_mesh(uint32_t x, uint32_t y, uint32_t z);
-/// void dispatch_mesh_indirect(BufferHandle buf, uint64_t offset,
-///                             uint32_t draw_count, uint32_t stride);
-/// void dispatch_mesh_indirect_count(BufferHandle arg_buf, uint64_t arg_offset,
-///                                   BufferHandle count_buf, uint64_t count_offset,
-///                                   uint32_t max_draw_count, uint32_t stride);
-///
-/// // --- Compute ---
-/// void dispatch(uint32_t x, uint32_t y, uint32_t z);
-/// void dispatch_indirect(BufferHandle buf, uint64_t offset);
-///
-/// // --- Ray tracing ---
-/// void trace_rays(const TraceRaysDesc& desc);
-/// void trace_rays_indirect(BufferHandle buf, uint64_t offset);
-///
-/// // --- Acceleration structure ---
-/// void build_acceleration_structure(const AccelerationStructureBuildDesc& desc);
-///
-/// // --- Work graphs ---
-/// void set_work_graph(WorkGraphHandle handle);
-/// void dispatch_graph(const DispatchGraphDesc& desc);
-///
-/// // --- Transfer ---
-/// void copy_buffer(BufferHandle src, uint64_t src_off,
-///                  BufferHandle dst, uint64_t dst_off, uint64_t size);
-/// void copy_texture(TextureHandle src, const TextureSubresource& src_sub,
-///                   TextureHandle dst, const TextureSubresource& dst_sub,
-///                   Extent3D extent);
-/// void copy_buffer_to_texture(BufferHandle src, uint64_t src_off,
-///                             TextureHandle dst, const TextureSubresource& dst_sub,
-///                             Extent3D extent);
-/// void copy_texture_to_buffer(TextureHandle src, const TextureSubresource& src_sub,
-///                             BufferHandle dst, uint64_t dst_off, Extent3D extent);
-///
-/// // --- Viewport and scissor ---
-/// void set_viewport(const Viewport& viewport);
-/// void set_scissor(const Scissor& scissor);
-///
-/// // --- Push constants ---
-/// void push_constants(const void* data, uint32_t size, uint32_t offset = 0);
-///
-/// // --- Descriptor heap binding ---
-/// void bind_descriptor_heap(DescriptorHeapHandle heap);
-///
-/// // --- Timestamp queries ---
-/// void write_timestamp(QueryPoolHandle pool, uint32_t index);
-/// void resolve_query_pool(QueryPoolHandle pool, uint32_t first, uint32_t count,
-///                         BufferHandle dst, uint64_t dst_offset);
-///
-/// // --- Debug labeling ---
-/// void begin_debug_label(std::string_view name);
-/// void end_debug_label();
-/// void insert_debug_label(std::string_view name);
+namespace harmonius::gpu {
+
+template <typename B>
+concept GpuCommandBuffer = requires(B b,
+        const BarrierDesc& bd, const RenderPassDesc& rpd,
+        PipelineHandle ph, BufferHandle bh, TextureHandle th,
+        WorkGraphHandle wgh, QueryPoolHandle qph, DescriptorHeapHandle dhh,
+        const AccelerationStructureBuildDesc& asbuild,
+        const TraceRaysDesc& trd, const DispatchGraphDesc& dgd,
+        const TextureSubresource& tsub, const Viewport& vp, const Scissor& sc,
+        Extent3D ext) {
+
+    { b.begin() } -> std::same_as<void>;
+    { b.end() } -> std::same_as<void>;
+
+    { b.barrier(bd) } -> std::same_as<void>;
+
+    { b.begin_render_pass(rpd) } -> std::same_as<void>;
+    { b.end_render_pass() } -> std::same_as<void>;
+
+    { b.set_pipeline(ph) } -> std::same_as<void>;
+
+    { b.dispatch_mesh(uint32_t{}, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
+    { b.dispatch_mesh_indirect(bh, uint64_t{}, uint32_t{}, uint32_t{}) }
+        -> std::same_as<void>;
+    { b.dispatch_mesh_indirect_count(bh, uint64_t{}, bh, uint64_t{},
+                                     uint32_t{}, uint32_t{}) }
+        -> std::same_as<void>;
+
+    { b.dispatch(uint32_t{}, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
+    { b.dispatch_indirect(bh, uint64_t{}) } -> std::same_as<void>;
+
+    { b.trace_rays(trd) } -> std::same_as<void>;
+    { b.trace_rays_indirect(bh, uint64_t{}) } -> std::same_as<void>;
+
+    { b.build_acceleration_structure(asbuild) } -> std::same_as<void>;
+
+    { b.set_work_graph(wgh) } -> std::same_as<void>;
+    { b.dispatch_graph(dgd) } -> std::same_as<void>;
+
+    { b.copy_buffer(bh, uint64_t{}, bh, uint64_t{}, uint64_t{}) }
+        -> std::same_as<void>;
+    { b.copy_texture(th, tsub, th, tsub, ext) } -> std::same_as<void>;
+    { b.copy_buffer_to_texture(bh, uint64_t{}, th, tsub, ext) }
+        -> std::same_as<void>;
+    { b.copy_texture_to_buffer(th, tsub, bh, uint64_t{}, ext) }
+        -> std::same_as<void>;
+
+    { b.set_viewport(vp) } -> std::same_as<void>;
+    { b.set_scissor(sc) } -> std::same_as<void>;
+
+    { b.push_constants(static_cast<const void*>(nullptr),
+                       uint32_t{}, uint32_t{}) } -> std::same_as<void>;
+
+    { b.bind_descriptor_heap(dhh) } -> std::same_as<void>;
+
+    { b.write_timestamp(qph, uint32_t{}) } -> std::same_as<void>;
+    { b.resolve_query_pool(qph, uint32_t{}, uint32_t{}, bh, uint64_t{}) }
+        -> std::same_as<void>;
+
+    { b.begin_debug_label(std::string_view{}) } -> std::same_as<void>;
+    { b.end_debug_label() } -> std::same_as<void>;
+    { b.insert_debug_label(std::string_view{}) } -> std::same_as<void>;
+};
+
+} // namespace harmonius::gpu
 ```
-```
+
+**Recording lifecycle:** Every command buffer must be opened with `begin()` before recording any
+commands, and closed with `end()` before submission. The execution engine calls these around each
+encoding group.
+
+| Operation | D3D12 | Vulkan | Metal |
+|-----------|-------|--------|-------|
+| `begin()` | `ID3D12GraphicsCommandList::Reset(allocator, nullptr)` | `vkBeginCommandBuffer(buf, &beginInfo)` | Implicit — `MTL4CommandBuffer` is recording-ready from allocation |
+| `end()` | `ID3D12GraphicsCommandList::Close()` | `vkEndCommandBuffer(buf)` | `[encoder endEncoding]` on active encoder (if any) |
 
 ### Render Pass Encoding
 
@@ -1085,6 +1188,32 @@ struct MeshRenderPipelineDesc {
     DepthStencilState       depth_stencil;
 };
 
+// A compiled but unlinked shader function library
+struct ShaderLibrary {
+    const void*  data       = nullptr;
+    uint64_t     size_bytes = 0;
+};
+
+// Linked mesh render pipeline — pixel shader assembled from fragment libraries at link time.
+// Requires DeviceCapabilities::shader_function_linking.
+// D3D12: ID3D12FunctionLinkingGraph links DXIL library functions
+// Vulkan: VK_EXT_graphics_pipeline_library links pipeline library objects with LTO
+// Metal:  MTLStitchedLibrary stitches Metal IR library functions
+struct LinkedMeshRenderPipelineDesc {
+    ShaderBytecode                    task_shader;       // monolithic
+    ShaderBytecode                    mesh_shader;       // monolithic
+    std::span<const ShaderLibrary>    pixel_libraries;   // fragment libraries to link
+    std::string_view                  entry_point;       // entry point in linked result
+
+    std::span<const Format> color_formats;
+    Format                  depth_stencil_format = Format::undefined;
+    SampleCount             samples              = SampleCount::x1;
+
+    BlendState              blend;
+    RasterizerState         rasterizer;
+    DepthStencilState       depth_stencil;
+};
+
 struct BlendState {
     struct Attachment {
         bool     blend_enable    = false;
@@ -1180,23 +1309,32 @@ struct WorkGraphMemoryRequirements {
 
 ### Pipeline Cache
 
+Pipeline caches persist compiled pipeline state to disk, avoiding expensive shader compilation on
+subsequent launches. The render graph creates a single pipeline cache at startup and passes it to
+all pipeline creation calls.
+
 ```cpp
 namespace harmonius::gpu {
 
+enum class PipelineCacheHandle : uint64_t { invalid = 0 };
+
 struct PipelineCacheDesc {
-    const void*  initial_data      = nullptr;
+    const void*  initial_data      = nullptr;  // previously serialized cache blob
     uint64_t     initial_data_size = 0;
 };
 
-/// Backend-specific pipeline cache serialization.
-/// D3D12: ID3D12PipelineLibrary
-/// Vulkan: VkPipelineCache
-/// Metal:  MTLBinaryArchive
-[[nodiscard]]
-std::vector<uint8_t> serialize_pipeline_cache();
-
 } // namespace harmonius::gpu
 ```
+
+| Backend | Cache Type | Creation | Serialization |
+|---------|-----------|----------|---------------|
+| D3D12 | `ID3D12PipelineLibrary` | `CreatePipelineLibrary(initial_data)` | `Serialize()` to blob |
+| Vulkan | `VkPipelineCache` | `vkCreatePipelineCache(createInfo)` | `vkGetPipelineCacheData()` |
+| Metal | `MTLBinaryArchive` | `newBinaryArchiveWithDescriptor:` with URL | `serializeToURL:error:` |
+
+Pipeline creation methods (`create_mesh_render_pipeline`, `create_compute_pipeline`,
+`create_ray_tracing_pipeline`) accept an optional `PipelineCacheHandle`. When provided, the backend
+stores the compiled pipeline in the cache and reuses cached results for identical pipeline state.
 
 ---
 
@@ -1434,11 +1572,22 @@ enum class Format : uint32_t {
 | `create_sparse_texture` | `CreateReservedResource2` | `vkCreateImage` with `VK_IMAGE_CREATE_SPARSE_BINDING_BIT` | `newTextureWithDescriptor` with sparse options |
 | Allocator | D3D12MA (`D3D12MemoryAllocator`) | VMA (`VulkanMemoryAllocator`) | MTLHeap sub-allocation |
 
+### Device Lifecycle
+
+| Abstract | D3D12 | Vulkan | Metal |
+|----------|-------|--------|-------|
+| `wait_idle` | Signal fence on each queue + `WaitForSingleObject` | `vkDeviceWaitIdle` | `[commandBuffer waitUntilCompleted]` on all in-flight buffers |
+| `resize_swapchain` | `IDXGISwapChain4::ResizeBuffers` | Destroy + recreate `VkSwapchainKHR` (pass old as `oldSwapchain`) | Set `CAMetalLayer.drawableSize` |
+
 ### Command Recording
 
 | Abstract | D3D12 | Vulkan | Metal |
 |----------|-------|--------|-------|
 | `create_command_pool` | `CreateCommandAllocator` | `vkCreateCommandPool` | `MTL4CommandAllocator` |
+| `allocate_command_buffer` | `CreateCommandList1(type, nullptr)` — created closed | `vkAllocateCommandBuffers` | `[allocator commandBuffer]` |
+| `begin` | `ID3D12GraphicsCommandList::Reset(allocator, nullptr)` | `vkBeginCommandBuffer` | Implicit (recording-ready from allocation) |
+| `end` | `ID3D12GraphicsCommandList::Close()` | `vkEndCommandBuffer` | `[encoder endEncoding]` on active encoder |
+| `reset_command_pool` | `ID3D12CommandAllocator::Reset()` | `vkResetCommandPool` | `[allocator reset]` |
 | Command buffer | `ID3D12GraphicsCommandList10` | `VkCommandBuffer` | `MTL4CommandBuffer` |
 | Render pass | `BeginRenderPass` / `EndRenderPass` | `vkCmdBeginRendering` / `vkCmdEndRendering` | `MTL4RenderCommandEncoder` |
 | `dispatch_mesh` | `DispatchMesh(x,y,z)` | `vkCmdDrawMeshTasksEXT(x,y,z)` | `drawMeshThreadgroups:threadsPerObjectThreadgroup:threadsPerMeshThreadgroup:` |
