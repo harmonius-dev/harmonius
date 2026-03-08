@@ -19,6 +19,7 @@ R-1.2.1–R-1.2.5 (platform support), R-3.2.1–R-3.2.7 (hardware requirements).
 - [Backend Selection](#backend-selection)
 - [Device](#device)
   - [Device Creation](#device-creation)
+  - [Initialization Hard Gate](#initialization-hard-gate)
   - [Device Capabilities](#device-capabilities)
   - [Queue Topology](#queue-topology)
 - [Resources](#resources)
@@ -79,14 +80,14 @@ R-1.2.1–R-1.2.5 (platform support), R-3.2.1–R-3.2.7 (hardware requirements).
 
 ## Design Principles
 
-| Principle | Rationale |
-|-----------|-----------|
-| Thin abstraction | The interface adds no policy or caching — the render graph owns scheduling, aliasing, and barriers |
-| C++20 concepts | Interface contracts are defined as concepts and enforced via `static_assert` — zero overhead, no vtables, no CRTP |
-| Static linkage only | The GPU backend is statically linked into the render graph library — no shared/dynamic libraries |
-| No legacy paths | No vertex/geometry/tessellation stages; mesh shaders are the sole geometry pipeline (R-1.1.3) |
-| Native backends only | No translation layers (R-1.1.5); each backend maps directly to the native API |
-| Explicit everything | Resource states, barriers, memory — nothing is implicit; the render graph compiler drives all transitions |
+| Principle            | Rationale                                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Thin abstraction     | The interface adds no policy or caching — the render graph owns scheduling, aliasing, and barriers                |
+| C++20 concepts       | Interface contracts are defined as concepts and enforced via `static_assert` — zero overhead, no vtables, no CRTP |
+| Static linkage only  | The GPU backend is statically linked into the render graph library — no shared/dynamic libraries                  |
+| No legacy paths      | No vertex/geometry/tessellation stages; mesh shaders are the sole geometry pipeline (R-1.1.3)                     |
+| Native backends only | No translation layers (R-1.1.5); each backend maps directly to the native API                                     |
+| Explicit everything  | Resource states, barriers, memory — nothing is implicit; the render graph compiler drives all transitions         |
 
 ---
 
@@ -179,6 +180,28 @@ struct DeviceDesc {
 
 } // namespace harmonius::gpu
 ```
+
+### Initialization Hard Gate
+
+Device creation SHALL fail with `DeviceError::feature_not_supported` if any required capability
+is absent. The hard gate runs immediately after the backend queries physical device properties
+and before any resource allocation occurs. Every required field in `DeviceCapabilities` is
+checked, and missing capabilities are collected into a diagnostic list reported to the caller.
+
+Required capabilities enforced by the hard gate:
+
+| Capability            | Requirement | Backend Query                                                                                                                                                                 |
+| --------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mesh_shaders`        | R-3.2.2     | D3D12: `D3D12_FEATURE_DATA_D3D12_OPTIONS7::MeshShaderTier != NOT_SUPPORTED`; Vulkan: `VK_EXT_mesh_shader` present + `meshShader` feature enabled; Metal: GPU family Apple8+   |
+| `bindless_resources`  | R-3.2.1     | D3D12: Resource Binding Tier 3; Vulkan: `VK_EXT_descriptor_indexing` + `descriptorBindingPartiallyBound`; Metal: Argument Buffers Tier 2                                      |
+| `timeline_fences`     | R-3.2.5     | D3D12: `ID3D12Fence` (always available); Vulkan: `VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore`; Metal: `MTLSharedEvent` (always available)                   |
+| `async_compute_queue` | R-3.2.4     | D3D12: dedicated compute engine (always available); Vulkan: queue family with `COMPUTE_BIT` but not `GRAPHICS_BIT`; Metal: always available (universal queues)                |
+| `transfer_queue`      | R-3.2.4     | D3D12: dedicated copy engine (always available); Vulkan: queue family with `TRANSFER_BIT` but not `COMPUTE_BIT` or `GRAPHICS_BIT`; Metal: always available (universal queues) |
+
+The hard gate is the **only** point where the framework terminates due to missing features.
+Soft-gated capabilities are never checked here — they are queried by the render graph's
+capability gating system (RG-6.1–6.7) to enable or disable optional passes at graph
+compilation time.
 
 The `GpuDevice` concept defines the full Device interface. Each backend provides a plain concrete
 class satisfying this concept. Device methods are categorized:
@@ -316,6 +339,8 @@ struct DeviceCapabilities {
     bool mesh_shaders             = false;  // R-3.2.2
     bool bindless_resources       = false;  // R-3.2.1
     bool timeline_fences          = false;  // R-3.2.5
+    bool async_compute_queue      = false;  // R-3.2.4
+    bool transfer_queue           = false;  // R-3.2.4
 
     // --- Soft-gated capabilities ---
     bool ray_tracing              = false;  // R-3.2.3
@@ -323,8 +348,6 @@ struct DeviceCapabilities {
     bool opacity_micromaps        = false;  // RG-2.25
     bool sparse_textures          = false;  // R-3.2.6
     bool int64_atomics            = false;  // R-3.2.7
-    bool async_compute_queue      = false;  // R-3.2.4
-    bool transfer_queue           = false;  // R-3.2.4
     bool variable_rate_shading    = false;
     bool work_graphs              = false;
     bool split_barriers           = false;
@@ -689,11 +712,11 @@ flowchart LR
     Submit -->|"next frame reset()"| Alloc
 ```
 
-| Backend | Pool Creation | Buffer Allocation | Pool Reset |
-|---------|--------------|-------------------|------------|
-| D3D12 | `CreateCommandAllocator(type)` | Reuse cached `ID3D12GraphicsCommandList10` or `CreateCommandList1(type, nullptr)` (closed state) | `ID3D12CommandAllocator::Reset()` — recycles all GPU-side memory; cached lists remain valid |
-| Vulkan | `vkCreateCommandPool(poolInfo)` with `RESET_COMMAND_BUFFER_BIT` | `vkAllocateCommandBuffers` from pool, or reuse cached | `vkResetCommandPool(pool, 0)` — all buffers return to initial state |
-| Metal | Create `MTL4CommandAllocator` from device | `[allocator commandBuffer]` — lightweight, pool-backed | `[allocator reset]` — recycles all command buffer memory |
+| Backend | Pool Creation                                                   | Buffer Allocation                                                                                | Pool Reset                                                                                  |
+| ------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| D3D12   | `CreateCommandAllocator(type)`                                  | Reuse cached `ID3D12GraphicsCommandList10` or `CreateCommandList1(type, nullptr)` (closed state) | `ID3D12CommandAllocator::Reset()` — recycles all GPU-side memory; cached lists remain valid |
+| Vulkan  | `vkCreateCommandPool(poolInfo)` with `RESET_COMMAND_BUFFER_BIT` | `vkAllocateCommandBuffers` from pool, or reuse cached                                            | `vkResetCommandPool(pool, 0)` — all buffers return to initial state                         |
+| Metal   | Create `MTL4CommandAllocator` from device                       | `[allocator commandBuffer]` — lightweight, pool-backed                                           | `[allocator reset]` — recycles all command buffer memory                                    |
 
 **Thread safety:** Each pool is **single-threaded by design**. The render graph assigns one pool
 per (queue type, thread) pair. No locking is needed within a pool. The execution engine dispatches
@@ -783,10 +806,10 @@ concept GpuCommandBuffer = requires(B b,
 commands, and closed with `end()` before submission. The execution engine calls these around each
 encoding group.
 
-| Operation | D3D12 | Vulkan | Metal |
-|-----------|-------|--------|-------|
+| Operation | D3D12                                                  | Vulkan                                  | Metal                                                             |
+| --------- | ------------------------------------------------------ | --------------------------------------- | ----------------------------------------------------------------- |
 | `begin()` | `ID3D12GraphicsCommandList::Reset(allocator, nullptr)` | `vkBeginCommandBuffer(buf, &beginInfo)` | Implicit — `MTL4CommandBuffer` is recording-ready from allocation |
-| `end()` | `ID3D12GraphicsCommandList::Close()` | `vkEndCommandBuffer(buf)` | `[encoder endEncoding]` on active encoder (if any) |
+| `end()`   | `ID3D12GraphicsCommandList::Close()`                   | `vkEndCommandBuffer(buf)`               | `[encoder endEncoding]` on active encoder (if any)                |
 
 ### Render Pass Encoding
 
@@ -809,7 +832,7 @@ struct DepthStencilAttachment {
     uint32_t        array_layer    = 0;
     LoadOp          depth_load_op  = LoadOp::clear;
     StoreOp         depth_store_op = StoreOp::store;
-    float           clear_depth    = 1.0f;
+    float           clear_depth    = 0.0f;    // Reverse-Z: far plane = 0.0 (R-3.3.1)
     LoadOp          stencil_load_op  = LoadOp::dont_care;
     StoreOp         stencil_store_op = StoreOp::dont_care;
     uint8_t         clear_stencil    = 0;
@@ -851,11 +874,11 @@ struct Scissor {
 or framebuffers. Instead, `begin_render_pass` accepts `TextureHandle` references with mip/layer
 targeting, and the backend creates transient views internally:
 
-| Backend | Render Target Mechanism |
-|---------|------------------------|
-| D3D12 | Creates `D3D12_RENDER_TARGET_VIEW_DESC` in a non-shader-visible RTV heap; creates `D3D12_DEPTH_STENCIL_VIEW_DESC` in a DSV heap. Views are cached and reused per unique (texture, mip, layer) triple. Passed to `OMSetRenderTargets` inside `BeginRenderPass`. |
-| Vulkan | Uses dynamic rendering (`vkCmdBeginRendering` / `VkRenderingInfo`). Creates `VkImageView` per unique (image, mip, layer, format) tuple. Views are cached in a frame-ring and destroyed when the frame completes. |
-| Metal | Sets color/depth attachments directly on `MTLRenderPassDescriptor`. Metal does not require explicit view objects — the texture, level, and slice are set as properties on `MTLRenderPassColorAttachmentDescriptor`. |
+| Backend | Render Target Mechanism                                                                                                                                                                                                                                        |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D3D12   | Creates `D3D12_RENDER_TARGET_VIEW_DESC` in a non-shader-visible RTV heap; creates `D3D12_DEPTH_STENCIL_VIEW_DESC` in a DSV heap. Views are cached and reused per unique (texture, mip, layer) triple. Passed to `OMSetRenderTargets` inside `BeginRenderPass`. |
+| Vulkan  | Uses dynamic rendering (`vkCmdBeginRendering` / `VkRenderingInfo`). Creates `VkImageView` per unique (image, mip, layer, format) tuple. Views are cached in a frame-ring and destroyed when the frame completes.                                               |
+| Metal   | Sets color/depth attachments directly on `MTLRenderPassDescriptor`. Metal does not require explicit view objects — the texture, level, and slice are set as properties on `MTLRenderPassColorAttachmentDescriptor`.                                            |
 
 ### Compute Encoding
 
@@ -942,8 +965,10 @@ struct DispatchGraphDesc {
 
 ### Indirect Commands
 
-GPU-driven rendering (R-1.1.2) requires all dispatch to originate from indirect buffers populated
-by compute culling passes. The indirect argument structs define the GPU-side buffer layout.
+GPU-driven rendering (R-1.1.2) requires scene geometry dispatch to originate from indirect
+buffers populated by compute culling passes. Direct dispatch is permitted for async compute and
+mesh shader launches that do not go through the culling pipeline. The indirect argument structs
+define the GPU-side buffer layout.
 
 ```cpp
 namespace harmonius::gpu {
@@ -990,11 +1015,11 @@ sequenceDiagram
     Mesh->>CountBuf: reads draw count
 ```
 
-| Backend | Indirect Count Mechanism |
-|---------|------------------------|
-| D3D12 | `ExecuteIndirect` with `D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH` command signature; count buffer passed as `pCountBuffer` parameter |
-| Vulkan | `vkCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride)` |
-| Metal | `drawMeshThreadgroupsWithIndirectBuffer:indirectBufferOffset:threadsPerObjectThreadgroup:threadsPerMeshThreadgroup:` (count from buffer requires compute pre-pass on Metal) |
+| Backend | Indirect Count Mechanism                                                                                                                                                    |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D3D12   | `ExecuteIndirect` with `D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH` command signature; count buffer passed as `pCountBuffer` parameter                                      |
+| Vulkan  | `vkCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride)`                                                   |
+| Metal   | `drawMeshThreadgroupsWithIndirectBuffer:indirectBufferOffset:threadsPerObjectThreadgroup:threadsPerMeshThreadgroup:` (count from buffer requires compute pre-pass on Metal) |
 
 ---
 
@@ -1129,13 +1154,13 @@ enum class FenceHandle : uint64_t { invalid = 0 };
 } // namespace harmonius::gpu
 ```
 
-| Operation | D3D12 | Vulkan | Metal |
-|-----------|-------|--------|-------|
-| GPU signal | `ID3D12CommandQueue::Signal` | `VkSemaphoreSubmitInfo` in `vkQueueSubmit2` | `MTLSharedEvent` signaled in `MTL4CommandBuffer` |
-| GPU wait | `ID3D12CommandQueue::Wait` | `VkSemaphoreSubmitInfo` in `vkQueueSubmit2` | `MTLSharedEvent` waited in `MTL4CommandBuffer` |
-| CPU signal | `ID3D12Fence::Signal` | `vkSignalSemaphore` | `MTLSharedEvent.signaledValue = N` |
-| CPU wait | `ID3D12Fence::SetEventOnCompletion` | `vkWaitSemaphores` | `MTLSharedEvent.notifyListener` |
-| CPU query | `ID3D12Fence::GetCompletedValue` | `vkGetSemaphoreCounterValue` | `MTLSharedEvent.signaledValue` |
+| Operation  | D3D12                               | Vulkan                                      | Metal                                            |
+| ---------- | ----------------------------------- | ------------------------------------------- | ------------------------------------------------ |
+| GPU signal | `ID3D12CommandQueue::Signal`        | `VkSemaphoreSubmitInfo` in `vkQueueSubmit2` | `MTLSharedEvent` signaled in `MTL4CommandBuffer` |
+| GPU wait   | `ID3D12CommandQueue::Wait`          | `VkSemaphoreSubmitInfo` in `vkQueueSubmit2` | `MTLSharedEvent` waited in `MTL4CommandBuffer`   |
+| CPU signal | `ID3D12Fence::Signal`               | `vkSignalSemaphore`                         | `MTLSharedEvent.signaledValue = N`               |
+| CPU wait   | `ID3D12Fence::SetEventOnCompletion` | `vkWaitSemaphores`                          | `MTLSharedEvent.notifyListener`                  |
+| CPU query  | `ID3D12Fence::GetCompletedValue`    | `vkGetSemaphoreCounterValue`                | `MTLSharedEvent.signaledValue`                   |
 
 ### Swapchain
 
@@ -1242,7 +1267,7 @@ struct RasterizerState {
 struct DepthStencilState {
     bool          depth_test_enable   = true;
     bool          depth_write_enable  = true;
-    CompareOp     depth_compare       = CompareOp::less;
+    CompareOp     depth_compare       = CompareOp::greater_equal; // Reverse-Z (R-3.3.1)
     bool          stencil_test_enable = false;
     StencilOpState front_stencil;
     StencilOpState back_stencil;
@@ -1326,11 +1351,11 @@ struct PipelineCacheDesc {
 } // namespace harmonius::gpu
 ```
 
-| Backend | Cache Type | Creation | Serialization |
-|---------|-----------|----------|---------------|
-| D3D12 | `ID3D12PipelineLibrary` | `CreatePipelineLibrary(initial_data)` | `Serialize()` to blob |
-| Vulkan | `VkPipelineCache` | `vkCreatePipelineCache(createInfo)` | `vkGetPipelineCacheData()` |
-| Metal | `MTLBinaryArchive` | `newBinaryArchiveWithDescriptor:` with URL | `serializeToURL:error:` |
+| Backend | Cache Type              | Creation                                   | Serialization              |
+| ------- | ----------------------- | ------------------------------------------ | -------------------------- |
+| D3D12   | `ID3D12PipelineLibrary` | `CreatePipelineLibrary(initial_data)`      | `Serialize()` to blob      |
+| Vulkan  | `VkPipelineCache`       | `vkCreatePipelineCache(createInfo)`        | `vkGetPipelineCacheData()` |
+| Metal   | `MTLBinaryArchive`      | `newBinaryArchiveWithDescriptor:` with URL | `serializeToURL:error:`    |
 
 Pipeline creation methods (`create_mesh_render_pipeline`, `create_compute_pipeline`,
 `create_ray_tracing_pipeline`) accept an optional `PipelineCacheHandle`. When provided, the backend
@@ -1393,11 +1418,11 @@ struct DescriptorWrite {
 } // namespace harmonius::gpu
 ```
 
-| Backend | Bindless Mechanism | Heap Binding |
-|---------|--------------------|-------------|
-| D3D12 | SM 6.6 `ResourceDescriptorHeap[idx]` | `SetDescriptorHeaps` + unbounded descriptor table |
-| Vulkan | `VK_EXT_descriptor_indexing` with `UPDATE_AFTER_BIND` + `PARTIALLY_BOUND` | `vkCmdBindDescriptorSets` with runtime array |
-| Metal | Argument Buffers Tier 2 / `MTL4ArgumentTable` | Resource made resident via `useHeap` / residency sets |
+| Backend | Bindless Mechanism                                                        | Heap Binding                                          |
+| ------- | ------------------------------------------------------------------------- | ----------------------------------------------------- |
+| D3D12   | SM 6.6 `ResourceDescriptorHeap[idx]`                                      | `SetDescriptorHeaps` + unbounded descriptor table     |
+| Vulkan  | `VK_EXT_descriptor_indexing` with `UPDATE_AFTER_BIND` + `PARTIALLY_BOUND` | `vkCmdBindDescriptorSets` with runtime array          |
+| Metal   | Argument Buffers Tier 2 / `MTL4ArgumentTable`                             | Resource made resident via `useHeap` / residency sets |
 
 ### Push Constants
 
@@ -1408,11 +1433,11 @@ without descriptor allocation.
 cmd->push_constants(&draw_data, sizeof(draw_data));
 ```
 
-| Backend | Mechanism | Limit |
-|---------|-----------|-------|
-| D3D12 | Root constants (32-bit values at root signature slot) | 64 DWORDs max root arguments |
-| Vulkan | `vkCmdPushConstants` | `maxPushConstantsSize` (min 128 bytes) |
-| Metal | `setBytes:length:atIndex:` on encoder | 4 KB per stage |
+| Backend | Mechanism                                             | Limit                                  |
+| ------- | ----------------------------------------------------- | -------------------------------------- |
+| D3D12   | Root constants (32-bit values at root signature slot) | 64 DWORDs max root arguments           |
+| Vulkan  | `vkCmdPushConstants`                                  | `maxPushConstantsSize` (min 128 bytes) |
+| Metal   | `setBytes:length:atIndex:` on encoder                 | 4 KB per stage                         |
 
 ### Root Constant Buffer
 
@@ -1443,53 +1468,53 @@ enum class QueryType : uint8_t {
 } // namespace harmonius::gpu
 ```
 
-| Backend | Timestamp Mechanism |
-|---------|-------------------|
-| D3D12 | `ID3D12GraphicsCommandList::EndQuery(D3D12_QUERY_TYPE_TIMESTAMP)` |
-| Vulkan | `vkCmdWriteTimestamp2` with `VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT` |
-| Metal | `MTLCounterSampleBuffer` + `sampleCounters` |
+| Backend | Timestamp Mechanism                                                |
+| ------- | ------------------------------------------------------------------ |
+| D3D12   | `ID3D12GraphicsCommandList::EndQuery(D3D12_QUERY_TYPE_TIMESTAMP)`  |
+| Vulkan  | `vkCmdWriteTimestamp2` with `VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT` |
+| Metal   | `MTLCounterSampleBuffer` + `sampleCounters`                        |
 
 ### Pipeline Statistics
 
-| Backend | Statistics |
-|---------|-----------|
-| D3D12 | `D3D12_QUERY_DATA_PIPELINE_STATISTICS1` (includes `MSInvocations`, `MSPrimitives`) |
-| Vulkan | `VK_QUERY_TYPE_PIPELINE_STATISTICS` with `meshShaderInvocations` |
-| Metal | GPU counters via `MTLCounterSet` |
+| Backend | Statistics                                                                         |
+| ------- | ---------------------------------------------------------------------------------- |
+| D3D12   | `D3D12_QUERY_DATA_PIPELINE_STATISTICS1` (includes `MSInvocations`, `MSPrimitives`) |
+| Vulkan  | `VK_QUERY_TYPE_PIPELINE_STATISTICS` with `meshShaderInvocations`                   |
+| Metal   | GPU counters via `MTLCounterSet`                                                   |
 
 ### Debug Labels
 
 Command buffer debug labels (for GPU profiler regions):
 
-| Backend | Label Mechanism |
-|---------|----------------|
-| D3D12 | PIX `PIXBeginEvent` / `PIXEndEvent` on command list |
-| Vulkan | `vkCmdBeginDebugUtilsLabelEXT` / `vkCmdEndDebugUtilsLabelEXT` |
-| Metal | `pushDebugGroup:` / `popDebugGroup` on command encoder |
+| Backend | Label Mechanism                                               |
+| ------- | ------------------------------------------------------------- |
+| D3D12   | PIX `PIXBeginEvent` / `PIXEndEvent` on command list           |
+| Vulkan  | `vkCmdBeginDebugUtilsLabelEXT` / `vkCmdEndDebugUtilsLabelEXT` |
+| Metal   | `pushDebugGroup:` / `popDebugGroup` on command encoder        |
 
 ### Resource Naming
 
 All GPU objects carry debug names for profiler and validation layer output. The `Device::set_name`
 overloads apply names at creation or retroactively:
 
-| Backend | Naming Mechanism |
-|---------|-----------------|
-| D3D12 | `ID3D12Object::SetName(LPCWSTR)` |
-| Vulkan | `vkSetDebugUtilsObjectNameEXT(VkDebugUtilsObjectNameInfoEXT)` |
-| Metal | `MTLResource.label`, `MTLCommandBuffer.label`, `MTLCommandQueue.label` |
+| Backend | Naming Mechanism                                                       |
+| ------- | ---------------------------------------------------------------------- |
+| D3D12   | `ID3D12Object::SetName(LPCWSTR)`                                       |
+| Vulkan  | `vkSetDebugUtilsObjectNameEXT(VkDebugUtilsObjectNameInfoEXT)`          |
+| Metal   | `MTLResource.label`, `MTLCommandBuffer.label`, `MTLCommandQueue.label` |
 
 Names flow through from `TextureDesc::name` / `BufferDesc::name` automatically at creation time.
 
 ### Shader Debugging
 
-| Feature | D3D12 | Vulkan | Metal |
-|---------|-------|--------|-------|
-| Shader printf | SM 6.6 `printf()` via debug layer | `debugPrintfEXT()` via validation layer | `os_log` in Metal shader |
-| Shader assert | Not natively supported | Not natively supported | Metal shader validation |
-| GPU capture | PIX programmatic capture | RenderDoc capture layer | Xcode Metal debugger |
-| Shader profiling | PIX shader profiler | VK_KHR_performance_query | Xcode GPU shader profiler |
-| Validation layers | D3D12 Debug Layer + DRED | VK_LAYER_KHRONOS_validation | Metal API validation |
-| GPU crash dump | DRED (Device Removed Extended Data) | VK_EXT_device_fault | Metal command buffer error |
+| Feature           | D3D12                               | Vulkan                                  | Metal                      |
+| ----------------- | ----------------------------------- | --------------------------------------- | -------------------------- |
+| Shader printf     | SM 6.6 `printf()` via debug layer   | `debugPrintfEXT()` via validation layer | `os_log` in Metal shader   |
+| Shader assert     | Not natively supported              | Not natively supported                  | Metal shader validation    |
+| GPU capture       | PIX programmatic capture            | RenderDoc capture layer                 | Xcode Metal debugger       |
+| Shader profiling  | PIX shader profiler                 | VK_KHR_performance_query                | Xcode GPU shader profiler  |
+| Validation layers | D3D12 Debug Layer + DRED            | VK_LAYER_KHRONOS_validation             | Metal API validation       |
+| GPU crash dump    | DRED (Device Removed Extended Data) | VK_EXT_device_fault                     | Metal command buffer error |
 
 **DRED (D3D12):** Automatically enabled in debug builds. Provides breadcrumbs identifying the
 last successfully completed GPU operation before a device removal. Integrated with Windows Error
@@ -1555,66 +1580,66 @@ enum class Format : uint32_t {
 
 ### Device Creation
 
-| Abstract | D3D12 | Vulkan | Metal |
-|----------|-------|--------|-------|
+| Abstract        | D3D12                                    | Vulkan                                | Metal                          |
+| --------------- | ---------------------------------------- | ------------------------------------- | ------------------------------ |
 | `create_device` | `D3D12CreateDevice` (feature level 12_2) | `vkCreateInstance` + `vkCreateDevice` | `MTLCreateSystemDefaultDevice` |
-| Validation | `ID3D12Debug::EnableDebugLayer` | `VK_LAYER_KHRONOS_validation` | `MTL_DEBUG_LAYER=1` |
-| GPU capture | PIX `WinPixEventRuntime` | RenderDoc layer | Xcode Metal capture |
+| Validation      | `ID3D12Debug::EnableDebugLayer`          | `VK_LAYER_KHRONOS_validation`         | `MTL_DEBUG_LAYER=1`            |
+| GPU capture     | PIX `WinPixEventRuntime`                 | RenderDoc layer                       | Xcode Metal capture            |
 
 ### Resource Management
 
-| Abstract | D3D12 | Vulkan | Metal |
-|----------|-------|--------|-------|
-| `create_texture` | `CreateCommittedResource2` | `vkCreateImage` + `vkAllocateMemory` + `vkBindImageMemory` | `newTextureWithDescriptor` |
-| `create_buffer` | `CreateCommittedResource2` | `vkCreateBuffer` + `vkAllocateMemory` + `vkBindBufferMemory` | `newBufferWithLength` |
-| `create_heap` | `CreateHeap` | `vkAllocateMemory` (dedicated) | `newHeapWithDescriptor` |
-| `create_placed_texture` | `CreatePlacedResource2` | `vkCreateImage` + `vkBindImageMemory2` (at offset) | `newTextureWithDescriptor:offset:` on heap |
-| `create_sparse_texture` | `CreateReservedResource2` | `vkCreateImage` with `VK_IMAGE_CREATE_SPARSE_BINDING_BIT` | `newTextureWithDescriptor` with sparse options |
-| Allocator | D3D12MA (`D3D12MemoryAllocator`) | VMA (`VulkanMemoryAllocator`) | VMA virtualized (`VmaVirtualBlock`) + MTLHeap |
+| Abstract                | D3D12                            | Vulkan                                                       | Metal                                          |
+| ----------------------- | -------------------------------- | ------------------------------------------------------------ | ---------------------------------------------- |
+| `create_texture`        | `CreateCommittedResource2`       | `vkCreateImage` + `vkAllocateMemory` + `vkBindImageMemory`   | `newTextureWithDescriptor`                     |
+| `create_buffer`         | `CreateCommittedResource2`       | `vkCreateBuffer` + `vkAllocateMemory` + `vkBindBufferMemory` | `newBufferWithLength`                          |
+| `create_heap`           | `CreateHeap`                     | `vkAllocateMemory` (dedicated)                               | `newHeapWithDescriptor`                        |
+| `create_placed_texture` | `CreatePlacedResource2`          | `vkCreateImage` + `vkBindImageMemory2` (at offset)           | `newTextureWithDescriptor:offset:` on heap     |
+| `create_sparse_texture` | `CreateReservedResource2`        | `vkCreateImage` with `VK_IMAGE_CREATE_SPARSE_BINDING_BIT`    | `newTextureWithDescriptor` with sparse options |
+| Allocator               | D3D12MA (`D3D12MemoryAllocator`) | VMA (`VulkanMemoryAllocator`)                                | VMA virtualized (`VmaVirtualBlock`) + MTLHeap  |
 
 ### Device Lifecycle
 
-| Abstract | D3D12 | Vulkan | Metal |
-|----------|-------|--------|-------|
-| `wait_idle` | Signal fence on each queue + `WaitForSingleObject` | `vkDeviceWaitIdle` | `[commandBuffer waitUntilCompleted]` on all in-flight buffers |
-| `resize_swapchain` | `IDXGISwapChain4::ResizeBuffers` | Destroy + recreate `VkSwapchainKHR` (pass old as `oldSwapchain`) | Set `CAMetalLayer.drawableSize` |
+| Abstract           | D3D12                                              | Vulkan                                                           | Metal                                                         |
+| ------------------ | -------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| `wait_idle`        | Signal fence on each queue + `WaitForSingleObject` | `vkDeviceWaitIdle`                                               | `[commandBuffer waitUntilCompleted]` on all in-flight buffers |
+| `resize_swapchain` | `IDXGISwapChain4::ResizeBuffers`                   | Destroy + recreate `VkSwapchainKHR` (pass old as `oldSwapchain`) | Set `CAMetalLayer.drawableSize`                               |
 
 ### Command Recording
 
-| Abstract | D3D12 | Vulkan | Metal |
-|----------|-------|--------|-------|
-| `create_command_pool` | `CreateCommandAllocator` | `vkCreateCommandPool` | `MTL4CommandAllocator` |
-| `allocate_command_buffer` | `CreateCommandList1(type, nullptr)` — created closed | `vkAllocateCommandBuffers` | `[allocator commandBuffer]` |
-| `begin` | `ID3D12GraphicsCommandList::Reset(allocator, nullptr)` | `vkBeginCommandBuffer` | Implicit (recording-ready from allocation) |
-| `end` | `ID3D12GraphicsCommandList::Close()` | `vkEndCommandBuffer` | `[encoder endEncoding]` on active encoder |
-| `reset_command_pool` | `ID3D12CommandAllocator::Reset()` | `vkResetCommandPool` | `[allocator reset]` |
-| Command buffer | `ID3D12GraphicsCommandList10` | `VkCommandBuffer` | `MTL4CommandBuffer` |
-| Render pass | `BeginRenderPass` / `EndRenderPass` | `vkCmdBeginRendering` / `vkCmdEndRendering` | `MTL4RenderCommandEncoder` |
-| `dispatch_mesh` | `DispatchMesh(x,y,z)` | `vkCmdDrawMeshTasksEXT(x,y,z)` | `drawMeshThreadgroups:threadsPerObjectThreadgroup:threadsPerMeshThreadgroup:` |
-| `dispatch` | `Dispatch(x,y,z)` | `vkCmdDispatch(x,y,z)` | `dispatchThreadgroups:threadsPerThreadgroup:` |
-| `trace_rays` | `DispatchRays` | `vkCmdTraceRaysKHR` | Compute-based intersection query |
-| `build_acceleration_structure` | `BuildRaytracingAccelerationStructure` | `vkCmdBuildAccelerationStructuresKHR` | `accelerationStructureCommandEncoder.build` |
-| `dispatch_graph` | `DispatchGraph` | N/A (capability-gated) | N/A (capability-gated) |
+| Abstract                       | D3D12                                                  | Vulkan                                      | Metal                                                                         |
+| ------------------------------ | ------------------------------------------------------ | ------------------------------------------- | ----------------------------------------------------------------------------- |
+| `create_command_pool`          | `CreateCommandAllocator`                               | `vkCreateCommandPool`                       | `MTL4CommandAllocator`                                                        |
+| `allocate_command_buffer`      | `CreateCommandList1(type, nullptr)` — created closed   | `vkAllocateCommandBuffers`                  | `[allocator commandBuffer]`                                                   |
+| `begin`                        | `ID3D12GraphicsCommandList::Reset(allocator, nullptr)` | `vkBeginCommandBuffer`                      | Implicit (recording-ready from allocation)                                    |
+| `end`                          | `ID3D12GraphicsCommandList::Close()`                   | `vkEndCommandBuffer`                        | `[encoder endEncoding]` on active encoder                                     |
+| `reset_command_pool`           | `ID3D12CommandAllocator::Reset()`                      | `vkResetCommandPool`                        | `[allocator reset]`                                                           |
+| Command buffer                 | `ID3D12GraphicsCommandList10`                          | `VkCommandBuffer`                           | `MTL4CommandBuffer`                                                           |
+| Render pass                    | `BeginRenderPass` / `EndRenderPass`                    | `vkCmdBeginRendering` / `vkCmdEndRendering` | `MTL4RenderCommandEncoder`                                                    |
+| `dispatch_mesh`                | `DispatchMesh(x,y,z)`                                  | `vkCmdDrawMeshTasksEXT(x,y,z)`              | `drawMeshThreadgroups:threadsPerObjectThreadgroup:threadsPerMeshThreadgroup:` |
+| `dispatch`                     | `Dispatch(x,y,z)`                                      | `vkCmdDispatch(x,y,z)`                      | `dispatchThreadgroups:threadsPerThreadgroup:`                                 |
+| `trace_rays`                   | `DispatchRays`                                         | `vkCmdTraceRaysKHR`                         | Compute-based intersection query                                              |
+| `build_acceleration_structure` | `BuildRaytracingAccelerationStructure`                 | `vkCmdBuildAccelerationStructuresKHR`       | `accelerationStructureCommandEncoder.build`                                   |
+| `dispatch_graph`               | `DispatchGraph`                                        | N/A (capability-gated)                      | N/A (capability-gated)                                                        |
 
 ### Synchronization
 
-| Abstract | D3D12 | Vulkan | Metal |
-|----------|-------|--------|-------|
-| Timeline fence | `ID3D12Fence` | `VkSemaphore` (timeline type) | `MTLSharedEvent` |
-| Barrier | `ID3D12GraphicsCommandList7::Barrier` | `vkCmdPipelineBarrier2` | `MTL4ComputeCommandEncoder` barrier API |
-| Texture layout | `D3D12_BARRIER_LAYOUT` | `VkImageLayout` | Automatic (Metal manages internally) |
-| Split barrier | `SyncAfter=SPLIT` / `SyncBefore=SPLIT` | `vkCmdSetEvent2` / `vkCmdWaitEvents2` | N/A (Metal barriers are immediate) |
-| Queue ownership | Enhanced barriers with queue-specific layouts | `srcQueueFamilyIndex` / `dstQueueFamilyIndex` | Not required (unified memory) |
+| Abstract        | D3D12                                         | Vulkan                                        | Metal                                   |
+| --------------- | --------------------------------------------- | --------------------------------------------- | --------------------------------------- |
+| Timeline fence  | `ID3D12Fence`                                 | `VkSemaphore` (timeline type)                 | `MTLSharedEvent`                        |
+| Barrier         | `ID3D12GraphicsCommandList7::Barrier`         | `vkCmdPipelineBarrier2`                       | `MTL4ComputeCommandEncoder` barrier API |
+| Texture layout  | `D3D12_BARRIER_LAYOUT`                        | `VkImageLayout`                               | Automatic (Metal manages internally)    |
+| Split barrier   | `SyncAfter=SPLIT` / `SyncBefore=SPLIT`        | `vkCmdSetEvent2` / `vkCmdWaitEvents2`         | N/A (Metal barriers are immediate)      |
+| Queue ownership | Enhanced barriers with queue-specific layouts | `srcQueueFamilyIndex` / `dstQueueFamilyIndex` | Not required (unified memory)           |
 
 ### Pipeline State
 
-| Abstract | D3D12 | Vulkan | Metal |
-|----------|-------|--------|-------|
+| Abstract        | D3D12                                                 | Vulkan                                                 | Metal                                       |
+| --------------- | ----------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------- |
 | Mesh render PSO | Stream-based PSO (`CD3DX12_PIPELINE_STATE_STREAM_MS`) | `vkCreateGraphicsPipelines` with `MESH_BIT_EXT` stages | `newRenderPipelineStateWithMeshDescriptor:` |
-| Compute PSO | `CreateComputePipelineState` | `vkCreateComputePipelines` | `newComputePipelineStateWithFunction:` |
-| RT PSO | `CreateStateObject` (`RAYTRACING_PIPELINE`) | `vkCreateRayTracingPipelinesKHR` | Compute-based (intersection query) |
-| Work graph | `CreateStateObject` (`WORK_GRAPH`) | N/A | N/A |
-| Pipeline cache | `ID3D12PipelineLibrary` | `VkPipelineCache` | `MTLBinaryArchive` |
+| Compute PSO     | `CreateComputePipelineState`                          | `vkCreateComputePipelines`                             | `newComputePipelineStateWithFunction:`      |
+| RT PSO          | `CreateStateObject` (`RAYTRACING_PIPELINE`)           | `vkCreateRayTracingPipelinesKHR`                       | Compute-based (intersection query)          |
+| Work graph      | `CreateStateObject` (`WORK_GRAPH`)                    | N/A                                                    | N/A                                         |
+| Pipeline cache  | `ID3D12PipelineLibrary`                               | `VkPipelineCache`                                      | `MTLBinaryArchive`                          |
 
 ---
 
@@ -1634,12 +1659,12 @@ error** when `DeviceCapabilities::ray_tracing` is true but the pipeline model is
 tracing on Metal is implemented through inline ray queries (`RayQuery<>` / `intersector<>`) in
 compute shaders. The render graph expresses RT passes as compute passes on Metal.
 
-| Interface Method | D3D12 | Vulkan | Metal |
-|-----------------|-------|--------|-------|
-| `create_ray_tracing_pipeline` | State object with DXIL RT libraries | `vkCreateRayTracingPipelinesKHR` | Returns `PipelineError::unsupported` — use compute |
-| `trace_rays` | `DispatchRays` | `vkCmdTraceRaysKHR` | Translated to `dispatch()` with intersection query compute kernel |
-| `trace_rays_indirect` | `ExecuteIndirect` with RT signature | `vkCmdTraceRaysIndirect2KHR` | Translated to `dispatch_indirect()` |
-| SBT fields in `TraceRaysDesc` | Used | Used | Ignored — Metal has no SBT |
+| Interface Method              | D3D12                               | Vulkan                           | Metal                                                             |
+| ----------------------------- | ----------------------------------- | -------------------------------- | ----------------------------------------------------------------- |
+| `create_ray_tracing_pipeline` | State object with DXIL RT libraries | `vkCreateRayTracingPipelinesKHR` | Returns `PipelineError::unsupported` — use compute                |
+| `trace_rays`                  | `DispatchRays`                      | `vkCmdTraceRaysKHR`              | Translated to `dispatch()` with intersection query compute kernel |
+| `trace_rays_indirect`         | `ExecuteIndirect` with RT signature | `vkCmdTraceRaysIndirect2KHR`     | Translated to `dispatch_indirect()`                               |
+| SBT fields in `TraceRaysDesc` | Used                                | Used                             | Ignored — Metal has no SBT                                        |
 
 **Application impact:** Shader code that uses inline ray queries (`RayQuery` in HLSL / `intersector`
 in MSL) works identically on all backends. Full RT pipeline shaders (raygen/hit/miss) only work
@@ -1655,11 +1680,11 @@ path separately from inline ray query support via `DeviceCapabilities::ray_traci
 On Vulkan and Metal, `work_graphs` is always `false`. The render graph's fallback chain (RG-6.3)
 must provide a compute-shader fallback for any work graph pass.
 
-| Interface Method | D3D12 | Vulkan | Metal |
-|-----------------|-------|--------|-------|
+| Interface Method    | D3D12                           | Vulkan                               | Metal                                |
+| ------------------- | ------------------------------- | ------------------------------------ | ------------------------------------ |
 | `create_work_graph` | `CreateStateObject(WORK_GRAPH)` | Returns `PipelineError::unsupported` | Returns `PipelineError::unsupported` |
-| `set_work_graph` | `SetProgram` | No-op | No-op |
-| `dispatch_graph` | `DispatchGraph` | No-op | No-op |
+| `set_work_graph`    | `SetProgram`                    | No-op                                | No-op                                |
+| `dispatch_graph`    | `DispatchGraph`                 | No-op                                | No-op                                |
 
 ### Split Barriers
 
@@ -1673,11 +1698,11 @@ must provide a compute-shader fallback for any work graph pass.
 The render graph compiler should check `DeviceCapabilities::split_barriers` and emit split
 barriers only when `true`. When `false`, it emits immediate barriers at the consuming pass.
 
-| | D3D12 | Vulkan | Metal |
-|---|-------|--------|-------|
-| `split_barriers` capability | `true` | `true` | `false` |
-| Split begin | `SyncAfter = SPLIT` | `vkCmdSetEvent2` | Ignored |
-| Split end | `SyncBefore = SPLIT` | `vkCmdWaitEvents2` | Immediate barrier |
+|                             | D3D12                | Vulkan             | Metal             |
+| --------------------------- | -------------------- | ------------------ | ----------------- |
+| `split_barriers` capability | `true`               | `true`             | `false`           |
+| Split begin                 | `SyncAfter = SPLIT`  | `vkCmdSetEvent2`   | Ignored           |
+| Split end                   | `SyncBefore = SPLIT` | `vkCmdWaitEvents2` | Immediate barrier |
 
 ### Texture Layouts (Image Layouts)
 
@@ -1710,11 +1735,11 @@ queue families. D3D12 uses resource state promotion for COMMON state. Metal requ
 
 **Shim:** The abstract barrier's `src_queue` / `dst_queue` fields drive queue ownership:
 
-| Backend | Cross-queue barrier behavior |
-|---------|----------------------------|
-| D3D12 | Resources on the copy queue must be in COMMON layout. Enhanced barriers handle cross-engine access via layout-based access patterns. No explicit release/acquire pairs. |
-| Vulkan | Full release/acquire barrier pair with `srcQueueFamilyIndex` / `dstQueueFamilyIndex`. |
-| Metal | `src_queue` / `dst_queue` ignored. Only stage/access synchronization emitted. |
+| Backend | Cross-queue barrier behavior                                                                                                                                            |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D3D12   | Resources on the copy queue must be in COMMON layout. Enhanced barriers handle cross-engine access via layout-based access patterns. No explicit release/acquire pairs. |
+| Vulkan  | Full release/acquire barrier pair with `srcQueueFamilyIndex` / `dstQueueFamilyIndex`.                                                                                   |
+| Metal   | `src_queue` / `dst_queue` ignored. Only stage/access synchronization emitted.                                                                                           |
 
 ### Variable Rate Shading
 
@@ -1743,11 +1768,11 @@ This shim is invisible to the render graph — the command buffer method signatu
 
 **Problem:** Push constant limits vary dramatically:
 
-| Backend | Maximum Push Constants |
-|---------|----------------------|
-| D3D12 | 32 bytes (8 DWORDs in root signature slot 4) |
-| Vulkan | 128 bytes minimum (`maxPushConstantsSize`, typically 128–256) |
-| Metal | 4 KB per stage (`setBytes:length:atIndex:`) |
+| Backend | Maximum Push Constants                                        |
+| ------- | ------------------------------------------------------------- |
+| D3D12   | 32 bytes (8 DWORDs in root signature slot 4)                  |
+| Vulkan  | 128 bytes minimum (`maxPushConstantsSize`, typically 128–256) |
+| Metal   | 4 KB per stage (`setBytes:length:atIndex:`)                   |
 
 **Shim:** The interface limits push constants to **32 bytes** (the D3D12 minimum). This is
 enforced by the `DeviceCapabilities::max_push_constants_bytes` field. All per-draw data must
@@ -1798,26 +1823,26 @@ enum class PipelineError : uint8_t {
 
 ### Opacity Micromaps
 
-| Backend | Support | Capability Gate |
-|---------|---------|----------------|
-| D3D12 | DXR 1.2 — attached to BLAS geometry via `OpacityMicromap` field | `DeviceCapabilities::opacity_micromaps` |
-| Vulkan | `VK_EXT_opacity_micromap` — separate build pass | `DeviceCapabilities::opacity_micromaps` |
-| Metal | Not supported | `opacity_micromaps` is always `false` |
+| Backend | Support                                                         | Capability Gate                         |
+| ------- | --------------------------------------------------------------- | --------------------------------------- |
+| D3D12   | DXR 1.2 — attached to BLAS geometry via `OpacityMicromap` field | `DeviceCapabilities::opacity_micromaps` |
+| Vulkan  | `VK_EXT_opacity_micromap` — separate build pass                 | `DeviceCapabilities::opacity_micromaps` |
+| Metal   | Not supported                                                   | `opacity_micromaps` is always `false`   |
 
 ### Capability Summary
 
-| Capability | D3D12 | Vulkan | Metal |
-|-----------|-------|--------|-------|
-| `mesh_shaders` | Required (SM 6.5+) | Required (`VK_EXT_mesh_shader`) | Required (Apple8+) |
-| `bindless_resources` | Required (Tier 3) | Required (`VK_EXT_descriptor_indexing`) | Required (Tier 2) |
-| `timeline_fences` | Required (`ID3D12Fence`) | Required (core 1.2) | Required (`MTLSharedEvent`) |
-| `ray_tracing` | Soft-gated (DXR 1.2) | Soft-gated (`VK_KHR_ray_tracing_pipeline`) | Soft-gated (Apple7+ — inline only) |
-| `ray_tracing_inline` | Soft-gated (SM 6.5 `RayQuery`) | Soft-gated (`VK_KHR_ray_query`) | Soft-gated (Apple7+ — `intersector`) |
-| `opacity_micromaps` | Soft-gated (DXR 1.2) | Soft-gated (`VK_EXT_opacity_micromap`) | Always `false` |
-| `sparse_textures` | Soft-gated (Tiled Resources Tier 1+) | Soft-gated (`sparseBinding`) | Soft-gated (Apple7+) |
-| `int64_atomics` | Soft-gated (SM 6.6) | Soft-gated (`shaderBufferInt64Atomics`) | Soft-gated (Apple7+) |
-| `async_compute_queue` | Always `true` (dedicated compute engine) | Depends on queue families | Always `true` (Metal queues are universal) |
-| `transfer_queue` | Always `true` (dedicated copy engine) | Depends on queue families | Always `true` |
-| `variable_rate_shading` | Soft-gated (VRS Tier 2) | Soft-gated (`VK_KHR_fragment_shading_rate`) | Always `false` (no image-based VRS) |
-| `work_graphs` | Soft-gated (Work Graphs Tier 1) | Always `false` | Always `false` |
-| `split_barriers` | Always `true` (enhanced barriers) | Always `true` (events) | Always `false` |
+| Capability              | D3D12                                | Vulkan                                      | Metal                                 |
+| ----------------------- | ------------------------------------ | ------------------------------------------- | ------------------------------------- |
+| `mesh_shaders`          | Required (SM 6.5+)                   | Required (`VK_EXT_mesh_shader`)             | Required (Apple8+)                    |
+| `bindless_resources`    | Required (Tier 3)                    | Required (`VK_EXT_descriptor_indexing`)     | Required (Tier 2)                     |
+| `timeline_fences`       | Required (`ID3D12Fence`)             | Required (core 1.2)                         | Required (`MTLSharedEvent`)           |
+| `ray_tracing`           | Soft-gated (DXR 1.2)                 | Soft-gated (`VK_KHR_ray_tracing_pipeline`)  | Soft-gated (Apple7+ — inline only)    |
+| `ray_tracing_inline`    | Soft-gated (SM 6.5 `RayQuery`)       | Soft-gated (`VK_KHR_ray_query`)             | Soft-gated (Apple7+ — `intersector`)  |
+| `opacity_micromaps`     | Soft-gated (DXR 1.2)                 | Soft-gated (`VK_EXT_opacity_micromap`)      | Always `false`                        |
+| `sparse_textures`       | Soft-gated (Tiled Resources Tier 1+) | Soft-gated (`sparseBinding`)                | Soft-gated (Apple7+)                  |
+| `int64_atomics`         | Soft-gated (SM 6.6)                  | Soft-gated (`shaderBufferInt64Atomics`)     | Soft-gated (Apple7+)                  |
+| `async_compute_queue`   | Required (dedicated compute engine)  | Required (dedicated compute queue family)   | Required (Metal queues are universal) |
+| `transfer_queue`        | Required (dedicated copy engine)     | Required (dedicated transfer queue family)  | Required (Metal queues are universal) |
+| `variable_rate_shading` | Soft-gated (VRS Tier 2)              | Soft-gated (`VK_KHR_fragment_shading_rate`) | Always `false` (no image-based VRS)   |
+| `work_graphs`           | Soft-gated (Work Graphs Tier 1)      | Always `false`                              | Always `false`                        |
+| `split_barriers`        | Always `true` (enhanced barriers)    | Always `true` (events)                      | Always `false`                        |

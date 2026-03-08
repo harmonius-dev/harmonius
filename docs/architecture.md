@@ -83,15 +83,15 @@ These constraints (from
 [1.1-core-constraints.md](requirements/1-architecture/1.1-core-constraints.md))
 shape every component:
 
-| ID | Constraint | Impact |
-|---|---|---|
-| R-1.1.1 | Safe C++ user-facing API | Unsafe ops confined to render/IO threads behind internal boundaries |
-| R-1.1.2 | GPU-driven rendering | No CPU-side draw calls; indirect dispatch only |
-| R-1.1.3 | Mesh shader pipeline | No legacy vertex/geometry/tessellation stages |
-| R-1.1.4 | Declarative render graph | Frame-invariant DAG compiled once, executed per frame |
-| R-1.1.5 | Native backends, no translation layers | Direct D3D12/Vulkan/Metal; no MoltenVK/DXVK |
-| R-1.1.6 | Modern hardware only | Bindless, mesh shaders, and RT required; no fallbacks |
-| R-1.1.7 | Strict layer separation | No backend types in render graph; no graph concepts in backend |
+| ID      | Constraint                             | Impact                                                                               |
+| ------- | -------------------------------------- | ------------------------------------------------------------------------------------ |
+| R-1.1.1 | Safe C++ user-facing API               | Unsafe ops confined to render/IO threads behind internal boundaries                  |
+| R-1.1.2 | GPU-driven rendering                   | Indirect dispatch for scene geometry; direct dispatch for async compute/mesh shaders |
+| R-1.1.3 | Mesh shader pipeline                   | No legacy vertex/geometry/tessellation stages                                        |
+| R-1.1.4 | Declarative render graph               | Frame-invariant DAG compiled once, executed per frame                                |
+| R-1.1.5 | Native backends, no translation layers | Direct D3D12/Vulkan/Metal; no MoltenVK/DXVK                                          |
+| R-1.1.6 | Modern hardware only                   | Bindless, mesh shaders, and RT required; no fallbacks                                |
+| R-1.1.7 | Strict layer separation                | No backend types in render graph; no graph concepts in backend                       |
 
 ## Layers
 
@@ -138,14 +138,14 @@ Derived from the 119 requirements in
 These principles are derived from R-1.1.4 (declarative render graph), R-3.1.2 (minimal barriers),
 R-3.1.3 (resource aliasing), and R-3.1.8 (zero-allocation execution).
 
-| Principle | Source | Implication |
-|---|---|---|
-| Compile once, execute many | R-1.1.4, RG-14.1 | Graph topology is immutable after compilation; only per-frame data changes |
-| Rendering-agnostic | RG README | Graph knows passes, resources, queues, barriers, gates -- never bloom, shadows, etc. |
-| Declarative I/O | RG-1.1 | Barrier, layout, scheduling, aliasing derived from typed pass I/O declarations |
-| Zero per-frame allocation | R-3.1.8, RG-10.5 | Hot path uses pre-allocated ring buffers and fixed pools; no heap allocation per frame |
-| Automatic synchronization | RG-3.1--3.6 | Barriers, layout transitions, ownership transfers are compiler-derived |
-| Cascading elimination | RG-7.3, RG-13.2--13.3 | Disabled/culled/dead passes transitively eliminate exclusive producers and resources |
+| Principle                  | Source                | Implication                                                                            |
+| -------------------------- | --------------------- | -------------------------------------------------------------------------------------- |
+| Compile once, execute many | R-1.1.4, RG-14.1      | Graph topology is immutable after compilation; only per-frame data changes             |
+| Rendering-agnostic         | RG README             | Graph knows passes, resources, queues, barriers, gates -- never bloom, shadows, etc.   |
+| Declarative I/O            | RG-1.1                | Barrier, layout, scheduling, aliasing derived from typed pass I/O declarations         |
+| Zero per-frame allocation  | R-3.1.8, RG-10.5      | Hot path uses pre-allocated ring buffers and fixed pools; no heap allocation per frame |
+| Automatic synchronization  | RG-3.1--3.6           | Barriers, layout transitions, ownership transfers are compiler-derived                 |
+| Cascading elimination      | RG-7.3, RG-13.2--13.3 | Disabled/culled/dead passes transitively eliminate exclusive producers and resources   |
 
 #### System Overview
 
@@ -321,14 +321,14 @@ with different bindings. Resources are classified as shared (one allocation, all
 exclusive (one per instance). The compiler optimizes shared barriers, enables parallel encoding of
 independent instances, and merges all instances into one unified DAG.
 
-| Pattern | Template | Instances | Shared | Exclusive |
-|---|---|---|---|---|
-| Multi-camera (F-1.1.5) | Main render pipeline | N cameras | Scene data | Per-camera RT |
-| Cubemap capture (F-1.1.7) | Face render | 6 faces | Scene data | Per-face layer |
-| Cascaded shadows (F-1.3.1) | Shadow render | N cascades | Light data | Per-cascade layer |
-| Split-screen (F-6.2.7) | Full pipeline | N players | Scene data | Per-player RT |
-| Per-light shadows (F-1.3.5) | Shadow render | N lights | Geometry | Per-light atlas tile |
-| Deep opacity maps (F-2.3.7) | DOM render | N lights | Hair data | Per-light DOM texture |
+| Pattern                     | Template             | Instances  | Shared     | Exclusive             |
+| --------------------------- | -------------------- | ---------- | ---------- | --------------------- |
+| Multi-camera (F-1.1.5)      | Main render pipeline | N cameras  | Scene data | Per-camera RT         |
+| Cubemap capture (F-1.1.7)   | Face render          | 6 faces    | Scene data | Per-face layer        |
+| Cascaded shadows (F-1.3.1)  | Shadow render        | N cascades | Light data | Per-cascade layer     |
+| Split-screen (F-6.2.7)      | Full pipeline        | N players  | Scene data | Per-player RT         |
+| Per-light shadows (F-1.3.5) | Shadow render        | N lights   | Geometry   | Per-light atlas tile  |
+| Deep opacity maps (F-2.3.7) | DOM render           | N lights   | Hair data  | Per-light DOM texture |
 
 **Streaming Integration.** The streaming subsystem bridges the render graph and the IO system,
 managing the lifecycle of partially-resident resources through fault-driven transfer pass injection,
@@ -374,20 +374,20 @@ flowchart TD
 These properties hold for any valid compiled graph and are enforced by the compiler or execution
 engine.
 
-| # | Invariant | Enforcement | Source |
-|---|---|---|---|
-| 1 | Every resource is written before it is read | Topological sort | RG-5.1 |
-| 2 | No resource has concurrent writers | Compile-time static check | RG-3.5 |
-| 3 | All barriers are derived from I/O declarations | Compiler-generated | RG-3.1--3.4 |
-| 4 | The graph is acyclic | Compile-time cycle detection | RG-5.7 |
-| 5 | Exactly one variant is active per variant slot | Compile-time check | RG-13.7 |
-| 6 | Array layer count = sub-graph instance count | Compile-time check | RG-13.8 |
-| 7 | Disabled passes do not consume GPU time or memory | Cascading elimination | RG-7.3, RG-13.2--13.3 |
-| 8 | Per-frame operations perform zero heap allocations | Ring buffers + fixed pools | RG-10.5, R-3.1.8 |
-| 9 | Execution order is deterministic for identical topology | Deterministic topological sort | RG-5.6 |
-| 10 | Cross-queue transfers use ownership barrier pairs | Compiler-emitted release/acquire | RG-3.4 |
-| 11 | Aliasing occurs only between same-heap-type resources | Heap type check | RG-8.5 |
-| 12 | Diagnostic instrumentation is zero-cost when disabled | Compile-time opt-out | RG-12.7 |
+| #   | Invariant                                               | Enforcement                      | Source                |
+| --- | ------------------------------------------------------- | -------------------------------- | --------------------- |
+| 1   | Every resource is written before it is read             | Topological sort                 | RG-5.1                |
+| 2   | No resource has concurrent writers                      | Compile-time static check        | RG-3.5                |
+| 3   | All barriers are derived from I/O declarations          | Compiler-generated               | RG-3.1--3.4           |
+| 4   | The graph is acyclic                                    | Compile-time cycle detection     | RG-5.7                |
+| 5   | Exactly one variant is active per variant slot          | Compile-time check               | RG-13.7               |
+| 6   | Array layer count = sub-graph instance count            | Compile-time check               | RG-13.8               |
+| 7   | Disabled passes do not consume GPU time or memory       | Cascading elimination            | RG-7.3, RG-13.2--13.3 |
+| 8   | Per-frame operations perform zero heap allocations      | Ring buffers + fixed pools       | RG-10.5, R-3.1.8      |
+| 9   | Execution order is deterministic for identical topology | Deterministic topological sort   | RG-5.6                |
+| 10  | Cross-queue transfers use ownership barrier pairs       | Compiler-emitted release/acquire | RG-3.4                |
+| 11  | Aliasing occurs only between same-heap-type resources   | Heap type check                  | RG-8.5                |
+| 12  | Diagnostic instrumentation is zero-cost when disabled   | Compile-time opt-out             | RG-12.7               |
 
 #### Data Flow
 
@@ -459,34 +459,34 @@ flowchart TD
 How renderer feature categories map to render graph subsystems. The render graph does not know
 about these features; they are expressed through the generic graph builder API.
 
-| Feature Category | Key Features | Primary RG Subsystems Used |
-|---|---|---|
-| **Core Rendering** (F-1.1) | Culling, instancing, scene capture, dynamic resolution | Pass declaration, multi-view, budget culling |
-| **Lighting** (F-1.2) | Forward+, deferred, PBR, IBL, DDGI | Variant dispatch, texture arrays, persistent resources |
-| **Shadows** (F-1.3) | CSM, VSM, shadow atlas, soft shadows | Multi-view templates, atlas resources, fallback chains |
-| **Post-Processing** (F-1.4) | Bloom, DOF, motion blur, tonemapping | Pass chains, transient resources, conditional passes |
-| **Anti-Aliasing** (F-1.5) | TAA, TSR, FXAA, MSAA, checkerboard | Variant dispatch, history resources, resolution scaling |
-| **Ray Tracing** (F-2.1) | RT reflections, GI, path tracing, ReSTIR | AS resources, capability gates, history resources |
-| **Environment** (F-2.2) | Sky, volumetrics, clouds, ocean, fog | Persistent resources, async compute, history resources |
-| **Hair and Characters** (F-2.3) | Strand hair, skin, eyes, cloth, peach fuzz | Capability gates, fallback chains, deep opacity maps |
-| **Meshlet Pipeline** (F-3.1) | Visibility buffer, VRS, GPU work graphs | 64-bit RT, shading rate images, work graph passes |
-| **Worlds and Terrain** (F-3.2) | Streaming worlds, voxels, terrain, HLOD | Streaming integration, sparse textures, pool resources |
-| **Foliage** (F-3.3) | Instanced foliage, wind, GPU skinning | Indirect argument buffers, persistent resources |
-| **Animation** (F-4.1) | Skeletal, morph, cloth, hair sim, crowds | Async compute, persistent buffers, conditional passes |
-| **UI and 2D** (F-5.1) | Vector/bitmap UI, sprites, tilemaps | Imported resources, pass chains, conditional passes |
-| **Shader and Assets** (F-6.1) | Shader graphs, custom passes, glTF import | Custom pass registration, bindless heap |
-| **IO and Streaming** (F-6.2) | Streaming priorities, GPU decompression | Streaming integration, transfer queue, pool resources |
-| **VFX and Particles** (F-7.1) | GPU particles, fluid sim, destruction | Persistent resources, async compute, indirect buffers |
+| Feature Category                | Key Features                                           | Primary RG Subsystems Used                              |
+| ------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| **Core Rendering** (F-1.1)      | Culling, instancing, scene capture, dynamic resolution | Pass declaration, multi-view, budget culling            |
+| **Lighting** (F-1.2)            | Forward+, deferred, PBR, IBL, DDGI                     | Variant dispatch, texture arrays, persistent resources  |
+| **Shadows** (F-1.3)             | CSM, VSM, shadow atlas, soft shadows                   | Multi-view templates, atlas resources, fallback chains  |
+| **Post-Processing** (F-1.4)     | Bloom, DOF, motion blur, tonemapping                   | Pass chains, transient resources, conditional passes    |
+| **Anti-Aliasing** (F-1.5)       | TAA, TSR, FXAA, MSAA, checkerboard                     | Variant dispatch, history resources, resolution scaling |
+| **Ray Tracing** (F-2.1)         | RT reflections, GI, path tracing, ReSTIR               | AS resources, capability gates, history resources       |
+| **Environment** (F-2.2)         | Sky, volumetrics, clouds, ocean, fog                   | Persistent resources, async compute, history resources  |
+| **Hair and Characters** (F-2.3) | Strand hair, skin, eyes, cloth, peach fuzz             | Capability gates, fallback chains, deep opacity maps    |
+| **Meshlet Pipeline** (F-3.1)    | Visibility buffer, VRS, GPU work graphs                | 64-bit RT, shading rate images, work graph passes       |
+| **Worlds and Terrain** (F-3.2)  | Streaming worlds, voxels, terrain, HLOD                | Streaming integration, sparse textures, pool resources  |
+| **Foliage** (F-3.3)             | Instanced foliage, wind, GPU skinning                  | Indirect argument buffers, persistent resources         |
+| **Animation** (F-4.1)           | Skeletal, morph, cloth, hair sim, crowds               | Async compute, persistent buffers, conditional passes   |
+| **UI and 2D** (F-5.1)           | Vector/bitmap UI, sprites, tilemaps                    | Imported resources, pass chains, conditional passes     |
+| **Shader and Assets** (F-6.1)   | Shader graphs, custom passes, glTF import              | Custom pass registration, bindless heap                 |
+| **IO and Streaming** (F-6.2)    | Streaming priorities, GPU decompression                | Streaming integration, transfer queue, pool resources   |
+| **VFX and Particles** (F-7.1)   | GPU particles, fluid sim, destruction                  | Persistent resources, async compute, indirect buffers   |
 
 ### Shader Pipeline
 
 Compiles HLSL source through DXC into backend-native intermediate representations:
 
-| Backend | IR | Profile |
-|---|---|---|
-| Direct3D 12 | DXIL | Shader Model 6.9 |
-| Vulkan 1.4 | SPIR-V | Via DXC `-spirv` |
-| Metal 4 | Metal IR | Via `metal-shaderconverter` from DXIL |
+| Backend     | IR       | Profile                               |
+| ----------- | -------- | ------------------------------------- |
+| Direct3D 12 | DXIL     | Shader Model 6.9                      |
+| Vulkan 1.4  | SPIR-V   | Via DXC `-spirv`                      |
+| Metal 4     | Metal IR | Via `metal-shaderconverter` from DXIL |
 
 The pipeline handles shader reflection, permutation management, and runtime hot-reload during
 development. All shaders use HLSL as the single authoring language.
@@ -502,11 +502,11 @@ Transforms raw assets into GPU-ready formats through a three-stage pipeline:
 2. **Bundle** -- Pack cooked assets into streaming-friendly bundles with dependency metadata.
 3. **Stream** -- Load bundles at runtime via platform-native high-performance IO:
 
-| Platform | IO Path |
-|---|---|
-| Windows (D3D12) | DirectStorage |
-| Linux/SteamOS (Vulkan) | `io_uring` |
-| macOS (Metal) | `MTLIOCommandBuffer` |
+| Platform               | IO Path              |
+| ---------------------- | -------------------- |
+| Windows (D3D12)        | DirectStorage        |
+| Linux/SteamOS (Vulkan) | `io_uring`           |
+| macOS (Metal)          | `MTLIOCommandBuffer` |
 
 A standard async file IO fallback is available when native paths are unavailable (R-1.2.4).
 
@@ -514,12 +514,12 @@ A standard async file IO fallback is available when native paths are unavailable
 
 ## Platform Matrix
 
-| Platform | GPU API | IO Path | Status |
-|---|---|---|---|
-| macOS (Apple Silicon M1+) | Metal 4 | `MTLIOCommandBuffer` | Initial development target |
-| Windows | Direct3D 12 (Agility SDK 1.619+) | DirectStorage | Supported |
-| Windows | Vulkan 1.4 | async file IO | Supported |
-| Linux / SteamOS | Vulkan 1.4 | `io_uring` | Supported |
+| Platform                  | GPU API                          | IO Path              | Status                     |
+| ------------------------- | -------------------------------- | -------------------- | -------------------------- |
+| macOS (Apple Silicon M1+) | Metal 4                          | `MTLIOCommandBuffer` | Initial development target |
+| Windows                   | Direct3D 12 (Agility SDK 1.619+) | DirectStorage        | Supported                  |
+| Windows                   | Vulkan 1.4                       | async file IO        | Supported                  |
+| Linux / SteamOS           | Vulkan 1.4                       | `io_uring`           | Supported                  |
 
 Desktop only -- no console or mobile platforms (R-1.2.5). All platforms require mesh shaders,
 bindless resources, and hardware ray tracing (R-1.1.6).
@@ -536,19 +536,19 @@ bindless resources, and hardware ray tracing (R-1.1.6).
 
 Detailed design and API specifications live in `docs/design/`:
 
-| Document | Scope |
-|---|---|
-| [render-graph-design.md](design/render-graph-design.md) | Render graph C++ API surfaces for all 9 modules |
-| [render-graph-classes.md](design/render-graph-classes.md) | Class diagrams, sequence diagrams, and type definitions |
-| [gpu-backend-interface.md](design/gpu-backend-interface.md) | GPU backend abstract interface, types, and cross-backend compatibility |
-| [gpu-backend-d3d12.md](design/gpu-backend-d3d12.md) | Direct3D 12 backend implementation |
-| [gpu-backend-vulkan.md](design/gpu-backend-vulkan.md) | Vulkan 1.4 backend implementation |
-| [gpu-backend-metal.md](design/gpu-backend-metal.md) | Metal 4 backend implementation |
-| [shader-pipeline.md](design/shader-pipeline.md) | Shader compilation pipeline (HLSL to DXC to native IR) |
-| [asset-pipeline.md](design/asset-pipeline.md) | Asset cooking, bundling, and streaming pipeline |
-| [shader-pipeline-classes.md](design/shader-pipeline-classes.md) | Shader pipeline class diagrams and type definitions |
-| [asset-pipeline-classes.md](design/asset-pipeline-classes.md) | Asset pipeline class diagrams and type definitions |
-| [gpu-backend-interface-classes.md](design/gpu-backend-interface-classes.md) | GPU backend interface class diagrams |
-| [gpu-backend-d3d12-classes.md](design/gpu-backend-d3d12-classes.md) | Direct3D 12 backend class diagrams |
-| [gpu-backend-vulkan-classes.md](design/gpu-backend-vulkan-classes.md) | Vulkan 1.4 backend class diagrams |
-| [gpu-backend-metal-classes.md](design/gpu-backend-metal-classes.md) | Metal 4 backend class diagrams |
+| Document                                                                    | Scope                                                                  |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [render-graph-design.md](design/render-graph-design.md)                     | Render graph C++ API surfaces for all 9 modules                        |
+| [render-graph-classes.md](design/render-graph-classes.md)                   | Class diagrams, sequence diagrams, and type definitions                |
+| [gpu-backend-interface.md](design/gpu-backend-interface.md)                 | GPU backend abstract interface, types, and cross-backend compatibility |
+| [gpu-backend-d3d12.md](design/gpu-backend-d3d12.md)                         | Direct3D 12 backend implementation                                     |
+| [gpu-backend-vulkan.md](design/gpu-backend-vulkan.md)                       | Vulkan 1.4 backend implementation                                      |
+| [gpu-backend-metal.md](design/gpu-backend-metal.md)                         | Metal 4 backend implementation                                         |
+| [shader-pipeline.md](design/shader-pipeline.md)                             | Shader compilation pipeline (HLSL to DXC to native IR)                 |
+| [asset-pipeline.md](design/asset-pipeline.md)                               | Asset cooking, bundling, and streaming pipeline                        |
+| [shader-pipeline-classes.md](design/shader-pipeline-classes.md)             | Shader pipeline class diagrams and type definitions                    |
+| [asset-pipeline-classes.md](design/asset-pipeline-classes.md)               | Asset pipeline class diagrams and type definitions                     |
+| [gpu-backend-interface-classes.md](design/gpu-backend-interface-classes.md) | GPU backend interface class diagrams                                   |
+| [gpu-backend-d3d12-classes.md](design/gpu-backend-d3d12-classes.md)         | Direct3D 12 backend class diagrams                                     |
+| [gpu-backend-vulkan-classes.md](design/gpu-backend-vulkan-classes.md)       | Vulkan 1.4 backend class diagrams                                      |
+| [gpu-backend-metal-classes.md](design/gpu-backend-metal-classes.md)         | Metal 4 backend class diagrams                                         |
