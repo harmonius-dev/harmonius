@@ -325,6 +325,8 @@ classDiagram
         +uint64_t acceleration_structure_read
         +uint64_t acceleration_structure_write
         +uint64_t shading_rate_read
+        +uint64_t resolve_read
+        +uint64_t resolve_write
         +uint64_t present
     }
     class TextureLayout {
@@ -805,6 +807,8 @@ classDiagram
         +create_descriptor_heap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
         +create_swapchain(SwapchainDesc) expected~SwapchainHandle~
         +create_pipeline_cache(PipelineCacheDesc) expected~PipelineCacheHandle~
+        +query_texture_allocation_info(TextureDesc) AllocationInfo
+        +query_buffer_allocation_info(BufferDesc) AllocationInfo
         +wait_idle() void
         +map(BufferHandle) void_ptr
         +unmap(BufferHandle) void

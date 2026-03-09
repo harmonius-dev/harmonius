@@ -1175,6 +1175,15 @@ milliseconds. The optimized pipeline can be compiled in the background and swapp
 
 ---
 
+## Unsupported Features
+
+Work graphs (`create_work_graph`, `set_work_graph`, `dispatch_graph`) are a D3D12-only feature with no
+Vulkan equivalent. These methods return `PipelineError::unsupported` and are gated by
+`DeviceCapabilities::work_graphs = false`. The render graph's capability gating system (RG-6.1–RG-6.7)
+ensures work graph passes are pruned at compile time on Vulkan.
+
+---
+
 ## Diagnostics
 
 | Feature | Vulkan API |

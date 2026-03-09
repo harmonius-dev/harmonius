@@ -1017,7 +1017,7 @@ Key architectural differences that affect the backend implementation:
 | Ray tracing model | Dedicated pipeline stages (raygen, hit, miss) | Intersection query in compute/fragment shaders |
 | Render target views | Explicit RTV/DSV (D3D12) or VkImageView | Set directly on render pass descriptor |
 | Descriptor binding | Descriptor heaps/tables (D3D12) or descriptor sets (Vulkan) | Argument buffers / argument tables |
-| Work graphs | State object + DispatchGraph (D3D12 only) | Not supported |
+| Work graphs | State object + DispatchGraph (D3D12 only) | Not supported — stubs return `PipelineError::unsupported` |
 | Variable rate shading | Shading rate image attachment | Per-primitive or per-draw rate (no image-based VRS) |
 
 ---

@@ -302,6 +302,7 @@ enum class PassType : uint8_t {
     host_callback,           // RG-1.7: CPU-only, no GPU commands
     work_graph,              // RG-1.13: GPU self-scheduled
     checkerboard_resolve,    // RG-1.14: half-res reconstruction
+    opacity_micromap_build,  // RG-2.25: dedicated OMM build pass
 };
 
 } // namespace harmonius::rg
@@ -421,6 +422,7 @@ enum class ValidationErrorKind : uint8_t {
     variant_ambiguity,         // RG-13.7
     instance_count_mismatch,   // RG-13.8
     hard_gate_unsatisfied,     // RG-6.2
+    sample_count_mismatch,     // RG-2.21
 };
 
 struct ValidationError {
@@ -490,15 +492,24 @@ public:
     ResourceHandle declare_staging(StagingBufferDesc desc);
     ResourceHandle declare_atlas(AtlasResourceDesc desc);
     ResourceHandle declare_acceleration_structure(AccelStructDesc desc);
+    ResourceHandle declare_ring_buffer(RingBufferDesc desc);           // RG-2.14
+    ResourceHandle declare_bindless_heap(BindlessHeapDesc desc);       // RG-2.15
 
     // --- Gates (RG-6.1–6.7) ---
     GateHandle attach_capability_gate(PassHandle pass, gate::CapabilityGateDesc desc);
     GateHandle attach_budget_gate(PassHandle pass, gate::BudgetGateDesc desc);
+    GateHandle attach_path_conditioned_gate(PassHandle pass,
+                                            gate::PathConditionedGateDesc desc);  // RG-6.7
     GateHandle declare_fallback_chain(std::string_view name,
                                       std::span<const gate::FallbackEntry> entries);
 
-    // --- Ordering constraints (RG-5.3) ---
+    // --- Ordering constraints (RG-5.3, RG-5.4) ---
     void add_ordering_edge(PassHandle before, PassHandle after);
+    void add_frame_dependency(PassHandle src, PassHandle dst,
+                              uint32_t frame_offset);                  // RG-5.4
+
+    // --- Chain management (RG-1.3) ---
+    void remove_chain_step(ChainHandle chain, PassHandle pass);
 
     // --- Diagnostics attachment (RG-12.1–12.7) ---
     void attach_timestamp_query(PassHandle pass, std::string_view name);
@@ -531,6 +542,9 @@ struct PassDescriptor {
     // Cost/priority for budget culling (RG-7.2)
     float    estimated_cost_ms = 0.0f;
     uint32_t priority          = 0;
+
+    // RG-1.14: checkerboard frame parity — nullopt if unused, true/false alternates per frame
+    std::optional<bool> frame_parity;
 
     // Execute callback — type-erased, invoked during encoding
     // For host_callback passes (RG-1.7), this runs on CPU after predecessor fence
@@ -652,6 +666,20 @@ struct ActiveExtentDesc {
     uint32_t max_height;
 };
 
+// RG-2.14: persistent ring buffer with per-slot single-writer enforcement
+struct RingBufferDesc {
+    std::string_view name;
+    uint64_t         slot_size_bytes;
+    uint32_t         slot_count;
+};
+
+// RG-2.15: bindless descriptor heap region managed by the render graph
+struct BindlessHeapDesc {
+    std::string_view name;
+    uint32_t         max_descriptors;
+    uint32_t         max_samplers;
+};
+
 } // namespace harmonius::rg::builder
 ```
 
@@ -678,6 +706,8 @@ struct SubGraphBindings {
     std::vector<ResourceHandle> exclusive_resources; // RG-9.2
     std::vector<ResourceHandle> shared_resources;    // RG-9.3
     uint32_t                    target_array_layer;  // RG-9.4
+    // RG-1.12: per-instance variant parameter overrides
+    std::unordered_map<VariantSlotHandle, std::string_view> variant_selections;
 };
 
 } // namespace harmonius::rg::builder
@@ -732,7 +762,7 @@ flowchart TD
     RA["6. Resource Aliasing<br/>lifetime intervals, heap assignment"]
     QP["7. Queue Partitioning<br/>graphics, async-compute, transfer"]
     EG["8. Encoding Plan<br/>parallelizable groups"]
-    IM["9. Instance Merge<br/>sub-graph unification"]
+    IM["9. Instance Merge<br/>sub-graph unification,<br/>shared barrier dedup (RG-9.3)"]
     EP["ExecutionPlan<br/>immutable output"]
 
     DG --> V --> GE --> DP --> TS --> BS --> RA --> QP --> EG --> IM --> EP
@@ -879,6 +909,7 @@ The validator checks:
 | Variant ambiguity       | `variant_ambiguity`       | RG-13.7 |
 | Instance count mismatch | `instance_count_mismatch` | RG-13.8 |
 | Hard gate unsatisfied   | `hard_gate_unsatisfied`   | RG-6.2  |
+| Sample count mismatch   | `sample_count_mismatch`   | RG-2.21 |
 
 ### Recompilation Triggers (RG-13.5)
 
@@ -889,6 +920,7 @@ The validator checks:
 | Capability set change                          | Yes                 |
 | Residency state change                         | Partial (RG-13.6)   |
 | Per-frame constants, enable flags, resolution  | No                  |
+| Instance count (within max_instances)          | No                  |
 | Buffer/texture handles                         | No                  |
 
 ---
@@ -921,6 +953,9 @@ stateDiagram-v2
 ### Aliasing Solver
 
 Computes lifetime intervals and assigns aliased heap slots for transient resources (RG-8.1–8.5).
+The solver operates on both standalone transient resources and intra-pool elements (RG-8.3):
+pool elements with disjoint lifetimes are assigned to the same backing heap slot within the
+pool's reserved capacity.
 
 ```cpp
 namespace harmonius::rg::resource {
@@ -1197,6 +1232,9 @@ public:
     [[nodiscard]] uint64_t current_value(QueueAffinity queue) const;
 
     // Advance all counters for new frame
+    // RG-11.7: fence values are monotonic across frames — a frame N+1 pass can
+    // wait on a frame N fence value via add_frame_dependency() in the graph builder.
+    // The compiler emits the cross-frame wait using the recorded fence value.
     void advance_frame();
 
 private:
@@ -1486,6 +1524,9 @@ public:
                              uint32_t instance_index,
                              bool active);
 
+    // RG-1.11: per-frame instance count update without recompilation
+    void set_instance_count(SubGraphHandle tpl, uint32_t count);
+
     // --- History control (RG-2.19) ---
     void invalidate_history(ResourceHandle history_resource);
 
@@ -1587,7 +1628,8 @@ struct TransferPassDesc {
     uint64_t            src_offset;
     uint64_t            dst_offset;
     uint64_t            size_bytes;
-    int32_t             priority = 0; // RG-5.5: higher = first
+    int32_t             priority = 0;
+    uint64_t            completion_fence_value = 0; // RG-11.2: host-pollable fence value // RG-5.5: higher = first
 };
 
 } // namespace harmonius::rg::exec
@@ -1656,6 +1698,7 @@ sequenceDiagram
 | `host_callback`                | No GPU commands — CPU-only execution after fence wait                                                       |
 | `work_graph`                   | `set_work_graph` → `dispatch_graph`                                                                         |
 | `checkerboard_resolve`         | `set_pipeline(resolve_compute_pso)` → `dispatch` (compute-based reconstruction)                             |
+| `opacity_micromap_build`       | RG-2.25: build OMM; compiler enforces completion before any RT dispatch referencing the parent BLAS          |
 
 **Barrier emission:** The executor iterates the `ScheduledPass::pre_barriers` and
 `ScheduledPass::post_barriers` from the execution plan. Each barrier set is translated to a

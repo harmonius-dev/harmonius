@@ -49,13 +49,24 @@ classDiagram
         +create_buffer(BufferDesc) expected~BufferHandle~
         +create_heap(HeapDesc) expected~HeapHandle~
         +create_placed_texture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
+        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
+        +create_sparse_texture(SparseTextureDesc) expected~TextureHandle~
         +create_fence(uint64_t) expected~FenceHandle~
         +create_mesh_render_pipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
+        +create_compute_pipeline(ComputePipelineDesc) expected~PipelineHandle~
         +create_ray_tracing_pipeline(RayTracingPipelineDesc) expected~PipelineHandle~
         +create_work_graph(WorkGraphDesc) expected~WorkGraphHandle~
+        +create_descriptor_heap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
+        +create_swapchain(SwapchainDesc) expected~SwapchainHandle~
+        +create_pipeline_cache(PipelineCacheDesc) expected~PipelineCacheHandle~
+        +create_acceleration_structure(AccelerationStructureDesc) expected~AccelerationStructureHandle~
+        +query_texture_allocation_info(TextureDesc) AllocationInfo
+        +query_buffer_allocation_info(BufferDesc) AllocationInfo
         +resize_swapchain(SwapchainHandle, uint32_t, uint32_t) void
         +submit(QueueType, cmd_bufs, signals, waits) void
         +create_command_pool(QueueType) D3D12CommandPool
+        +map(BufferHandle) void_ptr
+        +unmap(BufferHandle) void
     }
 
     class QueueSet {
@@ -81,19 +92,33 @@ classDiagram
         +D3D12CommandBuffer(ComPtr~ID3D12GraphicsCommandList10~)
         +begin() void
         +end() void
-        +barrier(span~BarrierDesc~) void
+        +barrier(BarrierDesc) void
         +begin_render_pass(RenderPassDesc) void
         +end_render_pass() void
         +set_pipeline(PipelineHandle) void
         +dispatch_mesh(x, y, z) void
         +dispatch_mesh_indirect(buf, offset, count, stride) void
+        +dispatch_mesh_indirect_count(args) void
         +dispatch(x, y, z) void
+        +dispatch_indirect(buf, offset) void
         +trace_rays(TraceRaysDesc) void
+        +trace_rays_indirect(buf, offset) void
         +build_acceleration_structure(BuildDesc) void
+        +set_work_graph(WorkGraphHandle) void
         +dispatch_graph(DispatchGraphDesc) void
         +copy_buffer(src, src_off, dst, dst_off, size) void
+        +copy_texture(src, sub, dst, sub, ext) void
+        +copy_buffer_to_texture(args) void
+        +copy_texture_to_buffer(args) void
+        +set_viewport(Viewport) void
+        +set_scissor(Scissor) void
         +push_constants(data, size, offset) void
+        +bind_descriptor_heap(DescriptorHeapHandle) void
         +write_timestamp(pool, index) void
+        +resolve_query_pool(pool, first, count, dst, offset) void
+        +begin_debug_label(name) void
+        +end_debug_label() void
+        +insert_debug_label(name) void
     }
 
     class D3D12Fence {

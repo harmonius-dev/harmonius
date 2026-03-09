@@ -299,7 +299,7 @@ classDiagram
         <<enum class>>
         out_of_memory
         invalid_desc
-        unsupported
+        unsupported_format
     }
 
     VulkanDevice --> TextureHandle : creates

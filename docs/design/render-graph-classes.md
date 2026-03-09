@@ -64,6 +64,7 @@ classDiagram
         host_callback
         work_graph
         checkerboard_resolve
+        opacity_micromap_build
     }
     class AccessMode["AccessMode «enumeration»"] {
         read
@@ -119,6 +120,7 @@ classDiagram
         variant_ambiguity
         instance_count_mismatch
         hard_gate_unsatisfied
+        sample_count_mismatch
     }
     class ValidationError["ValidationError «struct»"] {
         +ValidationErrorKind kind
@@ -169,6 +171,11 @@ classDiagram
         +attach_budget_gate(PassHandle, BudgetGateDesc) GateHandle
         +declare_fallback_chain(string_view, span) GateHandle
         +add_ordering_edge(PassHandle, PassHandle) void
+        +add_frame_dependency(PassHandle, PassHandle, uint32_t) void
+        +remove_chain_step(ChainHandle, PassHandle) void
+        +declare_ring_buffer(RingBufferDesc) ResourceHandle
+        +declare_bindless_heap(BindlessHeapDesc) ResourceHandle
+        +attach_path_conditioned_gate(PassHandle, PathConditionedGateDesc) GateHandle
         +attach_timestamp_query(PassHandle, string_view) void
         +attach_statistics_query(PassHandle, string_view) void
         +mark_debug_overlay(PassHandle) void
@@ -191,6 +198,7 @@ classDiagram
         +vector~string_view~ tags
         +float estimated_cost_ms
         +uint32_t priority
+        +optional~bool~ frame_parity
         +move_only_function execute
     }
     class SubGraphDescriptor {
@@ -203,6 +211,7 @@ classDiagram
         +vector~ResourceHandle~ exclusive_resources
         +vector~ResourceHandle~ shared_resources
         +uint32_t target_array_layer
+        +unordered_map variant_selections
     }
     class TransientResourceDesc {
         +string_view name
@@ -277,6 +286,16 @@ classDiagram
         +ResourceCategory category
         +bool has_opacity_micromap
     }
+    class RingBufferDesc {
+        +string_view name
+        +uint64_t slot_size_bytes
+        +uint32_t slot_count
+    }
+    class BindlessHeapDesc {
+        +string_view name
+        +uint32_t max_descriptors
+        +uint32_t max_samplers
+    }
     class ActiveExtentDesc {
         +uint32_t max_layers
         +uint32_t max_width
@@ -307,6 +326,8 @@ classDiagram
     GraphBuilder --> StagingBufferDesc : accepts
     GraphBuilder --> AtlasResourceDesc : accepts
     GraphBuilder --> AccelStructDesc : accepts
+    GraphBuilder --> RingBufferDesc : accepts
+    GraphBuilder --> BindlessHeapDesc : accepts
     DeclaredGraph *-- PassDescriptor
     PassDescriptor --> ResourceBinding
     PassDescriptor --> RenderArea
@@ -454,12 +475,28 @@ classDiagram
         +bool now_resident
     }
 
+    class AtlasAllocator {
+        +AtlasAllocator(AtlasResourceDesc, Device)
+        +allocate_tile(uint64_t owner_key) expected~AtlasTileRect, PoolError~
+        +release_tile(uint64_t owner_key) void
+        +utilization() float
+        +capacity() uint32_t
+    }
+    class AtlasTileRect {
+        +uint32_t x
+        +uint32_t y
+        +uint32_t width
+        +uint32_t height
+    }
+
     AliasingSolver --> AliasingMap : produces
     AliasingSolver --> LifetimeInterval : reads
     AliasingSolver --> ResourceSizeInfo : reads
     AliasingMap *-- AliasingAssignment
     PoolAllocator --> Device : uses
     RingAllocator --> Device : uses
+    AtlasAllocator --> Device : uses
+    AtlasAllocator --> AtlasTileRect : returns
 ```
 
 ### 5. Synchronization Engine
@@ -581,6 +618,7 @@ classDiagram
         +set_resolution_scale(string_view, float) void
         +set_pass_active(PassHandle, bool) void
         +set_instance_active(SubGraphHandle, uint32_t, bool) void
+        +set_instance_count(SubGraphHandle, uint32_t) void
         +invalidate_history(ResourceHandle) void
         +inject_transfer(TransferPassDesc) void
         +bind_residency_map(ResourceHandle, gpu_ResourceHandle) void
@@ -618,6 +656,7 @@ classDiagram
         +uint64_t dst_offset
         +uint64_t size_bytes
         +int32_t priority
+        +uint64_t completion_fence_value
     }
 
     Executor --> ExecutionPlan : reads
@@ -667,6 +706,8 @@ classDiagram
     class TransferStatistics {
         +vector~Entry~ entries
         +uint64_t total_bytes_per_frame
+        +unordered_map per_pool_bytes
+        +unordered_map per_queue_bytes
     }
     class TransferStatisticsEntry {
         +string_view pass_name

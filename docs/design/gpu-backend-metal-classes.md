@@ -55,14 +55,27 @@ classDiagram
         -uint64_t next_idle_value_
         +capabilities() DeviceCapabilities
         +wait_idle() void
-        +create_texture(TextureDesc) TextureHandle
-        +create_buffer(BufferDesc) BufferHandle
-        +create_heap(HeapDesc) HeapHandle
-        +create_placed_texture() TextureHandle
-        +create_fence(uint64_t) FenceHandle
-        +create_mesh_render_pipeline() PipelineHandle
-        +submit() void
-        +set_name() void
+        +create_texture(TextureDesc) expected~TextureHandle~
+        +create_buffer(BufferDesc) expected~BufferHandle~
+        +create_heap(HeapDesc) expected~HeapHandle~
+        +create_placed_texture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
+        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
+        +create_sparse_texture(SparseTextureDesc) expected~TextureHandle~
+        +create_fence(uint64_t) expected~FenceHandle~
+        +create_mesh_render_pipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
+        +create_compute_pipeline(ComputePipelineDesc) expected~PipelineHandle~
+        +create_ray_tracing_pipeline(RayTracingPipelineDesc) expected~PipelineHandle~
+        +create_work_graph(WorkGraphDesc) expected~WorkGraphHandle~
+        +create_descriptor_heap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
+        +create_swapchain(SwapchainDesc) expected~SwapchainHandle~
+        +create_pipeline_cache(PipelineCacheDesc) expected~PipelineCacheHandle~
+        +create_acceleration_structure(AccelerationStructureDesc) expected~AccelerationStructureHandle~
+        +query_texture_allocation_info(TextureDesc) AllocationInfo
+        +query_buffer_allocation_info(BufferDesc) AllocationInfo
+        +submit(QueueType, cmd_bufs, signals, waits) void
+        +map(BufferHandle) void_ptr
+        +unmap(BufferHandle) void
+        +set_name(TextureHandle, string_view) void
     }
     class MetalCommandPool {
         -MTL4CommandAllocator allocator_
@@ -82,15 +95,29 @@ classDiagram
         +begin_render_pass(RenderPassDesc) void
         +end_render_pass() void
         +set_pipeline(PipelineHandle) void
-        +dispatch_mesh(x y z) void
-        +dispatch_mesh_indirect() void
-        +dispatch(x y z) void
-        +build_acceleration_structure() void
-        +copy_buffer() void
-        +push_constants() void
-        +write_timestamp() void
+        +dispatch_mesh(x, y, z) void
+        +dispatch_mesh_indirect(buf, offset, count, stride) void
+        +dispatch_mesh_indirect_count(args) void
+        +dispatch(x, y, z) void
+        +dispatch_indirect(buf, offset) void
+        +trace_rays(TraceRaysDesc) void
+        +trace_rays_indirect(buf, offset) void
+        +build_acceleration_structure(BuildDesc) void
+        +set_work_graph(WorkGraphHandle) void
+        +dispatch_graph(DispatchGraphDesc) void
+        +copy_buffer(src, src_off, dst, dst_off, size) void
+        +copy_texture(src, sub, dst, sub, ext) void
+        +copy_buffer_to_texture(args) void
+        +copy_texture_to_buffer(args) void
+        +set_viewport(Viewport) void
+        +set_scissor(Scissor) void
+        +push_constants(data, size, offset) void
+        +bind_descriptor_heap(DescriptorHeapHandle) void
+        +write_timestamp(pool, index) void
+        +resolve_query_pool(pool, first, count, dst, offset) void
         +begin_debug_label(name) void
         +end_debug_label() void
+        +insert_debug_label(name) void
     }
     class MetalFence {
         -MTLSharedEvent event_
