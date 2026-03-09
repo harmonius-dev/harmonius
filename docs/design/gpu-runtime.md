@@ -35,9 +35,12 @@ tracking, work graph execution, and feature emulation.
     - [Native Path](#native-path)
     - [Emulated Path](#emulated-path)
     - [Executor API](#executor-api)
+    - [Synchronization in Emulated Path](#synchronization-in-emulated-path)
+    - [Backing Memory](#backing-memory)
   - [4. Feature Emulation — `harmonius::gpu_runtime::compat`](#4-feature-emulation--harmoniusgpu_runtimecompat)
     - [Split Barrier Emulation](#split-barrier-emulation)
     - [Queue Ownership Elision](#queue-ownership-elision)
+    - [Ray Tracing Pipeline Emulation](#ray-tracing-pipeline-emulation)
   - [Integration Points](#integration-points)
     - [Render Graph Integration](#render-graph-integration)
     - [GPU Backend API Usage](#gpu-backend-api-usage)
@@ -778,14 +781,78 @@ private:
 } // namespace harmonius::gpu_runtime::work_graph
 ```
 
+### Synchronization in Emulated Path
+
+The emulated path must replicate the synchronization guarantees that native GPU work graphs
+provide implicitly. The executor derives synchronization points from the execution plan's
+dependency edges:
+
+| Dependency Type  | Native Work Graph                 | Emulated Path                                          |
+| ---------------- | --------------------------------- | ------------------------------------------------------ |
+| Same-queue       | Implicit node ordering            | Pipeline barrier between passes                        |
+| Cross-queue      | Implicit via work graph scheduler | Timeline fence signal (producer) + wait (consumer)     |
+| Read-after-write | Implicit memory visibility        | Barrier with appropriate stage and access flags        |
+| Write-after-read | Implicit via node dependencies    | Execution barrier with drain before subsequent write   |
+
+The barrier optimizer (GR-2) processes all barriers emitted by the emulated path, so batching,
+deduplication, and split barrier emulation apply automatically.
+
+**Requirements covered:** GR-3.8.
+
+### Backing Memory
+
+Native GPU work graph programs require backing memory for node records and scheduler metadata.
+The work graph executor queries memory requirements from the backend after program creation and
+allocates backing memory through `gpu_runtime::memory::Allocator`:
+
+```cpp
+// After creating a native work graph program
+auto mem_req = device_.query_work_graph_memory_requirements(cached_program_);
+backing_alloc_ = allocator_.allocate({
+    .heap_type  = memory::HeapType::device_local,
+    .strategy   = memory::AllocationStrategy::sub_allocate,
+    .size       = mem_req.size,
+    .alignment  = mem_req.alignment,
+    .debug_name = "work_graph_backing"
+});
+```
+
+Backing memory is reused across frames. It is reallocated only when:
+
+1. The execution plan changes (new program compiled via `set_execution_plan()`)
+2. The new program's memory requirements exceed the current allocation
+
+The backing memory handle and offset are passed to the backend via `DispatchGraphDesc`:
+
+```cpp
+void WorkGraphExecutor::execute(const FrameData& data,
+                                state::TrackedCommandBuffer& cmd,
+                                const gpu::DeviceCapabilities& caps) {
+    if (use_native_) {
+        gpu::DispatchGraphDesc desc{
+            .backing_memory        = backing_alloc_.value().heap,
+            .backing_memory_offset = backing_alloc_.value().offset,
+            .backing_memory_size   = backing_alloc_.value().size,
+            // ... per-frame input data ...
+        };
+        cmd.inner().dispatch_graph(desc);
+    } else {
+        execute_emulated(data, cmd);
+    }
+}
+```
+
+**Requirements covered:** GR-3.9.
+
 ---
 
 ## 4. Feature Emulation — `harmonius::gpu_runtime::compat`
 
 **Responsibility:** Provides cross-backend feature compatibility built on top of the GPU
-backend interface.
+backend interface. Includes barrier optimization, split barrier emulation, queue ownership
+elision, and ray tracing pipeline emulation.
 
-**Requirements covered:** GR-4.1–GR-4.5.
+**Requirements covered:** GR-4.1–GR-4.9.
 
 ### Split Barrier Emulation
 
@@ -814,6 +881,204 @@ if (caps_.is_unified_memory()) {
 }
 ```
 
+### Ray Tracing Pipeline Emulation
+
+D3D12 and Vulkan provide dedicated ray tracing pipeline stages (ray generation, closest hit,
+any hit, miss) dispatched via `trace_rays()`. Metal has no dedicated RT pipeline — ray tracing
+is implemented through inline ray queries (`intersector<>`) in compute shaders. The compat
+layer bridges this gap so higher-level systems can express RT passes uniformly.
+
+**Requirements covered:** GR-4.6–GR-4.9.
+
+#### Architecture
+
+```mermaid
+flowchart TD
+    Caller["Caller (Render Graph)"]
+    RTA["RayTracingAdapter"]
+
+    subgraph Decision["Path Selection (initialization-time)"]
+        Cap{"ray_tracing<br/>capability?"}
+    end
+
+    subgraph Native["Native RT Path (D3D12 / Vulkan)"]
+        SetRT["set_pipeline(rt_pipeline)"]
+        BindSBT["Bind SBT buffer"]
+        BindAS_N["Bind AS via RT descriptor"]
+        TraceRays["trace_rays(w, h, d)"]
+    end
+
+    subgraph Emulated["Emulated RT Path (Metal)"]
+        SetComp["set_pipeline(compute_fallback)"]
+        BindMat["Bind emulated SBT buffer<br/>(material index buffer)"]
+        BindAS_E["Bind AS as compute SRV"]
+        Dispatch["dispatch(⌈w/8⌉, ⌈h/8⌉, d)"]
+    end
+
+    Caller --> RTA
+    RTA --> Cap
+    Cap -->|true| Native
+    Cap -->|false| Emulated
+    SetRT --> BindSBT --> BindAS_N --> TraceRays
+    SetComp --> BindMat --> BindAS_E --> Dispatch
+```
+
+The path selection is made once at initialization based on
+`DeviceCapabilities::ray_tracing`. Since the GPU backend is selected at compile time,
+the unused path is eliminated by the compiler.
+
+#### RayTracingAdapter
+
+Manages pipeline pair registration and dispatch translation.
+
+```cpp
+namespace harmonius::gpu_runtime::compat {
+
+struct PipelinePair {
+    gpu::PipelineHandle rt_pipeline;       // native RT pipeline (invalid on Metal)
+    gpu::PipelineHandle compute_fallback;  // compute pipeline with inline ray queries
+};
+
+class RayTracingAdapter {
+public:
+    explicit RayTracingAdapter(const gpu::DeviceCapabilities& caps,
+                               memory::Allocator& allocator);
+
+    // --- Pipeline pair registration (GR-4.8) ---
+
+    void register_pipeline_pair(uint64_t id, const PipelinePair& pair);
+    void unregister_pipeline_pair(uint64_t id);
+
+    // --- SBT management (GR-4.7) ---
+
+    void build_sbt(uint64_t pipeline_id, const SbtLayout& layout);
+
+    // --- Dispatch (GR-4.6) ---
+
+    // Dispatches trace_rays natively or translates to compute dispatch.
+    // Returns true if the call was emulated.
+    bool dispatch(uint64_t pipeline_id,
+                  const gpu::TraceRaysDesc& desc,
+                  state::TrackedCommandBuffer& cmd);
+
+    // --- Queries ---
+
+    [[nodiscard]] bool is_emulated() const;
+
+private:
+    const gpu::DeviceCapabilities&                     caps_;
+    memory::Allocator&                                 allocator_;
+    bool                                               emulated_;
+    std::unordered_map<uint64_t, PipelinePair>         pairs_;
+    std::unordered_map<uint64_t, gpu::BufferHandle>    sbt_buffers_;
+};
+
+} // namespace harmonius::gpu_runtime::compat
+```
+
+#### SBT Layout and Emulation
+
+The SBT is a D3D12/Vulkan concept that maps geometry intersections to shader invocations and
+per-record root arguments. On Metal, there is no SBT — the equivalent data must be packed
+into a regular GPU buffer indexed by instance and geometry ID.
+
+```cpp
+namespace harmonius::gpu_runtime::compat {
+
+struct SbtRecord {
+    std::span<const uint8_t> local_root_args;  // per-record root arguments
+};
+
+struct SbtLayout {
+    std::span<const SbtRecord> raygen_records;
+    std::span<const SbtRecord> miss_records;
+    std::span<const SbtRecord> hit_group_records;
+    std::span<const SbtRecord> callable_records;
+    uint32_t                   record_stride;    // stride between records
+};
+
+} // namespace harmonius::gpu_runtime::compat
+```
+
+**SBT translation strategy:**
+
+| SBT Component | Native (D3D12/Vulkan)                   | Emulated (Metal)                                       |
+| ------------- | --------------------------------------- | ------------------------------------------------------ |
+| Raygen record | SBT region at `raygen_offset`           | Push constants (dispatch parameters)                   |
+| Miss records  | SBT region at `miss_offset` + stride    | Buffer region indexed by miss shader index             |
+| Hit groups    | SBT region at `hit_offset` + stride     | Buffer region indexed by `instanceID * geomCount + geomIdx` |
+| Callable      | SBT region at `callable_offset` + stride | Buffer region indexed by callable index                |
+
+On the native path, `build_sbt()` creates a standard SBT buffer with shader identifiers and
+per-record data laid out per the D3D12/Vulkan SBT alignment rules. On the emulated path,
+`build_sbt()` packs the per-record root arguments into a flat buffer without shader
+identifiers (the compute fallback shader handles material dispatch via branching or indirect
+function calls).
+
+#### Dispatch Translation
+
+When `is_emulated()` is true, `RayTracingAdapter::dispatch()` performs the following
+translation:
+
+```cpp
+bool RayTracingAdapter::dispatch(uint64_t pipeline_id,
+                                 const gpu::TraceRaysDesc& desc,
+                                 state::TrackedCommandBuffer& cmd) {
+    auto it = pairs_.find(pipeline_id);
+    if (!emulated_) {
+        // Native path: forward directly
+        cmd.set_pipeline(it->second.rt_pipeline);
+        cmd.inner().trace_rays(desc);
+        return false;
+    }
+
+    // Emulated path: translate to compute dispatch
+    cmd.set_pipeline(it->second.compute_fallback);
+
+    // Bind emulated SBT buffer as bindless SRV
+    // Bind acceleration structure as compute SRV (GR-4.9)
+
+    // Push trace_rays parameters as push constants
+    struct RtPushConstants {
+        uint32_t width;
+        uint32_t height;
+        uint32_t depth;
+        uint32_t sbt_buffer_index;  // bindless index of emulated SBT
+    };
+    RtPushConstants pc{desc.width, desc.height, desc.depth,
+                       /* bindless index */};
+    cmd.push_constants(&pc, sizeof(pc));
+
+    // Dispatch with 8x8 thread groups
+    constexpr uint32_t tile = 8;
+    cmd.dispatch((desc.width + tile - 1) / tile,
+                 (desc.height + tile - 1) / tile,
+                 desc.depth);
+    return true;
+}
+```
+
+#### Capability Matrix
+
+| Feature                  | D3D12           | Vulkan          | Metal                     |
+| ------------------------ | --------------- | --------------- | ------------------------- |
+| `ray_tracing`            | DXR 1.2         | KHR extensions  | `false` — no RT pipeline  |
+| `ray_tracing_inline`     | SM 6.5 RayQuery | KHR ray query   | Apple7+ `intersector<>`   |
+| Dedicated RT pipeline    | Yes             | Yes             | No — compute only         |
+| SBT                      | Native          | Native          | Emulated via flat buffer  |
+| `trace_rays()`           | `DispatchRays`  | `vkCmdTraceRaysKHR` | → `dispatch()`       |
+| `trace_rays_indirect()`  | `ExecuteIndirect` | `vkCmdTraceRaysIndirect2KHR` | → `dispatch_indirect()` |
+| AS binding for inline    | SRV             | Descriptor      | Argument buffer           |
+
+**Shader pipeline interaction:** The GPU runtime does not compile or translate shaders. The
+shader pipeline module is responsible for producing both variants of each RT effect:
+
+1. **Native variant:** Raygen + miss + closest-hit + any-hit shaders → RT pipeline
+2. **Compute variant:** Single compute shader with inline ray queries → compute pipeline
+
+Both pipeline handles are registered with `RayTracingAdapter::register_pipeline_pair()`.
+The GPU runtime selects the appropriate handle at dispatch time based on device capabilities.
+
 ---
 
 ## Integration Points
@@ -829,6 +1094,7 @@ The render graph modules change their dependencies from `harmonius::gpu` to
 | `rg::sync`          | `gpu::CommandBuffer::barrier`           | `gpu_runtime::state::BarrierOptimizer`           |
 | `rg::exec`          | `gpu::CommandBuffer::*` (all methods)   | `gpu_runtime::state::TrackedCommandBuffer`       |
 | `rg::exec`          | CPU-side pass scheduling                | `gpu_runtime::work_graph::WorkGraphExecutor`     |
+| `rg::exec`          | `gpu::CommandBuffer::trace_rays`        | `gpu_runtime::compat::RayTracingAdapter`         |
 | `rg::diag`          | `gpu::Device::create_query_pool`        | Unchanged (diagnostics access GPU directly)      |
 
 ```mermaid
@@ -868,6 +1134,7 @@ graph TD
     exec --> sync
     exec --> wg
     exec --> st
+    exec --> compat
     diag --> exec
     diag --> backend
 
@@ -897,3 +1164,8 @@ The following table maps GPU runtime operations to backend API calls:
 | `WorkGraphExecutor::execute` (emulated)   | Per-pass: `barrier` → pass commands → `barrier`              |
 | `DefragEngine::plan_step`                 | None (CPU-side planning)                                     |
 | `DefragEngine` GPU copies                 | `CommandBuffer::copy_buffer` / `copy_texture`                |
+| `RayTracingAdapter::dispatch` (native)    | `CommandBuffer::trace_rays`                                  |
+| `RayTracingAdapter::dispatch` (emulated)  | `set_pipeline(compute)` → `push_constants` → `dispatch`     |
+| `RayTracingAdapter::build_sbt` (native)   | `Allocator::create_buffer` (SBT layout with shader IDs)     |
+| `RayTracingAdapter::build_sbt` (emulated) | `Allocator::create_buffer` (flat material index buffer)      |
+| `WorkGraphExecutor` backing memory        | `Allocator::allocate` → passed via `DispatchGraphDesc`       |

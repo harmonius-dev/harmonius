@@ -20,7 +20,10 @@ Class diagrams, sequence diagrams, and type definitions for the GPU runtime modu
     - [Class Diagram](#class-diagram-2)
     - [Native Execution Flow](#native-execution-flow)
     - [Emulated Execution Flow](#emulated-execution-flow)
-  - [4. Module Dependencies](#4-module-dependencies)
+  - [4. Feature Emulation (Compat)](#4-feature-emulation-compat)
+    - [Class Diagram](#class-diagram-3)
+    - [RT Dispatch Flow](#rt-dispatch-flow)
+  - [5. Module Dependencies](#5-module-dependencies)
 
 ---
 
@@ -533,7 +536,79 @@ sequenceDiagram
 
 ---
 
-## 4. Module Dependencies
+## 4. Feature Emulation (Compat)
+
+### Class Diagram
+
+```mermaid
+classDiagram
+    class RayTracingAdapter {
+        -gpu::DeviceCapabilities& caps_
+        -memory::Allocator& allocator_
+        -bool emulated_
+        -unordered_map~uint64_t, PipelinePair~ pairs_
+        -unordered_map~uint64_t, BufferHandle~ sbt_buffers_
+        +RayTracingAdapter(DeviceCapabilities&, Allocator&)
+        +register_pipeline_pair(uint64_t id, PipelinePair) void
+        +unregister_pipeline_pair(uint64_t id) void
+        +build_sbt(uint64_t pipeline_id, SbtLayout) void
+        +dispatch(uint64_t pipeline_id, TraceRaysDesc, TrackedCommandBuffer&) bool
+        +is_emulated() bool
+    }
+
+    class PipelinePair {
+        +gpu::PipelineHandle rt_pipeline
+        +gpu::PipelineHandle compute_fallback
+    }
+
+    class SbtLayout {
+        +span~SbtRecord~ raygen_records
+        +span~SbtRecord~ miss_records
+        +span~SbtRecord~ hit_group_records
+        +span~SbtRecord~ callable_records
+        +uint32_t record_stride
+    }
+
+    class SbtRecord {
+        +span~uint8_t~ local_root_args
+    }
+
+    RayTracingAdapter --> PipelinePair : stores
+    RayTracingAdapter --> SbtLayout : accepts
+    RayTracingAdapter --> Allocator : uses
+    RayTracingAdapter --> TrackedCommandBuffer : records into
+    SbtLayout --> SbtRecord : contains
+```
+
+### RT Dispatch Flow
+
+```mermaid
+sequenceDiagram
+    participant Caller as Caller (Render Graph)
+    participant RTA as RayTracingAdapter
+    participant TCB as TrackedCommandBuffer
+    participant CB as gpu::CommandBuffer
+
+    Caller->>RTA: dispatch(pipeline_id, trace_rays_desc, tcb)
+
+    alt Native RT (D3D12 / Vulkan)
+        RTA->>TCB: set_pipeline(rt_pipeline)
+        TCB->>CB: set_pipeline(rt_pipeline)
+        RTA->>CB: trace_rays(desc)
+        RTA-->>Caller: false (not emulated)
+    else Emulated RT (Metal)
+        RTA->>TCB: set_pipeline(compute_fallback)
+        TCB->>CB: set_pipeline(compute_fallback)
+        RTA->>TCB: push_constants(width, height, depth, sbt_index)
+        RTA->>TCB: dispatch(⌈w/8⌉, ⌈h/8⌉, d)
+        TCB->>CB: dispatch(⌈w/8⌉, ⌈h/8⌉, d)
+        RTA-->>Caller: true (emulated)
+    end
+```
+
+---
+
+## 5. Module Dependencies
 
 Complete dependency graph showing how the GPU runtime fits between the render graph and
 GPU backend.
@@ -585,6 +660,7 @@ flowchart TD
     rg_exec --> rg_sync
     rg_exec --> gprt_wg
     rg_exec --> gprt_state
+    rg_exec --> gprt_compat
     rg_diag --> rg_exec
 
     gprt_mem --> gpu_iface

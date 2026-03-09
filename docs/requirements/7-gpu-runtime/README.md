@@ -15,10 +15,10 @@ lifetimes, DAGs).
 | ---- | ----------------------------------------------------------- | ---- | ----------------------------------------------------------------------------- |
 | GR-1 | [7.1-memory-management.md](7.1-memory-management.md)       | 11   | Heap management, sub-allocation, ring buffers, defragmentation, budget        |
 | GR-2 | [7.2-state-tracking.md](7.2-state-tracking.md)             | 7    | Redundant state elimination, resource state cache, tracked command buffers    |
-| GR-3 | [7.3-work-graph-runtime.md](7.3-work-graph-runtime.md)     | 7    | Native GPU work graph execution, CPU-side emulation, transparent dispatch    |
-| GR-4 | [7.4-feature-emulation.md](7.4-feature-emulation.md)       | 5    | Cross-backend feature emulation, barrier optimization, capability adaptation |
+| GR-3 | [7.3-work-graph-runtime.md](7.3-work-graph-runtime.md)     | 9    | Native GPU work graph execution, CPU-side emulation, transparent dispatch    |
+| GR-4 | [7.4-feature-emulation.md](7.4-feature-emulation.md)       | 9    | Cross-backend feature emulation, barrier optimization, RT pipeline emulation |
 
-**Total: 30 requirements**
+**Total: 36 requirements**
 
 ## Design Principles
 
