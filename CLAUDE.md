@@ -8,7 +8,8 @@ This handbook provides guidelines and best practices for agents working on the H
 - Never create ASCII diagrams. Instead, create Mermaid diagrams. Always render Mermaid diagrams with the MCP to ensure
   correctness and readability.
 - Always limit lines to 120 characters for all code, configuration, documentation, and comments. The limit may be
-  exceeded if the line cannot be split without changing semantics.
+  exceeded if the line cannot be split without changing semantics. The line length limit does not apply to tables in
+  Markdown documents.
 - Always sort JSON documents by keys in lexicographical order. Do not sort JSON arrays, only JSON objects.
 
 ## Design guidelines
