@@ -79,3 +79,55 @@ These requirements do not apply to this framework. For details about this, see
   quality config, error reporting, resource handles
 - [5.2 Extensibility](5-api-and-extensibility/5.2-extensibility.md) — shader
   nodes, custom passes, material extensions, animation evaluators
+
+### 6 Render Graph
+
+Low-level requirements for the declarative render graph library. See
+[README.md](6-render-graph/README.md) for details and traceability.
+
+- [6.1 Pass Declaration](6-render-graph/6.1-pass-declaration.md) — pass types,
+  typed I/O, ordered chains, variants, conditional passes
+- [6.2 Resource Management](6-render-graph/6.2-resource-management.md) —
+  transient, persistent, imported, history resources, formats, atlas
+  sub-allocation
+- [6.3 Barriers and Sync](6-render-graph/6.3-barriers-and-sync.md) — automatic
+  barriers, layout transitions, batching, cross-queue ownership
+- [6.4 Queue Assignment](6-render-graph/6.4-queue-assignment.md) — per-pass
+  queue affinity, async compute, transfer queue, fallback
+- [6.5 Scheduling and Ordering](6-render-graph/6.5-scheduling-and-ordering.md)
+  — topological sort, sub-graph instantiation, priority scheduling
+- [6.6 Capability Gating](6-render-graph/6.6-capability-gating.md) — hardware
+  gates, hard/soft gates, fallback chains, capability descriptors
+- [6.7 Budget Culling](6-render-graph/6.7-budget-culling.md) — GPU timing
+  gates, cost/priority annotations, cascading dead-pass elimination
+- [6.8 Resource Aliasing](6-render-graph/6.8-resource-aliasing.md) — lifetime
+  intervals, aliased heap allocation, pool-based aliasing, memory diagnostics
+- [6.9 Multi-View Execution](6-render-graph/6.9-multi-view-execution.md) —
+  parameterized sub-graph templates, per-instance resources, array-layer
+  targeting
+- [6.10 Parallel Encoding](6-render-graph/6.10-parallel-encoding.md) —
+  independent command buffers, thread-safe pools, encoding dependency graph
+- [6.11 Streaming Integration](6-render-graph/6.11-streaming-integration.md) —
+  transfer queue passes, completion fences, residency tracking, eviction
+- [6.12 Diagnostics](6-render-graph/6.12-diagnostics.md) — GPU timestamp
+  queries, pipeline statistics, transfer throughput, debug overlays
+- [6.13 Graph Compilation](6-render-graph/6.13-graph-compilation.md) — DAG
+  compilation, dead-pass elimination, compile-time validation, incremental
+  recompilation
+- [6.14 Per-Frame Execution](6-render-graph/6.14-per-frame-execution.md) —
+  topology-data separation, per-frame binding, dynamic resolution, pass
+  activation flags
+
+### 7 GPU Runtime
+
+Requirements for the GPU runtime layer. See
+[README.md](7-gpu-runtime/README.md) for details and design principles.
+
+- [7.1 Memory Management](7-gpu-runtime/7.1-memory-management.md) — heap
+  management, sub-allocation, ring buffers, defragmentation, budget
+- [7.2 State Tracking](7-gpu-runtime/7.2-state-tracking.md) — redundant state
+  elimination, resource state cache, tracked command buffers
+- [7.3 Work Graph Runtime](7-gpu-runtime/7.3-work-graph-runtime.md) — native
+  GPU work graph execution, CPU-side emulation, transparent dispatch
+- [7.4 Feature Emulation](7-gpu-runtime/7.4-feature-emulation.md) —
+  cross-backend feature emulation, barrier optimization, RT pipeline emulation
