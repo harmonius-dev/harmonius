@@ -16,6 +16,7 @@ export namespace harmonius::gpu
       const BarrierDesc &barrier_desc,
       const RenderPassDesc &rp_desc,
       PipelineHandle pipeline,
+      WorkGraphHandle wgh,
       std::uint32_t u32,
       std::uint64_t u64,
       const TraceRaysDesc &trace_desc,
@@ -26,6 +27,7 @@ export namespace harmonius::gpu
       const TextureSubresource &sub,
       const Viewport &vp,
       const Scissor &sc,
+      Extent3D ext,
       const void *data,
       DescriptorHeapHandle desc_heap,
       QueryPoolHandle query_pool,
@@ -40,26 +42,50 @@ export namespace harmonius::gpu
 
     { b.set_pipeline(pipeline) } -> std::same_as<void>;
 
+    // Mesh shader dispatch
     { b.dispatch_mesh(u32, u32, u32) } -> std::same_as<void>;
+    { b.dispatch_mesh_indirect(buf, u64, u32, u32) } -> std::same_as<void>;
+    { b.dispatch_mesh_indirect_count(buf, u64, buf, u64, u32, u32) } -> std::same_as<void>;
+
+    // Compute dispatch
     { b.dispatch(u32, u32, u32) } -> std::same_as<void>;
+    { b.dispatch_indirect(buf, u64) } -> std::same_as<void>;
+
+    // Ray tracing
     { b.trace_rays(trace_desc) } -> std::same_as<void>;
-    { b.dispatch_graph(graph_desc) } -> std::same_as<void>;
+    { b.trace_rays_indirect(buf, u64) } -> std::same_as<void>;
+
+    // Acceleration structures
     { b.build_acceleration_structure(build_desc) } -> std::same_as<void>;
 
-    { b.copy_buffer_to_buffer(buf, u64, buf, u64, u64) } -> std::same_as<void>;
-    { b.copy_buffer_to_texture(buf, tex, sub) } -> std::same_as<void>;
-    { b.copy_texture_to_buffer(tex, buf, sub) } -> std::same_as<void>;
-    { b.copy_texture_to_texture(tex, tex, sub, sub) } -> std::same_as<void>;
+    // Work graphs
+    { b.set_work_graph(wgh) } -> std::same_as<void>;
+    { b.dispatch_graph(graph_desc) } -> std::same_as<void>;
 
+    // Copy commands
+    { b.copy_buffer(buf, u64, buf, u64, u64) } -> std::same_as<void>;
+    { b.copy_texture(tex, sub, tex, sub, ext) } -> std::same_as<void>;
+    { b.copy_buffer_to_texture(buf, u64, tex, sub, ext) } -> std::same_as<void>;
+    { b.copy_texture_to_buffer(tex, sub, buf, u64, ext) } -> std::same_as<void>;
+
+    // Viewport and scissor
     { b.set_viewport(vp) } -> std::same_as<void>;
     { b.set_scissor(sc) } -> std::same_as<void>;
 
-    { b.push_constants(data, u32) } -> std::same_as<void>;
-    { b.bind_descriptor_heap(desc_heap) } -> std::same_as<void>;
-    { b.write_timestamp(query_pool, u32) } -> std::same_as<void>;
+    // Push constants
+    { b.push_constants(data, u32, u32) } -> std::same_as<void>;
 
+    // Descriptor binding
+    { b.bind_descriptor_heap(desc_heap) } -> std::same_as<void>;
+
+    // Queries
+    { b.write_timestamp(query_pool, u32) } -> std::same_as<void>;
+    { b.resolve_query_pool(query_pool, u32, u32, buf, u64) } -> std::same_as<void>;
+
+    // Debug labels
     { b.begin_debug_label(label) } -> std::same_as<void>;
     { b.end_debug_label() } -> std::same_as<void>;
+    { b.insert_debug_label(label) } -> std::same_as<void>;
   };
 
   // ---------------------------------------------------------------------------
@@ -72,7 +98,7 @@ export namespace harmonius::gpu
       requires(P p, const P cp) {
         { p.allocate_command_buffer() } -> std::same_as<typename P::CommandBufferType>;
         { p.reset() } -> std::same_as<void>;
-        { cp.allocated_count() } -> std::same_as<std::uint32_t>;
+        { cp.allocated_count() } -> std::convertible_to<std::uint32_t>;
       };
 
   // ---------------------------------------------------------------------------
@@ -98,7 +124,6 @@ export namespace harmonius::gpu
           const AccelerationStructureDesc &accel_desc,
           AccelerationStructureHandle accel,
           FenceHandle fence,
-          typename D::CommandPoolType pool,
           const MeshRenderPipelineDesc &mesh_desc,
           const ComputePipelineDesc &compute_desc,
           const RayTracingPipelineDesc &rt_desc,
@@ -115,7 +140,7 @@ export namespace harmonius::gpu
           SwapchainHandle swapchain,
           const PipelineCacheDesc &pc_desc,
           PipelineCacheHandle pipeline_cache,
-          std::span<const typename D::CommandBufferType> cmd_bufs,
+          std::span<typename D::CommandBufferType *> cmd_bufs,
           std::span<const FenceSignal> signals,
           std::span<const FenceWait> waits,
           std::string_view name) {
@@ -124,82 +149,110 @@ export namespace harmonius::gpu
         { cd.queue_count(qt) } -> std::same_as<std::uint32_t>;
 
         // Texture
-        { d.create_texture(tex_desc) } -> std::same_as<std::expected<TextureHandle, ResourceError>>;
+        { d.create_texture(tex_desc) }
+            -> std::same_as<std::expected<TextureHandle, ResourceError>>;
         { d.destroy_texture(tex) } -> std::same_as<void>;
 
         // Buffer
-        { d.create_buffer(buf_desc) } -> std::same_as<std::expected<BufferHandle, ResourceError>>;
+        { d.create_buffer(buf_desc) }
+            -> std::same_as<std::expected<BufferHandle, ResourceError>>;
         { d.destroy_buffer(buf) } -> std::same_as<void>;
 
         // Heap
-        { d.create_heap(heap_desc) } -> std::same_as<std::expected<HeapHandle, ResourceError>>;
+        { d.create_heap(heap_desc) }
+            -> std::same_as<std::expected<HeapHandle, ResourceError>>;
         { d.destroy_heap(heap) } -> std::same_as<void>;
 
         // Placed resources
-        { d.create_placed_texture(tex_desc, heap, u64) } -> std::same_as<std::expected<TextureHandle, ResourceError>>;
-        { d.create_placed_buffer(buf_desc, heap, u64) } -> std::same_as<std::expected<BufferHandle, ResourceError>>;
+        { d.create_placed_texture(heap, u64, tex_desc) }
+            -> std::same_as<std::expected<TextureHandle, ResourceError>>;
+        { d.create_placed_buffer(heap, u64, buf_desc) }
+            -> std::same_as<std::expected<BufferHandle, ResourceError>>;
+
+        // Allocation info queries
+        { cd.query_texture_allocation_info(tex_desc) } -> std::same_as<AllocationInfo>;
+        { cd.query_buffer_allocation_info(buf_desc) } -> std::same_as<AllocationInfo>;
 
         // Sparse resources
-        { d.create_sparse_texture(sparse_tex_desc) } -> std::same_as<std::expected<TextureHandle, ResourceError>>;
+        { d.create_sparse_texture(sparse_tex_desc) }
+            -> std::same_as<std::expected<TextureHandle, ResourceError>>;
         { d.update_sparse_bindings(tex, bindings) } -> std::same_as<void>;
-
-        // Acceleration structures
-        { d.create_acceleration_structure(accel_desc) } -> std::same_as<std::expected<AccelerationStructureHandle, ResourceError>>;
-        { d.destroy_acceleration_structure(accel) } -> std::same_as<void>;
-        { cd.get_acceleration_structure_sizes(accel_desc) } -> std::same_as<AccelerationStructureSizes>;
-
-        // Fences
-        { d.create_fence(u64) } -> std::same_as<std::expected<FenceHandle, DeviceError>>;
-        { d.destroy_fence(fence) } -> std::same_as<void>;
-
-        // Command pools
-        { d.create_command_pool(qt) } -> std::same_as<std::expected<typename D::CommandPoolType, DeviceError>>;
-        { d.destroy_command_pool(pool) } -> std::same_as<void>;
-
-        // Pipelines
-        { d.create_mesh_render_pipeline(mesh_desc) } -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
-        { d.create_compute_pipeline(compute_desc) } -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
-        { d.create_ray_tracing_pipeline(rt_desc) } -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
-        { d.destroy_pipeline(pipeline) } -> std::same_as<void>;
-
-        // Work graphs
-        { d.create_work_graph(wg_desc) } -> std::same_as<std::expected<WorkGraphHandle, PipelineError>>;
-        { d.destroy_work_graph(work_graph) } -> std::same_as<void>;
-
-        // Descriptor heaps
-        { d.create_descriptor_heap(dh_desc) } -> std::same_as<std::expected<DescriptorHeapHandle, DeviceError>>;
-        { d.destroy_descriptor_heap(desc_heap) } -> std::same_as<void>;
-        { d.write_descriptor(desc_heap, u32, dw) } -> std::same_as<void>;
-
-        // Query pools
-        { d.create_query_pool(qp_desc) } -> std::same_as<std::expected<QueryPoolHandle, DeviceError>>;
-        { d.destroy_query_pool(query_pool) } -> std::same_as<void>;
-
-        // Swapchain
-        { d.create_swapchain(sc_desc) } -> std::same_as<std::expected<SwapchainHandle, DeviceError>>;
-        { d.destroy_swapchain(swapchain) } -> std::same_as<void>;
-
-        // Pipeline cache
-        { d.create_pipeline_cache(pc_desc) } -> std::same_as<std::expected<PipelineCacheHandle, DeviceError>>;
-        { d.destroy_pipeline_cache(pipeline_cache) } -> std::same_as<void>;
-
-        // Submission and synchronization
-        { d.submit(qt, cmd_bufs, signals, waits) } -> std::same_as<void>;
 
         // Memory mapping
         { d.map(buf) } -> std::same_as<void *>;
         { d.unmap(buf) } -> std::same_as<void>;
 
-        // Device operations
-        { d.wait_idle() } -> std::same_as<void>;
+        // Acceleration structures
+        { d.create_acceleration_structure(accel_desc) }
+            -> std::same_as<std::expected<AccelerationStructureHandle, ResourceError>>;
+        { cd.query_acceleration_structure_sizes(accel_desc) }
+            -> std::same_as<AccelerationStructureSizes>;
+        { d.destroy_acceleration_structure(accel) } -> std::same_as<void>;
+
+        // Fences
+        { d.create_fence(u64) }
+            -> std::same_as<std::expected<FenceHandle, DeviceError>>;
+        { d.destroy_fence(fence) } -> std::same_as<void>;
+        { cd.fence_completed_value(fence) } -> std::same_as<std::uint64_t>;
+        { d.wait_fence_cpu(fence, u64) } -> std::same_as<void>;
+
+        // Command pools
+        { d.create_command_pool(qt) };
+
+        // Submission
+        { d.submit(qt, cmd_bufs, signals, waits) } -> std::same_as<void>;
+
+        // Pipelines
+        { d.create_mesh_render_pipeline(mesh_desc) }
+            -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
+        { d.create_compute_pipeline(compute_desc) }
+            -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
+        { d.create_ray_tracing_pipeline(rt_desc) }
+            -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
+        { d.destroy_pipeline(pipeline) } -> std::same_as<void>;
+
+        // Work graphs
+        { d.create_work_graph(wg_desc) }
+            -> std::same_as<std::expected<WorkGraphHandle, PipelineError>>;
+        { d.destroy_work_graph(work_graph) } -> std::same_as<void>;
+
+        // Descriptor heaps
+        { d.create_descriptor_heap(dh_desc) }
+            -> std::same_as<std::expected<DescriptorHeapHandle, DeviceError>>;
+        { d.write_descriptor(desc_heap, u32, dw) } -> std::same_as<void>;
+        { d.destroy_descriptor_heap(desc_heap) } -> std::same_as<void>;
+
+        // Query pools
+        { d.create_query_pool(qp_desc) }
+            -> std::same_as<std::expected<QueryPoolHandle, DeviceError>>;
+        { d.destroy_query_pool(query_pool) } -> std::same_as<void>;
+        { cd.timestamp_period_ns() } -> std::same_as<double>;
+
+        // Swapchain
+        { d.create_swapchain(sc_desc) }
+            -> std::same_as<std::expected<SwapchainHandle, DeviceError>>;
+        { d.acquire_next_image(swapchain) }
+            -> std::same_as<std::expected<TextureHandle, DeviceError>>;
+        { d.present(swapchain) } -> std::same_as<void>;
+        { d.resize_swapchain(swapchain, u32, u32) } -> std::same_as<void>;
+        { d.destroy_swapchain(swapchain) } -> std::same_as<void>;
+
+        // Pipeline cache
+        { d.create_pipeline_cache(pc_desc) }
+            -> std::same_as<std::expected<PipelineCacheHandle, DeviceError>>;
+        { d.serialize_pipeline_cache(pipeline_cache) }
+            -> std::same_as<std::vector<std::uint8_t>>;
+        { d.destroy_pipeline_cache(pipeline_cache) } -> std::same_as<void>;
 
         // Debug naming
         { d.set_name(tex, name) } -> std::same_as<void>;
         { d.set_name(buf, name) } -> std::same_as<void>;
+        { d.set_name(accel, name) } -> std::same_as<void>;
+        { d.set_name(pipeline, name) } -> std::same_as<void>;
+        { d.set_name(fence, name) } -> std::same_as<void>;
 
-        // Presentation
-        { d.present(swapchain) } -> std::same_as<std::expected<TextureHandle, DeviceError>>;
-        { d.resize_swapchain(swapchain, u32, u32) } -> std::same_as<void>;
+        // Device operations
+        { d.wait_idle() } -> std::same_as<void>;
       };
 
 } // namespace harmonius::gpu

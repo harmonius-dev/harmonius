@@ -59,7 +59,7 @@ export namespace harmonius::rg::builder
     std::uint32_t depth_or_layers = 1;
     std::uint32_t mip_levels = 1;
     gpu::SampleCount samples = gpu::SampleCount::x1;
-    gpu::TextureUsage usage = {};
+    gpu::TextureUsageFlags usage = {};
     std::optional<std::string_view> resolution_param;
   };
 
@@ -73,7 +73,7 @@ export namespace harmonius::rg::builder
     std::uint32_t depth_or_layers = 1;
     std::uint32_t mip_levels = 1;
     gpu::SampleCount samples = gpu::SampleCount::x1;
-    gpu::TextureUsage usage = {};
+    gpu::TextureUsageFlags usage = {};
   };
 
   struct HistoryResourceDesc
@@ -86,7 +86,7 @@ export namespace harmonius::rg::builder
     std::uint32_t depth_or_layers = 1;
     std::uint32_t mip_levels = 1;
     gpu::SampleCount samples = gpu::SampleCount::x1;
-    gpu::TextureUsage usage = {};
+    gpu::TextureUsageFlags usage = {};
   };
 
   struct MultiFrameHistoryDesc
@@ -99,7 +99,7 @@ export namespace harmonius::rg::builder
     std::uint32_t depth_or_layers = 1;
     std::uint32_t mip_levels = 1;
     gpu::SampleCount samples = gpu::SampleCount::x1;
-    gpu::TextureUsage usage = {};
+    gpu::TextureUsageFlags usage = {};
     std::uint32_t history_length = 2;
   };
 
@@ -113,7 +113,7 @@ export namespace harmonius::rg::builder
     std::uint32_t depth_or_layers = 1;
     std::uint32_t mip_levels = 1;
     gpu::SampleCount samples = gpu::SampleCount::x1;
-    gpu::TextureUsage usage = {};
+    gpu::TextureUsageFlags usage = {};
   };
 
   struct SparseResourceDesc
@@ -125,7 +125,7 @@ export namespace harmonius::rg::builder
     std::uint32_t height = 0;
     std::uint32_t depth_or_layers = 1;
     std::uint32_t mip_levels = 1;
-    gpu::TextureUsage usage = {};
+    gpu::TextureUsageFlags usage = {};
     std::uint32_t tile_width = 256;
     std::uint32_t tile_height = 256;
   };
@@ -140,7 +140,7 @@ export namespace harmonius::rg::builder
     std::uint32_t depth_or_layers = 1;
     std::uint32_t mip_levels = 1;
     gpu::SampleCount samples = gpu::SampleCount::x1;
-    gpu::TextureUsage usage = {};
+    gpu::TextureUsageFlags usage = {};
     std::uint32_t pool_size = 1;
   };
 
@@ -149,7 +149,7 @@ export namespace harmonius::rg::builder
     std::string_view name;
     std::uint64_t size_bytes = 0;
     gpu::HeapType heap_type = gpu::HeapType::upload;
-    gpu::BufferUsage usage = {};
+    gpu::BufferUsageFlags usage = {};
   };
 
   struct AtlasResourceDesc
@@ -160,13 +160,13 @@ export namespace harmonius::rg::builder
     std::uint32_t atlas_height = 0;
     std::uint32_t tile_width = 256;
     std::uint32_t tile_height = 256;
-    gpu::TextureUsage usage = {};
+    gpu::TextureUsageFlags usage = {};
   };
 
   struct AccelStructDesc
   {
     std::string_view name;
-    gpu::BufferUsage usage = {};
+    gpu::BufferUsageFlags usage = {};
     std::uint64_t max_size_bytes = 0;
     bool allow_update = false;
   };

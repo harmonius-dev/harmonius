@@ -279,7 +279,7 @@ export namespace harmonius::shader
   class ShaderCompiler
   {
   public:
-    explicit ShaderCompiler(gpu::Backend target_backend);
+    explicit ShaderCompiler(std::string_view target_backend);
 
     [[nodiscard]] auto compile(const ShaderModuleDesc &desc)
         -> std::expected<ShaderModule, ShaderDiagnostic>;
@@ -299,8 +299,6 @@ export namespace harmonius::shader
     auto add_include_path(std::string_view path) -> void;
     auto set_global_define(std::string_view name, std::string_view value) -> void;
 
-  private:
-    gpu::Backend backend_;
   };
 
   // ---------------------------------------------------------------------------
@@ -371,7 +369,7 @@ export namespace harmonius::shader
   public:
     explicit ShaderStitcher(
         const ShaderFragmentLibrary &library,
-        gpu::Backend backend);
+        std::string_view target_backend);
 
     [[nodiscard]] auto validate(const StitchingGraph &graph)
         -> std::expected<void, std::vector<ShaderDiagnostic>>;

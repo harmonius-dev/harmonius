@@ -9,6 +9,19 @@ export namespace harmonius::rg::exec
 {
 
   // ---------------------------------------------------------------------------
+  // Resolved resource (texture or buffer)
+  // ---------------------------------------------------------------------------
+
+  struct ResolvedResource
+  {
+    gpu::TextureHandle texture = gpu::TextureHandle::invalid;
+    gpu::BufferHandle buffer = gpu::BufferHandle::invalid;
+
+    [[nodiscard]] auto is_texture() const -> bool;
+    [[nodiscard]] auto is_buffer() const -> bool;
+  };
+
+  // ---------------------------------------------------------------------------
   // Transfer pass descriptor
   // ---------------------------------------------------------------------------
 
@@ -29,8 +42,9 @@ export namespace harmonius::rg::exec
   class PassContext
   {
   public:
-    [[nodiscard]] auto resolve(ResourceHandle handle) const -> gpu::ResourceHandle;
-    [[nodiscard]] auto allocate_constants(std::uint64_t size) -> std::pair<gpu::BufferHandle, std::uint64_t>;
+    [[nodiscard]] auto resolve(ResourceHandle handle) const -> ResolvedResource;
+    [[nodiscard]] auto allocate_constants(std::uint64_t size)
+        -> std::pair<gpu::BufferHandle, std::uint64_t>;
     [[nodiscard]] auto frame_index() const -> std::uint32_t;
   };
 
@@ -52,7 +66,8 @@ export namespace harmonius::rg::exec
   class Executor
   {
   public:
-    auto bind_resource(ResourceHandle rg_handle, gpu::ResourceHandle gpu_handle) -> void;
+    auto bind_texture(ResourceHandle rg_handle, gpu::TextureHandle gpu_handle) -> void;
+    auto bind_buffer(ResourceHandle rg_handle, gpu::BufferHandle gpu_handle) -> void;
     auto set_resolution_scale(std::string_view name, float scale) -> void;
     auto set_pass_active(PassHandle pass, bool active) -> void;
     auto invalidate_history(ResourceHandle resource) -> void;

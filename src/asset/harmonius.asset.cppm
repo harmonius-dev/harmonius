@@ -98,7 +98,7 @@ export namespace harmonius::asset
   {
     AssetId id;
     AssetType type;
-    gpu::Backend target_backend;
+    std::string_view target_backend;
     std::vector<std::uint8_t> data;
     std::uint64_t content_hash;
     CookedMetadata metadata;
@@ -217,7 +217,7 @@ export namespace harmonius::asset
   class AssetCooker
   {
   public:
-    explicit AssetCooker(gpu::Backend target);
+    explicit AssetCooker(std::string_view target_backend);
 
     [[nodiscard]] auto cook(const RawAsset &raw)
         -> std::expected<CookedAsset, CookError>;
@@ -228,9 +228,6 @@ export namespace harmonius::asset
     auto register_processor(
         AssetType type,
         std::function<CookedAsset(const RawAsset &)> fn) -> void;
-
-  private:
-    gpu::Backend backend_;
   };
 
   // ---------------------------------------------------------------------------
@@ -308,15 +305,23 @@ export namespace harmonius::asset
   class ResourceRegistry
   {
   public:
-    [[nodiscard]] auto register_asset(
+    [[nodiscard]] auto register_texture(
         AssetId id,
-        gpu::ResourceHandle gpu_resource,
+        gpu::TextureHandle gpu_texture,
+        const CookedMetadata &metadata) -> AssetHandle;
+
+    [[nodiscard]] auto register_buffer(
+        AssetId id,
+        gpu::BufferHandle gpu_buffer,
         const CookedMetadata &metadata) -> AssetHandle;
 
     auto unregister(AssetHandle handle) -> void;
 
-    [[nodiscard]] auto resolve(AssetHandle handle) const
-        -> std::expected<gpu::ResourceHandle, AssetError>;
+    [[nodiscard]] auto resolve_texture(AssetHandle handle) const
+        -> std::expected<gpu::TextureHandle, AssetError>;
+
+    [[nodiscard]] auto resolve_buffer(AssetHandle handle) const
+        -> std::expected<gpu::BufferHandle, AssetError>;
 
     [[nodiscard]] auto resolve_descriptor_index(AssetHandle handle) const
         -> std::expected<std::uint32_t, AssetError>;
@@ -335,14 +340,16 @@ export namespace harmonius::asset
     explicit BindlessDescriptorHeap(
         std::uint32_t max_descriptors = 1'000'000);
 
-    [[nodiscard]] auto allocate(gpu::ResourceHandle resource)
+    [[nodiscard]] auto allocate_texture(gpu::TextureHandle texture)
+        -> std::expected<std::uint32_t, HeapError>;
+
+    [[nodiscard]] auto allocate_buffer(gpu::BufferHandle buffer)
         -> std::expected<std::uint32_t, HeapError>;
 
     auto free(std::uint32_t index) -> void;
 
-    auto update(
-        std::uint32_t index,
-        gpu::ResourceHandle new_resource) -> void;
+    auto update_texture(std::uint32_t index, gpu::TextureHandle texture) -> void;
+    auto update_buffer(std::uint32_t index, gpu::BufferHandle buffer) -> void;
 
     [[nodiscard]] auto gpu_handle() const -> gpu::DescriptorHeapHandle;
     [[nodiscard]] auto allocated_count() const -> std::uint32_t;

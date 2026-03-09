@@ -12,16 +12,23 @@ export namespace harmonius::rg::gate
 
   struct CapabilityDescriptor
   {
+    // Required capabilities
     bool mesh_shaders = false;
+    bool bindless_resources = false;
+    bool timeline_fences = false;
+    bool async_compute_queue = false;
+    bool transfer_queue = false;
+
+    // Soft-gated capabilities
     bool ray_tracing = false;
-    bool ray_tracing_pipeline = false;
-    bool work_graphs = false;
-    bool sparse_resources = false;
-    bool variable_rate_shading = false;
-    bool sampler_feedback = false;
-    bool enhanced_barriers = false;
+    bool ray_tracing_inline = false;
+    bool opacity_micromaps = false;
+    bool sparse_textures = false;
     bool int64_atomics = false;
-    bool descriptor_indexing = false;
+    bool variable_rate_shading = false;
+    bool work_graphs = false;
+    bool split_barriers = false;
+    bool shader_function_linking = false;
 
     [[nodiscard]] auto has(std::string_view cap) const -> bool;
   };
