@@ -16,7 +16,7 @@ Companion to [render-graph-design.md](render-graph-design.md).
   - [6. Gating System](#6-gating-system)
   - [7. Execution Engine](#7-execution-engine)
   - [8. Diagnostics](#8-diagnostics)
-  - [9. GPU Backend](#9-gpu-backend)
+  - [9. GPU Runtime](#9-gpu-runtime)
 - [Cross-Module Relationships](#cross-module-relationships)
 - [Sequence Diagrams](#sequence-diagrams)
   - [Full Lifecycle](#full-lifecycle)
@@ -738,12 +738,14 @@ classDiagram
     TransferStatistics *-- TransferStatisticsEntry
 ```
 
-### 9. GPU Backend
+### 9. GPU Runtime
 
-`harmonius::gpu` — Concrete device, command buffer, and command pool types selected at compile
-time. Interface contracts are defined as C++20 concepts (`GpuDevice`, `GpuCommandBuffer`,
-`GpuCommandPool`) and enforced via `static_assert`. No virtual dispatch — one backend is compiled
-per binary. See the dedicated GPU backend design documents:
+`harmonius::gpu_runtime` — Shared services built on the GPU backend interface. The render graph
+depends on the GPU runtime layer, not on the GPU backend directly. See [gpu-runtime.md](gpu-runtime.md)
+and [gpu-runtime-classes.md](gpu-runtime-classes.md) for full class diagrams.
+
+This section shows only the abstract concept interfaces that the render graph interacts with.
+Concrete backend implementations (D3D12, Vulkan, Metal) are documented in:
 
 - [gpu-backend-interface.md](gpu-backend-interface.md) — concepts, types, and cross-backend
   compatibility
@@ -821,44 +823,6 @@ classDiagram
         +reset() void
         +allocated_count() uint32_t
     }
-    class D3D12Device {
-        -ID3D12Device16 device_
-        -D3D12MA_Allocator allocator_
-        -ID3D12DescriptorHeap cbv_srv_uav_heap_
-        -ID3D12RootSignature global_root_signature_
-    }
-    class VulkanDevice {
-        -VkDevice device_
-        -VmaAllocator allocator_
-        -VkDescriptorPool bindless_pool_
-        -VkPipelineLayout global_layout_
-    }
-    class MetalDevice {
-        -MTLDevice device_
-        -MTLResidencySet residency_set_
-        -MTL4Compiler compiler_
-        -VmaVirtualBlock virtual_block_
-    }
-    class D3D12CommandBuffer {
-        -ID3D12GraphicsCommandList10 list_
-    }
-    class VulkanCommandBuffer {
-        -VkCommandBuffer buffer_
-    }
-    class MetalCommandBuffer {
-        -MTL4CommandBuffer cmd_
-    }
-    class D3D12CommandPool {
-        -ID3D12CommandAllocator allocator_
-        -vector cached_lists_
-    }
-    class VulkanCommandPool {
-        -VkCommandPool pool_
-        -vector cached_buffers_
-    }
-    class MetalCommandPool {
-        -MTL4CommandAllocator allocator_
-    }
     class DeviceCapabilities {
         +bool mesh_shaders
         +bool bindless_resources
@@ -878,31 +842,17 @@ classDiagram
         +uint64_t device_local_memory_bytes
     }
 
-    GpuDevice ..> D3D12Device : satisfied by
-    GpuDevice ..> VulkanDevice : satisfied by
-    GpuDevice ..> MetalDevice : satisfied by
-    GpuCommandBuffer ..> D3D12CommandBuffer : satisfied by
-    GpuCommandBuffer ..> VulkanCommandBuffer : satisfied by
-    GpuCommandBuffer ..> MetalCommandBuffer : satisfied by
-    GpuCommandPool ..> D3D12CommandPool : satisfied by
-    GpuCommandPool ..> VulkanCommandPool : satisfied by
-    GpuCommandPool ..> MetalCommandPool : satisfied by
-    D3D12Device --> D3D12CommandPool : creates
-    VulkanDevice --> VulkanCommandPool : creates
-    MetalDevice --> MetalCommandPool : creates
-    D3D12CommandPool --> D3D12CommandBuffer : allocates
-    VulkanCommandPool --> VulkanCommandBuffer : allocates
-    MetalCommandPool --> MetalCommandBuffer : allocates
-    D3D12Device --> DeviceCapabilities : exposes
-    VulkanDevice --> DeviceCapabilities : exposes
-    MetalDevice --> DeviceCapabilities : exposes
+    GpuDevice --> DeviceCapabilities : exposes
+    GpuDevice --> GpuCommandPool : creates
+    GpuCommandPool --> GpuCommandBuffer : allocates
 ```
 
 ---
 
 ## Cross-Module Relationships
 
-How the nine modules depend on each other at the class level.
+How the modules depend on each other at the class level. The render graph interacts with the
+GPU through the GPU runtime layer (`gpu_runtime`) — it never uses backend APIs directly.
 
 ```mermaid
 classDiagram
@@ -916,10 +866,13 @@ classDiagram
     class Executor["Executor «exec»"]
     class TimelineFenceManager["TimelineFenceManager «sync»"]
     class CommandBufferPool["CommandBufferPool «exec»"]
-    class RingAllocator["RingAllocator «resource»"]
-    class PoolAllocator["PoolAllocator «resource»"]
     class DiagnosticsCollector["DiagnosticsCollector «diag»"]
-    class Device["Device «gpu»"]
+    class Allocator["Allocator «gpu_runtime::memory»"]
+    class RingAllocator["RingAllocator «gpu_runtime::memory»"]
+    class PoolAllocator["PoolAllocator «gpu_runtime::memory»"]
+    class TrackedCommandBuffer["TrackedCommandBuffer «gpu_runtime::state»"]
+    class BarrierOptimizer["BarrierOptimizer «gpu_runtime::state»"]
+    class WorkGraphExecutor["WorkGraphExecutor «gpu_runtime::work_graph»"]
     class DeviceCapabilities["DeviceCapabilities «gpu»"]
 
     GraphBuilder --> DeclaredGraph : produces
@@ -931,34 +884,35 @@ classDiagram
     Executor --> ExecutionPlan : reads
     Executor --> TimelineFenceManager : owns
     Executor --> CommandBufferPool : owns
-    Executor --> RingAllocator : owns
-    Executor --> Device : "submit(), present(), wait_idle()"
+    Executor --> Allocator : "allocate(), free()"
+    Executor --> RingAllocator : "allocate() per-frame staging"
+    Executor --> TrackedCommandBuffer : "records commands"
+    Executor --> WorkGraphExecutor : "execute()"
     DiagnosticsCollector --> Executor : reads metrics from
-    DiagnosticsCollector --> Device : "create_query_pool(), timestamp_period_ns()"
-    PoolAllocator --> Device : "create_texture(), create_buffer()"
-    RingAllocator --> Device : "create_buffer(upload), map()"
-    AliasingSolver --> Device : "query_allocation_info()"
+    PoolAllocator --> Allocator : "allocate(), free()"
+    AliasingSolver --> Allocator : "query_allocation_info()"
+    BarrierScheduler --> BarrierOptimizer : "enqueue(), flush()"
     BarrierScheduler --> DeviceCapabilities : "split_barriers check"
     GateEvaluator --> DiagnosticsCollector : reads timing from
     GateEvaluator --> DeviceCapabilities : "capability checks"
-    CommandBufferPool --> Device : "create_command_pool()"
-    TimelineFenceManager --> Device : "create_fence(), fence_completed_value()"
 ```
 
-### Render Graph to GPU Backend Type Mapping
+### Render Graph to GPU Runtime Type Mapping
 
-How render graph types translate into GPU backend types at the boundary between the two layers.
+How render graph types translate into GPU runtime and backend interface types at the boundary.
+The render graph depends on `gpu_runtime` types for all GPU interaction — it never references
+backend-specific types (D3D12, Vulkan, Metal).
 
-| Render Graph Type | GPU Backend Type | Translation Point |
-|------------------|-----------------|-------------------|
+| Render Graph Type | GPU Runtime / Interface Type | Translation Point |
+|------------------|----------------------------|-------------------|
 | `rg::QueueAffinity` | `gpu::QueueType` | Direct 1:1 enum mapping (`graphics` → `graphics`, etc.) |
 | `rg::UsageType` | `gpu::PipelineStage` + `gpu::ResourceAccess` + `gpu::TextureLayout` | `BarrierScheduler` performs the multi-field translation |
-| `rg::sync::BarrierDesc` | `gpu::BarrierDesc` (containing `gpu::TextureBarrier` / `gpu::BufferBarrier` / `gpu::GlobalBarrier`) | Synchronization engine translates at compile time |
-| `rg::builder::TransientResourceDesc` | `gpu::TextureDesc` or `gpu::BufferDesc` | Resource system maps format, dimensions, usage flags |
-| `rg::builder::PassDescriptor` (execute callback) | `gpu::CommandBuffer` method calls | `PassContext::cmd()` exposes the command buffer |
-| `rg::compiler::FenceCoordination` | `gpu::FenceSignal` + `gpu::FenceWait` in `gpu::Device::submit()` | `TimelineFenceManager` translates fence operations |
-| `rg::resource::AliasingAssignment` | `gpu::Device::create_placed_texture()` / `create_placed_buffer()` at heap offset | Resource system creates placed resources from assignments |
-| `rg::gate::CapabilityDescriptor` | `gpu::DeviceCapabilities` | 1:1 field mapping — populated from `gpu::Device::capabilities()` at init |
+| `rg::sync::BarrierDesc` | `gpu_runtime::state::BarrierOptimizer::enqueue()` | Synchronization engine enqueues barriers at compile time |
+| `rg::builder::TransientResourceDesc` | `gpu_runtime::memory::Allocator::allocate()` | Resource system allocates via the runtime allocator |
+| `rg::builder::PassDescriptor` (execute callback) | `gpu_runtime::state::TrackedCommandBuffer` method calls | `PassContext::cmd()` exposes the tracked command buffer |
+| `rg::compiler::FenceCoordination` | `gpu::FenceSignal` + `gpu::FenceWait` | `TimelineFenceManager` translates fence operations |
+| `rg::resource::AliasingAssignment` | `gpu_runtime::memory::Allocator::allocate()` with placed strategy | Resource system creates placed resources from assignments |
+| `rg::gate::CapabilityDescriptor` | `gpu::DeviceCapabilities` | 1:1 field mapping — populated from device capabilities at init |
 
 ---
 

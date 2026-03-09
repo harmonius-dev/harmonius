@@ -53,10 +53,8 @@ if(HARMONIUS_GPU_BACKEND STREQUAL "metal")
               ${FOUNDATION_FRAMEWORK} ${IOKIT_FRAMEWORK} ${IOSURFACE_FRAMEWORK})
 elseif(HARMONIUS_GPU_BACKEND STREQUAL "vulkan")
   find_package(Vulkan REQUIRED)
-  find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 elseif(HARMONIUS_GPU_BACKEND STREQUAL "d3d12")
   find_package(directx-headers CONFIG REQUIRED)
-  find_package(unofficial-d3d12-memory-allocator CONFIG REQUIRED)
 endif()
 
 # Library modules

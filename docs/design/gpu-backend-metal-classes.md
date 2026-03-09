@@ -16,7 +16,7 @@ concepts and types that these classes satisfy.
 - [Metal-Specific Details](#metal-specific-details)
   - [Metal 4 Command Model](#metal-4-command-model)
   - [Residency Management](#residency-management)
-  - [VMA Virtualized Mode](#vma-virtualized-mode)
+  - [Memory Management](#memory-management)
   - [Bindless Resources](#bindless-resources)
   - [Shader Function Linking](#shader-function-linking)
   - [Pipeline Caching](#pipeline-caching)
@@ -48,7 +48,6 @@ classDiagram
         -MTLBuffer argument_buffer_
         -MTLResidencySet residency_set_
         -MTL4Compiler compiler_
-        -VmaVirtualBlock virtual_block_
         -MTLSharedEvent graphics_event_
         -MTLSharedEvent compute_event_
         -MTLSharedEvent copy_event_
@@ -214,10 +213,6 @@ classDiagram
         +commit() void
         +requestResidency() void
     }
-    class VmaVirtualBlock {
-        +vmaVirtualAllocate() Allocation
-        +vmaVirtualFree() void
-    }
     class MTLStitchedLibrary {
         +newFunctionWithName() MTLFunction
     }
@@ -267,18 +262,22 @@ buffers. `MTLResidencySet` (Metal 4) provides batch residency control:
 
 All command buffers automatically include residency set resources once committed.
 
-### VMA Virtualized Mode
+### Memory Management
 
-The Metal backend uses VMA's `VmaVirtualBlock` for CPU-side allocation tracking
-without requiring a real Vulkan device. Actual Metal allocations go through native
-Metal APIs, but VMA manages the logical address space:
+Memory management (sub-allocation, defragmentation, budget tracking) is handled by
+the GPU runtime layer (`harmonius::gpu_runtime::memory`). The Metal backend provides
+only raw heap and resource creation primitives:
 
-| VMA Feature | Metal Usage |
-|-------------|-------------|
-| Virtual sub-allocation | Offset management within `MTLHeap` placement heaps |
-| Virtual block defragmentation | Compaction of persistent resources across heaps |
-| Allocation tracking | Unified memory diagnostics across all backends |
-| Budget tracking | Memory pressure via `MTLDevice.currentAllocatedSize` |
+| Backend Method | Metal API Call |
+|----------------|---------------|
+| `create_heap()` | `newHeapWithDescriptor:` |
+| `create_placed_texture()` | `newTextureWithDescriptor:offset:` on `MTLHeap` |
+| `create_placed_buffer()` | `newBufferWithLength:options:offset:` on `MTLHeap` |
+| `create_texture()` | `newTextureWithDescriptor:` |
+| `create_buffer()` | `newBufferWithLength:options:` |
+
+Memory budget monitoring uses `MTLDevice.currentAllocatedSize`, exposed through
+the `DeviceCapabilities` struct.
 
 ### Bindless Resources
 
@@ -367,8 +366,6 @@ sequenceDiagram
     participant App
     participant MD as MetalDevice
     participant MTL as MTLDevice
-    participant VMA as VmaVirtualBlock
-
     App->>MD: MetalDevice(DeviceDesc)
     MD->>MTL: MTLCreateSystemDefaultDevice()
     MTL-->>MD: id MTLDevice
@@ -383,10 +380,6 @@ sequenceDiagram
     MD->>MTL: newCommandQueue (graphics)
     MD->>MTL: newCommandQueue (compute)
     MD->>MTL: newCommandQueue (copy)
-
-    Note over MD,VMA: Memory management
-    MD->>VMA: vmaCreateVirtualBlock
-    VMA-->>MD: VmaVirtualBlock
 
     Note over MD,MTL: Bindless and residency
     MD->>MTL: newBufferWithLength (argument buffer)

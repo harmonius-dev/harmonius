@@ -1595,7 +1595,10 @@ enum class Format : uint32_t {
 | `create_heap`           | `CreateHeap`                     | `vkAllocateMemory` (dedicated)                               | `newHeapWithDescriptor`                        |
 | `create_placed_texture` | `CreatePlacedResource2`          | `vkCreateImage` + `vkBindImageMemory2` (at offset)           | `newTextureWithDescriptor:offset:` on heap     |
 | `create_sparse_texture` | `CreateReservedResource2`        | `vkCreateImage` with `VK_IMAGE_CREATE_SPARSE_BINDING_BIT`    | `newTextureWithDescriptor` with sparse options |
-| Allocator               | D3D12MA (`D3D12MemoryAllocator`) | VMA (`VulkanMemoryAllocator`)                                | VMA virtualized (`VmaVirtualBlock`) + MTLHeap  |
+
+Memory management (sub-allocation, defragmentation, budget tracking) is handled by the GPU
+runtime layer (`harmonius::gpu_runtime::memory`) — not by the backends. Backends provide only
+the raw heap/resource creation primitives listed above.
 
 ### Device Lifecycle
 

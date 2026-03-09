@@ -45,6 +45,10 @@ graph TD
         AP["Asset Pipeline<br/>cook → bundle → stream"]
     end
 
+    subgraph Runtime["GPU Runtime Layer — shared services"]
+        GR["GPU Runtime<br/>memory · state tracking · work graphs · compat"]
+    end
+
     subgraph Backend["GPU Backend Layer — static dispatch, no vtables"]
         D3D12["Direct3D 12<br/>Agility SDK 1.619+ · SM 6.9"]
         VK["Vulkan 1.4"]
@@ -58,21 +62,19 @@ graph TD
     A -->|"safe/unsafe boundary"| RG
     RG --> SP
     RG --> AP
-    RG -->|"harmonius::gpu"| D3D12
-    RG -->|"harmonius::gpu"| VK
-    RG -->|"harmonius::gpu"| MTL
-    SP -->|"DXIL"| D3D12
-    SP -->|"SPIR-V"| VK
-    SP -->|"Metal IR"| MTL
-    AP -->|"DirectStorage"| D3D12
-    AP -->|"io_uring"| VK
-    AP -->|"MTLIOCommandBuffer"| MTL
+    RG -->|"harmonius::gpu_runtime"| GR
+    SP --> GR
+    AP --> GR
+    GR -->|"harmonius::gpu"| D3D12
+    GR -->|"harmonius::gpu"| VK
+    GR -->|"harmonius::gpu"| MTL
     D3D12 --> GPU
     VK --> GPU
     MTL --> GPU
 
     style Application fill:#e8f5e9,stroke:#2e7d32
     style Framework fill:#e3f2fd,stroke:#1565c0
+    style Runtime fill:#e8eaf6,stroke:#283593
     style Backend fill:#fff3e0,stroke:#e65100
     style Hardware fill:#f3e5f5,stroke:#6a1b9a
 ```
@@ -110,6 +112,25 @@ The core implementation layer. Three components -- the render graph library, sha
 asset pipeline -- collaborate to turn a declarative scene description into GPU command streams.
 All framework code is C++26, built with CMake 3.30+, and depends on vcpkg-managed packages.
 
+### GPU Runtime Layer -- Shared Services
+
+A shared services module (`harmonius::gpu_runtime`) between the GPU backend and framework
+components. Provides memory management (heap sub-allocation, ring buffers, defragmentation),
+GPU state tracking (redundant state elimination, resource state caching), work graph execution
+(native GPU work graphs when available, CPU-side emulation otherwise), and cross-backend
+feature emulation. Depends only on `harmonius::gpu` -- no render graph or application types.
+
+When GPU work graphs are available (D3D12), the runtime transparently uses them to schedule
+render graph pass execution on the GPU, eliminating CPU-side command recording overhead.
+When unavailable, the runtime emulates the same scheduling on the CPU. This is invisible to
+the render graph and its users.
+
+Memory management is first-party -- no third-party allocators (VMA, D3D12MA) are used. The
+runtime's TLSF block allocator provides O(1) allocation/deallocation with bounded
+fragmentation across all backends.
+
+**Requirements:** GR-1.1--GR-4.5
+
 ### GPU Backend Layer -- Static Dispatch
 
 A thin abstraction over D3D12, Vulkan 1.4, and Metal 4, defined in the `harmonius::gpu` namespace.
@@ -118,7 +139,8 @@ static (compile-time polymorphism) -- no vtables, no virtual methods, no dynamic
 
 Each backend implements the same interface but maps to native API concepts directly. Cross-backend
 compatibility shims (e.g., push constants capped at 32 bytes for D3D12 parity) are documented in
-the interface specification.
+the interface specification. Backends are thin wrappers -- they add no policy, caching, or memory
+management beyond direct native API calls.
 
 **Requirements:** R-1.1.5, R-1.2.1--R-1.2.3
 
@@ -540,6 +562,8 @@ Detailed design and API specifications live in `docs/design/`:
 | --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | [render-graph-design.md](design/render-graph-design.md)                     | Render graph C++ API surfaces for all 9 modules                        |
 | [render-graph-classes.md](design/render-graph-classes.md)                   | Class diagrams, sequence diagrams, and type definitions                |
+| [gpu-runtime.md](design/gpu-runtime.md)                                     | GPU runtime shared services (memory, state, work graphs, compat)       |
+| [gpu-runtime-classes.md](design/gpu-runtime-classes.md)                     | GPU runtime class diagrams and type definitions                        |
 | [gpu-backend-interface.md](design/gpu-backend-interface.md)                 | GPU backend abstract interface, types, and cross-backend compatibility |
 | [gpu-backend-d3d12.md](design/gpu-backend-d3d12.md)                         | Direct3D 12 backend implementation                                     |
 | [gpu-backend-vulkan.md](design/gpu-backend-vulkan.md)                       | Vulkan 1.4 backend implementation                                      |

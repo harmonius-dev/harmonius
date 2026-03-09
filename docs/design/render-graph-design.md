@@ -81,9 +81,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(VulkanHeaders CONFIG REQUIRED)
-find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(directx-headers CONFIG REQUIRED)
-find_package(D3D12MemoryAllocator CONFIG REQUIRED)
 
 add_subdirectory(src/rg/core)
 add_subdirectory(src/rg/builder)
@@ -112,17 +110,18 @@ add_subdirectory(src/gpu/metal)
 
 **Platform-specific dependencies:**
 
-| Platform      | Package                             | Purpose                                                           |
-| ------------- | ----------------------------------- | ----------------------------------------------------------------- |
-| Windows       | `directx-headers`                   | D3D12 API headers                                                 |
-| Windows       | `unofficial-d3d12-memory-allocator` | GPU memory management, allocation tracking, defragmentation       |
-| Windows       | `directx-dxc`                       | DXC shader compiler                                               |
-| Windows       | Agility SDK (vendored)              | Latest D3D12 runtime                                              |
-| Linux/SteamOS | `vulkan`                            | Vulkan API headers and loader                                     |
-| Linux/SteamOS | `vulkan-memory-allocator`           | GPU memory management, allocation tracking, defragmentation       |
-| macOS         | `vulkan-memory-allocator`           | VMA virtualized mode for Metal sub-allocation and defragmentation |
-| macOS         | Metal framework (system)            | Metal API                                                         |
-| macOS         | `metal-shaderconverter` (vendored)  | DXIL → Metal IR conversion                                        |
+| Platform      | Package              | Purpose                    |
+| ------------- | -------------------- | -------------------------- |
+| Windows       | `directx-headers`    | D3D12 API headers          |
+| Windows       | `directx-dxc`        | DXC shader compiler        |
+| Windows       | Agility SDK (vendor) | Latest D3D12 runtime       |
+| Linux/SteamOS | `vulkan`             | Vulkan API headers/loader  |
+| macOS         | Metal framework      | Metal API (system)         |
+| macOS         | `metal-shaderconvtr` | DXIL → Metal IR (vendored) |
+
+GPU memory management, allocation tracking, and defragmentation are provided by the
+GPU runtime layer (`harmonius::gpu_runtime::memory`) — no third-party allocators (VMA,
+D3D12MA) are used. See [gpu-runtime.md](gpu-runtime.md) for details.
 
 ### Shader Compilation Pipeline
 
@@ -178,20 +177,27 @@ endfunction()
 
 ### Namespace Layout
 
-All render graph types live under `harmonius::rg`. The GPU backend abstraction lives under
-`harmonius::gpu`. Modules correspond 1:1 with the architecture's seven subsystems.
+All render graph types live under `harmonius::rg`. The GPU runtime layer lives under
+`harmonius::gpu_runtime`. The GPU backend interface lives under `harmonius::gpu`. Render
+graph modules access GPU operations through the GPU runtime — not directly through the
+backend (R-1.1.7).
 
-| Namespace                 | Architecture subsystem | Purpose                                      |
-| ------------------------- | ---------------------- | -------------------------------------------- |
-| `harmonius::rg`           | Core types             | Handles, enums, descriptors shared by all    |
-| `harmonius::rg::builder`  | Graph Builder          | Declarative graph construction API           |
-| `harmonius::rg::compiler` | Graph Compiler         | DAG validation, optimization, plan output    |
-| `harmonius::rg::resource` | Resource System        | Allocation, aliasing, pools, ring buffers    |
-| `harmonius::rg::sync`     | Synchronization Engine | Barriers, layout transitions, fences         |
-| `harmonius::rg::gate`     | Gating System          | Capability gates, budget gates, fallbacks    |
-| `harmonius::rg::exec`     | Execution Engine       | Per-frame binding, parallel encoding, submit |
-| `harmonius::rg::diag`     | Diagnostics            | Timestamps, statistics, memory metrics       |
-| `harmonius::gpu`          | Backend Abstraction    | D3D12, Vulkan 1.4, Metal 4 device layer      |
+| Namespace                        | Architecture subsystem | Purpose                                       |
+| -------------------------------- | ---------------------- | --------------------------------------------- |
+| `harmonius::rg`                  | Core types             | Handles, enums, descriptors shared by all     |
+| `harmonius::rg::builder`         | Graph Builder          | Declarative graph construction API            |
+| `harmonius::rg::compiler`        | Graph Compiler         | DAG validation, optimization, plan output     |
+| `harmonius::rg::resource`        | Resource System        | Allocation, aliasing, pools, ring buffers     |
+| `harmonius::rg::sync`            | Synchronization Engine | Barriers, layout transitions, fences          |
+| `harmonius::rg::gate`            | Gating System          | Capability gates, budget gates, fallbacks     |
+| `harmonius::rg::exec`            | Execution Engine       | Per-frame binding, parallel encoding, submit  |
+| `harmonius::rg::diag`            | Diagnostics            | Timestamps, statistics, memory metrics        |
+| `harmonius::gpu_runtime`         | GPU Runtime            | Memory, state tracking, work graphs, compat   |
+| `harmonius::gpu_runtime::memory` | Memory Manager         | Heap sub-alloc (TLSF), ring buffers, defrag   |
+| `harmonius::gpu_runtime::state`  | State Tracker          | Redundant state elim, resource state cache    |
+| `harmonius::gpu_runtime::work_graph` | Work Graph Runtime | Native GPU work graphs or CPU emulation    |
+| `harmonius::gpu_runtime::compat` | Feature Emulation      | Split barrier emulation, barrier optimization |
+| `harmonius::gpu`                 | Backend Interface      | D3D12, Vulkan 1.4, Metal 4 device layer       |
 
 ```mermaid
 graph TD
@@ -206,6 +212,13 @@ graph TD
         diag["diag<br/>Profiling and statistics"]
     end
 
+    subgraph gprt["harmonius::gpu_runtime"]
+        mem["memory<br/>Heap sub-alloc, ring buffers"]
+        st["state<br/>State tracking, barriers"]
+        wg["work_graph<br/>Native or emulated"]
+        compat["compat<br/>Feature emulation"]
+    end
+
     subgraph gpu["harmonius::gpu"]
         backend["backend<br/>D3D12, Vulkan, Metal"]
     end
@@ -214,23 +227,29 @@ graph TD
     compiler --> core
     compiler --> gate
     resource --> core
-    resource --> backend
+    resource --> mem
     sync --> core
-    sync --> backend
+    sync --> st
     gate --> core
     exec --> compiler
     exec --> resource
     exec --> sync
-    exec --> backend
+    exec --> wg
+    exec --> st
     diag --> exec
-    diag --> backend
+
+    mem --> backend
+    st --> backend
+    wg --> backend
+    compat --> backend
 ```
 
 ### Library Targets
 
 Each module compiles to a static library. The GPU backend is selected at build time via CMake
 and statically linked — only one backend exists per binary (see
-[gpu-backend-interface.md](gpu-backend-interface.md) for rationale).
+[gpu-backend-interface.md](gpu-backend-interface.md) for rationale). The GPU runtime sits
+between the render graph and the GPU backend (see [gpu-runtime.md](gpu-runtime.md)).
 
 ```mermaid
 flowchart TD
@@ -239,6 +258,7 @@ flowchart TD
     C["harmonius-rg-compiler"]
     D["harmonius-rg-exec"]
     E["harmonius-rg-diag"]
+    R["harmonius-gpu-runtime"]
     F["harmonius-gpu"]
     G["harmonius-gpu-d3d12"]
     H["harmonius-gpu-vulkan"]
@@ -249,8 +269,9 @@ flowchart TD
     C --> B
     D --> A
     D --> C
-    D --> F
+    D --> R
     E --> D
+    R --> F
     G --> F
     H --> F
     I --> F
@@ -1010,7 +1031,7 @@ namespace harmonius::rg::resource {
 class PoolAllocator {
 public:
     explicit PoolAllocator(const builder::PoolResourceDesc& desc,
-                           gpu::Device& device);
+                           gpu_runtime::memory::Allocator& allocator);
 
     // Allocate element from pool, invoking eviction if full (RG-11.5)
     [[nodiscard]]
@@ -1041,7 +1062,7 @@ public:
     // Pre-allocate ring with frame_count slots (typically 3 for triple buffering)
     explicit RingAllocator(uint64_t slot_size_bytes,
                            uint32_t frame_count,
-                           gpu::Device& device);
+                           gpu_runtime::memory::Allocator& allocator);
 
     // Lock-free allocation from current frame's slot
     // Returns {offset, mapped_ptr} — no heap allocation (R-3.1.8)
@@ -1085,48 +1106,41 @@ struct ResidencyChange {
 } // namespace harmonius::rg::resource
 ```
 
-### GPU Backend API Usage
+### GPU Runtime API Usage
 
-The resource system is the primary consumer of the GPU backend's resource creation and memory
-management APIs. All GPU memory allocation flows through `gpu::Device`.
+The resource system is the primary consumer of the GPU runtime's memory management APIs.
+All GPU memory allocation flows through `gpu_runtime::memory::Allocator` — the render graph
+never calls `gpu::Device` resource creation methods directly.
 
-| Resource System Operation     | GPU Backend API                                | Notes                                      |
-| ----------------------------- | ---------------------------------------------- | ------------------------------------------ |
-| Transient texture allocation  | `gpu::Device::create_placed_texture()`         | Placed in aliasing heap at computed offset |
-| Transient buffer allocation   | `gpu::Device::create_placed_buffer()`          | Placed in aliasing heap at computed offset |
-| Persistent texture allocation | `gpu::Device::create_texture()`                | Committed resource with own memory         |
-| Persistent buffer allocation  | `gpu::Device::create_buffer()`                 | Committed resource with own memory         |
-| Aliasing heap creation        | `gpu::Device::create_heap()`                   | One heap per type class (RG-8.5)           |
-| Size/alignment query          | `gpu::Device::query_texture_allocation_info()` | Feeds aliasing solver packing              |
-| Size/alignment query          | `gpu::Device::query_buffer_allocation_info()`  | Feeds aliasing solver packing              |
-| Sparse texture creation       | `gpu::Device::create_sparse_texture()`         | Reserved/sparse-bound resource             |
-| Sparse tile binding update    | `gpu::Device::update_sparse_bindings()`        | Maps/unmaps tiles per residency            |
-| Staging buffer mapping        | `gpu::Device::map()` / `unmap()`               | Ring allocator's upload buffer             |
-| Resource naming               | `gpu::Device::set_name()`                      | Debug names from resource descriptors      |
+| Resource System Operation     | GPU Runtime API                                                 | Notes                                      |
+| ----------------------------- | --------------------------------------------------------------- | ------------------------------------------ |
+| Transient texture allocation  | `gpu_runtime::memory::Allocator::allocate(placed)`              | Placed in aliasing heap at computed offset |
+| Transient buffer allocation   | `gpu_runtime::memory::Allocator::allocate(placed)`              | Placed in aliasing heap at computed offset |
+| Persistent texture allocation | `gpu_runtime::memory::Allocator::create_texture()`              | Committed resource with own memory         |
+| Persistent buffer allocation  | `gpu_runtime::memory::Allocator::create_buffer()`               | Committed resource with own memory         |
+| Size/alignment query          | `gpu_runtime::memory::Allocator::query_allocation_info()`       | Feeds aliasing solver packing              |
+| Sparse texture creation       | `gpu_runtime::memory::Allocator::create_sparse_texture()`       | Reserved/sparse-bound resource             |
+| Sparse tile binding update    | `gpu_runtime::memory::Allocator::update_sparse_bindings()`      | Maps/unmaps tiles per residency            |
+| Staging buffer allocation     | `gpu_runtime::memory::RingAllocator::allocate()`                | Per-frame upload staging                   |
+| Resource naming               | `gpu_runtime::state::TrackedCommandBuffer` (pass-through)       | Debug names from resource descriptors      |
 
 **Aliasing heap optimization:** The aliasing solver computes non-overlapping lifetime intervals
-and packs resources into the minimum number of heaps. The resource system calls
-`query_texture_allocation_info` and `query_buffer_allocation_info` to get platform-specific
-sizes and alignment requirements, then uses `create_heap` + `create_placed_texture` /
-`create_placed_buffer` to sub-allocate. On D3D12, this maps to `CreateHeap` +
-`CreatePlacedResource2`. On Vulkan, this maps to `vkAllocateMemory` + `vkBindImageMemory2`.
-On Metal, this maps to `newHeapWithDescriptor` + `newTextureWithDescriptor:offset:`.
+and packs resources into the minimum number of heaps. The resource system delegates to
+`gpu_runtime::memory::Allocator` with the `placed` allocation strategy, which handles
+platform-specific size queries, alignment, heap creation, and placed resource binding
+internally. See [gpu-runtime.md](gpu-runtime.md) for memory allocator details.
 
 ```mermaid
 flowchart TD
     AS["AliasingSolver.solve()"] -->|"lifetime intervals + sizes"| Pack["Packing algorithm"]
-    Pack -->|"heap_offset per resource"| Heaps["gpu::Device::create_heap()"]
-    Heaps --> PT["gpu::Device::create_placed_texture()"]
-    Heaps --> PB["gpu::Device::create_placed_buffer()"]
-
-    QT["gpu::Device::query_texture_allocation_info()"] -->|"size, alignment"| Pack
-    QB["gpu::Device::query_buffer_allocation_info()"] -->|"size, alignment"| Pack
+    Pack -->|"heap_offset per resource"| Alloc["gpu_runtime::memory::Allocator::allocate(placed)"]
+    Alloc --> T["TextureHandle"]
+    Alloc --> B["BufferHandle"]
 ```
 
-**Ring allocator GPU mapping:** The `RingAllocator` creates an upload-heap buffer via
-`gpu::Device::create_buffer` with `HeapType::upload`, then maps it persistently with
-`gpu::Device::map()`. The mapped pointer is divided into `frame_count` slots. Lock-free
-atomic bumps allocate within the current frame's slot — no GPU API calls on the hot path.
+**Ring allocator GPU mapping:** The `gpu_runtime::memory::RingAllocator` manages an upload-heap
+buffer internally. The mapped pointer is divided into `frame_count` slots. Lock-free atomic bumps
+allocate within the current frame's slot — no GPU API calls on the hot path.
 
 ---
 
@@ -1214,7 +1228,7 @@ namespace harmonius::rg::sync {
 // RG-10.6: per-queue monotonically increasing fence counters
 class TimelineFenceManager {
 public:
-    explicit TimelineFenceManager(gpu::Device& device);
+    explicit TimelineFenceManager(gpu_runtime::memory::Allocator& allocator);
 
     // Signal fence on queue after pass submission
     void signal(QueueAffinity queue, uint64_t value);
@@ -1248,15 +1262,15 @@ private:
 } // namespace harmonius::rg::sync
 ```
 
-### GPU Backend API Translation
+### GPU Runtime Barrier Translation
 
-The synchronization engine translates render graph barrier descriptors into GPU backend barrier
-calls. This translation is the critical path for GPU synchronization correctness.
+The synchronization engine translates render graph barrier descriptors into GPU runtime barrier
+operations. This translation is the critical path for GPU synchronization correctness.
 
 **Barrier descriptor translation:** The render graph's `rg::sync::BarrierDesc` uses high-level
-`UsageType` enums. The synchronization engine translates these to the GPU backend's fine-grained
-`gpu::PipelineStage`, `gpu::ResourceAccess`, and `gpu::TextureLayout` types before calling
-`gpu::CommandBuffer::barrier()`.
+`UsageType` enums. The synchronization engine translates these to the GPU backend interface's
+fine-grained `gpu::PipelineStage`, `gpu::ResourceAccess`, and `gpu::TextureLayout` types and
+enqueues them through `gpu_runtime::state::BarrierOptimizer`.
 
 | `rg::UsageType`           | `gpu::PipelineStage`                | `gpu::ResourceAccess`    | `gpu::TextureLayout`       |
 | ------------------------- | ----------------------------------- | ------------------------ | -------------------------- |
@@ -1272,52 +1286,36 @@ calls. This translation is the critical path for GPU synchronization correctness
 | `present`                 | `none`                              | `present`                | `present`                  |
 
 **Barrier batching optimization:** The barrier scheduler merges compatible barriers at the same
-synchronization point into a single `gpu::BarrierDesc` containing arrays of
-`gpu::TextureBarrier`, `gpu::BufferBarrier`, and `gpu::GlobalBarrier`. This produces one
-`gpu::CommandBuffer::barrier()` call per synchronization point instead of one per resource:
+synchronization point into a single batch of `gpu::TextureBarrier`, `gpu::BufferBarrier`, and
+`gpu::GlobalBarrier` entries. These are enqueued through `gpu_runtime::state::BarrierOptimizer`,
+which flushes them as a single optimized barrier call per synchronization point:
 
 ```cpp
-// Merged barrier call — single API call covers all transitions at this sync point
-gpu::BarrierDesc desc{
-    .global_barriers  = global_span,   // e.g., UAV flush
-    .texture_barriers = texture_span,  // e.g., 5 layout transitions
-    .buffer_barriers  = buffer_span,   // e.g., 2 buffer state changes
-};
-cmd.barrier(desc);
-// D3D12: single Barrier() call with arrays
-// Vulkan: single vkCmdPipelineBarrier2() with arrays
-// Metal:  N memoryBarrier calls (no native batching)
+// Barriers are enqueued through the GPU runtime barrier optimizer, which handles
+// batching, deduplication, split barrier emulation, and backend-specific translation.
+gpu_runtime::state::BarrierOptimizer& optimizer = /* ... */;
+optimizer.enqueue(gpu::TextureBarrier{ /* transition */ });
+optimizer.enqueue(gpu::BufferBarrier{ /* transition */ });
+optimizer.flush(tracked_cmd);  // emits optimal barrier calls on the tracked command buffer
 ```
 
-**Split barrier optimization:** When `gpu::DeviceCapabilities::split_barriers` is `true`
-(D3D12 and Vulkan), the barrier scheduler emits split barriers for transitions where the
-producing and consuming passes are separated by other work. The split begin is placed after
-the producer; the split end is placed before the consumer. The GPU can overlap the transition
-with intervening work:
-
-| Barrier Type      | D3D12                                                                                | Vulkan                                        |
-| ----------------- | ------------------------------------------------------------------------------------ | --------------------------------------------- |
-| Split begin       | `gpu::PipelineStage::split_begin` → `D3D12_TEXTURE_BARRIER` with `SyncAfter = SPLIT` | `vkCmdSetEvent2` with src stages              |
-| Split end         | `gpu::PipelineStage::split_end` → `D3D12_TEXTURE_BARRIER` with `SyncBefore = SPLIT`  | `vkCmdWaitEvents2` with dst stages            |
-| Immediate (Metal) | N/A                                                                                  | N/A — collapsed to single barrier at consumer |
+**Split barrier optimization:** The `gpu_runtime::compat` layer transparently emits split
+barriers on backends that support them. When producing and consuming passes are separated
+by other work, the runtime inserts a split begin after the producer and a split end before
+the consumer, allowing the GPU to overlap the transition with intervening work. On backends
+without split barrier support (Metal), transitions are collapsed to immediate barriers at
+the consumer. The render graph barrier scheduler is unaware of this optimization — it enqueues
+transitions through `gpu_runtime::state::BarrierOptimizer` and the runtime handles the rest.
+See [gpu-runtime.md](gpu-runtime.md) sections on feature emulation (GR-4.x) for details.
 
 **Cross-queue ownership transfers:** When a barrier's `src_queue` differs from `dst_queue`, the
-synchronization engine emits a release barrier on the source queue and an acquire barrier on the
-destination queue. This maps to:
-- **Vulkan:** Full `srcQueueFamilyIndex` / `dstQueueFamilyIndex` release/acquire pair
-- **D3D12:** Enhanced barriers with `COMMON` layout for copy queue transitions
-- **Metal:** No-op — unified memory requires only stage/access synchronization
+`gpu_runtime::compat` layer emits the appropriate release/acquire barrier pair. Backend-specific
+details (queue family indices, layout transitions, unified memory elision) are handled
+transparently by the runtime. See [gpu-runtime.md](gpu-runtime.md) for details.
 
-**Timeline fence GPU API mapping:**
-
-| `TimelineFenceManager` method | GPU Backend API                                            |
-| ----------------------------- | ---------------------------------------------------------- |
-| Constructor                   | `gpu::Device::create_fence(0)` — one per queue             |
-| `signal(queue, value)`        | Included in `gpu::Device::submit()` via `gpu::FenceSignal` |
-| `wait(queue, value)`          | Included in `gpu::Device::submit()` via `gpu::FenceWait`   |
-| `is_complete(queue, value)`   | `gpu::Device::fence_completed_value(fence)` ≥ value        |
-| `wait_cpu(queue, value)`      | `gpu::Device::wait_fence_cpu(fence, value)`                |
-| Destructor                    | `gpu::Device::destroy_fence()`                             |
+**Timeline fence mapping:** The `TimelineFenceManager` manages timeline fences through the
+GPU runtime layer. Fence creation, signaling, and waiting are delegated to the runtime, which
+forwards them to the GPU backend interface internally.
 
 ---
 
@@ -1499,7 +1497,10 @@ namespace harmonius::rg::exec {
 
 class Executor {
 public:
-    explicit Executor(gpu::Device& device, uint32_t frame_count = 3);
+    explicit Executor(gpu_runtime::memory::Allocator& allocator,
+                      gpu_runtime::state::TrackedCommandBuffer& cmd,
+                      gpu_runtime::work_graph::WorkGraphExecutor& work_graphs,
+                      uint32_t frame_count = 3);
 
     // --- Per-frame data binding (RG-14.1–14.4) ---
 
@@ -1552,7 +1553,9 @@ private:
     void submit_command_buffers(const compiler::ExecutionPlan& plan);
     void advance_frame();
 
-    gpu::Device&                   device_;
+    gpu_runtime::memory::Allocator&              allocator_;
+    gpu_runtime::state::TrackedCommandBuffer&    tracked_cmd_;
+    gpu_runtime::work_graph::WorkGraphExecutor&  work_graphs_;
     sync::TimelineFenceManager     fence_manager_;
     std::vector<CommandBufferPool> cmd_pools_; // per-queue (RG-4.6)
     resource::RingAllocator        ring_allocator_;
@@ -1572,8 +1575,8 @@ namespace harmonius::rg::exec {
 
 class PassContext {
 public:
-    // Access the command buffer for this pass
-    [[nodiscard]] gpu::CommandBuffer& cmd() const;
+    // Access the tracked command buffer for this pass
+    [[nodiscard]] gpu_runtime::state::TrackedCommandBuffer& cmd() const;
 
     // Resolve a resource handle to its GPU-side handle for this frame
     [[nodiscard]] gpu::ResourceHandle resolve(ResourceHandle handle) const;
@@ -1601,13 +1604,13 @@ namespace harmonius::rg::exec {
 // RG-10.2: thread-safe per-queue command buffer pool
 class CommandBufferPool {
 public:
-    explicit CommandBufferPool(gpu::Device& device, QueueAffinity queue);
+    explicit CommandBufferPool(gpu_runtime::memory::Allocator& allocator, QueueAffinity queue);
 
     // Lock-free acquire — no cross-queue or cross-thread contention
-    [[nodiscard]] gpu::CommandBuffer acquire();
+    [[nodiscard]] gpu_runtime::state::TrackedCommandBuffer acquire();
 
     // Return command buffer after submission
-    void release(gpu::CommandBuffer cmd);
+    void release(gpu_runtime::state::TrackedCommandBuffer cmd);
 
     // Reset all buffers for new frame (called after fence signal)
     void reset_frame(uint32_t frame_index);
@@ -1635,54 +1638,55 @@ struct TransferPassDesc {
 } // namespace harmonius::rg::exec
 ```
 
-### GPU Backend API Usage
+### GPU Runtime API Usage
 
-The execution engine is the primary consumer of the GPU backend's command recording and
-submission APIs. Every frame, it allocates command buffers, records passes, emits barriers,
-and submits work to the GPU queues.
+The execution engine is the primary consumer of the GPU runtime's tracked command buffer and
+submission APIs. Every frame, it acquires tracked command buffers, records passes with
+automatic state caching, emits barriers through the barrier optimizer, and submits work
+through the GPU runtime.
 
-**Per-frame execution translated to GPU calls:**
+**Per-frame execution translated to GPU runtime calls:**
 
 ```mermaid
 sequenceDiagram
     participant Exec as Executor
-    participant Pool as gpu::CommandPool
-    participant CB as gpu::CommandBuffer
-    participant Dev as gpu::Device
+    participant Pool as CommandBufferPool
+    participant TCB as TrackedCommandBuffer
+    participant RT as gpu_runtime
 
-    Note over Exec,Dev: Frame start — wait for frame N-2 to complete
-    Exec->>Dev: wait_fence_cpu(fence, frame_N_minus_2)
-    Exec->>Pool: reset()
+    Note over Exec,RT: Frame start — wait for frame N-2 to complete
+    Exec->>RT: wait_fence_cpu(fence, frame_N_minus_2)
+    Exec->>Pool: reset_frame()
 
-    Note over Exec,Dev: Parallel encoding (per thread)
-    Exec->>Pool: allocate_command_buffer()
-    Pool-->>CB: command buffer
-    CB->>CB: begin()
-    CB->>CB: barrier(pre_barriers)
-    CB->>CB: begin_render_pass(desc)
-    CB->>CB: set_pipeline(pso)
-    CB->>CB: push_constants(data, size)
-    CB->>CB: dispatch_mesh(x, y, z)
-    CB->>CB: end_render_pass()
-    CB->>CB: barrier(post_barriers)
-    CB->>CB: end()
+    Note over Exec,RT: Parallel encoding (per thread)
+    Exec->>Pool: acquire()
+    Pool-->>TCB: tracked command buffer
+    TCB->>TCB: begin()
+    TCB->>TCB: barrier(pre_barriers) [via BarrierOptimizer]
+    TCB->>TCB: begin_render_pass(desc)
+    TCB->>TCB: set_pipeline(pso) [cached — skips if redundant]
+    TCB->>TCB: push_constants(data, size) [cached — skips if redundant]
+    TCB->>TCB: dispatch_mesh(x, y, z)
+    TCB->>TCB: end_render_pass()
+    TCB->>TCB: barrier(post_barriers) [via BarrierOptimizer]
+    TCB->>TCB: end()
 
-    Note over Exec,Dev: Submission
-    Exec->>Dev: submit(graphics, cmd_bufs, signals, waits)
-    Exec->>Dev: submit(async_compute, cmd_bufs, signals, waits)
-    Exec->>Dev: present(swapchain)
+    Note over Exec,RT: Submission
+    Exec->>RT: submit(graphics, cmd_bufs, signals, waits)
+    Exec->>RT: submit(async_compute, cmd_bufs, signals, waits)
+    Exec->>RT: present(swapchain)
 ```
 
 **Command pool lifecycle mapping:**
 
-| Execution Engine Operation | GPU Backend API                                    | Frequency                     |
-| -------------------------- | -------------------------------------------------- | ----------------------------- |
-| Pool creation (init)       | `gpu::Device::create_command_pool(queue_type)`     | Once per (queue, thread) pair |
-| Pool reset                 | `gpu::CommandPool::reset()`                        | Once per pool per frame       |
-| Buffer allocation          | `gpu::CommandPool::allocate_command_buffer()`      | Once per pass per frame       |
-| Begin recording            | `gpu::CommandBuffer::begin()`                      | Once per command buffer       |
-| End recording              | `gpu::CommandBuffer::end()`                        | Once per command buffer       |
-| Submit to GPU              | `gpu::Device::submit(queue, bufs, signals, waits)` | Once per queue per frame      |
+| Execution Engine Operation | GPU Runtime API                                                  | Frequency                     |
+| -------------------------- | ---------------------------------------------------------------- | ----------------------------- |
+| Pool creation (init)       | `gpu_runtime::state::TrackedCommandBuffer` pool initialization   | Once per (queue, thread) pair |
+| Pool reset                 | Pool reset via GPU runtime                                       | Once per pool per frame       |
+| Buffer allocation          | `gpu_runtime::state::TrackedCommandBuffer` allocation            | Once per pass per frame       |
+| Begin recording            | `TrackedCommandBuffer::begin()`                                  | Once per command buffer       |
+| End recording              | `TrackedCommandBuffer::end()`                                    | Once per command buffer       |
+| Submit to GPU              | Submission via GPU runtime                                       | Once per queue per frame      |
 
 **Pass type to GPU command mapping:**
 
@@ -1694,30 +1698,30 @@ sequenceDiagram
 | `acceleration_structure_build` | `build_acceleration_structure`                                                                              |
 | `transfer`                     | `copy_buffer` / `copy_buffer_to_texture` / `copy_texture_to_buffer`                                         |
 | `msaa_resolve`                 | `begin_render_pass` with `resolve_texture` set → `end_render_pass`                                          |
-| `present`                      | `gpu::Device::present(swapchain)`                                                                           |
+| `present`                      | Present via GPU runtime                                                                                     |
 | `host_callback`                | No GPU commands — CPU-only execution after fence wait                                                       |
 | `work_graph`                   | `set_work_graph` → `dispatch_graph`                                                                         |
 | `checkerboard_resolve`         | `set_pipeline(resolve_compute_pso)` → `dispatch` (compute-based reconstruction)                             |
 | `opacity_micromap_build`       | RG-2.25: build OMM; compiler enforces completion before any RT dispatch referencing the parent BLAS          |
 
 **Barrier emission:** The executor iterates the `ScheduledPass::pre_barriers` and
-`ScheduledPass::post_barriers` from the execution plan. Each barrier set is translated to a
-`gpu::BarrierDesc` and emitted via `gpu::CommandBuffer::barrier()`. The synchronization engine
+`ScheduledPass::post_barriers` from the execution plan. Each barrier set is enqueued through
+`gpu_runtime::state::BarrierOptimizer`, which handles batching, deduplication, and split
+barrier emulation before flushing to the `TrackedCommandBuffer`. The synchronization engine
 has already translated `rg::sync::BarrierDesc` to `gpu::PipelineStage` / `gpu::ResourceAccess` /
-`gpu::TextureLayout` values (see [Synchronization Engine GPU API Translation](#gpu-backend-api-translation)).
+`gpu::TextureLayout` values (see [GPU Runtime Barrier Translation](#gpu-runtime-barrier-translation)).
 
-**Swapchain integration:** The executor acquires the next swapchain image via
-`gpu::Device::acquire_next_image()` at the start of each frame. The resulting `TextureHandle`
-is bound as the imported backbuffer resource. After the final pass, `gpu::Device::present()`
-is called. On window resize, the executor calls `gpu::Device::wait_idle()` followed by
-`gpu::Device::resize_swapchain()`.
+**Swapchain integration:** The executor acquires the next swapchain image and presents through
+the GPU runtime layer. The resulting `TextureHandle` is bound as the imported backbuffer
+resource. On window resize, the executor requests an idle wait and swapchain resize through
+the runtime.
 
 **Optimization: parallel encoding on multiple threads.** The execution engine dispatches
-encoding groups to a thread pool. Each thread has its own `gpu::CommandPool` — no cross-thread
-contention on pool or command buffer allocation. The `gpu::CommandPool::allocate_command_buffer()`
-call reuses cached command buffers from previous frames, avoiding per-frame GPU object creation.
-After all encoding groups complete, the main thread submits the command buffers in topological
-order via `gpu::Device::submit()`.
+encoding groups to a thread pool. Each thread has its own `TrackedCommandBuffer` pool — no
+cross-thread contention on pool or command buffer allocation. The pool reuses cached command
+buffers from previous frames, avoiding per-frame GPU object creation. After all encoding groups
+complete, the main thread submits the command buffers in topological order through the GPU
+runtime.
 
 ---
 
@@ -1782,7 +1786,7 @@ struct MemoryDiagnostics {
 
 class DiagnosticsCollector {
 public:
-    explicit DiagnosticsCollector(gpu::Device& device);
+    explicit DiagnosticsCollector(gpu_runtime::memory::Allocator& allocator);
 
     // Read results after frame fence signals
     [[nodiscard]] TimestampResults    read_timestamps() const;
@@ -1806,63 +1810,92 @@ public:
 } // namespace harmonius::rg::diag
 ```
 
-### GPU Backend API Usage
+### GPU Runtime API Usage
 
-The diagnostics module uses the GPU backend's query and debug labeling APIs to instrument passes
-without affecting rendering correctness. All instrumentation is zero-overhead when disabled
-(RG-12.7) — the execution engine skips query and label commands entirely.
+The diagnostics module uses the GPU runtime's tracked command buffer for query and debug
+labeling APIs to instrument passes without affecting rendering correctness. All
+instrumentation is zero-overhead when disabled (RG-12.7) — the execution engine skips
+query and label commands entirely.
 
 **Timestamp query flow:**
 
 ```mermaid
 sequenceDiagram
     participant Diag as DiagnosticsCollector
-    participant Dev as gpu::Device
-    participant CB as gpu::CommandBuffer
+    participant Alloc as gpu_runtime::memory::Allocator
+    participant TCB as gpu_runtime::state::TrackedCommandBuffer
     participant Buf as Readback Buffer
 
     Note over Diag,Buf: Initialization
-    Diag->>Dev: create_query_pool({timestamp, 256})
-    Diag->>Dev: create_buffer({readback, 256 * 8})
-    Diag->>Dev: timestamp_period_ns()
+    Diag->>Alloc: create query pool + readback buffer
 
     Note over Diag,Buf: Per-pass instrumentation
-    CB->>CB: write_timestamp(pool, begin_index)
-    CB->>CB: ... pass commands ...
-    CB->>CB: write_timestamp(pool, end_index)
+    TCB->>TCB: write_timestamp(pool, begin_index)
+    TCB->>TCB: ... pass commands ...
+    TCB->>TCB: write_timestamp(pool, end_index)
 
     Note over Diag,Buf: End of frame
-    CB->>CB: resolve_query_pool(pool, 0, count, readback_buf, 0)
+    TCB->>TCB: resolve_query_pool(pool, 0, count, readback_buf, 0)
 
     Note over Diag,Buf: After fence signal (next frame)
-    Diag->>Dev: map(readback_buf)
+    Diag->>Alloc: map(readback_buf)
     Diag->>Diag: compute durations × timestamp_period_ns
-    Diag->>Dev: unmap(readback_buf)
+    Diag->>Alloc: unmap(readback_buf)
 ```
 
-| Diagnostics Operation | GPU Backend API                            | Backend Mapping                                                                                       |
-| --------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Create query pool     | `gpu::Device::create_query_pool()`         | D3D12: `CreateQueryHeap`; Vulkan: `vkCreateQueryPool`; Metal: `MTLCounterSampleBuffer`                |
-| Write timestamp       | `gpu::CommandBuffer::write_timestamp()`    | D3D12: `EndQuery(TIMESTAMP)`; Vulkan: `vkCmdWriteTimestamp2`; Metal: `sampleCounters`                 |
-| Resolve queries       | `gpu::CommandBuffer::resolve_query_pool()` | D3D12: `ResolveQueryData`; Vulkan: `vkCmdCopyQueryPoolResults`; Metal: `resolveCounters`              |
-| Get timestamp period  | `gpu::Device::timestamp_period_ns()`       | D3D12: `GetTimestampFrequency` → 1e9/freq; Vulkan: `timestampPeriod`; Metal: `sampleTimestamps` delta |
-| Read results          | `gpu::Device::map()` on readback buffer    | Standard buffer mapping                                                                               |
-| Begin debug label     | `gpu::CommandBuffer::begin_debug_label()`  | D3D12: PIX `BeginEvent`; Vulkan: `vkCmdBeginDebugUtilsLabelEXT`; Metal: `pushDebugGroup`              |
-| End debug label       | `gpu::CommandBuffer::end_debug_label()`    | D3D12: PIX `EndEvent`; Vulkan: `vkCmdEndDebugUtilsLabelEXT`; Metal: `popDebugGroup`                   |
-| Name resource         | `gpu::Device::set_name()`                  | D3D12: `SetName`; Vulkan: `vkSetDebugUtilsObjectNameEXT`; Metal: `.label`                             |
+| Diagnostics Operation | GPU Runtime API                                               | Notes                                     |
+| --------------------- | ------------------------------------------------------------- | ----------------------------------------- |
+| Create query pool     | `gpu_runtime::state::TrackedCommandBuffer` (pass-through)     | Delegates to backend query pool creation  |
+| Write timestamp       | `gpu_runtime::state::TrackedCommandBuffer::write_timestamp()` | Injected around pass recording            |
+| Resolve queries       | `gpu_runtime::state::TrackedCommandBuffer::resolve_query_pool()` | End-of-frame readback                  |
+| Get timestamp period  | `gpu::DeviceCapabilities` (queried at init)                   | Stored as a capability value              |
+| Read results          | `gpu_runtime::memory::Allocator` readback buffer + map        | Standard buffer mapping                   |
+| Begin debug label     | `gpu_runtime::state::TrackedCommandBuffer::begin_debug_label()` | Pass-through to backend                 |
+| End debug label       | `gpu_runtime::state::TrackedCommandBuffer::end_debug_label()` | Pass-through to backend                   |
+| Name resource         | `gpu_runtime::state::TrackedCommandBuffer` (pass-through)     | Delegates to backend naming               |
 
-**GPU readback:** The `request_readback` method enqueues a `copy_buffer` from device-local to
-a readback-heap buffer via `gpu::CommandBuffer::copy_buffer()`. After the frame fence signals,
-`read_readback` maps the readback buffer via `gpu::Device::map()` and returns the contents.
+**GPU readback:** The `request_readback` method enqueues a `copy_buffer` through the
+`TrackedCommandBuffer` from device-local to a readback buffer allocated via the GPU runtime
+allocator. After the frame fence signals, `read_readback` maps the readback buffer and returns
+the contents.
 
 ---
 
-## 9. GPU Backend Abstraction — `harmonius::gpu`
+## 9. GPU Runtime — `harmonius::gpu_runtime`
 
-**Responsibility:** Provides a thin abstraction over Direct3D 12, Vulkan 1.4, and Metal 4. The
-render graph modules use this interface exclusively — no direct API calls. The backend is selected
-at build time via CMake and statically linked into the binary. All dispatch is static — no vtables,
-no virtual methods, no shared libraries.
+**Responsibility:** Shared services layer between the GPU backend interface and the render
+graph. Provides memory management (heap sub-allocation, ring buffers, defragmentation), GPU
+state tracking (redundant state elimination, resource state caching), transparent work graph
+execution (native GPU work graphs when available, CPU-side emulation otherwise), and
+cross-backend feature emulation (split barrier emulation, barrier optimization).
+
+**Requirements covered:** GR-1.1–GR-4.5.
+
+The render graph accesses all GPU operations through the GPU runtime — not directly through
+the backend. This ensures:
+
+- **Memory management** is centralized in one allocator (TLSF-based, replacing VMA/D3D12MA)
+- **State tracking** eliminates redundant GPU API calls across passes
+- **Work graph execution** is transparent — the render graph doesn't know whether passes
+  are scheduled by the GPU (via native work graphs) or by the CPU (via emulation)
+- **Feature emulation** handles cross-backend differences without per-backend logic in the
+  render graph
+
+The GPU runtime depends only on `harmonius::gpu` and has no knowledge of render graph
+concepts (passes, resource lifetimes, DAGs).
+
+Design, API surfaces, and class diagrams are in dedicated documents:
+
+- [gpu-runtime.md](gpu-runtime.md) — module design, API surfaces, and integration points
+- [gpu-runtime-classes.md](gpu-runtime-classes.md) — class diagrams and sequence diagrams
+
+## 10. GPU Backend Interface — `harmonius::gpu`
+
+**Responsibility:** Provides a thin abstraction over Direct3D 12, Vulkan 1.4, and Metal 4.
+The GPU runtime layer uses this interface exclusively — no direct API calls. The backend is
+selected at build time via CMake and statically linked into the binary. All dispatch is
+static — no vtables, no virtual methods, no shared libraries. Backends are thin wrappers
+that add no policy, caching, or memory management beyond direct native API calls.
 
 **Requirements covered:** R-1.1.5 (native backends), R-1.2.1–1.2.3 (platform support).
 

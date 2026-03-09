@@ -13,21 +13,16 @@
     "d3d12": {
       "dependencies": [
         "directx-dxc",
-        "directx-headers",
-        "unofficial-d3d12-memory-allocator"
+        "directx-headers"
       ],
       "description": "Direct3D 12 backend"
     },
     "metal": {
-      "dependencies": [
-        "vulkan-memory-allocator"
-      ],
-      "description": "Metal backend (uses VMA in virtualized mode)"
+      "description": "Metal backend"
     },
     "vulkan": {
       "dependencies": [
-        "vulkan",
-        "vulkan-memory-allocator"
+        "vulkan"
       ],
       "description": "Vulkan 1.4 backend"
     }

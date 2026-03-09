@@ -13,7 +13,7 @@ interactions. Companion to [gpu-backend-d3d12.md](gpu-backend-d3d12.md). See
   - [1. D3D12 Backend Classes](#1-d3d12-backend-classes)
   - [2. Concept Satisfaction](#2-concept-satisfaction)
   - [3. Enhanced Barriers Mapping](#3-enhanced-barriers-mapping)
-  - [4. Resource Creation via D3D12MA](#4-resource-creation-via-d3d12ma)
+  - [4. Resource Creation via D3D12 API](#4-resource-creation-via-d3d12-api)
   - [5. Command List Type Mapping](#5-command-list-type-mapping)
 - [Sequence Diagrams](#sequence-diagrams)
   - [D3D12 Device Initialization](#d3d12-device-initialization)
@@ -35,7 +35,6 @@ classDiagram
         -ComPtr~IDXGIFactory7~ factory_
         -ComPtr~IDXGIAdapter4~ adapter_
         -ComPtr~ID3D12Device16~ device_
-        -ComPtr~D3D12MA::Allocator~ allocator_
         -QueueSet queues_
         -ComPtr~ID3D12DescriptorHeap~ cbv_srv_uav_heap_
         -ComPtr~ID3D12DescriptorHeap~ sampler_heap_
@@ -177,7 +176,6 @@ classDiagram
 
     class D3D12Device {
         -ID3D12Device16 device_
-        -D3D12MA_Allocator allocator_
         -ID3D12DescriptorHeap cbv_srv_uav_heap_
         -ID3D12RootSignature global_root_signature_
     }
@@ -323,9 +321,11 @@ classDiagram
 | `present` | `PRESENT` |
 | `shading_rate` | `SHADING_RATE_SOURCE` |
 
-### 4. Resource Creation via D3D12MA
+### 4. Resource Creation via D3D12 API
 
-How the abstract resource creation methods map to D3D12MA allocation strategies.
+How the abstract resource creation methods map to D3D12 allocation strategies. Memory
+management (sub-allocation, defragmentation) is handled by the GPU runtime layer
+(`harmonius::gpu_runtime::memory`); the D3D12 backend provides only the raw D3D12 API calls.
 
 ```mermaid
 classDiagram
@@ -334,11 +334,6 @@ classDiagram
         +create_buffer(BufferDesc) expected~BufferHandle~
         +create_heap(HeapDesc) expected~HeapHandle~
         +create_placed_texture(HeapHandle, offset, TextureDesc) expected~TextureHandle~
-    }
-
-    class D3D12MA_Allocator {
-        +CreateResource3(alloc_desc, res_desc, layout, ...) HRESULT
-        +CreatePool(pool_desc) HRESULT
     }
 
     class CommittedResource {
@@ -366,13 +361,13 @@ classDiagram
     }
 
     class ID3D12Device16 {
+        +CreateCommittedResource3(desc, ...) HRESULT
         +CreatePlacedResource2(heap, offset, desc, ...) HRESULT
         +CreateReservedResource2(desc, ...) HRESULT
     }
 
-    D3D12Device --> D3D12MA_Allocator : delegates to
-    D3D12MA_Allocator --> CommittedResource : create_texture / create_buffer
     D3D12Device --> ID3D12Device16 : delegates to
+    ID3D12Device16 --> CommittedResource : create_texture / create_buffer
     ID3D12Device16 --> PlacedResource : create_placed_texture
     ID3D12Device16 --> ReservedResource : update_sparse_bindings
     PlacedResource --> D3D12_HEAP_DESC : placed within
@@ -440,14 +435,13 @@ classDiagram
 ### D3D12 Device Initialization
 
 Full initialization sequence: DXGI factory, adapter enumeration, device creation, feature checks,
-queue creation, D3D12MA allocator, descriptor heaps, root signature, and timeline fences.
+queue creation, descriptor heaps, root signature, and timeline fences.
 
 ```mermaid
 sequenceDiagram
     participant App
     participant DXGI as DXGI Factory
     participant Dev as ID3D12Device16
-    participant DMA as D3D12MA Allocator
     participant GFX as Graphics Queue
     participant CMP as Compute Queue
     participant CPY as Copy Queue
@@ -482,11 +476,6 @@ sequenceDiagram
     Dev-->>CMP: ID3D12CommandQueue
     App->>Dev: CreateCommandQueue(COPY, NORMAL)
     Dev-->>CPY: ID3D12CommandQueue
-
-    Note over App,DMA: Memory allocator
-
-    App->>DMA: CreateAllocator(device, adapter)
-    DMA-->>App: D3D12MA Allocator
 
     Note over App,Dev: Descriptor heaps and root signature
 
@@ -569,7 +558,6 @@ sequenceDiagram
     participant Dev as D3D12Device
     participant SO as ID3D12StateObject
     participant WGP as ID3D12WorkGraphProperties
-    participant DMA as D3D12MA Allocator
     participant Cmd as D3D12CommandBuffer
     participant List as ID3D12GraphicsCommandList10
 
@@ -586,10 +574,7 @@ sequenceDiagram
     WGP->>WGP: GetWorkGraphMemoryRequirements(index)
     WGP-->>Dev: MinSizeInBytes, MaxSizeInBytes
 
-    Note over Dev,DMA: Backing memory allocation
-
-    Dev->>DMA: CreateResource3(UAV buffer, max_size)
-    DMA-->>Dev: backing_memory_buffer
+    Note over Dev,List: Backing memory (allocated via gpu_runtime::memory)
 
     Note over Cmd,List: Dispatch
 

@@ -68,13 +68,11 @@ flowchart TD
     CheckFeatures["Check Feature Support<br/>D3D12_FEATURE_D3D12_OPTIONS7+"]
     Device["Create Device<br/>D3D12CreateDevice(FL 12_2)"]
     Queues["Create Command Queues<br/>DIRECT, COMPUTE, COPY"]
-    Allocator["Create D3D12MA Allocator"]
     DescHeap["Create Descriptor Heaps<br/>CBV_SRV_UAV + SAMPLER"]
     Fence["Create Timeline Fences"]
 
     DXGI --> Adapter --> CheckFeatures --> Device
     Device --> Queues
-    Device --> Allocator
     Device --> DescHeap
     Device --> Fence
 ```
@@ -122,8 +120,6 @@ private:
     ComPtr<IDXGIFactory7>                factory_;
     ComPtr<IDXGIAdapter4>                adapter_;
     ComPtr<ID3D12Device16>               device_;
-    ComPtr<D3D12MA::Allocator>           allocator_;
-
     struct QueueSet {
         ComPtr<ID3D12CommandQueue>  graphics;
         ComPtr<ID3D12CommandQueue>  compute;
@@ -179,9 +175,6 @@ device_->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&queues_.graphics));
 Committed resources allocate their own implicit heap. Used for persistent and imported resources.
 
 ```cpp
-D3D12MA::ALLOCATION_DESC alloc_desc = {};
-alloc_desc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
-
 D3D12_RESOURCE_DESC1 res_desc = {};
 res_desc.Dimension        = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 res_desc.Width            = desc.width;
@@ -193,9 +186,10 @@ res_desc.SampleDesc       = {static_cast<UINT>(desc.samples), 0};
 res_desc.Layout           = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 res_desc.Flags            = to_d3d12_resource_flags(desc.usage);
 
-allocator_->CreateResource3(&alloc_desc, &res_desc,
-    D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr,
-    &allocation, IID_PPV_ARGS(&resource));
+D3D12_HEAP_PROPERTIES heap_props = {D3D12_HEAP_TYPE_DEFAULT};
+device_->CreateCommittedResource3(&heap_props, D3D12_HEAP_FLAG_NONE,
+    &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, nullptr,
+    0, nullptr, IID_PPV_ARGS(&resource));
 ```
 
 ### Heaps and Placed Resources
@@ -243,16 +237,11 @@ queue->UpdateTileMappings(sparse_texture, 1, &coord, &region,
 
 ### Memory Allocator
 
-The D3D12 backend uses [D3D12 Memory Allocator (D3D12MA)](https://gpuopen.com/d3d12-memory-allocator/)
-for GPU memory management, allocation tracking, and memory defragmentation.
-
-| D3D12MA Feature | Usage |
-|----------------|-------|
-| Pool allocator | Transient resource pools per heap type |
-| Virtual blocks | Ring buffer sub-allocation for staging |
-| Budget queries | `IDXGIAdapter3::QueryVideoMemoryInfo` |
-| Defragmentation | Background defrag of persistent resources |
-| Allocation tracking | Per-allocation metadata for diagnostics |
+Memory management (sub-allocation, defragmentation, budget tracking) is handled by the GPU
+runtime layer (`harmonius::gpu_runtime::memory`). The D3D12 backend provides only raw heap
+and resource creation primitives (`CreateHeap`, `CreatePlacedResource2`,
+`CreateCommittedResource2`). Memory budget queries use `IDXGIAdapter3::QueryVideoMemoryInfo`,
+exposed through the `DeviceCapabilities` struct.
 
 ---
 
@@ -1103,7 +1092,6 @@ dred_data->GetAutoBreadcrumbsOutput1(&breadcrumbs);
 classDiagram
     class D3D12Device {
         -ID3D12Device16 device_
-        -D3D12MA::Allocator allocator_
         -ID3D12CommandQueue graphics_queue_
         -ID3D12CommandQueue compute_queue_
         -ID3D12CommandQueue copy_queue_

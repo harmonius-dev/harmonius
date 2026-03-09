@@ -37,7 +37,7 @@ Companion to [gpu-backend-vulkan.md](gpu-backend-vulkan.md) and
   - [25. Cross-Class Relationships](#25-cross-class-relationships)
 - [Vulkan-Specific Details](#vulkan-specific-details)
   - [26. Instance and Device Creation](#26-instance-and-device-creation)
-  - [27. VMA Integration](#27-vma-integration)
+  - [27. Memory Management](#27-memory-management)
   - [28. Queue Family Selection](#28-queue-family-selection)
   - [29. Dynamic Rendering](#29-dynamic-rendering)
 - [Sequence Diagrams](#sequence-diagrams)
@@ -119,7 +119,7 @@ classDiagram
         -VkDebugUtilsMessengerEXT debug_messenger_
         -VkPhysicalDevice physical_device_
         -VkDevice device_
-        -VmaAllocator allocator_
+        -VkPhysicalDeviceMemoryProperties mem_props_
         -QueueSet queues_
         -VkDescriptorPool bindless_pool_
         -VkDescriptorSetLayout bindless_layout_
@@ -366,7 +366,7 @@ classDiagram
 
 ### 6. Heap and Placed Resources
 
-Aliasing support for the render graph transient resource system. Uses VMA custom
+Aliasing support for the render graph transient resource system. Uses dedicated
 pools for explicit offset placement.
 
 ```mermaid
@@ -1421,7 +1421,7 @@ classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
         -VkDevice device_
-        -VmaAllocator allocator_
+        -VkPhysicalDeviceMemoryProperties mem_props_
         -VkDescriptorSet bindless_set_
         -VkPipelineLayout global_layout_
         -VkPipelineCache pipeline_cache_
@@ -1513,10 +1513,8 @@ flowchart TD
 
     N --> O["Select Queue Families\ngraphics + compute + transfer"]
     O --> P["Create VkDevice\nwith enabled extensions"]
-    P --> Q["Create VMA Allocator"]
     P --> R["Get Queue Handles\nvkGetDeviceQueue"]
-    Q --> S["Create Bindless Descriptor Pool\nUPDATE_AFTER_BIND"]
-    R --> S
+    R --> S["Create Bindless Descriptor Pool\nUPDATE_AFTER_BIND"]
     S --> T["Create Descriptor Set Layout\nUnbounded arrays per binding"]
     T --> U["Allocate Bindless Descriptor Set"]
     U --> V["Create Global Pipeline Layout\nbindless_layout_ + push constants"]
@@ -1537,20 +1535,21 @@ flowchart TD
 | `VK_EXT_graphics_pipeline_library` | Soft-gated | `graphicsPipelineLibrary` |
 | `VK_KHR_fragment_shading_rate` | Soft-gated | `pipelineFragmentShadingRate` |
 
-### 27. VMA Integration
+### 27. Memory Management
 
-The Vulkan backend delegates all GPU memory management to
-[Vulkan Memory Allocator (VMA)](https://gpuopen.com/vulkan-memory-allocator/).
+Memory management (sub-allocation, defragmentation, budget tracking) is handled by the
+GPU runtime layer (`harmonius::gpu_runtime::memory`). The Vulkan backend provides only
+raw Vulkan memory and resource creation primitives:
 
-| VMA Feature | Backend Usage |
-|------------|---------------|
-| Custom pools | Transient resource aliasing heaps (`create_heap` / `create_placed_texture`) |
-| Virtual blocks | Ring buffer sub-allocation for per-frame constants |
-| `VMA_MEMORY_USAGE_AUTO` | Automatic memory type selection for committed resources |
-| `HOST_ACCESS_SEQUENTIAL_WRITE_BIT` | Upload heap buffers (`HeapType::upload`) |
-| `HOST_ACCESS_RANDOM_BIT` | Readback heap buffers (`HeapType::readback`) |
-| Budget queries | `VK_EXT_memory_budget` integration for residency decisions |
-| Defragmentation | Background compaction of persistent resources |
+| Backend Method | Vulkan API Call |
+|----------------|-----------------|
+| `create_heap()` | `vkAllocateMemory` with selected memory type |
+| `create_placed_texture()` | `vkCreateImage` + `vkBindImageMemory2` at offset |
+| `create_placed_buffer()` | `vkCreateBuffer` + `vkBindBufferMemory2` at offset |
+| `create_texture()` | `vkCreateImage` + `vkAllocateMemory` + `vkBindImageMemory` |
+| `create_buffer()` | `vkCreateBuffer` + `vkAllocateMemory` + `vkBindBufferMemory` |
+| `query_texture_allocation_info()` | `vkGetImageMemoryRequirements` |
+| `query_buffer_allocation_info()` | `vkGetBufferMemoryRequirements` |
 
 **HeapType to Vulkan memory property mapping:**
 
@@ -1562,8 +1561,7 @@ The Vulkan backend delegates all GPU memory management to
 
 **Placed resource aliasing flow:**
 
-1. `create_heap()` creates a VMA custom pool with a single block of the requested
-   size
+1. `create_heap()` allocates a `VkDeviceMemory` block of the requested size
 2. `create_placed_texture()` / `create_placed_buffer()` binds a resource at a
    specific offset using `vkBindImageMemory2` / `vkBindBufferMemory2`
 3. Multiple resources alias the same memory at non-overlapping lifetime intervals
@@ -1615,8 +1613,6 @@ sequenceDiagram
     participant App
     participant VD as VulkanDevice
     participant Vk as Vulkan API
-    participant VMA
-
     App->>VD: VulkanDevice(DeviceDesc)
     VD->>Vk: vkCreateInstance(VK_API_VERSION_1_4)
     Vk-->>VD: VkInstance
@@ -1631,8 +1627,8 @@ sequenceDiagram
     Vk-->>VD: VkDevice
     VD->>Vk: vkGetDeviceQueue (x3)
     Vk-->>VD: graphics, compute, transfer queues
-    VD->>VMA: vmaCreateAllocator
-    VMA-->>VD: VmaAllocator
+    VD->>Vk: vkGetPhysicalDeviceMemoryProperties2
+    Vk-->>VD: memory properties
     VD->>Vk: vkCreateDescriptorSetLayout (bindless)
     VD->>Vk: vkCreateDescriptorPool (UPDATE_AFTER_BIND)
     VD->>Vk: vkAllocateDescriptorSets

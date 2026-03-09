@@ -76,12 +76,10 @@ flowchart TD
     CheckFeatures["Check Features<br/>meshShader, descriptorIndexing, etc."]
     QueueFamilies["Query Queue Families<br/>vkGetPhysicalDeviceQueueFamilyProperties2"]
     LogicalDev["Create Logical Device<br/>vkCreateDevice"]
-    VMA["Create VMA Allocator<br/>VmaAllocatorCreateInfo"]
     DescPool["Create Descriptor Pools<br/>UPDATE_AFTER_BIND"]
 
     Instance --> Debug --> PhysDev --> CheckFeatures
     CheckFeatures --> QueueFamilies --> LogicalDev
-    LogicalDev --> VMA
     LogicalDev --> DescPool
 ```
 
@@ -128,7 +126,7 @@ private:
     VkDebugUtilsMessengerEXT     debug_messenger_  = VK_NULL_HANDLE;
     VkPhysicalDevice             physical_device_  = VK_NULL_HANDLE;
     VkDevice                     device_           = VK_NULL_HANDLE;
-    VmaAllocator                 allocator_        = VK_NULL_HANDLE;
+    VkPhysicalDeviceMemoryProperties mem_props_    = {};
 
     struct QueueSet {
         VkQueue graphics  = VK_NULL_HANDLE;
@@ -227,13 +225,12 @@ VkImageCreateInfo image_info = {
     .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 };
 
-VmaAllocationCreateInfo alloc_info = {
-    .usage = VMA_MEMORY_USAGE_AUTO,
-};
-
 VkImage image;
-VmaAllocation allocation;
-vmaCreateImage(allocator_, &image_info, &alloc_info, &image, &allocation, nullptr);
+vkCreateImage(device_, &image_info, nullptr, &image);
+
+VkMemoryRequirements mem_req;
+vkGetImageMemoryRequirements(device_, image, &mem_req);
+// Memory allocation and binding handled by gpu_runtime::memory::Allocator
 
 // Set debug name
 VkDebugUtilsObjectNameInfoEXT name_info = {
@@ -254,42 +251,40 @@ VkBufferCreateInfo buffer_info = {
     .usage = to_vk_buffer_usage(desc.usage),
 };
 
-VmaAllocationCreateInfo alloc_info = {
-    .flags = (desc.heap_type == HeapType::upload)
-        ? VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-        : (desc.heap_type == HeapType::readback)
-            ? VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
-            : 0,
-    .usage = VMA_MEMORY_USAGE_AUTO,
-};
+VkBuffer buffer;
+vkCreateBuffer(device_, &buffer_info, nullptr, &buffer);
 
-vmaCreateBuffer(allocator_, &buffer_info, &alloc_info, &buffer, &allocation, nullptr);
+VkMemoryRequirements mem_req;
+vkGetBufferMemoryRequirements(device_, buffer, &mem_req);
+// Memory allocation and binding handled by gpu_runtime::memory::Allocator
 ```
 
 ### Placed Resources and Aliasing
 
-For render graph aliasing (RG-8.1–8.6), VMA is used with dedicated memory blocks:
+For render graph aliasing (RG-8.1–8.6), the GPU runtime's memory manager creates dedicated
+`VkDeviceMemory` blocks via `create_heap()` and places resources at specific offsets via
+`create_placed_texture()` / `create_placed_buffer()`:
 
 ```cpp
-// Create a dedicated VMA pool as the "heap"
-VmaPoolCreateInfo pool_info = {
+// Allocate a dedicated memory block (heap)
+VkMemoryAllocateInfo alloc_info = {
+    .sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+    .allocationSize  = heap_size_bytes,
     .memoryTypeIndex = device_local_type_index,
-    .blockSize       = heap_size_bytes,
-    .maxBlockCount   = 1,
 };
-VmaPool pool;
-vmaCreatePool(allocator_, &pool_info, &pool);
+VkDeviceMemory memory;
+vkAllocateMemory(device_, &alloc_info, nullptr, &memory);
 
-// Place a resource at a specific offset within the pool
-VmaAllocationCreateInfo alloc_info = {
-    .pool = pool,
-};
-// VMA handles offset management; for explicit offset control, use
-// vkBindImageMemory2 with VkBindImageMemoryInfo.memoryOffset directly.
+// Place a resource at a specific offset (aliasing)
+vkBindImageMemory2(device_, 1, &(VkBindImageMemoryInfo){
+    .sType        = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+    .image        = image,
+    .memory       = memory,
+    .memoryOffset = offset_within_heap,
+});
 
-// Aliasing: multiple images/buffers can bind to the same VkDeviceMemory
-// at non-overlapping lifetime intervals. Before first use of an aliased
-// resource, issue a barrier with oldLayout = UNDEFINED to reset metadata.
+// Before first use of an aliased resource, issue a barrier with
+// oldLayout = UNDEFINED to reset metadata.
 ```
 
 ### Sparse Resources
@@ -325,18 +320,13 @@ VkBindSparseInfo sparse_bind = {
 vkQueueBindSparse(queues_.graphics, 1, &sparse_bind, VK_NULL_HANDLE);
 ```
 
-### Memory Allocator
+### Memory Management
 
-The Vulkan backend uses [Vulkan Memory Allocator (VMA)](https://gpuopen.com/vulkan-memory-allocator/)
-for GPU memory management, allocation tracking, and memory defragmentation.
-
-| VMA Feature | Usage |
-|------------|-------|
-| Custom pools | Transient resource aliasing heaps |
-| Virtual blocks | Ring buffer sub-allocation |
-| Budget queries | `VK_EXT_memory_budget` via VMA |
-| Defragmentation | Background compaction of persistent resources |
-| Allocation tracking | Per-allocation metadata for diagnostics |
+Memory management (sub-allocation, defragmentation, budget tracking) is handled by the GPU
+runtime layer (`harmonius::gpu_runtime::memory`). The Vulkan backend provides only raw heap
+and resource creation primitives (`vkAllocateMemory`, `vkCreateImage`, `vkCreateBuffer`,
+`vkBindImageMemory2`, `vkBindBufferMemory2`). Memory budget queries use
+`VK_EXT_memory_budget`, exposed through the `DeviceCapabilities` struct.
 
 ---
 
@@ -1209,7 +1199,7 @@ classDiagram
         -VkInstance instance_
         -VkDevice device_
         -VkPhysicalDevice physical_device_
-        -VmaAllocator allocator_
+        -VkPhysicalDeviceMemoryProperties mem_props_
         -VkQueue graphics_queue_
         -VkQueue compute_queue_
         -VkQueue transfer_queue_
