@@ -38,15 +38,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install LLVM 20
+      - name: Install LLVM 21
         run: |
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
             | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
           sudo add-apt-repository -y \
-            "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-20 main"
+            "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-21 main"
           sudo apt-get update
           sudo apt-get install -y \
-            clang-20 libc++-20-dev libc++abi-20-dev lld-20 ninja-build
+            clang-21 libc++-21-dev libc++abi-21-dev lld-21 ninja-build
 
       - name: Install Vulkan SDK
         run: |
@@ -65,14 +65,27 @@ jobs:
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
 
+      - name: Find libc++ modules JSON
+        id: find-modules
+        run: |
+          MODULES_JSON=$(find /usr/lib/llvm-21 -name 'libc++.modules.json' 2>/dev/null | head -1)
+          if [ -z "$MODULES_JSON" ]; then
+            echo "ERROR: libc++.modules.json not found under /usr/lib/llvm-21"
+            find /usr/lib/llvm-21 -name '*.modules.json' 2>/dev/null || true
+            dpkg -L libc++-21-dev | grep -i module || true
+            exit 1
+          fi
+          echo "Found: $MODULES_JSON"
+          echo "path=$MODULES_JSON" >> "$GITHUB_OUTPUT"
+
       - name: Configure
         run: |
           cmake --preset linux-release \
-            -DCMAKE_C_COMPILER=clang-20 \
-            -DCMAKE_CXX_COMPILER=clang++-20 \
+            -DCMAKE_C_COMPILER=clang-21 \
+            -DCMAKE_CXX_COMPILER=clang++-21 \
             -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
             -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -lc++abi" \
-            -DCMAKE_CXX_STDLIB_MODULES_JSON=/usr/lib/llvm-20/lib/c++/libc++.modules.json
+            -DCMAKE_CXX_STDLIB_MODULES_JSON=${{ steps.find-modules.outputs.path }}
 
       - name: Build
         run: cmake --build --preset linux-release
