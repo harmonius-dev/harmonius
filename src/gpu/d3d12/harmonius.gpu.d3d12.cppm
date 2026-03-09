@@ -3,6 +3,10 @@ module;
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
+// wingdi.h defines DeviceCapabilities as a macro (DeviceCapabilitiesA/W).
+// Undefine it to avoid collision with harmonius::gpu::DeviceCapabilities.
+#undef DeviceCapabilities
+
 export module harmonius.gpu.d3d12;
 
 import std;
