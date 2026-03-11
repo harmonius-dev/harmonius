@@ -1,7 +1,5 @@
 add_library(harmonius-gpu STATIC)
-target_sources(
-  harmonius-gpu PUBLIC FILE_SET CXX_MODULES FILES harmonius.gpu.cppm
-                       harmonius.gpu.concepts.cppm)
+target_sources(harmonius-gpu PUBLIC FILE_SET CXX_MODULES FILES harmonius.gpu.cppm harmonius.gpu.concepts.cppm)
 
 if(HARMONIUS_GPU_BACKEND STREQUAL "metal")
   add_subdirectory(metal)

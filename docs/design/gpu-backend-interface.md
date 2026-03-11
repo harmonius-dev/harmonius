@@ -123,19 +123,19 @@ The build-time backend selection aliases the concrete types and verifies them ag
 namespace harmonius::gpu {
 
 #if defined(HARMONIUS_BACKEND_D3D12)
-    using Device        = d3d12::D3D12Device;
-    using CommandBuffer = d3d12::D3D12CommandBuffer;
-    using CommandPool   = d3d12::D3D12CommandPool;
+using Device = d3d12::D3D12Device;
+using CommandBuffer = d3d12::D3D12CommandBuffer;
+using CommandPool = d3d12::D3D12CommandPool;
 #elif defined(HARMONIUS_BACKEND_VULKAN)
-    using Device        = vulkan::VulkanDevice;
-    using CommandBuffer = vulkan::VulkanCommandBuffer;
-    using CommandPool   = vulkan::VulkanCommandPool;
+using Device = vulkan::VulkanDevice;
+using CommandBuffer = vulkan::VulkanCommandBuffer;
+using CommandPool = vulkan::VulkanCommandPool;
 #elif defined(HARMONIUS_BACKEND_METAL)
-    using Device        = metal::MetalDevice;
-    using CommandBuffer = metal::MetalCommandBuffer;
-    using CommandPool   = metal::MetalCommandPool;
+using Device = metal::MetalDevice;
+using CommandBuffer = metal::MetalCommandBuffer;
+using CommandPool = metal::MetalCommandPool;
 #else
-    #error "No GPU backend selected. Set HARMONIUS_GPU_BACKEND in CMake."
+#error "No GPU backend selected. Set HARMONIUS_GPU_BACKEND in CMake."
 #endif
 
 // Compile-time verification — if a backend is missing any required method,
@@ -144,7 +144,7 @@ static_assert(GpuDevice<Device>);
 static_assert(GpuCommandBuffer<CommandBuffer>);
 static_assert(GpuCommandPool<CommandPool>);
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 **Why concepts over CRTP:** C++20 concepts define the interface contract without requiring base
@@ -173,17 +173,17 @@ across the render graph and backend together.
 namespace harmonius::gpu {
 
 struct DeviceDesc {
-    bool enable_validation  = false;   // debug layer / validation layers
-    bool enable_gpu_capture = false;   // PIX / RenderDoc / Xcode GPU capture
-    uint32_t frame_count    = 3;       // triple buffering (R-3.1.7)
+  bool enable_validation = false;   // debug layer / validation layers
+  bool enable_gpu_capture = false;  // PIX / RenderDoc / Xcode GPU capture
+  uint32_t frame_count = 3;         // triple buffering (R-3.1.7)
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Initialization Hard Gate
 
-Device creation SHALL fail with `DeviceError::feature_not_supported` if any required capability
+Device creation SHALL fail with `DeviceError::kFeatureNotSupported` if any required capability
 is absent. The hard gate runs immediately after the backend queries physical device properties
 and before any resource allocation occurs. Every required field in `DeviceCapabilities` is
 checked, and missing capabilities are collected into a diagnostic list reported to the caller.
@@ -192,10 +192,10 @@ Required capabilities enforced by the hard gate:
 
 | Capability            | Requirement | Backend Query                                                                                                                                                                 |
 | --------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mesh_shaders`        | R-3.2.2     | D3D12: `D3D12_FEATURE_DATA_D3D12_OPTIONS7::MeshShaderTier != NOT_SUPPORTED`; Vulkan: `VK_EXT_mesh_shader` present + `meshShader` feature enabled; Metal: GPU family Apple8+   |
+| `mesh_shaders`        | R-3.2.2     | D3D12: `D3D12_FEATURE_DATA_D3D12_OPTIONS7::MeshShaderTier != NOT_SUPPORTED`; Vulkan: `VK_EXT_mesh_shader` Present + `meshShader` feature enabled; Metal: GPU family Apple8+   |
 | `bindless_resources`  | R-3.2.1     | D3D12: Resource Binding Tier 3; Vulkan: `VK_EXT_descriptor_indexing` + `descriptorBindingPartiallyBound`; Metal: Argument Buffers Tier 2                                      |
 | `timeline_fences`     | R-3.2.5     | D3D12: `ID3D12Fence` (always available); Vulkan: `VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore`; Metal: `MTLSharedEvent` (always available)                   |
-| `async_compute_queue` | R-3.2.4     | D3D12: dedicated compute engine (always available); Vulkan: queue family with `COMPUTE_BIT` but not `GRAPHICS_BIT`; Metal: always available (universal queues)                |
+| `async_compute_queue` | R-3.2.4     | D3D12: dedicated Compute engine (always available); Vulkan: queue family with `COMPUTE_BIT` but not `GRAPHICS_BIT`; Metal: always available (universal queues)                |
 | `transfer_queue`      | R-3.2.4     | D3D12: dedicated copy engine (always available); Vulkan: queue family with `TRANSFER_BIT` but not `COMPUTE_BIT` or `GRAPHICS_BIT`; Metal: always available (universal queues) |
 
 The hard gate is the **only** point where the framework terminates due to missing features.
@@ -215,116 +215,85 @@ All hot-path recording goes through CommandBuffer (see below).
 namespace harmonius::gpu {
 
 template <typename D>
-concept GpuDevice = requires(D d, const D cd,
-        const TextureDesc& td, const BufferDesc& bd,
-        const HeapDesc& hd, const SparseTextureDesc& stexd,
-        const AccelerationStructureDesc& asd,
-        const MeshRenderPipelineDesc& mrpd,
-        const ComputePipelineDesc& cpd,
-        const RayTracingPipelineDesc& rtpd,
-        const WorkGraphDesc& wgd,
-        const DescriptorHeapDesc& dhd,
-        const QueryPoolDesc& qpd,
-        const SwapchainDesc& scd,
-        const PipelineCacheDesc& pcached,
-        TextureHandle th, BufferHandle bh, HeapHandle hh,
-        AccelerationStructureHandle ash,
-        FenceHandle fh, PipelineHandle ph,
-        WorkGraphHandle wgh, DescriptorHeapHandle dhh,
-        QueryPoolHandle qph, SwapchainHandle swh,
-        PipelineCacheHandle pch, QueueType qt) {
+concept GpuDevice = requires(
+    D d, const D cd, const TextureDesc& td, const BufferDesc& bd, const HeapDesc& hd, const SparseTextureDesc& stexd,
+    const AccelerationStructureDesc& asd, const MeshRenderPipelineDesc& mrpd, const ComputePipelineDesc& cpd,
+    const RayTracingPipelineDesc& rtpd, const WorkGraphDesc& wgd, const DescriptorHeapDesc& dhd,
+    const QueryPoolDesc& qpd, const SwapchainDesc& scd, const PipelineCacheDesc& pcached, TextureHandle th,
+    BufferHandle bh, HeapHandle hh, AccelerationStructureHandle ash, FenceHandle fh, PipelineHandle ph,
+    WorkGraphHandle wgh, DescriptorHeapHandle dhh, QueryPoolHandle qph, SwapchainHandle swh, PipelineCacheHandle pch,
+    QueueType qt) {
+  { cd.Capabilities() } -> std::same_as<DeviceCapabilities>;
+  { cd.QueueCount(qt) } -> std::same_as<uint32_t>;
 
-    { cd.capabilities() } -> std::same_as<DeviceCapabilities>;
-    { cd.queue_count(qt) } -> std::same_as<uint32_t>;
+  { d.CreateTexture(td) } -> std::same_as<std::expected<TextureHandle, ResourceError>>;
+  { d.CreateBuffer(bd) } -> std::same_as<std::expected<BufferHandle, ResourceError>>;
+  { d.DestroyTexture(th) } -> std::same_as<void>;
+  { d.DestroyBuffer(bh) } -> std::same_as<void>;
 
-    { d.create_texture(td) }
-        -> std::same_as<std::expected<TextureHandle, ResourceError>>;
-    { d.create_buffer(bd) }
-        -> std::same_as<std::expected<BufferHandle, ResourceError>>;
-    { d.destroy_texture(th) } -> std::same_as<void>;
-    { d.destroy_buffer(bh) } -> std::same_as<void>;
+  { d.CreateHeap(hd) } -> std::same_as<std::expected<HeapHandle, ResourceError>>;
+  { d.CreatePlacedTexture(hh, uint64_t{}, td) } -> std::same_as<std::expected<TextureHandle, ResourceError>>;
+  { d.CreatePlacedBuffer(hh, uint64_t{}, bd) } -> std::same_as<std::expected<BufferHandle, ResourceError>>;
+  { d.DestroyHeap(hh) } -> std::same_as<void>;
 
-    { d.create_heap(hd) }
-        -> std::same_as<std::expected<HeapHandle, ResourceError>>;
-    { d.create_placed_texture(hh, uint64_t{}, td) }
-        -> std::same_as<std::expected<TextureHandle, ResourceError>>;
-    { d.create_placed_buffer(hh, uint64_t{}, bd) }
-        -> std::same_as<std::expected<BufferHandle, ResourceError>>;
-    { d.destroy_heap(hh) } -> std::same_as<void>;
+  { d.CreateSparseTexture(stexd) } -> std::same_as<std::expected<TextureHandle, ResourceError>>;
+  { d.UpdateSparseBindings(th, std::span<const SparseTileBinding>{}) } -> std::same_as<void>;
 
-    { d.create_sparse_texture(stexd) }
-        -> std::same_as<std::expected<TextureHandle, ResourceError>>;
-    { d.update_sparse_bindings(th, std::span<const SparseTileBinding>{}) }
-        -> std::same_as<void>;
+  { d.Map(bh) } -> std::same_as<void*>;
+  { d.Unmap(bh) } -> std::same_as<void>;
 
-    { d.map(bh) } -> std::same_as<void*>;
-    { d.unmap(bh) } -> std::same_as<void>;
+  { d.CreateAccelerationStructure(asd) } -> std::same_as<std::expected<AccelerationStructureHandle, ResourceError>>;
+  { cd.QueryAccelerationStructureSizes(asd) } -> std::same_as<AccelerationStructureSizes>;
+  { d.DestroyAccelerationStructure(ash) } -> std::same_as<void>;
 
-    { d.create_acceleration_structure(asd) }
-        -> std::same_as<std::expected<AccelerationStructureHandle, ResourceError>>;
-    { cd.query_acceleration_structure_sizes(asd) }
-        -> std::same_as<AccelerationStructureSizes>;
-    { d.destroy_acceleration_structure(ash) } -> std::same_as<void>;
+  { d.CreateFence(uint64_t{}) } -> std::same_as<std::expected<FenceHandle, DeviceError>>;
+  { d.DestroyFence(fh) } -> std::same_as<void>;
+  { cd.FenceCompletedValue(fh) } -> std::same_as<uint64_t>;
+  { d.WaitFenceCpu(fh, uint64_t{}) } -> std::same_as<void>;
 
-    { d.create_fence(uint64_t{}) }
-        -> std::same_as<std::expected<FenceHandle, DeviceError>>;
-    { d.destroy_fence(fh) } -> std::same_as<void>;
-    { cd.fence_completed_value(fh) } -> std::same_as<uint64_t>;
-    { d.wait_fence_cpu(fh, uint64_t{}) } -> std::same_as<void>;
+  { d.CreateCommandPool(qt) };
+  requires GpuCommandPool<decltype(d.CreateCommandPool(qt))>;
 
-    { d.create_command_pool(qt) };
-    requires GpuCommandPool<decltype(d.create_command_pool(qt))>;
+  {
+    d.Submit(qt, std::span<typename D::CommandBufferType*>{}, std::span<const FenceSignal>{},
+             std::span<const FenceWait>{})
+  } -> std::same_as<void>;
 
-    { d.submit(qt,
-               std::span<typename D::CommandBufferType*>{},
-               std::span<const FenceSignal>{},
-               std::span<const FenceWait>{}) } -> std::same_as<void>;
+  { d.CreateMeshRenderPipeline(mrpd) } -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
+  { d.CreateComputePipeline(cpd) } -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
+  { d.CreateRayTracingPipeline(rtpd) } -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
+  { d.CreateWorkGraph(wgd) } -> std::same_as<std::expected<WorkGraphHandle, PipelineError>>;
+  { d.DestroyPipeline(ph) } -> std::same_as<void>;
+  { d.DestroyWorkGraph(wgh) } -> std::same_as<void>;
 
-    { d.create_mesh_render_pipeline(mrpd) }
-        -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
-    { d.create_compute_pipeline(cpd) }
-        -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
-    { d.create_ray_tracing_pipeline(rtpd) }
-        -> std::same_as<std::expected<PipelineHandle, PipelineError>>;
-    { d.create_work_graph(wgd) }
-        -> std::same_as<std::expected<WorkGraphHandle, PipelineError>>;
-    { d.destroy_pipeline(ph) } -> std::same_as<void>;
-    { d.destroy_work_graph(wgh) } -> std::same_as<void>;
+  { d.CreateDescriptorHeap(dhd) } -> std::same_as<std::expected<DescriptorHeapHandle, DeviceError>>;
+  { d.WriteDescriptor(dhh, uint32_t{}, DescriptorWrite{}) } -> std::same_as<void>;
+  { d.DestroyDescriptorHeap(dhh) } -> std::same_as<void>;
 
-    { d.create_descriptor_heap(dhd) }
-        -> std::same_as<std::expected<DescriptorHeapHandle, DeviceError>>;
-    { d.write_descriptor(dhh, uint32_t{}, DescriptorWrite{}) }
-        -> std::same_as<void>;
-    { d.destroy_descriptor_heap(dhh) } -> std::same_as<void>;
+  { d.CreateQueryPool(qpd) } -> std::same_as<std::expected<QueryPoolHandle, DeviceError>>;
+  { d.DestroyQueryPool(qph) } -> std::same_as<void>;
+  { cd.TimestampPeriodNs() } -> std::same_as<double>;
 
-    { d.create_query_pool(qpd) }
-        -> std::same_as<std::expected<QueryPoolHandle, DeviceError>>;
-    { d.destroy_query_pool(qph) } -> std::same_as<void>;
-    { cd.timestamp_period_ns() } -> std::same_as<double>;
+  { d.CreateSwapchain(scd) } -> std::same_as<std::expected<SwapchainHandle, DeviceError>>;
+  { d.AcquireNextImage(swh) } -> std::same_as<std::expected<TextureHandle, DeviceError>>;
+  { d.Present(swh) } -> std::same_as<void>;
+  { d.ResizeSwapchain(swh, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
+  { d.DestroySwapchain(swh) } -> std::same_as<void>;
 
-    { d.create_swapchain(scd) }
-        -> std::same_as<std::expected<SwapchainHandle, DeviceError>>;
-    { d.acquire_next_image(swh) }
-        -> std::same_as<std::expected<TextureHandle, DeviceError>>;
-    { d.present(swh) } -> std::same_as<void>;
-    { d.resize_swapchain(swh, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
-    { d.destroy_swapchain(swh) } -> std::same_as<void>;
+  { d.SetName(th, std::string_view{}) } -> std::same_as<void>;
+  { d.SetName(bh, std::string_view{}) } -> std::same_as<void>;
+  { d.SetName(ash, std::string_view{}) } -> std::same_as<void>;
+  { d.SetName(ph, std::string_view{}) } -> std::same_as<void>;
+  { d.SetName(fh, std::string_view{}) } -> std::same_as<void>;
 
-    { d.set_name(th, std::string_view{}) } -> std::same_as<void>;
-    { d.set_name(bh, std::string_view{}) } -> std::same_as<void>;
-    { d.set_name(ash, std::string_view{}) } -> std::same_as<void>;
-    { d.set_name(ph, std::string_view{}) } -> std::same_as<void>;
-    { d.set_name(fh, std::string_view{}) } -> std::same_as<void>;
+  { d.WaitIdle() } -> std::same_as<void>;
 
-    { d.wait_idle() } -> std::same_as<void>;
-
-    { d.create_pipeline_cache(pcached) }
-        -> std::same_as<std::expected<PipelineCacheHandle, DeviceError>>;
-    { d.serialize_pipeline_cache(pch) } -> std::same_as<std::vector<uint8_t>>;
-    { d.destroy_pipeline_cache(pch) } -> std::same_as<void>;
+  { d.CreatePipelineCache(pcached) } -> std::same_as<std::expected<PipelineCacheHandle, DeviceError>>;
+  { d.SerializePipelineCache(pch) } -> std::same_as<std::vector<uint8_t>>;
+  { d.DestroyPipelineCache(pch) } -> std::same_as<void>;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Device Capabilities
@@ -335,49 +304,49 @@ Queried at initialization and used by the render graph's gating system (RG-6.1�
 namespace harmonius::gpu {
 
 struct DeviceCapabilities {
-    // --- Required capabilities (initialization fails without these) ---
-    bool mesh_shaders             = false;  // R-3.2.2
-    bool bindless_resources       = false;  // R-3.2.1
-    bool timeline_fences          = false;  // R-3.2.5
-    bool async_compute_queue      = false;  // R-3.2.4
-    bool transfer_queue           = false;  // R-3.2.4
+  // --- Required Capabilities (initialization fails without these) ---
+  bool mesh_shaders = false;         // R-3.2.2
+  bool bindless_resources = false;   // R-3.2.1
+  bool timeline_fences = false;      // R-3.2.5
+  bool async_compute_queue = false;  // R-3.2.4
+  bool transfer_queue = false;       // R-3.2.4
 
-    // --- Soft-gated capabilities ---
-    bool ray_tracing              = false;  // R-3.2.3
-    bool ray_tracing_inline       = false;  // ray queries in any shader stage
-    bool opacity_micromaps        = false;  // RG-2.25
-    bool sparse_textures          = false;  // R-3.2.6
-    bool int64_atomics            = false;  // R-3.2.7
-    bool variable_rate_shading    = false;
-    bool work_graphs              = false;
-    bool split_barriers           = false;
-    bool shader_function_linking  = false;  // D3D12: ID3D12FunctionLinkingGraph,
-                                            // Vulkan: VK_EXT_graphics_pipeline_library,
-                                            // Metal: MTLStitchedLibrary
+  // --- Soft-gated capabilities ---
+  bool ray_tracing = false;         // R-3.2.3
+  bool ray_tracing_inline = false;  // ray queries in any shader stage
+  bool opacity_micromaps = false;   // RG-2.25
+  bool sparse_textures = false;     // R-3.2.6
+  bool int64_atomics = false;       // R-3.2.7
+  bool variable_rate_shading = false;
+  bool work_graphs = false;
+  bool split_barriers = false;
+  bool shader_function_linking = false;  // D3D12: ID3D12FunctionLinkingGraph,
+                                         // Vulkan: VK_EXT_graphics_pipeline_library,
+                                         // Metal: MTLStitchedLibrary
 
-    // --- Limits ---
-    uint32_t max_texture_dimension_2d     = 0;
-    uint32_t max_texture_dimension_3d     = 0;
-    uint32_t max_texture_array_layers     = 0;
-    uint32_t max_buffer_size_bytes        = 0;
-    uint32_t max_descriptor_count         = 0;
-    uint32_t max_push_constants_bytes     = 0;
+  // --- Limits ---
+  uint32_t max_texture_dimension_2d = 0;
+  uint32_t max_texture_dimension_3d = 0;
+  uint32_t max_texture_array_layers = 0;
+  uint32_t max_buffer_size_bytes = 0;
+  uint32_t max_descriptor_count = 0;
+  uint32_t max_push_constants_bytes = 0;
 
-    // --- Mesh shader limits ---
-    uint32_t max_mesh_output_vertices     = 0;
-    uint32_t max_mesh_output_primitives   = 0;
-    uint32_t max_mesh_workgroup_size      = 0;
-    uint32_t max_mesh_shared_memory_bytes = 0;
-    uint32_t max_task_workgroup_size      = 0;
-    uint32_t max_task_shared_memory_bytes = 0;
-    uint32_t max_task_payload_bytes       = 0;
+  // --- Mesh shader limits ---
+  uint32_t max_mesh_output_vertices = 0;
+  uint32_t max_mesh_output_primitives = 0;
+  uint32_t max_mesh_workgroup_size = 0;
+  uint32_t max_mesh_shared_memory_bytes = 0;
+  uint32_t max_task_workgroup_size = 0;
+  uint32_t max_task_shared_memory_bytes = 0;
+  uint32_t max_task_payload_bytes = 0;
 
-    // --- Memory ---
-    uint64_t device_local_memory_bytes    = 0;
-    uint64_t shared_memory_bytes          = 0; // unified / host-visible
+  // --- Memory ---
+  uint64_t device_local_memory_bytes = 0;
+  uint64_t shared_memory_bytes = 0;  // unified / host-visible
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Queue Topology
@@ -386,22 +355,22 @@ struct DeviceCapabilities {
 namespace harmonius::gpu {
 
 enum class QueueType : uint8_t {
-    graphics,       // supports all operations
-    async_compute,  // compute + copy
-    transfer,       // copy only
+  kGraphics,      // supports all operations
+  kAsyncCompute,  // compute + copy
+  kTransfer,      // copy only
 };
 
 struct FenceSignal {
-    FenceHandle fence;
-    uint64_t    value;
+  FenceHandle fence;
+  uint64_t value;
 };
 
 struct FenceWait {
-    FenceHandle fence;
-    uint64_t    value;
+  FenceHandle fence;
+  uint64_t value;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ```mermaid
@@ -417,11 +386,11 @@ flowchart LR
         F2["Fence B"]
     end
 
-    GFX -->|"signal"| F1
-    F1 -->|"wait"| AC
-    AC -->|"signal"| F2
-    F2 -->|"wait"| GFX
-    TX -->|"signal"| F1
+    GFX -->|"Signal"| F1
+    F1 -->|"Wait"| AC
+    AC -->|"Signal"| F2
+    F2 -->|"Wait"| GFX
+    TX -->|"Signal"| F1
 ```
 
 ---
@@ -434,18 +403,18 @@ flowchart LR
 namespace harmonius::gpu {
 
 // Opaque handles — backend stores implementation-specific data
-enum class TextureHandle : uint64_t { invalid = 0 };
-enum class BufferHandle : uint64_t { invalid = 0 };
-enum class HeapHandle : uint64_t { invalid = 0 };
-enum class AccelerationStructureHandle : uint64_t { invalid = 0 };
+enum class TextureHandle : uint64_t { kInvalid = 0 };
+enum class BufferHandle : uint64_t { kInvalid = 0 };
+enum class HeapHandle : uint64_t { kInvalid = 0 };
+enum class AccelerationStructureHandle : uint64_t { kInvalid = 0 };
 
 enum class HeapType : uint8_t {
-    device_local,   // GPU-only memory (DEFAULT / DEVICE_LOCAL / private)
-    upload,         // CPU-writable, GPU-readable (UPLOAD / HOST_VISIBLE | HOST_COHERENT / shared)
-    readback,       // GPU-writable, CPU-readable (READBACK / HOST_VISIBLE | HOST_CACHED / shared)
+  kDeviceLocal,  // GPU-only memory (DEFAULT / DEVICE_LOCAL / private)
+  kUpload,       // CPU-writable, GPU-readable (UPLOAD / HOST_VISIBLE | HOST_COHERENT / shared)
+  kReadback,     // GPU-writable, CPU-readable (READBACK / HOST_VISIBLE | HOST_CACHED / shared)
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Texture Creation
@@ -454,39 +423,39 @@ enum class HeapType : uint8_t {
 namespace harmonius::gpu {
 
 enum class TextureDimension : uint8_t {
-    tex_2d,
-    tex_2d_array,
-    tex_3d,
-    tex_cube,
-    tex_cube_array,
+  kTex2d,
+  kTex2dArray,
+  kTex3d,
+  kTexCube,
+  kTexCubeArray,
 };
 
 struct TextureDesc {
-    std::string_view   name;
-    TextureDimension   dimension       = TextureDimension::tex_2d;
-    Format             format          = Format::rgba8_unorm;
-    uint32_t           width           = 1;
-    uint32_t           height          = 1;
-    uint32_t           depth_or_layers = 1;
-    uint32_t           mip_levels      = 1;
-    SampleCount        samples         = SampleCount::x1;
-    TextureUsageFlags  usage           = {};
+  std::string_view name;
+  TextureDimension dimension = TextureDimension::kTex2d;
+  Format format = Format::kRgba8Unorm;
+  uint32_t width = 1;
+  uint32_t height = 1;
+  uint32_t depth_or_layers = 1;
+  uint32_t mip_levels = 1;
+  SampleCount samples = SampleCount::kX1;
+  TextureUsageFlags usage = {};
 };
 
 enum class TextureUsageFlagBits : uint32_t {
-    color_attachment              = 1 << 0,
-    depth_stencil_attachment      = 1 << 1,
-    shader_read                   = 1 << 2,
-    storage_read_write            = 1 << 3,
-    transfer_src                  = 1 << 4,
-    transfer_dst                  = 1 << 5,
-    shading_rate_attachment       = 1 << 6,
+  kColorAttachment = 1 << 0,
+  kDepthStencilAttachment = 1 << 1,
+  kShaderRead = 1 << 2,
+  kStorageReadWrite = 1 << 3,
+  kTransferSrc = 1 << 4,
+  kTransferDst = 1 << 5,
+  kShadingRateAttachment = 1 << 6,
 };
 using TextureUsageFlags = uint32_t;
 
-enum class SampleCount : uint8_t { x1 = 1, x2 = 2, x4 = 4 };
+enum class SampleCount : uint8_t { kX1 = 1, kX2 = 2, kX4 = 4 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Buffer Creation
@@ -495,25 +464,25 @@ enum class SampleCount : uint8_t { x1 = 1, x2 = 2, x4 = 4 };
 namespace harmonius::gpu {
 
 struct BufferDesc {
-    std::string_view   name;
-    uint64_t           size_bytes  = 0;
-    HeapType           heap_type   = HeapType::device_local;
-    BufferUsageFlags   usage       = {};
+  std::string_view name;
+  uint64_t size_bytes = 0;
+  HeapType heap_type = HeapType::kDeviceLocal;
+  BufferUsageFlags usage = {};
 };
 
 enum class BufferUsageFlagBits : uint32_t {
-    constant_buffer         = 1 << 0,
-    storage_buffer          = 1 << 1,
-    index_buffer            = 1 << 2,
-    indirect_argument       = 1 << 3,
-    transfer_src            = 1 << 4,
-    transfer_dst            = 1 << 5,
-    acceleration_structure  = 1 << 6,
-    shader_binding_table    = 1 << 7,
+  kConstantBuffer = 1 << 0,
+  kStorageBuffer = 1 << 1,
+  kIndexBuffer = 1 << 2,
+  kIndirectArgument = 1 << 3,
+  kTransferSrc = 1 << 4,
+  kTransferDst = 1 << 5,
+  kAccelerationStructure = 1 << 6,
+  kShaderBindingTable = 1 << 7,
 };
 using BufferUsageFlags = uint32_t;
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Heap and Placed Resources
@@ -525,23 +494,23 @@ shared heaps.
 namespace harmonius::gpu {
 
 struct HeapDesc {
-    uint64_t size_bytes = 0;
-    HeapType type       = HeapType::device_local;
+  uint64_t size_bytes = 0;
+  HeapType type = HeapType::kDeviceLocal;
 };
 
 struct AllocationInfo {
-    uint64_t size_bytes  = 0;
-    uint64_t alignment   = 0;
+  uint64_t size_bytes = 0;
+  uint64_t alignment = 0;
 };
 
 /// Query the size and alignment a resource would require if placed in a heap.
 [[nodiscard]]
-AllocationInfo query_texture_allocation_info(const TextureDesc& desc);
+AllocationInfo QueryTextureAllocationInfo(const TextureDesc& desc);
 
 [[nodiscard]]
-AllocationInfo query_buffer_allocation_info(const BufferDesc& desc);
+AllocationInfo QueryBufferAllocationInfo(const BufferDesc& desc);
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Sparse Resources
@@ -550,21 +519,21 @@ AllocationInfo query_buffer_allocation_info(const BufferDesc& desc);
 namespace harmonius::gpu {
 
 struct SparseTextureDesc {
-    TextureDesc  base;
-    uint32_t     tile_width  = 256;  // texels per tile (hardware-dependent)
-    uint32_t     tile_height = 256;
+  TextureDesc base;
+  uint32_t tile_width = 256;  // texels per tile (hardware-dependent)
+  uint32_t tile_height = 256;
 };
 
 struct SparseTileBinding {
-    uint32_t     mip_level;
-    uint32_t     array_layer;
-    uint32_t     tile_x;
-    uint32_t     tile_y;
-    HeapHandle   heap;         // source heap (invalid = unmap tile)
-    uint64_t     heap_offset;
+  uint32_t mip_level;
+  uint32_t array_layer;
+  uint32_t tile_x;
+  uint32_t tile_y;
+  HeapHandle heap;  // source heap (invalid = unmap tile)
+  uint64_t heap_offset;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Resource Mapping
@@ -574,11 +543,11 @@ namespace harmonius::gpu {
 
 /// Map a buffer for CPU access.
 /// Only valid for upload and readback heap types.
-/// Returns a pointer valid until unmap() is called.
-void* map(BufferHandle handle);
-void  unmap(BufferHandle handle);
+/// Returns a pointer valid until Unmap() is called.
+void* Map(BufferHandle handle);
+void Unmap(BufferHandle handle);
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Acceleration Structures
@@ -587,67 +556,67 @@ void  unmap(BufferHandle handle);
 namespace harmonius::gpu {
 
 enum class AccelerationStructureType : uint8_t {
-    bottom_level,   // BLAS — triangle/AABB geometry
-    top_level,      // TLAS — instances referencing BLASes
+  kBottomLevel,  // BLAS — triangle/AABB geometry
+  kTopLevel,     // TLAS — instances referencing BLASes
 };
 
 struct AccelerationStructureDesc {
-    AccelerationStructureType type;
-    BufferHandle              buffer;
-    uint64_t                  offset      = 0;
-    uint64_t                  size_bytes  = 0;
+  AccelerationStructureType type;
+  BufferHandle buffer;
+  uint64_t offset = 0;
+  uint64_t size_bytes = 0;
 };
 
 struct AccelerationStructureSizes {
-    uint64_t structure_size_bytes = 0;
-    uint64_t build_scratch_bytes  = 0;
-    uint64_t update_scratch_bytes = 0;
+  uint64_t structure_size_bytes = 0;
+  uint64_t build_scratch_bytes = 0;
+  uint64_t update_scratch_bytes = 0;
 };
 
 struct AccelerationStructureGeometry {
-    enum class GeometryType : uint8_t { triangles, aabbs };
-    GeometryType type;
+  enum class GeometryType : uint8_t { kTriangles, kAabbs };
+  GeometryType type;
 
-    // For triangles:
-    BufferHandle vertex_buffer;
-    uint64_t     vertex_offset       = 0;
-    uint32_t     vertex_count        = 0;
-    uint32_t     vertex_stride       = 0;
-    Format       vertex_format       = Format::rgb32_float;
-    BufferHandle index_buffer;
-    uint64_t     index_offset        = 0;
-    uint32_t     index_count         = 0;
-    Format       index_format        = Format::r32_uint;
-    BufferHandle transform_buffer;
-    uint64_t     transform_offset    = 0;
+  // For triangles:
+  BufferHandle vertex_buffer;
+  uint64_t vertex_offset = 0;
+  uint32_t vertex_count = 0;
+  uint32_t vertex_stride = 0;
+  Format vertex_format = Format::rgb32_float;
+  BufferHandle index_buffer;
+  uint64_t index_offset = 0;
+  uint32_t index_count = 0;
+  Format index_format = Format::kR32Uint;
+  BufferHandle transform_buffer;
+  uint64_t transform_offset = 0;
 
-    // For AABBs:
-    BufferHandle aabb_buffer;
-    uint64_t     aabb_offset         = 0;
-    uint32_t     aabb_count          = 0;
-    uint32_t     aabb_stride         = 0;
+  // For AABBs:
+  BufferHandle aabb_buffer;
+  uint64_t aabb_offset = 0;
+  uint32_t aabb_count = 0;
+  uint32_t aabb_stride = 0;
 
-    bool opaque = true;
+  bool opaque = true;
 };
 
 struct AccelerationStructureBuildDesc {
-    AccelerationStructureHandle              dst;
-    AccelerationStructureHandle              src;       // for updates
-    BufferHandle                             scratch;
-    uint64_t                                 scratch_offset = 0;
-    std::span<const AccelerationStructureGeometry> geometries;
-    bool                                     update     = false;
+  AccelerationStructureHandle dst;
+  AccelerationStructureHandle src;  // for updates
+  BufferHandle scratch;
+  uint64_t scratch_offset = 0;
+  std::span<const AccelerationStructureGeometry> geometries;
+  bool update = false;
 };
 
 struct AccelerationStructureInstance {
-    float                          transform[3][4];
-    uint32_t                       instance_id       = 0;
-    uint32_t                       mask               = 0xFF;
-    uint32_t                       sbt_offset         = 0;
-    AccelerationStructureHandle    blas;
+  float transform[3][4];
+  uint32_t instance_id = 0;
+  uint32_t mask = 0xFF;
+  uint32_t sbt_offset = 0;
+  AccelerationStructureHandle blas;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ---
@@ -668,12 +637,12 @@ enum class CommandBufferHandle : uint64_t { invalid = 0 };
 
 template <typename P>
 concept GpuCommandPool = requires(P p, const P cp) {
-    { p.allocate_command_buffer() };
-    { p.reset() } -> std::same_as<void>;
-    { cp.allocated_count() } -> std::convertible_to<uint32_t>;
+  { p.AllocateCommandBuffer() };
+  { p.Reset() } -> std::same_as<void>;
+  { cp.AllocatedCount() } -> std::convertible_to<uint32_t>;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 Each backend provides a concrete pool class satisfying `GpuCommandPool`:
@@ -681,22 +650,22 @@ Each backend provides a concrete pool class satisfying `GpuCommandPool`:
 ```cpp
 // D3D12 example — plain concrete class, no base class:
 class D3D12CommandPool {
-public:
-    D3D12CommandBuffer allocate_command_buffer();
-    void reset();
-    uint32_t allocated_count() const;
+ public:
+  D3D12CommandBuffer AllocateCommandBuffer();
+  void Reset();
+  uint32_t AllocatedCount() const;
 
-private:
-    ComPtr<ID3D12CommandAllocator> allocator_;
-    std::vector<ComPtr<ID3D12GraphicsCommandList10>> cached_lists_;
-    uint32_t next_free_ = 0;
+ private:
+  ComPtr<ID3D12CommandAllocator> allocator_;
+  std::vector<ComPtr<ID3D12GraphicsCommandList10>> cached_lists_;
+  uint32_t next_free_ = 0;
 };
 static_assert(GpuCommandPool<D3D12CommandPool>);
 ```
 
 **Memory management strategy:** Each pool maintains a cache of previously created command buffers.
-`allocate_command_buffer()` returns a cached buffer when available, or creates a new one if the
-cache is exhausted. `reset()` resets the underlying allocator memory and returns all buffers to
+`AllocateCommandBuffer()` returns a cached buffer when available, or creates a new one if the
+cache is exhausted. `Reset()` resets the underlying allocator memory and returns all buffers to
 the cache. This avoids per-frame allocation and deallocation overhead.
 
 ```mermaid
@@ -706,17 +675,17 @@ flowchart LR
         Cache["Command Buffer Cache<br/>[cb0, cb1, cb2, ...]"]
     end
 
-    Alloc -->|"reset()"| Cache
-    Cache -->|"allocate_command_buffer()"| CB["CommandBuffer"]
-    CB -->|"begin() → record → end()"| Submit["Device::submit()"]
-    Submit -->|"next frame reset()"| Alloc
+    Alloc -->|"Reset()"| Cache
+    Cache -->|"AllocateCommandBuffer()"| CB["CommandBuffer"]
+    CB -->|"Begin() → record → End()"| Submit["Device::Submit()"]
+    Submit -->|"next frame Reset()"| Alloc
 ```
 
 | Backend | Pool Creation                                                   | Buffer Allocation                                                                                | Pool Reset                                                                                  |
 | ------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
 | D3D12   | `CreateCommandAllocator(type)`                                  | Reuse cached `ID3D12GraphicsCommandList10` or `CreateCommandList1(type, nullptr)` (closed state) | `ID3D12CommandAllocator::Reset()` — recycles all GPU-side memory; cached lists remain valid |
 | Vulkan  | `vkCreateCommandPool(poolInfo)` with `RESET_COMMAND_BUFFER_BIT` | `vkAllocateCommandBuffers` from pool, or reuse cached                                            | `vkResetCommandPool(pool, 0)` — all buffers return to initial state                         |
-| Metal   | Create `MTL4CommandAllocator` from device                       | `[allocator commandBuffer]` — lightweight, pool-backed                                           | `[allocator reset]` — recycles all command buffer memory                                    |
+| Metal   | Create `MTL4CommandAllocator` from device                       | `[allocator commandBuffer]` — lightweight, pool-backed                                           | `[allocator Reset]` — recycles all command Buffer memory                                    |
 
 **Thread safety:** Each pool is **single-threaded by design**. The render graph assigns one pool
 per (queue type, thread) pair. No locking is needed within a pool. The execution engine dispatches
@@ -737,79 +706,67 @@ type. All calls are direct method calls that the compiler and LTO can inline.
 namespace harmonius::gpu {
 
 template <typename B>
-concept GpuCommandBuffer = requires(B b,
-        const BarrierDesc& bd, const RenderPassDesc& rpd,
-        PipelineHandle ph, BufferHandle bh, TextureHandle th,
-        WorkGraphHandle wgh, QueryPoolHandle qph, DescriptorHeapHandle dhh,
-        const AccelerationStructureBuildDesc& asbuild,
-        const TraceRaysDesc& trd, const DispatchGraphDesc& dgd,
-        const TextureSubresource& tsub, const Viewport& vp, const Scissor& sc,
-        Extent3D ext) {
+concept GpuCommandBuffer =
+    requires(B b, const BarrierDesc& bd, const RenderPassDesc& rpd, PipelineHandle ph, BufferHandle bh,
+             TextureHandle th, WorkGraphHandle wgh, QueryPoolHandle qph, DescriptorHeapHandle dhh,
+             const AccelerationStructureBuildDesc& asbuild, const TraceRaysDesc& trd, const DispatchGraphDesc& dgd,
+             const TextureSubresource& tsub, const Viewport& vp, const Scissor& sc, Extent3D ext) {
+      { b.Begin() } -> std::same_as<void>;
+      { b.End() } -> std::same_as<void>;
 
-    { b.begin() } -> std::same_as<void>;
-    { b.end() } -> std::same_as<void>;
+      { b.Barrier(bd) } -> std::same_as<void>;
 
-    { b.barrier(bd) } -> std::same_as<void>;
+      { b.BeginRenderPass(rpd) } -> std::same_as<void>;
+      { b.EndRenderPass() } -> std::same_as<void>;
 
-    { b.begin_render_pass(rpd) } -> std::same_as<void>;
-    { b.end_render_pass() } -> std::same_as<void>;
+      { b.SetPipeline(ph) } -> std::same_as<void>;
 
-    { b.set_pipeline(ph) } -> std::same_as<void>;
+      { b.DispatchMesh(uint32_t{}, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
+      { b.DispatchMeshIndirect(bh, uint64_t{}, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
+      { b.DispatchMeshIndirectCount(bh, uint64_t{}, bh, uint64_t{}, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
 
-    { b.dispatch_mesh(uint32_t{}, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
-    { b.dispatch_mesh_indirect(bh, uint64_t{}, uint32_t{}, uint32_t{}) }
-        -> std::same_as<void>;
-    { b.dispatch_mesh_indirect_count(bh, uint64_t{}, bh, uint64_t{},
-                                     uint32_t{}, uint32_t{}) }
-        -> std::same_as<void>;
+      { b.Dispatch(uint32_t{}, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
+      { b.DispatchIndirect(bh, uint64_t{}) } -> std::same_as<void>;
 
-    { b.dispatch(uint32_t{}, uint32_t{}, uint32_t{}) } -> std::same_as<void>;
-    { b.dispatch_indirect(bh, uint64_t{}) } -> std::same_as<void>;
+      { b.TraceRays(trd) } -> std::same_as<void>;
+      { b.TraceRaysIndirect(bh, uint64_t{}) } -> std::same_as<void>;
 
-    { b.trace_rays(trd) } -> std::same_as<void>;
-    { b.trace_rays_indirect(bh, uint64_t{}) } -> std::same_as<void>;
+      { b.BuildAccelerationStructure(asbuild) } -> std::same_as<void>;
 
-    { b.build_acceleration_structure(asbuild) } -> std::same_as<void>;
+      { b.SetWorkGraph(wgh) } -> std::same_as<void>;
+      { b.DispatchGraph(dgd) } -> std::same_as<void>;
 
-    { b.set_work_graph(wgh) } -> std::same_as<void>;
-    { b.dispatch_graph(dgd) } -> std::same_as<void>;
+      { b.CopyBuffer(bh, uint64_t{}, bh, uint64_t{}, uint64_t{}) } -> std::same_as<void>;
+      { b.CopyTexture(th, tsub, th, tsub, ext) } -> std::same_as<void>;
+      { b.CopyBufferToTexture(bh, uint64_t{}, th, tsub, ext) } -> std::same_as<void>;
+      { b.CopyTextureToBuffer(th, tsub, bh, uint64_t{}, ext) } -> std::same_as<void>;
 
-    { b.copy_buffer(bh, uint64_t{}, bh, uint64_t{}, uint64_t{}) }
-        -> std::same_as<void>;
-    { b.copy_texture(th, tsub, th, tsub, ext) } -> std::same_as<void>;
-    { b.copy_buffer_to_texture(bh, uint64_t{}, th, tsub, ext) }
-        -> std::same_as<void>;
-    { b.copy_texture_to_buffer(th, tsub, bh, uint64_t{}, ext) }
-        -> std::same_as<void>;
+      { b.SetViewport(vp) } -> std::same_as<void>;
+      { b.SetScissor(sc) } -> std::same_as<void>;
 
-    { b.set_viewport(vp) } -> std::same_as<void>;
-    { b.set_scissor(sc) } -> std::same_as<void>;
+      { b.PushConstants(static_cast<const void*>(nullptr), uint32_t{}, uint32_t{}) } -> std::same_as<void>;
 
-    { b.push_constants(static_cast<const void*>(nullptr),
-                       uint32_t{}, uint32_t{}) } -> std::same_as<void>;
+      { b.BindDescriptorHeap(dhh) } -> std::same_as<void>;
 
-    { b.bind_descriptor_heap(dhh) } -> std::same_as<void>;
+      { b.WriteTimestamp(qph, uint32_t{}) } -> std::same_as<void>;
+      { b.ResolveQueryPool(qph, uint32_t{}, uint32_t{}, bh, uint64_t{}) } -> std::same_as<void>;
 
-    { b.write_timestamp(qph, uint32_t{}) } -> std::same_as<void>;
-    { b.resolve_query_pool(qph, uint32_t{}, uint32_t{}, bh, uint64_t{}) }
-        -> std::same_as<void>;
+      { b.BeginDebugLabel(std::string_view{}) } -> std::same_as<void>;
+      { b.EndDebugLabel() } -> std::same_as<void>;
+      { b.InsertDebugLabel(std::string_view{}) } -> std::same_as<void>;
+    };
 
-    { b.begin_debug_label(std::string_view{}) } -> std::same_as<void>;
-    { b.end_debug_label() } -> std::same_as<void>;
-    { b.insert_debug_label(std::string_view{}) } -> std::same_as<void>;
-};
-
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
-**Recording lifecycle:** Every command buffer must be opened with `begin()` before recording any
-commands, and closed with `end()` before submission. The execution engine calls these around each
+**Recording lifecycle:** Every command buffer must be opened with `Begin()` before recording any
+commands, and closed with `End()` before submission. The execution engine calls these around each
 encoding group.
 
 | Operation | D3D12                                                  | Vulkan                                  | Metal                                                             |
 | --------- | ------------------------------------------------------ | --------------------------------------- | ----------------------------------------------------------------- |
-| `begin()` | `ID3D12GraphicsCommandList::Reset(allocator, nullptr)` | `vkBeginCommandBuffer(buf, &beginInfo)` | Implicit — `MTL4CommandBuffer` is recording-ready from allocation |
-| `end()`   | `ID3D12GraphicsCommandList::Close()`                   | `vkEndCommandBuffer(buf)`               | `[encoder endEncoding]` on active encoder (if any)                |
+| `Begin()` | `ID3D12GraphicsCommandList::Reset(allocator, nullptr)` | `vkBeginCommandBuffer(buf, &beginInfo)` | Implicit — `MTL4CommandBuffer` is recording-ready from allocation |
+| `End()`   | `ID3D12GraphicsCommandList::Close()`                   | `vkEndCommandBuffer(buf)`               | `[encoder endEncoding]` on active encoder (if any)                |
 
 ### Render Pass Encoding
 
@@ -817,61 +774,68 @@ encoding group.
 namespace harmonius::gpu {
 
 struct ColorAttachment {
-    TextureHandle   texture;
-    uint32_t        mip_level    = 0;
-    uint32_t        array_layer  = 0;
-    LoadOp          load_op      = LoadOp::clear;
-    StoreOp         store_op     = StoreOp::store;
-    float           clear_color[4] = {0, 0, 0, 0};
-    TextureHandle   resolve_texture;  // for MSAA resolve
+  TextureHandle texture;
+  uint32_t mip_level = 0;
+  uint32_t array_layer = 0;
+  LoadOp load_op = LoadOp::kClear;
+  StoreOp store_op = StoreOp::kStore;
+  float clear_color[4] = {0, 0, 0, 0};
+  TextureHandle resolve_texture;  // for MSAA resolve
 };
 
 struct DepthStencilAttachment {
-    TextureHandle   texture;
-    uint32_t        mip_level      = 0;
-    uint32_t        array_layer    = 0;
-    LoadOp          depth_load_op  = LoadOp::clear;
-    StoreOp         depth_store_op = StoreOp::store;
-    float           clear_depth    = 0.0f;    // Reverse-Z: far plane = 0.0 (R-3.3.1)
-    LoadOp          stencil_load_op  = LoadOp::dont_care;
-    StoreOp         stencil_store_op = StoreOp::dont_care;
-    uint8_t         clear_stencil    = 0;
+  TextureHandle texture;
+  uint32_t mip_level = 0;
+  uint32_t array_layer = 0;
+  LoadOp depth_load_op = LoadOp::kClear;
+  StoreOp depth_store_op = StoreOp::kStore;
+  float clear_depth = 0.0f;  // Reverse-Z: far plane = 0.0 (R-3.3.1)
+  LoadOp stencil_load_op = LoadOp::kDontCare;
+  StoreOp stencil_store_op = StoreOp::kDontCare;
+  uint8_t clear_stencil = 0;
 };
 
 struct ShadingRateAttachment {
-    TextureHandle   texture;
-    uint32_t        tile_width  = 16;
-    uint32_t        tile_height = 16;
+  TextureHandle texture;
+  uint32_t tile_width = 16;
+  uint32_t tile_height = 16;
 };
 
 struct RenderPassDesc {
-    std::span<const ColorAttachment>      color_attachments;
-    std::optional<DepthStencilAttachment> depth_stencil;
-    std::optional<ShadingRateAttachment>  shading_rate;
-    Extent2D                              render_area;
+  std::span<const ColorAttachment> color_attachments;
+  std::optional<DepthStencilAttachment> depth_stencil;
+  std::optional<ShadingRateAttachment> shading_rate;
+  Extent2D render_area;
 };
 
-enum class LoadOp : uint8_t { load, clear, dont_care };
-enum class StoreOp : uint8_t { store, dont_care };
+enum class LoadOp : uint8_t { kLoad, kClear, kDontCare };
+enum class StoreOp : uint8_t { kStore, kDontCare };
 
-struct Extent2D { uint32_t width = 0; uint32_t height = 0; };
-struct Extent3D { uint32_t width = 0; uint32_t height = 0; uint32_t depth = 1; };
+struct Extent2D {
+  uint32_t width = 0;
+  uint32_t height = 0;
+};
+struct Extent3D {
+  uint32_t width = 0;
+  uint32_t height = 0;
+  uint32_t depth = 1;
+};
 
 struct Viewport {
-    float x = 0, y = 0, width = 0, height = 0;
-    float min_depth = 0, max_depth = 1;
+  float x = 0, y = 0, width = 0, height = 0;
+  float min_depth = 0, max_depth = 1;
 };
 
 struct Scissor {
-    int32_t  x = 0, y = 0;
-    uint32_t width = 0, height = 0;
+  int32_t x = 0, y = 0;
+  uint32_t width = 0, height = 0;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 **Render target management:** The abstract interface does not expose render target views (RTVs)
-or framebuffers. Instead, `begin_render_pass` accepts `TextureHandle` references with mip/layer
+or framebuffers. Instead, `BeginRenderPass` accepts `TextureHandle` references with mip/layer
 targeting, and the backend creates transient views internally:
 
 | Backend | Render Target Mechanism                                                                                                                                                                                                                                        |
@@ -885,9 +849,9 @@ targeting, and the backend creates transient views internally:
 Compute work is recorded directly on the command buffer without a sub-encoder:
 
 ```cpp
-cmd->set_pipeline(compute_pso);
-cmd->push_constants(&per_dispatch_data, sizeof(per_dispatch_data));
-cmd->dispatch(groups_x, groups_y, groups_z);
+cmd->SetPipeline(compute_pso);
+cmd->PushConstants(&per_dispatch_data, sizeof(per_dispatch_data));
+cmd->Dispatch(groups_x, groups_y, groups_z);
 ```
 
 ### Transfer Encoding
@@ -895,8 +859,8 @@ cmd->dispatch(groups_x, groups_y, groups_z);
 Transfer-only commands for the copy queue:
 
 ```cpp
-cmd->copy_buffer(src, src_offset, dst, dst_offset, size);
-cmd->copy_buffer_to_texture(staging, offset, texture, subresource, extent);
+cmd->CopyBuffer(src, src_offset, dst, dst_offset, size);
+cmd->CopyBufferToTexture(staging, offset, texture, subresource, extent);
 ```
 
 ### Mesh Shader Dispatch
@@ -905,17 +869,13 @@ The sole geometry dispatch path (R-1.1.3). No vertex/geometry/tessellation draw 
 
 ```cpp
 // Direct dispatch — launches threadgroups for task/mesh pipeline
-cmd->dispatch_mesh(groups_x, groups_y, groups_z);
+cmd->DispatchMesh(groups_x, groups_y, groups_z);
 
 // GPU-driven indirect dispatch — arguments read from buffer
-cmd->dispatch_mesh_indirect(argument_buffer, offset, draw_count, stride);
+cmd->DispatchMeshIndirect(argument_buffer, offset, draw_count, stride);
 
 // Indirect with count — draw count also read from buffer
-cmd->dispatch_mesh_indirect_count(
-    argument_buffer, arg_offset,
-    count_buffer, count_offset,
-    max_draw_count, stride
-);
+cmd->DispatchMeshIndirectCount(argument_buffer, arg_offset, count_buffer, count_offset, max_draw_count, stride);
 ```
 
 ### Ray Tracing Dispatch
@@ -924,23 +884,23 @@ cmd->dispatch_mesh_indirect_count(
 namespace harmonius::gpu {
 
 struct TraceRaysDesc {
-    BufferHandle raygen_sbt;
-    uint64_t     raygen_offset;
-    uint64_t     raygen_size;
-    BufferHandle miss_sbt;
-    uint64_t     miss_offset;
-    uint64_t     miss_stride;
-    uint64_t     miss_size;
-    BufferHandle hit_sbt;
-    uint64_t     hit_offset;
-    uint64_t     hit_stride;
-    uint64_t     hit_size;
-    uint32_t     width;
-    uint32_t     height;
-    uint32_t     depth = 1;
+  BufferHandle raygen_sbt;
+  uint64_t raygen_offset;
+  uint64_t raygen_size;
+  BufferHandle miss_sbt;
+  uint64_t miss_offset;
+  uint64_t miss_stride;
+  uint64_t miss_size;
+  BufferHandle hit_sbt;
+  uint64_t hit_offset;
+  uint64_t hit_stride;
+  uint64_t hit_size;
+  uint32_t width;
+  uint32_t height;
+  uint32_t depth = 1;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Work Graph Dispatch
@@ -949,18 +909,18 @@ struct TraceRaysDesc {
 namespace harmonius::gpu {
 
 struct DispatchGraphDesc {
-    uint32_t          entry_point_index = 0;
-    const void*       cpu_input         = nullptr;
-    uint32_t          cpu_input_size    = 0;
-    BufferHandle      gpu_input;
-    uint64_t          gpu_input_offset  = 0;
-    uint32_t          gpu_input_size    = 0;
-    BufferHandle      backing_memory;
-    uint64_t          backing_memory_offset = 0;
-    uint64_t          backing_memory_size   = 0;
+  uint32_t entry_point_index = 0;
+  const void* cpu_input = nullptr;
+  uint32_t cpu_input_size = 0;
+  BufferHandle gpu_input;
+  uint64_t gpu_input_offset = 0;
+  uint32_t gpu_input_size = 0;
+  BufferHandle backing_memory;
+  uint64_t backing_memory_offset = 0;
+  uint64_t backing_memory_size = 0;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Indirect Commands
@@ -975,29 +935,29 @@ namespace harmonius::gpu {
 
 /// Mesh shader indirect arguments — written by GPU culling pass, consumed by dispatch_mesh_indirect.
 struct DispatchMeshIndirectArgs {
-    uint32_t group_count_x;
-    uint32_t group_count_y;
-    uint32_t group_count_z;
+  uint32_t group_count_x;
+  uint32_t group_count_y;
+  uint32_t group_count_z;
 };
 
 /// Compute indirect arguments — written by GPU, consumed by dispatch_indirect.
 struct DispatchIndirectArgs {
-    uint32_t group_count_x;
-    uint32_t group_count_y;
-    uint32_t group_count_z;
+  uint32_t group_count_x;
+  uint32_t group_count_y;
+  uint32_t group_count_z;
 };
 
 /// Ray tracing indirect arguments — consumed by trace_rays_indirect.
 struct TraceRaysIndirectArgs {
-    uint32_t width;
-    uint32_t height;
-    uint32_t depth;
+  uint32_t width;
+  uint32_t height;
+  uint32_t depth;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
-**Multi-draw indirect with count:** The `dispatch_mesh_indirect_count` variant reads both the
+**Multi-draw indirect with count:** The `DispatchMeshIndirectCount` variant reads both the
 argument buffer and a separate count buffer. The count buffer contains a `uint32_t` draw count
 written by a preceding compute pass. This is the primary path for GPU-driven mesh rendering:
 
@@ -1017,9 +977,9 @@ sequenceDiagram
 
 | Backend | Indirect Count Mechanism                                                                                                                                                    |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D3D12   | `ExecuteIndirect` with `D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH` command signature; count buffer passed as `pCountBuffer` parameter                                      |
-| Vulkan  | `vkCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride)`                                                   |
-| Metal   | `drawMeshThreadgroupsWithIndirectBuffer:indirectBufferOffset:threadsPerObjectThreadgroup:threadsPerMeshThreadgroup:` (count from buffer requires compute pre-pass on Metal) |
+| D3D12   | `ExecuteIndirect` with `D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH` command signature; count Buffer passed as `pCountBuffer` parameter                                      |
+| Vulkan  | `vkCmdDrawMeshTasksIndirectCountEXT(commandBuffer, Buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride)`                                                   |
+| Metal   | `drawMeshThreadgroupsWithIndirectBuffer:indirectBufferOffset:threadsPerObjectThreadgroup:threadsPerMeshThreadgroup:` (count from Buffer requires Compute pre-pass on Metal) |
 
 ---
 
@@ -1034,106 +994,106 @@ The render graph compiler (RG-3.1–3.6) produces these barrier descriptions.
 namespace harmonius::gpu {
 
 enum class PipelineStage : uint64_t {
-    none                      = 0,
-    mesh_shader               = 1 << 0,
-    task_shader               = 1 << 1,
-    fragment_shader           = 1 << 2,
-    compute_shader            = 1 << 3,
-    ray_tracing_shader        = 1 << 4,
-    all_shading               = 1 << 5,
-    color_output              = 1 << 6,
-    depth_stencil             = 1 << 7,
-    transfer                  = 1 << 8,
-    resolve                   = 1 << 9,
-    acceleration_structure    = 1 << 10,
-    indirect_argument         = 1 << 11,
-    shading_rate              = 1 << 12,
-    all                       = 0xFFFFFFFFFFFFFFFF,
+  kNone = 0,
+  kMeshShader = 1 << 0,
+  kTaskShader = 1 << 1,
+  kFragmentShader = 1 << 2,
+  kComputeShader = 1 << 3,
+  kRayTracingShader = 1 << 4,
+  kAllShading = 1 << 5,
+  kColorOutput = 1 << 6,
+  kDepthStencil = 1 << 7,
+  kTransfer = 1 << 8,
+  kResolve = 1 << 9,
+  kAccelerationStructure = 1 << 10,
+  kIndirectArgument = 1 << 11,
+  kShadingRate = 1 << 12,
+  kAll = 0xFFFFFFFFFFFFFFFF,
 
-    // Split barrier markers
-    split_begin               = 1ULL << 62,
-    split_end                 = 1ULL << 63,
+  // Split barrier markers
+  kSplitBegin = 1ULL << 62,
+  kSplitEnd = 1ULL << 63,
 };
 
 enum class ResourceAccess : uint64_t {
-    none                      = 0,
-    shader_read               = 1 << 0,
-    shader_write              = 1 << 1,
-    color_attachment_read     = 1 << 2,
-    color_attachment_write    = 1 << 3,
-    depth_stencil_read        = 1 << 4,
-    depth_stencil_write       = 1 << 5,
-    transfer_read             = 1 << 6,
-    transfer_write            = 1 << 7,
-    indirect_read             = 1 << 8,
-    acceleration_structure_read  = 1 << 9,
-    acceleration_structure_write = 1 << 10,
-    shading_rate_read         = 1 << 11,
-    resolve_read              = 1 << 12,
-    resolve_write             = 1 << 13,
-    present                   = 1 << 14,
+  kNone = 0,
+  kShaderRead = 1 << 0,
+  kShaderWrite = 1 << 1,
+  kColorAttachmentRead = 1 << 2,
+  kColorAttachmentWrite = 1 << 3,
+  kDepthStencilRead = 1 << 4,
+  kDepthStencilWrite = 1 << 5,
+  kTransferRead = 1 << 6,
+  kTransferWrite = 1 << 7,
+  kIndirectRead = 1 << 8,
+  kAccelerationStructureRead = 1 << 9,
+  kAccelerationStructureWrite = 1 << 10,
+  kShadingRateRead = 1 << 11,
+  kResolveRead = 1 << 12,
+  kResolveWrite = 1 << 13,
+  kPresent = 1 << 14,
 };
 
 enum class TextureLayout : uint8_t {
-    undefined,
-    general,
-    color_attachment,
-    depth_stencil_attachment,
-    depth_stencil_read_only,
-    shader_read_only,
-    transfer_src,
-    transfer_dst,
-    present,
-    shading_rate,
+  kUndefined,
+  kGeneral,
+  kColorAttachment,
+  kDepthStencilAttachment,
+  kDepthStencilReadOnly,
+  kShaderReadOnly,
+  kTransferSrc,
+  kTransferDst,
+  kPresent,
+  kShadingRate,
 };
 
 struct TextureSubresourceRange {
-    uint32_t base_mip_level    = 0;
-    uint32_t mip_level_count   = 1;
-    uint32_t base_array_layer  = 0;
-    uint32_t array_layer_count = 1;
+  uint32_t base_mip_level = 0;
+  uint32_t mip_level_count = 1;
+  uint32_t base_array_layer = 0;
+  uint32_t array_layer_count = 1;
 };
 
 struct TextureBarrier {
-    TextureHandle           texture;
-    PipelineStage           src_stage;
-    ResourceAccess          src_access;
-    TextureLayout           old_layout;
-    PipelineStage           dst_stage;
-    ResourceAccess          dst_access;
-    TextureLayout           new_layout;
-    TextureSubresourceRange subresource_range;
-    QueueType               src_queue = QueueType::graphics;
-    QueueType               dst_queue = QueueType::graphics;
-    bool                    discard   = false;
+  TextureHandle texture;
+  PipelineStage src_stage;
+  ResourceAccess src_access;
+  TextureLayout old_layout;
+  PipelineStage dst_stage;
+  ResourceAccess dst_access;
+  TextureLayout new_layout;
+  TextureSubresourceRange subresource_range;
+  QueueType src_queue = QueueType::kGraphics;
+  QueueType dst_queue = QueueType::kGraphics;
+  bool discard = false;
 };
 
 struct BufferBarrier {
-    BufferHandle   buffer;
-    PipelineStage  src_stage;
-    ResourceAccess src_access;
-    PipelineStage  dst_stage;
-    ResourceAccess dst_access;
-    uint64_t       offset = 0;
-    uint64_t       size   = ~0ULL; // whole buffer
-    QueueType      src_queue = QueueType::graphics;
-    QueueType      dst_queue = QueueType::graphics;
+  BufferHandle buffer;
+  PipelineStage src_stage;
+  ResourceAccess src_access;
+  PipelineStage dst_stage;
+  ResourceAccess dst_access;
+  uint64_t offset = 0;
+  uint64_t size = ~0ULL;  // whole buffer
+  QueueType src_queue = QueueType::kGraphics;
+  QueueType dst_queue = QueueType::kGraphics;
 };
 
 struct GlobalBarrier {
-    PipelineStage  src_stage;
-    ResourceAccess src_access;
-    PipelineStage  dst_stage;
-    ResourceAccess dst_access;
+  PipelineStage src_stage;
+  ResourceAccess src_access;
+  PipelineStage dst_stage;
+  ResourceAccess dst_access;
 };
 
 struct BarrierDesc {
-    std::span<const GlobalBarrier>  global_barriers;
-    std::span<const TextureBarrier> texture_barriers;
-    std::span<const BufferBarrier>  buffer_barriers;
+  std::span<const GlobalBarrier> global_barriers;
+  std::span<const TextureBarrier> texture_barriers;
+  std::span<const BufferBarrier> buffer_barriers;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Timeline Fences
@@ -1144,22 +1104,22 @@ semantics natively.
 ```cpp
 namespace harmonius::gpu {
 
-enum class FenceHandle : uint64_t { invalid = 0 };
+enum class FenceHandle : uint64_t { kInvalid = 0 };
 
 /// GPU-side signal — enqueued in the command queue.
 /// GPU-side wait — the queue stalls until the fence reaches the value.
 /// CPU-side wait — blocks the calling thread.
 /// CPU-side query — non-blocking poll of the completed value.
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 | Operation  | D3D12                               | Vulkan                                      | Metal                                            |
 | ---------- | ----------------------------------- | ------------------------------------------- | ------------------------------------------------ |
-| GPU signal | `ID3D12CommandQueue::Signal`        | `VkSemaphoreSubmitInfo` in `vkQueueSubmit2` | `MTLSharedEvent` signaled in `MTL4CommandBuffer` |
-| GPU wait   | `ID3D12CommandQueue::Wait`          | `VkSemaphoreSubmitInfo` in `vkQueueSubmit2` | `MTLSharedEvent` waited in `MTL4CommandBuffer`   |
-| CPU signal | `ID3D12Fence::Signal`               | `vkSignalSemaphore`                         | `MTLSharedEvent.signaledValue = N`               |
-| CPU wait   | `ID3D12Fence::SetEventOnCompletion` | `vkWaitSemaphores`                          | `MTLSharedEvent.notifyListener`                  |
+| GPU Signal | `ID3D12CommandQueue::Signal`        | `VkSemaphoreSubmitInfo` in `vkQueueSubmit2` | `MTLSharedEvent` signaled in `MTL4CommandBuffer` |
+| GPU Wait   | `ID3D12CommandQueue::Wait`          | `VkSemaphoreSubmitInfo` in `vkQueueSubmit2` | `MTLSharedEvent` waited in `MTL4CommandBuffer`   |
+| CPU Signal | `ID3D12Fence::Signal`               | `vkSignalSemaphore`                         | `MTLSharedEvent.signaledValue = N`               |
+| CPU Wait   | `ID3D12Fence::SetEventOnCompletion` | `vkWaitSemaphores`                          | `MTLSharedEvent.notifyListener`                  |
 | CPU query  | `ID3D12Fence::GetCompletedValue`    | `vkGetSemaphoreCounterValue`                | `MTLSharedEvent.signaledValue`                   |
 
 ### Swapchain
@@ -1167,18 +1127,18 @@ enum class FenceHandle : uint64_t { invalid = 0 };
 ```cpp
 namespace harmonius::gpu {
 
-enum class SwapchainHandle : uint64_t { invalid = 0 };
+enum class SwapchainHandle : uint64_t { kInvalid = 0 };
 
 struct SwapchainDesc {
-    void*     native_window;  // HWND, CAMetalLayer*, etc.
-    uint32_t  width;
-    uint32_t  height;
-    Format    format = Format::bgra8_unorm;
-    uint32_t  image_count = 3;
-    bool      vsync = true;
+  void* native_window;  // HWND, CAMetalLayer*, etc.
+  uint32_t width;
+  uint32_t height;
+  Format format = Format::kBgra8Unorm;
+  uint32_t image_count = 3;
+  bool vsync = true;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ---
@@ -1192,31 +1152,31 @@ The only rasterization pipeline type. No vertex/geometry/tessellation pipeline e
 ```cpp
 namespace harmonius::gpu {
 
-enum class PipelineHandle : uint64_t { invalid = 0 };
+enum class PipelineHandle : uint64_t { kInvalid = 0 };
 
 struct ShaderBytecode {
-    const void*  data      = nullptr;
-    uint64_t     size_bytes = 0;
+  const void* data = nullptr;
+  uint64_t size_bytes = 0;
 };
 
 struct MeshRenderPipelineDesc {
-    ShaderBytecode task_shader;   // optional (amplification / object)
-    ShaderBytecode mesh_shader;   // required
-    ShaderBytecode pixel_shader;  // required (fragment)
+  ShaderBytecode task_shader;   // optional (amplification / object)
+  ShaderBytecode mesh_shader;   // required
+  ShaderBytecode pixel_shader;  // required (fragment)
 
-    std::span<const Format> color_formats;
-    Format                  depth_stencil_format = Format::undefined;
-    SampleCount             samples              = SampleCount::x1;
+  std::span<const Format> color_formats;
+  Format depth_stencil_format = Format::kUndefined;
+  SampleCount samples = SampleCount::kX1;
 
-    BlendState              blend;
-    RasterizerState         rasterizer;
-    DepthStencilState       depth_stencil;
+  BlendState blend;
+  RasterizerState rasterizer;
+  DepthStencilState depth_stencil;
 };
 
 // A compiled but unlinked shader function library
 struct ShaderLibrary {
-    const void*  data       = nullptr;
-    uint64_t     size_bytes = 0;
+  const void* data = nullptr;
+  uint64_t size_bytes = 0;
 };
 
 // Linked mesh render pipeline — pixel shader assembled from fragment libraries at link time.
@@ -1225,55 +1185,55 @@ struct ShaderLibrary {
 // Vulkan: VK_EXT_graphics_pipeline_library links pipeline library objects with LTO
 // Metal:  MTLStitchedLibrary stitches Metal IR library functions
 struct LinkedMeshRenderPipelineDesc {
-    ShaderBytecode                    task_shader;       // monolithic
-    ShaderBytecode                    mesh_shader;       // monolithic
-    std::span<const ShaderLibrary>    pixel_libraries;   // fragment libraries to link
-    std::string_view                  entry_point;       // entry point in linked result
+  ShaderBytecode task_shader;                      // monolithic
+  ShaderBytecode mesh_shader;                      // monolithic
+  std::span<const ShaderLibrary> pixel_libraries;  // fragment libraries to link
+  std::string_view entry_point;                    // entry point in linked result
 
-    std::span<const Format> color_formats;
-    Format                  depth_stencil_format = Format::undefined;
-    SampleCount             samples              = SampleCount::x1;
+  std::span<const Format> color_formats;
+  Format depth_stencil_format = Format::kUndefined;
+  SampleCount samples = SampleCount::kX1;
 
-    BlendState              blend;
-    RasterizerState         rasterizer;
-    DepthStencilState       depth_stencil;
+  BlendState blend;
+  RasterizerState rasterizer;
+  DepthStencilState depth_stencil;
 };
 
 struct BlendState {
-    struct Attachment {
-        bool     blend_enable    = false;
-        BlendFactor src_color    = BlendFactor::one;
-        BlendFactor dst_color    = BlendFactor::zero;
-        BlendOp     color_op     = BlendOp::add;
-        BlendFactor src_alpha    = BlendFactor::one;
-        BlendFactor dst_alpha    = BlendFactor::zero;
-        BlendOp     alpha_op     = BlendOp::add;
-        ColorWriteMask write_mask = ColorWriteMask::all;
-    };
-    std::span<const Attachment> attachments;
+  struct Attachment {
+    bool blend_enable = false;
+    BlendFactor src_color = BlendFactor::kOne;
+    BlendFactor dst_color = BlendFactor::kZero;
+    BlendOp color_op = BlendOp::kAdd;
+    BlendFactor src_alpha = BlendFactor::kOne;
+    BlendFactor dst_alpha = BlendFactor::kZero;
+    BlendOp alpha_op = BlendOp::kAdd;
+    ColorWriteMask write_mask = ColorWriteMask::kAll;
+  };
+  std::span<const Attachment> attachments;
 };
 
 struct RasterizerState {
-    CullMode     cull_mode     = CullMode::back;
-    FrontFace    front_face    = FrontFace::counter_clockwise;
-    PolygonMode  polygon_mode  = PolygonMode::fill;
-    bool         depth_clamp   = false;
-    float        depth_bias           = 0;
-    float        depth_bias_clamp     = 0;
-    float        depth_bias_slope     = 0;
-    bool         conservative_raster  = false;
+  CullMode cull_mode = CullMode::kBack;
+  FrontFace front_face = FrontFace::kCounterClockwise;
+  PolygonMode polygon_mode = PolygonMode::kFill;
+  bool depth_clamp = false;
+  float depth_bias = 0;
+  float depth_bias_clamp = 0;
+  float depth_bias_slope = 0;
+  bool conservative_raster = false;
 };
 
 struct DepthStencilState {
-    bool          depth_test_enable   = true;
-    bool          depth_write_enable  = true;
-    CompareOp     depth_compare       = CompareOp::greater_equal; // Reverse-Z (R-3.3.1)
-    bool          stencil_test_enable = false;
-    StencilOpState front_stencil;
-    StencilOpState back_stencil;
+  bool depth_test_enable = true;
+  bool depth_write_enable = true;
+  CompareOp depth_compare = CompareOp::kGreaterEqual;  // Reverse-Z (R-3.3.1)
+  bool stencil_test_enable = false;
+  StencilOpState front_stencil;
+  StencilOpState back_stencil;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Compute Pipeline
@@ -1282,10 +1242,10 @@ struct DepthStencilState {
 namespace harmonius::gpu {
 
 struct ComputePipelineDesc {
-    ShaderBytecode compute_shader;
+  ShaderBytecode compute_shader;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Ray Tracing Pipeline
@@ -1294,21 +1254,21 @@ struct ComputePipelineDesc {
 namespace harmonius::gpu {
 
 struct HitGroup {
-    ShaderBytecode closest_hit;
-    ShaderBytecode any_hit;       // optional
-    ShaderBytecode intersection;  // optional (for procedural geometry)
+  ShaderBytecode closest_hit;
+  ShaderBytecode any_hit;       // optional
+  ShaderBytecode intersection;  // optional (for procedural geometry)
 };
 
 struct RayTracingPipelineDesc {
-    ShaderBytecode                   ray_generation;
-    std::span<const ShaderBytecode>  miss_shaders;
-    std::span<const HitGroup>        hit_groups;
-    uint32_t  max_recursion_depth   = 1;
-    uint32_t  max_payload_size      = 32;
-    uint32_t  max_attribute_size    = 8;
+  ShaderBytecode ray_generation;
+  std::span<const ShaderBytecode> miss_shaders;
+  std::span<const HitGroup> hit_groups;
+  uint32_t max_recursion_depth = 1;
+  uint32_t max_payload_size = 32;
+  uint32_t max_attribute_size = 8;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Work Graph Program
@@ -1316,20 +1276,20 @@ struct RayTracingPipelineDesc {
 ```cpp
 namespace harmonius::gpu {
 
-enum class WorkGraphHandle : uint64_t { invalid = 0 };
+enum class WorkGraphHandle : uint64_t { kInvalid = 0 };
 
 struct WorkGraphDesc {
-    ShaderBytecode state_object;    // compiled state object blob
-    std::string_view program_name;  // identifies the work graph within the state object
+  ShaderBytecode state_object;    // compiled state object blob
+  std::string_view program_name;  // identifies the work graph within the state object
 };
 
 struct WorkGraphMemoryRequirements {
-    uint64_t min_backing_memory_bytes  = 0;
-    uint64_t max_backing_memory_bytes  = 0;
-    uint64_t max_input_records_bytes   = 0;
+  uint64_t min_backing_memory_bytes = 0;
+  uint64_t max_backing_memory_bytes = 0;
+  uint64_t max_input_records_bytes = 0;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Pipeline Cache
@@ -1341,14 +1301,14 @@ all pipeline creation calls.
 ```cpp
 namespace harmonius::gpu {
 
-enum class PipelineCacheHandle : uint64_t { invalid = 0 };
+enum class PipelineCacheHandle : uint64_t { kInvalid = 0 };
 
 struct PipelineCacheDesc {
-    const void*  initial_data      = nullptr;  // previously serialized cache blob
-    uint64_t     initial_data_size = 0;
+  const void* initial_data = nullptr;  // previously serialized cache blob
+  uint64_t initial_data_size = 0;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 | Backend | Cache Type              | Creation                                   | Serialization              |
@@ -1357,8 +1317,8 @@ struct PipelineCacheDesc {
 | Vulkan  | `VkPipelineCache`       | `vkCreatePipelineCache(createInfo)`        | `vkGetPipelineCacheData()` |
 | Metal   | `MTLBinaryArchive`      | `newBinaryArchiveWithDescriptor:` with URL | `serializeToURL:error:`    |
 
-Pipeline creation methods (`create_mesh_render_pipeline`, `create_compute_pipeline`,
-`create_ray_tracing_pipeline`) accept an optional `PipelineCacheHandle`. When provided, the backend
+Pipeline creation methods (`CreateMeshRenderPipeline`, `CreateComputePipeline`,
+`CreateRayTracingPipeline`) accept an optional `PipelineCacheHandle`. When provided, the backend
 stores the compiled pipeline in the cache and reuses cached results for identical pipeline state.
 
 ---
@@ -1373,49 +1333,49 @@ CBV/SRV/UAV descriptors indexed by `uint32_t`.
 ```cpp
 namespace harmonius::gpu {
 
-enum class DescriptorHeapHandle : uint64_t { invalid = 0 };
+enum class DescriptorHeapHandle : uint64_t { kInvalid = 0 };
 
 struct DescriptorHeapDesc {
-    uint32_t max_descriptors = 1'000'000;
-    uint32_t max_samplers    = 2048;
+  uint32_t max_descriptors = 1'000'000;
+  uint32_t max_samplers = 2048;
 };
 
 enum class DescriptorType : uint8_t {
-    srv_texture,
-    srv_buffer,
-    uav_texture,
-    uav_buffer,
-    cbv,
-    sampler,
-    acceleration_structure,
+  kSrvTexture,
+  kSrvBuffer,
+  kUavTexture,
+  kUavBuffer,
+  kCbv,
+  kSampler,
+  kAccelerationStructure,
 };
 
 struct DescriptorWrite {
-    DescriptorType type;
-    uint32_t       index;
+  DescriptorType type;
+  uint32_t index;
 
-    // For textures:
-    TextureHandle  texture;
-    Format         format   = Format::undefined; // view format override
-    uint32_t       mip_level    = 0;
-    uint32_t       mip_count    = ~0u;
-    uint32_t       array_layer  = 0;
-    uint32_t       layer_count  = ~0u;
+  // For textures:
+  TextureHandle texture;
+  Format format = Format::kUndefined;  // view format override
+  uint32_t mip_level = 0;
+  uint32_t mip_count = ~0u;
+  uint32_t array_layer = 0;
+  uint32_t layer_count = ~0u;
 
-    // For buffers:
-    BufferHandle   buffer;
-    uint64_t       offset       = 0;
-    uint64_t       size         = ~0ULL;
-    uint32_t       structure_stride = 0;
+  // For buffers:
+  BufferHandle buffer;
+  uint64_t offset = 0;
+  uint64_t size = ~0ULL;
+  uint32_t structure_stride = 0;
 
-    // For acceleration structures:
-    AccelerationStructureHandle acceleration_structure;
+  // For acceleration structures:
+  AccelerationStructureHandle acceleration_structure;
 
-    // For samplers:
-    SamplerDesc    sampler;
+  // For samplers:
+  SamplerDesc sampler;
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 | Backend | Bindless Mechanism                                                        | Heap Binding                                          |
@@ -1430,7 +1390,7 @@ Small per-draw data (32 bytes, matching the global root signature) pushed direct
 without descriptor allocation.
 
 ```cpp
-cmd->push_constants(&draw_data, sizeof(draw_data));
+cmd->PushConstants(&draw_data, sizeof(draw_data));
 ```
 
 | Backend | Mechanism                                             | Limit                                  |
@@ -1453,19 +1413,19 @@ the global root signature's CBV slot (b0).
 ```cpp
 namespace harmonius::gpu {
 
-enum class QueryPoolHandle : uint64_t { invalid = 0 };
+enum class QueryPoolHandle : uint64_t { kInvalid = 0 };
 
 struct QueryPoolDesc {
-    QueryType type  = QueryType::timestamp;
-    uint32_t  count = 256;
+  QueryType type = QueryType::kTimestamp;
+  uint32_t count = 256;
 };
 
 enum class QueryType : uint8_t {
-    timestamp,
-    pipeline_statistics,
+  kTimestamp,
+  kPipelineStatistics,
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 | Backend | Timestamp Mechanism                                                |
@@ -1494,7 +1454,7 @@ Command buffer debug labels (for GPU profiler regions):
 
 ### Resource Naming
 
-All GPU objects carry debug names for profiler and validation layer output. The `Device::set_name`
+All GPU objects carry debug names for profiler and validation layer output. The `Device::SetName`
 overloads apply names at creation or retroactively:
 
 | Backend | Naming Mechanism                                                       |
@@ -1514,7 +1474,7 @@ Names flow through from `TextureDesc::name` / `BufferDesc::name` automatically a
 | GPU capture       | PIX programmatic capture            | RenderDoc capture layer                 | Xcode Metal debugger       |
 | Shader profiling  | PIX shader profiler                 | VK_KHR_performance_query                | Xcode GPU shader profiler  |
 | Validation layers | D3D12 Debug Layer + DRED            | VK_LAYER_KHRONOS_validation             | Metal API validation       |
-| GPU crash dump    | DRED (Device Removed Extended Data) | VK_EXT_device_fault                     | Metal command buffer error |
+| GPU crash dump    | DRED (Device Removed Extended Data) | VK_EXT_device_fault                     | Metal command Buffer error |
 
 **DRED (D3D12):** Automatically enabled in debug builds. Provides breadcrumbs identifying the
 last successfully completed GPU operation before a device removal. Integrated with Windows Error
@@ -1534,44 +1494,80 @@ error codes and the `MTLCommandBufferEncoderInfo` array identifying which encode
 namespace harmonius::gpu {
 
 enum class Format : uint32_t {
-    undefined = 0,
+  kUndefined = 0,
 
-    // 8-bit
-    r8_unorm, r8_snorm, r8_uint, r8_sint,
+  // 8-bit
+  kR8Unorm,
+  kR8Snorm,
+  kR8Uint,
+  kR8Sint,
 
-    // 16-bit
-    r16_float, r16_uint, r16_sint, r16_unorm,
-    rg8_unorm, rg8_snorm, rg8_uint, rg8_sint,
+  // 16-bit
+  kR16Float,
+  kR16Uint,
+  kR16Sint,
+  kR16Unorm,
+  kRg8Unorm,
+  kRg8Snorm,
+  kRg8Uint,
+  kRg8Sint,
 
-    // 32-bit
-    r32_float, r32_uint, r32_sint,
-    rg16_float, rg16_uint, rg16_sint,
-    rgba8_unorm, rgba8_snorm, rgba8_uint, rgba8_sint, rgba8_srgb,
-    bgra8_unorm, bgra8_srgb,
-    rgb10a2_unorm, rgb10a2_uint,
-    rg11b10_float,
+  // 32-bit
+  kR32Float,
+  kR32Uint,
+  kR32Sint,
+  kRg16Float,
+  kRg16Uint,
+  kRg16Sint,
+  kRgba8Unorm,
+  kRgba8Snorm,
+  kRgba8Uint,
+  kRgba8Sint,
+  kRgba8Srgb,
+  kBgra8Unorm,
+  kBgra8Srgb,
+  kRgb10a2Unorm,
+  kRgb10a2Uint,
+  kRg11b10Float,
 
-    // 64-bit
-    rg32_float, rg32_uint, rg32_sint,
-    rgba16_float, rgba16_uint, rgba16_sint, rgba16_unorm,
+  // 64-bit
+  kRg32Float,
+  kRg32Uint,
+  kRg32Sint,
+  kRgba16Float,
+  kRgba16Uint,
+  kRgba16Sint,
+  kRgba16Unorm,
 
-    // 128-bit
-    rgba32_float, rgba32_uint, rgba32_sint,
+  // 128-bit
+  kRgba32Float,
+  kRgba32Uint,
+  kRgba32Sint,
 
-    // Depth/stencil
-    d16_unorm, d32_float, d24_unorm_s8_uint, d32_float_s8_uint,
+  // Depth/stencil
+  kD16Unorm,
+  kD32Float,
+  kD24UnormS8Uint,
+  kD32FloatS8Uint,
 
-    // Compressed
-    bc1_unorm, bc1_srgb,
-    bc2_unorm, bc2_srgb,
-    bc3_unorm, bc3_srgb,
-    bc4_unorm, bc4_snorm,
-    bc5_unorm, bc5_snorm,
-    bc6h_ufloat, bc6h_sfloat,
-    bc7_unorm, bc7_srgb,
+  // Compressed
+  kBc1Unorm,
+  kBc1Srgb,
+  kBc2Unorm,
+  kBc2Srgb,
+  kBc3Unorm,
+  kBc3Srgb,
+  kBc4Unorm,
+  kBc4Snorm,
+  kBc5Unorm,
+  kBc5Snorm,
+  kBc6hUfloat,
+  kBc6hSfloat,
+  kBc7Unorm,
+  kBc7Srgb,
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ---
@@ -1582,7 +1578,7 @@ enum class Format : uint32_t {
 
 | Abstract        | D3D12                                    | Vulkan                                | Metal                          |
 | --------------- | ---------------------------------------- | ------------------------------------- | ------------------------------ |
-| `create_device` | `D3D12CreateDevice` (feature level 12_2) | `vkCreateInstance` + `vkCreateDevice` | `MTLCreateSystemDefaultDevice` |
+| `CreateDevice` | `D3D12CreateDevice` (feature level 12_2) | `vkCreateInstance` + `vkCreateDevice` | `MTLCreateSystemDefaultDevice` |
 | Validation      | `ID3D12Debug::EnableDebugLayer`          | `VK_LAYER_KHRONOS_validation`         | `MTL_DEBUG_LAYER=1`            |
 | GPU capture     | PIX `WinPixEventRuntime`                 | RenderDoc layer                       | Xcode Metal capture            |
 
@@ -1590,11 +1586,11 @@ enum class Format : uint32_t {
 
 | Abstract                | D3D12                            | Vulkan                                                       | Metal                                          |
 | ----------------------- | -------------------------------- | ------------------------------------------------------------ | ---------------------------------------------- |
-| `create_texture`        | `CreateCommittedResource2`       | `vkCreateImage` + `vkAllocateMemory` + `vkBindImageMemory`   | `newTextureWithDescriptor`                     |
-| `create_buffer`         | `CreateCommittedResource2`       | `vkCreateBuffer` + `vkAllocateMemory` + `vkBindBufferMemory` | `newBufferWithLength`                          |
-| `create_heap`           | `CreateHeap`                     | `vkAllocateMemory` (dedicated)                               | `newHeapWithDescriptor`                        |
-| `create_placed_texture` | `CreatePlacedResource2`          | `vkCreateImage` + `vkBindImageMemory2` (at offset)           | `newTextureWithDescriptor:offset:` on heap     |
-| `create_sparse_texture` | `CreateReservedResource2`        | `vkCreateImage` with `VK_IMAGE_CREATE_SPARSE_BINDING_BIT`    | `newTextureWithDescriptor` with sparse options |
+| `CreateTexture`        | `CreateCommittedResource2`       | `vkCreateImage` + `vkAllocateMemory` + `vkBindImageMemory`   | `newTextureWithDescriptor`                     |
+| `CreateBuffer`         | `CreateCommittedResource2`       | `vkCreateBuffer` + `vkAllocateMemory` + `vkBindBufferMemory` | `newBufferWithLength`                          |
+| `CreateHeap`           | `CreateHeap`                     | `vkAllocateMemory` (dedicated)                               | `newHeapWithDescriptor`                        |
+| `CreatePlacedTexture` | `CreatePlacedResource2`          | `vkCreateImage` + `vkBindImageMemory2` (at offset)           | `newTextureWithDescriptor:offset:` on heap     |
+| `CreateSparseTexture` | `CreateReservedResource2`        | `vkCreateImage` with `VK_IMAGE_CREATE_SPARSE_BINDING_BIT`    | `newTextureWithDescriptor` with sparse options |
 
 Memory management (sub-allocation, defragmentation, budget tracking) is handled by the GPU
 runtime layer (`harmonius::gpu_runtime::memory`) — not by the backends. Backends provide only
@@ -1604,34 +1600,34 @@ the raw heap/resource creation primitives listed above.
 
 | Abstract           | D3D12                                              | Vulkan                                                           | Metal                                                         |
 | ------------------ | -------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
-| `wait_idle`        | Signal fence on each queue + `WaitForSingleObject` | `vkDeviceWaitIdle`                                               | `[commandBuffer waitUntilCompleted]` on all in-flight buffers |
-| `resize_swapchain` | `IDXGISwapChain4::ResizeBuffers`                   | Destroy + recreate `VkSwapchainKHR` (pass old as `oldSwapchain`) | Set `CAMetalLayer.drawableSize`                               |
+| `WaitIdle`        | Signal fence on each queue + `WaitForSingleObject` | `vkDeviceWaitIdle`                                               | `[commandBuffer waitUntilCompleted]` on all in-flight buffers |
+| `ResizeSwapchain` | `IDXGISwapChain4::ResizeBuffers`                   | Destroy + recreate `VkSwapchainKHR` (pass old as `oldSwapchain`) | Set `CAMetalLayer.drawableSize`                               |
 
 ### Command Recording
 
 | Abstract                       | D3D12                                                  | Vulkan                                      | Metal                                                                         |
 | ------------------------------ | ------------------------------------------------------ | ------------------------------------------- | ----------------------------------------------------------------------------- |
-| `create_command_pool`          | `CreateCommandAllocator`                               | `vkCreateCommandPool`                       | `MTL4CommandAllocator`                                                        |
-| `allocate_command_buffer`      | `CreateCommandList1(type, nullptr)` — created closed   | `vkAllocateCommandBuffers`                  | `[allocator commandBuffer]`                                                   |
-| `begin`                        | `ID3D12GraphicsCommandList::Reset(allocator, nullptr)` | `vkBeginCommandBuffer`                      | Implicit (recording-ready from allocation)                                    |
-| `end`                          | `ID3D12GraphicsCommandList::Close()`                   | `vkEndCommandBuffer`                        | `[encoder endEncoding]` on active encoder                                     |
-| `reset_command_pool`           | `ID3D12CommandAllocator::Reset()`                      | `vkResetCommandPool`                        | `[allocator reset]`                                                           |
-| Command buffer                 | `ID3D12GraphicsCommandList10`                          | `VkCommandBuffer`                           | `MTL4CommandBuffer`                                                           |
+| `CreateCommandPool`          | `CreateCommandAllocator`                               | `vkCreateCommandPool`                       | `MTL4CommandAllocator`                                                        |
+| `AllocateCommandBuffer`      | `CreateCommandList1(type, nullptr)` — created closed   | `vkAllocateCommandBuffers`                  | `[allocator commandBuffer]`                                                   |
+| `Begin`                        | `ID3D12GraphicsCommandList::Reset(allocator, nullptr)` | `vkBeginCommandBuffer`                      | Implicit (recording-ready from allocation)                                    |
+| `End`                          | `ID3D12GraphicsCommandList::Close()`                   | `vkEndCommandBuffer`                        | `[encoder endEncoding]` on active encoder                                     |
+| `ResetCommandPool`             | `ID3D12CommandAllocator::Reset()`                      | `vkResetCommandPool`                        | `[allocator Reset]`                                                           |
+| Command Buffer                 | `ID3D12GraphicsCommandList10`                          | `VkCommandBuffer`                           | `MTL4CommandBuffer`                                                           |
 | Render pass                    | `BeginRenderPass` / `EndRenderPass`                    | `vkCmdBeginRendering` / `vkCmdEndRendering` | `MTL4RenderCommandEncoder`                                                    |
-| `dispatch_mesh`                | `DispatchMesh(x,y,z)`                                  | `vkCmdDrawMeshTasksEXT(x,y,z)`              | `drawMeshThreadgroups:threadsPerObjectThreadgroup:threadsPerMeshThreadgroup:` |
-| `dispatch`                     | `Dispatch(x,y,z)`                                      | `vkCmdDispatch(x,y,z)`                      | `dispatchThreadgroups:threadsPerThreadgroup:`                                 |
-| `trace_rays`                   | `DispatchRays`                                         | `vkCmdTraceRaysKHR`                         | Compute-based intersection query                                              |
-| `build_acceleration_structure` | `BuildRaytracingAccelerationStructure`                 | `vkCmdBuildAccelerationStructuresKHR`       | `accelerationStructureCommandEncoder.build`                                   |
-| `dispatch_graph`               | `DispatchGraph`                                        | N/A (capability-gated)                      | N/A (capability-gated)                                                        |
+| `DispatchMesh`                | `DispatchMesh(x,y,z)`                                  | `vkCmdDrawMeshTasksEXT(x,y,z)`              | `drawMeshThreadgroups:threadsPerObjectThreadgroup:threadsPerMeshThreadgroup:` |
+| `Dispatch`                     | `Dispatch(x,y,z)`                                      | `vkCmdDispatch(x,y,z)`                      | `dispatchThreadgroups:threadsPerThreadgroup:`                                 |
+| `TraceRays`                   | `DispatchRays`                                         | `vkCmdTraceRaysKHR`                         | Compute-based intersection query                                              |
+| `BuildAccelerationStructure` | `BuildRaytracingAccelerationStructure`                 | `vkCmdBuildAccelerationStructuresKHR`       | `accelerationStructureCommandEncoder.build`                                   |
+| `DispatchGraph`               | `DispatchGraph`                                        | N/A (capability-gated)                      | N/A (capability-gated)                                                        |
 
 ### Synchronization
 
 | Abstract        | D3D12                                         | Vulkan                                        | Metal                                   |
 | --------------- | --------------------------------------------- | --------------------------------------------- | --------------------------------------- |
 | Timeline fence  | `ID3D12Fence`                                 | `VkSemaphore` (timeline type)                 | `MTLSharedEvent`                        |
-| Barrier         | `ID3D12GraphicsCommandList7::Barrier`         | `vkCmdPipelineBarrier2`                       | `MTL4ComputeCommandEncoder` barrier API |
+| Barrier         | `ID3D12GraphicsCommandList7::Barrier`         | `vkCmdPipelineBarrier2`                       | `MTL4ComputeCommandEncoder` Barrier API |
 | Texture layout  | `D3D12_BARRIER_LAYOUT`                        | `VkImageLayout`                               | Automatic (Metal manages internally)    |
-| Split barrier   | `SyncAfter=SPLIT` / `SyncBefore=SPLIT`        | `vkCmdSetEvent2` / `vkCmdWaitEvents2`         | N/A (Metal barriers are immediate)      |
+| Split Barrier   | `SyncAfter=SPLIT` / `SyncBefore=SPLIT`        | `vkCmdSetEvent2` / `vkCmdWaitEvents2`         | N/A (Metal barriers are immediate)      |
 | Queue ownership | Enhanced barriers with queue-specific layouts | `srcQueueFamilyIndex` / `dstQueueFamilyIndex` | Not required (unified memory)           |
 
 ### Pipeline State
@@ -1657,17 +1653,17 @@ fallbacks, or capability gates required to make the abstract interface behave co
 hit, any hit, miss) dispatched via `DispatchRays` / `vkCmdTraceRaysKHR`. Metal uses intersection
 queries in compute shaders — there is no dedicated RT pipeline.
 
-**Shim:** The Metal backend implements `create_ray_tracing_pipeline` as a **no-op that returns an
+**Shim:** The Metal backend implements `CreateRayTracingPipeline` as a **no-op that returns an
 error** when `DeviceCapabilities::ray_tracing` is true but the pipeline model is unavailable. Ray
 tracing on Metal is implemented through inline ray queries (`RayQuery<>` / `intersector<>`) in
 compute shaders. The render graph expresses RT passes as compute passes on Metal.
 
 | Interface Method              | D3D12                               | Vulkan                           | Metal                                                             |
 | ----------------------------- | ----------------------------------- | -------------------------------- | ----------------------------------------------------------------- |
-| `create_ray_tracing_pipeline` | State object with DXIL RT libraries | `vkCreateRayTracingPipelinesKHR` | Returns `PipelineError::unsupported` — use compute                |
-| `trace_rays`                  | `DispatchRays`                      | `vkCmdTraceRaysKHR`              | Translated to `dispatch()` with intersection query compute kernel |
-| `trace_rays_indirect`         | `ExecuteIndirect` with RT signature | `vkCmdTraceRaysIndirect2KHR`     | Translated to `dispatch_indirect()`                               |
-| SBT fields in `TraceRaysDesc` | Used                                | Used                             | Ignored — Metal has no SBT                                        |
+| `CreateRayTracingPipeline` | State object with DXIL RT libraries | `vkCreateRayTracingPipelinesKHR` | Returns `PipelineError::kUnsupported` — use Compute                |
+| `TraceRays`                  | `DispatchRays`                      | `vkCmdTraceRaysKHR`              | Translated to `Dispatch()` with intersection query Compute kernel |
+| `TraceRaysIndirect`         | `ExecuteIndirect` with RT signature | `vkCmdTraceRaysIndirect2KHR`     | Translated to `DispatchIndirect()`                               |
+| SBT fields in `TraceRaysDesc` | Used                                | Used                             | Ignored — Metal Has no SBT                                        |
 
 **Application impact:** Shader code that uses inline ray queries (`RayQuery` in HLSL / `intersector`
 in MSL) works identically on all backends. Full RT pipeline shaders (raygen/hit/miss) only work
@@ -1685,9 +1681,9 @@ must provide a compute-shader fallback for any work graph pass.
 
 | Interface Method    | D3D12                           | Vulkan                               | Metal                                |
 | ------------------- | ------------------------------- | ------------------------------------ | ------------------------------------ |
-| `create_work_graph` | `CreateStateObject(WORK_GRAPH)` | Returns `PipelineError::unsupported` | Returns `PipelineError::unsupported` |
-| `set_work_graph`    | `SetProgram`                    | No-op                                | No-op                                |
-| `dispatch_graph`    | `DispatchGraph`                 | No-op                                | No-op                                |
+| `CreateWorkGraph` | `CreateStateObject(WORK_GRAPH)` | Returns `PipelineError::kUnsupported` | Returns `PipelineError::kUnsupported` |
+| `SetWorkGraph`    | `SetProgram`                    | No-op                                | No-op                                |
+| `DispatchGraph`    | `DispatchGraph`                 | No-op                                | No-op                                |
 
 ### Split Barriers
 
@@ -1695,8 +1691,8 @@ must provide a compute-shader fallback for any work graph pass.
 (`SPLIT` sync). Vulkan supports them via events.
 
 **Shim:** The Metal backend collapses split barriers into immediate barriers:
-- `split_begin` → ignored (no-op)
-- `split_end` → emitted as an immediate full barrier with the combined src/dst stages
+- `SplitBegin` → ignored (no-op)
+- `SplitEnd` → emitted as an immediate full barrier with the combined src/dst stages
 
 The render graph compiler should check `DeviceCapabilities::split_barriers` and emit split
 barriers only when `true`. When `false`, it emits immediate barriers at the consuming pass.
@@ -1704,8 +1700,8 @@ barriers only when `true`. When `false`, it emits immediate barriers at the cons
 |                             | D3D12                | Vulkan             | Metal             |
 | --------------------------- | -------------------- | ------------------ | ----------------- |
 | `split_barriers` capability | `true`               | `true`             | `false`           |
-| Split begin                 | `SyncAfter = SPLIT`  | `vkCmdSetEvent2`   | Ignored           |
-| Split end                   | `SyncBefore = SPLIT` | `vkCmdWaitEvents2` | Immediate barrier |
+| Split Begin                 | `SyncAfter = SPLIT`  | `vkCmdSetEvent2`   | Ignored           |
+| Split End                   | `SyncBefore = SPLIT` | `vkCmdWaitEvents2` | Immediate Barrier |
 
 ### Texture Layouts (Image Layouts)
 
@@ -1717,13 +1713,14 @@ are emitted as stage/access-only synchronization:
 
 ```cpp
 // Metal barrier translation — layout fields stripped
-void MetalCommandBuffer::barrier(const BarrierDesc& desc) {
-    for (auto& tb : desc.texture_barriers) {
-        // Ignore old_layout, new_layout — Metal manages internally
-        [encoder memoryBarrierWithResources:&texture count:1
-                               afterStages:to_mtl_stage(tb.src_stage)
-                              beforeStages:to_mtl_stage(tb.dst_stage)];
-    }
+void MetalCommandBuffer::Barrier(const BarrierDesc& desc) {
+  for (auto& tb : desc.texture_barriers) {
+    // Ignore old_layout, new_layout — Metal manages internally
+    [encoder memoryBarrierWithResources:&texture
+                                  count:1
+                            afterStages:ToMtlStage(tb.src_stage)
+                           beforeStages:ToMtlStage(tb.dst_stage)];
+  }
 }
 ```
 
@@ -1738,10 +1735,10 @@ queue families. D3D12 uses resource state promotion for COMMON state. Metal requ
 
 **Shim:** The abstract barrier's `src_queue` / `dst_queue` fields drive queue ownership:
 
-| Backend | Cross-queue barrier behavior                                                                                                                                            |
+| Backend | Cross-queue Barrier behavior                                                                                                                                            |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D3D12   | Resources on the copy queue must be in COMMON layout. Enhanced barriers handle cross-engine access via layout-based access patterns. No explicit release/acquire pairs. |
-| Vulkan  | Full release/acquire barrier pair with `srcQueueFamilyIndex` / `dstQueueFamilyIndex`.                                                                                   |
+| D3D12   | Resources on the copy queue must be in COMMON layout. Enhanced barriers handle cross-engine access via layout-based access patterns. No explicit Release/acquire pairs. |
+| Vulkan  | Full Release/acquire Barrier pair with `srcQueueFamilyIndex` / `dstQueueFamilyIndex`.                                                                                   |
 | Metal   | `src_queue` / `dst_queue` ignored. Only stage/access synchronization emitted.                                                                                           |
 
 ### Variable Rate Shading
@@ -1759,7 +1756,7 @@ should not emit VRS passes. VRS is capability-gated.
 (`vkCmdDrawMeshTasksIndirectCountEXT`) natively support reading the draw count from a GPU buffer.
 Metal does not — `drawMeshThreadgroupsWithIndirectBuffer` takes a fixed group count.
 
-**Shim:** The Metal backend implements `dispatch_mesh_indirect_count` by:
+**Shim:** The Metal backend implements `DispatchMeshIndirectCount` by:
 1. Reading the count buffer via a small compute pre-pass that clamps the count and writes it
    into the indirect argument buffer's header.
 2. Dispatching with the maximum possible count, relying on the compute pre-pass to zero out
@@ -1803,25 +1800,25 @@ All `std::expected` return types use the following error enums:
 namespace harmonius::gpu {
 
 enum class ResourceError : uint8_t {
-    out_of_memory,           // device or host memory exhausted
-    invalid_format,          // unsupported format for this resource type
-    invalid_dimensions,      // dimensions exceed device limits
-    unsupported_usage,       // usage flags not supported by this backend
+  kOutOfMemory,        // device or host memory exhausted
+  kInvalidFormat,      // unsupported format for this resource type
+  kInvalidDimensions,  // dimensions exceed device limits
+  kUnsupportedUsage,   // usage flags not supported by this backend
 };
 
 enum class DeviceError : uint8_t {
-    initialization_failed,   // device creation failed
-    feature_not_supported,   // required feature unavailable
-    out_of_memory,
+  kInitializationFailed,  // device creation failed
+  kFeatureNotSupported,   // required feature unavailable
+  kOutOfMemory,
 };
 
 enum class PipelineError : uint8_t {
-    compilation_failed,      // shader compilation error
-    unsupported,             // pipeline type not available (e.g., RT on Metal)
-    invalid_state,           // invalid pipeline state combination
+  kCompilationFailed,  // shader compilation error
+  kUnsupported,        // pipeline type not available (e.g., RT on Metal)
+  kInvalidState,       // invalid pipeline state combination
 };
 
-} // namespace harmonius::gpu
+}  // namespace harmonius::gpu
 ```
 
 ### Opacity Micromaps
@@ -1829,7 +1826,7 @@ enum class PipelineError : uint8_t {
 | Backend | Support                                                         | Capability Gate                         |
 | ------- | --------------------------------------------------------------- | --------------------------------------- |
 | D3D12   | DXR 1.2 — attached to BLAS geometry via `OpacityMicromap` field | `DeviceCapabilities::opacity_micromaps` |
-| Vulkan  | `VK_EXT_opacity_micromap` — separate build pass                 | `DeviceCapabilities::opacity_micromaps` |
+| Vulkan  | `VK_EXT_opacity_micromap` — separate Build pass                 | `DeviceCapabilities::opacity_micromaps` |
 | Metal   | Not supported                                                   | `opacity_micromaps` is always `false`   |
 
 ### Capability Summary
@@ -1844,7 +1841,7 @@ enum class PipelineError : uint8_t {
 | `opacity_micromaps`     | Soft-gated (DXR 1.2)                 | Soft-gated (`VK_EXT_opacity_micromap`)      | Always `false`                        |
 | `sparse_textures`       | Soft-gated (Tiled Resources Tier 1+) | Soft-gated (`sparseBinding`)                | Soft-gated (Apple7+)                  |
 | `int64_atomics`         | Soft-gated (SM 6.6)                  | Soft-gated (`shaderBufferInt64Atomics`)     | Soft-gated (Apple7+)                  |
-| `async_compute_queue`   | Required (dedicated compute engine)  | Required (dedicated compute queue family)   | Required (Metal queues are universal) |
+| `async_compute_queue`   | Required (dedicated Compute engine)  | Required (dedicated Compute queue family)   | Required (Metal queues are universal) |
 | `transfer_queue`        | Required (dedicated copy engine)     | Required (dedicated transfer queue family)  | Required (Metal queues are universal) |
 | `variable_rate_shading` | Soft-gated (VRS Tier 2)              | Soft-gated (`VK_KHR_fragment_shading_rate`) | Always `false` (no image-based VRS)   |
 | `work_graphs`           | Soft-gated (Work Graphs Tier 1)      | Always `false`                              | Always `false`                        |

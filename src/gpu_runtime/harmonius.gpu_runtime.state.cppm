@@ -9,128 +9,184 @@
 
 export module harmonius.gpu_runtime.state;
 
-import std;
 import harmonius.gpu;
 
-export namespace harmonius::gpu_runtime::state
-{
+import std;
 
-  // ---------------------------------------------------------------------------
-  // Resource state
-  // ---------------------------------------------------------------------------
+export namespace harmonius::gpu_runtime::state {
 
-  struct ResourceState
-  {
-    gpu::PipelineStage stage = gpu::PipelineStage::none;
-    gpu::ResourceAccess access = gpu::ResourceAccess::none;
-    gpu::TextureLayout layout = gpu::TextureLayout::undefined;
-    gpu::QueueType owner = gpu::QueueType::graphics;
-  };
+// ---------------------------------------------------------------------------
+// Resource state
+// ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // Resource state cache
-  // ---------------------------------------------------------------------------
+/// Describes the current pipeline stage, access, layout, and queue ownership of a resource.
+struct ResourceState {
+    gpu::PipelineStage stage = gpu::PipelineStage::kNone;
+    gpu::ResourceAccess access = gpu::ResourceAccess::kNone;
+    gpu::TextureLayout layout = gpu::TextureLayout::kUndefined;
+    gpu::QueueType owner = gpu::QueueType::kGraphics;
+};
 
-  class ResourceStateCache
-  {
-  public:
-    auto register_resource(gpu::TextureHandle handle, ResourceState initial) -> void;
-    auto register_resource(gpu::BufferHandle handle, ResourceState initial) -> void;
+// ---------------------------------------------------------------------------
+// Resource state cache
+// ---------------------------------------------------------------------------
 
-    [[nodiscard]] auto current_state(gpu::TextureHandle handle) const -> ResourceState;
-    [[nodiscard]] auto current_state(gpu::BufferHandle handle) const -> ResourceState;
+/// Tracks the current state of every registered GPU resource.
+/// @threadsafety Instances are not thread-safe.
+class ResourceStateCache {
+ public:
+    /// Register a texture with its initial state.
+    auto RegisterResource(gpu::TextureHandle handle, ResourceState initial) -> void;
 
-    auto transition(gpu::TextureHandle handle, ResourceState new_state) -> void;
-    auto transition(gpu::BufferHandle handle, ResourceState new_state) -> void;
+    /// Register a buffer with its initial state.
+    auto RegisterResource(gpu::BufferHandle handle, ResourceState initial) -> void;
 
-    [[nodiscard]] auto needs_transition(gpu::TextureHandle handle,
-                                        ResourceState target) const -> bool;
-    [[nodiscard]] auto needs_transition(gpu::BufferHandle handle,
-                                        ResourceState target) const -> bool;
+    /// Returns the current state of the given texture.
+    [[nodiscard]] auto CurrentState(gpu::TextureHandle handle) const -> ResourceState;
 
-    auto unregister(gpu::TextureHandle handle) -> void;
-    auto unregister(gpu::BufferHandle handle) -> void;
+    /// Returns the current state of the given buffer.
+    [[nodiscard]] auto CurrentState(gpu::BufferHandle handle) const -> ResourceState;
 
-  private:
+    /// Transition a texture to a new state.
+    auto Transition(gpu::TextureHandle handle, ResourceState new_state) -> void;
+
+    /// Transition a buffer to a new state.
+    auto Transition(gpu::BufferHandle handle, ResourceState new_state) -> void;
+
+    /// Returns true if the texture needs a state transition to reach the target.
+    [[nodiscard]] auto NeedsTransition(gpu::TextureHandle handle, ResourceState target) const -> bool;
+
+    /// Returns true if the buffer needs a state transition to reach the target.
+    [[nodiscard]] auto NeedsTransition(gpu::BufferHandle handle, ResourceState target) const -> bool;
+
+    /// Unregister a texture from the cache.
+    auto Unregister(gpu::TextureHandle handle) -> void;
+
+    /// Unregister a buffer from the cache.
+    auto Unregister(gpu::BufferHandle handle) -> void;
+
+ private:
     std::unordered_map<gpu::TextureHandle, ResourceState> texture_states_;
     std::unordered_map<gpu::BufferHandle, ResourceState> buffer_states_;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Barrier optimizer
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Barrier optimizer
+// ---------------------------------------------------------------------------
 
-  class BarrierOptimizer
-  {
-  public:
-    explicit BarrierOptimizer(ResourceStateCache &state_cache,
-                              const gpu::DeviceCapabilities &caps);
+/// Batches, deduplicates, and elides GPU barriers for optimal submission.
+/// @threadsafety Instances are not thread-safe.
+class BarrierOptimizer {
+ public:
+    explicit BarrierOptimizer(ResourceStateCache& state_cache, const gpu::DeviceCapabilities& caps);
 
-    auto enqueue(const gpu::BarrierDesc &desc) -> void;
+    /// Enqueue a barrier for deferred batch submission.
+    auto Enqueue(const gpu::BarrierDesc& desc) -> void;
 
-    [[nodiscard]] auto flush() -> std::vector<gpu::BarrierDesc>;
+    /// Flush all pending barriers, returning the optimized batch.
+    [[nodiscard]] auto Flush() -> std::vector<gpu::BarrierDesc>;
 
-    auto split_begin(const gpu::BarrierDesc &desc) -> void;
-    auto split_end(const gpu::BarrierDesc &desc) -> void;
+    /// Begin a split barrier.
+    auto SplitBegin(const gpu::BarrierDesc& desc) -> void;
 
-  private:
-    ResourceStateCache &state_cache_;
-    const gpu::DeviceCapabilities &caps_;
+    /// End a split barrier.
+    auto SplitEnd(const gpu::BarrierDesc& desc) -> void;
+
+ private:
+    ResourceStateCache& state_cache_;
+    const gpu::DeviceCapabilities& caps_;
     std::vector<gpu::BarrierDesc> pending_;
     std::vector<gpu::BarrierDesc> deferred_splits_;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Tracked command buffer
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Tracked command buffer
+// ---------------------------------------------------------------------------
 
-  class TrackedCommandBuffer
-  {
-  public:
-    auto set_pipeline(gpu::PipelineHandle handle) -> void;
-    auto bind_descriptor_heap(gpu::DescriptorHeapHandle handle) -> void;
-    auto set_viewport(const gpu::Viewport &vp) -> void;
-    auto set_scissor(const gpu::Scissor &rect) -> void;
-    auto push_constants(const void *data, std::uint32_t size,
-                        std::uint32_t offset = 0) -> void;
+/// Command buffer wrapper that filters redundant state changes and batches barriers.
+/// @threadsafety Instances are not thread-safe.
+class TrackedCommandBuffer {
+ public:
+    /// Bind a pipeline, skipping if already bound.
+    auto SetPipeline(gpu::PipelineHandle handle) -> void;
 
-    auto barrier(const gpu::BarrierDesc &desc) -> void;
-    auto flush_barriers() -> void;
+    /// Bind a descriptor heap, skipping if already bound.
+    auto BindDescriptorHeap(gpu::DescriptorHeapHandle handle) -> void;
 
-    auto begin() -> void;
-    auto end() -> void;
-    auto begin_render_pass(const gpu::RenderPassDesc &desc) -> void;
-    auto end_render_pass() -> void;
-    auto dispatch_mesh(std::uint32_t x, std::uint32_t y, std::uint32_t z) -> void;
-    auto dispatch(std::uint32_t x, std::uint32_t y, std::uint32_t z) -> void;
-    auto dispatch_indirect(gpu::BufferHandle args, std::uint64_t offset) -> void;
-    auto trace_rays(const gpu::TraceRaysDesc &desc) -> void;
-    auto build_acceleration_structure(const gpu::AccelerationStructureBuildDesc &desc) -> void;
-    auto copy_buffer(gpu::BufferHandle src, std::uint64_t src_offset,
-                     gpu::BufferHandle dst, std::uint64_t dst_offset,
-                     std::uint64_t size) -> void;
-    auto copy_buffer_to_texture(gpu::BufferHandle src, std::uint64_t src_offset,
-                                gpu::TextureHandle dst,
-                                const gpu::TextureSubresource &sub,
-                                gpu::Extent3D extent) -> void;
-    auto copy_texture_to_buffer(gpu::TextureHandle src,
-                                const gpu::TextureSubresource &sub,
-                                gpu::BufferHandle dst, std::uint64_t dst_offset,
-                                gpu::Extent3D extent) -> void;
-    auto copy_texture(gpu::TextureHandle src, const gpu::TextureSubresource &src_sub,
-                      gpu::TextureHandle dst, const gpu::TextureSubresource &dst_sub,
-                      gpu::Extent3D extent) -> void;
-    auto begin_debug_label(std::string_view name) -> void;
-    auto end_debug_label() -> void;
+    /// Set the viewport, skipping if unchanged.
+    auto SetViewport(const gpu::Viewport& vp) -> void;
 
-  private:
-    gpu::PipelineHandle bound_pipeline_ = gpu::PipelineHandle::invalid;
-    gpu::DescriptorHeapHandle bound_heap_ = gpu::DescriptorHeapHandle::invalid;
+    /// Set the scissor rectangle, skipping if unchanged.
+    auto SetScissor(const gpu::Scissor& rect) -> void;
+
+    /// Set push constant data.
+    auto PushConstants(const void* data, std::uint32_t size, std::uint32_t offset = 0) -> void;
+
+    /// Enqueue a barrier for deferred submission.
+    auto Barrier(const gpu::BarrierDesc& desc) -> void;
+
+    /// Flush all pending barriers to the underlying command buffer.
+    auto FlushBarriers() -> void;
+
+    /// Begin recording commands.
+    auto Begin() -> void;
+
+    /// End recording commands.
+    auto End() -> void;
+
+    /// Begin a render pass.
+    auto BeginRenderPass(const gpu::RenderPassDesc& desc) -> void;
+
+    /// End the current render pass.
+    auto EndRenderPass() -> void;
+
+    /// Dispatch a mesh shader workload.
+    auto DispatchMesh(std::uint32_t x, std::uint32_t y, std::uint32_t z) -> void;
+
+    /// Dispatch a compute shader workload.
+    auto Dispatch(std::uint32_t x, std::uint32_t y, std::uint32_t z) -> void;
+
+    /// Dispatch a compute shader workload with indirect arguments.
+    auto DispatchIndirect(gpu::BufferHandle args, std::uint64_t offset) -> void;
+
+    /// Dispatch a ray tracing workload.
+    auto TraceRays(const gpu::TraceRaysDesc& desc) -> void;
+
+    /// Build or update an acceleration structure.
+    auto BuildAccelerationStructure(const gpu::AccelerationStructureBuildDesc& desc) -> void;
+
+    /// Copy data between buffers.
+    auto CopyBuffer(gpu::BufferHandle src, std::uint64_t src_offset, gpu::BufferHandle dst,
+                    std::uint64_t dst_offset, std::uint64_t size) -> void;
+
+    /// Copy data from a buffer to a texture.
+    auto CopyBufferToTexture(gpu::BufferHandle src, std::uint64_t src_offset, gpu::TextureHandle dst,
+                             const gpu::TextureSubresource& sub, gpu::Extent3D extent) -> void;
+
+    /// Copy data from a texture to a buffer.
+    auto CopyTextureToBuffer(gpu::TextureHandle src, const gpu::TextureSubresource& sub,
+                             gpu::BufferHandle dst, std::uint64_t dst_offset,
+                             gpu::Extent3D extent) -> void;
+
+    /// Copy data between textures.
+    auto CopyTexture(gpu::TextureHandle src, const gpu::TextureSubresource& src_sub,
+                     gpu::TextureHandle dst, const gpu::TextureSubresource& dst_sub,
+                     gpu::Extent3D extent) -> void;
+
+    /// Begin a debug label region.
+    auto BeginDebugLabel(std::string_view name) -> void;
+
+    /// End the current debug label region.
+    auto EndDebugLabel() -> void;
+
+ private:
+    gpu::PipelineHandle bound_pipeline_ = gpu::PipelineHandle::kInvalid;
+    gpu::DescriptorHeapHandle bound_heap_ = gpu::DescriptorHeapHandle::kInvalid;
     std::optional<gpu::Viewport> current_viewport_;
     std::optional<gpu::Scissor> current_scissor_;
     std::array<std::uint8_t, 128> push_constant_cache_ = {};
     std::uint32_t push_constant_size_ = 0;
     std::vector<gpu::BarrierDesc> pending_barriers_;
-  };
+};
 
-} // namespace harmonius::gpu_runtime::state
+}  // namespace harmonius::gpu_runtime::state

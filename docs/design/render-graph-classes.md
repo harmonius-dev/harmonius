@@ -36,72 +36,72 @@ Companion to [render-graph-design.md](render-graph-design.md).
 ```mermaid
 classDiagram
     class PassHandle["PassHandle «enumeration»"] {
-        invalid
+        kInvalid
     }
     class ResourceHandle["ResourceHandle «enumeration»"] {
-        invalid
+        kInvalid
     }
     class SubGraphHandle["SubGraphHandle «enumeration»"] {
-        invalid
+        kInvalid
     }
     class GateHandle["GateHandle «enumeration»"] {
-        invalid
+        kInvalid
     }
     class ChainHandle["ChainHandle «enumeration»"] {
-        invalid
+        kInvalid
     }
     class VariantSlotHandle["VariantSlotHandle «enumeration»"] {
-        invalid
+        kInvalid
     }
     class PassType["PassType «enumeration»"] {
-        rasterization
-        compute
-        ray_tracing_dispatch
-        acceleration_structure_build
-        transfer
-        msaa_resolve
-        present
-        host_callback
-        work_graph
-        checkerboard_resolve
-        opacity_micromap_build
+        kRasterization
+        kCompute
+        kRayTracingDispatch
+        kAccelerationStructureBuild
+        kTransfer
+        kMsaaResolve
+        kPresent
+        kHostCallback
+        kWorkGraph
+        kCheckerboardResolve
+        kOpacityMicromapBuild
     }
     class AccessMode["AccessMode «enumeration»"] {
-        read
-        write
-        read_write
+        kRead
+        kWrite
+        kReadWrite
     }
     class UsageType["UsageType «enumeration»"] {
-        color_attachment
-        depth_attachment
-        shader_read
-        storage_read
-        storage_write
-        shading_rate_attachment
-        indirect_argument
-        acceleration_structure_read
-        acceleration_structure_build_write
-        transfer_src
-        transfer_dst
-        present
+        kColorAttachment
+        kDepthAttachment
+        kShaderRead
+        kStorageRead
+        kStorageWrite
+        kShadingRateAttachment
+        kIndirectArgument
+        kAccelerationStructureRead
+        kAccelerationStructureBuildWrite
+        kTransferSrc
+        kTransferDst
+        kPresent
     }
     class QueueAffinity["QueueAffinity «enumeration»"] {
-        graphics
-        async_compute
-        transfer
-        any
+        kGraphics
+        kAsyncCompute
+        kTransfer
+        kAny
     }
     class ResourceCategory["ResourceCategory «enumeration»"] {
-        transient
-        persistent
-        imported
-        history
-        multi_frame_history
-        sparse
-        pool_backed
-        staging
-        atlas
-        acceleration_structure
+        kTransient
+        kPersistent
+        kImported
+        kHistory
+        kMultiFrameHistory
+        kSparse
+        kPoolBacked
+        kStaging
+        kAtlas
+        kAccelerationStructure
     }
     class ResourceBinding["ResourceBinding «struct»"] {
         +ResourceHandle resource
@@ -112,15 +112,15 @@ classDiagram
         +bool is_history
     }
     class ValidationErrorKind["ValidationErrorKind «enumeration»"] {
-        cycle_detected
-        type_mismatch
-        undeclared_resource
-        queue_incompatibility
-        single_writer_violation
-        variant_ambiguity
-        instance_count_mismatch
-        hard_gate_unsatisfied
-        sample_count_mismatch
+        kCycleDetected
+        kTypeMismatch
+        kUndeclaredResource
+        kQueueIncompatibility
+        kSingleWriterViolation
+        kVariantAmbiguity
+        kInstanceCountMismatch
+        kHardGateUnsatisfied
+        kSampleCountMismatch
     }
     class ValidationError["ValidationError «struct»"] {
         +ValidationErrorKind kind
@@ -149,42 +149,42 @@ classDiagram
 classDiagram
     class GraphBuilder {
         +GraphBuilder(CapabilityDescriptor caps)
-        +add_pass(PassDescriptor) PassHandle
-        +begin_chain(string_view) ChainHandle
-        +add_chain_step(ChainHandle, PassDescriptor) PassHandle
-        +end_chain(ChainHandle) void
-        +declare_variant_slot(string_view) VariantSlotHandle
-        +add_variant(VariantSlotHandle, string_view, PassDescriptor) PassHandle
-        +declare_subgraph_template(string_view, SubGraphDescriptor) SubGraphHandle
-        +instantiate_subgraph(SubGraphHandle, uint32_t, span) void
-        +declare_transient(TransientResourceDesc) ResourceHandle
-        +declare_persistent(PersistentResourceDesc) ResourceHandle
-        +declare_imported(ImportedResourceDesc) ResourceHandle
-        +declare_history(HistoryResourceDesc) ResourceHandle
-        +declare_multi_frame_history(MultiFrameHistoryDesc) ResourceHandle
-        +declare_sparse(SparseResourceDesc) ResourceHandle
-        +declare_pool(PoolResourceDesc) ResourceHandle
-        +declare_staging(StagingBufferDesc) ResourceHandle
-        +declare_atlas(AtlasResourceDesc) ResourceHandle
-        +declare_acceleration_structure(AccelStructDesc) ResourceHandle
-        +attach_capability_gate(PassHandle, CapabilityGateDesc) GateHandle
-        +attach_budget_gate(PassHandle, BudgetGateDesc) GateHandle
-        +declare_fallback_chain(string_view, span) GateHandle
-        +add_ordering_edge(PassHandle, PassHandle) void
-        +add_frame_dependency(PassHandle, PassHandle, uint32_t) void
-        +remove_chain_step(ChainHandle, PassHandle) void
-        +declare_ring_buffer(RingBufferDesc) ResourceHandle
-        +declare_bindless_heap(BindlessHeapDesc) ResourceHandle
-        +attach_path_conditioned_gate(PassHandle, PathConditionedGateDesc) GateHandle
-        +attach_timestamp_query(PassHandle, string_view) void
-        +attach_statistics_query(PassHandle, string_view) void
-        +mark_debug_overlay(PassHandle) void
-        +build() expected~DeclaredGraph, CompileError~
+        +AddPass(PassDescriptor) PassHandle
+        +BeginChain(string_view) ChainHandle
+        +AddChainStep(ChainHandle, PassDescriptor) PassHandle
+        +EndChain(ChainHandle) void
+        +DeclareVariantSlot(string_view) VariantSlotHandle
+        +AddVariant(VariantSlotHandle, string_view, PassDescriptor) PassHandle
+        +DeclareSubgraphTemplate(string_view, SubGraphDescriptor) SubGraphHandle
+        +InstantiateSubgraph(SubGraphHandle, uint32_t, span) void
+        +DeclareTransient(TransientResourceDesc) ResourceHandle
+        +DeclarePersistent(PersistentResourceDesc) ResourceHandle
+        +DeclareImported(ImportedResourceDesc) ResourceHandle
+        +DeclareHistory(HistoryResourceDesc) ResourceHandle
+        +DeclareMultiFrameHistory(MultiFrameHistoryDesc) ResourceHandle
+        +DeclareSparse(SparseResourceDesc) ResourceHandle
+        +DeclarePool(PoolResourceDesc) ResourceHandle
+        +DeclareStaging(StagingBufferDesc) ResourceHandle
+        +DeclareAtlas(AtlasResourceDesc) ResourceHandle
+        +DeclareAccelerationStructure(AccelStructDesc) ResourceHandle
+        +AttachCapabilityGate(PassHandle, CapabilityGateDesc) GateHandle
+        +AttachBudgetGate(PassHandle, BudgetGateDesc) GateHandle
+        +DeclareFallbackChain(string_view, span) GateHandle
+        +AddOrderingEdge(PassHandle, PassHandle) void
+        +AddFrameDependency(PassHandle, PassHandle, uint32_t) void
+        +RemoveChainStep(ChainHandle, PassHandle) void
+        +DeclareRingBuffer(RingBufferDesc) ResourceHandle
+        +DeclareBindlessHeap(BindlessHeapDesc) ResourceHandle
+        +AttachPathConditionedGate(PassHandle, PathConditionedGateDesc) GateHandle
+        +AttachTimestampQuery(PassHandle, string_view) void
+        +AttachStatisticsQuery(PassHandle, string_view) void
+        +MarkDebugOverlay(PassHandle) void
+        +Build() expected~DeclaredGraph, CompileError~
     }
     class DeclaredGraph {
-        +passes() span~PassDescriptor~
-        +pass_count() uint32_t
-        +resource_count() uint32_t
+        +Passes() span~PassDescriptor~
+        +PassCount() uint32_t
+        +ResourceCount() uint32_t
         -Impl impl_
     }
     class PassDescriptor {
@@ -344,28 +344,28 @@ classDiagram
 ```mermaid
 classDiagram
     class GraphCompiler {
-        +compile(DeclaredGraph, CapabilityDescriptor, CompileOptions) expected~ExecutionPlan, CompileError~
-        +recompile_residency(ExecutionPlan, span~ResidencyChange~) expected~ExecutionPlan, CompileError~
-        -validate(DeclaredGraph) vector~ValidationError~
-        -evaluate_gates(DeclaredGraph, CapabilityDescriptor) vector~PassHandle~
-        -eliminate_dead_passes(DeclaredGraph) void
-        -topological_sort() void
-        -compute_barriers() BarrierSchedule
-        -compute_aliasing() AliasingMap
-        -partition_queues() void
-        -plan_encoding() void
-        -merge_instances() void
+        +Compile(DeclaredGraph, CapabilityDescriptor, CompileOptions) expected~ExecutionPlan, CompileError~
+        +RecompileResidency(ExecutionPlan, span~ResidencyChange~) expected~ExecutionPlan, CompileError~
+        -Validate(DeclaredGraph) vector~ValidationError~
+        -EvaluateGates(DeclaredGraph, CapabilityDescriptor) vector~PassHandle~
+        -EliminateDeadPasses(DeclaredGraph) void
+        -TopologicalSort() void
+        -ComputeBarriers() BarrierSchedule
+        -ComputeAliasing() AliasingMap
+        -PartitionQueues() void
+        -PlanEncoding() void
+        -MergeInstances() void
     }
     class ExecutionPlan {
-        +passes() span~ScheduledPass~
-        +queue_submissions() span~QueueSubmission~
-        +encoding_groups() span~EncodingGroup~
-        +aliasing_map() AliasingMap
-        +fence_points() span~FenceCoordination~
-        +transfer_injection_index() uint32_t
-        +active_pass_count() uint32_t
-        +conditional_passes() span~PassHandle~
-        +resolution_params() span~ResolutionParam~
+        +Passes() span~ScheduledPass~
+        +QueueSubmissions() span~QueueSubmission~
+        +EncodingGroups() span~EncodingGroup~
+        +AliasingMap() AliasingMap
+        +FencePoints() span~FenceCoordination~
+        +TransferInjectionIndex() uint32_t
+        +ActivePassCount() uint32_t
+        +ConditionalPasses() span~PassHandle~
+        +ResolutionParams() span~ResolutionParam~
         -Impl impl_
     }
     class ScheduledPass {
@@ -425,27 +425,27 @@ classDiagram
 ```mermaid
 classDiagram
     class AliasingSolver {
-        +solve(span~LifetimeInterval~, span~ResourceSizeInfo~) AliasingMap
+        +Solve(span~LifetimeInterval~, span~ResourceSizeInfo~) AliasingMap
     }
     class AliasingMap {
-        +assignments() span~AliasingAssignment~
-        +peak_memory_bytes() uint64_t
-        +total_logical_bytes() uint64_t
-        +aliasing_efficiency() float
+        +Assignments() span~AliasingAssignment~
+        +PeakMemoryBytes() uint64_t
+        +TotalLogicalBytes() uint64_t
+        +AliasingEfficiency() float
     }
     class PoolAllocator {
         +PoolAllocator(PoolResourceDesc, Device)
-        +allocate() expected~ResourceHandle, PoolError~
-        +release(ResourceHandle) void
-        +utilization() float
-        +capacity() uint32_t
-        +active_count() uint32_t
+        +Allocate() expected~ResourceHandle, PoolError~
+        +Release(ResourceHandle) void
+        +Utilization() float
+        +Capacity() uint32_t
+        +ActiveCount() uint32_t
     }
     class RingAllocator {
         +RingAllocator(uint64_t slot_size, uint32_t frame_count, Device)
-        +allocate(uint64_t size, uint64_t alignment) optional~Allocation~
-        +advance_frame(uint32_t frame_index) void
-        +buffer() gpu_ResourceHandle
+        +Allocate(uint64_t size, uint64_t alignment) optional~Allocation~
+        +AdvanceFrame(uint32_t frame_index) void
+        +Buffer() gpu_ResourceHandle
     }
     class LifetimeInterval {
         +ResourceHandle resource
@@ -477,10 +477,10 @@ classDiagram
 
     class AtlasAllocator {
         +AtlasAllocator(AtlasResourceDesc, Device)
-        +allocate_tile(uint64_t owner_key) expected~AtlasTileRect, PoolError~
-        +release_tile(uint64_t owner_key) void
-        +utilization() float
-        +capacity() uint32_t
+        +AllocateTile(uint64_t owner_key) expected~AtlasTileRect, PoolError~
+        +ReleaseTile(uint64_t owner_key) void
+        +Utilization() float
+        +Capacity() uint32_t
     }
     class AtlasTileRect {
         +uint32_t x
@@ -506,9 +506,9 @@ classDiagram
 ```mermaid
 classDiagram
     class BarrierScheduler {
-        +compute(span~ScheduledPass~, DeclaredGraph) BarrierSchedule
-        -merge_barriers(vector~BarrierDesc~) void
-        -apply_split_barriers(BarrierSchedule, DeviceCapabilities) void
+        +Compute(span~ScheduledPass~, DeclaredGraph) BarrierSchedule
+        -MergeBarriers(vector~BarrierDesc~) void
+        -ApplySplitBarriers(BarrierSchedule, DeviceCapabilities) void
     }
     class BarrierSchedule {
         +vector~vector~BarrierDesc~~ pre_pass_barriers
@@ -516,12 +516,12 @@ classDiagram
     }
     class TimelineFenceManager {
         +TimelineFenceManager(Device)
-        +signal(QueueAffinity, uint64_t) void
-        +wait(QueueAffinity, uint64_t) void
-        +is_complete(QueueAffinity, uint64_t) bool
-        +wait_cpu(QueueAffinity, uint64_t) void
-        +current_value(QueueAffinity) uint64_t
-        +advance_frame() void
+        +Signal(QueueAffinity, uint64_t) void
+        +Wait(QueueAffinity, uint64_t) void
+        +IsComplete(QueueAffinity, uint64_t) bool
+        +WaitCpu(QueueAffinity, uint64_t) void
+        +CurrentValue(QueueAffinity) uint64_t
+        +AdvanceFrame() void
         -array~PerQueueFence, 3~ fences_
     }
     class BarrierDesc {
@@ -539,11 +539,11 @@ classDiagram
         +bool is_split_end
     }
     class BarrierType["BarrierType «enumeration»"] {
-        memory
-        layout_transition
-        ownership_release
-        ownership_acquire
-        aliasing
+        kMemory
+        kLayoutTransition
+        kOwnershipRelease
+        kOwnershipAcquire
+        kAliasing
     }
 
     BarrierScheduler --> BarrierSchedule : produces
@@ -559,8 +559,8 @@ classDiagram
 ```mermaid
 classDiagram
     class GateEvaluator {
-        +evaluate_compile_time(DeclaredGraph, CapabilityDescriptor) expected~vector~PassHandle~, CompileError~
-        +evaluate_runtime(ExecutionPlan, TimestampResults, span~PoolAllocator~) vector~PassHandle~
+        +EvaluateCompileTime(DeclaredGraph, CapabilityDescriptor) expected~vector~PassHandle~, CompileError~
+        +EvaluateRuntime(ExecutionPlan, TimestampResults, span~PoolAllocator~) vector~PassHandle~
     }
     class CapabilityDescriptor {
         +bool mesh_shaders
@@ -573,7 +573,7 @@ classDiagram
         +bool gpu_work_graphs
         +bool opacity_micromaps
         +bool split_barriers
-        +has(string_view) bool
+        +Has(string_view) bool
     }
     class CapabilityGateDesc {
         +string_view required_capability
@@ -613,22 +613,22 @@ classDiagram
 classDiagram
     class Executor {
         +Executor(Device, uint32_t frame_count)
-        +bind_resource(ResourceHandle, gpu_ResourceHandle) void
-        +bind_subgraph_params(SubGraphHandle, uint32_t, span) void
-        +set_resolution_scale(string_view, float) void
-        +set_pass_active(PassHandle, bool) void
-        +set_instance_active(SubGraphHandle, uint32_t, bool) void
-        +set_instance_count(SubGraphHandle, uint32_t) void
-        +invalidate_history(ResourceHandle) void
-        +inject_transfer(TransferPassDesc) void
-        +bind_residency_map(ResourceHandle, gpu_ResourceHandle) void
-        +set_budget_threshold(GateHandle, float) void
-        +execute(ExecutionPlan) void
-        +frame_index() uint64_t
-        -evaluate_budget_gates() void
-        -dispatch_encoding_groups(ExecutionPlan) void
-        -submit_command_buffers(ExecutionPlan) void
-        -advance_frame() void
+        +BindResource(ResourceHandle, gpu_ResourceHandle) void
+        +BindSubgraphParams(SubGraphHandle, uint32_t, span) void
+        +SetResolutionScale(string_view, float) void
+        +SetPassActive(PassHandle, bool) void
+        +SetInstanceActive(SubGraphHandle, uint32_t, bool) void
+        +SetInstanceCount(SubGraphHandle, uint32_t) void
+        +InvalidateHistory(ResourceHandle) void
+        +InjectTransfer(TransferPassDesc) void
+        +BindResidencyMap(ResourceHandle, gpu_ResourceHandle) void
+        +SetBudgetThreshold(GateHandle, float) void
+        +Execute(ExecutionPlan) void
+        +FrameIndex() uint64_t
+        -EvaluateBudgetGates() void
+        -DispatchEncodingGroups(ExecutionPlan) void
+        -SubmitCommandBuffers(ExecutionPlan) void
+        -AdvanceFrame() void
         -Device device_
         -TimelineFenceManager fence_manager_
         -vector~CommandBufferPool~ cmd_pools_
@@ -638,16 +638,16 @@ classDiagram
     }
     class PassContext {
         +cmd() CommandBuffer
-        +resolve(ResourceHandle) gpu_ResourceHandle
-        +allocate_constants(uint64_t, uint64_t) Allocation
-        +frame_index() uint64_t
-        +render_area() RenderArea
+        +Resolve(ResourceHandle) gpu_ResourceHandle
+        +AllocateConstants(uint64_t, uint64_t) Allocation
+        +FrameIndex() uint64_t
+        +RenderArea() RenderArea
     }
     class CommandBufferPool {
         +CommandBufferPool(Device, QueueAffinity)
         +acquire() CommandBuffer
-        +release(CommandBuffer) void
-        +reset_frame(uint32_t) void
+        +Release(CommandBuffer) void
+        +ResetFrame(uint32_t) void
     }
     class TransferPassDesc {
         +gpu_ResourceHandle src_staging
@@ -677,23 +677,23 @@ classDiagram
 classDiagram
     class DiagnosticsCollector {
         +DiagnosticsCollector(Device)
-        +read_timestamps() TimestampResults
-        +read_statistics() PipelineStatistics
-        +read_transfer_stats() TransferStatistics
-        +read_memory_stats() MemoryDiagnostics
-        +queue_depth(QueueAffinity) uint32_t
-        +request_readback(ReadbackRequest) void
-        +read_readback() span~uint8_t~
+        +ReadTimestamps() TimestampResults
+        +ReadStatistics() PipelineStatistics
+        +ReadTransferStats() TransferStatistics
+        +ReadMemoryStats() MemoryDiagnostics
+        +QueueDepth(QueueAffinity) uint32_t
+        +RequestReadback(ReadbackRequest) void
+        +ReadReadback() span~uint8_t~
     }
     class TimestampResults {
         +vector~Entry~ entries
-        +find(string_view) optional~Entry~
+        +Find(string_view) optional~Entry~
     }
     class TimestampEntry {
         +string_view pass_name
         +uint64_t begin_ns
         +uint64_t end_ns
-        +duration_ms() double
+        +DurationMs() double
     }
     class PipelineStatistics {
         +vector~Entry~ entries
@@ -756,72 +756,72 @@ Concrete backend implementations (D3D12, Vulkan, Metal) are documented in:
 ```mermaid
 classDiagram
     class GpuDevice["GpuDevice «concept»"] {
-        +capabilities() DeviceCapabilities
-        +create_texture(TextureDesc) expected~TextureHandle~
-        +create_buffer(BufferDesc) expected~BufferHandle~
-        +create_heap(HeapDesc) expected~HeapHandle~
-        +create_placed_texture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
-        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
-        +create_sparse_texture(SparseTextureDesc) expected~TextureHandle~
-        +update_sparse_bindings(TextureHandle, span) void
-        +query_texture_allocation_info(TextureDesc) AllocationInfo
-        +query_buffer_allocation_info(BufferDesc) AllocationInfo
-        +create_fence(uint64_t) expected~FenceHandle~
-        +fence_completed_value(FenceHandle) uint64_t
-        +wait_fence_cpu(FenceHandle, uint64_t) void
-        +create_command_pool(QueueType) CommandPool
-        +submit(QueueType, cmd_bufs, signals, waits) void
-        +create_mesh_render_pipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
-        +create_compute_pipeline(ComputePipelineDesc) expected~PipelineHandle~
-        +create_ray_tracing_pipeline(RayTracingPipelineDesc) expected~PipelineHandle~
-        +create_work_graph(WorkGraphDesc) expected~WorkGraphHandle~
-        +create_descriptor_heap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
-        +create_query_pool(QueryPoolDesc) expected~QueryPoolHandle~
-        +timestamp_period_ns() double
-        +create_swapchain(SwapchainDesc) expected~SwapchainHandle~
-        +acquire_next_image(SwapchainHandle) expected~TextureHandle~
-        +present(SwapchainHandle) void
-        +resize_swapchain(SwapchainHandle, uint32_t, uint32_t) void
-        +create_pipeline_cache(PipelineCacheDesc) expected~PipelineCacheHandle~
-        +serialize_pipeline_cache(PipelineCacheHandle) vector~uint8_t~
-        +wait_idle() void
-        +set_name(handle, string_view) void
-        +map(BufferHandle) void_ptr
-        +unmap(BufferHandle) void
+        +Capabilities() DeviceCapabilities
+        +CreateTexture(TextureDesc) expected~TextureHandle~
+        +CreateBuffer(BufferDesc) expected~BufferHandle~
+        +CreateHeap(HeapDesc) expected~HeapHandle~
+        +CreatePlacedTexture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
+        +CreatePlacedBuffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
+        +CreateSparseTexture(SparseTextureDesc) expected~TextureHandle~
+        +UpdateSparseBindings(TextureHandle, span) void
+        +QueryTextureAllocationInfo(TextureDesc) AllocationInfo
+        +QueryBufferAllocationInfo(BufferDesc) AllocationInfo
+        +CreateFence(uint64_t) expected~FenceHandle~
+        +FenceCompletedValue(FenceHandle) uint64_t
+        +WaitFenceCpu(FenceHandle, uint64_t) void
+        +CreateCommandPool(QueueType) CommandPool
+        +Submit(QueueType, cmd_bufs, signals, waits) void
+        +CreateMeshRenderPipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
+        +CreateComputePipeline(ComputePipelineDesc) expected~PipelineHandle~
+        +CreateRayTracingPipeline(RayTracingPipelineDesc) expected~PipelineHandle~
+        +CreateWorkGraph(WorkGraphDesc) expected~WorkGraphHandle~
+        +CreateDescriptorHeap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
+        +CreateQueryPool(QueryPoolDesc) expected~QueryPoolHandle~
+        +TimestampPeriodNs() double
+        +CreateSwapchain(SwapchainDesc) expected~SwapchainHandle~
+        +AcquireNextImage(SwapchainHandle) expected~TextureHandle~
+        +Present(SwapchainHandle) void
+        +ResizeSwapchain(SwapchainHandle, uint32_t, uint32_t) void
+        +CreatePipelineCache(PipelineCacheDesc) expected~PipelineCacheHandle~
+        +SerializePipelineCache(PipelineCacheHandle) vector~uint8_t~
+        +WaitIdle() void
+        +SetName(handle, string_view) void
+        +Map(BufferHandle) void_ptr
+        +Unmap(BufferHandle) void
     }
     class GpuCommandBuffer["GpuCommandBuffer «concept»"] {
-        +begin() void
-        +end() void
-        +barrier(BarrierDesc) void
-        +begin_render_pass(RenderPassDesc) void
-        +end_render_pass() void
-        +set_pipeline(PipelineHandle) void
-        +dispatch_mesh(x, y, z) void
-        +dispatch_mesh_indirect(buf, offset, count, stride) void
-        +dispatch_mesh_indirect_count(args...) void
-        +dispatch(x, y, z) void
-        +dispatch_indirect(buf, offset) void
-        +trace_rays(TraceRaysDesc) void
-        +trace_rays_indirect(buf, offset) void
-        +build_acceleration_structure(BuildDesc) void
-        +set_work_graph(WorkGraphHandle) void
-        +dispatch_graph(DispatchGraphDesc) void
-        +copy_buffer(src, src_off, dst, dst_off, size) void
-        +copy_buffer_to_texture(args...) void
-        +copy_texture_to_buffer(args...) void
-        +set_viewport(Viewport) void
-        +set_scissor(Scissor) void
-        +push_constants(data, size, offset) void
-        +bind_descriptor_heap(DescriptorHeapHandle) void
-        +write_timestamp(pool, index) void
-        +resolve_query_pool(pool, first, count, dst, offset) void
-        +begin_debug_label(name) void
-        +end_debug_label() void
+        +Begin() void
+        +End() void
+        +Barrier(BarrierDesc) void
+        +BeginRenderPass(RenderPassDesc) void
+        +EndRenderPass() void
+        +SetPipeline(PipelineHandle) void
+        +DispatchMesh(x, y, z) void
+        +DispatchMeshIndirect(buf, offset, count, stride) void
+        +DispatchMeshIndirectCount(args...) void
+        +Dispatch(x, y, z) void
+        +DispatchIndirect(buf, offset) void
+        +TraceRays(TraceRaysDesc) void
+        +TraceRaysIndirect(buf, offset) void
+        +BuildAccelerationStructure(BuildDesc) void
+        +SetWorkGraph(WorkGraphHandle) void
+        +DispatchGraph(DispatchGraphDesc) void
+        +CopyBuffer(src, src_off, dst, dst_off, size) void
+        +CopyBufferToTexture(args...) void
+        +CopyTextureToBuffer(args...) void
+        +SetViewport(Viewport) void
+        +SetScissor(Scissor) void
+        +PushConstants(data, size, offset) void
+        +BindDescriptorHeap(DescriptorHeapHandle) void
+        +WriteTimestamp(pool, index) void
+        +ResolveQueryPool(pool, first, count, dst, offset) void
+        +BeginDebugLabel(name) void
+        +EndDebugLabel() void
     }
     class GpuCommandPool["GpuCommandPool «concept»"] {
-        +allocate_command_buffer() CommandBuffer
-        +reset() void
-        +allocated_count() uint32_t
+        +AllocateCommandBuffer() CommandBuffer
+        +Reset() void
+        +AllocatedCount() uint32_t
     }
     class DeviceCapabilities {
         +bool mesh_shaders
@@ -884,14 +884,14 @@ classDiagram
     Executor --> ExecutionPlan : reads
     Executor --> TimelineFenceManager : owns
     Executor --> CommandBufferPool : owns
-    Executor --> Allocator : "allocate(), free()"
-    Executor --> RingAllocator : "allocate() per-frame staging"
+    Executor --> Allocator : "Allocate(), Free()"
+    Executor --> RingAllocator : "Allocate() per-frame staging"
     Executor --> TrackedCommandBuffer : "records commands"
-    Executor --> WorkGraphExecutor : "execute()"
+    Executor --> WorkGraphExecutor : "Execute()"
     DiagnosticsCollector --> Executor : reads metrics from
-    PoolAllocator --> Allocator : "allocate(), free()"
+    PoolAllocator --> Allocator : "Allocate(), Free()"
     AliasingSolver --> Allocator : "query_allocation_info()"
-    BarrierScheduler --> BarrierOptimizer : "enqueue(), flush()"
+    BarrierScheduler --> BarrierOptimizer : "Enqueue(), Flush()"
     BarrierScheduler --> DeviceCapabilities : "split_barriers check"
     GateEvaluator --> DiagnosticsCollector : reads timing from
     GateEvaluator --> DeviceCapabilities : "capability checks"
@@ -905,14 +905,14 @@ backend-specific types (D3D12, Vulkan, Metal).
 
 | Render Graph Type | GPU Runtime / Interface Type | Translation Point |
 |------------------|----------------------------|-------------------|
-| `rg::QueueAffinity` | `gpu::QueueType` | Direct 1:1 enum mapping (`graphics` → `graphics`, etc.) |
+| `rg::QueueAffinity` | `gpu::QueueType` | Direct 1:1 enum mapping (`kGraphics` → `kGraphics`, etc.) |
 | `rg::UsageType` | `gpu::PipelineStage` + `gpu::ResourceAccess` + `gpu::TextureLayout` | `BarrierScheduler` performs the multi-field translation |
-| `rg::sync::BarrierDesc` | `gpu_runtime::state::BarrierOptimizer::enqueue()` | Synchronization engine enqueues barriers at compile time |
-| `rg::builder::TransientResourceDesc` | `gpu_runtime::memory::Allocator::allocate()` | Resource system allocates via the runtime allocator |
-| `rg::builder::PassDescriptor` (execute callback) | `gpu_runtime::state::TrackedCommandBuffer` method calls | `PassContext::cmd()` exposes the tracked command buffer |
+| `rg::sync::BarrierDesc` | `gpu_runtime::state::BarrierOptimizer::Enqueue()` | Synchronization engine enqueues barriers at Compile time |
+| `rg::builder::TransientResourceDesc` | `gpu_runtime::memory::Allocator::Allocate()` | Resource system allocates via the runtime allocator |
+| `rg::builder::PassDescriptor` (Execute callback) | `gpu_runtime::state::TrackedCommandBuffer` method calls | `PassContext::cmd()` exposes the tracked command Buffer |
 | `rg::compiler::FenceCoordination` | `gpu::FenceSignal` + `gpu::FenceWait` | `TimelineFenceManager` translates fence operations |
-| `rg::resource::AliasingAssignment` | `gpu_runtime::memory::Allocator::allocate()` with placed strategy | Resource system creates placed resources from assignments |
-| `rg::gate::CapabilityDescriptor` | `gpu::DeviceCapabilities` | 1:1 field mapping — populated from device capabilities at init |
+| `rg::resource::AliasingAssignment` | `gpu_runtime::memory::Allocator::Allocate()` with placed strategy | Resource system creates placed resources from Assignments |
+| `rg::gate::CapabilityDescriptor` | `gpu::DeviceCapabilities` | 1:1 field mapping — populated from device Capabilities at init |
 
 ---
 
@@ -931,13 +931,13 @@ sequenceDiagram
     participant GPU
 
     Note over App,GPU: Phase 1 - Build (once)
-    App->>GB: add_pass(), declare_transient(), attach_gate()
-    App->>GB: declare_subgraph_template(), instantiate()
-    App->>GB: build()
+    App->>GB: AddPass(), DeclareTransient(), AttachGate()
+    App->>GB: DeclareSubgraphTemplate(), instantiate()
+    App->>GB: Build()
     GB-->>App: DeclaredGraph
 
     Note over App,GPU: Phase 2 - Compile (once)
-    App->>GC: compile(DeclaredGraph, capabilities)
+    App->>GC: Compile(DeclaredGraph, capabilities)
     GC->>GC: validate
     GC->>GC: evaluate gates
     GC->>GC: dead-pass elimination
@@ -953,7 +953,7 @@ sequenceDiagram
     loop Every Frame
         App->>Exec: bind_frame_data()
         App->>Exec: set_activation_flags()
-        App->>Exec: set_resolution_scale()
+        App->>Exec: SetResolutionScale()
         Exec->>Exec: evaluate budget gates
         Exec->>GPU: parallel encode + submit
         GPU-->>Exec: fence signals
@@ -978,17 +978,17 @@ sequenceDiagram
     participant EP as EncodingPlanner
     participant IM as InstanceMerger
 
-    GC->>Val: validate(declared_graph)
+    GC->>Val: Validate(declared_graph)
     Val-->>GC: errors or ok
-    GC->>GE: evaluate_compile_time(graph, caps)
+    GC->>GE: EvaluateCompileTime(graph, caps)
     GE-->>GC: pruned pass set
     GC->>DPE: eliminate(graph, pruned)
     DPE-->>GC: minimal graph
     GC->>TS: sort(minimal_graph)
     TS-->>GC: sorted passes
-    GC->>BS: compute(sorted_passes, graph)
+    GC->>BS: Compute(sorted_passes, graph)
     BS-->>GC: barrier schedule
-    GC->>AS: solve(lifetimes, sizes)
+    GC->>AS: Solve(lifetimes, sizes)
     AS-->>GC: aliasing map
     GC->>QP: partition(sorted_passes, affinities)
     QP-->>GC: queue submissions
@@ -1015,9 +1015,9 @@ sequenceDiagram
     participant GPU
 
     App->>Exec: bind_resource(slot, handle)
-    App->>Exec: set_pass_active(bloom, false)
-    App->>Exec: set_resolution_scale("render", 0.75)
-    App->>Exec: inject_transfer(upload_desc)
+    App->>Exec: SetPassActive(bloom, false)
+    App->>Exec: SetResolutionScale("render", 0.75)
+    App->>Exec: InjectTransfer(upload_desc)
 
     Exec->>BG: evaluate(timing_results, pools)
     BG-->>Exec: culled passes
@@ -1028,22 +1028,22 @@ sequenceDiagram
     Pool-->>T1: cmd_buf_1
     par Thread 0
         T0->>T0: encode shadow cascade 0
-        T0->>Ring: allocate_constants(256)
+        T0->>Ring: AllocateConstants(256)
         Ring-->>T0: offset + mapped_ptr
     and Thread 1
         T1->>T1: encode shadow cascade 1
-        T1->>Ring: allocate_constants(256)
+        T1->>Ring: AllocateConstants(256)
         Ring-->>T1: offset + mapped_ptr
     end
     T0-->>Exec: cmd_buf_0
     T1-->>Exec: cmd_buf_1
 
     Note over Exec,GPU: Submit in topological order
-    Exec->>GPU: submit(graphics, [cmd_buf_0, cmd_buf_1])
-    Exec->>GPU: signal(graphics_fence, frame_N)
+    Exec->>GPU: Submit(graphics, [cmd_buf_0, cmd_buf_1])
+    Exec->>GPU: Signal(graphics_fence, frame_N)
     GPU-->>Exec: fence signal
-    Exec->>Exec: advance_frame()
-    Exec->>Ring: advance_frame(frame_index)
+    Exec->>Exec: AdvanceFrame()
+    Exec->>Ring: AdvanceFrame(frame_index)
 ```
 
 ### Parallel Encoding
@@ -1109,7 +1109,7 @@ sequenceDiagram
     IO-->>Exec: staging buffer ready
 
     Note over Renderer,Diag: Frame N+1 - upload injected
-    Exec->>Exec: inject_transfer(staging, dest, priority)
+    Exec->>Exec: InjectTransfer(staging, dest, priority)
     Exec->>TX: upload pass
     TX->>TX: copy staging to device-local
     TX-->>Exec: completion fence signal

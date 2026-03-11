@@ -1,6 +1,7 @@
 /// @file harmonius.gpu_runtime.compat.cppm
 /// @brief Cross-backend feature emulation — split barrier emulation,
-///        barrier batching, queue ownership elision, ray tracing pipeline emulation.
+///        barrier batching, queue ownership elision, ray tracing pipeline
+///        emulation.
 ///
 /// Provides capability-aware wrappers that automatically select native or
 /// emulated code paths based on DeviceCapabilities.
@@ -9,69 +10,74 @@
 
 export module harmonius.gpu_runtime.compat;
 
-import std;
 import harmonius.gpu;
 import harmonius.gpu_runtime.memory;
 import harmonius.gpu_runtime.state;
 
-export namespace harmonius::gpu_runtime::compat
-{
+import std;
 
-  // ---------------------------------------------------------------------------
-  // Pipeline pair for RT emulation
-  // ---------------------------------------------------------------------------
+export namespace harmonius::gpu_runtime::compat {
 
-  struct PipelinePair
-  {
+// ---------------------------------------------------------------------------
+// Pipeline pair for RT emulation
+// ---------------------------------------------------------------------------
+
+/// A native ray tracing pipeline paired with its compute fallback.
+struct PipelinePair {
     gpu::PipelineHandle rt_pipeline;
     gpu::PipelineHandle compute_fallback;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // SBT types
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// SBT types
+// ---------------------------------------------------------------------------
 
-  struct SbtRecord
-  {
+/// A single shader binding table record containing local root arguments.
+struct SbtRecord {
     std::span<const std::uint8_t> local_root_args;
-  };
+};
 
-  struct SbtLayout
-  {
+/// Layout of a shader binding table across all shader stages.
+struct SbtLayout {
     std::span<const SbtRecord> raygen_records;
     std::span<const SbtRecord> miss_records;
     std::span<const SbtRecord> hit_group_records;
     std::span<const SbtRecord> callable_records;
     std::uint32_t record_stride;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Ray tracing adapter
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Ray tracing adapter
+// ---------------------------------------------------------------------------
 
-  class RayTracingAdapter
-  {
-  public:
-    explicit RayTracingAdapter(const gpu::DeviceCapabilities &caps,
-                               memory::Allocator &allocator);
+/// Capability-aware ray tracing dispatcher that falls back to compute emulation.
+/// @threadsafety Instances are not thread-safe.
+class RayTracingAdapter {
+ public:
+    explicit RayTracingAdapter(const gpu::DeviceCapabilities& caps, memory::Allocator& allocator);
 
-    auto register_pipeline_pair(std::uint64_t id, const PipelinePair &pair) -> void;
-    auto unregister_pipeline_pair(std::uint64_t id) -> void;
+    /// Register a native/fallback pipeline pair.
+    auto RegisterPipelinePair(std::uint64_t id, const PipelinePair& pair) -> void;
 
-    auto build_sbt(std::uint64_t pipeline_id, const SbtLayout &layout) -> void;
+    /// Unregister a pipeline pair.
+    auto UnregisterPipelinePair(std::uint64_t id) -> void;
 
-    auto dispatch(std::uint64_t pipeline_id,
-                  const gpu::TraceRaysDesc &desc,
-                  state::TrackedCommandBuffer &cmd) -> bool;
+    /// Build a shader binding table for the given pipeline.
+    auto BuildSbt(std::uint64_t pipeline_id, const SbtLayout& layout) -> void;
 
-    [[nodiscard]] auto is_emulated() const -> bool;
+    /// Dispatch ray tracing work, using emulation if necessary. Returns true if emulated.
+    [[nodiscard]] auto Dispatch(std::uint64_t pipeline_id, const gpu::TraceRaysDesc& desc,
+                                state::TrackedCommandBuffer& cmd) -> bool;
 
-  private:
-    const gpu::DeviceCapabilities &caps_;
-    memory::Allocator &allocator_;
+    /// Returns true if ray tracing is emulated via compute.
+    [[nodiscard]] auto IsEmulated() const -> bool;
+
+ private:
+    const gpu::DeviceCapabilities& caps_;
+    memory::Allocator& allocator_;
     bool emulated_;
     std::unordered_map<std::uint64_t, PipelinePair> pairs_;
     std::unordered_map<std::uint64_t, gpu::BufferHandle> sbt_buffers_;
-  };
+};
 
-} // namespace harmonius::gpu_runtime::compat
+}  // namespace harmonius::gpu_runtime::compat

@@ -73,9 +73,9 @@ classDiagram
     }
     class AssetCooker {
         +AssetCooker(gpu_Backend target)
-        +cook(RawAsset) expected~CookedAsset, CookError~
-        +cook_batch(span~RawAsset~) vector~expected~
-        +register_processor(AssetType, function) void
+        +Cook(RawAsset) expected~CookedAsset, CookError~
+        +CookBatch(span~RawAsset~) vector~expected~
+        +RegisterProcessor(AssetType, function) void
     }
 
     RawAsset --> AssetId
@@ -108,8 +108,8 @@ classDiagram
         +float normal_cone[4]
     }
     class MeshletBuilder {
-        +build(span~float~, span~uint32_t~, uint32_t) MeshletData
-        +build_lod_chain(span~float~, span~uint32_t~, uint32_t, uint32_t) vector~MeshletData~
+        +Build(span~float~, span~uint32_t~, uint32_t) MeshletData
+        +BuildLodChain(span~float~, span~uint32_t~, uint32_t, uint32_t) vector~MeshletData~
     }
 
     MeshletData *-- Meshlet
@@ -129,7 +129,7 @@ classDiagram
         +uint32_t max_dimension
     }
     class TextureCompressor {
-        +compress(span~uint8_t~, uint32_t, uint32_t, TextureCookOptions) CookedAsset
+        +Compress(span~uint8_t~, uint32_t, uint32_t, TextureCookOptions) CookedAsset
     }
 
     TextureCompressor --> TextureCookOptions : reads
@@ -146,7 +146,7 @@ classDiagram
     class BundleManifest {
         +vector~BundleEntry~ bundles
         +vector~AssetEntry~ assets
-        +find(AssetId) AssetEntry*
+        +Find(AssetId) AssetEntry*
     }
     class BundleEntry {
         +string bundle_path
@@ -207,12 +207,12 @@ classDiagram
     }
     class StreamingScheduler {
         +StreamingScheduler(BundleManifest, PoolAllocator, RingAllocator)
-        +request(span~StreamRequest~) void
-        +process_pending() vector~TransferPassDesc~
-        +set_eviction_policy(function) void
-        +is_resident(AssetId) bool
-        +residency_ratio() float
-        +io_backend() IOBackend
+        +Request(span~StreamRequest~) void
+        +ProcessPending() vector~TransferPassDesc~
+        +SetEvictionPolicy(function) void
+        +IsResident(AssetId) bool
+        +ResidencyRatio() float
+        +IoBackend() IOBackend
         -IOBackend io_backend_
     }
 
@@ -228,8 +228,9 @@ classDiagram
 ### 6. IO Backend
 
 `harmonius::asset` — Platform-native async IO with concept-based static dispatch.
-One backend is compiled per binary, selected at build time via CMake. No virtual
-methods, no vtables, no dynamic dispatch.
+No C++ standard library file IO is used. One backend is compiled per binary, selected
+at build time via CMake and target platform. No virtual methods, no vtables, no
+dynamic dispatch.
 
 ```mermaid
 classDiagram
@@ -242,34 +243,41 @@ classDiagram
     }
     class IOBackendConcept {
         <<concept>>
-        +submit_read(string_view, uint64_t, uint64_t, ResourceHandle, uint64_t) void
-        +poll_completions() vector~IOCompletion~
+        +SubmitRead(string_view, uint64_t, uint64_t, ResourceHandle, uint64_t) void
+        +PollCompletions() vector~IOCompletion~
     }
-    class MetalIOBackend {
-        +submit_read(string_view, uint64_t, uint64_t, ResourceHandle, uint64_t) void
-        +poll_completions() vector~IOCompletion~
+    class DispatchIOBackend {
+        +SubmitRead(string_view, uint64_t, uint64_t, ResourceHandle, uint64_t) void
+        +PollCompletions() vector~IOCompletion~
     }
     class DirectStorageBackend {
-        +submit_read(string_view, uint64_t, uint64_t, ResourceHandle, uint64_t) void
-        +poll_completions() vector~IOCompletion~
+        +SubmitRead(string_view, uint64_t, uint64_t, ResourceHandle, uint64_t) void
+        +PollCompletions() vector~IOCompletion~
+    }
+    class IocpBackend {
+        +SubmitRead(string_view, uint64_t, uint64_t, ResourceHandle, uint64_t) void
+        +PollCompletions() vector~IOCompletion~
     }
     class IoUringBackend {
-        +submit_read(string_view, uint64_t, uint64_t, ResourceHandle, uint64_t) void
-        +poll_completions() vector~IOCompletion~
+        +SubmitRead(string_view, uint64_t, uint64_t, ResourceHandle, uint64_t) void
+        +PollCompletions() vector~IOCompletion~
     }
     class IOBackend {
         <<compile-time alias>>
     }
 
-    IOBackendConcept ..> MetalIOBackend : satisfied by
+    IOBackendConcept ..> DispatchIOBackend : satisfied by
     IOBackendConcept ..> DirectStorageBackend : satisfied by
+    IOBackendConcept ..> IocpBackend : satisfied by
     IOBackendConcept ..> IoUringBackend : satisfied by
-    MetalIOBackend --> IOCompletion : produces
+    DispatchIOBackend --> IOCompletion : produces
     DirectStorageBackend --> IOCompletion : produces
+    IocpBackend --> IOCompletion : produces
     IoUringBackend --> IOCompletion : produces
-    IOBackend ..> MetalIOBackend : Metal
-    IOBackend ..> DirectStorageBackend : D3D12
-    IOBackend ..> IoUringBackend : Vulkan
+    IOBackend ..> DispatchIOBackend : Metal (macOS)
+    IOBackend ..> DirectStorageBackend : D3D12 (Windows)
+    IOBackend ..> IocpBackend : Vulkan (Windows)
+    IOBackend ..> IoUringBackend : Vulkan (Linux)
 ```
 
 ### 7. Resource Registry
@@ -282,17 +290,17 @@ classDiagram
     class AssetHandle {
         +uint32_t index
         +uint32_t generation
-        +is_valid() bool
+        +IsValid() bool
     }
     class ResourceRegistry {
         +ResourceRegistry(gpu_Device, BindlessDescriptorHeap)
-        +register_asset(AssetId, gpu_ResourceHandle, CookedMetadata) AssetHandle
-        +unregister(AssetHandle) void
-        +resolve(AssetHandle) expected~gpu_ResourceHandle, AssetError~
-        +resolve_descriptor_index(AssetHandle) expected~uint32_t, AssetError~
-        +find_by_rg_resource(rg_ResourceHandle) AssetHandle
-        +registered_count() uint32_t
-        +total_gpu_bytes() uint64_t
+        +RegisterAsset(AssetId, gpu_ResourceHandle, CookedMetadata) AssetHandle
+        +Unregister(AssetHandle) void
+        +Resolve(AssetHandle) expected~gpu_ResourceHandle, AssetError~
+        +ResolveDescriptorIndex(AssetHandle) expected~uint32_t, AssetError~
+        +FindByRgResource(rg_ResourceHandle) AssetHandle
+        +RegisteredCount() uint32_t
+        +TotalGpuBytes() uint64_t
         -vector~Entry~ entries_
         -unordered_map id_to_index_
         -queue~uint32_t~ free_list_
@@ -323,13 +331,13 @@ resources. Shaders address resources by `uint32_t` index via push constants.
 classDiagram
     class BindlessDescriptorHeap {
         +BindlessDescriptorHeap(gpu_Device, uint32_t max_descriptors)
-        +allocate(gpu_ResourceHandle) expected~uint32_t, HeapError~
-        +free(uint32_t index) void
-        +update(uint32_t index, gpu_ResourceHandle) void
-        +gpu_handle() gpu_ResourceHandle
-        +import_to_graph(GraphBuilder) rg_ResourceHandle
-        +allocated_count() uint32_t
-        +capacity() uint32_t
+        +Allocate(gpu_ResourceHandle) expected~uint32_t, HeapError~
+        +Free(uint32_t index) void
+        +Update(uint32_t index, gpu_ResourceHandle) void
+        +GpuHandle() gpu_ResourceHandle
+        +ImportToGraph(GraphBuilder) rg_ResourceHandle
+        +AllocatedCount() uint32_t
+        +Capacity() uint32_t
         -gpu_Device device_
         -gpu_ResourceHandle heap_handle_
         -queue~uint32_t~ free_list_
@@ -413,12 +421,12 @@ boundaries.
 
 | Asset Pipeline Type      | Render Graph / GPU Type                  | Translation Point                |
 | ------------------------ | ---------------------------------------- | -------------------------------- |
-| `AssetId` (uint64_t)    | `rg::ResourceHandle`                     | `ResourceRegistry::find_by_rg_resource()` |
-| `AssetHandle` (gen+idx) | `gpu::ResourceHandle`                    | `ResourceRegistry::resolve()`    |
-| `AssetHandle` (gen+idx) | `uint32_t` descriptor index              | `ResourceRegistry::resolve_descriptor_index()` |
+| `AssetId` (uint64_t)    | `rg::ResourceHandle`                     | `ResourceRegistry::FindByRgResource()` |
+| `AssetHandle` (gen+idx) | `gpu::ResourceHandle`                    | `ResourceRegistry::Resolve()`    |
+| `AssetHandle` (gen+idx) | `uint32_t` descriptor index              | `ResourceRegistry::ResolveDescriptorIndex()` |
 | `CookedMetadata`        | `gpu::TextureDesc` / `gpu::BufferDesc`   | Resource allocation at registration |
-| `StreamRequest`         | `exec::TransferPassDesc`                 | `StreamingScheduler::process_pending()` |
-| `IOCompletion`          | `gpu::ResourceHandle` (staging buffer)   | IO backend returns staging refs  |
+| `StreamRequest`         | `exec::TransferPassDesc`                 | `StreamingScheduler::ProcessPending()` |
+| `IOCompletion`          | `gpu::ResourceHandle` (staging Buffer)   | IO backend returns staging refs  |
 | `ChunkLayout::alignment`| `gpu::AllocationInfo` alignment          | 64KB alignment matches GPU DMA   |
 
 ---
@@ -449,7 +457,7 @@ sequenceDiagram
     MB->>MB: optimize, meshletize, LOD chain
     MB-->>Cook: MeshletData
     Cook->>TC: texture raw data
-    TC->>TC: block compress (BC7/BC5), mip-gen
+    TC->>TC: block Compress (BC7/BC5), mip-gen
     TC-->>Cook: CookedAsset
     Cook->>Pack: CookedAsset batch
     Pack->>Pack: align 64KB, combine chunks
@@ -457,22 +465,22 @@ sequenceDiagram
 
     Note over DCC,RG: Phase 2 - Runtime Streaming
     Sched->>Sched: evaluate camera, visibility
-    Sched->>IO: submit_read(chunk)
+    Sched->>IO: SubmitRead(chunk)
     IO->>IO: platform-native async read
     IO-->>Sched: IOCompletion (staging buffer)
-    Sched->>Exec: inject_transfer(staging, device)
+    Sched->>Exec: InjectTransfer(staging, device)
     Exec->>RG: transfer pass in graph
     RG->>RG: DMA upload (transfer queue)
     RG-->>Exec: completion fence
 
     Note over DCC,RG: Phase 3 - Registration
     Exec->>Reg: register_asset(id, gpu_handle, metadata)
-    Reg->>Heap: allocate(gpu_handle)
+    Reg->>Heap: Allocate(gpu_handle)
     Heap-->>Reg: descriptor_index
     Reg-->>Exec: AssetHandle
 
     Note over DCC,RG: Phase 4 - Rendering
-    RG->>Reg: resolve_descriptor_index(handle)
+    RG->>Reg: ResolveDescriptorIndex(handle)
     Reg-->>RG: uint32_t index
     RG->>RG: push_constants.idx = index
     RG->>RG: shader reads ResourceDescriptorHeap[index]
@@ -498,28 +506,28 @@ sequenceDiagram
 
     Note over Renderer,Heap: Frame N - fault detected
     GFX->>Renderer: page fault (asset not resident)
-    Renderer->>Sched: request([asset_id, critical])
+    Renderer->>Sched: Request([asset_id, critical])
     Sched->>Sched: sort by priority, camera_distance
-    Sched->>IO: submit_read(bundle_path, offset, size, staging, buf_offset)
+    Sched->>IO: SubmitRead(bundle_path, offset, size, staging, buf_offset)
     IO->>IO: platform-native async read
     IO-->>Sched: IOCompletion (success, staging_buffer)
 
     Note over Renderer,Heap: Frame N+1 - upload and register
-    Sched->>Pool: allocate() device-local memory
+    Sched->>Pool: Allocate() device-local memory
     Pool-->>Sched: gpu::ResourceHandle
-    Sched->>Exec: inject_transfer(staging to device)
+    Sched->>Exec: InjectTransfer(staging to device)
     Exec->>TX: encode copy command
     TX->>TX: copy staging to device-local
     TX-->>Exec: completion fence signal
 
     Sched->>Reg: register_asset(id, gpu_handle, metadata)
-    Reg->>Heap: allocate(gpu_handle)
+    Reg->>Heap: Allocate(gpu_handle)
     Heap-->>Reg: descriptor_index
     Reg-->>Sched: AssetHandle
 
     Exec->>GFX: bind updated resources
     GFX->>GFX: render pass reads new asset
-    Renderer->>Sched: is_resident(asset_id)
+    Renderer->>Sched: IsResident(asset_id)
     Sched-->>Renderer: true
 ```
 
@@ -542,7 +550,7 @@ sequenceDiagram
     Sched->>Reg: register_asset(asset_id, gpu_handle, metadata)
     Reg->>Reg: find free slot in entries_ (or grow)
     Reg->>Reg: id_to_index_[asset_id] = slot
-    Reg->>Heap: allocate(gpu_handle)
+    Reg->>Heap: Allocate(gpu_handle)
 
     alt Free list not empty
         Heap->>Heap: index = free_list_.front()
@@ -557,15 +565,15 @@ sequenceDiagram
     Reg-->>Sched: AssetHandle(slot, generation)
 
     Note over Sched,Shader: Render graph uses descriptor
-    RG->>Reg: resolve_descriptor_index(handle)
+    RG->>Reg: ResolveDescriptorIndex(handle)
     Reg->>Reg: validate generation
     Reg-->>RG: expected(42)
     RG->>Shader: push_constants.texture_idx = 42
     Shader->>Shader: ResourceDescriptorHeap[42]
 
     Note over Sched,Shader: Asset eviction
-    Sched->>Reg: unregister(handle)
-    Reg->>Heap: free(descriptor_index)
+    Sched->>Reg: Unregister(handle)
+    Reg->>Heap: Free(descriptor_index)
     Heap->>Heap: free_list_.push(descriptor_index)
     Reg->>Reg: increment generation
     Reg->>Reg: free_list_.push(slot)

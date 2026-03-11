@@ -34,7 +34,7 @@ Companion to [gpu-backend-interface.md](gpu-backend-interface.md).
 ### 1. Handles
 
 `harmonius::gpu` -- Opaque typed handles. All are `enum class : uint64_t` with an
-`invalid = 0` sentinel value. The backend stores implementation-specific data behind
+`kInvalid = 0` sentinel value. The backend stores implementation-specific data behind
 each handle.
 
 ```mermaid
@@ -790,66 +790,66 @@ violations at compile time.
 classDiagram
     class GpuDevice {
         <<concept>>
-        +capabilities() DeviceCapabilities
-        +create_texture(TextureDesc) expected~TextureHandle~
-        +create_buffer(BufferDesc) expected~BufferHandle~
-        +create_heap(HeapDesc) expected~HeapHandle~
-        +create_placed_texture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
-        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
-        +create_sparse_texture(SparseTextureDesc) expected~TextureHandle~
-        +create_fence(uint64_t) expected~FenceHandle~
-        +create_command_pool(QueueType) CommandPool
-        +submit(QueueType, cmd_bufs, signals, waits) void
-        +create_mesh_render_pipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
-        +create_compute_pipeline(ComputePipelineDesc) expected~PipelineHandle~
-        +create_ray_tracing_pipeline(RayTracingPipelineDesc) expected~PipelineHandle~
-        +create_work_graph(WorkGraphDesc) expected~WorkGraphHandle~
-        +create_descriptor_heap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
-        +create_swapchain(SwapchainDesc) expected~SwapchainHandle~
-        +create_pipeline_cache(PipelineCacheDesc) expected~PipelineCacheHandle~
-        +query_texture_allocation_info(TextureDesc) AllocationInfo
-        +query_buffer_allocation_info(BufferDesc) AllocationInfo
-        +wait_idle() void
-        +map(BufferHandle) void_ptr
-        +unmap(BufferHandle) void
+        +Capabilities() DeviceCapabilities
+        +CreateTexture(TextureDesc) expected~TextureHandle~
+        +CreateBuffer(BufferDesc) expected~BufferHandle~
+        +CreateHeap(HeapDesc) expected~HeapHandle~
+        +CreatePlacedTexture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
+        +CreatePlacedBuffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
+        +CreateSparseTexture(SparseTextureDesc) expected~TextureHandle~
+        +CreateFence(uint64_t) expected~FenceHandle~
+        +CreateCommandPool(QueueType) CommandPool
+        +Submit(QueueType, cmd_bufs, signals, waits) void
+        +CreateMeshRenderPipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
+        +CreateComputePipeline(ComputePipelineDesc) expected~PipelineHandle~
+        +CreateRayTracingPipeline(RayTracingPipelineDesc) expected~PipelineHandle~
+        +CreateWorkGraph(WorkGraphDesc) expected~WorkGraphHandle~
+        +CreateDescriptorHeap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
+        +CreateSwapchain(SwapchainDesc) expected~SwapchainHandle~
+        +CreatePipelineCache(PipelineCacheDesc) expected~PipelineCacheHandle~
+        +QueryTextureAllocationInfo(TextureDesc) AllocationInfo
+        +QueryBufferAllocationInfo(BufferDesc) AllocationInfo
+        +WaitIdle() void
+        +Map(BufferHandle) void_ptr
+        +Unmap(BufferHandle) void
     }
     class GpuCommandBuffer {
         <<concept>>
-        +begin() void
-        +end() void
-        +barrier(BarrierDesc) void
-        +begin_render_pass(RenderPassDesc) void
-        +end_render_pass() void
-        +set_pipeline(PipelineHandle) void
-        +dispatch_mesh(x, y, z) void
-        +dispatch_mesh_indirect(buf, offset, count, stride) void
-        +dispatch_mesh_indirect_count(args) void
-        +dispatch(x, y, z) void
-        +dispatch_indirect(buf, offset) void
-        +trace_rays(TraceRaysDesc) void
-        +trace_rays_indirect(buf, offset) void
-        +build_acceleration_structure(BuildDesc) void
-        +set_work_graph(WorkGraphHandle) void
-        +dispatch_graph(DispatchGraphDesc) void
-        +copy_buffer(src, src_off, dst, dst_off, size) void
-        +copy_texture(src, sub, dst, sub, ext) void
-        +copy_buffer_to_texture(args) void
-        +copy_texture_to_buffer(args) void
-        +set_viewport(Viewport) void
-        +set_scissor(Scissor) void
-        +push_constants(data, size, offset) void
-        +bind_descriptor_heap(DescriptorHeapHandle) void
-        +write_timestamp(pool, index) void
-        +resolve_query_pool(pool, first, count, dst, offset) void
-        +begin_debug_label(name) void
-        +end_debug_label() void
-        +insert_debug_label(name) void
+        +Begin() void
+        +End() void
+        +Barrier(BarrierDesc) void
+        +BeginRenderPass(RenderPassDesc) void
+        +EndRenderPass() void
+        +SetPipeline(PipelineHandle) void
+        +DispatchMesh(x, y, z) void
+        +DispatchMeshIndirect(buf, offset, count, stride) void
+        +DispatchMeshIndirectCount(args) void
+        +Dispatch(x, y, z) void
+        +DispatchIndirect(buf, offset) void
+        +TraceRays(TraceRaysDesc) void
+        +TraceRaysIndirect(buf, offset) void
+        +BuildAccelerationStructure(BuildDesc) void
+        +SetWorkGraph(WorkGraphHandle) void
+        +DispatchGraph(DispatchGraphDesc) void
+        +CopyBuffer(src, src_off, dst, dst_off, size) void
+        +CopyTexture(src, sub, dst, sub, ext) void
+        +CopyBufferToTexture(args) void
+        +CopyTextureToBuffer(args) void
+        +SetViewport(Viewport) void
+        +SetScissor(Scissor) void
+        +PushConstants(data, size, offset) void
+        +BindDescriptorHeap(DescriptorHeapHandle) void
+        +WriteTimestamp(pool, index) void
+        +ResolveQueryPool(pool, first, count, dst, offset) void
+        +BeginDebugLabel(name) void
+        +EndDebugLabel() void
+        +InsertDebugLabel(name) void
     }
     class GpuCommandPool {
         <<concept>>
-        +allocate_command_buffer() CommandBuffer
-        +reset() void
-        +allocated_count() uint32_t
+        +AllocateCommandBuffer() CommandBuffer
+        +Reset() void
+        +AllocatedCount() uint32_t
     }
 
     GpuDevice --> GpuCommandPool : creates
@@ -929,11 +929,11 @@ classDiagram
     GpuDevice --> PipelineStateTypes : accepts pipeline descs
     GpuDevice --> ResourceBindingTypes : accepts descriptor writes
     GpuDevice --> DiagnosticsTypes : creates query pools
-    GpuCommandBuffer --> SynchronizationTypes : barrier()
-    GpuCommandBuffer --> RenderPassTypes : begin_render_pass()
+    GpuCommandBuffer --> SynchronizationTypes : Barrier()
+    GpuCommandBuffer --> RenderPassTypes : BeginRenderPass()
     GpuCommandBuffer --> Handles : PipelineHandle, WorkGraphHandle
-    GpuCommandBuffer --> IndirectCommandTypes : trace_rays(), dispatch_graph()
-    GpuCommandBuffer --> AccelerationStructures : build_acceleration_structure()
+    GpuCommandBuffer --> IndirectCommandTypes : TraceRays(), DispatchGraph()
+    GpuCommandBuffer --> AccelerationStructures : BuildAccelerationStructure()
     GpuDevice --> GpuCommandPool : creates
     GpuCommandPool --> GpuCommandBuffer : allocates
 ```
@@ -944,17 +944,17 @@ Which concept methods create and destroy each handle type.
 
 | Handle | Created By | Destroyed By |
 |--------|-----------|-------------|
-| `TextureHandle` | `GpuDevice::create_texture`, `create_placed_texture`, `create_sparse_texture` | `GpuDevice::destroy_texture` |
-| `BufferHandle` | `GpuDevice::create_buffer`, `create_placed_buffer` | `GpuDevice::destroy_buffer` |
-| `HeapHandle` | `GpuDevice::create_heap` | `GpuDevice::destroy_heap` |
-| `AccelerationStructureHandle` | `GpuDevice::create_acceleration_structure` | `GpuDevice::destroy_acceleration_structure` |
-| `FenceHandle` | `GpuDevice::create_fence` | `GpuDevice::destroy_fence` |
-| `PipelineHandle` | `GpuDevice::create_mesh_render_pipeline`, `create_compute_pipeline`, `create_ray_tracing_pipeline` | `GpuDevice::destroy_pipeline` |
-| `WorkGraphHandle` | `GpuDevice::create_work_graph` | `GpuDevice::destroy_work_graph` |
-| `DescriptorHeapHandle` | `GpuDevice::create_descriptor_heap` | `GpuDevice::destroy_descriptor_heap` |
-| `QueryPoolHandle` | `GpuDevice::create_query_pool` | `GpuDevice::destroy_query_pool` |
-| `SwapchainHandle` | `GpuDevice::create_swapchain` | `GpuDevice::destroy_swapchain` |
-| `PipelineCacheHandle` | `GpuDevice::create_pipeline_cache` | `GpuDevice::destroy_pipeline_cache` |
+| `TextureHandle` | `GpuDevice::CreateTexture`, `CreatePlacedTexture`, `CreateSparseTexture` | `GpuDevice::DestroyTexture` |
+| `BufferHandle` | `GpuDevice::CreateBuffer`, `CreatePlacedBuffer` | `GpuDevice::DestroyBuffer` |
+| `HeapHandle` | `GpuDevice::CreateHeap` | `GpuDevice::DestroyHeap` |
+| `AccelerationStructureHandle` | `GpuDevice::CreateAccelerationStructure` | `GpuDevice::DestroyAccelerationStructure` |
+| `FenceHandle` | `GpuDevice::CreateFence` | `GpuDevice::DestroyFence` |
+| `PipelineHandle` | `GpuDevice::CreateMeshRenderPipeline`, `CreateComputePipeline`, `CreateRayTracingPipeline` | `GpuDevice::DestroyPipeline` |
+| `WorkGraphHandle` | `GpuDevice::CreateWorkGraph` | `GpuDevice::DestroyWorkGraph` |
+| `DescriptorHeapHandle` | `GpuDevice::CreateDescriptorHeap` | `GpuDevice::DestroyDescriptorHeap` |
+| `QueryPoolHandle` | `GpuDevice::CreateQueryPool` | `GpuDevice::DestroyQueryPool` |
+| `SwapchainHandle` | `GpuDevice::CreateSwapchain` | `GpuDevice::DestroySwapchain` |
+| `PipelineCacheHandle` | `GpuDevice::CreatePipelineCache` | `GpuDevice::DestroyPipelineCache` |
 
 ---
 
@@ -993,7 +993,7 @@ sequenceDiagram
     Note over App,NS: Direct static dispatch
     App->>NS: gpu::Device device(desc)
     NS-->>App: D3D12Device ctor (no vtable)
-    App->>NS: device.create_texture(td)
+    App->>NS: device.CreateTexture(td)
     NS-->>App: Inlined via LTO
 ```
 
@@ -1010,26 +1010,26 @@ sequenceDiagram
     participant Cmd as CommandBuffer
     participant GPU
 
-    Exec->>Dev: create_command_pool(graphics)
+    Exec->>Dev: CreateCommandPool(graphics)
     Dev-->>Exec: CommandPool
 
-    Exec->>Pool: allocate_command_buffer()
+    Exec->>Pool: AllocateCommandBuffer()
     Pool-->>Exec: CommandBuffer
 
-    Exec->>Cmd: begin()
-    Cmd->>Cmd: barrier(pre_barriers)
-    Cmd->>Cmd: begin_render_pass(rp_desc)
-    Cmd->>Cmd: set_pipeline(mesh_pso)
-    Cmd->>Cmd: push_constants(draw_data)
-    Cmd->>Cmd: dispatch_mesh(x, y, z)
-    Cmd->>Cmd: end_render_pass()
-    Exec->>Cmd: end()
+    Exec->>Cmd: Begin()
+    Cmd->>Cmd: Barrier(pre_barriers)
+    Cmd->>Cmd: BeginRenderPass(rp_desc)
+    Cmd->>Cmd: SetPipeline(mesh_pso)
+    Cmd->>Cmd: PushConstants(draw_data)
+    Cmd->>Cmd: DispatchMesh(x, y, z)
+    Cmd->>Cmd: EndRenderPass()
+    Exec->>Cmd: End()
 
-    Exec->>Dev: submit(graphics, [cmd], signals, waits)
+    Exec->>Dev: Submit(graphics, [cmd], signals, waits)
     Dev->>GPU: Queue submit
     GPU-->>Dev: Fence signaled
 
-    Exec->>Pool: reset()
+    Exec->>Pool: Reset()
 ```
 
 ### Cross-Queue Synchronization with Timeline Fences
@@ -1050,26 +1050,26 @@ sequenceDiagram
 
     Note over App,FC: Frame N
 
-    App->>TX: submit(transfer, [upload_cmd])
+    App->>TX: Submit(transfer, [upload_cmd])
     TX->>TX: Copy staging to device
-    TX->>FC: signal(1)
+    TX->>FC: Signal(1)
 
-    App->>AC: submit(compute, [cull_cmd], wait FC:1)
+    App->>AC: Submit(compute, [cull_cmd], wait FC:1)
     FC-->>AC: wait satisfied
     AC->>AC: GPU culling pass
-    AC->>FB: signal(1)
+    AC->>FB: Signal(1)
 
-    App->>GFX: submit(graphics, [render_cmd], wait FB:1)
+    App->>GFX: Submit(graphics, [render_cmd], wait FB:1)
     FB-->>GFX: wait satisfied
     GFX->>GFX: Mesh shader rendering
-    GFX->>FA: signal(1)
+    GFX->>FA: Signal(1)
 
-    App->>FA: wait_fence_cpu(1)
+    App->>FA: WaitFenceCpu(1)
     FA-->>App: Frame N complete
 
     Note over App,FC: Frame N+1
 
-    App->>TX: submit(transfer, signal FC:2)
-    App->>AC: submit(compute, wait FC:2, signal FB:2)
-    App->>GFX: submit(graphics, wait FB:2, signal FA:2)
+    App->>TX: Submit(transfer, signal FC:2)
+    App->>AC: Submit(compute, wait FC:2, signal FB:2)
+    App->>GFX: Submit(graphics, wait FB:2, signal FA:2)
 ```

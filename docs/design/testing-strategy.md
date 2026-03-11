@@ -97,7 +97,7 @@ All testing adheres to these principles, derived from
 | Test-driven development | R-4.1.2 | All modules follow test-first: write a failing test, implement minimal code to pass, refactor. |
 | GPU CI on all platforms | R-4.1.5 | CI runs on GPU hardware for macOS/Metal, Linux/Vulkan, and Windows/D3D12. |
 | Validation layer enforcement | R-4.1.8 | GPU validation layer errors are treated as test failures. No warnings suppressed in CI. |
-| Zero-overhead instrumentation | R-4.1.7 | Disabled instrumentation has zero runtime overhead; tested by benchmarking with/without. |
+| Zero-overhead instrumentation | R-4.1.7 | Disabled instrumentation Has zero runtime overhead; tested by benchmarking with/without. |
 | Deterministic execution | RG-5.6 | Graph compiler produces deterministic ordering; tests verify reproducibility across runs. |
 | Test isolation | — | Each test creates its own device, resources, and fence; teardown destroys all state. |
 
@@ -149,23 +149,23 @@ assertions compare against computed expected values, not reference images.
 
 ```cpp
 // Example: compute shader writes a known pattern, readback asserts exact match.
-auto cmd = pool.allocate_command_buffer();
-cmd.begin();
-cmd.set_pipeline(fill_pipeline);
-cmd.push_constants(&fill_value, sizeof(fill_value));
-cmd.dispatch(width / 8, height / 8, 1);
-cmd.barrier(storage_to_transfer);
-cmd.copy_buffer(output_buffer, readback_buffer, size);
-cmd.end();
+auto cmd = pool.AllocateCommandBuffer();
+cmd.Begin();
+cmd.SetPipeline(fill_pipeline);
+cmd.PushConstants(&fill_value, sizeof(fill_value));
+cmd.Dispatch(width / 8, height / 8, 1);
+cmd.Barrier(storage_to_transfer);
+cmd.CopyBuffer(output_buffer, readback_buffer, size);
+cmd.End();
 
-device.submit(QueueType::graphics, {cmd}, {fence, 1}, {});
-device.wait_fence(fence, 1);
+device.Submit(QueueType::kGraphics, {cmd}, {fence, 1}, {});
+device.WaitFence(fence, 1);
 
-auto* data = static_cast<const uint32_t*>(device.map_buffer(readback_buffer));
+auto* data = static_cast<const uint32_t*>(device.MapBuffer(readback_buffer));
 for (uint64_t i = 0; i < element_count; ++i) {
-    REQUIRE(data[i] == fill_value);
+  REQUIRE(data[i] == fill_value);
 }
-device.unmap_buffer(readback_buffer);
+device.UnmapBuffer(readback_buffer);
 ```
 
 ---
@@ -230,7 +230,7 @@ render graph execution.
 Tests for `harmonius::gpu_runtime::state` verify redundant-state elimination by counting calls
 forwarded to the underlying command buffer.
 
-- **Pipeline cache:** bind the same pipeline twice; assert only one `set_pipeline` call is
+- **Pipeline cache:** bind the same pipeline twice; assert only one `SetPipeline` call is
   forwarded. Bind a different pipeline; assert it is forwarded (GR-2.1, GR-2.2).
 - **Descriptor heap cache:** bind the same descriptor heap twice; assert one forward (GR-2.3).
 - **Dynamic state cache:** set identical viewport, scissor, and blend constants twice; assert
@@ -239,7 +239,7 @@ forwarded to the underlying command buffer.
   Change data; assert forward (GR-2.5).
 - **Resource state cache:** transition a resource to state A, then request A again; assert
   barrier is elided. Request state B; assert barrier is emitted (GR-2.6).
-- **State reset:** call `begin()` on a tracked command buffer, then set pipeline. Assert the
+- **State reset:** call `Begin()` on a tracked command buffer, then set pipeline. Assert the
   set is forwarded even if the same pipeline was bound in the previous recording (GR-2.7).
 - **Direct output:** use a mock or instrumented backend command buffer to count forwarded calls
   and assert suppression ratios.
@@ -284,7 +284,7 @@ optimization.
 - **Queue ownership elision:** on unified memory (Metal), verify that cross-queue barriers
   omit ownership transfer (GR-4.5).
 - **RT dispatch emulation:** with `ray_tracing = false` and `ray_tracing_inline = true`,
-  verify that `trace_rays()` dispatches a compute shader with correct thread group dimensions
+  verify that `TraceRays()` dispatches a compute shader with correct thread group dimensions
   (GR-4.6).
 - **SBT emulation:** verify that shader binding table records are packed into a flat buffer
   indexed by instance/geometry ID (GR-4.7).
@@ -663,7 +663,7 @@ produce subtly different rasterization results.
 
 | Tier | p99 Threshold | Use Case |
 |------|---------------|----------|
-| Exact | 0 | Compute output, buffer readback, integer-format textures |
+| Exact | 0 | Compute output, Buffer readback, integer-format textures |
 | Tight | 1 / 255 | Deterministic rasterization (clear + single-triangle fill) |
 | Perceptual | 4 / 255 | Complex rendered frames (lighting, post-processing, TAA) |
 
@@ -819,7 +819,7 @@ baseline.
 
 Catch2 v3 is the testing framework for all unit and integration tests. It provides:
 
-- Header-only C++ library with native CMake integration via `catch_discover_tests()`
+- Header-only C++ library with native CMake integration via `CatchDiscoverTests()`
 - `SECTION` blocks for test case organization
 - `GENERATE` for parameterized tests across backends
 - `SKIP` for conditional test skipping when hardware capabilities are absent
@@ -836,27 +836,27 @@ namespace harmonius::test {
 /// command pool and fence, and tears down all state on destruction.
 /// Any GPU validation error during the fixture's lifetime fails the test.
 struct GpuFixture {
-    gpu::Device      device;
-    gpu::CommandPool pool;
-    gpu::FenceHandle fence;
+  gpu::Device device;
+  gpu::CommandPool pool;
+  gpu::FenceHandle fence;
 
-    GpuFixture() {
-        DeviceDesc desc{};
-        desc.enable_validation = true;
-        auto result = gpu::create_device(desc);
-        REQUIRE(result.has_value());
-        device = std::move(*result);
-        pool = device.create_command_pool(QueueType::graphics);
-        fence = device.create_fence(0);
-    }
+  GpuFixture() {
+    DeviceDesc desc{};
+    desc.enable_validation = true;
+    auto result = gpu::CreateDevice(desc);
+    REQUIRE(result.has_value());
+    device = std::move(*result);
+    pool = device.CreateCommandPool(QueueType::kGraphics);
+    fence = device.CreateFence(0);
+  }
 
-    ~GpuFixture() {
-        device.wait_idle();
-        device.destroy_fence(fence);
-    }
+  ~GpuFixture() {
+    device.WaitIdle();
+    device.DestroyFence(fence);
+  }
 };
 
-} // namespace harmonius::test
+}  // namespace harmonius::test
 ```
 
 ### Image Comparison
@@ -868,23 +868,18 @@ image, computes per-pixel differences, and reports pass/fail against the configu
 namespace harmonius::test {
 
 struct SnapshotResult {
-    float rmse;          // root mean square error across all channels
-    float p99_error;     // 99th percentile per-channel absolute error
-    bool  passed;        // p99_error <= threshold
+  float rmse;       // root mean square error across all channels
+  float p99_error;  // 99th percentile per-channel absolute error
+  bool passed;      // p99_error <= threshold
 };
 
 /// Compares a rendered image against a golden reference.
 /// On failure, writes a diff image highlighting pixels above threshold.
-auto compare_snapshot(
-    std::span<const std::byte> rendered,
-    uint32_t                   width,
-    uint32_t                   height,
-    std::string_view           golden_path,
-    float                      threshold,
-    std::string_view           diff_output_path
-) -> SnapshotResult;
+auto CompareSnapshot(std::span<const std::byte> rendered, uint32_t width, uint32_t height,
+                      std::string_view golden_path, float threshold, std::string_view diff_output_path)
+    -> SnapshotResult;
 
-} // namespace harmonius::test
+}  // namespace harmonius::test
 ```
 
 ### Test Data Generators
@@ -895,30 +890,19 @@ Helpers that produce textures and buffers filled with known data for direct outp
 namespace harmonius::test {
 
 /// Fills a buffer with a repeating 32-bit pattern via compute dispatch.
-auto generate_pattern_buffer(
-    gpu::Device& device,
-    uint64_t     size_bytes,
-    uint32_t     pattern
-) -> std::pair<gpu::BufferHandle, gpu_runtime::memory::Allocation>;
+auto GeneratePatternBuffer(gpu::Device& device, uint64_t size_bytes, uint32_t pattern)
+    -> std::pair<gpu::BufferHandle, gpu_runtime::memory::Allocation>;
 
 /// Fills a 2D texture with a solid RGBA color via compute dispatch.
-auto generate_solid_texture(
-    gpu::Device&         device,
-    uint32_t             width,
-    uint32_t             height,
-    gpu::Format          format,
-    std::array<float, 4> color
-) -> std::pair<gpu::TextureHandle, gpu_runtime::memory::Allocation>;
+auto GenerateSolidTexture(gpu::Device& device, uint32_t width, uint32_t height, gpu::Format format,
+                            std::array<float, 4> color)
+    -> std::pair<gpu::TextureHandle, gpu_runtime::memory::Allocation>;
 
 /// Fills a 2D texture with a horizontal gradient for precision tests.
-auto generate_gradient_texture(
-    gpu::Device& device,
-    uint32_t     width,
-    uint32_t     height,
-    gpu::Format  format
-) -> std::pair<gpu::TextureHandle, gpu_runtime::memory::Allocation>;
+auto GenerateGradientTexture(gpu::Device& device, uint32_t width, uint32_t height, gpu::Format format)
+    -> std::pair<gpu::TextureHandle, gpu_runtime::memory::Allocation>;
 
-} // namespace harmonius::test
+}  // namespace harmonius::test
 ```
 
 ### CMake Integration
@@ -947,7 +931,7 @@ Test targets follow the pattern `harmonius_<module>_test`:
 | `harmonius_integration_test` | Cross-module | Integration |
 
 Each test target links against `Catch2::Catch2WithMain` and its corresponding library target.
-`catch_discover_tests()` registers all test cases with CTest automatically.
+`CatchDiscoverTests()` registers all test cases with CTest automatically.
 
 ---
 
@@ -1009,7 +993,7 @@ itself.
 | F | Fuzz test |
 | S | Stress test |
 | P | Performance regression test |
-| D | Design / compile-time constraint |
+| D | Design / Compile-time constraint |
 
 ---
 
@@ -1021,7 +1005,7 @@ itself.
 | R-1.1.2 | GPU-driven rendering | I |
 | R-1.1.3 | Mesh shader pipeline | U, I |
 | R-1.1.4 | Declarative render graph | I |
-| R-1.1.5 | Native backends, static dispatch | D |
+| R-1.1.5 | Native backends, static Dispatch | D |
 | R-1.1.6 | Modern hardware only | U |
 | R-1.1.7 | Strict layer separation | D |
 | R-1.1.8 | Excluded scope | D |
@@ -1030,7 +1014,7 @@ itself.
 | R-1.2.3 | Windows/SteamOS via Vulkan | I |
 | R-1.2.4 | Platform-native IO | I |
 | R-1.2.5 | Desktop only | D |
-| R-1.3.1 | G-buffer layout | I |
+| R-1.3.1 | G-Buffer layout | I |
 | R-1.3.3 | Motion vector generation | I |
 | R-1.3.4 | Post-processing chain | I |
 | R-1.3.5 | Temporal anti-aliasing | I |
@@ -1044,8 +1028,8 @@ itself.
 | R-3.1.1 | Parallel command encoding | I |
 | R-3.1.2 | Minimal barriers | U |
 | R-3.1.3 | Resource lifetime aliasing | U |
-| R-3.1.4 | Feature and budget gates | U |
-| R-3.1.5 | Fixed-capacity resource pools | U, S |
+| R-3.1.4 | Feature and Budget gates | U |
+| R-3.1.5 | Fixed-Capacity resource pools | U, S |
 | R-3.1.6 | Streaming with priority scheduling | U, I |
 | R-3.1.7 | Triple-buffered frame pipeline | I |
 | R-3.1.8 | Zero-allocation execution path | U, P |
@@ -1060,7 +1044,7 @@ itself.
 | R-3.2.1 | Bindless resources required | U |
 | R-3.2.2 | Mesh shaders required | U |
 | R-3.2.3 | Ray tracing soft-gated | U, I |
-| R-3.2.4 | Async compute and transfer queues | U, I |
+| R-3.2.4 | Async Compute and transfer queues | U, I |
 | R-3.2.5 | Timeline fences | U, I |
 | R-3.2.6 | Sparse textures | U |
 | R-3.2.7 | 64-bit shader atomics | U |
@@ -1076,15 +1060,15 @@ itself.
 | R-3.3.3 | 4 animation blend limit | U |
 | R-3.3.4 | 8-bone IK chain | U |
 | R-3.3.5 | f16 morph target precision | U |
-| R-3.3.6 | 1M bindless heap capacity | U, S |
+| R-3.3.6 | 1M bindless heap Capacity | U, S |
 | R-3.3.7 | Single-writer invariant | U |
 | R-3.3.8 | Single shader IR (HLSL) | U, I |
 | R-3.3.9 | Shader graph format | U |
 | R-3.3.10 | glTF asset import | U, F |
 | R-3.3.11 | Forward+/deferred selection | U |
 | R-3.3.12 | Morph before skinning order | U |
-| R-3.3.13 | Constant buffer 256B alignment | U |
-| R-3.3.14 | Storage buffer 256B alignment | U |
+| R-3.3.13 | Constant Buffer 256B alignment | U |
+| R-3.3.14 | Storage Buffer 256B alignment | U |
 | R-3.3.15 | Texture data 512B alignment | U |
 | R-3.3.16 | Texture row pitch 256B alignment | U |
 | R-3.3.17 | Heap resource 64KB alignment | U |
@@ -1119,7 +1103,7 @@ itself.
 | R-3.5.2 | RT denoising quality | I |
 | R-3.5.3 | ≥10-bit color precision | U, I |
 | R-3.5.4 | Shadow bias control | I |
-| R-3.5.5 | LOD transition smoothing | I |
+| R-3.5.5 | LOD Transition smoothing | I |
 | R-3.5.6 | Atmosphere LUT resolution | U, I |
 
 ---
@@ -1156,7 +1140,7 @@ itself.
 | ID | Title | Test |
 |----|-------|------|
 | R-5.2.1 | Shader node registry | U |
-| R-5.2.2 | Custom render graph passes | U, I |
+| R-5.2.2 | Custom render graph Passes | U, I |
 | R-5.2.3 | Material model extensions | U |
 | R-5.2.4 | Custom animation evaluators | U |
 
@@ -1179,7 +1163,7 @@ itself.
 | RG-1.11 | Variable-count sub-graph | U |
 | RG-1.12 | Per-instance variant parameter | U |
 | RG-1.13 | GPU work graph pass | U, I |
-| RG-1.14 | Checkerboard resolve pass | U, I |
+| RG-1.14 | Checkerboard Resolve pass | U, I |
 
 ---
 
@@ -1196,11 +1180,11 @@ itself.
 | RG-2.7 | Variant-conditional resources | U |
 | RG-2.8 | Pool-backed resources | U |
 | RG-2.9 | Sparse texture resource | U |
-| RG-2.10 | Staging buffer resource | U |
+| RG-2.10 | Staging Buffer resource | U |
 | RG-2.11 | Shared vs. exclusive annotation | U |
 | RG-2.12 | Shading rate image resource | U |
-| RG-2.13 | Indirect argument buffer | U |
-| RG-2.14 | Ring buffer resource | U |
+| RG-2.13 | Indirect argument Buffer | U |
+| RG-2.14 | Ring Buffer resource | U |
 | RG-2.15 | Bindless heap registration | U |
 | RG-2.16 | 64-bit render target format | U |
 | RG-2.17 | Atlas sub-region resource | U |
@@ -1209,7 +1193,7 @@ itself.
 | RG-2.20 | Multiple resolution parameters | U |
 | RG-2.21 | Multi-sample render target | U |
 | RG-2.22 | Mip-level sub-resource targeting | U |
-| RG-2.23 | Fixed-capacity persistent texture | U |
+| RG-2.23 | Fixed-Capacity persistent texture | U |
 | RG-2.24 | Multi-frame history chain | U |
 | RG-2.25 | Opacity micromap annotation | U |
 
@@ -1233,11 +1217,11 @@ itself.
 | ID | Title | Test |
 |----|-------|------|
 | RG-4.1 | Per-pass queue affinity | U, I |
-| RG-4.2 | Async compute queue | U, I |
+| RG-4.2 | Async Compute queue | U, I |
 | RG-4.3 | Transfer queue | U, I |
 | RG-4.4 | Cross-queue dependency | U, I |
 | RG-4.5 | Queue capability fallback | U |
-| RG-4.6 | Per-queue command buffer pools | U |
+| RG-4.6 | Per-queue command Buffer pools | U |
 
 ---
 
@@ -1264,7 +1248,7 @@ itself.
 | RG-6.3 | Fallback chain declaration | U |
 | RG-6.4 | Capability descriptor | U |
 | RG-6.5 | Queue capability fallback gate | U |
-| RG-6.6 | Composite capability-and-budget gate | U |
+| RG-6.6 | Composite capability-and-Budget gate | U |
 | RG-6.7 | Path-conditioned variant gate | U |
 
 ---
@@ -1277,7 +1261,7 @@ itself.
 | RG-7.2 | Cost and priority annotations | U |
 | RG-7.3 | Cascading dead-pass elimination | U |
 | RG-7.4 | Resolution scale parameter | U, I |
-| RG-7.5 | Pool utilization budget gate | U |
+| RG-7.5 | Pool Utilization Budget gate | U |
 | RG-7.6 | Runtime parameter mutation | U |
 
 ---
@@ -1289,7 +1273,7 @@ itself.
 | RG-8.1 | Lifetime interval computation | U |
 | RG-8.2 | Aliased heap allocation | U |
 | RG-8.3 | Pool-based aliasing | U |
-| RG-8.4 | Staging buffer ring aliasing | U |
+| RG-8.4 | Staging Buffer ring aliasing | U |
 | RG-8.5 | Heap type selection | U |
 | RG-8.6 | Memory usage diagnostics | U |
 
@@ -1312,10 +1296,10 @@ itself.
 | ID | Title | Test |
 |----|-------|------|
 | RG-10.1 | Independent command buffers | U, I |
-| RG-10.2 | Thread-safe command buffer pool | U, I |
+| RG-10.2 | Thread-safe command Buffer pool | U, I |
 | RG-10.3 | Sub-graph parallel encoding | I |
 | RG-10.4 | Encoding dependency graph | U |
-| RG-10.5 | Ring buffer allocation | U |
+| RG-10.5 | Ring Buffer allocation | U |
 | RG-10.6 | Timeline fence coordination | U, I |
 | RG-10.7 | Submission ordering | U |
 
@@ -1341,10 +1325,10 @@ itself.
 |----|-------|------|
 | RG-12.1 | Per-pass GPU timestamps | U, I |
 | RG-12.2 | Pipeline statistics queries | U, I |
-| RG-12.3 | Transfer throughput stats | U |
+| RG-12.3 | Transfer throughput Stats | U |
 | RG-12.4 | Queue depth counter | U |
 | RG-12.5 | GPU readback pass | U, I |
-| RG-12.6 | Debug overlay passes | U |
+| RG-12.6 | Debug overlay Passes | U |
 | RG-12.7 | Zero-overhead diagnostic opt-out | U |
 
 ---
@@ -1369,13 +1353,13 @@ itself.
 | ID | Title | Test |
 |----|-------|------|
 | RG-14.1 | Topology-data separation | U, I |
-| RG-14.2 | Per-frame buffer/texture binding | U, I |
+| RG-14.2 | Per-frame Buffer/texture binding | U, I |
 | RG-14.3 | Sub-graph parameter update | U |
 | RG-14.4 | Dynamic resolution parameter | U, I |
 | RG-14.5 | Pass activation flags | U, I |
 | RG-14.6 | Frame index propagation | U |
 | RG-14.7 | Dynamic transfer injection | U, I |
-| RG-14.8 | Residency map binding | U |
+| RG-14.8 | Residency Map binding | U |
 
 ---
 
@@ -1387,9 +1371,9 @@ itself.
 | GR-1.2 | Block sub-allocation | U |
 | GR-1.3 | Committed allocation | U |
 | GR-1.4 | Placed allocation for aliasing | U |
-| GR-1.5 | Ring buffer allocation | U |
+| GR-1.5 | Ring Buffer allocation | U |
 | GR-1.6 | Online defragmentation | U, I |
-| GR-1.7 | Memory budget tracking | U |
+| GR-1.7 | Memory Budget tracking | U |
 | GR-1.8 | Heap type selection | U |
 | GR-1.9 | Allocation metadata query | U |
 | GR-1.10 | Pool-scoped allocation | U |
@@ -1401,13 +1385,13 @@ itself.
 
 | ID | Title | Test |
 |----|-------|------|
-| GR-2.1 | Tracked command buffer | U |
+| GR-2.1 | Tracked command Buffer | U |
 | GR-2.2 | Pipeline state cache | U |
 | GR-2.3 | Descriptor heap cache | U |
 | GR-2.4 | Dynamic state cache | U |
 | GR-2.5 | Push constant cache | U |
 | GR-2.6 | Resource state cache | U, I |
-| GR-2.7 | Command buffer state reset | U |
+| GR-2.7 | Command Buffer state Reset | U |
 
 ---
 
@@ -1432,11 +1416,11 @@ itself.
 | ID | Title | Test |
 |----|-------|------|
 | GR-4.1 | Capability-aware recording | U |
-| GR-4.2 | Split barrier emulation | U |
+| GR-4.2 | Split Barrier emulation | U |
 | GR-4.3 | Barrier batching | U |
 | GR-4.4 | Barrier deduplication | U |
 | GR-4.5 | Queue ownership elision | U |
-| GR-4.6 | RT dispatch emulation | U, I |
+| GR-4.6 | RT Dispatch emulation | U, I |
 | GR-4.7 | SBT emulation | U |
 | GR-4.8 | RT pipeline pair registration | U |
 | GR-4.9 | AS binding adaptation | U |

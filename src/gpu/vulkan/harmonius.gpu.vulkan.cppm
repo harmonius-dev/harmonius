@@ -4,260 +4,353 @@ module;
 
 export module harmonius.gpu.vulkan;
 
-import std;
 import harmonius.gpu;
 import harmonius.gpu.concepts;
 
-export namespace harmonius::gpu::vulkan
-{
+import std;
 
-  // ---------------------------------------------------------------------------
-  // Forward declarations
-  // ---------------------------------------------------------------------------
+export namespace harmonius::gpu::vulkan {
 
-  class VulkanCommandBuffer;
+// ---------------------------------------------------------------------------
+// Forward declarations
+// ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // VulkanCommandPool
-  // ---------------------------------------------------------------------------
+class VulkanCommandBuffer;
 
-  class VulkanCommandPool
-  {
-  public:
+// ---------------------------------------------------------------------------
+// VulkanCommandPool
+// ---------------------------------------------------------------------------
+
+/// A pool that allocates and recycles Vulkan command buffers.
+/// @threadsafety Instances are not thread-safe.
+class VulkanCommandPool {
+ public:
     using CommandBufferType = VulkanCommandBuffer;
 
-    auto allocate_command_buffer() -> VulkanCommandBuffer;
-    auto reset() -> void;
-    auto allocated_count() const -> std::uint32_t;
-  };
+    /// Allocates a new command buffer from this pool.
+    [[nodiscard]] auto AllocateCommandBuffer() -> VulkanCommandBuffer;
 
-  // ---------------------------------------------------------------------------
-  // VulkanCommandBuffer
-  // ---------------------------------------------------------------------------
+    /// Resets all command buffers allocated from this pool.
+    auto Reset() -> void;
 
-  class VulkanCommandBuffer
-  {
-  public:
-    auto begin() -> void;
-    auto end() -> void;
+    /// Returns the number of command buffers currently allocated.
+    [[nodiscard]] auto AllocatedCount() const -> std::uint32_t;
 
-    auto barrier(const BarrierDesc &desc) -> void;
+    VulkanCommandPool(const VulkanCommandPool&) = delete;
+    auto operator=(const VulkanCommandPool&) -> VulkanCommandPool& = delete;
+    VulkanCommandPool(VulkanCommandPool&&) noexcept;
+    auto operator=(VulkanCommandPool&&) noexcept -> VulkanCommandPool&;
+    ~VulkanCommandPool();
+};
 
-    auto begin_render_pass(const RenderPassDesc &desc) -> void;
-    auto end_render_pass() -> void;
+// ---------------------------------------------------------------------------
+// VulkanCommandBuffer
+// ---------------------------------------------------------------------------
 
-    auto set_pipeline(PipelineHandle pipeline) -> void;
+/// A Vulkan command buffer that records GPU commands for submission.
+/// @threadsafety Instances are not thread-safe.
+class VulkanCommandBuffer {
+ public:
+    /// Begins recording commands into this command buffer.
+    auto Begin() -> void;
 
-    // Mesh shader dispatch
-    auto dispatch_mesh(std::uint32_t group_count_x,
-                       std::uint32_t group_count_y,
-                       std::uint32_t group_count_z) -> void;
-    auto dispatch_mesh_indirect(BufferHandle args,
-                                std::uint64_t offset,
-                                std::uint32_t draw_count,
-                                std::uint32_t stride) -> void;
-    auto dispatch_mesh_indirect_count(BufferHandle args,
-                                      std::uint64_t arg_offset,
-                                      BufferHandle count_buffer,
-                                      std::uint64_t count_offset,
-                                      std::uint32_t max_draw_count,
-                                      std::uint32_t stride) -> void;
+    /// Ends recording commands into this command buffer.
+    auto End() -> void;
 
-    // Compute dispatch
-    auto dispatch(std::uint32_t group_count_x,
-                  std::uint32_t group_count_y,
+    /// Inserts pipeline barriers for resource synchronization.
+    auto Barrier(const BarrierDesc& desc) -> void;
+
+    /// Begins a render pass with the specified attachments.
+    auto BeginRenderPass(const RenderPassDesc& desc) -> void;
+
+    /// Ends the current render pass.
+    auto EndRenderPass() -> void;
+
+    /// Binds a pipeline state object for subsequent draw or dispatch calls.
+    auto SetPipeline(PipelineHandle pipeline) -> void;
+
+    /// Dispatches mesh shader workgroups.
+    auto DispatchMesh(std::uint32_t group_count_x, std::uint32_t group_count_y,
+                      std::uint32_t group_count_z) -> void;
+
+    /// Dispatches mesh shader workgroups using indirect arguments from a buffer.
+    auto DispatchMeshIndirect(BufferHandle args, std::uint64_t offset, std::uint32_t draw_count,
+                              std::uint32_t stride) -> void;
+
+    /// Dispatches mesh shader workgroups with an indirect count from a buffer.
+    auto DispatchMeshIndirectCount(BufferHandle args, std::uint64_t arg_offset, BufferHandle count_buffer,
+                                   std::uint64_t count_offset, std::uint32_t max_draw_count,
+                                   std::uint32_t stride) -> void;
+
+    /// Dispatches compute shader workgroups.
+    auto Dispatch(std::uint32_t group_count_x, std::uint32_t group_count_y,
                   std::uint32_t group_count_z) -> void;
-    auto dispatch_indirect(BufferHandle args, std::uint64_t offset) -> void;
 
-    // Ray tracing
-    auto trace_rays(const TraceRaysDesc &desc) -> void;
-    auto trace_rays_indirect(BufferHandle args, std::uint64_t offset) -> void;
+    /// Dispatches compute shader workgroups using indirect arguments from a buffer.
+    auto DispatchIndirect(BufferHandle args, std::uint64_t offset) -> void;
 
-    // Acceleration structures
-    auto build_acceleration_structure(const AccelerationStructureBuildDesc &desc) -> void;
+    /// Dispatches ray tracing work.
+    auto TraceRays(const TraceRaysDesc& desc) -> void;
 
-    // Work graphs
-    auto set_work_graph(WorkGraphHandle handle) -> void;
-    auto dispatch_graph(const DispatchGraphDesc &desc) -> void;
+    /// Dispatches ray tracing work using indirect arguments from a buffer.
+    auto TraceRaysIndirect(BufferHandle args, std::uint64_t offset) -> void;
 
-    // Copy commands
-    auto copy_buffer(BufferHandle src, std::uint64_t src_offset,
-                     BufferHandle dst, std::uint64_t dst_offset,
-                     std::uint64_t size) -> void;
-    auto copy_texture(TextureHandle src, const TextureSubresource &src_sub,
-                      TextureHandle dst, const TextureSubresource &dst_sub,
-                      Extent3D extent) -> void;
-    auto copy_buffer_to_texture(BufferHandle src, std::uint64_t src_offset,
-                                TextureHandle dst,
-                                const TextureSubresource &subresource,
-                                Extent3D extent) -> void;
-    auto copy_texture_to_buffer(TextureHandle src,
-                                const TextureSubresource &subresource,
-                                BufferHandle dst, std::uint64_t dst_offset,
-                                Extent3D extent) -> void;
+    /// Builds or updates a ray tracing acceleration structure.
+    auto BuildAccelerationStructure(const AccelerationStructureBuildDesc& desc) -> void;
 
-    // Viewport and scissor
-    auto set_viewport(const Viewport &viewport) -> void;
-    auto set_scissor(const Scissor &scissor) -> void;
+    /// Sets the active work graph program for subsequent dispatches.
+    auto SetWorkGraph(WorkGraphHandle handle) -> void;
 
-    // Push constants
-    auto push_constants(const void *data, std::uint32_t size,
-                        std::uint32_t offset) -> void;
+    /// Dispatches a work graph program.
+    auto DispatchGraph(const DispatchGraphDesc& desc) -> void;
 
-    // Descriptor binding
-    auto bind_descriptor_heap(DescriptorHeapHandle heap) -> void;
+    /// Copies data between two GPU buffers.
+    auto CopyBuffer(BufferHandle src, std::uint64_t src_offset, BufferHandle dst,
+                    std::uint64_t dst_offset, std::uint64_t size) -> void;
 
-    // Queries
-    auto write_timestamp(QueryPoolHandle pool, std::uint32_t index) -> void;
-    auto resolve_query_pool(QueryPoolHandle pool,
-                            std::uint32_t first_query,
-                            std::uint32_t query_count,
-                            BufferHandle dst,
-                            std::uint64_t dst_offset) -> void;
+    /// Copies a region between two GPU textures.
+    auto CopyTexture(TextureHandle src, const TextureSubresource& src_sub, TextureHandle dst,
+                     const TextureSubresource& dst_sub, Extent3D extent) -> void;
 
-    // Debug labels
-    auto begin_debug_label(std::string_view label) -> void;
-    auto end_debug_label() -> void;
-    auto insert_debug_label(std::string_view label) -> void;
-  };
+    /// Copies data from a GPU buffer to a GPU texture.
+    auto CopyBufferToTexture(BufferHandle src, std::uint64_t src_offset, TextureHandle dst,
+                             const TextureSubresource& subresource, Extent3D extent) -> void;
 
-  // ---------------------------------------------------------------------------
-  // VulkanDevice
-  // ---------------------------------------------------------------------------
+    /// Copies data from a GPU texture to a GPU buffer.
+    auto CopyTextureToBuffer(TextureHandle src, const TextureSubresource& subresource, BufferHandle dst,
+                             std::uint64_t dst_offset, Extent3D extent) -> void;
 
-  class VulkanDevice
-  {
-  public:
+    /// Sets the viewport rectangle.
+    auto SetViewport(const Viewport& viewport) -> void;
+
+    /// Sets the scissor rectangle.
+    auto SetScissor(const Scissor& scissor) -> void;
+
+    /// Uploads push constant data to the pipeline.
+    auto PushConstants(const void* data, std::uint32_t size, std::uint32_t offset) -> void;
+
+    /// Binds a descriptor heap for bindless resource access.
+    auto BindDescriptorHeap(DescriptorHeapHandle heap) -> void;
+
+    /// Writes a GPU timestamp into a query pool slot.
+    auto WriteTimestamp(QueryPoolHandle pool, std::uint32_t index) -> void;
+
+    /// Resolves query results from a query pool into a buffer.
+    auto ResolveQueryPool(QueryPoolHandle pool, std::uint32_t first_query, std::uint32_t query_count,
+                          BufferHandle dst, std::uint64_t dst_offset) -> void;
+
+    /// Begins a debug label region in the command buffer.
+    auto BeginDebugLabel(std::string_view label) -> void;
+
+    /// Ends the current debug label region.
+    auto EndDebugLabel() -> void;
+
+    /// Inserts a single debug label marker.
+    auto InsertDebugLabel(std::string_view label) -> void;
+
+    VulkanCommandBuffer(const VulkanCommandBuffer&) = delete;
+    auto operator=(const VulkanCommandBuffer&) -> VulkanCommandBuffer& = delete;
+    VulkanCommandBuffer(VulkanCommandBuffer&&) noexcept;
+    auto operator=(VulkanCommandBuffer&&) noexcept -> VulkanCommandBuffer&;
+    ~VulkanCommandBuffer();
+};
+
+// ---------------------------------------------------------------------------
+// VulkanDevice
+// ---------------------------------------------------------------------------
+
+/// A Vulkan GPU device that manages resources, pipelines, and command submission.
+/// @threadsafety Instances are not thread-safe.
+class VulkanDevice {
+ public:
     using CommandBufferType = VulkanCommandBuffer;
     using CommandPoolType = VulkanCommandPool;
 
-    // Queries
-    auto capabilities() const -> DeviceCapabilities;
-    auto queue_count(QueueType type) const -> std::uint32_t;
+    /// Returns the capabilities and limits of this GPU device.
+    [[nodiscard]] auto Capabilities() const -> DeviceCapabilities;
 
-    // Texture
-    auto create_texture(const TextureDesc &desc)
+    /// Returns the number of queues available for the given queue type.
+    [[nodiscard]] auto QueueCount(QueueType type) const -> std::uint32_t;
+
+    /// Creates a GPU texture resource.
+    [[nodiscard]] auto CreateTexture(const TextureDesc& desc)
         -> std::expected<TextureHandle, ResourceError>;
-    auto destroy_texture(TextureHandle handle) -> void;
 
-    // Buffer
-    auto create_buffer(const BufferDesc &desc)
-        -> std::expected<BufferHandle, ResourceError>;
-    auto destroy_buffer(BufferHandle handle) -> void;
+    /// Destroys a GPU texture resource.
+    auto DestroyTexture(TextureHandle handle) -> void;
 
-    // Heap
-    auto create_heap(const HeapDesc &desc)
-        -> std::expected<HeapHandle, ResourceError>;
-    auto destroy_heap(HeapHandle handle) -> void;
-
-    // Placed resources
-    auto create_placed_texture(HeapHandle heap, std::uint64_t offset,
-                               const TextureDesc &desc)
-        -> std::expected<TextureHandle, ResourceError>;
-    auto create_placed_buffer(HeapHandle heap, std::uint64_t offset,
-                              const BufferDesc &desc)
+    /// Creates a GPU buffer resource.
+    [[nodiscard]] auto CreateBuffer(const BufferDesc& desc)
         -> std::expected<BufferHandle, ResourceError>;
 
-    // Allocation info queries
-    auto query_texture_allocation_info(const TextureDesc &desc) const -> AllocationInfo;
-    auto query_buffer_allocation_info(const BufferDesc &desc) const -> AllocationInfo;
+    /// Destroys a GPU buffer resource.
+    auto DestroyBuffer(BufferHandle handle) -> void;
 
-    // Sparse resources
-    auto create_sparse_texture(const SparseTextureDesc &desc)
+    /// Creates a GPU memory heap.
+    [[nodiscard]] auto CreateHeap(const HeapDesc& desc) -> std::expected<HeapHandle, ResourceError>;
+
+    /// Destroys a GPU memory heap.
+    auto DestroyHeap(HeapHandle handle) -> void;
+
+    /// Creates a texture placed in an existing heap at the given offset.
+    [[nodiscard]] auto CreatePlacedTexture(HeapHandle heap, std::uint64_t offset, const TextureDesc& desc)
         -> std::expected<TextureHandle, ResourceError>;
-    auto update_sparse_bindings(TextureHandle texture,
-                                std::span<const SparseTileBinding> bindings) -> void;
 
-    // Memory mapping
-    auto map(BufferHandle handle) -> void *;
-    auto unmap(BufferHandle handle) -> void;
+    /// Creates a buffer placed in an existing heap at the given offset.
+    [[nodiscard]] auto CreatePlacedBuffer(HeapHandle heap, std::uint64_t offset, const BufferDesc& desc)
+        -> std::expected<BufferHandle, ResourceError>;
 
-    // Acceleration structures
-    auto create_acceleration_structure(const AccelerationStructureDesc &desc)
+    /// Queries the allocation size and alignment for a texture descriptor.
+    [[nodiscard]] auto QueryTextureAllocationInfo(const TextureDesc& desc) const -> AllocationInfo;
+
+    /// Queries the allocation size and alignment for a buffer descriptor.
+    [[nodiscard]] auto QueryBufferAllocationInfo(const BufferDesc& desc) const -> AllocationInfo;
+
+    /// Creates a sparse (tiled) GPU texture.
+    [[nodiscard]] auto CreateSparseTexture(const SparseTextureDesc& desc)
+        -> std::expected<TextureHandle, ResourceError>;
+
+    /// Updates sparse tile bindings for a texture.
+    auto UpdateSparseBindings(TextureHandle texture, std::span<const SparseTileBinding> bindings) -> void;
+
+    /// Maps a buffer for CPU access and returns a pointer to the mapped memory.
+    [[nodiscard]] auto Map(BufferHandle handle) -> void*;
+
+    /// Unmaps a previously mapped buffer.
+    auto Unmap(BufferHandle handle) -> void;
+
+    /// Creates a ray tracing acceleration structure.
+    [[nodiscard]] auto CreateAccelerationStructure(const AccelerationStructureDesc& desc)
         -> std::expected<AccelerationStructureHandle, ResourceError>;
-    auto query_acceleration_structure_sizes(const AccelerationStructureDesc &desc) const
+
+    /// Queries the memory requirements for building an acceleration structure.
+    [[nodiscard]] auto QueryAccelerationStructureSizes(const AccelerationStructureDesc& desc) const
         -> AccelerationStructureSizes;
-    auto destroy_acceleration_structure(AccelerationStructureHandle handle) -> void;
 
-    // Fences
-    auto create_fence(std::uint64_t initial_value)
+    /// Destroys a ray tracing acceleration structure.
+    auto DestroyAccelerationStructure(AccelerationStructureHandle handle) -> void;
+
+    /// Creates a timeline fence with the given initial value.
+    [[nodiscard]] auto CreateFence(std::uint64_t initial_value)
         -> std::expected<FenceHandle, DeviceError>;
-    auto destroy_fence(FenceHandle handle) -> void;
-    auto fence_completed_value(FenceHandle handle) const -> std::uint64_t;
-    auto wait_fence_cpu(FenceHandle handle, std::uint64_t value) -> void;
 
-    // Command pools
-    auto create_command_pool(QueueType type) -> VulkanCommandPool;
+    /// Destroys a timeline fence.
+    auto DestroyFence(FenceHandle handle) -> void;
 
-    // Submission
-    auto submit(QueueType type,
-                std::span<VulkanCommandBuffer *> command_buffers,
-                std::span<const FenceSignal> signal_fences,
-                std::span<const FenceWait> wait_fences) -> void;
+    /// Returns the last completed value of a timeline fence.
+    [[nodiscard]] auto FenceCompletedValue(FenceHandle handle) const -> std::uint64_t;
 
-    // Pipelines
-    auto create_mesh_render_pipeline(const MeshRenderPipelineDesc &desc)
+    /// Blocks the CPU until a fence reaches the specified value.
+    auto WaitFenceCpu(FenceHandle handle, std::uint64_t value) -> void;
+
+    /// Creates a command pool for the given queue type.
+    [[nodiscard]] auto CreateCommandPool(QueueType type) -> VulkanCommandPool;
+
+    /// Submits command buffers to a queue with fence signal and wait operations.
+    auto Submit(QueueType type, std::span<VulkanCommandBuffer*> command_buffers,
+                std::span<const FenceSignal> signal_fences, std::span<const FenceWait> wait_fences) -> void;
+
+    /// Creates a mesh-shader render pipeline.
+    [[nodiscard]] auto CreateMeshRenderPipeline(const MeshRenderPipelineDesc& desc)
         -> std::expected<PipelineHandle, PipelineError>;
-    auto create_compute_pipeline(const ComputePipelineDesc &desc)
-        -> std::expected<PipelineHandle, PipelineError>;
-    auto create_ray_tracing_pipeline(const RayTracingPipelineDesc &desc)
-        -> std::expected<PipelineHandle, PipelineError>;
-    auto destroy_pipeline(PipelineHandle handle) -> void;
 
-    // Work graphs
-    auto create_work_graph(const WorkGraphDesc &desc)
+    /// Creates a compute pipeline.
+    [[nodiscard]] auto CreateComputePipeline(const ComputePipelineDesc& desc)
+        -> std::expected<PipelineHandle, PipelineError>;
+
+    /// Creates a ray tracing pipeline.
+    [[nodiscard]] auto CreateRayTracingPipeline(const RayTracingPipelineDesc& desc)
+        -> std::expected<PipelineHandle, PipelineError>;
+
+    /// Destroys a pipeline state object.
+    auto DestroyPipeline(PipelineHandle handle) -> void;
+
+    /// Creates a work graph program.
+    [[nodiscard]] auto CreateWorkGraph(const WorkGraphDesc& desc)
         -> std::expected<WorkGraphHandle, PipelineError>;
-    auto destroy_work_graph(WorkGraphHandle handle) -> void;
 
-    // Descriptor heaps
-    auto create_descriptor_heap(const DescriptorHeapDesc &desc)
+    /// Destroys a work graph program.
+    auto DestroyWorkGraph(WorkGraphHandle handle) -> void;
+
+    /// Creates a bindless descriptor heap.
+    [[nodiscard]] auto CreateDescriptorHeap(const DescriptorHeapDesc& desc)
         -> std::expected<DescriptorHeapHandle, DeviceError>;
-    auto write_descriptor(DescriptorHeapHandle heap,
-                          std::uint32_t index,
-                          const DescriptorWrite &write) -> void;
-    auto destroy_descriptor_heap(DescriptorHeapHandle handle) -> void;
 
-    // Query pools
-    auto create_query_pool(const QueryPoolDesc &desc)
+    /// Writes a descriptor into a descriptor heap slot.
+    auto WriteDescriptor(DescriptorHeapHandle heap, std::uint32_t index,
+                         const DescriptorWrite& write) -> void;
+
+    /// Destroys a descriptor heap.
+    auto DestroyDescriptorHeap(DescriptorHeapHandle handle) -> void;
+
+    /// Creates a query pool for timestamps or pipeline statistics.
+    [[nodiscard]] auto CreateQueryPool(const QueryPoolDesc& desc)
         -> std::expected<QueryPoolHandle, DeviceError>;
-    auto destroy_query_pool(QueryPoolHandle handle) -> void;
-    auto timestamp_period_ns() const -> double;
 
-    // Swapchain
-    auto create_swapchain(const SwapchainDesc &desc)
+    /// Destroys a query pool.
+    auto DestroyQueryPool(QueryPoolHandle handle) -> void;
+
+    /// Returns the timestamp period in nanoseconds per tick.
+    [[nodiscard]] auto TimestampPeriodNs() const -> double;
+
+    /// Creates a swapchain for presenting to a window.
+    [[nodiscard]] auto CreateSwapchain(const SwapchainDesc& desc)
         -> std::expected<SwapchainHandle, DeviceError>;
-    auto acquire_next_image(SwapchainHandle swapchain)
+
+    /// Acquires the next presentable image from a swapchain.
+    [[nodiscard]] auto AcquireNextImage(SwapchainHandle swapchain)
         -> std::expected<TextureHandle, DeviceError>;
-    auto present(SwapchainHandle swapchain) -> void;
-    auto resize_swapchain(SwapchainHandle swapchain,
-                          std::uint32_t width,
-                          std::uint32_t height) -> void;
-    auto destroy_swapchain(SwapchainHandle handle) -> void;
 
-    // Pipeline cache
-    auto create_pipeline_cache(const PipelineCacheDesc &desc)
+    /// Presents a swapchain image to the display.
+    auto Present(SwapchainHandle swapchain) -> void;
+
+    /// Resizes a swapchain to new dimensions.
+    auto ResizeSwapchain(SwapchainHandle swapchain, std::uint32_t width, std::uint32_t height) -> void;
+
+    /// Destroys a swapchain.
+    auto DestroySwapchain(SwapchainHandle handle) -> void;
+
+    /// Creates a pipeline cache for accelerating pipeline compilation.
+    [[nodiscard]] auto CreatePipelineCache(const PipelineCacheDesc& desc)
         -> std::expected<PipelineCacheHandle, DeviceError>;
-    auto serialize_pipeline_cache(PipelineCacheHandle handle)
-        -> std::vector<std::uint8_t>;
-    auto destroy_pipeline_cache(PipelineCacheHandle handle) -> void;
 
-    // Debug naming
-    auto set_name(TextureHandle handle, std::string_view name) -> void;
-    auto set_name(BufferHandle handle, std::string_view name) -> void;
-    auto set_name(AccelerationStructureHandle handle, std::string_view name) -> void;
-    auto set_name(PipelineHandle handle, std::string_view name) -> void;
-    auto set_name(FenceHandle handle, std::string_view name) -> void;
+    /// Serializes the contents of a pipeline cache to a byte vector.
+    [[nodiscard]] auto SerializePipelineCache(PipelineCacheHandle handle) -> std::vector<std::uint8_t>;
 
-    // Device operations
-    auto wait_idle() -> void;
-  };
+    /// Destroys a pipeline cache.
+    auto DestroyPipelineCache(PipelineCacheHandle handle) -> void;
 
-  // ---------------------------------------------------------------------------
-  // Concept verification
-  // ---------------------------------------------------------------------------
+    /// Sets a debug name on a texture resource.
+    auto SetName(TextureHandle handle, std::string_view name) -> void;
 
-  static_assert(GpuCommandPool<VulkanCommandPool>);
-  static_assert(GpuCommandBuffer<VulkanCommandBuffer>);
-  static_assert(GpuDevice<VulkanDevice>);
+    /// Sets a debug name on a buffer resource.
+    auto SetName(BufferHandle handle, std::string_view name) -> void;
 
-} // namespace harmonius::gpu::vulkan
+    /// Sets a debug name on an acceleration structure.
+    auto SetName(AccelerationStructureHandle handle, std::string_view name) -> void;
+
+    /// Sets a debug name on a pipeline state object.
+    auto SetName(PipelineHandle handle, std::string_view name) -> void;
+
+    /// Sets a debug name on a fence.
+    auto SetName(FenceHandle handle, std::string_view name) -> void;
+
+    /// Blocks until all GPU work has completed.
+    auto WaitIdle() -> void;
+
+    VulkanDevice(const VulkanDevice&) = delete;
+    auto operator=(const VulkanDevice&) -> VulkanDevice& = delete;
+    VulkanDevice(VulkanDevice&&) noexcept;
+    auto operator=(VulkanDevice&&) noexcept -> VulkanDevice&;
+    ~VulkanDevice();
+};
+
+// ---------------------------------------------------------------------------
+// Concept verification
+// ---------------------------------------------------------------------------
+
+static_assert(GpuCommandPool<VulkanCommandPool>);
+static_assert(GpuCommandBuffer<VulkanCommandBuffer>);
+static_assert(GpuDevice<VulkanDevice>);
+
+}  // namespace harmonius::gpu::vulkan

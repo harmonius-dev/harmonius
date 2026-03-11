@@ -6,9 +6,10 @@ set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
 project(
   harmonius
   VERSION 0.1.0
-  LANGUAGES CXX)
+  LANGUAGES CXX
+)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_MODULE_STD ON)
 
@@ -16,13 +17,15 @@ set(CMAKE_CXX_MODULE_STD ON)
 if(APPLE AND CMAKE_CXX_COMPILER MATCHES "llvm")
   set(CMAKE_CXX_STDLIB_MODULES_JSON
       "/opt/homebrew/opt/llvm/lib/c++/libc++.modules.json"
-      CACHE FILEPATH "Path to libc++.modules.json for import std support")
+      CACHE FILEPATH "Path to libc++.modules.json for import std support"
+  )
 endif()
 
 # Backend selection — one backend per binary
 set(HARMONIUS_GPU_BACKEND
     ""
-    CACHE STRING "GPU backend: metal, d3d12, vulkan")
+    CACHE STRING "GPU backend: metal, d3d12, vulkan"
+)
 
 # Auto-detect if not specified
 if(NOT HARMONIUS_GPU_BACKEND)
@@ -48,9 +51,9 @@ if(HARMONIUS_GPU_BACKEND STREQUAL "metal")
   add_library(metal-cpp INTERFACE)
   target_include_directories(metal-cpp INTERFACE vendor/metal-cpp)
   target_link_libraries(
-    metal-cpp
-    INTERFACE ${METAL_FRAMEWORK} ${QUARTZCORE_FRAMEWORK}
-              ${FOUNDATION_FRAMEWORK} ${IOKIT_FRAMEWORK} ${IOSURFACE_FRAMEWORK})
+    metal-cpp INTERFACE ${METAL_FRAMEWORK} ${QUARTZCORE_FRAMEWORK} ${FOUNDATION_FRAMEWORK} ${IOKIT_FRAMEWORK}
+                        ${IOSURFACE_FRAMEWORK}
+  )
 elseif(HARMONIUS_GPU_BACKEND STREQUAL "vulkan")
   find_package(Vulkan REQUIRED)
 elseif(HARMONIUS_GPU_BACKEND STREQUAL "d3d12")

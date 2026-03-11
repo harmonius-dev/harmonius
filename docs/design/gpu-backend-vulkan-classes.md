@@ -60,34 +60,34 @@ enforced at compile time via `static_assert`.
 classDiagram
     class GpuDevice {
         <<concept>>
-        +capabilities() DeviceCapabilities
-        +queue_count(QueueType) uint32_t
-        +create_texture(TextureDesc) expected~TextureHandle~
-        +create_buffer(BufferDesc) expected~BufferHandle~
-        +create_heap(HeapDesc) expected~HeapHandle~
-        +create_fence(uint64_t) expected~FenceHandle~
-        +create_command_pool(QueueType) CommandPool
-        +submit(QueueType, cmds, signals, waits) void
-        +wait_idle() void
+        +Capabilities() DeviceCapabilities
+        +QueueCount(QueueType) uint32_t
+        +CreateTexture(TextureDesc) expected~TextureHandle~
+        +CreateBuffer(BufferDesc) expected~BufferHandle~
+        +CreateHeap(HeapDesc) expected~HeapHandle~
+        +CreateFence(uint64_t) expected~FenceHandle~
+        +CreateCommandPool(QueueType) CommandPool
+        +Submit(QueueType, cmds, signals, waits) void
+        +WaitIdle() void
     }
     class GpuCommandBuffer {
         <<concept>>
-        +begin() void
-        +end() void
-        +barrier(BarrierDesc) void
-        +begin_render_pass(RenderPassDesc) void
-        +end_render_pass() void
-        +set_pipeline(PipelineHandle) void
-        +dispatch_mesh(x, y, z) void
-        +dispatch(x, y, z) void
-        +trace_rays(TraceRaysDesc) void
-        +push_constants(data, size, offset) void
+        +Begin() void
+        +End() void
+        +Barrier(BarrierDesc) void
+        +BeginRenderPass(RenderPassDesc) void
+        +EndRenderPass() void
+        +SetPipeline(PipelineHandle) void
+        +DispatchMesh(x, y, z) void
+        +Dispatch(x, y, z) void
+        +TraceRays(TraceRaysDesc) void
+        +PushConstants(data, size, offset) void
     }
     class GpuCommandPool {
         <<concept>>
-        +allocate_command_buffer() CommandBuffer
-        +reset() void
-        +allocated_count() uint32_t
+        +AllocateCommandBuffer() CommandBuffer
+        +Reset() void
+        +AllocatedCount() uint32_t
     }
     class VulkanDevice {
         <<satisfies GpuDevice>>
@@ -128,9 +128,9 @@ classDiagram
         -VkPipelineCache pipeline_cache_
         -VkSampler immutable_samplers_
         +VulkanDevice(DeviceDesc desc)
-        +capabilities() DeviceCapabilities
-        +queue_count(QueueType) uint32_t
-        +wait_idle() void
+        +Capabilities() DeviceCapabilities
+        +QueueCount(QueueType) uint32_t
+        +WaitIdle() void
     }
     class QueueSet {
         <<struct>>
@@ -252,16 +252,16 @@ VulkanDevice resource creation methods and the descriptor types they consume.
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_texture(TextureDesc) expected~TextureHandle~
-        +create_buffer(BufferDesc) expected~BufferHandle~
-        +destroy_texture(TextureHandle) void
-        +destroy_buffer(BufferHandle) void
-        +query_texture_allocation_info(TextureDesc) AllocationInfo
-        +query_buffer_allocation_info(BufferDesc) AllocationInfo
-        +map(BufferHandle) void_ptr
-        +unmap(BufferHandle) void
-        +set_name(TextureHandle, string_view) void
-        +set_name(BufferHandle, string_view) void
+        +CreateTexture(TextureDesc) expected~TextureHandle~
+        +CreateBuffer(BufferDesc) expected~BufferHandle~
+        +DestroyTexture(TextureHandle) void
+        +DestroyBuffer(BufferHandle) void
+        +QueryTextureAllocationInfo(TextureDesc) AllocationInfo
+        +QueryBufferAllocationInfo(BufferDesc) AllocationInfo
+        +Map(BufferHandle) void_ptr
+        +Unmap(BufferHandle) void
+        +SetName(TextureHandle, string_view) void
+        +SetName(BufferHandle, string_view) void
     }
     class TextureHandle {
         <<enum class : uint64_t>>
@@ -373,10 +373,10 @@ pools for explicit offset placement.
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_heap(HeapDesc) expected~HeapHandle~
-        +create_placed_texture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
-        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
-        +destroy_heap(HeapHandle) void
+        +CreateHeap(HeapDesc) expected~HeapHandle~
+        +CreatePlacedTexture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
+        +CreatePlacedBuffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
+        +DestroyHeap(HeapHandle) void
     }
     class HeapHandle {
         <<enum class : uint64_t>>
@@ -403,8 +403,8 @@ and `VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT`.
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_sparse_texture(SparseTextureDesc) expected~TextureHandle~
-        +update_sparse_bindings(TextureHandle, span~SparseTileBinding~) void
+        +CreateSparseTexture(SparseTextureDesc) expected~TextureHandle~
+        +UpdateSparseBindings(TextureHandle, span~SparseTileBinding~) void
     }
     class SparseTextureDesc {
         <<struct>>
@@ -436,10 +436,10 @@ Ray tracing BLAS/TLAS resource management (soft-gated on
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_acceleration_structure(AccelerationStructureDesc) expected~AccelerationStructureHandle~
-        +query_acceleration_structure_sizes(AccelerationStructureDesc) AccelerationStructureSizes
-        +destroy_acceleration_structure(AccelerationStructureHandle) void
-        +set_name(AccelerationStructureHandle, string_view) void
+        +CreateAccelerationStructure(AccelerationStructureDesc) expected~AccelerationStructureHandle~
+        +QueryAccelerationStructureSizes(AccelerationStructureDesc) AccelerationStructureSizes
+        +DestroyAccelerationStructure(AccelerationStructureHandle) void
+        +SetName(AccelerationStructureHandle, string_view) void
     }
     class AccelerationStructureHandle {
         <<enum class : uint64_t>>
@@ -537,16 +537,16 @@ classDiagram
         -uint32_t allocated_count_
         -vector~VkCommandBuffer~ free_buffers_
         +VulkanCommandPool(VkDevice, uint32_t queue_family)
-        +allocate_command_buffer() VulkanCommandBuffer
-        +reset() void
-        +allocated_count() uint32_t
+        +AllocateCommandBuffer() VulkanCommandBuffer
+        +Reset() void
+        +AllocatedCount() uint32_t
     }
     class VulkanCommandBuffer {
         <<satisfies GpuCommandBuffer>>
         -VkCommandBuffer cmd_
         +VulkanCommandBuffer(VkCommandBuffer cmd)
-        +begin() void
-        +end() void
+        +Begin() void
+        +End() void
     }
 
     VulkanCommandPool --> VulkanCommandBuffer : allocates
@@ -561,41 +561,41 @@ classDiagram
     class VulkanCommandBuffer {
         <<satisfies GpuCommandBuffer>>
         -VkCommandBuffer cmd_
-        +begin() void
-        +end() void
-        +barrier(BarrierDesc) void
-        +begin_render_pass(RenderPassDesc) void
-        +end_render_pass() void
-        +set_pipeline(PipelineHandle) void
-        +dispatch_mesh(uint32_t, uint32_t, uint32_t) void
-        +dispatch_mesh_indirect(BufferHandle, uint64_t, uint32_t, uint32_t) void
-        +dispatch_mesh_indirect_count(BufferHandle, uint64_t, BufferHandle, uint64_t, uint32_t, uint32_t) void
-        +dispatch(uint32_t, uint32_t, uint32_t) void
-        +dispatch_indirect(BufferHandle, uint64_t) void
-        +trace_rays(TraceRaysDesc) void
-        +trace_rays_indirect(BufferHandle, uint64_t) void
-        +build_acceleration_structure(AccelerationStructureBuildDesc) void
-        +set_work_graph(WorkGraphHandle) void
-        +dispatch_graph(DispatchGraphDesc) void
-        +copy_buffer(BufferHandle, uint64_t, BufferHandle, uint64_t, uint64_t) void
-        +copy_texture(TextureHandle, TextureSubresource, TextureHandle, TextureSubresource, Extent3D) void
-        +copy_buffer_to_texture(BufferHandle, uint64_t, TextureHandle, TextureSubresource, Extent3D) void
-        +copy_texture_to_buffer(TextureHandle, TextureSubresource, BufferHandle, uint64_t, Extent3D) void
-        +set_viewport(Viewport) void
-        +set_scissor(Scissor) void
-        +push_constants(const_void_ptr, uint32_t, uint32_t) void
-        +bind_descriptor_heap(DescriptorHeapHandle) void
-        +write_timestamp(QueryPoolHandle, uint32_t) void
-        +resolve_query_pool(QueryPoolHandle, uint32_t, uint32_t, BufferHandle, uint64_t) void
-        +begin_debug_label(string_view) void
-        +end_debug_label() void
-        +insert_debug_label(string_view) void
+        +Begin() void
+        +End() void
+        +Barrier(BarrierDesc) void
+        +BeginRenderPass(RenderPassDesc) void
+        +EndRenderPass() void
+        +SetPipeline(PipelineHandle) void
+        +DispatchMesh(uint32_t, uint32_t, uint32_t) void
+        +DispatchMeshIndirect(BufferHandle, uint64_t, uint32_t, uint32_t) void
+        +DispatchMeshIndirectCount(BufferHandle, uint64_t, BufferHandle, uint64_t, uint32_t, uint32_t) void
+        +Dispatch(uint32_t, uint32_t, uint32_t) void
+        +DispatchIndirect(BufferHandle, uint64_t) void
+        +TraceRays(TraceRaysDesc) void
+        +TraceRaysIndirect(BufferHandle, uint64_t) void
+        +BuildAccelerationStructure(AccelerationStructureBuildDesc) void
+        +SetWorkGraph(WorkGraphHandle) void
+        +DispatchGraph(DispatchGraphDesc) void
+        +CopyBuffer(BufferHandle, uint64_t, BufferHandle, uint64_t, uint64_t) void
+        +CopyTexture(TextureHandle, TextureSubresource, TextureHandle, TextureSubresource, Extent3D) void
+        +CopyBufferToTexture(BufferHandle, uint64_t, TextureHandle, TextureSubresource, Extent3D) void
+        +CopyTextureToBuffer(TextureHandle, TextureSubresource, BufferHandle, uint64_t, Extent3D) void
+        +SetViewport(Viewport) void
+        +SetScissor(Scissor) void
+        +PushConstants(const_void_ptr, uint32_t, uint32_t) void
+        +BindDescriptorHeap(DescriptorHeapHandle) void
+        +WriteTimestamp(QueryPoolHandle, uint32_t) void
+        +ResolveQueryPool(QueryPoolHandle, uint32_t, uint32_t, BufferHandle, uint64_t) void
+        +BeginDebugLabel(string_view) void
+        +EndDebugLabel() void
+        +InsertDebugLabel(string_view) void
     }
 ```
 
 ### 11. Render Pass Types
 
-Types consumed by `begin_render_pass` -- mapped to `vkCmdBeginRendering` (dynamic
+Types consumed by `BeginRenderPass` -- mapped to `vkCmdBeginRendering` (dynamic
 rendering, no `VkRenderPass` or `VkFramebuffer`).
 
 ```mermaid
@@ -747,7 +747,7 @@ classDiagram
 
 ### 13. Barrier System
 
-Vulkan Synchronization2 barrier types. `VulkanCommandBuffer::barrier()` translates
+Vulkan Synchronization2 barrier types. `VulkanCommandBuffer::Barrier()` translates
 the abstract `BarrierDesc` into `vkCmdPipelineBarrier2` calls.
 
 ```mermaid
@@ -880,18 +880,18 @@ Vulkan timeline semaphores implementing the abstract `FenceHandle` interface.
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_fence(uint64_t) expected~FenceHandle~
-        +destroy_fence(FenceHandle) void
-        +fence_completed_value(FenceHandle) uint64_t
-        +wait_fence_cpu(FenceHandle, uint64_t) void
+        +CreateFence(uint64_t) expected~FenceHandle~
+        +DestroyFence(FenceHandle) void
+        +FenceCompletedValue(FenceHandle) uint64_t
+        +WaitFenceCpu(FenceHandle, uint64_t) void
     }
     class VulkanFence {
         <<internal>>
         -VkSemaphore semaphore_
-        +signal_gpu() VkSemaphoreSubmitInfo
-        +wait_gpu() VkSemaphoreSubmitInfo
-        +completed_value() uint64_t
-        +wait_cpu(uint64_t target) void
+        +SignalGpu() VkSemaphoreSubmitInfo
+        +WaitGpu() VkSemaphoreSubmitInfo
+        +CompletedValue() uint64_t
+        +WaitCpu(uint64_t target) void
     }
     class FenceHandle {
         <<enum class : uint64_t>>
@@ -923,9 +923,9 @@ vertex/geometry/tessellation pipeline exists.
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_mesh_render_pipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
-        +destroy_pipeline(PipelineHandle) void
-        +set_name(PipelineHandle, string_view) void
+        +CreateMeshRenderPipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
+        +DestroyPipeline(PipelineHandle) void
+        +SetName(PipelineHandle, string_view) void
     }
     class PipelineHandle {
         <<enum class : uint64_t>>
@@ -1070,10 +1070,10 @@ flowchart TD
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_compute_pipeline(ComputePipelineDesc) expected~PipelineHandle~
-        +create_ray_tracing_pipeline(RayTracingPipelineDesc) expected~PipelineHandle~
-        +create_work_graph(WorkGraphDesc) expected~WorkGraphHandle~
-        +destroy_work_graph(WorkGraphHandle) void
+        +CreateComputePipeline(ComputePipelineDesc) expected~PipelineHandle~
+        +CreateRayTracingPipeline(RayTracingPipelineDesc) expected~PipelineHandle~
+        +CreateWorkGraph(WorkGraphDesc) expected~WorkGraphHandle~
+        +DestroyWorkGraph(WorkGraphHandle) void
     }
     class ComputePipelineDesc {
         <<struct>>
@@ -1133,9 +1133,9 @@ Wraps `VkPipelineCache` for persisting compiled pipeline state across sessions.
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_pipeline_cache(PipelineCacheDesc) expected~PipelineCacheHandle~
-        +serialize_pipeline_cache(PipelineCacheHandle) vector~uint8_t~
-        +destroy_pipeline_cache(PipelineCacheHandle) void
+        +CreatePipelineCache(PipelineCacheDesc) expected~PipelineCacheHandle~
+        +SerializePipelineCache(PipelineCacheHandle) vector~uint8_t~
+        +DestroyPipelineCache(PipelineCacheHandle) void
     }
     class PipelineCacheHandle {
         <<enum class : uint64_t>>
@@ -1159,9 +1159,9 @@ Descriptor heap and write types for the bindless resource binding model.
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_descriptor_heap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
-        +write_descriptor(DescriptorHeapHandle, uint32_t, DescriptorWrite) void
-        +destroy_descriptor_heap(DescriptorHeapHandle) void
+        +CreateDescriptorHeap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
+        +WriteDescriptor(DescriptorHeapHandle, uint32_t, DescriptorWrite) void
+        +DestroyDescriptorHeap(DescriptorHeapHandle) void
     }
     class DescriptorHeapHandle {
         <<enum class : uint64_t>>
@@ -1243,11 +1243,11 @@ flowchart LR
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_swapchain(SwapchainDesc) expected~SwapchainHandle~
-        +acquire_next_image(SwapchainHandle) expected~TextureHandle~
-        +present(SwapchainHandle) void
-        +resize_swapchain(SwapchainHandle, uint32_t, uint32_t) void
-        +destroy_swapchain(SwapchainHandle) void
+        +CreateSwapchain(SwapchainDesc) expected~SwapchainHandle~
+        +AcquireNextImage(SwapchainHandle) expected~TextureHandle~
+        +Present(SwapchainHandle) void
+        +ResizeSwapchain(SwapchainHandle, uint32_t, uint32_t) void
+        +DestroySwapchain(SwapchainHandle) void
     }
     class SwapchainHandle {
         <<enum class : uint64_t>>
@@ -1295,10 +1295,10 @@ naming support via `VK_EXT_debug_utils`.
 classDiagram
     class VulkanDevice {
         <<satisfies GpuDevice>>
-        +create_query_pool(QueryPoolDesc) expected~QueryPoolHandle~
-        +destroy_query_pool(QueryPoolHandle) void
-        +timestamp_period_ns() double
-        +set_name(FenceHandle, string_view) void
+        +CreateQueryPool(QueryPoolDesc) expected~QueryPoolHandle~
+        +DestroyQueryPool(QueryPoolHandle) void
+        +TimestampPeriodNs() double
+        +SetName(FenceHandle, string_view) void
     }
     class QueryPoolHandle {
         <<enum class : uint64_t>>
@@ -1316,11 +1316,11 @@ classDiagram
     }
     class VulkanCommandBuffer {
         <<satisfies GpuCommandBuffer>>
-        +write_timestamp(QueryPoolHandle, uint32_t) void
-        +resolve_query_pool(QueryPoolHandle, uint32_t, uint32_t, BufferHandle, uint64_t) void
-        +begin_debug_label(string_view) void
-        +end_debug_label() void
-        +insert_debug_label(string_view) void
+        +WriteTimestamp(QueryPoolHandle, uint32_t) void
+        +ResolveQueryPool(QueryPoolHandle, uint32_t, uint32_t, BufferHandle, uint64_t) void
+        +BeginDebugLabel(string_view) void
+        +EndDebugLabel() void
+        +InsertDebugLabel(string_view) void
     }
 
     VulkanDevice --> QueryPoolHandle : creates
@@ -1543,26 +1543,26 @@ raw Vulkan memory and resource creation primitives:
 
 | Backend Method | Vulkan API Call |
 |----------------|-----------------|
-| `create_heap()` | `vkAllocateMemory` with selected memory type |
-| `create_placed_texture()` | `vkCreateImage` + `vkBindImageMemory2` at offset |
-| `create_placed_buffer()` | `vkCreateBuffer` + `vkBindBufferMemory2` at offset |
-| `create_texture()` | `vkCreateImage` + `vkAllocateMemory` + `vkBindImageMemory` |
-| `create_buffer()` | `vkCreateBuffer` + `vkAllocateMemory` + `vkBindBufferMemory` |
-| `query_texture_allocation_info()` | `vkGetImageMemoryRequirements` |
-| `query_buffer_allocation_info()` | `vkGetBufferMemoryRequirements` |
+| `CreateHeap()` | `vkAllocateMemory` with selected memory type |
+| `CreatePlacedTexture()` | `vkCreateImage` + `vkBindImageMemory2` at offset |
+| `CreatePlacedBuffer()` | `vkCreateBuffer` + `vkBindBufferMemory2` at offset |
+| `CreateTexture()` | `vkCreateImage` + `vkAllocateMemory` + `vkBindImageMemory` |
+| `CreateBuffer()` | `vkCreateBuffer` + `vkAllocateMemory` + `vkBindBufferMemory` |
+| `QueryTextureAllocationInfo()` | `vkGetImageMemoryRequirements` |
+| `QueryBufferAllocationInfo()` | `vkGetBufferMemoryRequirements` |
 
 **HeapType to Vulkan memory property mapping:**
 
 | `HeapType` | Vulkan Memory Properties |
 |------------|-------------------------|
-| `device_local` | `VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT` |
-| `upload` | `HOST_VISIBLE_BIT \| HOST_COHERENT_BIT` (prefer `DEVICE_LOCAL` if available) |
-| `readback` | `HOST_VISIBLE_BIT \| HOST_CACHED_BIT` |
+| `kDeviceLocal` | `VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT` |
+| `kUpload` | `HOST_VISIBLE_BIT \| HOST_COHERENT_BIT` (prefer `DEVICE_LOCAL` if available) |
+| `kReadback` | `HOST_VISIBLE_BIT \| HOST_CACHED_BIT` |
 
 **Placed resource aliasing flow:**
 
-1. `create_heap()` allocates a `VkDeviceMemory` block of the requested size
-2. `create_placed_texture()` / `create_placed_buffer()` binds a resource at a
+1. `CreateHeap()` allocates a `VkDeviceMemory` block of the requested size
+2. `CreatePlacedTexture()` / `CreatePlacedBuffer()` binds a resource at a
    specific offset using `vkBindImageMemory2` / `vkBindBufferMemory2`
 3. Multiple resources alias the same memory at non-overlapping lifetime intervals
 4. Before first use of an aliased resource, the render graph issues a barrier with
@@ -1576,9 +1576,9 @@ ownership transfer barriers.
 
 | `QueueType` | Queue Family Selection | Allowed Operations |
 |-------------|----------------------|-------------------|
-| `graphics` | Family with `GRAPHICS_BIT \| COMPUTE_BIT` | All: draw, dispatch, copy, RT, AS build |
-| `async_compute` | Dedicated family with `COMPUTE_BIT` only | Dispatch, copy |
-| `transfer` | Dedicated family with `TRANSFER_BIT` only | Copy operations |
+| `kGraphics` | Family with `GRAPHICS_BIT \| COMPUTE_BIT` | All: draw, Dispatch, copy, RT, AS Build |
+| `kAsyncCompute` | Dedicated family with `COMPUTE_BIT` only | Dispatch, copy |
+| `kTransfer` | Dedicated family with `TRANSFER_BIT` only | Copy operations |
 
 When a resource transitions between queues from different families, Vulkan requires
 explicit queue ownership transfer barriers (release on source queue, acquire on
@@ -1590,8 +1590,8 @@ based on `QueueSet` family indices.
 The Vulkan backend uses dynamic rendering (core in Vulkan 1.3) exclusively. No
 `VkRenderPass` or `VkFramebuffer` objects are created:
 
-- `begin_render_pass()` maps to `vkCmdBeginRendering` with `VkRenderingInfo`
-- `end_render_pass()` maps to `vkCmdEndRendering`
+- `BeginRenderPass()` maps to `vkCmdBeginRendering` with `VkRenderingInfo`
+- `EndRenderPass()` maps to `vkCmdEndRendering`
 - Pipeline creation uses `VkPipelineRenderingCreateInfo` in the `pNext` chain
 
 **Image view caching:** `VkImageView` objects required for rendering attachments
@@ -1642,7 +1642,7 @@ sequenceDiagram
 
 ### 31. Synchronization2 Barrier Sequence
 
-How `VulkanCommandBuffer::barrier()` translates abstract barrier descriptors into
+How `VulkanCommandBuffer::Barrier()` translates abstract barrier descriptors into
 Vulkan synchronization2 calls. Covers texture barriers (layout transitions), buffer
 barriers, queue ownership transfers, and split barriers via events.
 
@@ -1652,31 +1652,31 @@ sequenceDiagram
     participant CB as VulkanCommandBuffer
     participant Vk as Vulkan API
 
-    Note over RG,Vk: Texture barrier (layout transition)
-    RG->>CB: barrier(BarrierDesc)
+    Note over RG,Vk: Texture Barrier (layout transition)
+    RG->>CB: Barrier(BarrierDesc)
     CB->>CB: Translate to VkImageMemoryBarrier2
     Note over CB: srcStageMask, srcAccessMask,<br/>dstStageMask, dstAccessMask,<br/>oldLayout, newLayout
     CB->>Vk: vkCmdPipelineBarrier2(VkDependencyInfo)
 
-    Note over RG,Vk: Buffer barrier (storage write to read)
-    RG->>CB: barrier(BarrierDesc)
+    Note over RG,Vk: Buffer Barrier (storage write to read)
+    RG->>CB: Barrier(BarrierDesc)
     CB->>CB: Translate to VkBufferMemoryBarrier2
     CB->>Vk: vkCmdPipelineBarrier2(VkDependencyInfo)
 
     Note over RG,Vk: Queue ownership transfer
-    RG->>CB: barrier(BarrierDesc) on compute queue
+    RG->>CB: Barrier(BarrierDesc) on compute queue
     CB->>CB: Build release barrier
     Note over CB: srcQueueFamilyIndex = compute,<br/>dstQueueFamilyIndex = graphics
     CB->>Vk: vkCmdPipelineBarrier2 (release)
-    RG->>CB: barrier(BarrierDesc) on graphics queue
+    RG->>CB: Barrier(BarrierDesc) on graphics queue
     CB->>CB: Build acquire barrier
     CB->>Vk: vkCmdPipelineBarrier2 (acquire)
 
     Note over RG,Vk: Split barrier via events
-    RG->>CB: barrier(split_begin)
+    RG->>CB: Barrier(split_begin)
     CB->>Vk: vkCmdSetEvent2(event, VkDependencyInfo)
     Note over CB: Intervening commands overlap
-    RG->>CB: barrier(split_end)
+    RG->>CB: Barrier(split_end)
     CB->>Vk: vkCmdWaitEvents2(event, VkDependencyInfo)
 ```
 
@@ -1692,8 +1692,8 @@ sequenceDiagram
     participant VD as VulkanDevice
     participant Vk as Vulkan API
 
-    App->>VD: resize_swapchain(handle, width, height)
-    VD->>VD: wait_idle()
+    App->>VD: ResizeSwapchain(handle, width, height)
+    VD->>VD: WaitIdle()
     VD->>Vk: vkDeviceWaitIdle
     Note over VD: All in-flight frames complete
     VD->>Vk: vkCreateSwapchainKHR(oldSwapchain)
@@ -1705,7 +1705,7 @@ sequenceDiagram
     VD-->>App: swapchain ready
 
     Note over App,Vk: Next frame resumes normally
-    App->>VD: acquire_next_image(handle)
+    App->>VD: AcquireNextImage(handle)
     VD->>Vk: vkAcquireNextImageKHR
     Vk-->>VD: image index
     VD-->>App: TextureHandle
@@ -1723,14 +1723,14 @@ sequenceDiagram
     participant TS as Timeline Semaphore
 
     TX->>TX: vkCmdCopyBufferToImage
-    TX->>TS: signal(101) via VkSubmitInfo2
-    GFX->>TS: wait(101) via VkSubmitInfo2
+    TX->>TS: Signal(101) via VkSubmitInfo2
+    GFX->>TS: Wait(101) via VkSubmitInfo2
     Note over TX,GFX: Queue ownership transfer barrier pair
     GFX->>GFX: vkCmdDrawMeshTasksEXT
-    GFX->>TS: signal(201)
-    AC->>TS: wait(201)
+    GFX->>TS: Signal(201)
+    AC->>TS: Wait(201)
     AC->>AC: vkCmdDispatch (post-process)
-    AC->>TS: signal(301)
-    GFX->>TS: wait(301)
+    AC->>TS: Signal(301)
+    GFX->>TS: Wait(301)
     GFX->>GFX: Final composite
 ```

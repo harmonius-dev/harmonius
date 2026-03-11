@@ -100,43 +100,43 @@ flowchart TD
 namespace harmonius::gpu::d3d12 {
 
 class D3D12Device {
-public:
-    explicit D3D12Device(const DeviceDesc& desc);
-    ~D3D12Device();
+ public:
+  explicit D3D12Device(const DeviceDesc& desc);
+  ~D3D12Device();
 
-    // Non-copyable, non-movable
-    D3D12Device(const D3D12Device&) = delete;
-    D3D12Device& operator=(const D3D12Device&) = delete;
+  // Non-copyable, non-movable
+  D3D12Device(const D3D12Device&) = delete;
+  D3D12Device& operator=(const D3D12Device&) = delete;
 
-    [[nodiscard]] DeviceCapabilities capabilities() const;
+  [[nodiscard]] DeviceCapabilities Capabilities() const;
 
-    // Drains all queues and blocks until the GPU is idle.
-    // Signals each queue's fence and waits on the CPU for completion.
-    void wait_idle();
+  // Drains all queues and blocks until the GPU is idle.
+  // Signals each queue's fence and waits on the CPU for completion.
+  void WaitIdle();
 
-    // See gpu-backend-interface.md for the full method list.
+  // See gpu-backend-interface.md for the full method list.
 
-private:
-    ComPtr<IDXGIFactory7>                factory_;
-    ComPtr<IDXGIAdapter4>                adapter_;
-    ComPtr<ID3D12Device16>               device_;
-    struct QueueSet {
-        ComPtr<ID3D12CommandQueue>  graphics;
-        ComPtr<ID3D12CommandQueue>  compute;
-        ComPtr<ID3D12CommandQueue>  copy;
-    } queues_;
+ private:
+  ComPtr<IDXGIFactory7> factory_;
+  ComPtr<IDXGIAdapter4> adapter_;
+  ComPtr<ID3D12Device16> device_;
+  struct QueueSet {
+    ComPtr<ID3D12CommandQueue> graphics;
+    ComPtr<ID3D12CommandQueue> compute;
+    ComPtr<ID3D12CommandQueue> copy;
+  } queues_;
 
-    ComPtr<ID3D12DescriptorHeap>         cbv_srv_uav_heap_;
-    ComPtr<ID3D12DescriptorHeap>         sampler_heap_;
-    ComPtr<ID3D12RootSignature>          global_root_signature_;
+  ComPtr<ID3D12DescriptorHeap> cbv_srv_uav_heap_;
+  ComPtr<ID3D12DescriptorHeap> sampler_heap_;
+  ComPtr<ID3D12RootSignature> global_root_signature_;
 
-    uint32_t cbv_srv_uav_increment_ = 0;
-    uint32_t sampler_increment_     = 0;
+  uint32_t cbv_srv_uav_increment_ = 0;
+  uint32_t sampler_increment_ = 0;
 };
 
 static_assert(GpuDevice<D3D12Device>);
 
-} // namespace harmonius::gpu::d3d12
+}  // namespace harmonius::gpu::d3d12
 ```
 
 ---
@@ -147,17 +147,17 @@ D3D12 exposes three command list types mapping to three GPU engines:
 
 | `QueueType` | D3D12 Command List Type | GPU Engine | Allowed Operations |
 |-------------|------------------------|-----------|--------------------|
-| `graphics` | `D3D12_COMMAND_LIST_TYPE_DIRECT` | 3D engine | All: draw, dispatch, copy, RT, AS build, work graphs |
-| `async_compute` | `D3D12_COMMAND_LIST_TYPE_COMPUTE` | Compute engine | Dispatch, copy, UAV clear, indirect execute |
-| `transfer` | `D3D12_COMMAND_LIST_TYPE_COPY` | Copy engine | `CopyBufferRegion`, `CopyTextureRegion`, `CopyResource`, `CopyTiles` |
+| `kGraphics` | `D3D12_COMMAND_LIST_TYPE_DIRECT` | 3D engine | All: draw, Dispatch, copy, RT, AS Build, work graphs |
+| `kAsyncCompute` | `D3D12_COMMAND_LIST_TYPE_COMPUTE` | Compute engine | Dispatch, copy, UAV clear, indirect Execute |
+| `kTransfer` | `D3D12_COMMAND_LIST_TYPE_COPY` | Copy engine | `CopyBufferRegion`, `CopyTextureRegion`, `CopyResource`, `CopyTiles` |
 
 **Queue creation:**
 
 ```cpp
 D3D12_COMMAND_QUEUE_DESC queue_desc = {};
-queue_desc.Type     = D3D12_COMMAND_LIST_TYPE_DIRECT;
+queue_desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 queue_desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_HIGH;
-queue_desc.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE;
+queue_desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 device_->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&queues_.graphics));
 ```
 
@@ -176,20 +176,19 @@ Committed resources allocate their own implicit heap. Used for persistent and im
 
 ```cpp
 D3D12_RESOURCE_DESC1 res_desc = {};
-res_desc.Dimension        = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-res_desc.Width            = desc.width;
-res_desc.Height           = desc.height;
+res_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+res_desc.Width = desc.width;
+res_desc.Height = desc.height;
 res_desc.DepthOrArraySize = desc.depth_or_layers;
-res_desc.MipLevels        = desc.mip_levels;
-res_desc.Format           = to_dxgi_format(desc.format);
-res_desc.SampleDesc       = {static_cast<UINT>(desc.samples), 0};
-res_desc.Layout           = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-res_desc.Flags            = to_d3d12_resource_flags(desc.usage);
+res_desc.MipLevels = desc.mip_levels;
+res_desc.Format = ToDxgiFormat(desc.format);
+res_desc.SampleDesc = {static_cast<UINT>(desc.samples), 0};
+res_desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+res_desc.Flags = ToD3d12ResourceFlags(desc.usage);
 
 D3D12_HEAP_PROPERTIES heap_props = {D3D12_HEAP_TYPE_DEFAULT};
-device_->CreateCommittedResource3(&heap_props, D3D12_HEAP_FLAG_NONE,
-    &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, nullptr,
-    0, nullptr, IID_PPV_ARGS(&resource));
+device_->CreateCommittedResource3(&heap_props, D3D12_HEAP_FLAG_NONE, &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr,
+                                  nullptr, 0, nullptr, IID_PPV_ARGS(&resource));
 ```
 
 ### Heaps and Placed Resources
@@ -200,15 +199,14 @@ within the same heap at non-overlapping lifetime intervals.
 ```cpp
 // Create a heap
 D3D12_HEAP_DESC heap_desc = {};
-heap_desc.SizeInBytes     = desc.size_bytes;
+heap_desc.SizeInBytes = desc.size_bytes;
 heap_desc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
-heap_desc.Flags           = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
+heap_desc.Flags = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
 device_->CreateHeap(&heap_desc, IID_PPV_ARGS(&heap));
 
 // Place a resource within the heap at a specific offset
-device_->CreatePlacedResource2(heap, offset, &res_desc,
-    D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr,
-    IID_PPV_ARGS(&resource));
+device_->CreatePlacedResource2(heap, offset, &res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr,
+                               IID_PPV_ARGS(&resource));
 ```
 
 **Aliasing rules:**
@@ -222,17 +220,16 @@ device_->CreatePlacedResource2(heap, offset, &res_desc,
 For virtual textures and sparse residency (R-3.2.6):
 
 ```cpp
-device_->CreateReservedResource2(&res_desc,
-    D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, nullptr, 0, nullptr,
-    IID_PPV_ARGS(&sparse_texture));
+device_->CreateReservedResource2(&res_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, nullptr, 0, nullptr,
+                                 IID_PPV_ARGS(&sparse_texture));
 
 // Map tiles from a heap
 D3D12_TILED_RESOURCE_COORDINATE coord = {tile_x, tile_y, 0, 0};
 D3D12_TILE_REGION_SIZE region = {1, FALSE, 0, 0, 0};
 D3D12_TILE_RANGE_FLAGS flags = D3D12_TILE_RANGE_FLAG_NONE;
 UINT heap_offset = ...;
-queue->UpdateTileMappings(sparse_texture, 1, &coord, &region,
-    heap, 1, &flags, &heap_offset, &tile_count, D3D12_TILE_MAPPING_FLAG_NONE);
+queue->UpdateTileMappings(sparse_texture, 1, &coord, &region, heap, 1, &flags, &heap_offset, &tile_count,
+                          D3D12_TILE_MAPPING_FLAG_NONE);
 ```
 
 ### Memory Allocator
@@ -251,17 +248,10 @@ exposed through the `DeviceCapabilities` struct.
 
 ```cpp
 // One allocator per frame-in-flight per queue type per thread
-device_->CreateCommandAllocator(
-    D3D12_COMMAND_LIST_TYPE_DIRECT,
-    IID_PPV_ARGS(&allocator)
-);
+device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator));
 
 // Command list reused across frames (Reset + re-record)
-device_->CreateCommandList1(
-    0, D3D12_COMMAND_LIST_TYPE_DIRECT,
-    D3D12_COMMAND_LIST_FLAG_NONE,
-    IID_PPV_ARGS(&cmd_list)
-);
+device_->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmd_list));
 
 // Begin recording
 cmd_list->Reset(allocator, nullptr);
@@ -281,25 +271,25 @@ queue->ExecuteCommandLists(1, lists);
 
 ```cpp
 class D3D12CommandPool {
-public:
-    D3D12CommandPool(ID3D12Device16* device, D3D12_COMMAND_LIST_TYPE type);
+ public:
+  D3D12CommandPool(ID3D12Device16* device, D3D12_COMMAND_LIST_TYPE type);
 
-    // Reuse a cached command list or create a new one.
-    // The returned list is in a non-recording state — call begin() to start.
-    [[nodiscard]] D3D12CommandBuffer allocate_command_buffer();
+  // Reuse a cached command list or create a new one.
+  // The returned list is in a non-recording state — call Begin() to start.
+  [[nodiscard]] D3D12CommandBuffer AllocateCommandBuffer();
 
-    // Reset the underlying ID3D12CommandAllocator and return all command
-    // lists to the cache. Must only be called once the GPU has finished
-    // executing all previously submitted command buffers from this pool.
-    void reset();
+  // Reset the underlying ID3D12CommandAllocator and return all command
+  // lists to the cache. Must only be called once the GPU has finished
+  // executing all previously submitted command buffers from this pool.
+  void Reset();
 
-    [[nodiscard]] uint32_t allocated_count() const { return allocated_; }
+  [[nodiscard]] uint32_t AllocatedCount() const { return allocated_; }
 
-private:
-    ComPtr<ID3D12CommandAllocator>                        allocator_;
-    std::vector<ComPtr<ID3D12GraphicsCommandList10>>      cached_lists_;
-    uint32_t                                              allocated_ = 0;
-    D3D12_COMMAND_LIST_TYPE                               type_;
+ private:
+  ComPtr<ID3D12CommandAllocator> allocator_;
+  std::vector<ComPtr<ID3D12GraphicsCommandList10>> cached_lists_;
+  uint32_t allocated_ = 0;
+  D3D12_COMMAND_LIST_TYPE type_;
 };
 
 static_assert(GpuCommandPool<D3D12CommandPool>);
@@ -310,22 +300,22 @@ a single `ID3D12GraphicsCommandList10`:
 
 ```cpp
 class D3D12CommandBuffer {
-public:
-    explicit D3D12CommandBuffer(ComPtr<ID3D12GraphicsCommandList10> list);
+ public:
+  explicit D3D12CommandBuffer(ComPtr<ID3D12GraphicsCommandList10> list);
 
-    // Reset the command list with the given allocator, entering the recording state.
-    // Calls list_->Reset(allocator, nullptr).
-    void begin();
+  // Reset the command list with the given allocator, entering the recording state.
+  // Calls list_->Reset(allocator, nullptr).
+  void Begin();
 
-    // Finalize the command list for submission.
-    // Calls list_->Close().
-    void end();
+  // Finalize the command list for submission.
+  // Calls list_->Close().
+  void End();
 
-    // ... remaining methods (barrier, dispatch_mesh, etc.)
+  // ... remaining methods (barrier, dispatch_mesh, etc.)
 
-private:
-    ComPtr<ID3D12GraphicsCommandList10>  list_;
-    ID3D12CommandAllocator*              current_allocator_ = nullptr;
+ private:
+  ComPtr<ID3D12GraphicsCommandList10> list_;
+  ID3D12CommandAllocator* current_allocator_ = nullptr;
 };
 
 static_assert(GpuCommandBuffer<D3D12CommandBuffer>);
@@ -357,36 +347,34 @@ cache flushing, and layout transitions.
 **Mapping from abstract `BarrierDesc`:**
 
 ```cpp
-void D3D12CommandBuffer::barrier(std::span<const BarrierDesc> barriers) {
-    // Collect into D3D12_BARRIER_GROUP arrays
-    std::vector<D3D12_TEXTURE_BARRIER> texture_barriers;
-    std::vector<D3D12_BUFFER_BARRIER>  buffer_barriers;
-    std::vector<D3D12_GLOBAL_BARRIER>  global_barriers;
+void D3D12CommandBuffer::Barrier(std::span<const BarrierDesc> barriers) {
+  // Collect into D3D12_BARRIER_GROUP arrays
+  std::vector<D3D12_TEXTURE_BARRIER> texture_barriers;
+  std::vector<D3D12_BUFFER_BARRIER> buffer_barriers;
+  std::vector<D3D12_GLOBAL_BARRIER> global_barriers;
 
-    for (auto& b : barriers) {
-        for (auto& tb : b.texture_barriers) {
-            texture_barriers.push_back({
-                .SyncBefore   = to_d3d12_sync(tb.src_stage),
-                .SyncAfter    = to_d3d12_sync(tb.dst_stage),
-                .AccessBefore = to_d3d12_access(tb.src_access),
-                .AccessAfter  = to_d3d12_access(tb.dst_access),
-                .LayoutBefore = to_d3d12_layout(tb.old_layout),
-                .LayoutAfter  = to_d3d12_layout(tb.new_layout),
-                .pResource    = resolve_texture(tb.texture),
-                .Subresources = to_d3d12_subresource_range(tb.subresource_range),
-                .Flags        = tb.discard
-                    ? D3D12_TEXTURE_BARRIER_FLAGS_DISCARD
-                    : D3D12_TEXTURE_BARRIER_FLAGS_NONE,
-            });
-        }
-        // ... buffer and global barriers similarly ...
+  for (auto& b : barriers) {
+    for (auto& tb : b.texture_barriers) {
+      texture_barriers.push_back({
+          .SyncBefore = ToD3d12Sync(tb.src_stage),
+          .SyncAfter = ToD3d12Sync(tb.dst_stage),
+          .AccessBefore = ToD3d12Access(tb.src_access),
+          .AccessAfter = ToD3d12Access(tb.dst_access),
+          .LayoutBefore = ToD3d12Layout(tb.old_layout),
+          .LayoutAfter = ToD3d12Layout(tb.new_layout),
+          .pResource = ResolveTexture(tb.texture),
+          .Subresources = ToD3d12SubresourceRange(tb.subresource_range),
+          .Flags = tb.discard ? D3D12_TEXTURE_BARRIER_FLAGS_DISCARD : D3D12_TEXTURE_BARRIER_FLAGS_NONE,
+      });
     }
+    // ... buffer and global barriers similarly ...
+  }
 
-    D3D12_BARRIER_GROUP groups[3];
-    uint32_t group_count = 0;
-    // ... populate groups ...
+  D3D12_BARRIER_GROUP groups[3];
+  uint32_t group_count = 0;
+  // ... populate groups ...
 
-    cmd_list_->Barrier(group_count, groups);
+  cmd_list_->Barrier(group_count, groups);
 }
 ```
 
@@ -394,38 +382,38 @@ void D3D12CommandBuffer::barrier(std::span<const BarrierDesc> barriers) {
 
 | Abstract | D3D12 |
 |----------|-------|
-| `mesh_shader` | `VERTEX_SHADING` (covers mesh/amplification) |
-| `task_shader` | `VERTEX_SHADING` |
-| `fragment_shader` | `PIXEL_SHADING` |
-| `compute_shader` | `COMPUTE_SHADING` |
-| `ray_tracing_shader` | `RAYTRACING` |
-| `color_output` | `RENDER_TARGET` |
-| `depth_stencil` | `DEPTH_STENCIL` |
-| `transfer` | `COPY` |
-| `resolve` | `RESOLVE` |
-| `acceleration_structure` | `BUILD_RAYTRACING_ACCELERATION_STRUCTURE` |
-| `indirect_argument` | `EXECUTE_INDIRECT` |
+| `kMeshShader` | `VERTEX_SHADING` (covers mesh/amplification) |
+| `kTaskShader` | `VERTEX_SHADING` |
+| `kFragmentShader` | `PIXEL_SHADING` |
+| `kComputeShader` | `COMPUTE_SHADING` |
+| `kRayTracingShader` | `RAYTRACING` |
+| `kColorOutput` | `RENDER_TARGET` |
+| `kDepthStencil` | `DEPTH_STENCIL` |
+| `kTransfer` | `COPY` |
+| `Resolve` | `RESOLVE` |
+| `kAccelerationStructure` | `BUILD_RAYTRACING_ACCELERATION_STRUCTURE` |
+| `kIndirectArgument` | `EXECUTE_INDIRECT` |
 | `all` | `ALL` |
-| `split_begin` | Set `SyncAfter = SPLIT` |
-| `split_end` | Set `SyncBefore = SPLIT` |
+| `SplitBegin` | Set `SyncAfter = SPLIT` |
+| `SplitEnd` | Set `SyncBefore = SPLIT` |
 
 **Layout mapping (`TextureLayout` → `D3D12_BARRIER_LAYOUT`):**
 
 | Abstract | D3D12 |
 |----------|-------|
 | `undefined` | `UNDEFINED` |
-| `general` | `UNORDERED_ACCESS` |
-| `color_attachment` | `RENDER_TARGET` |
-| `depth_stencil_attachment` | `DEPTH_STENCIL_WRITE` |
-| `depth_stencil_read_only` | `DEPTH_STENCIL_READ` |
-| `shader_read_only` | `SHADER_RESOURCE` |
-| `transfer_src` | `COPY_SOURCE` |
-| `transfer_dst` | `COPY_DEST` |
-| `present` | `PRESENT` |
-| `shading_rate` | `SHADING_RATE_SOURCE` |
+| `kGeneral` | `UNORDERED_ACCESS` |
+| `kColorAttachment` | `RENDER_TARGET` |
+| `kDepthStencilAttachment` | `DEPTH_STENCIL_WRITE` |
+| `kDepthStencilReadOnly` | `DEPTH_STENCIL_READ` |
+| `kShaderReadOnly` | `SHADER_RESOURCE` |
+| `kTransferSrc` | `COPY_SOURCE` |
+| `kTransferDst` | `COPY_DEST` |
+| `Present` | `PRESENT` |
+| `kShadingRate` | `SHADING_RATE_SOURCE` |
 
-**Split barriers** are supported by D3D12. The render graph compiler emits `split_begin` at the
-first possible point after the producing pass and `split_end` just before the consuming pass,
+**Split barriers** are supported by D3D12. The render graph compiler emits `SplitBegin` at the
+first possible point after the producing pass and `SplitEnd` just before the consuming pass,
 allowing the GPU to overlap the transition with intervening work.
 
 ### Fences
@@ -436,10 +424,10 @@ D3D12 fences are inherently timeline-based — they store a monotonically increa
 // Create fence
 device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
-// GPU-side signal (after all preceding commands complete)
+// GPU-side Signal (after all preceding commands complete)
 queue->Signal(fence, value);
 
-// GPU-side wait (queue stalls until fence >= value)
+// GPU-side Wait (queue stalls until fence >= value)
 queue->Wait(fence, value);
 
 // CPU-side query
@@ -483,16 +471,16 @@ Mesh shader PSOs use stream-based creation (not the legacy `D3D12_GRAPHICS_PIPEL
 
 ```cpp
 struct MeshPSO_Stream {
-    CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE   pRootSignature;
-    CD3DX12_PIPELINE_STATE_STREAM_AS               AS;  // amplification (task)
-    CD3DX12_PIPELINE_STATE_STREAM_MS               MS;  // mesh
-    CD3DX12_PIPELINE_STATE_STREAM_PS               PS;  // pixel (fragment)
-    CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC       Blend;
-    CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER       Rasterizer;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL1   DepthStencil;
-    CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTFormats;
-    CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT  DSFormat;
-    CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC      SampleDesc;
+  CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
+  CD3DX12_PIPELINE_STATE_STREAM_AS AS;  // amplification (task)
+  CD3DX12_PIPELINE_STATE_STREAM_MS MS;  // mesh
+  CD3DX12_PIPELINE_STATE_STREAM_PS PS;  // pixel (fragment)
+  CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC Blend;
+  CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER Rasterizer;
+  CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL1 DepthStencil;
+  CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTFormats;
+  CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT DSFormat;
+  CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC SampleDesc;
 };
 
 MeshPSO_Stream stream = {};
@@ -525,15 +513,13 @@ D3D12_INDIRECT_ARGUMENT_DESC arg_desc = {};
 arg_desc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH;
 
 D3D12_COMMAND_SIGNATURE_DESC sig_desc = {};
-sig_desc.ByteStride    = sizeof(D3D12_DISPATCH_MESH_ARGUMENTS);
+sig_desc.ByteStride = sizeof(D3D12_DISPATCH_MESH_ARGUMENTS);
 sig_desc.NumArgumentDescs = 1;
-sig_desc.pArgumentDescs   = &arg_desc;
-device_->CreateCommandSignature(&sig_desc, nullptr,
-    IID_PPV_ARGS(&mesh_indirect_sig));
+sig_desc.pArgumentDescs = &arg_desc;
+device_->CreateCommandSignature(&sig_desc, nullptr, IID_PPV_ARGS(&mesh_indirect_sig));
 
 // At recording time:
-cmd_list->ExecuteIndirect(mesh_indirect_sig, draw_count,
-    argument_buffer, arg_offset, count_buffer, count_offset);
+cmd_list->ExecuteIndirect(mesh_indirect_sig, draw_count, argument_buffer, arg_offset, count_buffer, count_offset);
 ```
 
 ### Limits
@@ -545,8 +531,8 @@ cmd_list->ExecuteIndirect(mesh_indirect_sig, draw_count,
 | Max output primitives | 256 |
 | Max shared memory (mesh) | 28 KB |
 | Max shared memory (amplification) | 32 KB |
-| Max payload size (AS → MS) | 16 KB |
-| Max dispatch dimensions (each) | 65,535 |
+| Max payload Size (AS → MS) | 16 KB |
+| Max Dispatch dimensions (each) | 65,535 |
 | Max total dispatched groups | 2²² |
 
 ---
@@ -565,13 +551,13 @@ geom_desc.Triangles.VertexCount = vertex_count;
 geom_desc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
 geom_desc.Triangles.IndexBuffer = index_gpu_addr;
 geom_desc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
-geom_desc.Triangles.IndexCount  = index_count;
+geom_desc.Triangles.IndexCount = index_count;
 geom_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 
 D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
-inputs.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-inputs.Flags         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-inputs.NumDescs      = 1;
+inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+inputs.NumDescs = 1;
 inputs.pGeometryDescs = &geom_desc;
 
 // Query sizes
@@ -580,8 +566,8 @@ device_->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &prebuild_info)
 
 // Build
 D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC build_desc = {};
-build_desc.Inputs                           = inputs;
-build_desc.DestAccelerationStructureData    = blas_gpu_addr;
+build_desc.Inputs = inputs;
+build_desc.DestAccelerationStructureData = blas_gpu_addr;
 build_desc.ScratchAccelerationStructureData = scratch_gpu_addr;
 cmd_list->BuildRaytracingAccelerationStructure(&build_desc, 0, nullptr);
 ```
@@ -591,7 +577,7 @@ cmd_list->BuildRaytracingAccelerationStructure(&build_desc, 0, nullptr);
 RT pipelines use state objects:
 
 ```cpp
-CD3DX12_STATE_OBJECT_DESC so_desc(D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE);
+CD3DX12_STATE_OBJECT_DESC SoDesc(D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE);
 
 // Add DXIL library subobject with shader entry points
 auto* lib = so_desc.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
@@ -632,11 +618,11 @@ The SBT maps ray types to shader entry points:
 ```cpp
 D3D12_DISPATCH_RAYS_DESC dispatch_desc = {};
 dispatch_desc.RayGenerationShaderRecord = {raygen_gpu_addr, raygen_size};
-dispatch_desc.MissShaderTable           = {miss_gpu_addr, miss_size, miss_stride};
-dispatch_desc.HitGroupTable             = {hit_gpu_addr, hit_size, hit_stride};
-dispatch_desc.Width  = width;
+dispatch_desc.MissShaderTable = {miss_gpu_addr, miss_size, miss_stride};
+dispatch_desc.HitGroupTable = {hit_gpu_addr, hit_size, hit_stride};
+dispatch_desc.Width = width;
 dispatch_desc.Height = height;
-dispatch_desc.Depth  = 1;
+dispatch_desc.Depth = 1;
 cmd_list->SetPipelineState1(rt_state_object);
 cmd_list->DispatchRays(&dispatch_desc);
 
@@ -701,7 +687,7 @@ Work graphs enable GPU-driven dynamic work generation (RG-1.13). Capability-gate
 ### State Object Creation
 
 ```cpp
-CD3DX12_STATE_OBJECT_DESC so_desc(D3D12_STATE_OBJECT_TYPE_EXECUTABLE);
+CD3DX12_STATE_OBJECT_DESC SoDesc(D3D12_STATE_OBJECT_TYPE_EXECUTABLE);
 
 // Add DXIL library with [Shader("node")] entry points
 auto* lib = so_desc.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
@@ -742,8 +728,8 @@ set_desc.WorkGraph.BackingMemory = {backing_gpu_addr, backing_size};
 cmd_list->SetProgram(&set_desc);
 
 D3D12_DISPATCH_GRAPH_DESC dispatch_desc = {};
-dispatch_desc.Mode           = D3D12_DISPATCH_GRAPH_MODE_NODE_CPU_INPUT;
-dispatch_desc.NodeCPUInput   = {0, input_data, input_size};
+dispatch_desc.Mode = D3D12_DISPATCH_GRAPH_MODE_NODE_CPU_INPUT;
+dispatch_desc.NodeCPUInput = {0, input_data, input_size};
 cmd_list->DispatchGraph(&dispatch_desc);
 ```
 
@@ -767,8 +753,8 @@ D3D12 has four descriptor heap types. Only `CBV_SRV_UAV` and `SAMPLER` are shade
 ```cpp
 D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
 heap_desc.NumDescriptors = 1'000'000;
-heap_desc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-heap_desc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 device_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&cbv_srv_uav_heap_));
 ```
 
@@ -786,19 +772,19 @@ A single global root signature serves all pipelines:
 CD3DX12_ROOT_PARAMETER1 params[5];
 params[0].InitAsConstantBufferView(0);  // b0
 
-CD3DX12_DESCRIPTOR_RANGE1 srv_range(D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-    UINT_MAX, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+CD3DX12_DESCRIPTOR_RANGE1 SrvRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, UINT_MAX, 0, 0,
+                                    D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
 params[1].InitAsDescriptorTable(1, &srv_range);
 
-CD3DX12_DESCRIPTOR_RANGE1 uav_range(D3D12_DESCRIPTOR_RANGE_TYPE_UAV,
-    UINT_MAX, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+CD3DX12_DESCRIPTOR_RANGE1 UavRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, UINT_MAX, 0, 0,
+                                    D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
 params[2].InitAsDescriptorTable(1, &uav_range);
 
-CD3DX12_DESCRIPTOR_RANGE1 sampler_range(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER,
-    UINT_MAX, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+CD3DX12_DESCRIPTOR_RANGE1 SamplerRange(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, UINT_MAX, 0, 0,
+                                        D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
 params[3].InitAsDescriptorTable(1, &sampler_range);
 
-params[4].InitAsConstants(8, 1); // 8 DWORDs = 32 bytes at b1
+params[4].InitAsConstants(8, 1);  // 8 DWORDs = 32 bytes at b1
 ```
 
 ### Bindless Access (SM 6.6)
@@ -823,8 +809,7 @@ enabling precise sub-allocation from ring buffers and shared buffer pools.
 
 ```cpp
 D3D12_FEATURE_DATA_D3D12_OPTIONS22 options22 = {};
-device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS22,
-    &options22, sizeof(options22));
+device_->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS22, &options22, sizeof(options22));
 bool byte_views = options22.CreateByteOffsetViewsSupported;
 ```
 
@@ -833,19 +818,19 @@ bool byte_views = options22.CreateByteOffsetViewsSupported;
 ```cpp
 // Byte-offset SRV for buffers
 struct D3D12_BUFFER_SRV_BYTE_OFFSET {
-    UINT64  Offset;               // byte offset into the buffer
-    UINT64  Size;                  // view size in bytes (0 = to end)
-    UINT    StructureByteStride;   // element stride (0 = typed/raw)
-    D3D12_BUFFER_SRV_FLAGS Flags;
+  UINT64 Offset;             // byte offset into the buffer
+  UINT64 Size;               // view size in bytes (0 = to end)
+  UINT StructureByteStride;  // element stride (0 = typed/raw)
+  D3D12_BUFFER_SRV_FLAGS Flags;
 };
 
 // Byte-offset UAV for buffers
 struct D3D12_BUFFER_UAV_BYTE_OFFSET {
-    UINT64  Offset;               // byte offset into the buffer
-    UINT64  Size;                  // view size in bytes
-    UINT    StructureByteStride;   // element stride
-    UINT64  CounterOffsetInBytes;  // counter resource offset
-    D3D12_BUFFER_UAV_FLAGS Flags;
+  UINT64 Offset;                // byte offset into the buffer
+  UINT64 Size;                  // view size in bytes
+  UINT StructureByteStride;     // element stride
+  UINT64 CounterOffsetInBytes;  // counter resource offset
+  D3D12_BUFFER_UAV_FLAGS Flags;
 };
 ```
 
@@ -853,25 +838,24 @@ struct D3D12_BUFFER_UAV_BYTE_OFFSET {
 
 ```cpp
 D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-srv_desc.Format        = DXGI_FORMAT_UNKNOWN;
+srv_desc.Format = DXGI_FORMAT_UNKNOWN;
 srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER_BYTE_OFFSET;
 srv_desc.BufferByteOffset.Offset = ring_buffer_offset;  // arbitrary byte offset
-srv_desc.BufferByteOffset.Size   = 256;
+srv_desc.BufferByteOffset.Size = 256;
 srv_desc.BufferByteOffset.StructureByteStride = 16;
 
 // New Try* methods return HRESULT for error handling
-HRESULT hr = device16->TryCreateShaderResourceView(
-    buffer, &srv_desc, descriptor_handle);
+HRESULT hr = device16->TryCreateShaderResourceView(buffer, &srv_desc, descriptor_handle);
 ```
 
 **Alignment rules for byte-offset views:**
 
 | Buffer Type | Minimum Alignment |
 |------------|-------------------|
-| Power-of-2 format (e.g., `R32G32B32A32_FLOAT`) | Format size (16 bytes) |
-| Non-power-of-2 format (e.g., `R32G32B32_FLOAT`) | Channel size (4 bytes) |
-| Structured buffer | `min(2^ffs(stride), 16)` bytes |
-| Raw buffer | 16 bytes (`D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT`) |
+| Power-of-2 format (e.g., `R32G32B32A32_FLOAT`) | Format Size (16 bytes) |
+| Non-power-of-2 format (e.g., `R32G32B32_FLOAT`) | Channel Size (4 bytes) |
+| Structured Buffer | `kMin(2^ffs(stride), 16)` bytes |
+| Raw Buffer | 16 bytes (`D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT`) |
 
 ### Tight Alignment for Placed Resources
 
@@ -879,16 +863,13 @@ Agility SDK 1.618+ supports `D3D12_RESOURCE_FLAG_USE_TIGHT_ALIGNMENT` for placed
 resources, reducing alignment from 64 KB to as low as 8 bytes:
 
 ```cpp
-CD3DX12_RESOURCE_DESC buf_desc = CD3DX12_RESOURCE_DESC::Buffer(
-    size, D3D12_RESOURCE_FLAG_USE_TIGHT_ALIGNMENT);
+CD3DX12_RESOURCE_DESC buf_desc = CD3DX12_RESOURCE_DESC::Buffer(size, D3D12_RESOURCE_FLAG_USE_TIGHT_ALIGNMENT);
 
-D3D12_RESOURCE_ALLOCATION_INFO info =
-    device_->GetResourceAllocationInfo(0, 1, &buf_desc);
+D3D12_RESOURCE_ALLOCATION_INFO info = device_->GetResourceAllocationInfo(0, 1, &buf_desc);
 // info.Alignment may be as low as 8 bytes
 
-device_->CreatePlacedResource2(heap, offset, &buf_desc,
-    D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr,
-    IID_PPV_ARGS(&resource));
+device_->CreatePlacedResource2(heap, offset, &buf_desc, D3D12_BARRIER_LAYOUT_UNDEFINED, nullptr, 0, nullptr,
+                               IID_PPV_ARGS(&resource));
 ```
 
 This reduces memory waste for many small buffers by 25–50% and enables denser packing in
@@ -907,28 +888,24 @@ is needed (unlike Vulkan). All references to back buffer resources must be relea
 `ResizeBuffers`:
 
 ```cpp
-void D3D12Device::resize_swapchain(SwapchainHandle handle,
-                                   uint32_t width, uint32_t height) {
-    auto& sc = get_swapchain(handle);
+void D3D12Device::ResizeSwapchain(SwapchainHandle handle, uint32_t width, uint32_t height) {
+  auto& sc = GetSwapchain(handle);
 
-    // Release all back buffer references so ResizeBuffers can succeed.
-    for (auto& rt : sc.back_buffers) {
-        rt.Reset();
-    }
+  // Release all back buffer references so ResizeBuffers can succeed.
+  for (auto& rt : sc.back_buffers) {
+    rt.Reset();
+  }
 
-    HRESULT hr = sc.swapchain->ResizeBuffers(
-        0,           // keep current buffer count
-        width,
-        height,
-        DXGI_FORMAT_UNKNOWN,  // keep current format
-        sc.flags
-    );
-    check_hresult(hr);
+  HRESULT hr = sc.swapchain->ResizeBuffers(0,  // keep current buffer count
+                                           width, height,
+                                           DXGI_FORMAT_UNKNOWN,  // keep current format
+                                           sc.flags);
+  CheckHresult(hr);
 
-    // Re-acquire back buffer resources and recreate RTVs.
-    for (uint32_t i = 0; i < sc.buffer_count; ++i) {
-        sc.swapchain->GetBuffer(i, IID_PPV_ARGS(&sc.back_buffers[i]));
-    }
+  // Re-acquire back buffer resources and recreate RTVs.
+  for (uint32_t i = 0; i < sc.buffer_count; ++i) {
+    sc.swapchain->GetBuffer(i, IID_PPV_ARGS(&sc.back_buffers[i]));
+  }
 }
 ```
 
@@ -964,7 +941,7 @@ ComPtr<ID3D12FunctionLinkingGraph> flg;
 D3DCreateFunctionLinkingGraph(0, &flg);
 
 // Define input signature (data from mesh shader)
-D3D12_PARAMETER_DESC input_params[] = { /* position, UV, tangent frame */ };
+D3D12_PARAMETER_DESC input_params[] = {/* position, UV, tangent frame */};
 ID3D12LinkingNode* input_node;
 flg->SetInputSignature(input_params, _countof(input_params), &input_node);
 
@@ -1019,28 +996,25 @@ serialized blob to avoid redundant shader compilation:
 
 ```cpp
 // Load pipeline library from a previously saved blob
-std::vector<uint8_t> blob = load_file("pipeline_cache.bin");
+std::vector<uint8_t> blob = LoadFile("pipeline_cache.bin");
 ComPtr<ID3D12PipelineLibrary1> library;
-HRESULT hr = device_->CreatePipelineLibrary(
-    blob.data(), blob.size(), IID_PPV_ARGS(&library));
+HRESULT hr = device_->CreatePipelineLibrary(blob.data(), blob.Size(), IID_PPV_ARGS(&library));
 
-if (hr == D3D12_ERROR_DRIVER_VERSION_MISMATCH ||
-    hr == D3D12_ERROR_ADAPTER_NOT_FOUND ||
-    hr == DXGI_ERROR_UNSUPPORTED) {
-    // Blob is stale — create a fresh library
-    device_->CreatePipelineLibrary(nullptr, 0, IID_PPV_ARGS(&library));
+if (hr == D3D12_ERROR_DRIVER_VERSION_MISMATCH || hr == D3D12_ERROR_ADAPTER_NOT_FOUND || hr == DXGI_ERROR_UNSUPPORTED) {
+  // Blob is stale — create a fresh library
+  device_->CreatePipelineLibrary(nullptr, 0, IID_PPV_ARGS(&library));
 }
 
 // Store PSOs in the library as they are created
 library->StorePipeline(L"gbuffer_mesh", gbuffer_pso);
-library->StorePipeline(L"shadow_mesh",  shadow_pso);
-library->StorePipeline(L"lighting_cs",  lighting_pso);
+library->StorePipeline(L"shadow_mesh", shadow_pso);
+library->StorePipeline(L"lighting_cs", lighting_pso);
 
 // At shutdown, serialize the library to disk for the next session
 SIZE_T cache_size = library->GetSerializedSize();
 std::vector<uint8_t> cache(cache_size);
 library->Serialize(cache.data(), cache_size);
-save_file("pipeline_cache.bin", cache);
+SaveFile("pipeline_cache.bin", cache);
 ```
 
 The pipeline library blob is invalidated by driver updates or adapter changes. The backend
@@ -1052,13 +1026,13 @@ detects these conditions via `HRESULT` and rebuilds the cache transparently.
 
 | Feature | D3D12 API |
 |---------|-----------|
-| Timestamp queries | `EndQuery(D3D12_QUERY_TYPE_TIMESTAMP)` → resolve to readback buffer |
+| Timestamp queries | `EndQuery(D3D12_QUERY_TYPE_TIMESTAMP)` → Resolve to readback Buffer |
 | Pipeline statistics | `BeginQuery(D3D12_QUERY_TYPE_PIPELINE_STATISTICS1)` / `EndQuery` |
 | Debug labels | PIX `PIXBeginEvent` / `PIXEndEvent` on command list |
 | Resource naming | `ID3D12Object::SetName(LPCWSTR)` on all device children |
 | GPU capture | PIX `WinPixEventRuntime`, `PIXBeginCapture` |
-| Memory budget | `IDXGIAdapter3::QueryVideoMemoryInfo` |
-| Mesh shader stats | `D3D12_QUERY_DATA_PIPELINE_STATISTICS1.ASInvocations`, `.MSInvocations`, `.MSPrimitives` |
+| Memory Budget | `IDXGIAdapter3::QueryVideoMemoryInfo` |
+| Mesh shader Stats | `D3D12_QUERY_DATA_PIPELINE_STATISTICS1.ASInvocations`, `.MSInvocations`, `.MSPrimitives` |
 
 ### Shader Debugging
 
@@ -1098,19 +1072,19 @@ classDiagram
         -ID3D12DescriptorHeap cbv_srv_uav_heap_
         -ID3D12DescriptorHeap sampler_heap_
         -ID3D12RootSignature global_root_signature_
-        +capabilities() DeviceCapabilities
-        +wait_idle() void
-        +create_texture(TextureDesc) TextureHandle
-        +create_buffer(BufferDesc) BufferHandle
-        +create_heap(HeapDesc) HeapHandle
-        +create_placed_texture(HeapHandle, offset, TextureDesc) TextureHandle
-        +create_fence(initial_value) FenceHandle
-        +create_mesh_render_pipeline(MeshRenderPipelineDesc) PipelineHandle
-        +create_ray_tracing_pipeline(RayTracingPipelineDesc) PipelineHandle
-        +create_work_graph(WorkGraphDesc) WorkGraphHandle
-        +resize_swapchain(SwapchainHandle, w, h) void
-        +submit(QueueType, cmd_bufs, signals, waits) void
-        +create_command_pool(QueueType) D3D12CommandPool
+        +Capabilities() DeviceCapabilities
+        +WaitIdle() void
+        +CreateTexture(TextureDesc) TextureHandle
+        +CreateBuffer(BufferDesc) BufferHandle
+        +CreateHeap(HeapDesc) HeapHandle
+        +CreatePlacedTexture(HeapHandle, offset, TextureDesc) TextureHandle
+        +CreateFence(initial_value) FenceHandle
+        +CreateMeshRenderPipeline(MeshRenderPipelineDesc) PipelineHandle
+        +CreateRayTracingPipeline(RayTracingPipelineDesc) PipelineHandle
+        +CreateWorkGraph(WorkGraphDesc) WorkGraphHandle
+        +ResizeSwapchain(SwapchainHandle, w, h) void
+        +Submit(QueueType, cmd_bufs, signals, waits) void
+        +CreateCommandPool(QueueType) D3D12CommandPool
     }
 
     class D3D12CommandPool {
@@ -1118,39 +1092,39 @@ classDiagram
         -vector~ID3D12GraphicsCommandList10~ cached_lists_
         -uint32_t allocated_
         -D3D12_COMMAND_LIST_TYPE type_
-        +allocate_command_buffer() D3D12CommandBuffer
-        +reset() void
-        +allocated_count() uint32_t
+        +AllocateCommandBuffer() D3D12CommandBuffer
+        +Reset() void
+        +AllocatedCount() uint32_t
     }
 
     class D3D12CommandBuffer {
         -ID3D12GraphicsCommandList10 list_
         -ID3D12CommandAllocator* current_allocator_
-        +begin() void
-        +end() void
-        +barrier(BarrierDesc) void
-        +begin_render_pass(RenderPassDesc) void
-        +end_render_pass() void
-        +set_pipeline(PipelineHandle) void
-        +dispatch_mesh(x, y, z) void
-        +dispatch_mesh_indirect(buf, offset, count, stride) void
-        +dispatch(x, y, z) void
-        +trace_rays(TraceRaysDesc) void
-        +build_acceleration_structure(BuildDesc) void
-        +dispatch_graph(DispatchGraphDesc) void
-        +copy_buffer(src, src_off, dst, dst_off, size) void
-        +push_constants(data, size) void
-        +write_timestamp(pool, index) void
+        +Begin() void
+        +End() void
+        +Barrier(BarrierDesc) void
+        +BeginRenderPass(RenderPassDesc) void
+        +EndRenderPass() void
+        +SetPipeline(PipelineHandle) void
+        +DispatchMesh(x, y, z) void
+        +DispatchMeshIndirect(buf, offset, count, stride) void
+        +Dispatch(x, y, z) void
+        +TraceRays(TraceRaysDesc) void
+        +BuildAccelerationStructure(BuildDesc) void
+        +DispatchGraph(DispatchGraphDesc) void
+        +CopyBuffer(src, src_off, dst, dst_off, size) void
+        +PushConstants(data, size) void
+        +WriteTimestamp(pool, index) void
     }
 
     class D3D12Fence {
         -ID3D12Fence fence_
         -HANDLE event_
-        +signal_gpu(queue, value) void
-        +wait_gpu(queue, value) void
-        +signal_cpu(value) void
-        +wait_cpu(value) void
-        +completed_value() uint64_t
+        +SignalGpu(queue, value) void
+        +WaitGpu(queue, value) void
+        +SignalCpu(value) void
+        +WaitCpu(value) void
+        +CompletedValue() uint64_t
     }
 
     D3D12Device ..|> GpuDevice : satisfies

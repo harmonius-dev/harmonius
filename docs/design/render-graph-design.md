@@ -189,14 +189,14 @@ backend (R-1.1.7).
 | `harmonius::rg::compiler`        | Graph Compiler         | DAG validation, optimization, plan output     |
 | `harmonius::rg::resource`        | Resource System        | Allocation, aliasing, pools, ring buffers     |
 | `harmonius::rg::sync`            | Synchronization Engine | Barriers, layout transitions, fences          |
-| `harmonius::rg::gate`            | Gating System          | Capability gates, budget gates, fallbacks     |
-| `harmonius::rg::exec`            | Execution Engine       | Per-frame binding, parallel encoding, submit  |
+| `harmonius::rg::gate`            | Gating System          | Capability gates, Budget gates, fallbacks     |
+| `harmonius::rg::exec`            | Execution Engine       | Per-frame binding, parallel encoding, Submit  |
 | `harmonius::rg::diag`            | Diagnostics            | Timestamps, statistics, memory metrics        |
 | `harmonius::gpu_runtime`         | GPU Runtime            | Memory, state tracking, work graphs, compat   |
 | `harmonius::gpu_runtime::memory` | Memory Manager         | Heap sub-alloc (TLSF), ring buffers, defrag   |
 | `harmonius::gpu_runtime::state`  | State Tracker          | Redundant state elim, resource state cache    |
 | `harmonius::gpu_runtime::work_graph` | Work Graph Runtime | Native GPU work graphs or CPU emulation    |
-| `harmonius::gpu_runtime::compat` | Feature Emulation      | Split barrier emulation, barrier optimization |
+| `harmonius::gpu_runtime::compat` | Feature Emulation      | Split Barrier emulation, Barrier optimization |
 | `harmonius::gpu`                 | Backend Interface      | D3D12, Vulkan 1.4, Metal 4 device layer       |
 
 ```mermaid
@@ -295,14 +295,14 @@ dense registries.
 namespace harmonius::rg {
 
 // Strongly-typed handles — distinct types prevent misuse at compile time
-enum class PassHandle       : uint32_t { invalid = UINT32_MAX };
-enum class ResourceHandle   : uint32_t { invalid = UINT32_MAX };
-enum class SubGraphHandle   : uint32_t { invalid = UINT32_MAX };
-enum class GateHandle       : uint32_t { invalid = UINT32_MAX };
-enum class ChainHandle      : uint32_t { invalid = UINT32_MAX };
-enum class VariantSlotHandle: uint32_t { invalid = UINT32_MAX };
+enum class PassHandle : uint32_t { kInvalid = UINT32_MAX };
+enum class ResourceHandle : uint32_t { kInvalid = UINT32_MAX };
+enum class SubGraphHandle : uint32_t { kInvalid = UINT32_MAX };
+enum class GateHandle : uint32_t { kInvalid = UINT32_MAX };
+enum class ChainHandle : uint32_t { kInvalid = UINT32_MAX };
+enum class VariantSlotHandle : uint32_t { kInvalid = UINT32_MAX };
 
-} // namespace harmonius::rg
+}  // namespace harmonius::rg
 ```
 
 ### Pass Types
@@ -313,20 +313,20 @@ Drawn from RG-1.1, RG-1.7, RG-1.13, RG-1.14. Exhaustive — no extensibility nee
 namespace harmonius::rg {
 
 enum class PassType : uint8_t {
-    rasterization,
-    compute,
-    ray_tracing_dispatch,
-    acceleration_structure_build,
-    transfer,
-    msaa_resolve,
-    present,
-    host_callback,           // RG-1.7: CPU-only, no GPU commands
-    work_graph,              // RG-1.13: GPU self-scheduled
-    checkerboard_resolve,    // RG-1.14: half-res reconstruction
-    opacity_micromap_build,  // RG-2.25: dedicated OMM build pass
+  kRasterization,
+  kCompute,
+  kRayTracingDispatch,
+  kAccelerationStructureBuild,
+  kTransfer,
+  kMsaaResolve,
+  kPresent,
+  kHostCallback,           // RG-1.7: CPU-only, no GPU commands
+  kWorkGraph,              // RG-1.13: GPU self-scheduled
+  kCheckerboardResolve,    // RG-1.14: half-res reconstruction
+  kOpacityMicromapBuild,   // RG-2.25: dedicated OMM build pass
 };
 
-} // namespace harmonius::rg
+}  // namespace harmonius::rg
 ```
 
 ### Access Modes and Usage Types
@@ -335,27 +335,27 @@ enum class PassType : uint8_t {
 namespace harmonius::rg {
 
 enum class AccessMode : uint8_t {
-    read,
-    write,
-    read_write,
+  kRead,
+  kWrite,
+  kReadWrite,
 };
 
 enum class UsageType : uint8_t {
-    color_attachment,
-    depth_attachment,
-    shader_read,
-    storage_read,
-    storage_write,
-    shading_rate_attachment,   // RG-2.12
-    indirect_argument,         // RG-2.13
-    acceleration_structure_read,
-    acceleration_structure_build_write,
-    transfer_src,
-    transfer_dst,
-    present,
+  kColorAttachment,
+  kDepthAttachment,
+  kShaderRead,
+  kStorageRead,
+  kStorageWrite,
+  kShadingRateAttachment,  // RG-2.12
+  kIndirectArgument,       // RG-2.13
+  kAccelerationStructureRead,
+  kAccelerationStructureBuildWrite,
+  kTransferSrc,
+  kTransferDst,
+  kPresent,
 };
 
-} // namespace harmonius::rg
+}  // namespace harmonius::rg
 ```
 
 ### Queue Types
@@ -364,13 +364,13 @@ enum class UsageType : uint8_t {
 namespace harmonius::rg {
 
 enum class QueueAffinity : uint8_t {
-    graphics,
-    async_compute,    // RG-4.2
-    transfer,         // RG-4.3
-    any,              // defaults to graphics (RG-4.1)
+  kGraphics,
+  kAsyncCompute,  // RG-4.2
+  kTransfer,      // RG-4.3
+  kAny,           // defaults to kGraphics (RG-4.1)
 };
 
-} // namespace harmonius::rg
+}  // namespace harmonius::rg
 ```
 
 ### Resource Categories
@@ -379,19 +379,19 @@ enum class QueueAffinity : uint8_t {
 namespace harmonius::rg {
 
 enum class ResourceCategory : uint8_t {
-    transient,           // RG-2.1: single-frame, aliasable
-    persistent,          // RG-2.2: cross-frame, stable allocation
-    imported,            // RG-2.3: external allocation
-    history,             // RG-2.4: ping-pong double-buffer
-    multi_frame_history, // RG-2.24: N-way rotation
-    sparse,              // RG-2.9: tile-granularity residency
-    pool_backed,         // RG-2.8: fixed-capacity pool
-    staging,             // RG-2.10: ring-managed host-visible
-    atlas,               // RG-2.17: power-of-two tile slots
-    acceleration_structure, // RG-2.18: AS with build/read states
+  kTransient,              // RG-2.1: single-frame, aliasable
+  kPersistent,             // RG-2.2: cross-frame, stable allocation
+  kImported,               // RG-2.3: external allocation
+  kHistory,                // RG-2.4: ping-pong double-buffer
+  kMultiFrameHistory,      // RG-2.24: N-way rotation
+  kSparse,                 // RG-2.9: tile-granularity residency
+  kPoolBacked,             // RG-2.8: fixed-capacity pool
+  kStaging,                // RG-2.10: ring-managed host-visible
+  kAtlas,                  // RG-2.17: power-of-two tile slots
+  kAccelerationStructure,  // RG-2.18: AS with build/read states
 };
 
-} // namespace harmonius::rg
+}  // namespace harmonius::rg
 ```
 
 ### Resource Binding Descriptor
@@ -402,15 +402,15 @@ The fundamental unit of pass I/O declaration (RG-1.1).
 namespace harmonius::rg {
 
 struct ResourceBinding {
-    ResourceHandle resource;
-    AccessMode     access;
-    UsageType      usage;
-    uint32_t       array_layer  = 0; // RG-1.5: specific layer target
-    uint32_t       mip_level    = 0; // RG-2.22: specific mip target
-    bool           is_history   = false; // reading previous frame
+  ResourceHandle resource;
+  AccessMode access;
+  UsageType usage;
+  uint32_t array_layer = 0;  // RG-1.5: specific layer target
+  uint32_t mip_level = 0;    // RG-2.22: specific mip target
+  bool is_history = false;   // reading previous frame
 };
 
-} // namespace harmonius::rg
+}  // namespace harmonius::rg
 ```
 
 ### Format and Sample Count
@@ -426,7 +426,7 @@ namespace harmonius::rg {
 using gpu::Format;
 using gpu::SampleCount;
 
-} // namespace harmonius::rg
+}  // namespace harmonius::rg
 ```
 
 ### Error Types
@@ -435,29 +435,29 @@ using gpu::SampleCount;
 namespace harmonius::rg {
 
 enum class ValidationErrorKind : uint8_t {
-    cycle_detected,            // RG-5.7
-    type_mismatch,             // RG-13.4
-    undeclared_resource,       // RG-13.4
-    queue_incompatibility,     // RG-13.4
-    single_writer_violation,   // RG-3.5
-    variant_ambiguity,         // RG-13.7
-    instance_count_mismatch,   // RG-13.8
-    hard_gate_unsatisfied,     // RG-6.2
-    sample_count_mismatch,     // RG-2.21
+  kCycleDetected,          // RG-5.7
+  kTypeMismatch,           // RG-13.4
+  kUndeclaredResource,     // RG-13.4
+  kQueueIncompatibility,   // RG-13.4
+  kSingleWriterViolation,  // RG-3.5
+  kVariantAmbiguity,       // RG-13.7
+  kInstanceCountMismatch,  // RG-13.8
+  kHardGateUnsatisfied,    // RG-6.2
+  kSampleCountMismatch,    // RG-2.21
 };
 
 struct ValidationError {
-    ValidationErrorKind kind;
-    PassHandle          pass;             // pass involved
-    ResourceHandle      resource;         // resource involved (if applicable)
-    std::string         message;
+  ValidationErrorKind kind;
+  PassHandle pass;          // pass involved
+  ResourceHandle resource;  // resource involved (if applicable)
+  std::string message;
 };
 
 struct CompileError {
-    std::vector<ValidationError> errors;
+  std::vector<ValidationError> errors;
 };
 
-} // namespace harmonius::rg
+}  // namespace harmonius::rg
 ```
 
 ---
@@ -478,71 +478,65 @@ The primary entry point for declaring the graph topology. Returns a `DeclaredGra
 namespace harmonius::rg::builder {
 
 class GraphBuilder {
-public:
-    explicit GraphBuilder(const gate::CapabilityDescriptor& caps);
+ public:
+  explicit GraphBuilder(const gate::CapabilityDescriptor& caps);
 
-    // --- Pass declaration (RG-1.1, RG-1.2) ---
-    PassHandle add_pass(PassDescriptor desc);
+  // --- Pass declaration (RG-1.1, RG-1.2) ---
+  PassHandle AddPass(PassDescriptor desc);
 
-    // --- Pass chains (RG-1.3) ---
-    ChainHandle begin_chain(std::string_view name);
-    PassHandle  add_chain_step(ChainHandle chain, PassDescriptor desc);
-    void        end_chain(ChainHandle chain);
+  // --- Pass chains (RG-1.3) ---
+  ChainHandle BeginChain(std::string_view name);
+  PassHandle AddChainStep(ChainHandle chain, PassDescriptor desc);
+  void EndChain(ChainHandle chain);
 
-    // --- Variant dispatch (RG-1.4) ---
-    VariantSlotHandle declare_variant_slot(std::string_view name);
-    PassHandle add_variant(VariantSlotHandle slot,
-                           std::string_view variant_name,
-                           PassDescriptor desc);
+  // --- Variant Dispatch (RG-1.4) ---
+  VariantSlotHandle DeclareVariantSlot(std::string_view name);
+  PassHandle AddVariant(VariantSlotHandle slot, std::string_view variant_name, PassDescriptor desc);
 
-    // --- Sub-graph templates (RG-1.5, RG-9.1) ---
-    SubGraphHandle declare_subgraph_template(std::string_view name,
-                                             SubGraphDescriptor desc);
-    void instantiate_subgraph(SubGraphHandle tpl,
-                              uint32_t instance_count,
-                              std::span<const SubGraphBindings> bindings);
+  // --- Sub-graph templates (RG-1.5, RG-9.1) ---
+  SubGraphHandle DeclareSubgraphTemplate(std::string_view name, SubGraphDescriptor desc);
+  void InstantiateSubgraph(SubGraphHandle tpl, uint32_t instance_count, std::span<const SubGraphBindings> bindings);
 
-    // --- Resource declaration (RG-2.1–2.25) ---
-    ResourceHandle declare_transient(TransientResourceDesc desc);
-    ResourceHandle declare_persistent(PersistentResourceDesc desc);
-    ResourceHandle declare_imported(ImportedResourceDesc desc);
-    ResourceHandle declare_history(HistoryResourceDesc desc);
-    ResourceHandle declare_multi_frame_history(MultiFrameHistoryDesc desc);
-    ResourceHandle declare_sparse(SparseResourceDesc desc);
-    ResourceHandle declare_pool(PoolResourceDesc desc);
-    ResourceHandle declare_staging(StagingBufferDesc desc);
-    ResourceHandle declare_atlas(AtlasResourceDesc desc);
-    ResourceHandle declare_acceleration_structure(AccelStructDesc desc);
-    ResourceHandle declare_ring_buffer(RingBufferDesc desc);           // RG-2.14
-    ResourceHandle declare_bindless_heap(BindlessHeapDesc desc);       // RG-2.15
+  // --- Resource declaration (RG-2.1–2.25) ---
+  ResourceHandle DeclareTransient(TransientResourceDesc desc);
+  ResourceHandle DeclarePersistent(PersistentResourceDesc desc);
+  ResourceHandle DeclareImported(ImportedResourceDesc desc);
+  ResourceHandle DeclareHistory(HistoryResourceDesc desc);
+  ResourceHandle DeclareMultiFrameHistory(MultiFrameHistoryDesc desc);
+  ResourceHandle DeclareSparse(SparseResourceDesc desc);
+  ResourceHandle DeclarePool(PoolResourceDesc desc);
+  ResourceHandle DeclareStaging(StagingBufferDesc desc);
+  ResourceHandle DeclareAtlas(AtlasResourceDesc desc);
+  ResourceHandle DeclareAccelerationStructure(AccelStructDesc desc);
+  ResourceHandle DeclareRingBuffer(RingBufferDesc desc);      // RG-2.14
+  ResourceHandle DeclareBindlessHeap(BindlessHeapDesc desc);  // RG-2.15
 
-    // --- Gates (RG-6.1–6.7) ---
-    GateHandle attach_capability_gate(PassHandle pass, gate::CapabilityGateDesc desc);
-    GateHandle attach_budget_gate(PassHandle pass, gate::BudgetGateDesc desc);
-    GateHandle attach_path_conditioned_gate(PassHandle pass,
-                                            gate::PathConditionedGateDesc desc);  // RG-6.7
-    GateHandle declare_fallback_chain(std::string_view name,
-                                      std::span<const gate::FallbackEntry> entries);
+  // --- Gates (RG-6.1–6.7) ---
+  GateHandle AttachCapabilityGate(PassHandle pass, gate::CapabilityGateDesc desc);
+  GateHandle AttachBudgetGate(PassHandle pass, gate::BudgetGateDesc desc);
+  GateHandle AttachPathConditionedGate(PassHandle pass,
+                                          gate::PathConditionedGateDesc desc);  // RG-6.7
+  GateHandle DeclareFallbackChain(std::string_view name, std::span<const gate::FallbackEntry> entries);
 
-    // --- Ordering constraints (RG-5.3, RG-5.4) ---
-    void add_ordering_edge(PassHandle before, PassHandle after);
-    void add_frame_dependency(PassHandle src, PassHandle dst,
-                              uint32_t frame_offset);                  // RG-5.4
+  // --- Ordering constraints (RG-5.3, RG-5.4) ---
+  void AddOrderingEdge(PassHandle before, PassHandle after);
+  void AddFrameDependency(PassHandle src, PassHandle dst,
+                            uint32_t frame_offset);  // RG-5.4
 
-    // --- Chain management (RG-1.3) ---
-    void remove_chain_step(ChainHandle chain, PassHandle pass);
+  // --- Chain management (RG-1.3) ---
+  void RemoveChainStep(ChainHandle chain, PassHandle pass);
 
-    // --- Diagnostics attachment (RG-12.1–12.7) ---
-    void attach_timestamp_query(PassHandle pass, std::string_view name);
-    void attach_statistics_query(PassHandle pass, std::string_view name);
-    void mark_debug_overlay(PassHandle pass); // RG-12.6
+  // --- Diagnostics attachment (RG-12.1–12.7) ---
+  void AttachTimestampQuery(PassHandle pass, std::string_view name);
+  void AttachStatisticsQuery(PassHandle pass, std::string_view name);
+  void MarkDebugOverlay(PassHandle pass);  // RG-12.6
 
-    // --- Build ---
-    [[nodiscard]]
-    std::expected<DeclaredGraph, CompileError> build();
+  // --- Build ---
+  [[nodiscard]]
+  std::expected<DeclaredGraph, CompileError> Build();
 };
 
-} // namespace harmonius::rg::builder
+}  // namespace harmonius::rg::builder
 ```
 
 ### Pass Descriptor
@@ -551,36 +545,36 @@ public:
 namespace harmonius::rg::builder {
 
 struct PassDescriptor {
-    std::string_view              name;              // RG-1.8: stable debug name
-    PassType                      type;              // RG-1.1
-    QueueAffinity                 queue = QueueAffinity::any; // RG-4.1
-    std::vector<ResourceBinding>  inputs;            // read bindings
-    std::vector<ResourceBinding>  outputs;           // write bindings
-    bool                          conditional = false; // RG-1.6
-    std::optional<RenderArea>     render_area;       // RG-1.9
-    std::vector<std::string_view> tags;              // RG-1.8: optional tags
+  std::string_view name;                      // RG-1.8: stable debug name
+  PassType type;                              // RG-1.1
+  QueueAffinity queue = QueueAffinity::kAny;  // RG-4.1
+  std::vector<ResourceBinding> inputs;        // read bindings
+  std::vector<ResourceBinding> outputs;       // write bindings
+  bool conditional = false;                   // RG-1.6
+  std::optional<RenderArea> render_area;      // RG-1.9
+  std::vector<std::string_view> tags;         // RG-1.8: optional tags
 
-    // Cost/priority for budget culling (RG-7.2)
-    float    estimated_cost_ms = 0.0f;
-    uint32_t priority          = 0;
+  // Cost/priority for budget culling (RG-7.2)
+  float estimated_cost_ms = 0.0f;
+  uint32_t priority = 0;
 
-    // RG-1.14: checkerboard frame parity — nullopt if unused, true/false alternates per frame
-    std::optional<bool> frame_parity;
+  // RG-1.14: checkerboard frame parity — nullopt if unused, true/false alternates per frame
+  std::optional<bool> frame_parity;
 
-    // Execute callback — type-erased, invoked during encoding
-    // For host_callback passes (RG-1.7), this runs on CPU after predecessor fence
-    std::move_only_function<void(exec::PassContext&) const> execute;
+  // Execute callback — type-erased, invoked during encoding
+  // For host_callback Passes (RG-1.7), this runs on CPU after predecessor fence
+  std::move_only_function<void(exec::PassContext&) const> execute;
 };
 
 struct RenderArea {
-    uint32_t x      = 0;
-    uint32_t y      = 0;
-    uint32_t width  = 0;
-    uint32_t height = 0;
-    bool     is_per_frame_binding = false; // resolved at bind time
+  uint32_t x = 0;
+  uint32_t y = 0;
+  uint32_t width = 0;
+  uint32_t height = 0;
+  bool is_per_frame_binding = false;  // resolved at bind time
 };
 
-} // namespace harmonius::rg::builder
+}  // namespace harmonius::rg::builder
 ```
 
 ### Resource Descriptors
@@ -589,119 +583,118 @@ struct RenderArea {
 namespace harmonius::rg::builder {
 
 struct TransientResourceDesc {
-    std::string_view name;
-    Format           format;
-    uint32_t         width;
-    uint32_t         height;
-    uint32_t         depth       = 1;
-    uint32_t         mip_levels  = 1; // RG-2.22
-    uint32_t         array_layers = 1; // RG-2.6
-    SampleCount      samples     = SampleCount::x1; // RG-2.21
+  std::string_view name;
+  Format format;
+  uint32_t width;
+  uint32_t height;
+  uint32_t depth = 1;
+  uint32_t mip_levels = 1;                 // RG-2.22
+  uint32_t array_layers = 1;               // RG-2.6
+  SampleCount samples = SampleCount::kX1;  // RG-2.21
 
-    // RG-2.5: resolution-scaled dimensions
-    std::optional<std::string_view> resolution_param;
+  // RG-2.5: resolution-scaled dimensions
+  std::optional<std::string_view> resolution_param;
 };
 
 struct PersistentResourceDesc {
-    std::string_view name;
-    Format           format;
-    uint32_t         width;
-    uint32_t         height;
-    uint32_t         depth       = 1;
-    uint32_t         array_layers = 1;
+  std::string_view name;
+  Format format;
+  uint32_t width;
+  uint32_t height;
+  uint32_t depth = 1;
+  uint32_t array_layers = 1;
 
-    // RG-2.23: fixed capacity with runtime active extent
-    std::optional<ActiveExtentDesc> active_extent;
+  // RG-2.23: fixed capacity with runtime active extent
+  std::optional<ActiveExtentDesc> active_extent;
 };
 
 struct HistoryResourceDesc {
-    std::string_view name;
-    Format           format;
-    uint32_t         width;
-    uint32_t         height;
+  std::string_view name;
+  Format format;
+  uint32_t width;
+  uint32_t height;
 
-    // RG-2.5: resolution-scaled
-    std::optional<std::string_view> resolution_param;
+  // RG-2.5: resolution-scaled
+  std::optional<std::string_view> resolution_param;
 };
 
 struct MultiFrameHistoryDesc {
-    std::string_view name;
-    Format           format;
-    uint32_t         width;
-    uint32_t         height;
-    uint32_t         history_depth; // RG-2.24: N >= 2
+  std::string_view name;
+  Format format;
+  uint32_t width;
+  uint32_t height;
+  uint32_t history_depth;  // RG-2.24: N >= 2
 
-    std::optional<std::string_view> resolution_param;
+  std::optional<std::string_view> resolution_param;
 };
 
 struct ImportedResourceDesc {
-    std::string_view    name;
-    gpu::ResourceHandle external_handle; // opaque backend handle
-    AccessMode          initial_access;  // RG-2.3: explicit initial state
-    UsageType           initial_usage;
+  std::string_view name;
+  gpu::ResourceHandle external_handle;  // opaque backend handle
+  AccessMode initial_access;            // RG-2.3: explicit initial state
+  UsageType initial_usage;
 };
 
 struct SparseResourceDesc {
-    std::string_view name;
-    Format           format;
-    uint32_t         width;
-    uint32_t         height;
-    uint32_t         tile_width;  // RG-2.9: tile granularity
-    uint32_t         tile_height;
+  std::string_view name;
+  Format format;
+  uint32_t width;
+  uint32_t height;
+  uint32_t tile_width;  // RG-2.9: tile granularity
+  uint32_t tile_height;
 };
 
 struct PoolResourceDesc {
-    std::string_view name;
-    Format           format;
-    uint32_t         element_width;
-    uint32_t         element_height;
-    uint32_t         max_elements; // RG-2.8: fixed capacity
+  std::string_view name;
+  Format format;
+  uint32_t element_width;
+  uint32_t element_height;
+  uint32_t max_elements;  // RG-2.8: fixed capacity
 
-    // RG-11.5: eviction callback
-    std::move_only_function<
-        std::vector<uint32_t>(uint32_t pool_id, uint32_t needed) const> eviction_callback;
+  // RG-11.5: eviction callback
+  std::move_only_function<std::vector<uint32_t>(uint32_t pool_id, uint32_t needed) const> eviction_callback;
 };
 
 struct StagingBufferDesc {
-    std::string_view name;
-    uint64_t         size_bytes;  // RG-2.10
+  std::string_view name;
+  uint64_t size_bytes;  // RG-2.10
 };
 
 struct AtlasResourceDesc {
-    std::string_view name;
-    Format           format;
-    uint32_t         width;
-    uint32_t         height;
-    uint32_t         tile_size;   // RG-2.17: power-of-two
+  std::string_view name;
+  Format format;
+  uint32_t width;
+  uint32_t height;
+  uint32_t tile_size;  // RG-2.17: power-of-two
 };
 
 struct AccelStructDesc {
-    std::string_view name;
-    ResourceCategory category; // persistent or transient (scratch)
-    bool             has_opacity_micromap = false; // RG-2.25
+  std::string_view name;
+  ResourceCategory category;          // persistent or transient (scratch)
+  bool has_opacity_micromap = false;  // RG-2.25
 };
 
 struct ActiveExtentDesc {
-    uint32_t max_layers;
-    uint32_t max_width;
-    uint32_t max_height;
+  uint32_t max_layers;
+  uint32_t max_width;
+  uint32_t max_height;
 };
 
 // RG-2.14: persistent ring buffer with per-slot single-writer enforcement
 struct RingBufferDesc {
-    std::string_view name;
-    uint64_t         slot_size_bytes;
-    uint32_t         slot_count;
+  std::string_view name;
+  uint64_t slot_size_bytes;
+  uint32_t slot_count;
 };
 
 // RG-2.15: bindless descriptor heap region managed by the render graph
 struct BindlessHeapDesc {
-    std::string_view name;
-    uint32_t         max_descriptors;
-    uint32_t         max_samplers;
+  std::string_view name;
+  uint32_t max_descriptors;
+  uint32_t max_samplers;
 };
 
-} // namespace harmonius::rg::builder
+}  // namespace harmonius::rg::builder
 ```
 
 ### Sub-Graph Descriptors
@@ -711,27 +704,27 @@ namespace harmonius::rg::builder {
 
 // RG-9.1: parameterized sub-graph template
 struct SubGraphDescriptor {
-    std::string_view                name;
-    uint32_t                        max_instances; // RG-1.11: compile-time max
-    std::vector<PassDescriptor>     passes;
-    std::vector<SubGraphParamSlot>  param_slots;   // typed parameter declarations
+  std::string_view name;
+  uint32_t max_instances;  // RG-1.11: compile-time max
+  std::vector<PassDescriptor> passes;
+  std::vector<SubGraphParamSlot> param_slots;  // typed parameter declarations
 };
 
 struct SubGraphParamSlot {
-    std::string_view name;
-    bool             is_shared; // RG-9.3 (true) vs RG-9.2 (false)
+  std::string_view name;
+  bool is_shared;  // RG-9.3 (true) vs RG-9.2 (false)
 };
 
 // Per-instance bindings provided at instantiation
 struct SubGraphBindings {
-    std::vector<ResourceHandle> exclusive_resources; // RG-9.2
-    std::vector<ResourceHandle> shared_resources;    // RG-9.3
-    uint32_t                    target_array_layer;  // RG-9.4
-    // RG-1.12: per-instance variant parameter overrides
-    std::unordered_map<VariantSlotHandle, std::string_view> variant_selections;
+  std::vector<ResourceHandle> exclusive_resources;  // RG-9.2
+  std::vector<ResourceHandle> shared_resources;     // RG-9.3
+  uint32_t target_array_layer;                      // RG-9.4
+  // RG-1.12: per-instance variant parameter overrides
+  std::unordered_map<VariantSlotHandle, std::string_view> variant_selections;
 };
 
-} // namespace harmonius::rg::builder
+}  // namespace harmonius::rg::builder
 ```
 
 ### Declared Graph
@@ -742,19 +735,20 @@ The immutable output of the builder, consumed by the compiler.
 namespace harmonius::rg::builder {
 
 class DeclaredGraph {
-public:
-    [[nodiscard]] std::span<const PassDescriptor> passes() const;
-    [[nodiscard]] uint32_t pass_count() const;
-    [[nodiscard]] uint32_t resource_count() const;
+ public:
+  [[nodiscard]] std::span<const PassDescriptor> Passes() const;
+  [[nodiscard]] uint32_t PassCount() const;
+  [[nodiscard]] uint32_t ResourceCount() const;
 
-    // Internal — used by compiler
-    friend class compiler::GraphCompiler;
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+  // Internal — used by compiler
+  friend class compiler::GraphCompiler;
+
+ private:
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
 };
 
-} // namespace harmonius::rg::builder
+}  // namespace harmonius::rg::builder
 ```
 
 ---
@@ -795,34 +789,30 @@ flowchart TD
 namespace harmonius::rg::compiler {
 
 struct CompileOptions {
-    // RG-13.5: variant selection triggers recompile
-    std::unordered_map<VariantSlotHandle, std::string_view> variant_selections;
+  // RG-13.5: variant selection triggers recompile
+  std::unordered_map<VariantSlotHandle, std::string_view> variant_selections;
 
-    // RG-12.7: opt-out diagnostics at compile time
-    bool enable_timestamp_queries   = true;
-    bool enable_statistics_queries  = true;
-    bool enable_debug_overlays      = true;
+  // RG-12.7: opt-out diagnostics at compile time
+  bool enable_timestamp_queries = true;
+  bool enable_statistics_queries = true;
+  bool enable_debug_overlays = true;
 };
 
 class GraphCompiler {
-public:
-    // Full compilation (RG-13.1)
-    [[nodiscard]]
-    std::expected<ExecutionPlan, CompileError> compile(
-        const builder::DeclaredGraph& graph,
-        const gate::CapabilityDescriptor& caps,
-        const CompileOptions& options = {}
-    );
+ public:
+  // Full compilation (RG-13.1)
+  [[nodiscard]]
+  std::expected<ExecutionPlan, CompileError> Compile(const builder::DeclaredGraph& graph,
+                                                     const gate::CapabilityDescriptor& caps,
+                                                     const CompileOptions& options = {});
 
-    // Incremental recompilation for residency changes (RG-13.6)
-    [[nodiscard]]
-    std::expected<ExecutionPlan, CompileError> recompile_residency(
-        const ExecutionPlan& existing_plan,
-        std::span<const resource::ResidencyChange> changes
-    );
+  // Incremental recompilation for residency changes (RG-13.6)
+  [[nodiscard]]
+  std::expected<ExecutionPlan, CompileError> RecompileResidency(const ExecutionPlan& existing_plan,
+                                                                std::span<const resource::ResidencyChange> changes);
 };
 
-} // namespace harmonius::rg::compiler
+}  // namespace harmonius::rg::compiler
 ```
 
 ### Execution Plan
@@ -833,77 +823,78 @@ The immutable output of compilation, consumed by the execution engine every fram
 namespace harmonius::rg::compiler {
 
 class ExecutionPlan {
-public:
-    // Sorted pass list with barrier insertion points
-    [[nodiscard]] std::span<const ScheduledPass> passes() const;
+ public:
+  // Sorted pass list with barrier insertion points
+  [[nodiscard]] std::span<const ScheduledPass> Passes() const;
 
-    // Per-queue command lists
-    [[nodiscard]] std::span<const QueueSubmission> queue_submissions() const;
+  // Per-queue command lists
+  [[nodiscard]] std::span<const QueueSubmission> QueueSubmissions() const;
 
-    // Encoding dependency graph — which groups can encode in parallel
-    [[nodiscard]] std::span<const EncodingGroup> encoding_groups() const;
+  // Encoding dependency graph — which groups can encode in parallel
+  [[nodiscard]] std::span<const EncodingGroup> EncodingGroups() const;
 
-    // Resource aliasing map — transient resources sharing heap ranges
-    [[nodiscard]] const resource::AliasingMap& aliasing_map() const;
+  // Resource aliasing map — transient resources sharing heap ranges
+  [[nodiscard]] const resource::AliasingMap& AliasingMap() const;
 
-    // Fence coordination points between queues
-    [[nodiscard]] std::span<const FenceCoordination> fence_points() const;
+  // Fence coordination points between queues
+  [[nodiscard]] std::span<const FenceCoordination> FencePoints() const;
 
-    // Transfer pass injection point index (RG-14.7)
-    [[nodiscard]] uint32_t transfer_injection_index() const;
+  // Transfer pass injection point index (RG-14.7)
+  [[nodiscard]] uint32_t TransferInjectionIndex() const;
 
-    // Active pass count (after gate evaluation and dead-pass elimination)
-    [[nodiscard]] uint32_t active_pass_count() const;
+  // Active pass count (after gate evaluation and dead-pass elimination)
+  [[nodiscard]] uint32_t ActivePassCount() const;
 
-    // Per-pass conditional activation slots (RG-14.5)
-    [[nodiscard]] std::span<const PassHandle> conditional_passes() const;
+  // Per-pass conditional activation slots (RG-14.5)
+  [[nodiscard]] std::span<const PassHandle> ConditionalPasses() const;
 
-    // Resolution parameter slots (RG-2.20)
-    [[nodiscard]] std::span<const ResolutionParam> resolution_params() const;
+  // Resolution parameter slots (RG-2.20)
+  [[nodiscard]] std::span<const ResolutionParam> ResolutionParams() const;
 
-    friend class exec::Executor;
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+  friend class exec::Executor;
+
+ private:
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
 };
 
 struct ScheduledPass {
-    PassHandle            handle;
-    uint32_t              execution_order;
-    QueueAffinity         queue;
-    std::span<const sync::BarrierDesc> pre_barriers;  // barriers before this pass
-    std::span<const sync::BarrierDesc> post_barriers; // barriers after this pass
-    uint32_t              encoding_group;
-    bool                  is_conditional;
+  PassHandle handle;
+  uint32_t execution_order;
+  QueueAffinity queue;
+  std::span<const sync::BarrierDesc> pre_barriers;   // barriers before this pass
+  std::span<const sync::BarrierDesc> post_barriers;  // barriers after this pass
+  uint32_t encoding_group;
+  bool is_conditional;
 };
 
 struct EncodingGroup {
-    uint32_t                        group_id;
-    std::vector<PassHandle>         passes;   // passes in this group
-    bool                            parallel; // can encode concurrently
+  uint32_t group_id;
+  std::vector<PassHandle> passes;  // passes in this group
+  bool parallel;                   // can encode concurrently
 };
 
 struct QueueSubmission {
-    QueueAffinity               queue;
-    std::vector<PassHandle>     passes;
-    std::vector<FenceCoordination> fence_ops;
+  QueueAffinity queue;
+  std::vector<PassHandle> passes;
+  std::vector<FenceCoordination> fence_ops;
 };
 
 struct FenceCoordination {
-    QueueAffinity source_queue;
-    QueueAffinity dest_queue;
-    uint64_t      signal_value;
-    uint64_t      wait_value;
+  QueueAffinity source_queue;
+  QueueAffinity dest_queue;
+  uint64_t signal_value;
+  uint64_t wait_value;
 };
 
 struct ResolutionParam {
-    std::string_view name;
-    float            default_scale = 1.0f;
-    float            min_scale     = 0.25f;
-    float            max_scale     = 1.0f;
+  std::string_view name;
+  float default_scale = 1.0f;
+  float min_scale = 0.25f;
+  float max_scale = 1.0f;
 };
 
-} // namespace harmonius::rg::compiler
+}  // namespace harmonius::rg::compiler
 ```
 
 ### Validation (RG-13.4)
@@ -913,24 +904,24 @@ namespace harmonius::rg::compiler {
 
 // Internal validation checks performed in stage 1
 // Returns a list of errors; empty list means valid
-std::vector<ValidationError> validate(const builder::DeclaredGraph& graph);
+std::vector<ValidationError> Validate(const builder::DeclaredGraph& graph);
 
-} // namespace harmonius::rg::compiler
+}  // namespace harmonius::rg::compiler
 ```
 
 The validator checks:
 
 | Check                   | Error kind                | Source  |
 | ----------------------- | ------------------------- | ------- |
-| Cycle detection         | `cycle_detected`          | RG-5.7  |
-| Type mismatch           | `type_mismatch`           | RG-13.4 |
-| Undeclared resource     | `undeclared_resource`     | RG-13.4 |
-| Queue incompatibility   | `queue_incompatibility`   | RG-13.4 |
-| Single-writer violation | `single_writer_violation` | RG-3.5  |
-| Variant ambiguity       | `variant_ambiguity`       | RG-13.7 |
-| Instance count mismatch | `instance_count_mismatch` | RG-13.8 |
-| Hard gate unsatisfied   | `hard_gate_unsatisfied`   | RG-6.2  |
-| Sample count mismatch   | `sample_count_mismatch`   | RG-2.21 |
+| Cycle detection         | `kCycleDetected`          | RG-5.7  |
+| Type mismatch           | `kTypeMismatch`           | RG-13.4 |
+| Undeclared resource     | `kUndeclaredResource`     | RG-13.4 |
+| Queue incompatibility   | `kQueueIncompatibility`   | RG-13.4 |
+| Single-writer violation | `kSingleWriterViolation` | RG-3.5  |
+| Variant ambiguity       | `kVariantAmbiguity`       | RG-13.7 |
+| Instance count mismatch | `kInstanceCountMismatch` | RG-13.8 |
+| Hard gate unsatisfied   | `kHardGateUnsatisfied`   | RG-6.2  |
+| Sample count mismatch   | `kSampleCountMismatch`   | RG-2.21 |
 
 ### Recompilation Triggers (RG-13.5)
 
@@ -958,7 +949,7 @@ assignment, pool allocation, and ring buffer management.
 ```mermaid
 stateDiagram-v2
     [*] --> Declared
-    Declared --> Validated: compile()
+    Declared --> Validated: Compile()
     Validated --> Eliminated: dead pass elimination
     Validated --> Allocated: allocate backing memory
     Eliminated --> [*]
@@ -967,7 +958,7 @@ stateDiagram-v2
     Encoding --> Submitted: submit command buffers
     Submitted --> Completed: fence signal
     Completed --> Bound: next frame
-    Completed --> Released: release()
+    Completed --> Released: Release()
     Released --> [*]
 ```
 
@@ -982,43 +973,40 @@ pool's reserved capacity.
 namespace harmonius::rg::resource {
 
 struct LifetimeInterval {
-    ResourceHandle resource;
-    uint32_t       first_write; // execution step index
-    uint32_t       last_read;   // execution step index
+  ResourceHandle resource;
+  uint32_t first_write;  // execution step index
+  uint32_t last_read;    // execution step index
 };
 
 struct AliasingAssignment {
-    ResourceHandle resource;
-    uint32_t       heap_offset;
-    uint32_t       heap_size;
-    uint32_t       heap_index; // which heap (same-type constraint, RG-8.5)
+  ResourceHandle resource;
+  uint32_t heap_offset;
+  uint32_t heap_size;
+  uint32_t heap_index;  // which heap (same-type constraint, RG-8.5)
 };
 
 class AliasingMap {
-public:
-    [[nodiscard]] std::span<const AliasingAssignment> assignments() const;
-    [[nodiscard]] uint64_t peak_memory_bytes() const;
-    [[nodiscard]] uint64_t total_logical_bytes() const;
-    [[nodiscard]] float    aliasing_efficiency() const; // RG-8.6: ratio
+ public:
+  [[nodiscard]] std::span<const AliasingAssignment> Assignments() const;
+  [[nodiscard]] uint64_t PeakMemoryBytes() const;
+  [[nodiscard]] uint64_t TotalLogicalBytes() const;
+  [[nodiscard]] float AliasingEfficiency() const;  // RG-8.6: ratio
 };
 
 class AliasingSolver {
-public:
-    // Compute optimal aliasing from lifetime intervals
-    [[nodiscard]]
-    AliasingMap solve(
-        std::span<const LifetimeInterval> intervals,
-        std::span<const ResourceSizeInfo> sizes
-    );
+ public:
+  // Compute optimal aliasing from lifetime intervals
+  [[nodiscard]]
+  AliasingMap Solve(std::span<const LifetimeInterval> intervals, std::span<const ResourceSizeInfo> sizes);
 };
 
 struct ResourceSizeInfo {
-    ResourceHandle resource;
-    uint64_t       size_bytes;
-    gpu::HeapType  heap_type; // RG-8.5: same-type constraint
+  ResourceHandle resource;
+  uint64_t size_bytes;
+  gpu::HeapType heap_type;  // RG-8.5: same-type constraint
 };
 
-} // namespace harmonius::rg::resource
+}  // namespace harmonius::rg::resource
 ```
 
 ### Pool Allocator
@@ -1029,25 +1017,24 @@ Fixed-capacity resource pools with eviction (RG-2.8, RG-8.3).
 namespace harmonius::rg::resource {
 
 class PoolAllocator {
-public:
-    explicit PoolAllocator(const builder::PoolResourceDesc& desc,
-                           gpu_runtime::memory::Allocator& allocator);
+ public:
+  explicit PoolAllocator(const builder::PoolResourceDesc& desc, gpu_runtime::memory::Allocator& allocator);
 
-    // Allocate element from pool, invoking eviction if full (RG-11.5)
-    [[nodiscard]]
-    std::expected<gpu::ResourceHandle, PoolError> allocate();
+  // Allocate element from pool, invoking eviction if full (RG-11.5)
+  [[nodiscard]]
+  std::expected<gpu::ResourceHandle, PoolError> Allocate();
 
-    // Release element back to pool
-    void release(gpu::ResourceHandle handle);
+  // Release element back to pool
+  void Release(gpu::ResourceHandle handle);
 
-    // RG-7.5: utilization ratio for budget gating
-    [[nodiscard]] float utilization() const;
+  // RG-7.5: utilization ratio for budget gating
+  [[nodiscard]] float Utilization() const;
 
-    [[nodiscard]] uint32_t capacity() const;
-    [[nodiscard]] uint32_t active_count() const;
+  [[nodiscard]] uint32_t Capacity() const;
+  [[nodiscard]] uint32_t ActiveCount() const;
 };
 
-} // namespace harmonius::rg::resource
+}  // namespace harmonius::rg::resource
 ```
 
 ### Ring Allocator
@@ -1058,29 +1045,27 @@ Lock-free ring buffer for per-frame transient allocations (RG-10.5, RG-8.4).
 namespace harmonius::rg::resource {
 
 class RingAllocator {
-public:
-    // Pre-allocate ring with frame_count slots (typically 3 for triple buffering)
-    explicit RingAllocator(uint64_t slot_size_bytes,
-                           uint32_t frame_count,
-                           gpu_runtime::memory::Allocator& allocator);
+ public:
+  // Pre-allocate ring with frame_count slots (typically 3 for triple buffering)
+  explicit RingAllocator(uint64_t slot_size_bytes, uint32_t frame_count, gpu_runtime::memory::Allocator& allocator);
 
-    // Lock-free allocation from current frame's slot
-    // Returns {offset, mapped_ptr} — no heap allocation (R-3.1.8)
-    struct Allocation {
-        uint64_t offset;
-        void*    mapped_ptr;
-    };
+  // Lock-free allocation from current frame's slot
+  // Returns {offset, mapped_ptr} — no heap allocation (R-3.1.8)
+  struct Allocation {
+    uint64_t offset;
+    void* mapped_ptr;
+  };
 
-    [[nodiscard]] std::optional<Allocation> allocate(uint64_t size, uint64_t alignment);
+  [[nodiscard]] std::optional<Allocation> Allocate(uint64_t size, uint64_t alignment);
 
-    // Advance to next frame's slot (called after fence signal)
-    void advance_frame(uint32_t frame_index);
+  // Advance to next frame's slot (called after fence signal)
+  void AdvanceFrame(uint32_t frame_index);
 
-    // Underlying GPU buffer for binding
-    [[nodiscard]] gpu::ResourceHandle buffer() const;
+  // Underlying GPU buffer for binding
+  [[nodiscard]] gpu::ResourceHandle Buffer() const;
 };
 
-} // namespace harmonius::rg::resource
+}  // namespace harmonius::rg::resource
 ```
 
 ### Residency Tracking
@@ -1090,20 +1075,20 @@ namespace harmonius::rg::resource {
 
 // RG-11.3: structured buffer of per-tile residency state
 struct ResidencyEntry {
-    uint32_t tile_x;
-    uint32_t tile_y;
-    uint8_t  resident; // 0 = not resident, 1 = resident
+  uint32_t tile_x;
+  uint32_t tile_y;
+  uint8_t resident;  // 0 = not resident, 1 = resident
 };
 
 // RG-13.6: incremental recompilation input
 struct ResidencyChange {
-    ResourceHandle resource;
-    uint32_t       tile_x;
-    uint32_t       tile_y;
-    bool           now_resident;
+  ResourceHandle resource;
+  uint32_t tile_x;
+  uint32_t tile_y;
+  bool now_resident;
 };
 
-} // namespace harmonius::rg::resource
+}  // namespace harmonius::rg::resource
 ```
 
 ### GPU Runtime API Usage
@@ -1114,26 +1099,26 @@ never calls `gpu::Device` resource creation methods directly.
 
 | Resource System Operation     | GPU Runtime API                                                 | Notes                                      |
 | ----------------------------- | --------------------------------------------------------------- | ------------------------------------------ |
-| Transient texture allocation  | `gpu_runtime::memory::Allocator::allocate(placed)`              | Placed in aliasing heap at computed offset |
-| Transient buffer allocation   | `gpu_runtime::memory::Allocator::allocate(placed)`              | Placed in aliasing heap at computed offset |
-| Persistent texture allocation | `gpu_runtime::memory::Allocator::create_texture()`              | Committed resource with own memory         |
-| Persistent buffer allocation  | `gpu_runtime::memory::Allocator::create_buffer()`               | Committed resource with own memory         |
-| Size/alignment query          | `gpu_runtime::memory::Allocator::query_allocation_info()`       | Feeds aliasing solver packing              |
-| Sparse texture creation       | `gpu_runtime::memory::Allocator::create_sparse_texture()`       | Reserved/sparse-bound resource             |
-| Sparse tile binding update    | `gpu_runtime::memory::Allocator::update_sparse_bindings()`      | Maps/unmaps tiles per residency            |
-| Staging buffer allocation     | `gpu_runtime::memory::RingAllocator::allocate()`                | Per-frame upload staging                   |
+| Transient texture allocation  | `gpu_runtime::memory::Allocator::Allocate(kPlaced)`              | Placed in aliasing heap at computed offset |
+| Transient Buffer allocation   | `gpu_runtime::memory::Allocator::Allocate(kPlaced)`              | Placed in aliasing heap at computed offset |
+| Persistent texture allocation | `gpu_runtime::memory::Allocator::CreateTexture()`              | Committed resource with own memory         |
+| Persistent Buffer allocation  | `gpu_runtime::memory::Allocator::CreateBuffer()`               | Committed resource with own memory         |
+| Size/alignment query          | `gpu_runtime::memory::Allocator::QueryAllocationInfo()`       | Feeds aliasing solver packing              |
+| Sparse texture creation       | `gpu_runtime::memory::Allocator::CreateSparseTexture()`       | Reserved/sparse-bound resource             |
+| Sparse tile binding update    | `gpu_runtime::memory::Allocator::UpdateSparseBindings()`      | Maps/unmaps tiles per residency            |
+| Staging Buffer allocation     | `gpu_runtime::memory::RingAllocator::Allocate()`                | Per-frame upload staging                   |
 | Resource naming               | `gpu_runtime::state::TrackedCommandBuffer` (pass-through)       | Debug names from resource descriptors      |
 
 **Aliasing heap optimization:** The aliasing solver computes non-overlapping lifetime intervals
 and packs resources into the minimum number of heaps. The resource system delegates to
-`gpu_runtime::memory::Allocator` with the `placed` allocation strategy, which handles
+`gpu_runtime::memory::Allocator` with the `kPlaced` allocation strategy, which handles
 platform-specific size queries, alignment, heap creation, and placed resource binding
 internally. See [gpu-runtime.md](gpu-runtime.md) for memory allocator details.
 
 ```mermaid
 flowchart TD
-    AS["AliasingSolver.solve()"] -->|"lifetime intervals + sizes"| Pack["Packing algorithm"]
-    Pack -->|"heap_offset per resource"| Alloc["gpu_runtime::memory::Allocator::allocate(placed)"]
+    AS["AliasingSolver.Solve()"] -->|"lifetime intervals + sizes"| Pack["Packing algorithm"]
+    Pack -->|"heap_offset per resource"| Alloc["gpu_runtime::memory::Allocator::Allocate(kPlaced)"]
     Alloc --> T["TextureHandle"]
     Alloc --> B["BufferHandle"]
 ```
@@ -1158,33 +1143,33 @@ barrier merging, and split barriers.
 namespace harmonius::rg::sync {
 
 enum class BarrierType : uint8_t {
-    memory,            // RAW or WAW (RG-3.1, RG-3.2)
-    layout_transition, // image layout change (RG-3.3)
-    ownership_release, // cross-queue release (RG-3.4)
-    ownership_acquire, // cross-queue acquire (RG-3.4)
-    aliasing,          // aliasing barrier for shared heap
+  kMemory,            // RAW or WAW (RG-3.1, RG-3.2)
+  kLayoutTransition,  // image layout change (RG-3.3)
+  kOwnershipRelease,  // cross-queue Release (RG-3.4)
+  kOwnershipAcquire,  // cross-queue acquire (RG-3.4)
+  kAliasing,          // aliasing barrier for shared heap
 };
 
 struct BarrierDesc {
-    BarrierType    type;
-    ResourceHandle resource;
-    UsageType      src_usage;
-    UsageType      dst_usage;
-    QueueAffinity  src_queue;
-    QueueAffinity  dst_queue;
+  BarrierType type;
+  ResourceHandle resource;
+  UsageType src_usage;
+  UsageType dst_usage;
+  QueueAffinity src_queue;
+  QueueAffinity dst_queue;
 
-    // Sub-resource targeting
-    uint32_t       mip_level    = 0;
-    uint32_t       array_layer  = 0;
-    uint32_t       mip_count    = 1;
-    uint32_t       layer_count  = 1;
+  // Sub-resource targeting
+  uint32_t mip_level = 0;
+  uint32_t array_layer = 0;
+  uint32_t mip_count = 1;
+  uint32_t layer_count = 1;
 
-    // Split barrier support (RG-3.6)
-    bool           is_split_begin = false;
-    bool           is_split_end   = false;
+  // Split barrier support (RG-3.6)
+  bool is_split_begin = false;
+  bool is_split_end = false;
 };
 
-} // namespace harmonius::rg::sync
+}  // namespace harmonius::rg::sync
 ```
 
 ### Barrier Scheduler
@@ -1193,31 +1178,27 @@ struct BarrierDesc {
 namespace harmonius::rg::sync {
 
 class BarrierScheduler {
-public:
-    // Compute barriers for the entire sorted pass list
-    // Called by the compiler during stage 5
-    struct BarrierSchedule {
-        // barriers[i] = barriers to insert before pass i
-        std::vector<std::vector<BarrierDesc>> pre_pass_barriers;
-        std::vector<std::vector<BarrierDesc>> post_pass_barriers;
-    };
+ public:
+  // Compute barriers for the entire sorted pass list
+  // Called by the compiler during stage 5
+  struct BarrierSchedule {
+    // barriers[i] = barriers to insert before pass i
+    std::vector<std::vector<BarrierDesc>> pre_pass_barriers;
+    std::vector<std::vector<BarrierDesc>> post_pass_barriers;
+  };
 
-    [[nodiscard]]
-    BarrierSchedule compute(
-        std::span<const compiler::ScheduledPass> sorted_passes,
-        const builder::DeclaredGraph& graph
-    );
+  [[nodiscard]]
+  BarrierSchedule Compute(std::span<const compiler::ScheduledPass> sorted_passes, const builder::DeclaredGraph& graph);
 
-private:
-    // RG-3.6: merge compatible barriers at same sync point
-    void merge_barriers(std::vector<BarrierDesc>& barriers);
+ private:
+  // RG-3.6: merge compatible barriers at same sync point
+  void MergeBarriers(std::vector<BarrierDesc>& barriers);
 
-    // RG-3.6: split barriers where hardware supports
-    void apply_split_barriers(BarrierSchedule& schedule,
-                              const gpu::DeviceCapabilities& caps);
+  // RG-3.6: split barriers where hardware supports
+  void ApplySplitBarriers(BarrierSchedule& schedule, const gpu::DeviceCapabilities& caps);
 };
 
-} // namespace harmonius::rg::sync
+}  // namespace harmonius::rg::sync
 ```
 
 ### Timeline Fence Manager
@@ -1227,39 +1208,39 @@ namespace harmonius::rg::sync {
 
 // RG-10.6: per-queue monotonically increasing fence counters
 class TimelineFenceManager {
-public:
-    explicit TimelineFenceManager(gpu_runtime::memory::Allocator& allocator);
+ public:
+  explicit TimelineFenceManager(gpu_runtime::memory::Allocator& allocator);
 
-    // Signal fence on queue after pass submission
-    void signal(QueueAffinity queue, uint64_t value);
+  // Signal fence on queue after pass submission
+  void Signal(QueueAffinity queue, uint64_t value);
 
-    // Wait on fence value before starting pass on queue
-    void wait(QueueAffinity queue, uint64_t value);
+  // Wait on fence value before starting pass on queue
+  void Wait(QueueAffinity queue, uint64_t value);
 
-    // Poll fence completion (non-blocking)
-    [[nodiscard]] bool is_complete(QueueAffinity queue, uint64_t value) const;
+  // Poll fence completion (non-blocking)
+  [[nodiscard]] bool IsComplete(QueueAffinity queue, uint64_t value) const;
 
-    // Block until fence completes
-    void wait_cpu(QueueAffinity queue, uint64_t value);
+  // Block until fence completes
+  void WaitCpu(QueueAffinity queue, uint64_t value);
 
-    // Get current fence value for queue
-    [[nodiscard]] uint64_t current_value(QueueAffinity queue) const;
+  // Get current fence value for queue
+  [[nodiscard]] uint64_t CurrentValue(QueueAffinity queue) const;
 
-    // Advance all counters for new frame
-    // RG-11.7: fence values are monotonic across frames — a frame N+1 pass can
-    // wait on a frame N fence value via add_frame_dependency() in the graph builder.
-    // The compiler emits the cross-frame wait using the recorded fence value.
-    void advance_frame();
+  // Advance all counters for new frame
+  // RG-11.7: fence values are monotonic across frames — a frame N+1 pass can
+  // wait on a frame N fence value via AddFrameDependency() in the graph builder.
+  // The compiler emits the cross-frame wait using the recorded fence value.
+  void AdvanceFrame();
 
-private:
-    struct PerQueueFence {
-        gpu::FenceHandle fence;
-        uint64_t         counter = 0;
-    };
-    std::array<PerQueueFence, 3> fences_; // graphics, async-compute, transfer
+ private:
+  struct PerQueueFence {
+    gpu::FenceHandle fence;
+    uint64_t counter = 0;
+  };
+  std::array<PerQueueFence, 3> fences_;  // graphics, async-compute, transfer
 };
 
-} // namespace harmonius::rg::sync
+}  // namespace harmonius::rg::sync
 ```
 
 ### GPU Runtime Barrier Translation
@@ -1274,16 +1255,16 @@ enqueues them through `gpu_runtime::state::BarrierOptimizer`.
 
 | `rg::UsageType`           | `gpu::PipelineStage`                | `gpu::ResourceAccess`    | `gpu::TextureLayout`       |
 | ------------------------- | ----------------------------------- | ------------------------ | -------------------------- |
-| `color_attachment`        | `color_output`                      | `color_attachment_write` | `color_attachment`         |
-| `depth_attachment`        | `depth_stencil`                     | `depth_stencil_write`    | `depth_stencil_attachment` |
-| `shader_read`             | `fragment_shader \| compute_shader` | `shader_read`            | `shader_read_only`         |
-| `storage_read`            | `compute_shader`                    | `shader_read`            | `general`                  |
-| `storage_write`           | `compute_shader`                    | `shader_write`           | `general`                  |
-| `shading_rate_attachment` | `shading_rate`                      | `shading_rate_read`      | `shading_rate`             |
-| `indirect_argument`       | `indirect_argument`                 | `indirect_read`          | N/A (buffer only)          |
-| `transfer_src`            | `transfer`                          | `transfer_read`          | `transfer_src`             |
-| `transfer_dst`            | `transfer`                          | `transfer_write`         | `transfer_dst`             |
-| `present`                 | `none`                              | `present`                | `present`                  |
+| `kColorAttachment`        | `kColorOutput`                      | `kColorAttachmentWrite` | `kColorAttachment`         |
+| `kDepthAttachment`        | `kDepthStencil`                     | `kDepthStencilWrite`    | `kDepthStencilAttachment` |
+| `kShaderRead`             | `kFragmentShader \| kComputeShader` | `kShaderRead`            | `kShaderReadOnly`         |
+| `kStorageRead`            | `kComputeShader`                    | `kShaderRead`            | `kGeneral`                  |
+| `kStorageWrite`           | `kComputeShader`                    | `kShaderWrite`           | `kGeneral`                  |
+| `kShadingRateAttachment` | `kShadingRate`                      | `kShadingRateRead`      | `kShadingRate`             |
+| `kIndirectArgument`       | `kIndirectArgument`                 | `kIndirectRead`          | N/A (Buffer only)          |
+| `kTransferSrc`            | `kTransfer`                          | `kTransferRead`          | `kTransferSrc`             |
+| `kTransferDst`            | `kTransfer`                          | `kTransferWrite`         | `kTransferDst`             |
+| `Present`                 | `kNone`                              | `Present`                | `Present`                  |
 
 **Barrier batching optimization:** The barrier scheduler merges compatible barriers at the same
 synchronization point into a single batch of `gpu::TextureBarrier`, `gpu::BufferBarrier`, and
@@ -1294,9 +1275,9 @@ which flushes them as a single optimized barrier call per synchronization point:
 // Barriers are enqueued through the GPU runtime barrier optimizer, which handles
 // batching, deduplication, split barrier emulation, and backend-specific translation.
 gpu_runtime::state::BarrierOptimizer& optimizer = /* ... */;
-optimizer.enqueue(gpu::TextureBarrier{ /* transition */ });
-optimizer.enqueue(gpu::BufferBarrier{ /* transition */ });
-optimizer.flush(tracked_cmd);  // emits optimal barrier calls on the tracked command buffer
+optimizer.Enqueue(gpu::TextureBarrier{/* transition */});
+optimizer.Enqueue(gpu::BufferBarrier{/* transition */});
+optimizer.Flush(tracked_cmd);  // emits optimal barrier calls on the tracked command buffer
 ```
 
 **Split barrier optimization:** The `gpu_runtime::compat` layer transparently emits split
@@ -1368,22 +1349,22 @@ namespace harmonius::rg::gate {
 
 // RG-6.4: typed capability enumeration, immutable for graph lifetime
 struct CapabilityDescriptor {
-    bool mesh_shaders          = false;
-    bool ray_tracing           = false;
-    bool sparse_textures       = false;
-    bool async_compute_queue   = false;
-    bool transfer_queue        = false;
-    bool shading_rate_images   = false;
-    bool sixty_four_bit_atomics = false;
-    bool gpu_work_graphs       = false;
-    bool opacity_micromaps     = false;
-    bool split_barriers        = false;
+  bool mesh_shaders = false;
+  bool ray_tracing = false;
+  bool sparse_textures = false;
+  bool async_compute_queue = false;
+  bool transfer_queue = false;
+  bool shading_rate_images = false;
+  bool sixty_four_bit_atomics = false;
+  bool gpu_work_graphs = false;
+  bool opacity_micromaps = false;
+  bool split_barriers = false;
 
-    // Query by capability name for gate evaluation
-    [[nodiscard]] bool has(std::string_view capability) const;
+  // Query by capability name for gate evaluation
+  [[nodiscard]] bool Has(std::string_view capability) const;
 };
 
-} // namespace harmonius::rg::gate
+}  // namespace harmonius::rg::gate
 ```
 
 ### Gate Descriptors
@@ -1393,38 +1374,38 @@ namespace harmonius::rg::gate {
 
 // RG-6.1, RG-6.2: capability gate
 struct CapabilityGateDesc {
-    std::string_view required_capability;
-    bool             hard = false; // hard gate = compile error if missing
+  std::string_view required_capability;
+  bool hard = false;  // hard gate = compile error if missing
 };
 
 // RG-7.1: GPU timing feedback gate
 struct BudgetGateDesc {
-    std::string_view timestamp_query_name; // which query to sample
-    float            threshold_ms;         // cull if exceeded
-    uint32_t         priority;             // culling order (RG-7.2)
+  std::string_view timestamp_query_name;  // which query to sample
+  float threshold_ms;                     // cull if exceeded
+  uint32_t priority;                      // culling order (RG-7.2)
 };
 
 // RG-7.5: pool utilization gate
 struct PoolUtilizationGateDesc {
-    ResourceHandle pool;
-    float          utilization_threshold; // cull if exceeded
-    uint32_t       priority;
+  ResourceHandle pool;
+  float utilization_threshold;  // cull if exceeded
+  uint32_t priority;
 };
 
 // RG-6.3: fallback chain entry
 struct FallbackEntry {
-    PassHandle                        pass;
-    std::optional<CapabilityGateDesc> capability_gate;
-    std::optional<BudgetGateDesc>     budget_gate; // RG-6.6: composite gate
+  PassHandle pass;
+  std::optional<CapabilityGateDesc> capability_gate;
+  std::optional<BudgetGateDesc> budget_gate;  // RG-6.6: composite gate
 };
 
 // RG-6.7: path-conditioned variant gate
 struct PathConditionedGateDesc {
-    VariantSlotHandle variant_slot;
-    std::string_view  required_variant;
+  VariantSlotHandle variant_slot;
+  std::string_view required_variant;
 };
 
-} // namespace harmonius::rg::gate
+}  // namespace harmonius::rg::gate
 ```
 
 ### Gate Evaluator
@@ -1433,26 +1414,21 @@ struct PathConditionedGateDesc {
 namespace harmonius::rg::gate {
 
 class GateEvaluator {
-public:
-    // Compile-time evaluation: prune passes with unsatisfied capability gates
-    // Returns set of passes to remove from the graph
-    [[nodiscard]]
-    std::expected<std::vector<PassHandle>, CompileError> evaluate_compile_time(
-        const builder::DeclaredGraph& graph,
-        const CapabilityDescriptor& caps
-    );
+ public:
+  // Compile-time evaluation: prune passes with unsatisfied capability gates
+  // Returns set of passes to remove from the graph
+  [[nodiscard]]
+  std::expected<std::vector<PassHandle>, CompileError> EvaluateCompileTime(const builder::DeclaredGraph& graph,
+                                                                           const CapabilityDescriptor& caps);
 
-    // Runtime evaluation: budget gates checked per-frame
-    // Returns set of passes to skip this frame
-    [[nodiscard]]
-    std::vector<PassHandle> evaluate_runtime(
-        const compiler::ExecutionPlan& plan,
-        const diag::TimestampResults& timing,
-        std::span<const resource::PoolAllocator*> pools
-    );
+  // Runtime evaluation: budget gates checked per-frame
+  // Returns set of passes to skip this frame
+  [[nodiscard]]
+  std::vector<PassHandle> EvaluateRuntime(const compiler::ExecutionPlan& plan, const diag::TimestampResults& timing,
+                                          std::span<const resource::PoolAllocator*> pools);
 };
 
-} // namespace harmonius::rg::gate
+}  // namespace harmonius::rg::gate
 ```
 
 ---
@@ -1476,7 +1452,7 @@ sequenceDiagram
 
     App->>Exec: bind_frame_data()
     App->>Exec: set_activation_flags()
-    App->>Exec: set_resolution_scale()
+    App->>Exec: SetResolutionScale()
     Exec->>Exec: evaluate budget gates
     Exec->>Exec: inject transfer passes
     Exec->>Exec: bind residency map
@@ -1496,74 +1472,67 @@ sequenceDiagram
 namespace harmonius::rg::exec {
 
 class Executor {
-public:
-    explicit Executor(gpu_runtime::memory::Allocator& allocator,
-                      gpu_runtime::state::TrackedCommandBuffer& cmd,
-                      gpu_runtime::work_graph::WorkGraphExecutor& work_graphs,
-                      uint32_t frame_count = 3);
+ public:
+  explicit Executor(gpu_runtime::memory::Allocator& allocator, gpu_runtime::state::TrackedCommandBuffer& cmd,
+                    gpu_runtime::work_graph::WorkGraphExecutor& work_graphs, uint32_t frame_count = 3);
 
-    // --- Per-frame data binding (RG-14.1–14.4) ---
+  // --- Per-frame data binding (RG-14.1–14.4) ---
 
-    // RG-14.2: bind buffer/texture handles for this frame
-    void bind_resource(ResourceHandle slot, gpu::ResourceHandle handle);
+  // RG-14.2: bind buffer/texture handles for this frame
+  void BindResource(ResourceHandle slot, gpu::ResourceHandle handle);
 
-    // RG-14.3: bind sub-graph instance parameters
-    void bind_subgraph_params(SubGraphHandle tpl,
-                              uint32_t instance_index,
-                              std::span<const gpu::ResourceHandle> params);
+  // RG-14.3: bind sub-graph instance parameters
+  void BindSubgraphParams(SubGraphHandle tpl, uint32_t instance_index, std::span<const gpu::ResourceHandle> params);
 
-    // RG-14.4, RG-7.4: set resolution scale for named parameter
-    void set_resolution_scale(std::string_view param_name, float scale);
+  // RG-14.4, RG-7.4: set resolution scale for named parameter
+  void SetResolutionScale(std::string_view param_name, float scale);
 
-    // --- Activation control (RG-14.5) ---
+  // --- Activation control (RG-14.5) ---
 
-    // Toggle conditional passes without recompilation
-    void set_pass_active(PassHandle pass, bool active);
+  // Toggle conditional passes without recompilation
+  void SetPassActive(PassHandle pass, bool active);
 
-    // RG-1.10: per-instance enable on sub-graph instances
-    void set_instance_active(SubGraphHandle tpl,
-                             uint32_t instance_index,
-                             bool active);
+  // RG-1.10: per-instance enable on sub-graph instances
+  void SetInstanceActive(SubGraphHandle tpl, uint32_t instance_index, bool active);
 
-    // RG-1.11: per-frame instance count update without recompilation
-    void set_instance_count(SubGraphHandle tpl, uint32_t count);
+  // RG-1.11: per-frame instance count update without recompilation
+  void SetInstanceCount(SubGraphHandle tpl, uint32_t count);
 
-    // --- History control (RG-2.19) ---
-    void invalidate_history(ResourceHandle history_resource);
+  // --- History control (RG-2.19) ---
+  void InvalidateHistory(ResourceHandle history_resource);
 
-    // --- Transfer injection (RG-14.7) ---
-    void inject_transfer(TransferPassDesc desc);
+  // --- Transfer injection (RG-14.7) ---
+  void InjectTransfer(TransferPassDesc desc);
 
-    // --- Residency map (RG-14.8) ---
-    void bind_residency_map(ResourceHandle resource,
-                            gpu::ResourceHandle map_buffer);
+  // --- Residency Map (RG-14.8) ---
+  void BindResidencyMap(ResourceHandle resource, gpu::ResourceHandle map_buffer);
 
-    // --- Budget gate parameters (RG-7.6) ---
-    void set_budget_threshold(GateHandle gate, float threshold_ms);
+  // --- Budget gate parameters (RG-7.6) ---
+  void SetBudgetThreshold(GateHandle gate, float threshold_ms);
 
-    // --- Execute frame ---
-    void execute(const compiler::ExecutionPlan& plan);
+  // --- Execute frame ---
+  void Execute(const compiler::ExecutionPlan& plan);
 
-    // --- Frame management ---
-    [[nodiscard]] uint64_t frame_index() const; // RG-14.6
+  // --- Frame management ---
+  [[nodiscard]] uint64_t FrameIndex() const;  // RG-14.6
 
-private:
-    void evaluate_budget_gates();
-    void dispatch_encoding_groups(const compiler::ExecutionPlan& plan);
-    void submit_command_buffers(const compiler::ExecutionPlan& plan);
-    void advance_frame();
+ private:
+  void EvaluateBudgetGates();
+  void DispatchEncodingGroups(const compiler::ExecutionPlan& plan);
+  void SubmitCommandBuffers(const compiler::ExecutionPlan& plan);
+  void AdvanceFrame();
 
-    gpu_runtime::memory::Allocator&              allocator_;
-    gpu_runtime::state::TrackedCommandBuffer&    tracked_cmd_;
-    gpu_runtime::work_graph::WorkGraphExecutor&  work_graphs_;
-    sync::TimelineFenceManager     fence_manager_;
-    std::vector<CommandBufferPool> cmd_pools_; // per-queue (RG-4.6)
-    resource::RingAllocator        ring_allocator_;
-    uint64_t                       frame_index_ = 0;
-    uint32_t                       frame_count_;
+  gpu_runtime::memory::Allocator& allocator_;
+  gpu_runtime::state::TrackedCommandBuffer& tracked_cmd_;
+  gpu_runtime::work_graph::WorkGraphExecutor& work_graphs_;
+  sync::TimelineFenceManager fence_manager_;
+  std::vector<CommandBufferPool> cmd_pools_;  // per-queue (RG-4.6)
+  resource::RingAllocator ring_allocator_;
+  uint64_t frame_index_ = 0;
+  uint32_t frame_count_;
 };
 
-} // namespace harmonius::rg::exec
+}  // namespace harmonius::rg::exec
 ```
 
 ### Pass Context
@@ -1574,26 +1543,25 @@ Provided to pass execute callbacks during encoding.
 namespace harmonius::rg::exec {
 
 class PassContext {
-public:
-    // Access the tracked command buffer for this pass
-    [[nodiscard]] gpu_runtime::state::TrackedCommandBuffer& cmd() const;
+ public:
+  // Access the tracked command buffer for this pass
+  [[nodiscard]] gpu_runtime::state::TrackedCommandBuffer& cmd() const;
 
-    // Resolve a resource handle to its GPU-side handle for this frame
-    [[nodiscard]] gpu::ResourceHandle resolve(ResourceHandle handle) const;
+  // Resolve a resource handle to its GPU-side handle for this frame
+  [[nodiscard]] gpu::ResourceHandle Resolve(ResourceHandle handle) const;
 
-    // Ring buffer allocation (RG-10.5) — lock-free, zero-allocation
-    [[nodiscard]]
-    resource::RingAllocator::Allocation allocate_constants(
-        uint64_t size, uint64_t alignment = 256);
+  // Ring buffer allocation (RG-10.5) — lock-free, zero-allocation
+  [[nodiscard]]
+  resource::RingAllocator::Allocation AllocateConstants(uint64_t size, uint64_t alignment = 256);
 
-    // Current frame index (RG-14.6)
-    [[nodiscard]] uint64_t frame_index() const;
+  // Current frame index (RG-14.6)
+  [[nodiscard]] uint64_t FrameIndex() const;
 
-    // Per-pass render area (RG-1.9)
-    [[nodiscard]] const builder::RenderArea& render_area() const;
+  // Per-pass render area (RG-1.9)
+  [[nodiscard]] const builder::RenderArea& RenderArea() const;
 };
 
-} // namespace harmonius::rg::exec
+}  // namespace harmonius::rg::exec
 ```
 
 ### Command Buffer Pool
@@ -1603,20 +1571,20 @@ namespace harmonius::rg::exec {
 
 // RG-10.2: thread-safe per-queue command buffer pool
 class CommandBufferPool {
-public:
-    explicit CommandBufferPool(gpu_runtime::memory::Allocator& allocator, QueueAffinity queue);
+ public:
+  explicit CommandBufferPool(gpu_runtime::memory::Allocator& allocator, QueueAffinity queue);
 
-    // Lock-free acquire — no cross-queue or cross-thread contention
-    [[nodiscard]] gpu_runtime::state::TrackedCommandBuffer acquire();
+  // Lock-free acquire — no cross-queue or cross-thread contention
+  [[nodiscard]] gpu_runtime::state::TrackedCommandBuffer acquire();
 
-    // Return command buffer after submission
-    void release(gpu_runtime::state::TrackedCommandBuffer cmd);
+  // Return command buffer after submission
+  void Release(gpu_runtime::state::TrackedCommandBuffer cmd);
 
-    // Reset all buffers for new frame (called after fence signal)
-    void reset_frame(uint32_t frame_index);
+  // Reset all buffers for new frame (called after fence signal)
+  void ResetFrame(uint32_t frame_index);
 };
 
-} // namespace harmonius::rg::exec
+}  // namespace harmonius::rg::exec
 ```
 
 ### Transfer Pass Injection
@@ -1626,16 +1594,16 @@ namespace harmonius::rg::exec {
 
 // RG-14.7: fault-driven transfer pass injection
 struct TransferPassDesc {
-    gpu::ResourceHandle src_staging; // source staging buffer
-    gpu::ResourceHandle dst_resource; // destination device resource
-    uint64_t            src_offset;
-    uint64_t            dst_offset;
-    uint64_t            size_bytes;
-    int32_t             priority = 0;
-    uint64_t            completion_fence_value = 0; // RG-11.2: host-pollable fence value // RG-5.5: higher = first
+  gpu::ResourceHandle src_staging;   // source staging buffer
+  gpu::ResourceHandle dst_resource;  // destination device resource
+  uint64_t src_offset;
+  uint64_t dst_offset;
+  uint64_t size_bytes;
+  int32_t priority = 0;
+  uint64_t completion_fence_value = 0;  // RG-11.2: host-pollable fence value // RG-5.5: higher = first
 };
 
-} // namespace harmonius::rg::exec
+}  // namespace harmonius::rg::exec
 ```
 
 ### GPU Runtime API Usage
@@ -1655,26 +1623,26 @@ sequenceDiagram
     participant RT as gpu_runtime
 
     Note over Exec,RT: Frame start — wait for frame N-2 to complete
-    Exec->>RT: wait_fence_cpu(fence, frame_N_minus_2)
-    Exec->>Pool: reset_frame()
+    Exec->>RT: WaitFenceCpu(fence, frame_N_minus_2)
+    Exec->>Pool: ResetFrame()
 
     Note over Exec,RT: Parallel encoding (per thread)
     Exec->>Pool: acquire()
     Pool-->>TCB: tracked command buffer
-    TCB->>TCB: begin()
-    TCB->>TCB: barrier(pre_barriers) [via BarrierOptimizer]
-    TCB->>TCB: begin_render_pass(desc)
-    TCB->>TCB: set_pipeline(pso) [cached — skips if redundant]
-    TCB->>TCB: push_constants(data, size) [cached — skips if redundant]
-    TCB->>TCB: dispatch_mesh(x, y, z)
-    TCB->>TCB: end_render_pass()
-    TCB->>TCB: barrier(post_barriers) [via BarrierOptimizer]
-    TCB->>TCB: end()
+    TCB->>TCB: Begin()
+    TCB->>TCB: Barrier(pre_barriers) [via BarrierOptimizer]
+    TCB->>TCB: BeginRenderPass(desc)
+    TCB->>TCB: SetPipeline(pso) [cached — skips if redundant]
+    TCB->>TCB: PushConstants(data, size) [cached — skips if redundant]
+    TCB->>TCB: DispatchMesh(x, y, z)
+    TCB->>TCB: EndRenderPass()
+    TCB->>TCB: Barrier(post_barriers) [via BarrierOptimizer]
+    TCB->>TCB: End()
 
     Note over Exec,RT: Submission
-    Exec->>RT: submit(graphics, cmd_bufs, signals, waits)
-    Exec->>RT: submit(async_compute, cmd_bufs, signals, waits)
-    Exec->>RT: present(swapchain)
+    Exec->>RT: Submit(graphics, cmd_bufs, signals, waits)
+    Exec->>RT: Submit(async_compute, cmd_bufs, signals, waits)
+    Exec->>RT: Present(swapchain)
 ```
 
 **Command pool lifecycle mapping:**
@@ -1682,27 +1650,27 @@ sequenceDiagram
 | Execution Engine Operation | GPU Runtime API                                                  | Frequency                     |
 | -------------------------- | ---------------------------------------------------------------- | ----------------------------- |
 | Pool creation (init)       | `gpu_runtime::state::TrackedCommandBuffer` pool initialization   | Once per (queue, thread) pair |
-| Pool reset                 | Pool reset via GPU runtime                                       | Once per pool per frame       |
+| Pool Reset                 | Pool Reset via GPU runtime                                       | Once per pool per frame       |
 | Buffer allocation          | `gpu_runtime::state::TrackedCommandBuffer` allocation            | Once per pass per frame       |
-| Begin recording            | `TrackedCommandBuffer::begin()`                                  | Once per command buffer       |
-| End recording              | `TrackedCommandBuffer::end()`                                    | Once per command buffer       |
+| Begin recording            | `TrackedCommandBuffer::Begin()`                                  | Once per command Buffer       |
+| End recording              | `TrackedCommandBuffer::End()`                                    | Once per command Buffer       |
 | Submit to GPU              | Submission via GPU runtime                                       | Once per queue per frame      |
 
 **Pass type to GPU command mapping:**
 
 | `rg::PassType`                 | GPU Commands Emitted                                                                                        |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `rasterization`                | `begin_render_pass` → `set_pipeline` → `dispatch_mesh` / `dispatch_mesh_indirect_count` → `end_render_pass` |
-| `compute`                      | `set_pipeline` → `push_constants` → `dispatch` / `dispatch_indirect`                                        |
-| `ray_tracing_dispatch`         | `set_pipeline` → `trace_rays` / `trace_rays_indirect`                                                       |
-| `acceleration_structure_build` | `build_acceleration_structure`                                                                              |
-| `transfer`                     | `copy_buffer` / `copy_buffer_to_texture` / `copy_texture_to_buffer`                                         |
-| `msaa_resolve`                 | `begin_render_pass` with `resolve_texture` set → `end_render_pass`                                          |
-| `present`                      | Present via GPU runtime                                                                                     |
-| `host_callback`                | No GPU commands — CPU-only execution after fence wait                                                       |
-| `work_graph`                   | `set_work_graph` → `dispatch_graph`                                                                         |
-| `checkerboard_resolve`         | `set_pipeline(resolve_compute_pso)` → `dispatch` (compute-based reconstruction)                             |
-| `opacity_micromap_build`       | RG-2.25: build OMM; compiler enforces completion before any RT dispatch referencing the parent BLAS          |
+| `rasterization`                | `BeginRenderPass` → `SetPipeline` → `DispatchMesh` / `DispatchMeshIndirectCount` → `EndRenderPass` |
+| `Compute`                      | `SetPipeline` → `PushConstants` → `Dispatch` / `DispatchIndirect`                                        |
+| `kRayTracingDispatch`         | `SetPipeline` → `TraceRays` / `TraceRaysIndirect`                                                       |
+| `kAccelerationStructureBuild` | `BuildAccelerationStructure`                                                                              |
+| `kTransfer`                     | `CopyBuffer` / `CopyBufferToTexture` / `CopyTextureToBuffer`                                         |
+| `kMsaaResolve`                 | `BeginRenderPass` with `ResolveTexture` set → `EndRenderPass`                                          |
+| `Present`                      | Present via GPU runtime                                                                                     |
+| `kHostCallback`                | No GPU commands — CPU-only execution after fence Wait                                                       |
+| `kWorkGraph`                   | `SetWorkGraph` → `DispatchGraph`                                                                         |
+| `kCheckerboardResolve`         | `SetPipeline(resolve_compute_pso)` → `Dispatch` (Compute-based reconstruction)                             |
+| `kOpacityMicromapBuild`       | RG-2.25: Build OMM; compiler enforces completion before any RT Dispatch referencing the parent BLAS          |
 
 **Barrier emission:** The executor iterates the `ScheduledPass::pre_barriers` and
 `ScheduledPass::post_barriers` from the execution plan. Each barrier set is enqueued through
@@ -1740,74 +1708,72 @@ namespace harmonius::rg::diag {
 
 // RG-12.1: per-pass GPU timestamp results
 struct TimestampResults {
-    struct Entry {
-        std::string_view pass_name;
-        uint64_t         begin_ns;
-        uint64_t         end_ns;
-        [[nodiscard]] double duration_ms() const {
-            return static_cast<double>(end_ns - begin_ns) / 1'000'000.0;
-        }
-    };
-    std::vector<Entry> entries;
+  struct Entry {
+    std::string_view pass_name;
+    uint64_t begin_ns;
+    uint64_t end_ns;
+    [[nodiscard]] double DurationMs() const { return static_cast<double>(end_ns - begin_ns) / 1'000'000.0; }
+  };
+  std::vector<Entry> entries;
 
-    // Lookup by pass name
-    [[nodiscard]] std::optional<Entry> find(std::string_view name) const;
+  // Lookup by pass name
+  [[nodiscard]] std::optional<Entry> Find(std::string_view name) const;
 };
 
 // RG-12.2: pipeline statistics
 struct PipelineStatistics {
-    struct Entry {
-        std::string_view pass_name;
-        uint64_t         primitives_count;
-        uint64_t         invocations_count;
-    };
-    std::vector<Entry> entries;
+  struct Entry {
+    std::string_view pass_name;
+    uint64_t primitives_count;
+    uint64_t invocations_count;
+  };
+  std::vector<Entry> entries;
 };
 
 // RG-12.3: transfer throughput
 struct TransferStatistics {
-    struct Entry {
-        std::string_view pass_name;
-        uint64_t         bytes_transferred;
-        double           latency_ms;
-    };
-    std::vector<Entry> entries;
-    uint64_t           total_bytes_per_frame;
+  struct Entry {
+    std::string_view pass_name;
+    uint64_t bytes_transferred;
+    double latency_ms;
+  };
+  std::vector<Entry> entries;
+  uint64_t total_bytes_per_frame;
 };
 
 // RG-8.6: memory diagnostics
 struct MemoryDiagnostics {
-    uint64_t peak_aliased_bytes;
-    uint64_t total_allocated_bytes;
-    float    aliasing_efficiency; // logical / physical ratio
-    uint32_t active_pool_count;
-    uint32_t total_pool_capacity;
+  uint64_t peak_aliased_bytes;
+  uint64_t total_allocated_bytes;
+  float aliasing_efficiency;  // logical / physical ratio
+  uint32_t active_pool_count;
+  uint32_t total_pool_capacity;
 };
 
 class DiagnosticsCollector {
-public:
-    explicit DiagnosticsCollector(gpu_runtime::memory::Allocator& allocator);
+ public:
+  explicit DiagnosticsCollector(gpu_runtime::memory::Allocator& allocator);
 
-    // Read results after frame fence signals
-    [[nodiscard]] TimestampResults    read_timestamps() const;
-    [[nodiscard]] PipelineStatistics  read_statistics() const;
-    [[nodiscard]] TransferStatistics  read_transfer_stats() const;
-    [[nodiscard]] MemoryDiagnostics   read_memory_stats() const;
+  // Read results after frame fence signals
+  [[nodiscard]] TimestampResults ReadTimestamps() const;
+  [[nodiscard]] PipelineStatistics ReadStatistics() const;
+  [[nodiscard]] TransferStatistics ReadTransferStats() const;
+  [[nodiscard]] MemoryDiagnostics ReadMemoryStats() const;
 
-    // RG-12.4: per-queue depth counters (no GPU sync needed)
-    [[nodiscard]] uint32_t queue_depth(QueueAffinity queue) const;
+  // RG-12.4: per-queue depth counters (no GPU sync needed)
+  [[nodiscard]] uint32_t QueueDepth(QueueAffinity queue) const;
 
-    // GPU readback (RG-12.5)
-    struct ReadbackRequest {
-        gpu::ResourceHandle src_buffer;
-        uint64_t            offset;
-        uint64_t            size;
-    };
-    void request_readback(ReadbackRequest req);
-    [[nodiscard]] std::span<const uint8_t> read_readback() const;
+  // GPU readback (RG-12.5)
+  struct ReadbackRequest {
+    gpu::ResourceHandle src_buffer;
+    uint64_t offset;
+    uint64_t size;
+  };
+  void RequestReadback(ReadbackRequest req);
+  [[nodiscard]] std::span<const uint8_t> ReadReadback() const;
 };
 
-} // namespace harmonius::rg::diag
+}  // namespace harmonius::rg::diag
 ```
 
 ### GPU Runtime API Usage
@@ -1830,33 +1796,33 @@ sequenceDiagram
     Diag->>Alloc: create query pool + readback buffer
 
     Note over Diag,Buf: Per-pass instrumentation
-    TCB->>TCB: write_timestamp(pool, begin_index)
+    TCB->>TCB: WriteTimestamp(pool, begin_index)
     TCB->>TCB: ... pass commands ...
-    TCB->>TCB: write_timestamp(pool, end_index)
+    TCB->>TCB: WriteTimestamp(pool, end_index)
 
     Note over Diag,Buf: End of frame
-    TCB->>TCB: resolve_query_pool(pool, 0, count, readback_buf, 0)
+    TCB->>TCB: ResolveQueryPool(pool, 0, count, readback_buf, 0)
 
-    Note over Diag,Buf: After fence signal (next frame)
-    Diag->>Alloc: map(readback_buf)
+    Note over Diag,Buf: After fence Signal (next frame)
+    Diag->>Alloc: Map(readback_buf)
     Diag->>Diag: compute durations × timestamp_period_ns
-    Diag->>Alloc: unmap(readback_buf)
+    Diag->>Alloc: Unmap(readback_buf)
 ```
 
 | Diagnostics Operation | GPU Runtime API                                               | Notes                                     |
 | --------------------- | ------------------------------------------------------------- | ----------------------------------------- |
 | Create query pool     | `gpu_runtime::state::TrackedCommandBuffer` (pass-through)     | Delegates to backend query pool creation  |
-| Write timestamp       | `gpu_runtime::state::TrackedCommandBuffer::write_timestamp()` | Injected around pass recording            |
-| Resolve queries       | `gpu_runtime::state::TrackedCommandBuffer::resolve_query_pool()` | End-of-frame readback                  |
+| Write timestamp       | `gpu_runtime::state::TrackedCommandBuffer::WriteTimestamp()` | Injected around pass recording            |
+| Resolve queries       | `gpu_runtime::state::TrackedCommandBuffer::ResolveQueryPool()` | End-of-frame readback                  |
 | Get timestamp period  | `gpu::DeviceCapabilities` (queried at init)                   | Stored as a capability value              |
-| Read results          | `gpu_runtime::memory::Allocator` readback buffer + map        | Standard buffer mapping                   |
-| Begin debug label     | `gpu_runtime::state::TrackedCommandBuffer::begin_debug_label()` | Pass-through to backend                 |
-| End debug label       | `gpu_runtime::state::TrackedCommandBuffer::end_debug_label()` | Pass-through to backend                   |
+| Read results          | `gpu_runtime::memory::Allocator` readback Buffer + Map        | Standard Buffer mapping                   |
+| Begin debug label     | `gpu_runtime::state::TrackedCommandBuffer::BeginDebugLabel()` | Pass-through to backend                 |
+| End debug label       | `gpu_runtime::state::TrackedCommandBuffer::EndDebugLabel()` | Pass-through to backend                   |
 | Name resource         | `gpu_runtime::state::TrackedCommandBuffer` (pass-through)     | Delegates to backend naming               |
 
-**GPU readback:** The `request_readback` method enqueues a `copy_buffer` through the
+**GPU readback:** The `RequestReadback` method enqueues a `CopyBuffer` through the
 `TrackedCommandBuffer` from device-local to a readback buffer allocated via the GPU runtime
-allocator. After the frame fence signals, `read_readback` maps the readback buffer and returns
+allocator. After the frame fence signals, `ReadReadback` maps the readback buffer and returns
 the contents.
 
 ---

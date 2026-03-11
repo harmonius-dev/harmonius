@@ -42,30 +42,30 @@ classDiagram
         -uint32_t cbv_srv_uav_increment_
         -uint32_t sampler_increment_
         +D3D12Device(DeviceDesc)
-        +capabilities() DeviceCapabilities
-        +wait_idle() void
-        +create_texture(TextureDesc) expected~TextureHandle~
-        +create_buffer(BufferDesc) expected~BufferHandle~
-        +create_heap(HeapDesc) expected~HeapHandle~
-        +create_placed_texture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
-        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
-        +create_sparse_texture(SparseTextureDesc) expected~TextureHandle~
-        +create_fence(uint64_t) expected~FenceHandle~
-        +create_mesh_render_pipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
-        +create_compute_pipeline(ComputePipelineDesc) expected~PipelineHandle~
-        +create_ray_tracing_pipeline(RayTracingPipelineDesc) expected~PipelineHandle~
-        +create_work_graph(WorkGraphDesc) expected~WorkGraphHandle~
-        +create_descriptor_heap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
-        +create_swapchain(SwapchainDesc) expected~SwapchainHandle~
-        +create_pipeline_cache(PipelineCacheDesc) expected~PipelineCacheHandle~
-        +create_acceleration_structure(AccelerationStructureDesc) expected~AccelerationStructureHandle~
-        +query_texture_allocation_info(TextureDesc) AllocationInfo
-        +query_buffer_allocation_info(BufferDesc) AllocationInfo
-        +resize_swapchain(SwapchainHandle, uint32_t, uint32_t) void
-        +submit(QueueType, cmd_bufs, signals, waits) void
-        +create_command_pool(QueueType) D3D12CommandPool
-        +map(BufferHandle) void_ptr
-        +unmap(BufferHandle) void
+        +Capabilities() DeviceCapabilities
+        +WaitIdle() void
+        +CreateTexture(TextureDesc) expected~TextureHandle~
+        +CreateBuffer(BufferDesc) expected~BufferHandle~
+        +CreateHeap(HeapDesc) expected~HeapHandle~
+        +CreatePlacedTexture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
+        +CreatePlacedBuffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
+        +CreateSparseTexture(SparseTextureDesc) expected~TextureHandle~
+        +CreateFence(uint64_t) expected~FenceHandle~
+        +CreateMeshRenderPipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
+        +CreateComputePipeline(ComputePipelineDesc) expected~PipelineHandle~
+        +CreateRayTracingPipeline(RayTracingPipelineDesc) expected~PipelineHandle~
+        +CreateWorkGraph(WorkGraphDesc) expected~WorkGraphHandle~
+        +CreateDescriptorHeap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
+        +CreateSwapchain(SwapchainDesc) expected~SwapchainHandle~
+        +CreatePipelineCache(PipelineCacheDesc) expected~PipelineCacheHandle~
+        +CreateAccelerationStructure(AccelerationStructureDesc) expected~AccelerationStructureHandle~
+        +QueryTextureAllocationInfo(TextureDesc) AllocationInfo
+        +QueryBufferAllocationInfo(BufferDesc) AllocationInfo
+        +ResizeSwapchain(SwapchainHandle, uint32_t, uint32_t) void
+        +Submit(QueueType, cmd_bufs, signals, waits) void
+        +CreateCommandPool(QueueType) D3D12CommandPool
+        +Map(BufferHandle) void_ptr
+        +Unmap(BufferHandle) void
     }
 
     class QueueSet {
@@ -80,54 +80,54 @@ classDiagram
         -uint32_t allocated_
         -D3D12_COMMAND_LIST_TYPE type_
         +D3D12CommandPool(ID3D12Device16*, D3D12_COMMAND_LIST_TYPE)
-        +allocate_command_buffer() D3D12CommandBuffer
-        +reset() void
-        +allocated_count() uint32_t
+        +AllocateCommandBuffer() D3D12CommandBuffer
+        +Reset() void
+        +AllocatedCount() uint32_t
     }
 
     class D3D12CommandBuffer {
         -ComPtr~ID3D12GraphicsCommandList10~ list_
         -ID3D12CommandAllocator* current_allocator_
         +D3D12CommandBuffer(ComPtr~ID3D12GraphicsCommandList10~)
-        +begin() void
-        +end() void
-        +barrier(BarrierDesc) void
-        +begin_render_pass(RenderPassDesc) void
-        +end_render_pass() void
-        +set_pipeline(PipelineHandle) void
-        +dispatch_mesh(x, y, z) void
-        +dispatch_mesh_indirect(buf, offset, count, stride) void
-        +dispatch_mesh_indirect_count(args) void
-        +dispatch(x, y, z) void
-        +dispatch_indirect(buf, offset) void
-        +trace_rays(TraceRaysDesc) void
-        +trace_rays_indirect(buf, offset) void
-        +build_acceleration_structure(BuildDesc) void
-        +set_work_graph(WorkGraphHandle) void
-        +dispatch_graph(DispatchGraphDesc) void
-        +copy_buffer(src, src_off, dst, dst_off, size) void
-        +copy_texture(src, sub, dst, sub, ext) void
-        +copy_buffer_to_texture(args) void
-        +copy_texture_to_buffer(args) void
-        +set_viewport(Viewport) void
-        +set_scissor(Scissor) void
-        +push_constants(data, size, offset) void
-        +bind_descriptor_heap(DescriptorHeapHandle) void
-        +write_timestamp(pool, index) void
-        +resolve_query_pool(pool, first, count, dst, offset) void
-        +begin_debug_label(name) void
-        +end_debug_label() void
-        +insert_debug_label(name) void
+        +Begin() void
+        +End() void
+        +Barrier(BarrierDesc) void
+        +BeginRenderPass(RenderPassDesc) void
+        +EndRenderPass() void
+        +SetPipeline(PipelineHandle) void
+        +DispatchMesh(x, y, z) void
+        +DispatchMeshIndirect(buf, offset, count, stride) void
+        +DispatchMeshIndirectCount(args) void
+        +Dispatch(x, y, z) void
+        +DispatchIndirect(buf, offset) void
+        +TraceRays(TraceRaysDesc) void
+        +TraceRaysIndirect(buf, offset) void
+        +BuildAccelerationStructure(BuildDesc) void
+        +SetWorkGraph(WorkGraphHandle) void
+        +DispatchGraph(DispatchGraphDesc) void
+        +CopyBuffer(src, src_off, dst, dst_off, size) void
+        +CopyTexture(src, sub, dst, sub, ext) void
+        +CopyBufferToTexture(args) void
+        +CopyTextureToBuffer(args) void
+        +SetViewport(Viewport) void
+        +SetScissor(Scissor) void
+        +PushConstants(data, size, offset) void
+        +BindDescriptorHeap(DescriptorHeapHandle) void
+        +WriteTimestamp(pool, index) void
+        +ResolveQueryPool(pool, first, count, dst, offset) void
+        +BeginDebugLabel(name) void
+        +EndDebugLabel() void
+        +InsertDebugLabel(name) void
     }
 
     class D3D12Fence {
         -ComPtr~ID3D12Fence~ fence_
         -HANDLE event_
-        +signal_gpu(ID3D12CommandQueue*, uint64_t) void
-        +wait_gpu(ID3D12CommandQueue*, uint64_t) void
-        +signal_cpu(uint64_t) void
-        +wait_cpu(uint64_t) void
-        +completed_value() uint64_t
+        +SignalGpu(ID3D12CommandQueue*, uint64_t) void
+        +WaitGpu(ID3D12CommandQueue*, uint64_t) void
+        +SignalCpu(uint64_t) void
+        +WaitCpu(uint64_t) void
+        +CompletedValue() uint64_t
     }
 
     D3D12Device *-- QueueSet
@@ -146,32 +146,32 @@ at compile time via `static_assert`.
 classDiagram
     class GpuDevice {
         <<concept>>
-        +capabilities() DeviceCapabilities
-        +create_texture(TextureDesc) expected~TextureHandle~
-        +create_buffer(BufferDesc) expected~BufferHandle~
-        +create_heap(HeapDesc) expected~HeapHandle~
-        +create_fence(uint64_t) expected~FenceHandle~
-        +create_command_pool(QueueType) CommandPool
-        +submit(QueueType, bufs, signals, waits) void
-        +wait_idle() void
+        +Capabilities() DeviceCapabilities
+        +CreateTexture(TextureDesc) expected~TextureHandle~
+        +CreateBuffer(BufferDesc) expected~BufferHandle~
+        +CreateHeap(HeapDesc) expected~HeapHandle~
+        +CreateFence(uint64_t) expected~FenceHandle~
+        +CreateCommandPool(QueueType) CommandPool
+        +Submit(QueueType, bufs, signals, waits) void
+        +WaitIdle() void
     }
 
     class GpuCommandPool {
         <<concept>>
-        +allocate_command_buffer() CommandBuffer
-        +reset() void
-        +allocated_count() uint32_t
+        +AllocateCommandBuffer() CommandBuffer
+        +Reset() void
+        +AllocatedCount() uint32_t
     }
 
     class GpuCommandBuffer {
         <<concept>>
-        +begin() void
-        +end() void
-        +barrier(BarrierDesc) void
-        +dispatch_mesh(x, y, z) void
-        +dispatch(x, y, z) void
-        +trace_rays(TraceRaysDesc) void
-        +dispatch_graph(DispatchGraphDesc) void
+        +Begin() void
+        +End() void
+        +Barrier(BarrierDesc) void
+        +DispatchMesh(x, y, z) void
+        +Dispatch(x, y, z) void
+        +TraceRays(TraceRaysDesc) void
+        +DispatchGraph(DispatchGraphDesc) void
     }
 
     class D3D12Device {
@@ -293,33 +293,33 @@ classDiagram
 
 | Abstract | D3D12 |
 |----------|-------|
-| `mesh_shader` | `VERTEX_SHADING` |
-| `task_shader` | `VERTEX_SHADING` |
-| `fragment_shader` | `PIXEL_SHADING` |
-| `compute_shader` | `COMPUTE_SHADING` |
-| `ray_tracing_shader` | `RAYTRACING` |
-| `color_output` | `RENDER_TARGET` |
-| `depth_stencil` | `DEPTH_STENCIL` |
-| `transfer` | `COPY` |
-| `acceleration_structure` | `BUILD_RAYTRACING_ACCELERATION_STRUCTURE` |
+| `kMeshShader` | `VERTEX_SHADING` |
+| `kTaskShader` | `VERTEX_SHADING` |
+| `kFragmentShader` | `PIXEL_SHADING` |
+| `kComputeShader` | `COMPUTE_SHADING` |
+| `kRayTracingShader` | `RAYTRACING` |
+| `kColorOutput` | `RENDER_TARGET` |
+| `kDepthStencil` | `DEPTH_STENCIL` |
+| `kTransfer` | `COPY` |
+| `kAccelerationStructure` | `BUILD_RAYTRACING_ACCELERATION_STRUCTURE` |
 | `all` | `ALL` |
-| `split_begin` | Set `SyncAfter = SPLIT` |
-| `split_end` | Set `SyncBefore = SPLIT` |
+| `SplitBegin` | Set `SyncAfter = SPLIT` |
+| `SplitEnd` | Set `SyncBefore = SPLIT` |
 
 **Layout mapping (`TextureLayout` to `D3D12_BARRIER_LAYOUT`):**
 
 | Abstract | D3D12 |
 |----------|-------|
 | `undefined` | `UNDEFINED` |
-| `general` | `UNORDERED_ACCESS` |
-| `color_attachment` | `RENDER_TARGET` |
-| `depth_stencil_attachment` | `DEPTH_STENCIL_WRITE` |
-| `depth_stencil_read_only` | `DEPTH_STENCIL_READ` |
-| `shader_read_only` | `SHADER_RESOURCE` |
-| `transfer_src` | `COPY_SOURCE` |
-| `transfer_dst` | `COPY_DEST` |
-| `present` | `PRESENT` |
-| `shading_rate` | `SHADING_RATE_SOURCE` |
+| `kGeneral` | `UNORDERED_ACCESS` |
+| `kColorAttachment` | `RENDER_TARGET` |
+| `kDepthStencilAttachment` | `DEPTH_STENCIL_WRITE` |
+| `kDepthStencilReadOnly` | `DEPTH_STENCIL_READ` |
+| `kShaderReadOnly` | `SHADER_RESOURCE` |
+| `kTransferSrc` | `COPY_SOURCE` |
+| `kTransferDst` | `COPY_DEST` |
+| `Present` | `PRESENT` |
+| `kShadingRate` | `SHADING_RATE_SOURCE` |
 
 ### 4. Resource Creation via D3D12 API
 
@@ -330,10 +330,10 @@ management (sub-allocation, defragmentation) is handled by the GPU runtime layer
 ```mermaid
 classDiagram
     class D3D12Device {
-        +create_texture(TextureDesc) expected~TextureHandle~
-        +create_buffer(BufferDesc) expected~BufferHandle~
-        +create_heap(HeapDesc) expected~HeapHandle~
-        +create_placed_texture(HeapHandle, offset, TextureDesc) expected~TextureHandle~
+        +CreateTexture(TextureDesc) expected~TextureHandle~
+        +CreateBuffer(BufferDesc) expected~BufferHandle~
+        +CreateHeap(HeapDesc) expected~HeapHandle~
+        +CreatePlacedTexture(HeapHandle, offset, TextureDesc) expected~TextureHandle~
     }
 
     class CommittedResource {
@@ -513,7 +513,7 @@ sequenceDiagram
 
     Note over Dev,Fence: Allocate and record
 
-    Dev->>Pool: allocate_command_buffer()
+    Dev->>Pool: AllocateCommandBuffer()
     Pool->>Pool: check cached_lists_
     alt cached list available
         Pool->>Pool: reuse from cache
@@ -542,9 +542,9 @@ sequenceDiagram
 
     Note over Dev,Fence: Next frame wait
 
-    Dev->>Fence: wait_cpu(old_value)
+    Dev->>Fence: WaitCpu(old_value)
     Dev->>Alloc: Reset()
-    Dev->>Pool: reset()
+    Dev->>Pool: Reset()
 ```
 
 ### Work Graph Dispatch
@@ -563,7 +563,7 @@ sequenceDiagram
 
     Note over App,List: State object creation
 
-    App->>Dev: create_work_graph(WorkGraphDesc)
+    App->>Dev: CreateWorkGraph(WorkGraphDesc)
     Dev->>SO: CreateStateObject(EXECUTABLE, DXIL lib + work graph subobject)
     SO-->>Dev: ID3D12StateObject
 
@@ -599,36 +599,36 @@ sequenceDiagram
 
     Note over RG,List: Standard barrier
 
-    RG->>Cmd: barrier(texture: color_attachment to shader_read)
+    RG->>Cmd: Barrier(texture: color_attachment to shader_read)
     Cmd->>Cmd: to_d3d12_sync(color_output) = RENDER_TARGET
     Cmd->>Cmd: to_d3d12_sync(fragment_shader) = PIXEL_SHADING
     Cmd->>Cmd: to_d3d12_layout(color_attachment) = RENDER_TARGET
     Cmd->>Cmd: to_d3d12_layout(shader_read_only) = SHADER_RESOURCE
     Cmd->>List: Barrier(D3D12_TEXTURE_BARRIER)
 
-    Note over RG,List: Split barrier begin (after producing pass)
+    Note over RG,List: Split barrier Begin (after producing pass)
 
-    RG->>Cmd: barrier(split_begin: depth to shader_read)
+    RG->>Cmd: Barrier(split_begin: depth to shader_read)
     Cmd->>Cmd: SyncBefore = DEPTH_STENCIL
     Cmd->>Cmd: SyncAfter = SPLIT
     Cmd->>List: Barrier(D3D12_TEXTURE_BARRIER)
 
     Note over RG,List: Intervening work executes on GPU
 
-    RG->>Cmd: dispatch(compute_pass)
+    RG->>Cmd: Dispatch(compute_pass)
 
-    Note over RG,List: Split barrier end (before consuming pass)
+    Note over RG,List: Split barrier End (before consuming pass)
 
-    RG->>Cmd: barrier(split_end: depth to shader_read)
+    RG->>Cmd: Barrier(split_end: depth to shader_read)
     Cmd->>Cmd: SyncBefore = SPLIT
     Cmd->>Cmd: SyncAfter = PIXEL_SHADING
     Cmd->>Cmd: LayoutBefore = DEPTH_STENCIL_WRITE
     Cmd->>Cmd: LayoutAfter = SHADER_RESOURCE
     Cmd->>List: Barrier(D3D12_TEXTURE_BARRIER)
 
-    Note over RG,List: Aliasing barrier (transient resource activation)
+    Note over RG,List: Aliasing Barrier (transient resource activation)
 
-    RG->>Cmd: barrier(aliasing: activate placed resource)
+    RG->>Cmd: Barrier(aliasing: activate placed resource)
     Cmd->>Cmd: AccessBefore = NO_ACCESS
     Cmd->>Cmd: LayoutBefore = UNDEFINED
     Cmd->>Cmd: Flags = DISCARD

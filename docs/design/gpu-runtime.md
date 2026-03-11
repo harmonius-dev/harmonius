@@ -55,7 +55,7 @@ tracking, work graph execution, and feature emulation.
 | No third-party allocators | Memory management is first-party — VMA, D3D12MA, and similar libraries are not used            |
 | Zero per-frame allocation | Hot-path operations use pre-allocated pools and ring buffers; no `malloc`/`new` per frame       |
 | Transparent optimization  | Consumers see one API; native vs. emulated paths are selected at initialization                 |
-| Static dispatch           | The runtime is templated on the backend's concrete types via C++20 concepts — no vtables        |
+| Static Dispatch           | The runtime is templated on the backend's concrete types via C++20 concepts — no vtables        |
 | Strict downward deps      | Depends only on `harmonius::gpu` — no knowledge of render graph, asset pipeline, or application |
 
 ---
@@ -68,7 +68,7 @@ tracking, work graph execution, and feature emulation.
 | ------------------------------------- | ------------------------------------------------------ |
 | `harmonius::gpu_runtime`              | Root namespace — re-exports commonly used types         |
 | `harmonius::gpu_runtime::memory`      | Memory allocation, sub-allocation, defrag, budgets      |
-| `harmonius::gpu_runtime::state`       | State tracking, barrier optimization, resource states   |
+| `harmonius::gpu_runtime::state`       | State tracking, Barrier optimization, resource states   |
 | `harmonius::gpu_runtime::work_graph`  | Work graph execution (native and emulated)              |
 | `harmonius::gpu_runtime::compat`      | Feature emulation and cross-backend compatibility       |
 
@@ -164,33 +164,33 @@ It adds sub-allocation, tracking, and defragmentation on top of the thin backend
 
 Manages a set of GPU heaps, grouped by heap type. New heaps are created on demand when
 existing heaps cannot satisfy an allocation. Each heap is a fixed-size block of GPU memory
-created via `gpu::Device::create_heap()`.
+created via `gpu::Device::CreateHeap()`.
 
 ```cpp
 namespace harmonius::gpu_runtime::memory {
 
 enum class HeapType : uint8_t {
-    device_local,    // GPU-only memory (render targets, textures, buffers)
-    host_visible,    // CPU-writable, GPU-readable (staging, upload)
-    host_cached,     // CPU-cached readback memory
+  kDeviceLocal,  // GPU-only memory (render targets, textures, buffers)
+  kHostVisible,  // CPU-writable, GPU-readable (staging, upload)
+  kHostCached,   // CPU-cached readback memory
 };
 
 struct HeapConfig {
-    HeapType type;
-    uint64_t block_size;     // size of each heap block (e.g., 64 MiB or 256 MiB)
-    uint32_t max_blocks;     // maximum number of blocks per heap type
+  HeapType type;
+  uint64_t block_size;  // size of each heap block (e.g., 64 MiB or 256 MiB)
+  uint32_t max_blocks;  // maximum number of blocks per heap type
 };
 
-} // namespace harmonius::gpu_runtime::memory
+}  // namespace harmonius::gpu_runtime::memory
 ```
 
 **Heap sizing strategy:**
 
 | Heap Type      | Default Block Size | Rationale                                               |
 | -------------- | ------------------ | ------------------------------------------------------- |
-| `device_local` | 256 MiB            | Large blocks reduce heap count; most resources are here  |
-| `host_visible` | 64 MiB             | Staging buffers are transient; smaller blocks suffice    |
-| `host_cached`  | 16 MiB             | Readback is infrequent; small blocks minimize waste      |
+| `kDeviceLocal` | 256 MiB            | Large blocks reduce heap count; most resources are here  |
+| `kHostVisible` | 64 MiB             | Staging buffers are transient; smaller blocks suffice    |
+| `kHostCached`  | 16 MiB             | Readback is infrequent; small blocks minimize waste      |
 
 ### Block Allocator (TLSF)
 
@@ -205,32 +205,31 @@ within heaps. TLSF provides:
 namespace harmonius::gpu_runtime::memory {
 
 class BlockAllocator {
-public:
-    explicit BlockAllocator(uint64_t pool_size);
+ public:
+  explicit BlockAllocator(uint64_t pool_size);
 
-    struct Block {
-        uint64_t offset;
-        uint64_t size;
-    };
+  struct Block {
+    uint64_t offset;
+    uint64_t size;
+  };
 
-    // O(1) allocation — returns offset within the pool
-    [[nodiscard]] std::expected<Block, AllocationError> allocate(
-        uint64_t size, uint64_t alignment);
+  // O(1) allocation — returns offset within the pool
+  [[nodiscard]] std::expected<Block, AllocationError> Allocate(uint64_t size, uint64_t alignment);
 
-    // O(1) deallocation
-    void free(Block block);
+  // O(1) deallocation
+  void Free(Block block);
 
-    // Fragmentation metrics
-    [[nodiscard]] float fragmentation_ratio() const;
-    [[nodiscard]] uint64_t largest_free_block() const;
-    [[nodiscard]] uint64_t total_free() const;
+  // Fragmentation metrics
+  [[nodiscard]] float FragmentationRatio() const;
+  [[nodiscard]] uint64_t LargestFreeBlock() const;
+  [[nodiscard]] uint64_t TotalFree() const;
 
-private:
-    // TLSF internal state: first-level and second-level bitmaps,
-    // free lists indexed by size class
+ private:
+  // TLSF internal state: first-level and second-level bitmaps,
+  // free lists indexed by size class
 };
 
-} // namespace harmonius::gpu_runtime::memory
+}  // namespace harmonius::gpu_runtime::memory
 ```
 
 **Why TLSF over other algorithms:**
@@ -239,8 +238,8 @@ private:
 | ------------- | ---------- | ------------ | ------------- | ------------------------------------------ |
 | First-fit     | O(n)       | O(1)         | High          | Linear search is too slow for hot paths    |
 | Best-fit      | O(n)       | O(1)         | Low           | Linear search is too slow for hot paths    |
-| Buddy         | O(log n)   | O(log n)     | ~50% internal | High internal fragmentation wastes memory  |
-| **TLSF**      | **O(1)**   | **O(1)**     | **~3.5%**     | **Best balance of speed and fragmentation** |
+| Buddy         | O(log n)   | O(log n)     | ~50% internal | High internal Fragmentation wastes memory  |
+| **TLSF**      | **O(1)**   | **O(1)**     | **~3.5%**     | **Best balance of speed and Fragmentation** |
 
 ### Allocation API
 
@@ -248,73 +247,71 @@ private:
 namespace harmonius::gpu_runtime::memory {
 
 enum class AllocationStrategy : uint8_t {
-    sub_allocate,   // Default: sub-allocate from a shared heap
-    committed,      // Dedicated heap for this resource
-    placed,         // Caller-managed placement at specific heap offset
+  kSubAllocate,  // Default: sub-allocate from a shared heap
+  kCommitted,    // Dedicated heap for this resource
+  kPlaced,       // Caller-managed placement at specific heap offset
 };
 
 struct AllocationDesc {
-    HeapType           heap_type  = HeapType::device_local;
-    AllocationStrategy strategy   = AllocationStrategy::sub_allocate;
-    uint64_t           size       = 0;
-    uint64_t           alignment  = 0;    // 0 = auto (queried from backend)
-    std::string_view   debug_name = {};
+  HeapType heap_type = HeapType::kDeviceLocal;
+  AllocationStrategy strategy = AllocationStrategy::kSubAllocate;
+  uint64_t size = 0;
+  uint64_t alignment = 0;  // 0 = auto (queried from backend)
+  std::string_view debug_name = {};
 };
 
 struct Allocation {
-    gpu::HeapHandle    heap;
-    uint64_t           offset;
-    uint64_t           size;
-    HeapType           heap_type;
-    AllocationStrategy strategy;
+  gpu::HeapHandle heap;
+  uint64_t offset;
+  uint64_t size;
+  HeapType heap_type;
+  AllocationStrategy strategy;
 };
 
 enum class AllocationError : uint8_t {
-    out_of_memory,        // no free block large enough
-    budget_exceeded,      // allocation would exceed memory budget
-    pool_exhausted,       // named pool is at capacity
-    invalid_alignment,    // alignment is not a power of two
+  kOutOfMemory,       // no free block large enough
+  kBudgetExceeded,    // allocation would exceed memory budget
+  kPoolExhausted,     // named pool is at capacity
+  kInvalidAlignment,  // alignment is not a power of two
 };
 
 class Allocator {
-public:
-    explicit Allocator(gpu::Device& device, std::span<const HeapConfig> configs);
-    ~Allocator();
+ public:
+  explicit Allocator(gpu::Device& device, std::span<const HeapConfig> configs);
+  ~Allocator();
 
-    // --- Core allocation ---
+  // --- Core allocation ---
 
-    [[nodiscard]]
-    std::expected<Allocation, AllocationError> allocate(const AllocationDesc& desc);
+  [[nodiscard]]
+  std::expected<Allocation, AllocationError> Allocate(const AllocationDesc& desc);
 
-    void free(const Allocation& alloc);
+  void Free(const Allocation& alloc);
 
-    // --- Texture/buffer creation with integrated allocation ---
+  // --- Texture/buffer creation with integrated allocation ---
 
-    [[nodiscard]]
-    std::expected<std::pair<gpu::TextureHandle, Allocation>, AllocationError>
-    create_texture(const gpu::TextureDesc& desc, AllocationStrategy strategy
-                   = AllocationStrategy::sub_allocate);
+  [[nodiscard]]
+  std::expected<std::pair<gpu::TextureHandle, Allocation>, AllocationError> CreateTexture(
+      const gpu::TextureDesc& desc, AllocationStrategy strategy = AllocationStrategy::kSubAllocate);
 
-    [[nodiscard]]
-    std::expected<std::pair<gpu::BufferHandle, Allocation>, AllocationError>
-    create_buffer(const gpu::BufferDesc& desc, AllocationStrategy strategy
-                  = AllocationStrategy::sub_allocate);
+  [[nodiscard]]
+  std::expected<std::pair<gpu::BufferHandle, Allocation>, AllocationError> CreateBuffer(
+      const gpu::BufferDesc& desc, AllocationStrategy strategy = AllocationStrategy::kSubAllocate);
 
-    void destroy_texture(gpu::TextureHandle handle, const Allocation& alloc);
-    void destroy_buffer(gpu::BufferHandle handle, const Allocation& alloc);
+  void DestroyTexture(gpu::TextureHandle handle, const Allocation& alloc);
+  void DestroyBuffer(gpu::BufferHandle handle, const Allocation& alloc);
 
-    // --- Queries ---
+  // --- Queries ---
 
-    [[nodiscard]] BudgetInfo budget(HeapType type) const;
-    [[nodiscard]] AllocationStats stats() const;
+  [[nodiscard]] BudgetInfo Budget(HeapType type) const;
+  [[nodiscard]] AllocationStats Stats() const;
 
-private:
-    gpu::Device&                           device_;
-    std::array<HeapPool, 3>                pools_;   // one per HeapType
-    BudgetTracker                          budget_;
+ private:
+  gpu::Device& device_;
+  std::array<HeapPool, 3> pools_;  // one per HeapType
+  BudgetTracker budget_;
 };
 
-} // namespace harmonius::gpu_runtime::memory
+}  // namespace harmonius::gpu_runtime::memory
 ```
 
 ### Ring Allocator
@@ -327,35 +324,34 @@ frame's GPU work completes.
 namespace harmonius::gpu_runtime::memory {
 
 class RingAllocator {
-public:
-    struct Config {
-        uint64_t total_size;       // total ring buffer size (e.g., 32 MiB)
-        uint32_t frame_count;      // number of frames in flight (typically 3)
-    };
+ public:
+  struct Config {
+    uint64_t total_size;   // total ring buffer Size (e.g., 32 MiB)
+    uint32_t frame_count;  // number of frames in flight (typically 3)
+  };
 
-    explicit RingAllocator(gpu::Device& device, const Config& config);
+  explicit RingAllocator(gpu::Device& device, const Config& config);
 
-    struct RingAllocation {
-        gpu::BufferHandle buffer;    // the ring buffer handle
-        uint64_t          offset;    // offset within the ring buffer
-        uint64_t          size;
-        void*             mapped;    // persistently mapped CPU pointer
-    };
+  struct RingAllocation {
+    gpu::BufferHandle buffer;  // the ring buffer handle
+    uint64_t offset;           // offset within the ring buffer
+    uint64_t size;
+    void* mapped;  // persistently mapped CPU pointer
+  };
 
-    // Lock-free allocation from the current frame's slot
-    [[nodiscard]]
-    std::expected<RingAllocation, AllocationError> allocate(
-        uint64_t size, uint64_t alignment = 256);
+  // Lock-free allocation from the current frame's slot
+  [[nodiscard]]
+  std::expected<RingAllocation, AllocationError> Allocate(uint64_t size, uint64_t alignment = 256);
 
-    // Called at frame start — recycles the slot from frame N-frame_count
-    void begin_frame(uint64_t frame_index);
+  // Called at frame start — recycles the slot from frame N-frame_count
+  void BeginFrame(uint64_t frame_index);
 
-    // Metrics
-    [[nodiscard]] uint64_t used_this_frame() const;
-    [[nodiscard]] uint64_t capacity_per_frame() const;
+  // Metrics
+  [[nodiscard]] uint64_t UsedThisFrame() const;
+  [[nodiscard]] uint64_t CapacityPerFrame() const;
 };
 
-} // namespace harmonius::gpu_runtime::memory
+}  // namespace harmonius::gpu_runtime::memory
 ```
 
 ### Pool Allocator
@@ -366,32 +362,32 @@ Fixed-capacity typed pools for streaming resources (tiles, voxels, chunks).
 namespace harmonius::gpu_runtime::memory {
 
 struct PoolDesc {
-    std::string_view name;
-    HeapType         heap_type;
-    uint64_t         element_size;
-    uint32_t         max_elements;
+  std::string_view name;
+  HeapType heap_type;
+  uint64_t element_size;
+  uint32_t max_elements;
 };
 
 class PoolAllocator {
-public:
-    explicit PoolAllocator(gpu::Device& device, const PoolDesc& desc);
+ public:
+  explicit PoolAllocator(gpu::Device& device, const PoolDesc& desc);
 
-    struct PoolSlot {
-        uint32_t  index;           // slot index within the pool
-        uint64_t  heap_offset;     // offset within the pool's heap
-    };
+  struct PoolSlot {
+    uint32_t index;        // slot index within the pool
+    uint64_t heap_offset;  // offset within the pool's heap
+  };
 
-    [[nodiscard]]
-    std::expected<PoolSlot, AllocationError> allocate();
+  [[nodiscard]]
+  std::expected<PoolSlot, AllocationError> Allocate();
 
-    void free(PoolSlot slot);
+  void Free(PoolSlot slot);
 
-    [[nodiscard]] uint32_t active_count() const;
-    [[nodiscard]] uint32_t capacity() const;
-    [[nodiscard]] float utilization() const;
+  [[nodiscard]] uint32_t ActiveCount() const;
+  [[nodiscard]] uint32_t Capacity() const;
+  [[nodiscard]] float Utilization() const;
 };
 
-} // namespace harmonius::gpu_runtime::memory
+}  // namespace harmonius::gpu_runtime::memory
 ```
 
 ### Defragmentation Engine
@@ -402,38 +398,38 @@ Incremental defragmentation that relocates resources to compact heaps.
 namespace harmonius::gpu_runtime::memory {
 
 struct DefragStats {
-    uint32_t moves_completed;
-    uint32_t moves_remaining;
-    uint64_t bytes_moved;
-    uint64_t bytes_freed;
-    float    fragmentation_before;
-    float    fragmentation_after;
+  uint32_t moves_completed;
+  uint32_t moves_remaining;
+  uint64_t bytes_moved;
+  uint64_t bytes_freed;
+  float fragmentation_before;
+  float fragmentation_after;
 };
 
 class DefragEngine {
-public:
-    explicit DefragEngine(Allocator& allocator, gpu::Device& device);
+ public:
+  explicit DefragEngine(Allocator& allocator, gpu::Device& device);
 
-    // Compute a defragmentation plan (which allocations to move)
-    [[nodiscard]] bool needs_defrag(HeapType type, float threshold = 0.2f) const;
+  // Compute a defragmentation plan (which allocations to move)
+  [[nodiscard]] bool NeedsDefrag(HeapType type, float threshold = 0.2f) const;
 
-    // Execute one incremental step (bounded number of moves)
-    // Returns GPU copy commands to be recorded into a transfer command buffer
-    struct DefragStep {
-        std::vector<gpu::CopyRegion> copies;   // GPU-side copies to execute
-        std::vector<Allocation>      old_allocs; // allocations being moved
-        std::vector<Allocation>      new_allocs; // new locations after move
-    };
+  // Execute one incremental step (bounded number of moves)
+  // Returns GPU copy commands to be recorded into a transfer command buffer
+  struct DefragStep {
+    std::vector<gpu::CopyRegion> copies;  // GPU-side copies to execute
+    std::vector<Allocation> old_allocs;   // allocations being moved
+    std::vector<Allocation> new_allocs;   // new locations after move
+  };
 
-    [[nodiscard]] DefragStep plan_step(HeapType type, uint32_t max_moves = 8);
+  [[nodiscard]] DefragStep PlanStep(HeapType type, uint32_t max_moves = 8);
 
-    // Finalize after GPU copies complete (update internal tracking)
-    void commit_step(const DefragStep& step);
+  // Finalize after GPU copies complete (update internal tracking)
+  void CommitStep(const DefragStep& step);
 
-    [[nodiscard]] DefragStats stats(HeapType type) const;
+  [[nodiscard]] DefragStats Stats(HeapType type) const;
 };
 
-} // namespace harmonius::gpu_runtime::memory
+}  // namespace harmonius::gpu_runtime::memory
 ```
 
 ### Budget Tracker
@@ -442,21 +438,21 @@ public:
 namespace harmonius::gpu_runtime::memory {
 
 struct BudgetInfo {
-    uint64_t total_budget;      // total available memory for this heap type
-    uint64_t current_usage;     // currently allocated bytes
-    uint64_t peak_usage;        // high-water mark since last reset
-    float    utilization;       // current_usage / total_budget
+  uint64_t total_budget;   // total available memory for this heap type
+  uint64_t current_usage;  // currently allocated bytes
+  uint64_t peak_usage;     // high-water mark since last reset
+  float utilization;       // current_usage / total_budget
 };
 
 struct AllocationStats {
-    uint64_t total_allocated;
-    uint64_t total_freed;
-    uint32_t active_allocations;
-    uint32_t total_heaps;
-    float    avg_fragmentation;
+  uint64_t total_allocated;
+  uint64_t total_freed;
+  uint32_t active_allocations;
+  uint32_t total_heaps;
+  float avg_fragmentation;
 };
 
-} // namespace harmonius::gpu_runtime::memory
+}  // namespace harmonius::gpu_runtime::memory
 ```
 
 ---
@@ -476,64 +472,63 @@ Wraps a `gpu::CommandBuffer` and filters redundant state changes.
 namespace harmonius::gpu_runtime::state {
 
 class TrackedCommandBuffer {
-public:
-    explicit TrackedCommandBuffer(gpu::CommandBuffer& inner,
-                                 const gpu::DeviceCapabilities& caps);
+ public:
+  explicit TrackedCommandBuffer(gpu::CommandBuffer& inner, const gpu::DeviceCapabilities& caps);
 
-    // --- State-tracked methods (filter redundant calls) ---
+  // --- State-tracked methods (filter redundant calls) ---
 
-    void set_pipeline(gpu::PipelineHandle handle);
-    void bind_descriptor_heap(gpu::DescriptorHeapHandle handle);
-    void set_viewport(const gpu::Viewport& vp);
-    void set_scissor(const gpu::ScissorRect& rect);
-    void push_constants(const void* data, uint32_t size, uint32_t offset = 0);
+  void SetPipeline(gpu::PipelineHandle handle);
+  void BindDescriptorHeap(gpu::DescriptorHeapHandle handle);
+  void SetViewport(const gpu::Viewport& vp);
+  void SetScissor(const gpu::ScissorRect& rect);
+  void PushConstants(const void* data, uint32_t size, uint32_t offset = 0);
 
-    // --- Barrier optimization ---
+  // --- Barrier optimization ---
 
-    // Queue a barrier; will be batched and emitted on flush
-    void barrier(const gpu::BarrierDesc& desc);
+  // Queue a barrier; will be batched and emitted on flush
+  void Barrier(const gpu::BarrierDesc& desc);
 
-    // Emit all queued barriers as a single batched call
-    void flush_barriers();
+  // Emit all queued barriers as a single batched call
+  void FlushBarriers();
 
-    // --- Pass-through methods (not state-tracked) ---
+  // --- Pass-through methods (not state-tracked) ---
 
-    void begin();
-    void end();
-    void begin_render_pass(const gpu::RenderPassDesc& desc);
-    void end_render_pass();
-    void dispatch_mesh(uint32_t x, uint32_t y, uint32_t z);
-    void dispatch(uint32_t x, uint32_t y, uint32_t z);
-    void dispatch_indirect(gpu::BufferHandle args, uint64_t offset);
-    void trace_rays(const gpu::TraceRaysDesc& desc);
-    void build_acceleration_structure(const gpu::AccelerationStructureBuildDesc& desc);
-    void copy_buffer(const gpu::BufferCopyDesc& desc);
-    void copy_buffer_to_texture(const gpu::BufferTextureCopyDesc& desc);
-    void copy_texture_to_buffer(const gpu::BufferTextureCopyDesc& desc);
-    void copy_texture(const gpu::TextureCopyDesc& desc);
-    void begin_debug_label(std::string_view name, std::span<const float, 4> color);
-    void end_debug_label();
+  void Begin();
+  void End();
+  void BeginRenderPass(const gpu::RenderPassDesc& desc);
+  void EndRenderPass();
+  void DispatchMesh(uint32_t x, uint32_t y, uint32_t z);
+  void Dispatch(uint32_t x, uint32_t y, uint32_t z);
+  void DispatchIndirect(gpu::BufferHandle args, uint64_t offset);
+  void TraceRays(const gpu::TraceRaysDesc& desc);
+  void BuildAccelerationStructure(const gpu::AccelerationStructureBuildDesc& desc);
+  void CopyBuffer(const gpu::BufferCopyDesc& desc);
+  void CopyBufferToTexture(const gpu::BufferTextureCopyDesc& desc);
+  void CopyTextureToBuffer(const gpu::BufferTextureCopyDesc& desc);
+  void CopyTexture(const gpu::TextureCopyDesc& desc);
+  void BeginDebugLabel(std::string_view name, std::span<const float, 4> color);
+  void EndDebugLabel();
 
-    // Access the underlying command buffer
-    [[nodiscard]] gpu::CommandBuffer& inner();
+  // Access the underlying command buffer
+  [[nodiscard]] gpu::CommandBuffer& Inner();
 
-private:
-    gpu::CommandBuffer&            inner_;
-    const gpu::DeviceCapabilities& caps_;
+ private:
+  gpu::CommandBuffer& inner_;
+  const gpu::DeviceCapabilities& caps_;
 
-    // Cached state for redundancy elimination
-    gpu::PipelineHandle            bound_pipeline_   = gpu::PipelineHandle::invalid;
-    gpu::DescriptorHeapHandle      bound_heap_       = gpu::DescriptorHeapHandle::invalid;
-    std::optional<gpu::Viewport>   current_viewport_;
-    std::optional<gpu::ScissorRect> current_scissor_;
-    std::array<uint8_t, 128>       push_constant_cache_ = {};
-    uint32_t                       push_constant_size_  = 0;
+  // Cached state for redundancy elimination
+  gpu::PipelineHandle bound_pipeline_ = gpu::PipelineHandle::kInvalid;
+  gpu::DescriptorHeapHandle bound_heap_ = gpu::DescriptorHeapHandle::kInvalid;
+  std::optional<gpu::Viewport> current_viewport_;
+  std::optional<gpu::ScissorRect> current_scissor_;
+  std::array<uint8_t, 128> push_constant_cache_ = {};
+  uint32_t push_constant_size_ = 0;
 
-    // Barrier batch buffer
-    std::vector<gpu::BarrierDesc>  pending_barriers_;
+  // Barrier batch buffer
+  std::vector<gpu::BarrierDesc> pending_barriers_;
 };
 
-} // namespace harmonius::gpu_runtime::state
+}  // namespace harmonius::gpu_runtime::state
 ```
 
 **State-tracking flow:**
@@ -545,21 +540,21 @@ sequenceDiagram
     participant Cache as State Cache
     participant CB as gpu::CommandBuffer
 
-    Caller->>TCB: set_pipeline(pso_A)
+    Caller->>TCB: SetPipeline(pso_A)
     TCB->>Cache: check bound_pipeline_
     Cache-->>TCB: invalid (no pipeline bound)
-    TCB->>CB: set_pipeline(pso_A)
+    TCB->>CB: SetPipeline(pso_A)
     TCB->>Cache: bound_pipeline_ = pso_A
 
-    Caller->>TCB: set_pipeline(pso_A)
+    Caller->>TCB: SetPipeline(pso_A)
     TCB->>Cache: check bound_pipeline_
     Cache-->>TCB: pso_A (same!)
     Note over TCB: Suppressed — no call to CB
 
-    Caller->>TCB: set_pipeline(pso_B)
+    Caller->>TCB: SetPipeline(pso_B)
     TCB->>Cache: check bound_pipeline_
     Cache-->>TCB: pso_A (different)
-    TCB->>CB: set_pipeline(pso_B)
+    TCB->>CB: SetPipeline(pso_B)
     TCB->>Cache: bound_pipeline_ = pso_B
 ```
 
@@ -571,38 +566,36 @@ Tracks the current layout/access state of every resource for barrier optimizatio
 namespace harmonius::gpu_runtime::state {
 
 struct ResourceState {
-    gpu::PipelineStage stage    = gpu::PipelineStage::none;
-    gpu::ResourceAccess access  = gpu::ResourceAccess::none;
-    gpu::TextureLayout  layout  = gpu::TextureLayout::undefined;
-    gpu::QueueType      owner   = gpu::QueueType::graphics;
+  gpu::PipelineStage stage = gpu::PipelineStage::kNone;
+  gpu::ResourceAccess access = gpu::ResourceAccess::kNone;
+  gpu::TextureLayout layout = gpu::TextureLayout::kUndefined;
+  gpu::QueueType owner = gpu::QueueType::kGraphics;
 };
 
 class ResourceStateCache {
-public:
-    // Set initial state for a resource (called at creation)
-    void register_resource(gpu::TextureHandle handle, ResourceState initial);
-    void register_resource(gpu::BufferHandle handle, ResourceState initial);
+ public:
+  // Set initial state for a resource (called at creation)
+  void RegisterResource(gpu::TextureHandle handle, ResourceState initial);
+  void RegisterResource(gpu::BufferHandle handle, ResourceState initial);
 
-    // Query current state
-    [[nodiscard]] ResourceState current_state(gpu::TextureHandle handle) const;
-    [[nodiscard]] ResourceState current_state(gpu::BufferHandle handle) const;
+  // Query current state
+  [[nodiscard]] ResourceState CurrentState(gpu::TextureHandle handle) const;
+  [[nodiscard]] ResourceState CurrentState(gpu::BufferHandle handle) const;
 
-    // Update state after a barrier
-    void transition(gpu::TextureHandle handle, ResourceState new_state);
-    void transition(gpu::BufferHandle handle, ResourceState new_state);
+  // Update state after a barrier
+  void Transition(gpu::TextureHandle handle, ResourceState new_state);
+  void Transition(gpu::BufferHandle handle, ResourceState new_state);
 
-    // Check if a barrier is needed
-    [[nodiscard]] bool needs_transition(gpu::TextureHandle handle,
-                                        ResourceState target) const;
-    [[nodiscard]] bool needs_transition(gpu::BufferHandle handle,
-                                        ResourceState target) const;
+  // Check if a barrier is needed
+  [[nodiscard]] bool NeedsTransition(gpu::TextureHandle handle, ResourceState target) const;
+  [[nodiscard]] bool NeedsTransition(gpu::BufferHandle handle, ResourceState target) const;
 
-    // Remove tracking (called at destruction)
-    void unregister(gpu::TextureHandle handle);
-    void unregister(gpu::BufferHandle handle);
+  // Remove tracking (called at destruction)
+  void Unregister(gpu::TextureHandle handle);
+  void Unregister(gpu::BufferHandle handle);
 };
 
-} // namespace harmonius::gpu_runtime::state
+}  // namespace harmonius::gpu_runtime::state
 ```
 
 ### Barrier Optimizer
@@ -613,29 +606,28 @@ Batches, merges, and deduplicates barriers before emitting to the backend.
 namespace harmonius::gpu_runtime::state {
 
 class BarrierOptimizer {
-public:
-    explicit BarrierOptimizer(ResourceStateCache& state_cache,
-                              const gpu::DeviceCapabilities& caps);
+ public:
+  explicit BarrierOptimizer(ResourceStateCache& state_cache, const gpu::DeviceCapabilities& caps);
 
-    // Queue a barrier request
-    void enqueue(const gpu::BarrierDesc& desc);
+  // Queue a barrier request
+  void Enqueue(const gpu::BarrierDesc& desc);
 
-    // Process queued barriers: deduplicate, merge, elide, and emit
-    // Returns the optimized barrier list ready for gpu::CommandBuffer::barrier()
-    [[nodiscard]] std::vector<gpu::BarrierDesc> flush();
+  // Process queued barriers: deduplicate, merge, elide, and emit
+  // Returns the optimized barrier list ready for gpu::CommandBuffer::Barrier()
+  [[nodiscard]] std::vector<gpu::BarrierDesc> Flush();
 
-    // Split barrier support (GR-4.2)
-    void split_begin(const gpu::BarrierDesc& desc);
-    void split_end(const gpu::BarrierDesc& desc);
+  // Split barrier support (GR-4.2)
+  void SplitBegin(const gpu::BarrierDesc& desc);
+  void SplitEnd(const gpu::BarrierDesc& desc);
 
-private:
-    ResourceStateCache&            state_cache_;
-    const gpu::DeviceCapabilities& caps_;
-    std::vector<gpu::BarrierDesc>  pending_;
-    std::vector<gpu::BarrierDesc>  deferred_splits_;
+ private:
+  ResourceStateCache& state_cache_;
+  const gpu::DeviceCapabilities& caps_;
+  std::vector<gpu::BarrierDesc> pending_;
+  std::vector<gpu::BarrierDesc> deferred_splits_;
 };
 
-} // namespace harmonius::gpu_runtime::state
+}  // namespace harmonius::gpu_runtime::state
 ```
 
 ---
@@ -689,11 +681,11 @@ plan into a GPU work graph program:
    resource dependencies become work graph edges. The barrier schedule from the execution
    plan is embedded in the work graph node entry/exit barriers.
 2. **Program creation:** The translated work graph is compiled into a
-   `gpu::WorkGraphHandle` via `gpu::Device::create_work_graph()`. The program is cached
+   `gpu::WorkGraphHandle` via `gpu::Device::CreateWorkGraph()`. The program is cached
    and reused across frames until the execution plan changes.
 3. **Per-frame dispatch:** Each frame, the executor writes per-frame data (resource bindings,
    constants, activation flags) into the root input record buffer, then dispatches the work
-   graph via `gpu::CommandBuffer::dispatch_graph()`.
+   graph via `gpu::CommandBuffer::DispatchGraph()`.
 4. **GPU self-scheduling:** The GPU hardware schedules node execution, handling producer-
    consumer synchronization internally without CPU involvement.
 
@@ -701,29 +693,29 @@ plan into a GPU work graph program:
 namespace harmonius::gpu_runtime::work_graph {
 
 struct ExecutionPlanView {
-    // Opaque view into the render graph's compiled execution plan.
-    // The work graph runtime reads pass order, dependencies, barriers,
-    // and resource bindings without depending on render graph types.
-    std::span<const PassNode>       passes;
-    std::span<const Dependency>     dependencies;
-    std::span<const BarrierGroup>   barriers;
+  // Opaque view into the render graph's compiled execution plan.
+  // The work graph runtime reads pass order, dependencies, barriers,
+  // and resource bindings without depending on render graph types.
+  std::span<const PassNode> passes;
+  std::span<const Dependency> dependencies;
+  std::span<const BarrierGroup> barriers;
 };
 
 struct PassNode {
-    uint32_t                       id;
-    gpu::PipelineHandle            pipeline;
-    std::span<const ResourceRef>   inputs;
-    std::span<const ResourceRef>   outputs;
-    gpu::QueueType                 queue;
-    bool                           active;
+  uint32_t id;
+  gpu::PipelineHandle pipeline;
+  std::span<const ResourceRef> inputs;
+  std::span<const ResourceRef> outputs;
+  gpu::QueueType queue;
+  bool active;
 };
 
 struct Dependency {
-    uint32_t src_pass;
-    uint32_t dst_pass;
+  uint32_t src_pass;
+  uint32_t dst_pass;
 };
 
-} // namespace harmonius::gpu_runtime::work_graph
+}  // namespace harmonius::gpu_runtime::work_graph
 ```
 
 ### Emulated Path
@@ -749,36 +741,34 @@ always-available code path.
 namespace harmonius::gpu_runtime::work_graph {
 
 class WorkGraphExecutor {
-public:
-    explicit WorkGraphExecutor(gpu::Device& device);
+ public:
+  explicit WorkGraphExecutor(gpu::Device& device);
 
-    // Called once after graph compilation (or when execution plan changes)
-    void set_execution_plan(const ExecutionPlanView& plan);
+  // Called once after graph compilation (or when execution plan changes)
+  void SetExecutionPlan(const ExecutionPlanView& plan);
 
-    // Called each frame with per-frame bindings
-    struct FrameData {
-        std::span<const ResourceBinding>  resource_bindings;
-        std::span<const uint8_t>          push_constant_data;
-        std::span<const bool>             pass_activation_flags;
-        uint64_t                          frame_index;
-    };
+  // Called each frame with per-frame bindings
+  struct FrameData {
+    std::span<const ResourceBinding> resource_bindings;
+    std::span<const uint8_t> push_constant_data;
+    std::span<const bool> pass_activation_flags;
+    uint64_t frame_index;
+  };
 
-    // Execute the current plan with the given frame data
-    void execute(const FrameData& data,
-                 state::TrackedCommandBuffer& cmd,
-                 const gpu::DeviceCapabilities& caps);
+  // Execute the current plan with the given frame data
+  void Execute(const FrameData& data, state::TrackedCommandBuffer& cmd, const gpu::DeviceCapabilities& caps);
 
-    // Query whether native path is active
-    [[nodiscard]] bool is_native() const;
+  // Query whether native path is active
+  [[nodiscard]] bool IsNative() const;
 
-private:
-    gpu::Device&                   device_;
-    bool                           use_native_;
-    gpu::WorkGraphHandle           cached_program_ = gpu::WorkGraphHandle::invalid;
-    uint64_t                       plan_version_   = 0;
+ private:
+  gpu::Device& device_;
+  bool use_native_;
+  gpu::WorkGraphHandle cached_program_ = gpu::WorkGraphHandle::kInvalid;
+  uint64_t plan_version_ = 0;
 };
 
-} // namespace harmonius::gpu_runtime::work_graph
+}  // namespace harmonius::gpu_runtime::work_graph
 ```
 
 ### Synchronization in Emulated Path
@@ -789,10 +779,10 @@ dependency edges:
 
 | Dependency Type  | Native Work Graph                 | Emulated Path                                          |
 | ---------------- | --------------------------------- | ------------------------------------------------------ |
-| Same-queue       | Implicit node ordering            | Pipeline barrier between passes                        |
-| Cross-queue      | Implicit via work graph scheduler | Timeline fence signal (producer) + wait (consumer)     |
+| Same-queue       | Implicit node ordering            | Pipeline Barrier between Passes                        |
+| Cross-queue      | Implicit via work graph scheduler | Timeline fence Signal (producer) + Wait (consumer)     |
 | Read-after-write | Implicit memory visibility        | Barrier with appropriate stage and access flags        |
-| Write-after-read | Implicit via node dependencies    | Execution barrier with drain before subsequent write   |
+| Write-after-read | Implicit via node dependencies    | Execution Barrier with drain before subsequent write   |
 
 The barrier optimizer (GR-2) processes all barriers emitted by the emulated path, so batching,
 deduplication, and split barrier emulation apply automatically.
@@ -807,38 +797,35 @@ allocates backing memory through `gpu_runtime::memory::Allocator`:
 
 ```cpp
 // After creating a native work graph program
-auto mem_req = device_.query_work_graph_memory_requirements(cached_program_);
-backing_alloc_ = allocator_.allocate({
-    .heap_type  = memory::HeapType::device_local,
-    .strategy   = memory::AllocationStrategy::sub_allocate,
-    .size       = mem_req.size,
-    .alignment  = mem_req.alignment,
-    .debug_name = "work_graph_backing"
-});
+auto mem_req = device_.QueryWorkGraphMemoryRequirements(cached_program_);
+backing_alloc_ = allocator_.Allocate({.heap_type = memory::HeapType::kDeviceLocal,
+                                      .strategy = memory::AllocationStrategy::kSubAllocate,
+                                      .size = mem_req.size,
+                                      .alignment = mem_req.alignment,
+                                      .debug_name = "work_graph_backing"});
 ```
 
 Backing memory is reused across frames. It is reallocated only when:
 
-1. The execution plan changes (new program compiled via `set_execution_plan()`)
+1. The execution plan changes (new program compiled via `SetExecutionPlan()`)
 2. The new program's memory requirements exceed the current allocation
 
 The backing memory handle and offset are passed to the backend via `DispatchGraphDesc`:
 
 ```cpp
-void WorkGraphExecutor::execute(const FrameData& data,
-                                state::TrackedCommandBuffer& cmd,
+void WorkGraphExecutor::Execute(const FrameData& data, state::TrackedCommandBuffer& cmd,
                                 const gpu::DeviceCapabilities& caps) {
-    if (use_native_) {
-        gpu::DispatchGraphDesc desc{
-            .backing_memory        = backing_alloc_.value().heap,
-            .backing_memory_offset = backing_alloc_.value().offset,
-            .backing_memory_size   = backing_alloc_.value().size,
-            // ... per-frame input data ...
-        };
-        cmd.inner().dispatch_graph(desc);
-    } else {
-        execute_emulated(data, cmd);
-    }
+  if (use_native_) {
+    gpu::DispatchGraphDesc desc{
+        .backing_memory = backing_alloc_.value().heap,
+        .backing_memory_offset = backing_alloc_.value().offset,
+        .backing_memory_size = backing_alloc_.value().size,
+        // ... per-frame input data ...
+    };
+    cmd.Inner().DispatchGraph(desc);
+  } else {
+    ExecuteEmulated(data, cmd);
+  }
 }
 ```
 
@@ -861,8 +848,8 @@ barrier pairs into immediate barriers:
 
 | Operation       | Native (D3D12/Vulkan)                    | Emulated (Metal)                             |
 | --------------- | ---------------------------------------- | -------------------------------------------- |
-| `split_begin()` | Emit `barrier(sync_after = SPLIT)`       | Store barrier in deferred list (no GPU call)  |
-| `split_end()`   | Emit `barrier(sync_before = SPLIT)`      | Emit immediate barrier with combined stages   |
+| `SplitBegin()` | Emit `Barrier(sync_after = SPLIT)`       | Store Barrier in deferred list (no GPU call)  |
+| `SplitEnd()`   | Emit `Barrier(sync_before = SPLIT)`      | Emit immediate Barrier with combined stages   |
 
 ### Queue Ownership Elision
 
@@ -871,20 +858,20 @@ When the backend reports unified memory architecture (detected via
 barrier optimizer elides queue ownership transfer barriers:
 
 ```cpp
-// In BarrierOptimizer::flush()
-if (caps_.is_unified_memory()) {
-    // Remove queue ownership fields — not needed on unified memory
-    for (auto& b : pending_) {
-        b.src_queue = gpu::QueueType::graphics;
-        b.dst_queue = gpu::QueueType::graphics;
-    }
+// In BarrierOptimizer::Flush()
+if (caps_.IsUnifiedMemory()) {
+  // Remove queue ownership fields — not needed on unified memory
+  for (auto& b : pending_) {
+    b.src_queue = gpu::QueueType::kGraphics;
+    b.dst_queue = gpu::QueueType::kGraphics;
+  }
 }
 ```
 
 ### Ray Tracing Pipeline Emulation
 
 D3D12 and Vulkan provide dedicated ray tracing pipeline stages (ray generation, closest hit,
-any hit, miss) dispatched via `trace_rays()`. Metal has no dedicated RT pipeline — ray tracing
+any hit, miss) dispatched via `TraceRays()`. Metal has no dedicated RT pipeline — ray tracing
 is implemented through inline ray queries (`intersector<>`) in compute shaders. The compat
 layer bridges this gap so higher-level systems can express RT passes uniformly.
 
@@ -902,17 +889,17 @@ flowchart TD
     end
 
     subgraph Native["Native RT Path (D3D12 / Vulkan)"]
-        SetRT["set_pipeline(rt_pipeline)"]
+        SetRT["SetPipeline(rt_pipeline)"]
         BindSBT["Bind SBT buffer"]
         BindAS_N["Bind AS via RT descriptor"]
-        TraceRays["trace_rays(w, h, d)"]
+        TraceRays["TraceRays(w, h, d)"]
     end
 
     subgraph Emulated["Emulated RT Path (Metal)"]
-        SetComp["set_pipeline(compute_fallback)"]
+        SetComp["SetPipeline(compute_fallback)"]
         BindMat["Bind emulated SBT buffer<br/>(material index buffer)"]
         BindAS_E["Bind AS as compute SRV"]
-        Dispatch["dispatch(⌈w/8⌉, ⌈h/8⌉, d)"]
+        Dispatch["Dispatch(⌈w/8⌉, ⌈h/8⌉, d)"]
     end
 
     Caller --> RTA
@@ -935,45 +922,42 @@ Manages pipeline pair registration and dispatch translation.
 namespace harmonius::gpu_runtime::compat {
 
 struct PipelinePair {
-    gpu::PipelineHandle rt_pipeline;       // native RT pipeline (invalid on Metal)
-    gpu::PipelineHandle compute_fallback;  // compute pipeline with inline ray queries
+  gpu::PipelineHandle rt_pipeline;       // native RT pipeline (invalid on Metal)
+  gpu::PipelineHandle compute_fallback;  // compute pipeline with inline ray queries
 };
 
 class RayTracingAdapter {
-public:
-    explicit RayTracingAdapter(const gpu::DeviceCapabilities& caps,
-                               memory::Allocator& allocator);
+ public:
+  explicit RayTracingAdapter(const gpu::DeviceCapabilities& caps, memory::Allocator& allocator);
 
-    // --- Pipeline pair registration (GR-4.8) ---
+  // --- Pipeline pair registration (GR-4.8) ---
 
-    void register_pipeline_pair(uint64_t id, const PipelinePair& pair);
-    void unregister_pipeline_pair(uint64_t id);
+  void RegisterPipelinePair(uint64_t id, const PipelinePair& pair);
+  void UnregisterPipelinePair(uint64_t id);
 
-    // --- SBT management (GR-4.7) ---
+  // --- SBT management (GR-4.7) ---
 
-    void build_sbt(uint64_t pipeline_id, const SbtLayout& layout);
+  void BuildSbt(uint64_t pipeline_id, const SbtLayout& layout);
 
-    // --- Dispatch (GR-4.6) ---
+  // --- Dispatch (GR-4.6) ---
 
-    // Dispatches trace_rays natively or translates to compute dispatch.
-    // Returns true if the call was emulated.
-    bool dispatch(uint64_t pipeline_id,
-                  const gpu::TraceRaysDesc& desc,
-                  state::TrackedCommandBuffer& cmd);
+  // Dispatches trace_rays natively or translates to compute dispatch.
+  // Returns true if the call was emulated.
+  bool Dispatch(uint64_t pipeline_id, const gpu::TraceRaysDesc& desc, state::TrackedCommandBuffer& cmd);
 
-    // --- Queries ---
+  // --- Queries ---
 
-    [[nodiscard]] bool is_emulated() const;
+  [[nodiscard]] bool IsEmulated() const;
 
-private:
-    const gpu::DeviceCapabilities&                     caps_;
-    memory::Allocator&                                 allocator_;
-    bool                                               emulated_;
-    std::unordered_map<uint64_t, PipelinePair>         pairs_;
-    std::unordered_map<uint64_t, gpu::BufferHandle>    sbt_buffers_;
+ private:
+  const gpu::DeviceCapabilities& caps_;
+  memory::Allocator& allocator_;
+  bool emulated_;
+  std::unordered_map<uint64_t, PipelinePair> pairs_;
+  std::unordered_map<uint64_t, gpu::BufferHandle> sbt_buffers_;
 };
 
-} // namespace harmonius::gpu_runtime::compat
+}  // namespace harmonius::gpu_runtime::compat
 ```
 
 #### SBT Layout and Emulation
@@ -986,75 +970,74 @@ into a regular GPU buffer indexed by instance and geometry ID.
 namespace harmonius::gpu_runtime::compat {
 
 struct SbtRecord {
-    std::span<const uint8_t> local_root_args;  // per-record root arguments
+  std::span<const uint8_t> local_root_args;  // per-record root arguments
 };
 
 struct SbtLayout {
-    std::span<const SbtRecord> raygen_records;
-    std::span<const SbtRecord> miss_records;
-    std::span<const SbtRecord> hit_group_records;
-    std::span<const SbtRecord> callable_records;
-    uint32_t                   record_stride;    // stride between records
+  std::span<const SbtRecord> raygen_records;
+  std::span<const SbtRecord> miss_records;
+  std::span<const SbtRecord> hit_group_records;
+  std::span<const SbtRecord> callable_records;
+  uint32_t record_stride;  // stride between records
 };
 
-} // namespace harmonius::gpu_runtime::compat
+}  // namespace harmonius::gpu_runtime::compat
 ```
 
 **SBT translation strategy:**
 
 | SBT Component | Native (D3D12/Vulkan)                   | Emulated (Metal)                                       |
 | ------------- | --------------------------------------- | ------------------------------------------------------ |
-| Raygen record | SBT region at `raygen_offset`           | Push constants (dispatch parameters)                   |
+| Raygen record | SBT region at `raygen_offset`           | Push constants (Dispatch parameters)                   |
 | Miss records  | SBT region at `miss_offset` + stride    | Buffer region indexed by miss shader index             |
 | Hit groups    | SBT region at `hit_offset` + stride     | Buffer region indexed by `instanceID * geomCount + geomIdx` |
 | Callable      | SBT region at `callable_offset` + stride | Buffer region indexed by callable index                |
 
-On the native path, `build_sbt()` creates a standard SBT buffer with shader identifiers and
+On the native path, `BuildSbt()` creates a standard SBT buffer with shader identifiers and
 per-record data laid out per the D3D12/Vulkan SBT alignment rules. On the emulated path,
-`build_sbt()` packs the per-record root arguments into a flat buffer without shader
+`BuildSbt()` packs the per-record root arguments into a flat buffer without shader
 identifiers (the compute fallback shader handles material dispatch via branching or indirect
 function calls).
 
 #### Dispatch Translation
 
-When `is_emulated()` is true, `RayTracingAdapter::dispatch()` performs the following
+When `IsEmulated()` is true, `RayTracingAdapter::Dispatch()` performs the following
 translation:
 
 ```cpp
-bool RayTracingAdapter::dispatch(uint64_t pipeline_id,
-                                 const gpu::TraceRaysDesc& desc,
+bool RayTracingAdapter::Dispatch(uint64_t pipeline_id, const gpu::TraceRaysDesc& desc,
                                  state::TrackedCommandBuffer& cmd) {
-    auto it = pairs_.find(pipeline_id);
-    if (!emulated_) {
-        // Native path: forward directly
-        cmd.set_pipeline(it->second.rt_pipeline);
-        cmd.inner().trace_rays(desc);
-        return false;
-    }
+  auto it = pairs_.Find(pipeline_id);
+  if (!emulated_) {
+    // Native path: forward directly
+    cmd.SetPipeline(it->second.rt_pipeline);
+    cmd.Inner().TraceRays(desc);
+    return false;
+  }
 
-    // Emulated path: translate to compute dispatch
-    cmd.set_pipeline(it->second.compute_fallback);
+  // Emulated path: translate to compute dispatch
+  cmd.SetPipeline(it->second.compute_fallback);
 
-    // Bind emulated SBT buffer as bindless SRV
-    // Bind acceleration structure as compute SRV (GR-4.9)
+  // Bind emulated SBT buffer as bindless SRV
+  // Bind acceleration structure as compute SRV (GR-4.9)
 
-    // Push trace_rays parameters as push constants
-    struct RtPushConstants {
-        uint32_t width;
-        uint32_t height;
-        uint32_t depth;
-        uint32_t sbt_buffer_index;  // bindless index of emulated SBT
-    };
-    RtPushConstants pc{desc.width, desc.height, desc.depth,
-                       /* bindless index */};
-    cmd.push_constants(&pc, sizeof(pc));
+  // Push trace_rays parameters as push constants
+  struct RtPushConstants {
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth;
+    uint32_t sbt_buffer_index;  // bindless index of emulated SBT
+  };
+  RtPushConstants pc{desc.width,
+                     desc.height,
+                     desc.depth,
+                     /* bindless index */};
+  cmd.PushConstants(&pc, sizeof(pc));
 
-    // Dispatch with 8x8 thread groups
-    constexpr uint32_t tile = 8;
-    cmd.dispatch((desc.width + tile - 1) / tile,
-                 (desc.height + tile - 1) / tile,
-                 desc.depth);
-    return true;
+  // Dispatch with 8x8 thread groups
+  constexpr uint32_t tile = 8;
+  cmd.Dispatch((desc.width + tile - 1) / tile, (desc.height + tile - 1) / tile, desc.depth);
+  return true;
 }
 ```
 
@@ -1064,11 +1047,11 @@ bool RayTracingAdapter::dispatch(uint64_t pipeline_id,
 | ------------------------ | --------------- | --------------- | ------------------------- |
 | `ray_tracing`            | DXR 1.2         | KHR extensions  | `false` — no RT pipeline  |
 | `ray_tracing_inline`     | SM 6.5 RayQuery | KHR ray query   | Apple7+ `intersector<>`   |
-| Dedicated RT pipeline    | Yes             | Yes             | No — compute only         |
-| SBT                      | Native          | Native          | Emulated via flat buffer  |
-| `trace_rays()`           | `DispatchRays`  | `vkCmdTraceRaysKHR` | → `dispatch()`       |
-| `trace_rays_indirect()`  | `ExecuteIndirect` | `vkCmdTraceRaysIndirect2KHR` | → `dispatch_indirect()` |
-| AS binding for inline    | SRV             | Descriptor      | Argument buffer           |
+| Dedicated RT pipeline    | Yes             | Yes             | No — Compute only         |
+| SBT                      | Native          | Native          | Emulated via flat Buffer  |
+| `TraceRays()`           | `DispatchRays`  | `vkCmdTraceRaysKHR` | → `Dispatch()`       |
+| `TraceRaysIndirect()`  | `ExecuteIndirect` | `vkCmdTraceRaysIndirect2KHR` | → `DispatchIndirect()` |
+| AS binding for inline    | SRV             | Descriptor      | Argument Buffer           |
 
 **Shader pipeline interaction:** The GPU runtime does not compile or translate shaders. The
 shader pipeline module is responsible for producing both variants of each RT effect:
@@ -1076,7 +1059,7 @@ shader pipeline module is responsible for producing both variants of each RT eff
 1. **Native variant:** Raygen + miss + closest-hit + any-hit shaders → RT pipeline
 2. **Compute variant:** Single compute shader with inline ray queries → compute pipeline
 
-Both pipeline handles are registered with `RayTracingAdapter::register_pipeline_pair()`.
+Both pipeline handles are registered with `RayTracingAdapter::RegisterPipelinePair()`.
 The GPU runtime selects the appropriate handle at dispatch time based on device capabilities.
 
 ---
@@ -1090,12 +1073,12 @@ The render graph modules change their dependencies from `harmonius::gpu` to
 
 | Render Graph Module | Before (direct GPU)                     | After (via GPU Runtime)                          |
 | ------------------- | --------------------------------------- | ------------------------------------------------ |
-| `rg::resource`      | `gpu::Device::create_texture/buffer`    | `gpu_runtime::memory::Allocator::create_texture` |
-| `rg::sync`          | `gpu::CommandBuffer::barrier`           | `gpu_runtime::state::BarrierOptimizer`           |
+| `rg::resource`      | `gpu::Device::CreateTexture/Buffer`    | `gpu_runtime::memory::Allocator::CreateTexture` |
+| `rg::sync`          | `gpu::CommandBuffer::Barrier`           | `gpu_runtime::state::BarrierOptimizer`           |
 | `rg::exec`          | `gpu::CommandBuffer::*` (all methods)   | `gpu_runtime::state::TrackedCommandBuffer`       |
 | `rg::exec`          | CPU-side pass scheduling                | `gpu_runtime::work_graph::WorkGraphExecutor`     |
-| `rg::exec`          | `gpu::CommandBuffer::trace_rays`        | `gpu_runtime::compat::RayTracingAdapter`         |
-| `rg::diag`          | `gpu::Device::create_query_pool`        | Unchanged (diagnostics access GPU directly)      |
+| `rg::exec`          | `gpu::CommandBuffer::TraceRays`        | `gpu_runtime::compat::RayTracingAdapter`         |
+| `rg::diag`          | `gpu::Device::CreateQueryPool`        | Unchanged (diagnostics access GPU directly)      |
 
 ```mermaid
 graph TD
@@ -1151,21 +1134,21 @@ The following table maps GPU runtime operations to backend API calls:
 
 | GPU Runtime Operation                     | Backend API Calls                                           |
 | ----------------------------------------- | ----------------------------------------------------------- |
-| `Allocator::create_texture` (sub-alloc)   | `query_texture_allocation_info` → `create_heap` (if needed) |
-|                                           | → `create_placed_texture`                                   |
-| `Allocator::create_texture` (committed)   | `create_texture`                                            |
-| `Allocator::create_buffer` (sub-alloc)    | `query_buffer_allocation_info` → `create_heap` (if needed)  |
-|                                           | → `create_placed_buffer`                                    |
-| `RingAllocator::allocate`                 | None (offset arithmetic on pre-allocated buffer)             |
-| `TrackedCommandBuffer::set_pipeline`      | `CommandBuffer::set_pipeline` (if changed)                   |
-| `TrackedCommandBuffer::barrier`           | Queued; emitted via `CommandBuffer::barrier` on flush         |
-| `BarrierOptimizer::flush`                 | `CommandBuffer::barrier` (batched)                           |
-| `WorkGraphExecutor::execute` (native)     | `CommandBuffer::set_work_graph` → `dispatch_graph`           |
-| `WorkGraphExecutor::execute` (emulated)   | Per-pass: `barrier` → pass commands → `barrier`              |
-| `DefragEngine::plan_step`                 | None (CPU-side planning)                                     |
-| `DefragEngine` GPU copies                 | `CommandBuffer::copy_buffer` / `copy_texture`                |
-| `RayTracingAdapter::dispatch` (native)    | `CommandBuffer::trace_rays`                                  |
-| `RayTracingAdapter::dispatch` (emulated)  | `set_pipeline(compute)` → `push_constants` → `dispatch`     |
-| `RayTracingAdapter::build_sbt` (native)   | `Allocator::create_buffer` (SBT layout with shader IDs)     |
-| `RayTracingAdapter::build_sbt` (emulated) | `Allocator::create_buffer` (flat material index buffer)      |
-| `WorkGraphExecutor` backing memory        | `Allocator::allocate` → passed via `DispatchGraphDesc`       |
+| `Allocator::CreateTexture` (sub-alloc)   | `QueryTextureAllocationInfo` → `CreateHeap` (if needed) |
+|                                           | → `CreatePlacedTexture`                                   |
+| `Allocator::CreateTexture` (committed)   | `CreateTexture`                                            |
+| `Allocator::CreateBuffer` (sub-alloc)    | `QueryBufferAllocationInfo` → `CreateHeap` (if needed)  |
+|                                           | → `CreatePlacedBuffer`                                    |
+| `RingAllocator::Allocate`                 | None (offset arithmetic on pre-allocated Buffer)             |
+| `TrackedCommandBuffer::SetPipeline`      | `CommandBuffer::SetPipeline` (if changed)                   |
+| `TrackedCommandBuffer::Barrier`           | Queued; emitted via `CommandBuffer::Barrier` on Flush         |
+| `BarrierOptimizer::Flush`                 | `CommandBuffer::Barrier` (batched)                           |
+| `WorkGraphExecutor::Execute` (native)     | `CommandBuffer::SetWorkGraph` → `DispatchGraph`           |
+| `WorkGraphExecutor::Execute` (emulated)   | Per-pass: `Barrier` → pass commands → `Barrier`              |
+| `DefragEngine::PlanStep`                 | None (CPU-side planning)                                     |
+| `DefragEngine` GPU copies                 | `CommandBuffer::CopyBuffer` / `CopyTexture`                |
+| `RayTracingAdapter::Dispatch` (native)    | `CommandBuffer::TraceRays`                                  |
+| `RayTracingAdapter::Dispatch` (emulated)  | `SetPipeline(Compute)` → `PushConstants` → `Dispatch`     |
+| `RayTracingAdapter::BuildSbt` (native)   | `Allocator::CreateBuffer` (SBT layout with shader IDs)     |
+| `RayTracingAdapter::BuildSbt` (emulated) | `Allocator::CreateBuffer` (flat material index Buffer)      |
+| `WorkGraphExecutor` backing memory        | `Allocator::Allocate` → passed via `DispatchGraphDesc`       |

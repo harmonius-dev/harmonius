@@ -95,44 +95,44 @@ flowchart TD
 namespace harmonius::gpu::metal {
 
 class MetalDevice {
-public:
-    explicit MetalDevice(const DeviceDesc& desc);
-    ~MetalDevice();
+ public:
+  explicit MetalDevice(const DeviceDesc& desc);
+  ~MetalDevice();
 
-    MetalDevice(const MetalDevice&) = delete;
-    MetalDevice& operator=(const MetalDevice&) = delete;
+  MetalDevice(const MetalDevice&) = delete;
+  MetalDevice& operator=(const MetalDevice&) = delete;
 
-    [[nodiscard]] DeviceCapabilities capabilities() const;
+  [[nodiscard]] DeviceCapabilities Capabilities() const;
 
-    /// Waits for all in-flight command buffers to complete by waiting on
-    /// MTLSharedEvent timeline values for each queue. Used at shutdown and
-    /// before pipeline recompilation.
-    void wait_idle();
+  /// Waits for all in-flight command buffers to complete by waiting on
+  /// MTLSharedEvent timeline values for each queue. Used at shutdown and
+  /// before pipeline recompilation.
+  void WaitIdle();
 
-    // All remaining GpuDevice concept methods — see gpu-backend-interface.md
-    // for the full method list.
+  // All remaining GpuDevice concept methods — see gpu-backend-interface.md
+  // for the full method list.
 
-private:
-    id<MTLDevice>          device_;
-    id<MTLCommandQueue>    graphics_queue_;
-    id<MTLCommandQueue>    compute_queue_;
-    id<MTLCommandQueue>    copy_queue_;
+ private:
+  id<MTLDevice> device_;
+  id<MTLCommandQueue> graphics_queue_;
+  id<MTLCommandQueue> compute_queue_;
+  id<MTLCommandQueue> copy_queue_;
 
-    id<MTLBuffer>          argument_buffer_;      // bindless resource table
-    id<MTLResidencySet>    residency_set_;         // Metal 4 residency
-    MTL4Compiler*          compiler_;              // Metal 4 shader compiler
-    // Memory management handled by gpu_runtime::memory::Allocator
+  id<MTLBuffer> argument_buffer_;      // bindless resource table
+  id<MTLResidencySet> residency_set_;  // Metal 4 residency
+  MTL4Compiler* compiler_;             // Metal 4 shader compiler
+  // Memory management handled by gpu_runtime::memory::Allocator
 
-    // Per-queue shared events used by wait_idle() to drain all queues.
-    id<MTLSharedEvent>     graphics_event_;
-    id<MTLSharedEvent>     compute_event_;
-    id<MTLSharedEvent>     copy_event_;
-    uint64_t               next_idle_value_ = 0;
+  // Per-queue shared events used by WaitIdle() to drain all queues.
+  id<MTLSharedEvent> graphics_event_;
+  id<MTLSharedEvent> compute_event_;
+  id<MTLSharedEvent> copy_event_;
+  uint64_t next_idle_value_ = 0;
 };
 
 static_assert(GpuDevice<MetalDevice>);
 
-} // namespace harmonius::gpu::metal
+}  // namespace harmonius::gpu::metal
 ```
 
 ---
@@ -144,9 +144,9 @@ Unlike Vulkan, Metal does not have queue families — all queues can execute all
 
 | `QueueType` | Metal Queue | Encoding |
 |-------------|-------------|----------|
-| `graphics` | Primary `MTLCommandQueue` | Render + compute + blit encoders |
-| `async_compute` | Secondary `MTLCommandQueue` | Compute + blit encoders |
-| `transfer` | Tertiary `MTLCommandQueue` | Blit encoder only |
+| `kGraphics` | Primary `MTLCommandQueue` | Render + Compute + blit encoders |
+| `kAsyncCompute` | Secondary `MTLCommandQueue` | Compute + blit encoders |
+| `kTransfer` | Tertiary `MTLCommandQueue` | Blit encoder only |
 
 **Unified memory:** Apple Silicon has a unified memory architecture. There is no distinction
 between "device local" and "host visible" memory at the physical level. However, Metal still
@@ -154,9 +154,9 @@ exposes `MTLStorageMode` to control CPU/GPU caching behavior:
 
 | `HeapType` | `MTLStorageMode` | `MTLCPUCacheMode` |
 |------------|------------------|--------------------|
-| `device_local` | `MTLStorageModePrivate` | N/A (GPU only) |
-| `upload` | `MTLStorageModeShared` | `MTLCPUCacheModeWriteCombined` |
-| `readback` | `MTLStorageModeShared` | `MTLCPUCacheModeDefaultCache` |
+| `kDeviceLocal` | `MTLStorageModePrivate` | N/A (GPU only) |
+| `kUpload` | `MTLStorageModeShared` | `MTLCPUCacheModeWriteCombined` |
+| `kReadback` | `MTLStorageModeShared` | `MTLCPUCacheModeDefaultCache` |
 
 **No queue ownership transfers:** Because of unified memory, Metal does not require explicit
 queue ownership transfer barriers. Resources are accessible from any queue without release/acquire
@@ -307,30 +307,30 @@ MTL4CommandBuffer* cmd = [allocator commandBuffer];
 namespace harmonius::gpu::metal {
 
 class MetalCommandPool {
-public:
-    MetalCommandPool(id<MTLDevice> device, QueueType queue_type);
-    ~MetalCommandPool();
+ public:
+  MetalCommandPool(id<MTLDevice> device, QueueType queue_type);
+  ~MetalCommandPool();
 
-    /// Creates an MTL4CommandBuffer from the allocator. The returned buffer is
-    /// lightweight and pool-backed. Metal command buffers are recording-ready
-    /// from allocation — no separate begin() call is needed.
-    MetalCommandBuffer allocate_command_buffer();
+  /// Creates an MTL4CommandBuffer from the allocator. The returned buffer is
+  /// lightweight and pool-backed. Metal command buffers are recording-ready
+  /// from allocation — no separate Begin() call is needed.
+  MetalCommandBuffer AllocateCommandBuffer();
 
-    /// Calls [allocator_ reset] to recycle all backing memory. All command
-    /// buffers previously allocated from this pool become invalid.
-    void reset();
+  /// Calls [allocator_ reset] to recycle all backing memory. All command
+  /// buffers previously allocated from this pool become invalid.
+  void Reset();
 
-    uint32_t allocated_count() const;
+  uint32_t AllocatedCount() const;
 
-private:
-    MTL4CommandAllocator* allocator_;   // Metal 4 command allocator (wraps pool memory)
-    QueueType             queue_type_;
-    uint32_t              allocated_count_ = 0;
+ private:
+  MTL4CommandAllocator* allocator_;  // Metal 4 command allocator (wraps pool memory)
+  QueueType queue_type_;
+  uint32_t allocated_count_ = 0;
 };
 
 static_assert(GpuCommandPool<MetalCommandPool>);
 
-} // namespace harmonius::gpu::metal
+}  // namespace harmonius::gpu::metal
 ```
 
 **Command buffer implementation class:**
@@ -339,27 +339,27 @@ static_assert(GpuCommandPool<MetalCommandPool>);
 namespace harmonius::gpu::metal {
 
 class MetalCommandBuffer {
-public:
-    explicit MetalCommandBuffer(MTL4CommandBuffer* cmd);
+ public:
+  explicit MetalCommandBuffer(MTL4CommandBuffer* cmd);
 
-    /// No-op — Metal command buffers are recording-ready from allocation.
-    void begin();
+  /// No-op — Metal command buffers are recording-ready from allocation.
+  void Begin();
 
-    /// Calls [encoder endEncoding] on the active encoder, if any.
-    void end();
+  /// Calls [encoder endEncoding] on the active encoder, if any.
+  void End();
 
-    // All remaining GpuCommandBuffer concept methods — see
-    // gpu-backend-interface.md for the full method list.
+  // All remaining GpuCommandBuffer concept methods — see
+  // gpu-backend-interface.md for the full method list.
 
-private:
-    MTL4CommandBuffer*             cmd_;
-    id<MTLRenderCommandEncoder>    active_render_encoder_;
-    id<MTLComputeCommandEncoder>   active_compute_encoder_;
+ private:
+  MTL4CommandBuffer* cmd_;
+  id<MTLRenderCommandEncoder> active_render_encoder_;
+  id<MTLComputeCommandEncoder> active_compute_encoder_;
 };
 
 static_assert(GpuCommandBuffer<MetalCommandBuffer>);
 
-} // namespace harmonius::gpu::metal
+}  // namespace harmonius::gpu::metal
 ```
 
 ### Render Command Encoding
@@ -474,8 +474,8 @@ on Metal — barriers only need to express stage/access dependencies.
 
 | Abstract Concept | Metal Equivalent |
 |-----------------|-----------------|
-| Texture layout transition | Not needed — Metal handles internally |
-| Memory barrier | `memoryBarrierWithScope:` or `memoryBarrierWithResources:` |
+| Texture layout Transition | Not needed — Metal handles internally |
+| Memory Barrier | `memoryBarrierWithScope:` or `memoryBarrierWithResources:` |
 | Queue ownership transfer | Not needed — unified memory |
 | Split barriers | Not supported — barriers are immediate |
 
@@ -646,7 +646,7 @@ void mesh_main(
 | Max threads per mesh threadgroup | 1,024 |
 | Max threads per object threadgroup | 1,024 |
 | Max threadgroup memory | 32 KB |
-| Max payload size | 16 KB |
+| Max payload Size | 16 KB |
 | Max mesh threadgroups per grid | 1M per dimension |
 
 ---
@@ -734,7 +734,7 @@ void raygen(
 
 **Difference from D3D12/Vulkan:** Metal does not have separate ray generation, closest hit, any
 hit, and miss shader stages. All ray tracing logic lives in a single compute kernel using the
-intersection query API. The abstract interface's `trace_rays` command is implemented as a compute
+intersection query API. The abstract interface's `TraceRays` command is implemented as a compute
 dispatch on Metal, with the SBT fields unused.
 
 ---
@@ -971,7 +971,7 @@ re-stitching or recompilation, further reducing the effective PSO count.
 |---------|-----------|
 | Timestamp queries | `MTLCounterSampleBuffer` + `sampleCounters` |
 | Pipeline statistics | GPU counters via `MTLCounterSet` |
-| Debug labels | `pushDebugGroup:` / `popDebugGroup` on encoder; `.label` on cmd buffer |
+| Debug labels | `pushDebugGroup:` / `popDebugGroup` on encoder; `.label` on cmd Buffer |
 | Resource naming | `MTLResource.label`, `MTLCommandBuffer.label`, `MTLCommandQueue.label` |
 | GPU capture | Xcode Metal debugger, `MTLCaptureManager` for programmatic capture |
 | Shader profiling | Xcode GPU shader profiler (per-line cost) |
@@ -1002,12 +1002,12 @@ Key architectural differences that affect the backend implementation:
 | Memory model | Discrete GPU: separate device/host memory | Unified memory: single address space |
 | Memory allocator | `gpu_runtime::memory` (TLSF-based) | `gpu_runtime::memory` (TLSF-based) + MTLHeap |
 | Image layouts | Explicit layout transitions required | Automatic — Metal manages internally |
-| Queue ownership | Explicit release/acquire barrier pairs | Not required — unified memory |
+| Queue ownership | Explicit Release/acquire Barrier pairs | Not required — unified memory |
 | Split barriers | Supported (enhanced barriers / events) | Not supported — immediate barriers |
-| Ray tracing model | Dedicated pipeline stages (raygen, hit, miss) | Intersection query in compute/fragment shaders |
+| Ray tracing model | Dedicated pipeline stages (raygen, hit, miss) | Intersection query in Compute/fragment shaders |
 | Render target views | Explicit RTV/DSV (D3D12) or VkImageView | Set directly on render pass descriptor |
 | Descriptor binding | Descriptor heaps/tables (D3D12) or descriptor sets (Vulkan) | Argument buffers / argument tables |
-| Work graphs | State object + DispatchGraph (D3D12 only) | Not supported — stubs return `PipelineError::unsupported` |
+| Work graphs | State object + DispatchGraph (D3D12 only) | Not supported — stubs return `PipelineError::kUnsupported` |
 | Variable rate shading | Shading rate image attachment | Per-primitive or per-draw rate (no image-based VRS) |
 
 ---
@@ -1028,16 +1028,16 @@ classDiagram
         -MTLSharedEvent graphics_event_
         -MTLSharedEvent compute_event_
         -MTLSharedEvent copy_event_
-        +capabilities() DeviceCapabilities
-        +wait_idle() void
-        +create_texture(TextureDesc) TextureHandle
-        +create_buffer(BufferDesc) BufferHandle
-        +create_heap(HeapDesc) HeapHandle
-        +create_placed_texture(HeapHandle, offset, TextureDesc) TextureHandle
-        +create_fence(initial_value) FenceHandle
-        +create_mesh_render_pipeline(MeshRenderPipelineDesc) PipelineHandle
-        +submit(QueueType, cmd_bufs, signals, waits) void
-        +set_name(TextureHandle, string_view) void
+        +Capabilities() DeviceCapabilities
+        +WaitIdle() void
+        +CreateTexture(TextureDesc) TextureHandle
+        +CreateBuffer(BufferDesc) BufferHandle
+        +CreateHeap(HeapDesc) HeapHandle
+        +CreatePlacedTexture(HeapHandle, offset, TextureDesc) TextureHandle
+        +CreateFence(initial_value) FenceHandle
+        +CreateMeshRenderPipeline(MeshRenderPipelineDesc) PipelineHandle
+        +Submit(QueueType, cmd_bufs, signals, waits) void
+        +SetName(TextureHandle, string_view) void
     }
 
     class MetalCommandPool {
@@ -1045,9 +1045,9 @@ classDiagram
         -MTL4CommandAllocator allocator_
         -QueueType queue_type_
         -uint32_t allocated_count_
-        +allocate_command_buffer() MetalCommandBuffer
-        +reset() void
-        +allocated_count() uint32_t
+        +AllocateCommandBuffer() MetalCommandBuffer
+        +Reset() void
+        +AllocatedCount() uint32_t
     }
 
     class MetalCommandBuffer {
@@ -1055,29 +1055,29 @@ classDiagram
         -MTL4CommandBuffer cmd_
         -MTLRenderCommandEncoder active_render_encoder_
         -MTLComputeCommandEncoder active_compute_encoder_
-        +begin() void
-        +end() void
-        +barrier(BarrierDesc) void
-        +begin_render_pass(RenderPassDesc) void
-        +end_render_pass() void
-        +set_pipeline(PipelineHandle) void
-        +dispatch_mesh(x, y, z) void
-        +dispatch_mesh_indirect(buf, offset, count, stride) void
-        +dispatch(x, y, z) void
-        +build_acceleration_structure(BuildDesc) void
-        +copy_buffer(src, src_off, dst, dst_off, size) void
-        +push_constants(data, size) void
-        +write_timestamp(pool, index) void
-        +begin_debug_label(name) void
-        +end_debug_label() void
+        +Begin() void
+        +End() void
+        +Barrier(BarrierDesc) void
+        +BeginRenderPass(RenderPassDesc) void
+        +EndRenderPass() void
+        +SetPipeline(PipelineHandle) void
+        +DispatchMesh(x, y, z) void
+        +DispatchMeshIndirect(buf, offset, count, stride) void
+        +Dispatch(x, y, z) void
+        +BuildAccelerationStructure(BuildDesc) void
+        +CopyBuffer(src, src_off, dst, dst_off, size) void
+        +PushConstants(data, size) void
+        +WriteTimestamp(pool, index) void
+        +BeginDebugLabel(name) void
+        +EndDebugLabel() void
     }
 
     class MetalFence {
         -MTLSharedEvent event_
-        +signal_gpu(cmd, value) void
-        +wait_gpu(cmd, value) void
-        +completed_value() uint64_t
-        +wait_cpu(value) void
+        +SignalGpu(cmd, value) void
+        +WaitGpu(cmd, value) void
+        +CompletedValue() uint64_t
+        +WaitCpu(value) void
     }
 
     MetalDevice --> MetalCommandPool : creates

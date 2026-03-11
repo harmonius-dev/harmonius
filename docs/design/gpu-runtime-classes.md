@@ -38,14 +38,14 @@ classDiagram
         -array~HeapPool, 3~ pools_
         -BudgetTracker budget_
         +Allocator(gpu::Device&, span~HeapConfig~)
-        +allocate(AllocationDesc) expected~Allocation~
-        +free(Allocation) void
-        +create_texture(TextureDesc, AllocationStrategy) expected~pair~
-        +create_buffer(BufferDesc, AllocationStrategy) expected~pair~
-        +destroy_texture(TextureHandle, Allocation) void
-        +destroy_buffer(BufferHandle, Allocation) void
-        +budget(HeapType) BudgetInfo
-        +stats() AllocationStats
+        +Allocate(AllocationDesc) expected~Allocation~
+        +Free(Allocation) void
+        +CreateTexture(TextureDesc, AllocationStrategy) expected~pair~
+        +CreateBuffer(BufferDesc, AllocationStrategy) expected~pair~
+        +DestroyTexture(TextureHandle, Allocation) void
+        +DestroyBuffer(BufferHandle, Allocation) void
+        +Budget(HeapType) BudgetInfo
+        +Stats() AllocationStats
     }
 
     class HeapPool {
@@ -53,28 +53,28 @@ classDiagram
         -uint64_t block_size_
         -uint32_t max_blocks_
         -vector~HeapBlock~ blocks_
-        +allocate(uint64_t size, uint64_t alignment) expected~SubAllocation~
-        +free(SubAllocation) void
-        +fragmentation() float
+        +Allocate(uint64_t size, uint64_t alignment) expected~SubAllocation~
+        +Free(SubAllocation) void
+        +Fragmentation() float
     }
 
     class HeapBlock {
         -gpu::HeapHandle heap_
         -BlockAllocator allocator_
         -uint64_t size_
-        +allocate(uint64_t size, uint64_t alignment) expected~Block~
-        +free(Block) void
-        +fragmentation_ratio() float
-        +total_free() uint64_t
+        +Allocate(uint64_t size, uint64_t alignment) expected~Block~
+        +Free(Block) void
+        +FragmentationRatio() float
+        +TotalFree() uint64_t
     }
 
     class BlockAllocator {
         -uint64_t pool_size_
-        +allocate(uint64_t size, uint64_t alignment) expected~Block~
-        +free(Block) void
-        +fragmentation_ratio() float
-        +largest_free_block() uint64_t
-        +total_free() uint64_t
+        +Allocate(uint64_t size, uint64_t alignment) expected~Block~
+        +Free(Block) void
+        +FragmentationRatio() float
+        +LargestFreeBlock() uint64_t
+        +TotalFree() uint64_t
     }
 
     class RingAllocator {
@@ -85,10 +85,10 @@ classDiagram
         -uint32_t frame_count_
         -uint64_t current_offset_
         +RingAllocator(gpu::Device&, Config)
-        +allocate(uint64_t size, uint64_t alignment) expected~RingAllocation~
-        +begin_frame(uint64_t frame_index) void
-        +used_this_frame() uint64_t
-        +capacity_per_frame() uint64_t
+        +Allocate(uint64_t size, uint64_t alignment) expected~RingAllocation~
+        +BeginFrame(uint64_t frame_index) void
+        +UsedThisFrame() uint64_t
+        +CapacityPerFrame() uint64_t
     }
 
     class PoolAllocator {
@@ -98,30 +98,30 @@ classDiagram
         -vector~bool~ slot_active_
         -uint32_t free_head_
         +PoolAllocator(gpu::Device&, PoolDesc)
-        +allocate() expected~PoolSlot~
-        +free(PoolSlot) void
-        +active_count() uint32_t
-        +capacity() uint32_t
-        +utilization() float
+        +Allocate() expected~PoolSlot~
+        +Free(PoolSlot) void
+        +ActiveCount() uint32_t
+        +Capacity() uint32_t
+        +Utilization() float
     }
 
     class DefragEngine {
         -Allocator& allocator_
         -gpu::Device& device_
-        +needs_defrag(HeapType, float threshold) bool
-        +plan_step(HeapType, uint32_t max_moves) DefragStep
-        +commit_step(DefragStep) void
-        +stats(HeapType) DefragStats
+        +NeedsDefrag(HeapType, float threshold) bool
+        +PlanStep(HeapType, uint32_t max_moves) DefragStep
+        +CommitStep(DefragStep) void
+        +Stats(HeapType) DefragStats
     }
 
     class BudgetTracker {
         -gpu::Device& device_
         -array~BudgetInfo, 3~ budgets_
-        +check(HeapType, uint64_t size) bool
-        +record_alloc(HeapType, uint64_t size) void
-        +record_free(HeapType, uint64_t size) void
-        +refresh() void
-        +budget(HeapType) BudgetInfo
+        +Check(HeapType, uint64_t size) bool
+        +RecordAlloc(HeapType, uint64_t size) void
+        +RecordFree(HeapType, uint64_t size) void
+        +Refresh() void
+        +Budget(HeapType) BudgetInfo
     }
 
     class Allocation {
@@ -248,34 +248,34 @@ sequenceDiagram
     participant BA as BlockAllocator
     participant GPU as gpu::Device
 
-    C->>A: create_texture(desc, sub_allocate)
-    A->>GPU: query_texture_allocation_info(desc)
+    C->>A: CreateTexture(desc, sub_allocate)
+    A->>GPU: QueryTextureAllocationInfo(desc)
     GPU-->>A: size, alignment
 
-    A->>BT: check(device_local, size)
+    A->>BT: Check(device_local, size)
     BT-->>A: within budget
 
-    A->>HP: allocate(size, alignment)
-    HP->>HB: allocate(size, alignment)
-    HB->>BA: allocate(size, alignment)
+    A->>HP: Allocate(size, alignment)
+    HP->>HB: Allocate(size, alignment)
+    HB->>BA: Allocate(size, alignment)
     BA-->>HB: Block{offset, size}
 
     alt Block found in existing heap
         HB-->>HP: SubAllocation{heap, offset, size}
     else No space in existing heaps
-        HP->>GPU: create_heap(HeapDesc)
+        HP->>GPU: CreateHeap(HeapDesc)
         GPU-->>HP: HeapHandle
         HP->>HP: create new HeapBlock
-        HP->>HB: allocate(size, alignment)
-        HB->>BA: allocate(size, alignment)
+        HP->>HB: Allocate(size, alignment)
+        HB->>BA: Allocate(size, alignment)
         BA-->>HB: Block{offset, size}
         HB-->>HP: SubAllocation{heap, offset, size}
     end
 
     HP-->>A: SubAllocation
-    A->>GPU: create_placed_texture(heap, offset, desc)
+    A->>GPU: CreatePlacedTexture(heap, offset, desc)
     GPU-->>A: TextureHandle
-    A->>BT: record_alloc(device_local, size)
+    A->>BT: RecordAlloc(device_local, size)
     A-->>C: {TextureHandle, Allocation}
 ```
 
@@ -289,23 +289,23 @@ sequenceDiagram
     participant GPU as gpu::Device
     participant CB as gpu::CommandBuffer
 
-    App->>DE: needs_defrag(device_local, 0.2)
+    App->>DE: NeedsDefrag(device_local, 0.2)
     DE-->>App: true (fragmentation > 20%)
 
-    App->>DE: plan_step(device_local, 8)
+    App->>DE: PlanStep(device_local, 8)
     DE->>A: find movable allocations
     DE->>A: allocate new locations (compact)
     DE-->>App: DefragStep{copies, old_allocs, new_allocs}
 
     Note over App,CB: Record GPU copy commands
     loop For each copy in DefragStep
-        App->>CB: copy_buffer(src, dst)
+        App->>CB: CopyBuffer(src, dst)
     end
-    App->>GPU: submit(transfer, cmd_buf, signal_fence)
+    App->>GPU: Submit(transfer, cmd_buf, signal_fence)
 
     Note over App,DE: After fence signals (GPU copies complete)
-    App->>DE: commit_step(step)
-    DE->>A: free(old_allocs)
+    App->>DE: CommitStep(step)
+    DE->>A: Free(old_allocs)
     DE->>A: update internal tracking
 ```
 
@@ -327,35 +327,35 @@ classDiagram
         -array~uint8_t, 128~ push_constant_cache_
         -vector~BarrierDesc~ pending_barriers_
         +TrackedCommandBuffer(gpu::CommandBuffer&, DeviceCapabilities&)
-        +set_pipeline(PipelineHandle) void
-        +bind_descriptor_heap(DescriptorHeapHandle) void
-        +set_viewport(Viewport) void
-        +set_scissor(ScissorRect) void
-        +push_constants(void*, uint32_t, uint32_t) void
-        +barrier(BarrierDesc) void
-        +flush_barriers() void
-        +begin() void
-        +end() void
-        +begin_render_pass(RenderPassDesc) void
-        +end_render_pass() void
-        +dispatch_mesh(uint32_t, uint32_t, uint32_t) void
-        +dispatch(uint32_t, uint32_t, uint32_t) void
-        +inner() gpu::CommandBuffer&
+        +SetPipeline(PipelineHandle) void
+        +BindDescriptorHeap(DescriptorHeapHandle) void
+        +SetViewport(Viewport) void
+        +SetScissor(ScissorRect) void
+        +PushConstants(void*, uint32_t, uint32_t) void
+        +Barrier(BarrierDesc) void
+        +FlushBarriers() void
+        +Begin() void
+        +End() void
+        +BeginRenderPass(RenderPassDesc) void
+        +EndRenderPass() void
+        +DispatchMesh(uint32_t, uint32_t, uint32_t) void
+        +Dispatch(uint32_t, uint32_t, uint32_t) void
+        +Inner() gpu::CommandBuffer&
     }
 
     class ResourceStateCache {
         -unordered_map~TextureHandle, ResourceState~ texture_states_
         -unordered_map~BufferHandle, ResourceState~ buffer_states_
-        +register_resource(TextureHandle, ResourceState) void
-        +register_resource(BufferHandle, ResourceState) void
-        +current_state(TextureHandle) ResourceState
-        +current_state(BufferHandle) ResourceState
-        +transition(TextureHandle, ResourceState) void
-        +transition(BufferHandle, ResourceState) void
-        +needs_transition(TextureHandle, ResourceState) bool
-        +needs_transition(BufferHandle, ResourceState) bool
-        +unregister(TextureHandle) void
-        +unregister(BufferHandle) void
+        +RegisterResource(TextureHandle, ResourceState) void
+        +RegisterResource(BufferHandle, ResourceState) void
+        +CurrentState(TextureHandle) ResourceState
+        +CurrentState(BufferHandle) ResourceState
+        +Transition(TextureHandle, ResourceState) void
+        +Transition(BufferHandle, ResourceState) void
+        +NeedsTransition(TextureHandle, ResourceState) bool
+        +NeedsTransition(BufferHandle, ResourceState) bool
+        +Unregister(TextureHandle) void
+        +Unregister(BufferHandle) void
     }
 
     class BarrierOptimizer {
@@ -364,10 +364,10 @@ classDiagram
         -vector~BarrierDesc~ pending_
         -vector~BarrierDesc~ deferred_splits_
         +BarrierOptimizer(ResourceStateCache&, DeviceCapabilities&)
-        +enqueue(BarrierDesc) void
-        +flush() vector~BarrierDesc~
-        +split_begin(BarrierDesc) void
-        +split_end(BarrierDesc) void
+        +Enqueue(BarrierDesc) void
+        +Flush() vector~BarrierDesc~
+        +SplitBegin(BarrierDesc) void
+        +SplitEnd(BarrierDesc) void
     }
 
     class ResourceState {
@@ -392,24 +392,24 @@ sequenceDiagram
     participant CB as gpu::CommandBuffer
 
     Note over Caller,CB: Enqueue barriers
-    Caller->>BO: enqueue(barrier_A: tex1 → shader_read)
-    Caller->>BO: enqueue(barrier_B: tex2 → shader_read)
-    Caller->>BO: enqueue(barrier_C: tex1 → shader_read)
+    Caller->>BO: Enqueue(barrier_A: tex1 → shader_read)
+    Caller->>BO: Enqueue(barrier_B: tex2 → shader_read)
+    Caller->>BO: Enqueue(barrier_C: tex1 → shader_read)
 
     Note over Caller,CB: Flush — optimize and emit
-    Caller->>BO: flush()
+    Caller->>BO: Flush()
 
-    BO->>RSC: needs_transition(tex1, shader_read)?
+    BO->>RSC: NeedsTransition(tex1, shader_read)?
     RSC-->>BO: true (currently render_target)
-    BO->>RSC: needs_transition(tex2, shader_read)?
+    BO->>RSC: NeedsTransition(tex2, shader_read)?
     RSC-->>BO: false (already shader_read)
     Note over BO: barrier_B elided — tex2 already in target state
     Note over BO: barrier_C deduplicated — same as barrier_A
 
-    BO->>CB: barrier([barrier_A])
+    BO->>CB: Barrier([barrier_A])
     Note over BO: Only 1 barrier emitted (from 3 requested)
 
-    BO->>RSC: transition(tex1, shader_read)
+    BO->>RSC: Transition(tex1, shader_read)
 ```
 
 ---
@@ -426,9 +426,9 @@ classDiagram
         -WorkGraphHandle cached_program_
         -uint64_t plan_version_
         +WorkGraphExecutor(gpu::Device&)
-        +set_execution_plan(ExecutionPlanView) void
-        +execute(FrameData, TrackedCommandBuffer&, DeviceCapabilities&) void
-        +is_native() bool
+        +SetExecutionPlan(ExecutionPlanView) void
+        +Execute(FrameData, TrackedCommandBuffer&, DeviceCapabilities&) void
+        +IsNative() bool
     }
 
     class ExecutionPlanView {
@@ -494,17 +494,17 @@ sequenceDiagram
     participant CB as gpu::CommandBuffer
 
     Note over RG,CB: One-time: after graph compilation
-    RG->>WGE: set_execution_plan(plan)
+    RG->>WGE: SetExecutionPlan(plan)
     WGE->>WGE: translate plan → work graph desc
-    WGE->>GPU: create_work_graph(desc)
+    WGE->>GPU: CreateWorkGraph(desc)
     GPU-->>WGE: WorkGraphHandle
     WGE->>WGE: cache program
 
     Note over RG,CB: Per-frame
-    RG->>WGE: execute(frame_data, cmd, caps)
+    RG->>WGE: Execute(frame_data, cmd, caps)
     WGE->>WGE: write per-frame data to root input buffer
-    WGE->>CB: set_work_graph(cached_program)
-    WGE->>CB: dispatch_graph(root_input)
+    WGE->>CB: SetWorkGraph(cached_program)
+    WGE->>CB: DispatchGraph(root_input)
     Note over CB: GPU self-schedules all passes
 ```
 
@@ -518,16 +518,16 @@ sequenceDiagram
     participant CB as gpu::CommandBuffer
 
     Note over RG,CB: Per-frame
-    RG->>WGE: execute(frame_data, tcb, caps)
+    RG->>WGE: Execute(frame_data, tcb, caps)
 
     loop For each pass in topological order
         WGE->>WGE: check pass_activation_flags[i]
         alt pass active
-            WGE->>TCB: flush_barriers() [pre-pass barriers]
-            WGE->>TCB: set_pipeline(pass.pipeline)
-            WGE->>TCB: push_constants(frame_data)
+            WGE->>TCB: FlushBarriers() [pre-pass barriers]
+            WGE->>TCB: SetPipeline(pass.pipeline)
+            WGE->>TCB: PushConstants(frame_data)
             WGE->>TCB: dispatch/draw/trace (pass-specific)
-            WGE->>TCB: barrier(post-pass barriers)
+            WGE->>TCB: Barrier(post-pass barriers)
         end
     end
 
@@ -549,11 +549,11 @@ classDiagram
         -unordered_map~uint64_t, PipelinePair~ pairs_
         -unordered_map~uint64_t, BufferHandle~ sbt_buffers_
         +RayTracingAdapter(DeviceCapabilities&, Allocator&)
-        +register_pipeline_pair(uint64_t id, PipelinePair) void
-        +unregister_pipeline_pair(uint64_t id) void
-        +build_sbt(uint64_t pipeline_id, SbtLayout) void
-        +dispatch(uint64_t pipeline_id, TraceRaysDesc, TrackedCommandBuffer&) bool
-        +is_emulated() bool
+        +RegisterPipelinePair(uint64_t id, PipelinePair) void
+        +UnregisterPipelinePair(uint64_t id) void
+        +BuildSbt(uint64_t pipeline_id, SbtLayout) void
+        +Dispatch(uint64_t pipeline_id, TraceRaysDesc, TrackedCommandBuffer&) bool
+        +IsEmulated() bool
     }
 
     class PipelinePair {
@@ -589,19 +589,19 @@ sequenceDiagram
     participant TCB as TrackedCommandBuffer
     participant CB as gpu::CommandBuffer
 
-    Caller->>RTA: dispatch(pipeline_id, trace_rays_desc, tcb)
+    Caller->>RTA: Dispatch(pipeline_id, trace_rays_desc, tcb)
 
     alt Native RT (D3D12 / Vulkan)
-        RTA->>TCB: set_pipeline(rt_pipeline)
-        TCB->>CB: set_pipeline(rt_pipeline)
-        RTA->>CB: trace_rays(desc)
+        RTA->>TCB: SetPipeline(rt_pipeline)
+        TCB->>CB: SetPipeline(rt_pipeline)
+        RTA->>CB: TraceRays(desc)
         RTA-->>Caller: false (not emulated)
     else Emulated RT (Metal)
-        RTA->>TCB: set_pipeline(compute_fallback)
-        TCB->>CB: set_pipeline(compute_fallback)
-        RTA->>TCB: push_constants(width, height, depth, sbt_index)
-        RTA->>TCB: dispatch(⌈w/8⌉, ⌈h/8⌉, d)
-        TCB->>CB: dispatch(⌈w/8⌉, ⌈h/8⌉, d)
+        RTA->>TCB: SetPipeline(compute_fallback)
+        TCB->>CB: SetPipeline(compute_fallback)
+        RTA->>TCB: PushConstants(width, height, depth, sbt_index)
+        RTA->>TCB: Dispatch(⌈w/8⌉, ⌈h/8⌉, d)
+        TCB->>CB: Dispatch(⌈w/8⌉, ⌈h/8⌉, d)
         RTA-->>Caller: true (emulated)
     end
 ```

@@ -1,359 +1,416 @@
 export module harmonius.asset;
 
-import std;
 import harmonius.gpu;
 import harmonius.rg.exec;
 
-export namespace harmonius::asset
-{
+import std;
 
-  // ---------------------------------------------------------------------------
-  // Enums
-  // ---------------------------------------------------------------------------
+export namespace harmonius::asset {
 
-  enum class AssetType : std::uint8_t
-  {
-    mesh,
-    texture,
-    material,
-    terrain_tile,
-    shader,
-    acceleration_structure,
-  };
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
 
-  enum class StreamPriority : std::uint8_t
-  {
-    critical = 0,
-    high = 1,
-    normal = 2,
-    low = 3,
-  };
+/// The type of an asset in the pipeline.
+enum class AssetType : std::uint8_t {
+    kMesh,
+    kTexture,
+    kMaterial,
+    kTerrainTile,
+    kShader,
+    kAccelerationStructure,
+};
 
-  // ---------------------------------------------------------------------------
-  // Identity and handle types
-  // ---------------------------------------------------------------------------
+/// Priority level for asset streaming requests.
+enum class StreamPriority : std::uint8_t {
+    kCritical = 0,
+    kHigh = 1,
+    kNormal = 2,
+    kLow = 3,
+};
 
-  enum class AssetId : std::uint64_t
-  {
-    invalid = 0,
-  };
+// ---------------------------------------------------------------------------
+// Identity and handle types
+// ---------------------------------------------------------------------------
 
-  struct AssetHandle
-  {
+/// Unique identifier for an asset, derived from its content hash.
+enum class AssetId : std::uint64_t {
+    kInvalid = 0,
+};
+
+/// Generational handle to a registered asset resource.
+struct AssetHandle {
     std::uint32_t index;
     std::uint32_t generation;
 
-    [[nodiscard]] auto is_valid() const -> bool;
-  };
+    /// Returns true if this handle refers to a valid asset slot.
+    [[nodiscard]] auto IsValid() const -> bool;
+};
 
-  // ---------------------------------------------------------------------------
-  // Error types
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Error types
+// ---------------------------------------------------------------------------
 
-  struct CookError
-  {
-    std::string message;
-  };
+/// Errors that can occur during asset cooking.
+enum class CookError : std::uint8_t {
+    kUnsupportedType,
+    kInvalidData,
+    kProcessorNotRegistered,
+};
 
-  struct AssetError
-  {
-    std::string message;
-  };
+/// Errors that can occur during asset operations.
+enum class AssetError : std::uint8_t {
+    kNotFound,
+    kInvalidHandle,
+    kTypeMismatch,
+    kLoadFailed,
+};
 
-  struct HeapError
-  {
-    std::string message;
-  };
+/// Errors that can occur during heap operations.
+enum class HeapError : std::uint8_t {
+    kOutOfCapacity,
+    kInvalidAllocation,
+};
 
-  // ---------------------------------------------------------------------------
-  // Raw asset
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Raw asset
+// ---------------------------------------------------------------------------
 
-  struct RawAsset
-  {
+/// An unprocessed asset loaded from its source file.
+struct RawAsset {
     AssetId id;
     AssetType type;
     std::string source_path;
     std::vector<std::uint8_t> raw_data;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Cooked asset types
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Cooked asset types
+// ---------------------------------------------------------------------------
 
-  struct CookedMetadata
-  {
+/// Metadata describing a cooked asset's GPU resource properties.
+struct CookedMetadata {
     std::uint32_t meshlet_count = 0;
     std::uint32_t vertex_count = 0;
     std::uint32_t triangle_count = 0;
-    gpu::Format format = gpu::Format::undefined;
+    gpu::Format format = gpu::Format::kUndefined;
     std::uint32_t width = 0;
     std::uint32_t height = 0;
     std::uint32_t mip_levels = 0;
     std::uint32_t array_layers = 0;
     std::uint64_t gpu_size_bytes = 0;
-  };
+};
 
-  struct CookedAsset
-  {
+/// A fully processed asset ready for GPU upload.
+struct CookedAsset {
     AssetId id;
     AssetType type;
     std::string_view target_backend;
     std::vector<std::uint8_t> data;
     std::uint64_t content_hash;
     CookedMetadata metadata;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Meshlet types
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Meshlet types
+// ---------------------------------------------------------------------------
 
-  struct MeshletData
-  {
-    struct Meshlet
-    {
-      std::uint32_t vertex_offset;
-      std::uint32_t triangle_offset;
-      std::uint8_t vertex_count;
-      std::uint8_t triangle_count;
-      std::array<float, 4> bounding_sphere;
-      std::array<float, 4> normal_cone;
+/// Mesh data decomposed into GPU-friendly meshlet clusters.
+struct MeshletData {
+    /// A single meshlet cluster within the mesh.
+    struct Meshlet {
+        std::uint32_t vertex_offset;
+        std::uint32_t triangle_offset;
+        std::uint8_t vertex_count;
+        std::uint8_t triangle_count;
+        std::array<float, 4> bounding_sphere;
+        std::array<float, 4> normal_cone;
     };
 
     std::vector<Meshlet> meshlets;
     std::vector<std::uint8_t> vertex_data;
     std::vector<std::uint8_t> triangle_data;
     std::uint32_t vertex_stride;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Texture cook options
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Texture cook options
+// ---------------------------------------------------------------------------
 
-  struct TextureCookOptions
-  {
-    gpu::Format target_format = gpu::Format::bc7_unorm;
+/// Configuration options for texture compression during cooking.
+struct TextureCookOptions {
+    gpu::Format target_format = gpu::Format::kBc7Unorm;
     bool generate_mips = true;
     bool srgb = false;
     std::uint32_t max_dimension = 4096;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Bundle manifest types
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Bundle manifest types
+// ---------------------------------------------------------------------------
 
-  struct BundleManifest
-  {
-    struct BundleEntry
-    {
-      std::string bundle_path;
-      std::uint64_t total_size;
-      std::vector<AssetId> asset_ids;
+/// Manifest describing the layout of bundled assets on disk.
+struct BundleManifest {
+    /// An entry describing a single bundle file.
+    struct BundleEntry {
+        std::string bundle_path;
+        std::uint64_t total_size;
+        std::vector<AssetId> asset_ids;
     };
 
-    struct AssetEntry
-    {
-      AssetId id;
-      AssetType type;
-      std::uint64_t gpu_size;
-      std::uint32_t bundle_index;
-      std::uint32_t chunk_index;
-      std::uint64_t chunk_offset;
-      std::uint64_t chunk_size;
-      std::uint16_t priority_bias;
-      CookedMetadata metadata;
+    /// An entry describing a single asset within a bundle.
+    struct AssetEntry {
+        AssetId id;
+        AssetType type;
+        std::uint64_t gpu_size;
+        std::uint32_t bundle_index;
+        std::uint32_t chunk_index;
+        std::uint64_t chunk_offset;
+        std::uint64_t chunk_size;
+        std::uint16_t priority_bias;
+        CookedMetadata metadata;
     };
 
     std::vector<BundleEntry> bundles;
     std::vector<AssetEntry> assets;
 
-    [[nodiscard]] auto find(AssetId id) const -> const AssetEntry *;
-  };
+    /// Finds an asset entry by its identifier, or returns nullptr.
+    [[nodiscard]] auto Find(AssetId id) const -> const AssetEntry*;
+};
 
-  // ---------------------------------------------------------------------------
-  // Chunk layout
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Chunk layout
+// ---------------------------------------------------------------------------
 
-  struct ChunkLayout
-  {
-    static constexpr std::uint64_t alignment = 65536;
+/// Describes the memory layout of asset chunks within a bundle.
+struct ChunkLayout {
+    static constexpr std::uint64_t kAlignment = 65536;
 
-    struct Region
-    {
-      std::uint64_t offset;
-      std::uint64_t size;
-      AssetType type;
+    /// A contiguous region within a chunk.
+    struct Region {
+        std::uint64_t offset;
+        std::uint64_t size;
+        AssetType type;
     };
 
     std::vector<Region> regions;
     std::uint64_t total_size;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Streaming types
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Streaming types
+// ---------------------------------------------------------------------------
 
-  struct StreamRequest
-  {
+/// A request to stream an asset chunk into GPU memory.
+struct StreamRequest {
     AssetId asset_id;
     std::uint32_t chunk_index;
     StreamPriority priority;
     float camera_distance;
-  };
+};
 
-  struct IOCompletion
-  {
+/// The result of a completed asynchronous I/O operation.
+struct IOCompletion {
     AssetId asset_id;
     gpu::BufferHandle staging_buffer;
     std::uint64_t buffer_offset;
     std::uint64_t size;
     bool success;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // AssetCooker
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// IoBackend concept
+// ---------------------------------------------------------------------------
 
-  class AssetCooker
-  {
-  public:
+/// An I/O backend capable of submitting asynchronous file reads.
+template <typename B>
+concept IoBackend = requires(B b, std::string_view path, std::uint64_t file_offset,
+                             std::uint64_t size, gpu::BufferHandle staging_buffer,
+                             std::uint64_t buffer_offset) {
+    { b.SubmitRead(path, file_offset, size, staging_buffer, buffer_offset) } -> std::same_as<void>;
+    { b.PollCompletions() } -> std::same_as<std::vector<IOCompletion>>;
+};
+
+// ---------------------------------------------------------------------------
+// AssetCooker
+// ---------------------------------------------------------------------------
+
+/// Transforms raw assets into cooked, GPU-ready representations.
+///
+/// @threadsafety Not thread-safe. Synchronize externally if shared across threads.
+class AssetCooker {
+ public:
     explicit AssetCooker(std::string_view target_backend);
+    ~AssetCooker();
 
-    [[nodiscard]] auto cook(const RawAsset &raw)
-        -> std::expected<CookedAsset, CookError>;
+    AssetCooker(const AssetCooker&) = delete;
+    auto operator=(const AssetCooker&) -> AssetCooker& = delete;
 
-    [[nodiscard]] auto cook_batch(std::span<const RawAsset> assets)
+    AssetCooker(AssetCooker&&) noexcept;
+    auto operator=(AssetCooker&&) noexcept -> AssetCooker&;
+
+    /// Cooks a single raw asset into its GPU-ready form.
+    [[nodiscard]] auto Cook(const RawAsset& raw) -> std::expected<CookedAsset, CookError>;
+
+    /// Cooks a batch of raw assets, returning results for each.
+    [[nodiscard]] auto CookBatch(std::span<const RawAsset> assets)
         -> std::vector<std::expected<CookedAsset, CookError>>;
 
-    auto register_processor(
-        AssetType type,
-        std::function<CookedAsset(const RawAsset &)> fn) -> void;
-  };
+    /// Registers a custom processor function for the given asset type.
+    auto RegisterProcessor(AssetType type, std::move_only_function<CookedAsset(const RawAsset&)> fn) -> void;
+};
 
-  // ---------------------------------------------------------------------------
-  // MeshletBuilder
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// MeshletBuilder
+// ---------------------------------------------------------------------------
 
-  class MeshletBuilder
-  {
-  public:
-    [[nodiscard]] auto build(
-        std::span<const float> positions,
-        std::span<const std::uint32_t> indices,
-        std::uint32_t vertex_stride) -> MeshletData;
-  };
+/// Builds meshlet data from raw vertex and index buffers.
+///
+/// @threadsafety Not thread-safe.
+class MeshletBuilder {
+ public:
+    /// Decomposes a mesh into meshlet clusters.
+    [[nodiscard]] auto Build(std::span<const float> positions,
+                             std::span<const std::uint32_t> indices,
+                             std::uint32_t vertex_stride) -> MeshletData;
+};
 
-  // ---------------------------------------------------------------------------
-  // TextureCompressor
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// TextureCompressor
+// ---------------------------------------------------------------------------
 
-  class TextureCompressor
-  {
-  public:
-    [[nodiscard]] auto compress(
-        std::span<const std::uint8_t> rgba_data,
-        std::uint32_t width,
-        std::uint32_t height,
-        const TextureCookOptions &options) -> CookedAsset;
-  };
+/// Compresses RGBA texture data into block-compressed GPU formats.
+///
+/// @threadsafety Not thread-safe.
+class TextureCompressor {
+ public:
+    /// Compresses raw RGBA data according to the provided options.
+    [[nodiscard]] auto Compress(std::span<const std::uint8_t> rgba_data, std::uint32_t width,
+                                std::uint32_t height,
+                                const TextureCookOptions& options) -> CookedAsset;
+};
 
-  // ---------------------------------------------------------------------------
-  // IOBackend
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// StreamingScheduler
+// ---------------------------------------------------------------------------
 
-  class IOBackend
-  {
-  public:
-    virtual ~IOBackend() = default;
+/// Schedules and prioritizes asset streaming from disk to GPU memory.
+///
+/// @threadsafety Not thread-safe. Synchronize externally if shared across threads.
+template <IoBackend B>
+class StreamingScheduler {
+ public:
+    /// Constructs a streaming scheduler with the given I/O backend.
+    explicit StreamingScheduler(B& backend);
+    ~StreamingScheduler();
 
-    virtual auto submit_read(
-        std::string_view path,
-        std::uint64_t file_offset,
-        std::uint64_t size,
-        gpu::BufferHandle staging_buffer,
-        std::uint64_t buffer_offset) -> void = 0;
+    StreamingScheduler(const StreamingScheduler&) = delete;
+    auto operator=(const StreamingScheduler&) -> StreamingScheduler& = delete;
 
-    [[nodiscard]] virtual auto poll_completions()
-        -> std::vector<IOCompletion> = 0;
-  };
+    StreamingScheduler(StreamingScheduler&&) noexcept;
+    auto operator=(StreamingScheduler&&) noexcept -> StreamingScheduler&;
 
-  // ---------------------------------------------------------------------------
-  // StreamingScheduler
-  // ---------------------------------------------------------------------------
+    /// Submits a batch of streaming requests for prioritization.
+    auto Request(std::span<const StreamRequest> requests) -> void;
 
-  class StreamingScheduler
-  {
-  public:
-    auto request(std::span<const StreamRequest> requests) -> void;
+    /// Processes pending requests and returns transfer pass descriptors.
+    [[nodiscard]] auto ProcessPending() -> std::vector<rg::exec::TransferPassDesc>;
 
-    [[nodiscard]] auto process_pending()
-        -> std::vector<rg::exec::TransferPassDesc>;
+    /// Sets the eviction policy used when memory pressure requires unloading.
+    auto SetEvictionPolicy(std::move_only_function<std::vector<AssetId>(std::uint32_t)> policy) -> void;
 
-    auto set_eviction_policy(
-        std::function<std::vector<AssetId>(std::uint32_t)> policy) -> void;
+    /// Returns whether the asset with the given identifier is resident in GPU memory.
+    [[nodiscard]] auto IsResident(AssetId id) const -> bool;
 
-    [[nodiscard]] auto is_resident(AssetId id) const -> bool;
-    [[nodiscard]] auto residency_ratio() const -> float;
+    /// Returns the ratio of resident assets to total requested assets.
+    [[nodiscard]] auto ResidencyRatio() const -> float;
 
-    auto set_io_backend(std::unique_ptr<IOBackend> backend) -> void;
-  };
+ private:
+    B* backend_;
+};
 
-  // ---------------------------------------------------------------------------
-  // ResourceRegistry
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// ResourceRegistry
+// ---------------------------------------------------------------------------
 
-  class ResourceRegistry
-  {
-  public:
-    [[nodiscard]] auto register_texture(
-        AssetId id,
-        gpu::TextureHandle gpu_texture,
-        const CookedMetadata &metadata) -> AssetHandle;
+/// Tracks mappings between asset identifiers and GPU resource handles.
+///
+/// @threadsafety Not thread-safe. Synchronize externally if shared across threads.
+class ResourceRegistry {
+ public:
+    /// Registers a GPU texture for the given asset and returns a handle.
+    [[nodiscard]] auto RegisterTexture(AssetId id, gpu::TextureHandle gpu_texture,
+                                       const CookedMetadata& metadata) -> AssetHandle;
 
-    [[nodiscard]] auto register_buffer(
-        AssetId id,
-        gpu::BufferHandle gpu_buffer,
-        const CookedMetadata &metadata) -> AssetHandle;
+    /// Registers a GPU buffer for the given asset and returns a handle.
+    [[nodiscard]] auto RegisterBuffer(AssetId id, gpu::BufferHandle gpu_buffer,
+                                      const CookedMetadata& metadata) -> AssetHandle;
 
-    auto unregister(AssetHandle handle) -> void;
+    /// Unregisters the asset associated with the given handle.
+    auto Unregister(AssetHandle handle) -> void;
 
-    [[nodiscard]] auto resolve_texture(AssetHandle handle) const
+    /// Resolves an asset handle to its underlying GPU texture handle.
+    [[nodiscard]] auto ResolveTexture(AssetHandle handle) const
         -> std::expected<gpu::TextureHandle, AssetError>;
 
-    [[nodiscard]] auto resolve_buffer(AssetHandle handle) const
+    /// Resolves an asset handle to its underlying GPU buffer handle.
+    [[nodiscard]] auto ResolveBuffer(AssetHandle handle) const
         -> std::expected<gpu::BufferHandle, AssetError>;
 
-    [[nodiscard]] auto resolve_descriptor_index(AssetHandle handle) const
+    /// Resolves an asset handle to its bindless descriptor index.
+    [[nodiscard]] auto ResolveDescriptorIndex(AssetHandle handle) const
         -> std::expected<std::uint32_t, AssetError>;
 
-    [[nodiscard]] auto registered_count() const -> std::uint32_t;
-    [[nodiscard]] auto total_gpu_bytes() const -> std::uint64_t;
-  };
+    /// Returns the number of currently registered assets.
+    [[nodiscard]] auto RegisteredCount() const -> std::uint32_t;
 
-  // ---------------------------------------------------------------------------
-  // BindlessDescriptorHeap
-  // ---------------------------------------------------------------------------
+    /// Returns the total GPU memory in bytes used by registered assets.
+    [[nodiscard]] auto TotalGpuBytes() const -> std::uint64_t;
+};
 
-  class BindlessDescriptorHeap
-  {
-  public:
-    explicit BindlessDescriptorHeap(
-        std::uint32_t max_descriptors = 1'000'000);
+// ---------------------------------------------------------------------------
+// BindlessDescriptorHeap
+// ---------------------------------------------------------------------------
 
-    [[nodiscard]] auto allocate_texture(gpu::TextureHandle texture)
+/// Manages a bindless descriptor heap for GPU resource indexing.
+///
+/// @threadsafety Not thread-safe. Synchronize externally if shared across threads.
+class BindlessDescriptorHeap {
+ public:
+    explicit BindlessDescriptorHeap(std::uint32_t max_descriptors = 1'000'000);
+    ~BindlessDescriptorHeap();
+
+    BindlessDescriptorHeap(const BindlessDescriptorHeap&) = delete;
+    auto operator=(const BindlessDescriptorHeap&) -> BindlessDescriptorHeap& = delete;
+
+    BindlessDescriptorHeap(BindlessDescriptorHeap&&) noexcept;
+    auto operator=(BindlessDescriptorHeap&&) noexcept -> BindlessDescriptorHeap&;
+
+    /// Allocates a descriptor slot for a texture and returns its index.
+    [[nodiscard]] auto AllocateTexture(gpu::TextureHandle texture)
         -> std::expected<std::uint32_t, HeapError>;
 
-    [[nodiscard]] auto allocate_buffer(gpu::BufferHandle buffer)
+    /// Allocates a descriptor slot for a buffer and returns its index.
+    [[nodiscard]] auto AllocateBuffer(gpu::BufferHandle buffer)
         -> std::expected<std::uint32_t, HeapError>;
 
-    auto free(std::uint32_t index) -> void;
+    /// Frees the descriptor slot at the given index.
+    auto Free(std::uint32_t index) -> void;
 
-    auto update_texture(std::uint32_t index, gpu::TextureHandle texture) -> void;
-    auto update_buffer(std::uint32_t index, gpu::BufferHandle buffer) -> void;
+    /// Updates the texture at the given descriptor index.
+    auto UpdateTexture(std::uint32_t index, gpu::TextureHandle texture) -> void;
 
-    [[nodiscard]] auto gpu_handle() const -> gpu::DescriptorHeapHandle;
-    [[nodiscard]] auto allocated_count() const -> std::uint32_t;
-    [[nodiscard]] auto capacity() const -> std::uint32_t;
-  };
+    /// Updates the buffer at the given descriptor index.
+    auto UpdateBuffer(std::uint32_t index, gpu::BufferHandle buffer) -> void;
 
-} // namespace harmonius::asset
+    /// Returns the GPU handle to the underlying descriptor heap.
+    [[nodiscard]] auto GpuHandle() const -> gpu::DescriptorHeapHandle;
+
+    /// Returns the number of currently allocated descriptors.
+    [[nodiscard]] auto AllocatedCount() const -> std::uint32_t;
+
+    /// Returns the maximum capacity of the descriptor heap.
+    [[nodiscard]] auto Capacity() const -> std::uint32_t;
+};
+
+}  // namespace harmonius::asset

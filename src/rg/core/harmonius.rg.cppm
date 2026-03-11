@@ -1,145 +1,136 @@
 export module harmonius.rg;
 
-import std;
 import harmonius.gpu;
 
-export namespace harmonius::rg
-{
+import std;
 
-  // ---------------------------------------------------------------------------
-  // Handle types
-  // ---------------------------------------------------------------------------
+export namespace harmonius::rg {
 
-  enum class PassHandle : std::uint32_t
-  {
-    invalid = std::numeric_limits<std::uint32_t>::max()
-  };
+// ---------------------------------------------------------------------------
+// Handle types
+// ---------------------------------------------------------------------------
 
-  enum class ResourceHandle : std::uint32_t
-  {
-    invalid = std::numeric_limits<std::uint32_t>::max()
-  };
+/// Opaque handle identifying a render pass within the graph.
+enum class PassHandle : std::uint32_t { kInvalid = std::numeric_limits<std::uint32_t>::max() };
 
-  enum class SubGraphHandle : std::uint32_t
-  {
-    invalid = std::numeric_limits<std::uint32_t>::max()
-  };
+/// Opaque handle identifying a resource within the graph.
+enum class ResourceHandle : std::uint32_t { kInvalid = std::numeric_limits<std::uint32_t>::max() };
 
-  enum class GateHandle : std::uint32_t
-  {
-    invalid = std::numeric_limits<std::uint32_t>::max()
-  };
+/// Opaque handle identifying a sub-graph template.
+enum class SubGraphHandle : std::uint32_t { kInvalid = std::numeric_limits<std::uint32_t>::max() };
 
-  enum class ChainHandle : std::uint32_t
-  {
-    invalid = std::numeric_limits<std::uint32_t>::max()
-  };
+/// Opaque handle identifying a gate for conditional pass execution.
+enum class GateHandle : std::uint32_t { kInvalid = std::numeric_limits<std::uint32_t>::max() };
 
-  enum class VariantSlotHandle : std::uint32_t
-  {
-    invalid = std::numeric_limits<std::uint32_t>::max()
-  };
+/// Opaque handle identifying a chain of sequentially dependent passes.
+enum class ChainHandle : std::uint32_t { kInvalid = std::numeric_limits<std::uint32_t>::max() };
 
-  // ---------------------------------------------------------------------------
-  // Classification enums
-  // ---------------------------------------------------------------------------
+/// Opaque handle identifying a variant dispatch slot.
+enum class VariantSlotHandle : std::uint32_t { kInvalid = std::numeric_limits<std::uint32_t>::max() };
 
-  enum class PassType : std::uint8_t
-  {
-    rasterization,
-    compute,
-    ray_tracing_dispatch,
-    acceleration_structure_build,
-    transfer,
-    msaa_resolve,
-    present,
-    host_callback,
-    work_graph,
-    checkerboard_resolve,
-  };
+// ---------------------------------------------------------------------------
+// Classification enums
+// ---------------------------------------------------------------------------
 
-  enum class AccessMode : std::uint8_t
-  {
-    read,
-    write,
-    read_write,
-  };
+/// The type of work a render pass performs.
+enum class PassType : std::uint8_t {
+  kRasterization,
+  kCompute,
+  kRayTracingDispatch,
+  kAccelerationStructureBuild,
+  kTransfer,
+  kMsaaResolve,
+  kPresent,
+  kHostCallback,
+  kWorkGraph,
+  kCheckerboardResolve,
+};
 
-  enum class UsageType : std::uint8_t
-  {
-    color_attachment,
-    depth_attachment,
-    shader_read,
-    storage_read,
-    storage_write,
-    shading_rate_attachment,
-    indirect_argument,
-    acceleration_structure_read,
-    acceleration_structure_build_write,
-    transfer_src,
-    transfer_dst,
-    present,
-  };
+/// How a resource is accessed by a pass.
+enum class AccessMode : std::uint8_t {
+  kRead,
+  kWrite,
+  kReadWrite,
+};
 
-  enum class QueueAffinity : std::uint8_t
-  {
-    graphics,
-    async_compute,
-    transfer,
-    any,
-  };
+/// The specific usage of a resource within a pass.
+enum class UsageType : std::uint8_t {
+  kColorAttachment,
+  kDepthAttachment,
+  kShaderRead,
+  kStorageRead,
+  kStorageWrite,
+  kShadingRateAttachment,
+  kIndirectArgument,
+  kAccelerationStructureRead,
+  kAccelerationStructureBuildWrite,
+  kTransferSrc,
+  kTransferDst,
+  kPresent,
+};
 
-  enum class ResourceCategory : std::uint8_t
-  {
-    transient,
-    persistent,
-    imported,
-    history,
-    multi_frame_history,
-    sparse,
-    pool_backed,
-    staging,
-    atlas,
-    acceleration_structure,
-  };
+/// The GPU queue a pass should be submitted to.
+enum class QueueAffinity : std::uint8_t {
+  kGraphics,
+  kAsyncCompute,
+  kTransfer,
+  kAny,
+};
 
-  enum class ValidationErrorKind : std::uint8_t
-  {
-    cycle_detected,
-    type_mismatch,
-    undeclared_resource,
-    queue_incompatibility,
-    single_writer_violation,
-    variant_ambiguity,
-    instance_count_mismatch,
-    hard_gate_unsatisfied,
-  };
+/// The lifetime category of a resource.
+enum class ResourceCategory : std::uint8_t {
+  kTransient,
+  kPersistent,
+  kImported,
+  kHistory,
+  kMultiFrameHistory,
+  kSparse,
+  kPoolBacked,
+  kStaging,
+  kAtlas,
+  kAccelerationStructure,
+};
 
-  // ---------------------------------------------------------------------------
-  // Shared vocabulary structs
-  // ---------------------------------------------------------------------------
+/// The kind of validation error detected during graph compilation.
+enum class ValidationErrorKind : std::uint8_t {
+  kCycleDetected,
+  kTypeMismatch,
+  kUndeclaredResource,
+  kQueueIncompatibility,
+  kSingleWriterViolation,
+  kVariantAmbiguity,
+  kInstanceCountMismatch,
+  kHardGateUnsatisfied,
+};
 
-  struct ResourceBinding
-  {
-    ResourceHandle resource;
-    AccessMode access;
-    UsageType usage;
-    std::uint32_t array_layer = 0;
-    std::uint32_t mip_level = 0;
-    bool is_history = false;
-  };
+// ---------------------------------------------------------------------------
+// Shared vocabulary structs
+// ---------------------------------------------------------------------------
 
-  struct ValidationError
-  {
-    ValidationErrorKind kind;
-    PassHandle pass;
-    ResourceHandle resource;
-    std::string message;
-  };
+/// Describes how a pass binds to a resource, including access mode and usage.
+/// @threadsafety Instances are not thread-safe.
+struct ResourceBinding {
+  ResourceHandle resource;
+  AccessMode access;
+  UsageType usage;
+  std::uint32_t array_layer = 0;
+  std::uint32_t mip_level = 0;
+  bool is_history = false;
+};
 
-  struct CompileError
-  {
-    std::vector<ValidationError> errors;
-  };
+/// A single validation error produced during graph compilation.
+/// @threadsafety Instances are not thread-safe.
+struct ValidationError {
+  ValidationErrorKind kind;
+  PassHandle pass;
+  ResourceHandle resource;
+  std::string message;
+};
 
-} // namespace harmonius::rg
+/// Aggregated compilation errors containing all validation failures.
+/// @threadsafety Instances are not thread-safe.
+struct CompileError {
+  std::vector<ValidationError> errors;
+};
+
+}  // namespace harmonius::rg

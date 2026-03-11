@@ -52,78 +52,78 @@ classDiagram
         -MTLSharedEvent compute_event_
         -MTLSharedEvent copy_event_
         -uint64_t next_idle_value_
-        +capabilities() DeviceCapabilities
-        +wait_idle() void
-        +create_texture(TextureDesc) expected~TextureHandle~
-        +create_buffer(BufferDesc) expected~BufferHandle~
-        +create_heap(HeapDesc) expected~HeapHandle~
-        +create_placed_texture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
-        +create_placed_buffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
-        +create_sparse_texture(SparseTextureDesc) expected~TextureHandle~
-        +create_fence(uint64_t) expected~FenceHandle~
-        +create_mesh_render_pipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
-        +create_compute_pipeline(ComputePipelineDesc) expected~PipelineHandle~
-        +create_ray_tracing_pipeline(RayTracingPipelineDesc) expected~PipelineHandle~
-        +create_work_graph(WorkGraphDesc) expected~WorkGraphHandle~
-        +create_descriptor_heap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
-        +create_swapchain(SwapchainDesc) expected~SwapchainHandle~
-        +create_pipeline_cache(PipelineCacheDesc) expected~PipelineCacheHandle~
-        +create_acceleration_structure(AccelerationStructureDesc) expected~AccelerationStructureHandle~
-        +query_texture_allocation_info(TextureDesc) AllocationInfo
-        +query_buffer_allocation_info(BufferDesc) AllocationInfo
-        +submit(QueueType, cmd_bufs, signals, waits) void
-        +map(BufferHandle) void_ptr
-        +unmap(BufferHandle) void
-        +set_name(TextureHandle, string_view) void
+        +Capabilities() DeviceCapabilities
+        +WaitIdle() void
+        +CreateTexture(TextureDesc) expected~TextureHandle~
+        +CreateBuffer(BufferDesc) expected~BufferHandle~
+        +CreateHeap(HeapDesc) expected~HeapHandle~
+        +CreatePlacedTexture(HeapHandle, uint64_t, TextureDesc) expected~TextureHandle~
+        +CreatePlacedBuffer(HeapHandle, uint64_t, BufferDesc) expected~BufferHandle~
+        +CreateSparseTexture(SparseTextureDesc) expected~TextureHandle~
+        +CreateFence(uint64_t) expected~FenceHandle~
+        +CreateMeshRenderPipeline(MeshRenderPipelineDesc) expected~PipelineHandle~
+        +CreateComputePipeline(ComputePipelineDesc) expected~PipelineHandle~
+        +CreateRayTracingPipeline(RayTracingPipelineDesc) expected~PipelineHandle~
+        +CreateWorkGraph(WorkGraphDesc) expected~WorkGraphHandle~
+        +CreateDescriptorHeap(DescriptorHeapDesc) expected~DescriptorHeapHandle~
+        +CreateSwapchain(SwapchainDesc) expected~SwapchainHandle~
+        +CreatePipelineCache(PipelineCacheDesc) expected~PipelineCacheHandle~
+        +CreateAccelerationStructure(AccelerationStructureDesc) expected~AccelerationStructureHandle~
+        +QueryTextureAllocationInfo(TextureDesc) AllocationInfo
+        +QueryBufferAllocationInfo(BufferDesc) AllocationInfo
+        +Submit(QueueType, cmd_bufs, signals, waits) void
+        +Map(BufferHandle) void_ptr
+        +Unmap(BufferHandle) void
+        +SetName(TextureHandle, string_view) void
     }
     class MetalCommandPool {
         -MTL4CommandAllocator allocator_
         -QueueType queue_type_
         -uint32_t allocated_count_
-        +allocate_command_buffer() MetalCommandBuffer
-        +reset() void
-        +allocated_count() uint32_t
+        +AllocateCommandBuffer() MetalCommandBuffer
+        +Reset() void
+        +AllocatedCount() uint32_t
     }
     class MetalCommandBuffer {
         -MTL4CommandBuffer cmd_
         -MTLRenderCommandEncoder active_render_encoder_
         -MTLComputeCommandEncoder active_compute_encoder_
-        +begin() void
-        +end() void
-        +barrier(BarrierDesc) void
-        +begin_render_pass(RenderPassDesc) void
-        +end_render_pass() void
-        +set_pipeline(PipelineHandle) void
-        +dispatch_mesh(x, y, z) void
-        +dispatch_mesh_indirect(buf, offset, count, stride) void
-        +dispatch_mesh_indirect_count(args) void
-        +dispatch(x, y, z) void
-        +dispatch_indirect(buf, offset) void
-        +trace_rays(TraceRaysDesc) void
-        +trace_rays_indirect(buf, offset) void
-        +build_acceleration_structure(BuildDesc) void
-        +set_work_graph(WorkGraphHandle) void
-        +dispatch_graph(DispatchGraphDesc) void
-        +copy_buffer(src, src_off, dst, dst_off, size) void
-        +copy_texture(src, sub, dst, sub, ext) void
-        +copy_buffer_to_texture(args) void
-        +copy_texture_to_buffer(args) void
-        +set_viewport(Viewport) void
-        +set_scissor(Scissor) void
-        +push_constants(data, size, offset) void
-        +bind_descriptor_heap(DescriptorHeapHandle) void
-        +write_timestamp(pool, index) void
-        +resolve_query_pool(pool, first, count, dst, offset) void
-        +begin_debug_label(name) void
-        +end_debug_label() void
-        +insert_debug_label(name) void
+        +Begin() void
+        +End() void
+        +Barrier(BarrierDesc) void
+        +BeginRenderPass(RenderPassDesc) void
+        +EndRenderPass() void
+        +SetPipeline(PipelineHandle) void
+        +DispatchMesh(x, y, z) void
+        +DispatchMeshIndirect(buf, offset, count, stride) void
+        +DispatchMeshIndirectCount(args) void
+        +Dispatch(x, y, z) void
+        +DispatchIndirect(buf, offset) void
+        +TraceRays(TraceRaysDesc) void
+        +TraceRaysIndirect(buf, offset) void
+        +BuildAccelerationStructure(BuildDesc) void
+        +SetWorkGraph(WorkGraphHandle) void
+        +DispatchGraph(DispatchGraphDesc) void
+        +CopyBuffer(src, src_off, dst, dst_off, size) void
+        +CopyTexture(src, sub, dst, sub, ext) void
+        +CopyBufferToTexture(args) void
+        +CopyTextureToBuffer(args) void
+        +SetViewport(Viewport) void
+        +SetScissor(Scissor) void
+        +PushConstants(data, size, offset) void
+        +BindDescriptorHeap(DescriptorHeapHandle) void
+        +WriteTimestamp(pool, index) void
+        +ResolveQueryPool(pool, first, count, dst, offset) void
+        +BeginDebugLabel(name) void
+        +EndDebugLabel() void
+        +InsertDebugLabel(name) void
     }
     class MetalFence {
         -MTLSharedEvent event_
-        +signal_gpu(cmd value) void
-        +wait_gpu(cmd value) void
-        +completed_value() uint64_t
-        +wait_cpu(value) void
+        +SignalGpu(cmd value) void
+        +WaitGpu(cmd value) void
+        +CompletedValue() uint64_t
+        +WaitCpu(value) void
     }
     MetalDevice --> MetalCommandPool : creates
     MetalCommandPool --> MetalCommandBuffer : allocates
@@ -143,25 +143,25 @@ concept definitions.
 classDiagram
     class GpuDevice {
         <<concept>>
-        +capabilities() DeviceCapabilities
-        +create_texture() TextureHandle
-        +create_buffer() BufferHandle
-        +create_fence() FenceHandle
-        +submit() void
-        +wait_idle() void
+        +Capabilities() DeviceCapabilities
+        +CreateTexture() TextureHandle
+        +CreateBuffer() BufferHandle
+        +CreateFence() FenceHandle
+        +Submit() void
+        +WaitIdle() void
     }
     class GpuCommandBuffer {
         <<concept>>
-        +begin() void
-        +end() void
-        +barrier() void
-        +dispatch_mesh() void
-        +dispatch() void
+        +Begin() void
+        +End() void
+        +Barrier() void
+        +DispatchMesh() void
+        +Dispatch() void
     }
     class GpuCommandPool {
         <<concept>>
-        +allocate_command_buffer() CommandBuffer
-        +reset() void
+        +AllocateCommandBuffer() CommandBuffer
+        +Reset() void
     }
     class MetalDevice {
         -MTLDevice device_
@@ -201,7 +201,7 @@ These types are not exposed through the abstract GPU interface.
 classDiagram
     class MTL4CommandAllocator {
         +commandBuffer() MTL4CommandBuffer
-        +reset() void
+        +Reset() void
     }
     class MTL4CommandBuffer {
         +commitToQueue(queue) void
@@ -242,12 +242,12 @@ buffers from queues. This maps cleanly to the abstract `GpuCommandPool` /
 
 | Abstract Type | Metal 4 Type | Notes |
 |---------------|-------------|-------|
-| `GpuCommandPool` | `MTL4CommandAllocator` | Pool-backed memory; `reset()` recycles all |
-| `GpuCommandBuffer` | `MTL4CommandBuffer` | Recording-ready from allocation (no begin) |
-| `submit()` | `commitToQueue()` | Commit to a specific queue at submission |
+| `GpuCommandPool` | `MTL4CommandAllocator` | Pool-backed memory; `Reset()` recycles all |
+| `GpuCommandBuffer` | `MTL4CommandBuffer` | Recording-ready from allocation (no Begin) |
+| `Submit()` | `commitToQueue()` | Commit to a specific queue at submission |
 
 Unlike D3D12 and Vulkan, Metal command buffers are immediately recording-ready after
-allocation. The `begin()` method on `MetalCommandBuffer` is a no-op.
+allocation. The `Begin()` method on `MetalCommandBuffer` is a no-op.
 
 ### Residency Management
 
@@ -258,7 +258,7 @@ buffers. `MTLResidencySet` (Metal 4) provides batch residency control:
 |-----------|----------|------|
 | Register heap | `addAllocation(MTLHeap)` | After heap creation |
 | Apply changes | `commit()` | After adding/removing allocations |
-| Make resident | `requestResidency()` | Before first use in command buffer |
+| Make resident | `requestResidency()` | Before first use in command Buffer |
 
 All command buffers automatically include residency set resources once committed.
 
@@ -270,11 +270,11 @@ only raw heap and resource creation primitives:
 
 | Backend Method | Metal API Call |
 |----------------|---------------|
-| `create_heap()` | `newHeapWithDescriptor:` |
-| `create_placed_texture()` | `newTextureWithDescriptor:offset:` on `MTLHeap` |
-| `create_placed_buffer()` | `newBufferWithLength:options:offset:` on `MTLHeap` |
-| `create_texture()` | `newTextureWithDescriptor:` |
-| `create_buffer()` | `newBufferWithLength:options:` |
+| `CreateHeap()` | `newHeapWithDescriptor:` |
+| `CreatePlacedTexture()` | `newTextureWithDescriptor:offset:` on `MTLHeap` |
+| `CreatePlacedBuffer()` | `newBufferWithLength:options:offset:` on `MTLHeap` |
+| `CreateTexture()` | `newTextureWithDescriptor:` |
+| `CreateBuffer()` | `newBufferWithLength:options:` |
 
 Memory budget monitoring uses `MTLDevice.currentAllocatedSize`, exposed through
 the `DeviceCapabilities` struct.
@@ -336,8 +336,8 @@ express stage/access dependencies via `memoryBarrierWithScope:` or
 
 | Abstract Concept | Metal Equivalent |
 |-----------------|-----------------|
-| Texture layout transition | Not needed (Metal handles internally) |
-| Memory barrier | `memoryBarrierWithScope:` / `memoryBarrierWithResources:` |
+| Texture layout Transition | Not needed (Metal handles internally) |
+| Memory Barrier | `memoryBarrierWithScope:` / `memoryBarrierWithResources:` |
 | Split barriers | Not supported (barriers are immediate) |
 
 ### No Queue Ownership Transfers
@@ -348,9 +348,9 @@ barrier fields are ignored on Metal.
 
 | Abstract Concept | Metal Equivalent |
 |-----------------|-----------------|
-| Queue ownership release | Not needed (unified memory) |
+| Queue ownership Release | Not needed (unified memory) |
 | Queue ownership acquire | Not needed (unified memory) |
-| Cross-queue synchronization | `MTLSharedEvent` signal/wait |
+| Cross-queue synchronization | `MTLSharedEvent` Signal/Wait |
 
 ---
 
@@ -412,7 +412,7 @@ sequenceDiagram
     Pool->>CB: MetalCommandBuffer(cmd)
 
     Note over CB,Queue: Recording
-    CB->>CB: begin() (no-op on Metal)
+    CB->>CB: Begin() (no-op on Metal)
 
     Note over CB,RE: Render pass
     CB->>Cmd: renderCommandEncoderWithDescriptor
@@ -431,7 +431,7 @@ sequenceDiagram
     CB->>CE: endEncoding
 
     Note over CB,Queue: Submission
-    CB->>CB: end() (ends active encoder)
+    CB->>CB: End() (ends active encoder)
     CB->>Cmd: commitToQueue(graphics_queue)
 ```
 

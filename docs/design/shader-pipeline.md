@@ -143,69 +143,59 @@ namespace harmonius::shader {
 
 // Shader graph node — the fundamental unit of the graph
 struct ShaderNode {
-    uint32_t                     node_id;
-    std::string_view             type_name;   // e.g., "pbr_base", "noise_3d", "custom_sss"
-    std::vector<TypedSlot>       inputs;
-    std::vector<TypedSlot>       outputs;
+  uint32_t node_id;
+  std::string_view type_name;  // e.g., "pbr_base", "noise_3d", "custom_sss"
+  std::vector<TypedSlot> inputs;
+  std::vector<TypedSlot> outputs;
 };
 
 struct TypedSlot {
-    std::string_view name;
-    SlotType         type;  // float, float2, float3, float4, texture_handle, sampler
+  std::string_view name;
+  SlotType type;  // float, float2, float3, float4, texture_handle, sampler
 };
 
 // Permutation axis — compile-time branching
 struct PermutationAxis {
-    std::string_view             name;     // e.g., "alpha_mode", "quality_tier"
-    std::vector<std::string_view> values;  // e.g., {"opaque", "masked", "blended"}
+  std::string_view name;                 // e.g., "alpha_mode", "quality_tier"
+  std::vector<std::string_view> values;  // e.g., {"opaque", "masked", "blended"}
 };
 
 // Compiled shader graph — platform-neutral IR
 struct ShaderGraphIR {
-    std::vector<uint8_t>           bytecode;      // compact binary (R-3.3.9)
-    std::vector<PermutationAxis>   permutations;
-    std::vector<BindingReflection> bindings;       // reflected resource slots
-    uint64_t                       content_hash;   // for cache keying
+  std::vector<uint8_t> bytecode;  // compact binary (R-3.3.9)
+  std::vector<PermutationAxis> permutations;
+  std::vector<BindingReflection> bindings;  // reflected resource slots
+  uint64_t content_hash;                    // for cache keying
 };
 
 class ShaderGraphCompiler {
-public:
-    // Validate graph structure (R-2.11.8)
-    [[nodiscard]]
-    std::expected<void, std::vector<ShaderDiagnostic>> validate(
-        const ShaderGraph& graph
-    );
+ public:
+  // Validate graph structure (R-2.11.8)
+  [[nodiscard]]
+  std::expected<void, std::vector<ShaderDiagnostic>> Validate(const ShaderGraph& graph);
 
-    // Compile graph to platform-neutral IR
-    [[nodiscard]]
-    std::expected<ShaderGraphIR, std::vector<ShaderDiagnostic>> compile(
-        const ShaderGraph& graph
-    );
+  // Compile graph to platform-neutral IR
+  [[nodiscard]]
+  std::expected<ShaderGraphIR, std::vector<ShaderDiagnostic>> Compile(const ShaderGraph& graph);
 
-    // Lower IR to HLSL source for a specific permutation
-    [[nodiscard]]
-    std::string generate_hlsl(
-        const ShaderGraphIR& ir,
-        const PermutationKey& permutation
-    );
+  // Lower IR to HLSL source for a specific permutation
+  [[nodiscard]]
+  std::string GenerateHlsl(const ShaderGraphIR& ir, const PermutationKey& permutation);
 
-    // Register custom node types (R-2.11.3)
-    void register_node_type(std::string_view name,
-                            NodeDescriptor desc,
-                            IRLoweringFn lowering_fn);
+  // Register custom node types (R-2.11.3)
+  void RegisterNodeType(std::string_view name, NodeDescriptor desc, IRLoweringFn lowering_fn);
 
-    // Generate shader fragments from graph IR for link-time composition
-    [[nodiscard]]
-    std::expected<std::vector<ShaderFragment>, std::vector<ShaderDiagnostic>>
-    generate_fragments(const ShaderGraphIR& ir);
+  // Generate shader fragments from graph IR for link-time composition
+  [[nodiscard]]
+  std::expected<std::vector<ShaderFragment>, std::vector<ShaderDiagnostic>> GenerateFragments(const ShaderGraphIR& ir);
 
-    // Determine which permutation axes can be converted to specialization constants
-    // or fragment selections instead of compile-time defines
-    [[nodiscard]]
-    SpecializationMap compute_specialization_map(const ShaderGraphIR& ir);
+  // Determine which permutation axes can be converted to specialization constants
+  // or fragment selections instead of compile-time defines
+  [[nodiscard]]
+  SpecializationMap ComputeSpecializationMap(const ShaderGraphIR& ir);
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ---
@@ -224,7 +214,7 @@ flowchart LR
     end
 
     subgraph fragment_gen["Fragment Generation"]
-        GenFrag["generate_fragments()"]
+        GenFrag["GenerateFragments()"]
         FragHLSL["Fragment HLSL<br/>(per-function)"]
     end
 
@@ -241,7 +231,7 @@ flowchart LR
     end
 
     subgraph link_stage["Link Stage"]
-        Stitch["ShaderStitcher::link()"]
+        Stitch["ShaderStitcher::Link()"]
         LTO["Dead code elimination<br/>Constant folding"]
     end
 
@@ -249,8 +239,8 @@ flowchart LR
         DiskCache["Disk Cache<br/>(content-hashed)"]
     end
 
-    SG_IR -->|"generate_hlsl()"| HLSL
-    SG_IR -->|"generate_fragments()"| GenFrag
+    SG_IR -->|"GenerateHlsl()"| HLSL
+    SG_IR -->|"GenerateFragments()"| GenFrag
     GenFrag --> FragHLSL
     HLSL --> DXC_Mono
     FragHLSL --> DXC_Lib
@@ -273,111 +263,102 @@ flowchart LR
 namespace harmonius::shader {
 
 enum class ShaderStage : uint8_t {
-    task,               // task/amplification shader
-    mesh,               // mesh shader
-    pixel,              // pixel/fragment shader
-    compute,            // compute shader
-    ray_generation,     // DXR ray generation
-    closest_hit,        // DXR closest hit
-    any_hit,            // DXR any hit
-    miss,               // DXR miss
-    intersection,       // DXR intersection
+  kTask,           // task/amplification shader
+  kMesh,           // mesh shader
+  kPixel,          // pixel/fragment shader
+  kCompute,        // compute shader
+  kRayGeneration,  // DXR ray generation
+  kClosestHit,     // DXR closest hit
+  kAnyHit,         // DXR any hit
+  kMiss,           // DXR miss
+  kIntersection,   // DXR intersection
 };
 
 struct ShaderModuleDesc {
-    std::string_view   source_path;
-    ShaderStage        stage;
-    std::string_view   entry_point = "main";
-    PermutationKey     permutation;         // compile-time defines
-    uint64_t           content_hash;        // for cache lookup
+  std::string_view source_path;
+  ShaderStage stage;
+  std::string_view entry_point = "main";
+  PermutationKey permutation;  // compile-time defines
+  uint64_t content_hash;       // for cache lookup
 };
 
 // Compiled shader blob — backend-specific bytecode
 struct ShaderModule {
-    std::vector<uint8_t> bytecode;
-    ShaderStage          stage;
-    BindingReflection    reflection;
-    uint64_t             content_hash;
+  std::vector<uint8_t> bytecode;
+  ShaderStage stage;
+  BindingReflection reflection;
+  uint64_t content_hash;
 };
 
 // A compiled shader function within a library — not a full entry point
 struct ShaderFunction {
-    std::string_view     name;         // e.g., "evaluate_sss", "lighting_deferred"
-    ShaderFunctionType   type;         // surface, lighting, postprocess, utility
-    std::vector<uint8_t> bytecode;     // compiled but unlinked function bytecode
-    FunctionSignature    signature;    // typed input/output slots
-    uint64_t             content_hash;
+  std::string_view name;          // e.g., "evaluate_sss", "lighting_deferred"
+  ShaderFunctionType type;        // surface, lighting, postprocess, utility
+  std::vector<uint8_t> bytecode;  // compiled but unlinked function bytecode
+  FunctionSignature signature;    // typed input/output slots
+  uint64_t content_hash;
 };
 
 enum class ShaderFunctionType : uint8_t {
-    surface_evaluation,    // evaluates material surface properties
-    lighting_model,        // computes lighting contribution
-    bsdf_layer,            // modifies surface or radiance (clearcoat, SSS, sheen)
-    post_process_effect,   // screen-space post-processing
-    utility,               // shared helper (BRDF, noise, sampling)
+  kSurfaceEvaluation,  // evaluates material surface properties
+  kLightingModel,      // computes lighting contribution
+  kBsdfLayer,          // modifies surface or radiance (clearcoat, SSS, sheen)
+  kPostProcessEffect,  // screen-space post-processing
+  kUtility,            // shared helper (BRDF, noise, sampling)
 };
 
 struct FunctionSignature {
-    std::vector<TypedSlot> inputs;
-    std::vector<TypedSlot> outputs;
-    std::vector<TypedSlot> resources;  // bindless resource references
+  std::vector<TypedSlot> inputs;
+  std::vector<TypedSlot> outputs;
+  std::vector<TypedSlot> resources;  // bindless resource references
 };
 
 // Describes a shader function to compile as a library export
 struct ShaderFunctionDesc {
-    std::string_view   source_path;
-    std::string_view   function_name;  // exported function name
-    ShaderFunctionType type;
-    PermutationKey     permutation;
-    uint64_t           content_hash;
+  std::string_view source_path;
+  std::string_view function_name;  // exported function name
+  ShaderFunctionType type;
+  PermutationKey permutation;
+  uint64_t content_hash;
 };
 
 class ShaderCompiler {
-public:
-    explicit ShaderCompiler(gpu::Backend target_backend);
+ public:
+  explicit ShaderCompiler(gpu::Backend target_backend);
 
-    // Compile a single shader module (full entry point)
-    [[nodiscard]]
-    std::expected<ShaderModule, ShaderDiagnostic> compile(
-        const ShaderModuleDesc& desc
-    );
+  // Compile a single shader module (full entry point)
+  [[nodiscard]]
+  std::expected<ShaderModule, ShaderDiagnostic> Compile(const ShaderModuleDesc& desc);
 
-    // Batch compile multiple modules (parallel)
-    [[nodiscard]]
-    std::vector<std::expected<ShaderModule, ShaderDiagnostic>> compile_batch(
-        std::span<const ShaderModuleDesc> descs
-    );
+  // Batch compile multiple modules (parallel)
+  [[nodiscard]]
+  std::vector<std::expected<ShaderModule, ShaderDiagnostic>> CompileBatch(std::span<const ShaderModuleDesc> descs);
 
-    // Compile a shader function for a library target (not a full entry point).
-    // D3D12: DXC -T lib_6_9, Vulkan: SPIR-V module, Metal: Metal IR library
-    [[nodiscard]]
-    std::expected<ShaderFunction, ShaderDiagnostic> compile_function(
-        const ShaderFunctionDesc& desc
-    );
+  // Compile a shader function for a library target (not a full entry point).
+  // D3D12: DXC -T lib_6_9, Vulkan: SPIR-V module, Metal: Metal IR library
+  [[nodiscard]]
+  std::expected<ShaderFunction, ShaderDiagnostic> CompileFunction(const ShaderFunctionDesc& desc);
 
-    // Batch compile multiple functions (parallel)
-    [[nodiscard]]
-    std::vector<std::expected<ShaderFunction, ShaderDiagnostic>> compile_functions_batch(
-        std::span<const ShaderFunctionDesc> descs
-    );
+  // Batch compile multiple functions (parallel)
+  [[nodiscard]]
+  std::vector<std::expected<ShaderFunction, ShaderDiagnostic>> CompileFunctionsBatch(
+      std::span<const ShaderFunctionDesc> descs);
 
-    // Link multiple compiled functions into a single shader module.
-    // Performs dead code elimination and constant folding at link time.
-    [[nodiscard]]
-    std::expected<ShaderModule, ShaderDiagnostic> link(
-        std::span<const ShaderFunction> functions,
-        const StitchingGraph& graph,
-        const SpecializationData& specialization
-    );
+  // Link multiple compiled functions into a single shader module.
+  // Performs dead code elimination and constant folding at link time.
+  [[nodiscard]]
+  std::expected<ShaderModule, ShaderDiagnostic> Link(std::span<const ShaderFunction> functions,
+                                                     const StitchingGraph& graph,
+                                                     const SpecializationData& specialization);
 
-    // Set include search paths
-    void add_include_path(std::string_view path);
+  // Set include search paths
+  void AddIncludePath(std::string_view path);
 
-    // Set global defines applied to all compilations
-    void set_global_define(std::string_view name, std::string_view value);
+  // Set global defines applied to all compilations
+  void SetGlobalDefine(std::string_view name, std::string_view value);
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ---
@@ -395,54 +376,54 @@ namespace harmonius::shader {
 
 // Binding slot discovered via reflection
 struct BindingReflection {
-    std::string_view name;
-    uint32_t         register_index;    // register number (t0, u0, b0, s0)
-    uint32_t         register_space;
-    BindingType      type;              // srv, uav, cbv, sampler
-    uint32_t         array_size;        // 0 = unbounded (bindless)
+  std::string_view name;
+  uint32_t register_index;  // register number (t0, u0, b0, s0)
+  uint32_t register_space;
+  BindingType type;     // srv, uav, cbv, sampler
+  uint32_t array_size;  // 0 = unbounded (bindless)
 };
 
 enum class BindingType : uint8_t {
-    srv,        // Texture, StructuredBuffer, ByteAddressBuffer
-    uav,        // RWTexture, RWStructuredBuffer, RWByteAddressBuffer
-    cbv,        // ConstantBuffer
-    sampler,    // SamplerState
+  kSrv,      // Texture, StructuredBuffer, ByteAddressBuffer
+  kUav,      // RWTexture, RWStructuredBuffer, RWByteAddressBuffer
+  kCbv,      // ConstantBuffer
+  kSampler,  // SamplerState
 };
 
 // Thread group dimensions for compute / task / mesh shaders
 struct ThreadGroupSize {
-    uint32_t x = 1;
-    uint32_t y = 1;
-    uint32_t z = 1;
+  uint32_t x = 1;
+  uint32_t y = 1;
+  uint32_t z = 1;
 };
 
 // Mesh shader output limits
 struct MeshOutputLimits {
-    uint32_t max_vertices   = 0;
-    uint32_t max_primitives = 0;
+  uint32_t max_vertices = 0;
+  uint32_t max_primitives = 0;
 };
 
 // Complete reflection data for a compiled shader module
 struct ShaderReflection {
-    ShaderStage                    stage;
-    std::string_view               entry_point;
-    std::vector<BindingReflection> bindings;
-    ThreadGroupSize                thread_group_size;   // compute, task, mesh
-    MeshOutputLimits               mesh_output_limits;  // mesh shaders only
-    uint32_t                       input_signature_hash;
-    uint32_t                       output_signature_hash;
+  ShaderStage stage;
+  std::string_view entry_point;
+  std::vector<BindingReflection> bindings;
+  ThreadGroupSize thread_group_size;    // compute, task, mesh
+  MeshOutputLimits mesh_output_limits;  // mesh shaders only
+  uint32_t input_signature_hash;
+  uint32_t output_signature_hash;
 };
 
 // Reflection data for a shader function (fragment library export)
 struct FunctionReflection {
-    std::string_view               name;
-    FunctionSignature              signature;
-    std::vector<BindingReflection> bindings;
-    std::vector<uint32_t>          spec_constant_ids;   // specialization constants referenced
-    bool                           has_side_effects;    // writes to UAVs
+  std::string_view name;
+  FunctionSignature signature;
+  std::vector<BindingReflection> bindings;
+  std::vector<uint32_t> spec_constant_ids;  // specialization constants referenced
+  bool has_side_effects;                    // writes to UAVs
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ### ShaderReflector API
@@ -451,31 +432,25 @@ struct FunctionReflection {
 namespace harmonius::shader {
 
 class ShaderReflector {
-public:
-    // Reflect a compiled shader module (full entry point)
-    [[nodiscard]]
-    std::expected<ShaderReflection, ShaderDiagnostic> reflect(
-        const ShaderModule& module
-    );
+ public:
+  // Reflect a compiled shader module (full entry point)
+  [[nodiscard]]
+  std::expected<ShaderReflection, ShaderDiagnostic> Reflect(const ShaderModule& module);
 
-    // Reflect a compiled shader function (fragment library export)
-    [[nodiscard]]
-    std::expected<FunctionReflection, ShaderDiagnostic> reflect_function(
-        const ShaderFunction& function
-    );
+  // Reflect a compiled shader function (fragment library export)
+  [[nodiscard]]
+  std::expected<FunctionReflection, ShaderDiagnostic> ReflectFunction(const ShaderFunction& function);
 
-    // Validate that two function signatures are compatible for stitching.
-    // Checks that the output slots of `producer` are type-compatible with the
-    // input slots of `consumer` for all connected edges.
-    [[nodiscard]]
-    std::expected<void, std::vector<ShaderDiagnostic>> validate_stitching_edge(
-        const FunctionReflection& producer,
-        const FunctionReflection& consumer,
-        std::span<const StitchEdge> edges
-    );
+  // Validate that two function signatures are compatible for stitching.
+  // Checks that the output slots of `producer` are type-compatible with the
+  // input slots of `consumer` for all connected edges.
+  [[nodiscard]]
+  std::expected<void, std::vector<ShaderDiagnostic>> ValidateStitchingEdge(const FunctionReflection& producer,
+                                                                             const FunctionReflection& consumer,
+                                                                             std::span<const StitchEdge> edges);
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ### Backend Reflection Mechanisms
@@ -483,7 +458,7 @@ public:
 | Backend | Reflection API                                  | Library reflection                     |
 | ------- | ----------------------------------------------- | -------------------------------------- |
 | D3D12   | `ID3D12ShaderReflection` (from DXC)             | `ID3D12LibraryReflection`              |
-| Vulkan  | `spirv-reflect` or `SPIRV-Cross`                | Module-level reflection on exports     |
+| Vulkan  | `spirv-Reflect` or `SPIRV-Cross`                | Module-level reflection on exports     |
 | Metal   | `MTLRenderPipelineReflection`                   | `MTLLibrary` function enumeration      |
 
 Reflection data is extracted at compile time and cached alongside the compiled bytecode in the
@@ -511,13 +486,13 @@ namespace harmonius::shader {
 
 // A specific point in the permutation space
 struct PermutationKey {
-    std::vector<std::pair<std::string_view, std::string_view>> defines;
+  std::vector<std::pair<std::string_view, std::string_view>> defines;
 
-    [[nodiscard]] uint64_t hash() const;
-    [[nodiscard]] bool operator==(const PermutationKey&) const = default;
+  [[nodiscard]] uint64_t Hash() const;
+  [[nodiscard]] bool operator==(const PermutationKey&) const = default;
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ### Strategy 2: Specialization Constants
@@ -534,23 +509,23 @@ blocks without changing the shader's structural connectivity:
 namespace harmonius::shader {
 
 struct SpecializationMap {
-    struct Entry {
-        uint32_t         constant_id;
-        std::string_view axis_name;     // e.g., "shadow_quality"
-        uint32_t         default_value;
-    };
-    std::vector<Entry> entries;
+  struct Entry {
+    uint32_t constant_id;
+    std::string_view axis_name;  // e.g., "shadow_quality"
+    uint32_t default_value;
+  };
+  std::vector<Entry> entries;
 };
 
 struct SpecializationData {
-    std::vector<std::pair<uint32_t, uint32_t>> constants;  // id -> value
+  std::vector<std::pair<uint32_t, uint32_t>> constants;  // id -> value
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 Specialization constants absorb permutation axes that were previously compile-time defines. The
-`ShaderGraphCompiler::compute_specialization_map()` method analyzes the shader graph IR to
+`ShaderGraphCompiler::ComputeSpecializationMap()` method analyzes the shader graph IR to
 determine which axes can be safely converted — axes that only gate scalar operations or toggle
 additive code blocks are eligible.
 
@@ -588,7 +563,7 @@ The optimization passes are:
 ### Strategy 5: Fragment Selection
 
 The render graph's variant system (RG-1.4) drives fragment selection at runtime. When a variant
-slot selects a value (e.g., `lighting_model = "deferred"`), the corresponding fragment is
+slot selects a value (e.g., `kLightingModel = "deferred"`), the corresponding fragment is
 selected from the [Shader Fragment Library](#shader-fragment-library) and the stitching graph is
 resolved. The linked PSO is then requested from the pipeline cache.
 
@@ -603,7 +578,7 @@ preserving correctness:
 
 | Axis               | Strategy              | Typical values | Rationale                                  |
 | ------------------ | --------------------- | -------------- | ------------------------------------------ |
-| Alpha mode         | 1 (compile-time)      | 3              | Changes blend state and pipeline structure  |
+| Alpha mode         | 1 (Compile-time)      | 3              | Changes blend state and pipeline structure  |
 | Lighting model     | 3 (fragment linking)  | 2              | Interchangeable algorithm implementations   |
 | Shadow quality     | 2 (specialization)    | 3              | Scalar threshold / sample count difference  |
 | Shading model      | 3 (fragment linking)  | 8              | Interchangeable surface evaluation          |
@@ -620,7 +595,7 @@ resolved at link time (shading model, lighting model, BSDF layers) or PSO creati
 
 | Budget category          | Count  | Resolution stage |
 | ------------------------ | ------ | ---------------- |
-| Compile-time permutations | 3      | Offline cook     |
+| Compile-time permutations | 3      | Offline Cook     |
 | Fragment selections       | ~20    | Link time        |
 | Specialization variants   | ~9     | PSO creation     |
 
@@ -690,49 +665,47 @@ namespace harmonius::shader {
 
 // Fragment — a reusable unit of shader logic compiled as a library export
 struct ShaderFragment {
-    std::string_view      name;            // globally unique identifier
-    ShaderFunctionType    type;
-    FunctionSignature     signature;
-    std::vector<uint8_t>  ir_bytecode;     // platform-neutral IR
-    std::vector<uint32_t> spec_constant_ids; // specialization constants used by this fragment
-    uint64_t              content_hash;
+  std::string_view name;  // globally unique identifier
+  ShaderFunctionType type;
+  FunctionSignature signature;
+  std::vector<uint8_t> ir_bytecode;         // platform-neutral IR
+  std::vector<uint32_t> spec_constant_ids;  // specialization constants used by this fragment
+  uint64_t content_hash;
 };
 
 class ShaderFragmentLibrary {
-public:
-    // Register a fragment (from shader graph compilation or hand-authored HLSL)
-    void register_fragment(ShaderFragment fragment);
+ public:
+  // Register a fragment (from shader graph compilation or hand-authored HLSL)
+  void RegisterFragment(ShaderFragment fragment);
 
-    // Look up by name
-    [[nodiscard]]
-    const ShaderFragment* find(std::string_view name) const;
+  // Look up by name
+  [[nodiscard]]
+  const ShaderFragment* Find(std::string_view name) const;
 
-    // Look up all fragments matching a function type
-    [[nodiscard]]
-    std::vector<const ShaderFragment*> find_by_type(ShaderFunctionType type) const;
+  // Look up all fragments matching a function type
+  [[nodiscard]]
+  std::vector<const ShaderFragment*> FindByType(ShaderFunctionType type) const;
 
-    // Compile all registered fragments to backend-native bytecode
-    [[nodiscard]]
-    std::expected<void, std::vector<ShaderDiagnostic>> compile_all(
-        const ShaderCompiler& compiler
-    );
+  // Compile all registered fragments to backend-native bytecode
+  [[nodiscard]]
+  std::expected<void, std::vector<ShaderDiagnostic>> CompileAll(const ShaderCompiler& compiler);
 
-    // Get the compiled function for a specific fragment
-    [[nodiscard]]
-    const ShaderFunction* get_compiled(std::string_view name) const;
+  // Get the compiled function for a specific fragment
+  [[nodiscard]]
+  const ShaderFunction* GetCompiled(std::string_view name) const;
 
-    // Content hash of the entire library (for cache invalidation)
-    [[nodiscard]] uint64_t library_hash() const;
+  // Content hash of the entire library (for cache invalidation)
+  [[nodiscard]] uint64_t LibraryHash() const;
 
-    // Number of registered fragments
-    [[nodiscard]] uint32_t size() const;
+  // Number of registered fragments
+  [[nodiscard]] uint32_t Size() const;
 
-private:
-    std::unordered_map<std::string_view, ShaderFragment>  fragments_;
-    std::unordered_map<std::string_view, ShaderFunction>  compiled_;
+ private:
+  std::unordered_map<std::string_view, ShaderFragment> fragments_;
+  std::unordered_map<std::string_view, ShaderFunction> compiled_;
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ### Backend Mapping
@@ -776,8 +749,8 @@ flowchart TD
         QT["quality_tier = high"]
     end
 
-    spec -.->|"baked at link time"| Light
-    spec -.->|"baked at link time"| Surface
+    spec -.->|"baked at Link time"| Light
+    spec -.->|"baked at Link time"| Surface
 ```
 
 ### StitchingGraph API
@@ -787,54 +760,45 @@ namespace harmonius::shader {
 
 // A node in the stitching graph — references a fragment by name
 struct StitchNode {
-    uint32_t                  node_id;
-    std::string_view          fragment_name;  // key into ShaderFragmentLibrary
-    std::vector<StitchEdge>   input_edges;    // connections from other nodes
+  uint32_t node_id;
+  std::string_view fragment_name;       // key into ShaderFragmentLibrary
+  std::vector<StitchEdge> input_edges;  // connections from other nodes
 };
 
 // An edge connecting an output slot of one node to an input slot of another
 struct StitchEdge {
-    uint32_t         source_node;
-    std::string_view source_slot;
-    std::string_view dest_slot;
+  uint32_t source_node;
+  std::string_view source_slot;
+  std::string_view dest_slot;
 };
 
 // The complete stitching graph for a single pixel shader
 struct StitchingGraph {
-    std::vector<StitchNode>   nodes;
-    uint32_t                  output_node;      // node that produces the final color
-    SpecializationData        specialization;   // values for specialization constants
-    uint64_t                  content_hash;
+  std::vector<StitchNode> nodes;
+  uint32_t output_node;               // node that produces the final color
+  SpecializationData specialization;  // values for specialization constants
+  uint64_t content_hash;
 };
 
 // Produces a linked shader from a stitching graph
 class ShaderStitcher {
-public:
-    explicit ShaderStitcher(
-        const ShaderFragmentLibrary& library,
-        gpu::Backend target_backend
-    );
+ public:
+  explicit ShaderStitcher(const ShaderFragmentLibrary& library, gpu::Backend target_backend);
 
-    // Validate a stitching graph (type-check edges, detect cycles, verify fragments exist)
-    [[nodiscard]]
-    std::expected<void, std::vector<ShaderDiagnostic>> validate(
-        const StitchingGraph& graph
-    );
+  // Validate a stitching graph (type-check edges, detect cycles, verify fragments exist)
+  [[nodiscard]]
+  std::expected<void, std::vector<ShaderDiagnostic>> Validate(const StitchingGraph& graph);
 
-    // Link fragments into a single shader module with link-time optimization
-    [[nodiscard]]
-    std::expected<ShaderModule, std::vector<ShaderDiagnostic>> link(
-        const StitchingGraph& graph
-    );
+  // Link fragments into a single shader module with link-time optimization
+  [[nodiscard]]
+  std::expected<ShaderModule, std::vector<ShaderDiagnostic>> Link(const StitchingGraph& graph);
 
-    // Enumerate all fragments referenced by a stitching graph
-    [[nodiscard]]
-    std::vector<std::string_view> referenced_fragments(
-        const StitchingGraph& graph
-    ) const;
+  // Enumerate all fragments referenced by a stitching graph
+  [[nodiscard]]
+  std::vector<std::string_view> ReferencedFragments(const StitchingGraph& graph) const;
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ### Backend Linking Mechanisms
@@ -849,7 +813,7 @@ ComPtr<ID3D12FunctionLinkingGraph> flg;
 D3DCreateFunctionLinkingGraph(0, &flg);
 
 // Define the input node (receives interpolated data from the mesh shader)
-D3D12_PARAMETER_DESC input_params[] = { /* SV_Position, UV, TangentFrame, ... */ };
+D3D12_PARAMETER_DESC input_params[] = {/* SV_Position, UV, TangentFrame, ... */};
 ID3D12LinkingNode* input_node;
 flg->SetInputSignature(input_params, _countof(input_params), &input_node);
 
@@ -864,9 +828,9 @@ ID3D12LinkingNode* lighting_node;
 flg->CallFunction("", lighting_library, "lighting_deferred", &lighting_node);
 
 // Wire edges: input -> surface -> coat -> lighting -> output
-flg->PassValue(input_node, 0, surface_node, 0);   // material params
-flg->PassValue(surface_node, 0, coat_node, 0);     // SurfaceData
-flg->PassValue(coat_node, 0, lighting_node, 0);    // modified SurfaceData
+flg->PassValue(input_node, 0, surface_node, 0);  // material params
+flg->PassValue(surface_node, 0, coat_node, 0);   // SurfaceData
+flg->PassValue(coat_node, 0, lighting_node, 0);  // modified SurfaceData
 
 // Define output node
 ID3D12LinkingNode* output_node;
@@ -888,22 +852,21 @@ VkGraphicsPipelineLibraryCreateInfoEXT lib_info = {
 };
 
 VkGraphicsPipelineCreateInfo fragment_lib_ci = {
-    .sType  = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-    .pNext  = &lib_info,
-    .flags  = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR
-            | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT,
+    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+    .pNext = &lib_info,
+    .flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT,
     .stageCount = 1,
-    .pStages    = &fragment_stage,  // linked fragment shader
-    .layout     = global_layout_,
+    .pStages = &fragment_stage,  // linked fragment shader
+    .layout = global_layout_,
 };
 vkCreateGraphicsPipelines(device_, cache, 1, &fragment_lib_ci, nullptr, &frag_lib);
 
 // Link pipeline libraries with LTO into a final pipeline
-VkPipeline libraries[] = { pre_raster_lib, frag_lib, frag_output_lib };
+VkPipeline libraries[] = {pre_raster_lib, frag_lib, frag_output_lib};
 VkPipelineLibraryCreateInfoKHR link_info = {
-    .sType        = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR,
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR,
     .libraryCount = 3,
-    .pLibraries   = libraries,
+    .pLibraries = libraries,
 };
 
 VkGraphicsPipelineCreateInfo linked_ci = {
@@ -1039,22 +1002,22 @@ is resolved and linked at PSO creation time:
 namespace harmonius::shader {
 
 struct LinkedPipelineStateDesc {
-    ShaderModule       task_shader;      // compiled monolithically
-    ShaderModule       mesh_shader;      // compiled monolithically
-    StitchingGraph     pixel_graph;      // resolved from fragments at link time
-    SpecializationData specialization;   // baked into the linked pixel shader
+  ShaderModule task_shader;           // compiled monolithically
+  ShaderModule mesh_shader;           // compiled monolithically
+  StitchingGraph pixel_graph;         // resolved from fragments at link time
+  SpecializationData specialization;  // baked into the linked pixel shader
 
-    // Fixed-function state (identical to PipelineStateDesc)
-    RenderTargetFormats rt_formats;
-    DepthStencilFormat  ds_format;
-    SampleCount         samples;
-    BlendState          blend;
-    RasterizerState     rasterizer;
-    DepthStencilState   depth_stencil;
-    uint64_t            hash;
+  // Fixed-function state (identical to PipelineStateDesc)
+  RenderTargetFormats rt_formats;
+  DepthStencilFormat ds_format;
+  SampleCount samples;
+  BlendState blend;
+  RasterizerState rasterizer;
+  DepthStencilState depth_stencil;
+  uint64_t hash;
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ### Root Signature / Pipeline Layout
@@ -1071,15 +1034,15 @@ namespace harmonius::shader {
 // Slot 3: Bindless sampler heap (unbounded, s0, space0)
 // Slot 4: Push constants (32 bytes, per-draw data)
 struct GlobalRootSignature {
-    static constexpr uint32_t frame_constants_slot = 0;
-    static constexpr uint32_t srv_heap_slot        = 1;
-    static constexpr uint32_t uav_heap_slot        = 2;
-    static constexpr uint32_t sampler_heap_slot    = 3;
-    static constexpr uint32_t push_constants_slot  = 4;
-    static constexpr uint32_t push_constants_size  = 32;
+  static constexpr uint32_t frame_constants_slot = 0;
+  static constexpr uint32_t srv_heap_slot = 1;
+  static constexpr uint32_t uav_heap_slot = 2;
+  static constexpr uint32_t sampler_heap_slot = 3;
+  static constexpr uint32_t push_constants_slot = 4;
+  static constexpr uint32_t push_constants_size = 32;
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ---
@@ -1129,61 +1092,60 @@ flowchart TD
 namespace harmonius::shader {
 
 class PipelineCache {
-public:
-    explicit PipelineCache(gpu::Device& device,
-                           std::filesystem::path cache_dir);
+ public:
+  explicit PipelineCache(gpu::Device& device, std::filesystem::path cache_dir);
 
-    // Look up or compile a monolithic PSO — returns immediately if cached
-    [[nodiscard]]
-    PipelineState get_or_create(const PipelineStateDesc& desc);
+  // Look up or compile a monolithic PSO — returns immediately if cached
+  [[nodiscard]]
+  PipelineState GetOrCreate(const PipelineStateDesc& desc);
 
-    [[nodiscard]]
-    PipelineState get_or_create(const ComputePipelineDesc& desc);
+  [[nodiscard]]
+  PipelineState GetOrCreate(const ComputePipelineDesc& desc);
 
-    [[nodiscard]]
-    PipelineState get_or_create(const RTPipelineDesc& desc);
+  [[nodiscard]]
+  PipelineState GetOrCreate(const RTPipelineDesc& desc);
 
-    // Look up or link a stitched PSO — resolves the stitching graph, links fragments,
-    // applies specialization constants, and performs link-time optimization
-    [[nodiscard]]
-    PipelineState get_or_create(const LinkedPipelineStateDesc& desc);
+  // Look up or link a stitched PSO — resolves the stitching graph, links fragments,
+  // applies specialization constants, and performs link-time optimization
+  [[nodiscard]]
+  PipelineState GetOrCreate(const LinkedPipelineStateDesc& desc);
 
-    // Async variants — returns placeholder if not yet compiled/linked
-    [[nodiscard]]
-    PipelineState get_or_create_async(const PipelineStateDesc& desc);
+  // Async variants — returns placeholder if not yet compiled/linked
+  [[nodiscard]]
+  PipelineState GetOrCreateAsync(const PipelineStateDesc& desc);
 
-    [[nodiscard]]
-    PipelineState get_or_create_async(const LinkedPipelineStateDesc& desc);
+  [[nodiscard]]
+  PipelineState GetOrCreateAsync(const LinkedPipelineStateDesc& desc);
 
-    // Pre-warm cache during loading screen
-    void warmup(std::span<const PipelineStateDesc> descs);
-    void warmup(std::span<const LinkedPipelineStateDesc> descs);
-    void warmup(std::span<const ComputePipelineDesc> descs);
+  // Pre-warm cache during loading screen
+  void Warmup(std::span<const PipelineStateDesc> descs);
+  void Warmup(std::span<const LinkedPipelineStateDesc> descs);
+  void Warmup(std::span<const ComputePipelineDesc> descs);
 
-    // Serialize cache to disk for next session
-    void flush_to_disk();
+  // Serialize cache to disk for next session
+  void FlushToDisk();
 
-    // Evict least-recently-used entries
-    void evict(uint32_t target_count);
+  // Evict least-recently-used entries
+  void Evict(uint32_t target_count);
 
-    // Statistics
-    [[nodiscard]] uint32_t total_cached() const;
-    [[nodiscard]] uint32_t l1_hit_rate() const;
-    [[nodiscard]] uint32_t l2_hit_rate() const;
-    [[nodiscard]] uint32_t pending_compilations() const;
+  // Statistics
+  [[nodiscard]] uint32_t TotalCached() const;
+  [[nodiscard]] uint32_t L1HitRate() const;
+  [[nodiscard]] uint32_t L2HitRate() const;
+  [[nodiscard]] uint32_t PendingCompilations() const;
 
-private:
-    struct L1Entry {
-        PipelineState  pso;
-        uint64_t       last_used_frame;
-    };
-    std::unordered_map<uint64_t, L1Entry> l1_cache_;
-    gpu::Device&                          device_;
-    std::filesystem::path                 cache_dir_;
-    std::jthread                          compile_thread_;
+ private:
+  struct L1Entry {
+    PipelineState pso;
+    uint64_t last_used_frame;
+  };
+  std::unordered_map<uint64_t, L1Entry> l1_cache_;
+  gpu::Device& device_;
+  std::filesystem::path cache_dir_;
+  std::jthread compile_thread_;
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ### Disk Cache Format
@@ -1197,14 +1159,14 @@ PSOs include additional metadata for cache invalidation when any constituent fra
 | Version             | 4 bytes   | Cache format version                                              |
 | Backend             | 1 byte    | D3D12, Vulkan, or Metal                                           |
 | Flags               | 1 byte    | Bit 0: is linked PSO                                              |
-| Driver hash         | 8 bytes   | Hash of driver version (invalidates on update)                    |
-| Content hash        | 8 bytes   | Hash of shader bytecodes + pipeline state                         |
-| Blob size           | 4 bytes   | Size of platform-native PSO blob                                  |
+| Driver Hash         | 8 bytes   | Hash of driver version (invalidates on update)                    |
+| Content Hash        | 8 bytes   | Hash of shader bytecodes + pipeline state                         |
+| Blob Size           | 4 bytes   | Size of platform-native PSO blob                                  |
 | Blob                | variable  | `ID3D12PipelineState`, `VkPipelineCache`, Metal archive           |
-| Link graph hash     | 8 bytes   | Hash of the `StitchingGraph` (linked PSOs only)                   |
-| Specialization hash | 8 bytes   | Hash of `SpecializationData` (linked PSOs only)                   |
+| Link graph Hash     | 8 bytes   | Hash of the `StitchingGraph` (linked PSOs only)                   |
+| Specialization Hash | 8 bytes   | Hash of `SpecializationData` (linked PSOs only)                   |
 | Fragment count      | 2 bytes   | Number of fragments linked (linked PSOs only)                     |
-| Fragment hashes     | 8×N bytes | Content hash of each fragment (for fine-grained invalidation)     |
+| Fragment hashes     | 8×N bytes | Content Hash of each fragment (for fine-grained invalidation)     |
 
 ---
 
@@ -1247,22 +1209,21 @@ namespace harmonius::shader {
 // Vulkan: VK_KHR_pipeline_library for partial pipeline objects
 // Metal: MTLBinaryArchive for pre-compiled pipeline functions
 class PipelineLibrary {
-public:
-    explicit PipelineLibrary(gpu::Device& device,
-                             std::filesystem::path archive_path);
+ public:
+  explicit PipelineLibrary(gpu::Device& device, std::filesystem::path archive_path);
 
-    // Store a compiled PSO into the library
-    void store(std::string_view name, const PipelineState& pso);
+  // Store a compiled PSO into the library
+  void Store(std::string_view name, const PipelineState& pso);
 
-    // Load a previously stored PSO
-    [[nodiscard]]
-    std::optional<PipelineState> load(std::string_view name);
+  // Load a previously stored PSO
+  [[nodiscard]]
+  std::optional<PipelineState> Load(std::string_view name);
 
-    // Serialize library to disk
-    void serialize();
+  // Serialize library to disk
+  void Serialize();
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ---
@@ -1309,13 +1270,13 @@ GPU before pipeline creation, reducing disk IO and load times:
 namespace harmonius::shader {
 
 struct CompressedShaderBlob {
-    uint64_t             content_hash;
-    uint32_t             compressed_size;
-    uint32_t             uncompressed_size;
-    std::vector<uint8_t> data;  // zstd-compressed DXIL/SPIR-V/Metal IR
+  uint64_t content_hash;
+  uint32_t compressed_size;
+  uint32_t uncompressed_size;
+  std::vector<uint8_t> data;  // zstd-compressed DXIL/SPIR-V/Metal IR
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ### Hot Reloading (Development Only)
@@ -1327,21 +1288,19 @@ The affected PSOs are replaced at the next frame boundary without pipeline recon
 namespace harmonius::shader {
 
 class ShaderHotReloader {
-public:
-    explicit ShaderHotReloader(ShaderCompiler& compiler,
-                               PipelineCache& cache,
-                               ShaderFragmentLibrary& fragment_library);
+ public:
+  explicit ShaderHotReloader(ShaderCompiler& compiler, PipelineCache& cache, ShaderFragmentLibrary& fragment_library);
 
-    // Start watching shader directories
-    void start_watching(std::span<const std::filesystem::path> dirs);
+  // Start watching shader directories
+  void StartWatching(std::span<const std::filesystem::path> dirs);
 
-    // Poll for changed shaders and recompile.
-    // For fragment sources, recompiles the affected fragment and re-links all
-    // PSOs that reference it. Returns number of PSOs recompiled this frame.
-    uint32_t poll_and_recompile();
+  // Poll for changed shaders and recompile.
+  // For fragment sources, recompiles the affected fragment and re-links all
+  // PSOs that reference it. Returns number of PSOs recompiled this frame.
+  uint32_t PollAndRecompile();
 };
 
-} // namespace harmonius::shader
+}  // namespace harmonius::shader
 ```
 
 ---
@@ -1367,7 +1326,7 @@ sequenceDiagram
         Cache-->>Pass: PipelineState
     else Linked PSO (material passes)
         Pass->>Cache: get_or_create(linked_pso_desc)
-        Cache->>Stitcher: link(pixel_graph)
+        Cache->>Stitcher: Link(pixel_graph)
         Stitcher-->>Cache: ShaderModule (linked pixel shader)
         Cache-->>Pass: PipelineState
     end
@@ -1375,7 +1334,7 @@ sequenceDiagram
     Ctx-->>Pass: CommandBuffer
     Pass->>Cmd: set_pipeline_state(pso)
     Pass->>Cmd: set_push_constants(draw_data)
-    Pass->>Cmd: dispatch_mesh(groups_x, groups_y, 1)
+    Pass->>Cmd: DispatchMesh(groups_x, groups_y, 1)
 ```
 
 ### Resource Binding Flow
@@ -1386,7 +1345,7 @@ time. Shaders never see `ResourceHandle` — only `uint32_t` indices:
 ```mermaid
 flowchart LR
     RG["Render Graph<br/>ResourceHandle"]
-    Resolve["PassContext::resolve()"]
+    Resolve["PassContext::Resolve()"]
     GPU_H["gpu::ResourceHandle"]
     Heap["Bindless Descriptor Heap"]
     Index["uint32_t index"]
@@ -1403,7 +1362,7 @@ selection. Each variant slot maps to one of three resolution mechanisms:
 | Render Graph Variant Slot | Resolution strategy          | Resolved to                                     | Example values                            |
 | ------------------------- | ---------------------------- | ----------------------------------------------- | ----------------------------------------- |
 | `alpha_mode`              | Compile-time define          | `PermutationKey` define                          | `OPAQUE`, `MASKED`, `BLENDED`             |
-| `lighting_model`          | Fragment selection           | `StitchNode` for lighting fragment               | `lighting_deferred`, `lighting_forward_plus` |
+| `kLightingModel`          | Fragment selection           | `StitchNode` for lighting fragment               | `lighting_deferred`, `lighting_forward_plus` |
 | `shading_model`           | Fragment selection           | `StitchNode` for surface evaluation fragment     | `pbr_standard`, `hair_marschner`, etc.    |
 | `aa_mode`                 | Fragment selection           | `StitchNode` for post-process fragment           | `taa_resolve`, `fxaa_pass`                |
 | `shadow_quality`          | Specialization constant      | `SpecializationData` entry (constant_id 0)       | `0`=PCF, `1`=PCSS, `2`=RT                |

@@ -1,107 +1,128 @@
 export module harmonius.rg.diag;
 
-import std;
 import harmonius.gpu;
 import harmonius.rg;
 
-export namespace harmonius::rg::diag
-{
+import std;
 
-  // ---------------------------------------------------------------------------
-  // Timestamp diagnostics
-  // ---------------------------------------------------------------------------
+export namespace harmonius::rg::diag {
 
-  struct TimestampEntry
-  {
-    std::string_view pass_name;
-    std::uint64_t begin_ns;
-    std::uint64_t end_ns;
+// ---------------------------------------------------------------------------
+// Timestamp diagnostics
+// ---------------------------------------------------------------------------
 
-    [[nodiscard]] auto duration_ms() const -> float
-    {
-      return static_cast<float>(end_ns - begin_ns) / 1'000'000.0f;
-    }
-  };
+/// A single GPU timestamp measurement for a render pass.
+/// @threadsafety Instances are not thread-safe.
+struct TimestampEntry {
+  std::string_view pass_name;
+  std::uint64_t begin_ns;
+  std::uint64_t end_ns;
 
-  struct TimestampResults
-  {
-    std::vector<TimestampEntry> entries;
+  /// Returns the duration of the pass in milliseconds.
+  [[nodiscard]] auto DurationMs() const -> float { return static_cast<float>(end_ns - begin_ns) / 1'000'000.0f; }
+};
 
-    [[nodiscard]] auto find(std::string_view name) const -> std::optional<TimestampEntry>;
-  };
+/// Collection of GPU timestamp results for all measured passes.
+/// @threadsafety Instances are not thread-safe.
+struct TimestampResults {
+  std::vector<TimestampEntry> entries;
 
-  // ---------------------------------------------------------------------------
-  // Pipeline statistics
-  // ---------------------------------------------------------------------------
+  /// Finds a timestamp entry by pass name.
+  [[nodiscard]] auto Find(std::string_view name) const -> std::optional<TimestampEntry>;
+};
 
-  struct PipelineStatisticsEntry
-  {
-    std::string_view pass_name;
-    std::uint64_t primitives_count;
-    std::uint64_t invocations_count;
-  };
+// ---------------------------------------------------------------------------
+// Pipeline statistics
+// ---------------------------------------------------------------------------
 
-  struct PipelineStatistics
-  {
-    std::vector<PipelineStatisticsEntry> entries;
-  };
+/// GPU pipeline statistics for a single render pass.
+/// @threadsafety Instances are not thread-safe.
+struct PipelineStatisticsEntry {
+  std::string_view pass_name;
+  std::uint64_t primitives_count;
+  std::uint64_t invocations_count;
+};
 
-  // ---------------------------------------------------------------------------
-  // Transfer statistics
-  // ---------------------------------------------------------------------------
+/// Collection of pipeline statistics for all measured passes.
+/// @threadsafety Instances are not thread-safe.
+struct PipelineStatistics {
+  std::vector<PipelineStatisticsEntry> entries;
+};
 
-  struct TransferEntry
-  {
-    std::string_view pass_name;
-    std::uint64_t bytes_transferred;
-    float latency_ms;
-  };
+// ---------------------------------------------------------------------------
+// Transfer statistics
+// ---------------------------------------------------------------------------
 
-  struct TransferStatistics
-  {
-    std::vector<TransferEntry> entries;
-    std::uint64_t total_bytes_per_frame;
-  };
+/// Transfer statistics for a single pass.
+/// @threadsafety Instances are not thread-safe.
+struct TransferEntry {
+  std::string_view pass_name;
+  std::uint64_t bytes_transferred;
+  float latency_ms;
+};
 
-  // ---------------------------------------------------------------------------
-  // Memory diagnostics
-  // ---------------------------------------------------------------------------
+/// Aggregated transfer statistics for a frame.
+/// @threadsafety Instances are not thread-safe.
+struct TransferStatistics {
+  std::vector<TransferEntry> entries;
+  std::uint64_t total_bytes_per_frame;
+};
 
-  struct MemoryDiagnostics
-  {
-    std::uint64_t peak_aliased_bytes;
-    std::uint64_t total_allocated_bytes;
-    float aliasing_efficiency;
-    std::uint32_t active_pool_count;
-    std::uint64_t total_pool_capacity;
-  };
+// ---------------------------------------------------------------------------
+// Memory diagnostics
+// ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // Readback
-  // ---------------------------------------------------------------------------
+/// Memory usage diagnostics including aliasing efficiency and pool statistics.
+/// @threadsafety Instances are not thread-safe.
+struct MemoryDiagnostics {
+  std::uint64_t peak_aliased_bytes;
+  std::uint64_t total_allocated_bytes;
+  float aliasing_efficiency;
+  std::uint32_t active_pool_count;
+  std::uint64_t total_pool_capacity;
+};
 
-  struct ReadbackRequest
-  {
-    ResourceHandle resource;
-    std::uint32_t mip = 0;
-    std::uint32_t layer = 0;
-    std::function<void(std::span<const std::uint8_t>)> callback;
-  };
+// ---------------------------------------------------------------------------
+// Readback
+// ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // Diagnostics collector
-  // ---------------------------------------------------------------------------
+/// Describes a request to read back GPU resource data to the CPU.
+/// @threadsafety Instances are not thread-safe.
+struct ReadbackRequest {
+  ResourceHandle resource;
+  std::uint32_t mip = 0;
+  std::uint32_t layer = 0;
+  std::move_only_function<void(std::span<const std::uint8_t>)> callback;
+};
 
-  class DiagnosticsCollector
-  {
-  public:
-    [[nodiscard]] auto read_timestamps() const -> TimestampResults;
-    [[nodiscard]] auto read_statistics() const -> PipelineStatistics;
-    [[nodiscard]] auto read_transfer_stats() const -> TransferStatistics;
-    [[nodiscard]] auto read_memory_stats() const -> MemoryDiagnostics;
-    [[nodiscard]] auto queue_depth(QueueAffinity queue) const -> std::uint32_t;
-    auto request_readback(ReadbackRequest req) -> void;
-    auto read_readback() -> void;
-  };
+// ---------------------------------------------------------------------------
+// Diagnostics collector
+// ---------------------------------------------------------------------------
 
-} // namespace harmonius::rg::diag
+/// Collects GPU performance diagnostics, statistics, and readback data.
+/// @threadsafety Instances are not thread-safe.
+class DiagnosticsCollector {
+ public:
+  /// Reads GPU timestamp results for the most recently completed frame.
+  [[nodiscard]] auto ReadTimestamps() const -> TimestampResults;
+
+  /// Reads pipeline statistics for the most recently completed frame.
+  [[nodiscard]] auto ReadStatistics() const -> PipelineStatistics;
+
+  /// Reads transfer statistics for the most recently completed frame.
+  [[nodiscard]] auto ReadTransferStats() const -> TransferStatistics;
+
+  /// Reads memory diagnostics for the current frame.
+  [[nodiscard]] auto ReadMemoryStats() const -> MemoryDiagnostics;
+
+  /// Returns the current queue depth for the specified queue.
+  [[nodiscard]] auto QueueDepth(QueueAffinity queue) const -> std::uint32_t;
+
+  /// Enqueues a readback request for a GPU resource.
+  auto RequestReadback(ReadbackRequest req) -> void;
+
+  /// Processes completed readback requests, invoking their callbacks.
+  auto ReadReadback() -> void;
+};
+
+}  // namespace harmonius::rg::diag

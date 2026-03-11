@@ -132,12 +132,12 @@ classDiagram
         +uint64_t content_hash
     }
     class ShaderGraphCompiler {
-        +validate(ShaderGraph) expected~void, vector~ShaderDiagnostic~~
-        +compile(ShaderGraph) expected~ShaderGraphIR, vector~ShaderDiagnostic~~
-        +generate_hlsl(ShaderGraphIR, PermutationKey) string
-        +register_node_type(string_view, NodeDescriptor, IRLoweringFn) void
-        +generate_fragments(ShaderGraphIR) expected~vector~ShaderFragment~~
-        +compute_specialization_map(ShaderGraphIR) SpecializationMap
+        +Validate(ShaderGraph) expected~void, vector~ShaderDiagnostic~~
+        +Compile(ShaderGraph) expected~ShaderGraphIR, vector~ShaderDiagnostic~~
+        +GenerateHlsl(ShaderGraphIR, PermutationKey) string
+        +RegisterNodeType(string_view, NodeDescriptor, IRLoweringFn) void
+        +GenerateFragments(ShaderGraphIR) expected~vector~ShaderFragment~~
+        +ComputeSpecializationMap(ShaderGraphIR) SpecializationMap
     }
 
     ShaderNode *-- TypedSlot
@@ -193,13 +193,13 @@ classDiagram
     }
     class ShaderCompiler {
         +ShaderCompiler(gpu_Backend target_backend)
-        +compile(ShaderModuleDesc) expected~ShaderModule, ShaderDiagnostic~
-        +compile_batch(span~ShaderModuleDesc~) vector~expected~
-        +compile_function(ShaderFunctionDesc) expected~ShaderFunction, ShaderDiagnostic~
-        +compile_functions_batch(span~ShaderFunctionDesc~) vector~expected~
-        +link(span~ShaderFunction~, StitchingGraph, SpecializationData) expected~ShaderModule~
-        +add_include_path(string_view) void
-        +set_global_define(string_view, string_view) void
+        +Compile(ShaderModuleDesc) expected~ShaderModule, ShaderDiagnostic~
+        +CompileBatch(span~ShaderModuleDesc~) vector~expected~
+        +CompileFunction(ShaderFunctionDesc) expected~ShaderFunction, ShaderDiagnostic~
+        +CompileFunctionsBatch(span~ShaderFunctionDesc~) vector~expected~
+        +Link(span~ShaderFunction~, StitchingGraph, SpecializationData) expected~ShaderModule~
+        +AddIncludePath(string_view) void
+        +SetGlobalDefine(string_view, string_view) void
     }
 
     ShaderModuleDesc --> ShaderStage
@@ -242,9 +242,9 @@ classDiagram
         +bool has_side_effects
     }
     class ShaderReflector {
-        +reflect(ShaderModule) expected~ShaderReflection, ShaderDiagnostic~
-        +reflect_function(ShaderFunction) expected~FunctionReflection, ShaderDiagnostic~
-        +validate_stitching_edge(FunctionReflection, FunctionReflection, span~StitchEdge~) expected~void~
+        +Reflect(ShaderModule) expected~ShaderReflection, ShaderDiagnostic~
+        +ReflectFunction(ShaderFunction) expected~FunctionReflection, ShaderDiagnostic~
+        +ValidateStitchingEdge(FunctionReflection, FunctionReflection, span~StitchEdge~) expected~void~
     }
 
     ShaderReflection *-- BindingReflection
@@ -269,7 +269,7 @@ classDiagram
     class PermutationKey {
         <<struct>>
         +vector~pair~ defines
-        +hash() uint64_t
+        +Hash() uint64_t
         +operator==(PermutationKey) bool
     }
     class SpecializationMap {
@@ -310,13 +310,13 @@ classDiagram
         +uint64_t content_hash
     }
     class ShaderFragmentLibrary {
-        +register_fragment(ShaderFragment) void
-        +find(string_view) const ShaderFragment ptr
-        +find_by_type(ShaderFunctionType) vector~const ShaderFragment ptr~
-        +compile_all(ShaderCompiler) expected~void, vector~ShaderDiagnostic~~
-        +get_compiled(string_view) const ShaderFunction ptr
-        +library_hash() uint64_t
-        +size() uint32_t
+        +RegisterFragment(ShaderFragment) void
+        +Find(string_view) const ShaderFragment ptr
+        +FindByType(ShaderFunctionType) vector~const ShaderFragment ptr~
+        +CompileAll(ShaderCompiler) expected~void, vector~ShaderDiagnostic~~
+        +GetCompiled(string_view) const ShaderFunction ptr
+        +LibraryHash() uint64_t
+        +Size() uint32_t
         -fragments_ unordered_map~string_view, ShaderFragment~
         -compiled_ unordered_map~string_view, ShaderFunction~
     }
@@ -355,9 +355,9 @@ classDiagram
     }
     class ShaderStitcher {
         +ShaderStitcher(ShaderFragmentLibrary, gpu_Backend)
-        +validate(StitchingGraph) expected~void, vector~ShaderDiagnostic~~
-        +link(StitchingGraph) expected~ShaderModule, vector~ShaderDiagnostic~~
-        +referenced_fragments(StitchingGraph) vector~string_view~
+        +Validate(StitchingGraph) expected~void, vector~ShaderDiagnostic~~
+        +Link(StitchingGraph) expected~ShaderModule, vector~ShaderDiagnostic~~
+        +ReferencedFragments(StitchingGraph) vector~string_view~
     }
 
     StitchingGraph *-- StitchNode
@@ -461,21 +461,21 @@ serialized PSO blobs, and L3 async background compilation with placeholder fallb
 classDiagram
     class PipelineCache {
         +PipelineCache(Device, path cache_dir)
-        +get_or_create(PipelineStateDesc) PipelineState
-        +get_or_create(ComputePipelineDesc) PipelineState
-        +get_or_create(RTPipelineDesc) PipelineState
-        +get_or_create(LinkedPipelineStateDesc) PipelineState
-        +get_or_create_async(PipelineStateDesc) PipelineState
-        +get_or_create_async(LinkedPipelineStateDesc) PipelineState
+        +GetOrCreate(PipelineStateDesc) PipelineState
+        +GetOrCreate(ComputePipelineDesc) PipelineState
+        +GetOrCreate(RTPipelineDesc) PipelineState
+        +GetOrCreate(LinkedPipelineStateDesc) PipelineState
+        +GetOrCreateAsync(PipelineStateDesc) PipelineState
+        +GetOrCreateAsync(LinkedPipelineStateDesc) PipelineState
         +warmup(span~PipelineStateDesc~) void
         +warmup(span~LinkedPipelineStateDesc~) void
         +warmup(span~ComputePipelineDesc~) void
-        +flush_to_disk() void
+        +FlushToDisk() void
         +evict(uint32_t target_count) void
-        +total_cached() uint32_t
-        +l1_hit_rate() uint32_t
-        +l2_hit_rate() uint32_t
-        +pending_compilations() uint32_t
+        +TotalCached() uint32_t
+        +L1HitRate() uint32_t
+        +L2HitRate() uint32_t
+        +PendingCompilations() uint32_t
         -l1_cache_ unordered_map~uint64_t, L1Entry~
         -device_ Device ref
         -cache_dir_ path
@@ -518,8 +518,8 @@ classDiagram
     }
     class ShaderHotReloader {
         +ShaderHotReloader(ShaderCompiler, PipelineCache, ShaderFragmentLibrary)
-        +start_watching(span~path~ dirs) void
-        +poll_and_recompile() uint32_t
+        +StartWatching(span~path~ dirs) void
+        +PollAndRecompile() uint32_t
     }
 
     ShaderHotReloader --> ShaderCompiler : recompiles with
@@ -604,13 +604,13 @@ classDiagram
     ShaderGraphCompiler --> ShaderFragment : generates
     ShaderGraphCompiler --> SpecializationMap : computes map
     ShaderGraphIR --> PermutationKey : parameterized by
-    ShaderCompiler --> ShaderModule : "compile()"
-    ShaderCompiler --> ShaderFunction : "compile_function()"
-    ShaderCompiler --> ShaderModule : "link() produces"
-    ShaderReflector --> ShaderReflection : "reflect() extracts"
-    ShaderReflector --> FunctionReflection : "reflect_function() extracts"
+    ShaderCompiler --> ShaderModule : "Compile()"
+    ShaderCompiler --> ShaderFunction : "CompileFunction()"
+    ShaderCompiler --> ShaderModule : "Link() produces"
+    ShaderReflector --> ShaderReflection : "Reflect() extracts"
+    ShaderReflector --> FunctionReflection : "ReflectFunction() extracts"
     ShaderFragmentLibrary --> ShaderFragment : stores
-    ShaderFragmentLibrary --> ShaderCompiler : "compile_all() delegates to"
+    ShaderFragmentLibrary --> ShaderCompiler : "CompileAll() delegates to"
     ShaderStitcher --> ShaderFragmentLibrary : reads fragments
     ShaderStitcher --> StitchingGraph : consumes
     ShaderStitcher --> ShaderModule : produces linked
@@ -635,15 +635,15 @@ layers.
 | Shader Pipeline Type | GPU Backend Type | Translation Point |
 |---|---|---|
 | `shader::ShaderModule` | `gpu::PipelineShaderStageCreateInfo` | PSO creation in `PipelineCache` |
-| `shader::PipelineStateDesc` | `gpu::MeshRenderPipelineDesc` | `PipelineCache::get_or_create()` |
-| `shader::LinkedPipelineStateDesc` | `gpu::MeshRenderPipelineDesc` | `PipelineCache::get_or_create()` after linking |
-| `shader::ComputePipelineDesc` | `gpu::ComputePipelineDesc` | `PipelineCache::get_or_create()` |
-| `shader::RTPipelineDesc` | `gpu::RayTracingPipelineDesc` | `PipelineCache::get_or_create()` |
+| `shader::PipelineStateDesc` | `gpu::MeshRenderPipelineDesc` | `PipelineCache::GetOrCreate()` |
+| `shader::LinkedPipelineStateDesc` | `gpu::MeshRenderPipelineDesc` | `PipelineCache::GetOrCreate()` after linking |
+| `shader::ComputePipelineDesc` | `gpu::ComputePipelineDesc` | `PipelineCache::GetOrCreate()` |
+| `shader::RTPipelineDesc` | `gpu::RayTracingPipelineDesc` | `PipelineCache::GetOrCreate()` |
 | `shader::PipelineState` | `gpu::PipelineHandle` | Handle wrapping after PSO creation |
 | `shader::GlobalRootSignature` | `gpu::RootSignature` / `VkPipelineLayout` | Created once at device initialization |
 | `shader::BindingReflection` | `gpu::DescriptorSetLayoutBinding` | Pipeline layout validation |
 | `shader::SpecializationData` | `VkSpecializationInfo` / `MTLFunctionConstantValues` | PSO creation |
-| `shader::CompressedShaderBlob` | `gpu::Buffer` (staging) | GPU decompression compute pass |
+| `shader::CompressedShaderBlob` | `gpu::Buffer` (staging) | GPU decompression Compute pass |
 
 ### Shader Pipeline to Render Graph Type Mapping
 
@@ -651,9 +651,9 @@ How shader pipeline concepts integrate with the render graph's variant and pass 
 
 | Render Graph Type | Shader Pipeline Type | Integration Point |
 |---|---|---|
-| `rg::builder::PassDescriptor` (execute) | `shader::PipelineState` via `PassContext` | PSO resolved at encoding time |
+| `rg::builder::PassDescriptor` (Execute) | `shader::PipelineState` via `PassContext` | PSO resolved at encoding time |
 | `rg::VariantSlotHandle` (alpha_mode) | `shader::PermutationKey` | Compile-time define selection |
-| `rg::VariantSlotHandle` (shading_model) | `shader::StitchNode` in `StitchingGraph` | Fragment selection at link time |
+| `rg::VariantSlotHandle` (shading_model) | `shader::StitchNode` in `StitchingGraph` | Fragment selection at Link time |
 | `rg::VariantSlotHandle` (shadow_quality) | `shader::SpecializationData` entry | Spec constant at PSO creation |
 | `rg::compiler::CompileOptions` variants | `shader::StitchingGraph` resolution | Variant drives fragment selection |
 
@@ -676,24 +676,24 @@ sequenceDiagram
     participant GPU
 
     Note over App,GPU: Phase 1 - Graph Compilation
-    App->>SGC: compile(shader_graph)
-    SGC->>SGC: validate(graph)
+    App->>SGC: Compile(shader_graph)
+    SGC->>SGC: Validate(graph)
     SGC-->>App: ShaderGraphIR
 
     Note over App,GPU: Phase 2 - Fragment Generation
-    App->>SGC: generate_fragments(ir)
+    App->>SGC: GenerateFragments(ir)
     SGC-->>App: vector of ShaderFragment
-    App->>FL: register_fragment(fragment) for each
+    App->>FL: RegisterFragment(fragment) for each
 
     Note over App,GPU: Phase 3 - Fragment Compilation
-    App->>FL: compile_all(compiler)
+    App->>FL: CompileAll(compiler)
     FL->>SC: compile_functions_batch(descs)
     SC-->>FL: vector of ShaderFunction
-    FL->>SR: reflect_function(fn) for each
+    FL->>SR: ReflectFunction(fn) for each
     SR-->>FL: FunctionReflection
 
     Note over App,GPU: Phase 4 - Monolithic Compilation
-    App->>SC: compile(module_desc)
+    App->>SC: Compile(module_desc)
     SC-->>App: ShaderModule (task/mesh/compute)
 
     Note over App,GPU: Phase 5 - PSO Creation
@@ -728,15 +728,15 @@ sequenceDiagram
             Cache->>Cache: deserialize PSO blob
             Cache-->>App: PipelineState
         else L2 miss
-            Cache->>Stitch: validate(stitching_graph)
-            Stitch->>FL: find(fragment_name) for each node
+            Cache->>Stitch: Validate(stitching_graph)
+            Stitch->>FL: Find(fragment_name) for each node
             FL-->>Stitch: ShaderFragment pointers
             Stitch->>SR: validate_stitching_edge(producer, consumer, edges)
             SR-->>Stitch: ok
 
-            Stitch->>FL: get_compiled(name) for each
+            Stitch->>FL: GetCompiled(name) for each
             FL-->>Stitch: ShaderFunction list
-            Stitch->>SC: link(functions, graph, specialization)
+            Stitch->>SC: Link(functions, graph, specialization)
             SC->>SC: constant propagation
             SC->>SC: dead code elimination
             SC->>SC: function inlining
@@ -777,7 +777,7 @@ sequenceDiagram
         Pool->>Cache: insert L1 + serialize L2
     and Linked PSOs
         Cache->>Pool: submit link + compile
-        Pool->>Stitch: link(stitching_graph)
+        Pool->>Stitch: Link(stitching_graph)
         Stitch-->>Pool: ShaderModule
         Pool->>GPU: create_pipeline_state(linked_desc)
         GPU-->>Pool: PipelineHandle
@@ -811,17 +811,17 @@ sequenceDiagram
     participant Cache as PipelineCache
 
     FS->>HR: file change detected (HLSL source)
-    HR->>SC: compile(changed_source)
+    HR->>SC: Compile(changed_source)
     SC-->>HR: ShaderModule or ShaderFunction
 
     alt Fragment source changed
-        HR->>FL: register_fragment(updated)
-        HR->>FL: compile_all(compiler)
-        FL->>SC: compile_function(updated_desc)
+        HR->>FL: RegisterFragment(updated)
+        HR->>FL: CompileAll(compiler)
+        FL->>SC: CompileFunction(updated_desc)
         SC-->>FL: ShaderFunction
         HR->>HR: find PSOs referencing fragment
         loop For each affected PSO
-            HR->>Stitch: link(graph)
+            HR->>Stitch: Link(graph)
             Stitch-->>HR: ShaderModule
             HR->>Cache: replace PSO entry
         end
@@ -849,13 +849,13 @@ sequenceDiagram
         Cache-->>Pass: PipelineState
     else Linked PSO (material passes)
         Pass->>Cache: get_or_create(linked_pso_desc)
-        Cache->>Stitch: link(pixel_graph)
+        Cache->>Stitch: Link(pixel_graph)
         Stitch-->>Cache: ShaderModule (linked pixel shader)
         Cache-->>Pass: PipelineState
     end
     Pass->>Ctx: cmd()
     Ctx-->>Pass: CommandBuffer
-    Pass->>Cmd: set_pipeline(pso)
-    Pass->>Cmd: push_constants(draw_data)
-    Pass->>Cmd: dispatch_mesh(groups_x, groups_y, 1)
+    Pass->>Cmd: SetPipeline(pso)
+    Pass->>Cmd: PushConstants(draw_data)
+    Pass->>Cmd: DispatchMesh(groups_x, groups_y, 1)
 ```

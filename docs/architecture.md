@@ -259,11 +259,11 @@ sequenceDiagram
 
     GFX->>GFX: Pass A
     AC->>AC: Pass B writes
-    AC-->>GFX: signal (timeline fence)
+    AC-->>GFX: Signal (timeline fence)
     GFX->>GFX: wait, Pass C reads
 
     TX->>TX: Upload
-    TX-->>GFX: signal (timeline fence)
+    TX-->>GFX: Signal (timeline fence)
     GFX->>GFX: wait, Pass D reads uploaded data
 ```
 
@@ -365,8 +365,8 @@ sequenceDiagram
     IO->>RG: residency fault
     RG->>RG: inject transfer pass (RG-14.7)
     RG->>GPU: transfer queue upload
-    GPU-->>RG: completion fence signal (RG-11.2)
-    RG->>RG: update residency map (RG-14.8)
+    GPU-->>RG: completion fence Signal (RG-11.2)
+    RG->>RG: update residency Map (RG-14.8)
     RG->>GPU: bind residency map to consuming passes
 
     Note over IO,GPU: Pool at capacity?
@@ -467,9 +467,9 @@ flowchart TD
     Feedback["Budget Gates, Dynamic Resolution, Streaming Priority"]
 
     App --> GB
-    GB -->|"compile (one-time)"| GC
+    GB -->|"Compile (one-time)"| GC
     GC --> EP
-    EP -->|"execute (every frame)"| EE
+    EP -->|"Execute (every frame)"| EE
     EE --> GPU
     GPU -->|"feedback (next frame)"| Diag
     Diag -->|"feeds back to"| Feedback
@@ -524,13 +524,14 @@ Transforms raw assets into GPU-ready formats through a three-stage pipeline:
 2. **Bundle** -- Pack cooked assets into streaming-friendly bundles with dependency metadata.
 3. **Stream** -- Load bundles at runtime via platform-native high-performance IO:
 
-| Platform               | IO Path              |
-| ---------------------- | -------------------- |
-| Windows (D3D12)        | DirectStorage        |
-| Linux/SteamOS (Vulkan) | `io_uring`           |
-| macOS (Metal)          | `MTLIOCommandBuffer` |
+| Platform               | IO Path                              |
+| ---------------------- | ------------------------------------ |
+| macOS (Metal)          | `dispatch_io` (Grand Central Dispatch) |
+| Windows (D3D12)        | DirectStorage                        |
+| Windows (Vulkan)       | I/O completion ports (IOCP)          |
+| Linux/SteamOS (Vulkan) | `io_uring`                           |
 
-A standard async file IO fallback is available when native paths are unavailable (R-1.2.4).
+No C++ standard library file IO is used; all paths are platform-native async IO (R-1.2.4).
 
 **Design doc:** [asset-pipeline.md](design/asset-pipeline.md)
 
@@ -538,9 +539,9 @@ A standard async file IO fallback is available when native paths are unavailable
 
 | Platform                  | GPU API                          | IO Path              | Status                     |
 | ------------------------- | -------------------------------- | -------------------- | -------------------------- |
-| macOS (Apple Silicon M1+) | Metal 4                          | `MTLIOCommandBuffer` | Initial development target |
+| macOS (Apple Silicon M1+) | Metal 4                          | `dispatch_io` (GCD)  | Initial development target |
 | Windows                   | Direct3D 12 (Agility SDK 1.619+) | DirectStorage        | Supported                  |
-| Windows                   | Vulkan 1.4                       | async file IO        | Supported                  |
+| Windows                   | Vulkan 1.4                       | IOCP                 | Supported                  |
 | Linux / SteamOS           | Vulkan 1.4                       | `io_uring`           | Supported                  |
 
 Desktop only -- no console or mobile platforms (R-1.2.5). All platforms require mesh shaders,
@@ -576,3 +577,11 @@ Detailed design and API specifications live in `docs/design/`:
 | [gpu-backend-d3d12-classes.md](design/gpu-backend-d3d12-classes.md)         | Direct3D 12 backend class diagrams                                     |
 | [gpu-backend-vulkan-classes.md](design/gpu-backend-vulkan-classes.md)       | Vulkan 1.4 backend class diagrams                                      |
 | [gpu-backend-metal-classes.md](design/gpu-backend-metal-classes.md)         | Metal 4 backend class diagrams                                         |
+| [testing-strategy.md](design/testing-strategy.md)                           | Unit, integration, and end-to-end testing strategy                     |
+| [coding-conventions.md](design/coding-conventions.md)                       | C++26 coding conventions (adapted from Google C++ Style Guide)         |
+| [error-handling.md](design/error-handling.md)                               | Error handling strategy (std::expected, assertions, no exceptions)     |
+| [platform-feature-matrix.md](design/platform-feature-matrix.md)             | Consolidated platform capabilities and emulation matrix                |
+| [cross-backend-emulation.md](design/cross-backend-emulation.md)             | Detailed cross-backend emulation algorithms and fallback paths         |
+| [streaming-scheduler.md](design/streaming-scheduler.md)                     | Streaming scheduler algorithm, eviction policy, and tuning             |
+| [integration-examples.md](design/integration-examples.md)                   | API usage examples (render graphs, gating, streaming, budget control)  |
+| [implementation-roadmap.md](design/implementation-roadmap.md)               | Phased implementation plan with dependency ordering                    |

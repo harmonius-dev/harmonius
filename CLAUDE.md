@@ -27,6 +27,8 @@ This handbook provides guidelines and best practices for agents working on the H
 - Write multiplatform code that works consistently across supported operating systems. Use platform-agnostic libraries
   and tools when possible. Ensure all cross-platform interfaces are compatible with each supported platform, or use
   gating to expose platform-specific functionality.
+- Do not use file I/O from the C++ standard library. Use platform-native async I/O instead: I/O completion ports on
+  Windows, dispatch_async I/O (Grand Central Dispatch) on macOS, and io_uring on Linux.
 
 ## Development guidelines
 

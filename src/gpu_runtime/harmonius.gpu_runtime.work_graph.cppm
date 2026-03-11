@@ -10,91 +10,94 @@
 
 export module harmonius.gpu_runtime.work_graph;
 
-import std;
 import harmonius.gpu;
 import harmonius.gpu_runtime.state;
 
-export namespace harmonius::gpu_runtime::work_graph
-{
+import std;
 
-  // ---------------------------------------------------------------------------
-  // Execution plan view types
-  // ---------------------------------------------------------------------------
+export namespace harmonius::gpu_runtime::work_graph {
 
-  struct ResourceRef
-  {
+// ---------------------------------------------------------------------------
+// Execution plan view types
+// ---------------------------------------------------------------------------
+
+/// Reference to a resource used by a render pass.
+struct ResourceRef {
     std::uint32_t resource_id;
     gpu::ResourceAccess access;
     gpu::TextureLayout layout;
-  };
+};
 
-  struct PassNode
-  {
+/// A single pass within the execution plan.
+struct PassNode {
     std::uint32_t id;
     gpu::PipelineHandle pipeline;
     std::span<const ResourceRef> inputs;
     std::span<const ResourceRef> outputs;
     gpu::QueueType queue;
     bool active;
-  };
+};
 
-  struct Dependency
-  {
+/// A dependency edge between two passes.
+struct Dependency {
     std::uint32_t src_pass;
     std::uint32_t dst_pass;
-  };
+};
 
-  struct BarrierGroup
-  {
+/// A group of barriers to be issued before a specific pass.
+struct BarrierGroup {
     std::uint32_t before_pass;
     std::span<const gpu::BarrierDesc> barriers;
-  };
+};
 
-  struct ExecutionPlanView
-  {
+/// Read-only view of a compiled execution plan.
+struct ExecutionPlanView {
     std::span<const PassNode> passes;
     std::span<const Dependency> dependencies;
     std::span<const BarrierGroup> barriers;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Per-frame data
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Per-frame data
+// ---------------------------------------------------------------------------
 
-  struct ResourceBinding
-  {
+/// Binding of a GPU resource to a descriptor slot.
+struct ResourceBinding {
     std::uint32_t slot;
     gpu::TextureHandle texture;
     gpu::BufferHandle buffer;
-  };
+};
 
-  struct FrameData
-  {
+/// Per-frame dynamic data supplied to the executor.
+struct FrameData {
     std::span<const ResourceBinding> resource_bindings;
     std::span<const std::uint8_t> push_constant_data;
     std::span<const bool> pass_activation_flags;
     std::uint64_t frame_index;
-  };
+};
 
-  // ---------------------------------------------------------------------------
-  // Work graph executor
-  // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Work graph executor
+// ---------------------------------------------------------------------------
 
-  class WorkGraphExecutor
-  {
-  public:
-    auto set_execution_plan(const ExecutionPlanView &plan) -> void;
+/// Executes a render graph plan via native work graphs or CPU-side emulation.
+/// @threadsafety Instances are not thread-safe.
+class WorkGraphExecutor {
+ public:
+    /// Install a new execution plan, rebuilding the work graph program if native.
+    auto SetExecutionPlan(const ExecutionPlanView& plan) -> void;
 
-    auto execute(const FrameData &data,
-                 state::TrackedCommandBuffer &cmd,
-                 const gpu::DeviceCapabilities &caps) -> void;
+    /// Execute the current plan for one frame.
+    auto Execute(const FrameData& data, state::TrackedCommandBuffer& cmd,
+                 const gpu::DeviceCapabilities& caps) -> void;
 
-    [[nodiscard]] auto is_native() const -> bool;
+    /// Returns true if using native GPU work graphs.
+    [[nodiscard]] auto IsNative() const -> bool;
 
-  private:
+ private:
     bool use_native_ = false;
-    gpu::WorkGraphHandle cached_program_ = gpu::WorkGraphHandle::invalid;
+    gpu::WorkGraphHandle cached_program_ = gpu::WorkGraphHandle::kInvalid;
     std::uint64_t plan_version_ = 0;
-  };
+};
 
-} // namespace harmonius::gpu_runtime::work_graph
+}  // namespace harmonius::gpu_runtime::work_graph
