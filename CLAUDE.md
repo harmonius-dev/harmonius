@@ -5,40 +5,71 @@ This handbook provides guidelines and best practices for agents working on the H
 ## Rulebook
 
 - Put all documentation in the `docs/` directory. Use Markdown format for all documentation.
-- Never create ASCII diagrams. Instead, create Mermaid diagrams. Always render Mermaid diagrams with the MCP to ensure
-  correctness and readability.
-- Always limit lines to 120 characters for all code, configuration, documentation, and comments. The limit may be
-  exceeded if the line cannot be split without changing semantics. The line length limit does not apply to tables in
-  Markdown documents.
-- Always sort JSON documents by keys in lexicographical order. Do not sort JSON arrays, only JSON objects.
+- Never create ASCII diagrams. Instead, create Mermaid diagrams. Always render Mermaid diagrams with
+  the MCP to ensure correctness and readability.
+- Always limit lines to 120 characters for all code, configuration, documentation, and comments. The
+  limit may be exceeded if the line cannot be split without changing semantics. The line length
+  limit does not apply to tables in Markdown documents.
+- Always sort JSON documents by keys in lexicographical order. Do not sort JSON arrays, only JSON
+  objects.
+- Be visual when possible. Use Mermaid diagrams frequently to illustrate concepts to me during
+  conversation. Include them in documentation and README files when they illustrate a point well. I
+  prefer visual information over prose.
+- Keep documentation prose structured using headings, subheadings, numbered lists, bulleted lists,
+  and tables. Keep paragraphs under 5 sentences and 100 words.
 
 ## Design guidelines
 
-- Design abstractions to be modular and reusable. Separate concerns between components and modules. Prefer composition
-  over inheritance.
-- Always prefer static dispatch via C++20 concepts. Do not use virtual methods, vtables, abstract base classes, or
+- Always write design for significant features with major new changes. For minor changes, provide
+  the design in a message if feasible. The design should include references to requirements, a quick
+  overview, architecture diagrams, flowcharts, sequence diagrams, and class diagrams (data
+  structures, enums, relationships)
+- Use lists and tables to display requirements, OS API usage, tabluar data, comparisons, matrices,
+  features and any other structured or semi-structured information.
+- Start from requirements, and rethink the design periodically to see if it needs to be redone. In
+  this case, you should stash the current state, create a new branch, then delete all of the
+  existing design files in the branch. Finally, write a new design from scratch that better meets
+  the requirements. Throw away any inferior design iterations until you settle on an ideal design.
+- Design abstractions to be modular and reusable. Separate concerns between components and modules.
+  Prefer composition over inheritance.
+- Always come up with a test plan and an explicit list of test cases. Ensure full coverage of all
+  code paths.
+- Always prefer static dispatch. Do not use virtual methods, vtables, abstract base classes, or
   dynamic dispatch unless necessary for runtime polymorphism.
-- Use domain-driven design to model the problem space and create a ubiquitous language. Define clear boundaries between
-  domains and use interfaces to decouple them.
-- Seek approval before adding or changing any dependencies. If you need to add a dependency, propose a low-level
-  library that is well supported and maintained, and can be accessed through vcpkg. Avoid using any frameworks.
-- Always use the latest versions of dependencies and tools. Use the package manager CLI to install dependencies with the
-  latest version automatically.
-- Write multiplatform code that works consistently across supported operating systems. Use platform-agnostic libraries
-  and tools when possible. Ensure all cross-platform interfaces are compatible with each supported platform, or use
-  gating to expose platform-specific functionality.
-- Do not use file I/O from the C++ standard library. Use platform-native async I/O instead: I/O completion ports on
-  Windows, dispatch_async I/O (Grand Central Dispatch) on macOS, and io_uring on Linux.
+- Use domain-driven design to model the problem space and create a ubiquitous language. Define clear
+  boundaries between domains and use interfaces to decouple them.
+- Seek approval before adding or changing any dependencies. If you need to add a dependency, propose
+  a low-level library that is well supported and maintained, and can be accessed through vcpkg.
+  Avoid using any frameworks.
+- Always use the latest versions of dependencies and tools. Use the package manager CLI to install
+  dependencies with the latest version automatically.
+- Write multiplatform code that works consistently across supported operating systems. Use
+  platform-agnostic libraries and tools when possible. Ensure all cross-platform interfaces are
+  compatible with each supported platform, or use gating to expose platform-specific functionality.
+- Do not use file I/O from the Rust standard library. Use platform-native async I/O instead: I/O
+  completion ports on Windows, dispatch_async I/O (Grand Central Dispatch) on macOS, and io_uring on
+  Linux.
+- Always use dependency injection. Components receive their dependencies through constructors or
+  method parameters, never by creating or locating them internally. This makes dependencies
+  explicit, testable, and swappable.
+- No singletons. Never use the singleton pattern. All dependencies must be explicitly passed via
+  constructor injection or function parameters.
+- Think about the implementation after the design of the API is finalized. Do not design and write
+  code simultaneously. Separate design, design iteration, design review, implementation planning,
+  test planning, test-driven implementation, verification, documentation, and release into distinct
+  phases. Do not start implementation until the design is approved and finalized.
 
 ## Development guidelines
 
-- Write implementation comments sparingly. Always write documentation comments and generate an API reference from them.
-  Use implementation comments only for complex algorithms or non-obvious code.
-- Use test-driven development to ensure code quality and correctness. Write unit tests, integration tests, and
-  end-to-end tests to cover all aspects of the codebase. Use continuous integration to run tests automatically on every
-  commit.
-- Ensure all code is memory-safe and free of undefined behavior. Use safe concurrency and multithreading patterns when
-  accessing shared data.
+- Write implementation comments sparingly. Always write documentation comments and generate an API
+  reference from them. Use implementation comments only for complex algorithms or non-obvious code.
+- Use test-driven development to ensure code quality and correctness. Always write unit tests,
+  integration tests, and/or end-to-end tests to cover all aspects of the codebase. Use continuous
+  integration to run tests automatically on every commit.
+- Ensure all code is memory-safe and free of undefined behavior. Use safe concurrency and
+  multithreading patterns when accessing shared data.
 - Use functional programming and immutable data structures when feasible and performant.
-- Always minimize mutable state and isolate it as much as possible. Avoid using mutable shared state.
-- Whenever making a change to a code file, make sure the associated documentation is updated, and vice versa.
+- Always minimize mutable state and isolate it as much as possible. Avoid using mutable shared
+  state.
+- Whenever making a change to a code file, make sure the associated documentation is updated, and
+  vice versa.
