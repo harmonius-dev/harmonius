@@ -1,8 +1,0 @@
-add_subdirectory(core)
-add_subdirectory(builder)
-add_subdirectory(compiler)
-add_subdirectory(resource)
-add_subdirectory(sync)
-add_subdirectory(gate)
-add_subdirectory(exec)
-add_subdirectory(diag)
