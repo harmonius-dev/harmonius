@@ -1,38 +1,25 @@
 # Features
 
-Hierarchical feature specification for a theoretical renderer that uses the
-render graph library. Each feature has a unique identifier (e.g., `F-2.1.3` is
-the third feature in section 2.1). Features reference requirements from
-[docs/requirements/](../requirements/) by ID (e.g., `R-1.1.2`).
+Feature specifications for the Harmonius game engine — an open world MMO-scale engine.
+Each feature has a unique identifier (e.g., `F-2.3.1` is the first feature in category
+2.3). Features reference requirements from [docs/requirements/](../requirements/) by ID.
 
-## Sections
+## Domains
 
-### 1 Rendering
-- [1.1 Core Rendering](1-rendering/1.1-core-rendering.md) — culling, projection, instancing, area lights, scene capture, dynamic resolution
-- [1.2 Lighting and Materials](1-rendering/1.2-lighting-and-materials.md) — forward+, deferred, PBR, BSDF, material instances, decals, shading models
-- [1.3 Shadows and Effects](1-rendering/1.3-shadows-and-effects.md) — shadow maps, virtual shadow maps, AO, SSS, OIT, volumetric shadow maps
-- [1.4 Post-Processing](1-rendering/1.4-post-processing.md) — bloom, DOF, motion blur, tonemapping, color grading, film grain
-- [1.5 Anti-Aliasing and Upscaling](1-rendering/1.5-anti-aliasing.md) — TAA, TSR, FXAA, MSAA, checkerboard, upscaler integration, frame generation
-
-### 2 Advanced Rendering
-- [2.1 Ray Tracing](2-advanced-rendering/2.1-ray-tracing.md) — acceleration structures, RT reflections, surfel GI, ReSTIR, production path tracing, OMM, SER, neural denoising, voxel GI, neural radiance cache
-- [2.2 Environment](2-advanced-rendering/2.2-environment.md) — sky, volumetrics, clouds, voxel clouds, fog, water, breaking waves, weather, heterogeneous volumes
-- [2.3 Hair and Character Rendering](2-advanced-rendering/2.3-hair-and-characters.md) — strand hair, card hair, compute raster hair, eye, cloth, skin, peach fuzz, biometric skin
-
-### 3 Geometry
-- [3.1 Meshlet Pipeline](3-geometry/3.1-meshlet-pipeline.md) — virtualized geometry, mesh shaders, tessellation, visibility buffer, VRS, meshlet compression, GPU work graphs, CBT, LOD generation, LOD blending, skinned mesh LOD, static mesh merging
-- [3.2 Worlds and Terrain](3-geometry/3.2-worlds-and-terrain.md) — streaming, voxels, terrain, HLOD, procedural generation, terrain splatting, surface deformation, procedural placement, clipmap terrain
-- [3.3 Foliage and Vegetation](3-geometry/3.3-foliage-and-vegetation.md) — hierarchical instancing, wind, fade, transmission, GPU vegetation skinning, interactive vegetation, deferred texturing
-
-### 4 Animation
-- [4.1 Animation](4-animation/4.1-animation.md) — skeletal, morph targets, state machines, IK, cloth, hair, motion matching, muscle deformation
-
-### 5 UI and 2D
-- [5.1 UI and 2D](5-ui-and-2d/5.1-ui-and-2d.md) — vector/bitmap UI, sprites, tilemaps, isometric
-
-### 6 Tooling and IO
-- [6.1 Shader and Asset Pipeline](6-tooling-and-io/6.1-shader-and-assets.md) — shader graph, compilation, asset import, DSL, neural textures, neural materials
-- [6.2 IO and Streaming](6-tooling-and-io/6.2-io-and-streaming.md) — transfer queues, streaming, platform IO, multi-view, GPU decompression, bindless resources
-
-### 7 VFX
-- [7.1 Particle and VFX Rendering](7-vfx/7.1-particle-rendering.md) — GPU particles, sprites, mesh particles, ribbons, fluid simulation, destruction
+| # | Domain | Description |
+|---|--------|-------------|
+| 1 | [Core Runtime](core-runtime/) | ECS, scene, reflection, serialization, events, plugins, memory |
+| 2 | [Rendering](rendering/) | GPU abstraction, render graph, lighting, materials, post-processing |
+| 3 | [Geometry & World](geometry-world/) | Meshlets, terrain, foliage, procedural generation |
+| 4 | [Physics](physics/) | Rigid body, collision, constraints, vehicles, destruction, fluids |
+| 5 | [Audio](audio/) | Engine, spatial, DSP, music, voice |
+| 6 | [Input](input/) | Devices, actions, gestures, haptics |
+| 7 | [AI](ai/) | Navigation, steering, behavior trees, perception, crowds |
+| 8 | [Networking](networking/) | Transport, replication, prediction, MMO infrastructure |
+| 9 | [Animation](animation/) | Skeletal, morph, procedural, state machines, cloth & hair |
+| 10 | [UI & 2D](ui-2d/) | Widgets, UI rendering, 2D games, accessibility |
+| 11 | [VFX](vfx/) | Particles, fluid VFX, effect graph |
+| 12 | [Content Pipeline](content-pipeline/) | Asset import, processing, shaders, streaming, registry |
+| 13 | [Game Framework](game-framework/) | Gameplay, camera, cinematics, scripting, save, localization |
+| 14 | [Platform](platform/) | Windowing, OS integration, platform services, distribution |
+| 15 | [Tools & Editor](tools-editor/) | Scene/material/animation/VFX editors, profiler, debugger |

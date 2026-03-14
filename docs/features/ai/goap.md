@@ -1,0 +1,69 @@
+# 7.5 — Goal-Oriented Action Planning
+
+## World State
+
+### F-7.5.1 World State Representation
+
+Models AI-relevant world state as a fixed-size bitset of named boolean and integer properties
+(has_weapon, health > 50, is_in_cover, target_visible). World states are cheap to copy, compare,
+and diff, enabling fast forward-search planning for thousands of NPCs per tick.
+
+- **Requirements:** R-7.5.1
+- **Dependencies:** None
+- **Platform notes:** None
+
+## Planner
+
+### F-7.5.2 GOAP Forward-Search Planner
+
+A* search over the action space from the current world state toward a goal state. Each action
+declares preconditions and effects as world-state deltas. The planner finds a minimal-cost sequence
+of actions that satisfies the goal, producing a plan that the agent executes step by step.
+
+- **Requirements:** R-7.5.2
+- **Dependencies:** F-7.5.1
+- **Platform notes:** None
+
+### F-7.5.3 Action Preconditions & Effects
+
+Each GOAP action defines a set of world-state preconditions that must hold before it can execute and
+a set of effects that modify the world state upon completion. Actions also carry a cost used by the
+planner to prefer cheaper plans (e.g., melee attack costs less than crafting a weapon to attack).
+
+- **Requirements:** R-7.5.3
+- **Dependencies:** F-7.5.1
+- **Platform notes:** None
+
+## Plan Management
+
+### F-7.5.4 Plan Caching & Reuse
+
+Caches recently computed plans keyed by (goal, initial-state-hash) so identical planning requests
+across multiple NPCs of the same archetype reuse existing plans without re-searching. Cache entries
+are invalidated when registered actions change or a configurable TTL expires.
+
+- **Requirements:** R-7.5.4
+- **Dependencies:** F-7.5.2
+- **Platform notes:** None
+
+### F-7.5.5 Replanning Triggers
+
+Monitors executing plans for invalidation conditions: an action's preconditions no longer hold, the
+goal has changed, or a blackboard observer fires a high-priority event (e.g., ambushed, ally down).
+Triggers partial or full replan with a cooldown to prevent thrashing under rapidly changing
+conditions.
+
+- **Requirements:** R-7.5.5
+- **Dependencies:** F-7.5.2, F-7.3.4
+- **Platform notes:** None
+
+### F-7.5.6 Goal Prioritization
+
+Maintains a scored list of goals per agent, each with a dynamic priority derived from utility
+considerations or blackboard values. The highest-priority unsatisfied goal drives the planner.
+When the active goal is satisfied or a higher-priority goal emerges, the agent abandons the current
+plan and replans for the new goal.
+
+- **Requirements:** R-7.5.6
+- **Dependencies:** F-7.5.2, F-7.4.1
+- **Platform notes:** None

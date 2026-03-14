@@ -1,0 +1,66 @@
+# Environment and Atmosphere
+
+## F-2.7.1 Procedural Sky (Bruneton/Hillaire Atmosphere)
+
+Physically-based sky rendering using precomputed atmosphere LUTs (transmittance, multi-scattering,
+sky view, aerial perspective). Supports time-of-day transitions with sun position and Rayleigh/Mie
+scattering parameters.
+
+## F-2.7.2 Ray-Marched Volumetric Fog (Froxels)
+
+Frustum-aligned voxel (froxel) grid encoding in-scattered light and extinction per cell. A resolve
+pass ray-marches from the camera through the grid to accumulate volumetric fog, applied as a
+multiply-accumulate over the scene.
+
+- **Requirements:** [R-3.2.1](../../requirements/3-nonfunctional/3.2-hardware.md) bindless
+
+## F-2.7.3 Procedural Volumetric Clouds
+
+Ray-marched volumetric clouds through an altitude-bounded layer using 3D noise textures. Temporal
+reprojection blends frames to amortize the high ray-march cost.
+
+## F-2.7.4 God Rays
+
+Screen-space radial blur or full volumetric integration of light shafts from bright occluded sources
+(sun, lamps). The screen-space mode is lightweight; the volumetric mode reuses the froxel grid.
+
+## F-2.7.5 Distance and Height Fog
+
+Analytical fog (exponential and exponential-squared) with height falloff. Can be used standalone or
+in combination with the volumetric froxel system.
+
+## F-2.7.6 Water Simulation (FFT Ocean)
+
+FFT-based ocean surface simulation with compute stages for spectrum initialization, IFFT, and normal
+map generation. The ocean surface is rendered via the mesh shader pipeline with LOD based on camera
+distance. Supports reflections (SSR or RT), Fresnel blending, foam, and optional underwater effects.
+
+- **Requirements:** [R-1.1.3](../../requirements/1-architecture/1.1-core-constraints.md) mesh shaders
+
+## F-2.7.7 Heterogeneous Volumes (OpenVDB)
+
+Volumetric rendering of fire, smoke, explosions, and clouds from sparse volume data (OpenVDB import).
+Volumes are stored as sparse volume textures and ray-marched with full lighting and shadow
+integration. Supports emission, absorption, and anisotropic scattering via a volumetric BSDF.
+
+## F-2.7.8 Voxel-Based Volumetric Clouds
+
+Advanced volumetric cloud system using full 3D voxel representation with compressed signed distance
+fields for ray march acceleration. Supports both ground-level and high-altitude gameplay
+(fly-through). Fluid simulation-based cloud modeling with cloud-specific lighting (dark edges, inner
+glow). Temporal reprojection over multiple frames with full frame reconstruction. Supersedes
+noise-only ray marching for production-quality cloud environments.
+
+## F-2.7.9 Art-Directable Breaking Waves
+
+Hybrid wave system combining offline Houdini-simulated breaking wave deformation baked as 2D
+deformation textures with a compute shader generating vertex buffers at runtime. Wavefront shapes
+use Coons surface interpolation for smooth evaluation. Art-directable guide curves give artists full
+control over wave shape, timing, and animation.
+
+## F-2.7.10 Weather System
+
+Dynamic weather state machine driving volumetric clouds, atmospheric scattering, fog density,
+precipitation particles, wind fields, and lighting conditions. Weather states (clear, overcast, rain,
+thunderstorm, snow, dust storm) interpolate over configurable transition periods. Weather directly
+influences material wetness, puddle rendering, and vegetation animation intensity.

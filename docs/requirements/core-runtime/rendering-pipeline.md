@@ -1,0 +1,33 @@
+# Rendering Pipeline
+
+## R-1.3.1 G-Buffer Layout
+
+The deferred lighting path SHALL use a fixed G-buffer layout:
+
+| Target | Format | Contents |
+|---|---|---|
+| RT0 | RGBA8 | Albedo (RGB) + Metallic (A) |
+| RT1 | RGBA16F | World Normal (RG) + Roughness (B) + Material Flags (A) |
+| RT2 | RG16F | Motion Vectors |
+| Depth | D32F | Reverse-Z depth (per R-3.3.1) |
+
+All G-buffer targets SHALL be allocated as transient resources eligible for render graph aliasing
+per R-3.1.3.
+
+## R-1.3.3 Motion Vector Generation
+
+All opaque and alpha-tested geometry SHALL output per-pixel screen-space motion vectors encoding
+frame-to-frame displacement. Motion vectors SHALL be available to TAA, temporal reprojection, motion
+blur, and any temporal denoising passes.
+
+## R-1.3.4 Post-Processing Pass Chain
+
+Post-processing SHALL be implemented as individually toggleable render graph passes. The default
+chain SHALL include: bloom extraction, bloom blur, tone mapping, and final anti-aliasing. Each pass
+SHALL declare typed inputs and outputs for automatic barrier insertion and dead-pass elimination.
+
+## R-1.3.5 Temporal Anti-Aliasing
+
+TAA SHALL be the primary anti-aliasing method. TAA SHALL consume per-pixel motion vectors (R-1.3.3)
+and jittered sub-pixel projection offsets. A fallback to FXAA SHALL be available when motion vectors
+are unavailable or when TAA is explicitly disabled.

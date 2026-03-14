@@ -1,0 +1,127 @@
+# Core Rendering
+
+## F-2.3.1 Direct Lighting
+
+Point, spot, and directional light evaluation with physically-based attenuation. All light types
+contribute to the same unified light buffer consumed by both forward and deferred paths.
+
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven rendering
+
+## F-2.3.2 GPU Frustum Culling
+
+Meshlet-level frustum culling on the GPU via a compute pass. Each meshlet's AABB is tested against
+the six camera frustum planes. Meshlets outside the frustum are excluded from the indirect draw
+buffer.
+
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven,
+  [R-1.1.3](../../requirements/1-architecture/1.1-core-constraints.md) mesh shaders,
+  [R-3.2.1](../../requirements/3-nonfunctional/3.2-hardware.md) bindless
+
+## F-2.3.3 Backface Culling
+
+Meshlet-level normal cone culling on the GPU. Meshlets whose triangles all face away from the camera
+(determined by the cone test against camera position) are culled before rasterization.
+
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven
+
+## F-2.3.4 Occlusion Culling (HZB Two-Phase)
+
+Two-phase hierarchical Z-buffer occlusion culling. Phase 1 tests meshlets against the previous
+frame's HZB (conservative). Phase 2 re-tests phase-1 rejects against the current frame's HZB. This
+avoids missing newly-revealed geometry.
+
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven,
+  [R-3.3.1](../../requirements/3-nonfunctional/3.3-data-constraints.md) reverse-Z
+
+## F-2.3.5 Orthographic Projection
+
+Orthographic camera projection for top-down views, 2D game rendering, and shadow map generation.
+
+- **Requirements:** [R-3.3.1](../../requirements/3-nonfunctional/3.3-data-constraints.md) reverse-Z
+
+## F-2.3.6 Perspective Projection (Reverse-Z)
+
+Perspective camera projection with reverse-Z and optional infinite far plane for maximum depth
+precision at distance.
+
+- **Requirements:** [R-3.3.1](../../requirements/3-nonfunctional/3.3-data-constraints.md) reverse-Z
+
+## F-2.3.7 GPU-Driven Instancing
+
+GPU-side instance compaction and indirect dispatch. After culling, surviving opaque meshlet instances
+are batched by shared material and material instance into contiguous draw buffers and dispatched via a
+single indirect call per material batch. Opaque meshlets are not depth-sorted; draw order within a
+batch is arbitrary. Transparent objects are not batched -- each transparent object is drawn
+individually in back-to-front sorted order (see [F-2.4.5](#f-245-transparent-objects)).
+
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven,
+  [R-1.1.3](../../requirements/1-architecture/1.1-core-constraints.md) mesh shaders,
+  [R-3.2.1](../../requirements/3-nonfunctional/3.2-hardware.md) bindless
+
+## F-2.3.8 Render-to-Texture
+
+Ability to render any pass to an off-screen texture for use by subsequent passes. The render graph
+compiler automatically inserts barriers between write and read.
+
+- **Requirements:** [R-1.1.4](../../requirements/1-architecture/1.1-core-constraints.md) declarative
+  graph,
+  [R-3.1.2](../../requirements/3-nonfunctional/3.1-performance.md) minimal barriers
+
+## F-2.3.9 Cubemaps
+
+Static and dynamic cubemap rendering for environment maps, reflection probes, and IBL prefiltering.
+Dynamic cubemaps re-render specified faces per frame.
+
+- **Requirements:** [R-3.2.1](../../requirements/3-nonfunctional/3.2-hardware.md) bindless
+
+## F-2.3.10 Area Lights (Rect/Sphere)
+
+Rectangular and spherical area light evaluation using linearly-transformed cosine (LTC) integration.
+Area lights produce soft reflections and natural falloff proportional to source size, enabling
+realistic window lighting and softbox illumination.
+
+- **Requirements:** [R-1.1.2](../../requirements/1-architecture/1.1-core-constraints.md) GPU-driven
+
+## F-2.3.11 Sky Light (IBL)
+
+Image-based ambient lighting captured from the sky atmosphere or a provided cubemap. The sky
+contribution is pre-filtered into diffuse irradiance and split-sum specular lookup tables for
+efficient real-time evaluation.
+
+## F-2.3.12 IES Light Profiles
+
+Photometric light distribution profiles loaded from IES data files. Each profile defines intensity as
+a function of angle, applied to point and spot lights for physically accurate architectural and
+cinematic lighting.
+
+## F-2.3.13 Light Functions
+
+Material-driven intensity and color modulation applied to any light type. A lightweight material
+graph produces a scalar or color mask (e.g., window blinds, gobo patterns, animated flicker)
+evaluated per-pixel in the light's influence volume.
+
+## F-2.3.14 Scene Capture
+
+Rendering the scene from an arbitrary camera into a texture target for use as a material input.
+Supports 2D planar capture and omnidirectional cubemap capture for security cameras, mirrors,
+portals, and minimap rendering.
+
+- **Requirements:** [R-1.1.4](../../requirements/1-architecture/1.1-core-constraints.md) declarative
+  graph
+
+## F-2.3.15 Dynamic Resolution
+
+Runtime resolution scaling that adjusts the internal render resolution to maintain a target frame
+budget. A GPU timing feedback loop drives the screen percentage between configurable min/max bounds.
+
+## F-2.3.16 Subsurface Scattering
+
+Screen-space and ray-traced subsurface scattering for skin, wax, marble, and other translucent
+materials. Driven by per-material SSS profiles defining scatter radius and extinction.
+
+- **Requirements:** [R-3.2.1](../../requirements/3-nonfunctional/3.2-hardware.md) bindless
+
+## F-2.3.17 Alpha Mask Cutouts
+
+Alpha-tested geometry for vegetation, fences, and decals. Material flags control the alpha test
+threshold. Cutout geometry participates in shadow map rendering.

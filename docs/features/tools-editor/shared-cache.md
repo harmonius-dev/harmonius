@@ -1,0 +1,114 @@
+# 15.11 — Shared Build Cache
+
+## Compiled Asset Caching
+
+### F-15.11.1 Centralized Compiled Asset Cache
+
+A web service that stores compiled and processed assets keyed by content hash — a combination of
+source content, build settings, and tool version. When any developer builds an asset, the compiled
+result is uploaded to the shared cache. Other developers download the cached result instead of
+rebuilding locally, eliminating redundant builds across the entire organization. One build per
+unique asset version, regardless of how many developers need it.
+
+- **Requirements:** R-15.11.1
+- **Dependencies:** F-12.5.1 (Asset Database), F-12.6.1 (Content Pipeline)
+- **Platform notes:** The cache service exposes a REST API over HTTPS. Clients authenticate via
+  project-scoped API tokens or SSO integration.
+
+### F-15.11.2 Shader Compilation Cache
+
+Compiled shader variants (SPIR-V, MSL, DXIL) are cached by a composite key of shader source hash,
+target platform, and feature permutation flags. A full shader rebuild that takes hours locally
+completes in minutes by downloading pre-compiled variants from the shared cache. The cache is
+populated by CI builds targeting all supported platforms, ensuring developers always have
+pre-compiled shaders available for their target.
+
+- **Requirements:** R-15.11.2
+- **Dependencies:** F-15.11.1, F-15.8.5 (Shader Graphs), F-2.1.1 (GPU Abstraction)
+- **Platform notes:** Shader output format varies by platform: DXIL on Windows, SPIR-V on Linux,
+  MSL on macOS. Each platform's variants are cached independently.
+
+### F-15.11.3 Logic Graph Compilation Cache
+
+Compiled logic graph bytecode and AOT native code are cached by graph content hash and target
+platform. When a graph is unchanged since the last build, the compiled output is fetched from the
+shared cache instead of recompiling. Avoids recompiling thousands of gameplay, animation, audio,
+and tool graphs on every editor launch or branch switch.
+
+- **Requirements:** R-15.11.3
+- **Dependencies:** F-15.11.1, F-15.8.12 (Graph Compilation)
+- **Platform notes:** AOT native code cache entries are platform-specific (x86-64, ARM64).
+  Bytecode cache entries are platform-agnostic.
+
+## Onboarding
+
+### F-15.11.4 New Developer Onboarding Acceleration
+
+A fresh repository clone followed by the first editor launch fetches all compiled assets, shaders,
+and graph bytecode from the shared cache instead of building from source. Reduces first-launch time
+from hours to minutes for large projects. Cache prefetch runs in parallel with Git LFS downloads,
+saturating available bandwidth. A progress dashboard shows download status per asset category with
+estimated time remaining.
+
+- **Requirements:** R-15.11.4
+- **Dependencies:** F-15.11.1, F-15.11.2, F-15.11.3, F-15.10.2 (Git LFS)
+- **Platform notes:** None
+
+## Cache Lifecycle
+
+### F-15.11.5 Cache Invalidation and Garbage Collection
+
+Cache entries are invalidated when the build tool version changes or the source content hash no
+longer matches any active branch. Garbage collection runs on a configurable schedule, removing
+entries not referenced by any branch head within a retention window (default 30 days). Storage
+quotas prevent unbounded growth, with least-recently-used eviction when the quota is exceeded.
+Administrators can trigger manual garbage collection and view invalidation logs.
+
+- **Requirements:** R-15.11.5
+- **Dependencies:** F-15.11.1
+- **Platform notes:** None
+
+## Transport and Storage
+
+### F-15.11.6 Cache Transport and Storage
+
+The cache service supports multiple storage backends: local filesystem for small teams, S3, GCS,
+or Azure Blob Storage for cloud deployments, and on-premise HTTP servers for air-gapped
+environments. Content is compressed with Zstd and transferred over HTTPS with content-addressable
+deduplication. Parallel downloads use configurable concurrency and bandwidth limits to avoid
+saturating office network links.
+
+- **Requirements:** R-15.11.6
+- **Dependencies:** F-15.11.1
+- **Platform notes:** On macOS, network transfers use NSURLSession. On Windows, uses WinHTTP.
+  On Linux, uses libcurl. All backends share a unified client interface.
+
+## CI/CD Integration
+
+### F-15.11.7 CI/CD Cache Population
+
+CI build pipelines automatically populate the shared cache as part of their build process. Every
+CI build produces cache entries for all target platforms, ensuring developers always have
+pre-built assets available. Nightly full builds warm the cache for all active branches, including
+feature branches with recent activity. Cache population is idempotent — uploading an entry with
+an existing key is a no-op, avoiding redundant writes.
+
+- **Requirements:** R-15.11.7
+- **Dependencies:** F-15.11.1, F-15.11.2, F-15.11.3
+- **Platform notes:** CI integration is provided via a standalone CLI tool that runs outside the
+  editor, suitable for headless build servers.
+
+## Monitoring
+
+### F-15.11.8 Cache Hit Metrics and Monitoring
+
+A monitoring dashboard displays cache hit rate, miss rate, storage usage, download bandwidth, and
+per-asset build time savings. Alerts fire when the cache hit rate drops below a configurable
+threshold, indicating a tool version change or cache misconfiguration. Per-developer and per-team
+breakdowns identify workflow bottlenecks. Historical trends show cache effectiveness over time and
+correlate hit rate changes with tool version updates.
+
+- **Requirements:** R-15.11.8
+- **Dependencies:** F-15.11.1, F-15.11.5
+- **Platform notes:** Metrics are exported in OpenTelemetry format for integration with Grafana,
+  Datadog, or other observability platforms.

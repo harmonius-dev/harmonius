@@ -1,0 +1,110 @@
+# 1.9 — Spatial Indexing
+
+## Acceleration Structures
+
+### F-1.9.1 Shared BVH Spatial Index
+
+A single bounding volume hierarchy (BVH) maintained as an ECS resource, updated once per frame
+by a dedicated system that queries all entities with spatial components (Transform, Collider,
+BoundingVolume). All subsystems — physics broadphase, rendering frustum culling, network
+interest management, AI perception, and gameplay spatial queries — read from this shared
+structure rather than maintaining independent copies.
+
+- **Requirements:** R-1.9.1
+- **Dependencies:** F-1.1.1 (Archetype Storage), F-1.1.5 (Queries), F-1.2.1 (Transforms)
+- **Platform notes:** None
+
+### F-1.9.2 Incremental BVH Updates
+
+Update the BVH incrementally using ECS change detection (F-1.1.7) on Transform components rather
+than rebuilding from scratch each frame. Moved entities are refitted in-place; large movements
+trigger node reinsertion. Newly spawned entities are batch-inserted. This keeps update cost
+proportional to the number of moved entities, not total entity count — critical for MMO worlds
+where most entities are stationary.
+
+- **Requirements:** R-1.9.2
+- **Dependencies:** F-1.9.1, F-1.1.7 (Change Detection)
+- **Platform notes:** None
+
+### F-1.9.3 Hierarchical Grid / Octree Index
+
+An optional coarse-grained spatial index (uniform grid or octree) for queries that benefit from
+cell-based locality — network area-of-interest filtering, AI crowd density queries, and
+world-partition zone assignment. Stored as an ECS resource alongside the BVH. Entities register
+in cells based on their Transform; cell membership is updated by the same spatial index system.
+
+- **Requirements:** R-1.9.3
+- **Dependencies:** F-1.9.1, F-1.1.7 (Change Detection)
+- **Platform notes:** None
+
+## Query Interface
+
+### F-1.9.4 Unified Spatial Query API
+
+A single query API that all subsystems use to perform ray casts, shape casts, overlap tests,
+nearest-neighbor searches, and frustum queries against the shared spatial index. Queries return
+ECS Entity handles with hit metadata (position, normal, distance). The API accepts ECS query
+filters (With<T>, Without<T>) so callers can restrict results by component presence without
+post-filtering.
+
+- **Requirements:** R-1.9.4
+- **Dependencies:** F-1.9.1, F-1.1.5 (Queries)
+- **Platform notes:** None
+
+### F-1.9.5 Batch and Parallel Spatial Queries
+
+Submit multiple spatial queries as a batch that executes in parallel across worker threads via
+the job system (F-14.3.3). Batch queries amortize tree traversal overhead and exploit SIMD for
+ray-BVH intersection. This is essential for server-side MMO ticks where hundreds of AI agents,
+ability checks, and network relevancy scans issue spatial queries simultaneously.
+
+- **Requirements:** R-1.9.5
+- **Dependencies:** F-1.9.4, F-14.3.3 (Job System)
+- **Platform notes:** None
+
+## Consumer Integration
+
+### F-1.9.6 Physics Broadphase Integration
+
+The physics broadphase reads from the shared BVH rather than maintaining a separate
+sweep-and-prune or BVH. The collision detection system queries the shared index for overlapping
+AABB pairs, filtered by CollisionLayers components. This eliminates redundant spatial data and
+ensures physics and rendering agree on entity positions within the same frame.
+
+- **Requirements:** R-1.9.6
+- **Dependencies:** F-1.9.1, F-4.2.1 (Broadphase), F-4.2.6 (Collision Layers)
+- **Platform notes:** None
+
+### F-1.9.7 Rendering Culling Integration
+
+The rendering frustum culling system reads from the shared BVH to determine visible entities
+per view (main camera, shadow cascades, reflection probes). Culling results are written as
+transient Visible marker components or into per-view visibility bitsets. Sharing the BVH with
+physics avoids rebuilding a separate culling hierarchy for the renderer.
+
+- **Requirements:** R-1.9.7
+- **Dependencies:** F-1.9.1, F-2.10.4 (View Setup)
+- **Platform notes:** None
+
+### F-1.9.8 Network Interest Management Integration
+
+The network relevancy system uses the shared spatial index (grid or octree, F-1.9.3) to
+compute area-of-interest sets for each connected player. Only entities within a player's
+relevancy radius are replicated, and the spatial index provides efficient range queries.
+Sharing the index with physics and rendering ensures consistent spatial reasoning across
+all subsystems.
+
+- **Requirements:** R-1.9.8
+- **Dependencies:** F-1.9.3, F-8.2.2 (Relevancy)
+- **Platform notes:** None
+
+### F-1.9.9 AI Perception and Gameplay Integration
+
+AI perception systems (sight cones, hearing radii) and gameplay spatial queries (area-of-effect
+abilities, trigger volumes) read from the shared spatial index. Perception queries use frustum
+and sphere overlap tests on the BVH; gameplay queries use the unified query API (F-1.9.4).
+This avoids AI and gameplay systems maintaining their own spatial lookups.
+
+- **Requirements:** R-1.9.9
+- **Dependencies:** F-1.9.4, F-7.6.1 (Sight), F-7.6.2 (Hearing)
+- **Platform notes:** None
