@@ -63,7 +63,7 @@ For MMO, cloud save coordinates with the authoritative server database to reconc
 progression.
 
 - **Requirements:** R-13.3.5
-- **Dependencies:** F-13.3.4, F-14.3.1 (Platform Services)
+- **Dependencies:** F-13.3.4, F-14.5.5 (Platform Cloud Storage)
 - **Platform notes:** Each platform requires its own SDK integration. Uses platform-native
   async I/O (IOCP on Windows, GCD on macOS, io_uring on Linux) for file transfers.
 

@@ -1,5 +1,9 @@
 # GPU Runtime Requirements
 
+> **Scope:** GPU runtime internals -- memory management, state tracking, work graph emulation,
+> and feature emulation. For the backend trait interface (Metal, D3D12, Vulkan), see
+> [gpu-abstraction-layer.md](gpu-abstraction-layer.md).
+
 Requirements for the GPU runtime layer (`harmonius::gpu_runtime`), a shared services module that
 sits between the GPU backend interface (`harmonius::gpu`) and consumers such as the render graph
 (`harmonius::rg`) and asset pipeline (`harmonius::asset`).

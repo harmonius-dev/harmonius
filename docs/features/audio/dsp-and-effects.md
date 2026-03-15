@@ -11,7 +11,8 @@ are smoothed per-sample to avoid zipper noise when parameters change at runtime.
 
 - **Requirements:** R-5.3.1
 - **Dependencies:** F-5.1.3
-- **Platform notes:** None
+- **Platform notes:** Biquad filters are lightweight on all platforms. Per-voice filter
+  count governed by voice budget (see F-5.1.4).
 
 ### F-5.3.2 Parametric Equalizer
 
@@ -22,7 +23,8 @@ from a stone cathedral without requiring separate assets.
 
 - **Requirements:** R-5.3.2
 - **Dependencies:** F-5.3.1
-- **Platform notes:** None
+- **Platform notes:** EQ band count scales per tier: mobile 4 bands, Switch 6, desktop
+  8. Fewer bands reduce per-bus DSP cost on mobile.
 
 ## Reverb
 
@@ -35,7 +37,9 @@ are impractical due to the sheer number of distinct spaces in an MMO world.
 
 - **Requirements:** R-5.3.3
 - **Dependencies:** F-5.3.1
-- **Platform notes:** None
+- **Platform notes:** Algorithmic reverb is the default reverb on mobile and Switch.
+  FDN delay line count: mobile 4, Switch 8, desktop 16. Diffusion quality reduced
+  on mobile.
 
 ### F-5.3.4 Convolution Reverb
 
@@ -47,7 +51,9 @@ the higher CPU cost.
 
 - **Requirements:** R-5.3.4
 - **Dependencies:** F-5.1.5, F-5.3.1
-- **Platform notes:** None
+- **Platform notes:** Convolution reverb available on desktop and Switch only. Mobile
+  uses algorithmic reverb (F-5.3.3) exclusively. IR length capped on Switch (0.5s vs
+  2s+ on desktop) to limit FFT partition count.
 
 ## Dynamics
 
@@ -60,7 +66,8 @@ ambience) would otherwise overdrive the output.
 
 - **Requirements:** R-5.3.5
 - **Dependencies:** F-5.1.3
-- **Platform notes:** None
+- **Platform notes:** Compressor and limiter on master bus active on all tiers.
+  Per-bus insert compressors limited on mobile (master + SFX bus only).
 
 ## Modulation and Time Effects
 
@@ -73,7 +80,8 @@ such as echo in canyons or phasing on magical abilities.
 
 - **Requirements:** R-5.3.6
 - **Dependencies:** F-5.1.3
-- **Platform notes:** None
+- **Platform notes:** Time-based effects available on all tiers. Active delay/chorus/
+  flanger insert count: mobile 1-2, Switch 3-4, desktop 8+.
 
 ### F-5.3.7 Pitch Shifting
 
@@ -84,7 +92,8 @@ without altering the duration of the source material.
 
 - **Requirements:** R-5.3.7
 - **Dependencies:** F-5.1.3
-- **Platform notes:** None
+- **Platform notes:** Pitch shifting uses time-domain OLA on mobile (lower quality,
+  lower CPU). Desktop uses phase-vocoder for higher fidelity.
 
 ## Extensibility
 
@@ -97,4 +106,5 @@ audio processing, and rapid prototyping without modifying engine internals.
 
 - **Requirements:** R-5.3.8
 - **Dependencies:** F-5.1.3
-- **Platform notes:** None
+- **Platform notes:** Total DSP chain length (inserts across all buses) capped per tier:
+  mobile 8-12 nodes, Switch 16-24, desktop 32+.

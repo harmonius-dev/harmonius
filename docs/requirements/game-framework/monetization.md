@@ -1,0 +1,408 @@
+# R-13.23 — Monetization and Live Operations Requirements
+
+## Battle Pass and Season System
+
+### R-13.23.1 Battle Pass with Tiered Reward Tracks
+
+The engine **SHALL** provide a data-driven battle pass system with free and premium reward tiers,
+season-scoped XP progression, and server-loaded pass definitions supporting configurable season
+duration, per-tier reward grants, catch-up mechanics, and live-ops content updates without client
+patches.
+
+- **Derived from:** [F-13.23.1](../../features/game-framework/monetization.md)
+- **Rationale:** A server-driven battle pass enables live-ops teams to iterate on reward
+  structures and season content without requiring client updates or redeployment.
+- **Verification:** Integration test: load a pass definition with 50 tiers (25 free, 25
+  premium). Award XP to advance through tiers and verify correct reward grants per tier. Verify
+  premium-tier rewards are withheld for non-purchasers. Simulate season reset and confirm
+  progress clears while catch-up XP multiplier activates in the final third of the season.
+
+## Daily and Weekly Challenge System
+
+### R-13.23.2 Server-Defined Rotating Challenges
+
+The engine **SHALL** support server-defined daily and weekly challenge lists with incremental
+progress tracking, configurable rewards, difficulty tiers, scheduled rotation, and per-day
+reroll at a currency cost.
+
+- **Derived from:** [F-13.23.2](../../features/game-framework/monetization.md)
+- **Rationale:** Server-side challenge definitions allow live-ops deployment of new objectives
+  without client updates, supporting ongoing player engagement.
+- **Verification:** Integration test: deploy a daily challenge set (3 challenges) and a weekly
+  set (2 challenges). Advance an in-game counter and verify incremental progress updates. Verify
+  daily rotation replaces challenges after the configured interval. Verify reroll deducts
+  currency and replaces the selected challenge without duplicating active challenges.
+
+## In-App Purchase and Premium Currency
+
+### R-13.23.3a Platform Purchase Abstraction
+
+The engine **SHALL** abstract platform-specific purchase APIs (StoreKit 2, Play Billing 5+,
+Steam ISteamMicroTxn, console store APIs) behind a unified purchase interface. The interface
+**SHALL** expose a single `initiate_purchase` / `on_purchase_complete` flow. Platform
+selection **SHALL** be automatic based on the runtime environment. The abstraction **SHALL**
+handle platform-specific quirks: deferred purchases on iOS, pending transactions on Google
+Play, and overlay callbacks on Steam.
+
+- **Derived from:** [F-13.23.3a](../../features/game-framework/monetization.md)
+- **Rationale:** A unified purchase abstraction reduces per-platform integration cost and
+  ensures consistent purchase flows across all supported platforms.
+- **Verification:** Per-platform test: initiate a purchase through the unified API, complete
+  the platform dialog, and verify `on_purchase_complete` fires with correct product ID and
+  receipt. Test deferred purchase on iOS and pending transaction on Google Play to verify
+  the abstraction handles platform-specific states. Verify the same code path works across
+  all supported platforms.
+
+### R-13.23.3b Server-Side Receipt Validation
+
+All purchase receipts **SHALL** be validated server-side before granting items or currency.
+The validation service **SHALL** contact the platform's verification endpoint. Duplicate
+receipt replay **SHALL** be detected and rejected within 100ms. Failed validations **SHALL**
+be retried with exponential backoff. All validation results **SHALL** be logged with
+transaction ID, timestamp, and status.
+
+- **Derived from:** [F-13.23.3b](../../features/game-framework/monetization.md)
+- **Rationale:** Server-side receipt validation prevents fraudulent transactions and
+  duplicate receipt replay.
+- **Verification:** Complete a purchase and verify server-side validation succeeds. Replay
+  the same receipt and verify rejection within 100ms. Simulate a validation failure and
+  verify retry with exponential backoff. Verify all validation results are logged with
+  transaction ID, timestamp, and status.
+
+### R-13.23.3c Premium Currency System
+
+Premium currency **SHALL** be a special currency type purchasable with real money via IAP
+and spendable on cosmetic shop items, battle pass tiers, and convenience features. Currency
+balances **SHALL** be stored server-side. Purchases **SHALL** credit currency only after
+successful receipt validation. All monetized items **SHALL** be cosmetic or convenience
+only in the default configuration, enforceable via governance rules.
+
+- **Derived from:** [F-13.23.3c](../../features/game-framework/monetization.md)
+- **Rationale:** Server-side balance storage prevents client-side tampering. Cosmetic-only
+  defaults prevent pay-to-win dynamics.
+- **Verification:** Purchase premium currency and verify the balance is credited server-side
+  only after receipt validation. Attempt to modify the balance client-side and verify the
+  server rejects the tampered value. Verify premium currency can purchase cosmetic items
+  but cannot purchase gameplay-affecting items in default configuration.
+
+### R-13.23.3d Purchase History and Refund Tracking
+
+Every completed transaction **SHALL** be recorded in a per-player purchase history with
+transaction ID, platform, item/currency purchased, amount, timestamp, and refund status.
+Platform refund notifications (Apple Server Notifications v2, Google Real-Time Developer
+Notifications) **SHALL** update the refund status automatically. The purchase history
+**SHALL** be queryable via the game's account management UI.
+
+- **Derived from:** [F-13.23.3d](../../features/game-framework/monetization.md)
+- **Rationale:** Purchase history provides audit trails for disputes and refund tracking
+  automates a manual support process.
+- **Verification:** Complete a purchase and verify it appears in the purchase history with
+  correct transaction ID, platform, amount, and timestamp. Trigger a platform refund
+  notification and verify the refund status updates automatically. Query the purchase
+  history via the account management UI and verify all fields are displayed.
+
+## Daily Login Reward Calendar
+
+### R-13.23.4 Consecutive Login Reward Calendar with Streak Tracking
+
+The engine **SHALL** provide a daily login reward calendar with server-validated timestamps,
+configurable streak milestones (7, 14, 28 days), escalating rewards, and selectable strict
+(reset on miss) or lenient (catch-up stamp) streak modes.
+
+- **Derived from:** [F-13.23.4](../../features/game-framework/monetization.md)
+- **Rationale:** Server-side timestamp validation prevents client clock manipulation, ensuring
+  login reward integrity.
+- **Verification:** Integration test: simulate 7 consecutive logins and verify milestone reward
+  grants. In strict mode, skip a day and verify streak resets to zero. In lenient mode, skip a
+  day and verify catch-up stamp is consumed. Attempt login with a manipulated client clock and
+  verify the server rejects the timestamp.
+
+## Non-Functional Requirements
+
+### NFR-13.23.1 Purchase Transaction Security
+
+All in-app purchase transactions **SHALL** use server-side receipt validation. Duplicate
+receipt replay **SHALL** be rejected within 100ms. Purchase flow from platform dialog
+completion to item/currency delivery **SHALL** complete within 3 seconds. Failed transactions
+**SHALL** be idempotently retryable without double-crediting.
+
+- **Rationale:** Purchase integrity prevents revenue loss from fraud and ensures players
+  receive purchased items reliably.
+- **Verification:** Complete a purchase and verify server-side validation succeeds within 3
+  seconds. Replay the same receipt and verify rejection within 100ms. Simulate a network
+  failure mid-transaction, retry, and verify no double-credit occurs.
+
+### NFR-13.23.2 Live Operations Hot-Reload
+
+Battle pass definitions, challenge rotations, and login calendar configurations **SHALL** be
+deployable from the server without requiring a client update or restart. New content **SHALL**
+be visible to the client within 60 seconds of server deployment.
+
+- **Rationale:** Live operations require rapid iteration on reward structures and challenges.
+  Server-side deployment without client patches reduces time-to-player for content updates.
+- **Verification:** Deploy a new battle pass definition server-side. Verify the client
+  reflects the updated pass within 60 seconds without restart. Deploy a new daily challenge
+  set and verify it appears on the client within 60 seconds.
+
+## Subscription and Membership Tiers
+
+### R-13.23.5a Subscription State Verification
+
+Subscription state **SHALL** be verified server-side on login and periodically during play
+(interval configurable, default 15 minutes). The verification service **SHALL** query the
+platform subscription API to confirm active status. A local cache **SHALL** avoid redundant
+API calls within the verification interval. Lapsed subscriptions **SHALL** be detected
+within one verification interval.
+
+- **Derived from:** [F-13.23.5a](../../features/game-framework/monetization.md)
+- **Rationale:** Server-side verification prevents subscription spoofing. Local caching
+  avoids excessive API calls while maintaining timely lapse detection.
+- **Verification:** Create a subscription and verify server-side state is active on login.
+  Simulate lapse by expiring the subscription server-side. Verify the verification service
+  detects the lapse within one interval. Verify no redundant API calls occur within the
+  cache interval.
+
+### R-13.23.5b Subscription Benefit Application
+
+Configurable per-tier benefits **SHALL** be granted on active subscription and revoked on
+lapse. Lapsed subscriptions **SHALL NOT** delete earned content — cosmetics, inventory
+items, and progression data **SHALL** be retained. Tier-exclusive benefits (exclusive modes,
+priority queue, XP multipliers) **SHALL** be revoked within one verification interval of
+lapse detection. Tier changes (upgrade/downgrade) **SHALL** adjust benefits immediately on
+the next verification.
+
+- **Derived from:** [F-13.23.5b](../../features/game-framework/monetization.md)
+- **Rationale:** Retaining earned content on lapse avoids punishing players who temporarily
+  unsubscribe and encourages re-subscription.
+- **Verification:** Create a subscription and verify tier benefits are active. Simulate
+  lapse and verify tier-exclusive benefits are revoked within one verification interval.
+  Verify all previously earned cosmetics and inventory remain accessible. Test
+  upgrade/downgrade and verify benefits change on next verification.
+
+### R-13.23.5c Subscription Management UI
+
+The engine **SHALL** provide an in-game UI for viewing current subscription tier and
+benefits, upgrading, downgrading, and canceling. Management actions **SHALL** redirect to
+the platform store's native subscription management flow. The UI **SHALL** display renewal
+date, next billing amount, and a tier comparison table.
+
+- **Derived from:** [F-13.23.5c](../../features/game-framework/monetization.md)
+- **Rationale:** In-game subscription management reduces friction for tier changes and
+  cancellations.
+- **Verification:** Open the subscription management UI and verify current tier, renewal
+  date, and billing amount are displayed. Initiate an upgrade and verify redirect to the
+  platform store. Verify the tier comparison table shows all available tiers with benefits.
+
+### R-13.23.5d Subscription Gifting
+
+Players **SHALL** be able to purchase a subscription as a gift for another player by
+selecting a recipient, tier, and duration. Gift subscriptions **SHALL NOT** auto-renew.
+The recipient **SHALL** receive a notification with the gifter's name. After the gift
+period ends, the recipient **SHALL** be required to subscribe independently to continue.
+
+- **Derived from:** [F-13.23.5d](../../features/game-framework/monetization.md)
+- **Rationale:** Subscription gifting enables social spending and player acquisition through
+  word-of-mouth.
+- **Verification:** Gift a subscription to another player and verify the recipient gains
+  active subscription state with a notification. Verify the gift subscription does not
+  auto-renew after expiration. Verify the recipient must explicitly subscribe to continue
+  after the gift period.
+
+## Game Trial and Free Weekend System
+
+### R-13.23.6a Timed Game Trial
+
+The engine **SHALL** support configurable game trials where new players access the full game
+for N hours (configurable per title). Trial time tracking **SHALL** persist across sessions —
+closing and reopening the game **SHALL NOT** reset the trial clock. Trial time **SHALL** be
+tracked server-side to prevent clock manipulation. Trial progress (character data, inventory,
+achievements) **SHALL** carry over to purchase without data loss. Trial expiration **SHALL**
+revert the player to non-owner state without deleting saved data.
+
+- **Derived from:** [F-13.23.6a](../../features/game-framework/monetization.md)
+- **Rationale:** Progress carry-over removes a major friction point for trial-to-purchase
+  conversion. Server-side time tracking prevents clock manipulation.
+- **Verification:** Start a trial with a 2-hour limit. Play for 30 minutes, close the
+  session, reopen and verify 90 minutes remain. Play until expiration and verify revert to
+  non-owner state. Purchase the game and verify all trial progress is intact. Attempt to
+  manipulate the client clock and verify the server rejects the tampered time.
+
+### R-13.23.6b Free Weekend Events
+
+Free weekend events **SHALL** be configurable server-side with start/end timestamps and
+broadcast to the launcher. Non-owners **SHALL** receive a launcher notification when a free
+weekend is active. Access **SHALL** be automatically revoked after the event end timestamp.
+Progress made during the free weekend **SHALL** carry over if the player later purchases
+the game.
+
+- **Derived from:** [F-13.23.6b](../../features/game-framework/monetization.md)
+- **Rationale:** Server-side free weekend scheduling enables marketing promotions without
+  client patches.
+- **Verification:** Configure a free weekend event server-side. Verify non-owners can
+  launch and play during the event window. Verify access is revoked after the event end
+  timestamp. Purchase the game afterward and verify free weekend progress is intact.
+
+### R-13.23.6c Content Trial
+
+Content trials **SHALL** temporarily unlock specific DLC or expansion content for all
+players during server-configured promotional periods. Content trial start/end timestamps
+**SHALL** be set server-side. Temporary access **SHALL** automatically revert on
+expiration. Players **SHALL** see a targeted purchase prompt for the full DLC during and
+after the content trial.
+
+- **Derived from:** [F-13.23.6c](../../features/game-framework/monetization.md)
+- **Rationale:** Content trials allow players to experience premium content before
+  purchasing, increasing conversion rates.
+- **Verification:** Configure a content trial server-side for a specific DLC. Verify all
+  players can access the DLC content during the trial period. Verify access reverts on
+  expiration. Verify a purchase prompt is displayed during and after the trial.
+
+## DLC and Expansion Purchasing
+
+### R-13.23.7 On-Demand DLC Download with Entitlement Gating
+
+The engine **SHALL** support purchasing and downloading DLC content on demand — DLC **SHALL
+NOT** be bundled with the base install. Each DLC **SHALL** be a signed asset bundle verified
+by the entitlement system before activation. The DLC store UI **SHALL** display available DLC,
+owned DLC, local-currency prices, bundle deals, and seasonal sales. DLC download progress
+**SHALL** be visible in the launcher and in-game. DLC that adds gameplay systems **SHALL**
+integrate through the modular system and activate on next login without requiring a full
+client restart.
+
+- **Derived from:** [F-13.23.7](../../features/game-framework/monetization.md)
+- **Rationale:** On-demand download keeps the base install small, reducing initial download
+  barriers. Signed asset bundles prevent tampered content from loading.
+- **Verification:** Integration test: publish a DLC asset bundle, purchase it through the
+  store, and verify on-demand download starts with visible progress. Verify the DLC content
+  is accessible after download and next login. Attempt to load an unsigned or tampered DLC
+  bundle and verify it is rejected. Verify bundle deal pricing displays correctly and
+  applies the discount. Verify base install size does not include DLC content.
+
+## Cosmetic Store and Virtual Currency
+
+### R-13.23.8 Cosmetic-Only Store with Automatic Refund Window
+
+The engine **SHALL** provide an in-game cosmetic store where all purchasable items provide
+zero gameplay advantage — no stat boosts, no power increases, no gameplay-affecting
+modifications. The store **SHALL** support three currency types: premium (real-money
+purchased), earned (gameplay-granted), and event (seasonal, time-limited). A 24-hour refund
+window **SHALL** be automatically available for all cosmetic purchases — refunds within this
+window **SHALL** require no approval and **SHALL** restore the spent currency immediately.
+Cosmetics **SHALL** be bound to the player account (not per-character) for cross-character
+access. The store **SHALL** rotate featured items on a configurable schedule. AI-generated
+cosmetics **SHALL** be clearly labeled per the AI governance toggle.
+
+- **Derived from:** [F-13.23.8](../../features/game-framework/monetization.md)
+- **Rationale:** Cosmetic-only monetization avoids pay-to-win dynamics that degrade
+  competitive integrity. Automatic refund windows build player trust and reduce support
+  burden.
+- **Verification:** Integration test: purchase a cosmetic item, verify it provides no stat
+  changes on any character. Equip the cosmetic on one character and verify it is available on
+  all characters on the same account. Request a refund within 24 hours and verify currency is
+  restored immediately without approval. Request a refund after 24 hours and verify it is
+  rejected. Verify store rotation changes featured items on the configured schedule. Verify
+  AI-generated cosmetics display a governance label.
+
+## Anti-Exploitation Advertising Safeguards
+
+### R-13.23.9a Deceptive UI Prevention
+
+Ad close buttons **SHALL** be minimum 44x44 points and **SHALL** be functional immediately
+upon display — no delayed activation, no fake buttons, no invisible tap regions. The ad
+mediation layer **SHALL** reject ad creatives that mimic game UI elements, fake system
+notifications, or simulate interactive game content. These rules **SHALL** be compiled into
+the engine binary and **SHALL NOT** be overridable by game configuration or developer code.
+
+- **Derived from:** [F-13.23.9a](../../features/game-framework/monetization.md)
+- **Rationale:** Engine-level enforcement prevents game developers from circumventing player
+  protections against deceptive ad UI.
+- **Verification:** Render an ad with a close button smaller than 44x44pt and verify the
+  engine rejects it. Verify close button is tappable within 100ms of ad display. Submit an
+  ad creative containing a fake system notification and verify the mediation layer rejects
+  it. Verify these rules cannot be overridden by modifying game configuration files.
+
+### R-13.23.9b Minor-Targeted Ad Blocking
+
+Players under age 16 (as reported by platform parental controls) **SHALL** receive only
+contextual ads. No personalized or behaviorally-targeted advertising **SHALL** be served to
+minors. Age detection **SHALL** integrate with platform parental control APIs. The age check
+**SHALL** be performed on session start and cached for the session duration. These rules
+**SHALL** be compiled into the engine binary.
+
+- **Derived from:** [F-13.23.9b](../../features/game-framework/monetization.md)
+- **Rationale:** Protecting minors from targeted advertising complies with COPPA (US) and
+  GDPR Article 8 (EU).
+- **Verification:** Set player age to 14 via platform parental controls and verify only
+  contextual ads are served. Verify no personalized ad requests are made for under-16
+  players. Verify the age check occurs on session start and is cached.
+
+### R-13.23.9c Dark Pattern Prevention
+
+Ads **SHALL NOT** auto-play audio without user initiation, vibrate the device to attract
+attention, launch external apps without explicit consent, or obscure the "Ad" label. The ad
+mediation layer **SHALL** validate each ad creative against these rules before display.
+Violations **SHALL** be logged and the offending ad **SHALL** be suppressed. A global
+"disable all ads" setting **SHALL** be available in accessibility preferences. These rules
+**SHALL** be compiled into the engine binary.
+
+- **Derived from:** [F-13.23.9c](../../features/game-framework/monetization.md)
+- **Rationale:** Dark pattern prevention protects players from manipulative advertising
+  practices and ensures a respectful user experience.
+- **Verification:** Submit an ad creative that auto-plays audio and verify it is suppressed.
+  Submit an ad that vibrates the device and verify it is suppressed. Submit an ad that
+  launches an external app without consent and verify it is blocked. Enable "disable all
+  ads" and verify no ad format is displayed. Verify violations are logged.
+
+### R-13.23.9d Frequency Cap Enforcement
+
+Ad frequency **SHALL** be hard-capped at maximum 1 interstitial per 10 minutes and 3
+rewarded videos per hour, enforced engine-side regardless of game developer configuration.
+Cap timers **SHALL** use rolling windows (not calendar boundaries). Attempts to display
+ads exceeding the cap **SHALL** be silently blocked and logged. Cap values **SHALL** be
+compiled into the engine binary and **SHALL NOT** be changeable at runtime.
+
+- **Derived from:** [F-13.23.9d](../../features/game-framework/monetization.md)
+- **Rationale:** Engine-enforced frequency caps prevent excessive ad exposure regardless of
+  how individual game teams configure their monetization.
+- **Verification:** Attempt to show 2 interstitials within 10 minutes and verify the second
+  is blocked. Attempt 4 rewarded videos within 1 hour and verify the fourth is blocked.
+  Verify the cap uses a rolling window by showing an interstitial, waiting 10 minutes, and
+  verifying a second is allowed. Verify cap values cannot be overridden by game config.
+
+### NFR-13.23.3 Subscription Verification Latency
+
+Subscription state verification **SHALL** complete within 500ms on login. Periodic
+re-verification during play **SHALL** complete within 1 second and **SHALL NOT** block
+gameplay.
+
+- **Rationale:** Subscription checks must not delay login or interrupt gameplay. Background
+  verification keeps the experience seamless while maintaining security.
+- **Verification:** Measure subscription verification time across 100 login attempts and
+  verify p99 is under 500ms. Trigger a periodic re-verification during active gameplay and
+  verify no frame stutter or gameplay pause occurs.
+
+### NFR-13.23.4 DLC Download Performance
+
+DLC download **SHALL** saturate the available network bandwidth (minimum 80% utilization on
+connections 10 Mbps and above). Download progress updates **SHALL** be reported at least once
+per second. A failed or interrupted download **SHALL** be resumable from the last completed
+chunk without re-downloading.
+
+- **Rationale:** Fast, resumable downloads minimize wait time and prevent wasted bandwidth on
+  interrupted connections.
+- **Verification:** Download a 2 GB DLC bundle on a 100 Mbps connection and verify throughput
+  exceeds 80 Mbps. Interrupt the download at 50% and resume — verify download continues from
+  the interruption point. Verify progress callbacks fire at least once per second during
+  download.
+
+### NFR-13.23.5 Cosmetic Store Load Time
+
+The cosmetic store **SHALL** display the initial page of items within 2 seconds of opening,
+including item thumbnails. Scrolling through the store **SHALL** maintain 60 FPS with no
+visible hitching during thumbnail loading.
+
+- **Rationale:** A responsive store experience encourages browsing and purchasing. Slow or
+  hitchy stores frustrate players and reduce revenue.
+- **Verification:** Open the cosmetic store with 500 items in the catalog and verify the
+  first page renders within 2 seconds. Scroll through the full catalog and verify frame rate
+  stays above 58 FPS (allowing minor variance).

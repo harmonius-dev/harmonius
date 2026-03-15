@@ -54,7 +54,8 @@ before and after test scenarios.
 
 - **Requirements:** R-15.5.4
 - **Dependencies:** F-15.5.3
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime. Use remote
+  profiling (F-15.5.7) to profile mobile and console targets.
 
 ## Network Profiling
 
@@ -67,7 +68,7 @@ spikes that exceed budget thresholds. Essential for tuning MMO replication in cr
 
 - **Requirements:** R-15.5.5
 - **Dependencies:** F-12.1.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Overlays and Remote Profiling
 
@@ -80,7 +81,8 @@ for post-session analysis.
 
 - **Requirements:** R-15.5.6
 - **Dependencies:** F-15.5.1, F-15.5.2
-- **Platform notes:** None
+- **Platform notes:** Stat overlays render on all platforms including mobile. Mobile overlays
+  use a compact layout to avoid obscuring the small screen.
 
 ### F-15.5.7 Remote Profiling
 

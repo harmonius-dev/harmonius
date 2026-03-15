@@ -13,7 +13,8 @@ reach 80-150 ms.
 
 - **Requirements:** R-8.4.1
 - **Dependencies:** F-8.2.1, F-8.1.3
-- **Platform notes:** None
+- **Platform notes:** Mobile limits rollback replay to 4 frames (vs. 8+ on desktop) to
+  bound per-frame CPU cost. Higher mobile RTT makes prediction more important.
 
 ### F-8.4.2 Input Buffering and Redundant Transmission
 
@@ -24,7 +25,8 @@ depth is tunable based on measured round-trip time and jitter.
 
 - **Requirements:** R-8.4.2
 - **Dependencies:** F-8.4.1
-- **Platform notes:** None
+- **Platform notes:** Mobile uses deeper default buffer (6 frames vs. 3) to absorb higher
+  jitter on cellular networks. Redundancy level is auto-tuned from loss rate.
 
 ## Interpolation
 
@@ -38,7 +40,8 @@ the interpolation window.
 
 - **Requirements:** R-8.4.3
 - **Dependencies:** F-8.2.1
-- **Platform notes:** None
+- **Platform notes:** Mobile uses a wider interpolation window (2 ticks vs. 1) to
+  compensate for higher jitter, trading slightly more visual latency for smoothness.
 
 ### F-8.4.4 Entity Extrapolation with Error Correction
 
@@ -50,7 +53,8 @@ simultaneously.
 
 - **Requirements:** R-8.4.4
 - **Dependencies:** F-8.4.3
-- **Platform notes:** None
+- **Platform notes:** Mobile extrapolation window is longer (200 ms vs. 100 ms) to cover
+  more frequent late packets. Error correction uses faster decay on mobile.
 
 ## Lag Compensation
 
@@ -76,4 +80,5 @@ smooth gameplay over consumer internet connections.
 
 - **Requirements:** R-8.4.6
 - **Dependencies:** F-8.1.7
-- **Platform notes:** None
+- **Platform notes:** Mobile defaults to a deeper jitter buffer (3-5 ticks vs. 1-3 on
+  desktop) to absorb cellular network variance. Wi-Fi vs. cellular is auto-detected.

@@ -56,23 +56,8 @@ graph inline with remote tracking status and ahead/behind counts.
 
 - **Requirements:** R-15.10.4
 - **Dependencies:** F-15.10.1, F-15.10.7
-- **Platform notes:** Pull/merge request creation integrates with GitHub, GitLab, Bitbucket,
-  and Azure DevOps APIs. The provider is auto-detected from the remote URL or configured
-  manually per-project.
-
-### F-15.10.8 Multi-Provider Git Hosting Support
-
-First-class support for GitHub, GitLab, Bitbucket, and self-hosted Git servers. All hosting-
-provider-specific features (pull requests, merge requests, code review, issue linking, CI
-status) are accessed through a provider abstraction layer. The editor auto-detects the provider
-from the remote URL. Provider-specific API tokens are stored in the platform credential store.
-All provider interactions (PR creation, review, merge, comment) happen within the editor — no
-browser required.
-
-- **Requirements:** R-15.10.8
-- **Dependencies:** F-15.10.1, F-15.12.14 (PR Review in Editor)
-- **Platform notes:** GitHub uses REST v3 + GraphQL v4 APIs. GitLab uses REST v4 API.
-  Bitbucket uses REST 2.0 API. Self-hosted instances require configurable base URL.
+- **Platform notes:** Desktop only. Not available on mobile or console runtime. Pull/merge
+  request creation integrates with GitHub, GitLab, Bitbucket, and Azure DevOps APIs.
 
 ## Collaboration
 
@@ -120,3 +105,19 @@ overlapping edits.
 - **Dependencies:** F-15.10.1, F-15.10.3, F-15.11.1
 - **Platform notes:** Shelf data is stored in the project's `.harmonius/shelves/` directory and
   excluded from version control via `.gitignore`.
+
+## Multi-Provider
+
+### F-15.10.8 Multi-Provider Git Hosting Support
+
+First-class support for GitHub, GitLab, Bitbucket, and self-hosted Git servers. All hosting-
+provider-specific features (pull requests, merge requests, code review, issue linking, CI
+status) are accessed through a provider abstraction layer. The editor auto-detects the provider
+from the remote URL. Provider-specific API tokens are stored in the platform credential store.
+All provider interactions (PR creation, review, merge, comment) happen within the editor — no
+browser required.
+
+- **Requirements:** R-15.10.8
+- **Dependencies:** F-15.10.1, F-15.12.14 (PR Review in Editor)
+- **Platform notes:** GitHub uses REST v3 + GraphQL v4 APIs. GitLab uses REST v4 API.
+  Bitbucket uses REST 2.0 API. Self-hosted instances require configurable base URL.

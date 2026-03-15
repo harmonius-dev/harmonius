@@ -11,7 +11,8 @@ arguments. This supports millions of vegetation instances across MMO-scale fores
 
 - **Requirements:** R-3.3.1
 - **Dependencies:** F-3.1.3
-- **Platform notes:** None
+- **Platform notes:** Instance count caps scale per tier: mobile 50K-100K, Switch 200K,
+  desktop 1M+. Culling cluster granularity coarsened on mobile to reduce dispatch cost.
 
 ## Procedural Placement
 
@@ -24,7 +25,8 @@ eliminating the need to store per-instance data on disk for vast open worlds.
 
 - **Requirements:** R-3.3.2
 - **Dependencies:** F-3.2.1, F-3.3.1
-- **Platform notes:** None
+- **Platform notes:** Density multiplier scales per tier: mobile 0.25x-0.5x, Switch 0.5x,
+  desktop 1.0x. Placement evaluation radius reduced on mobile.
 
 ## Foliage LOD
 
@@ -38,20 +40,24 @@ magnitude at distance.
 
 - **Requirements:** R-3.3.3
 - **Dependencies:** F-3.3.1
-- **Platform notes:** None
+- **Platform notes:** Billboard/impostor transition distance shorter on mobile (earlier
+  switch to impostors). Impostor atlas resolution halved on mobile.
 
 ## Wind Animation
 
 ### F-3.3.4 GPU Vertex Shader Wind Animation
 
-Hierarchical wind deformation computed entirely in the vertex or mesh shader. A global wind field texture combined
-with per-instance phase offsets drives three-layer animation: trunk sway (low frequency), branch oscillation
-(medium frequency), and leaf flutter (high frequency). Wind gusts propagate spatially as wave fronts across the
-world. The system supports artist-tunable per-species wind response curves.
+Hierarchical wind deformation computed entirely in the vertex or mesh shader. Foliage vertex shaders sample wind
+velocity from the shared wind field texture generated from `WindSource` ECS entities (F-4.7.5) and apply
+procedural oscillation. Per-instance phase offsets drive three-layer animation: trunk sway (low frequency), branch
+oscillation (medium frequency), and leaf flutter (high frequency). Wind gusts propagate spatially as wave fronts
+across the world. The system supports artist-tunable per-species wind response curves.
 
 - **Requirements:** R-3.3.4
-- **Dependencies:** F-3.3.1
-- **Platform notes:** None
+- **Dependencies:** F-3.3.1, F-4.7.5 (Wind Field Texture)
+- **Platform notes:** Wind animation layers scale per tier: mobile trunk sway only (1
+  layer), Switch trunk + branch (2 layers), desktop all 3 layers. Wind field texture
+  resolution halved on mobile.
 
 ## Foliage Collision / Interaction
 
@@ -65,7 +71,8 @@ bound cost.
 
 - **Requirements:** R-3.3.5
 - **Dependencies:** F-3.3.1, F-3.3.4
-- **Platform notes:** None
+- **Platform notes:** Interaction buffer resolution and range reduced on mobile. Decay
+  rate increased on mobile to limit active displacement samples.
 
 ## Grass Rendering
 
@@ -78,7 +85,9 @@ thousands of visible blades per frame for lush meadow and savannah environments.
 
 - **Requirements:** R-3.3.6
 - **Dependencies:** F-3.2.1, F-3.3.2
-- **Platform notes:** None
+- **Platform notes:** Visible blade count scales per tier: mobile 10K-30K, Switch 50K,
+  desktop 200K+. Blade geometry simplified on mobile (fewer segments per blade).
+  Grass render distance reduced on mobile.
 
 ## Tree Systems
 
@@ -91,4 +100,5 @@ animation. The system supports artist-authored and procedurally generated trees 
 
 - **Requirements:** R-3.3.7
 - **Dependencies:** F-3.3.1, F-3.3.3, F-3.3.4
-- **Platform notes:** None
+- **Platform notes:** Subsurface leaf transmission disabled on mobile. Canopy mesh LOD
+  more aggressive on mobile. Wind skeleton simplified to trunk-only on mobile.

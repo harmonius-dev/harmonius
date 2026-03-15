@@ -10,8 +10,8 @@ type-safe pins (scalar, vector, color, texture). Supports copy/paste, node group
 and minimap navigation for large graphs used by material artists.
 
 - **Requirements:** R-15.3.1
-- **Dependencies:** F-8.1.1, F-15.1.1
-- **Platform notes:** None
+- **Dependencies:** F-2.1.1, F-15.1.1
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.3.2 Material Functions and Subgraphs
 
@@ -22,7 +22,7 @@ parameter pins with default values.
 
 - **Requirements:** R-15.3.2
 - **Dependencies:** F-15.3.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Preview and Iteration
 
@@ -35,7 +35,7 @@ material variants side by side.
 
 - **Requirements:** R-15.3.3
 - **Dependencies:** F-15.3.1, F-2.3.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.3.4 Shader Parameter Tweaking
 
@@ -46,7 +46,7 @@ editing the node graph.
 
 - **Requirements:** R-15.3.4
 - **Dependencies:** F-15.3.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Material Instancing and Library
 
@@ -59,7 +59,7 @@ from a single base material. Essential for MMO-scale asset diversity.
 
 - **Requirements:** R-15.3.5
 - **Dependencies:** F-15.3.1, F-15.3.4
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.3.6 Material Library and Browser
 
@@ -70,4 +70,4 @@ to meshes in the viewport or assigns them in the inspector.
 
 - **Requirements:** R-15.3.6
 - **Dependencies:** F-15.3.5, F-15.1.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.

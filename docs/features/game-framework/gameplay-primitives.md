@@ -100,3 +100,41 @@ deaths.
 - **Requirements:** R-13.1.8
 - **Dependencies:** F-13.1.7, F-13.1.1, F-9.4.7 (Animation Montages)
 - **Platform notes:** None
+
+## Modular Systems
+
+### F-13.1.9 Modular System Registration
+
+Every gameplay system (physics, audio, AI, networking, animation, UI, VFX, combat, inventory,
+quests) registers through the plugin system (F-1.6.1) with declared dependencies and is
+independently enableable per project. The project file (F-15.15.4) specifies which systems are
+active; disabled systems are excluded from compilation, reducing binary size, editor UI clutter,
+and runtime memory. System dependencies are validated at project load — enabling combat requires
+physics and animation; enabling networking requires serialization. The editor UI hides panels,
+inspectors, and tools for disabled systems. Enabling a system mid-project automatically enables
+its transitive dependencies with user confirmation.
+
+- **Requirements:** R-13.1.9
+- **Dependencies:** F-1.6.1 (Plugin System), F-15.15.4 (Project File Format)
+- **Platform notes:** None
+
+## Developer Extensibility
+
+### F-13.1.10 Rust Plugin API for Developers
+
+A stable Rust API for third-party developers to extend the engine with custom systems,
+components, and editor tools. Plugins are Rust crates that depend on the engine's public API
+crate, compiled as dynamic libraries (.dylib/.dll/.so) loaded at editor and runtime startup.
+The plugin API exposes: ECS world access (register components, add systems, query entities),
+asset pipeline hooks (custom importers, processors), editor extension points (custom inspector
+panels, viewport overlays, menu items), and rendering hooks (custom render passes, post-process
+effects). Plugins declare their engine version compatibility; the loader validates ABI
+compatibility before loading. A plugin template generator scaffolds new plugin projects with
+build configuration and boilerplate.
+
+- **Requirements:** R-13.1.10
+- **Dependencies:** F-1.6.1 (Plugin System), F-1.1.4 (Component Registration),
+  F-1.3.1 (Type Registry)
+- **Platform notes:** Dynamic library loading uses dlopen on macOS/Linux, LoadLibrary on
+  Windows. ABI stability requires a C-compatible plugin interface layer even though plugins
+  are authored in Rust.

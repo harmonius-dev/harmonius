@@ -50,7 +50,8 @@ terrain, and overlap avoidance to prevent stacking.
 
 - **Requirements:** R-10.3.4
 - **Dependencies:** F-10.1.1, F-10.3.1, F-10.4.1
-- **Platform notes:** None
+- **Platform notes:** Mobile caps visible nameplates lower (50 vs 200 on desktop) with more
+  aggressive distance culling to stay within widget and draw call budgets.
 
 ### F-10.3.5 Floating Combat Text and Damage Numbers
 
@@ -117,3 +118,119 @@ same grid widget with context-specific behavior.
 - **Requirements:** R-10.3.9
 - **Dependencies:** F-10.1.1, F-10.2.7, F-10.2.5, F-10.2.6
 - **Platform notes:** None
+
+## Compass and Bearing
+
+### F-10.3.10 Compass Bar HUD
+
+A Skyrim-style horizontal compass strip at the top of the screen showing cardinal/intercardinal
+directions and directional markers for tracked objectives. The compass rotates with the player's
+facing direction. Marker types: quest objectives (icon + distance), custom waypoints (player-
+placed pins), enemy indicators (combat targets), party members (when off-screen), points of
+interest (discovered locations), and custom markers (from gameplay logic graphs F-15.8.4).
+Markers stack vertically when overlapping on the same bearing and fade at configurable distance
+thresholds. The compass supports both 2D (top-down) and 3D (first/third-person) camera modes.
+Compass style (full strip, arc, minimal dot) is configurable per project. On mobile, the
+compass can be replaced with or augmented by edge-of-screen directional arrows (off-screen
+indicators) for tracked objectives.
+
+- **Requirements:** R-10.3.10
+- **Dependencies:** F-10.1.1 (Widget Tree), F-10.3.7 (Quest Tracker), F-6.2.1 (Input Actions)
+- **Platform notes:** Mobile uses simplified compass with fewer markers to avoid clutter.
+
+### F-10.3.11 Off-Screen Objective Indicators
+
+HUD arrows or chevrons at screen edges pointing toward tracked objectives that are outside
+the viewport. Indicators show: direction to the objective, distance (text or bar), objective
+icon, and priority-based coloring (main quest gold, side quest silver, party member blue,
+enemy red). Indicators clamp to the screen edge and smoothly transition to the in-world
+marker when the objective enters the viewport. Multiple off-screen indicators stack along
+the screen edge with overlap avoidance. The system works with both 3D perspectives and 2D
+top-down cameras. Indicator visibility is controlled per-marker (some objectives show only
+on the compass, others show off-screen arrows, both, or neither).
+
+- **Requirements:** R-10.3.11
+- **Dependencies:** F-10.3.10 (Compass), F-10.3.7 (Quest Tracker), F-2.10.4 (View Setup)
+- **Platform notes:** None
+
+## Map System
+
+### F-10.3.12 Procedural Minimap Generation
+
+Automatically generate the minimap from world data without artist intervention. The minimap
+renderer captures a top-down orthographic view of the terrain (F-3.2.1), colorized by biome/
+material type: green for grass, brown for dirt, blue for water, grey for stone, white for
+snow. Building footprints are rendered as filled shapes from collision geometry. Roads appear
+as lines from the road spline data (F-3.6.15). The generated minimap updates as the world
+loads — newly streamed chunks extend the minimap. For voxel worlds (F-3.2.9), the minimap
+shows a slice at the player's current elevation with cave/tunnel outlines. For procedurally
+generated worlds, the minimap generates as the player explores, revealing terrain progressively
+(integrating with fog of war F-13.20.1 if enabled). The minimap is rendered to a texture that
+the minimap widget (F-10.3.6) displays with rotation, zoom, and icon overlay.
+
+- **Requirements:** R-10.3.12
+- **Dependencies:** F-10.3.6 (Minimap Widget), F-3.2.1 (Terrain), F-13.20.1 (Fog of War),
+  F-3.6.15 (Road Network)
+- **Platform notes:** Minimap texture resolution scales with platform (256x256 mobile,
+  512x512 desktop).
+
+### F-10.3.13 World Map Generation and Rendering
+
+Generate a full world map from terrain, biome, political, and infrastructure data. Map layers:
+**terrain** (heightmap-derived elevation shading with relief), **biome** (color-coded regions),
+**political** (faction territory borders and colors from F-3.6.36), **roads and paths** (from
+road network F-3.6.15), **settlements** (city/town/village icons from F-3.6.35), **water**
+(rivers, lakes, oceans), **fog of war** (unexplored regions hidden/shrouded from F-13.20.1),
+and **player annotations** (waypoints, notes, custom pins). The world map supports: continuous
+zoom from world overview to local detail, smooth panning, click-to-set-waypoint, click-to-
+fast-travel (F-13.24.5), and search-by-name for discovered locations. For planet-scale worlds
+(F-3.2.11), the world map renders on a globe with zoom-to-surface transitions. Map data is
+generated from the procedural generation output (F-3.6.x) and cached as tiled image pyramids
+for efficient zoom rendering.
+
+- **Requirements:** R-10.3.13
+- **Dependencies:** F-10.3.6 (Minimap Widget), F-3.6.36 (Factions), F-3.6.35 (Cities),
+  F-13.20.1 (Fog of War), F-13.24.5 (Fast Travel)
+- **Platform notes:** Mobile uses lower-resolution tiled image pyramids and fewer zoom levels
+  to reduce GPU memory. Planet-scale globe rendering is desktop/console only.
+
+### F-10.3.14 Artist-Authored Map Overlays and Post-Processing
+
+Support hand-painted or stylized map presentations layered on top of the generated map data.
+Artists create map overlay assets: parchment textures, hand-drawn coastlines, illustrated
+landmarks, decorative compass roses, sea monster illustrations, and artistic border frames.
+Post-processing filters transform the generated map into stylized presentations: **parchment**
+(sepia tone, ink-drawn lines, aged paper texture), **painted** (watercolor wash, artistic
+terrain coloring), **tactical** (high-contrast, military-style contour lines), **satellite**
+(photorealistic aerial view from terrain materials), and **schematic** (flat colors, clean
+lines, labeled grid). Artists compose these in the visual editor by layering overlay assets
+on the generated map and selecting a post-processing style. Static maps (hand-painted images
+for specific zones) can replace the generated map entirely for areas requiring maximum artistic
+control. The map rendering pipeline blends static artistic layers with dynamic data layers
+(player position, quest markers, fog of war) so artistic maps remain functional.
+
+- **Requirements:** R-10.3.14
+- **Dependencies:** F-10.3.13 (World Map), F-10.4.4 (UI Atlas), F-2.9.1 (Post-Processing)
+- **Platform notes:** None
+
+### F-10.3.15 Dynamic Map Markers and Quest Integration
+
+A data-driven marker system for both the minimap and world map with deep quest integration.
+Marker categories: **quest objectives** (main quest, side quest, daily — with progress
+indicators), **NPCs** (vendors, quest givers, trainers — filtered by type), **resources**
+(mining nodes, herbs, fishing spots — shown when the profession is active), **party/raid**
+(member positions, pings, drawing), **enemies** (from perception or fog of war reveal),
+**player waypoints** (custom pins with labels and colors), **discovered POIs** (with
+completion percentage), and **dynamic events** (world bosses, invasions, seasonal events with
+countdown timers). Markers are defined as data assets with: icon, color, category, visibility
+rules (always visible, only when tracked, only in specific zoom range), and source (static
+placement, quest system F-13.6.1, procedural F-3.6.40, player-created). Markers appear on
+BOTH the minimap and the compass (F-10.3.10) simultaneously with consistent icons. The quest
+tracker (F-10.3.7) drives marker visibility — tracking a quest shows its markers, untracking
+hides them. Markers support clustering at zoom levels where individual icons would overlap.
+
+- **Requirements:** R-10.3.15
+- **Dependencies:** F-10.3.6 (Minimap), F-10.3.10 (Compass), F-10.3.7 (Quest Tracker),
+  F-13.6.1 (Quest System), F-3.6.40 (Creature Placement)
+- **Platform notes:** Marker count is capped per view to maintain performance. Mobile shows
+  fewer simultaneous markers.

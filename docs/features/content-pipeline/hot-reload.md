@@ -37,14 +37,16 @@ application restarts.
 - **Dependencies:** F-12.4.1, F-12.2.7
 - **Platform notes:** None
 
-### F-12.4.4 Script Hot Reload
+### F-12.4.4 Logic Graph Hot Reload
 
-Detect script source changes, recompile the affected module, and hot-swap the function pointers or
-WASM module in the scripting runtime without restarting gameplay. Entity state is serialized before
-reload and deserialized after, preserving the live game state across code changes.
+Hot reload of logic graph assets. When a logic graph asset is modified in the editor, the runtime
+recompiles the affected graph through the shared build cache (F-15.11.3) and patches running graph
+instances with updated bytecode. Persistent state (local variables, coroutine positions) is
+preserved when the variable layout is compatible. Incompatible changes trigger a clean restart of
+the affected graph instance.
 
 - **Requirements:** R-12.4.4
-- **Dependencies:** F-12.4.1
+- **Dependencies:** F-12.4.1, F-15.8.1 (Logic Graph Runtime), F-15.8.12 (Graph Compilation)
 - **Platform notes:** None
 
 ### F-12.4.5 UI Hot Reload
@@ -61,9 +63,9 @@ progress so that UI iteration does not reset the interface to its initial state.
 
 ### F-12.4.6 Partial Re-Import
 
-When a source file changes, re-import only the modified sub-assets rather than the entire file. For
-example, modifying a single animation clip in a multi-animation glTF file re-imports only that clip.
-Partial re-import reduces hot reload latency for large composite assets common in MMO content.
+When a source file changes, re-import only the modified sub-assets rather than the entire file.
+For example, modifying a single animation clip in a multi-asset DCC export re-imports only that
+clip. Partial re-import reduces hot reload latency for large composite assets.
 
 - **Requirements:** R-12.4.6
 - **Dependencies:** F-12.4.1, F-12.3.2

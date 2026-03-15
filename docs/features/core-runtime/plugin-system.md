@@ -10,7 +10,7 @@ automatically from declared dependencies, not from call order, ensuring determin
 how plugins are composed.
 
 - **Requirements:** R-1.6.1
-- **Dependencies:** F-1.1.3 (Component Registration), F-1.3.1 (Type Registry)
+- **Dependencies:** F-1.1.4 (Static and Dynamic Component Registration), F-1.3.1 (Type Registry)
 - **Platform notes:** None
 
 ### F-1.6.2 Plugin Groups and Presets

@@ -66,7 +66,7 @@ reads, network operations, and GPU readbacks complete without blocking worker th
 events are dispatched as jobs in the task graph, maintaining a unified scheduling model.
 
 - **Requirements:** R-14.3.5
-- **Dependencies:** F-14.3.3
+- **Dependencies:** F-14.3.3, F-1.8.1
 - **Platform notes:** Windows uses I/O completion ports (`CreateIoCompletionPort`,
   `GetQueuedCompletionStatusEx`); macOS uses Grand Central Dispatch
   (`dispatch_io_create`, `dispatch_io_read`); Linux uses `io_uring`

@@ -29,7 +29,9 @@ and a caller-supplied context token for correlation.
 
 - **Requirements:** R-1.8.2
 - **Dependencies:** F-1.8.1
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 32 in-flight I/O operations to conserve kernel
+  resources. Switch: max 64 in-flight operations. Desktop: max 256 in-flight.
+  High-end PC: max 1024 in-flight for parallel asset streaming.
 
 ## File I/O
 

@@ -76,7 +76,8 @@ enabling worlds with millions of tiles.
 
 - **Requirements:** R-10.5.6
 - **Dependencies:** F-10.5.1
-- **Platform notes:** None
+- **Platform notes:** Mobile limits visible tile layers (3 vs 8 on desktop) and uses smaller
+  tile atlas pages to reduce GPU memory pressure.
 
 ### F-10.5.7 Isometric and Hex Tilemap Support
 
@@ -127,7 +128,8 @@ velocity. Deterministic for server-authoritative 2D games.
 
 - **Requirements:** R-10.5.10
 - **Dependencies:** F-1.1.1 (ECS), F-4.1.1 (Integration)
-- **Platform notes:** None
+- **Platform notes:** Mobile budgets fewer active rigid bodies (200 vs 500+ on desktop) to
+  maintain 60fps on lower-core-count devices.
 
 ### F-10.5.11 2D Collision Shapes and Tilemap Colliders
 
@@ -173,7 +175,8 @@ normal-mapped sprites for pseudo-3D lighting, and emissive sprites that glow ind
 
 - **Requirements:** R-10.5.14
 - **Dependencies:** F-10.5.1
-- **Platform notes:** None
+- **Platform notes:** Mobile caps dynamic 2D lights (8 vs 32 on desktop) and uses
+  lower-resolution light maps (half res) to stay within fill rate budget.
 
 ### F-10.5.15 2D Particle Effects
 
@@ -184,7 +187,8 @@ for sword slashes, magic effects, and projectile trails. Performance-optimized f
 
 - **Requirements:** R-10.5.15
 - **Dependencies:** F-10.5.1, F-11.1.1 (Particle System)
-- **Platform notes:** None
+- **Platform notes:** Mobile caps active particles per emitter (256 vs 1024 on desktop) and
+  total on-screen particles (2K vs 10K). Trail particles use fewer segments on mobile.
 
 ## Mobile and Touch
 
@@ -211,47 +215,6 @@ action system so gesture-to-action mappings are rebindable. Supports simultaneou
 
 - **Requirements:** R-10.5.17
 - **Dependencies:** F-6.3.1 (Gestures), F-10.5.9 (2D Camera)
-- **Platform notes:** None
-
-## 2.5D and Hybrid Rendering
-
-### F-10.5.22 2.5D Layer Composition
-
-Composite 3D-rendered elements into a 2D scene pipeline. A `RenderLayer3D` component renders
-3D characters, props, or effects into an offscreen texture that is inserted into the 2D
-z-order as a sprite-like layer. 3D objects respect 2D game constraints (movement on a 2D
-plane, 2D collision, 2D physics) while displaying full 3D models with lighting and shadows.
-Multiple 3D layers can be interleaved with 2D sprite and parallax layers for depth effects.
-Used for side-scrollers and top-down games with 3D characters on 2D backgrounds.
-
-- **Requirements:** R-10.5.22
-- **Dependencies:** F-10.5.1, F-10.5.9 (2D Camera), F-2.10.1 (Render Proxy)
-- **Platform notes:** None
-
-### F-10.5.23 Perspective 3D with 2D Physics (Octopath-Style)
-
-A perspective or orthographic 3D camera renders a full 3D scene while gameplay physics are
-constrained to a 2D plane. 2D collision shapes (F-10.5.11) and 2D rigid bodies (F-10.5.10)
-operate on the XY or XZ plane; the 3D renderer shows the scene from an angled viewpoint with
-depth. 2D sprite assets (billboards, particle cards, painted backdrops) layer into the 3D
-scene with depth-correct sorting. 3D parallax backgrounds scroll at varying rates based on
-depth. This is the HD-2D rendering model (Octopath Traveler, Triangle Strategy).
-
-- **Requirements:** R-10.5.23
-- **Dependencies:** F-10.5.10 (2D Physics), F-10.5.14 (2D Lighting), F-2.10.4 (View Setup)
-- **Platform notes:** None
-
-### F-10.5.24 Dynamic 2D/3D Asset Layering
-
-Arbitrarily layer 2D and 3D assets within a single scene. Each layer has a render mode (2D
-sprite, 3D mesh, 2D tilemap, 3D particle, 2D vector) and a depth value. The compositor
-resolves visibility between layers using depth testing or painter's algorithm as configured.
-2D UI elements, 3D characters, 2D foreground foliage, and 3D environmental effects coexist
-in a single frame with correct occlusion. Layer visibility and blend modes are configurable
-per layer and per camera.
-
-- **Requirements:** R-10.5.24
-- **Dependencies:** F-10.5.1, F-10.5.4, F-2.10.1 (Render Proxy)
 - **Platform notes:** None
 
 ## 2D Networking
@@ -304,4 +267,46 @@ required items found before locked doors.
 
 - **Requirements:** R-10.5.21
 - **Dependencies:** F-10.5.8, F-3.6.30 (Constraint Solver)
+- **Platform notes:** None
+
+## 2.5D and Hybrid Rendering
+
+### F-10.5.22 2.5D Layer Composition
+
+Composite 3D-rendered elements into a 2D scene pipeline. A `RenderLayer3D` component renders
+3D characters, props, or effects into an offscreen texture that is inserted into the 2D
+z-order as a sprite-like layer. 3D objects respect 2D game constraints (movement on a 2D
+plane, 2D collision, 2D physics) while displaying full 3D models with lighting and shadows.
+Multiple 3D layers can be interleaved with 2D sprite and parallax layers for depth effects.
+Used for side-scrollers and top-down games with 3D characters on 2D backgrounds.
+
+- **Requirements:** R-10.5.22
+- **Dependencies:** F-10.5.1, F-10.5.9 (2D Camera), F-2.10.1 (Render Proxy)
+- **Platform notes:** Mobile limits simultaneous 3D layers (2 vs 4+ on desktop) and renders
+  them at reduced resolution to control GPU fill rate.
+
+### F-10.5.23 Perspective 3D with 2D Physics (Octopath-Style)
+
+A perspective or orthographic 3D camera renders a full 3D scene while gameplay physics are
+constrained to a 2D plane. 2D collision shapes (F-10.5.11) and 2D rigid bodies (F-10.5.10)
+operate on the XY or XZ plane; the 3D renderer shows the scene from an angled viewpoint with
+depth. 2D sprite assets (billboards, particle cards, painted backdrops) layer into the 3D
+scene with depth-correct sorting. 3D parallax backgrounds scroll at varying rates based on
+depth. This is the HD-2D rendering model (Octopath Traveler, Triangle Strategy).
+
+- **Requirements:** R-10.5.23
+- **Dependencies:** F-10.5.10 (2D Physics), F-10.5.14 (2D Lighting), F-2.10.4 (View Setup)
+- **Platform notes:** None
+
+### F-10.5.24 Dynamic 2D/3D Asset Layering
+
+Arbitrarily layer 2D and 3D assets within a single scene. Each layer has a render mode (2D
+sprite, 3D mesh, 2D tilemap, 3D particle, 2D vector) and a depth value. The compositor
+resolves visibility between layers using depth testing or painter's algorithm as configured.
+2D UI elements, 3D characters, 2D foreground foliage, and 3D environmental effects coexist
+in a single frame with correct occlusion. Layer visibility and blend modes are configurable
+per layer and per camera.
+
+- **Requirements:** R-10.5.24
+- **Dependencies:** F-10.5.1, F-10.5.4, F-2.10.1 (Render Proxy)
 - **Platform notes:** None

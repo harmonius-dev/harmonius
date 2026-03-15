@@ -11,7 +11,8 @@ budget-limited, and as the reference for baking sky lookup tables.
 
 - **Requirements:** R-3.5.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Analytical sky model is lightweight and runs at full quality on all
+  platforms. Used as the default sky on mobile when volumetric atmosphere is disabled.
 
 ## Physically-Based Atmosphere Scattering
 
@@ -25,7 +26,8 @@ haze naturally. This is critical for MMO draw distances spanning tens of kilomet
 
 - **Requirements:** R-3.5.2
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** LUT resolution scales per tier: mobile uses lower-res LUTs with
+  fewer scattering samples. Froxel volume depth slices reduced on mobile (16 vs 64).
 
 ## Volumetric Clouds
 
@@ -39,7 +41,9 @@ per-pixel ray-march cost.
 
 - **Requirements:** R-3.5.3
 - **Dependencies:** F-3.5.2
-- **Platform notes:** None
+- **Platform notes:** Ray-march step count scales per tier: mobile 32-48 steps, Switch
+  64, desktop 96-128. Temporal reprojection essential on all platforms; mobile reprojects
+  over more frames (4-6 vs 2 on desktop).
 
 ### F-3.5.4 Cloud Shadow Map
 
@@ -49,7 +53,8 @@ large-scale moving shadow patterns across the open world that reinforce the sens
 
 - **Requirements:** R-3.5.4
 - **Dependencies:** F-3.5.3
-- **Platform notes:** None
+- **Platform notes:** Cloud shadow map resolution scales per tier: mobile 512x512,
+  desktop 2048x2048. Update rate reduced on mobile (every 2-4 frames).
 
 ## Dynamic Time of Day
 
@@ -62,7 +67,8 @@ control, supporting accelerated day/night cycles common in MMO worlds.
 
 - **Requirements:** R-3.5.5
 - **Dependencies:** F-3.5.2, F-3.5.3
-- **Platform notes:** None
+- **Platform notes:** Time-of-day parameter updates are lightweight on all platforms. LUT
+  rebuild frequency reduced on mobile (triggered only on significant sun angle change).
 
 ## Celestial Bodies
 
@@ -75,7 +81,8 @@ celestial positions are astronomically computed or artist-overridden.
 
 - **Requirements:** R-3.5.6
 - **Dependencies:** F-3.5.5
-- **Platform notes:** None
+- **Platform notes:** Star count reduced on mobile (fewer catalog entries rendered).
+  Twinkling animation disabled on mobile. Moon uses lower-res texture on mobile.
 
 ## Sky Capture
 
@@ -88,4 +95,5 @@ schedule to amortize cost, ensuring reflections and ambient lighting always matc
 
 - **Requirements:** R-3.5.7
 - **Dependencies:** F-3.5.2, F-3.5.3, F-3.5.6
-- **Platform notes:** None
+- **Platform notes:** Cubemap capture resolution scales per tier: mobile 64x64, Switch
+  128x128, desktop 256x256. Update rate: mobile every 4-8 frames, desktop every 1-2.

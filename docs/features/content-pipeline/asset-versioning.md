@@ -23,7 +23,8 @@ are the unit of streaming, patching, and download-on-demand delivery.
 
 - **Requirements:** R-12.7.2
 - **Dependencies:** F-12.7.1, F-12.5.1 (Virtual File System)
-- **Platform notes:** None
+- **Platform notes:** Mobile builds use smaller bundle granularity for download-on-demand
+  over metered connections. LZ4 is preferred on mobile for decompression speed.
 
 ## Diffing and Merging
 

@@ -1,5 +1,11 @@
 # Render Graph Library Requirements
 
+> **Migration note:** This file was authored against an earlier requirement structure. Requirements
+> RG-1.1 through RG-3.6 have full Derived-from, Rationale, and Verification sections. Requirements
+> from RG-4 onward need these sections added and their Derived-from links updated to reference
+> the current feature IDs (F-2.2.x) instead of the deleted R-2.x.y IDs. This migration is
+> tracked as a future work item.
+
 Low-level requirements for the declarative render graph library. The render graph is a
 frame-invariant DAG of passes and resources, compiled once and re-executed each frame. It knows
 nothing about rendering features (bloom, shadows, hair, etc.) -- only passes, resources, queues,

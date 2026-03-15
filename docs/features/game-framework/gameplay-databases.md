@@ -35,16 +35,17 @@ and curves, enabling spreadsheet-like computed fields (e.g., `damage = base_dama
 - **Dependencies:** F-13.7.1
 - **Platform notes:** None
 
-### F-13.7.4 Formula Expression Language
+### F-13.7.4 Visual Formula Nodes
 
-A lightweight DSL for computing derived values from table data: `stat[strength] + dice(2, 6)
-* level_curve(level) - 10`. Expressions reference columns by name, call built-in functions
-(min, max, clamp, floor, ceil, dice, lerp), and access curves. Formulas are parsed once and
-compiled to a bytecode evaluator. Designers author formulas in data files without code changes
-— used for damage calculations, XP requirements, shop prices, and crafting yields.
+The formula system uses visual formula nodes authored in the logic graph editor (F-15.8.4),
+not a textual DSL. Formulas are composed by connecting math nodes (add, multiply, min, max,
+clamp, floor, ceil, lerp, random range) in a visual graph. Column references and curve
+lookups are represented as typed input pins on formula nodes. The graph compiles to the same
+bytecode as gameplay logic graphs. Used for damage calculations, XP requirements, shop prices,
+and crafting yields.
 
 - **Requirements:** R-13.7.4
-- **Dependencies:** F-13.7.3, F-13.7.2
+- **Dependencies:** F-13.7.3, F-13.7.2, F-15.8.4 (Gameplay Logic Graphs)
 - **Platform notes:** None
 
 ### F-13.7.5 Row Inheritance and Prototype Chains

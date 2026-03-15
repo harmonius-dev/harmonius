@@ -35,7 +35,9 @@ component storage columns and resource containers where object lifetimes are ind
 
 - **Requirements:** R-1.7.3
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Mobile: max pool size 16 MB per type, 256 MB total across all pools.
+  Switch: max 32 MB per type, 512 MB total. Desktop: configurable, default 256 MB per type.
+  Pool growth uses virtual memory commit-on-demand on all platforms.
 
 ## Resource Handles
 
@@ -72,7 +74,10 @@ over-allocating. This prevents any single subsystem from starving others at MMO 
 
 - **Requirements:** R-1.7.6
 - **Dependencies:** F-1.7.1, F-1.7.3
-- **Platform notes:** None
+- **Platform notes:** Mobile (2-6 GB): ECS 128 MB, asset cache 256 MB, GPU upload 64 MB,
+  scratch 32 MB. Switch (4 GB): ECS 256 MB, asset cache 512 MB, GPU upload 128 MB,
+  scratch 64 MB. Desktop (16+ GB): all budgets configurable with higher defaults.
+  High-end PC (64 GB): extended budgets for streaming-heavy open worlds.
 
 ## Profiling Hooks
 
@@ -97,3 +102,18 @@ memory growth in long-running MMO server processes.
 - **Requirements:** R-1.7.8
 - **Dependencies:** F-1.7.7
 - **Platform notes:** None
+
+## Numeric Types
+
+### F-1.7.9 Arbitrary Precision Numeric Types
+
+Arbitrary precision integer and floating-point types for values beyond 64-bit range. The integer type
+supports 128-bit, 256-bit, or unlimited precision for cosmic distances, astronomical masses, and geological
+timescales. The float type uses significand + exponent representation with configurable precision and
+guaranteed deterministic cross-platform arithmetic. Conversion to/from f32/f64 for GPU operations. Formatting
+with unit suffixes ("2.4 million light-years"). Used by the universe pipeline (F-3.6.60), large world
+coordinates (F-3.2.7), and sparse cosmic storage (F-3.6.63).
+
+- **Requirements:** R-1.7.9
+- **Dependencies:** F-1.7.1 (Frame Arena Allocator)
+- **Platform notes:** Arbitrary precision is CPU-only. GPU uses camera-relative f32.

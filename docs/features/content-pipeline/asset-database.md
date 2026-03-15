@@ -113,10 +113,11 @@ underused assets and flagging near-duplicate imports that waste storage.
 ### F-12.3.10 Asset Versioning
 
 Track the full revision history of each asset, including source file changes, import setting
-modifications, and processing outputs. Any previous version can be restored by its content hash.
-Versioning supports live-ops workflows where content must be rolled back quickly if a patch
-introduces visual regressions or asset corruption.
+modifications, and processing outputs. Any previous version can be restored by its content
+hash. Versioning supports live-ops workflows where content must be rolled back quickly if a
+patch introduces visual regressions or asset corruption. Version history is stored using the
+structural diffing system defined in F-12.7.3.
 
 - **Requirements:** R-12.3.10
-- **Dependencies:** F-12.3.1, F-12.3.2
+- **Dependencies:** F-12.3.1, F-12.3.2, F-12.7.3 (Structural Asset Diffing)
 - **Platform notes:** None

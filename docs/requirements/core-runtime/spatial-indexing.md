@@ -1,0 +1,151 @@
+# R-1.9 — Spatial Indexing Requirements
+
+## Acceleration Structures
+
+### R-1.9.1 Shared BVH Spatial Index
+
+The engine **SHALL** maintain a single bounding volume hierarchy (BVH) as an ECS resource, updated once
+per frame by a dedicated system, shared across all subsystems (physics broadphase, rendering frustum
+culling, network interest management, AI perception, gameplay spatial queries).
+
+- **Derived from:** [F-1.9.1](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** A shared spatial index eliminates redundant spatial data structures and ensures all
+  subsystems agree on entity positions within the same frame.
+- **Verification:** Integration test: verify the BVH resource is accessible from physics, rendering,
+  and gameplay query systems within the same frame. Verify a single entity moved in the transform
+  system is visible at the updated position to all consumer subsystems after the BVH update runs.
+
+### R-1.9.1a BVH Memory Bounds and Quality Metrics
+
+BVH memory overhead **SHALL NOT** exceed 64 bytes per indexed entity. The BVH **SHALL** maintain a
+surface area heuristic (SAH) quality metric that stays within 2x of a full rebuild's quality after
+incremental updates. The engine **SHALL** trigger a background full rebuild when SAH quality degrades
+beyond a configurable threshold.
+
+- **Derived from:** [F-1.9.1](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** Incremental updates degrade BVH quality over time; automatic rebuilds prevent query
+  performance from slowly decaying.
+- **Verification:** Insert 1 million entities, incrementally update 10% per frame for 1,000 frames.
+  Measure SAH quality vs. a fresh build and verify it stays within the 2x threshold. Verify memory
+  usage per entity is under 64 bytes.
+
+### R-1.9.2 Incremental BVH Updates
+
+The engine **SHALL** update the BVH incrementally using ECS change detection on Transform components,
+refitting moved entities in-place and batch-inserting newly spawned entities, with update cost
+proportional to the number of moved entities rather than total entity count.
+
+- **Derived from:** [F-1.9.2](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** Full BVH rebuilds are infeasible at scale; incremental updates keep frame cost
+  proportional to dynamic entity count.
+- **Verification:** Benchmark: insert 1 million entities, move 1% per frame. Verify BVH update time
+  is under 1 ms. Compare against moving 10% and verify update time scales linearly (approximately
+  10x, not remaining constant or exploding).
+
+### R-1.9.3 Hierarchical Grid / Octree Index
+
+The engine **SHALL** provide an optional coarse-grained spatial index (uniform grid or octree) stored
+as an ECS resource alongside the BVH, with cell membership updated by the same spatial index system
+using transform change detection.
+
+- **Derived from:** [F-1.9.3](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** Cell-based indices are more efficient than BVH for network area-of-interest filtering
+  and AI crowd density queries where exact bounds are not needed.
+- **Verification:** Integration test: insert 100,000 entities into the grid index. Query a cell and
+  verify all entities within the cell's bounds are returned. Move entities across cell boundaries and
+  verify cell membership updates correctly on the next frame.
+
+## Query Interface
+
+### R-1.9.4 Unified Spatial Query API
+
+The engine **SHALL** provide a single spatial query API supporting ray casts, shape casts, overlap tests,
+nearest-neighbor searches, and frustum queries, returning ECS Entity handles with hit metadata
+(position, normal, distance) and accepting ECS query filters (`With<T>`, `Without<T>`).
+
+- **Derived from:** [F-1.9.4](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** A unified API avoids subsystem-specific query implementations and enables combined
+  spatial + archetype filtering.
+- **Verification:** Integration test: populate a scene with 10,000 entities. Perform each query type
+  (ray cast, sphere overlap, frustum, k-nearest) and verify correct results against a brute-force
+  reference implementation. Apply a `Without<Static>` filter and verify filtered entities are excluded.
+
+### R-1.9.5 Batch and Parallel Spatial Queries
+
+The engine **SHALL** support submitting multiple spatial queries as a batch that executes in parallel
+across worker threads, amortizing tree traversal overhead and exploiting SIMD for ray-BVH intersection.
+
+- **Derived from:** [F-1.9.5](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** Server ticks with hundreds of concurrent AI, ability, and network queries require
+  parallel execution to meet frame budgets.
+- **Verification:** Benchmark: submit 1,000 ray casts as a batch on 1, 2, 4, and 8 cores. Verify
+  near-linear speedup (at least 3x on 4 cores). Verify batch results match sequential single-query
+  results exactly.
+
+### R-1.9.4a Spatial Query Latency Bounds
+
+Single-ray casts **SHALL** complete in under 10 microseconds against a BVH containing 1 million
+entities. Frustum culling queries **SHALL** complete in under 500 microseconds for 1 million entities.
+Queries against an empty or uninitialized index **SHALL** return an empty result set, not an error
+or undefined behavior.
+
+- **Derived from:** [F-1.9.4](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** Spatial queries are invoked thousands of times per frame by multiple subsystems;
+  predictable latency is essential for frame-time budgets.
+- **Verification:** Benchmark: perform 10,000 single-ray casts against 1 million entities and verify
+  average latency under 10 microseconds. Perform a frustum query and verify under 500 microseconds.
+  Query an empty index and verify an empty result set is returned.
+
+## Consumer Integration
+
+### R-1.9.6 Physics Broadphase Integration
+
+The engine **SHALL** use the shared BVH for physics broadphase collision detection, querying for
+overlapping AABB pairs filtered by `CollisionLayers` components, without maintaining a separate
+broadphase data structure.
+
+- **Derived from:** [F-1.9.6](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** Eliminating the redundant broadphase structure reduces memory usage and ensures physics
+  and rendering agree on spatial positions.
+- **Verification:** Integration test: create 1,000 entities with colliders in known overlapping
+  configurations. Verify the physics system detects all expected collision pairs via the shared BVH.
+  Verify no separate broadphase structure is allocated.
+
+### R-1.9.7 Rendering Culling Integration
+
+The engine **SHALL** use the shared BVH for rendering frustum culling to determine visible entities
+per view (main camera, shadow cascades, reflection probes), outputting visibility as transient marker
+components or per-view bitsets.
+
+- **Derived from:** [F-1.9.7](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** Sharing the BVH with physics avoids rebuilding a separate culling hierarchy for the
+  renderer.
+- **Verification:** Integration test: place 10,000 entities in a scene with a camera frustum covering
+  roughly half. Verify the culling system marks approximately 5,000 entities as visible. Verify
+  entities outside the frustum are not marked. Verify shadow cascade culling produces a different
+  visibility set.
+
+### R-1.9.8 Network Interest Management Integration
+
+The engine **SHALL** use the shared spatial index (grid or octree) to compute area-of-interest sets for
+connected players, replicating only entities within each player's relevancy radius.
+
+- **Derived from:** [F-1.9.8](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** Area-of-interest filtering is essential for network bandwidth management in large
+  multiplayer worlds.
+- **Verification:** Integration test: create 10,000 entities spread across a world. Define 2 players
+  at different positions with a relevancy radius of 100 units. Verify each player's interest set
+  contains only entities within their radius. Move a player and verify the interest set updates on
+  the next frame.
+
+### R-1.9.9 AI Perception and Gameplay Integration
+
+The engine **SHALL** route AI perception queries (sight cones, hearing radii) and gameplay spatial
+queries (area-of-effect, trigger volumes) through the shared spatial index via the unified query API.
+
+- **Derived from:** [F-1.9.9](../../features/core-runtime/spatial-indexing.md)
+- **Rationale:** Using the shared index avoids AI and gameplay systems maintaining independent spatial
+  lookups, reducing memory and update cost.
+- **Verification:** Integration test: create 100 AI agents with sight cones and 500 target entities.
+  Verify sight cone queries return only entities within the cone's angular and distance bounds. Verify
+  an area-of-effect sphere query returns all entities within the radius and none outside it.

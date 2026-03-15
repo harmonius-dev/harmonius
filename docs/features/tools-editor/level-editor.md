@@ -11,7 +11,7 @@ geometry. Placement respects undo/redo and multi-selection.
 
 - **Requirements:** R-15.2.1
 - **Dependencies:** F-15.1.3, F-15.1.4, F-7.1.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.2.2 Prefab System with Nested Prefabs
 
@@ -22,7 +22,7 @@ instances across the world unless overridden.
 
 - **Requirements:** R-15.2.2
 - **Dependencies:** F-15.2.1, F-7.4.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.2.3 Prefab Instance Overrides
 
@@ -34,7 +34,7 @@ variation.
 
 - **Requirements:** R-15.2.3
 - **Dependencies:** F-15.2.2
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Brush and Shape Tools
 
@@ -47,7 +47,7 @@ common blockout-to-art workflow used by level design teams.
 
 - **Requirements:** R-15.2.4
 - **Dependencies:** F-15.1.3, F-3.1.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.2.5 Spline Editing
 
@@ -58,7 +58,7 @@ configurable spacing and randomization rules.
 
 - **Requirements:** R-15.2.5
 - **Dependencies:** F-15.1.3, F-15.1.5
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Painting
 
@@ -71,7 +71,7 @@ material quality.
 
 - **Requirements:** R-15.2.6
 - **Dependencies:** F-15.6.3, F-3.2.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.2.7 Foliage Painting
 
@@ -82,4 +82,4 @@ and the painter previews LOD transitions in real time.
 
 - **Requirements:** R-15.2.7
 - **Dependencies:** F-3.3.1, F-15.2.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.

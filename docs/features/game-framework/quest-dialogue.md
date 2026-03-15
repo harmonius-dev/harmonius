@@ -52,16 +52,37 @@ cinematic playback. Supports localized text and audio references per dialogue no
 - **Dependencies:** F-13.6.1, F-1.4.1 (Binary Serialization)
 - **Platform notes:** None
 
-### F-13.6.5 NPC Conversation System
+### F-13.6.5a Conversation Camera and Framing
 
-Manages the runtime state of an active NPC conversation: camera framing (over-the-shoulder or
-close-up shots), NPC idle animations, player character facing, ambient audio ducking, and HUD
-suppression. Supports multi-NPC conversations where several characters speak in sequence. Handles
-interruption gracefully if the player is attacked or disconnects during dialogue, restoring
-gameplay state and marking the conversation as incomplete for resumption.
+Manages camera behavior during NPC conversations: over-the-shoulder and close-up shots, player
+character facing toward the NPC, and NPC idle animations during dialogue. Supports multi-NPC
+conversations where several characters speak in sequence with automatic camera switching between
+speakers.
 
-- **Requirements:** R-13.6.5
+- **Requirements:** R-13.6.5a
 - **Dependencies:** F-13.6.4, F-13.5.2 (Cutscene Camera), F-9.4.7 (Montages)
+- **Platform notes:** None
+
+### F-13.6.5b Conversation Gameplay State
+
+Manages gameplay state changes during active NPC conversations: ambient audio ducking, HUD
+element suppression, and gameplay input suppression. State changes apply on conversation start
+and restore on conversation end. Configurable per conversation asset — some dialogues suppress
+HUD fully while others retain minimap and health.
+
+- **Requirements:** R-13.6.5b
+- **Dependencies:** F-13.6.4, F-5.1.1 (Audio Engine), F-10.3.1 (HUD Widgets)
+- **Platform notes:** None
+
+### F-13.6.5c Conversation Interruption and Resumption
+
+Handles interruption of active NPC conversations when the player is attacked, disconnects, or
+leaves the conversation area. On interruption, gameplay state (audio, HUD, input) is restored
+immediately and the conversation is marked as incomplete with its current node index saved.
+Resumption returns the player to the last visited dialogue node.
+
+- **Requirements:** R-13.6.5c
+- **Dependencies:** F-13.6.5a, F-13.6.5b, F-13.3.1 (Save System)
 - **Platform notes:** None
 
 ## Rewards and Economy
@@ -78,15 +99,24 @@ and transactional to prevent duplication exploits.
 - **Dependencies:** F-13.6.1, F-8.7.5 (Persistent World State)
 - **Platform notes:** None
 
-### F-13.6.7 Dynamic World Events and Phased Quests
+### F-13.6.7a Server-Driven World Events
 
-Supports server-driven world events that alter zone state for all players: invasion spawns, world
-boss activations, territory control shifts, and seasonal festivals. Quest phasing shows different
-versions of a zone to players at different quest stages (e.g., a town before and after
-destruction). Phasing integrates with the level streaming sub-level system to swap geometry,
-NPCs, and interactables per player's quest progress without affecting other players in the
-same zone.
+Supports server-driven world events that alter zone state for all players: invasion spawns,
+world boss activations, territory control shifts, and seasonal festivals. Events are triggered
+by server-side conditions (time, player count thresholds, quest completion rates) and broadcast
+zone state changes to all connected clients simultaneously.
 
-- **Requirements:** R-13.6.7
-- **Dependencies:** F-13.6.1, F-13.2.4 (Sub-Level Composition), F-8.7.1 (World Sharding)
+- **Requirements:** R-13.6.7a
+- **Dependencies:** F-13.6.1, F-8.7.1 (World Sharding)
+- **Platform notes:** None
+
+### F-13.6.7b Quest Phasing System
+
+Shows different versions of a zone to players at different quest stages (e.g., a town before
+and after destruction). Phasing integrates with the level streaming sub-level system to swap
+geometry, NPCs, and interactables per player's quest progress without affecting other players
+in the same zone. Phase mappings are authored as data assets per quest node.
+
+- **Requirements:** R-13.6.7b
+- **Dependencies:** F-13.6.1, F-13.2.4 (Sub-Level Composition)
 - **Platform notes:** None

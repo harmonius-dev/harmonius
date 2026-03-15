@@ -11,7 +11,8 @@ per-entity overhead minimal while feeding the spatial audio and mixer systems.
 
 - **Requirements:** R-5.1.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Sound source component is lightweight on all platforms. Active
+  emitter count governed by voice management budget (see F-5.1.4).
 
 ### F-5.1.2 Listener Component
 
@@ -22,7 +23,9 @@ active camera.
 
 - **Requirements:** R-5.1.2
 - **Dependencies:** F-5.1.1
-- **Platform notes:** None
+- **Platform notes:** Listener component is lightweight on all platforms. Multiple
+  listeners supported on all tiers (split-screen may be limited on mobile by voice
+  budget).
 
 ## Mixer Bus Hierarchy
 
@@ -35,7 +38,9 @@ support dynamic mix states such as underwater or pause-menu ducking.
 
 - **Requirements:** R-5.1.3
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Mixer bus hierarchy depth uniform across platforms. Insert effect
+  chain length per bus scales per tier (see F-5.3.8). Mobile limits total insert
+  count.
 
 ## Voice Management
 
@@ -50,7 +55,8 @@ ambient loops, and voice chat demand strict budgeting.
 
 - **Requirements:** R-5.1.4
 - **Dependencies:** F-5.1.1, F-5.1.3
-- **Platform notes:** None
+- **Platform notes:** Voice pool size scales per tier: mobile 16-32 voices, Switch
+  32-64, desktop 128-256. Virtualization threshold adjusted per tier.
 
 ## Playback
 
@@ -76,7 +82,8 @@ the precise sample offset within the next buffer.
 
 - **Requirements:** R-5.1.6
 - **Dependencies:** F-5.1.1, F-5.1.3
-- **Platform notes:** None
+- **Platform notes:** Sample-accurate scheduling is supported on all platforms. Audio
+  buffer size may be larger on mobile (higher latency) to reduce CPU wake-ups.
 
 ## Formats and Codecs
 

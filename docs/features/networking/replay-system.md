@@ -12,7 +12,8 @@ to trade file size against seek granularity.
 
 - **Requirements:** R-8.6.1
 - **Dependencies:** F-8.2.1, F-8.2.2
-- **Platform notes:** None
+- **Platform notes:** Server-side recording; platform-agnostic. Mobile clients downloading
+  replays receive compressed files sized for mobile storage constraints.
 
 ### F-8.6.2 Deterministic Playback
 
@@ -24,7 +25,8 @@ procedural audio) are seeded from replay metadata.
 
 - **Requirements:** R-8.6.2
 - **Dependencies:** F-8.6.1, F-8.4.3
-- **Platform notes:** None
+- **Platform notes:** Mobile playback renders at the device's quality tier; visual fidelity
+  matches live gameplay on that platform, not the recording platform.
 
 ## Playback Control
 
@@ -38,7 +40,8 @@ review and content creation.
 
 - **Requirements:** R-8.6.3
 - **Dependencies:** F-8.6.2
-- **Platform notes:** None
+- **Platform notes:** Mobile limits fast-forward to 4x (vs. 8x on desktop) to avoid
+  exceeding CPU budget during accelerated delta replay.
 
 ## Spectating
 
@@ -52,7 +55,8 @@ broadcast by using fan-out relay servers rather than burdening the game server.
 
 - **Requirements:** R-8.6.4
 - **Dependencies:** F-8.2.1, F-8.2.3
-- **Platform notes:** None
+- **Platform notes:** Mobile spectators receive the same stream via relay servers. Mobile
+  UI limits camera modes to player-locked and overhead (no free camera with touch).
 
 ### F-8.6.5 Kill Cam and Highlight Extraction
 

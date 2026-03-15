@@ -11,19 +11,22 @@ interest management, AI perception, and gameplay spatial queries — read from t
 structure rather than maintaining independent copies.
 
 - **Requirements:** R-1.9.1
-- **Dependencies:** F-1.1.1 (Archetype Storage), F-1.1.5 (Queries), F-1.2.1 (Transforms)
-- **Platform notes:** None
+- **Dependencies:** F-1.1.1 (Archetype Storage), F-1.1.17 (Composable Archetype Queries),
+  F-1.2.1 (Transforms)
+- **Platform notes:** Mobile: max 50K entities in BVH, ~2 MB memory. Switch: max 200K
+  entities, ~8 MB. Desktop: 1M+ entities, ~40 MB. High-end PC: 5M+ entities with
+  SIMD-optimized traversal. BVH node size tuned per platform cache line.
 
 ### F-1.9.2 Incremental BVH Updates
 
-Update the BVH incrementally using ECS change detection (F-1.1.7) on Transform components rather
+Update the BVH incrementally using ECS change detection (F-1.1.22) on Transform components rather
 than rebuilding from scratch each frame. Moved entities are refitted in-place; large movements
 trigger node reinsertion. Newly spawned entities are batch-inserted. This keeps update cost
 proportional to the number of moved entities, not total entity count — critical for MMO worlds
 where most entities are stationary.
 
 - **Requirements:** R-1.9.2
-- **Dependencies:** F-1.9.1, F-1.1.7 (Change Detection)
+- **Dependencies:** F-1.9.1, F-1.1.22 (Tick-Based Change Detection)
 - **Platform notes:** None
 
 ### F-1.9.3 Hierarchical Grid / Octree Index
@@ -34,8 +37,10 @@ world-partition zone assignment. Stored as an ECS resource alongside the BVH. En
 in cells based on their Transform; cell membership is updated by the same spatial index system.
 
 - **Requirements:** R-1.9.3
-- **Dependencies:** F-1.9.1, F-1.1.7 (Change Detection)
-- **Platform notes:** None
+- **Dependencies:** F-1.9.1, F-1.1.22 (Tick-Based Change Detection)
+- **Platform notes:** Mobile: max grid 64x64, octree depth 4. Switch: grid 128x128,
+  octree depth 5. Desktop: grid 256x256, octree depth 8. Cell size adjusts per platform
+  to keep total cell count within memory budget.
 
 ## Query Interface
 
@@ -48,7 +53,7 @@ filters (With<T>, Without<T>) so callers can restrict results by component prese
 post-filtering.
 
 - **Requirements:** R-1.9.4
-- **Dependencies:** F-1.9.1, F-1.1.5 (Queries)
+- **Dependencies:** F-1.9.1, F-1.1.17 (Composable Archetype Queries)
 - **Platform notes:** None
 
 ### F-1.9.5 Batch and Parallel Spatial Queries
@@ -60,7 +65,9 @@ ability checks, and network relevancy scans issue spatial queries simultaneously
 
 - **Requirements:** R-1.9.5
 - **Dependencies:** F-1.9.4, F-14.3.3 (Job System)
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 64 queries per batch, 2 worker threads. Switch: max 128
+  queries, 3 workers. Desktop: max 1024 queries, workers scale with core count.
+  High-end PC: 4096+ queries with full SIMD ray-BVH acceleration.
 
 ## Consumer Integration
 
@@ -84,7 +91,9 @@ physics avoids rebuilding a separate culling hierarchy for the renderer.
 
 - **Requirements:** R-1.9.7
 - **Dependencies:** F-1.9.1, F-2.10.4 (View Setup)
-- **Platform notes:** None
+- **Platform notes:** Mobile: 1 view + 1 shadow cascade culled per frame. Switch: 1 view
+  + 2 shadow cascades. Desktop: main view + 4 shadow cascades + reflection probes.
+  High-end PC: unlimited views with parallel culling passes.
 
 ### F-1.9.8 Network Interest Management Integration
 
@@ -95,7 +104,7 @@ Sharing the index with physics and rendering ensures consistent spatial reasonin
 all subsystems.
 
 - **Requirements:** R-1.9.8
-- **Dependencies:** F-1.9.3, F-8.2.2 (Relevancy)
+- **Dependencies:** F-1.9.3, F-8.2.3 (Area-of-Interest Filtering)
 - **Platform notes:** None
 
 ### F-1.9.9 AI Perception and Gameplay Integration

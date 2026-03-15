@@ -12,7 +12,7 @@ spatial query API (F-1.9.4) and are foundational for line-of-sight checks, weapo
 and AI perception in server-authoritative simulation.
 
 - **Requirements:** R-4.4.1
-- **Dependencies:** F-1.9.4 (Unified Spatial Query API), F-4.2.6, F-1.1.5 (Archetype Queries)
+- **Dependencies:** F-1.9.4 (Unified Spatial Query API), F-4.2.6, F-1.1.17 (Composable Archetype Queries)
 - **Platform notes:** None
 
 ### F-4.4.2 Shape Casting (Sweep Tests)
@@ -25,7 +25,7 @@ Results include the hit `Entity` ID, contact point, normal, penetration depth, a
 detection, and safe movement queries.
 
 - **Requirements:** R-4.4.2
-- **Dependencies:** F-4.2.1, F-4.2.2, F-4.2.6, F-1.1.5 (Archetype Queries)
+- **Dependencies:** F-4.2.1, F-4.2.2, F-4.2.6, F-1.1.17 (Composable Archetype Queries)
 - **Platform notes:** None
 
 ## Overlap and Proximity
@@ -39,7 +39,7 @@ Supported query shapes are sphere, box, capsule, and convex hull. Overlap tests 
 area-of-effect abilities, trigger volumes, and proximity-based gameplay logic.
 
 - **Requirements:** R-4.4.3
-- **Dependencies:** F-4.2.1, F-4.2.6, F-1.1.5 (Archetype Queries)
+- **Dependencies:** F-4.2.1, F-4.2.6, F-1.1.17 (Composable Archetype Queries)
 - **Platform notes:** None
 
 ### F-4.4.4 Closest Point Queries
@@ -51,7 +51,7 @@ normal, and signed distance. Useful for distance-based triggers, attachment poin
 and AI navigation queries requiring precise geometric proximity.
 
 - **Requirements:** R-4.4.4
-- **Dependencies:** F-4.2.2, F-4.2.1, F-1.1.5 (Archetype Queries)
+- **Dependencies:** F-4.2.2, F-4.2.1, F-1.1.17 (Composable Archetype Queries)
 - **Platform notes:** None
 
 ## Batching and Performance
@@ -65,8 +65,10 @@ traversal cost and exploit SIMD parallelism, which is critical for server-side s
 hundreds of AI agents issue spatial queries every tick.
 
 - **Requirements:** R-4.4.5
-- **Dependencies:** F-4.4.1, F-4.4.2, F-4.4.3, F-1.1.6 (Parallel Iteration)
-- **Platform notes:** None
+- **Dependencies:** F-4.4.1, F-4.4.2, F-4.4.3, F-1.1.20 (Automatic Parallel Iteration)
+- **Platform notes:** Mobile: max 32 queries per batch, single-threaded fallback. Switch:
+  max 64 queries, 2 worker threads. Desktop: max 512 queries, workers scale with cores.
+  High-end PC: max 4096 queries with SIMD ray-BVH acceleration.
 
 ### F-4.4.6 Query Filtering and Custom Predicates
 
@@ -78,5 +80,5 @@ candidate entity during broadphase and narrowphase traversal. This enables queri
 nearest enemy not behind cover" without post-filtering large result sets.
 
 - **Requirements:** R-4.4.6
-- **Dependencies:** F-4.4.1, F-4.2.6, F-1.1.5 (Archetype Queries)
+- **Dependencies:** F-4.4.1, F-4.2.6, F-1.1.17 (Composable Archetype Queries)
 - **Platform notes:** None

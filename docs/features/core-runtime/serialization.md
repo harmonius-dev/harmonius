@@ -83,5 +83,9 @@ Deserialization reconstructs the world state faithfully, including entity ID rem
 merging scenes. This powers save/load, level streaming, and server-to-server world migration in MMO deployments.
 
 - **Requirements:** R-1.4.7
-- **Dependencies:** F-1.4.1, F-1.4.3, F-1.2.1 (Scene Hierarchy), F-1.1.10 (Multiple Worlds)
-- **Platform notes:** None
+- **Dependencies:** F-1.4.1, F-1.4.3, F-1.2.1 (Scene Hierarchy),
+  F-1.1.34 (Multiple World Support)
+- **Platform notes:** Mobile: streaming deserialization with 1 MB staging buffer, max scene
+  size 64 MB. Switch: 2 MB staging buffer, max 256 MB. Desktop: configurable staging
+  buffer, no scene size cap. Serialize in chunks to avoid memory spikes on constrained
+  platforms.

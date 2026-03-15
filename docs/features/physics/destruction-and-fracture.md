@@ -13,7 +13,9 @@ the pre-computed asset.
 
 - **Requirements:** R-4.6.1
 - **Dependencies:** F-1.1.1, F-4.2.3
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 8 fragments per fracture asset. Switch: max 16
+  fragments. Desktop: max 64 fragments. High-end PC: max 256 fragments. Platform-
+  specific LOD variants baked at build time to reduce runtime fragment count.
 
 ### F-4.6.2 Pre-Fractured Mesh Authoring
 
@@ -44,7 +46,10 @@ battles.
 
 - **Requirements:** R-4.6.3
 - **Dependencies:** F-1.1.1, F-4.6.1, F-4.6.2, F-4.3.4
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 1 fracture activation per frame, 8 fragments max.
+  Switch: max 2 activations per frame, 16 fragments. Desktop: max 8 activations per
+  frame, 64 fragments. High-end PC: max 16 activations, 256 fragments. Spawning
+  staggered across frames on constrained platforms.
 
 ### F-4.6.4 Progressive Damage Model
 
@@ -74,7 +79,10 @@ entities.
 
 - **Requirements:** R-4.6.5
 - **Dependencies:** F-1.1.1, F-4.6.3, F-4.3.4
-- **Platform notes:** None
+- **Platform notes:** Mobile: disabled by default; fracture uses pre-baked collapse
+  sequences. Switch: simplified graph traversal, max 32 fragments per structure.
+  Desktop: full stress propagation, max 256 fragments. High-end PC: full propagation,
+  max 1024 fragments with parallel graph traversal.
 
 ## Debris Management
 
@@ -90,7 +98,10 @@ sleep logic.
 
 - **Requirements:** R-4.6.6
 - **Dependencies:** F-1.1.1, F-4.1.6, F-4.6.3
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 32 debris entities, 3-second TTL. Switch: max 64
+  debris, 5-second TTL. Desktop: max 512 debris, 10-second TTL. High-end PC: max 2048
+  debris, 30-second TTL. Shorter lifetimes on constrained platforms free simulation
+  budget faster.
 
 ### F-4.6.7 Debris Pooling and LOD
 
@@ -104,4 +115,6 @@ components removed and are represented as visual-only particles with no simulati
 
 - **Requirements:** R-4.6.7
 - **Dependencies:** F-1.1.1, F-4.6.6
-- **Platform notes:** None
+- **Platform notes:** Mobile: pool size 32, LOD transition at 10m, particle fallback at
+  20m. Switch: pool 64, LOD at 20m, particle at 40m. Desktop: pool 512, LOD at 50m,
+  particle at 100m. High-end PC: pool 2048, extended distances.

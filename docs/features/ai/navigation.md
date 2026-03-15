@@ -34,7 +34,8 @@ Queries are batched and spread across frames to stay within a per-tick CPU budge
 
 - **Requirements:** R-7.1.3
 - **Dependencies:** F-7.1.1, F-7.1.2
-- **Platform notes:** None
+- **Platform notes:** Per-tick pathfinding budget scales by platform: mobile 0.5 ms, Switch 1 ms,
+  desktop 2 ms. Mobile limits concurrent path queries to 16; desktop allows 128+.
 
 ### F-7.1.4 String Pulling (Funnel Algorithm)
 
@@ -44,7 +45,7 @@ to steering and path smoothing.
 
 - **Requirements:** R-7.1.4
 - **Dependencies:** F-7.1.3
-- **Platform notes:** None
+- **Platform notes:** Lightweight CPU cost; runs identically on all platforms.
 
 ### F-7.1.5 Path Smoothing
 
@@ -54,7 +55,8 @@ trajectories where aesthetics matter (e.g., town patrol routes).
 
 - **Requirements:** R-7.1.5
 - **Dependencies:** F-7.1.4
-- **Platform notes:** None
+- **Platform notes:** Mobile skips Bezier interpolation and uses linear waypoint paths to
+  reduce per-path CPU cost.
 
 ## Dynamic Obstacles & Links
 
@@ -66,7 +68,8 @@ localized repath requests for agents whose corridors intersect the modified area
 
 - **Requirements:** R-7.1.6
 - **Dependencies:** F-7.1.2
-- **Platform notes:** None
+- **Platform notes:** Mobile limits simultaneous carve operations to 4 per tick; desktop
+  allows 16+. Repath storms are throttled more aggressively on mobile.
 
 ### F-7.1.7 NavMesh Links (Off-Mesh Connections)
 
@@ -76,7 +79,7 @@ and optional precondition (key required, ability unlocked) so the planner can ev
 
 - **Requirements:** R-7.1.7
 - **Dependencies:** F-7.1.1
-- **Platform notes:** None
+- **Platform notes:** Link data is lightweight; runs identically on all platforms.
 
 ## Runtime NavMesh Rebuilding
 
@@ -90,7 +93,8 @@ A `NavMeshDirtyRegion` ECS component marks spatial extents that require rebuild,
 
 - **Requirements:** R-7.1.8
 - **Dependencies:** F-7.1.2, F-1.1.7 (Change Detection)
-- **Platform notes:** None
+- **Platform notes:** Mobile caps concurrent tile rebuilds to 1; desktop allows 4+. Mobile
+  uses coarser voxel resolution (cell size 2x desktop) to reduce rebuild cost.
 
 ### F-7.1.9 Background NavMesh Generation
 
@@ -102,7 +106,8 @@ avoidance). Completed tiles are swapped in atomically at the next sync point.
 
 - **Requirements:** R-7.1.9
 - **Dependencies:** F-7.1.8, F-14.3.3 (Job System)
-- **Platform notes:** None
+- **Platform notes:** Mobile devices have fewer worker threads (2-4 vs. 8+ on desktop);
+  generation queue depth is capped lower to avoid starving gameplay threads.
 
 ### F-7.1.10 Destruction-Triggered NavMesh Updates
 
@@ -114,7 +119,8 @@ priority scales with the number of active agents whose paths intersect the regio
 
 - **Requirements:** R-7.1.10
 - **Dependencies:** F-7.1.8, F-4.6.3 (Runtime Fracture), F-1.5.1 (Events)
-- **Platform notes:** None
+- **Platform notes:** Mobile may defer or skip rebuilds for distant destruction events;
+  agents fall back to obstacle avoidance until the tile is rebuilt.
 
 ### F-7.1.11 Player-Built Structure Integration
 
@@ -126,7 +132,8 @@ platforms with NavMesh links auto-generated for stairs and ladders.
 
 - **Requirements:** R-7.1.11
 - **Dependencies:** F-7.1.8, F-7.1.7
-- **Platform notes:** None
+- **Platform notes:** Mobile uses coarser NavMesh tile resolution (see F-7.1.8); auto-link
+  generation for stairs/ladders may be deferred to reduce rebuild cost.
 
 ## Multi-Agent Navigation
 
@@ -140,7 +147,8 @@ layer via a `NavMeshAgent` ECS component.
 
 - **Requirements:** R-7.1.12
 - **Dependencies:** F-7.1.1, F-7.1.2
-- **Platform notes:** None
+- **Platform notes:** Mobile limits to 2 agent size layers (humanoid + large); desktop
+  supports 4+. Fewer layers reduce NavMesh memory and streaming bandwidth.
 
 ### F-7.1.13 Dynamic Area Cost Modification
 
@@ -152,7 +160,7 @@ cheaper).
 
 - **Requirements:** R-7.1.13
 - **Dependencies:** F-7.1.3
-- **Platform notes:** None
+- **Platform notes:** Lightweight data-only operation; runs identically on all platforms.
 
 ## Long-Distance Pathfinding
 
@@ -166,7 +174,8 @@ side NPCs with cross-continent travel goals.
 
 - **Requirements:** R-7.1.14
 - **Dependencies:** F-7.1.2, F-7.1.3
-- **Platform notes:** None
+- **Platform notes:** Primarily server-side. Mobile clients with local AI use HPA*
+  exclusively for paths longer than 3 tiles to keep query cost minimal.
 
 ## Debugging and Visualization
 
@@ -179,4 +188,5 @@ agent-path trails help designers diagnose navigation failures in complex open-wo
 
 - **Requirements:** R-7.1.15
 - **Dependencies:** F-7.1.1, F-15.1.4 (Gizmos)
-- **Platform notes:** None
+- **Platform notes:** Debug-only feature; stripped from shipping builds on all platforms.
+  Editor visualization available on desktop only.

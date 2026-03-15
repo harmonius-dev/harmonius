@@ -11,7 +11,7 @@ artists can shape massive open-world terrains without loading the entire heightm
 
 - **Requirements:** R-15.6.1
 - **Dependencies:** F-3.2.1, F-15.1.3
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.6.2 Terrain Erosion
 
@@ -36,7 +36,7 @@ is bounded to maintain shader performance.
 
 - **Requirements:** R-15.6.3
 - **Dependencies:** F-15.6.1, F-15.3.5
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.6.4 Water Body Placement
 
@@ -47,7 +47,7 @@ rendering pipeline for reflections, refraction, caustics, and foam generation.
 
 - **Requirements:** R-15.6.4
 - **Dependencies:** F-15.2.5, F-2.7.4
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Vegetation and Lighting
 
@@ -60,7 +60,7 @@ distributions declaratively so that large regions can be auto-populated and then
 
 - **Requirements:** R-15.6.5
 - **Dependencies:** F-3.3.1, F-15.2.7
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.6.6 Lighting Setup (Light Probes and Reflection Probes)
 
@@ -71,7 +71,7 @@ baking, real-time update, and visualization overlays showing probe influence reg
 
 - **Requirements:** R-15.6.6
 - **Dependencies:** F-2.5.2, F-2.3.9
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Navigation and World Partition
 
@@ -84,7 +84,7 @@ edits. Displays pathfinding test results between user-placed start and goal mark
 
 - **Requirements:** R-15.6.7
 - **Dependencies:** F-11.1.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.6.8 World Partition Visualization
 
@@ -96,4 +96,4 @@ managing MMO-scale worlds spanning hundreds of square kilometers.
 
 - **Requirements:** R-15.6.8
 - **Dependencies:** F-3.2.3
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.

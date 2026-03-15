@@ -25,7 +25,8 @@ friction. Modules are compiled into a single compute dispatch per emitter to min
 
 - **Requirements:** R-11.1.2
 - **Dependencies:** F-11.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile disables SDF collision and curl noise; uses depth-buffer
+  collision only. Turbulence and vector fields use lower resolution on mobile.
 
 ## Rendering
 
@@ -39,7 +40,8 @@ per-particle transforms, and LOD selection by camera distance.
 
 - **Requirements:** R-11.1.3
 - **Dependencies:** F-11.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile favors sprites over mesh particles due to draw call cost.
+  Soft-particle depth fade disabled on low-end mobile GPUs.
 
 ### F-11.1.4 Particle LOD, Sorting, and Budget Culling
 
@@ -51,7 +53,8 @@ Transparent particles are GPU radix-sorted by camera distance with per-emitter s
 
 - **Requirements:** R-11.1.4
 - **Dependencies:** F-11.1.1
-- **Platform notes:** None
+- **Platform notes:** Global particle budget: mobile 10K, Switch 50K, console 200K, desktop
+  500K+. Mobile uses aggressive LOD distances (near/cull thresholds halved).
 
 ## Advanced Features
 
@@ -64,7 +67,8 @@ monolithic particle systems.
 
 - **Requirements:** R-11.1.5
 - **Dependencies:** F-11.1.1, F-11.1.2
-- **Platform notes:** None
+- **Platform notes:** Mobile limits sub-emitter depth to 1 (no nested sub-emitters) and caps
+  child particle count to prevent cascade-driven budget spikes.
 
 ### F-11.1.6 Particle Light Emission
 
@@ -75,7 +79,8 @@ lighting cost bounded during spell-heavy combat.
 
 - **Requirements:** R-11.1.6
 - **Dependencies:** F-11.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile caps particle lights to 4 per emitter (vs. 16 on desktop) and
+  uses smaller attenuation radii. Disabled entirely on low-end mobile GPUs.
 
 ### F-11.1.7 GPU Fluid Simulation
 
@@ -86,4 +91,5 @@ scales with LOD distance for large open-world deployments.
 
 - **Requirements:** R-11.1.7
 - **Dependencies:** F-11.1.1
-- **Platform notes:** Requires async compute queue support
+- **Platform notes:** Requires async compute queue support. Disabled on mobile GPUs that lack
+  compute. Switch uses 32^3 grid (vs. 128^3 desktop). Mobile falls back to sprite particles.

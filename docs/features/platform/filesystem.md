@@ -4,10 +4,13 @@
 
 ### F-14.6.1 Async File Open, Read, and Write
 
-Open, read, and write files entirely through the platform async I/O layer (F-1.8). Supports
-sequential reads, random-access reads with explicit offsets, and buffered/unbuffered write modes.
-All operations return futures that resolve on the I/O thread pool without blocking game threads.
-No Rust stdlib file I/O is used anywhere in the engine.
+Open, read, and write files entirely through the platform async I/O layer (F-1.8). File
+operations use the core async I/O abstraction (F-1.8.1) as the underlying transport layer. The
+filesystem module provides high-level file operation semantics (create, read, write, delete,
+enumerate) on top of the platform I/O primitives. Supports sequential reads, random-access reads
+with explicit offsets, and buffered/unbuffered write modes. All operations return futures that
+resolve on the I/O thread pool without blocking game threads. No Rust stdlib file I/O is used
+anywhere in the engine.
 
 - **Requirements:** R-14.6.1
 - **Dependencies:** F-1.8.1, F-1.8.3

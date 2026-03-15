@@ -12,7 +12,8 @@ the minimal diff.
 
 - **Requirements:** R-8.2.1
 - **Dependencies:** F-8.1.3, F-8.1.4
-- **Platform notes:** None
+- **Platform notes:** Mobile clients receive more aggressively delta-compressed updates with
+  lower quantization precision to fit within ~500 Kbps bandwidth budgets.
 
 ### F-8.2.2 Component Replication with Schema Versioning
 
@@ -23,7 +24,8 @@ updates without kicking all players — critical for live-service MMO operations
 
 - **Requirements:** R-8.2.2
 - **Dependencies:** F-8.2.1, F-8.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile clients may run older app versions due to app store update
+  delays; schema versioning is critical for mobile cross-version compatibility.
 
 ## Relevancy and Filtering
 
@@ -31,12 +33,12 @@ updates without kicking all players — critical for live-service MMO operations
 
 Limit replication to entities within each client's area of interest (AOI), defined by spatial
 proximity, visibility, and game-specific rules (e.g., always replicate party members, guild
-members in the same zone, or raid boss regardless of distance). AOI queries must use spatial
-indexing to efficiently evaluate relevancy for thousands of clients against hundreds of
-thousands of entities per zone.
+members in the same zone, or raid boss regardless of distance). AOI queries use the shared
+BVH spatial index (F-1.9.8) for spatial relevancy filtering, enabling efficient evaluation
+for thousands of clients against hundreds of thousands of entities per zone.
 
 - **Requirements:** R-8.2.3
-- **Dependencies:** F-8.2.1
+- **Dependencies:** F-8.2.1, F-1.9.8 (Network Relevancy Integration)
 - **Platform notes:** None
 
 ### F-8.2.4 Conditional and Tiered Replication
@@ -49,7 +51,8 @@ players in guild siege or world boss encounters.
 
 - **Requirements:** R-8.2.4
 - **Dependencies:** F-8.2.3
-- **Platform notes:** None
+- **Platform notes:** Mobile uses more aggressive distance tiers: near (full, 20 Hz), mid
+  (reduced, 5 Hz), far (position-only, 2 Hz) to stay within bandwidth budget.
 
 ## Bandwidth Management
 
@@ -63,7 +66,8 @@ the congestion controller's send rate from F-8.1.7.
 
 - **Requirements:** R-8.2.5
 - **Dependencies:** F-8.2.3, F-8.1.7
-- **Platform notes:** None
+- **Platform notes:** Mobile bandwidth budget is typically 50-100 KB/s (vs. 500+ KB/s on
+  desktop). Server tags mobile connections for tighter budget allocation.
 
 ### F-8.2.6 Entity Dormancy
 
@@ -75,4 +79,5 @@ triggers), making this critical for server scalability.
 
 - **Requirements:** R-8.2.6
 - **Dependencies:** F-8.2.5
-- **Platform notes:** None
+- **Platform notes:** Server-side feature; benefits all client platforms equally. Mobile
+  clients benefit most from dormancy reducing their limited bandwidth consumption.

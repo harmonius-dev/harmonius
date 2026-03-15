@@ -11,7 +11,8 @@ updates arrive at a lower rate than the audio buffer callback.
 
 - **Requirements:** R-5.2.1
 - **Dependencies:** F-5.1.1, F-5.1.2
-- **Platform notes:** None
+- **Platform notes:** 3D positioning runs on all platforms. Per-voice Doppler calculation
+  is lightweight. Active spatialized voice count governed by F-5.1.4 tier limits.
 
 ### F-5.2.2 Distance Attenuation Curves
 
@@ -23,7 +24,8 @@ gain compression.
 
 - **Requirements:** R-5.2.2
 - **Dependencies:** F-5.2.1
-- **Platform notes:** None
+- **Platform notes:** Attenuation curves are per-source lookups, lightweight on all
+  platforms. No platform-specific scaling required.
 
 ## Binaural and Ambisonics
 
@@ -49,20 +51,25 @@ configurations.
 
 - **Requirements:** R-5.2.4
 - **Dependencies:** F-5.2.1, F-5.1.3
-- **Platform notes:** None
+- **Platform notes:** Ambisonics order scales per tier: mobile first-order only, desktop
+  up to third-order. Higher orders require more channels and CPU for rotation.
 
 ## Occlusion and Propagation
 
 ### F-5.2.5 Occlusion and Obstruction Filtering
 
 Attenuate and low-pass filter sounds whose direct path to the listener is blocked by
-geometry (occlusion) or partially blocked (obstruction). Occlusion queries use the physics
-engine's ray-cast infrastructure, with material-dependent transmission loss coefficients
-so that a wooden door and a stone wall produce different muffling characteristics.
+geometry (occlusion) or partially blocked (obstruction). Occlusion queries ray-cast
+against the shared BVH spatial index used by physics, rendering, and AI, with
+material-dependent transmission loss coefficients so that a wooden door and a stone wall
+produce different muffling characteristics.
 
 - **Requirements:** R-5.2.5
-- **Dependencies:** F-5.2.1
-- **Platform notes:** None
+- **Dependencies:** F-5.2.1, F-1.9.4 (Unified Spatial Query API),
+  F-1.9.9 (AI Perception Integration)
+- **Platform notes:** Occlusion ray count per voice scales per tier: mobile 1 ray,
+  Switch 2, desktop 4. Mobile uses simplified binary occlusion (occluded/not).
+  Desktop uses multi-ray material-weighted transmission.
 
 ### F-5.2.6 Sound Propagation via Portals and Rays
 
@@ -74,7 +81,10 @@ through corridors and around corners.
 
 - **Requirements:** R-5.2.6
 - **Dependencies:** F-5.2.5
-- **Platform notes:** None
+- **Platform notes:** Propagation path complexity scales per tier: mobile uses portal-
+  only (no ray reflections), Switch adds 1-bounce reflections, desktop supports full
+  multi-bounce ray + portal propagation. Solver update rate: mobile every 4-8 frames,
+  desktop every 1-2 frames.
 
 ## Reverb and Reflections
 
@@ -88,4 +98,6 @@ to reinforce spatial cues in enclosed environments such as taverns, caves, and t
 
 - **Requirements:** R-5.2.7
 - **Dependencies:** F-5.2.1, F-5.3.2
-- **Platform notes:** None
+- **Platform notes:** Active reverb zone count scales per tier: mobile 1-2 concurrent,
+  Switch 3-4, desktop 6+. Early reflections disabled on mobile; uses algorithmic reverb
+  only (see F-5.3.3).

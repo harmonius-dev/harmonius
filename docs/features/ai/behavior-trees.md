@@ -11,7 +11,8 @@ condition check). These composites form the structural backbone of all NPC behav
 
 - **Requirements:** R-7.3.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Mobile ticks behavior trees at reduced frequency (5-10 Hz vs. 20-30 Hz
+  on desktop) via the AI LOD system (F-7.7.5) to fit within CPU budget.
 
 ### F-7.3.2 Decorator Nodes
 
@@ -22,7 +23,8 @@ duplicating subtrees.
 
 - **Requirements:** R-7.3.2
 - **Dependencies:** F-7.3.1
-- **Platform notes:** None
+- **Platform notes:** Rate Limiter decorators are especially useful on mobile to throttle
+  expensive subtrees independently of the global tick rate.
 
 ### F-7.3.3 Conditional Aborts
 
@@ -33,7 +35,8 @@ threat changes.
 
 - **Requirements:** R-7.3.3
 - **Dependencies:** F-7.3.1
-- **Platform notes:** None
+- **Platform notes:** Abort re-evaluation frequency tied to BT tick rate; mobile agents
+  react slower due to reduced tick rate but remain functionally correct.
 
 ## Blackboard
 
@@ -46,7 +49,8 @@ conditional aborts.
 
 - **Requirements:** R-7.3.4
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Per-agent memory footprint matters on mobile. Mobile limits blackboard
+  key count per agent and uses compact storage for value types.
 
 ## Assets & Serialization
 
@@ -59,7 +63,8 @@ leaf nodes.
 
 - **Requirements:** R-7.3.5
 - **Dependencies:** F-7.3.1, F-7.3.4
-- **Platform notes:** None
+- **Platform notes:** Hot-reload is development-only; stripped from shipping builds on all
+  platforms. Mobile ships pre-compiled binary tree assets for faster loading.
 
 ### F-7.3.6 Subtree References & Reuse
 
@@ -69,7 +74,8 @@ safety, call for help) are defined once and reused across many NPC archetypes.
 
 - **Requirements:** R-7.3.6
 - **Dependencies:** F-7.3.5
-- **Platform notes:** None
+- **Platform notes:** Mobile may use simplified subtree variants (fewer branches) loaded via
+  platform-specific asset variants to reduce tree depth and tick cost.
 
 ## Debugging
 

@@ -12,7 +12,8 @@ world traversal and encounter escalation.
 
 - **Requirements:** R-5.4.1
 - **Dependencies:** F-5.1.6, F-5.1.3
-- **Platform notes:** None
+- **Platform notes:** Concurrent stem count scales per tier: mobile 4-6 stems, Switch
+  8, desktop 12+. Mobile uses lower-bitrate stem encoding to save bandwidth.
 
 ### F-5.4.2 Horizontal Re-Sequencing
 
@@ -24,7 +25,8 @@ narrative state without audible cuts.
 
 - **Requirements:** R-5.4.2
 - **Dependencies:** F-5.1.6, F-5.4.4
-- **Platform notes:** None
+- **Platform notes:** Segment graph complexity is uniform across platforms. Prefetch
+  buffer size for next segment reduced on mobile due to memory constraints.
 
 ## Transitions
 
@@ -37,7 +39,8 @@ gameplay state changes arrive at unpredictable times.
 
 - **Requirements:** R-5.4.3
 - **Dependencies:** F-5.4.2, F-5.4.4
-- **Platform notes:** None
+- **Platform notes:** Transition rules are lightweight on all platforms. Crossfade
+  duration may be shortened on mobile to reduce concurrent stream overlap.
 
 ## Tempo and Beat Tracking
 
@@ -50,7 +53,8 @@ gameplay code (e.g., rhythm-synced ability cooldowns or UI pulse effects).
 
 - **Requirements:** R-5.4.4
 - **Dependencies:** F-5.1.6
-- **Platform notes:** None
+- **Platform notes:** Beat clock tracking is lightweight on all platforms. No
+  platform-specific scaling required.
 
 ## Stingers and One-Shots
 
@@ -64,7 +68,8 @@ during large-scale MMO encounters.
 
 - **Requirements:** R-5.4.5
 - **Dependencies:** F-5.4.4, F-5.1.4
-- **Platform notes:** None
+- **Platform notes:** Stinger playback draws from the voice pool (see F-5.1.4). Stinger
+  pile-up prevention is more aggressive on mobile (longer cooldowns).
 
 ## Playlists and Randomization
 
@@ -77,7 +82,8 @@ support non-repeating constraints so that the same track is not heard twice in s
 
 - **Requirements:** R-5.4.6
 - **Dependencies:** F-5.4.2
-- **Platform notes:** None
+- **Platform notes:** Playlist logic is lightweight CPU-side on all platforms. No
+  platform-specific scaling required.
 
 ### F-5.4.7 Dynamic Intensity Parameter
 
@@ -89,4 +95,5 @@ adaptive scores across exploration, social, and combat contexts.
 
 - **Requirements:** R-5.4.7
 - **Dependencies:** F-5.4.1, F-5.4.2, F-5.4.5
-- **Platform notes:** None
+- **Platform notes:** Intensity parameter is a single float on all platforms. Stem/
+  segment responses inherit per-tier stem limits from F-5.4.1.

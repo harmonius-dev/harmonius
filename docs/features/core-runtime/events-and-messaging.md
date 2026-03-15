@@ -22,7 +22,9 @@ for server-authoritative MMO simulation.
 
 - **Requirements:** R-1.5.2
 - **Dependencies:** F-1.5.1
-- **Platform notes:** None
+- **Platform notes:** Mobile: ring buffer capped at 4K events per channel, 64 max channels.
+  Switch: 8K events per channel, 128 channels. Desktop: 32K events per channel,
+  configurable channels. Retention window reduced on memory-constrained platforms.
 
 ## Observer Pattern
 
@@ -33,8 +35,12 @@ Observers are invoked during command buffer application at sync points, not imme
 deterministic execution order. This enables reactive patterns like updating spatial indices when transforms change
 or triggering network replication when game state is modified.
 
+Extends the observer system defined in F-1.1.30.
+
 - **Requirements:** R-1.5.3
-- **Dependencies:** F-1.1.7 (Change Detection), F-1.1.11 (Deferred Structural Changes)
+- **Dependencies:** F-1.1.22 (Tick-Based Change Detection),
+  F-1.1.32 (Deferred Structural Changes via Command Buffers),
+  F-1.1.30 (Event-Triggered Observers)
 - **Platform notes:** None
 
 ## Deferred Command Buffers
@@ -46,8 +52,11 @@ component, send event) for deferred execution. Commands are flushed at explicit 
 order matching system execution order. Deferred execution eliminates the need for exclusive world access during
 parallel system runs.
 
+Extends the command buffer system defined in F-1.1.32.
+
 - **Requirements:** R-1.5.4
-- **Dependencies:** F-1.1.4 (Entity Lifecycle), F-1.7.1 (Arena Allocators)
+- **Dependencies:** F-1.1.11 (Entity Lifecycle with Generational Indices),
+  F-1.7.1 (Arena Allocators), F-1.1.32 (Deferred Structural Changes via Command Buffers)
 - **Platform notes:** None
 
 ## Reactive Queries
@@ -60,7 +69,8 @@ skipped entirely. For MMO servers with many conditionally-active systems, this s
 overhead.
 
 - **Requirements:** R-1.5.5
-- **Dependencies:** F-1.1.5 (Composable Archetype Queries), F-1.1.7 (Change Detection)
+- **Dependencies:** F-1.1.17 (Composable Archetype Queries),
+  F-1.1.22 (Tick-Based Change Detection)
 - **Platform notes:** None
 
 ## Inter-System Communication
@@ -72,8 +82,11 @@ the standard access-declaration mechanism. Resources participate in the schedule
 safe concurrent access. Resources serve as the communication channel for cross-cutting state like time, input, and
 configuration.
 
+Extends the world resources defined in F-1.1.23.
+
 - **Requirements:** R-1.5.6
-- **Dependencies:** F-1.1.8 (Dependency Resolution), F-1.3.1 (Type Registry)
+- **Dependencies:** F-1.1.25 (Dependency Resolution and Topological Ordering),
+  F-1.3.1 (Type Registry), F-1.1.23 (World Resources)
 - **Platform notes:** None
 
 ### F-1.5.7 Cross-World Event Bridges
@@ -84,5 +97,5 @@ supports MMO architectures where instanced zones, lobby worlds, and the overworl
 must exchange gameplay events.
 
 - **Requirements:** R-1.5.7
-- **Dependencies:** F-1.5.1, F-1.1.10 (Multiple Worlds)
+- **Dependencies:** F-1.5.1, F-1.1.34 (Multiple World Support)
 - **Platform notes:** None

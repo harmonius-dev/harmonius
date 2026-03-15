@@ -12,7 +12,8 @@ supports parameterized difficulty, lockout timers, and group-scoped state.
 
 - **Requirements:** R-8.7.1
 - **Dependencies:** F-8.5.4
-- **Platform notes:** None
+- **Platform notes:** Server-side infrastructure; same topology serves all client platforms.
+  Mobile clients connect to the same shards as desktop/console.
 
 ### F-8.7.2 Seamless Zone Transitions
 
@@ -24,7 +25,8 @@ pop-in and state discontinuities.
 
 - **Requirements:** R-8.7.2
 - **Dependencies:** F-8.7.1, F-8.2.1, F-8.1.2
-- **Platform notes:** None
+- **Platform notes:** Mobile may show a brief loading indicator during zone handoff due to
+  higher reconnection latency on cellular. Overlap region size is server-configured.
 
 ## Server Mesh
 
@@ -39,7 +41,8 @@ MMO gameplay patterns.
 
 - **Requirements:** R-8.7.3
 - **Dependencies:** F-8.7.2, F-8.5.4
-- **Platform notes:** None
+- **Platform notes:** Server-side infrastructure; transparent to all client platforms.
+  Server mesh decisions may factor in mobile client ratio to adjust entity budgets.
 
 ### F-8.7.4 Player Migration Between Servers
 
@@ -51,7 +54,8 @@ using extrapolation during the brief handoff window (target < 100 ms).
 
 - **Requirements:** R-8.7.4
 - **Dependencies:** F-8.7.3, F-8.4.4, F-8.1.2
-- **Platform notes:** None
+- **Platform notes:** Mobile handoff may exceed 100 ms target on cellular due to connection
+  re-establishment latency; extrapolation window is extended accordingly.
 
 ## Persistence
 
@@ -93,4 +97,22 @@ auction bid and a buyout arriving simultaneously must resolve deterministically.
 
 - **Requirements:** R-8.7.7
 - **Dependencies:** F-8.7.1, F-8.7.5
-- **Platform notes:** None
+- **Platform notes:** Server-side microservices; platform-agnostic. Mobile clients access
+  the same cross-shard APIs through the game client's networking layer.
+
+## Inter-Server Communication
+
+### F-8.7.8 Inter-Server Communication Bus
+
+A dedicated message bus for server-to-server communication within the server mesh. Servers
+exchange player migration requests, cross-shard events (world bosses, faction wars), shared
+economy state, and global chat messages through typed, serialized messages over persistent TCP
+connections with automatic reconnection. The bus supports publish-subscribe channels (all
+servers receive global events) and point-to-point routing (direct message to the server owning
+a specific shard). Message delivery guarantees are configurable per channel (at-most-once for
+telemetry, at-least-once for player migration, exactly-once for economy transactions).
+
+- **Requirements:** R-8.7.8
+- **Dependencies:** F-8.7.1 (World Sharding), F-8.1.5 (Encryption)
+- **Platform notes:** Server-to-server only; no client platform dependency. Runs on Linux
+  datacenter infrastructure.

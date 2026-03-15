@@ -52,7 +52,8 @@ repack stalls.
 
 - **Requirements:** R-10.4.4
 - **Dependencies:** F-10.4.1
-- **Platform notes:** None
+- **Platform notes:** Atlas page size 2048x2048 on mobile, 4096x4096 on desktop. Fewer atlas
+  pages reduce texture binds on bandwidth-limited mobile GPUs.
 
 ### F-10.4.5 Render-to-Texture for 3D-in-UI
 
@@ -64,7 +65,8 @@ excessive GPU cost by rendering at reduced resolution and upscaling.
 
 - **Requirements:** R-10.4.5
 - **Dependencies:** F-10.4.1
-- **Platform notes:** None
+- **Platform notes:** Mobile limits to one simultaneous 3D preview at reduced resolution
+  (quarter res). Desktop supports multiple previews at half res.
 
 ## Compositing
 

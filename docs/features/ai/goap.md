@@ -10,7 +10,7 @@ and diff, enabling fast forward-search planning for thousands of NPCs per tick.
 
 - **Requirements:** R-7.5.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Compact bitset format; runs identically on all platforms.
 
 ## Planner
 
@@ -22,7 +22,8 @@ of actions that satisfies the goal, producing a plan that the agent executes ste
 
 - **Requirements:** R-7.5.2
 - **Dependencies:** F-7.5.1
-- **Platform notes:** None
+- **Platform notes:** Mobile limits planner search depth to 4 actions (vs. 8 on desktop)
+  and caps planner iterations per tick to stay within CPU budget.
 
 ### F-7.5.3 Action Preconditions & Effects
 
@@ -32,7 +33,8 @@ planner to prefer cheaper plans (e.g., melee attack costs less than crafting a w
 
 - **Requirements:** R-7.5.3
 - **Dependencies:** F-7.5.1
-- **Platform notes:** None
+- **Platform notes:** Mobile registers fewer actions per agent archetype to reduce planner
+  branching factor and keep search time bounded.
 
 ## Plan Management
 
@@ -44,7 +46,8 @@ are invalidated when registered actions change or a configurable TTL expires.
 
 - **Requirements:** R-7.5.4
 - **Dependencies:** F-7.5.2
-- **Platform notes:** None
+- **Platform notes:** Mobile cache holds fewer entries (32 vs. 256 on desktop) due to
+  memory constraints; cache hits are critical for mobile performance.
 
 ### F-7.5.5 Replanning Triggers
 
@@ -55,7 +58,8 @@ conditions.
 
 - **Requirements:** R-7.5.5
 - **Dependencies:** F-7.5.2, F-7.3.4
-- **Platform notes:** None
+- **Platform notes:** Mobile uses longer replan cooldowns (1 s vs. 0.3 s on desktop) to
+  reduce planner invocations per agent per second.
 
 ### F-7.5.6 Goal Prioritization
 
@@ -66,4 +70,5 @@ plan and replans for the new goal.
 
 - **Requirements:** R-7.5.6
 - **Dependencies:** F-7.5.2, F-7.4.1
-- **Platform notes:** None
+- **Platform notes:** Mobile limits concurrent goal candidates to 4 (vs. 8+ on desktop).
+  Goal re-evaluation frequency tied to the BT tick rate.

@@ -13,7 +13,9 @@ evaluates density and pressure kernels, and writes updated particle state back t
 
 - **Requirements:** R-4.8.1
 - **Dependencies:** F-1.1.1, F-1.1.2
-- **Platform notes:** None
+- **Platform notes:** Mobile: disabled by default (GPU budget insufficient). Switch: max
+  1 SPH volume, 1K particles. Desktop: max 4 volumes, 16K particles total. High-end PC:
+  max 16 volumes, 256K particles with GPU compute acceleration.
 
 ### F-4.8.2 FLIP/PIC Hybrid Simulation
 
@@ -26,7 +28,9 @@ grid stability with particle detail preservation for large-scale flooding and ri
 
 - **Requirements:** R-4.8.2
 - **Dependencies:** F-4.8.1, F-1.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile: disabled (requires GPU compute). Switch: max 1 volume, grid
+  32x32x16, 2K particles. Desktop: max 2 volumes, grid 64x64x32, 32K particles.
+  High-end PC: max 8 volumes, grid 128x128x64, 128K particles.
 
 ## Grid-Based Methods
 
@@ -41,7 +45,9 @@ configured per entity on the `FluidGrid` component.
 
 - **Requirements:** R-4.8.3
 - **Dependencies:** F-1.1.1, F-1.1.2
-- **Platform notes:** None
+- **Platform notes:** Mobile: disabled by default (memory intensive). Switch: max 1 volume,
+  grid 32x32. Desktop: max 4 volumes, grid 128x128. High-end PC: max 8 volumes, grid
+  256x256 with adaptive refinement. GPU compute required for grids above 64x64.
 
 ## Surface and Rendering Integration
 
@@ -56,7 +62,9 @@ normals.
 
 - **Requirements:** R-4.8.4
 - **Dependencies:** F-4.8.1, F-1.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile: screen-space approach only, half resolution. Switch: screen-
+  space at 75% resolution. Desktop: marching cubes at full resolution. High-end PC:
+  marching cubes with adaptive refinement. GPU compute required for marching cubes.
 
 ### F-4.8.5 Water Surface Simulation
 
@@ -65,11 +73,15 @@ stores FFT parameters, Gerstner wave descriptors, and flow map references. The
 `WaterSurfaceSystem` queries all `(WaterSurface, Transform)` entities and evaluates wave
 synthesis plus localized displacement from nearby `FluidVolume` entities. The `WaterSurface`
 component produces seamless tiling across streaming zones and supports river flow fields and
-shoreline wave breaking through the `WaveConfig` parameters.
+shoreline wave breaking through the `WaveConfig` parameters. The visual representation of
+water surfaces is handled by geometry-world/water.md (F-3.4.1).
 
 - **Requirements:** R-4.8.5
-- **Dependencies:** F-4.8.3, F-1.1.1
-- **Platform notes:** None
+- **Dependencies:** F-4.8.3, F-1.1.1, F-3.4.1 (Water Surface Rendering)
+- **Platform notes:** Mobile: Gerstner waves only (no FFT), max 4 wave layers, no flow
+  maps. Switch: Gerstner with 8 layers, simple flow maps. Desktop: FFT ocean with 16+
+  layers, full flow maps. High-end PC: FFT at 512x512 resolution with shoreline
+  breaking.
 
 ## Rigid Body Interaction
 
@@ -84,7 +96,9 @@ fluid systems reading `RigidBody` and `Velocity` components on nearby entities.
 
 - **Requirements:** R-4.8.6
 - **Dependencies:** F-4.8.5, F-4.1.1, F-1.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 4 buoyant bodies, 4 sample points per collider. Switch:
+  max 8 buoyant bodies, 8 sample points. Desktop: max 64 buoyant bodies, 16 sample
+  points. High-end PC: max 256 bodies, 32 sample points for precise submerged volume.
 
 ### F-4.8.7 Two-Way Fluid-Rigid Body Coupling
 
@@ -98,4 +112,6 @@ Coupling degrades gracefully when simulation budget is exceeded by reducing quer
 
 - **Requirements:** R-4.8.7
 - **Dependencies:** F-4.8.6, F-4.8.1, F-1.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile: one-way coupling only (buoyancy without fluid displacement).
+  Switch: two-way for player vehicle only, 5m query radius. Desktop: full two-way
+  coupling, 20m radius. High-end PC: full coupling, 50m radius with wake effects.

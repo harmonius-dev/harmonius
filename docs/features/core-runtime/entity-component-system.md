@@ -12,7 +12,8 @@ cache-line-aligned access.
 
 - **Requirements:** R-1.1.1
 - **Dependencies:** F-1.7.1 (Arena Allocators), F-1.3.1 (Type Registry)
-- **Platform notes:** None
+- **Platform notes:** Mobile: 8 KiB default chunk size to fit L1 cache. Switch: 8 KiB
+  handheld, 16 KiB docked. Desktop: 16 KiB default, configurable up to 64 KiB.
 
 ### F-1.1.2 Sparse Component Storage
 
@@ -81,7 +82,8 @@ inventory slots, waypoint sequences, and any per-entity collection. Accessed thr
 
 - **Requirements:** R-1.1.7
 - **Dependencies:** F-1.1.1, F-1.7.2 (Pool Allocators)
-- **Platform notes:** None
+- **Platform notes:** Mobile: inline threshold 128 bytes, max buffer 4 KiB before spill.
+  Switch: inline threshold 256 bytes. Desktop: inline threshold 512 bytes, no cap.
 
 ### F-1.1.8 Enableable Components
 
@@ -231,7 +233,9 @@ the same component storage. Scales linearly with core count for large entity pop
 
 - **Requirements:** R-1.1.20
 - **Dependencies:** F-1.1.17, F-1.1.25 (System Scheduling)
-- **Platform notes:** None
+- **Platform notes:** Mobile: 2-4 worker threads, chunk-level partitioning only.
+  Switch: 3 workers handheld, 3 workers docked. Desktop: worker count = physical cores - 1.
+  High-end PC: up to 15+ workers on 16-core CPUs with archetype-level partitioning.
 
 ## Aspects
 
@@ -397,7 +401,8 @@ streaming staging worlds, and instanced dungeon isolation.
 
 - **Requirements:** R-1.1.34
 - **Dependencies:** F-1.1.1, F-1.1.11
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 2 concurrent worlds (game + staging). Switch: max 3
+  worlds. Desktop: configurable, default 8. High-end PC: unlimited concurrent worlds.
 
 ### F-1.1.35 Entity Migration Between Worlds
 

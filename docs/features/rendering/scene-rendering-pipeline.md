@@ -10,7 +10,8 @@ data via immutable queries so the simulation can advance concurrently with rende
 
 - **Requirements:** R-2.10.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** All platforms: full quality. Mobile: extraction thread shares
+  cores with fewer available threads; budget for lower entity counts.
 
 ### F-2.10.2 Render Component System
 
@@ -20,7 +21,8 @@ Proxies hold only the data the GPU pipeline needs, discarding simulation-only fi
 
 - **Requirements:** R-2.10.2
 - **Dependencies:** F-2.10.1
-- **Platform notes:** None
+- **Platform notes:** All platforms: full quality. SoA layout benefits cache performance
+  uniformly across all hardware tiers.
 
 ### F-2.10.3 Change Detection and Incremental Update
 
@@ -30,7 +32,8 @@ and bus bandwidth from O(N) to O(changed) at MMO entity counts.
 
 - **Requirements:** R-2.10.3
 - **Dependencies:** F-2.10.1, F-2.10.2
-- **Platform notes:** None
+- **Platform notes:** All platforms: full quality. Especially critical on mobile where
+  bus bandwidth is limited (LPDDR4/5 shared between CPU and GPU).
 
 ## View Setup and Camera
 
@@ -66,7 +69,8 @@ depth to minimize state changes during submission.
 
 - **Requirements:** R-2.10.6
 - **Dependencies:** F-2.10.2, F-2.10.4
-- **Platform notes:** None
+- **Platform notes:** All platforms: full quality. Sort key order is critical on mobile
+  where state changes incur higher driver overhead.
 
 ### F-2.10.7 GPU-Driven Batch Compaction
 
@@ -77,7 +81,9 @@ minimal draw calls.
 
 - **Requirements:** R-2.10.7
 - **Dependencies:** F-2.10.6, F-2.1.7
-- **Platform notes:** None
+- **Platform notes:** Mobile: requires indirect draw support (Vulkan 1.1+ /
+  Metal GPU family 3+). Compaction buffer sized for lower draw counts. Switch: full
+  indirect compaction. Desktop/High-end: full quality with large compaction buffers.
 
 ## Material Parameter Binding
 
@@ -103,7 +109,8 @@ and drawn after the final scene composite. Disabled in shipping builds via compi
 
 - **Requirements:** R-2.10.9
 - **Dependencies:** F-2.2.1
-- **Platform notes:** None
+- **Platform notes:** All platforms: debug-only feature stripped from shipping builds.
+  No platform scaling needed.
 
 ### F-2.10.10 Buffer Visualization Modes
 
@@ -113,4 +120,5 @@ and overdraw heat maps. Selectable at runtime via a debug menu.
 
 - **Requirements:** R-2.10.10
 - **Dependencies:** F-2.10.9
-- **Platform notes:** None
+- **Platform notes:** All platforms: debug-only feature stripped from shipping builds.
+  Mobile: G-buffer visualization unavailable when deferred path is disabled.

@@ -57,7 +57,8 @@ studios fine-grained control over which AI capabilities are active.
 
 - **Requirements:** R-15.7.4
 - **Dependencies:** F-15.7.3
-- **Platform notes:** None
+- **Platform notes:** Desktop only. AI assistance features are editor-only and not present in
+  mobile or console runtime.
 
 ## Enterprise Administration
 
@@ -102,7 +103,8 @@ allow auto-approval for assets where human modification exceeds a configurable t
 
 - **Requirements:** R-15.7.7
 - **Dependencies:** F-15.7.1, F-15.7.2, F-15.7.6
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Review workflow runs in the editor. Not available on
+  mobile or console runtime.
 
 ### F-15.7.8 Provenance Metadata in Packaged Builds
 

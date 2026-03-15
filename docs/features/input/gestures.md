@@ -60,11 +60,14 @@ resolution prevents frustrating input swallowing in complex MMO touch interfaces
 
 ### F-6.3.5 Custom Gesture Definition
 
-Allow gameplay code to define custom gesture recognizers by composing primitive recognizers or
-implementing a gesture trait with touch event callbacks. Custom gestures enable MMO-specific
-interactions such as drawing rune shapes to cast spells, circular swipes for area-of-effect
-abilities, or signature gestures for emotes.
+Define custom gesture recognizers visually by composing touch event patterns in the gesture
+editor. Authors drag primitive recognizers (tap, swipe, hold, pinch) onto a timeline, connect
+them with sequencing and branching nodes, and set distance, angle, and timing thresholds via
+property panels. Complex patterns such as drawing rune shapes to cast spells, circular swipes
+for area-of-effect targeting, or signature emote gestures are authored entirely in the visual
+editor and evaluated at runtime through the logic graph system (F-15.8.4).
 
 - **Requirements:** R-6.3.5
-- **Dependencies:** F-6.3.4
-- **Platform notes:** None
+- **Dependencies:** F-6.3.4, F-15.8.4 (Logic Graphs)
+- **Platform notes:** Primarily used on mobile and tablet. Desktop touchscreen and macOS
+  trackpad support custom gestures but are secondary targets.

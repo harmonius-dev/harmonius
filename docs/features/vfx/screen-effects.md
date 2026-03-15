@@ -11,7 +11,8 @@ shake independently, with accessibility options for reduced motion.
 
 - **Requirements:** R-11.3.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Lightweight CPU effect; runs identically on all platforms. Mobile
+  default amplitude is lower to reduce motion sickness on handheld devices.
 
 ### F-11.3.2 Motion Blur
 
@@ -22,7 +23,8 @@ sampling cost. Intensity scales with frame rate to maintain consistent blur widt
 
 - **Requirements:** R-11.3.2
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Mobile skips per-object blur; camera-only blur at half resolution.
+  Disabled entirely on low-end mobile GPUs. Switch uses reduced sample count.
 
 ### F-11.3.3 Lens Flare
 
@@ -33,7 +35,8 @@ shape, color shift, and radial falloff. Temporal smoothing prevents popping on p
 
 - **Requirements:** R-11.3.3
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Mobile limits flare elements to 2 ghosts (vs. 6 on desktop) and skips
+  starburst generation. Disabled on low-end mobile GPUs.
 
 ## Post-Process Distortions
 
@@ -47,7 +50,8 @@ triggers for cinematic polish.
 
 - **Requirements:** R-11.3.4
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Mobile disables chromatic aberration and film grain by default to save
+  fill rate. Vignette is retained as a single-sample overlay (cheap).
 
 ### F-11.3.5 Heat Haze and Refraction
 
@@ -58,7 +62,8 @@ to bound cost when many refraction sources overlap in raid encounters.
 
 - **Requirements:** R-11.3.5
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Mobile uses quarter-resolution distortion buffer. Disabled entirely on
+  low-end mobile GPUs. Switch uses half-resolution (same as desktop).
 
 ## Gameplay Overlays
 
@@ -72,4 +77,5 @@ independent lifecycle timers and clamped total opacity.
 
 - **Requirements:** R-11.3.6
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Lightweight full-screen overlay; runs on all platforms. Mobile limits
+  concurrent overlay count to 2 (vs. 4 on desktop) to control overdraw.

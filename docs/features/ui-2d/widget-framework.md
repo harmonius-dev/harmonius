@@ -39,7 +39,8 @@ inventory cells are created and destroyed per second.
 
 - **Requirements:** R-10.1.3
 - **Dependencies:** F-10.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile enforces a lower active widget budget (200 vs 500 on desktop).
+  Aggressive pooling and recycling are critical on memory-constrained devices.
 
 ## Layout
 
@@ -162,3 +163,39 @@ bound widgets changing simultaneously.
 - **Requirements:** R-10.1.12
 - **Dependencies:** F-10.1.1, F-10.1.7 (Data Binding)
 - **Platform notes:** None
+
+## Animation
+
+### F-10.1.13 Widget Animation System
+
+Animate widget properties (position, size, opacity, color, rotation, scale) over time using
+keyframed curves with configurable easing functions (linear, ease-in, ease-out, ease-in-out,
+cubic bezier, spring, bounce). Animations are declared as named animation assets authored in
+the UI visual editor. Supports transition animations triggered by state changes (panel
+slide-in on open, fade-out on close), looping animations (pulsing glow on highlighted items,
+spinning loading indicator), staggered list animations (items animate in sequence with
+configurable delay), and interruptible animations that smoothly blend to a new target when
+retriggered mid-flight. The animation system runs independently of the game's animation
+system (domain 9), operating directly on widget tree properties.
+
+- **Requirements:** R-10.1.13
+- **Dependencies:** F-10.1.1 (Widget Tree), F-10.1.12 (Tree Diffing)
+- **Platform notes:** None
+
+## Audio
+
+### F-10.1.14 UI Audio Feedback
+
+Automatic audio feedback for widget interactions: button click, hover enter, hover exit,
+focus gain, focus loss, scroll, drag start, drag end, toggle on/off, slider value change,
+and notification popup. Each widget type defines default sound slots that designers override
+per-widget or per-theme. Sounds reference audio assets played through a dedicated UI mixer
+bus (F-5.1.3) with low-latency scheduling. Audio feedback respects accessibility settings
+— can be disabled globally, individually per sound type, or replaced with haptic feedback
+(F-6.4.1) on supported platforms.
+
+- **Requirements:** R-10.1.14
+- **Dependencies:** F-10.1.1 (Widget Tree), F-5.1.3 (Mixer Bus Graph), F-5.1.7 (Audio
+  Formats)
+- **Platform notes:** On mobile, UI sounds use low-latency audio paths (AudioToolbox on
+  iOS, SoundPool on Android) to avoid mixer bus scheduling delay.

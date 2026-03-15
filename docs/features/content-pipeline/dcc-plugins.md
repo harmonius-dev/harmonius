@@ -4,14 +4,13 @@
 
 ### F-12.6.1 Asset Pipeline Plugin SDK
 
-A C API with language bindings (Python, C++) that DCC tool plugins use to push assets directly
-into the engine's content pipeline. The SDK provides functions to submit meshes, skeletons,
-animations, materials, textures, and scene hierarchies in the engine's native interchange
-format — bypassing lossy intermediate formats (FBX, glTF). The SDK handles versioning,
-compression, and transport over a local socket or shared memory channel.
+A C API with language bindings (Python, C++) that DCC tool plugins use to export assets
+directly to the engine's native binary format (F-12.7.1). The SDK provides functions to
+submit meshes, skeletons, animations, materials, textures, and scene hierarchies. The SDK
+handles versioning, compression, and transport over a local socket or shared memory channel.
 
 - **Requirements:** R-12.6.1
-- **Dependencies:** F-12.1.1 (Asset Import), F-12.2.1 (Asset Processing)
+- **Dependencies:** F-12.7.1 (Universal Binary Asset Format), F-12.2.1 (Asset Processing)
 - **Platform notes:** SDK ships as a shared library (.dll/.dylib/.so) loadable by any DCC host.
 
 ### F-12.6.2 Live Link Connection
@@ -24,7 +23,8 @@ delta protocol.
 
 - **Requirements:** R-12.6.2
 - **Dependencies:** F-12.6.1, F-12.4.1 (Hot Reload)
-- **Platform notes:** None
+- **Platform notes:** Desktop only. DCC tools run on Windows, macOS, or Linux workstations.
+  Not available on mobile or console runtime.
 
 ## Houdini Plugin
 
@@ -45,8 +45,9 @@ interactive procedural workflows.
 
 Export meshes with vertex attributes (position, normal, UV sets, color, custom attributes),
 skeleton hierarchies, skin weights, morph targets, and scene hierarchy directly from Houdini
-to the engine via the plugin SDK. Supports Houdini packed primitives as instanced meshes,
-curve primitives as engine splines, and volume primitives as 3D textures.
+to the engine's native binary format (F-12.7.1) via the plugin SDK. Supports Houdini packed
+primitives as instanced meshes, curve primitives as engine splines, and volume primitives as
+3D textures.
 
 - **Requirements:** R-12.6.4
 - **Dependencies:** F-12.6.1, F-12.6.3
@@ -69,10 +70,10 @@ Houdini's procedural environment.
 ### F-12.6.6 Maya Direct Export Plugin
 
 A Maya plugin (Python + C++ Maya API) that exports meshes, skeletons, animations, blend
-shapes, materials, cameras, and lights directly to the engine via the plugin SDK. Bypasses
-FBX entirely — the plugin reads Maya's internal dag hierarchy and component data, converts
-to the engine's interchange format, and pushes over the live link or writes to an asset file.
-Supports incremental export of only changed nodes.
+shapes, materials, cameras, and lights directly to the engine's native binary format
+(F-12.7.1) via the plugin SDK. The plugin reads Maya's internal DAG hierarchy and component
+data, converts to the engine's native format, and pushes over the live link or writes to an
+asset file. Supports incremental export of only changed nodes.
 
 - **Requirements:** R-12.6.6
 - **Dependencies:** F-12.6.1
@@ -81,10 +82,11 @@ Supports incremental export of only changed nodes.
 
 ### F-12.6.7 Maya Animation and Rigging Export
 
-Export animation clips (skeletal, blendshape, camera) with full curve data (Bezier tangents,
-step/linear/cubic interpolation) rather than baked per-frame samples. Export skin cluster
-weights, IK handles (as metadata for engine IK setup), and constraint setups. Character
-rigs export skeleton + bind pose + morph target set as a single character asset.
+Export animation clips (skeletal, blendshape, camera) to the engine's native binary format
+(F-12.7.1) with full curve data (Bezier tangents, step/linear/cubic interpolation) rather
+than baked per-frame samples. Export skin cluster weights, IK handles (as metadata for engine
+IK setup), and constraint setups. Character rigs export skeleton + bind pose + morph target
+set as a single character asset.
 
 - **Requirements:** R-12.6.7
 - **Dependencies:** F-12.6.6
@@ -95,10 +97,11 @@ rigs export skeleton + bind pose + morph target set as a single character asset.
 ### F-12.6.8 Blender Direct Export Addon
 
 A Blender addon (Python, using bpy API) that exports meshes, armatures, shape keys,
-animations, materials (node tree → engine material mapping), and scene hierarchy directly to
-the engine. Supports Blender's collections as engine prefab hierarchies. Addon registers as
-an export operator and a live-link panel in Blender's sidebar. Blender's modifier stack is
-applied at export time with an option to export pre-modifier data for engine-side processing.
+animations, materials (node tree to engine material mapping), and scene hierarchy directly to
+the engine's native binary format (F-12.7.1). Supports Blender's collections as engine prefab
+hierarchies. Addon registers as an export operator and a live-link panel in Blender's sidebar.
+Blender's modifier stack is applied at export time with an option to export pre-modifier data
+for engine-side processing.
 
 - **Requirements:** R-12.6.8
 - **Dependencies:** F-12.6.1
@@ -118,16 +121,17 @@ defaults. Material conversion runs automatically on export and on live-link push
 
 ## Marvelous Designer
 
-### F-12.6.10 Marvelous Designer Clothing Import
+### F-12.6.10 Marvelous Designer Clothing Export
 
-Import clothing and fabric assets from Marvelous Designer via Alembic (.abc) or native
-Garment (.zprj) files. The importer extracts garment meshes, UV layouts, seam data, and
-fabric material properties (thickness, stretch, bend stiffness). Garment meshes are bound
-to the character skeleton using the engine's skinning pipeline. Fabric properties map to
-the cloth simulation system (F-4.7.2) for runtime simulation of imported garments.
+Export clothing and fabric assets from Marvelous Designer directly to the engine's native
+binary format (F-12.7.1) via the plugin SDK. The plugin extracts garment meshes, UV layouts,
+seam data, and fabric material properties (thickness, stretch, bend stiffness). Garment
+meshes are bound to the character skeleton using the engine's skinning pipeline. Fabric
+properties map to the cloth simulation system (F-4.7.2) for runtime simulation of exported
+garments.
 
 - **Requirements:** R-12.6.10
-- **Dependencies:** F-12.1.1 (Asset Import), F-4.7.2 (Cloth), F-13.8.9 (Modular Parts)
+- **Dependencies:** F-12.6.1 (Plugin SDK), F-4.7.2 (Cloth), F-13.8.9 (Modular Parts)
 - **Platform notes:** None
 
 ### F-12.6.11 Garment-to-Character Fitting
@@ -153,7 +157,7 @@ are stored in the material asset and adjustable in the engine's material editor 
 re-exporting from Substance Designer.
 
 - **Requirements:** R-12.6.12
-- **Dependencies:** F-12.1.1 (Asset Import)
+- **Dependencies:** F-12.6.1 (Plugin SDK)
 - **Platform notes:** Uses the Substance Engine C API for .sbsar evaluation. Substance
   Engine is licensed separately; baked textures require no runtime license.
 
@@ -186,7 +190,8 @@ spikes.
 ### F-12.6.15 Photoshop Direct Export Plugin
 
 A Photoshop plugin (UXP/CEP JavaScript + C++ native module) that exports textures, UI sprites,
-and layered compositions directly to the engine. Exports individual layers or flattened output
+and layered compositions directly to the engine's native binary format (F-12.7.1). Exports
+individual layers or flattened output
 with channel packing (e.g., metallic in R, roughness in G, AO in B) matching the engine's
 material conventions. Supports PSD round-trip — the engine stores a reference to the source
 PSD so re-export updates the engine asset without manual reimport. Live link pushes texture
@@ -212,8 +217,9 @@ in Photoshop and push to the engine without manual recreation of widget trees.
 
 ### F-12.6.17 Illustrator Vector Asset Export
 
-Export Illustrator vector artwork (icons, HUD elements, decals, signage) as engine vector
-graphics assets or rasterized texture atlases. SVG paths are converted to the engine's vector
+Export Illustrator vector artwork (icons, HUD elements, decals, signage) to the engine's
+native binary format (F-12.7.1) as vector graphics assets or rasterized texture atlases. SVG
+paths are converted to the engine's vector
 rendering format (F-10.4.3) for resolution-independent UI. Artboards map to individual assets;
 symbols map to shared instances. Color swatches export as engine color palette assets for
 consistent theming.
@@ -227,7 +233,8 @@ consistent theming.
 
 ### F-12.6.18 ZBrush High-Poly to Engine Pipeline
 
-Export ZBrush sculpts (ZTL/ZPR) to the engine via GoZ bridge or file-based export. The plugin
+Export ZBrush sculpts (ZTL/ZPR) to the engine's native binary format (F-12.7.1) via GoZ
+bridge or file-based export. The plugin
 extracts the highest subdivision mesh, generates normal/displacement/cavity maps by projecting
 detail onto a lower subdivision level, and pushes both the low-poly mesh and baked maps to the
 engine. Polypaint exports as vertex colors or baked to texture. Supports multi-part models
@@ -254,9 +261,10 @@ engine mesh asset with LOD transitions configured automatically.
 ### F-12.6.20 MotionBuilder Animation Export
 
 Export motion capture data, cleaned animations, and character rigs from MotionBuilder directly
-to the engine via the plugin SDK. The plugin reads MotionBuilder's internal FBX scene,
-extracts skeleton hierarchies, animation takes with full curve data (not baked samples), and
-character definitions. Supports batch export of multiple takes from a single session.
+to the engine's native binary format (F-12.7.1) via the plugin SDK. The plugin reads
+MotionBuilder's internal scene representation, extracts skeleton hierarchies, animation takes
+with full curve data (not baked samples), and character definitions. Supports batch export of
+multiple takes from a single session.
 
 - **Requirements:** R-12.6.20
 - **Dependencies:** F-12.6.1
@@ -279,7 +287,7 @@ see mocap results on final characters with full materials and lighting during ca
 ### F-12.6.22 DCC Plugin Git LFS Lock Workflow
 
 Every DCC plugin integrates with Git LFS locking. When an artist opens a source file (PSD,
-.ma, .blend, .ztl, .zprj, .hip, .spp, .ai, .fbx) from the engine's asset browser or from
+.ma, .blend, .ztl, .zprj, .hip, .spp, .ai) from the engine's asset browser or from
 within the DCC tool, the plugin automatically acquires a Git LFS lock on that file. A status
 indicator in the DCC tool shows lock state (locked by you, locked by another user, unlocked).
 On save and close, the plugin commits the changes, pushes, and releases the lock. If another

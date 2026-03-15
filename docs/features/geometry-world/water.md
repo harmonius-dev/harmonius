@@ -8,11 +8,14 @@ Open-ocean surface displacement computed via inverse FFT on a GPU compute shader
 (Phillips, JONSWAP, or TMA spectrum) at different resolutions capture waves from large swells down to capillary
 ripples. The simulation runs at a fixed timestep and writes displacement, normal, and fold maps to tiled textures
 that seamlessly repeat across the infinite ocean grid required for MMO naval traversal. Analytical Gerstner waves
-can be layered on top for artist-directed swell control during storms or cinematic sequences.
+can be layered on top for artist-directed swell control during storms or cinematic sequences. The visual ocean
+surface integrates with the physics water simulation (F-4.8.5) for buoyancy and wave interaction.
 
 - **Requirements:** R-3.4.1
-- **Dependencies:** None
-- **Platform notes:** None
+- **Dependencies:** F-4.8.5 (Water Surface Simulation)
+- **Platform notes:** FFT resolution scales per tier: mobile 64x64 (1 cascade), Switch
+  128x128 (2 cascades), desktop 256x256+ (3-4 cascades). Mobile falls back to
+  Gerstner-only waves when compute budget is exceeded.
 
 ## Shoreline Blending
 
@@ -25,7 +28,8 @@ noise to simulate wave breaking and surf.
 
 - **Requirements:** R-3.4.2
 - **Dependencies:** F-3.4.1, F-3.2.1
-- **Platform notes:** None
+- **Platform notes:** Foam mask resolution halved on mobile. Shoreline blend width
+  reduced on mobile to simplify the depth comparison pass.
 
 ## Underwater Rendering
 
@@ -38,7 +42,8 @@ as volumetric light shafts, enabling immersive underwater zones in the MMO world
 
 - **Requirements:** R-3.4.3
 - **Dependencies:** F-3.4.1
-- **Platform notes:** None
+- **Platform notes:** Volumetric god rays disabled on mobile; uses screen-space
+  approximation. Underwater fog uses simpler depth curve on mobile.
 
 ## Caustics
 
@@ -51,7 +56,8 @@ surfaces, adding visual richness to shallow water and underwater environments.
 
 - **Requirements:** R-3.4.4
 - **Dependencies:** F-3.4.1
-- **Platform notes:** None
+- **Platform notes:** Mobile uses pre-baked tiling caustics maps only. Desktop uses
+  real-time refracted caustics from the ocean normal map.
 
 ## Water Refraction / Reflection
 
@@ -64,7 +70,9 @@ using the water normal map as an offset into the screen-space color buffer.
 
 - **Requirements:** R-3.4.5
 - **Dependencies:** F-3.4.1
-- **Platform notes:** None
+- **Platform notes:** Reflection quality scales per tier: mobile uses cubemap-only
+  reflections, Switch adds SSR at half-res, desktop uses full-res SSR + optional
+  planar reflection pass for hero water bodies.
 
 ## River Flow
 
@@ -77,7 +85,8 @@ seamlessly with the ocean system at estuary points.
 
 - **Requirements:** R-3.4.6
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Flow map resolution consistent across platforms. Normal map
+  animation layers reduced on mobile (1 layer vs 2-3 on desktop).
 
 ## Foam Generation
 
@@ -90,4 +99,5 @@ producing realistic whitecap, surf, and wake foam across oceans, rivers, and lak
 
 - **Requirements:** R-3.4.7
 - **Dependencies:** F-3.4.1, F-3.4.2, F-3.4.6
-- **Platform notes:** None
+- **Platform notes:** Foam coverage map resolution halved on mobile. Object wake foam
+  disabled on mobile. Whitecap generation from FFT Jacobian simplified on Switch.

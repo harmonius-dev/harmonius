@@ -28,7 +28,9 @@ component on each wheel entity for downstream systems to consume.
 
 - **Requirements:** R-4.5.2
 - **Dependencies:** F-1.1.1, F-4.5.1, F-4.1.3
-- **Platform notes:** None
+- **Platform notes:** Mobile: simplified friction model (linear approximation instead of
+  Pacejka). Switch: Pacejka with reduced curve table (4 surface types). Desktop: full
+  Pacejka model with configurable surface tables.
 
 ## Drivetrain
 
@@ -44,7 +46,9 @@ based on configurable shift points in the `Drivetrain` component.
 
 - **Requirements:** R-4.5.3
 - **Dependencies:** F-1.1.1, F-4.5.1, F-4.5.2
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 4 simultaneous drivetrain simulations, simplified
+  differential (open only). Switch: max 8 drivetrains. Desktop: max 64 drivetrains
+  with full differential models. High-end PC: max 256 drivetrains.
 
 ## Stability
 
@@ -61,7 +65,9 @@ disabled per entity.
 
 - **Requirements:** R-4.5.4
 - **Dependencies:** F-1.1.1, F-4.5.1, F-4.5.3
-- **Platform notes:** None
+- **Platform notes:** Mobile: stability control only on player vehicle, anti-roll bars
+  disabled for AI vehicles. Switch: full stability for up to 4 vehicles. Desktop: full
+  stability for all active vehicles.
 
 ## Specialized Vehicles
 
@@ -77,7 +83,9 @@ right track speeds within the `TrackedVehicle` component.
 
 - **Requirements:** R-4.5.5
 - **Dependencies:** F-1.1.1, F-4.5.2, F-4.1.3
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 2 tracked vehicles, 4 shape casts per track. Switch: max
+  4 tracked vehicles, 6 casts. Desktop: max 32 tracked vehicles, 8 casts per track.
+  Ground sampling density reduced on mobile to lower per-frame cast count.
 
 ### F-4.5.6 Hover Vehicle Simulation
 
@@ -91,7 +99,9 @@ correction torques to keep the vehicle level over terrain edges and water surfac
 
 - **Requirements:** R-4.5.6
 - **Dependencies:** F-1.1.1, F-4.4.1, F-4.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 2 hover vehicles, 4 repulsor points each. Switch: max 4
+  vehicles, 6 repulsor points. Desktop: max 32 vehicles, 8 repulsor points. Fewer
+  repulsors reduce per-frame ray cast count on constrained platforms.
 
 ### F-4.5.7 Server-Authoritative Vehicle Replication
 

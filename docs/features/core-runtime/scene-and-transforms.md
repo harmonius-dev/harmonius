@@ -10,7 +10,8 @@ maintain consistency during parallel iteration. This enables efficient traversal
 and serialization.
 
 - **Requirements:** R-1.2.1
-- **Dependencies:** F-1.1.4 (Entity Lifecycle), F-1.1.11 (Deferred Structural Changes)
+- **Dependencies:** F-1.1.11 (Entity Lifecycle with Generational Indices),
+  F-1.1.32 (Deferred Structural Changes via Command Buffers)
 - **Platform notes:** None
 
 ### F-1.2.2 Hierarchy Traversal Iterators
@@ -32,7 +33,7 @@ where children are reparented to the world root instead. Lifecycle cascading is 
 to avoid iterator invalidation during hierarchy walks.
 
 - **Requirements:** R-1.2.3
-- **Dependencies:** F-1.2.1, F-1.1.11 (Deferred Structural Changes)
+- **Dependencies:** F-1.2.1, F-1.1.32 (Deferred Structural Changes via Command Buffers)
 - **Platform notes:** None
 
 ## Transform Propagation
@@ -45,8 +46,10 @@ top-down parallel system that processes independent subtrees concurrently. For M
 stack overflow.
 
 - **Requirements:** R-1.2.4
-- **Dependencies:** F-1.2.1, F-1.1.6 (Parallel Iteration)
-- **Platform notes:** None
+- **Dependencies:** F-1.2.1, F-1.1.20 (Automatic Parallel Iteration)
+- **Platform notes:** Mobile: max hierarchy depth 32, parallel threshold 512 entities.
+  Switch: max depth 64, parallel threshold 256. Desktop: max depth 256, parallel threshold
+  128. All platforms use iterative (not recursive) propagation to avoid stack overflow.
 
 ## Dirty Tracking
 
@@ -57,7 +60,7 @@ only recomputes world-space transforms for dirty subtrees, skipping static geome
 most entities are stationary each frame, this reduces propagation cost by orders of magnitude.
 
 - **Requirements:** R-1.2.5
-- **Dependencies:** F-1.2.4, F-1.1.7 (Change Detection)
+- **Dependencies:** F-1.2.4, F-1.1.22 (Tick-Based Change Detection)
 - **Platform notes:** None
 
 ## Spatial Partitioning
@@ -69,9 +72,14 @@ and bounding volumes. The index is updated incrementally using dirty flags from 
 support millions of entities and provide sub-millisecond query times for frustum culling, range queries, and
 nearest-neighbor lookups.
 
+This feature delegates to the shared spatial index (F-1.9.1) for the underlying acceleration
+structure.
+
 - **Requirements:** R-1.2.6
-- **Dependencies:** F-1.2.4, F-1.2.5
-- **Platform notes:** None
+- **Dependencies:** F-1.2.4, F-1.2.5, F-1.9.1 (Shared BVH Spatial Index)
+- **Platform notes:** Mobile: max 50K indexed entities, BVH refit budget 0.5ms.
+  Switch: max 200K entities, 0.8ms budget. Desktop: 1M+ entities, 1ms budget.
+  High-end PC: 5M+ entities with parallel BVH refit.
 
 ## Scene Queries
 
@@ -82,6 +90,10 @@ neighbors. Queries combine spatial filtering from the acceleration structure wit
 retrieve only entities matching both spatial and archetype criteria. This powers gameplay systems like proximity
 triggers, line-of-sight checks, and area-of-effect abilities.
 
+This feature delegates to the shared spatial index (F-1.9.1) for the underlying acceleration
+structure.
+
 - **Requirements:** R-1.2.7
-- **Dependencies:** F-1.2.6, F-1.1.5 (Composable Archetype Queries)
+- **Dependencies:** F-1.2.6, F-1.1.17 (Composable Archetype Queries),
+  F-1.9.4 (Unified Spatial Query API)
 - **Platform notes:** None

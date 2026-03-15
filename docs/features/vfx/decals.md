@@ -23,7 +23,8 @@ and correct tangent-space normals matter more than runtime flexibility.
 
 - **Requirements:** R-11.2.2
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Bake-time mesh decals run on all platforms. On-demand mesh decal
+  generation is disabled on mobile due to CPU cost; uses deferred decals instead.
 
 ## Management and Performance
 
@@ -36,7 +37,8 @@ entries when memory pressure rises during large siege battles.
 
 - **Requirements:** R-11.2.3
 - **Dependencies:** F-11.2.1
-- **Platform notes:** None
+- **Platform notes:** Mobile uses smaller atlas pages (1024x1024 vs. 2048x2048 on desktop)
+  and a lower streaming budget to fit within GPU memory constraints.
 
 ### F-11.2.4 Decal Priority, Layering, and Lifecycle
 
@@ -48,7 +50,8 @@ A global budget reclaims the oldest low-priority decals first when the pool is e
 
 - **Requirements:** R-11.2.4
 - **Dependencies:** F-11.2.1
-- **Platform notes:** None
+- **Platform notes:** Mobile global decal pool is 64 (vs. 256 on desktop). Shorter default
+  lifecycle durations on mobile to recycle slots faster.
 
 ## Gameplay Decals
 
@@ -61,7 +64,8 @@ feedback in melee combat and raid encounters.
 
 - **Requirements:** R-11.2.5
 - **Dependencies:** F-11.2.1, F-11.2.4
-- **Platform notes:** None
+- **Platform notes:** Mobile uses fewer atlas variants and shorter persistence. Blood decals
+  may be disabled by platform content rating (region-specific).
 
 ### F-11.2.6 Footprints and Tire Tracks
 
@@ -72,4 +76,5 @@ the vehicle path with width matching the wheel contact patch.
 
 - **Requirements:** R-11.2.6
 - **Dependencies:** F-11.2.1, F-11.2.4
-- **Platform notes:** None
+- **Platform notes:** Mobile spawns footprints at reduced frequency (every 4th step vs. every
+  step on desktop). Deformation response uses simplified textures on mobile.

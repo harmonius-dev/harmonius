@@ -59,6 +59,3 @@ elseif(HARMONIUS_GPU_BACKEND STREQUAL "vulkan")
 elseif(HARMONIUS_GPU_BACKEND STREQUAL "d3d12")
   find_package(directx-headers CONFIG REQUIRED)
 endif()
-
-# Library modules
-add_subdirectory(src)

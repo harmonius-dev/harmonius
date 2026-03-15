@@ -160,7 +160,9 @@ with per-submesh instancing for variation.
 
 - **Requirements:** R-13.8.13
 - **Dependencies:** F-9.1.6 (Instanced Animation), F-13.8.9
-- **Platform notes:** None
+- **Platform notes:** Mobile uses aggressive LOD distances — card hair and simplified meshes
+  at shorter range, impostor billboards earlier. Fewer simultaneous unique characters rendered
+  (50 vs 200+ on desktop).
 
 ### F-13.8.14 Mesh Merging and Draw Call Reduction
 

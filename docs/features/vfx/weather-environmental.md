@@ -11,7 +11,8 @@ downward with gravity, merge on contact, and evaporate after the storm passes.
 
 - **Requirements:** R-11.4.1
 - **Dependencies:** F-11.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile uses a single particle layer (no screen droplets). Rain
+  particle density reduced to 25% of desktop. Ripple normals use half-res on mobile.
 
 ### F-11.4.2 Rain Puddles and Wet Surfaces
 
@@ -22,7 +23,8 @@ reflects, and dirt turns to mud. Puddle depth drains over time after rain stops.
 
 - **Requirements:** R-11.4.2
 - **Dependencies:** F-11.4.1
-- **Platform notes:** None
+- **Platform notes:** Mobile uses pre-placed puddle decals (no dynamic heightfield
+  accumulation). Wet surface effect is albedo-darken only (no roughness modification).
 
 ### F-11.4.3 Snow Accumulation and Interaction
 
@@ -33,7 +35,8 @@ underlying surface material and fade gradually under continued snowfall.
 
 - **Requirements:** R-11.4.3
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Mobile uses texture-blend snow (no vertex displacement). Deformation
+  trails use decals instead of depth stamps on mobile. Lower height texture resolution.
 
 ## Atmospheric Effects
 
@@ -45,8 +48,9 @@ volumetric fog froxel grid and participate in temporal reprojection. Used for sw
 mist, and spell-area fog across open-world zones without affecting the global atmosphere.
 
 - **Requirements:** R-11.4.4
-- **Dependencies:** None
-- **Platform notes:** None
+- **Dependencies:** F-2.7.2 (Ray-Marched Volumetric Fog)
+- **Platform notes:** Mobile uses screen-space height fog (no volumetric froxel grid). Switch
+  uses a lower-resolution froxel grid. Concurrent fog volumes limited on mobile.
 
 ### F-11.4.5 Lightning
 
@@ -56,8 +60,9 @@ illuminating terrain and clouds for a single frame followed by exponential decay
 cues are distance-delayed. Multiple simultaneous bolts are supported for intense storm sequences.
 
 - **Requirements:** R-11.4.5
-- **Dependencies:** None
-- **Platform notes:** None
+- **Dependencies:** F-11.1.1 (GPU Particle Simulation)
+- **Platform notes:** Mobile limits branching depth to 2 (vs. 4 on desktop) and caps
+  simultaneous bolts to 1. Light emission uses a single directional flash on mobile.
 
 ### F-11.4.6 Wind Visualization and Dust Storms
 
@@ -69,7 +74,8 @@ transitions across open-world zones.
 
 - **Requirements:** R-11.4.6
 - **Dependencies:** F-11.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile uses reduced wind particle count (10% of desktop). Dust storm
+  visibility reduction uses distance fog only (no volumetric scattering) on mobile.
 
 ## Underwater Effects
 
@@ -82,5 +88,6 @@ simulates the view through a rippling interface. Light shafts are rendered as sc
 god rays from the surface.
 
 - **Requirements:** R-11.4.7
-- **Dependencies:** None
-- **Platform notes:** None
+- **Dependencies:** F-11.3.3 (Full-Screen Distortion)
+- **Platform notes:** Mobile skips caustic projection and god rays; uses depth fog and
+  simplified blue tint only. Bubble particles reduced to 25% of desktop count.

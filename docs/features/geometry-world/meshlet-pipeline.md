@@ -11,7 +11,8 @@ mesh, enabling fine-grained GPU-driven LOD selection and culling as the atomic u
 
 - **Requirements:** R-3.1.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Meshlet size (64v/124t) is fixed across platforms. DAG depth and
+  coarsening aggressiveness scale per tier — mobile uses fewer hierarchy levels.
 
 ## GPU-Driven Culling
 
@@ -24,7 +25,8 @@ culling for MMO scenes with dense occluders.
 
 - **Requirements:** R-3.1.2
 - **Dependencies:** F-3.1.1
-- **Platform notes:** None
+- **Platform notes:** HZB resolution scales per platform. Mobile uses half-res HZB;
+  desktop uses full-res. Phase-two retest may be skipped on mobile under budget pressure.
 
 ### F-3.1.3 Cluster and Triangle Culling
 
@@ -35,7 +37,8 @@ open-world scenes.
 
 - **Requirements:** R-3.1.3
 - **Dependencies:** F-3.1.2
-- **Platform notes:** None
+- **Platform notes:** Task/mesh shader path on hardware with VK_EXT_mesh_shader, D3D12,
+  or Metal mesh shaders. Falls back to compute + vertex pipeline on mobile/older GPUs.
 
 ## Mesh Shaders / Indirect Draw Fallback
 
@@ -62,7 +65,8 @@ smooth quality gradation across a single mesh rather than whole-object LOD pops.
 
 - **Requirements:** R-3.1.5
 - **Dependencies:** F-3.1.1, F-3.1.4
-- **Platform notes:** None
+- **Platform notes:** Pixel-error threshold is higher on mobile (more aggressive LOD)
+  to reduce triangle count. Crossfade dither pattern simplified on mobile.
 
 ## Meshlet Streaming
 

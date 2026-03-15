@@ -10,7 +10,8 @@ these declarations without requiring manual ordering.
 
 - **Requirements:** R-2.2.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** All platforms: full quality. Pass registration is CPU-side with
+  no GPU cost.
 
 ### F-2.2.2 Capability Gating
 
@@ -33,7 +34,10 @@ in lifetime to share the same backing memory.
 
 - **Requirements:** R-2.2.3
 - **Dependencies:** F-2.2.1, F-2.1.7
-- **Platform notes:** None
+- **Platform notes:** Mobile: transient resources use memoryless storage on Metal
+  (MTLStorageModeMemoryless) and lazily-allocated memory on Vulkan
+  (VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) for zero-bandwidth tile-local
+  attachments. All platforms: full quality.
 
 ### F-2.2.4 Resource Aliasing
 
@@ -80,7 +84,7 @@ assignment. Stable ordering is maintained across frames to avoid GPU pipeline bu
 
 - **Requirements:** R-2.2.7
 - **Dependencies:** F-2.2.1
-- **Platform notes:** None
+- **Platform notes:** All platforms: full quality. CPU-side operation with no GPU cost.
 
 ### F-2.2.8 Budget Culling
 
@@ -90,7 +94,9 @@ from the graph before compilation, enabling graceful quality degradation at scal
 
 - **Requirements:** R-2.2.8
 - **Dependencies:** F-2.2.1, F-2.2.7
-- **Platform notes:** None
+- **Platform notes:** Mobile: aggressive budget targets (16-33 ms); many optional passes
+  culled by default. Switch: 16 ms docked (60 fps) / 33 ms handheld (30 fps) budgets.
+  Desktop: 16 ms target. High-end: 8-16 ms target allowing more optional passes.
 
 ## Execution
 
@@ -102,7 +108,9 @@ for split-screen, VR stereo, shadow cascades, and reflection probe renders. Shar
 
 - **Requirements:** R-2.2.9
 - **Dependencies:** F-2.2.1, F-2.2.7
-- **Platform notes:** None
+- **Platform notes:** Mobile: max 4 views (main + 2-3 shadow cascades); no VR stereo.
+  Switch: max 8 views. Desktop: configurable; dozens of concurrent views. High-end:
+  unlimited views; VR stereo with single-pass instanced rendering.
 
 ### F-2.2.10 Parallel Command Encoding
 
@@ -123,7 +131,9 @@ or skips dependent passes until streaming completes, avoiding stalls during worl
 
 - **Requirements:** R-2.2.11
 - **Dependencies:** F-2.2.3
-- **Platform notes:** None
+- **Platform notes:** Mobile: aggressive streaming pool limits (256-512 MB); more
+  frequent fallback to placeholders. Switch: 1 GB streaming pool. Desktop: 2-4 GB
+  pool. High-end: 8+ GB pool with acceleration structure streaming.
 
 ## Graph Compilation and Diagnostics
 
@@ -136,7 +146,8 @@ per-frame parameter updates.
 
 - **Requirements:** R-2.2.12
 - **Dependencies:** F-2.2.5, F-2.2.6, F-2.2.7, F-2.2.4
-- **Platform notes:** None
+- **Platform notes:** All platforms: full quality. Compiled graph topology is simpler on
+  mobile/Switch due to fewer active passes (many optional passes pruned).
 
 ### F-2.2.13 Render Graph Diagnostics
 
@@ -146,4 +157,5 @@ can be exported for offline analysis.
 
 - **Requirements:** R-2.2.13
 - **Dependencies:** F-2.2.12
-- **Platform notes:** None
+- **Platform notes:** All platforms: full quality. Debug overlay disabled in shipping
+  builds. Mobile profiling uses Metal GPU Capture or Vulkan validation layers.

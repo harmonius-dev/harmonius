@@ -37,7 +37,7 @@ editor session for crash recovery.
 
 - **Requirements:** R-15.1.3
 - **Dependencies:** F-7.4.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.1.4 Selection System
 
@@ -48,7 +48,7 @@ operations on the same group of objects.
 
 - **Requirements:** R-15.1.4
 - **Dependencies:** F-7.1.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Gizmos
 
@@ -61,7 +61,7 @@ Visual feedback shows the delta during manipulation.
 
 - **Requirements:** R-15.1.5
 - **Dependencies:** F-15.1.4, F-15.1.3
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.1.6 Bounds and Measurement Gizmos
 
@@ -71,7 +71,7 @@ corridor widths, jump distances, and line-of-sight clearances across large open-
 
 - **Requirements:** R-15.1.6
 - **Dependencies:** F-15.1.5
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Extensibility
 
@@ -84,7 +84,7 @@ remain local.
 
 - **Requirements:** R-15.1.7
 - **Dependencies:** F-7.4.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.1.8 Editor Extensions and Plugin API
 
@@ -95,4 +95,23 @@ dialogue trees, and loot table configurators.
 
 - **Requirements:** R-15.1.8
 - **Dependencies:** F-15.1.1, F-7.6.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
+
+## VR Editing
+
+### F-15.1.9 VR Editor Mode
+
+An immersive VR editing mode that renders the editor viewport in a VR headset, enabling spatial
+editing with motion controllers. Designers grab, place, rotate, and scale objects with natural hand
+gestures. The 3D viewport is rendered stereoscopically with head tracking (F-6.5.1).
+Controller-based gizmos replace mouse-based gizmos for transform manipulation. A floating tool
+palette provides access to common operations (selection, paint, sculpt) via laser pointer
+interaction. World-scale preview lets designers experience their levels at true player scale. VR
+mode coexists with the desktop editor — changes made in VR are immediately visible on the desktop
+monitor.
+
+- **Requirements:** R-15.1.9
+- **Dependencies:** F-15.1.1 (Editor Framework), F-6.5.1 (HMD Tracking), F-6.5.2 (Motion
+  Controllers)
+- **Platform notes:** Requires OpenXR-compatible headset. Desktop mirror view uses the existing
+  editor rendering pipeline.

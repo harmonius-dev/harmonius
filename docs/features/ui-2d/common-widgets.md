@@ -64,7 +64,8 @@ pull-to-refresh patterns.
 
 - **Requirements:** R-10.2.5
 - **Dependencies:** F-10.1.1, F-10.1.2, F-10.1.3
-- **Platform notes:** None
+- **Platform notes:** Mobile uses smaller virtualization buffers (fewer off-screen items
+  pre-rendered) to reduce memory usage on constrained devices.
 
 ## Overlays and Popups
 

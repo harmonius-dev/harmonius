@@ -11,7 +11,8 @@ thousands of concurrent connection attempts.
 
 - **Requirements:** R-8.1.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Mobile clients maintain a single server connection. Handshake must
+  tolerate high-latency mobile networks and Wi-Fi/cellular handoffs.
 
 ### F-8.1.2 Connection Lifecycle Management
 
@@ -22,7 +23,8 @@ timeout detection, essential for MMO server density.
 
 - **Requirements:** R-8.1.2
 - **Dependencies:** F-8.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile uses longer heartbeat intervals (5 s vs. 1 s) and more lenient
+  timeout windows to tolerate cellular network variability.
 
 ## Channel Architecture
 
@@ -89,4 +91,22 @@ high-bandwidth datacenter links between server nodes (~10 Gbps).
 
 - **Requirements:** R-8.1.7
 - **Dependencies:** F-8.1.3, F-8.1.4
-- **Platform notes:** None
+- **Platform notes:** Mobile defaults to a conservative initial send rate (~500 Kbps) and
+  uses more aggressive back-off on loss to respect metered data plans.
+
+## Diagnostics
+
+### F-8.1.8 Network Diagnostics and Quality Indicators
+
+Real-time network quality metrics exposed to both the engine and the player-facing UI. Tracks
+round-trip time (RTT), packet loss percentage, jitter, bandwidth utilization, and connection
+stability score. A configurable HUD widget (F-10.3.1) displays ping, connection quality bars,
+and packet loss warnings. The diagnostic system logs network events (spike, timeout, reconnect)
+for post-session analysis. Developers access raw metrics through ECS resource components for
+custom quality-of-service logic such as adaptive tick rates or graceful degradation under poor
+conditions.
+
+- **Requirements:** R-8.1.8
+- **Dependencies:** F-8.1.1, F-8.1.4 (Bandwidth Estimation)
+- **Platform notes:** Mobile HUD shows simplified connection indicator (icon only) to save
+  screen space. Cellular vs. Wi-Fi network type is reported on mobile.

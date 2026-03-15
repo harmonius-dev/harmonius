@@ -31,7 +31,8 @@ time so that command buffer encoding is zero-cost.
 
 - **Requirements:** R-2.1.3
 - **Dependencies:** F-2.1.1
-- **Platform notes:** None
+- **Platform notes:** Mobile: pipeline state cache warmed at load time to avoid hitching
+  on tile-based GPUs where PSO creation is expensive. All platforms: full quality.
 
 ## Metal Backend
 
@@ -93,7 +94,8 @@ overhead during high-frequency draw submission.
 
 - **Requirements:** R-2.1.8
 - **Dependencies:** F-2.1.2
-- **Platform notes:** None
+- **Platform notes:** All platforms: full quality. Especially important on mobile where
+  driver overhead per state change is proportionally higher due to lower CPU clocks.
 
 ### F-2.1.9 Barrier Optimization
 
@@ -127,3 +129,17 @@ capability queries, with no runtime branching in the hot path.
 - **Dependencies:** F-2.1.1
 - **Platform notes:** Emulated features include work graphs on Vulkan/Metal, mesh shaders on
   older Vulkan drivers, and enhanced barriers on D3D12 feature level < 12.2.
+
+### F-2.1.12 GPU Performance Queries and Profiling
+
+Hardware timestamp queries, pipeline statistics, and occupancy counters exposed through the GPU
+abstraction layer. Each render pass can be bracketed with begin/end timestamp queries whose results
+are read back one frame later to avoid stalls. The profiling API reports per-pass GPU time,
+vertex/fragment invocation counts, and bandwidth consumption. Results feed into the editor's GPU
+profiler (F-15.5.3) and the render graph's diagnostic overlay (F-2.2.13).
+
+- **Requirements:** R-2.1.12
+- **Dependencies:** F-2.1.1
+- **Platform notes:** Metal uses MTLCounterSampleBuffer. D3D12 uses ID3D12QueryHeap with
+  D3D12_QUERY_TYPE_TIMESTAMP. Vulkan uses vkCmdWriteTimestamp and
+  VK_QUERY_TYPE_PIPELINE_STATISTICS.

@@ -26,7 +26,8 @@ in MMO environments with variable network conditions.
 
 - **Requirements:** R-5.5.2
 - **Dependencies:** F-5.5.1
-- **Platform notes:** None
+- **Platform notes:** Jitter buffer depth default is higher on mobile (accounts for
+  variable network conditions on cellular). PLC quality is uniform (Opus built-in).
 
 ### F-5.5.3 Voice Activity Detection and Noise Suppression
 
@@ -37,7 +38,9 @@ background noise before encoding, improving intelligibility for all participants
 
 - **Requirements:** R-5.5.3
 - **Dependencies:** F-5.5.1
-- **Platform notes:** None
+- **Platform notes:** VAD and noise suppression run on all platforms. Mobile uses
+  lighter noise suppression model to reduce CPU overhead. Platform-native noise
+  suppression used where available (iOS, Android).
 
 ## Text-to-Speech
 
@@ -65,7 +68,9 @@ by the animation system.
 
 - **Requirements:** R-5.5.5
 - **Dependencies:** F-5.1.1
-- **Platform notes:** None
+- **Platform notes:** Viseme generation runs on all platforms. Active lip-synced
+  character count: mobile 1-2, Switch 4, desktop 8+. Distant characters use
+  random mouth animation on mobile.
 
 ## Dialogue System
 
@@ -79,7 +84,8 @@ stale barks do not play long after their context has passed.
 
 - **Requirements:** R-5.5.6
 - **Dependencies:** F-5.1.1, F-5.1.4, F-5.5.5
-- **Platform notes:** None
+- **Platform notes:** Dialogue queue depth uniform across platforms. Voice-over streaming
+  draws from voice pool budget (see F-5.1.4).
 
 ### F-5.5.7 Branching Dialogue Graph
 
@@ -91,4 +97,46 @@ or waits for player input depending on the node type.
 
 - **Requirements:** R-5.5.7
 - **Dependencies:** F-5.5.6
-- **Platform notes:** None
+- **Platform notes:** Dialogue graph evaluation is lightweight CPU-side on all platforms.
+  No platform-specific scaling required.
+
+## Voice Chat Channels
+
+### F-5.5.8 Voice Chat Channel Management
+
+Manage multiple concurrent voice chat channels with per-channel permissions and routing.
+Channel types: proximity (distance-attenuated, uses shared spatial index F-1.9.8), party
+(private group), guild (persistent organization channel), raid (large group with
+sub-channels for roles), broadcast (one-to-many for events), and custom (game-defined
+channels with arbitrary membership rules). Each channel supports independent volume,
+muting per-speaker, priority levels (raid leader voice overrides background chatter), and
+administrative controls (kick, mute, ban from channel). Players can monitor multiple
+channels simultaneously with configurable mix levels. Channel membership is replicated
+through the networking system (F-8.2.1).
+
+- **Requirements:** R-5.5.8
+- **Dependencies:** F-5.5.1 (Voice Chat Codec and Transport),
+  F-5.5.3 (Voice Activity Detection), F-8.2.1 (Property Replication)
+- **Platform notes:** Console platforms require using platform-native voice chat APIs for
+  party channels (PlayStation Party, Xbox Party Chat). Game-managed channels use the
+  engine's transport.
+
+## Acoustic Echo Cancellation
+
+### F-5.5.9 Acoustic Echo Cancellation
+
+Real-time acoustic echo cancellation (AEC) for players using speakers instead of
+headphones. The AEC module subtracts the known speaker output signal from the microphone
+input to prevent other players from hearing their own voices echoed back. Supports both
+linear adaptive filtering (NLMS) and non-linear processing for handling loudspeaker
+distortion. The AEC adapts to changing acoustic environments (room changes, volume
+adjustments) with continuous filter convergence. A comfort noise generator fills gaps left
+by echo removal to avoid unnatural silence. AEC processing runs on the audio thread with
+sub-millisecond latency to avoid introducing perceptible delay.
+
+- **Requirements:** R-5.5.9
+- **Dependencies:** F-5.5.1 (Voice Chat Codec and Transport),
+  F-5.5.3 (Voice Activity Detection)
+- **Platform notes:** On platforms with native AEC (iOS, Android system-level AEC), the
+  engine defers to the platform implementation. Custom AEC is used on PC and consoles
+  where platform AEC is unavailable or insufficient.

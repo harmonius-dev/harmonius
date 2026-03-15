@@ -11,7 +11,7 @@ speed adjustment. Keyframes can be moved, copied, and snapped to frame boundarie
 
 - **Requirements:** R-15.4.1
 - **Dependencies:** F-9.1.2, F-15.1.3
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.4.2 Curve Editor
 
@@ -22,7 +22,7 @@ editing for batch adjustments across many bones simultaneously.
 
 - **Requirements:** R-15.4.2
 - **Dependencies:** F-15.4.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Skeleton and Preview
 
@@ -35,7 +35,7 @@ skeletons for comparison.
 
 - **Requirements:** R-15.4.3
 - **Dependencies:** F-9.1.1, F-15.1.4
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.4.4 Animation Preview
 
@@ -46,7 +46,7 @@ such as velocity vectors, contact points, and bone trails.
 
 - **Requirements:** R-15.4.4
 - **Dependencies:** F-15.4.1, F-9.1.1, F-15.1.2
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Blend and State Authoring
 
@@ -59,7 +59,7 @@ moves a crosshair through the parameter space.
 
 - **Requirements:** R-15.4.5
 - **Dependencies:** F-9.1.3, F-15.4.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.4.6 State Machine Editor
 
@@ -69,8 +69,8 @@ rules. The editor highlights the active state during preview playback and shows 
 evaluation in real time, enabling animators to debug complex locomotion graphs.
 
 - **Requirements:** R-15.4.6
-- **Dependencies:** F-9.5.1, F-15.4.5
-- **Platform notes:** None
+- **Dependencies:** F-9.4.1, F-15.4.5
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ### F-15.4.7 Retargeting Setup
 
@@ -82,4 +82,4 @@ and mount rigs in an MMO roster.
 
 - **Requirements:** R-15.4.7
 - **Dependencies:** F-9.1.1, F-15.4.3
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.

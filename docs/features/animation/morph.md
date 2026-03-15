@@ -10,7 +10,8 @@ number of active targets per mesh with sparse delta storage to minimize memory b
 
 - **Requirements:** R-9.2.1
 - **Dependencies:** F-9.1.1
-- **Platform notes:** None
+- **Platform notes:** Active morph target count per mesh scales per tier: mobile 8-16,
+  Switch 16-32, desktop 64+. Sparse delta storage on all platforms.
 
 ## Corrective Blend Shapes
 
@@ -23,7 +24,8 @@ high-fidelity character deformation without manual per-frame intervention.
 
 - **Requirements:** R-9.2.2
 - **Dependencies:** F-9.2.1, F-9.1.1
-- **Platform notes:** None
+- **Platform notes:** Corrective blend shapes may be disabled on mobile under budget
+  pressure (uses base skinning only for non-hero characters).
 
 ## Facial Animation
 
@@ -36,7 +38,9 @@ visible characters in MMO city hubs.
 
 - **Requirements:** R-9.2.3
 - **Dependencies:** F-9.2.1
-- **Platform notes:** None
+- **Platform notes:** Facial blend shape count per face: mobile 16-24 action units,
+  desktop 52+ (ARKit-compatible full set). Facial animation disabled for distant NPCs
+  on mobile.
 
 ## Per-Vertex Animation
 
@@ -49,7 +53,8 @@ animations and distant crowd characters.
 
 - **Requirements:** R-9.2.4
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** VAT texture resolution scales per tier: mobile uses half-res VAT.
+  VAT playback is GPU-only and lightweight on all platforms.
 
 ## Morph Target Streaming
 

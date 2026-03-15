@@ -11,7 +11,8 @@ designers can tune NPC priorities without code changes.
 
 - **Requirements:** R-7.4.1
 - **Dependencies:** None
-- **Platform notes:** None
+- **Platform notes:** Lightweight math; runs identically on all platforms. Mobile may use
+  linear-only curves for low-LOD agents to avoid piecewise evaluation cost.
 
 ### F-7.4.2 Action Selection & Compensation
 
@@ -22,7 +23,8 @@ threshold-based filtering.
 
 - **Requirements:** R-7.4.2
 - **Dependencies:** F-7.4.1
-- **Platform notes:** None
+- **Platform notes:** Mobile limits candidate action pool to 8 (vs. 32 on desktop) for
+  low-LOD agents to reduce per-tick evaluation cost.
 
 ### F-7.4.3 Considerations & Input Axes
 
@@ -32,7 +34,8 @@ action evaluations. Custom considerations are registered by gameplay code throug
 
 - **Requirements:** R-7.4.3
 - **Dependencies:** F-7.4.1
-- **Platform notes:** None
+- **Platform notes:** Expensive considerations (line-of-sight raycasts) are evaluated less
+  frequently on mobile via the perception budget system (F-7.6.7).
 
 ## Advanced Reasoning
 
@@ -45,7 +48,8 @@ important actions in other categories.
 
 - **Requirements:** R-7.4.4
 - **Dependencies:** F-7.4.2
-- **Platform notes:** None
+- **Platform notes:** Mobile may fall back to single-axis scoring for low-LOD agents to
+  halve evaluation cost; high-LOD agents use full dual-axis.
 
 ### F-7.4.5 Context-Based Reasoning
 
@@ -56,4 +60,5 @@ repertoires.
 
 - **Requirements:** R-7.4.5
 - **Dependencies:** F-7.4.2
-- **Platform notes:** None
+- **Platform notes:** Context filtering is especially important on mobile where per-tick AI
+  budget is tight; mobile uses coarser context groups with fewer actions per set.

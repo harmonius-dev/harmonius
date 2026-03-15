@@ -67,15 +67,35 @@ cinematic conversations can branch based on player choices or quest state.
 
 ## Player Control
 
-### F-13.5.6 Skip, Fast-Forward, and Pause
+### F-13.5.6a Cutscene Skip System
 
-Allows players to skip cutscenes entirely (jumping to an end-state that applies all gameplay side
-effects), fast-forward at 2x/4x speed, or pause. In multiplayer instanced content, skip requires
-consensus from all group members or uses a majority-vote timeout. Skipping must reliably apply
-quest updates, item grants, and phase transitions that the cinematic would have triggered, without
-desynchronizing server state.
+Allows players to skip cutscenes entirely, jumping to an end-state that applies all gameplay
+side effects (quest updates, item grants, phase transitions) without desynchronizing server
+state. In multiplayer instanced content, skip requires consensus from all group members or
+uses a majority-vote timeout.
 
-- **Requirements:** R-13.5.6
+- **Requirements:** R-13.5.6a
+- **Dependencies:** F-13.5.1, F-13.1.2 (Game State Manager)
+- **Platform notes:** None
+
+### F-13.5.6b Cutscene Playback Speed
+
+Supports fast-forward playback at 2x and 4x speed. Fast-forward accelerates all tracks
+(camera, animation, audio, VFX) uniformly. Audio pitch-shifts or mutes during fast-forward
+as configured per sequence. All gameplay triggers fire at their correct timeline positions
+regardless of playback speed.
+
+- **Requirements:** R-13.5.6b
+- **Dependencies:** F-13.5.1
+- **Platform notes:** None
+
+### F-13.5.6c Cutscene Pause
+
+Allows players to pause cutscene playback, freezing all tracks at the current frame. Pausing
+displays a configurable overlay (dim, blur, or pause icon). Unpausing resumes from the exact
+frame. In multiplayer, pause behavior is configurable: disabled, host-only, or any-player.
+
+- **Requirements:** R-13.5.6c
 - **Dependencies:** F-13.5.1, F-13.1.2 (Game State Manager)
 - **Platform notes:** None
 

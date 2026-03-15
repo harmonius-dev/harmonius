@@ -2,20 +2,41 @@
 
 ## Voice Interaction
 
-### F-15.9.1 Voice-Controlled Editor Interaction
+### F-15.9.1a Speech-to-Text Pipeline
 
-Live voice input is captured by the system microphone, processed through a speech-to-text pipeline,
-and interpreted by an LLM agent that translates natural language into editor tool invocations.
-Commands such as "place a directional light facing east at 45 degrees" are parsed into structured
-tool calls against the editor API. The assistant maintains conversational context so follow-up
-commands like "rotate it 10 degrees north" reference the previously created or selected object.
+Live voice input is captured by the system microphone and processed through a speech-to-text
+pipeline. On macOS, microphone access requires user permission via the TCC framework. On
+Windows, uses WASAPI for low-latency audio capture. On Linux, uses PipeWire or PulseAudio.
+Speech-to-text processing runs on a configurable backend (local or remote). Transcription
+results are streamed to the command interpreter with word-level timestamps.
+
+- **Requirements:** R-15.9.1a
+- **Dependencies:** F-15.7.4 (AI Toggle)
+- **Platform notes:** On macOS, microphone access requires user permission via the TCC
+  framework. On Windows, uses WASAPI. On Linux, uses PipeWire or PulseAudio.
+
+### F-15.9.1b Voice Command Interpretation
+
+Transcribed voice input is interpreted by an LLM agent that translates natural language into
+structured editor tool invocations. Commands such as "place a directional light facing east at
+45 degrees" are parsed into tool calls against the editor API. The assistant maintains
+conversational context so follow-up commands like "rotate it 10 degrees north" reference the
+previously created or selected object.
+
+- **Requirements:** R-15.9.1b
+- **Dependencies:** F-15.9.1a, F-15.9.2, F-15.9.9
+- **Platform notes:** None
+
+### F-15.9.1c Voice Activation Modes
+
 Supports push-to-talk and always-listening activation modes, configurable per user preference.
+Push-to-talk requires holding a configurable key to activate the microphone. Always-listening
+uses a wake word or silence detection to segment commands. Mode selection is stored per-user
+in editor preferences.
 
-- **Requirements:** R-15.9.1
-- **Dependencies:** F-15.9.2, F-15.9.9, F-15.7.4
-- **Platform notes:** On macOS, microphone access requires user permission via the TCC framework.
-  On Windows, uses WASAPI for low-latency audio capture. On Linux, uses PipeWire or PulseAudio.
-  Speech-to-text processing runs on a configurable backend (local or remote).
+- **Requirements:** R-15.9.1c
+- **Dependencies:** F-15.9.1a
+- **Platform notes:** None
 
 ## Tool Interface
 
@@ -44,7 +65,7 @@ as undoable commands.
 
 - **Requirements:** R-15.9.3
 - **Dependencies:** F-15.9.2, F-15.1.5, F-15.2.1, F-15.3.1, F-15.6.1
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Recommendations
 
@@ -73,23 +94,45 @@ accurately regardless of panel layout.
 
 - **Requirements:** R-15.9.5
 - **Dependencies:** F-15.9.8, F-15.9.9, F-15.7.4
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Automation
 
-### F-15.9.6 Agent-Driven Editor Automation
+### F-15.9.6a Headless Editor API Layer
 
-Generative AI agents can fully drive the editor programmatically: opening panels, clicking buttons,
-entering values, navigating viewports, and triggering builds. Agents operate through a headless API
-layer that mirrors the UI interaction model, enabling automated content generation, regression
-testing, and CI/CD pipeline integration without a visible display. The headless layer exposes the
-same tool interface as the interactive assistant (F-15.9.2) plus low-level UI automation primitives
-for widget interaction. Multiple concurrent agents are supported with isolated command contexts.
+A headless API layer that mirrors the UI interaction model without a visible display. The
+headless layer exposes the same tool interface as the interactive assistant (F-15.9.2) plus
+low-level UI automation primitives for widget interaction (opening panels, clicking buttons,
+entering values, navigating viewports).
 
-- **Requirements:** R-15.9.6
+- **Requirements:** R-15.9.6a
 - **Dependencies:** F-15.9.2, F-15.1.8
-- **Platform notes:** Headless mode requires a GPU context for viewport operations. On CI servers
-  without a display, a virtual framebuffer (EGL on Linux, headless Metal on macOS) is used.
+- **Platform notes:** Headless mode requires a GPU context for viewport operations. On CI
+  servers without a display, a virtual framebuffer (EGL on Linux, headless Metal on macOS)
+  is used.
+
+### F-15.9.6b Agent Orchestration
+
+Multiple concurrent AI agents are supported with isolated command contexts. Each agent
+operates in its own context with independent undo stacks, selection state, and tool
+invocation history. Agents cannot observe or modify each other's contexts. Agent lifecycle
+(create, run, terminate) is managed through the headless API.
+
+- **Requirements:** R-15.9.6b
+- **Dependencies:** F-15.9.6a
+- **Platform notes:** None
+
+### F-15.9.6c CI/CD Agent Integration
+
+Agents integrate with CI/CD pipelines for automated content generation and regression
+testing. Build triggers, test execution, and result reporting are exposed as headless API
+operations. Agents can run unattended on build servers, producing build artifacts and test
+reports without human interaction.
+
+- **Requirements:** R-15.9.6c
+- **Dependencies:** F-15.9.6a, F-15.9.6b
+- **Platform notes:** Requires headless GPU context on CI servers (EGL on Linux, headless
+  Metal on macOS).
 
 ### F-15.9.7 Screenshot and Screen Recording Capture
 
@@ -135,7 +178,7 @@ that the LLM agent uses for intent resolution. Modality weights are tuned so tha
 
 - **Requirements:** R-15.9.9
 - **Dependencies:** F-15.9.1, F-15.9.7, F-15.9.8
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
 
 ## Administration
 

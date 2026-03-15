@@ -25,7 +25,8 @@ customize timing, speed, and line count.
 
 - **Requirements:** R-10.6.2
 - **Dependencies:** F-10.2.1, F-10.1.5
-- **Platform notes:** None
+- **Platform notes:** iOS uses UIAccessibility caption APIs; Android uses CaptioningManager for
+  system caption preferences. Mobile defaults to larger subtitle font sizes for readability.
 
 ## Visual Accessibility
 

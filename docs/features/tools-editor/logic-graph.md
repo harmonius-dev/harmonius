@@ -1,5 +1,9 @@
 # 15.8 — Visual Logic Graph
 
+> **Note:** The universal logic graph system supersedes the visual scripting features in
+> game-framework/scripting.md (F-13.4.x). All gameplay logic, shader authoring, animation control,
+> audio mixing, and tool automation are authored through this single unified graph system.
+
 ## Graph Runtime
 
 ### F-15.8.1 Universal Logic Graph Runtime
@@ -59,19 +63,40 @@ timed quest objectives.
 
 ## Shader and Material Authoring
 
-### F-15.8.5 Shader and Material Graphs
+### F-15.8.5a Shader Graph Core
 
 Visual authoring of GPU shaders including vertex, fragment, and compute stages using the logic
 graph system. Nodes represent math operations, texture samples, interpolation, branching, and
-buffer access. Graphs compile to HLSL, SPIR-V, or MSL depending on the target platform.
-Material graphs are a specialized shader graph variant with PBR inputs (base color, metallic,
-roughness, normal, emissive) and live preview in the viewport. Replaces all hand-written shader
-code with visual authoring.
+buffer access. Nodes are organized into domain categories (math, sampling, utility, flow
+control). Shader graphs validate stage-specific constraints (e.g., vertex outputs must include
+position).
 
-- **Requirements:** R-15.8.5
-- **Dependencies:** F-15.8.1, F-15.8.2, F-2.1.1 (GPU Abstraction), F-15.3.1 (Material Graph)
+- **Requirements:** R-15.8.5a
+- **Dependencies:** F-15.8.1, F-15.8.2, F-2.1.1 (GPU Abstraction)
+- **Platform notes:** None
+
+### F-15.8.5b Shader Graph to HLSL Compilation
+
+The shader graph compiles to HLSL, which DXC compiles to DXIL (for D3D12) and SPIR-V (for
+Vulkan). Metal Shader Converter translates DXIL to MSL (for Metal). DXC and Metal Shader
+Converter are C++ libraries accessed via cxx.rs FFI bindings. HLSL is the sole shader
+intermediate language. Compilation errors map back to the originating graph node.
+
+- **Requirements:** R-15.8.5b
+- **Dependencies:** F-15.8.5a
 - **Platform notes:** Shader output format is platform-dependent: DXIL on Windows, SPIR-V on
-  Linux, MSL on macOS.
+  Linux, MSL on macOS. All formats are produced through DXC and Metal Shader Converter.
+
+### F-15.8.5c Material Graph Variant
+
+Material graphs are a specialized shader graph variant with PBR inputs (base color, metallic,
+roughness, normal, emissive) and live preview in the viewport. Material graphs compile through
+the same HLSL pipeline as shader graphs. Replaces all hand-written shader code with visual
+authoring. Material parameter changes reflect in the viewport in real time.
+
+- **Requirements:** R-15.8.5c
+- **Dependencies:** F-15.8.5b, F-15.3.1 (Material Graph)
+- **Platform notes:** None
 
 ### F-15.8.6 Render Graph Configuration
 
@@ -123,7 +148,8 @@ graph system used for gameplay logic.
 
 - **Requirements:** R-15.8.9
 - **Dependencies:** F-15.8.1, F-15.8.4, F-15.1.8 (Editor Extensions), F-15.1.1 (Panel Layout)
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime. The compiled
+  graph bytecode produced by tool graphs runs only in the editor.
 
 ## Node Library
 
@@ -181,7 +207,8 @@ driver registered in repository configuration.
 
 - **Requirements:** R-15.8.13
 - **Dependencies:** F-15.8.1, F-15.1.3 (Undo/Redo)
-- **Platform notes:** Git integration requires a custom merge driver installed via project setup.
+- **Platform notes:** Desktop only. Not available on mobile or console runtime. Git
+  integration requires a custom merge driver installed via project setup.
 
 ## Search and Refactoring
 
@@ -195,4 +222,4 @@ in each graph for one-click navigation.
 
 - **Requirements:** R-15.8.14
 - **Dependencies:** F-15.8.1, F-15.8.10, F-12.5.1 (Asset Database)
-- **Platform notes:** None
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.

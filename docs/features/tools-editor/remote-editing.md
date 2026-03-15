@@ -45,114 +45,6 @@ for coordination.
 - **Platform notes:** CRDT operations are serialized as compact binary deltas. Direct peer-to-peer
   mode is supported on LAN with mDNS discovery; cloud relay for remote collaboration.
 
-### F-15.12.7 Collaboration Cloud Service
-
-A centralized cloud service written in Rust that manages real-time CRDT synchronization,
-session state, presence, and collaboration metadata. The service uses PostgreSQL for persistent
-session/project/user data and S3-compatible object storage for CRDT document snapshots and
-asset deltas. All CRDT operations flow through this service — clients push local operations,
-the service merges and rebroadcasts to other participants. The service handles hundreds of
-concurrent sessions with horizontal scaling behind a load balancer.
-
-- **Requirements:** R-15.12.7
-- **Dependencies:** F-15.12.3, F-1.8.4 (Async Network I/O)
-- **Platform notes:** Service stack: Rust (tokio + axum), PostgreSQL for relational data
-  (sessions, users, permissions, audit log), S3 for CRDT snapshots and binary deltas.
-  Deployed as containers (Docker/Kubernetes). WebSocket transport for real-time sync;
-  REST API for session management and administration.
-
-### F-15.12.8 CRDT Document Model for Engine Assets
-
-Each asset type defines a CRDT document schema mapping its structure to mergeable CRDT types.
-Scene hierarchies use a tree CRDT (entity add/remove/reparent). Logic graphs use an operation
-log CRDT (node add/remove/connect/disconnect). Data tables use a map CRDT (per-row, per-cell).
-Terrain heightmaps use a last-writer-wins register per tile. The CRDT layer sits between the
-asset editor and the persistence layer — editors read/write through CRDT accessors, which
-handle merge automatically.
-
-- **Requirements:** R-15.12.8
-- **Dependencies:** F-15.12.3, F-12.7.1 (Binary Asset Format)
-- **Platform notes:** None
-
-### F-15.12.9 Collaboration Access Control and Permissions
-
-Per-project and per-asset access control managed through the collaboration cloud service.
-Roles (viewer, editor, admin) determine who can edit, who can only observe, and who can
-manage sessions. Asset-level locks allow exclusive editing of specific assets within a
-collaborative session. Permissions are stored in PostgreSQL and enforced server-side — the
-client cannot bypass access controls.
-
-- **Requirements:** R-15.12.9
-- **Dependencies:** F-15.12.7
-- **Platform notes:** Authentication via OAuth2/OIDC (enterprise SSO). API keys for CI/CD
-  integration.
-
-## Communication
-
-### F-15.12.10 Integrated Voice and Text Chat
-
-Built-in voice chat (spatial and non-spatial modes) and text chat within collaborative sessions.
-Users join voice channels per work group. Text chat supports threads, mentions, emoji reactions,
-and inline asset/node references (click a reference to navigate to that asset in the editor).
-Chat history is persisted in the collaboration cloud service (PostgreSQL) and searchable. Voice
-uses Opus codec over the QUIC transport with echo cancellation and noise suppression.
-
-- **Requirements:** R-15.12.10
-- **Dependencies:** F-15.12.7, F-5.5.1 (Voice Chat Codec)
-- **Platform notes:** Voice capture via platform audio APIs (CoreAudio on macOS, WASAPI on
-  Windows, PipeWire on Linux).
-
-### F-15.12.11 Work Groups and Isolated Workspaces
-
-Collaborators organize into named work groups (e.g., "Level Design — Zone 3", "Shader Team",
-"Boss AI"). Each group has its own voice channel, text thread, and optionally an isolated
-workspace layer where edits are invisible to other groups until explicitly shared. Work groups
-map to work items (tasks, tickets, branches) for traceability. Group membership is dynamic —
-users join and leave without disrupting others.
-
-- **Requirements:** R-15.12.11
-- **Dependencies:** F-15.12.7, F-15.12.10
-- **Platform notes:** None
-
-### F-15.12.12 AI Agent Collaboration
-
-AI agents (F-15.9.6) participate in collaborative sessions as virtual users. An AI agent can
-be assigned to a work group, receive instructions via text chat, and execute editor operations
-visible to the group. Other users see the AI's cursor, selections, and edits in real time.
-AI agents can be instructed to work independently on a task ("populate this zone with
-vegetation") while the human team works on other areas. Agent actions are tagged with AI
-provenance (F-15.7.1).
-
-- **Requirements:** R-15.12.12
-- **Dependencies:** F-15.9.6 (Agent Automation), F-15.12.7, F-15.7.1 (Provenance)
-- **Platform notes:** None
-
-## Review and Comments
-
-### F-15.12.13 Asset and Scene Comments
-
-Attach comments to any asset, entity, node, property, or spatial location in the world.
-Comments are threaded (reply chains), support mentions (@user), and display as non-intrusive
-pins in the viewport or margin markers in editors. Comments are stored in the collaboration
-cloud service and synced across all connected clients. Resolved comments are collapsed but
-not deleted. Comments on logic graph nodes appear as annotations in the graph editor.
-
-- **Requirements:** R-15.12.13
-- **Dependencies:** F-15.12.7
-- **Platform notes:** None
-
-### F-15.12.14 Pull Request Review in Editor
-
-View and review GitHub/GitLab pull requests entirely within the editor. The PR review panel
-shows the list of changed assets with structural diffs (F-12.7.3) rendered in their native
-visual editors — not text diffs. Reviewers add comments on specific nodes, properties, or
-regions using the comment system (F-15.12.13). Approve/request-changes actions push status
-back to the Git hosting service via API. Users never need to view diffs in a web browser.
-
-- **Requirements:** R-15.12.14
-- **Dependencies:** F-15.12.13, F-12.7.3 (Structural Diff), F-15.10.1 (Git Integration)
-- **Platform notes:** Supports GitHub, GitLab, and Bitbucket APIs via configurable provider.
-
 ## Server Infrastructure
 
 ### F-15.12.4 Remote GPU Server Support
@@ -197,3 +89,114 @@ tier selection and pin a specific quality level.
 - **Dependencies:** F-15.12.1, F-15.12.2
 - **Platform notes:** Bandwidth measurement uses QUIC transport metrics when available. Falls back
   to application-level throughput sampling over TCP.
+
+## Cloud Service
+
+### F-15.12.7 Collaboration Cloud Service
+
+A centralized cloud service written in Rust that manages real-time CRDT synchronization,
+session state, presence, and collaboration metadata. The service uses PostgreSQL for persistent
+session/project/user data and S3-compatible object storage for CRDT document snapshots and
+asset deltas. All CRDT operations flow through this service — clients push local operations,
+the service merges and rebroadcasts to other participants. The service handles hundreds of
+concurrent sessions with horizontal scaling behind a load balancer.
+
+- **Requirements:** R-15.12.7
+- **Dependencies:** F-15.12.3, F-1.8.4 (Async Network I/O)
+- **Platform notes:** Service stack: Rust (tokio + axum), PostgreSQL for relational data
+  (sessions, users, permissions, audit log), S3 for CRDT snapshots and binary deltas.
+  Deployed as containers (Docker/Kubernetes). WebSocket transport for real-time sync;
+  REST API for session management and administration.
+
+### F-15.12.8 CRDT Document Model for Engine Assets
+
+Each asset type defines a CRDT document schema mapping its structure to mergeable CRDT types.
+Scene hierarchies use a tree CRDT (entity add/remove/reparent). Logic graphs use an operation
+log CRDT (node add/remove/connect/disconnect). Data tables use a map CRDT (per-row, per-cell).
+Terrain heightmaps use a last-writer-wins register per tile. The CRDT layer sits between the
+asset editor and the persistence layer — editors read/write through CRDT accessors, which
+handle merge automatically.
+
+- **Requirements:** R-15.12.8
+- **Dependencies:** F-15.12.3, F-12.7.1 (Binary Asset Format)
+- **Platform notes:** Desktop only. CRDT document schemas are used exclusively by the editor
+  collaboration system.
+
+### F-15.12.9 Collaboration Access Control and Permissions
+
+Per-project and per-asset access control managed through the collaboration cloud service.
+Roles (viewer, editor, admin) determine who can edit, who can only observe, and who can
+manage sessions. Asset-level locks allow exclusive editing of specific assets within a
+collaborative session. Permissions are stored in PostgreSQL and enforced server-side — the
+client cannot bypass access controls.
+
+- **Requirements:** R-15.12.9
+- **Dependencies:** F-15.12.7
+- **Platform notes:** Authentication via OAuth2/OIDC (enterprise SSO). API keys for CI/CD
+  integration.
+
+## Communication
+
+### F-15.12.10 Integrated Voice and Text Chat
+
+Built-in voice chat (spatial and non-spatial modes) and text chat within collaborative sessions.
+Users join voice channels per work group. Text chat supports threads, mentions, emoji reactions,
+and inline asset/node references (click a reference to navigate to that asset in the editor).
+Chat history is persisted in the collaboration cloud service (PostgreSQL) and searchable. Voice
+uses Opus codec over the QUIC transport with echo cancellation and noise suppression.
+
+- **Requirements:** R-15.12.10
+- **Dependencies:** F-15.12.7, F-5.5.1 (Voice Chat Codec)
+- **Platform notes:** Voice capture via platform audio APIs (CoreAudio on macOS, WASAPI on
+  Windows, PipeWire on Linux).
+
+### F-15.12.11 Work Groups and Isolated Workspaces
+
+Collaborators organize into named work groups (e.g., "Level Design — Zone 3", "Shader Team",
+"Boss AI"). Each group has its own voice channel, text thread, and optionally an isolated
+workspace layer where edits are invisible to other groups until explicitly shared. Work groups
+map to work items (tasks, tickets, branches) for traceability. Group membership is dynamic —
+users join and leave without disrupting others.
+
+- **Requirements:** R-15.12.11
+- **Dependencies:** F-15.12.7, F-15.12.10
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
+
+### F-15.12.12 AI Agent Collaboration
+
+AI agents (F-15.9.6) participate in collaborative sessions as virtual users. An AI agent can
+be assigned to a work group, receive instructions via text chat, and execute editor operations
+visible to the group. Other users see the AI's cursor, selections, and edits in real time.
+AI agents can be instructed to work independently on a task ("populate this zone with
+vegetation") while the human team works on other areas. Agent actions are tagged with AI
+provenance (F-15.7.1).
+
+- **Requirements:** R-15.12.12
+- **Dependencies:** F-15.9.6 (Agent Automation), F-15.12.7, F-15.7.1 (Provenance)
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
+
+## Review and Comments
+
+### F-15.12.13 Asset and Scene Comments
+
+Attach comments to any asset, entity, node, property, or spatial location in the world.
+Comments are threaded (reply chains), support mentions (@user), and display as non-intrusive
+pins in the viewport or margin markers in editors. Comments are stored in the collaboration
+cloud service and synced across all connected clients. Resolved comments are collapsed but
+not deleted. Comments on logic graph nodes appear as annotations in the graph editor.
+
+- **Requirements:** R-15.12.13
+- **Dependencies:** F-15.12.7
+- **Platform notes:** Desktop only. Not available on mobile or console runtime.
+
+### F-15.12.14 Pull Request Review in Editor
+
+View and review GitHub/GitLab pull requests entirely within the editor. The PR review panel
+shows the list of changed assets with structural diffs (F-12.7.3) rendered in their native
+visual editors — not text diffs. Reviewers add comments on specific nodes, properties, or
+regions using the comment system (F-15.12.13). Approve/request-changes actions push status
+back to the Git hosting service via API. Users never need to view diffs in a web browser.
+
+- **Requirements:** R-15.12.14
+- **Dependencies:** F-15.12.13, F-12.7.3 (Structural Diff), F-15.10.1 (Git Integration)
+- **Platform notes:** Supports GitHub, GitLab, and Bitbucket APIs via configurable provider.
