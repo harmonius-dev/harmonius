@@ -52,9 +52,7 @@ Key decisions locked in Wave 0:
 
 ---
 
-## Wave 1 — Core Runtime (6 design docs)
-
-**Next wave. ECS design starts first.**
+## Wave 1 — Core Runtime (6 design docs) — COMPLETE
 
 | # | Document | Features | Key Deliverables |
 |---|----------|----------|-----------------|
@@ -89,9 +87,7 @@ Key decisions locked in Wave 0:
 
 ---
 
-## Wave 2 — Infrastructure Fan-Out (9 design docs)
-
-**All 9 proceed in parallel once Wave 1 contracts lock.**
+## Wave 2 — Infrastructure Fan-Out (9 design docs) — COMPLETE
 
 | # | Document | Features |
 |---|----------|----------|
@@ -107,7 +103,7 @@ Key decisions locked in Wave 0:
 
 ---
 
-## Wave 3 — Intermediate Systems (12 design docs)
+## Wave 3 — Intermediate Systems (12 design docs) — COMPLETE
 
 | # | Document | Features |
 |---|----------|----------|
@@ -126,7 +122,7 @@ Key decisions locked in Wave 0:
 
 ---
 
-## Wave 4 — Integration Layer (19 design docs)
+## Wave 4 — Integration Layer (19 design docs) — COMPLETE
 
 | # | Document | Features |
 |---|----------|----------|
@@ -152,7 +148,7 @@ Key decisions locked in Wave 0:
 
 ---
 
-## Wave 5 — Advanced Systems (20 design docs)
+## Wave 5 — Advanced Systems (20 design docs) — COMPLETE
 
 | # | Document | Features |
 |---|----------|----------|
@@ -179,7 +175,7 @@ Key decisions locked in Wave 0:
 
 ---
 
-## Wave 6 — Capstone Systems (18 design docs)
+## Wave 6 — Capstone Systems (18 design docs) — COMPLETE
 
 | # | Document | Features |
 |---|----------|----------|
@@ -254,10 +250,10 @@ Before Wave 2, these Wave 1 contracts must lock:
 | Wave | Docs | Status |
 |------|------|--------|
 | 0 | 3 | **Complete** |
-| 1 | 6 | Next |
-| 2 | 9 | Blocked on Wave 1 |
-| 3 | 12 | Blocked on Wave 2 |
-| 4 | 19 | Blocked on Wave 3 |
-| 5 | 20 | Blocked on Wave 4 |
-| 6 | 18 | Blocked on Wave 5 |
-| **Total** | **87** | |
+| 1 | 6 | **Complete** |
+| 2 | 9 | **Complete** |
+| 3 | 12 | **Complete** |
+| 4 | 19 | **Complete** |
+| 5 | 20 | **Complete** |
+| 6 | 18 | **Complete** |
+| **Total** | **87** | **All Complete** |

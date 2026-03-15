@@ -1,0 +1,1598 @@
+# Genre-Specific Systems Design
+
+## Requirements Trace
+
+| Feature | Requirement | Description |
+|---------|-------------|-------------|
+| F-13.20.1 | R-13.20.1 | Fog of war grid with 3-state visibility and GPU fog texture |
+| F-13.20.2 | R-13.20.2 | Vision sources with sight radius, shape, and LOS blocking |
+| F-13.20.3 | R-13.20.3 | Vision modifier volumes (stealth zones, smoke, high ground) |
+| F-13.20.4 | R-13.20.4 | Fog memory with last-seen snapshots in shrouded areas |
+| F-13.21.1 | R-13.21.1 | Tactical grid (square/hex) with cover, elevation, occupancy |
+| F-13.21.2 | R-13.21.2 | Turn manager with initiative, team-based, and phase modes |
+| F-13.21.3 | R-13.21.3 | Action point movement and abilities per turn |
+| F-13.21.4 | R-13.21.4 | Grid cover, flanking, and overwatch stance |
+| F-13.21.5 | R-13.21.5 | Hit probability computation and combat resolution |
+| F-13.26.1 | R-13.26.1 | Minigame session with isolated ECS world partition |
+| F-13.26.2 | R-13.26.2 | Minigame presentation modes (world-space, fullscreen, split, diegetic) |
+| F-13.26.3 | R-13.26.3 | Minigame lifecycle with typed result contract |
+| F-13.26.4 | R-13.26.4 | Timing/rhythm minigame template |
+| F-13.26.5a | R-13.26.5a | Grid/board engine for card/board/match-3 games |
+| F-13.26.5b | R-13.26.5b | Match detection algorithms |
+| F-13.26.5c | R-13.26.5c | Board minigame AI with difficulty tiers |
+| F-13.26.5d | R-13.26.5d | Board piece animation and cascading |
+| F-13.26.6 | R-13.26.6 | Physics toy minigame template |
+| F-13.26.7 | R-13.26.7 | Multiplayer minigame sessions |
+| F-13.26.8 | R-13.26.8 | Minigame library and discovery registry |
+| F-13.22.1 | R-13.22.1 | Track and checkpoint system with lap timing |
+| F-13.22.2 | R-13.22.2 | Data-driven race mode framework |
+| F-13.22.3a | R-13.22.3a | Racing AI navigation via waypoint splines |
+| F-13.22.3b | R-13.22.3b | Rubber-banding difficulty adjustment |
+| F-13.22.3c | R-13.22.3c | AI racing behavior and personality profiles |
+| F-13.22.4 | R-13.22.4 | Drift scoring and boost system |
+| F-13.22.5 | R-13.22.5 | Ghost replay recording and leaderboards |
+| F-13.27.1 | R-13.27.1 | Block type registry with O(1) lookup |
+| F-13.27.2 | R-13.27.2 | Block placement and destruction via raycast |
+| F-13.27.3 | R-13.27.3 | Chunk-based storage with palette compression |
+| F-13.27.4 | R-13.27.4 | Greedy meshing with face culling and AO |
+| F-13.27.5 | R-13.27.5 | Flood-fill lighting (sunlight + block light) |
+| F-13.27.6a | R-13.27.6a | Gravity-affected block physics |
+| F-13.27.6b | R-13.27.6b | Fluid flow simulation (water, lava) |
+| F-13.27.6c | R-13.27.6c | Fluid-block interactions (ignition, extinguish) |
+| F-13.27.7a | R-13.27.7a | Signal source and wire blocks |
+| F-13.27.7b | R-13.27.7b | Logic gate blocks (repeaters, comparators) |
+| F-13.27.7c | R-13.27.7c | Mechanism blocks (pistons, doors, hoppers) |
+| F-13.27.7d | R-13.27.7d | Deterministic circuit evaluation with budget |
+| F-13.27.8a | R-13.27.8a | Seed-deterministic block terrain generation |
+| F-13.27.8b | R-13.27.8b | Biome system with smooth transitions |
+| F-13.27.8c | R-13.27.8c | Ore vein placement via 3D noise |
+| F-13.27.8d | R-13.27.8d | Structure generation (trees, villages, dungeons) |
+| F-13.15.1 | R-13.15.1 | Companion AI with commands and pathfinding |
+| F-13.15.2 | R-13.15.2 | Pet needs and mood system |
+| F-13.15.3a | R-13.15.3a | Mount summoning and dismissal |
+| F-13.15.3b | R-13.15.3b | Mounted locomotion with physics swap |
+| F-13.15.3c | R-13.15.3c | Mounted combat with ability restrictions |
+| F-13.15.3d | R-13.15.3d | Ground, flying, and aquatic mount types |
+| F-13.15.4 | R-13.15.4 | Creature taming with progress and probability |
+| F-13.15.5a | R-13.15.5a | Pet life stages (baby to elder) |
+| F-13.15.5b | R-13.15.5b | Evolution branching via diet/training |
+| F-13.15.5c | R-13.15.5c | Breeding with trait inheritance |
+
+## Overview
+
+This document covers six genre-specific systems that
+extend the core game framework with specialized
+gameplay mechanics. Each system is 100% ECS-based,
+data-driven, and authored through visual editors.
+
+1. **Fog of War** -- GPU-computed visibility for
+   RTS/strategy games
+2. **Turn-Based Combat** -- tactical grid, initiative,
+   action points, cover
+3. **Minigame Framework** -- isolated sessions with
+   typed result contracts
+4. **Racing** -- checkpoints, lap timing, drift,
+   ghost replay
+5. **Block/Voxel** -- Minecraft-style chunk world with
+   meshing, lighting, circuits
+6. **Pets and Mounts** -- companion AI, taming,
+   breeding, mounted locomotion
+
+## Architecture
+
+### Module Boundaries
+
+```mermaid
+graph TD
+    subgraph "harmonius_game::genre"
+        FOW[FogOfWar Module]
+        TBS[TurnBased Module]
+        MG[Minigame Module]
+        RC[Racing Module]
+        BV[BlockVoxel Module]
+        PM[PetMount Module]
+    end
+
+    subgraph "harmonius_game::core"
+        ECS[ECS World]
+        SI[Shared Spatial Index]
+        GDB[Gameplay Database]
+        EVT[Observer System]
+        ABL[Ability System]
+    end
+
+    subgraph "harmonius_platform"
+        GPU[GPU Compute]
+        IO[Async I/O]
+        THR[Thread Pool]
+    end
+
+    FOW --> ECS
+    FOW --> SI
+    FOW --> GPU
+    TBS --> ECS
+    TBS --> SI
+    TBS --> ABL
+    MG --> ECS
+    MG --> EVT
+    RC --> ECS
+    RC --> SI
+    BV --> ECS
+    BV --> THR
+    BV --> IO
+    PM --> ECS
+    PM --> GDB
+    PM --> ABL
+```
+
+### File Structure
+
+```
+harmonius_game/
+├── genre/
+│   ├── fog_of_war/
+│   │   ├── grid.rs         # FogGrid, FogCell
+│   │   ├── vision.rs       # VisionSource, VisionModifier
+│   │   ├── memory.rs       # FogMemory snapshots
+│   │   ├── gpu.rs          # GPU fog texture gen
+│   │   └── systems.rs      # FogUpdateSystem
+│   ├── turn_based/
+│   │   ├── grid.rs         # TacticalGrid, GridCell
+│   │   ├── turn.rs         # TurnManager, TurnOrder
+│   │   ├── action.rs       # ActionPoints, TurnAction
+│   │   ├── cover.rs        # CoverValue, Overwatch
+│   │   ├── combat.rs       # HitProbability, CombatResult
+│   │   └── systems.rs      # TurnSystem, CoverSystem
+│   ├── minigame/
+│   │   ├── session.rs       # MinigameSession, Context
+│   │   ├── contract.rs      # ResultContract, EntryReq
+│   │   ├── presentation.rs  # PresentationMode
+│   │   ├── timing.rs        # TimingTemplate, BeatTrack
+│   │   ├── board.rs         # BoardEngine, MatchDetect
+│   │   ├── physics_toy.rs   # PhysicsSandbox
+│   │   ├── registry.rs      # MinigameRegistry
+│   │   └── systems.rs       # MinigameLifecycle
+│   ├── racing/
+│   │   ├── track.rs         # Checkpoint, TrackLayout
+│   │   ├── mode.rs          # RaceMode, RuleComponent
+│   │   ├── ai.rs            # RacingAI, RubberBanding
+│   │   ├── drift.rs         # DriftDetector, BoostMeter
+│   │   ├── ghost.rs         # GhostRecorder, GhostReplay
+│   │   └── systems.rs       # RaceSystem, DriftSystem
+│   ├── block_voxel/
+│   │   ├── registry.rs      # BlockTypeRegistry
+│   │   ├── chunk.rs         # Chunk, ChunkManager
+│   │   ├── meshing.rs       # GreedyMesher
+│   │   ├── lighting.rs      # LightPropagation
+│   │   ├── physics.rs       # GravityBlock, FluidFlow
+│   │   ├── circuit.rs       # SignalSource, Wire, Gate
+│   │   ├── worldgen.rs      # TerrainGen, BiomeGen
+│   │   └── systems.rs       # ChunkSystem, LightSystem
+│   └── pet_mount/
+│       ├── companion.rs     # CompanionAI, Command
+│       ├── needs.rs         # PetNeeds, MoodState
+│       ├── mount.rs         # MountType, MountedState
+│       ├── taming.rs        # TamingProgress
+│       ├── breeding.rs      # BreedingPair, Offspring
+│       ├── growth.rs        # LifeStage, Evolution
+│       └── systems.rs       # CompanionSystem, MountSystem
+```
+
+---
+
+## 1. Fog of War
+
+### Fog of War Data Flow
+
+```mermaid
+sequenceDiagram
+    participant VS as VisionSource Entities
+    participant FS as FogSystem
+    participant SI as Spatial Index
+    participant FG as FogGrid Resource
+    participant GPU as GPU Compute
+    participant R as Renderer
+
+    loop Every Frame
+        FS->>VS: query VisionSource components
+        FS->>SI: line-of-sight raycasts
+        SI-->>FS: occlusion results
+        FS->>FG: update cell visibility
+        FG->>GPU: upload fog grid buffer
+        GPU->>GPU: generate fog texture
+        GPU-->>R: fog texture sampled
+    end
+```
+
+### Fog of War Components
+
+```rust
+/// Visibility state for a single fog cell.
+/// Encoded as 2 bits per cell per faction.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum FogState {
+    /// Never seen. Fully hidden.
+    Unexplored = 0,
+    /// Previously seen. Shows terrain ghosts.
+    Shrouded = 1,
+    /// Currently visible. Real-time display.
+    Visible = 2,
+}
+
+/// Per-faction fog grid stored as an ECS resource.
+/// 2 bits per cell, packed into u32 words.
+pub struct FogGrid {
+    width: u32,
+    height: u32,
+    /// One bitfield per faction.
+    faction_data: Vec<FogFactionLayer>,
+}
+
+pub struct FogFactionLayer {
+    faction_id: FactionId,
+    /// Packed 2-bit cells: ceil(width*height/16)
+    /// u32 words.
+    cells: Vec<u32>,
+}
+
+impl FogGrid {
+    pub fn new(
+        width: u32,
+        height: u32,
+        faction_count: u32,
+    ) -> Self;
+
+    pub fn get(
+        &self,
+        x: u32,
+        y: u32,
+        faction: FactionId,
+    ) -> FogState;
+
+    pub fn set(
+        &mut self,
+        x: u32,
+        y: u32,
+        faction: FactionId,
+        state: FogState,
+    );
+
+    /// Serialize for network transmission.
+    /// Full sync: 2 bits * width * height per faction.
+    pub fn serialize_full(
+        &self,
+        faction: FactionId,
+    ) -> Vec<u8>;
+
+    /// Delta update: only changed cells since
+    /// last sync.
+    pub fn serialize_delta(
+        &self,
+        faction: FactionId,
+        since: FrameId,
+    ) -> Vec<u8>;
+}
+
+/// Attached to entities that reveal fog.
+#[derive(Component)]
+pub struct VisionSource {
+    /// Base sight radius in grid cells.
+    pub radius: u32,
+    /// Shape of the vision cone.
+    pub shape: VisionShape,
+    /// Bonus radius per elevation tier above
+    /// ground level.
+    pub elevation_bonus: u32,
+    /// Faction this vision source belongs to.
+    pub faction: FactionId,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VisionShape {
+    /// 360-degree circle.
+    Circle,
+    /// Directional cone with half-angle in
+    /// degrees.
+    Cone { half_angle_deg: u32 },
+}
+
+/// Attached to trigger volume entities that
+/// modify vision behavior.
+#[derive(Component)]
+pub struct VisionModifier {
+    pub kind: VisionModifierKind,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VisionModifierKind {
+    /// Entities inside invisible to outsiders.
+    StealthZone,
+    /// Blocks all vision through the volume.
+    VisionBlocker,
+    /// Grants bonus vision radius to entities
+    /// inside.
+    HighGround { bonus: u32 },
+    /// Reduces all vision radii within.
+    Darkness { reduction: u32 },
+}
+
+/// Per-cell snapshot for fog memory. Stored per
+/// faction as an ECS resource.
+pub struct FogMemory {
+    cells: Vec<FogMemoryCell>,
+}
+
+pub struct FogMemoryCell {
+    /// Frame when cell was last visible.
+    pub last_seen: FrameId,
+    /// Entity reference of last-seen building.
+    pub building_ref: Option<EntityId>,
+    /// Resource state at last observation.
+    pub resource_state: Option<u32>,
+}
+```
+
+---
+
+## 2. Turn-Based Combat
+
+### Turn-Based Combat Sequence
+
+```mermaid
+sequenceDiagram
+    participant TM as TurnManager
+    participant UI as Turn Order UI
+    participant PC as Player Controller
+    participant AI as AI Controller
+    participant GR as TacticalGrid
+    participant AB as Ability System
+
+    TM->>TM: resolve initiative order
+    TM->>UI: display turn order bar
+
+    loop Each Turn
+        TM->>TM: advance to next actor
+        alt Player Unit
+            TM->>PC: begin player turn
+            PC->>GR: request reachable cells
+            GR-->>PC: highlighted movement range
+            PC->>AB: execute action (spend AP)
+            AB-->>TM: action complete
+        else AI Unit
+            TM->>AI: begin AI turn
+            AI->>GR: evaluate positions
+            AI->>AB: execute AI action
+            AB-->>TM: action complete
+        end
+        TM->>TM: check win/loss conditions
+    end
+```
+
+### Turn-Based Components
+
+```rust
+/// Grid cell shape for the tactical grid.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum GridShape {
+    Square,
+    Hexagonal,
+}
+
+/// Per-cell data in the tactical grid.
+pub struct GridCell {
+    pub traversable: bool,
+    pub elevation_tier: u8,
+    /// Movement cost multiplier. 1.0 = normal,
+    /// 2.0 = difficult terrain.
+    pub movement_cost: f32,
+    /// Directional cover values (per edge).
+    pub cover: [CoverValue; 6],
+    /// Entity occupying this cell, if any.
+    pub occupant: Option<EntityId>,
+    /// Terrain type for gameplay rules.
+    pub terrain_type: TerrainTypeId,
+}
+
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum CoverValue {
+    None,
+    Half,
+    Full,
+}
+
+/// The tactical grid, stored as an ECS resource.
+pub struct TacticalGrid {
+    shape: GridShape,
+    width: u32,
+    height: u32,
+    cells: Vec<GridCell>,
+    /// Floor connections for multi-floor grids.
+    floor_links: Vec<FloorLink>,
+}
+
+impl TacticalGrid {
+    pub fn new(
+        shape: GridShape,
+        width: u32,
+        height: u32,
+    ) -> Self;
+
+    pub fn cell(
+        &self,
+        x: u32,
+        y: u32,
+    ) -> &GridCell;
+
+    pub fn cell_mut(
+        &mut self,
+        x: u32,
+        y: u32,
+    ) -> &mut GridCell;
+
+    /// BFS reachable cells within AP budget.
+    /// Returns cells with path cost.
+    pub fn reachable_cells(
+        &self,
+        origin: GridCoord,
+        max_ap: u32,
+    ) -> Vec<(GridCoord, u32)>;
+
+    /// A* pathfinding between two cells.
+    pub fn find_path(
+        &self,
+        from: GridCoord,
+        to: GridCoord,
+    ) -> Option<Vec<GridCoord>>;
+
+    /// Get cover value from attacker direction.
+    pub fn cover_between(
+        &self,
+        attacker: GridCoord,
+        defender: GridCoord,
+    ) -> CoverValue;
+}
+
+/// Turn ordering mode.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum TurnMode {
+    /// Fixed order each round.
+    RoundRobin,
+    /// Speed stat determines order.
+    Initiative,
+    /// All of team A, then team B.
+    TeamBased,
+    /// Movement phase, action phase, end phase.
+    PhaseBased,
+}
+
+/// ECS resource managing the turn lifecycle.
+pub struct TurnManager {
+    mode: TurnMode,
+    turn_count: u32,
+    current_actor: Option<EntityId>,
+    turn_order: Vec<EntityId>,
+    current_phase: TurnPhase,
+}
+
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum TurnPhase {
+    WaitingForInput,
+    Executing,
+    Animating,
+    EndOfTurn,
+}
+
+impl TurnManager {
+    pub fn new(mode: TurnMode) -> Self;
+
+    /// Resolve turn order from all participating
+    /// entities. For initiative mode, sorts by
+    /// speed stat descending.
+    pub fn resolve_order(
+        &mut self,
+        participants: &[(EntityId, u32)],
+    );
+
+    /// Advance to the next actor. Returns the
+    /// entity whose turn begins.
+    pub fn advance(
+        &mut self,
+    ) -> Option<EntityId>;
+
+    /// End the current actor's turn.
+    pub fn end_turn(&mut self);
+
+    pub fn current_actor(
+        &self,
+    ) -> Option<EntityId>;
+
+    pub fn turn_count(&self) -> u32;
+}
+
+/// Attached to entities with turn-based movement.
+#[derive(Component)]
+pub struct ActionPoints {
+    pub current: u32,
+    pub max: u32,
+}
+
+/// Attached to entities in overwatch stance.
+#[derive(Component)]
+pub struct OverwatchStance {
+    /// Direction and arc of overwatch cone.
+    pub facing: Vec2,
+    pub arc_deg: f32,
+    /// Accuracy modifier (typically 0.5-0.8).
+    pub accuracy_modifier: f32,
+    /// Has this overwatch triggered this turn?
+    pub triggered: bool,
+}
+
+/// Result of a combat resolution.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CombatOutcome {
+    Miss,
+    Graze { damage: u32 },
+    Hit { damage: u32 },
+    Critical { damage: u32 },
+}
+
+/// Computes hit probability from all factors.
+pub struct HitProbabilityCalc;
+
+impl HitProbabilityCalc {
+    /// Compute hit chance as a percentage (0-100).
+    pub fn compute(
+        base_accuracy: f32,
+        range_penalty: f32,
+        cover_bonus: f32,
+        elevation_bonus: f32,
+        flanking: bool,
+        buffs: f32,
+        attacker_accuracy: f32,
+        defender_evasion: f32,
+    ) -> f32;
+
+    /// Resolve combat with weighted random.
+    pub fn resolve(
+        hit_chance: f32,
+        crit_chance: f32,
+        base_damage: u32,
+        crit_multiplier: f32,
+    ) -> CombatOutcome;
+}
+```
+
+---
+
+## 3. Minigame Framework
+
+### Minigame Session Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Setup: enter minigame
+    Setup --> Play: conditions met
+    Setup --> [*]: conditions failed
+    Play --> Result: complete / win / lose
+    Play --> Teardown: player quits
+    Result --> Teardown: apply contract
+    Teardown --> [*]: destroy partition
+
+    state Setup {
+        [*] --> ValidateEntry
+        ValidateEntry --> DeductCosts
+        DeductCosts --> CreatePartition
+        CreatePartition --> InitState
+    }
+
+    state Play {
+        [*] --> Running
+        Running --> Running: game loop
+    }
+
+    state Result {
+        [*] --> ComputeOutcome
+        ComputeOutcome --> DisplayResult
+        DisplayResult --> ApplyContract
+    }
+```
+
+### Minigame Components
+
+```rust
+/// Presentation mode for rendering the minigame.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum PresentationMode {
+    /// Render-to-texture on an in-world surface.
+    WorldSpace,
+    /// Fullscreen overlay with dimmed outer world.
+    FullscreenOverlay,
+    /// Minigame in a screen region.
+    SplitView,
+    /// 3D objects in the outer world.
+    Diegetic,
+}
+
+/// Lifecycle phase of a minigame session.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum MinigamePhase {
+    Setup,
+    Play,
+    Result,
+    Teardown,
+}
+
+/// Policy applied when the player quits
+/// mid-minigame.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum QuitPolicy {
+    /// Quitting counts as a loss.
+    Loss,
+    /// Entry cost is refunded.
+    Refund,
+    /// No effect on outer world.
+    NoEffect,
+}
+
+/// Entry conditions for starting a minigame.
+pub struct EntryConditions {
+    pub required_items: Vec<ItemId>,
+    pub minimum_level: Option<u32>,
+    pub currency_cost: Option<(CurrencyId, u64)>,
+}
+
+/// Typed result contract defining minigame I/O.
+pub struct ResultContract {
+    pub entry: EntryConditions,
+    pub quit_policy: QuitPolicy,
+    /// Outputs applied atomically on completion.
+    pub outputs: Vec<ResultOutput>,
+}
+
+/// A single output applied to the outer world.
+pub enum ResultOutput {
+    GrantItem { item: ItemId, count: u32 },
+    GrantCurrency { currency: CurrencyId, amount: u64 },
+    SetQuestFlag { flag: QuestFlagId },
+    ModifyReputation { faction: FactionId, delta: i32 },
+    UnlockAchievement { achievement: AchievementId },
+}
+
+/// The live minigame session. One per active
+/// minigame.
+pub struct MinigameSession {
+    /// Isolated ECS world partition.
+    pub world_partition: WorldPartitionId,
+    pub presentation: PresentationMode,
+    pub phase: MinigamePhase,
+    pub contract: ResultContract,
+    /// Outer world tick behavior while active.
+    pub outer_world_mode: OuterWorldMode,
+}
+
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum OuterWorldMode {
+    Paused,
+    ReducedTickRate { divisor: u32 },
+    Normal,
+}
+
+impl MinigameSession {
+    /// Create and initialize the session.
+    /// Validates entry conditions, deducts costs,
+    /// creates the ECS partition.
+    pub fn start(
+        contract: ResultContract,
+        presentation: PresentationMode,
+        outer_mode: OuterWorldMode,
+    ) -> Result<Self, MinigameError>;
+
+    /// Apply the result contract atomically to
+    /// the outer world.
+    pub fn apply_results(
+        &self,
+        outcome: MinigameOutcome,
+    ) -> Result<(), MinigameError>;
+
+    /// Destroy the session and reclaim memory.
+    pub fn teardown(self);
+}
+
+/// Reusable timing/rhythm minigame template.
+pub struct TimingTemplate {
+    /// Beat markers synchronized to audio.
+    pub beats: Vec<BeatMarker>,
+    /// Input tolerance windows.
+    pub windows: TimingWindows,
+    /// Combo multiplier config.
+    pub combo_config: ComboConfig,
+}
+
+pub struct TimingWindows {
+    /// +/- milliseconds for each grade.
+    pub perfect_ms: u32,
+    pub great_ms: u32,
+    pub good_ms: u32,
+}
+
+pub struct BeatMarker {
+    pub timestamp_ms: u64,
+    pub input_action: InputActionId,
+    pub score_value: u32,
+}
+
+/// Reusable NxM board engine for grid-based
+/// minigames.
+pub struct BoardEngine {
+    pub width: u32,
+    pub height: u32,
+    pub cells: Vec<BoardCell>,
+    pub mode: BoardMode,
+}
+
+pub struct BoardCell {
+    pub cell_type: BoardCellTypeId,
+    pub piece: Option<BoardPieceId>,
+}
+
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum BoardMode {
+    TurnBased,
+    RealTime,
+}
+
+/// Match detection result for grid-based
+/// minigames.
+pub struct MatchResult {
+    pub cells: Vec<GridCoord>,
+    pub pattern: MatchPattern,
+    pub score: u32,
+}
+
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum MatchPattern {
+    ThreeInARow,
+    FourInARow,
+    FiveInARow,
+    PokerHand(PokerHandRank),
+    Custom(LogicGraphId),
+}
+
+/// Runtime registry of all available minigames.
+pub struct MinigameRegistry {
+    entries: Vec<MinigameEntry>,
+}
+
+pub struct MinigameEntry {
+    pub id: MinigameId,
+    pub name: StringId,
+    pub category: MinigameCategory,
+    pub player_count: RangeInclusive<u32>,
+    pub avg_duration_sec: u32,
+    pub difficulty: u8,
+    pub unlock_condition: Option<UnlockConditionId>,
+    pub discovered: bool,
+    pub high_score: u64,
+    pub completion_count: u32,
+}
+```
+
+---
+
+## 4. Racing Systems
+
+### Checkpoint Flow
+
+```mermaid
+sequenceDiagram
+    participant V as Vehicle Entity
+    participant CP as CheckpointSystem
+    participant RS as RaceState
+    participant GH as GhostSystem
+    participant LB as Leaderboard
+    participant UI as Race HUD
+
+    V->>CP: enter checkpoint volume
+    CP->>RS: record checkpoint timestamp
+    RS->>RS: validate checkpoint order
+    alt Valid checkpoint
+        RS->>UI: update split time display
+        RS->>GH: compare to ghost position
+        GH-->>UI: delta time display
+    else Skipped checkpoint
+        RS->>UI: show warning
+    end
+
+    V->>CP: cross start/finish
+    CP->>RS: check all checkpoints passed
+    alt Lap complete
+        RS->>RS: increment lap count
+        RS->>GH: update best ghost
+        RS->>LB: submit lap time
+        LB-->>UI: update standings
+    end
+```
+
+### Racing Components
+
+```rust
+/// A single checkpoint on the track.
+#[derive(Component)]
+pub struct Checkpoint {
+    /// Position in the ordered sequence (0-based).
+    pub index: u32,
+    /// True if this is the start/finish line.
+    pub is_start_finish: bool,
+}
+
+/// Per-racer race progress, attached to each
+/// vehicle entity.
+#[derive(Component)]
+pub struct RaceProgress {
+    /// Checkpoints passed in the current lap.
+    pub checkpoints_hit: BitSet,
+    /// Current lap number (0-based).
+    pub current_lap: u32,
+    /// Timestamp of each checkpoint crossing.
+    pub split_times: Vec<u64>,
+    /// Best lap time in microseconds.
+    pub best_lap_us: Option<u64>,
+    /// Finishing position (None if still racing).
+    pub finish_position: Option<u32>,
+}
+
+/// Track definition stored as an ECS resource.
+pub struct TrackLayout {
+    pub checkpoint_count: u32,
+    pub total_laps: u32,
+    /// Boundary volumes that apply penalties.
+    pub boundary_volumes: Vec<EntityId>,
+}
+
+/// Race mode configuration.
+pub struct RaceMode {
+    pub kind: RaceModeKind,
+    pub scoring: ScoringRule,
+    pub timer: TimerBehavior,
+    pub elimination: Option<EliminationRule>,
+    pub reward_distribution: Vec<RewardTier>,
+}
+
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum RaceModeKind {
+    Circuit { laps: u32 },
+    TimeTrial,
+    Elimination,
+    Knockout { round_duration_sec: u32 },
+    DriftChallenge,
+    DragRace,
+    CheckpointRace,
+}
+
+/// AI racer navigation data per track segment.
+pub struct RacingLineSegment {
+    pub position: Vec3,
+    pub target_speed: f32,
+    pub braking_point: f32,
+    /// 0.0 = hug inside, 1.0 = wide outside.
+    pub line_offset: f32,
+}
+
+/// Attached to AI racer entities.
+#[derive(Component)]
+pub struct RacingAI {
+    pub racing_line: Vec<RacingLineSegment>,
+    pub current_segment: u32,
+    pub top_speed_limiter: f32,
+    pub braking_accuracy: f32,
+    pub line_adherence: f32,
+    pub personality: RacingPersonality,
+}
+
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum RacingPersonality {
+    Cautious,
+    Balanced,
+    Aggressive,
+}
+
+/// Rubber-banding parameters stored as an
+/// ECS resource.
+pub struct RubberBanding {
+    pub enabled: bool,
+    /// Maximum time gap in seconds before
+    /// rubber-banding activates.
+    pub max_gap_sec: f32,
+    /// Speed multiplier for trailing AI.
+    pub trailing_boost: f32,
+    /// Speed multiplier for leading AI.
+    pub leading_penalty: f32,
+}
+
+/// Drift detection and scoring. Attached to
+/// vehicle entities.
+#[derive(Component)]
+pub struct DriftState {
+    /// True when slip angle exceeds threshold.
+    pub drifting: bool,
+    /// Current drift score accumulating.
+    pub current_score: f32,
+    /// Combo multiplier (increases with duration).
+    pub combo_multiplier: f32,
+    /// Slip angle threshold in degrees.
+    pub slip_threshold_deg: f32,
+}
+
+/// Boost meter attached to vehicle entities.
+#[derive(Component)]
+pub struct BoostMeter {
+    pub current: f32,
+    pub max: f32,
+    /// True when boost is actively applied.
+    pub active: bool,
+    /// Remaining boost duration in seconds.
+    pub remaining_sec: f32,
+    /// Speed increase while boosting.
+    pub speed_bonus: f32,
+}
+
+/// Ghost replay recording. One per track per
+/// player.
+pub struct GhostRecording {
+    pub track_id: TrackId,
+    pub total_time_us: u64,
+    /// Delta-compressed position samples at
+    /// 120 Hz.
+    pub samples: Vec<GhostSample>,
+}
+
+pub struct GhostSample {
+    /// Delta from previous position.
+    pub delta_pos: [i16; 3],
+    /// Quantized rotation.
+    pub rotation: [i16; 4],
+    /// Input state bits.
+    pub input_bits: u8,
+}
+```
+
+---
+
+## 5. Block/Voxel World
+
+### Chunk Pipeline
+
+```mermaid
+graph LR
+    subgraph Generation
+        HM[Heightmap Noise]
+        CV[Cave Noise]
+        BM[Biome Selection]
+        ORE[Ore Placement]
+        STR[Structure Gen]
+    end
+
+    subgraph Storage
+        CH[Chunk Array]
+        PL[Palette Compress]
+    end
+
+    subgraph Processing
+        GM[Greedy Meshing]
+        LT[Light Propagation]
+        PH[Block Physics]
+        CR[Circuit Eval]
+    end
+
+    subgraph Rendering
+        ML[Meshlet Pipeline]
+        FT[Fog Texture]
+    end
+
+    HM --> CH
+    CV --> CH
+    BM --> CH
+    ORE --> CH
+    STR --> CH
+    CH --> PL
+    PL --> GM
+    PL --> LT
+    PL --> PH
+    PL --> CR
+    GM --> ML
+    LT --> FT
+```
+
+### Block/Voxel Components
+
+```rust
+/// Unique identifier for a block type (0-1023).
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+    Hash, Ord, PartialOrd,
+)]
+pub struct BlockTypeId(pub u16);
+
+/// Collision behavior for a block type.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum BlockCollision {
+    Solid,
+    Passable,
+    Liquid,
+    Climbable,
+}
+
+/// Properties for a registered block type.
+pub struct BlockTypeDef {
+    pub id: BlockTypeId,
+    pub name: StringId,
+    pub collision: BlockCollision,
+    pub hardness: f32,
+    pub tool_requirement: Option<ToolTypeId>,
+    pub drop_table: DropTableId,
+    pub light_emission: u8,
+    pub light_attenuation: u8,
+    pub transparent: bool,
+    pub flammable: bool,
+    pub blast_resistance: f32,
+    /// Optional logic graph for custom behavior.
+    pub behavior: Option<LogicGraphId>,
+}
+
+/// O(1) lookup registry for block types.
+pub struct BlockTypeRegistry {
+    /// Indexed by BlockTypeId. Capacity >= 1024.
+    types: Vec<Option<BlockTypeDef>>,
+}
+
+impl BlockTypeRegistry {
+    pub fn new() -> Self;
+
+    pub fn register(
+        &mut self,
+        def: BlockTypeDef,
+    ) -> Result<(), RegistryError>;
+
+    /// O(1) lookup by ID.
+    pub fn get(
+        &self,
+        id: BlockTypeId,
+    ) -> Option<&BlockTypeDef>;
+}
+
+/// A 16x16x16 chunk of blocks.
+pub struct Chunk {
+    /// Palette-compressed block storage.
+    storage: ChunkStorage,
+    /// Two 4-bit light channels per block.
+    light: ChunkLightData,
+    /// Dirty flag for incremental re-meshing.
+    dirty: bool,
+}
+
+/// Palette compression for chunk block data.
+enum ChunkStorage {
+    /// All blocks are the same type.
+    Uniform(BlockTypeId),
+    /// <= 16 unique types: 4-bit palette indices.
+    Palette4 {
+        palette: SmallVec<[BlockTypeId; 16]>,
+        /// 4096 blocks * 4 bits = 2048 bytes.
+        indices: [u8; 2048],
+    },
+    /// > 16 unique types: full 16-bit IDs.
+    Full {
+        /// 4096 blocks * 2 bytes = 8192 bytes.
+        blocks: [BlockTypeId; 4096],
+    },
+}
+
+impl Chunk {
+    pub fn new_uniform(
+        block: BlockTypeId,
+    ) -> Self;
+
+    pub fn get(
+        &self,
+        x: u8,
+        y: u8,
+        z: u8,
+    ) -> BlockTypeId;
+
+    pub fn set(
+        &mut self,
+        x: u8,
+        y: u8,
+        z: u8,
+        block: BlockTypeId,
+    );
+}
+
+/// Manages loaded, loading, and queued chunks.
+pub struct ChunkManager {
+    /// Loaded chunks indexed by chunk coordinate.
+    loaded: HashMap<ChunkCoord, Chunk>,
+    /// Render distance in chunks per axis.
+    render_distance: u32,
+}
+
+impl ChunkManager {
+    pub fn new(
+        render_distance: u32,
+    ) -> Self;
+
+    /// Update loaded set based on player
+    /// positions. Queues generation for new
+    /// chunks and unloads distant ones.
+    pub fn update(
+        &mut self,
+        player_positions: &[Vec3],
+    );
+}
+
+/// Signal power level (0-15).
+pub type SignalPower = u8;
+
+/// Circuit component attached to signal-emitting
+/// blocks.
+#[derive(Component)]
+pub struct SignalSource {
+    pub power: SignalPower,
+    pub active: bool,
+}
+
+/// Circuit wire that transmits power with
+/// distance attenuation.
+#[derive(Component)]
+pub struct Wire {
+    pub received_power: SignalPower,
+}
+
+/// Logic gate types for circuit networks.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum GateType {
+    Repeater { delay_ticks: u8 },
+    Comparator,
+    NotGate,
+}
+
+/// Fluid flow state attached to fluid blocks.
+#[derive(Component)]
+pub struct FluidState {
+    pub fluid_type: FluidTypeId,
+    /// 0 = source, 1-7 = decreasing flow.
+    pub flow_level: u8,
+    /// Direction of flow for current force.
+    pub flow_direction: Vec3,
+}
+```
+
+---
+
+## 6. Pets, Companions, and Mounts
+
+### Companion State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Following: follow command
+    Idle --> Guarding: guard command
+    Idle --> Assisting: assist command
+    Idle --> Patrolling: patrol command
+
+    Following --> Teleporting: distance exceeded
+    Teleporting --> Following: arrived
+    Following --> Assisting: enemy detected
+
+    Assisting --> Following: combat ended
+    Guarding --> Assisting: enemy in range
+    Assisting --> Guarding: enemy cleared
+
+    Patrolling --> Assisting: enemy detected
+    Assisting --> Patrolling: enemy cleared
+
+    Following --> Idle: stay command
+    Guarding --> Idle: stay command
+    Patrolling --> Idle: stay command
+```
+
+### Pet/Mount Components
+
+```rust
+/// Command issued to a companion entity.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum CompanionCommand {
+    Follow,
+    Guard { position: Vec3 },
+    Assist,
+    Stay,
+    Patrol { route: PatrolRouteId },
+    Passive,
+}
+
+/// Attached to companion entities.
+#[derive(Component)]
+pub struct CompanionAI {
+    pub current_command: CompanionCommand,
+    pub follow_distance: f32,
+    pub teleport_distance: f32,
+    pub owner: EntityId,
+    pub behavior_tree: BehaviorTreeId,
+}
+
+/// Pet needs meters. Attached to pet entities.
+#[derive(Component)]
+pub struct PetNeeds {
+    pub hunger: f32,
+    pub happiness: f32,
+    pub cleanliness: f32,
+}
+
+/// Mood derived from needs. Attached to pet
+/// entities.
+#[derive(Component)]
+pub struct PetMood {
+    pub state: MoodState,
+}
+
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum MoodState {
+    Happy,
+    Content,
+    Unhappy,
+    Neglected,
+}
+
+/// Mount movement type.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum MountType {
+    Ground,
+    Flying { max_altitude: f32 },
+    Aquatic { max_depth: f32 },
+}
+
+/// Attached to mount entities when summoned.
+#[derive(Component)]
+pub struct MountStats {
+    pub mount_type: MountType,
+    pub speed: f32,
+    pub acceleration: f32,
+    pub jump_height: f32,
+    pub turn_rate: f32,
+    pub stamina: f32,
+    pub armor: f32,
+    pub combat_enabled: bool,
+    pub allowed_abilities: Vec<AbilityId>,
+}
+
+/// Attached to the player entity while mounted.
+#[derive(Component)]
+pub struct MountedState {
+    pub mount_entity: EntityId,
+    /// True during enter/exit animation.
+    pub transitioning: bool,
+}
+
+/// Taming progress attached to the creature
+/// being tamed.
+#[derive(Component)]
+pub struct TamingProgress {
+    pub progress: f32,
+    pub required_progress: f32,
+    pub base_success_rate: f32,
+    /// Player entity attempting the tame.
+    pub tamer: EntityId,
+}
+
+/// Life stage for creatures that grow.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+    Ord, PartialOrd,
+)]
+pub enum LifeStage {
+    Baby,
+    Juvenile,
+    Adult,
+    Elder,
+}
+
+/// Attached to creatures with growth/evolution.
+#[derive(Component)]
+pub struct PetGrowth {
+    pub stage: LifeStage,
+    /// Progress toward next stage (0.0-1.0).
+    pub progress: f32,
+    /// Growth mode.
+    pub mode: GrowthMode,
+}
+
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+)]
+pub enum GrowthMode {
+    TimeBased { seconds_per_stage: u32 },
+    ExperienceBased { xp_per_stage: u32 },
+}
+
+/// Attached to creatures eligible for evolution.
+#[derive(Component)]
+pub struct EvolutionTracker {
+    /// Accumulated diet/training history used
+    /// to determine evolution branch.
+    pub meat_fed: u32,
+    pub herb_fed: u32,
+    pub combat_xp: u32,
+    pub tracking_xp: u32,
+}
+
+/// Breeding pair state. Attached to a "stable"
+/// or "pen" entity.
+#[derive(Component)]
+pub struct BreedingPair {
+    pub parent_a: EntityId,
+    pub parent_b: EntityId,
+    pub gestation_remaining_sec: f32,
+    /// Computed at breeding start from parents.
+    pub offspring_traits: OffspringTraits,
+}
+
+pub struct OffspringTraits {
+    pub color: ColorId,
+    pub stat_bonuses: Vec<(StatId, f32)>,
+    pub special_abilities: Vec<AbilityId>,
+}
+```
+
+## Data Flow
+
+### Per-Frame System Execution
+
+Each genre system runs as ECS systems within the
+frame graph. Systems declare their component
+queries and resource access, enabling the ECS
+scheduler to parallelize independent systems.
+
+1. **Fog of War** -- `FogUpdateSystem` queries
+   all `VisionSource` + `Transform` entities,
+   raycasts through the spatial index, updates
+   the `FogGrid` resource, uploads to GPU.
+2. **Turn-Based** -- `TurnSystem` advances the
+   `TurnManager` resource, `CoverSystem` updates
+   cover values, `CombatSystem` resolves attacks.
+3. **Minigame** -- `MinigameLifecycleSystem`
+   manages session phases. The minigame's own
+   systems run in the isolated world partition.
+4. **Racing** -- `CheckpointSystem` detects volume
+   overlaps, `DriftSystem` reads vehicle physics,
+   `GhostSystem` records/replays at 120 Hz.
+5. **Block/Voxel** -- `ChunkSystem` streams chunks,
+   `MeshingSystem` runs greedy mesh on workers,
+   `LightSystem` propagates BFS, `CircuitSystem`
+   evaluates at 20 Hz.
+6. **Pet/Mount** -- `CompanionSystem` ticks
+   behavior trees, `NeedsSystem` decays meters,
+   `MountSystem` swaps character controllers.
+
+### Multiplayer Integration
+
+| System | Replication Model |
+|--------|-------------------|
+| Fog of War | Per-faction delta sync (2 bits/cell) |
+| Turn-Based | Server-authoritative turn resolution |
+| Minigame | Session-scoped replication with own partition |
+| Racing | 120 Hz state replication, ghost sharing via platform services |
+| Block/Voxel | Server-authoritative block modifications, chunk streaming |
+| Pet/Mount | Owner-authoritative companion AI, server-authoritative taming |
+
+## Platform Considerations
+
+### Fog of War
+
+| Platform | Implementation | Notes |
+|----------|----------------|-------|
+| Desktop | GPU compute shader | Full-resolution fog grid |
+| Mobile | GPU compute or CPU fallback | Half/quarter resolution on low-end |
+| Console | GPU compute shader | Full-resolution |
+
+### Block/Voxel
+
+| Platform | Render Distance | Fluid Tick Rate | Circuit Budget |
+|----------|----------------|-----------------|----------------|
+| Desktop | 16-32 chunks | 20 Hz | Standard |
+| Mobile | 8 chunks | 10 Hz | Reduced |
+| Console | 16-24 chunks | 20 Hz | Standard |
+
+### Racing
+
+| Platform | Physics Tick | Ghost Storage |
+|----------|-------------|---------------|
+| All | 120 Hz fixed | <= 10 KB/min |
+
+### Minigame Timing
+
+| Platform | Notes |
+|----------|-------|
+| All | Sub-ms input timestamp precision required |
+| Mobile | Touch slop for rhythm game input |
+
+## Test Plan
+
+### Unit Tests
+
+| Test | Req | Description |
+|------|-----|-------------|
+| `test_fog_three_states` | R-13.20.1 | Set cell states, verify get returns correct state |
+| `test_fog_2bit_encoding` | R-13.20.1 | 256x256 grid serializes to 16,384 bytes per faction |
+| `test_fog_delta_90pct` | NFR-13.20.2 | 5% cell change yields >= 90% smaller delta |
+| `test_vision_circle` | R-13.20.2 | Radius-10 source reveals correct cells |
+| `test_vision_los_blocked` | R-13.20.2 | Wall occluder blocks visibility |
+| `test_vision_elevation` | R-13.20.2 | +3 elevation bonus increases radius to 13 |
+| `test_vision_modifier_stealth` | R-13.20.3 | Entity in stealth zone invisible to outsiders |
+| `test_fog_memory_persist` | R-13.20.4 | Ghost building persists in shroud, updates on reveal |
+| `test_grid_reachable_cells` | R-13.21.1 | BFS reachable cells match expected set |
+| `test_grid_hex_adjacency` | R-13.21.1 | Hex grid adjacency correct for odd/even rows |
+| `test_initiative_order` | R-13.21.2 | Speed stats 10,20,15,5 -> order 20,15,10,5 |
+| `test_team_turn_order` | R-13.21.2 | Team A acts fully before team B |
+| `test_ap_movement` | R-13.21.3 | 3 flat cells cost 3 AP, difficult costs 6 AP |
+| `test_ap_interleave` | R-13.21.3 | Move, attack, move again within budget |
+| `test_cover_directional` | R-13.21.4 | Half cover from north, none from east flank |
+| `test_overwatch_triggers` | R-13.21.4 | Enemy moving through LOS triggers overwatch shot |
+| `test_hit_probability` | R-13.21.5 | 80% base - 10% range - 20% cover = 50% |
+| `test_combat_outcomes` | R-13.21.5 | 1000 rolls at 50% within 95% CI |
+| `test_minigame_isolation` | R-13.26.1 | Cannot access outer world components |
+| `test_minigame_contract` | R-13.26.3 | Results applied atomically; crash = no partial |
+| `test_minigame_quit_policy` | R-13.26.3 | Quit with Loss/Refund/NoEffect policies |
+| `test_timing_windows` | R-13.26.4 | Perfect +/-30ms, great +/-60ms detection |
+| `test_match_3_detection` | R-13.26.5b | 3-in-a-row detected (H, V, diagonal) |
+| `test_cascade_recursive` | R-13.26.5d | Cascade triggers recursive match checks |
+| `test_board_ai_difficulty` | R-13.26.5c | Easy <30%, hard >70% vs random baseline |
+| `test_physics_determinism` | R-13.26.6 | Identical inputs produce identical physics |
+| `test_checkpoint_order` | R-13.22.1 | Skipped checkpoint invalidates lap |
+| `test_lap_counting` | R-13.22.1 | Lap increments on start/finish with all CPs |
+| `test_split_times` | R-13.22.1 | Split time = current - best at each CP |
+| `test_race_modes` | R-13.22.2 | Circuit, elimination, time trial end correctly |
+| `test_rubber_banding` | R-13.22.3b | Trailing AI speeds up, leading AI slows |
+| `test_drift_detection` | R-13.22.4 | Slip angle above threshold activates drift |
+| `test_drift_combo` | R-13.22.4 | 3s drift increases combo multiplier |
+| `test_boost_fill` | R-13.22.4 | Drift score fills boost meter proportionally |
+| `test_ghost_record_replay` | R-13.22.5 | Recorded ghost replays at correct positions |
+| `test_ghost_storage_10kb` | NFR-13.22.2 | 1 min ghost <= 10 KB compressed |
+| `test_block_registry_o1` | R-13.27.1 | 1024 types with O(1) lookup |
+| `test_block_placement` | R-13.27.2 | Raycast face targeting, validation rules |
+| `test_palette_compression` | R-13.27.3 | 8 unique types -> 4-bit palette (2048 bytes) |
+| `test_uniform_chunk` | R-13.27.3 | All-air chunk stores as single value |
+| `test_greedy_meshing` | R-13.27.4 | 16x16 flat surface -> single quad per face |
+| `test_interior_culling` | R-13.27.4 | Enclosed block generates zero mesh faces |
+| `test_light_propagation` | R-13.27.5 | Torch light attenuates over 15 blocks |
+| `test_sunlight_flood` | R-13.27.5 | Sunlight propagates down at full intensity |
+| `test_gravity_block` | R-13.27.6a | Sand falls to nearest solid surface |
+| `test_fluid_flow_levels` | R-13.27.6b | Water flows with 7 decreasing levels |
+| `test_fluid_interaction` | R-13.27.6c | Lava + water -> cobblestone |
+| `test_signal_attenuation` | R-13.27.7a | Signal reaches 15 blocks, not 16 |
+| `test_not_gate` | R-13.27.7b | Torch on powered block inverts signal |
+| `test_piston_push` | R-13.27.7c | Piston pushes adjacent block on power |
+| `test_circuit_determinism` | R-13.27.7d | Same circuit = identical on 2 clients |
+| `test_circuit_budget` | R-13.27.7d | Exceed budget -> warning + depower |
+| `test_terrain_seed` | R-13.27.8a | Same seed -> identical terrain cross-platform |
+| `test_biome_composition` | R-13.27.8b | Plains = grass/dirt, desert = sand |
+| `test_companion_follow` | R-13.15.1 | Companion maintains follow distance |
+| `test_companion_teleport` | R-13.15.1 | Teleports when distance exceeded |
+| `test_pet_needs_decay` | R-13.15.2 | Needs drain to zero -> command refusal |
+| `test_mount_locomotion` | R-13.15.3b | Mount physics replaces player physics |
+| `test_mounted_combat` | R-13.15.3c | Only allowed abilities available |
+| `test_flying_mount_alt` | R-13.15.3d | Flying mount respects altitude limit |
+| `test_taming_progress` | R-13.15.4 | Multiple feedings advance progress bar |
+| `test_taming_probability` | R-13.15.4 | Level deficit reduces success rate |
+| `test_life_stages` | R-13.15.5a | Baby -> juvenile -> adult stat changes |
+| `test_evolution_branch` | R-13.15.5b | Meat diet -> combat wolf specialization |
+| `test_breeding_inheritance` | R-13.15.5c | Offspring inherits parental traits |
+
+### Integration Tests
+
+| Test | Req | Description |
+|------|-----|-------------|
+| `test_fog_gpu_texture` | NFR-13.20.1 | 512x512 grid, 128 sources: GPU < 0.5ms |
+| `test_fog_cpu_fallback` | NFR-13.20.1 | Same config: CPU < 2ms |
+| `test_grid_pathfind_perf` | NFR-13.21.1 | 100x100 grid pathfinding < 2ms |
+| `test_turn_transition` | NFR-13.21.2 | Camera focus + UI update < 500ms |
+| `test_minigame_create_teardown` | NFR-13.26.1 | Create < 500ms, teardown < 200ms, zero leak |
+| `test_minigame_100_cycles` | NFR-13.26.1 | 100 create/destroy cycles: zero net alloc |
+| `test_rhythm_input_latency` | NFR-13.26.2 | Audio-to-detection < 16ms |
+| `test_racing_tick_precision` | NFR-13.22.1 | 10 identical laps: variance < 1ms |
+| `test_chunk_mesh_perf` | NFR-13.27.1 | 1000 chunks avg < 2ms per mesh |
+| `test_block_modify_latency` | NFR-13.27.1 | Input to visual update < 16ms |
+| `test_32k_chunks_60fps` | NFR-13.27.1 | 32,768 chunks sustained 60 fps |
+| `test_companion_8_budget` | NFR-13.15.1 | 8 companions total AI < 4ms/frame |
+| `test_mount_swap_latency` | NFR-13.15.2 | Locomotion transition < 100ms |
+
+### Benchmarks
+
+| Benchmark | Target | Source |
+|-----------|--------|--------|
+| Fog GPU texture gen (512x512, 128 sources) | < 0.5 ms | NFR-13.20.1 |
+| Fog network payload (512x512, 4 factions) | <= 262,144 bytes | NFR-13.20.2 |
+| Grid pathfinding (100x100) | < 2 ms | NFR-13.21.1 |
+| Hit probability computation | < 0.1 ms | NFR-13.21.1 |
+| Minigame session create | < 500 ms | NFR-13.26.1 |
+| Minigame session teardown | < 200 ms | NFR-13.26.1 |
+| Rhythm input latency | < 16 ms | NFR-13.26.2 |
+| Racing lap time variance | < 1 ms | NFR-13.22.1 |
+| Ghost storage | <= 10 KB/min | NFR-13.22.2 |
+| Chunk meshing | < 2 ms per chunk | NFR-13.27.1 |
+| Incremental re-mesh | < 1 ms | NFR-13.27.1 |
+| Light propagation (single block) | < 0.5 ms | NFR-13.27.1 |
+| Block placement latency | < 16 ms | NFR-13.27.1 |
+| Companion AI per frame (8 companions) | < 4 ms | NFR-13.15.1 |
+| Mount locomotion swap | < 100 ms | NFR-13.15.2 |
+
+## Open Questions
+
+1. **Fog grid resolution** -- Should the fog grid
+   resolution be independent of chunk size, or
+   should it align to chunk boundaries for
+   efficient streaming?
+2. **Turn-based network model** -- Should
+   turn-based combat use lockstep or
+   server-authoritative resolution? Lockstep
+   simplifies replay but increases cheat surface.
+3. **Minigame asset hot-reload** -- Can minigame
+   assets be hot-reloaded while a session is
+   active, or only between sessions?
+4. **Racing physics substep** -- Should racing
+   vehicle physics use a separate 120 Hz substep
+   or run within the global physics tick?
+5. **Chunk meshing thread budget** -- How many
+   worker threads should be reserved for chunk
+   meshing during gameplay to avoid starving
+   other systems?
+6. **Block world persistence format** -- Should
+   chunk data use the engine's standard
+   serialization (RON + binary companion) or a
+   custom compact format optimized for block data?
+7. **Companion teleport animation** -- Should
+   companion teleport be instant or play a
+   fade-out/fade-in effect? Instant is simpler;
+   animated is more polished.
+8. **Breeding trait randomness** -- Should
+   trait inheritance use a seeded PRNG for
+   deterministic breeding outcomes in
+   multiplayer, or accept non-determinism with
+   server-authoritative resolution?
