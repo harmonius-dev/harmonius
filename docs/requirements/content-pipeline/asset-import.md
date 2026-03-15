@@ -1,9 +1,9 @@
 # R-12.1 Asset Import
 
 ## R-12.1.1 Native Asset Ingestion
-The engine **SHALL** accept asset exports produced by DCC tool plugins in the engine's native
-binary format, validate format version and magic bytes, verify content hashes against the embedded
-BLAKE3 digest, and register each asset in the asset database with automatic content-addressable
+The engine **SHALL** accept asset exports produced by DCC tool plugins in the engine's native binary
+format, validate format version and magic bytes, verify content hashes against the embedded BLAKE3
+digest, and register each asset in the asset database with automatic content-addressable
 deduplication.
 - **Derived from:** [F-12.1.1](../../features/content-pipeline/asset-import.md)
 - **Rationale:** A single validated ingestion path for plugin-exported assets ensures data integrity
@@ -24,8 +24,8 @@ decoded textures into the texture compression pipeline.
 
 ## R-12.1.3 Audio Source Import
 The engine **SHALL** import raw audio source files in WAV, FLAC, and Ogg Vorbis formats, extract
-metadata (sample rate, channel count, bit depth, loop points, cue markers), and store the raw
-audio data alongside metadata for downstream encoding.
+metadata (sample rate, channel count, bit depth, loop points, cue markers), and store the raw audio
+data alongside metadata for downstream encoding.
 - **Derived from:** [F-12.1.3](../../features/content-pipeline/asset-import.md)
 - **Rationale:** Accepting standard lossless and compressed audio formats allows sound designers to
   supply assets directly without requiring a DCC plugin export step.
@@ -34,8 +34,8 @@ audio data alongside metadata for downstream encoding.
 
 ## R-12.1.4 Import Validation and Error Reporting
 The engine **SHALL** validate all imported assets against schema definitions, format version
-constraints, and content integrity checks, and report errors with source file path, byte offset,
-and actionable fix suggestions.
+constraints, and content integrity checks, and report errors with source file path, byte offset, and
+actionable fix suggestions.
 - **Derived from:** [F-12.1.4](../../features/content-pipeline/asset-import.md)
 - **Rationale:** Precise error reporting with fix suggestions reduces artist iteration time and
   prevents corrupt or incompatible assets from entering the pipeline.
@@ -52,5 +52,5 @@ cancellation that rolls back partially imported assets to maintain database cons
   large-scale asset libraries where importing thousands of assets sequentially would be
   prohibitively slow.
 - **Verification:** Batch-import 100+ assets and confirm all complete with correct status; cancel
-  mid-batch and confirm no partially imported assets remain in the database; vary concurrency
-  limits and confirm they are respected.
+  mid-batch and confirm no partially imported assets remain in the database; vary concurrency limits
+  and confirm they are respected.

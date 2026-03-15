@@ -4,19 +4,19 @@
 
 ### R-8.7.1 World Sharding and Instancing
 
-The engine **SHALL** partition the persistent game world into shards (full world copies for population
-management) and instances (isolated zone copies for dungeons, raids, battlegrounds), managing
-character-to-shard assignment, cross-shard social features, shard merging/splitting based on
-population, and parameterized instance difficulty and lockout timers.
+The engine **SHALL** partition the persistent game world into shards (full world copies for
+population management) and instances (isolated zone copies for dungeons, raids, battlegrounds),
+managing character-to-shard assignment, cross-shard social features, shard merging/splitting based
+on population, and parameterized instance difficulty and lockout timers.
 
 - **Derived from:** [F-8.7.1](../../features/networking/mmo-infrastructure.md)
 - **Rationale:** No single server can host an entire MMO population; sharding and instancing are the
   fundamental scaling mechanisms for persistent worlds.
-- **Verification:** Integration test: create 3 shards and verify players are assigned to shards based
-  on configured rules. Verify cross-shard friends list, guild roster, and mail operate correctly. Spin
-  up a dungeon instance with difficulty parameters and verify isolated state. Verify shard merge
-  moves all players and state to the target shard without data loss. Verify instance lockout timers
-  prevent re-entry within the configured cooldown.
+- **Verification:** Integration test: create 3 shards and verify players are assigned to shards
+  based on configured rules. Verify cross-shard friends list, guild roster, and mail operate
+  correctly. Spin up a dungeon instance with difficulty parameters and verify isolated state. Verify
+  shard merge moves all players and state to the target shard without data loss. Verify instance
+  lockout timers prevent re-entry within the configured cooldown.
 
 ### R-8.7.2 Seamless Zone Transitions
 
@@ -37,18 +37,18 @@ near zone edges to prevent pop-in.
 
 ### R-8.7.3 Dynamic Server Mesh
 
-The engine **SHALL** distribute the continuous game world across a mesh of server processes where each
-process owns a spatial region that dynamically resizes based on entity density and CPU load, splitting
-overloaded regions across additional server processes and merging underutilized regions to conserve
-resources.
+The engine **SHALL** distribute the continuous game world across a mesh of server processes where
+each process owns a spatial region that dynamically resizes based on entity density and CPU load,
+splitting overloaded regions across additional server processes and merging underutilized regions to
+conserve resources.
 
 - **Derived from:** [F-8.7.3](../../features/networking/mmo-infrastructure.md)
 - **Rationale:** Fixed zone boundaries cannot handle dynamic player concentrations like guild sieges
   or world boss events; dynamic spatial partitioning adapts to real-time load.
 - **Verification:** Integration test: simulate 500 players converging on a single region. Verify the
-  mesh controller splits the region across 2 or more server processes within 10 seconds. Disperse the
-  players and verify regions merge back within 30 seconds. Verify no player experiences a disconnect
-  or visible glitch during split or merge operations.
+  mesh controller splits the region across 2 or more server processes within 10 seconds. Disperse
+  the players and verify regions merge back within 30 seconds. Verify no player experiences a
+  disconnect or visible glitch during split or merge operations.
 
 ### R-8.7.4 Player Migration Between Servers
 
@@ -85,10 +85,10 @@ throughput of tens of thousands of transactions per second across the server fle
 
 ### R-8.7.6 Load Balancing and Auto-Scaling
 
-The engine **SHALL** monitor server process CPU, memory, network utilization, and player count in real
-time, automatically provisioning or deprovisioning server processes to match demand, reacting to
-population surges within seconds and scaling down by draining players before terminating underutilized
-servers.
+The engine **SHALL** monitor server process CPU, memory, network utilization, and player count in
+real time, automatically provisioning or deprovisioning server processes to match demand, reacting
+to population surges within seconds and scaling down by draining players before terminating
+underutilized servers.
 
 - **Derived from:** [F-8.7.6](../../features/networking/mmo-infrastructure.md)
 - **Rationale:** MMO populations fluctuate dramatically; auto-scaling prevents both overprovisioning
@@ -110,8 +110,8 @@ microservices with their own persistence, resolving concurrent operations determ
 - **Verification:** Integration test: list an auction item on shard A and verify it is visible and
   purchasable from shard B. Send cross-shard mail with an attachment and verify delivery. Simulate
   concurrent auction bid and buyout on the same item and verify deterministic resolution (one
-  succeeds, one fails with correct error). Verify each service continues operating when one shard
-  is offline.
+  succeeds, one fails with correct error). Verify each service continues operating when one shard is
+  offline.
 
 ## Inter-Server Communication
 
@@ -119,8 +119,8 @@ microservices with their own persistence, resolving concurrent operations determ
 
 The engine **SHALL** provide a typed, serialized message bus for server-to-server communication over
 persistent TCP connections with automatic reconnection, supporting publish-subscribe channels and
-point-to-point routing, with configurable per-channel delivery guarantees (at-most-once, at-least-once,
-exactly-once).
+point-to-point routing, with configurable per-channel delivery guarantees (at-most-once,
+at-least-once, exactly-once).
 
 - **Derived from:** [F-8.7.8](../../features/networking/mmo-infrastructure.md)
 - **Rationale:** Server mesh coordination, cross-shard events, and global chat require reliable

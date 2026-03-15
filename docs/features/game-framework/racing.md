@@ -29,10 +29,10 @@ data-driven — custom modes are assembled from composable rule components in th
 
 ### F-13.22.3a Racing AI Navigation
 
-AI-controlled racers navigate tracks via waypoint splines with configurable racing lines,
-braking points, and speed targets per segment. AI difficulty is controlled by top speed
-limiter, braking accuracy, and racing line adherence. Spline data and per-segment parameters
-are authored as data assets per track.
+AI-controlled racers navigate tracks via waypoint splines with configurable racing lines, braking
+points, and speed targets per segment. AI difficulty is controlled by top speed limiter, braking
+accuracy, and racing line adherence. Spline data and per-segment parameters are authored as data
+assets per track.
 
 - **Requirements:** R-13.22.3a
 - **Dependencies:** F-13.22.1, F-7.2.1 (Steering Behaviors)
@@ -40,10 +40,10 @@ are authored as data assets per track.
 
 ### F-13.22.3b Rubber-Banding Difficulty
 
-Rubber-banding dynamically adjusts AI speed based on position relative to the player.
-Trailing AI speeds up and leading AI slows down to maintain competitive gaps. Aggressive
-rubber-banding keeps all racers within a configurable time window of the player. Rubber-band
-intensity is a per-difficulty-tier parameter.
+Rubber-banding dynamically adjusts AI speed based on position relative to the player. Trailing AI
+speeds up and leading AI slows down to maintain competitive gaps. Aggressive rubber-banding keeps
+all racers within a configurable time window of the player. Rubber-band intensity is a
+per-difficulty-tier parameter.
 
 - **Requirements:** R-13.22.3b
 - **Dependencies:** F-13.22.3a
@@ -51,10 +51,10 @@ intensity is a per-difficulty-tier parameter.
 
 ### F-13.22.3c AI Racing Behavior
 
-AI racers avoid collisions using simplified avoidance steering, jostle for position on
-straights, and defend racing lines through corners. Behavior aggressiveness is configurable
-per AI personality profile (cautious, balanced, aggressive). Personality profiles are
-data-driven assets authored in the visual editor.
+AI racers avoid collisions using simplified avoidance steering, jostle for position on straights,
+and defend racing lines through corners. Behavior aggressiveness is configurable per AI personality
+profile (cautious, balanced, aggressive). Personality profiles are data-driven assets authored in
+the visual editor.
 
 - **Requirements:** R-13.22.3c
 - **Dependencies:** F-13.22.3a, F-7.2.1 (Steering Behaviors)
@@ -62,8 +62,8 @@ data-driven assets authored in the visual editor.
 
 ### F-13.22.4 Drift Scoring and Boost System
 
-Detect and score sustained drifts based on slip angle, speed, and duration. Drift detection uses
-the vehicle's lateral velocity relative to its forward direction — exceeding a slip angle threshold
+Detect and score sustained drifts based on slip angle, speed, and duration. Drift detection uses the
+vehicle's lateral velocity relative to its forward direction — exceeding a slip angle threshold
 triggers drift state. Drift score accumulates based on angle (higher angle = more points), speed
 (faster = more points), and duration (combo multiplier). Drift score can fill a boost meter that
 grants a temporary speed boost when activated. The boost system supports configurable boost sources:
@@ -78,11 +78,10 @@ effects (exhaust flame, motion lines, FOV widening).
 
 Record the player's best run as a ghost vehicle — a transparent replay of inputs and positions that
 races alongside the player in time trial mode. Ghosts are stored as compressed input/position
-streams referenced by track and player. Per-track leaderboards display best times with player
-names, vehicle used, and date. Online leaderboards sync through the platform services (F-14.5.2)
-for global competition. Ghost data can be shared between players for competitive challenges. The
-ghost system reuses the replay recording infrastructure (F-8.6.1) with a lightweight vehicle-only
-subset.
+streams referenced by track and player. Per-track leaderboards display best times with player names,
+vehicle used, and date. Online leaderboards sync through the platform services (F-14.5.2) for global
+competition. Ghost data can be shared between players for competitive challenges. The ghost system
+reuses the replay recording infrastructure (F-8.6.1) with a lightweight vehicle-only subset.
 
 - **Requirements:** R-13.22.5
 - **Dependencies:** F-8.6.1 (Replay Recording), F-14.5.2 (Leaderboards)

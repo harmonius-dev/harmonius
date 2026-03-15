@@ -23,8 +23,8 @@ threshold-based filtering.
 
 - **Requirements:** R-7.4.2
 - **Dependencies:** F-7.4.1
-- **Platform notes:** Mobile limits candidate action pool to 8 (vs. 32 on desktop) for
-  low-LOD agents to reduce per-tick evaluation cost.
+- **Platform notes:** Mobile limits candidate action pool to 8 (vs. 32 on desktop) for low-LOD
+  agents to reduce per-tick evaluation cost.
 
 ### F-7.4.3 Considerations & Input Axes
 
@@ -43,22 +43,21 @@ action evaluations. Custom considerations are registered by gameplay code throug
 
 Extends single-score selection with a two-axis model: one axis ranks action categories (combat,
 social, survival) and a second axis ranks specific actions within the chosen category. Prevents
-low-urgency actions in critical categories from being drowned out by high-scoring but less
-important actions in other categories.
+low-urgency actions in critical categories from being drowned out by high-scoring but less important
+actions in other categories.
 
 - **Requirements:** R-7.4.4
 - **Dependencies:** F-7.4.2
-- **Platform notes:** Mobile may fall back to single-axis scoring for low-LOD agents to
-  halve evaluation cost; high-LOD agents use full dual-axis.
+- **Platform notes:** Mobile may fall back to single-axis scoring for low-LOD agents to halve
+  evaluation cost; high-LOD agents use full dual-axis.
 
 ### F-7.4.5 Context-Based Reasoning
 
-Groups actions into context sets (in-combat, exploring, fleeing, socializing) and evaluates only
-the active context's action pool each tick. Context transitions are governed by hysteresis
-thresholds to avoid rapid switching. Reduces per-tick evaluation cost for NPCs with large action
-repertoires.
+Groups actions into context sets (in-combat, exploring, fleeing, socializing) and evaluates only the
+active context's action pool each tick. Context transitions are governed by hysteresis thresholds to
+avoid rapid switching. Reduces per-tick evaluation cost for NPCs with large action repertoires.
 
 - **Requirements:** R-7.4.5
 - **Dependencies:** F-7.4.2
-- **Platform notes:** Context filtering is especially important on mobile where per-tick AI
-  budget is tight; mobile uses coarser context groups with fewer actions per set.
+- **Platform notes:** Context filtering is especially important on mobile where per-tick AI budget
+  is tight; mobile uses coarser context groups with fewer actions per set.

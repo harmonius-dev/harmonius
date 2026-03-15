@@ -1,8 +1,9 @@
 # Harmonius Game Engine -- Requirements
 
-Complete requirements for the Harmonius game engine, a general-purpose, all-genre engine supporting MMO, RPG, FPS,
-RTS, 2D, VR, co-op, and local multiplayer games. Each requirement has a unique identifier (e.g., `R-2.3.1` is the
-first requirement in category 2.3). Requirements trace to features in [docs/features/](../features/).
+Complete requirements for the Harmonius game engine, a general-purpose, all-genre engine supporting
+MMO, RPG, FPS, RTS, 2D, VR, co-op, and local multiplayer games. Each requirement has a unique
+identifier (e.g., `R-2.3.1` is the first requirement in category 2.3). Requirements trace to
+features in [docs/features/](../features/).
 
 ## Summary
 

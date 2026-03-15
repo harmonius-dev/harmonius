@@ -4,9 +4,9 @@
 
 ## US-1.7.1 Use Per-Frame Arena Allocators for Transient Data
 
-**As an** engine developer (P-26), **I want** a bump allocator that resets at zero cost at
-frame boundaries, **so that** transient allocations for command buffers, query results, and
-scratch data avoid individual deallocation overhead and fragmentation in hot loops.
+**As an** engine developer (P-26), **I want** a bump allocator that resets at zero cost at frame
+boundaries, **so that** transient allocations for command buffers, query results, and scratch data
+avoid individual deallocation overhead and fragmentation in hot loops.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -28,9 +28,9 @@ individual deallocations in hot paths.
 
 ## US-1.7.3 Reclaim Temporary Allocations Before Frame End
 
-**As an** engine developer (P-26), **I want** nested arena scopes that reclaim memory before
-the frame boundary, **so that** systems with bursty allocation patterns reduce peak memory
-usage by freeing temporary allocations immediately when the scope exits.
+**As an** engine developer (P-26), **I want** nested arena scopes that reclaim memory before the
+frame boundary, **so that** systems with bursty allocation patterns reduce peak memory usage by
+freeing temporary allocations immediately when the scope exits.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -40,9 +40,9 @@ usage by freeing temporary allocations immediately when the scope exits.
 
 ## US-1.7.4 Verify Nested Arena Scope Correctness
 
-**As an** engine tester (P-27), **I want** to verify that nested arena scopes correctly
-restore parent watermarks and that child allocations are not accessible after scope exit,
-**so that** scoped memory management is safe and correct.
+**As an** engine tester (P-27), **I want** to verify that nested arena scopes correctly restore
+parent watermarks and that child allocations are not accessible after scope exit, **so that** scoped
+memory management is safe and correct.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -54,9 +54,9 @@ restore parent watermarks and that child allocations are not accessible after sc
 
 ## US-1.7.5 Allocate and Free Fixed-Size Blocks in O(1)
 
-**As an** engine developer (P-26), **I want** a fixed-size block pool with O(1) alloc and
-dealloc via an intrusive free list, **so that** ECS component columns and resource containers
-have zero fragmentation and constant-time lifecycle operations.
+**As an** engine developer (P-26), **I want** a fixed-size block pool with O(1) alloc and dealloc
+via an intrusive free list, **so that** ECS component columns and resource containers have zero
+fragmentation and constant-time lifecycle operations.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -67,9 +67,9 @@ have zero fragmentation and constant-time lifecycle operations.
 
 ## US-1.7.6 Use Pool Allocators for ECS Component Storage
 
-**As a** game developer (P-15), **I want** ECS component columns backed by typed pool
-allocators, **so that** component allocation and deallocation are constant-time and do not
-cause memory fragmentation over long sessions.
+**As a** game developer (P-15), **I want** ECS component columns backed by typed pool allocators,
+**so that** component allocation and deallocation are constant-time and do not cause memory
+fragmentation over long sessions.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -81,9 +81,9 @@ cause memory fragmentation over long sessions.
 
 ## US-1.7.7 Reference Resources Safely via Generational Handles
 
-**As an** engine developer (P-26), **I want** generational index handles with O(1) access,
-O(1) validation, and safe recycling, **so that** stale references to despawned entities and
-unloaded assets are detected without garbage collection or reference counting.
+**As an** engine developer (P-26), **I want** generational index handles with O(1) access, O(1)
+validation, and safe recycling, **so that** stale references to despawned entities and unloaded
+assets are detected without garbage collection or reference counting.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -105,9 +105,9 @@ iteration for archetype columns while maintaining stable external references.
 
 ## US-1.7.9 Verify Slot Map Handle Stability During Compaction
 
-**As an** engine tester (P-27), **I want** to verify that slot map handles remain valid after
-dense array insertions, removals, and compactions, **so that** external references never
-silently point to wrong data.
+**As an** engine tester (P-27), **I want** to verify that slot map handles remain valid after dense
+array insertions, removals, and compactions, **so that** external references never silently point to
+wrong data.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -119,9 +119,9 @@ silently point to wrong data.
 
 ## US-1.7.10 Enforce Per-Subsystem Memory Budgets
 
-**As an** engine developer (P-26), **I want** configurable memory budgets per engine subsystem
-with eviction or backpressure policies on limit, **so that** no single subsystem starves
-others and memory usage is predictable at scale.
+**As an** engine developer (P-26), **I want** configurable memory budgets per engine subsystem with
+eviction or backpressure policies on limit, **so that** no single subsystem starves others and
+memory usage is predictable at scale.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -131,9 +131,9 @@ others and memory usage is predictable at scale.
 
 ## US-1.7.11 Configure Memory Budgets for Different Hardware
 
-**As a** game developer (P-15), **I want** to configure memory budgets per platform target
-(mobile 2-6 GB, Switch 4 GB, desktop 16+ GB), **so that** the engine runs within hardware
-constraints on every supported device.
+**As a** game developer (P-15), **I want** to configure memory budgets per platform target (mobile
+2-6 GB, Switch 4 GB, desktop 16+ GB), **so that** the engine runs within hardware constraints on
+every supported device.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -143,9 +143,9 @@ constraints on every supported device.
 
 ## US-1.7.12 Verify Memory Budgets Prevent Over-Allocation
 
-**As an** engine tester (P-27), **I want** to verify that subsystem memory budgets trigger
-eviction or backpressure before over-allocating, **so that** no out-of-memory crashes occur
-in long-running sessions.
+**As an** engine tester (P-27), **I want** to verify that subsystem memory budgets trigger eviction
+or backpressure before over-allocating, **so that** no out-of-memory crashes occur in long-running
+sessions.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -157,9 +157,9 @@ in long-running sessions.
 
 ## US-1.7.13 Profile Memory Usage in Development Builds
 
-**As a** QA engineer (P-19), **I want** allocator profiling hooks recording allocation counts,
-byte totals, peak usage, and call sites that compile out in release builds, **so that** I can
-identify memory leaks and budget violations without impacting shipping performance.
+**As a** QA engineer (P-19), **I want** allocator profiling hooks recording allocation counts, byte
+totals, peak usage, and call sites that compile out in release builds, **so that** I can identify
+memory leaks and budget violations without impacting shipping performance.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -170,9 +170,9 @@ identify memory leaks and budget violations without impacting shipping performan
 
 ## US-1.7.14 Tag Allocations by Subsystem for Memory Reports
 
-**As an** engine developer (P-26), **I want** every allocation tagged with a subsystem
-identifier that propagates through child allocators, **so that** I can generate per-subsystem
-memory reports to diagnose growth in long-running server processes.
+**As an** engine developer (P-26), **I want** every allocation tagged with a subsystem identifier
+that propagates through child allocators, **so that** I can generate per-subsystem memory reports to
+diagnose growth in long-running server processes.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -182,9 +182,9 @@ memory reports to diagnose growth in long-running server processes.
 
 ## US-1.7.15 Verify Allocation Tags Propagate Through Child Allocators
 
-**As an** engine tester (P-27), **I want** to verify that allocation tags correctly propagate
-from parent to child allocators, **so that** memory reports accurately attribute all
-allocations to their originating subsystem.
+**As an** engine tester (P-27), **I want** to verify that allocation tags correctly propagate from
+parent to child allocators, **so that** memory reports accurately attribute all allocations to their
+originating subsystem.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -197,8 +197,8 @@ allocations to their originating subsystem.
 ## US-1.7.16 Represent Cosmic Distances With Arbitrary Precision
 
 **As a** game developer (P-15), **I want** arbitrary precision integer and float types with
-deterministic cross-platform arithmetic, **so that** I can represent cosmic distances,
-astronomical masses, and geological timescales beyond the range of 64-bit types.
+deterministic cross-platform arithmetic, **so that** I can represent cosmic distances, astronomical
+masses, and geological timescales beyond the range of 64-bit types.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -209,9 +209,9 @@ astronomical masses, and geological timescales beyond the range of 64-bit types.
 
 ## US-1.7.17 Verify Arbitrary Precision Determinism Across Platforms
 
-**As an** engine tester (P-27), **I want** to verify that arbitrary precision arithmetic
-produces identical results on all supported platforms, **so that** cosmic distance
-calculations are deterministic for multiplayer synchronization.
+**As an** engine tester (P-27), **I want** to verify that arbitrary precision arithmetic produces
+identical results on all supported platforms, **so that** cosmic distance calculations are
+deterministic for multiplayer synchronization.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -221,9 +221,9 @@ calculations are deterministic for multiplayer synchronization.
 
 ## US-1.7.18 Understand Precision Types in the Visual Editor
 
-**As a** designer (P-5), **I want** the visual editor to display arbitrary precision values
-with human-readable unit formatting, **so that** I can understand cosmic distances and
-timescales when editing universe-scale properties.
+**As a** designer (P-5), **I want** the visual editor to display arbitrary precision values with
+human-readable unit formatting, **so that** I can understand cosmic distances and timescales when
+editing universe-scale properties.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

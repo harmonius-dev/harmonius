@@ -15,13 +15,12 @@ multi-floor grids for buildings with stairs connecting elevation tiers.
 
 ### F-13.21.2 Turn Manager and Initiative
 
-Turn order resolution for turn-based games. Turn modes: round-robin (fixed order),
-initiative-based (speed stat determines order each round), team-based (all of team A acts, then
-team B), and phase-based (movement phase, action phase, end phase for all units). The turn manager
-maintains the current actor, turn count, and phase. UI displays the turn order bar showing upcoming
-actors with portraits. Turn transitions trigger camera focus on the active unit. AI and player
-units use the same turn interface — player turns await input while AI turns execute behavior trees
-automatically.
+Turn order resolution for turn-based games. Turn modes: round-robin (fixed order), initiative-based
+(speed stat determines order each round), team-based (all of team A acts, then team B), and
+phase-based (movement phase, action phase, end phase for all units). The turn manager maintains the
+current actor, turn count, and phase. UI displays the turn order bar showing upcoming actors with
+portraits. Turn transitions trigger camera focus on the active unit. AI and player units use the
+same turn interface — player turns await input while AI turns execute behavior trees automatically.
 
 - **Requirements:** R-13.21.2
 - **Dependencies:** F-13.21.1, F-7.3.1 (Behavior Trees)
@@ -45,10 +44,10 @@ passes remaining AP (or saves it for overwatch). AP resets at the start of each 
 Cover mechanics on the tactical grid. Cover objects (walls, crates, pillars) provide half or full
 cover bonuses to defense. Cover is directional — only effective against attacks from the covered
 direction. Flanking (attacking from a direction without cover) negates cover bonuses and may grant
-accuracy/damage bonuses. Overwatch: a unit spends AP to enter overwatch stance, automatically
-firing at the first enemy that moves within line-of-sight during the enemy turn. Overwatch shots
-use a reduced accuracy modifier. Both cover values and overwatch state are visualized on the grid
-with shield icons and overwatch cones.
+accuracy/damage bonuses. Overwatch: a unit spends AP to enter overwatch stance, automatically firing
+at the first enemy that moves within line-of-sight during the enemy turn. Overwatch shots use a
+reduced accuracy modifier. Both cover values and overwatch state are visualized on the grid with
+shield icons and overwatch cones.
 
 - **Requirements:** R-13.21.4
 - **Dependencies:** F-13.21.3, F-13.21.1

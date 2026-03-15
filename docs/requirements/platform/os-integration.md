@@ -5,8 +5,8 @@
 ### R-14.2.1 Clipboard Access
 
 The engine **SHALL** read and write plain text and image data to the system clipboard on Windows,
-macOS, and Linux (X11 and Wayland), with clipboard operations executing asynchronously so they
-never block the game loop.
+macOS, and Linux (X11 and Wayland), with clipboard operations executing asynchronously so they never
+block the game loop.
 
 - **Derived from:** [F-14.2.1](../../features/platform/os-integration.md)
 - **Rationale:** Players rely on the clipboard for pasting chat messages, sharing coordinates, and
@@ -35,8 +35,8 @@ open.
 ### R-14.2.3 System Notifications and Tray Icons
 
 The engine **SHALL** display OS toast notifications for background events when the game window is
-minimized or unfocused, and **SHALL** optionally provide a system tray icon with a context menu,
-on platforms that support these features.
+minimized or unfocused, and **SHALL** optionally provide a system tray icon with a context menu, on
+platforms that support these features.
 
 - **Derived from:** [F-14.2.3](../../features/platform/os-integration.md)
 - **Rationale:** Players tabbed out of the game need to be alerted to time-sensitive events such as
@@ -49,8 +49,8 @@ on platforms that support these features.
 ### R-14.2.4 Drag and Drop
 
 The engine **SHALL** accept files and data dragged from the OS desktop onto the game window,
-validating MIME types and file extensions before accepting the drop, on Windows, macOS, and
-Linux (X11 and Wayland).
+validating MIME types and file extensions before accepting the drop, on Windows, macOS, and Linux
+(X11 and Wayland).
 
 - **Derived from:** [F-14.2.4](../../features/platform/os-integration.md)
 - **Rationale:** Drag-and-drop provides a natural workflow for importing add-ons and assets without
@@ -73,9 +73,9 @@ layout-change event.
   search fields without switching layouts; dead-key sequences are essential for Latin-extended and
   Cyrillic scripts.
 - **Verification:** Integration test: on each platform, set the layout to French AZERTY and type a
-  dead-key sequence (e.g., `^` then `e` to produce `ê`); assert the engine emits `ê` as the
-  composed character. Switch the layout at runtime and assert the key-to-character mapping updates
-  within one frame.
+  dead-key sequence (e.g., `^` then `e` to produce `ê`); assert the engine emits `ê` as the composed
+  character. Switch the layout at runtime and assert the key-to-character mapping updates within one
+  frame.
 
 ### R-14.2.6 Input Method Editor (IME) for CJK
 
@@ -90,3 +90,22 @@ composition, commit, and candidate-list events.
   sequence and assert the engine receives composition update events with the correct intermediate
   text. Commit the composition and assert the final text matches the expected character. Move and
   resize the game window and assert the candidate window position updates to track the text cursor.
+
+## Async API Surface
+
+### R-14.2.7 Uniform Async/Await API for Clipboard and Dialogs
+
+The engine **SHALL** expose all clipboard read/write and file dialog operations as `async fn`
+methods that return `Future`s, providing a uniform calling convention across all platforms so that
+callers always use `.await` regardless of whether the underlying platform API is synchronous or
+asynchronous.
+
+- **Derived from:** [F-14.2.7](../../features/platform/os-integration.md)
+- **Rationale:** A uniform async API eliminates platform-conditional calling conventions in gameplay
+  and editor code. Callers should not need to know whether Wayland requires true async or Windows
+  wraps a sync call.
+- **Verification:** Unit test: call `Clipboard::read_text()` and `FileDialog::open_file()` from an
+  async context on each platform and verify they compile and resolve without blocking the calling
+  thread. Integration test: invoke clipboard write followed by clipboard read using `.await` on all
+  three platforms and verify round-trip correctness. Static analysis: verify no synchronous
+  clipboard or dialog call sites exist outside platform backend modules.

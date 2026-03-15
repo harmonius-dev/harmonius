@@ -2,9 +2,9 @@
 
 ## US-10.2.1 Read Rich Text With Inline Formatting and Complex Scripts
 
-**As a** player (P-23), **I want** rich text with inline formatting, embedded icons,
-hyperlinks, and proper shaping for complex scripts like Arabic and Thai, **so that** chat
-messages, quest descriptions, and tooltips render correctly in any language.
+**As a** player (P-23), **I want** rich text with inline formatting, embedded icons, hyperlinks, and
+proper shaping for complex scripts like Arabic and Thai, **so that** chat messages, quest
+descriptions, and tooltips render correctly in any language.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -15,9 +15,9 @@ messages, quest descriptions, and tooltips render correctly in any language.
 
 ## US-10.2.2 Implement Rich Text Rendering With Cross-Platform Shaping
 
-**As an** engine developer (P-26), **I want** to implement a rich text renderer using a
-bundled shaping library for consistent cross-platform behavior, **so that** text renders
-identically on Windows, macOS, and Linux without OS-specific shaper differences.
+**As an** engine developer (P-26), **I want** to implement a rich text renderer using a bundled
+shaping library for consistent cross-platform behavior, **so that** text renders identically on
+Windows, macOS, and Linux without OS-specific shaper differences.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -27,9 +27,9 @@ identically on Windows, macOS, and Linux without OS-specific shaper differences.
 
 ## US-10.2.3 Verify Rich Text Renders Identically Across Platforms
 
-**As a** QA engineer (P-19), **I want** to verify that rich text with complex scripts,
-bidirectional content, and inline formatting renders identically on all platforms, **so that**
-players see the same text regardless of operating system.
+**As a** QA engineer (P-19), **I want** to verify that rich text with complex scripts, bidirectional
+content, and inline formatting renders identically on all platforms, **so that** players see the
+same text regardless of operating system.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -40,8 +40,8 @@ players see the same text regardless of operating system.
 ## US-10.2.4 Type Chat Messages With IME and Clipboard Support
 
 **As a** player (P-23), **I want** text input with IME support for CJK languages, clipboard
-operations, and undo/redo, **so that** I can compose chat messages in any language during
-gameplay without dropping characters.
+operations, and undo/redo, **so that** I can compose chat messages in any language during gameplay
+without dropping characters.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -52,9 +52,9 @@ gameplay without dropping characters.
 
 ## US-10.2.5 Implement Platform-Specific IME Integration
 
-**As an** engine developer (P-26), **I want** to implement IME integration using
-platform-specific APIs (TSM on macOS, IMM32/TSF on Windows, IBus/Fcitx on Linux), **so that**
-CJK text input works natively on each platform.
+**As an** engine developer (P-26), **I want** to implement IME integration using platform-specific
+APIs (TSM on macOS, IMM32/TSF on Windows, IBus/Fcitx on Linux), **so that** CJK text input works
+natively on each platform.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -64,9 +64,9 @@ CJK text input works natively on each platform.
 
 ## US-10.2.6 Interact With Buttons, Sliders, and Toggles
 
-**As a** player (P-23), **I want** responsive buttons, sliders, checkboxes, radio buttons,
-and toggle controls with animated state transitions, **so that** I can adjust settings and
-interact with UI controls smoothly with any input device.
+**As a** player (P-23), **I want** responsive buttons, sliders, checkboxes, radio buttons, and
+toggle controls with animated state transitions, **so that** I can adjust settings and interact with
+UI controls smoothly with any input device.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -77,9 +77,9 @@ interact with UI controls smoothly with any input device.
 
 ## US-10.2.7 Design Custom Button and Slider Styles
 
-**As an** artist (P-8), **I want** to style buttons, sliders, and toggles with custom
-graphics for each interaction state (normal, hovered, pressed, disabled), **so that** UI
-controls match the game's visual identity.
+**As an** artist (P-8), **I want** to style buttons, sliders, and toggles with custom graphics for
+each interaction state (normal, hovered, pressed, disabled), **so that** UI controls match the
+game's visual identity.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -89,9 +89,9 @@ controls match the game's visual identity.
 
 ## US-10.2.8 Verify Slider Input Handles High-Frequency Dragging
 
-**As an** engine tester (P-27), **I want** to verify that sliders handle high-frequency
-dragging input without jitter or value skipping, **so that** audio volume, camera
-sensitivity, and other slider-driven settings feel responsive and precise.
+**As an** engine tester (P-27), **I want** to verify that sliders handle high-frequency dragging
+input without jitter or value skipping, **so that** audio volume, camera sensitivity, and other
+slider-driven settings feel responsive and precise.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -101,9 +101,9 @@ sensitivity, and other slider-driven settings feel responsive and precise.
 
 ## US-10.2.9 Filter Long Option Lists in Dropdown Menus
 
-**As a** player (P-23), **I want** searchable dropdown menus that filter options as I type,
-**so that** I can quickly find the right server, item category, or setting from lists with
-hundreds of entries.
+**As a** player (P-23), **I want** searchable dropdown menus that filter options as I type, **so
+that** I can quickly find the right server, item category, or setting from lists with hundreds of
+entries.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -113,9 +113,9 @@ hundreds of entries.
 
 ## US-10.2.10 Implement Searchable Dropdowns With Dynamic Options
 
-**As a** developer (P-15), **I want** to create dropdown widgets with dynamic option lists
-that update in real time and support search filtering, **so that** server selection,
-auction house filters, and category pickers handle large datasets efficiently.
+**As a** developer (P-15), **I want** to create dropdown widgets with dynamic option lists that
+update in real time and support search filtering, **so that** server selection, auction house
+filters, and category pickers handle large datasets efficiently.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -125,9 +125,9 @@ auction house filters, and category pickers handle large datasets efficiently.
 
 ## US-10.2.11 Scroll Through Thousands of List Items Smoothly
 
-**As a** player (P-23), **I want** virtualized list views with inertial scrolling, scroll
-bars, and overscroll feedback that handle thousands of entries without lag, **so that**
-browsing auction house results, guild rosters, and chat history feels responsive.
+**As a** player (P-23), **I want** virtualized list views with inertial scrolling, scroll bars, and
+overscroll feedback that handle thousands of entries without lag, **so that** browsing auction house
+results, guild rosters, and chat history feels responsive.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -138,9 +138,9 @@ browsing auction house results, guild rosters, and chat history feels responsive
 
 ## US-10.2.12 Implement Virtualized List Views With Variable-Height Items
 
-**As an** engine developer (P-26), **I want** to implement scroll views that virtualize
-rendering to only the visible subset plus a buffer, **so that** lists with thousands of
-entries have constant memory and layout cost regardless of total item count.
+**As an** engine developer (P-26), **I want** to implement scroll views that virtualize rendering to
+only the visible subset plus a buffer, **so that** lists with thousands of entries have constant
+memory and layout cost regardless of total item count.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -151,9 +151,9 @@ entries have constant memory and layout cost regardless of total item count.
 
 ## US-10.2.13 Inspect Items Via Tooltips and Right-Click Context Menus
 
-**As a** player (P-23), **I want** hover-triggered tooltips showing item stats and
-comparisons, right-click context menus with nested submenus, and modal confirmation
-dialogs, **so that** I can inspect, compare, and manage items efficiently.
+**As a** player (P-23), **I want** hover-triggered tooltips showing item stats and comparisons,
+right-click context menus with nested submenus, and modal confirmation dialogs, **so that** I can
+inspect, compare, and manage items efficiently.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -164,9 +164,9 @@ dialogs, **so that** I can inspect, compare, and manage items efficiently.
 
 ## US-10.2.14 Design Tooltip Layouts for Item Stat Comparisons
 
-**As a** designer (P-5), **I want** to design tooltip layouts that display item stats,
-set bonuses, and equipped-vs-inspected comparisons, **so that** players can make informed
-equipment decisions at a glance.
+**As a** designer (P-5), **I want** to design tooltip layouts that display item stats, set bonuses,
+and equipped-vs-inspected comparisons, **so that** players can make informed equipment decisions at
+a glance.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -176,10 +176,9 @@ equipment decisions at a glance.
 
 ## US-10.2.15 Drag Items Between Inventory, Equipment, and Trade Windows
 
-**As a** player (P-23), **I want** to drag and drop items between inventory slots,
-equipment slots, action bars, trade windows, and mail attachments with ghost preview and
-valid drop target highlighting, **so that** I can manage my items intuitively across all
-container types.
+**As a** player (P-23), **I want** to drag and drop items between inventory slots, equipment slots,
+action bars, trade windows, and mail attachments with ghost preview and valid drop target
+highlighting, **so that** I can manage my items intuitively across all container types.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -190,9 +189,9 @@ container types.
 
 ## US-10.2.16 Implement Cross-Panel Drag and Drop With Stack Splitting
 
-**As a** developer (P-15), **I want** a drag-and-drop system that works across different
-container panel types with split-stack operations, **so that** items move correctly between
-inventory, bank, vendor, and trade windows.
+**As a** developer (P-15), **I want** a drag-and-drop system that works across different container
+panel types with split-stack operations, **so that** items move correctly between inventory, bank,
+vendor, and trade windows.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -202,9 +201,9 @@ inventory, bank, vendor, and trade windows.
 
 ## US-10.2.17 See Accurate Progress for Loading, Crafting, and Experience
 
-**As a** player (P-23), **I want** determinate progress bars, circular indicators, and
-loading spinners that show accurate progress for loading screens, crafting timers, and
-experience tracking, **so that** I know how long each operation will take.
+**As a** player (P-23), **I want** determinate progress bars, circular indicators, and loading
+spinners that show accurate progress for loading screens, crafting timers, and experience tracking,
+**so that** I know how long each operation will take.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -215,9 +214,9 @@ experience tracking, **so that** I know how long each operation will take.
 
 ## US-10.2.18 Style Progress Bars to Match Game Visual Identity
 
-**As an** artist (P-8), **I want** to customize progress bar fill colors, gradients,
-segment styles, and label fonts, **so that** experience bars, reputation tracks, and
-crafting timers match the game's visual design language.
+**As an** artist (P-8), **I want** to customize progress bar fill colors, gradients, segment styles,
+and label fonts, **so that** experience bars, reputation tracks, and crafting timers match the
+game's visual design language.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

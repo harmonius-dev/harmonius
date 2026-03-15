@@ -1,12 +1,12 @@
 # Harmonius Plan
 
-Work plan for the Harmonius game engine. Maps every feature-group from the
-[domain decomposition](domain-decomposition.md) to its requirements, features, design status, and implementation
-status. Organized by wave to show what can proceed in parallel at each stage.
+Work plan for the Harmonius game engine. Maps every feature-group from the [domain
+decomposition](domain-decomposition.md) to its requirements, features, design status, and
+implementation status. Organized by wave to show what can proceed in parallel at each stage.
 
-**Current state:** Requirements and features are fully specified (1,501 requirements, 1,204 features across 15
-domains). Build system is configured (C++26, CMake, vcpkg, Metal/Vulkan/D3D12 backend selection). No source code
-exists. No designs exist.
+**Current state:** Requirements and features are fully specified (1,501 requirements, 1,204 features
+across 15 domains). Build system is configured (C++26, CMake, vcpkg, Metal/Vulkan/D3D12 backend
+selection). No source code exists. No designs exist.
 
 ---
 
@@ -20,8 +20,8 @@ No prerequisites. These are the first feature-groups to design and implement.
 | 2 | Platform.Threading | [threading-async](../requirements/platform/threading-async.md) | [threading-async](../features/platform/threading-async.md) | Not started | Not started |
 | 3 | Platform.OS | [os-integration](../requirements/platform/os-integration.md), [crash-reporting](../requirements/platform/crash-reporting.md), [platform-services](../requirements/platform/platform-services.md), [filesystem](../requirements/platform/filesystem.md) | [os-integration](../features/platform/os-integration.md), [crash-reporting](../features/platform/crash-reporting.md), [platform-services](../features/platform/platform-services.md), [filesystem](../features/platform/filesystem.md) | Not started | Not started |
 
-**Exit criteria:** Windows open on macOS/Linux/Windows, thread pool executes tasks, async file I/O completes, crash
-handler captures dumps.
+**Exit criteria:** Windows open on macOS/Linux/Windows, thread pool executes tasks, async file I/O
+completes, crash handler captures dumps.
 
 ---
 
@@ -38,9 +38,9 @@ Requires Wave 0. CoreRuntime.ECS should lead; other groups depend on its primiti
 | 8 | CoreRuntime.MemoryAsyncIO | [memory-management](../requirements/core-runtime/memory-management.md), [async-io](../requirements/core-runtime/async-io.md) | [memory-management](../features/core-runtime/memory-management.md), [async-io](../features/core-runtime/async-io.md) | Not started | Not started |
 | 9 | CoreRuntime.SpatialIndex | [spatial-indexing](../requirements/core-runtime/spatial-indexing.md) | [spatial-indexing](../features/core-runtime/spatial-indexing.md) | Not started | Not started |
 
-**Exit criteria:** Entities spawn, queries iterate, systems schedule in parallel, transforms propagate, events fire,
-types reflect, binary serialization round-trips, arena allocators work, async I/O completes, spatial index
-inserts/queries work.
+**Exit criteria:** Entities spawn, queries iterate, systems schedule in parallel, transforms
+propagate, events fire, types reflect, binary serialization round-trips, arena allocators work,
+async I/O completes, spatial index inserts/queries work.
 
 **Interoperability contracts to lock before Wave 2:**
 
@@ -80,9 +80,9 @@ Requires specific Wave 1 nodes. 9 feature-groups can proceed concurrently.
 | GPU backend trait | Rendering.GPUAbstraction | Device, command buffer, pipeline, buffer, texture APIs |
 | Asset handle type | ContentPipeline.AssetDatabase | Typed handle, load state, reference counting |
 
-**Exit criteria:** GPU device created and triangle renders, assets import from disk, rigid bodies simulate, ray-casts
-work, keyboard/mouse/gamepad input captured, audio plays, skeleton evaluates and skins, network connection
-established.
+**Exit criteria:** GPU device created and triangle renders, assets import from disk, rigid bodies
+simulate, ray-casts work, keyboard/mouse/gamepad input captured, audio plays, skeleton evaluates and
+skins, network connection established.
 
 ---
 
@@ -111,10 +111,10 @@ Requires specific Wave 2 nodes. 12 feature-groups can proceed concurrently.
 |----------|-----------|-------|
 | Render graph pass API | Rendering.RenderGraph | How to declare passes, read/write resources, submit commands |
 
-**Exit criteria:** Render graph executes passes with automatic barriers, shaders compile via DXC/MSC, assets stream
-from disk, input actions map to gameplay, spatial audio occludes, animation state machines transition, joints
-constrain bodies, NavMesh generates and pathfinds, components replicate over network, meshlets render, widget tree
-lays out, particles simulate on GPU.
+**Exit criteria:** Render graph executes passes with automatic barriers, shaders compile via
+DXC/MSC, assets stream from disk, input actions map to gameplay, spatial audio occludes, animation
+state machines transition, joints constrain bodies, NavMesh generates and pathfinds, components
+replicate over network, meshlets render, widget tree lays out, particles simulate on GPU.
 
 ---
 
@@ -144,10 +144,10 @@ Requires specific Wave 3 nodes. 19 feature-groups can proceed concurrently.
 | 48 | GeometryWorld.Foliage | [foliage](../requirements/geometry-world/foliage.md) | [foliage](../features/geometry-world/foliage.md) | Rendering.CoreRendering, CoreRuntime.SpatialIndex, ContentPipeline.Streaming | Not started | Not started |
 | 49 | Input.Gestures | [gestures](../requirements/input/gestures.md) | [gestures](../features/input/gestures.md) | Input.DeviceAbstraction | Not started | Not started |
 
-**Exit criteria:** Lit PBR scene renders with shadows, hot reload works for all asset types, AI agents navigate and
-perceive, procedural animation (IK, ragdoll blend) works, audio has DSP chains, client-side prediction works,
-gameplay primitives exist, camera follows player, UI renders in-game HUD, decals and screen effects render, terrain
-and foliage render with streaming.
+**Exit criteria:** Lit PBR scene renders with shadows, hot reload works for all asset types, AI
+agents navigate and perceive, procedural animation (IK, ragdoll blend) works, audio has DSP chains,
+client-side prediction works, gameplay primitives exist, camera follows player, UI renders in-game
+HUD, decals and screen effects render, terrain and foliage render with streaming.
 
 ---
 
@@ -209,8 +209,8 @@ Requires specific Wave 5 nodes. 18 feature-groups can proceed concurrently.
 
 ## Requirements and Features Not Yet Mapped to Feature-Groups
 
-The following requirement/feature docs exist but are not explicitly covered by the 87 feature-groups above. They
-should be folded into existing groups or promoted to new groups.
+The following requirement/feature docs exist but are not explicitly covered by the 87 feature-groups
+above. They should be folded into existing groups or promoted to new groups.
 
 ### Unmapped Requirements
 

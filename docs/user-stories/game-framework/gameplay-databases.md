@@ -10,55 +10,53 @@ well-defined structures without writing code.
 
 ## US-13.7.1.2 Use Complex Types in Table Schemas
 
-**As a** designer (P-5), **I want to** use enums, entity references, asset references, and
-nested structs as column types, **so that** table schemas model relationships between game
-data.
+**As a** designer (P-5), **I want to** use enums, entity references, asset references, and nested
+structs as column types, **so that** table schemas model relationships between game data.
 
 ## US-13.7.1.3 Verify Schema Validation Catches Mismatches on Load
 
-**As an** engine tester (P-27), **I want to** load data with columns that do not match the
-schema type and verify a clear error is reported, **so that** schema mismatches are detected
-before runtime.
+**As an** engine tester (P-27), **I want to** load data with columns that do not match the schema
+type and verify a clear error is reported, **so that** schema mismatches are detected before
+runtime.
 
 ## F-13.7.2 Row-Based Data Tables
 
 ## US-13.7.2.1 Create and Populate Data Tables
 
-**As a** gameplay director (P-3), **I want to** create row-based data tables keyed by unique
-IDs and populate them in the visual editor, **so that** gameplay data (items, abilities,
-NPCs) is managed as structured assets.
+**As a** gameplay director (P-3), **I want to** create row-based data tables keyed by unique IDs and
+populate them in the visual editor, **so that** gameplay data (items, abilities, NPCs) is managed as
+structured assets.
 
 ## US-13.7.2.2 Reference Rows Across Tables With Foreign Keys
 
-**As a** designer (P-5), **I want to** reference rows in other tables by ID (e.g., a loot table
-row references item table rows), **so that** cross-table relationships are explicit and
-validated.
+**As a** designer (P-5), **I want to** reference rows in other tables by ID (e.g., a loot table row
+references item table rows), **so that** cross-table relationships are explicit and validated.
 
 ## US-13.7.2.3 Verify Foreign Key Integrity on Load
 
-**As an** engine tester (P-27), **I want to** create a table with a broken foreign key reference
-and verify the loader reports the specific row and column, **so that** broken references are
-caught early.
+**As an** engine tester (P-27), **I want to** create a table with a broken foreign key reference and
+verify the loader reports the specific row and column, **so that** broken references are caught
+early.
 
 ## F-13.7.3 Curve and Formula Definitions
 
 ## US-13.7.3.1 Define Numeric Progression Curves
 
-**As a** gameplay director (P-3), **I want to** define numeric curves (leveling XP, stat
-scaling, damage falloff) with interpolation modes (linear, step, cubic Bezier), **so that**
-progression tuning is done through visual curve editing.
+**As a** gameplay director (P-3), **I want to** define numeric curves (leveling XP, stat scaling,
+damage falloff) with interpolation modes (linear, step, cubic Bezier), **so that** progression
+tuning is done through visual curve editing.
 
 ## US-13.7.3.2 Reference Curves in Formula Columns
 
-**As a** designer (P-5), **I want to** formula columns to reference curves and other table
-values, **so that** computed fields (e.g., damage = base * level_curve(level)) are derived
-from authored data.
+**As a** designer (P-5), **I want to** formula columns to reference curves and other table values,
+**so that** computed fields (e.g., damage = base * level_curve(level)) are derived from authored
+data.
 
 ## US-13.7.3.3 Verify Curve Interpolation Accuracy
 
-**As an** engine tester (P-27), **I want to** sample curves at all interpolation modes and
-verify output values match expected mathematical results, **so that** curve evaluation is
-numerically correct.
+**As an** engine tester (P-27), **I want to** sample curves at all interpolation modes and verify
+output values match expected mathematical results, **so that** curve evaluation is numerically
+correct.
 
 ## F-13.7.4 Visual Formula Nodes
 
@@ -70,61 +68,60 @@ calculations and XP requirements are authored visually.
 
 ## US-13.7.4.2 Connect Column References as Formula Inputs
 
-**As a** designer (P-5), **I want to** column references and curve lookups to appear as typed
-input pins on formula nodes, **so that** formulas integrate with table data without manual
-wiring.
+**As a** designer (P-5), **I want to** column references and curve lookups to appear as typed input
+pins on formula nodes, **so that** formulas integrate with table data without manual wiring.
 
 ## US-13.7.4.3 Verify Visual Formulas Compile to Graph Bytecode
 
-**As an** engine tester (P-27), **I want to** compile a visual formula and verify it produces
-the same bytecode as equivalent gameplay logic graphs, **so that** the formula system shares
-the logic graph runtime.
+**As an** engine tester (P-27), **I want to** compile a visual formula and verify it produces the
+same bytecode as equivalent gameplay logic graphs, **so that** the formula system shares the logic
+graph runtime.
 
 ## F-13.7.5 Row Inheritance and Prototype Chains
 
 ## US-13.7.5.1 Define Parent-Child Row Relationships
 
-**As a** gameplay director (P-3), **I want to** table rows to inherit column values from a
-parent row, overriding only specified columns, **so that** item hierarchies (Item > Weapon >
-Sword > FireSword) share common data.
+**As a** gameplay director (P-3), **I want to** table rows to inherit column values from a parent
+row, overriding only specified columns, **so that** item hierarchies (Item > Weapon > Sword >
+FireSword) share common data.
 
 ## US-13.7.5.2 Filter Equipment Slots by Prototype Chain
 
 **As a** designer (P-5), **I want to** equipment slot filtering to accept any row whose chain
-includes a specified prototype (e.g., "Head" slot accepts all "Headgear" descendants),
-**so that** slot compatibility is driven by data inheritance.
+includes a specified prototype (e.g., "Head" slot accepts all "Headgear" descendants), **so that**
+slot compatibility is driven by data inheritance.
 
 ## US-13.7.5.3 Verify Circular Inheritance Is Detected
 
-**As an** engine tester (P-27), **I want to** create a circular inheritance chain and verify
-it is detected and rejected at validation time, **so that** infinite loops in prototype
-chains are impossible.
+**As an** engine tester (P-27), **I want to** create a circular inheritance chain and verify it is
+detected and rejected at validation time, **so that** infinite loops in prototype chains are
+impossible.
 
 ## F-13.7.6 Currency and Resource Definitions
 
 ## US-13.7.6.1 Define Named Currency Types
 
-**As a** gameplay director (P-3), **I want to** define currency types (gold, gems, crafting
-tokens, reputation) with display name, icon, max cap, and decimal precision, **so that** all
-currencies are centrally managed as data.
+**As a** gameplay director (P-3), **I want to** define currency types (gold, gems, crafting tokens,
+reputation) with display name, icon, max cap, and decimal precision, **so that** all currencies are
+centrally managed as data.
 
 ## US-13.7.6.2 Configure Multi-Currency Transaction Costs
 
-**As a** designer (P-5), **I want to** items and services to cost multiple currencies (e.g.,
-100 gold AND 5 gems), **so that** the economy uses layered currency sinks.
+**As a** designer (P-5), **I want to** items and services to cost multiple currencies (e.g., 100
+gold AND 5 gems), **so that** the economy uses layered currency sinks.
 
 ## US-13.7.6.3 Verify Currency Cap Enforcement
 
-**As an** engine tester (P-27), **I want to** attempt to exceed a currency's max cap and verify
-the excess is rejected or clamped, **so that** currency caps are enforced.
+**As an** engine tester (P-27), **I want to** attempt to exceed a currency's max cap and verify the
+excess is rejected or clamped, **so that** currency caps are enforced.
 
 ## F-13.7.7 Crafting Recipe Tables
 
 ## US-13.7.7.1 Define Crafting Recipes With Input/Output Items
 
-**As a** gameplay director (P-3), **I want to** define recipes mapping input items (with
-quantities) to output items (with quantities and probability), **so that** the crafting system
-is entirely data-driven.
+**As a** gameplay director (P-3), **I want to** define recipes mapping input items (with quantities)
+to output items (with quantities and probability), **so that** the crafting system is entirely
+data-driven.
 
 ## US-13.7.7.2 Gate Recipes by Skill Level and Discovery
 
@@ -133,16 +130,16 @@ discovery conditions before they appear, **so that** recipe availability reflect
 
 ## US-13.7.7.3 Verify Recipe Validation Catches Broken Item References
 
-**As an** engine tester (P-27), **I want to** create a recipe referencing a nonexistent item ID
-and verify the validator reports the error, **so that** broken recipes are caught at load time.
+**As an** engine tester (P-27), **I want to** create a recipe referencing a nonexistent item ID and
+verify the validator reports the error, **so that** broken recipes are caught at load time.
 
 ## F-13.7.8 Loot Tables with Weighted Random
 
 ## US-13.7.8.1 Author Hierarchical Loot Tables
 
-**As a** gameplay director (P-3), **I want to** create loot tables with weighted random
-selection, guaranteed drops, pity counters, and nested sub-tables, **so that** drop
-distribution is tunable through data.
+**As a** gameplay director (P-3), **I want to** create loot tables with weighted random selection,
+guaranteed drops, pity counters, and nested sub-tables, **so that** drop distribution is tunable
+through data.
 
 ## US-13.7.8.2 Add Conditional Loot Entries
 
@@ -152,36 +149,34 @@ faction), **so that** drops are contextually relevant to the player.
 ## US-13.7.8.3 Verify Deterministic RNG Seeding for Loot
 
 **As an** engine tester (P-27), **I want to** seed the loot RNG with a known value and verify
-identical drop sequences, **so that** server-authoritative drops are deterministic and
-verifiable.
+identical drop sequences, **so that** server-authoritative drops are deterministic and verifiable.
 
 ## F-13.7.9 Stat and Attribute Tables
 
 ## US-13.7.9.1 Define Base and Derived Stats in Tables
 
 **As a** gameplay director (P-3), **I want to** define base stats (health, mana, strength) and
-derived stats (crit chance, armor reduction) with configurable modifier stacking rules,
-**so that** the stat system is fully data-driven.
+derived stats (crit chance, armor reduction) with configurable modifier stacking rules, **so that**
+the stat system is fully data-driven.
 
 ## US-13.7.9.2 Configure Modifier Stacking Rules Per Stat
 
-**As a** designer (P-5), **I want to** configure stacking order (additive group then
-multiplicative group) per stat, **so that** modifier interactions follow intended balance
-rules.
+**As a** designer (P-5), **I want to** configure stacking order (additive group then multiplicative
+group) per stat, **so that** modifier interactions follow intended balance rules.
 
 ## US-13.7.9.3 Verify Stat Modifier Stacking Order
 
-**As an** engine tester (P-27), **I want to** apply flat, percentage, and multiplicative
-modifiers to a stat and verify the final value matches expected stacking order, **so that**
-modifier math is correct.
+**As an** engine tester (P-27), **I want to** apply flat, percentage, and multiplicative modifiers
+to a stat and verify the final value matches expected stacking order, **so that** modifier math is
+correct.
 
 ## F-13.7.10 Asset List Tables
 
 ## US-13.7.10.1 Map Logical Names to Asset Handles
 
-**As a** gameplay director (P-3), **I want to** create reference tables mapping item IDs to
-mesh, material, VFX, and sound assets, **so that** the content pipeline builds correct asset
-dependency graphs.
+**As a** gameplay director (P-3), **I want to** create reference tables mapping item IDs to mesh,
+material, VFX, and sound assets, **so that** the content pipeline builds correct asset dependency
+graphs.
 
 ## US-13.7.10.2 Define Per-Platform Asset Overrides
 
@@ -190,80 +185,77 @@ resolution on console) and localization variants, **so that** assets adapt to ta
 
 ## US-13.7.10.3 Verify Asset References Resolve on All Platforms
 
-**As an** engine tester (P-27), **I want to** load asset list tables on each supported platform
-and verify all asset references resolve, **so that** no platform has missing assets.
+**As an** engine tester (P-27), **I want to** load asset list tables on each supported platform and
+verify all asset references resolve, **so that** no platform has missing assets.
 
 ## F-13.7.11 Indexed Lookup and Filtering
 
 ## US-13.7.11.1 Build Secondary Indices on Queried Columns
 
-**As a** gameplay director (P-3), **I want to** build indices on frequently queried columns for
-O(1) key lookup and O(log n) range queries, **so that** loot, shop, and recipe lookups are
-fast.
+**As a** gameplay director (P-3), **I want to** build indices on frequently queried columns for O(1)
+key lookup and O(log n) range queries, **so that** loot, shop, and recipe lookups are fast.
 
 ## US-13.7.11.2 Filter Table Rows With Compound Predicates
 
 **As a** designer (P-5), **I want to** filter rows using AND/OR/NOT composition with column
-predicates (equals, range, contains, regex), **so that** runtime queries return precise
-subsets.
+predicates (equals, range, contains, regex), **so that** runtime queries return precise subsets.
 
 ## US-13.7.11.3 Verify Index Lookup Performance
 
-**As an** engine tester (P-27), **I want to** query an indexed table with 10,000 rows and
-verify O(1) key lookup and O(log n) range query performance, **so that** indices provide the
-expected speedup.
+**As an** engine tester (P-27), **I want to** query an indexed table with 10,000 rows and verify
+O(1) key lookup and O(log n) range query performance, **so that** indices provide the expected
+speedup.
 
 ## F-13.7.12 ECS Component Binding
 
 ## US-13.7.12.1 Auto-Populate Components From Database Rows
 
 **As a** gameplay director (P-3), **I want to** spawned entities to automatically populate ECS
-components from referenced database rows, **so that** entity templates are driven by data
-tables without manual binding.
+components from referenced database rows, **so that** entity templates are driven by data tables
+without manual binding.
 
 ## US-13.7.12.2 Configure Partial Binding and Default Overrides
 
-**As a** designer (P-5), **I want to** bind only specified columns and override defaults per
-entity, **so that** entities customize their data without full table row duplication.
+**As a** designer (P-5), **I want to** bind only specified columns and override defaults per entity,
+**so that** entities customize their data without full table row duplication.
 
 ## US-13.7.12.3 Verify Two-Way Sync for Editor Workflows
 
-**As an** engine tester (P-27), **I want to** modify a component value in the editor and verify
-it syncs back to the database row, **so that** two-way binding works for authoring workflows.
+**As an** engine tester (P-27), **I want to** modify a component value in the editor and verify it
+syncs back to the database row, **so that** two-way binding works for authoring workflows.
 
 ## F-13.7.13 Hot Reload and Versioned Patching
 
 ## US-13.7.13.1 Hot-Reload Data Tables Without Server Restart
 
-**As a** gameplay director (P-3), **I want to** push data table changes to a running server
-without restarting, **so that** live balance tuning happens with zero downtime.
+**As a** gameplay director (P-3), **I want to** push data table changes to a running server without
+restarting, **so that** live balance tuning happens with zero downtime.
 
 ## US-13.7.13.2 Rollback Table Patches on Error
 
-**As a** designer (P-5), **I want to** roll back a hot-reloaded table to its previous version
-if the new data introduces errors, **so that** bad patches are reversible.
+**As a** designer (P-5), **I want to** roll back a hot-reloaded table to its previous version if the
+new data introduces errors, **so that** bad patches are reversible.
 
 ## US-13.7.13.3 Verify ECS Bindings Refresh After Hot Reload
 
-**As an** engine tester (P-27), **I want to** hot-reload a data table and verify all ECS
-component bindings referencing changed rows are updated, **so that** hot reload propagates
-consistently.
+**As an** engine tester (P-27), **I want to** hot-reload a data table and verify all ECS component
+bindings referencing changed rows are updated, **so that** hot reload propagates consistently.
 
 ## F-13.7.14 Data Validation and Constraint Checking
 
 ## US-13.7.14.1 Validate All Tables on Load
 
 **As a** gameplay director (P-3), **I want to** all data tables to be validated against their
-schemas on load (type checks, foreign key integrity, range constraints), **so that** data
-errors are caught before they affect gameplay.
+schemas on load (type checks, foreign key integrity, range constraints), **so that** data errors are
+caught before they affect gameplay.
 
 ## US-13.7.14.2 Define Custom Validation Rules
 
-**As a** designer (P-5), **I want to** define custom validation rules (e.g., loot table weights
-sum to a valid range) per table, **so that** domain-specific constraints are enforced.
+**As a** designer (P-5), **I want to** define custom validation rules (e.g., loot table weights sum
+to a valid range) per table, **so that** domain-specific constraints are enforced.
 
 ## US-13.7.14.3 Verify Validation Reports Specific Errors
 
-**As an** engine tester (P-27), **I want to** introduce validation errors in multiple tables
-and verify each error report includes table name, row ID, and column, **so that** designers
-can locate and fix errors quickly.
+**As an** engine tester (P-27), **I want to** introduce validation errors in multiple tables and
+verify each error report includes table name, row ID, and column, **so that** designers can locate
+and fix errors quickly.

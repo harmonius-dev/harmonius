@@ -25,8 +25,8 @@ from the indirect draw buffer.
   scales to millions of meshlets without CPU bottlenecks.
 - **Verification:** Render a scene with the camera positioned so that at least 50% of meshlets are
   outside the frustum. Verify the indirect draw buffer contains zero entries for off-screen
-  meshlets. Compare against a CPU reference culler and confirm identical accept/reject decisions
-  for all meshlets.
+  meshlets. Compare against a CPU reference culler and confirm identical accept/reject decisions for
+  all meshlets.
 
 ## R-2.3.3 Backface Culling
 
@@ -45,17 +45,17 @@ camera position.
 
 The engine **SHALL** implement two-phase hierarchical Z-buffer occlusion culling where phase 1 tests
 meshlets against the previous frame's HZB (conservative) and phase 2 re-tests phase-1 rejects
-against the current frame's HZB to avoid missing newly-revealed geometry. The two-phase HZB algorithm
-is shared with the meshlet pipeline (R-3.1.2); this requirement covers the integration into the scene
-rendering pipeline.
+against the current frame's HZB to avoid missing newly-revealed geometry. The two-phase HZB
+algorithm is shared with the meshlet pipeline (R-3.1.2); this requirement covers the integration
+into the scene rendering pipeline.
 
 - **Derived from:** [F-2.3.4](../../features/rendering/core-rendering.md)
 - **Rationale:** Two-phase HZB prevents temporal disocclusion artifacts that single-phase occlusion
   culling produces when objects move or the camera translates.
 - **Verification:** Place a large occluder in front of 100 meshlets. Verify phase 1 rejects the
   occluded meshlets. Move the camera to reveal the occluded geometry and verify phase 2 recovers
-  them in the same frame with no one-frame pop-in. Measure that occlusion culling reduces draw
-  calls by at least 30% in a dense urban scene.
+  them in the same frame with no one-frame pop-in. Measure that occlusion culling reduces draw calls
+  by at least 30% in a dense urban scene.
 
 ## R-2.3.5 Orthographic Projection
 
@@ -63,8 +63,8 @@ The engine **SHALL** support orthographic camera projection producing correct re
 views, 2D game rendering, and shadow map generation.
 
 - **Derived from:** [F-2.3.5](../../features/rendering/core-rendering.md)
-- **Rationale:** Orthographic projection is required for 2D games, isometric views, and
-  directional light shadow map rendering.
+- **Rationale:** Orthographic projection is required for 2D games, isometric views, and directional
+  light shadow map rendering.
 - **Verification:** Render two identical cubes at different distances from an orthographic camera.
   Verify both cubes have identical screen-space size (within 1 pixel). Verify shadow map depth
   values are linear.
@@ -79,8 +79,8 @@ optional infinite far plane for maximum depth precision at distance.
   eliminating z-fighting at far distances that plagues standard depth mappings.
 - **Verification:** Render two coplanar surfaces at 10,000 units from the camera. Verify no
   z-fighting artifacts with reverse-Z enabled. Enable infinite far plane and verify objects at
-  extreme distance (1,000,000 units) remain depth-resolvable. Confirm the depth buffer stores 1.0
-  at the near plane and 0.0 at the far plane.
+  extreme distance (1,000,000 units) remain depth-resolvable. Confirm the depth buffer stores 1.0 at
+  the near plane and 0.0 at the far plane.
 
 ## R-2.3.7 GPU-Driven Instancing
 
@@ -94,8 +94,8 @@ order without batching.
   preserving correct depth ordering for transparent objects.
 - **Verification:** Render a scene with 5,000 opaque instances sharing 10 materials. Verify the
   indirect draw buffer contains exactly 10 draw calls (one per material batch). Add 50 transparent
-  objects and verify each produces an individual draw call in back-to-front order. Confirm no
-  visual artifacts from incorrect draw ordering.
+  objects and verify each produces an individual draw call in back-to-front order. Confirm no visual
+  artifacts from incorrect draw ordering.
 
 ## R-2.3.8 Render-to-Texture
 
@@ -118,9 +118,9 @@ probes, and IBL prefiltering, with dynamic cubemaps re-rendering specified faces
 - **Derived from:** [F-2.3.9](../../features/rendering/core-rendering.md)
 - **Rationale:** Cubemaps are the foundation for environment reflections, sky lighting, and
   image-based lighting precomputation.
-- **Verification:** Render a dynamic cubemap and verify all six faces contain correct scene
-  geometry from the probe position. Update only two faces per frame and verify the remaining four
-  retain their previous content. Verify seamless edge filtering across face boundaries.
+- **Verification:** Render a dynamic cubemap and verify all six faces contain correct scene geometry
+  from the probe position. Update only two faces per frame and verify the remaining four retain
+  their previous content. Verify seamless edge filtering across face boundaries.
 
 ## R-2.3.10 Scene Capture
 
@@ -133,8 +133,8 @@ mirrors, portals, and minimap rendering.
   viewpoints other than the main camera.
 - **Verification:** Configure a planar scene capture rendering a mirror. Verify the reflected image
   matches a reference rendering from the mirror's virtual camera position. Configure a cubemap
-  capture and verify all six faces contain correct geometry. Verify the capture texture is usable
-  as a material input in the same frame.
+  capture and verify all six faces contain correct geometry. Verify the capture texture is usable as
+  a material input in the same frame.
 
 ## R-2.3.11 Dynamic Resolution
 
@@ -147,14 +147,14 @@ minimum and maximum bounds.
   visible quality loss when paired with temporal upscaling.
 - **Verification:** Render a scene that exceeds the frame budget at native resolution. Verify the
   resolution scale decreases within 5 frames. Reduce scene complexity below budget and verify the
-  resolution scale increases back toward 100%. Verify the scale never exceeds the configured
-  maximum or falls below the configured minimum.
+  resolution scale increases back toward 100%. Verify the scale never exceeds the configured maximum
+  or falls below the configured minimum.
 
 ## R-2.3.12 Subsurface Scattering
 
-The engine **SHALL** provide screen-space and ray-traced subsurface scattering driven by per-material
-SSS profiles defining scatter radius and extinction coefficients, applicable to skin, wax, marble,
-and other translucent materials.
+The engine **SHALL** provide screen-space and ray-traced subsurface scattering driven by
+per-material SSS profiles defining scatter radius and extinction coefficients, applicable to skin,
+wax, marble, and other translucent materials.
 
 - **Derived from:** [F-2.3.12](../../features/rendering/core-rendering.md)
 - **Rationale:** Subsurface scattering is essential for realistic rendering of organic and

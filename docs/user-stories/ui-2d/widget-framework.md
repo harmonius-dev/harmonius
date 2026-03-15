@@ -2,9 +2,9 @@
 
 ## US-10.1.1 Build UI Layouts in the Visual Editor Without Code
 
-**As a** designer (P-5), **I want** to compose UI screens using a declarative widget tree
-authored entirely in the visual editor with template composition and slot injection, **so that**
-I can build complex MMO interfaces without editing text files or writing code.
+**As a** designer (P-5), **I want** to compose UI screens using a declarative widget tree authored
+entirely in the visual editor with template composition and slot injection, **so that** I can build
+complex MMO interfaces without editing text files or writing code.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -16,8 +16,8 @@ I can build complex MMO interfaces without editing text files or writing code.
 ## US-10.1.2 Verify Widget Tree Diffs Apply Minimal Mutations
 
 **As an** engine tester (P-27), **I want** to verify that the declarative tree diffing engine
-applies only insert, remove, update, and reorder mutations without full rebuilds, **so that**
-I can confirm the framework meets its O(n) diffing performance target for keyed lists.
+applies only insert, remove, update, and reorder mutations without full rebuilds, **so that** I can
+confirm the framework meets its O(n) diffing performance target for keyed lists.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -28,9 +28,9 @@ I can confirm the framework meets its O(n) diffing performance target for keyed 
 
 ## US-10.1.3 Develop the Retained Widget Tree with Efficient Diffing
 
-**As an** engine developer (P-26), **I want** to implement a retained widget tree with
-automatic minimal diffing using a keyed reconciliation algorithm, **so that** the framework
-achieves retained-mode performance with declarative authoring simplicity.
+**As an** engine developer (P-26), **I want** to implement a retained widget tree with automatic
+minimal diffing using a keyed reconciliation algorithm, **so that** the framework achieves
+retained-mode performance with declarative authoring simplicity.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -41,9 +41,9 @@ achieves retained-mode performance with declarative authoring simplicity.
 
 ## US-10.1.4 Recycle Widgets in Virtualized Lists Without Allocation Churn
 
-**As a** developer (P-15), **I want** widget instances pooled and recycled for virtualized
-list views and inventory grids, **so that** frequently rebuilt UI elements avoid allocation
-churn even when hundreds of items scroll in and out of view each second.
+**As a** developer (P-15), **I want** widget instances pooled and recycled for virtualized list
+views and inventory grids, **so that** frequently rebuilt UI elements avoid allocation churn even
+when hundreds of items scroll in and out of view each second.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -54,8 +54,8 @@ churn even when hundreds of items scroll in and out of view each second.
 ## US-10.1.5 Stress-Test Widget Pooling Under Rapid Scroll
 
 **As an** engine tester (P-27), **I want** to stress-test widget pooling by scrolling through
-thousands of items at maximum speed, **so that** I can verify zero allocation churn and
-confirm the active widget budget is respected on all platforms.
+thousands of items at maximum speed, **so that** I can verify zero allocation churn and confirm the
+active widget budget is respected on all platforms.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -65,9 +65,9 @@ confirm the active widget budget is respected on all platforms.
 
 ## US-10.1.6 Arrange Widgets Using Flexbox and Grid Layout
 
-**As a** designer (P-5), **I want** CSS-like flexbox for one-dimensional flows and grid
-layout for two-dimensional arrangements, **so that** I can build toolbars, action bars,
-inventory grids, and talent trees with automatic positioning and alignment.
+**As a** designer (P-5), **I want** CSS-like flexbox for one-dimensional flows and grid layout for
+two-dimensional arrangements, **so that** I can build toolbars, action bars, inventory grids, and
+talent trees with automatic positioning and alignment.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -77,9 +77,9 @@ inventory grids, and talent trees with automatic positioning and alignment.
 
 ## US-10.1.7 Anchor HUD Elements to Screen Edges and Other Widgets
 
-**As a** designer (P-5), **I want** anchor-based and constraint-based layout for HUD
-elements that maintain fixed positions relative to screen edges or other widgets, **so that**
-my layouts adapt correctly across resolutions without manual repositioning.
+**As a** designer (P-5), **I want** anchor-based and constraint-based layout for HUD elements that
+maintain fixed positions relative to screen edges or other widgets, **so that** my layouts adapt
+correctly across resolutions without manual repositioning.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -89,9 +89,9 @@ my layouts adapt correctly across resolutions without manual repositioning.
 
 ## US-10.1.8 Verify Layout Correctness Across Resolutions
 
-**As a** QA engineer (P-19), **I want** to verify that flexbox, grid, anchor, and constraint
-layouts produce correct results across all supported resolutions and aspect ratios, **so that**
-no widget overflows, clips incorrectly, or overlaps at any resolution.
+**As a** QA engineer (P-19), **I want** to verify that flexbox, grid, anchor, and constraint layouts
+produce correct results across all supported resolutions and aspect ratios, **so that** no widget
+overflows, clips incorrectly, or overlaps at any resolution.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -101,9 +101,9 @@ no widget overflows, clips incorrectly, or overlaps at any resolution.
 
 ## US-10.1.9 Theme the UI With Cascading Styles and Runtime Swapping
 
-**As a** designer (P-5), **I want** a CSS-like cascading style system with external theme
-files that can be swapped at runtime, **so that** I can support light/dark modes,
-faction-specific skins, and seasonal event themes without duplicating widget trees.
+**As a** designer (P-5), **I want** a CSS-like cascading style system with external theme files that
+can be swapped at runtime, **so that** I can support light/dark modes, faction-specific skins, and
+seasonal event themes without duplicating widget trees.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -113,9 +113,9 @@ faction-specific skins, and seasonal event themes without duplicating widget tre
 
 ## US-10.1.10 Create Faction-Themed UI Skins
 
-**As an** artist (P-8), **I want** to create distinct visual themes per faction by defining
-style overrides for colors, fonts, borders, and backgrounds, **so that** each faction's UI
-feels unique while sharing the same widget structure.
+**As an** artist (P-8), **I want** to create distinct visual themes per faction by defining style
+overrides for colors, fonts, borders, and backgrounds, **so that** each faction's UI feels unique
+while sharing the same widget structure.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -125,10 +125,9 @@ feels unique while sharing the same widget structure.
 
 ## US-10.1.11 Bind UI Widgets to Live Game State Reactively
 
-**As a** developer (P-15), **I want** reactive data bindings that automatically update UI
-when game state changes, supporting one-way, two-way, and computed values, **so that**
-player stats, inventory, quest progress, and buff durations reflect in real time without
-manual polling.
+**As a** developer (P-15), **I want** reactive data bindings that automatically update UI when game
+state changes, supporting one-way, two-way, and computed values, **so that** player stats,
+inventory, quest progress, and buff durations reflect in real time without manual polling.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -138,9 +137,9 @@ manual polling.
 
 ## US-10.1.12 See Real-Time Stat Updates Without Manual Refresh
 
-**As a** player (P-23), **I want** health, mana, experience, and quest progress to update
-on screen immediately when they change, **so that** I always see accurate information
-without needing to close and reopen panels.
+**As a** player (P-23), **I want** health, mana, experience, and quest progress to update on screen
+immediately when they change, **so that** I always see accurate information without needing to close
+and reopen panels.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -149,9 +148,9 @@ without needing to close and reopen panels.
 
 ## US-10.1.13 Navigate UI Panels With Keyboard and Gamepad
 
-**As a** player (P-23), **I want** keyboard tab order, D-pad directional navigation, focus
-groups, and focus trapping for modal dialogs, **so that** I can navigate complex MMO UI
-panels, cycle action bar slots, and switch between open panels without a mouse.
+**As a** player (P-23), **I want** keyboard tab order, D-pad directional navigation, focus groups,
+and focus trapping for modal dialogs, **so that** I can navigate complex MMO UI panels, cycle action
+bar slots, and switch between open panels without a mouse.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -162,9 +161,9 @@ panels, cycle action bar slots, and switch between open panels without a mouse.
 
 ## US-10.1.14 Test Focus Traversal Across Nested Menu Hierarchies
 
-**As a** QA engineer (P-19), **I want** to verify that focus traversal works correctly
-across nested menus, modal dialogs, and multiple open panels, **so that** no interactive
-element is unreachable and focus never gets stuck in a dead end.
+**As a** QA engineer (P-19), **I want** to verify that focus traversal works correctly across nested
+menus, modal dialogs, and multiple open panels, **so that** no interactive element is unreachable
+and focus never gets stuck in a dead end.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -174,9 +173,9 @@ element is unreachable and focus never gets stuck in a dead end.
 
 ## US-10.1.15 Switch Locale and See UI Re-Layout Automatically
 
-**As a** player (P-23), **I want** to switch the game's language at runtime and have all
-text, images, and layout directions update automatically, **so that** I can play in my
-preferred language including right-to-left languages like Arabic.
+**As a** player (P-23), **I want** to switch the game's language at runtime and have all text,
+images, and layout directions update automatically, **so that** I can play in my preferred language
+including right-to-left languages like Arabic.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -187,9 +186,9 @@ preferred language including right-to-left languages like Arabic.
 
 ## US-10.1.16 Verify Localization Across All Supported Languages
 
-**As a** QA engineer (P-19), **I want** to verify that every UI screen renders correctly
-in all supported languages, including RTL and CJK, **so that** no text overflows, clips,
-or breaks layout in any locale.
+**As a** QA engineer (P-19), **I want** to verify that every UI screen renders correctly in all
+supported languages, including RTL and CJK, **so that** no text overflows, clips, or breaks layout
+in any locale.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -199,9 +198,9 @@ or breaks layout in any locale.
 
 ## US-10.1.17 Place UI Panels in the 3D World for Diegetic Interfaces
 
-**As a** designer (P-5), **I want** to render the same widget tree as a world-space 3D
-panel that receives ray-cast input, **so that** I can create diegetic interfaces like
-in-game computer screens, holographic displays, and shop kiosks.
+**As a** designer (P-5), **I want** to render the same widget tree as a world-space 3D panel that
+receives ray-cast input, **so that** I can create diegetic interfaces like in-game computer screens,
+holographic displays, and shop kiosks.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -212,9 +211,9 @@ in-game computer screens, holographic displays, and shop kiosks.
 
 ## US-10.1.18 Interact With VR UI Using Controller and Hand Tracking
 
-**As a** player (P-23), **I want** to interact with VR UI panels using laser pointer, direct
-touch, gaze-and-dwell, and hand tracking pinch gestures, **so that** I can use menus and
-interfaces comfortably in VR without removing my headset.
+**As a** player (P-23), **I want** to interact with VR UI panels using laser pointer, direct touch,
+gaze-and-dwell, and hand tracking pinch gestures, **so that** I can use menus and interfaces
+comfortably in VR without removing my headset.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -225,9 +224,9 @@ interfaces comfortably in VR without removing my headset.
 
 ## US-10.1.19 Test VR Input Modes Across Controller Types
 
-**As a** QA engineer (P-19), **I want** to verify that all VR input modes work correctly
-across different headsets and controller types, **so that** no input method fails on any
-supported VR platform.
+**As a** QA engineer (P-19), **I want** to verify that all VR input modes work correctly across
+different headsets and controller types, **so that** no input method fails on any supported VR
+platform.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -237,9 +236,9 @@ supported VR platform.
 
 ## US-10.1.20 Animate Widget Properties With Keyframed Curves
 
-**As a** designer (P-5), **I want** to animate widget properties like position, opacity,
-color, rotation, and scale using keyframed curves with easing functions, **so that** I can
-create polished transition animations, pulsing highlights, and staggered list reveals.
+**As a** designer (P-5), **I want** to animate widget properties like position, opacity, color,
+rotation, and scale using keyframed curves with easing functions, **so that** I can create polished
+transition animations, pulsing highlights, and staggered list reveals.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -251,9 +250,9 @@ create polished transition animations, pulsing highlights, and staggered list re
 
 ## US-10.1.21 Implement the Widget Animation System
 
-**As an** engine developer (P-26), **I want** to implement a widget animation system that
-operates directly on widget tree properties independent of the game animation system,
-**so that** UI animations run at consistent frame rates regardless of game simulation state.
+**As an** engine developer (P-26), **I want** to implement a widget animation system that operates
+directly on widget tree properties independent of the game animation system, **so that** UI
+animations run at consistent frame rates regardless of game simulation state.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -263,9 +262,9 @@ operates directly on widget tree properties independent of the game animation sy
 
 ## US-10.1.22 Configure Audio Feedback Per Widget Interaction
 
-**As a** designer (P-5), **I want** automatic audio feedback for widget interactions with
-per-widget and per-theme sound overrides played through a dedicated UI mixer bus, **so that**
-every button click, hover, scroll, and notification has satisfying audio feedback.
+**As a** designer (P-5), **I want** automatic audio feedback for widget interactions with per-widget
+and per-theme sound overrides played through a dedicated UI mixer bus, **so that** every button
+click, hover, scroll, and notification has satisfying audio feedback.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -275,9 +274,9 @@ every button click, hover, scroll, and notification has satisfying audio feedbac
 
 ## US-10.1.23 Disable or Replace UI Sounds With Haptic Feedback
 
-**As a** player (P-23), **I want** to disable UI audio globally or per sound type and
-optionally replace it with haptic feedback, **so that** I can customize my sensory
-experience based on my accessibility needs and preferences.
+**As a** player (P-23), **I want** to disable UI audio globally or per sound type and optionally
+replace it with haptic feedback, **so that** I can customize my sensory experience based on my
+accessibility needs and preferences.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -287,9 +286,9 @@ experience based on my accessibility needs and preferences.
 
 ## US-10.1.24 Verify UI Renders Under Budget
 
-**As an** engine tester (P-27), **I want** to benchmark the full HUD rendering to verify
-it completes under 2ms GPU time and 50 draw calls, **so that** the UI meets its performance
-budget across all target platforms.
+**As an** engine tester (P-27), **I want** to benchmark the full HUD rendering to verify it
+completes under 2ms GPU time and 50 draw calls, **so that** the UI meets its performance budget
+across all target platforms.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

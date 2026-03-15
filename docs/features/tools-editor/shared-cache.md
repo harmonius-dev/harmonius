@@ -25,20 +25,20 @@ pre-compiled shaders available for their target.
 
 - **Requirements:** R-15.11.2
 - **Dependencies:** F-15.11.1, F-15.8.5 (Shader Graphs), F-2.1.1 (GPU Abstraction)
-- **Platform notes:** Shader output format varies by platform: DXIL on Windows, SPIR-V on Linux,
-  MSL on macOS. Each platform's variants are cached independently.
+- **Platform notes:** Shader output format varies by platform: DXIL on Windows, SPIR-V on Linux, MSL
+  on macOS. Each platform's variants are cached independently.
 
 ### F-15.11.3 Logic Graph Compilation Cache
 
 Compiled logic graph bytecode and AOT native code are cached by graph content hash and target
 platform. When a graph is unchanged since the last build, the compiled output is fetched from the
-shared cache instead of recompiling. Avoids recompiling thousands of gameplay, animation, audio,
-and tool graphs on every editor launch or branch switch.
+shared cache instead of recompiling. Avoids recompiling thousands of gameplay, animation, audio, and
+tool graphs on every editor launch or branch switch.
 
 - **Requirements:** R-15.11.3
 - **Dependencies:** F-15.11.1, F-15.8.12 (Graph Compilation)
-- **Platform notes:** AOT native code cache entries are platform-specific (x86-64, ARM64).
-  Bytecode cache entries are platform-agnostic.
+- **Platform notes:** AOT native code cache entries are platform-specific (x86-64, ARM64). Bytecode
+  cache entries are platform-agnostic.
 
 ## Onboarding
 
@@ -72,26 +72,26 @@ Administrators can trigger manual garbage collection and view invalidation logs.
 
 ### F-15.11.6 Cache Transport and Storage
 
-The cache service supports multiple storage backends: local filesystem for small teams, S3, GCS,
-or Azure Blob Storage for cloud deployments, and on-premise HTTP servers for air-gapped
-environments. Content is compressed with Zstd and transferred over HTTPS with content-addressable
-deduplication. Parallel downloads use configurable concurrency and bandwidth limits to avoid
-saturating office network links.
+The cache service supports multiple storage backends: local filesystem for small teams, S3, GCS, or
+Azure Blob Storage for cloud deployments, and on-premise HTTP servers for air-gapped environments.
+Content is compressed with Zstd and transferred over HTTPS with content-addressable deduplication.
+Parallel downloads use configurable concurrency and bandwidth limits to avoid saturating office
+network links.
 
 - **Requirements:** R-15.11.6
 - **Dependencies:** F-15.11.1
-- **Platform notes:** On macOS, network transfers use NSURLSession. On Windows, uses WinHTTP.
-  On Linux, uses libcurl. All backends share a unified client interface.
+- **Platform notes:** On macOS, network transfers use NSURLSession. On Windows, uses WinHTTP. On
+  Linux, uses libcurl. All backends share a unified client interface.
 
 ## CI/CD Integration
 
 ### F-15.11.7 CI/CD Cache Population
 
-CI build pipelines automatically populate the shared cache as part of their build process. Every
-CI build produces cache entries for all target platforms, ensuring developers always have
-pre-built assets available. Nightly full builds warm the cache for all active branches, including
-feature branches with recent activity. Cache population is idempotent — uploading an entry with
-an existing key is a no-op, avoiding redundant writes.
+CI build pipelines automatically populate the shared cache as part of their build process. Every CI
+build produces cache entries for all target platforms, ensuring developers always have pre-built
+assets available. Nightly full builds warm the cache for all active branches, including feature
+branches with recent activity. Cache population is idempotent — uploading an entry with an existing
+key is a no-op, avoiding redundant writes.
 
 - **Requirements:** R-15.11.7
 - **Dependencies:** F-15.11.1, F-15.11.2, F-15.11.3

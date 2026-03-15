@@ -8,8 +8,8 @@ Automatically generate comprehensive API reference documentation from Rust doc c
 public engine crates. The reference covers: every public type, trait, function, and method with
 descriptions, parameter types, return types, examples, and cross-references. Generated as a
 searchable static website (rustdoc) published alongside each engine release. The reference is also
-accessible from within the editor via a help panel that opens the relevant page when clicking "?"
-on any inspector property or node type.
+accessible from within the editor via a help panel that opens the relevant page when clicking "?" on
+any inspector property or node type.
 
 - **Requirements:** R-15.19.1
 - **Dependencies:** F-1.3.1 (Type Registry), F-15.1.1 (Editor Framework)
@@ -17,12 +17,12 @@ on any inspector property or node type.
 
 ### F-15.19.2 Logic Graph Node Documentation
 
-Every built-in logic graph node (F-15.8.10) includes inline documentation: description,
-input/output port descriptions with types and valid ranges, usage examples as embedded mini-graphs,
-performance notes, and "see also" links to related nodes. Documentation is displayed in a tooltip
-when hovering over a node in the graph editor and in a dedicated documentation panel when a node is
-selected. Custom nodes (user-authored) inherit a documentation template that prompts the author to
-fill in descriptions for each port.
+Every built-in logic graph node (F-15.8.10) includes inline documentation: description, input/output
+port descriptions with types and valid ranges, usage examples as embedded mini-graphs, performance
+notes, and "see also" links to related nodes. Documentation is displayed in a tooltip when hovering
+over a node in the graph editor and in a dedicated documentation panel when a node is selected.
+Custom nodes (user-authored) inherit a documentation template that prompts the author to fill in
+descriptions for each port.
 
 - **Requirements:** R-15.19.2
 - **Dependencies:** F-15.8.10 (Graph Node Library), F-15.8.4 (Gameplay Logic Graphs)
@@ -43,8 +43,8 @@ optimization). Tutorials are authored as data assets using the logic graph syste
 community-created tutorials distributed via the asset store.
 
 - **Requirements:** R-15.19.3
-- **Dependencies:** F-15.1.1 (Editor Framework), F-15.8.4 (Logic Graphs),
-  F-13.24.7a (Tutorial Step System)
+- **Dependencies:** F-15.1.1 (Editor Framework), F-15.8.4 (Logic Graphs), F-13.24.7a (Tutorial Step
+  System)
 - **Platform notes:** Desktop only (editor feature).
 
 ### F-15.19.4 Video Tutorial Integration
@@ -63,13 +63,13 @@ store.
 
 ### F-15.19.5 Contextual Help and Tooltip System
 
-Every editor panel, property inspector field, toolbar button, and menu item includes contextual
-help accessible via hover tooltip, "?" button, or F1 key. Tooltips show: short description
-(1 line), detailed description (expandable), keyboard shortcut if applicable, link to full
-documentation, and link to relevant tutorial. Property inspector fields show: value type, valid
-range, default value, and what the property affects. Help content is stored as localized string
-assets and updated independently of engine releases. A "What's This?" mode (similar to Qt) allows
-clicking any UI element to see its documentation.
+Every editor panel, property inspector field, toolbar button, and menu item includes contextual help
+accessible via hover tooltip, "?" button, or F1 key. Tooltips show: short description (1 line),
+detailed description (expandable), keyboard shortcut if applicable, link to full documentation, and
+link to relevant tutorial. Property inspector fields show: value type, valid range, default value,
+and what the property affects. Help content is stored as localized string assets and updated
+independently of engine releases. A "What's This?" mode (similar to Qt) allows clicking any UI
+element to see its documentation.
 
 - **Requirements:** R-15.19.5
 - **Dependencies:** F-15.1.1 (Editor Framework), F-10.1.9 (Localization Hooks)
@@ -95,9 +95,9 @@ launcher's project creation wizard (F-15.15.3) or the asset store.
 ### F-15.19.7 Inline Code Examples in Documentation
 
 All engine API documentation includes runnable code examples (Rust snippets for plugin developers)
-and visual examples (logic graph screenshots for no-code users). Code examples are tested as part
-of the CI pipeline (F-15.18.6) — if an example fails to compile against the current engine version,
-the build fails, ensuring documentation never goes stale. Visual examples include before/after
+and visual examples (logic graph screenshots for no-code users). Code examples are tested as part of
+the CI pipeline (F-15.18.6) — if an example fails to compile against the current engine version, the
+build fails, ensuring documentation never goes stale. Visual examples include before/after
 screenshots showing the effect of each feature. Examples are versioned alongside the engine source
 and automatically updated by the project upgrade system (F-15.15.2).
 

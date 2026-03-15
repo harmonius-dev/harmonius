@@ -4,9 +4,9 @@
 
 ## US-1.8.1 Abstract Platform I/O With Zero Dynamic Dispatch
 
-**As an** engine developer (P-26), **I want** a trait-based abstraction over IOCP, GCD, and
-io_uring resolved at compile time with static dispatch, **so that** every I/O operation uses
-platform-native async primitives without any subsystem bypassing the unified layer.
+**As an** engine developer (P-26), **I want** a trait-based abstraction over IOCP, GCD, and io_uring
+resolved at compile time with static dispatch, **so that** every I/O operation uses platform-native
+async primitives without any subsystem bypassing the unified layer.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -16,9 +16,9 @@ platform-native async primitives without any subsystem bypassing the unified lay
 
 ## US-1.8.2 Implement IOCP Backend for Windows
 
-**As an** engine developer (P-26), **I want** a Windows I/O backend wrapping
-CreateIoCompletionPort and GetQueuedCompletionStatusEx via bindgen, **so that** Windows I/O
-uses native IOCP for maximum async performance.
+**As an** engine developer (P-26), **I want** a Windows I/O backend wrapping CreateIoCompletionPort
+and GetQueuedCompletionStatusEx via bindgen, **so that** Windows I/O uses native IOCP for maximum
+async performance.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -29,8 +29,8 @@ uses native IOCP for maximum async performance.
 ## US-1.8.3 Implement GCD Backend for macOS
 
 **As an** engine developer (P-26), **I want** a macOS I/O backend wrapping dispatch_io_create,
-dispatch_io_read, and dispatch_io_write via cxx.rs Objective-C++ wrappers, **so that** macOS
-I/O uses native Grand Central Dispatch.
+dispatch_io_read, and dispatch_io_write via cxx.rs Objective-C++ wrappers, **so that** macOS I/O
+uses native Grand Central Dispatch.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -40,8 +40,8 @@ I/O uses native Grand Central Dispatch.
 
 ## US-1.8.4 Verify Backend Abstraction Passes Same Tests on All Platforms
 
-**As an** engine tester (P-27), **I want** to run the same I/O test suite against IOCP, GCD,
-and io_uring backends, **so that** I can verify behavioral equivalence across all platforms.
+**As an** engine tester (P-27), **I want** to run the same I/O test suite against IOCP, GCD, and
+io_uring backends, **so that** I can verify behavioral equivalence across all platforms.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -54,8 +54,8 @@ and io_uring backends, **so that** I can verify behavioral equivalence across al
 ## US-1.8.5 Receive Typed Completion Notifications From the OS Kernel
 
 **As an** engine developer (P-26), **I want** a completion-based proactor model where the OS
-notifies on I/O completion with typed results and context tokens, **so that** I avoid the
-extra copies and retry loops of readiness-based models.
+notifies on I/O completion with typed results and context tokens, **so that** I avoid the extra
+copies and retry loops of readiness-based models.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -66,9 +66,9 @@ extra copies and retry loops of readiness-based models.
 
 ## US-1.8.6 Stress-Test In-Flight Operation Limits
 
-**As an** engine tester (P-27), **I want** to stress-test the async I/O system at maximum
-in-flight operation counts per platform, **so that** I can verify the system handles
-saturation without deadlock or dropped completions.
+**As an** engine tester (P-27), **I want** to stress-test the async I/O system at maximum in-flight
+operation counts per platform, **so that** I can verify the system handles saturation without
+deadlock or dropped completions.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -80,9 +80,9 @@ saturation without deadlock or dropped completions.
 
 ## US-1.8.7 Load Assets and Save Games via Async File I/O
 
-**As a** game developer (P-15), **I want** async file read, write, seek, and flush with
-explicit byte offsets routed through the platform backend, **so that** asset loading and save
-game persistence never block worker threads.
+**As a** game developer (P-15), **I want** async file read, write, seek, and flush with explicit
+byte offsets routed through the platform backend, **so that** asset loading and save game
+persistence never block worker threads.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -93,9 +93,8 @@ game persistence never block worker threads.
 
 ## US-1.8.8 Experience Smooth Loading Without Hitches
 
-**As a** player (P-23), **I want** asset loading and save operations to happen in the
-background without causing frame rate drops, **so that** gameplay is never interrupted by
-disk I/O.
+**As a** player (P-23), **I want** asset loading and save operations to happen in the background
+without causing frame rate drops, **so that** gameplay is never interrupted by disk I/O.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -107,9 +106,9 @@ disk I/O.
 
 ## US-1.8.9 Use Async TCP and UDP Sockets for Networking
 
-**As a** game developer (P-15), **I want** async TCP and UDP socket operations registered
-with the completion mechanism on creation, **so that** the transport layer, server
-infrastructure, and telemetry have a single non-blocking network I/O path.
+**As a** game developer (P-15), **I want** async TCP and UDP socket operations registered with the
+completion mechanism on creation, **so that** the transport layer, server infrastructure, and
+telemetry have a single non-blocking network I/O path.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -119,9 +118,9 @@ infrastructure, and telemetry have a single non-blocking network I/O path.
 
 ## US-1.8.10 Verify Network Socket I/O Under Concurrent Connections
 
-**As an** engine tester (P-27), **I want** to verify async socket I/O handles hundreds of
-concurrent connections without resource leaks or dropped packets, **so that** MMO server
-infrastructure operates reliably at scale.
+**As an** engine tester (P-27), **I want** to verify async socket I/O handles hundreds of concurrent
+connections without resource leaks or dropped packets, **so that** MMO server infrastructure
+operates reliably at scale.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -133,9 +132,9 @@ infrastructure operates reliably at scale.
 
 ## US-1.8.11 Stream Audio Without Buffer Underruns
 
-**As a** game developer (P-15), **I want** low-latency async audio buffer I/O with deadline
-hints that prioritize audio over bulk transfers, **so that** audio playback maintains sub-10ms
-latency without underruns during asset streaming.
+**As a** game developer (P-15), **I want** low-latency async audio buffer I/O with deadline hints
+that prioritize audio over bulk transfers, **so that** audio playback maintains sub-10ms latency
+without underruns during asset streaming.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -145,9 +144,8 @@ latency without underruns during asset streaming.
 
 ## US-1.8.12 Hear Smooth Audio During Loading and Level Transitions
 
-**As a** player (P-23), **I want** audio playback that never stutters or glitches during
-loading screens or level transitions, **so that** the audio experience remains smooth and
-immersive.
+**As a** player (P-23), **I want** audio playback that never stutters or glitches during loading
+screens or level transitions, **so that** the audio experience remains smooth and immersive.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -159,9 +157,9 @@ immersive.
 
 ## US-1.8.13 Assemble Composite Writes Without Staging Copies
 
-**As an** engine developer (P-26), **I want** scatter-gather operations that read into or
-write from multiple non-contiguous buffers in a single system call, **so that** composite
-writes and protocol framing avoid staging buffer copies.
+**As an** engine developer (P-26), **I want** scatter-gather operations that read into or write from
+multiple non-contiguous buffers in a single system call, **so that** composite writes and protocol
+framing avoid staging buffer copies.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -171,9 +169,9 @@ writes and protocol framing avoid staging buffer copies.
 
 ## US-1.8.14 Verify Vectored I/O Data Integrity
 
-**As an** engine tester (P-27), **I want** to verify that scatter-gather operations produce
-correct output when assembling data from multiple non-contiguous buffers, **so that** no
-bytes are lost, reordered, or corrupted during composite writes.
+**As an** engine tester (P-27), **I want** to verify that scatter-gather operations produce correct
+output when assembling data from multiple non-contiguous buffers, **so that** no bytes are lost,
+reordered, or corrupted during composite writes.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -186,8 +184,8 @@ bytes are lost, reordered, or corrupted during composite writes.
 ## US-1.8.15 Prioritize Audio and Frame-Critical I/O Over Background Work
 
 **As an** engine developer (P-26), **I want** I/O submissions with priority levels (critical,
-normal, background) and deadline hints that reorder the submission queue, **so that** audio
-buffers and frame-critical assets are serviced before prefetch and log flushing.
+normal, background) and deadline hints that reorder the submission queue, **so that** audio buffers
+and frame-critical assets are serviced before prefetch and log flushing.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -197,9 +195,9 @@ buffers and frame-critical assets are serviced before prefetch and log flushing.
 
 ## US-1.8.16 Verify Priority Scheduling Under Load
 
-**As an** engine tester (P-27), **I want** to verify that critical I/O operations complete
-before background operations when the I/O system is saturated, **so that** audio buffers
-and frame-critical assets are never starved by bulk transfers.
+**As an** engine tester (P-27), **I want** to verify that critical I/O operations complete before
+background operations when the I/O system is saturated, **so that** audio buffers and frame-critical
+assets are never starved by bulk transfers.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -211,9 +209,9 @@ and frame-critical assets are never starved by bulk transfers.
 
 ## US-1.8.17 Cancel Stale I/O Operations During Zone Transitions
 
-**As a** game developer (P-15), **I want** to cancel in-flight I/O operations via
-cancellation tokens with guaranteed completion callbacks, **so that** the asset system cancels
-stale loads when the player moves away and resources are cleaned up deterministically.
+**As a** game developer (P-15), **I want** to cancel in-flight I/O operations via cancellation
+tokens with guaranteed completion callbacks, **so that** the asset system cancels stale loads when
+the player moves away and resources are cleaned up deterministically.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -223,9 +221,9 @@ stale loads when the player moves away and resources are cleaned up deterministi
 
 ## US-1.8.18 Verify Cancellation Callback Fires Deterministically
 
-**As an** engine tester (P-27), **I want** to verify that cancelling an in-flight I/O
-operation always fires the completion callback with cancellation status, **so that** no
-resource leaks occur from cancelled operations.
+**As an** engine tester (P-27), **I want** to verify that cancelling an in-flight I/O operation
+always fires the completion callback with cancellation status, **so that** no resource leaks occur
+from cancelled operations.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -237,9 +235,9 @@ resource leaks occur from cancelled operations.
 
 ## US-1.8.19 Register Buffer Pools for Zero-Copy I/O
 
-**As an** engine developer (P-26), **I want** pre-allocated page-aligned I/O buffer pools
-registered with the platform backend for zero-copy transfers, **so that** high-throughput
-asset streaming avoids per-operation buffer setup costs and memory copies.
+**As an** engine developer (P-26), **I want** pre-allocated page-aligned I/O buffer pools registered
+with the platform backend for zero-copy transfers, **so that** high-throughput asset streaming
+avoids per-operation buffer setup costs and memory copies.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -251,8 +249,8 @@ asset streaming avoids per-operation buffer setup costs and memory copies.
 ## US-1.8.20 Verify Buffer Pool Lifetime Management
 
 **As an** engine tester (P-27), **I want** to verify that buffer pool handles are correctly
-reclaimed after I/O completion and that stale handles are rejected, **so that** no buffer
-leaks or double-use occurs during sustained streaming.
+reclaimed after I/O completion and that stale handles are rejected, **so that** no buffer leaks or
+double-use occurs during sustained streaming.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

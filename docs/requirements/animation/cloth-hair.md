@@ -13,9 +13,9 @@ and skinned mesh integration on top of the physics simulation.
   banners) without CPU overhead, critical for populated game scenes. Delegating constraint solving
   to the physics domain avoids duplicate solvers and ensures consistent physical behavior.
 - **Verification:** Simulate a 1000-vertex cloak attached to a character's shoulders. Apply a wind
-  force and verify the cloth billows in the wind direction. Walk the character through a doorway
-  and verify the cloth collides with the door frame capsules without penetration. Verify
-  self-collision by folding the cloth and confirming no vertices pass through the cloth surface.
+  force and verify the cloth billows in the wind direction. Walk the character through a doorway and
+  verify the cloth collides with the door frame capsules without penetration. Verify self-collision
+  by folding the cloth and confirming no vertices pass through the cloth surface.
 
 ## R-9.5.2 Strand-Based Hair Simulation
 
@@ -28,8 +28,8 @@ gravity, and collision with skeletal mesh capsules.
   and key NPCs where visual quality justifies the simulation cost.
 - **Verification:** Simulate 100 guide strands on a character head. Apply gravity and verify all
   strands hang downward. Rotate the head 90 degrees and verify strands respond with physically
-  plausible swinging motion. Verify no strands penetrate the head collision capsule by checking
-  all strand particle positions are outside the capsule radius each frame.
+  plausible swinging motion. Verify no strands penetrate the head collision capsule by checking all
+  strand particle positions are outside the capsule radius each frame.
 
 ## R-9.5.3 Card-Based Hair Rendering
 
@@ -48,16 +48,16 @@ as a performant alternative to strand-based hair.
 ## R-9.5.4 Hair LOD System
 
 The engine **SHALL** transition hair representation between strand-based simulation, simplified
-strand clusters, card-based rendering, and single textured shell based on camera distance and
-screen coverage, using temporal blending to avoid popping artifacts.
+strand clusters, card-based rendering, and single textured shell based on camera distance and screen
+coverage, using temporal blending to avoid popping artifacts.
 
 - **Derived from:** [F-9.5.4](../../features/animation/cloth-hair.md)
 - **Rationale:** Hair LOD prevents full strand simulation on distant characters, essential for
   maintaining frame rate with hundreds of visible characters.
-- **Verification:** Place a character with strand-based hair at 5 m, 20 m, 50 m, and 200 m from
-  the camera. Verify the hair representation is full strands, simplified clusters, cards, and
-  shell respectively. Fly the camera from 5 m to 200 m continuously and verify no visible popping
-  during LOD transitions by recording the flythrough and inspecting frame-by-frame.
+- **Verification:** Place a character with strand-based hair at 5 m, 20 m, 50 m, and 200 m from the
+  camera. Verify the hair representation is full strands, simplified clusters, cards, and shell
+  respectively. Fly the camera from 5 m to 200 m continuously and verify no visible popping during
+  LOD transitions by recording the flythrough and inspecting frame-by-frame.
 
 ## R-9.5.5 Cloth-Body Interaction
 

@@ -6,46 +6,46 @@
 
 The engine **SHALL** serialize the player's game state (character data, inventory, quest progress,
 ability loadout, map exploration, achievement progress) into a versioned binary format using the
-engine's reflection and serialization systems, supporting partial serialization of dirty fields
-only to reduce save size and I/O cost.
+engine's reflection and serialization systems, supporting partial serialization of dirty fields only
+to reduce save size and I/O cost.
 
 - **Derived from:** [F-13.3.1](../../features/game-framework/save-system.md)
 - **Rationale:** Reflection-based serialization eliminates hand-written serializers for each type,
   and partial dirty-field writes minimize I/O cost for characters with extensive data.
-- **Verification:** Integration test: create a character with inventory, quest progress, and
-  ability loadout. Serialize to binary, deserialize, and verify all fields match. Modify a
-  single field, serialize with partial mode, and verify only the dirty field is written. Verify
-  the binary format includes a version stamp.
+- **Verification:** Integration test: create a character with inventory, quest progress, and ability
+  loadout. Serialize to binary, deserialize, and verify all fields match. Modify a single field,
+  serialize with partial mode, and verify only the dirty field is written. Verify the binary format
+  includes a version stamp.
 
 ### R-13.3.2 Save Data Migration and Versioning
 
 The engine **SHALL** stamp each save file with a schema version and apply ordered migration
-transforms (version N to N+1) on load, supporting field addition, removal, renaming, and
-reshaping, such that older saves load correctly after schema evolution without data loss.
+transforms (version N to N+1) on load, supporting field addition, removal, renaming, and reshaping,
+such that older saves load correctly after schema evolution without data loss.
 
 - **Derived from:** [F-13.3.2](../../features/game-framework/save-system.md)
 - **Rationale:** Live-service games must evolve save schemas across patches and expansions without
   invalidating existing player data.
-- **Verification:** Unit test: create a save at schema version 1. Register migrations from v1 to
-  v2 (add field) and v2 to v3 (rename field). Load the v1 save and verify both migrations apply
-  in order, producing a valid v3 save with the added and renamed fields intact.
+- **Verification:** Unit test: create a save at schema version 1. Register migrations from v1 to v2
+  (add field) and v2 to v3 (rename field). Load the v1 save and verify both migrations apply in
+  order, producing a valid v3 save with the added and renamed fields intact.
 
 ## Save Triggers
 
 ### R-13.3.3 Checkpoint and Autosave
 
-The engine **SHALL** trigger automatic saves at designer-placed checkpoints (zone transitions,
-quest milestones, boss kills) and at configurable time intervals, writing to a rotating slot to
-prevent corruption from interrupted writes, with instanced content checkpoints capturing instance
-progress (bosses defeated, lockout state) for session resumption.
+The engine **SHALL** trigger automatic saves at designer-placed checkpoints (zone transitions, quest
+milestones, boss kills) and at configurable time intervals, writing to a rotating slot to prevent
+corruption from interrupted writes, with instanced content checkpoints capturing instance progress
+(bosses defeated, lockout state) for session resumption.
 
 - **Derived from:** [F-13.3.3](../../features/game-framework/save-system.md)
 - **Rationale:** Automatic saves at meaningful checkpoints and time intervals protect player
   progress without manual intervention, and rotating slots guard against write corruption.
-- **Verification:** Integration test: place a checkpoint at a zone transition, cross it, and
-  verify an autosave is written. Verify the rotating slot advances on each write. Simulate a
-  crash mid-write and verify the previous slot remains intact. Verify instance checkpoints
-  record boss-defeated state for session resumption.
+- **Verification:** Integration test: place a checkpoint at a zone transition, cross it, and verify
+  an autosave is written. Verify the rotating slot advances on each write. Simulate a crash
+  mid-write and verify the previous slot remains intact. Verify instance checkpoints record
+  boss-defeated state for session resumption.
 
 ### R-13.3.4 Save Slots and Management
 
@@ -58,9 +58,9 @@ loss from concurrent access or interrupted writes.
 - **Rationale:** Transactional slot management with rich metadata provides a safe and informative
   save UI that prevents accidental data loss.
 - **Verification:** Unit test: create a save slot and verify metadata (name, level, playtime,
-  timestamp) is correctly stored and retrievable. Copy a slot, verify the copy is identical.
-  Delete a slot and verify it is removed. Simulate an interrupted copy operation and verify
-  neither source nor destination is corrupted.
+  timestamp) is correctly stored and retrievable. Copy a slot, verify the copy is identical. Delete
+  a slot and verify it is removed. Simulate an interrupted copy operation and verify neither source
+  nor destination is corrupted.
 
 ## Cloud and Platform Integration
 
@@ -72,43 +72,43 @@ handling conflict resolution when local and cloud saves diverge, with fully asyn
 operations that never block the game thread.
 
 - **Derived from:** [F-13.3.5](../../features/game-framework/save-system.md)
-- **Rationale:** Cloud save integration ensures player progress persists across devices and
-  protects against local data loss, while async I/O prevents frame stalls.
+- **Rationale:** Cloud save integration ensures player progress persists across devices and protects
+  against local data loss, while async I/O prevents frame stalls.
 - **Verification:** Integration test: save locally and upload to cloud storage. Modify the local
-  save, trigger sync, and verify conflict resolution prompts the user. Verify upload and
-  download operations complete without blocking the game thread (measure zero frame stalls
-  exceeding 1 ms). Verify platform-native async I/O is used (no stdlib file I/O).
+  save, trigger sync, and verify conflict resolution prompts the user. Verify upload and download
+  operations complete without blocking the game thread (measure zero frame stalls exceeding 1 ms).
+  Verify platform-native async I/O is used (no stdlib file I/O).
 
 ### R-13.3.6 Async Save I/O Pipeline
 
 The engine **SHALL** route all save reads and writes through an async I/O pipeline that compresses
-(LZ4 for speed, Zstd for cloud uploads), encrypts (AES-256-GCM), and checksums (CRC-32) save
-data, using atomic rename for crash-safe writes and priority ordering so autosaves yield to
-explicit user saves.
+(LZ4 for speed, Zstd for cloud uploads), encrypts (AES-256-GCM), and checksums (CRC-32) save data,
+using atomic rename for crash-safe writes and priority ordering so autosaves yield to explicit user
+saves.
 
 - **Derived from:** [F-13.3.6](../../features/game-framework/save-system.md)
-- **Rationale:** Compression, encryption, and checksumming protect save integrity and privacy,
-  while atomic rename and priority ordering ensure consistency under all conditions.
+- **Rationale:** Compression, encryption, and checksumming protect save integrity and privacy, while
+  atomic rename and priority ordering ensure consistency under all conditions.
 - **Verification:** Integration test: write a save through the pipeline and verify the output is
-  compressed, encrypted, and checksummed. Simulate a crash mid-write and verify the previous
-  save file remains intact (atomic rename). Issue an autosave followed immediately by a user
-  save and verify the user save takes priority. Verify platform-native async I/O is used (no
-  stdlib file I/O).
+  compressed, encrypted, and checksummed. Simulate a crash mid-write and verify the previous save
+  file remains intact (atomic rename). Issue an autosave followed immediately by a user save and
+  verify the user save takes priority. Verify platform-native async I/O is used (no stdlib file
+  I/O).
 
 ## Non-Functional Requirements
 
 ### R-13.3.NF1 Maximum Save Time
 
 The engine **SHALL** complete a full save operation (serialization, compression, encryption, and
-write) within 100 ms on target hardware, measured from save initiation to write completion,
-so that autosaves do not produce perceptible hitches during gameplay.
+write) within 100 ms on target hardware, measured from save initiation to write completion, so that
+autosaves do not produce perceptible hitches during gameplay.
 
 - **Derived from:** F-13.3.1, F-13.3.6
-- **Rationale:** Saves that exceed 100 ms risk visible frame hitches or input lag, degrading
-  the player experience during autosave triggers.
-- **Verification:** Benchmark: serialize a character with 500 inventory items, 50 active quests,
-  and 200 achievement entries. Measure end-to-end save time across 100 iterations and verify
-  the 99th percentile is under 100 ms on target hardware.
+- **Rationale:** Saves that exceed 100 ms risk visible frame hitches or input lag, degrading the
+  player experience during autosave triggers.
+- **Verification:** Benchmark: serialize a character with 500 inventory items, 50 active quests, and
+  200 achievement entries. Measure end-to-end save time across 100 iterations and verify the 99th
+  percentile is under 100 ms on target hardware.
 
 ### R-13.3.NF2 Maximum Save File Size
 
@@ -120,8 +120,8 @@ consumption.
 - **Rationale:** Large save files increase cloud sync times and storage costs, and may exceed
   platform cloud storage quotas on constrained platforms.
 - **Verification:** Create a character with maximum inventory (all slots filled), all quests
-  completed, all achievements earned, and full customization. Serialize and compress; verify
-  the output file size is under 10 MB.
+  completed, all achievements earned, and full customization. Serialize and compress; verify the
+  output file size is under 10 MB.
 
 ### R-13.3.NF3 Save Data Integrity Under Failure
 
@@ -129,8 +129,8 @@ The engine **SHALL** guarantee that no save data is lost or corrupted if the pro
 unexpectedly (crash, power loss, force quit) at any point during a save operation.
 
 - **Derived from:** F-13.3.6
-- **Rationale:** Players losing hours of progress due to a crash during save is unacceptable;
-  atomic writes ensure the previous valid save always remains intact.
-- **Verification:** Inject process termination at 10 random points during a save pipeline
-  execution. After each termination, verify the most recent completed save loads without
-  corruption and no partial save files remain on disk.
+- **Rationale:** Players losing hours of progress due to a crash during save is unacceptable; atomic
+  writes ensure the previous valid save always remains intact.
+- **Verification:** Inject process termination at 10 random points during a save pipeline execution.
+  After each termination, verify the most recent completed save loads without corruption and no
+  partial save files remain on disk.

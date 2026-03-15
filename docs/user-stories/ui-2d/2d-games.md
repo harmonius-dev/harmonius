@@ -2,9 +2,9 @@
 
 ## US-10.5.1 Render Thousands of Sprites With Minimal Draw Calls
 
-**As a** developer (P-15), **I want** sprites rendered as instanced textured quads batched by
-atlas page and blend mode with per-sprite transform, UV rect, tint, and z-order, **so that**
-scenes with thousands of sprites draw in a few batched calls.
+**As a** developer (P-15), **I want** sprites rendered as instanced textured quads batched by atlas
+page and blend mode with per-sprite transform, UV rect, tint, and z-order, **so that** scenes with
+thousands of sprites draw in a few batched calls.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -14,9 +14,9 @@ scenes with thousands of sprites draw in a few batched calls.
 
 ## US-10.5.2 Animate Sprites With Configurable Playback and Events
 
-**As a** designer (P-5), **I want** frame-based sprite animation with configurable playback
-rate, looping modes, and animation events for footstep sounds and hit detection, **so that**
-I can create expressive character animations with precise timing.
+**As a** designer (P-5), **I want** frame-based sprite animation with configurable playback rate,
+looping modes, and animation events for footstep sounds and hit detection, **so that** I can create
+expressive character animations with precise timing.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -26,9 +26,9 @@ I can create expressive character animations with precise timing.
 
 ## US-10.5.3 Verify Sprite Animation Event Timing Accuracy
 
-**As an** engine tester (P-27), **I want** to verify that sprite animation events fire at
-exactly the correct frame in all playback modes, **so that** footstep sounds, hit detection,
-and other frame-synced events are never early or late.
+**As an** engine tester (P-27), **I want** to verify that sprite animation events fire at exactly
+the correct frame in all playback modes, **so that** footstep sounds, hit detection, and other
+frame-synced events are never early or late.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -38,9 +38,9 @@ and other frame-synced events are never early or late.
 
 ## US-10.5.4 Animate 2D Characters With Skeletal Bone Deformation
 
-**As an** artist (P-8), **I want** bone-based 2D skeletal animation with mesh deformation,
-IK constraints, bone-driven sprite swapping, and Spine/DragonBones import, **so that** I can
-create smooth character animations beyond what frame-by-frame provides.
+**As an** artist (P-8), **I want** bone-based 2D skeletal animation with mesh deformation, IK
+constraints, bone-driven sprite swapping, and Spine/DragonBones import, **so that** I can create
+smooth character animations beyond what frame-by-frame provides.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -51,9 +51,9 @@ create smooth character animations beyond what frame-by-frame provides.
 
 ## US-10.5.5 Use Runtime Bone Manipulation for Procedural Effects
 
-**As a** developer (P-15), **I want** runtime bone manipulation for procedural effects like
-look-at targeting, weapon recoil, and procedural head turning, **so that** 2D characters
-respond dynamically to gameplay without pre-authored animation for every case.
+**As a** developer (P-15), **I want** runtime bone manipulation for procedural effects like look-at
+targeting, weapon recoil, and procedural head turning, **so that** 2D characters respond dynamically
+to gameplay without pre-authored animation for every case.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -63,9 +63,9 @@ respond dynamically to gameplay without pre-authored animation for every case.
 
 ## US-10.5.6 Render Resolution-Independent 2D Shapes From Vector Paths
 
-**As a** developer (P-15), **I want** 2D shapes rendered from vector paths with fill,
-stroke, clipping masks, and gradient support at any resolution without pixelation, **so that**
-art games, map overlays, and scalable elements work across mobile and desktop.
+**As a** developer (P-15), **I want** 2D shapes rendered from vector paths with fill, stroke,
+clipping masks, and gradient support at any resolution without pixelation, **so that** art games,
+map overlays, and scalable elements work across mobile and desktop.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -75,9 +75,9 @@ art games, map overlays, and scalable elements work across mobile and desktop.
 
 ## US-10.5.7 Animate Vector Characters That Stay Crisp at Any Zoom
 
-**As an** artist (P-8), **I want** vector skeletal animation where bones deform vector path
-control points instead of raster mesh vertices, **so that** characters maintain crisp edges
-at any zoom level while animating smoothly.
+**As an** artist (P-8), **I want** vector skeletal animation where bones deform vector path control
+points instead of raster mesh vertices, **so that** characters maintain crisp edges at any zoom
+level while animating smoothly.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -88,8 +88,8 @@ at any zoom level while animating smoothly.
 ## US-10.5.8 Build Large Tile-Based Worlds With Auto-Tiling
 
 **As a** designer (P-5), **I want** chunked tilemap rendering with multiple layers, auto-tiling
-rules for terrain transitions, animated tiles, and per-tile flip/rotation, **so that** I can
-build large tile-based worlds with millions of tiles that stream and cull to the camera.
+rules for terrain transitions, animated tiles, and per-tile flip/rotation, **so that** I can build
+large tile-based worlds with millions of tiles that stream and cull to the camera.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -100,9 +100,9 @@ build large tile-based worlds with millions of tiles that stream and cull to the
 
 ## US-10.5.9 Implement Tilemap Streaming and Viewport Culling
 
-**As an** engine developer (P-26), **I want** to implement tilemap chunk streaming and
-viewport culling, **so that** worlds with millions of tiles load and render only the visible
-portion efficiently.
+**As an** engine developer (P-26), **I want** to implement tilemap chunk streaming and viewport
+culling, **so that** worlds with millions of tiles load and render only the visible portion
+efficiently.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -112,9 +112,9 @@ portion efficiently.
 
 ## US-10.5.10 Build Isometric and Hex Grid Worlds
 
-**As a** designer (P-5), **I want** isometric (diamond and staggered) and hexagonal grid
-layouts with correct depth sorting, coordinate conversion, and height-stacked tiles, **so
-that** I can create isometric RPGs and hex-based strategy games.
+**As a** designer (P-5), **I want** isometric (diamond and staggered) and hexagonal grid layouts
+with correct depth sorting, coordinate conversion, and height-stacked tiles, **so that** I can
+create isometric RPGs and hex-based strategy games.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -125,9 +125,9 @@ that** I can create isometric RPGs and hex-based strategy games.
 
 ## US-10.5.11 Verify Isometric Depth Sorting and Coordinate Conversion
 
-**As an** engine tester (P-27), **I want** to verify that isometric and hex tilemap depth
-sorting and screen-to-tile coordinate conversion are correct for all grid types, **so that**
-tiles never z-fight and mouse clicks map to the correct tile.
+**As an** engine tester (P-27), **I want** to verify that isometric and hex tilemap depth sorting
+and screen-to-tile coordinate conversion are correct for all grid types, **so that** tiles never
+z-fight and mouse clicks map to the correct tile.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -137,9 +137,9 @@ tiles never z-fight and mouse clicks map to the correct tile.
 
 ## US-10.5.12 Generate Roguelike Dungeons From Tileset Rules
 
-**As a** developer (P-15), **I want** procedural 2D tilemap generation using WFC, cellular
-automata, BSP dungeons, and room-and-corridor algorithms with adjacency constraints,
-**so that** I can create explorable roguelike dungeons and infinite side-scrollers.
+**As a** developer (P-15), **I want** procedural 2D tilemap generation using WFC, cellular automata,
+BSP dungeons, and room-and-corridor algorithms with adjacency constraints, **so that** I can create
+explorable roguelike dungeons and infinite side-scrollers.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -150,9 +150,9 @@ automata, BSP dungeons, and room-and-corridor algorithms with adjacency constrai
 
 ## US-10.5.13 Configure a 2D Camera With Parallax and Split-Screen
 
-**As a** developer (P-15), **I want** a dedicated 2D camera with position, zoom, rotation,
-parallax scrolling, camera smoothing, shake, and split-screen support, **so that** I can
-implement smooth camera behavior for any 2D game genre.
+**As a** developer (P-15), **I want** a dedicated 2D camera with position, zoom, rotation, parallax
+scrolling, camera smoothing, shake, and split-screen support, **so that** I can implement smooth
+camera behavior for any 2D game genre.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -163,9 +163,9 @@ implement smooth camera behavior for any 2D game genre.
 
 ## US-10.5.14 Design Parallax Backgrounds for Depth Illusion
 
-**As an** artist (P-8), **I want** to create multiple parallax background layers that scroll
-at different rates for a depth illusion, **so that** side-scrolling and top-down games feel
-more immersive with layered backgrounds.
+**As an** artist (P-8), **I want** to create multiple parallax background layers that scroll at
+different rates for a depth illusion, **so that** side-scrolling and top-down games feel more
+immersive with layered backgrounds.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -176,9 +176,8 @@ more immersive with layered backgrounds.
 ## US-10.5.15 Simulate 2D Rigid Body Physics as ECS Components
 
 **As a** developer (P-15), **I want** 2D rigid body physics simulated as ECS components
-(RigidBody2D, Velocity2D, Mass2D, Collider2D) with CCD, one-way platforms, and
-deterministic simulation, **so that** I can build server-authoritative 2D games with
-reliable physics.
+(RigidBody2D, Velocity2D, Mass2D, Collider2D) with CCD, one-way platforms, and deterministic
+simulation, **so that** I can build server-authoritative 2D games with reliable physics.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -189,9 +188,9 @@ reliable physics.
 
 ## US-10.5.16 Verify Deterministic 2D Physics Across Platforms
 
-**As an** engine tester (P-27), **I want** to verify bit-identical 2D physics simulation
-across all supported platforms, **so that** server-authoritative multiplayer games produce
-identical results on client and server regardless of OS.
+**As an** engine tester (P-27), **I want** to verify bit-identical 2D physics simulation across all
+supported platforms, **so that** server-authoritative multiplayer games produce identical results on
+client and server regardless of OS.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -201,9 +200,9 @@ identical results on client and server regardless of OS.
 
 ## US-10.5.17 Use Box, Circle, and Polygon Colliders for 2D Objects
 
-**As a** developer (P-15), **I want** 2D collider shapes (box, circle, capsule, convex
-polygon, edge chain, composite) with tilemap collision layers that auto-generate optimized
-edge chains, **so that** 2D worlds have efficient collision without manual collider setup.
+**As a** developer (P-15), **I want** 2D collider shapes (box, circle, capsule, convex polygon, edge
+chain, composite) with tilemap collision layers that auto-generate optimized edge chains, **so
+that** 2D worlds have efficient collision without manual collider setup.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -213,9 +212,9 @@ edge chains, **so that** 2D worlds have efficient collision without manual colli
 
 ## US-10.5.18 Connect 2D Bodies With Joints for Ropes and Ragdolls
 
-**As a** developer (P-15), **I want** 2D joint types (revolute, prismatic, distance, spring,
-rope, weld, wheel, mouse) with motors, limits, and break force, **so that** I can create
-ragdolls, swinging platforms, grappling hooks, and destructible chains.
+**As a** developer (P-15), **I want** 2D joint types (revolute, prismatic, distance, spring, rope,
+weld, wheel, mouse) with motors, limits, and break force, **so that** I can create ragdolls,
+swinging platforms, grappling hooks, and destructible chains.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -225,9 +224,9 @@ ragdolls, swinging platforms, grappling hooks, and destructible chains.
 
 ## US-10.5.19 Cast Rays and Test Overlaps in 2D Space
 
-**As a** developer (P-15), **I want** 2D ray casts, shape casts, and overlap tests against
-the shared spatial index, **so that** AI line-of-sight, area-of-effect abilities, platformer
-ground detection, and RTS unit selection work efficiently.
+**As a** developer (P-15), **I want** 2D ray casts, shape casts, and overlap tests against the
+shared spatial index, **so that** AI line-of-sight, area-of-effect abilities, platformer ground
+detection, and RTS unit selection work efficiently.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -237,9 +236,9 @@ ground detection, and RTS unit selection work efficiently.
 
 ## US-10.5.20 Light 2D Scenes With Dynamic Shadows
 
-**As an** artist (P-8), **I want** dynamic 2D point lights, spotlights, and ambient lighting
-with shadow casting from sprite edges and tilemap walls, **so that** I can create atmospheric
-2D scenes with colored lighting and normal-mapped sprites.
+**As an** artist (P-8), **I want** dynamic 2D point lights, spotlights, and ambient lighting with
+shadow casting from sprite edges and tilemap walls, **so that** I can create atmospheric 2D scenes
+with colored lighting and normal-mapped sprites.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -250,9 +249,9 @@ with shadow casting from sprite edges and tilemap walls, **so that** I can creat
 
 ## US-10.5.21 Benchmark 2D Lighting Within Mobile Fill Rate Budget
 
-**As an** engine tester (P-27), **I want** to benchmark 2D dynamic lighting to verify mobile
-stays within fill rate budget with 8 lights and half-res light maps, **so that** 2D lighting
-does not cause frame drops on mobile devices.
+**As an** engine tester (P-27), **I want** to benchmark 2D dynamic lighting to verify mobile stays
+within fill rate budget with 8 lights and half-res light maps, **so that** 2D lighting does not
+cause frame drops on mobile devices.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -262,9 +261,9 @@ does not cause frame drops on mobile devices.
 
 ## US-10.5.22 Add Particle Effects to 2D Scenes
 
-**As a** designer (P-5), **I want** 2D particle emitters integrated with the sprite pipeline
-that render particles as textured quads sorted into the 2D z-order, **so that** I can add
-sword slashes, magic effects, and projectile trails to 2D games.
+**As a** designer (P-5), **I want** 2D particle emitters integrated with the sprite pipeline that
+render particles as textured quads sorted into the 2D z-order, **so that** I can add sword slashes,
+magic effects, and projectile trails to 2D games.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -275,9 +274,9 @@ sword slashes, magic effects, and projectile trails to 2D games.
 
 ## US-10.5.23 Configure Virtual Touch Controls for Mobile 2D Games
 
-**As a** designer (P-5), **I want** configurable on-screen virtual joystick, D-pad, action
-buttons, and gesture zones that feed into the input action system, **so that** mobile players
-have responsive touch controls that adapt to screen size and orientation.
+**As a** designer (P-5), **I want** configurable on-screen virtual joystick, D-pad, action buttons,
+and gesture zones that feed into the input action system, **so that** mobile players have responsive
+touch controls that adapt to screen size and orientation.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -289,8 +288,8 @@ have responsive touch controls that adapt to screen size and orientation.
 ## US-10.5.24 Play 2D Games With Touch Gestures
 
 **As a** player (P-23) on a mobile device, **I want** pinch-to-zoom, two-finger pan, swipe,
-long-press, and double-tap gestures mapped to 2D game actions, **so that** I can control the
-camera, select units, and trigger abilities using natural touch interactions.
+long-press, and double-tap gestures mapped to 2D game actions, **so that** I can control the camera,
+select units, and trigger abilities using natural touch interactions.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -302,8 +301,8 @@ camera, select units, and trigger abilities using natural touch interactions.
 ## US-10.5.25 Replicate 2D Game State Across Network
 
 **As a** developer (P-15), **I want** 2D state replication optimized for Transform2D delta
-compression, sprite animation sync, tilemap chunk replication, and 2D physics state,
-**so that** 2D multiplayer games are bandwidth-efficient with hundreds of visible entities.
+compression, sprite animation sync, tilemap chunk replication, and 2D physics state, **so that** 2D
+multiplayer games are bandwidth-efficient with hundreds of visible entities.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -314,9 +313,8 @@ compression, sprite animation sync, tilemap chunk replication, and 2D physics st
 
 ## US-10.5.26 Play Competitive 2D Games With Rollback Netcode
 
-**As a** player (P-23), **I want** client-side prediction with rollback netcode for 2D
-fighting and action games, **so that** competitive multiplayer feels responsive even with
-moderate latency.
+**As a** player (P-23), **I want** client-side prediction with rollback netcode for 2D fighting and
+action games, **so that** competitive multiplayer feels responsive even with moderate latency.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -352,10 +350,9 @@ streaming, **so that** open-world 2D RPGs and survival games have explorable inf
 
 ## US-10.5.29 Generate Traversable 2D Dungeons With Lock-and-Key Logic
 
-**As a** developer (P-15), **I want** specialized 2D dungeon generators using BSP
-subdivision, random walk, and room-and-corridor placement with lock-and-key analysis,
-**so that** generated dungeons are always traversable with required items found before
-locked doors.
+**As a** developer (P-15), **I want** specialized 2D dungeon generators using BSP subdivision,
+random walk, and room-and-corridor placement with lock-and-key analysis, **so that** generated
+dungeons are always traversable with required items found before locked doors.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -366,9 +363,9 @@ locked doors.
 
 ## US-10.5.30 Composite 3D Characters Into 2D Scenes
 
-**As a** developer (P-15), **I want** 3D-rendered elements composited into the 2D scene
-pipeline via RenderLayer3D components inserted into the 2D z-order, **so that** 2.5D games
-show 3D characters on 2D backgrounds with correct depth ordering.
+**As a** developer (P-15), **I want** 3D-rendered elements composited into the 2D scene pipeline via
+RenderLayer3D components inserted into the 2D z-order, **so that** 2.5D games show 3D characters on
+2D backgrounds with correct depth ordering.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -378,9 +375,9 @@ show 3D characters on 2D backgrounds with correct depth ordering.
 
 ## US-10.5.31 Build HD-2D Games With 3D Camera and 2D Physics
 
-**As a** developer (P-15), **I want** a perspective 3D camera viewing a scene where physics
-are constrained to a 2D plane (Octopath-style), **so that** I can create HD-2D games with
-depth and atmosphere while maintaining simple 2D gameplay logic.
+**As a** developer (P-15), **I want** a perspective 3D camera viewing a scene where physics are
+constrained to a 2D plane (Octopath-style), **so that** I can create HD-2D games with depth and
+atmosphere while maintaining simple 2D gameplay logic.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -391,9 +388,9 @@ depth and atmosphere while maintaining simple 2D gameplay logic.
 
 ## US-10.5.32 Design Scenes With Mixed 2D and 3D Asset Layers
 
-**As a** designer (P-5), **I want** to arbitrarily layer 2D sprites, 3D meshes, 2D tilemaps,
-3D particles, and 2D vector elements with configurable depth and blend modes, **so that**
-hybrid scenes have correct occlusion between all render modes.
+**As a** designer (P-5), **I want** to arbitrarily layer 2D sprites, 3D meshes, 2D tilemaps, 3D
+particles, and 2D vector elements with configurable depth and blend modes, **so that** hybrid scenes
+have correct occlusion between all render modes.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -404,9 +401,9 @@ hybrid scenes have correct occlusion between all render modes.
 
 ## US-10.5.33 Verify 2D/3D Layer Occlusion and Depth Sorting
 
-**As an** engine tester (P-27), **I want** to verify that mixed 2D/3D scene layers sort and
-occlude correctly across all supported render mode combinations, **so that** no visual
-artifacts occur from incorrect depth ordering between layer types.
+**As an** engine tester (P-27), **I want** to verify that mixed 2D/3D scene layers sort and occlude
+correctly across all supported render mode combinations, **so that** no visual artifacts occur from
+incorrect depth ordering between layer types.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

@@ -16,44 +16,34 @@ This handbook provides guidelines and best practices for agents working on the H
   conversation. Include them in documentation and README files when they illustrate a point well. I
   prefer visual information over prose.
 - Keep documentation prose structured using headings, subheadings, numbered lists, bulleted lists,
-  and tables. Keep paragraphs under 5 sentences and 100 words.
+  and tables. Keep paragraphs under 5 sentences and 50 words.
+- Wrap git commit messages to a 50 character line length limit for the first line, and a 72
+  character line length limit for the rest of the commit message.
 
-## Design guidelines
+## Design constraints
+
+All project-wide design constraints (language, platform I/O, architecture, async model, etc.) are
+documented in [docs/design/constraints.md](docs/design/constraints.md). Read that file before
+starting any design or implementation work.
+
+## Design process
 
 - Always write design for significant features with major new changes. For minor changes, provide
   the design in a message if feasible. The design should include references to requirements, a quick
   overview, architecture diagrams, flowcharts, sequence diagrams, and class diagrams (data
-  structures, enums, relationships)
+  structures, enums, relationships).
 - Use lists and tables to display requirements, OS API usage, tabular data, comparisons, matrices,
   features and any other structured or semi-structured information.
 - Start from requirements, and rethink the design periodically to see if it needs to be redone. In
   this case, you should stash the current state, create a new branch, then delete all of the
   existing design files in the branch. Finally, write a new design from scratch that better meets
   the requirements. Throw away any inferior design iterations until you settle on an ideal design.
-- Design abstractions to be modular and reusable. Separate concerns between components and modules.
-  Prefer composition over inheritance.
 - Always come up with a test plan and an explicit list of test cases. Ensure full coverage of all
   code paths.
-- Always prefer static dispatch. Do not use virtual methods, vtables, abstract base classes, or
-  dynamic dispatch unless necessary for runtime polymorphism.
-- Use domain-driven design to model the problem space and create a ubiquitous language. Define clear
-  boundaries between domains and use interfaces to decouple them.
 - Seek approval before adding or changing any dependencies. If you need to add a dependency, propose
-  a low-level library that is well supported and maintained, and can be accessed through vcpkg.
-  Avoid using any frameworks.
+  a low-level library that is well supported and maintained. Avoid using any frameworks.
 - Always use the latest versions of dependencies and tools. Use the package manager CLI to install
   dependencies with the latest version automatically.
-- Write multiplatform code that works consistently across supported operating systems. Use
-  platform-agnostic libraries and tools when possible. Ensure all cross-platform interfaces are
-  compatible with each supported platform, or use gating to expose platform-specific functionality.
-- Do not use file I/O from the Rust standard library. Use platform-native async I/O instead: I/O
-  completion ports on Windows, dispatch_async I/O (Grand Central Dispatch) on macOS, and io_uring on
-  Linux.
-- Always use dependency injection. Components receive their dependencies through constructors or
-  method parameters, never by creating or locating them internally. This makes dependencies
-  explicit, testable, and swappable.
-- No singletons. Never use the singleton pattern. All dependencies must be explicitly passed via
-  constructor injection or function parameters.
 - Think about the implementation after the design of the API is finalized. Do not design and write
   code simultaneously. Separate design, design iteration, design review, implementation planning,
   test planning, test-driven implementation, verification, documentation, and release into distinct

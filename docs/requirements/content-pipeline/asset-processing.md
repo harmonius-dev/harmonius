@@ -2,8 +2,8 @@
 
 ## R-12.2.1 Texture Compression (BC, ASTC, ETC)
 The engine **SHALL** compress imported textures offline into GPU-native block-compressed formats
-(BC7/BC6H for desktop and console, ASTC for mobile and Apple Silicon, ETC2 as mobile fallback)
-with quality levels and format selection driven by import presets and per-platform override tables.
+(BC7/BC6H for desktop and console, ASTC for mobile and Apple Silicon, ETC2 as mobile fallback) with
+quality levels and format selection driven by import presets and per-platform override tables.
 - **Derived from:** [F-12.2.1](../../features/content-pipeline/asset-processing.md)
 - **Rationale:** Platform-appropriate block compression minimizes GPU memory and bandwidth while
   maintaining visual quality across all target hardware.
@@ -15,8 +15,8 @@ The engine **SHALL** generate automatic discrete LOD chains using edge-collapse 
 with each LOD level targeting a configurable triangle-count ratio and error threshold to preserve
 silhouette fidelity, requiring no manual artist intervention.
 - **Derived from:** [F-12.2.2](../../features/content-pipeline/asset-processing.md)
-- **Rationale:** Fully automated LOD generation is required for worlds containing millions of
-  unique meshes where manual LOD authoring is infeasible.
+- **Rationale:** Fully automated LOD generation is required for worlds containing millions of unique
+  meshes where manual LOD authoring is infeasible.
 - **Verification:** Generate an LOD chain for a reference mesh and confirm each level meets its
   triangle-count ratio within the error threshold; confirm silhouette deviation stays below the
   configured limit.
@@ -28,8 +28,8 @@ triangles) and precompute per-meshlet bounds (AABB and normal cone) for GPU-driv
 - **Rationale:** Meshlet partitioning is a prerequisite for the GPU-driven mesh shader rendering
   pipeline, and precomputed bounds enable efficient per-meshlet culling on the GPU.
 - **Verification:** Build meshlets from a test mesh and confirm no meshlet exceeds 64 vertices or
-  124 triangles; confirm each meshlet has a valid AABB and normal cone; render with mesh shaders
-  and confirm correct visual output.
+  124 triangles; confirm each meshlet has a valid AABB and normal cone; render with mesh shaders and
+  confirm correct visual output.
 
 ## R-12.2.4 Vertex Cache and Overdraw Optimization
 The engine **SHALL** reorder triangles and vertices within each meshlet to maximize post-transform
@@ -62,20 +62,20 @@ controlled by import presets.
 ## R-12.2.7 Shader Graph to HLSL Code Generation
 The engine **SHALL** compile visual shader graph assets into clean, human-readable HLSL source
 files. Each graph node **SHALL** emit an HLSL function; the compiler **SHALL** resolve input
-connections, generate typed local variables, and compose node functions into complete shader
-entry points. Custom nodes **SHALL** be user-authored HLSL snippets with function signatures
-called with resolved inputs. Generated .hlsl files **SHALL** contain no template markers,
-preprocessor hacks, or non-standard extensions — they **SHALL** be fully compatible with HLSL
-syntax highlighting and HLSL Tools features (IntelliSense, error squiggles, go-to-definition)
-in any IDE. Comments **SHALL** annotate which graph node produced each code section. Only
-reachable shader variants identified through static analysis **SHALL** be generated.
+connections, generate typed local variables, and compose node functions into complete shader entry
+points. Custom nodes **SHALL** be user-authored HLSL snippets with function signatures called with
+resolved inputs. Generated .hlsl files **SHALL** contain no template markers, preprocessor hacks, or
+non-standard extensions — they **SHALL** be fully compatible with HLSL syntax highlighting and HLSL
+Tools features (IntelliSense, error squiggles, go-to-definition) in any IDE. Comments **SHALL**
+annotate which graph node produced each code section. Only reachable shader variants identified
+through static analysis **SHALL** be generated.
 - **Derived from:** [F-12.2.7](../../features/content-pipeline/asset-processing.md)
-- **Rationale:** Human-readable HLSL output enables debugging, manual inspection, and IDE
-  tooling. Pure HLSL with no template remnants ensures compatibility with standard HLSL tools.
-- **Verification:** Generate HLSL from a shader graph with 20+ nodes; open in Visual Studio
-  with HLSL Tools; verify syntax highlighting, IntelliSense, and error squiggles work correctly.
-  Verify no template markers ({{, %%, <%>) appear in the output. Verify comments trace each
-  section to its graph node.
+- **Rationale:** Human-readable HLSL output enables debugging, manual inspection, and IDE tooling.
+  Pure HLSL with no template remnants ensures compatibility with standard HLSL tools.
+- **Verification:** Generate HLSL from a shader graph with 20+ nodes; open in Visual Studio with
+  HLSL Tools; verify syntax highlighting, IntelliSense, and error squiggles work correctly. Verify
+  no template markers ({{, %%, <%>) appear in the output. Verify comments trace each section to its
+  graph node.
 
 ## R-12.2.8 Asset Dependency Graphs
 The engine **SHALL** track directed acyclic dependency graphs between all assets, drive incremental
@@ -88,17 +88,17 @@ shared asset changes.
   rebuilt; introduce a circular reference and confirm it is detected and reported as an error.
 
 ## R-12.2.9 DXC and Metal Shader Converter Pipeline
-The engine **SHALL** compile generated HLSL source files (R-12.2.7) into platform-native
-bytecode using DXC for HLSL-to-DXIL and HLSL-to-SPIR-V, and Metal Shader Converter for
-DXIL-to-MSL. DXC **SHALL** perform validation, optimization (dead code elimination, constant
-folding), and reflection (binding layouts, push constant ranges, workgroup sizes). Both DXC
-and Metal Shader Converter are C++ libraries accessed via cxx.rs FFI. Compiled bytecode
-**SHALL** be cached by HLSL source hash in the shared build cache (F-15.11.2). Compilation
-errors **SHALL** report the original HLSL line number AND the graph node that generated it,
-enabling click-to-navigate from compiler errors to the visual graph node in the editor.
+The engine **SHALL** compile generated HLSL source files (R-12.2.7) into platform-native bytecode
+using DXC for HLSL-to-DXIL and HLSL-to-SPIR-V, and Metal Shader Converter for DXIL-to-MSL. DXC
+**SHALL** perform validation, optimization (dead code elimination, constant folding), and reflection
+(binding layouts, push constant ranges, workgroup sizes). Both DXC and Metal Shader Converter are
+C++ libraries accessed via cxx.rs FFI. Compiled bytecode **SHALL** be cached by HLSL source hash in
+the shared build cache (F-15.11.2). Compilation errors **SHALL** report the original HLSL line
+number AND the graph node that generated it, enabling click-to-navigate from compiler errors to the
+visual graph node in the editor.
 - **Derived from:** [F-12.2.9](../../features/content-pipeline/asset-processing.md)
 - **Rationale:** DXC and Metal Shader Converter are industry-standard, vendor-supported shader
   compilers that produce optimized output with full reflection data for all target APIs.
-- **Verification:** Compile a shader with dead code and constants, confirm dead code is removed
-  and constants are folded; confirm reflected binding layouts match the source HLSL; validate each
+- **Verification:** Compile a shader with dead code and constants, confirm dead code is removed and
+  constants are folded; confirm reflected binding layouts match the source HLSL; validate each
   output format on its target API.

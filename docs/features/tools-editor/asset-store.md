@@ -18,10 +18,10 @@ access where asset formats are compatible.
 ### F-15.17.2 One-Click Asset Import and Project Integration
 Purchase/download an asset and automatically import it into the current project. The import pipeline
 validates compatibility (engine version, required plugins, platform support), resolves dependencies
-(an asset requiring a specific material library pulls it automatically), and installs to a designated
-marketplace assets folder. Imported assets appear in the asset browser (F-12.3.1) immediately.
-Version conflicts (asset requires plugin v2.0 but project has v1.8) are flagged with upgrade
-guidance. Free assets download without payment flow. Asset licenses are tracked per-project.
+(an asset requiring a specific material library pulls it automatically), and installs to a
+designated marketplace assets folder. Imported assets appear in the asset browser (F-12.3.1)
+immediately. Version conflicts (asset requires plugin v2.0 but project has v1.8) are flagged with
+upgrade guidance. Free assets download without payment flow. Asset licenses are tracked per-project.
 - **Requirements:** R-15.17.2
 - **Dependencies:** F-15.17.1, F-12.1.1 (Native Asset Ingestion), F-15.15.4 (Project File)
 - **Platform notes:** None
@@ -40,8 +40,8 @@ last-updated date, engine version compatibility, and verified-publisher badge.
 
 ### F-15.17.4 Publisher Account and Dashboard
 Asset creators register publisher accounts with identity verification. The publisher dashboard
-displays: published assets, revenue analytics (sales, refunds, royalties), download statistics,
-user reviews (with response capability), compatibility test results per engine version, and payout
+displays: published assets, revenue analytics (sales, refunds, royalties), download statistics, user
+reviews (with response capability), compatibility test results per engine version, and payout
 history. Publishers set prices in multiple currencies, configure regional pricing, run time-limited
 sales and discount codes, and bundle assets into packs with aggregate pricing.
 - **Requirements:** R-15.17.4
@@ -64,8 +64,8 @@ The marketplace takes a configurable commission (default: 12%) on paid asset sal
 receive monthly payouts via bank transfer, PayPal, or platform credits. Revenue reports detail
 per-asset sales, regional breakdown, and commission deductions. Refund processing automatically
 reverses publisher revenue for refunded purchases within the refund window (14 days). Tax
-documentation (W-9, W-8BEN) is collected from publishers for compliance. Free assets cost nothing
-to publish.
+documentation (W-9, W-8BEN) is collected from publishers for compliance. Free assets cost nothing to
+publish.
 - **Requirements:** R-15.17.6
 - **Dependencies:** F-15.17.4
 - **Platform notes:** Payment processing uses Stripe or equivalent for global payouts.
@@ -85,12 +85,11 @@ libraries per platform). Each type has appropriate preview rendering and metadat
   platform-specific binaries.
 
 ### F-15.17.8 License Management and DRM
-Assets carry license metadata: usage rights (personal, commercial, non-transferable),
-redistribution rights (can mods include this asset?), attribution requirements, and seat count
-(per-user or per-project). The engine validates licenses at import time and displays license terms
-in the asset browser. No runtime DRM -- once imported, assets work offline without license checks.
-License violations (using a personal-license asset in a commercial product) are contractual, not
-technical.
+Assets carry license metadata: usage rights (personal, commercial, non-transferable), redistribution
+rights (can mods include this asset?), attribution requirements, and seat count (per-user or
+per-project). The engine validates licenses at import time and displays license terms in the asset
+browser. No runtime DRM -- once imported, assets work offline without license checks. License
+violations (using a personal-license asset in a commercial product) are contractual, not technical.
 - **Requirements:** R-15.17.8
 - **Dependencies:** F-15.17.2, F-15.15.5 (Account Management)
 - **Platform notes:** None

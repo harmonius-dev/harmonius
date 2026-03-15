@@ -13,8 +13,8 @@ consistent behavior across platforms.
 - **Requirements:** R-15.10.1
 - **Dependencies:** F-15.1.1, F-15.1.8
 - **Platform notes:** On macOS, SSH key access uses the Keychain for passphrase management. On
-  Windows, uses the Windows Credential Manager. On Linux, uses the Secret Service API (libsecret)
-  or ssh-agent.
+  Windows, uses the Windows Credential Manager. On Linux, uses the Secret Service API (libsecret) or
+  ssh-agent.
 
 ### F-15.10.2 Git LFS Management
 
@@ -34,10 +34,10 @@ organization limits, with warnings when usage exceeds configurable thresholds.
 ### F-15.10.3 Asset-Aware Merge Driver
 
 A custom Git merge driver registered automatically on project clone that invokes the engine's
-structural merge system (F-12.7.4) for binary and structured asset formats instead of failing
-with a binary conflict. The driver performs three-way structural merge on assets such as logic
-graphs, material graphs, prefabs, and data tables. Unresolvable conflicts fall back to the
-visual diff tool where users accept changes per-node or per-property.
+structural merge system (F-12.7.4) for binary and structured asset formats instead of failing with a
+binary conflict. The driver performs three-way structural merge on assets such as logic graphs,
+material graphs, prefabs, and data tables. Unresolvable conflicts fall back to the visual diff tool
+where users accept changes per-node or per-property.
 
 - **Requirements:** R-15.10.3
 - **Dependencies:** F-15.10.1, F-12.7.4 (Structural Merge), F-15.8.13 (Graph Diffing)
@@ -48,24 +48,24 @@ visual diff tool where users accept changes per-node or per-property.
 
 ### F-15.10.4 Branch-Per-Feature Workflow
 
-The editor supports creating feature branches, switching branches with asset cache preservation,
-and creating pull/merge requests directly from the editor UI. Branch switching warns about unsaved
+The editor supports creating feature branches, switching branches with asset cache preservation, and
+creating pull/merge requests directly from the editor UI. Branch switching warns about unsaved
 changes and offers to stash or shelve them before proceeding. Pull request descriptions are
-auto-populated from the commit history on the branch. The branch selector displays the branch
-graph inline with remote tracking status and ahead/behind counts.
+auto-populated from the commit history on the branch. The branch selector displays the branch graph
+inline with remote tracking status and ahead/behind counts.
 
 - **Requirements:** R-15.10.4
 - **Dependencies:** F-15.10.1, F-15.10.7
-- **Platform notes:** Desktop only. Not available on mobile or console runtime. Pull/merge
-  request creation integrates with GitHub, GitLab, Bitbucket, and Azure DevOps APIs.
+- **Platform notes:** Desktop only. Not available on mobile or console runtime. Pull/merge request
+  creation integrates with GitHub, GitLab, Bitbucket, and Azure DevOps APIs.
 
 ## Collaboration
 
 ### F-15.10.5 Collaborative Presence
 
-Real-time presence indicators show which team members are currently editing which assets. The
-asset browser displays a colored avatar badge on each asset that is open in another user's editor.
-For assets that do not merge well — large terrain heightmaps, baked lightmaps, navigation meshes —
+Real-time presence indicators show which team members are currently editing which assets. The asset
+browser displays a colored avatar badge on each asset that is open in another user's editor. For
+assets that do not merge well — large terrain heightmaps, baked lightmaps, navigation meshes —
 optional pessimistic locking prevents concurrent edits. Lock requests queue automatically when an
 asset is already locked, and the lock holder receives a notification with the option to release.
 
@@ -94,12 +94,11 @@ without blocking the editor.
 
 ### F-15.10.7 Shelving and Local Stash
 
-Save work-in-progress changes locally without committing to the repository. Named shelves store
-all modified assets along with their structural diffs, providing a richer view than a plain Git
-stash. Shelves can be shared with team members via the shared cache (F-15.11.1) for handoff
-scenarios. Applying a shelf merges the shelved changes with the current working state using the
-same structural merge system as the merge driver (F-15.10.3), with conflict resolution for
-overlapping edits.
+Save work-in-progress changes locally without committing to the repository. Named shelves store all
+modified assets along with their structural diffs, providing a richer view than a plain Git stash.
+Shelves can be shared with team members via the shared cache (F-15.11.1) for handoff scenarios.
+Applying a shelf merges the shelved changes with the current working state using the same structural
+merge system as the merge driver (F-15.10.3), with conflict resolution for overlapping edits.
 
 - **Requirements:** R-15.10.7
 - **Dependencies:** F-15.10.1, F-15.10.3, F-15.11.1
@@ -111,13 +110,12 @@ overlapping edits.
 ### F-15.10.8 Multi-Provider Git Hosting Support
 
 First-class support for GitHub, GitLab, Bitbucket, and self-hosted Git servers. All hosting-
-provider-specific features (pull requests, merge requests, code review, issue linking, CI
-status) are accessed through a provider abstraction layer. The editor auto-detects the provider
-from the remote URL. Provider-specific API tokens are stored in the platform credential store.
-All provider interactions (PR creation, review, merge, comment) happen within the editor — no
-browser required.
+provider-specific features (pull requests, merge requests, code review, issue linking, CI status)
+are accessed through a provider abstraction layer. The editor auto-detects the provider from the
+remote URL. Provider-specific API tokens are stored in the platform credential store. All provider
+interactions (PR creation, review, merge, comment) happen within the editor — no browser required.
 
 - **Requirements:** R-15.10.8
 - **Dependencies:** F-15.10.1, F-15.12.14 (PR Review in Editor)
-- **Platform notes:** GitHub uses REST v3 + GraphQL v4 APIs. GitLab uses REST v4 API.
-  Bitbucket uses REST 2.0 API. Self-hosted instances require configurable base URL.
+- **Platform notes:** GitHub uses REST v3 + GraphQL v4 APIs. GitLab uses REST v4 API. Bitbucket uses
+  REST 2.0 API. Self-hosted instances require configurable base URL.

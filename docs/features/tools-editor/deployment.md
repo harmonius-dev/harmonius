@@ -6,25 +6,24 @@
 
 Package the game project into platform-native distributable formats: macOS app bundle (.app),
 Windows executable (.exe with installer), Linux AppImage, iOS IPA, Android APK/AAB, and
-console-specific packages. The packaging pipeline cooks all assets for the target platform,
-strips editor-only content, optimizes binary size, and produces a self-contained distributable.
-Build configurations (debug, development, shipping) control optimization level, symbol stripping,
-and diagnostic inclusion. Packaging is invocable from the editor UI or CLI for CI integration.
+console-specific packages. The packaging pipeline cooks all assets for the target platform, strips
+editor-only content, optimizes binary size, and produces a self-contained distributable. Build
+configurations (debug, development, shipping) control optimization level, symbol stripping, and
+diagnostic inclusion. Packaging is invocable from the editor UI or CLI for CI integration.
 
 - **Requirements:** R-15.14.1
 - **Dependencies:** F-15.1.1 (Editor Framework), F-12.2.1 (Texture Compression)
-- **Platform notes:** Console packaging requires platform-specific SDKs (PlayStation SDK, Xbox
-  GDK, Nintendo SDK). Code signing uses platform-native tools (codesign on macOS, signtool on
-  Windows).
+- **Platform notes:** Console packaging requires platform-specific SDKs (PlayStation SDK, Xbox GDK,
+  Nintendo SDK). Code signing uses platform-native tools (codesign on macOS, signtool on Windows).
 
 ### F-15.14.2 Deploy-to-Device Workflow
 
 One-click deployment from the editor to connected development devices: iOS devices via USB/WiFi,
 Android devices via ADB, development consoles via devkit network connection. The deploy pipeline
-incrementally transfers only changed assets to minimize iteration time. A device manager panel
-lists connected devices with status, storage, and OS version. Remote launch starts the game on
-the target device with configurable command-line arguments. Console output from the remote device
-streams back to the editor's console panel.
+incrementally transfers only changed assets to minimize iteration time. A device manager panel lists
+connected devices with status, storage, and OS version. Remote launch starts the game on the target
+device with configurable command-line arguments. Console output from the remote device streams back
+to the editor's console panel.
 
 - **Requirements:** R-15.14.2
 - **Dependencies:** F-15.14.1, F-1.8.4 (Async Network I/O)
@@ -37,9 +36,9 @@ Automated validation of platform certification requirements before submission. C
 required platform-specific UI elements (trophy/achievement icons), button glyph correctness
 (F-6.2.6), save data compliance (size limits, encryption), accessibility requirements, content
 rating metadata, network connectivity handling (graceful offline behavior), and performance
-baselines. Each platform's certification checklist is maintained as a data asset that can be
-updated independently of the engine. The checker produces a report with pass/fail per requirement
-and remediation guidance.
+baselines. Each platform's certification checklist is maintained as a data asset that can be updated
+independently of the engine. The checker produces a report with pass/fail per requirement and
+remediation guidance.
 
 - **Requirements:** R-15.14.3
 - **Dependencies:** F-15.14.1, F-6.2.6 (Button Glyph Resolution)
@@ -48,16 +47,15 @@ and remediation guidance.
 
 ### F-15.14.4 Code Signing Pipeline
 
-Automated code signing for all distributable artifacts as part of the packaging pipeline.
-iOS: sign with development or distribution provisioning profiles and certificates from the Apple
-Developer portal, supporting both Ad Hoc (testing) and App Store distribution signing.
-macOS: sign the .app bundle with Developer ID certificate and submit for Apple notarization
-(staple the notarization ticket to the binary). Android: sign APK/AAB with a keystore (debug
-keystore for development, release keystore for distribution) using APK Signature Scheme v2/v3.
-Windows: Authenticode sign the .exe and .msi with an EV code signing certificate via signtool.
-Signing credentials are stored in the platform keychain (F-15.15.5) and never committed to
-version control. CI/CD pipelines access signing credentials through environment variables or
-secure vault integration.
+Automated code signing for all distributable artifacts as part of the packaging pipeline. iOS: sign
+with development or distribution provisioning profiles and certificates from the Apple Developer
+portal, supporting both Ad Hoc (testing) and App Store distribution signing. macOS: sign the .app
+bundle with Developer ID certificate and submit for Apple notarization (staple the notarization
+ticket to the binary). Android: sign APK/AAB with a keystore (debug keystore for development,
+release keystore for distribution) using APK Signature Scheme v2/v3. Windows: Authenticode sign the
+.exe and .msi with an EV code signing certificate via signtool. Signing credentials are stored in
+the platform keychain (F-15.15.5) and never committed to version control. CI/CD pipelines access
+signing credentials through environment variables or secure vault integration.
 
 - **Requirements:** R-15.14.4
 - **Dependencies:** F-15.14.1 (Platform Build Packaging), F-15.15.5 (Account Management)
@@ -67,15 +65,15 @@ secure vault integration.
 
 ### F-15.14.5 Platform-Specific Installers and Distributions
 
-Generate platform-native installer packages beyond raw executables. macOS: create .dmg disk
-images with background art, app icon placement, and Applications symlink for drag-to-install.
-Windows: generate .msi installers (via WiX or similar) with optional silent install mode, start
-menu shortcuts, file associations for .harmonius project files, and uninstaller registration.
-Linux: produce AppImage (portable, no install), .deb packages for Ubuntu/Debian with apt
-repository metadata for PPA distribution, and Flatpak manifests. SteamOS: produce a Steam
-Deck-verified build with Proton compatibility layer testing and appropriate controller
-configuration. Each installer format is generated by a platform-specific post-packaging step
-invocable from CLI or the editor's build panel.
+Generate platform-native installer packages beyond raw executables. macOS: create .dmg disk images
+with background art, app icon placement, and Applications symlink for drag-to-install. Windows:
+generate .msi installers (via WiX or similar) with optional silent install mode, start menu
+shortcuts, file associations for .harmonius project files, and uninstaller registration. Linux:
+produce AppImage (portable, no install), .deb packages for Ubuntu/Debian with apt repository
+metadata for PPA distribution, and Flatpak manifests. SteamOS: produce a Steam Deck-verified build
+with Proton compatibility layer testing and appropriate controller configuration. Each installer
+format is generated by a platform-specific post-packaging step invocable from CLI or the editor's
+build panel.
 
 - **Requirements:** R-15.14.5
 - **Dependencies:** F-15.14.1 (Packaging), F-15.14.4 (Code Signing)
@@ -86,49 +84,48 @@ invocable from CLI or the editor's build panel.
 ### F-15.14.6 Asset Bundle and DLC Packaging
 
 Package subsets of game content into downloadable asset bundles separate from the base game
-executable. Each bundle is a compressed, signed archive containing cooked assets, metadata
-(name, version, dependencies on other bundles), and a manifest listing all contained assets by
-content hash. DLC packs are bundles with entitlement gating — the runtime checks platform
-entitlements (F-14.5.6) before mounting DLC bundles. Patch bundles contain only assets that
-changed since a specified base version, enabling incremental updates. The bundle packaging
-pipeline is integrated with the asset database (F-12.3.1) and produces bundles for each target
-platform's asset format (texture compression, shader bytecode). Bundle integrity is verified on
-load via BLAKE3 content hashes.
+executable. Each bundle is a compressed, signed archive containing cooked assets, metadata (name,
+version, dependencies on other bundles), and a manifest listing all contained assets by content
+hash. DLC packs are bundles with entitlement gating — the runtime checks platform entitlements
+(F-14.5.6) before mounting DLC bundles. Patch bundles contain only assets that changed since a
+specified base version, enabling incremental updates. The bundle packaging pipeline is integrated
+with the asset database (F-12.3.1) and produces bundles for each target platform's asset format
+(texture compression, shader bytecode). Bundle integrity is verified on load via BLAKE3 content
+hashes.
 
 - **Requirements:** R-15.14.6
-- **Dependencies:** F-15.14.1, F-14.5.6 (Entitlements), F-12.3.1 (Asset Database),
-  F-12.5.9 (Compression)
+- **Dependencies:** F-15.14.1, F-14.5.6 (Entitlements), F-12.3.1 (Asset Database), F-12.5.9
+  (Compression)
 - **Platform notes:** None
 
 ### F-15.14.7 Delta Patching System
 
 Generate binary delta patches between game versions to minimize download sizes for updates. The
 patching system compares old and new asset bundles at the chunk level (using content-defined
-chunking for shift-resilient diffs) and produces a patch file containing only changed chunks.
-The runtime patcher applies delta patches to the installed game without requiring a full
-re-download. Patch sizes are typically 5-20% of the full update size. The patch generation
-pipeline runs as a CI step that takes the previous release and the new build as inputs. Patch
-verification ensures the patched result matches the full new build via content hash comparison.
+chunking for shift-resilient diffs) and produces a patch file containing only changed chunks. The
+runtime patcher applies delta patches to the installed game without requiring a full re-download.
+Patch sizes are typically 5-20% of the full update size. The patch generation pipeline runs as a CI
+step that takes the previous release and the new build as inputs. Patch verification ensures the
+patched result matches the full new build via content hash comparison.
 
 - **Requirements:** R-15.14.7
 - **Dependencies:** F-15.14.6 (Asset Bundles), F-12.5.9 (Compression)
 - **Platform notes:** Steam, Xbox, and PlayStation have their own delta patching systems. The
-  engine's delta patching is used for self-distributed builds (direct download, App Store,
-  custom launcher). Platform-native patching takes precedence when available.
+  engine's delta patching is used for self-distributed builds (direct download, App Store, custom
+  launcher). Platform-native patching takes precedence when available.
 
 ### F-15.14.8 Store Distribution Pipeline
 
-Automated submission of packaged builds to digital storefronts. Steam: upload builds via
-SteamCMD with depot configuration, set live branches (default, beta, staging), and manage build
-metadata. App Store (iOS/macOS): submit signed .ipa/.app via Transporter CLI or altool with app
-metadata, screenshots, and privacy declarations. Windows Store: package as MSIX and submit via
-the Microsoft Partner Center CLI. Xbox: upload via the Xbox Partner Center with certification
-pre-check results (F-15.14.3). Each store submission is a CLI command integrated into the CI/CD
-pipeline with configurable pre-submission validation gates. Submission status polling notifies
-the team when builds pass or fail store review.
+Automated submission of packaged builds to digital storefronts. Steam: upload builds via SteamCMD
+with depot configuration, set live branches (default, beta, staging), and manage build metadata. App
+Store (iOS/macOS): submit signed .ipa/.app via Transporter CLI or altool with app metadata,
+screenshots, and privacy declarations. Windows Store: package as MSIX and submit via the Microsoft
+Partner Center CLI. Xbox: upload via the Xbox Partner Center with certification pre-check results
+(F-15.14.3). Each store submission is a CLI command integrated into the CI/CD pipeline with
+configurable pre-submission validation gates. Submission status polling notifies the team when
+builds pass or fail store review.
 
 - **Requirements:** R-15.14.8
-- **Dependencies:** F-15.14.4 (Code Signing), F-15.14.5 (Installers),
-  F-15.14.3 (Certification)
-- **Platform notes:** Each store has its own CLI tools, authentication, and rate limits. Store
-  API credentials are stored securely and never committed to version control.
+- **Dependencies:** F-15.14.4 (Code Signing), F-15.14.5 (Installers), F-15.14.3 (Certification)
+- **Platform notes:** Each store has its own CLI tools, authentication, and rate limits. Store API
+  credentials are stored securely and never committed to version control.

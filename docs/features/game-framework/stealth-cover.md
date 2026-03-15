@@ -9,8 +9,8 @@ player's position, shadow/light state (using the lighting system's shadow maps),
 (crouching and stationary reduce visibility), equipment (dark clothing reduces visibility,
 reflective armor increases it), and active abilities (invisibility skill sets visibility to zero).
 AI perception (F-7.6.1) uses the visibility score as a multiplier on detection range — in darkness,
-enemies must be much closer to detect the player. A stealth HUD indicator shows the player's
-current visibility level (eye icon from closed to open).
+enemies must be much closer to detect the player. A stealth HUD indicator shows the player's current
+visibility level (eye icon from closed to open).
 
 - **Requirements:** R-13.18.1
 - **Dependencies:** F-7.6.1 (Perception - Sight), F-2.4.1 (Lighting)
@@ -34,25 +34,24 @@ suspicious to alerted, preventing instant detection from brief glimpses.
 
 Player actions generate noise events at varying intensity: sprinting (medium), gunfire (high), door
 opening (low), thrown distraction objects (medium at impact point). Noise events propagate through
-the shared spatial index (F-1.9.4) with distance attenuation to AI hearing perception (F-7.6.2).
-AI investigates noise sources by moving to the noise origin and searching. Throwable distraction
-items (rocks, bottles) create noise at the impact location to lure AI away from patrol routes.
-Noise propagation respects sound occlusion — closed doors and thick walls attenuate noise. Silenced
+the shared spatial index (F-1.9.4) with distance attenuation to AI hearing perception (F-7.6.2). AI
+investigates noise sources by moving to the noise origin and searching. Throwable distraction items
+(rocks, bottles) create noise at the impact location to lure AI away from patrol routes. Noise
+propagation respects sound occlusion — closed doors and thick walls attenuate noise. Silenced
 weapons reduce gunfire noise intensity.
 
 - **Requirements:** R-13.18.3
-- **Dependencies:** F-7.6.2 (Perception - Hearing), F-1.9.4 (Spatial Query),
-  F-5.2.5 (Occlusion)
+- **Dependencies:** F-7.6.2 (Perception - Hearing), F-1.9.4 (Spatial Query), F-5.2.5 (Occlusion)
 - **Platform notes:** None
 
 ### F-13.18.4 Stealth Takedown System
 
 Context-sensitive instant-kill or incapacitate action when approaching an unaware enemy from behind
 or above. Takedowns trigger a synchronized two-character animation (attacker + victim) with the
-attacker locked to the victim's position. Takedown types: silent (knife, chokehold — no noise),
-loud (neck snap — nearby AI alerted), and non-lethal (chokehold — victim unconscious, can be
-revived). Takedowns require: enemy unaware state, player behind or above the target, and a brief
-channeled input. Killed or unconscious bodies can be picked up (F-13.17.3) and hidden.
+attacker locked to the victim's position. Takedown types: silent (knife, chokehold — no noise), loud
+(neck snap — nearby AI alerted), and non-lethal (chokehold — victim unconscious, can be revived).
+Takedowns require: enemy unaware state, player behind or above the target, and a brief channeled
+input. Killed or unconscious bodies can be picked up (F-13.17.3) and hidden.
 
 - **Requirements:** R-13.18.4
 - **Dependencies:** F-13.18.2 (AI Alert States), F-9.4.1 (Animation State Machine)
@@ -67,10 +66,9 @@ points are classified by type: half cover (crouch height, provides torso protect
 (standing height, full body protection), and directional cover (protects from specific angles).
 Players snap to cover via input action, with smooth transition animation. While in cover: peek
 left/right to aim and shoot with partial exposure, blind fire over/around cover with reduced
-accuracy, and cover-to-cover sprint between adjacent cover points. AI agents (F-7.8.1) use the
-same cover points with scoring-based selection.
+accuracy, and cover-to-cover sprint between adjacent cover points. AI agents (F-7.8.1) use the same
+cover points with scoring-based selection.
 
 - **Requirements:** R-13.18.5
-- **Dependencies:** F-4.1.8 (Character Controller), F-1.9.4 (Spatial Query),
-  F-9.4.1 (Animation)
+- **Dependencies:** F-4.1.8 (Character Controller), F-1.9.4 (Spatial Query), F-9.4.1 (Animation)
 - **Platform notes:** None

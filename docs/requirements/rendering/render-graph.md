@@ -12,8 +12,9 @@ nothing about rendering features (bloom, shadows, hair, etc.) -- only passes, re
 barriers, scheduling, and gating.
 
 These requirements were derived from the high-level renderer functional requirements (R-2.x.y) via
-systematic translation and deduplication. See [traceability-matrix.md](../6-render-graph/traceability-matrix.md)
-for the complete bidirectional mapping.
+systematic translation and deduplication. See
+[traceability-matrix.md](../6-render-graph/traceability-matrix.md) for the complete bidirectional
+mapping.
 
 **Total: 119 render graph requirements** across 14 categories.
 
@@ -32,9 +33,9 @@ transitions, and scheduling constraints exclusively from these declarations.
 **Derived from:** R-2.1.6, R-2.1.8, R-2.1.12, R-2.3.5, R-2.3.8, R-2.3.11, R-2.3.12, R-2.3.13,
 R-2.4.12, R-2.5.2, R-2.5.3, R-2.5.10, R-2.6.1, R-2.6.3, R-2.6.5, R-2.6.9, R-2.6.11, R-2.7.1,
 R-2.7.3, R-2.7.10, R-2.7.11, R-2.8.11, R-2.9.1, R-2.9.8, R-2.9.9, R-2.10.1, R-2.10.5, R-2.10.6,
-R-2.11.6, R-2.12.3, R-2.12.5, R-2.13.1, R-2.13.2, R-2.13.3, R-2.13.4, R-2.13.5, R-2.13.6,
-R-2.13.7, R-2.13.8, R-2.13.9, R-2.13.10, R-2.13.11, R-2.13.12, R-2.14.4, R-2.15.6, R-2.15.7,
-R-2.16.1, R-2.17.1, R-2.17.6
+R-2.11.6, R-2.12.3, R-2.12.5, R-2.13.1, R-2.13.2, R-2.13.3, R-2.13.4, R-2.13.5, R-2.13.6, R-2.13.7,
+R-2.13.8, R-2.13.9, R-2.13.10, R-2.13.11, R-2.13.12, R-2.14.4, R-2.15.6, R-2.15.7, R-2.16.1,
+R-2.17.1, R-2.17.6
 
 ### RG-1.2 User-Declared Custom Pass Registration
 
@@ -62,8 +63,8 @@ slot, with exactly one variant selected at graph compile time based on a configu
 Unselected variants and their exclusively-dependent resources SHALL be eliminated from the execution
 plan.
 
-**Derived from:** R-2.1.8, R-2.3.3, R-2.3.5, R-2.4.3, R-2.4.13, R-2.5.3, R-2.5.9, R-2.6.7,
-R-2.6.8, R-2.14.1, R-2.14.3, R-2.14.4, R-2.14.5, R-2.15.3, R-2.15.8, R-2.17.10
+**Derived from:** R-2.1.8, R-2.3.3, R-2.3.5, R-2.4.3, R-2.4.13, R-2.5.3, R-2.5.9, R-2.6.7, R-2.6.8,
+R-2.14.1, R-2.14.3, R-2.14.4, R-2.14.5, R-2.15.3, R-2.15.8, R-2.17.10
 
 ### RG-1.5 Array-Slice-Targeted Pass Instances
 
@@ -80,10 +81,9 @@ toggled per frame without requiring full graph recompilation. Disabled passes SH
 dead and subject to cascading elimination of their exclusive resources and exclusively-dependent
 passes.
 
-**Derived from:** R-2.1.7, R-2.1.12, R-2.2.11, R-2.3.7, R-2.4.4, R-2.5.8, R-2.6.3, R-2.6.5,
-R-2.7.6, R-2.8.4, R-2.9.8, R-2.9.12, R-2.9.13, R-2.13.1, R-2.13.2, R-2.13.3, R-2.13.5,
-R-2.13.6, R-2.13.7, R-2.13.8, R-2.13.9, R-2.13.11, R-2.13.12, R-2.14.1, R-2.14.3, R-2.15.7,
-R-2.16.5, R-2.17.1, R-2.17.6
+**Derived from:** R-2.1.7, R-2.1.12, R-2.2.11, R-2.3.7, R-2.4.4, R-2.5.8, R-2.6.3, R-2.6.5, R-2.7.6,
+R-2.8.4, R-2.9.8, R-2.9.12, R-2.9.13, R-2.13.1, R-2.13.2, R-2.13.3, R-2.13.5, R-2.13.6, R-2.13.7,
+R-2.13.8, R-2.13.9, R-2.13.11, R-2.13.12, R-2.14.1, R-2.14.3, R-2.15.7, R-2.16.5, R-2.17.1, R-2.17.6
 
 ### RG-1.7 Host Callback Pass
 
@@ -103,9 +103,9 @@ registered at graph-build time at zero per-frame allocation cost.
 
 ### RG-1.9 Per-Pass Render Area Constraint
 
-The render graph SHALL support annotating a rasterization pass with a declared render area: an
-(x, y, width, height) rectangle specifying the texel region the pass writes. The compiler SHALL use
-the declared render area when computing write coverage for aliasing and barrier scoping.
+The render graph SHALL support annotating a rasterization pass with a declared render area: an (x,
+y, width, height) rectangle specifying the texel region the pass writes. The compiler SHALL use the
+declared render area when computing write coverage for aliasing and barrier scoping.
 
 **Derived from:** R-2.3.1, R-2.3.2
 
@@ -159,8 +159,8 @@ explicit format, usage flags, and dimension expressions.
 The render graph SHALL support declaring named persistent resources that survive across frame
 boundaries. Persistent resources SHALL NOT be eligible for intra-frame aliasing.
 
-**Derived from:** R-2.1.7, R-2.6.6, R-2.7.5, R-2.7.18, R-2.8.5, R-2.8.9, R-2.9.1, R-2.9.9,
-R-2.12.2, R-2.16.1, R-2.16.2, R-2.17.1, R-2.17.6
+**Derived from:** R-2.1.7, R-2.6.6, R-2.7.5, R-2.7.18, R-2.8.5, R-2.8.9, R-2.9.1, R-2.9.9, R-2.12.2,
+R-2.16.1, R-2.16.2, R-2.17.1, R-2.17.6
 
 ### RG-2.3 Imported External Resource Declaration
 
@@ -199,7 +199,8 @@ Resources exclusively produced by inactive compile-time variants SHALL not be al
 
 ### RG-2.8 Pool-Backed Fixed-Capacity Resource Pools
 
-The render graph SHALL support allocating persistent resources from named fixed-capacity typed pools.
+The render graph SHALL support allocating persistent resources from named fixed-capacity typed
+pools.
 
 **Derived from:** R-2.3.2, R-2.8.1, R-2.8.3, R-2.8.5, R-2.8.7, R-2.12.2
 
@@ -211,13 +212,13 @@ The render graph SHALL support declaring resources with a sparse residency flag.
 
 ### RG-2.10 through RG-2.25
 
-See [original files](../6-render-graph/) for the complete resource management requirements
-(RG-2.10 staging buffers, RG-2.11 shared/exclusive annotation, RG-2.12 shading rate image, RG-2.13
-indirect argument buffer, RG-2.14 ring buffer, RG-2.15 bindless heap, RG-2.16 64-bit render target,
-RG-2.17 atlas sub-region, RG-2.18 acceleration structure, RG-2.19 conditional history invalidation,
-RG-2.20 multiple resolution parameters, RG-2.21 multi-sample render target, RG-2.22 mip-level
-targeting, RG-2.23 fixed-capacity persistent texture, RG-2.24 multi-frame history chain, RG-2.25
-opacity micromap annotation).
+See [original files](../6-render-graph/) for the complete resource management requirements (RG-2.10
+staging buffers, RG-2.11 shared/exclusive annotation, RG-2.12 shading rate image, RG-2.13 indirect
+argument buffer, RG-2.14 ring buffer, RG-2.15 bindless heap, RG-2.16 64-bit render target, RG-2.17
+atlas sub-region, RG-2.18 acceleration structure, RG-2.19 conditional history invalidation, RG-2.20
+multiple resolution parameters, RG-2.21 multi-sample render target, RG-2.22 mip-level targeting,
+RG-2.23 fixed-capacity persistent texture, RG-2.24 multi-frame history chain, RG-2.25 opacity
+micromap annotation).
 
 ## RG-3: Barriers and Synchronization
 
@@ -228,7 +229,8 @@ barriers between any pass that writes a resource and any subsequent pass that re
 
 ### RG-3.2 Automatic Write-After-Write Barriers
 
-The render graph compiler SHALL detect and prevent write-after-write hazards with execution barriers.
+The render graph compiler SHALL detect and prevent write-after-write hazards with execution
+barriers.
 
 ### RG-3.3 Automatic Layout Transition Tracking
 
@@ -256,7 +258,8 @@ Each pass SHALL declare queue affinity from {graphics, async-compute, transfer, 
 
 ### RG-4.2 Dedicated Async Compute Queue
 
-The render graph SHALL expose a named async-compute queue slot for GPU-side compute/graphics overlap.
+The render graph SHALL expose a named async-compute queue slot for GPU-side compute/graphics
+overlap.
 
 ### RG-4.3 Dedicated Transfer Queue
 

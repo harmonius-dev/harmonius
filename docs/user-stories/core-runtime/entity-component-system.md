@@ -4,9 +4,9 @@
 
 ## US-1.1.1 Store Components in Cache-Friendly Archetype Tables
 
-**As an** engine developer (P-26), **I want** components stored in contiguous archetype tables
-with structure-of-arrays layout and configurable chunk sizes (8-64 KiB), **so that** iteration
-over large entity populations is cache-friendly and SIMD-optimized for maximum throughput.
+**As an** engine developer (P-26), **I want** components stored in contiguous archetype tables with
+structure-of-arrays layout and configurable chunk sizes (8-64 KiB), **so that** iteration over large
+entity populations is cache-friendly and SIMD-optimized for maximum throughput.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -16,9 +16,9 @@ over large entity populations is cache-friendly and SIMD-optimized for maximum t
 
 ## US-1.1.2 Verify Archetype Storage Cache Performance
 
-**As an** engine tester (P-27), **I want** to benchmark archetype iteration throughput at
-various entity counts and chunk sizes to verify cache-friendly access patterns, **so that**
-I can confirm the SoA layout delivers expected speedup over AoS alternatives.
+**As an** engine tester (P-27), **I want** to benchmark archetype iteration throughput at various
+entity counts and chunk sizes to verify cache-friendly access patterns, **so that** I can confirm
+the SoA layout delivers expected speedup over AoS alternatives.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -28,9 +28,9 @@ I can confirm the SoA layout delivers expected speedup over AoS alternatives.
 
 ## US-1.1.3 Mark Rarely-Queried Components as Sparse
 
-**As a** game developer (P-15), **I want** to mark components as sparse so they bypass
-archetype tables and are stored in per-type sparse sets, **so that** adding or removing debug
-markers and temporary status effects does not trigger expensive archetype migrations.
+**As a** game developer (P-15), **I want** to mark components as sparse so they bypass archetype
+tables and are stored in per-type sparse sets, **so that** adding or removing debug markers and
+temporary status effects does not trigger expensive archetype migrations.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -40,9 +40,9 @@ markers and temporary status effects does not trigger expensive archetype migrat
 
 ## US-1.1.4 Understand Which Components Are Sparse in the Visual Editor
 
-**As a** designer (P-5), **I want** the visual editor to indicate which components are sparse
-versus dense stored, **so that** I understand why some components cause migrations and others
-do not when editing entity templates.
+**As a** designer (P-5), **I want** the visual editor to indicate which components are sparse versus
+dense stored, **so that** I understand why some components cause migrations and others do not when
+editing entity templates.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -51,9 +51,9 @@ do not when editing entity templates.
 
 ## US-1.1.5 Resolve Archetype Transitions in O(1) via Cached Edges
 
-**As an** engine developer (P-26), **I want** a directed archetype graph with cached edge
-lookups so structural changes resolve target archetypes in O(1), **so that** bulk spawning
-and despawning thousands of entities per frame remains fast regardless of archetype count.
+**As an** engine developer (P-26), **I want** a directed archetype graph with cached edge lookups so
+structural changes resolve target archetypes in O(1), **so that** bulk spawning and despawning
+thousands of entities per frame remains fast regardless of archetype count.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -63,9 +63,9 @@ and despawning thousands of entities per frame remains fast regardless of archet
 
 ## US-1.1.6 Stress-Test Archetype Migration Under Bulk Spawn/Despawn
 
-**As an** engine tester (P-27), **I want** to stress-test archetype graph traversal under
-rapid bulk spawn and despawn of thousands of entities with varying component sets, **so that**
-I can verify O(1) edge lookup holds and no linear scans occur.
+**As an** engine tester (P-27), **I want** to stress-test archetype graph traversal under rapid bulk
+spawn and despawn of thousands of entities with varying component sets, **so that** I can verify
+O(1) edge lookup holds and no linear scans occur.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -77,9 +77,9 @@ I can verify O(1) edge lookup holds and no linear scans occur.
 
 ## US-1.1.7 Register Components at Compile Time and Runtime
 
-**As a** game developer (P-15), **I want** to register components both at compile time via
-derive macros and at runtime for hot-reloaded gameplay logic, **so that** I get zero-cost
-access for known types while supporting dynamic scripting.
+**As a** game developer (P-15), **I want** to register components both at compile time via derive
+macros and at runtime for hot-reloaded gameplay logic, **so that** I get zero-cost access for known
+types while supporting dynamic scripting.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -89,9 +89,9 @@ access for known types while supporting dynamic scripting.
 
 ## US-1.1.8 Use Zero-Size Tag Components for Entity Markers
 
-**As a** game developer (P-15), **I want** zero-sized tag components that alter archetype
-identity and enable query filtering without per-entity memory cost, **so that** I can mark
-entities as `Player`, `Enemy`, or `Static` efficiently across millions of entities.
+**As a** game developer (P-15), **I want** zero-sized tag components that alter archetype identity
+and enable query filtering without per-entity memory cost, **so that** I can mark entities as
+`Player`, `Enemy`, or `Static` efficiently across millions of entities.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -101,9 +101,9 @@ entities as `Player`, `Enemy`, or `Static` efficiently across millions of entiti
 
 ## US-1.1.9 Share Component Values Across Entities in a Chunk
 
-**As a** game developer (P-15), **I want** shared components stored once per chunk rather than
-per entity, **so that** material IDs, LOD groups, and render layer assignments do not waste
-memory when thousands of entities share the same value.
+**As a** game developer (P-15), **I want** shared components stored once per chunk rather than per
+entity, **so that** material IDs, LOD groups, and render layer assignments do not waste memory when
+thousands of entities share the same value.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -113,9 +113,9 @@ memory when thousands of entities share the same value.
 
 ## US-1.1.10 Store Variable-Length Arrays Per Entity
 
-**As a** game developer (P-15), **I want** variable-length arrays associated with entities
-via `DynamicBuffer<T>` with inline small buffers and heap spill, **so that** I can store
-child lists, inventory slots, and waypoint sequences per entity without fixed-size limits.
+**As a** game developer (P-15), **I want** variable-length arrays associated with entities via
+`DynamicBuffer<T>` with inline small buffers and heap spill, **so that** I can store child lists,
+inventory slots, and waypoint sequences per entity without fixed-size limits.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -126,9 +126,9 @@ child lists, inventory slots, and waypoint sequences per entity without fixed-si
 
 ## US-1.1.11 Toggle Components Without Structural Changes
 
-**As a** game developer (P-15), **I want** to toggle enableable components on and off per
-entity without structural changes, **so that** I can enable or disable behaviors like AI
-perception or physics sleeping cheaply from parallel worker threads.
+**As a** game developer (P-15), **I want** to toggle enableable components on and off per entity
+without structural changes, **so that** I can enable or disable behaviors like AI perception or
+physics sleeping cheaply from parallel worker threads.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -140,8 +140,8 @@ perception or physics sleeping cheaply from parallel worker threads.
 ## US-1.1.12 Verify Enableable Component Thread Safety
 
 **As an** engine tester (P-27), **I want** to stress-test concurrent toggling of enableable
-components from multiple worker threads, **so that** I can verify no data races or incorrect
-query results occur under parallel access.
+components from multiple worker threads, **so that** I can verify no data races or incorrect query
+results occur under parallel access.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -152,8 +152,8 @@ query results occur under parallel access.
 ## US-1.1.13 Keep Auxiliary Structures in Sync via Component Hooks
 
 **As an** engine developer (P-26), **I want** per-type lifecycle callbacks (on_add, on_remove,
-on_set) that fire synchronously at the point of change, **so that** auxiliary data structures
-like the spatial index stay in sync with component changes.
+on_set) that fire synchronously at the point of change, **so that** auxiliary data structures like
+the spatial index stay in sync with component changes.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -163,9 +163,9 @@ like the spatial index stay in sync with component changes.
 
 ## US-1.1.14 Insert Related Components Atomically as Bundles
 
-**As a** game developer (P-15), **I want** to insert groups of related components atomically
-as named bundles with auto-added required companions, **so that** I never create incomplete
-entities missing essential components like `CollisionLayers` when adding `Collider`.
+**As a** game developer (P-15), **I want** to insert groups of related components atomically as
+named bundles with auto-added required companions, **so that** I never create incomplete entities
+missing essential components like `CollisionLayers` when adding `Collider`.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -177,9 +177,9 @@ entities missing essential components like `CollisionLayers` when adding `Collid
 
 ## US-1.1.15 Detect Stale Entity References via Generational Indices
 
-**As an** engine developer (P-26), **I want** entities identified by generational indices
-(32-bit index + 32-bit generation) that detect stale references in O(1), **so that** recycled
-entity slots cannot be mistakenly accessed through old handles after despawn.
+**As an** engine developer (P-26), **I want** entities identified by generational indices (32-bit
+index + 32-bit generation) that detect stale references in O(1), **so that** recycled entity slots
+cannot be mistakenly accessed through old handles after despawn.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -189,9 +189,9 @@ entity slots cannot be mistakenly accessed through old handles after despawn.
 
 ## US-1.1.16 Verify Generational Index Prevents Use-After-Free
 
-**As an** engine tester (P-27), **I want** to verify that accessing a despawned entity via
-a stale generational handle fails safely rather than returning incorrect data, **so that**
-use-after-free bugs are impossible in the entity system.
+**As an** engine tester (P-27), **I want** to verify that accessing a despawned entity via a stale
+generational handle fails safely rather than returning incorrect data, **so that** use-after-free
+bugs are impossible in the entity system.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -202,8 +202,8 @@ use-after-free bugs are impossible in the entity system.
 ## US-1.1.17 Defer Entity Destruction for Resource Cleanup
 
 **As an** engine developer (P-26), **I want** cleanup components that persist after entity
-destruction so dedicated systems can tear down GPU buffers and network registrations,
-**so that** external resources are cleaned up gracefully rather than leaked.
+destruction so dedicated systems can tear down GPU buffers and network registrations, **so that**
+external resources are cleaned up gracefully rather than leaked.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -214,9 +214,9 @@ destruction so dedicated systems can tear down GPU buffers and network registrat
 
 ## US-1.1.18 Reference Entities by Name and Hierarchical Path
 
-**As a** game developer (P-15), **I want** to assign human-readable names to entities and look
-them up by hierarchical path (e.g., `World/Zone3/NPC_Guard_17`), **so that** I can reference
-entities in visual scripts and debug the entity tree without memorizing raw IDs.
+**As a** game developer (P-15), **I want** to assign human-readable names to entities and look them
+up by hierarchical path (e.g., `World/Zone3/NPC_Guard_17`), **so that** I can reference entities in
+visual scripts and debug the entity tree without memorizing raw IDs.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -226,9 +226,9 @@ entities in visual scripts and debug the entity tree without memorizing raw IDs.
 
 ## US-1.1.19 Browse Named Entities in the Visual Editor
 
-**As a** designer (P-5), **I want** to browse and search entities by name in the visual
-editor's entity tree, **so that** I can find and select specific entities without scrolling
-through raw numeric IDs.
+**As a** designer (P-5), **I want** to browse and search entities by name in the visual editor's
+entity tree, **so that** I can find and select specific entities without scrolling through raw
+numeric IDs.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -240,9 +240,9 @@ through raw numeric IDs.
 
 ## US-1.1.20 Model Relationships as Entity Pairs With Wildcard Queries
 
-**As a** game developer (P-15), **I want** relationships encoded as (Relationship, Target)
-pairs with wildcard queries, **so that** I can model complex data like "all entities that
-like any food" or "anything targeting this NPC" in a single query.
+**As a** game developer (P-15), **I want** relationships encoded as (Relationship, Target) pairs
+with wildcard queries, **so that** I can model complex data like "all entities that like any food"
+or "anything targeting this NPC" in a single query.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -252,9 +252,9 @@ like any food" or "anything targeting this NPC" in a single query.
 
 ## US-1.1.21 Enforce Domain Invariants With Relationship Properties
 
-**As a** game developer (P-15), **I want** relationships annotated with properties like
-Exclusive, Symmetric, Transitive, Acyclic, and cascading delete policies, **so that** domain
-invariants are enforced automatically without hand-written validation logic.
+**As a** game developer (P-15), **I want** relationships annotated with properties like Exclusive,
+Symmetric, Transitive, Acyclic, and cascading delete policies, **so that** domain invariants are
+enforced automatically without hand-written validation logic.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -266,8 +266,8 @@ invariants are enforced automatically without hand-written validation logic.
 ## US-1.1.22 Use Built-In Parent-Child Hierarchy With Cascading Delete
 
 **As a** game developer (P-15), **I want** a built-in `ChildOf` relationship with automatic
-cascading deletion and traversal support, **so that** deleting a parent entity automatically
-cleans up all descendants and I can walk the hierarchy in either direction.
+cascading deletion and traversal support, **so that** deleting a parent entity automatically cleans
+up all descendants and I can walk the hierarchy in either direction.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -277,9 +277,9 @@ cleans up all descendants and I can walk the hierarchy in either direction.
 
 ## US-1.1.23 Verify Cascading Delete Cleans Up Deep Hierarchies
 
-**As an** engine tester (P-27), **I want** to verify that deleting a parent entity at the root
-of a deep hierarchy cascades correctly through all descendants, **so that** no orphaned
-entities remain after hierarchical deletion.
+**As an** engine tester (P-27), **I want** to verify that deleting a parent entity at the root of a
+deep hierarchy cascades correctly through all descendants, **so that** no orphaned entities remain
+after hierarchical deletion.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -291,9 +291,9 @@ entities remain after hierarchical deletion.
 
 ## US-1.1.24 Compose Queries With Cached Archetype Filters
 
-**As a** game developer (P-15), **I want** to compose queries with `With`, `Without`,
-`Option`, `Changed`, and `Added` filters that cache after first evaluation, **so that** I
-can precisely select entities without repeated archetype matching overhead.
+**As a** game developer (P-15), **I want** to compose queries with `With`, `Without`, `Option`,
+`Changed`, and `Added` filters that cache after first evaluation, **so that** I can precisely select
+entities without repeated archetype matching overhead.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -303,9 +303,9 @@ can precisely select entities without repeated archetype matching overhead.
 
 ## US-1.1.25 Sort and Group Query Results for Batching
 
-**As a** game developer (P-15), **I want** to sort query results by component value and group
-by relationship target, **so that** I can batch draw calls by material ID and partition
-entities spatially without external sorting.
+**As a** game developer (P-15), **I want** to sort query results by component value and group by
+relationship target, **so that** I can batch draw calls by material ID and partition entities
+spatially without external sorting.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -315,9 +315,9 @@ entities spatially without external sorting.
 
 ## US-1.1.26 Match Graph Patterns Across Relationships
 
-**As a** game developer (P-15), **I want** query variables enabling graph pattern matching
-across entity relationships, **so that** I can find all children of boss entities or all
-entities connected by specific relationship chains in a single query pass.
+**As a** game developer (P-15), **I want** query variables enabling graph pattern matching across
+entity relationships, **so that** I can find all children of boss entities or all entities connected
+by specific relationship chains in a single query pass.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -327,9 +327,9 @@ entities connected by specific relationship chains in a single query pass.
 
 ## US-1.1.27 Iterate Queries in Parallel Across Worker Threads
 
-**As an** engine developer (P-26), **I want** query results automatically partitioned across
-worker threads with borrow safety guarantees, **so that** systems processing large entity
-populations scale linearly with core count.
+**As an** engine developer (P-26), **I want** query results automatically partitioned across worker
+threads with borrow safety guarantees, **so that** systems processing large entity populations scale
+linearly with core count.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -340,9 +340,9 @@ populations scale linearly with core count.
 
 ## US-1.1.28 Benchmark Parallel Iteration Scaling Across Core Counts
 
-**As an** engine tester (P-27), **I want** to benchmark parallel query iteration at various
-entity counts and core counts, **so that** I can verify linear scaling and identify any
-contention or false sharing bottlenecks.
+**As an** engine tester (P-27), **I want** to benchmark parallel query iteration at various entity
+counts and core counts, **so that** I can verify linear scaling and identify any contention or false
+sharing bottlenecks.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -354,9 +354,9 @@ contention or false sharing bottlenecks.
 
 ## US-1.1.29 Group Components Into Named Aspect Structs
 
-**As a** game developer (P-15), **I want** to group related components into named aspect
-structs like `PhysicsAspect`, **so that** I reduce boilerplate when multiple systems need the
-same component grouping.
+**As a** game developer (P-15), **I want** to group related components into named aspect structs
+like `PhysicsAspect`, **so that** I reduce boilerplate when multiple systems need the same component
+grouping.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -369,9 +369,9 @@ same component grouping.
 
 ## US-1.1.30 Skip Unmodified Chunks With Change Detection
 
-**As a** game developer (P-15), **I want** to query only components modified since the last
-tick using `Changed<T>`, **so that** network delta compression, spatial index updates, and
-dirty-flag propagation skip unmodified chunks.
+**As a** game developer (P-15), **I want** to query only components modified since the last tick
+using `Changed<T>`, **so that** network delta compression, spatial index updates, and dirty-flag
+propagation skip unmodified chunks.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -381,9 +381,9 @@ dirty-flag propagation skip unmodified chunks.
 
 ## US-1.1.31 Verify Change Detection Chunk Granularity
 
-**As an** engine tester (P-27), **I want** to verify that change detection correctly marks
-only chunks containing modified entities and does not produce false positives or negatives,
-**so that** reactive systems process exactly the correct set of changes.
+**As an** engine tester (P-27), **I want** to verify that change detection correctly marks only
+chunks containing modified entities and does not produce false positives or negatives, **so that**
+reactive systems process exactly the correct set of changes.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -396,9 +396,8 @@ only chunks containing modified entities and does not produce false positives or
 ## US-1.1.32 Access Global State Through Typed World Resources
 
 **As a** game developer (P-15), **I want** typed singleton resources accessible through
-scheduler-aware `Res<T>` and `ResMut<T>` parameters with change detection, **so that**
-global state like `Time` and `InputState` is type-safe and participates in dependency
-analysis.
+scheduler-aware `Res<T>` and `ResMut<T>` parameters with change detection, **so that** global state
+like `Time` and `InputState` is type-safe and participates in dependency analysis.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -408,9 +407,9 @@ analysis.
 
 ## US-1.1.33 Pin Non-Send Resources to the Main Thread
 
-**As an** engine developer (P-26), **I want** resources marked non-send to be automatically
-pinned to the main thread by the scheduler, **so that** GPU device handles and window handles
-are never accessed from worker threads.
+**As an** engine developer (P-26), **I want** resources marked non-send to be automatically pinned
+to the main thread by the scheduler, **so that** GPU device handles and window handles are never
+accessed from worker threads.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -422,9 +421,9 @@ are never accessed from worker threads.
 
 ## US-1.1.34 Resolve System Execution Order Automatically
 
-**As an** engine developer (P-26), **I want** system execution order resolved automatically
-from declared read/write access sets with DAG construction and cycle detection, **so that**
-I do not manually order hundreds of systems while guaranteeing correctness.
+**As an** engine developer (P-26), **I want** system execution order resolved automatically from
+declared read/write access sets with DAG construction and cycle detection, **so that** I do not
+manually order hundreds of systems while guaranteeing correctness.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -434,9 +433,9 @@ I do not manually order hundreds of systems while guaranteeing correctness.
 
 ## US-1.1.35 Organize Systems Into Groups and Phases
 
-**As a** game developer (P-15), **I want** systems organized into hierarchical groups and
-phases (PreUpdate, Update, PostUpdate, FixedUpdate, PreRender, Render) with before/after
-ordering, **so that** I can cleanly separate gameplay, physics, and rendering execution.
+**As a** game developer (P-15), **I want** systems organized into hierarchical groups and phases
+(PreUpdate, Update, PostUpdate, FixedUpdate, PreRender, Render) with before/after ordering, **so
+that** I can cleanly separate gameplay, physics, and rendering execution.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -448,8 +447,8 @@ ordering, **so that** I can cleanly separate gameplay, physics, and rendering ex
 ## US-1.1.36 Understand How Systems Map to Visual Editor Phases
 
 **As a** designer (P-5), **I want** to see which execution phase each system belongs to in the
-visual editor, **so that** I understand when gameplay logic runs relative to physics and
-rendering when debugging timing issues.
+visual editor, **so that** I understand when gameplay logic runs relative to physics and rendering
+when debugging timing issues.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -460,8 +459,8 @@ rendering when debugging timing issues.
 ## US-1.1.37 Gate System Execution on Run Criteria
 
 **As a** game developer (P-15), **I want** systems gated by predicates like fixed-timestep
-accumulators, state machine transitions, and resource existence checks, **so that** systems
-only run when their conditions are met without branching inside system bodies.
+accumulators, state machine transitions, and resource existence checks, **so that** systems only run
+when their conditions are met without branching inside system bodies.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -471,9 +470,9 @@ only run when their conditions are met without branching inside system bodies.
 
 ## US-1.1.38 Detect Scheduling Ambiguities at Build Time
 
-**As a** QA engineer (P-19), **I want** the scheduler to detect pairs of systems with
-conflicting access and no ordering constraint, **so that** I identify potential nondeterminism
-before it causes hard-to-reproduce bugs in deterministic simulation.
+**As a** QA engineer (P-19), **I want** the scheduler to detect pairs of systems with conflicting
+access and no ordering constraint, **so that** I identify potential nondeterminism before it causes
+hard-to-reproduce bugs in deterministic simulation.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -483,9 +482,9 @@ before it causes hard-to-reproduce bugs in deterministic simulation.
 
 ## US-1.1.39 Debug Scheduling Ambiguities in Development
 
-**As an** engine developer (P-26), **I want** ambiguity detection reports to include system
-names, conflicting component types, and suggested resolution, **so that** I can quickly fix
-ordering issues without manually tracing the dependency graph.
+**As an** engine developer (P-26), **I want** ambiguity detection reports to include system names,
+conflicting component types, and suggested resolution, **so that** I can quickly fix ordering issues
+without manually tracing the dependency graph.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -495,9 +494,9 @@ ordering issues without manually tracing the dependency graph.
 
 ## US-1.1.40 Use Exclusive Systems as Full Barriers
 
-**As an** engine developer (P-26), **I want** systems that acquire exclusive `&mut World`
-access and act as full barriers, **so that** operations like world serialization and scene
-loading that cannot be decomposed into queries still integrate with the scheduler.
+**As an** engine developer (P-26), **I want** systems that acquire exclusive `&mut World` access and
+act as full barriers, **so that** operations like world serialization and scene loading that cannot
+be decomposed into queries still integrate with the scheduler.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -509,9 +508,9 @@ loading that cannot be decomposed into queries still integrate with the schedule
 
 ## US-1.1.41 React to Entity Events at Sync Points
 
-**As a** game developer (P-15), **I want** to register callbacks that fire when specific
-events (OnAdd, OnRemove, OnSet) occur on entities matching a query at sync points, **so that**
-I can implement reactive patterns like spatial index updates without polling.
+**As a** game developer (P-15), **I want** to register callbacks that fire when specific events
+(OnAdd, OnRemove, OnSet) occur on entities matching a query at sync points, **so that** I can
+implement reactive patterns like spatial index updates without polling.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -521,9 +520,9 @@ I can implement reactive patterns like spatial index updates without polling.
 
 ## US-1.1.42 Emit Custom Events That Propagate Along Relationships
 
-**As a** game developer (P-15), **I want** to define custom event types and emit them at
-specific entities with propagation along relationship edges, **so that** gameplay events like
-DamageEvent and PickupEvent bubble up parent chains of composite entities.
+**As a** game developer (P-15), **I want** to define custom event types and emit them at specific
+entities with propagation along relationship edges, **so that** gameplay events like DamageEvent and
+PickupEvent bubble up parent chains of composite entities.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -535,9 +534,9 @@ DamageEvent and PickupEvent bubble up parent chains of composite entities.
 
 ## US-1.1.43 Record Structural Changes in Deferred Command Buffers
 
-**As an** engine developer (P-26), **I want** per-system command buffers that record spawn,
-despawn, and component operations applied in deterministic order at sync points, **so that**
-parallel systems can record mutations without borrow conflicts.
+**As an** engine developer (P-26), **I want** per-system command buffers that record spawn, despawn,
+and component operations applied in deterministic order at sync points, **so that** parallel systems
+can record mutations without borrow conflicts.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -547,9 +546,9 @@ parallel systems can record mutations without borrow conflicts.
 
 ## US-1.1.44 Record Commands in Parallel From Multiple Workers
 
-**As an** engine developer (P-26), **I want** multiple worker threads to record commands into
-the same buffer with sort keys for deterministic playback, **so that** parallel systems share
-a single command buffer without per-thread merge overhead.
+**As an** engine developer (P-26), **I want** multiple worker threads to record commands into the
+same buffer with sort keys for deterministic playback, **so that** parallel systems share a single
+command buffer without per-thread merge overhead.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -560,8 +559,8 @@ a single command buffer without per-thread merge overhead.
 ## US-1.1.45 Verify Deterministic Command Buffer Playback
 
 **As an** engine tester (P-27), **I want** to verify that parallel command recording produces
-identical playback order regardless of thread scheduling, **so that** deterministic
-simulation is maintained even under varying thread timing.
+identical playback order regardless of thread scheduling, **so that** deterministic simulation is
+maintained even under varying thread timing.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -573,9 +572,9 @@ simulation is maintained even under varying thread timing.
 
 ## US-1.1.46 Run Multiple Independent ECS Worlds
 
-**As a** game developer (P-15), **I want** multiple independent ECS worlds in a single process
-with per-world system instantiation controlled by flags (Game, Editor, Server, Shadow),
-**so that** I can isolate rollback worlds, streaming staging, and instanced zones.
+**As a** game developer (P-15), **I want** multiple independent ECS worlds in a single process with
+per-world system instantiation controlled by flags (Game, Editor, Server, Shadow), **so that** I can
+isolate rollback worlds, streaming staging, and instanced zones.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -585,9 +584,9 @@ with per-world system instantiation controlled by flags (Game, Editor, Server, S
 
 ## US-1.1.47 Migrate Entities Between Worlds for Zone Transitions
 
-**As a** game developer (P-15), **I want** to transfer entities with all components between
-worlds with automatic ID remapping, **so that** zone transitions in open worlds preserve full
-entity state without ID collisions.
+**As a** game developer (P-15), **I want** to transfer entities with all components between worlds
+with automatic ID remapping, **so that** zone transitions in open worlds preserve full entity state
+without ID collisions.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -597,9 +596,9 @@ entity state without ID collisions.
 
 ## US-1.1.48 Stress-Test Entity Migration Under Zone Transitions
 
-**As an** engine tester (P-27), **I want** to stress-test entity migration with hundreds of
-entities crossing zone boundaries simultaneously, **so that** I can verify no component data
-is lost or corrupted during bulk world-to-world transfer.
+**As an** engine tester (P-27), **I want** to stress-test entity migration with hundreds of entities
+crossing zone boundaries simultaneously, **so that** I can verify no component data is lost or
+corrupted during bulk world-to-world transfer.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -611,9 +610,9 @@ is lost or corrupted during bulk world-to-world transfer.
 
 ## US-1.1.49 Create Entity Templates With Prefab Inheritance
 
-**As a** designer (P-5), **I want** prefab templates where instances inherit shared components
-and automatically override on write, **so that** I can create thousands of similar entities
-from a single template while customizing individual instances in the editor.
+**As a** designer (P-5), **I want** prefab templates where instances inherit shared components and
+automatically override on write, **so that** I can create thousands of similar entities from a
+single template while customizing individual instances in the editor.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -624,9 +623,9 @@ from a single template while customizing individual instances in the editor.
 
 ## US-1.1.50 Compose Nested Prefab Hierarchies
 
-**As a** designer (P-5), **I want** nested prefab hierarchies where inner prefab changes
-propagate to all outer instances with slot references, **so that** I can compose complex game
-objects from reusable parts and update them centrally.
+**As a** designer (P-5), **I want** nested prefab hierarchies where inner prefab changes propagate
+to all outer instances with slot references, **so that** I can compose complex game objects from
+reusable parts and update them centrally.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -651,8 +650,8 @@ proportional to overrides rather than total instance count.
 ## US-1.1.52 Manage Game State With ECS-Integrated State Machine
 
 **As a** game developer (P-15), **I want** typed state components with OnEnter, OnExit, and
-OnTransition observer hooks that gate system execution, **so that** game state management
-(menu, loading, gameplay, paused) integrates naturally with the ECS scheduler.
+OnTransition observer hooks that gate system execution, **so that** game state management (menu,
+loading, gameplay, paused) integrates naturally with the ECS scheduler.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -663,9 +662,9 @@ OnTransition observer hooks that gate system execution, **so that** game state m
 
 ## US-1.1.53 Understand State Transitions in the Visual Editor
 
-**As a** designer (P-5), **I want** to see the current game state and available transitions
-in the visual editor, **so that** I understand which systems are active in each state and
-can debug state transition issues visually.
+**As a** designer (P-5), **I want** to see the current game state and available transitions in the
+visual editor, **so that** I understand which systems are active in each state and can debug state
+transition issues visually.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

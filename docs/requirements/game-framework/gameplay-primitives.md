@@ -5,17 +5,17 @@
 ### R-13.1.1 Game Mode State Machine
 
 The engine **SHALL** provide a hierarchical state machine that governs session rules, scoring,
-win/loss conditions, and phase transitions for each game mode, with each mode declaring player
-count limits, team composition rules, and respawn policies, and supporting nested sub-modes for
-encounters within a larger session.
+win/loss conditions, and phase transitions for each game mode, with each mode declaring player count
+limits, team composition rules, and respawn policies, and supporting nested sub-modes for encounters
+within a larger session.
 
 - **Derived from:** [F-13.1.1](../../features/game-framework/gameplay-primitives.md)
-- **Rationale:** Diverse game genres (open world, dungeon, arena, puzzle) require declarative
-  mode definitions that control session flow without hard-coded logic.
+- **Rationale:** Diverse game genres (open world, dungeon, arena, puzzle) require declarative mode
+  definitions that control session flow without hard-coded logic.
 - **Verification:** Integration test: define two modes (open world, arena) with distinct player
-  limits and respawn policies. Transition between them and verify rules change accordingly.
-  Nest a boss-phase sub-mode inside a raid mode and verify phase transitions update scoring
-  and respawn behavior independently of the parent mode.
+  limits and respawn policies. Transition between them and verify rules change accordingly. Nest a
+  boss-phase sub-mode inside a raid mode and verify phase transitions update scoring and respawn
+  behavior independently of the parent mode.
 
 ### R-13.1.2 Game State Manager
 
@@ -41,8 +41,8 @@ system and the controlled pawn entity, handling input context switching (explora
 mounted, vehicle, cinematic), camera ownership, UI focus arbitration, and targeting modes.
 
 - **Derived from:** [F-13.1.3](../../features/game-framework/gameplay-primitives.md)
-- **Rationale:** Decoupling input routing from the pawn allows context-sensitive control schemes
-  and seamless transitions between gameplay modes without rewiring input bindings.
+- **Rationale:** Decoupling input routing from the pawn allows context-sensitive control schemes and
+  seamless transitions between gameplay modes without rewiring input bindings.
 - **Verification:** Integration test: bind a player controller to a pawn, switch input contexts
   (exploration to combat to cinematic), and verify each context routes inputs to the correct
   actions. Verify camera ownership transfers correctly during context switches. Verify targeting
@@ -52,62 +52,62 @@ mounted, vehicle, cinematic), camera ownership, UI focus arbitration, and target
 
 The engine **SHALL** separate controllable pawns (any entity that can be possessed) from characters
 (pawns with movement, collision, and gameplay attributes), supporting possession transfer for
-mechanics like spectator mode and vehicle mounting, with characters carrying stats, equipment
-slots, faction, and level data as ECS components.
+mechanics like spectator mode and vehicle mounting, with characters carrying stats, equipment slots,
+faction, and level data as ECS components.
 
 - **Derived from:** [F-13.1.4](../../features/game-framework/gameplay-primitives.md)
-- **Rationale:** Separating pawn possession from character data enables mechanics like mind
-  control, spectating, and vehicle mounting without duplicating movement or attribute logic.
-- **Verification:** Unit test: possess a pawn, transfer possession to a different pawn, and
-  verify the original pawn retains its component state while the controller now drives the new
-  pawn. Create a character with stats, equipment, and faction components and verify all are
-  queryable through standard ECS queries.
+- **Rationale:** Separating pawn possession from character data enables mechanics like mind control,
+  spectating, and vehicle mounting without duplicating movement or attribute logic.
+- **Verification:** Unit test: possess a pawn, transfer possession to a different pawn, and verify
+  the original pawn retains its component state while the controller now drives the new pawn. Create
+  a character with stats, equipment, and faction components and verify all are queryable through
+  standard ECS queries.
 
 ## Ability System
 
 ### R-13.1.5 Gameplay Ability System
 
-The engine **SHALL** provide a data-driven ability framework where each ability is an asset
-defining activation conditions, costs, targeting rules, cast time, channeling behavior, interrupt
-priority, cooldown groups, and combo chaining, with all ability logic authored through visual
-logic graphs and validated server-authoritatively.
+The engine **SHALL** provide a data-driven ability framework where each ability is an asset defining
+activation conditions, costs, targeting rules, cast time, channeling behavior, interrupt priority,
+cooldown groups, and combo chaining, with all ability logic authored through visual logic graphs and
+validated server-authoritatively.
 
 - **Derived from:** [F-13.1.5](../../features/game-framework/gameplay-primitives.md)
 - **Rationale:** A data-driven ability system allows designers to create and iterate on abilities
   entirely through visual graphs and asset editors without writing code.
 - **Verification:** Integration test: define an ability asset with cost (mana), cooldown, AoE
-  targeting, and cast time. Activate it via visual logic graph and verify cost deduction,
-  cooldown enforcement, target selection, and cast-time delay. Verify server rejects an
-  activation attempt that violates cooldown or cost constraints.
+  targeting, and cast time. Activate it via visual logic graph and verify cost deduction, cooldown
+  enforcement, target selection, and cast-time delay. Verify server rejects an activation attempt
+  that violates cooldown or cost constraints.
 
 ### R-13.1.6 Gameplay Effect System
 
-The engine **SHALL** apply stat modifications, buffs, debuffs, damage-over-time,
-healing-over-time, and crowd-control effects to characters with configurable duration, stacking
-rules (refresh, stack count, diminishing returns), tick intervals, and effect inhibition
-(immunity, dispel, purge), with priority ordering for conflicting effects.
+The engine **SHALL** apply stat modifications, buffs, debuffs, damage-over-time, healing-over-time,
+and crowd-control effects to characters with configurable duration, stacking rules (refresh, stack
+count, diminishing returns), tick intervals, and effect inhibition (immunity, dispel, purge), with
+priority ordering for conflicting effects.
 
 - **Derived from:** [F-13.1.6](../../features/game-framework/gameplay-primitives.md)
 - **Rationale:** A unified effect system with stacking and inhibition rules prevents inconsistent
   stat calculations and simplifies balancing across all gameplay systems.
-- **Verification:** Unit test: apply a buff with stack-count 3, verify stat modification scales
-  with stacks. Apply a competing crowd-control effect and verify priority ordering resolves the
-  conflict. Apply an immunity effect and verify the inhibited effect is suppressed. Verify
-  diminishing returns reduce duration on successive applications.
+- **Verification:** Unit test: apply a buff with stack-count 3, verify stat modification scales with
+  stacks. Apply a competing crowd-control effect and verify priority ordering resolves the conflict.
+  Apply an immunity effect and verify the inhibited effect is suppressed. Verify diminishing returns
+  reduce duration on successive applications.
 
 ## Damage and Death
 
 ### R-13.1.7 Damage Model
 
-The engine **SHALL** compute final damage through a configurable pipeline of modifiers (attack
-power scaling, armor/resistance mitigation, critical strike, block, parry, dodge, absorb shields,
+The engine **SHALL** compute final damage through a configurable pipeline of modifiers (attack power
+scaling, armor/resistance mitigation, critical strike, block, parry, dodge, absorb shields,
 vulnerability multipliers) supporting multiple damage schools with per-school resistances, and
 producing a damage event consumed by the health system, combat log, floating combat text, and
 network replication.
 
 - **Derived from:** [F-13.1.7](../../features/game-framework/gameplay-primitives.md)
-- **Rationale:** A modular damage pipeline allows designers to tune each modifier independently
-  and add new damage schools or mitigation types without modifying the core calculation.
+- **Rationale:** A modular damage pipeline allows designers to tune each modifier independently and
+  add new damage schools or mitigation types without modifying the core calculation.
 - **Verification:** Unit test: configure a damage pipeline with armor mitigation, critical strike,
   and absorb shield. Apply damage and verify each stage modifies the value correctly. Verify
   per-school resistances reduce only matching damage schools. Verify the resulting damage event
@@ -123,10 +123,10 @@ respawn timers and repeated-death debuffs.
 - **Derived from:** [F-13.1.8](../../features/game-framework/gameplay-primitives.md)
 - **Rationale:** Death and respawn mechanics are genre-critical and must integrate with animation,
   physics, and encounter state to provide consistent player experience.
-- **Verification:** Integration test: kill a character and verify transition through ragdoll,
-  death state, spirit phase, and respawn at the correct point. Trigger a group wipe in an
-  encounter and verify boss health resets, adds despawn, and phase state reverts. Verify
-  repeated-death debuff applies with correct duration after successive deaths.
+- **Verification:** Integration test: kill a character and verify transition through ragdoll, death
+  state, spirit phase, and respawn at the correct point. Trigger a group wipe in an encounter and
+  verify boss health resets, adds despawn, and phase state reverts. Verify repeated-death debuff
+  applies with correct duration after successive deaths.
 
 ## Modular Systems
 
@@ -143,8 +143,8 @@ with user confirmation.
   binary size, editor clutter, and runtime memory for simpler game genres.
 - **Verification:** Integration test: create a project with combat enabled and audio disabled.
   Verify combat system loads and audio system is excluded from compilation and runtime. Enable
-  networking mid-project and verify serialization (a transitive dependency) is automatically
-  enabled after user confirmation. Verify the editor hides panels for disabled systems.
+  networking mid-project and verify serialization (a transitive dependency) is automatically enabled
+  after user confirmation. Verify the editor hides panels for disabled systems.
 
 ## Developer Extensibility
 
@@ -160,32 +160,31 @@ version compatibility validation and ABI safety through a C-compatible interface
   engine, while ABI validation prevents crashes from version mismatches.
 - **Verification:** Integration test: build a plugin as a dynamic library that registers a custom
   component and system. Load it at runtime and verify the component is queryable and the system
-  executes in the schedule. Load a plugin compiled against an incompatible engine version and
-  verify the loader rejects it with an ABI mismatch error.
+  executes in the schedule. Load a plugin compiled against an incompatible engine version and verify
+  the loader rejects it with an ABI mismatch error.
 
 ## Non-Functional Requirements
 
 ### R-13.1.NF1 Game Mode Transition Latency
 
 The engine **SHALL** complete game mode state machine transitions (rule changes, scoring resets,
-respawn policy updates) within 1 frame (16.67 ms at 60 fps), excluding any associated asset
-loading which occurs asynchronously.
+respawn policy updates) within 1 frame (16.67 ms at 60 fps), excluding any associated asset loading
+which occurs asynchronously.
 
 - **Derived from:** F-13.1.1, F-13.1.2
-- **Rationale:** Perceptible delays during mode transitions (e.g., entering a dungeon, starting
-  an arena match) break gameplay flow and can cause input desynchronization.
-- **Verification:** Trigger a mode transition between open-world and arena mode. Measure the
-  time from transition initiation to rule activation. Verify it completes within a single frame.
+- **Rationale:** Perceptible delays during mode transitions (e.g., entering a dungeon, starting an
+  arena match) break gameplay flow and can cause input desynchronization.
+- **Verification:** Trigger a mode transition between open-world and arena mode. Measure the time
+  from transition initiation to rule activation. Verify it completes within a single frame.
 
 ### R-13.1.NF2 Ability Cooldown Timer Precision
 
-The engine **SHALL** track ability cooldowns with at least millisecond precision, ensuring
-cooldown expiration is accurate to within 1 ms of the configured duration regardless of
-frame rate variation.
+The engine **SHALL** track ability cooldowns with at least millisecond precision, ensuring cooldown
+expiration is accurate to within 1 ms of the configured duration regardless of frame rate variation.
 
 - **Derived from:** F-13.1.5
-- **Rationale:** Imprecise cooldowns create unfair advantages or frustrations in competitive
-  play; millisecond precision ensures consistent behavior across hardware configurations.
-- **Verification:** Set a 1.500-second cooldown on an ability. Activate the ability at varying
-  frame rates (30, 60, 144 fps). Measure actual cooldown duration across 1,000 activations
-  and verify all expire within 1 ms of 1.500 seconds.
+- **Rationale:** Imprecise cooldowns create unfair advantages or frustrations in competitive play;
+  millisecond precision ensures consistent behavior across hardware configurations.
+- **Verification:** Set a 1.500-second cooldown on an ability. Activate the ability at varying frame
+  rates (30, 60, 144 fps). Measure actual cooldown duration across 1,000 activations and verify all
+  expire within 1 ms of 1.500 seconds.

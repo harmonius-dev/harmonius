@@ -170,8 +170,8 @@ Timestamp insertion on both native and emulated paths.
 
 ### GR-3.8 Synchronization Fidelity
 
-Emulated path replicating native GPU work graph synchronization guarantees via explicit barriers
-and timeline fences.
+Emulated path replicating native GPU work graph synchronization guarantees via explicit barriers and
+timeline fences.
 
 **Derived from:** RG-3.1, RG-3.3, GR-3.3
 

@@ -13,8 +13,8 @@ The editor provides real-time preview with scrubbing, looping, and performance s
 
 - **Requirements:** R-11.6.1
 - **Dependencies:** F-15.8.1 (Universal Logic Graph Runtime), F-11.1.1 (GPU Particle Simulation)
-- **Platform notes:** Editor is desktop-only. Compiled effect graphs run on all platforms.
-  Mobile graphs are compiled with node count limits (32 vs. 128 on desktop).
+- **Platform notes:** Editor is desktop-only. Compiled effect graphs run on all platforms. Mobile
+  graphs are compiled with node count limits (32 vs. 128 on desktop).
 
 ### F-11.6.2 Custom Effect Graph Nodes
 
@@ -27,8 +27,8 @@ alongside built-in nodes.
 
 - **Requirements:** R-11.6.2
 - **Dependencies:** F-11.6.1, F-15.8.4 (Gameplay Logic Graphs), F-15.8.10 (Graph Node Library)
-- **Platform notes:** Per-particle custom nodes are expensive; mobile restricts custom nodes
-  to per-emitter execution only to avoid GPU compute overhead.
+- **Platform notes:** Per-particle custom nodes are expensive; mobile restricts custom nodes to
+  per-emitter execution only to avoid GPU compute overhead.
 
 ### F-11.6.3 Effect Graph Parameter System
 
@@ -41,8 +41,8 @@ choreography.
 
 - **Requirements:** R-11.6.3
 - **Dependencies:** F-11.6.1, F-10.1.7 (Reactive Data Binding)
-- **Platform notes:** Lightweight parameter binding; runs identically on all platforms.
-  Mobile uses platform-variant defaults (lower spawn rate multipliers).
+- **Platform notes:** Lightweight parameter binding; runs identically on all platforms. Mobile uses
+  platform-variant defaults (lower spawn rate multipliers).
 
 ### F-11.6.4 Event-Driven Effect Spawning
 
@@ -55,8 +55,8 @@ auto-attach to moving entities or spawn at world positions.
 
 - **Requirements:** R-11.6.4
 - **Dependencies:** F-11.6.1, F-1.1.30 (Observers), F-9.1.9 (Animation Events)
-- **Platform notes:** Mobile throttles event-driven spawns: low-priority effects (ambient
-  dust, distant impacts) are skipped under budget pressure.
+- **Platform notes:** Mobile throttles event-driven spawns: low-priority effects (ambient dust,
+  distant impacts) are skipped under budget pressure.
 
 ### F-11.6.5 VFX LOD and Performance Budget
 

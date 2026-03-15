@@ -17,15 +17,15 @@ per mesh with sparse delta storage.
 ## R-9.2.2 Corrective Blend Shapes
 
 The engine **SHALL** automatically activate corrective morph targets driven by joint angle
-combination rules, applying difference-from-expected deltas to fix deformation artifacts at
-extreme poses.
+combination rules, applying difference-from-expected deltas to fix deformation artifacts at extreme
+poses.
 
 - **Derived from:** [F-9.2.2](../../features/animation/morph.md)
-- **Rationale:** Corrective shapes fix skinning artifacts (e.g., collapsed elbow volumes) at
-  extreme joint angles without requiring manual per-frame artist intervention.
+- **Rationale:** Corrective shapes fix skinning artifacts (e.g., collapsed elbow volumes) at extreme
+  joint angles without requiring manual per-frame artist intervention.
 - **Verification:** Configure a corrective shape to activate when elbow bend exceeds 120 degrees.
-  Animate the elbow from 0 to 180 degrees and verify the corrective shape weight is 0.0 below
-  120 degrees and 1.0 at 180 degrees. Compare the deformed mesh volume at 150 degrees against a
+  Animate the elbow from 0 to 180 degrees and verify the corrective shape weight is 0.0 below 120
+  degrees and 1.0 at 180 degrees. Compare the deformed mesh volume at 150 degrees against a
   reference mesh and verify the corrective shape restores at least 90% of the expected volume.
 
 ## R-9.2.3 Facial Animation System
@@ -46,12 +46,11 @@ real-time parameter input for lip sync and expression blending.
 ## R-9.2.4 Per-Vertex Animation Textures
 
 The engine **SHALL** play back per-vertex animation textures (VATs) in the vertex shader with zero
-CPU cost, where each animation frame is stored as a texel row sampled at the current playback
-time.
+CPU cost, where each animation frame is stored as a texel row sampled at the current playback time.
 
 - **Derived from:** [F-9.2.4](../../features/animation/morph.md)
-- **Rationale:** VATs enable complex deformation playback (fluids, tentacles, crowd LOD) with no
-  CPU overhead, ideal for decorative and distant animations.
+- **Rationale:** VATs enable complex deformation playback (fluids, tentacles, crowd LOD) with no CPU
+  overhead, ideal for decorative and distant animations.
 - **Verification:** Bake a 120-frame tentacle animation into a VAT. Play it back and verify the
   deformed mesh matches the source animation within 0.5 mm per vertex. Confirm zero CPU animation
   cost by profiling CPU time with 100 VAT-animated meshes and verifying no increase over a static

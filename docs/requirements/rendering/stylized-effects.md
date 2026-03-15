@@ -2,87 +2,84 @@
 
 ## R-2.11.1 2D and 3D Outline Rendering
 
-The engine **SHALL** render per-object outlines using at least three techniques: screen-space
-edge detection (Sobel/Roberts on depth and normal buffers), jump-flood-based distance field
-outlines with variable width and configurable falloff, and object-space shell extrusion
-(inverted-hull), supporting per-entity color, width, style (solid, dashed, animated),
-priority ordering, and simultaneous composition of multiple outline layers per entity.
+The engine **SHALL** render per-object outlines using at least three techniques: screen-space edge
+detection (Sobel/Roberts on depth and normal buffers), jump-flood-based distance field outlines with
+variable width and configurable falloff, and object-space shell extrusion (inverted-hull),
+supporting per-entity color, width, style (solid, dashed, animated), priority ordering, and
+simultaneous composition of multiple outline layers per entity.
 
 - **Derived from:** [F-2.11.1](../../features/rendering/stylized-effects.md)
-- **Rationale:** Outlines are a fundamental gameplay communication tool for selection,
-  hover, team identity, and quest indicators; multiple techniques cover different quality
-  and performance trade-offs.
-- **Verification:** Apply outlines using each of the three techniques and verify visually
-  correct edge rendering; assign multiple outline layers (selection, team-color,
-  quest-indicator) to a single entity and confirm all compose simultaneously; test
-  priority ordering by verifying a selection outline overrides a hover outline; confirm
-  jump-flood falls back to Sobel on devices without compute shader support.
+- **Rationale:** Outlines are a fundamental gameplay communication tool for selection, hover, team
+  identity, and quest indicators; multiple techniques cover different quality and performance
+  trade-offs.
+- **Verification:** Apply outlines using each of the three techniques and verify visually correct
+  edge rendering; assign multiple outline layers (selection, team-color, quest-indicator) to a
+  single entity and confirm all compose simultaneously; test priority ordering by verifying a
+  selection outline overrides a hover outline; confirm jump-flood falls back to Sobel on devices
+  without compute shader support.
 
 ## R-2.11.2 Highlight and Glow Effect
 
-The engine **SHALL** render emissive highlight overlays on selected or interactive objects
-by rendering affected entities into a stencil-masked buffer with configurable glow color
-and intensity, applying Gaussian blur, and compositing via additive or screen blending,
-supporting pulsing animation, fresnel-based rim glow, and inner glow, driven by a
-per-entity `HighlightState` ECS component.
+The engine **SHALL** render emissive highlight overlays on selected or interactive objects by
+rendering affected entities into a stencil-masked buffer with configurable glow color and intensity,
+applying Gaussian blur, and compositing via additive or screen blending, supporting pulsing
+animation, fresnel-based rim glow, and inner glow, driven by a per-entity `HighlightState` ECS
+component.
 
 - **Derived from:** [F-2.11.2](../../features/rendering/stylized-effects.md)
 - **Rationale:** Highlight and glow effects provide essential visual feedback for gameplay
   interactions (hover, loot rarity, damage flash) driven by game logic through ECS.
-- **Verification:** Set a `HighlightState` component on an entity and verify the glow
-  effect is rendered; test pulsing animation by confirming sinusoidal intensity modulation
-  over time; test fresnel rim glow by verifying brighter edges at silhouette angles;
-  verify inner glow produces a solid color fill; change the `HighlightState` at runtime
-  and confirm the effect updates.
+- **Verification:** Set a `HighlightState` component on an entity and verify the glow effect is
+  rendered; test pulsing animation by confirming sinusoidal intensity modulation over time; test
+  fresnel rim glow by verifying brighter edges at silhouette angles; verify inner glow produces a
+  solid color fill; change the `HighlightState` at runtime and confirm the effect updates.
 
 ## R-2.11.3 Advanced Toon Shading
 
-The engine **SHALL** provide a configurable cel-shading pipeline that quantizes lighting
-into a configurable number of bands with artist-controlled thresholds, colors, and ramp
-textures per band, rendering hard-edged specular highlight shapes (circular, star, cross),
-rim lighting with configurable width and blend mode, and hatching/stipple patterns for
-shadow regions, operating alongside the outline renderer (R-2.11.1).
+The engine **SHALL** provide a configurable cel-shading pipeline that quantizes lighting into a
+configurable number of bands with artist-controlled thresholds, colors, and ramp textures per band,
+rendering hard-edged specular highlight shapes (circular, star, cross), rim lighting with
+configurable width and blend mode, and hatching/stipple patterns for shadow regions, operating
+alongside the outline renderer (R-2.11.1).
 
 - **Derived from:** [F-2.11.3](../../features/rendering/stylized-effects.md)
-- **Rationale:** Toon shading enables a stylized art direction distinct from photorealistic
-  PBR, essential for games targeting a cel-shaded aesthetic.
-- **Verification:** Apply toon shading to a lit scene and verify lighting is quantized into
-  the configured band count; change ramp textures and confirm shading responds; verify
-  specular highlights render as hard-edged shapes; enable rim lighting and confirm it
-  appears at silhouette edges; verify toon shading and outlines render together correctly.
+- **Rationale:** Toon shading enables a stylized art direction distinct from photorealistic PBR,
+  essential for games targeting a cel-shaded aesthetic.
+- **Verification:** Apply toon shading to a lit scene and verify lighting is quantized into the
+  configured band count; change ramp textures and confirm shading responds; verify specular
+  highlights render as hard-edged shapes; enable rim lighting and confirm it appears at silhouette
+  edges; verify toon shading and outlines render together correctly.
 
 ## R-2.11.4 Cut-Through Visibility and Roof Fading
 
-The engine **SHALL** automatically or manually fade, dissolve, or remove occluding geometry
-(roofs, ceilings, canopy) when the camera or player moves beneath them, operating in at
-least three modes (volume-based, ray-based, layer-based), with configurable fade effects
-(dithered transparency, cross-hatch dissolve, smooth alpha) and optional child
-prop fading or silhouette retention.
+The engine **SHALL** automatically or manually fade, dissolve, or remove occluding geometry (roofs,
+ceilings, canopy) when the camera or player moves beneath them, operating in at least three modes
+(volume-based, ray-based, layer-based), with configurable fade effects (dithered transparency,
+cross-hatch dissolve, smooth alpha) and optional child prop fading or silhouette retention.
 
 - **Derived from:** [F-2.11.4](../../features/rendering/stylized-effects.md)
-- **Rationale:** Interior visibility through occluding geometry is essential for isometric,
-  CRPG, and top-down games where camera angle prevents direct interior views.
-- **Verification:** Place the camera above a roofed structure with a player inside; verify
-  the roof fades in volume-based mode when the player is beneath it; test ray-based mode
-  by verifying geometry between camera and player dissolves; test layer-based mode by
-  entering a trigger zone; confirm each fade effect type is visually correct; verify child
-  prop fading and silhouette retention options work independently.
+- **Rationale:** Interior visibility through occluding geometry is essential for isometric, CRPG,
+  and top-down games where camera angle prevents direct interior views.
+- **Verification:** Place the camera above a roofed structure with a player inside; verify the roof
+  fades in volume-based mode when the player is beneath it; test ray-based mode by verifying
+  geometry between camera and player dissolves; test layer-based mode by entering a trigger zone;
+  confirm each fade effect type is visually correct; verify child prop fading and silhouette
+  retention options work independently.
 
 ## R-2.11.5 X-Ray and See-Through Silhouette Rendering
 
-The engine **SHALL** render occluded entities with an `XRayVisible` component as colored
-silhouettes visible through opaque geometry, using a separate depth comparison pass that
-renders fragments failing the normal depth test with a silhouette material (flat color,
-team tint, or fresnel outline at reduced opacity), with priority levels controlling which
-entity types show through.
+The engine **SHALL** render occluded entities with an `XRayVisible` component as colored silhouettes
+visible through opaque geometry, using a separate depth comparison pass that renders fragments
+failing the normal depth test with a silhouette material (flat color, team tint, or fresnel outline
+at reduced opacity), with priority levels controlling which entity types show through.
 
 - **Derived from:** [F-2.11.5](../../features/rendering/stylized-effects.md)
-- **Rationale:** X-ray silhouettes communicate occluded entity positions for gameplay
-  purposes (ally visibility, enemy tracking, puzzle object highlighting).
-- **Verification:** Place an entity with `XRayVisible` behind opaque geometry and verify
-  its silhouette is visible through the wall; test priority levels by verifying high-priority
-  entities (players) always show while low-priority entities (allies) only show when toggled;
-  verify flat color, team tint, and fresnel outline silhouette styles all render correctly.
+- **Rationale:** X-ray silhouettes communicate occluded entity positions for gameplay purposes (ally
+  visibility, enemy tracking, puzzle object highlighting).
+- **Verification:** Place an entity with `XRayVisible` behind opaque geometry and verify its
+  silhouette is visible through the wall; test priority levels by verifying high-priority entities
+  (players) always show while low-priority entities (allies) only show when toggled; verify flat
+  color, team tint, and fresnel outline silhouette styles all render correctly.
 
 ## Non-Functional Requirements
 
@@ -99,11 +96,11 @@ for up to 50 entities.
 
 ### NFR-2.11.2 Cut-Through Visibility Response Time
 
-Roof fading and cut-through visibility **SHALL** begin fading within 1 frame (16.6 ms at 60 FPS)
-of the trigger condition being met and complete the full fade transition within the configured
-duration (default 0.3 seconds).
+Roof fading and cut-through visibility **SHALL** begin fading within 1 frame (16.6 ms at 60 FPS) of
+the trigger condition being met and complete the full fade transition within the configured duration
+(default 0.3 seconds).
 
-- **Rationale:** Delayed visibility updates create disorienting moments where the player is inside
-  a building but the roof is still visible.
-- **Verification:** Move the player beneath a roof and verify fading begins within 1 frame. Time
-  the full fade and confirm it completes within 0.3 seconds at default settings.
+- **Rationale:** Delayed visibility updates create disorienting moments where the player is inside a
+  building but the roof is still visible.
+- **Verification:** Move the player beneath a roof and verify fading begins within 1 frame. Time the
+  full fade and confirm it completes within 0.3 seconds at default settings.

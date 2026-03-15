@@ -4,15 +4,15 @@
 
 ### F-11.3.1 Screen Shake
 
-Procedural camera shake system driven by Perlin noise with configurable frequency, amplitude,
-decay, and directional bias. Shake events are additive and layer from multiple sources (explosions,
+Procedural camera shake system driven by Perlin noise with configurable frequency, amplitude, decay,
+and directional bias. Shake events are additive and layer from multiple sources (explosions,
 impacts, spells) with amplitude clamping to prevent nausea. Supports rotational and translational
 shake independently, with accessibility options for reduced motion.
 
 - **Requirements:** R-11.3.1
 - **Dependencies:** None
-- **Platform notes:** Lightweight CPU effect; runs identically on all platforms. Mobile
-  default amplitude is lower to reduce motion sickness on handheld devices.
+- **Platform notes:** Lightweight CPU effect; runs identically on all platforms. Mobile default
+  amplitude is lower to reduce motion sickness on handheld devices.
 
 ### F-11.3.2 Motion Blur
 
@@ -23,15 +23,15 @@ sampling cost. Intensity scales with frame rate to maintain consistent blur widt
 
 - **Requirements:** R-11.3.2
 - **Dependencies:** None
-- **Platform notes:** Mobile skips per-object blur; camera-only blur at half resolution.
-  Disabled entirely on low-end mobile GPUs. Switch uses reduced sample count.
+- **Platform notes:** Mobile skips per-object blur; camera-only blur at half resolution. Disabled
+  entirely on low-end mobile GPUs. Switch uses reduced sample count.
 
 ### F-11.3.3 Lens Flare
 
 Screen-space lens flare system triggered by bright light sources and emissive surfaces. Flare
-ghosts, halos, and starbursts are generated procedurally from a light's screen position and
-occluded luminance sampled via depth queries. Artist-authored flare element templates control
-shape, color shift, and radial falloff. Temporal smoothing prevents popping on partial occlusion.
+ghosts, halos, and starbursts are generated procedurally from a light's screen position and occluded
+luminance sampled via depth queries. Artist-authored flare element templates control shape, color
+shift, and radial falloff. Temporal smoothing prevents popping on partial occlusion.
 
 - **Requirements:** R-11.3.3
 - **Dependencies:** None
@@ -50,20 +50,20 @@ triggers for cinematic polish.
 
 - **Requirements:** R-11.3.4
 - **Dependencies:** None
-- **Platform notes:** Mobile disables chromatic aberration and film grain by default to save
-  fill rate. Vignette is retained as a single-sample overlay (cheap).
+- **Platform notes:** Mobile disables chromatic aberration and film grain by default to save fill
+  rate. Vignette is retained as a single-sample overlay (cheap).
 
 ### F-11.3.5 Heat Haze and Refraction
 
 Screen-space distortion effect sampling the color buffer with per-pixel UV offsets driven by
 scrolling normal maps or particle distortion fields. Used for heat shimmer above fire, magical
-portals, and shockwave ripples. Distortion vectors are accumulated into a half-resolution buffer
-to bound cost when many refraction sources overlap in raid encounters.
+portals, and shockwave ripples. Distortion vectors are accumulated into a half-resolution buffer to
+bound cost when many refraction sources overlap in raid encounters.
 
 - **Requirements:** R-11.3.5
 - **Dependencies:** None
-- **Platform notes:** Mobile uses quarter-resolution distortion buffer. Disabled entirely on
-  low-end mobile GPUs. Switch uses half-resolution (same as desktop).
+- **Platform notes:** Mobile uses quarter-resolution distortion buffer. Disabled entirely on low-end
+  mobile GPUs. Switch uses half-resolution (same as desktop).
 
 ## Gameplay Overlays
 

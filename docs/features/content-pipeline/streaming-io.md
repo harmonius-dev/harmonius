@@ -4,8 +4,8 @@
 
 ### F-12.5.1 Virtual File System
 
-An abstraction layer that presents a unified path namespace over multiple backing stores: loose files
-on disk during development, pak/archive files in shipping builds, and remote HTTP stores for
+An abstraction layer that presents a unified path namespace over multiple backing stores: loose
+files on disk during development, pak/archive files in shipping builds, and remote HTTP stores for
 download-on-demand patching. All engine subsystems access assets through the VFS, decoupling content
 layout from physical storage.
 
@@ -17,16 +17,16 @@ layout from physical storage.
 
 ### F-12.5.2 Platform-Native Async I/O
 
-Asynchronous file reads using each platform's highest-throughput I/O API: I/O completion ports
-on Windows, Grand Central Dispatch (dispatch_io) on macOS, and io_uring on Linux. All reads
-bypass the CPU page cache via direct I/O for predictable latency. No standard library file I/O
-is used anywhere in the engine. Builds on the core async I/O abstraction defined in F-1.8.1.
+Asynchronous file reads using each platform's highest-throughput I/O API: I/O completion ports on
+Windows, Grand Central Dispatch (dispatch_io) on macOS, and io_uring on Linux. All reads bypass the
+CPU page cache via direct I/O for predictable latency. No standard library file I/O is used anywhere
+in the engine. Builds on the core async I/O abstraction defined in F-1.8.1.
 
 - **Requirements:** R-12.5.2
-- **Dependencies:** F-12.5.1, F-1.8.1 (Platform I/O Backend Abstraction),
-  F-1.8.3 (Async File I/O Operations)
-- **Platform notes:** IOCP on Windows, GCD on macOS, io_uring on Linux. Each backend is a
-  separate platform module behind a unified async I/O trait.
+- **Dependencies:** F-12.5.1, F-1.8.1 (Platform I/O Backend Abstraction), F-1.8.3 (Async File I/O
+  Operations)
+- **Platform notes:** IOCP on Windows, GCD on macOS, io_uring on Linux. Each backend is a separate
+  platform module behind a unified async I/O trait.
 
 ### F-12.5.3 GPU Direct Storage
 
@@ -51,8 +51,8 @@ binding to map individual pages on demand.
 - **Requirements:** R-12.5.4
 - **Dependencies:** F-12.5.2, F-12.5.6
 - **Platform notes:** Sparse texture binding required (Vulkan sparse resources, Metal sparse
-  textures). Mobile uses tighter residency budgets (256 MB vs 1+ GB on desktop) and streams
-  fewer mip levels concurrently due to slower storage throughput.
+  textures). Mobile uses tighter residency budgets (256 MB vs 1+ GB on desktop) and streams fewer
+  mip levels concurrently due to slower storage throughput.
 
 ### F-12.5.5 Mesh Streaming
 
@@ -63,8 +63,8 @@ millions of unique meshes.
 
 - **Requirements:** R-12.5.5
 - **Dependencies:** F-12.5.2, F-12.5.6
-- **Platform notes:** Mobile keeps fewer fine LODs resident and uses more aggressive coarse
-  LOD thresholds due to smaller memory budgets and slower I/O bandwidth.
+- **Platform notes:** Mobile keeps fewer fine LODs resident and uses more aggressive coarse LOD
+  thresholds due to smaller memory budgets and slower I/O bandwidth.
 
 ## Priority and Memory Management
 
@@ -88,9 +88,9 @@ Prevents out-of-memory crashes during open-world traversal.
 
 - **Requirements:** R-12.5.7
 - **Dependencies:** F-12.5.4, F-12.5.5, F-12.5.6
-- **Platform notes:** Mobile devices trigger memory pressure response at lower thresholds.
-  iOS low-memory warnings (didReceiveMemoryWarning) and Android trim callbacks drive
-  aggressive eviction.
+- **Platform notes:** Mobile devices trigger memory pressure response at lower thresholds. iOS
+  low-memory warnings (didReceiveMemoryWarning) and Android trim callbacks drive aggressive
+  eviction.
 
 ## Archive and Compression
 
@@ -98,8 +98,8 @@ Prevents out-of-memory crashes during open-world traversal.
 
 Pack processed assets into seekable archive files with a central directory for O(1) lookup by asset
 ID. Archives are organized by streaming region and priority tier so that sequential reads align with
-spatial locality in the open world. Supports mounting multiple archives simultaneously for
-expansion packs and DLC.
+spatial locality in the open world. Supports mounting multiple archives simultaneously for expansion
+packs and DLC.
 
 - **Requirements:** R-12.5.8
 - **Dependencies:** F-12.5.1
@@ -127,5 +127,5 @@ where players download only the content they need rather than the entire game up
 
 - **Requirements:** R-12.5.10
 - **Dependencies:** F-12.5.1, F-12.5.8, F-12.5.9
-- **Platform notes:** Mobile networks are slower and metered. Downloads use smaller chunk
-  sizes, respect iOS/Android background download APIs, and pause on cellular by default.
+- **Platform notes:** Mobile networks are slower and metered. Downloads use smaller chunk sizes,
+  respect iOS/Android background download APIs, and pause on cellular by default.

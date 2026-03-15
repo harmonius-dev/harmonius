@@ -2,28 +2,26 @@
 
 ## R-12.7.1 Universal Binary Asset Format
 The engine **SHALL** store all assets (meshes, textures, materials, logic graphs, data tables,
-animations, scenes) in a single binary format with a common header (magic, version, type ID,
-content hash, compression codec) and type-specific payloads, supporting fast mmap-based loading
-and O(1) section access via a table-of-contents header, with no text-based asset files in
-production.
+animations, scenes) in a single binary format with a common header (magic, version, type ID, content
+hash, compression codec) and type-specific payloads, supporting fast mmap-based loading and O(1)
+section access via a table-of-contents header, with no text-based asset files in production.
 - **Derived from:** [F-12.7.1](../../features/content-pipeline/asset-versioning.md)
 - **Rationale:** A unified binary format with mmap loading and O(1) section lookup eliminates
   parsing overhead and enables instant random access to any asset section.
-- **Verification:** Write and read back each asset type; confirm the header contains correct
-  magic, version, type ID, and content hash; mmap a multi-section asset and confirm O(1) access
-  to an arbitrary section without reading preceding sections.
+- **Verification:** Write and read back each asset type; confirm the header contains correct magic,
+  version, type ID, and content hash; mmap a multi-section asset and confirm O(1) access to an
+  arbitrary section without reading preceding sections.
 
 ## R-12.7.2 Compressed Asset Bundles
-The engine **SHALL** group related assets into compressed bundles using LZ4 for runtime and Zstd
-for distribution, support partial decompression of individual assets without decompressing the
-entire bundle, and include bundle manifests listing contained assets with offsets for random
-access.
+The engine **SHALL** group related assets into compressed bundles using LZ4 for runtime and Zstd for
+distribution, support partial decompression of individual assets without decompressing the entire
+bundle, and include bundle manifests listing contained assets with offsets for random access.
 - **Derived from:** [F-12.7.2](../../features/content-pipeline/asset-versioning.md)
 - **Rationale:** Compressed bundles with partial decompression reduce storage and bandwidth while
   avoiding the latency penalty of full-bundle decompression for single-asset access.
-- **Verification:** Create a bundle with 10 assets; extract the 5th asset without decompressing
-  the other 9; confirm the manifest lists all 10 assets with correct offsets; confirm LZ4 is used
-  at runtime and Zstd at distribution time.
+- **Verification:** Create a bundle with 10 assets; extract the 5th asset without decompressing the
+  other 9; confirm the manifest lists all 10 assets with correct offsets; confirm LZ4 is used at
+  runtime and Zstd at distribution time.
 
 ## R-12.7.3 Structural Asset Diffing
 The engine **SHALL** diff any two asset versions at the structural level, showing added, removed,
@@ -32,30 +30,30 @@ count/bounding box for meshes, rows/columns for data tables, visual side-by-side
 highlighting for textures), displayed in the editor using the same visual representation as the
 asset editor.
 - **Derived from:** [F-12.7.3](../../features/content-pipeline/asset-versioning.md)
-- **Rationale:** Structural diffs let artists and designers understand what changed in an asset
-  at the semantic level rather than inspecting raw binary differences.
+- **Rationale:** Structural diffs let artists and designers understand what changed in an asset at
+  the semantic level rather than inspecting raw binary differences.
 - **Verification:** Create two versions of a logic graph with an added node; diff them and confirm
   the added node is highlighted; diff two mesh versions and confirm vertex count and bounding box
   deltas are shown; diff two textures and confirm a visual side-by-side is rendered.
 
 ## R-12.7.4 Three-Way Asset Merge
 The engine **SHALL** merge two divergent asset versions against a common ancestor, automatically
-succeed when changes are to non-overlapping structural regions, present conflicting changes in
-the visual diff tool with per-region accept-left/accept-right/manual-edit resolution, and
-integrate with Git via a custom merge driver.
+succeed when changes are to non-overlapping structural regions, present conflicting changes in the
+visual diff tool with per-region accept-left/accept-right/manual-edit resolution, and integrate with
+Git via a custom merge driver.
 - **Derived from:** [F-12.7.4](../../features/content-pipeline/asset-versioning.md)
-- **Rationale:** Structural three-way merge with a Git merge driver enables concurrent artist
-  edits on the same asset without forcing pessimistic file locking.
-- **Verification:** Branch an asset, make non-overlapping changes on each branch, merge, and
-  confirm automatic success; make overlapping changes, merge, and confirm the conflict is
-  presented in the visual diff tool with resolution options; confirm the Git merge driver invokes
-  the engine merge system.
+- **Rationale:** Structural three-way merge with a Git merge driver enables concurrent artist edits
+  on the same asset without forcing pessimistic file locking.
+- **Verification:** Branch an asset, make non-overlapping changes on each branch, merge, and confirm
+  automatic success; make overlapping changes, merge, and confirm the conflict is presented in the
+  visual diff tool with resolution options; confirm the Git merge driver invokes the engine merge
+  system.
 
 ## R-12.7.5 Automatic Merge Conflict Resolution
-The engine **SHALL** automatically resolve non-ambiguous merge conflicts using last-writer-wins
-for independent property changes, union for additive collections, and deterministic ordering for
-reordered elements, with any ambiguity falling through to manual resolution and resolution
-strategy configurable per asset type and per project.
+The engine **SHALL** automatically resolve non-ambiguous merge conflicts using last-writer-wins for
+independent property changes, union for additive collections, and deterministic ordering for
+reordered elements, with any ambiguity falling through to manual resolution and resolution strategy
+configurable per asset type and per project.
 - **Derived from:** [F-12.7.5](../../features/content-pipeline/asset-versioning.md)
 - **Rationale:** Conservative automatic resolution for common non-ambiguous cases reduces manual
   merge workload while preserving safety through fallback to manual resolution.
@@ -65,9 +63,9 @@ strategy configurable per asset type and per project.
 
 ## R-12.7.6 Spreadsheet-Style Data Table Editor
 The engine **SHALL** provide a spreadsheet-style editor for gameplay data tables with column
-sorting, filtering, search, inline formula editing, row inheritance visualization, bulk
-operations (copy, paste, fill-down), real-time cell validation with constraint violation
-highlighting, CSV import/export, and per-cell undo/redo.
+sorting, filtering, search, inline formula editing, row inheritance visualization, bulk operations
+(copy, paste, fill-down), real-time cell validation with constraint violation highlighting, CSV
+import/export, and per-cell undo/redo.
 - **Derived from:** [F-12.7.6](../../features/content-pipeline/asset-versioning.md)
 - **Rationale:** A spreadsheet interface matches designers' mental model for tabular data and
   provides the bulk-editing capabilities needed for large gameplay data sets.
@@ -81,21 +79,21 @@ wireframe for meshes, channel/mip/histogram view for textures, timeline with cur
 animations, waveform and spectrum for audio, lit sphere for materials) as the sole interface for
 viewing and editing assets, with no text or code fallback.
 - **Derived from:** [F-12.7.7](../../features/content-pipeline/asset-versioning.md)
-- **Rationale:** Visual-only asset inspection enforces the no-code principle and ensures all
-  asset types are presented in their native visual form.
+- **Rationale:** Visual-only asset inspection enforces the no-code principle and ensures all asset
+  types are presented in their native visual form.
 - **Verification:** Open one asset of each type (mesh, texture, animation, audio, material) and
   confirm the correct visual inspector is displayed; confirm no raw text or code view is available
   for any asset type.
 
 ## R-12.7.8 Git LFS and Custom Merge Driver Integration
 The engine **SHALL** track binary assets via Git LFS with a custom merge driver that invokes the
-engine's structural merge system (R-12.7.4) for three-way merges, support optional
-lock-before-edit per asset type, and display lock owner, modified state, and merge conflict
-presence in the asset browser.
+engine's structural merge system (R-12.7.4) for three-way merges, support optional lock-before-edit
+per asset type, and display lock owner, modified state, and merge conflict presence in the asset
+browser.
 - **Derived from:** [F-12.7.8](../../features/content-pipeline/asset-versioning.md)
 - **Rationale:** Git LFS with a structural merge driver combines standard version control tooling
   with engine-aware binary merging, giving teams the choice between optimistic and pessimistic
   locking workflows.
-- **Verification:** Commit a binary asset via Git LFS; merge two branches with conflicting
-  changes and confirm the custom merge driver invokes structural merge; enable lock-before-edit
-  on an asset type and confirm the asset browser shows lock owner and modified state.
+- **Verification:** Commit a binary asset via Git LFS; merge two branches with conflicting changes
+  and confirm the custom merge driver invokes structural merge; enable lock-before-edit on an asset
+  type and confirm the asset browser shows lock owner and modified state.

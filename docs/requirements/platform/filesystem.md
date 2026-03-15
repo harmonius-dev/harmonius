@@ -16,8 +16,8 @@ standard library file I/O used anywhere.
   I/O ensures a single consistent I/O path throughout the engine.
 - **Verification:** Integration test per platform: write 4 MB in 1 MB chunks at explicit offsets
   from 4 concurrent tasks, read back at the same offsets, and verify data integrity. Verify the
-  operations complete via the platform-native mechanism (IOCP/GCD/io_uring). Static analysis:
-  verify no `std::fs` or `std::io::Read`/`Write` calls exist in the codebase.
+  operations complete via the platform-native mechanism (IOCP/GCD/io_uring). Static analysis: verify
+  no `std::fs` or `std::io::Read`/`Write` calls exist in the codebase.
 
 ### R-14.6.2 Async File Create and Delete
 
@@ -58,9 +58,9 @@ provides it inline.
 - **Rationale:** Incremental async enumeration prevents blocking during large directory scans while
   inline metadata avoids redundant stat calls that double I/O cost.
 - **Verification:** Integration test: create a directory tree with 1,000 files across 5 depth
-  levels. Enumerate with depth limit 3 and verify only entries within that depth are returned.
-  Apply a glob filter and verify only matching entries appear. Verify each entry includes name,
-  type, and size without a separate stat call on platforms that provide inline metadata.
+  levels. Enumerate with depth limit 3 and verify only entries within that depth are returned. Apply
+  a glob filter and verify only matching entries appear. Verify each entry includes name, type, and
+  size without a separate stat call on platforms that provide inline metadata.
 
 ## File Watching
 
@@ -73,12 +73,12 @@ trees.
 
 - **Derived from:** [F-14.6.5](../../features/platform/filesystem.md)
 - **Rationale:** Platform-native watchers provide reliable, low-latency change detection for
-  hot-reload and asset pipelines, while debouncing prevents event floods during bulk operations
-  like version control checkouts.
+  hot-reload and asset pipelines, while debouncing prevents event floods during bulk operations like
+  version control checkouts.
 - **Verification:** Integration test per platform: watch a directory, create a file, modify it,
   rename it, and delete it. Verify the watcher emits correctly typed events for each operation.
-  Perform 100 rapid writes and verify the debounce interval coalesces them into fewer events.
-  Enable recursive watching and verify events from nested subdirectories are captured.
+  Perform 100 rapid writes and verify the debounce interval coalesces them into fewer events. Enable
+  recursive watching and verify events from nested subdirectories are captured.
 
 ### R-14.6.6 File Content Change Detection
 
@@ -114,3 +114,41 @@ duplicate asset entries from path aliasing.
   and `\\?\` long-path prefixes resolve correctly. On macOS, verify case-insensitive path variants
   resolve to the same canonical path. Verify two aliased paths used as asset keys map to the same
   entry.
+
+## File Watcher Delivery
+
+### R-14.6.8 Typed File Event Stream with Async Next
+
+The engine **SHALL** deliver debounced, hash-verified file change events through a typed
+`FileEventStream` that exposes an `async fn next()` method returning `FileEvent` structs with a
+canonical path and a `FileEventKind` enum (Created, Modified, Deleted, Renamed), so that consumers
+can `.await` events without polling and the stream terminates when the watch is cancelled.
+
+- **Derived from:** [F-14.6.8](../../features/platform/filesystem.md)
+- **Rationale:** A typed async stream provides compile-time guarantees on event structure,
+  integrates with the engine's async runtime for backpressure and cancellation, and eliminates the
+  need for callback registration or manual channel polling in consumer code.
+- **Verification:** Integration test: watch a directory, create a file, and call `next().await` on
+  the stream. Verify the returned `FileEvent` has kind `Created` and the correct canonical path.
+  Cancel the watch and verify `next().await` returns `None`. Unit test: verify the `FileEventKind`
+  enum covers Created, Modified, Deleted, and Renamed variants. Verify `Renamed` carries the
+  original path.
+
+## Content Hash Management
+
+### R-14.6.9 Content Hash Cache for Change Detection
+
+The engine **SHALL** maintain an in-memory cache mapping canonical paths to their most recent BLAKE3
+content hash, using the cache to avoid redundant full-file reads on repeated metadata-only
+filesystem events, and updating the cache entry when a genuine content change is detected.
+
+- **Derived from:** [F-14.6.9](../../features/platform/filesystem.md)
+- **Rationale:** Without a hash cache, every filesystem event triggers a full-file read and hash
+  computation even when the content has not changed. The cache reduces I/O load during bulk metadata
+  operations (permission changes, timestamp updates) and editor save patterns that generate multiple
+  events per write.
+- **Verification:** Unit test: insert a hash for a path, trigger a metadata-only event, and verify
+  the hasher skips the event by comparing against the cached hash without reading the file. Modify
+  the file content, trigger an event, and verify the cache is updated with the new hash. Benchmark:
+  measure I/O operations during 1,000 rapid metadata-only events and verify no file reads occur
+  after the initial hash is cached.

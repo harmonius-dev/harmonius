@@ -6,13 +6,13 @@
 Open-source AWS CDK (Cloud Development Kit) stacks in TypeScript/Rust that deploy all Harmonius
 server components to a developer's own AWS account. Stacks are modular — deploy only what you need.
 Each stack configures VPC networking, IAM roles, security groups, encryption (at rest and in
-transit), CloudWatch monitoring, and auto-scaling. Two deployment profiles: **Free Tier** (single-AZ,
-t3.micro/t4g.micro instances, minimal storage, suitable for solo developers and prototyping) and
-**Enterprise** (multi-AZ, auto-scaling groups, RDS Multi-AZ, ElastiCache, CloudFront CDN, WAF,
-suitable for production studios). A single `cdk deploy --profile free-tier` or
-`cdk deploy --profile enterprise` command provisions the entire infrastructure. Stack outputs include
-endpoint URLs, connection strings, and API keys. All stacks are version-pinned to the engine release
-for compatibility.
+transit), CloudWatch monitoring, and auto-scaling. Two deployment profiles: **Free Tier**
+(single-AZ, t3.micro/t4g.micro instances, minimal storage, suitable for solo developers and
+prototyping) and **Enterprise** (multi-AZ, auto-scaling groups, RDS Multi-AZ, ElastiCache,
+CloudFront CDN, WAF, suitable for production studios). A single `cdk deploy --profile free-tier` or
+`cdk deploy --profile enterprise` command provisions the entire infrastructure. Stack outputs
+include endpoint URLs, connection strings, and API keys. All stacks are version-pinned to the engine
+release for compatibility.
 - **Requirements:** R-15.18.1
 - **Dependencies:** None (standalone infrastructure)
 - **Platform notes:** AWS only. Requires AWS CLI and CDK CLI. Free tier stays within AWS Free Tier
@@ -21,8 +21,8 @@ for compatibility.
 ### F-15.18.2 Live Collaboration Server
 A self-hosted CRDT-based real-time collaboration server (the backend for F-15.12.3-14). Deployed as
 an ECS Fargate container or EC2 instance. Uses PostgreSQL (RDS) for persistent document state, S3
-for large binary assets, and WebSocket connections for real-time sync. The server handles: multi-user
-editing sessions, presence tracking, access control, voice/text chat relay, and AI agent
+for large binary assets, and WebSocket connections for real-time sync. The server handles:
+multi-user editing sessions, presence tracking, access control, voice/text chat relay, and AI agent
 collaboration channels. CDK stack configures: RDS PostgreSQL (db.t3.micro for free tier,
 db.r6g.large for enterprise), S3 bucket with lifecycle policies, Application Load Balancer with
 WebSocket support, and ECS task definitions.
@@ -61,9 +61,9 @@ depth.
 A self-hosted code signing and distribution packaging server. Stores signing credentials in AWS
 Secrets Manager (never on disk). Automates: iOS signing with provisioning profiles, macOS
 notarization submission, Android keystore signing, Windows Authenticode signing, and package
-generation (.dmg, .msi, .deb, AppImage). Integrates with the store distribution pipeline
-(F-15.14.8) for automated submissions. CDK stack configures: EC2 build agent, Secrets Manager for
-credentials, S3 for build artifacts, and CodePipeline for orchestration.
+generation (.dmg, .msi, .deb, AppImage). Integrates with the store distribution pipeline (F-15.14.8)
+for automated submissions. CDK stack configures: EC2 build agent, Secrets Manager for credentials,
+S3 for build artifacts, and CodePipeline for orchestration.
 - **Requirements:** R-15.18.5
 - **Dependencies:** F-15.18.1, F-15.14.4 (Code Signing), F-15.14.5 (Installers)
 - **Platform notes:** iOS signing requires a macOS build agent (Mac EC2 or external).
@@ -76,8 +76,7 @@ server F-15.18.3). Pipeline stages: source checkout, Rust build (debug/release),
 (F-15.18.4), automated tests (unit, integration, screenshot), packaging (F-15.18.5), deployment to
 S3/CloudFront for distribution. CDK stack configures the entire pipeline with configurable stages.
 - **Requirements:** R-15.18.6
-- **Dependencies:** F-15.18.1, F-15.18.3 (Git Server), F-15.18.4 (Build Farm),
-  F-15.18.5 (Signing)
+- **Dependencies:** F-15.18.1, F-15.18.3 (Git Server), F-15.18.4 (Build Farm), F-15.18.5 (Signing)
 - **Platform notes:** Free tier: single CodeBuild project. Enterprise: parallel builds, multiple
   environments.
 
@@ -114,8 +113,7 @@ monitored via CloudWatch alarms. CDK stack configures all backup policies and th
 replication topology.
 - **Requirements:** R-15.18.9
 - **Dependencies:** F-15.18.1, F-15.18.8 (Databases)
-- **Platform notes:** Free tier: 7-day RDS backups, S3 versioning. Enterprise: 35-day,
-  cross-region.
+- **Platform notes:** Free tier: 7-day RDS backups, S3 versioning. Enterprise: 35-day, cross-region.
 
 ### F-15.18.10 Enterprise Security Configuration
 Enterprise-grade security for all self-hosted components. VPC with private subnets for databases and

@@ -4,84 +4,82 @@
 
 ### F-4.8.1 SPH Fluid Simulation
 
-Each SPH fluid instance is an entity with a `FluidVolume` component (solver type set to SPH,
-domain bounds, viscosity, surface tension) and a `FluidParticleBuffer` component that stores
-particle positions and velocities as a GPU buffer resource. The `SPHSystem` queries all
-`(FluidVolume, FluidParticleBuffer, Transform)` entities where the solver type is SPH,
-evaluates density and pressure kernels, and writes updated particle state back to the
-`FluidParticleBuffer`. Particle counts are bounded per `FluidVolume` to maintain frame budgets.
+Each SPH fluid instance is an entity with a `FluidVolume` component (solver type set to SPH, domain
+bounds, viscosity, surface tension) and a `FluidParticleBuffer` component that stores particle
+positions and velocities as a GPU buffer resource. The `SPHSystem` queries all `(FluidVolume,
+FluidParticleBuffer, Transform)` entities where the solver type is SPH, evaluates density and
+pressure kernels, and writes updated particle state back to the `FluidParticleBuffer`. Particle
+counts are bounded per `FluidVolume` to maintain frame budgets.
 
 - **Requirements:** R-4.8.1
 - **Dependencies:** F-1.1.1, F-1.1.2
-- **Platform notes:** Mobile: disabled by default (GPU budget insufficient). Switch: max
-  1 SPH volume, 1K particles. Desktop: max 4 volumes, 16K particles total. High-end PC:
-  max 16 volumes, 256K particles with GPU compute acceleration.
+- **Platform notes:** Mobile: disabled by default (GPU budget insufficient). Switch: max 1 SPH
+  volume, 1K particles. Desktop: max 4 volumes, 16K particles total. High-end PC: max 16 volumes,
+  256K particles with GPU compute acceleration.
 
 ### F-4.8.2 FLIP/PIC Hybrid Simulation
 
 Entities requiring FLIP/PIC simulation carry a `FluidVolume` component (solver type set to
-FLIP/PIC), a `FluidParticleBuffer` for particle data, and a `FluidGrid` component for the
-background pressure-projection grid. The `FLIPSystem` queries all entities with this component
-triple, transfers particle velocities to the grid, runs pressure projection on the `FluidGrid`,
-then updates `FluidParticleBuffer` particles from the corrected grid velocities. This combines
-grid stability with particle detail preservation for large-scale flooding and river flow.
+FLIP/PIC), a `FluidParticleBuffer` for particle data, and a `FluidGrid` component for the background
+pressure-projection grid. The `FLIPSystem` queries all entities with this component triple,
+transfers particle velocities to the grid, runs pressure projection on the `FluidGrid`, then updates
+`FluidParticleBuffer` particles from the corrected grid velocities. This combines grid stability
+with particle detail preservation for large-scale flooding and river flow.
 
 - **Requirements:** R-4.8.2
 - **Dependencies:** F-4.8.1, F-1.1.1
-- **Platform notes:** Mobile: disabled (requires GPU compute). Switch: max 1 volume, grid
-  32x32x16, 2K particles. Desktop: max 2 volumes, grid 64x64x32, 32K particles.
-  High-end PC: max 8 volumes, grid 128x128x64, 128K particles.
+- **Platform notes:** Mobile: disabled (requires GPU compute). Switch: max 1 volume, grid 32x32x16,
+  2K particles. Desktop: max 2 volumes, grid 64x64x32, 32K particles. High-end PC: max 8 volumes,
+  grid 128x128x64, 128K particles.
 
 ## Grid-Based Methods
 
 ### F-4.8.3 Eulerian Grid Fluid Solver
 
-Bounded water volumes (lakes, harbors, moats) are entities with a `FluidVolume` component
-(solver type set to Eulerian) and a `FluidGrid` component storing velocity, pressure, and
-boundary condition data on a uniform or adaptive grid. The `EulerianSystem` queries all
-`(FluidVolume, FluidGrid, Transform)` entities where the solver type is Eulerian and computes
-velocity advection, pressure projection, and boundary enforcement. Grid resolution is
-configured per entity on the `FluidGrid` component.
+Bounded water volumes (lakes, harbors, moats) are entities with a `FluidVolume` component (solver
+type set to Eulerian) and a `FluidGrid` component storing velocity, pressure, and boundary condition
+data on a uniform or adaptive grid. The `EulerianSystem` queries all `(FluidVolume, FluidGrid,
+Transform)` entities where the solver type is Eulerian and computes velocity advection, pressure
+projection, and boundary enforcement. Grid resolution is configured per entity on the `FluidGrid`
+component.
 
 - **Requirements:** R-4.8.3
 - **Dependencies:** F-1.1.1, F-1.1.2
-- **Platform notes:** Mobile: disabled by default (memory intensive). Switch: max 1 volume,
-  grid 32x32. Desktop: max 4 volumes, grid 128x128. High-end PC: max 8 volumes, grid
-  256x256 with adaptive refinement. GPU compute required for grids above 64x64.
+- **Platform notes:** Mobile: disabled by default (memory intensive). Switch: max 1 volume, grid
+  32x32. Desktop: max 4 volumes, grid 128x128. High-end PC: max 8 volumes, grid 256x256 with
+  adaptive refinement. GPU compute required for grids above 64x64.
 
 ## Surface and Rendering Integration
 
 ### F-4.8.4 Fluid Surface Reconstruction
 
-The `SurfaceReconstructionSystem` queries all entities with a `FluidParticleBuffer` component
-and reconstructs a renderable triangle mesh using marching cubes or a screen-space approach.
-Reconstructed mesh data is written to a `FluidRenderer` component on the same entity, which
-bridges fluid data to the rendering pipeline for refraction, reflection, and foam effects.
-Surface reconstruction runs at interactive rates and produces watertight meshes with smooth
-normals.
+The `SurfaceReconstructionSystem` queries all entities with a `FluidParticleBuffer` component and
+reconstructs a renderable triangle mesh using marching cubes or a screen-space approach.
+Reconstructed mesh data is written to a `FluidRenderer` component on the same entity, which bridges
+fluid data to the rendering pipeline for refraction, reflection, and foam effects. Surface
+reconstruction runs at interactive rates and produces watertight meshes with smooth normals.
 
 - **Requirements:** R-4.8.4
 - **Dependencies:** F-4.8.1, F-1.1.1
-- **Platform notes:** Mobile: screen-space approach only, half resolution. Switch: screen-
-  space at 75% resolution. Desktop: marching cubes at full resolution. High-end PC:
-  marching cubes with adaptive refinement. GPU compute required for marching cubes.
+- **Platform notes:** Mobile: screen-space approach only, half resolution. Switch: screen- space at
+  75% resolution. Desktop: marching cubes at full resolution. High-end PC: marching cubes with
+  adaptive refinement. GPU compute required for marching cubes.
 
 ### F-4.8.5 Water Surface Simulation
 
-Ocean, river, and lake entities carry a `WaterSurface` component with a `WaveConfig` that
-stores FFT parameters, Gerstner wave descriptors, and flow map references. The
-`WaterSurfaceSystem` queries all `(WaterSurface, Transform)` entities and evaluates wave
-synthesis plus localized displacement from nearby `FluidVolume` entities. The `WaterSurface`
-component produces seamless tiling across streaming zones and supports river flow fields and
-shoreline wave breaking through the `WaveConfig` parameters. The visual representation of
-water surfaces is handled by geometry-world/water.md (F-3.4.1).
+Ocean, river, and lake entities carry a `WaterSurface` component with a `WaveConfig` that stores FFT
+parameters, Gerstner wave descriptors, and flow map references. The `WaterSurfaceSystem` queries all
+`(WaterSurface, Transform)` entities and evaluates wave synthesis plus localized displacement from
+nearby `FluidVolume` entities. The `WaterSurface` component produces seamless tiling across
+streaming zones and supports river flow fields and shoreline wave breaking through the `WaveConfig`
+parameters. The visual representation of water surfaces is handled by geometry-world/water.md
+(F-3.4.1).
 
 - **Requirements:** R-4.8.5
 - **Dependencies:** F-4.8.3, F-1.1.1, F-3.4.1 (Water Surface Rendering)
-- **Platform notes:** Mobile: Gerstner waves only (no FFT), max 4 wave layers, no flow
-  maps. Switch: Gerstner with 8 layers, simple flow maps. Desktop: FFT ocean with 16+
-  layers, full flow maps. High-end PC: FFT at 512x512 resolution with shoreline
-  breaking.
+- **Platform notes:** Mobile: Gerstner waves only (no FFT), max 4 wave layers, no flow maps. Switch:
+  Gerstner with 8 layers, simple flow maps. Desktop: FFT ocean with 16+ layers, full flow maps.
+  High-end PC: FFT at 512x512 resolution with shoreline breaking.
 
 ## Rigid Body Interaction
 
@@ -89,29 +87,29 @@ water surfaces is handled by geometry-world/water.md (F-3.4.1).
 
 The `BuoyancySystem` queries all `(RigidBody, Collider, Transform)` entities and tests their
 bounding shapes against every `FluidVolume` entity's domain. For overlapping pairs, the system
-computes buoyancy from submerged volume approximation using sample points on the `Collider`,
-and drag from the entity's `Velocity` relative to the fluid. Resulting forces are written as
-`ExternalForce` components on the rigid body entities. Two-way coupling is achieved by the
-fluid systems reading `RigidBody` and `Velocity` components on nearby entities.
+computes buoyancy from submerged volume approximation using sample points on the `Collider`, and
+drag from the entity's `Velocity` relative to the fluid. Resulting forces are written as
+`ExternalForce` components on the rigid body entities. Two-way coupling is achieved by the fluid
+systems reading `RigidBody` and `Velocity` components on nearby entities.
 
 - **Requirements:** R-4.8.6
 - **Dependencies:** F-4.8.5, F-4.1.1, F-1.1.1
-- **Platform notes:** Mobile: max 4 buoyant bodies, 4 sample points per collider. Switch:
-  max 8 buoyant bodies, 8 sample points. Desktop: max 64 buoyant bodies, 16 sample
-  points. High-end PC: max 256 bodies, 32 sample points for precise submerged volume.
+- **Platform notes:** Mobile: max 4 buoyant bodies, 4 sample points per collider. Switch: max 8
+  buoyant bodies, 8 sample points. Desktop: max 64 buoyant bodies, 16 sample points. High-end PC:
+  max 256 bodies, 32 sample points for precise submerged volume.
 
 ### F-4.8.7 Two-Way Fluid-Rigid Body Coupling
 
-Fluid simulation systems (`SPHSystem`, `FLIPSystem`, `EulerianSystem`) read `RigidBody`,
-`Velocity`, and `Collider` components on nearby entities to apply displacement forces from
-submerged bodies into the fluid. The `BuoyancySystem` writes `ExternalForce` components on
-rigid body entities to push them back. Object splashes, ship wakes, and debris carried by
-currents emerge from this bidirectional ECS query pattern. A `FluidRenderer` component on
-each fluid entity bridges simulation state to the rendering pipeline for visual feedback.
-Coupling degrades gracefully when simulation budget is exceeded by reducing query radius.
+Fluid simulation systems (`SPHSystem`, `FLIPSystem`, `EulerianSystem`) read `RigidBody`, `Velocity`,
+and `Collider` components on nearby entities to apply displacement forces from submerged bodies into
+the fluid. The `BuoyancySystem` writes `ExternalForce` components on rigid body entities to push
+them back. Object splashes, ship wakes, and debris carried by currents emerge from this
+bidirectional ECS query pattern. A `FluidRenderer` component on each fluid entity bridges simulation
+state to the rendering pipeline for visual feedback. Coupling degrades gracefully when simulation
+budget is exceeded by reducing query radius.
 
 - **Requirements:** R-4.8.7
 - **Dependencies:** F-4.8.6, F-4.8.1, F-1.1.1
-- **Platform notes:** Mobile: one-way coupling only (buoyancy without fluid displacement).
-  Switch: two-way for player vehicle only, 5m query radius. Desktop: full two-way
-  coupling, 20m radius. High-end PC: full coupling, 50m radius with wake effects.
+- **Platform notes:** Mobile: one-way coupling only (buoyancy without fluid displacement). Switch:
+  two-way for player vehicle only, 5m query radius. Desktop: full two-way coupling, 20m radius.
+  High-end PC: full coupling, 50m radius with wake effects.

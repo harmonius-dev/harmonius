@@ -63,9 +63,9 @@ progress so that UI iteration does not reset the interface to its initial state.
 
 ### F-12.4.6 Partial Re-Import
 
-When a source file changes, re-import only the modified sub-assets rather than the entire file.
-For example, modifying a single animation clip in a multi-asset DCC export re-imports only that
-clip. Partial re-import reduces hot reload latency for large composite assets.
+When a source file changes, re-import only the modified sub-assets rather than the entire file. For
+example, modifying a single animation clip in a multi-asset DCC export re-imports only that clip.
+Partial re-import reduces hot reload latency for large composite assets.
 
 - **Requirements:** R-12.4.6
 - **Dependencies:** F-12.4.1, F-12.3.2

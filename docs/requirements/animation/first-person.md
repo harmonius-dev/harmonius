@@ -3,9 +3,9 @@
 ## R-9.6.1 First-Person Camera Controller
 
 The engine **SHALL** provide a first-person camera with head-bob synchronized to locomotion speed,
-landing impact proportional to fall distance, procedural lean/peek with lateral translation,
-camera tilt on strafing and slopes, spring-damper driven motion, and a separate viewmodel FOV
-independent of world FOV.
+landing impact proportional to fall distance, procedural lean/peek with lateral translation, camera
+tilt on strafing and slopes, spring-damper driven motion, and a separate viewmodel FOV independent
+of world FOV.
 
 - **Derived from:** [F-9.6.1](../../features/animation/first-person.md)
 - **Rationale:** A physically-grounded first-person camera with spring-damper dynamics produces
@@ -26,10 +26,10 @@ locomotion bob, and sprint tilt.
 - **Rationale:** Per-weapon spring parameters give each weapon a distinct physical feel (heavy LMG
   vs. light pistol), and procedural generation avoids authoring sway animations per weapon.
 - **Verification:** Move the mouse right at constant speed and verify the weapon rotates left
-  (opposite direction) with a lagging follow. Walk at constant speed and verify vertical weapon
-  bob amplitude matches the configured value within 5%. Enter sprint and verify the weapon tilts
-  to the configured carry angle. Compare a heavy weapon (high mass) and light weapon (low mass)
-  and verify the heavy weapon has visibly more sway lag.
+  (opposite direction) with a lagging follow. Walk at constant speed and verify vertical weapon bob
+  amplitude matches the configured value within 5%. Enter sprint and verify the weapon tilts to the
+  configured carry angle. Compare a heavy weapon (high mass) and light weapon (low mass) and verify
+  the heavy weapon has visibly more sway lag.
 
 ## R-9.6.3 Procedural Recoil and ADS Animation
 
@@ -41,11 +41,11 @@ during ADS.
 - **Derived from:** [F-9.6.3](../../features/animation/first-person.md)
 - **Rationale:** Procedural recoil from pattern data produces unique per-shot visual feedback, and
   ADS interpolation enables sight alignment without per-weapon ADS animations.
-- **Verification:** Fire 10 consecutive shots and verify each recoil kick differs from the
-  previous by at least 10% in either rotation or translation magnitude. Enter ADS and verify the
-  weapon interpolates from hip to sight position within the configured duration. Verify weapon sway
-  amplitude during ADS is reduced to at most 30% of the hip-fire sway amplitude. Switch between
-  iron sights and a mounted optic and verify the sight alignment position changes correctly.
+- **Verification:** Fire 10 consecutive shots and verify each recoil kick differs from the previous
+  by at least 10% in either rotation or translation magnitude. Enter ADS and verify the weapon
+  interpolates from hip to sight position within the configured duration. Verify weapon sway
+  amplitude during ADS is reduced to at most 30% of the hip-fire sway amplitude. Switch between iron
+  sights and a mounted optic and verify the sight alignment position changes correctly.
 
 ## R-9.6.4 Weapon Equip, Inspect, and Dual Wield
 
@@ -57,8 +57,7 @@ bob, fire, and reload per hand, supporting alternating, simultaneous, and indepe
 - **Rationale:** Full weapon handling (equip, inspect, dual wield) provides tactile feedback and
   visual variety essential for first-person game feel.
 - **Verification:** Switch weapons and verify holster-then-draw plays in sequence with no frame
-  where neither weapon is visible. Trigger inspect and verify the weapon rotates to show all
-  sides. Equip two one-handed weapons and verify each hand has independent sway by moving the
-  mouse and observing both hands lag independently. Fire in alternating mode and verify shots
-  alternate left-right-left. Fire in simultaneous mode and verify both weapons fire on the same
-  frame.
+  where neither weapon is visible. Trigger inspect and verify the weapon rotates to show all sides.
+  Equip two one-handed weapons and verify each hand has independent sway by moving the mouse and
+  observing both hands lag independently. Fire in alternating mode and verify shots alternate
+  left-right-left. Fire in simultaneous mode and verify both weapons fire on the same frame.

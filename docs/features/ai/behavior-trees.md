@@ -11,8 +11,8 @@ condition check). These composites form the structural backbone of all NPC behav
 
 - **Requirements:** R-7.3.1
 - **Dependencies:** None
-- **Platform notes:** Mobile ticks behavior trees at reduced frequency (5-10 Hz vs. 20-30 Hz
-  on desktop) via the AI LOD system (F-7.7.5) to fit within CPU budget.
+- **Platform notes:** Mobile ticks behavior trees at reduced frequency (5-10 Hz vs. 20-30 Hz on
+  desktop) via the AI LOD system (F-7.7.5) to fit within CPU budget.
 
 ### F-7.3.2 Decorator Nodes
 
@@ -23,8 +23,8 @@ duplicating subtrees.
 
 - **Requirements:** R-7.3.2
 - **Dependencies:** F-7.3.1
-- **Platform notes:** Rate Limiter decorators are especially useful on mobile to throttle
-  expensive subtrees independently of the global tick rate.
+- **Platform notes:** Rate Limiter decorators are especially useful on mobile to throttle expensive
+  subtrees independently of the global tick rate.
 
 ### F-7.3.3 Conditional Aborts
 
@@ -35,8 +35,8 @@ threat changes.
 
 - **Requirements:** R-7.3.3
 - **Dependencies:** F-7.3.1
-- **Platform notes:** Abort re-evaluation frequency tied to BT tick rate; mobile agents
-  react slower due to reduced tick rate but remain functionally correct.
+- **Platform notes:** Abort re-evaluation frequency tied to BT tick rate; mobile agents react slower
+  due to reduced tick rate but remain functionally correct.
 
 ## Blackboard
 
@@ -49,8 +49,8 @@ conditional aborts.
 
 - **Requirements:** R-7.3.4
 - **Dependencies:** None
-- **Platform notes:** Per-agent memory footprint matters on mobile. Mobile limits blackboard
-  key count per agent and uses compact storage for value types.
+- **Platform notes:** Per-agent memory footprint matters on mobile. Mobile limits blackboard key
+  count per agent and uses compact storage for value types.
 
 ## Assets & Serialization
 
@@ -58,8 +58,8 @@ conditional aborts.
 
 Behavior trees are authored as data assets in a declarative format (RON or JSON) and loaded at
 runtime. Supports hot-reload during development so designers can iterate on NPC behavior without
-restarting the server. Trees reference node types by registered name, enabling project-specific
-leaf nodes.
+restarting the server. Trees reference node types by registered name, enabling project-specific leaf
+nodes.
 
 - **Requirements:** R-7.3.5
 - **Dependencies:** F-7.3.1, F-7.3.4

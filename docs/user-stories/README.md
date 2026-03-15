@@ -1,8 +1,8 @@
 # Harmonius Game Engine -- User Stories
 
-Exhaustive user stories for the Harmonius game engine covering every feature from multiple
-persona perspectives. Each story represents a single action by a single persona in a single
-use case of a single feature.
+Exhaustive user stories for the Harmonius game engine covering every feature from multiple persona
+perspectives. Each story represents a single action by a single persona in a single use case of a
+single feature.
 
 See [personas.md](personas.md) for the complete persona catalog (27 personas).
 

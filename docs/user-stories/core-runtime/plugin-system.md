@@ -4,9 +4,9 @@
 
 ## US-1.6.1 Register Plugins Declaratively With Automatic Ordering
 
-**As an** engine developer (P-26), **I want** a plugin trait that declares contributed
-systems, components, resources, and events with automatic ordering from dependencies,
-**so that** plugin registration is deterministic regardless of call order.
+**As an** engine developer (P-26), **I want** a plugin trait that declares contributed systems,
+components, resources, and events with automatic ordering from dependencies, **so that** plugin
+registration is deterministic regardless of call order.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -16,9 +16,9 @@ systems, components, resources, and events with automatic ordering from dependen
 
 ## US-1.6.2 Use Declarative Plugin Registration in the Visual Editor
 
-**As a** designer (P-5), **I want** the visual editor to show which plugins are loaded and
-what systems, components, and resources each contributes, **so that** I understand what
-functionality is available and where it comes from.
+**As a** designer (P-5), **I want** the visual editor to show which plugins are loaded and what
+systems, components, and resources each contributes, **so that** I understand what functionality is
+available and where it comes from.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -29,8 +29,8 @@ functionality is available and where it comes from.
 ## US-1.6.3 Set Up Projects With Plugin Group Presets
 
 **As a** game developer (P-15), **I want** named plugin groups like `DefaultPlugins` and
-`ServerPlugins` that I can customize by disabling individual plugins, **so that** I can set
-up client, server, and headless builds with a single registration call.
+`ServerPlugins` that I can customize by disabling individual plugins, **so that** I can set up
+client, server, and headless builds with a single registration call.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -40,9 +40,9 @@ up client, server, and headless builds with a single registration call.
 
 ## US-1.6.4 Verify Plugin Group Customization Works Correctly
 
-**As an** engine tester (P-27), **I want** to verify that disabling individual plugins within
-a group correctly removes their systems and components, **so that** customized plugin sets
-produce the expected minimal configuration.
+**As an** engine tester (P-27), **I want** to verify that disabling individual plugins within a
+group correctly removes their systems and components, **so that** customized plugin sets produce the
+expected minimal configuration.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -54,9 +54,9 @@ produce the expected minimal configuration.
 
 ## US-1.6.5 Validate Plugin Dependencies at Startup
 
-**As a** game developer (P-15), **I want** plugins to declare dependencies and conflicts
-validated at startup, **so that** missing dependencies are reported as actionable errors
-before any systems run rather than causing subtle runtime failures.
+**As a** game developer (P-15), **I want** plugins to declare dependencies and conflicts validated
+at startup, **so that** missing dependencies are reported as actionable errors before any systems
+run rather than causing subtle runtime failures.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -66,9 +66,9 @@ before any systems run rather than causing subtle runtime failures.
 
 ## US-1.6.6 Resolve Plugin Load Order by Topological Sort
 
-**As an** engine developer (P-26), **I want** plugin initialization order resolved by
-topological sort with circular dependency detection, **so that** dependencies are always
-initialized before dependents and cycles are caught at startup.
+**As an** engine developer (P-26), **I want** plugin initialization order resolved by topological
+sort with circular dependency detection, **so that** dependencies are always initialized before
+dependents and cycles are caught at startup.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -78,9 +78,9 @@ initialized before dependents and cycles are caught at startup.
 
 ## US-1.6.7 Verify Dependency Error Messages Are Actionable
 
-**As a** QA engineer (P-19), **I want** to verify that missing dependency and circular
-dependency errors include plugin names and specific missing items, **so that** developers can
-quickly resolve configuration issues without debugging.
+**As a** QA engineer (P-19), **I want** to verify that missing dependency and circular dependency
+errors include plugin names and specific missing items, **so that** developers can quickly resolve
+configuration issues without debugging.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -92,9 +92,9 @@ quickly resolve configuration issues without debugging.
 
 ## US-1.6.8 Hot-Reload Gameplay Plugins Without Losing State
 
-**As a** game developer (P-15), **I want** to hot-reload gameplay plugins during development
-with ECS world state preserved across reloads, **so that** I can iterate on gameplay logic
-without restarting the engine and losing my test scenario.
+**As a** game developer (P-15), **I want** to hot-reload gameplay plugins during development with
+ECS world state preserved across reloads, **so that** I can iterate on gameplay logic without
+restarting the engine and losing my test scenario.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -106,8 +106,8 @@ without restarting the engine and losing my test scenario.
 ## US-1.6.9 Implement Hot Reload With State Migration
 
 **As an** engine developer (P-26), **I want** to implement plugin hot reload using
-dlopen/LoadLibrary with state migration through serialization and reflection, **so that**
-component layout changes across reloads are handled gracefully.
+dlopen/LoadLibrary with state migration through serialization and reflection, **so that** component
+layout changes across reloads are handled gracefully.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -117,9 +117,9 @@ component layout changes across reloads are handled gracefully.
 
 ## US-1.6.10 Verify Hot Reload Preserves Entity State
 
-**As an** engine tester (P-27), **I want** to verify that hot-reloading a gameplay plugin
-preserves all entity state including modified components and relationships, **so that**
-developers do not lose their test scenarios during iteration.
+**As an** engine tester (P-27), **I want** to verify that hot-reloading a gameplay plugin preserves
+all entity state including modified components and relationships, **so that** developers do not lose
+their test scenarios during iteration.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -132,8 +132,8 @@ developers do not lose their test scenarios during iteration.
 ## US-1.6.11 Reject Incompatible Plugin Binaries at Load Time
 
 **As an** engine developer (P-26), **I want** plugins to embed semantic version and ABI hash
-metadata checked at load time, **so that** dynamically loaded plugins compiled against
-incompatible engine versions are rejected rather than causing memory corruption.
+metadata checked at load time, **so that** dynamically loaded plugins compiled against incompatible
+engine versions are rejected rather than causing memory corruption.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -143,9 +143,9 @@ incompatible engine versions are rejected rather than causing memory corruption.
 
 ## US-1.6.12 Verify ABI Compatibility Check Rejects Mismatched Plugins
 
-**As an** engine tester (P-27), **I want** to verify that loading a plugin compiled against
-a different engine version is rejected with a clear error message, **so that** no
-incompatible binary is silently loaded.
+**As an** engine tester (P-27), **I want** to verify that loading a plugin compiled against a
+different engine version is rejected with a clear error message, **so that** no incompatible binary
+is silently loaded.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -155,9 +155,9 @@ incompatible binary is silently loaded.
 
 ## US-1.6.13 Branch on Optional Plugin Capabilities at Runtime
 
-**As a** game developer (P-15), **I want** plugins to advertise and query optional
-capabilities at runtime, **so that** I can branch on feature presence (physics, audio,
-networking) without compile-time feature flags or tight coupling.
+**As a** game developer (P-15), **I want** plugins to advertise and query optional capabilities at
+runtime, **so that** I can branch on feature presence (physics, audio, networking) without
+compile-time feature flags or tight coupling.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -167,9 +167,9 @@ networking) without compile-time feature flags or tight coupling.
 
 ## US-1.6.14 Verify Capability Negotiation Returns Correct Results
 
-**As an** engine tester (P-27), **I want** to verify that capability queries return correct
-results when plugins are loaded, unloaded, or absent, **so that** systems branch correctly
-on capability presence in all configurations.
+**As an** engine tester (P-27), **I want** to verify that capability queries return correct results
+when plugins are loaded, unloaded, or absent, **so that** systems branch correctly on capability
+presence in all configurations.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

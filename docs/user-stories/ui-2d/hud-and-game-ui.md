@@ -2,9 +2,9 @@
 
 ## US-10.3.1 Monitor Health and Resources During Intense Combat
 
-**As a** player (P-23), **I want** segmented and continuous health/mana/energy bars with
-animated drain/fill, predicted damage overlays, and absorb shield indicators, **so that**
-I can monitor my character's status at a glance during fast-paced combat.
+**As a** player (P-23), **I want** segmented and continuous health/mana/energy bars with animated
+drain/fill, predicted damage overlays, and absorb shield indicators, **so that** I can monitor my
+character's status at a glance during fast-paced combat.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -16,8 +16,8 @@ I can monitor my character's status at a glance during fast-paced combat.
 ## US-10.3.2 Design Stylized Health Bar Themes
 
 **As an** artist (P-8), **I want** to customize health and resource bar visuals including
-segmentation, fill colors, border styles, and absorb overlay graphics, **so that** bars
-match the game's visual identity for different factions and character classes.
+segmentation, fill colors, border styles, and absorb overlay graphics, **so that** bars match the
+game's visual identity for different factions and character classes.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -27,9 +27,9 @@ match the game's visual identity for different factions and character classes.
 
 ## US-10.3.3 Benchmark Raid Frame Rendering Performance
 
-**As an** engine tester (P-27), **I want** to benchmark rendering of 40+ player health,
-mana, and cast bars simultaneously, **so that** I can verify raid UI stays within the 2ms
-GPU budget during worst-case raid encounters.
+**As an** engine tester (P-27), **I want** to benchmark rendering of 40+ player health, mana, and
+cast bars simultaneously, **so that** I can verify raid UI stays within the 2ms GPU budget during
+worst-case raid encounters.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -38,9 +38,9 @@ GPU budget during worst-case raid encounters.
 
 ## US-10.3.4 Track Active Buffs and Debuffs With Duration Overlays
 
-**As a** player (P-23), **I want** grid-based buff and debuff icons with radial cooldown
-sweeps, countdown text, and tooltip inspection, **so that** I can monitor 30+ active effects
-with priority filtering during raids.
+**As a** player (P-23), **I want** grid-based buff and debuff icons with radial cooldown sweeps,
+countdown text, and tooltip inspection, **so that** I can monitor 30+ active effects with priority
+filtering during raids.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -50,9 +50,9 @@ with priority filtering during raids.
 
 ## US-10.3.5 Configure Buff Icon Grouping and Priority
 
-**As a** designer (P-5), **I want** to configure how buff and debuff icons are grouped,
-prioritized, and filtered (player buffs, raid buffs, debuffs, dispellable), **so that**
-the most important effects are always visible even with many active.
+**As a** designer (P-5), **I want** to configure how buff and debuff icons are grouped, prioritized,
+and filtered (player buffs, raid buffs, debuffs, dispellable), **so that** the most important
+effects are always visible even with many active.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -62,9 +62,9 @@ the most important effects are always visible even with many active.
 
 ## US-10.3.6 Use Frame-Accurate Cooldown Indicators on Action Bars
 
-**As a** player (P-23), **I want** configurable action bar grids with radial cooldown sweeps,
-charge counts, range/usability tinting, and keybind labels, **so that** I know exactly when
-abilities are ready without frame-inaccurate visual delays.
+**As a** player (P-23), **I want** configurable action bar grids with radial cooldown sweeps, charge
+counts, range/usability tinting, and keybind labels, **so that** I know exactly when abilities are
+ready without frame-inaccurate visual delays.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -87,9 +87,9 @@ actually are and no visual desync occurs.
 
 ## US-10.3.8 See Nameplates Above Characters in Crowded Cities
 
-**As a** player (P-23), **I want** floating nameplates above characters and NPCs showing
-name, guild, health bar, and cast bar with overlap avoidance and distance-based culling,
-**so that** I can identify entities in crowded MMO cities without visual clutter.
+**As a** player (P-23), **I want** floating nameplates above characters and NPCs showing name,
+guild, health bar, and cast bar with overlap avoidance and distance-based culling, **so that** I can
+identify entities in crowded MMO cities without visual clutter.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -100,9 +100,9 @@ name, guild, health bar, and cast bar with overlap avoidance and distance-based 
 
 ## US-10.3.9 Stress-Test Nameplate Rendering in Dense Populations
 
-**As an** engine tester (P-27), **I want** to stress-test nameplate rendering with 200+
-visible entities to verify overlap avoidance, occlusion culling, and draw call budget,
-**so that** performance holds in worst-case city scenarios.
+**As an** engine tester (P-27), **I want** to stress-test nameplate rendering with 200+ visible
+entities to verify overlap avoidance, occlusion culling, and draw call budget, **so that**
+performance holds in worst-case city scenarios.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -112,9 +112,9 @@ visible entities to verify overlap avoidance, occlusion culling, and draw call b
 
 ## US-10.3.10 See Floating Damage Numbers During Combat
 
-**As a** player (P-23), **I want** animated damage numbers, healing numbers, and experience
-gains that spawn at world positions with color-coding by damage type and merge repeated
-hits, **so that** combat feedback is clear even during burst damage scenarios.
+**As a** player (P-23), **I want** animated damage numbers, healing numbers, and experience gains
+that spawn at world positions with color-coding by damage type and merge repeated hits, **so that**
+combat feedback is clear even during burst damage scenarios.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -126,8 +126,8 @@ hits, **so that** combat feedback is clear even during burst damage scenarios.
 ## US-10.3.11 Configure Damage Number Styles and Trajectories
 
 **As a** designer (P-5), **I want** to configure damage number fonts, colors per damage type,
-animation trajectories, merge behavior, and burst handling, **so that** combat text feedback
-matches the game's visual style and remains readable during intense encounters.
+animation trajectories, merge behavior, and burst handling, **so that** combat text feedback matches
+the game's visual style and remains readable during intense encounters.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -137,9 +137,9 @@ matches the game's visual style and remains readable during intense encounters.
 
 ## US-10.3.12 Navigate Using Minimap and World Map
 
-**As a** player (P-23), **I want** a minimap showing party members, NPCs, quest objectives,
-and POIs, plus a full world map with zoom, pan, fog-of-war, and waypoint placement,
-**so that** I can navigate and track objectives without getting lost.
+**As a** player (P-23), **I want** a minimap showing party members, NPCs, quest objectives, and
+POIs, plus a full world map with zoom, pan, fog-of-war, and waypoint placement, **so that** I can
+navigate and track objectives without getting lost.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -151,8 +151,8 @@ and POIs, plus a full world map with zoom, pan, fog-of-war, and waypoint placeme
 ## US-10.3.13 Track Quests With On-Screen Objectives and Waypoints
 
 **As a** player (P-23), **I want** a persistent quest tracker showing active objectives with
-progress indicators, world-space waypoint markers, compass indicators, and distance
-displays, **so that** I always know what to do next and where to go.
+progress indicators, world-space waypoint markers, compass indicators, and distance displays, **so
+that** I always know what to do next and where to go.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -163,9 +163,9 @@ displays, **so that** I always know what to do next and where to go.
 
 ## US-10.3.14 Design Quest Tracker Layouts for Complex Objectives
 
-**As a** designer (P-5), **I want** to design quest tracker layouts that handle complex MMO
-quest structures including chains, branches, and shared group progress, **so that** players
-can follow multi-layered quest lines without confusion.
+**As a** designer (P-5), **I want** to design quest tracker layouts that handle complex MMO quest
+structures including chains, branches, and shared group progress, **so that** players can follow
+multi-layered quest lines without confusion.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -175,9 +175,9 @@ can follow multi-layered quest lines without confusion.
 
 ## US-10.3.15 Chat With Hundreds of Players Using Multiple Channels
 
-**As a** player (P-23), **I want** a chat window with multiple channels, tabbed views,
-scrollable history, clickable player and item links, and inline emoji, **so that** I can
-communicate effectively in MMO cities with high message throughput.
+**As a** player (P-23), **I want** a chat window with multiple channels, tabbed views, scrollable
+history, clickable player and item links, and inline emoji, **so that** I can communicate
+effectively in MMO cities with high message throughput.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -188,9 +188,9 @@ communicate effectively in MMO cities with high message throughput.
 
 ## US-10.3.16 Verify Chat Handles High Message Throughput
 
-**As an** engine tester (P-27), **I want** to verify the chat system handles 200+ messages
-per second without dropping messages, lagging scroll, or UI hitches, **so that** chat
-remains responsive in crowded MMO areas.
+**As an** engine tester (P-27), **I want** to verify the chat system handles 200+ messages per
+second without dropping messages, lagging scroll, or UI hitches, **so that** chat remains responsive
+in crowded MMO areas.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -201,8 +201,8 @@ remains responsive in crowded MMO areas.
 ## US-10.3.17 Manage Inventory With Drag-Drop Grid Containers
 
 **As a** player (P-23), **I want** grid-based inventory with drag-and-drop, stack splitting,
-sorting, search filtering, and bag/tab organization, **so that** I can manage items across
-player bags, bank, guild bank, vendor, loot, and mail attachment views.
+sorting, search filtering, and bag/tab organization, **so that** I can manage items across player
+bags, bank, guild bank, vendor, loot, and mail attachment views.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -213,9 +213,9 @@ player bags, bank, guild bank, vendor, loot, and mail attachment views.
 
 ## US-10.3.18 Design Unified Container Widget for All Inventory Types
 
-**As a** designer (P-5), **I want** a single grid widget that adapts to different container
-types (bags, bank, vendor, trade, loot, mail) with context-specific behavior, **so that**
-all inventory interfaces share consistent interaction patterns.
+**As a** designer (P-5), **I want** a single grid widget that adapts to different container types
+(bags, bank, vendor, trade, loot, mail) with context-specific behavior, **so that** all inventory
+interfaces share consistent interaction patterns.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -225,9 +225,9 @@ all inventory interfaces share consistent interaction patterns.
 
 ## US-10.3.19 Navigate Using a Skyrim-Style Compass Bar
 
-**As a** player (P-23), **I want** a horizontal compass strip showing cardinal directions
-and tracked objective markers that rotate with my facing, **so that** I maintain directional
-awareness while exploring without opening the map.
+**As a** player (P-23), **I want** a horizontal compass strip showing cardinal directions and
+tracked objective markers that rotate with my facing, **so that** I maintain directional awareness
+while exploring without opening the map.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -238,9 +238,9 @@ awareness while exploring without opening the map.
 
 ## US-10.3.20 See Party Members and Custom Waypoints on Compass
 
-**As a** player (P-23), **I want** party member positions and custom waypoints to appear on
-the compass alongside quest markers with configurable distance fade, **so that** I can
-navigate toward teammates and custom destinations without opening the map.
+**As a** player (P-23), **I want** party member positions and custom waypoints to appear on the
+compass alongside quest markers with configurable distance fade, **so that** I can navigate toward
+teammates and custom destinations without opening the map.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -251,9 +251,9 @@ navigate toward teammates and custom destinations without opening the map.
 
 ## US-10.3.21 Configure Compass Style Per Project
 
-**As a** designer (P-5), **I want** to choose between full strip, arc, and minimal dot
-compass styles per project and configure marker types and fade thresholds, **so that**
-the compass matches the game's HUD aesthetic.
+**As a** designer (P-5), **I want** to choose between full strip, arc, and minimal dot compass
+styles per project and configure marker types and fade thresholds, **so that** the compass matches
+the game's HUD aesthetic.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -263,9 +263,9 @@ the compass matches the game's HUD aesthetic.
 
 ## US-10.3.22 Follow Edge Arrows to Off-Screen Objectives
 
-**As a** player (P-23), **I want** directional arrows at screen edges pointing toward
-off-screen tracked objectives with distance, icon, and priority-based coloring, **so that**
-I know which direction to turn without pausing to open the map.
+**As a** player (P-23), **I want** directional arrows at screen edges pointing toward off-screen
+tracked objectives with distance, icon, and priority-based coloring, **so that** I know which
+direction to turn without pausing to open the map.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -276,9 +276,9 @@ I know which direction to turn without pausing to open the map.
 
 ## US-10.3.23 Verify Multiple Off-Screen Indicators Stack Correctly
 
-**As a** QA engineer (P-19), **I want** to verify that multiple off-screen indicators stack
-along screen edges without overlap and that per-marker visibility controls work, **so that**
-all tracked objectives remain distinguishable.
+**As a** QA engineer (P-19), **I want** to verify that multiple off-screen indicators stack along
+screen edges without overlap and that per-marker visibility controls work, **so that** all tracked
+objectives remain distinguishable.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -288,9 +288,9 @@ all tracked objectives remain distinguishable.
 
 ## US-10.3.24 Auto-Generate Minimap From Procedural Terrain Data
 
-**As a** developer (P-15), **I want** the minimap to auto-generate from terrain, biome,
-building footprint, and road spline data without artist intervention, **so that**
-procedurally generated worlds have functional minimaps immediately.
+**As a** developer (P-15), **I want** the minimap to auto-generate from terrain, biome, building
+footprint, and road spline data without artist intervention, **so that** procedurally generated
+worlds have functional minimaps immediately.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -301,9 +301,9 @@ procedurally generated worlds have functional minimaps immediately.
 
 ## US-10.3.25 Explore Procedural Worlds With Progressive Map Reveal
 
-**As a** player (P-23), **I want** the minimap to reveal terrain progressively as I explore
-with fog of war hiding undiscovered areas, **so that** exploration feels rewarding and the
-map serves as a record of where I have been.
+**As a** player (P-23), **I want** the minimap to reveal terrain progressively as I explore with fog
+of war hiding undiscovered areas, **so that** exploration feels rewarding and the map serves as a
+record of where I have been.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -314,9 +314,9 @@ map serves as a record of where I have been.
 
 ## US-10.3.26 Browse the World Map With Multi-Layer Rendering
 
-**As a** player (P-23), **I want** a world map with terrain, biome, political, road,
-settlement, water, and fog-of-war layers that I can zoom, pan, and search, **so that** I
-can plan routes, find locations, and set waypoints.
+**As a** player (P-23), **I want** a world map with terrain, biome, political, road, settlement,
+water, and fog-of-war layers that I can zoom, pan, and search, **so that** I can plan routes, find
+locations, and set waypoints.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -327,9 +327,9 @@ can plan routes, find locations, and set waypoints.
 
 ## US-10.3.27 View Planet-Scale Worlds on a Zoomable Globe
 
-**As a** player (P-23), **I want** the world map to render on a zoomable globe with
-zoom-to-surface transitions for planet-scale worlds, **so that** the map matches the scale
-and curvature of the game world.
+**As a** player (P-23), **I want** the world map to render on a zoomable globe with zoom-to-surface
+transitions for planet-scale worlds, **so that** the map matches the scale and curvature of the game
+world.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -340,9 +340,9 @@ and curvature of the game world.
 
 ## US-10.3.28 Implement World Map Generation Pipeline
 
-**As an** engine developer (P-26), **I want** to implement a world map generation pipeline
-that produces tiled image pyramids from terrain, biome, political, and infrastructure data,
-**so that** maps render efficiently at all zoom levels with cached tiles.
+**As an** engine developer (P-26), **I want** to implement a world map generation pipeline that
+produces tiled image pyramids from terrain, biome, political, and infrastructure data, **so that**
+maps render efficiently at all zoom levels with cached tiles.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -352,9 +352,9 @@ that produces tiled image pyramids from terrain, biome, political, and infrastru
 
 ## US-10.3.29 Apply Artistic Post-Processing Styles to the World Map
 
-**As an** artist (P-8), **I want** to apply post-processing styles to the world map
-including parchment, painted, tactical, satellite, and schematic modes, **so that** the map
-reinforces the game's visual identity.
+**As an** artist (P-8), **I want** to apply post-processing styles to the world map including
+parchment, painted, tactical, satellite, and schematic modes, **so that** the map reinforces the
+game's visual identity.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -364,9 +364,9 @@ reinforces the game's visual identity.
 
 ## US-10.3.30 Substitute Hand-Painted Maps for Key Zones
 
-**As an** artist (P-8), **I want** to substitute static hand-painted map images for specific
-zones while dynamic data layers (player position, quest markers, fog of war) overlay
-correctly, **so that** important areas get maximum artistic quality.
+**As an** artist (P-8), **I want** to substitute static hand-painted map images for specific zones
+while dynamic data layers (player position, quest markers, fog of war) overlay correctly, **so
+that** important areas get maximum artistic quality.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -376,9 +376,9 @@ correctly, **so that** important areas get maximum artistic quality.
 
 ## US-10.3.31 Design Map Overlay Assets and Decorative Elements
 
-**As a** designer (P-5), **I want** to compose map overlay assets like compass roses,
-decorative borders, illustrated landmarks, and sea monster illustrations in the visual
-editor, **so that** the map has a polished, immersive presentation.
+**As a** designer (P-5), **I want** to compose map overlay assets like compass roses, decorative
+borders, illustrated landmarks, and sea monster illustrations in the visual editor, **so that** the
+map has a polished, immersive presentation.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -388,9 +388,9 @@ editor, **so that** the map has a polished, immersive presentation.
 
 ## US-10.3.32 See Quest Markers on Minimap, Compass, and World Map
 
-**As a** player (P-23), **I want** quest markers to appear simultaneously on the minimap,
-compass, and world map with consistent icons, **so that** I always know where my objectives
-are regardless of which navigation tool I check.
+**As a** player (P-23), **I want** quest markers to appear simultaneously on the minimap, compass,
+and world map with consistent icons, **so that** I always know where my objectives are regardless of
+which navigation tool I check.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -400,9 +400,9 @@ are regardless of which navigation tool I check.
 
 ## US-10.3.33 Define Data-Driven Map Marker Categories
 
-**As a** developer (P-15), **I want** map markers defined as data assets with icon, color,
-category, visibility rules, and source type, **so that** quest objectives, NPCs, resources,
-party members, enemies, and waypoints are all managed through a unified marker system.
+**As a** developer (P-15), **I want** map markers defined as data assets with icon, color, category,
+visibility rules, and source type, **so that** quest objectives, NPCs, resources, party members,
+enemies, and waypoints are all managed through a unified marker system.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -413,9 +413,8 @@ party members, enemies, and waypoints are all managed through a unified marker s
 
 ## US-10.3.34 Zoom Out and See Markers Cluster Automatically
 
-**As a** player (P-23), **I want** overlapping markers to cluster into grouped icons at low
-zoom levels that expand when I zoom in, **so that** the map remains readable even in
-marker-dense areas.
+**As a** player (P-23), **I want** overlapping markers to cluster into grouped icons at low zoom
+levels that expand when I zoom in, **so that** the map remains readable even in marker-dense areas.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

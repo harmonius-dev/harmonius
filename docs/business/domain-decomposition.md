@@ -1,19 +1,24 @@
 # Domain Decomposition
 
-Decomposes all 15 engine domains into feature-groups and maps cross-domain dependency edges to maximize parallel
-development pipelines. Each feature-group is a node in a directed acyclic graph. Edges represent "must exist before"
-relationships and can connect any node to any node regardless of domain or complexity level.
+Decomposes all 15 engine domains into feature-groups and maps cross-domain dependency edges to
+maximize parallel development pipelines. Each feature-group is a node in a directed acyclic graph.
+Edges represent "must exist before" relationships and can connect any node to any node regardless of
+domain or complexity level.
 
 ## Constraints
 
-1. **Interoperability:** Any two modules where a requirement dictates interoperation must share contracts (component
-   schemas, event types, API traits) before either module builds against those contracts.
-2. **All edge types:** Cross-domain dependencies exist in all four directions — foundational-to-foundational,
-   advanced-to-advanced, foundational-to-advanced, and advanced-to-foundational.
+1. **Interoperability:** Any two modules where a requirement dictates interoperation must share
+   contracts (component schemas, event types, API traits) before either module builds against those
+   contracts.
+2. **All edge types:** Cross-domain dependencies exist in all four directions —
+   foundational-to-foundational, advanced-to-advanced, foundational-to-advanced, and
+   advanced-to-foundational.
 3. **No-code enforcement:** All user-facing authoring surfaces must be visual (R-X.9.5).
 4. **ECS-first:** All simulation data lives as components, all logic as systems.
-5. **Shared spatial index:** Single BVH/octree shared across physics, rendering, networking, AI, gameplay.
-6. **Platform-native async I/O:** No stdlib file I/O — IOCP on Windows, GCD on macOS, io_uring on Linux.
+5. **Shared spatial index:** Single BVH/octree shared across physics, rendering, networking, AI,
+   gameplay.
+6. **Platform-native async I/O:** No stdlib file I/O — IOCP on Windows, GCD on macOS, io_uring on
+   Linux.
 
 ---
 
@@ -39,8 +44,7 @@ relationships and can connect any node to any node regardless of domain or compl
 | Platform.OS | ContentPipeline.Streaming | Filesystem abstraction for asset loading |
 | Platform.OS | Audio.Engine | Audio output device enumeration |
 
-**Inbound edges (what these require):**
-None. Platform is a root node.
+**Inbound edges (what these require):** None. Platform is a root node.
 
 ---
 
@@ -569,8 +573,9 @@ None. Platform is a root node.
 
 ## Topological Build Order
 
-Grouped into concurrency waves. Each wave contains all nodes whose prerequisites are satisfied by completion of
-prior waves. The node count per wave represents maximum agent parallelism at that stage.
+Grouped into concurrency waves. Each wave contains all nodes whose prerequisites are satisfied by
+completion of prior waves. The node count per wave represents maximum agent parallelism at that
+stage.
 
 ### Wave 0 — Root (no prerequisites)
 
@@ -597,8 +602,9 @@ prior waves. The node count per wave represents maximum agent parallelism at tha
 
 **Max parallelism: 6 agents**
 
-Internal ordering: CoreRuntime.ECS should lead. SceneTransforms, EventsPlugins, and SpatialIndex depend on ECS
-primitives. ReflectionSerialization and MemoryAsyncIO can proceed in parallel with ECS.
+Internal ordering: CoreRuntime.ECS should lead. SceneTransforms, EventsPlugins, and SpatialIndex
+depend on ECS primitives. ReflectionSerialization and MemoryAsyncIO can proceed in parallel with
+ECS.
 
 ---
 
@@ -767,8 +773,8 @@ Total feature-groups: **87**
 
 ## Interoperability Contracts
 
-The following contracts must be defined and locked before Wave 2 begins, as they are consumed by multiple concurrent
-development pipelines:
+The following contracts must be defined and locked before Wave 2 begins, as they are consumed by
+multiple concurrent development pipelines:
 
 | Contract | Defined By | Consumed By | Scope |
 |----------|-----------|-------------|-------|

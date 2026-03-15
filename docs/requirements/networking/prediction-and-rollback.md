@@ -18,25 +18,25 @@ atop the corrected server state within a single frame.
 
 ### R-8.4.2 Input Buffering and Redundant Transmission
 
-The engine **SHALL** buffer the last N client inputs and include redundant copies of recent inputs in
-each outgoing packet, where buffer depth is tunable based on measured RTT and jitter, so that the
+The engine **SHALL** buffer the last N client inputs and include redundant copies of recent inputs
+in each outgoing packet, where buffer depth is tunable based on measured RTT and jitter, so that the
 server can process inputs in order even when packets arrive out of sequence or are lost.
 
 - **Derived from:** [F-8.4.2](../../features/networking/prediction-and-rollback.md)
 - **Rationale:** Packet loss must not stall the server simulation; redundant input transmission
   provides resilience proportional to network quality.
-- **Verification:** Integration test: send inputs over a link with 10% packet loss. Verify the server
-  processes all inputs in order with zero gaps. Measure that buffer depth adapts upward when jitter
-  increases and downward when the connection stabilizes. Verify no duplicate input processing on the
-  server when redundant copies arrive.
+- **Verification:** Integration test: send inputs over a link with 10% packet loss. Verify the
+  server processes all inputs in order with zero gaps. Measure that buffer depth adapts upward when
+  jitter increases and downward when the connection stabilizes. Verify no duplicate input processing
+  on the server when redundant copies arrive.
 
 ## Interpolation
 
 ### R-8.4.3 Snapshot Interpolation
 
-The engine **SHALL** interpolate remote entity state between two buffered server snapshots to produce
-smooth visual motion at the client's render frame rate, with a configurable interpolation delay that
-dynamically adjusts based on server tick rate variability and network jitter.
+The engine **SHALL** interpolate remote entity state between two buffered server snapshots to
+produce smooth visual motion at the client's render frame rate, with a configurable interpolation
+delay that dynamically adjusts based on server tick rate variability and network jitter.
 
 - **Derived from:** [F-8.4.3](../../features/networking/prediction-and-rollback.md)
 - **Rationale:** Clients rendering at 60-240 FPS must display smooth motion from server updates
@@ -48,17 +48,17 @@ dynamically adjusts based on server tick rate variability and network jitter.
 
 ### R-8.4.4 Entity Extrapolation with Error Correction
 
-The engine **SHALL** extrapolate remote entity positions using velocity and acceleration when snapshot
-data is late, and apply smooth error correction via exponential decay when the next snapshot arrives
-and reveals prediction error.
+The engine **SHALL** extrapolate remote entity positions using velocity and acceleration when
+snapshot data is late, and apply smooth error correction via exponential decay when the next
+snapshot arrives and reveals prediction error.
 
 - **Derived from:** [F-8.4.4](../../features/networking/prediction-and-rollback.md)
-- **Rationale:** Entities must not freeze during packet loss or jitter spikes; extrapolation maintains
-  visual continuity while error correction prevents accumulated drift.
+- **Rationale:** Entities must not freeze during packet loss or jitter spikes; extrapolation
+  maintains visual continuity while error correction prevents accumulated drift.
 - **Verification:** Integration test: delay a server snapshot by 200 ms. Verify the client
-  extrapolates the entity's position using its last known velocity without freezing. When the delayed
-  snapshot arrives, verify the error correction converges to the true position within 200 ms using
-  exponential decay. Verify no visible snap or teleport.
+  extrapolates the entity's position using its last known velocity without freezing. When the
+  delayed snapshot arrives, verify the error correction converges to the true position within 200 ms
+  using exponential decay. Verify no visible snap or teleport.
 
 ## Lag Compensation
 
@@ -73,10 +73,10 @@ client observed at the time of input, bounded by a configurable maximum compensa
   despite network latency; bounding the window prevents abuse by high-latency or artificial-lag
   clients.
 - **Verification:** Integration test: simulate an attacker at 100 ms RTT firing at a moving target.
-  Verify the server rewinds the target's hitbox to the attacker's observed position and registers the
-  hit. Simulate an attacker at 300 ms RTT (exceeding the 250 ms window) and verify the server does
-  not rewind beyond the maximum. Simulate an ambiguous hit at the boundary and verify the defender
-  is favored.
+  Verify the server rewinds the target's hitbox to the attacker's observed position and registers
+  the hit. Simulate an attacker at 300 ms RTT (exceeding the 250 ms window) and verify the server
+  does not rewind beyond the maximum. Simulate an ambiguous hit at the boundary and verify the
+  defender is favored.
 
 ### R-8.4.6 Jitter Buffer and Adaptive Tick Alignment
 
@@ -92,5 +92,5 @@ field in the transport header.
   minimize added latency while preventing stutter.
 - **Verification:** Integration test: introduce 0-50 ms random jitter on a link. Verify the jitter
   buffer expands to absorb variance and the simulation receives packets at a steady rate with no
-  stutter. Remove jitter and verify the buffer contracts within 5 seconds. Measure added latency
-  and verify it does not exceed 2x the measured jitter standard deviation.
+  stutter. Remove jitter and verify the buffer contracts within 5 seconds. Measure added latency and
+  verify it does not exceed 2x the measured jitter standard deviation.

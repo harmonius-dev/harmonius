@@ -4,18 +4,18 @@
 
 ### R-8.3.1 Server RPC (Client-to-Server)
 
-The engine **SHALL** allow clients to invoke validated procedures on the server, where every server RPC
-passes through server-side validation and per-RPC-type rate limiting before execution, rejecting
-invalid or excessive invocations without crashing the server. Per-RPC rate limiting is a subset of the
-comprehensive rate limiting system defined in R-8.8.5.
+The engine **SHALL** allow clients to invoke validated procedures on the server, where every server
+RPC passes through server-side validation and per-RPC-type rate limiting before execution, rejecting
+invalid or excessive invocations without crashing the server. Per-RPC rate limiting is a subset of
+the comprehensive rate limiting system defined in R-8.8.5.
 
 - **Derived from:** [F-8.3.1](../../features/networking/remote-procedure-calls.md)
 - **Rationale:** Server RPCs are the primary client input mechanism in a server-authoritative
   architecture; all must be validated to prevent cheating and denial-of-service.
-- **Verification:** Integration test: invoke a server RPC with valid parameters and verify execution.
-  Invoke with out-of-range parameters and verify rejection with an error code. Exceed the configured
-  rate limit and verify subsequent calls are throttled. Send a malformed RPC payload and verify the
-  server does not crash.
+- **Verification:** Integration test: invoke a server RPC with valid parameters and verify
+  execution. Invoke with out-of-range parameters and verify rejection with an error code. Exceed the
+  configured rate limit and verify subsequent calls are throttled. Send a malformed RPC payload and
+  verify the server does not crash.
 
 ### R-8.3.2 Client RPC (Server-to-Client)
 
@@ -26,21 +26,23 @@ state.
 - **Derived from:** [F-8.3.2](../../features/networking/remote-procedure-calls.md)
 - **Rationale:** Ephemeral events like damage popups and loot notifications are fire-once and should
   not consume replication bandwidth as persistent state.
-- **Verification:** Integration test: invoke a client RPC from the server targeting a specific client.
-  Verify the target client receives and executes it. Verify non-target clients do not receive the RPC.
-  Verify the RPC payload does not appear in the replicated state snapshot.
+- **Verification:** Integration test: invoke a client RPC from the server targeting a specific
+  client. Verify the target client receives and executes it. Verify non-target clients do not
+  receive the RPC. Verify the RPC payload does not appear in the replicated state snapshot.
 
 ### R-8.3.3 Multicast RPC (Server-to-Group)
 
-The engine **SHALL** allow the server to invoke a procedure on a filtered set of clients (area-based,
-party, raid, battleground) in a single operation, without issuing individual client RPCs per recipient.
+The engine **SHALL** allow the server to invoke a procedure on a filtered set of clients
+(area-based, party, raid, battleground) in a single operation, without issuing individual client
+RPCs per recipient.
 
 - **Derived from:** [F-8.3.3](../../features/networking/remote-procedure-calls.md)
 - **Rationale:** Events visible to many players (world boss phase transitions, zone-wide weather
   changes) must be delivered efficiently without per-client RPC overhead.
 - **Verification:** Integration test: multicast an RPC to 100 clients in a spatial area. Verify all
-  100 receive the RPC. Verify clients outside the area do not receive it. Benchmark: compare CPU cost
-  of multicast vs 100 individual client RPCs and verify multicast is at least 5x more efficient.
+  100 receive the RPC. Verify clients outside the area do not receive it. Benchmark: compare CPU
+  cost of multicast vs 100 individual client RPCs and verify multicast is at least 5x more
+  efficient.
 
 ## Reliability and Serialization
 
@@ -60,9 +62,10 @@ invocation is delivered), with the mode immutable after registration.
 
 ### R-8.3.5 Parameter Serialization and Validation
 
-The engine **SHALL** serialize RPC parameters using compact binary encoding via the engine's reflection
-system, and validate all parameters server-side (type checking, range clamping, reference resolution,
-rate limiting) before execution, rejecting malformed or out-of-bounds parameters without crashing.
+The engine **SHALL** serialize RPC parameters using compact binary encoding via the engine's
+reflection system, and validate all parameters server-side (type checking, range clamping, reference
+resolution, rate limiting) before execution, rejecting malformed or out-of-bounds parameters without
+crashing.
 
 - **Derived from:** [F-8.3.5](../../features/networking/remote-procedure-calls.md)
 - **Rationale:** Compromised clients can send arbitrary payloads; the server must validate every
@@ -70,5 +73,5 @@ rate limiting) before execution, rejecting malformed or out-of-bounds parameters
 - **Verification:** Unit test: serialize and deserialize an RPC with 5 parameter types (integer,
   float, string, entity reference, enum) and verify round-trip fidelity. Send an RPC referencing a
   non-existent entity and verify rejection. Send a float parameter outside its declared range and
-  verify it is clamped or rejected. Send a truncated payload and verify the server rejects it without
-  crashing.
+  verify it is clamped or rejected. Send a truncated payload and verify the server rejects it
+  without crashing.

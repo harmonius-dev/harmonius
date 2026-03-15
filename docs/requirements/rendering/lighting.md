@@ -4,9 +4,9 @@
 
 ### R-2.4.1 Forward+ Lighting (Tiled/Clustered)
 
-The engine **SHALL** perform tiled or clustered light culling via a compute pass that assigns visible
-lights to screen-space tiles, where fragment shading evaluates only the lights assigned to each tile,
-supporting hundreds of dynamic lights per scene.
+The engine **SHALL** perform tiled or clustered light culling via a compute pass that assigns
+visible lights to screen-space tiles, where fragment shading evaluates only the lights assigned to
+each tile, supporting hundreds of dynamic lights per scene.
 
 - **Derived from:** [F-2.4.1](../../features/rendering/lighting.md)
 - **Rationale:** Tiled/clustered culling bounds per-fragment light evaluation cost, enabling
@@ -78,12 +78,12 @@ texture values of a parent material without shader recompilation, sharing the co
 uploading only a per-instance parameter buffer.
 
 - **Derived from:** [F-2.4.6](../../features/rendering/lighting.md)
-- **Rationale:** Material instances enable thousands of visual variants from a single compiled shader,
-  reducing pipeline state object count and compilation cost.
-- **Verification:** Create 1,000 material instances from a single parent material with varying
-  color and roughness parameters. Verify all instances share the same compiled pipeline state
-  object. Verify each instance renders with its unique parameter values. Measure that instance
-  creation does not trigger any shader compilation.
+- **Rationale:** Material instances enable thousands of visual variants from a single compiled
+  shader, reducing pipeline state object count and compilation cost.
+- **Verification:** Create 1,000 material instances from a single parent material with varying color
+  and roughness parameters. Verify all instances share the same compiled pipeline state object.
+  Verify each instance renders with its unique parameter values. Measure that instance creation does
+  not trigger any shader compilation.
 
 ### R-2.4.7 Material Layers and Blending
 
@@ -106,8 +106,8 @@ decal buffer (DBuffer) before lighting, and mesh-based decals wrapping geometry 
 normal-mapped contact on curved surfaces.
 
 - **Derived from:** [F-2.4.8](../../features/rendering/lighting.md)
-- **Rationale:** Decals add surface detail (bullet holes, footprints, signage) without modifying
-  the underlying mesh or material.
+- **Rationale:** Decals add surface detail (bullet holes, footprints, signage) without modifying the
+  underlying mesh or material.
 - **Verification:** Place a projected decal on a flat surface and verify it appears in the DBuffer
   with correct orientation and bounds. Place a mesh decal on a curved surface and verify the normal
   map follows the surface curvature. Verify decals receive correct lighting from all active lights
@@ -122,8 +122,8 @@ foliage (subsurface transmission), preintegrated skin (low-cost SSS), and single
 (absorption, scattering, refraction).
 
 - **Derived from:** [F-2.4.9](../../features/rendering/lighting.md)
-- **Rationale:** Specialized shading models produce physically plausible results for materials
-  whose optical behavior diverges significantly from the standard metallic/dielectric BRDF.
+- **Rationale:** Specialized shading models produce physically plausible results for materials whose
+  optical behavior diverges significantly from the standard metallic/dielectric BRDF.
 - **Verification:** Render a test object with each shading model variant. Verify each produces
   distinct, physically plausible visual characteristics (e.g., anisotropic highlights for hair,
   subsurface transmission for foliage). Verify the shading model selection is per-pixel (a single
@@ -131,17 +131,18 @@ foliage (subsurface transmission), preintegrated skin (low-cost SSS), and single
 
 ### R-2.4.10 Stochastic Many-Light Sampling
 
-The engine **SHALL** provide importance-sampled direct lighting for scenes with thousands of shadowed
-area lights, distributing a fixed ray budget per pixel across light sources proportional to estimated
-contribution (luminance and solid angle) via a stochastic pass with temporal accumulation denoising.
+The engine **SHALL** provide importance-sampled direct lighting for scenes with thousands of
+shadowed area lights, distributing a fixed ray budget per pixel across light sources proportional to
+estimated contribution (luminance and solid angle) via a stochastic pass with temporal accumulation
+denoising.
 
 - **Derived from:** [F-2.4.10](../../features/rendering/lighting.md)
 - **Rationale:** Stochastic sampling enables shadowed evaluation of thousands of lights within a
   fixed per-pixel cost budget, replacing per-light shadow map evaluation.
-- **Verification:** Render a scene with 2,000 area lights. Verify all lights contribute to the
-  final image after temporal convergence. Measure that per-frame cost remains constant regardless
-  of light count (within 10% variance). Compare against a brute-force reference and verify
-  converged output matches within PSNR 35 dB.
+- **Verification:** Render a scene with 2,000 area lights. Verify all lights contribute to the final
+  image after temporal convergence. Measure that per-frame cost remains constant regardless of light
+  count (within 10% variance). Compare against a brute-force reference and verify converged output
+  matches within PSNR 35 dB.
 
 ## Shadows
 
@@ -187,13 +188,12 @@ The engine **SHALL** provide tiered ambient occlusion: SSAO at half resolution a
 ### R-2.4.14 Virtual Shadow Maps
 
 The engine **SHALL** provide clipmap-based virtual shadow mapping with on-demand page allocation
-based on screen-space coverage, providing consistent shadow detail equivalent to a 16k x 16k
-virtual shadow atlas, paired with the meshlet pipeline for efficient geometry rendering into shadow
-pages.
+based on screen-space coverage, providing consistent shadow detail equivalent to a 16k x 16k virtual
+shadow atlas, paired with the meshlet pipeline for efficient geometry rendering into shadow pages.
 
 - **Derived from:** [F-2.4.14](../../features/rendering/lighting.md)
-- **Rationale:** Virtual shadow maps provide uniformly high shadow resolution across the entire
-  view without the per-cascade resolution compromise of CSM.
+- **Rationale:** Virtual shadow maps provide uniformly high shadow resolution across the entire view
+  without the per-cascade resolution compromise of CSM.
 - **Verification:** Render a large scene with a directional light. Verify shadow texel density is
   approximately constant in screen space across near and far objects. Verify only pages with
   screen-space coverage are allocated (inspect page residency). Measure VRAM consumption is below
@@ -235,10 +235,10 @@ shadowing in GI-lit regions.
 - **Derived from:** [F-2.4.17](../../features/rendering/lighting.md)
 - **Rationale:** Capsule shadows provide approximate indirect shadowing for animated characters at
   minimal cost compared to per-frame shadow map updates.
-- **Verification:** Animate a skeletal character and verify capsule shadows update with the
-  skeleton pose. Verify shadow softness is proportional to capsule radius. Confirm capsule shadows
-  appear only in GI-lit regions (not under direct shadow maps). Measure per-character capsule
-  shadow cost is below 0.1ms.
+- **Verification:** Animate a skeletal character and verify capsule shadows update with the skeleton
+  pose. Verify shadow softness is proportional to capsule radius. Confirm capsule shadows appear
+  only in GI-lit regions (not under direct shadow maps). Measure per-character capsule shadow cost
+  is below 0.1ms.
 
 ### R-2.4.18 Order-Independent Transparency (OIT)
 
@@ -269,16 +269,17 @@ colored volumetric shadowing and light shaft occlusion through Fourier opacity m
 
 ### R-2.4.20 Area Lights (Rect/Sphere)
 
-The engine **SHALL** evaluate rectangular and spherical area lights using linearly-transformed cosine
-(LTC) integration, producing soft reflections and natural falloff proportional to source size.
+The engine **SHALL** evaluate rectangular and spherical area lights using linearly-transformed
+cosine (LTC) integration, producing soft reflections and natural falloff proportional to source
+size.
 
 - **Derived from:** [F-2.4.20](../../features/rendering/lighting.md)
 - **Rationale:** Area lights produce physically correct soft illumination and specular reflections
   that point lights cannot approximate, essential for architectural and cinematic scenes.
 - **Verification:** Render a glossy surface lit by a rectangular area light. Verify the specular
   reflection shape matches the rectangular source. Vary the area light size and verify reflection
-  softness scales proportionally. Compare against a path-traced reference and verify PSNR above
-  35 dB.
+  softness scales proportionally. Compare against a path-traced reference and verify PSNR above 35
+  dB.
 
 ### R-2.4.21 Sky Light (IBL)
 
@@ -317,16 +318,16 @@ light's influence volume.
 - **Rationale:** Light functions enable dynamic projected patterns (gobos, window blinds, animated
   flicker) without dedicated shadow maps per effect.
 - **Verification:** Assign a gobo pattern light function to a spot light. Verify the projected
-  pattern appears on the illuminated surface matching the function output. Animate the function
-  over 60 frames and verify the pattern updates each frame. Verify light functions compose
-  correctly with shadow maps (pattern visible only in lit regions).
+  pattern appears on the illuminated surface matching the function output. Animate the function over
+  60 frames and verify the pattern updates each frame. Verify light functions compose correctly with
+  shadow maps (pattern visible only in lit regions).
 
 ## Non-Functional Requirements
 
 ### NFR-2.4.1 Light Count Scalability
 
-The forward+ tiled/clustered lighting system **SHALL** support at least 500 dynamic lights per
-scene with sub-linear frame time scaling relative to light count.
+The forward+ tiled/clustered lighting system **SHALL** support at least 500 dynamic lights per scene
+with sub-linear frame time scaling relative to light count.
 
 - **Rationale:** Many-light scenarios (cities, interiors with many fixtures) are common; the tiling
   system must prevent quadratic fragment-light cost.

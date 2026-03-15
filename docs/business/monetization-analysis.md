@@ -1,14 +1,14 @@
 # Monetization and Open-Source Strategy Analysis
 
-This document analyzes the business model for the Harmonius game engine. The entire engine is
-open source under Apache 2.0, with revenue from optional managed hosting, enterprise support,
-marketplace commission, and console SDK licensing.
+This document analyzes the business model for the Harmonius game engine. The entire engine is open
+source under Apache 2.0, with revenue from optional managed hosting, enterprise support, marketplace
+commission, and console SDK licensing.
 
 ## 1. Component Classification
 
-All engine components are open source under Apache 2.0. Developers can self-host every service
-using provided AWS CDK stacks. The only proprietary components are console SDKs (due to platform
-NDA requirements) and the optional managed hosting service.
+All engine components are open source under Apache 2.0. Developers can self-host every service using
+provided AWS CDK stacks. The only proprietary components are console SDKs (due to platform NDA
+requirements) and the optional managed hosting service.
 
 ### Classification Definitions
 
@@ -54,8 +54,8 @@ NDA requirements) and the optional managed hosting service.
 | Proprietary (NDA-required) | 1 | Console backends (PS5, Xbox, Switch SDKs) |
 | Proprietary SaaS (optional) | 1 | Managed hosting service |
 
-Open-sourcing 21 of 23 components (91%) under Apache 2.0 maximizes adoption and community trust.
-The only proprietary components exist due to legal constraints (console NDAs) or as an optional
+Open-sourcing 21 of 23 components (91%) under Apache 2.0 maximizes adoption and community trust. The
+only proprietary components exist due to legal constraints (console NDAs) or as an optional
 convenience service (managed hosting).
 
 ## 2. Pricing Model
@@ -100,8 +100,8 @@ infrastructure amortization. Larger studios typically self-host for cost savings
 
 ### Cost Estimates per Cloud Service
 
-All estimates use AWS US-East pricing as of 2025. Costs are per active user per month unless
-noted otherwise. These costs apply only to the managed hosting service.
+All estimates use AWS US-East pricing as of 2025. Costs are per active user per month unless noted
+otherwise. These costs apply only to the managed hosting service.
 
 #### Collaboration Service (CRDT Sync)
 
@@ -178,8 +178,8 @@ noted otherwise. These costs apply only to the managed hosting service.
 | Infrastructure | $0.01 |
 | **Total (all services)** | **$21.02** |
 
-At $29/user/month managed hosting price, the gross margin per user is **$7.98 (27.5%)**. This
-margin covers operational overhead, support, and profit.
+At $29/user/month managed hosting price, the gross margin per user is **$7.98 (27.5%)**. This margin
+covers operational overhead, support, and profit.
 
 ### Per-User Cost at Different Team Sizes (Managed Hosting)
 
@@ -196,9 +196,9 @@ Economies of scale reduce per-user cost as shared infrastructure is amortized ac
 | Infrastructure | $0.50 | $0.15 | $0.05 | $0.01 |
 | **Total** | **$46.06** | **$26.21** | **$21.87** | **$21.02** |
 
-Solo developers on managed hosting face higher per-user costs due to fixed infrastructure
-overhead. At team sizes of 20+, per-user costs converge toward the marginal cost. Solo developers
-are encouraged to self-host, where costs are significantly lower.
+Solo developers on managed hosting face higher per-user costs due to fixed infrastructure overhead.
+At team sizes of 20+, per-user costs converge toward the marginal cost. Solo developers are
+encouraged to self-host, where costs are significantly lower.
 
 ## 4. Revenue Projections
 
@@ -284,8 +284,8 @@ Most users self-host for free. A minority opt for managed hosting for convenienc
 | 25 engineers | $6,250,000 | 5,000 | $4,058,560 from support + console + marketplace |
 | 50 engineers | $12,500,000 | 10,000 | $8,558,560 from support + console + marketplace |
 
-Managed hosting alone cannot sustain a large team. Console SDK licenses and enterprise support
-are critical secondary revenue streams that together with marketplace commission close the gap.
+Managed hosting alone cannot sustain a large team. Console SDK licenses and enterprise support are
+critical secondary revenue streams that together with marketplace commission close the gap.
 
 ## 5. Competitive Comparison
 
@@ -307,20 +307,20 @@ are critical secondary revenue streams that together with marketplace commission
 
 ### Key Differentiators
 
-1. **Fully open source with no royalties** -- Unlike Unreal (5% royalty, source-available only)
-   or Unity (closed source, per-seat fees), Harmonius is Apache 2.0 with zero royalties. Developers
+1. **Fully open source with no royalties** -- Unlike Unreal (5% royalty, source-available only) or
+   Unity (closed source, per-seat fees), Harmonius is Apache 2.0 with zero royalties. Developers
    keep 100% of game revenue.
 2. **Built-in multiplayer and collaboration infrastructure** -- No other open-source engine ships
    with production-ready networking, CRDT collaboration, shared build cache, and deployment
    infrastructure. Godot lacks these entirely; Unreal requires third-party solutions.
-3. **Self-hostable everything** -- Every server component ships with AWS CDK stacks. Teams are
-   never locked into Harmonius-managed services, unlike Unity Cloud.
-4. **AAA-grade features in an open-source engine** -- Harmonius bridges the gap between Godot
-   (open source but limited feature set) and Unreal (AAA features but proprietary with royalties).
-   Features like GPU-driven rendering, ray tracing, advanced physics, and universe generation
-   exceed what Godot offers.
-5. **No vendor lock-in** -- Apache 2.0 license guarantees perpetual access. No pricing changes,
-   no retroactive terms, no trust erosion. The Unity pricing crisis of 2023 cannot happen.
+3. **Self-hostable everything** -- Every server component ships with AWS CDK stacks. Teams are never
+   locked into Harmonius-managed services, unlike Unity Cloud.
+4. **AAA-grade features in an open-source engine** -- Harmonius bridges the gap between Godot (open
+   source but limited feature set) and Unreal (AAA features but proprietary with royalties).
+   Features like GPU-driven rendering, ray tracing, advanced physics, and universe generation exceed
+   what Godot offers.
+5. **No vendor lock-in** -- Apache 2.0 license guarantees perpetual access. No pricing changes, no
+   retroactive terms, no trust erosion. The Unity pricing crisis of 2023 cannot happen.
 
 ### Competitive Positioning Matrix
 
@@ -406,16 +406,21 @@ are critical secondary revenue streams that together with marketplace commission
 
 ## Sources
 
-- [Epic Games reduces royalty to 3.5%](https://www.cgchannel.com/2024/10/epic-games-to-cut-royalty-rate-on-unreal-engine-games/)
+- [Epic Games reduces royalty to
+  3.5%](https://www.cgchannel.com/2024/10/epic-games-to-cut-royalty-rate-on-unreal-engine-games/)
 - [Unreal Engine licensing](https://www.unrealengine.com/en-US/license)
-- [Unity cancels Runtime Fee](https://www.gamedeveloper.com/business/unity-is-killing-its-controversial-runtime-fee)
+- [Unity cancels Runtime
+  Fee](https://www.gamedeveloper.com/business/unity-is-killing-its-controversial-runtime-fee)
 - [Unity pricing updates](https://unity.com/products/pricing-updates)
-- [W4 Games raises $15M for Godot](https://www.gamedeveloper.com/production/w4-games-nets-15-million-to-help-godot-scale-exponentially)
+- [W4 Games raises $15M for
+  Godot](https://www.gamedeveloper.com/production/w4-games-nets-15-million-to-help-godot-scale-exponentially)
 - [Godot Foundation](https://godot.foundation/)
 - [CryEngine licensing](https://www.cryengine.com/support/view/licensing)
 - [O3DE open-source announcement](https://www.theregister.com/2021/07/07/open_3d_engine/)
-- [Epic Marketplace 88/12 split](https://www.unrealengine.com/en-US/blog/epic-announces-unreal-engine-marketplace-88-12-revenue-share)
+- [Epic Marketplace 88/12
+  split](https://www.unrealengine.com/en-US/blog/epic-announces-unreal-engine-marketplace-88-12-revenue-share)
 - [AWS S3 pricing](https://aws.amazon.com/s3/pricing/)
 - [AWS RDS pricing](https://aws.amazon.com/rds/postgresql/pricing/)
 - [AWS CloudFront pricing](https://aws.amazon.com/cloudfront/pricing/)
-- [LLM API pricing comparison 2025](https://intuitionlabs.ai/articles/llm-api-pricing-comparison-2025)
+- [LLM API pricing comparison
+  2025](https://intuitionlabs.ai/articles/llm-api-pricing-comparison-2025)

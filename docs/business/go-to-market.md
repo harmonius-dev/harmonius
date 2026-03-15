@@ -1,30 +1,30 @@
 # Harmonius Go-to-Market Strategy
 
-Strategic plan for bringing the Harmonius game engine from specification to market. Written for a solo founder with
-AI-augmented development capacity (Claude). The engine has 1,204 features specified across 15 domains and 1,501
-requirements. No code has been written. No revenue.
+Strategic plan for bringing the Harmonius game engine from specification to market. Written for a
+solo founder with AI-augmented development capacity (Claude). The engine has 1,204 features
+specified across 15 domains and 1,501 requirements. No code has been written. No revenue.
 
 ## 1. Development Priorities
 
 Development is organized as a dependency DAG of 87 feature-groups across 15 domains, detailed in
-[domain-decomposition.md](domain-decomposition.md). The DAG replaces the traditional sequential tier model with a
-structure that maximizes parallel agent development pipelines.
+[domain-decomposition.md](domain-decomposition.md). The DAG replaces the traditional sequential tier
+model with a structure that maximizes parallel agent development pipelines.
 
 ### Priority Principles
 
-1. **Maximize parallelism:** Build foundational features across all domains as early as possible to unblock the most
-   concurrent development pipelines.
-2. **Preserve interoperability:** Lock down cross-domain contracts (component schemas, event types, API traits) before
-   multiple agents build against them.
-3. **DAG-driven ordering:** The build order emerges from the dependency graph. Feature-groups are built when their
-   prerequisites are satisfied, not when their domain's "turn" arrives.
-4. **Iterate foundations early:** Foundational products are built first so that future use cases can inform changes
-   before dependent systems are too entrenched.
+1. **Maximize parallelism:** Build foundational features across all domains as early as possible to
+   unblock the most concurrent development pipelines.
+2. **Preserve interoperability:** Lock down cross-domain contracts (component schemas, event types,
+   API traits) before multiple agents build against them.
+3. **DAG-driven ordering:** The build order emerges from the dependency graph. Feature-groups are
+   built when their prerequisites are satisfied, not when their domain's "turn" arrives.
+4. **Iterate foundations early:** Foundational products are built first so that future use cases can
+   inform changes before dependent systems are too entrenched.
 
 ### Wave Summary
 
-The DAG's topological sort produces 7 concurrency waves. Each wave contains all feature-groups whose prerequisites
-are satisfied by completion of prior waves.
+The DAG's topological sort produces 7 concurrency waves. Each wave contains all feature-groups whose
+prerequisites are satisfied by completion of prior waves.
 
 | Wave | Focus | Nodes | Max Concurrent Agents | Cumulative Complete |
 |------|-------|-------|-----------------------|--------------------|
@@ -46,11 +46,13 @@ Platform.Threading → CoreRuntime.ECS → Rendering.GPUAbstraction → Renderin
     → GeometryWorld.ProceduralGeneration
 ```
 
-**Critical path length: 8 feature-groups across 7 waves.** All other work proceeds in parallel around this chain.
+**Critical path length: 8 feature-groups across 7 waves.** All other work proceeds in parallel
+around this chain.
 
 ### Interoperability Contracts
 
-These contracts must be defined and locked before Wave 2, as they are consumed by multiple concurrent pipelines:
+These contracts must be defined and locked before Wave 2, as they are consumed by multiple
+concurrent pipelines:
 
 | Contract | Defined By | Consumed By |
 |----------|-----------|-------------|
@@ -96,8 +98,8 @@ These contracts must be defined and locked before Wave 2, as they are consumed b
 
 ### "First Playable" Feature List
 
-The demo: A third-person character navigates a small environment with enemies, combat, pickups, and a death/respawn
-loop. Think "Crash Bandicoot level" — 3 minutes of gameplay.
+The demo: A third-person character navigates a small environment with enemies, combat, pickups, and
+a death/respawn loop. Think "Crash Bandicoot level" — 3 minutes of gameplay.
 
 | System | Required Features | Feature IDs |
 |--------|-------------------|-------------|
@@ -113,7 +115,8 @@ loop. Think "Crash Bandicoot level" — 3 minutes of gameplay.
 | Assets | Mesh import, texture import, shader compilation | F-12.1.1-2, F-12.2.7 |
 | Platform | Windowing, threading, async I/O, logging | F-14.1.1, F-14.3.1, F-14.3.5, F-14.4.4 |
 
-**Total: ~55 features for the demo** (4.6% of all specified features). These span Waves 0–4 of the DAG.
+**Total: ~55 features for the demo** (4.6% of all specified features). These span Waves 0–4 of the
+DAG.
 
 ---
 
@@ -143,12 +146,12 @@ loop. Think "Crash Bandicoot level" — 3 minutes of gameplay.
 
 ### Pricing Philosophy
 
-- **Core engine is always free and open source.** Non-negotiable for Rust community adoption and competitive
-  positioning against Unity's pricing controversies.
-- **Revenue comes from cloud services, not the engine itself.** Collaboration, AI assistance, asset marketplace,
-  and build infrastructure are all cloud-hosted value-adds.
-- **No royalty below $1M.** Indie developers pay nothing until they succeed. This removes the biggest friction
-  point in engine adoption.
+- **Core engine is always free and open source.** Non-negotiable for Rust community adoption and
+  competitive positioning against Unity's pricing controversies.
+- **Revenue comes from cloud services, not the engine itself.** Collaboration, AI assistance, asset
+  marketplace, and build infrastructure are all cloud-hosted value-adds.
+- **No royalty below $1M.** Indie developers pay nothing until they succeed. This removes the
+  biggest friction point in engine adoption.
 
 ---
 
@@ -167,12 +170,14 @@ loop. Think "Crash Bandicoot level" — 3 minutes of gameplay.
 | Write "Why Rust for Game Engines" technical deep-dive | Blog, Hacker News | Front page post |
 | Publish architecture decision records (ADRs) publicly | GitHub wiki, blog | Developer trust |
 
-**Unique angle:** "The first game engine built collaboratively by a human and AI." Livestreaming the development
-process with Claude is genuinely novel and attracts attention from both the gamedev and AI communities.
+**Unique angle:** "The first game engine built collaboratively by a human and AI." Livestreaming the
+development process with Claude is genuinely novel and attracts attention from both the gamedev and
+AI communities.
 
 ### Phase 2: Developer Preview (during Waves 2–3)
 
-**Goal:** Get the engine into the hands of early adopters who will stress-test it and provide feedback.
+**Goal:** Get the engine into the hands of early adopters who will stress-test it and provide
+feedback.
 
 | Action | Channel | Expected Outcome |
 |--------|---------|------------------|
@@ -293,9 +298,9 @@ process with Claude is genuinely novel and attracts attention from both the game
 
 ### Positioning Statement (Long Form)
 
-Harmonius is for developers who want Unreal's ambition with Godot's openness, built on Rust's safety guarantees.
-It is the only engine designed from the ground up for real-time collaboration, AI-assisted development, and
-planet-scale procedural worlds — without writing a single line of code.
+Harmonius is for developers who want Unreal's ambition with Godot's openness, built on Rust's safety
+guarantees. It is the only engine designed from the ground up for real-time collaboration,
+AI-assisted development, and planet-scale procedural worlds — without writing a single line of code.
 
 ---
 

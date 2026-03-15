@@ -3,8 +3,8 @@
 ## R-2.5.1 Acceleration Structure Management (BLAS/TLAS)
 
 The engine **SHALL** build bottom-level acceleration structures (BLAS) from meshlet geometry with
-post-build compaction to reduce memory, and rebuild or refit top-level acceleration structures (TLAS)
-each frame for dynamic scenes.
+post-build compaction to reduce memory, and rebuild or refit top-level acceleration structures
+(TLAS) each frame for dynamic scenes.
 
 - **Derived from:** [F-2.5.1](../../features/rendering/advanced-rendering.md)
 - **Rationale:** Acceleration structures are the prerequisite for all hardware ray tracing features;
@@ -17,8 +17,9 @@ each frame for dynamic scenes.
 ## R-2.5.2 Ray Traced Reflections (Hybrid SSR + RT)
 
 The engine **SHALL** provide a hybrid reflection system combining screen-space ray marching (SSR)
-for nearby surfaces with hardware ray tracing for off-screen and rough reflections, using a roughness
-threshold to determine when RT rays supplement SSR, with temporal denoising for output stability.
+for nearby surfaces with hardware ray tracing for off-screen and rough reflections, using a
+roughness threshold to determine when RT rays supplement SSR, with temporal denoising for output
+stability.
 
 - **Derived from:** [F-2.5.2](../../features/rendering/advanced-rendering.md)
 - **Rationale:** Hybrid reflections use cheap SSR where screen data is available and fall back to
@@ -37,8 +38,8 @@ indirect illumination, feeding the output into the global illumination system.
 - **Rationale:** One-bounce diffuse ray tracing captures indirect color bleeding that screen-space
   techniques miss, providing physically accurate indirect illumination input.
 - **Verification:** Render a Cornell box with colored walls. Verify color bleeding from the red and
-  green walls onto the white surfaces. Compare against a path-traced reference and verify PSNR
-  above 30 dB for the indirect-only component. Verify output integrates with the GI system without
+  green walls onto the white surfaces. Compare against a path-traced reference and verify PSNR above
+  30 dB for the indirect-only component. Verify output integrates with the GI system without
   double-counting direct illumination.
 
 ## R-2.5.4 Real-Time Global Illumination (DDGI)
@@ -53,8 +54,8 @@ color bleeding and ambient fill.
   changes, unlike baked lightmaps.
 - **Verification:** Place a DDGI probe grid in a Cornell box. Verify color bleeding from colored
   walls appears on nearby surfaces within 2 seconds of convergence. Move a colored object and verify
-  indirect lighting updates dynamically. Inspect probe atlas textures and verify octahedral
-  encoding with correct irradiance and visibility data.
+  indirect lighting updates dynamically. Inspect probe atlas textures and verify octahedral encoding
+  with correct irradiance and visibility data.
 
 ## R-2.5.5 Path Tracing (Reference Renderer)
 
@@ -68,8 +69,8 @@ reference and cinematic rendering.
   rendering accuracy and enables cinematic-quality offline rendering.
 - **Verification:** Render a Cornell box at 4096 spp. Verify output converges to an analytical
   reference within 1% relative error for diffuse surfaces. Verify specular, transmission, and
-  volumetric paths produce physically correct results. Confirm the renderer is unbiased by
-  verifying error decreases proportionally to 1/sqrt(spp).
+  volumetric paths produce physically correct results. Confirm the renderer is unbiased by verifying
+  error decreases proportionally to 1/sqrt(spp).
 
 ## R-2.5.6 Ray Traced Subsurface Transmission
 
@@ -98,15 +99,15 @@ size with predictable performance.
   provides predictable performance independent of environment size.
 - **Verification:** Render a large open-world scene with surfel GI. Verify indirect lighting
   converges within 1 second and tracks dynamic light changes in real time. Measure that GPU cost
-  remains within 10% variance when doubling the environment size. Verify separate character
-  lighting probes produce correct indirect illumination on animated characters.
+  remains within 10% variance when doubling the environment size. Verify separate character lighting
+  probes produce correct indirect illumination on animated characters.
 
 ## R-2.5.8 ReSTIR Sampling Framework
 
 The engine **SHALL** provide a ReSTIR (reservoir-based spatiotemporal importance resampling)
 framework with ReSTIR DI for direct illumination from thousands of simultaneous lights with
-physically correct soft shadows, and ReSTIR GI for screen-space resampling of secondary surfaces
-for multi-bounce indirect lighting, maintaining per-pixel reservoirs across frames with spatial and
+physically correct soft shadows, and ReSTIR GI for screen-space resampling of secondary surfaces for
+multi-bounce indirect lighting, maintaining per-pixel reservoirs across frames with spatial and
 temporal reuse.
 
 - **Derived from:** [F-2.5.8](../../features/rendering/advanced-rendering.md)
@@ -129,8 +130,8 @@ neural denoising and temporal upscaling for real-time frame rates.
   full path tracing, with rasterized GI fallback preventing energy loss at path termination.
 - **Verification:** Render a scene at each quality tier. Verify the lowest tier applies direct RT
   only and the highest tier produces multi-bounce results. Verify path termination falls back to
-  rasterized GI (not black) by comparing terminated paths against a GI-only reference. Measure
-  that the highest tier maintains at least 30 FPS at 1080p with denoising and upscaling enabled.
+  rasterized GI (not black) by comparing terminated paths against a GI-only reference. Measure that
+  the highest tier maintains at least 30 FPS at 1080p with denoising and upscaling enabled.
 
 ## R-2.5.10 Opacity Micromaps
 
@@ -154,9 +155,9 @@ intersection testing scatters rays to diverse material shaders.
 - **Derived from:** [F-2.5.11](../../features/rendering/advanced-rendering.md)
 - **Rationale:** SER reduces shader divergence caused by incoherent ray hits, improving GPU
   occupancy and throughput for material-diverse scenes.
-- **Verification:** Render a scene with 50+ distinct materials. Enable SER and measure GPU
-  occupancy via hardware counters. Verify occupancy improves by at least 10% compared to SER
-  disabled. Verify visual output is identical with and without SER enabled.
+- **Verification:** Render a scene with 50+ distinct materials. Enable SER and measure GPU occupancy
+  via hardware counters. Verify occupancy improves by at least 10% compared to SER disabled. Verify
+  visual output is identical with and without SER enabled.
 
 ## R-2.5.12 Neural Denoising (Ray Reconstruction)
 
@@ -167,12 +168,12 @@ unavailable.
 
 - **Derived from:** [F-2.5.12](../../features/rendering/advanced-rendering.md)
 - **Rationale:** Neural denoising produces higher-quality temporally stable results from fewer
-  samples than hand-tuned bilateral/wavelet filters, reducing the ray budget required for
-  clean output.
+  samples than hand-tuned bilateral/wavelet filters, reducing the ray budget required for clean
+  output.
 - **Verification:** Denoise a 1-spp path-traced image with the neural denoiser. Compare against a
-  4096-spp reference and verify PSNR above 30 dB. Verify temporal stability across 120 frames
-  of camera motion with no ghosting or flickering. Disable neural hardware and verify the NRD
-  fallback activates and produces acceptable output (PSNR above 25 dB at 1 spp).
+  4096-spp reference and verify PSNR above 30 dB. Verify temporal stability across 120 frames of
+  camera motion with no ghosting or flickering. Disable neural hardware and verify the NRD fallback
+  activates and produces acceptable output (PSNR above 25 dB at 1 spp).
 
 ## R-2.5.13 RT Lens Flare
 
@@ -183,10 +184,10 @@ physically accurate ghost and halo artifacts.
 - **Derived from:** [F-2.5.13](../../features/rendering/advanced-rendering.md)
 - **Rationale:** Ray-traced lens flares match real optical behavior, producing physically grounded
   artifacts that image-based approximations cannot reproduce.
-- **Verification:** Position a bright light source in the scene. Verify lens ghosts and halos
-  appear at physically correct positions based on the lens element configuration. Vary the number
-  of lens elements and verify the ghost count changes accordingly. Compare ghost positions against
-  an analytical thin-lens prediction and verify within 5% angular error.
+- **Verification:** Position a bright light source in the scene. Verify lens ghosts and halos appear
+  at physically correct positions based on the lens element configuration. Vary the number of lens
+  elements and verify the ghost count changes accordingly. Compare ghost positions against an
+  analytical thin-lens prediction and verify within 5% angular error.
 
 ## R-2.5.14 Voxel-Based Global Illumination
 
@@ -226,12 +227,12 @@ spatially-varying roughness, with adjacent pixel ray reuse and dedicated spatial
 denoising filters.
 
 - **Derived from:** [F-2.5.16](../../features/rendering/advanced-rendering.md)
-- **Rationale:** Stochastic SSR produces physically correct rough reflections from screen-space
-  data alone, providing a performant rasterization-only reflection solution.
+- **Rationale:** Stochastic SSR produces physically correct rough reflections from screen-space data
+  alone, providing a performant rasterization-only reflection solution.
 - **Verification:** Render a floor with varying roughness (0.0-1.0). Verify reflections elongate
   with increasing roughness matching the BRDF lobe shape. Verify execution at half resolution (the
-  reflection buffer dimensions are half the render resolution). Measure denoising eliminates
-  visible noise within 4 frames of temporal accumulation with no ghosting.
+  reflection buffer dimensions are half the render resolution). Measure denoising eliminates visible
+  noise within 4 frames of temporal accumulation with no ghosting.
 
 ## Non-Functional Requirements
 
@@ -260,10 +261,10 @@ rasterization, post-processing, and CPU work.
 ### NFR-2.5.3 Denoiser Quality Threshold
 
 Neural and conventional denoisers **SHALL** produce output with PSNR above 30 dB compared to a
-4096-spp reference at 1 sample per pixel input, with no visible temporal flickering or ghosting
-over 120 frames of camera motion.
+4096-spp reference at 1 sample per pixel input, with no visible temporal flickering or ghosting over
+120 frames of camera motion.
 
 - **Rationale:** Denoisers must produce clean output from minimal samples to justify the reduced ray
   budget.
-- **Verification:** Measure PSNR of denoised 1-spp output against a 4096-spp reference. Verify
-  PSNR exceeds 30 dB. Inspect 120 frames of camera motion for temporal artifacts.
+- **Verification:** Measure PSNR of denoised 1-spp output against a 4096-spp reference. Verify PSNR
+  exceeds 30 dB. Inspect 120 frames of camera motion for temporal artifacts.

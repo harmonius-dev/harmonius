@@ -2,9 +2,9 @@
 
 ## US-10.4.1 Render UI With Minimal Draw Call Overhead
 
-**As an** engine developer (P-26), **I want** UI elements rendered as batched textured quads
-merged by atlas page and blend state into indirect dispatch draw calls, **so that** complex
-UIs with hundreds of visible widgets render in a handful of dispatches per frame.
+**As an** engine developer (P-26), **I want** UI elements rendered as batched textured quads merged
+by atlas page and blend state into indirect dispatch draw calls, **so that** complex UIs with
+hundreds of visible widgets render in a handful of dispatches per frame.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -14,9 +14,9 @@ UIs with hundreds of visible widgets render in a handful of dispatches per frame
 
 ## US-10.4.2 Verify Batched Rendering Stays Within Draw Call Budget
 
-**As an** engine tester (P-27), **I want** to benchmark UI rendering to verify the full HUD
-stays under 50 draw calls and 2ms GPU time, **so that** the rendering pipeline meets its
-performance budget on minimum-spec hardware.
+**As an** engine tester (P-27), **I want** to benchmark UI rendering to verify the full HUD stays
+under 50 draw calls and 2ms GPU time, **so that** the rendering pipeline meets its performance
+budget on minimum-spec hardware.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -26,9 +26,9 @@ performance budget on minimum-spec hardware.
 
 ## US-10.4.3 See Sharp Text at Any Scale Without Blurring
 
-**As a** player (P-23), **I want** text that remains sharp and readable at any UI scale from
-100% to 300% and at any rotation, **so that** chat, tooltips, nameplates, and damage numbers
-are always crisp regardless of my display settings.
+**As a** player (P-23), **I want** text that remains sharp and readable at any UI scale from 100% to
+300% and at any rotation, **so that** chat, tooltips, nameplates, and damage numbers are always
+crisp regardless of my display settings.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -39,8 +39,8 @@ are always crisp regardless of my display settings.
 
 ## US-10.4.4 Implement MSDF Text Rendering Pipeline
 
-**As an** engine developer (P-26), **I want** to implement multi-channel signed distance
-field text rendering with MSDF atlases generated at asset build time, **so that** text is
+**As an** engine developer (P-26), **I want** to implement multi-channel signed distance field text
+rendering with MSDF atlases generated at asset build time, **so that** text is
 resolution-independent and avoids reliance on platform-specific subpixel layout.
 
 | Acceptance criteria | Features | Requirements |
@@ -51,10 +51,9 @@ resolution-independent and avoids reliance on platform-specific subpixel layout.
 
 ## US-10.4.5 Create Resolution-Independent Shapes and Overlays
 
-**As a** designer (P-5), **I want** GPU-accelerated vector graphics with filled paths,
-stroked paths, Bezier curves, gradients, and resolution-independent shapes, **so that** I
-can create crisp minimap overlays, cooldown sweeps, radial menus, and custom health bars
-without bitmap assets.
+**As a** designer (P-5), **I want** GPU-accelerated vector graphics with filled paths, stroked
+paths, Bezier curves, gradients, and resolution-independent shapes, **so that** I can create crisp
+minimap overlays, cooldown sweeps, radial menus, and custom health bars without bitmap assets.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -66,8 +65,8 @@ without bitmap assets.
 ## US-10.4.6 Implement GPU-Accelerated Vector Path Rendering
 
 **As an** engine developer (P-26), **I want** to implement a compute-driven pipeline that
-tessellates vector paths into coverage masks or signed distance fields, **so that** vector
-graphics render on the GPU without CPU-side rasterization overhead.
+tessellates vector paths into coverage masks or signed distance fields, **so that** vector graphics
+render on the GPU without CPU-side rasterization overhead.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -77,10 +76,9 @@ graphics render on the GPU without CPU-side rasterization overhead.
 
 ## US-10.4.7 Author Nine-Slice Panel Backgrounds Without Distortion
 
-**As an** artist (P-8), **I want** UI textures packed into runtime-managed atlases with
-nine-slice rendering that stretches backgrounds without distorting corners or edges,
-**so that** panel backgrounds and borders scale cleanly at any size with a single atlas
-entry per visual style.
+**As an** artist (P-8), **I want** UI textures packed into runtime-managed atlases with nine-slice
+rendering that stretches backgrounds without distorting corners or edges, **so that** panel
+backgrounds and borders scale cleanly at any size with a single atlas entry per visual style.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -91,9 +89,9 @@ entry per visual style.
 
 ## US-10.4.8 Verify Atlas Incremental Repack Avoids Stalls
 
-**As an** engine tester (P-27), **I want** to verify that atlas pages rebuild incrementally
-when new assets stream in without causing full repack stalls, **so that** streaming in new
-UI textures does not cause frame hitches.
+**As an** engine tester (P-27), **I want** to verify that atlas pages rebuild incrementally when new
+assets stream in without causing full repack stalls, **so that** streaming in new UI textures does
+not cause frame hitches.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -103,9 +101,9 @@ UI textures does not cause frame hitches.
 
 ## US-10.4.9 Preview 3D Characters and Items in UI Panels
 
-**As a** player (P-23), **I want** 3D character portraits, item previews, and dressing room
-views rendered inside UI panels with camera orbit and zoom, **so that** I can inspect my
-character and equipment from any angle before making decisions.
+**As a** player (P-23), **I want** 3D character portraits, item previews, and dressing room views
+rendered inside UI panels with camera orbit and zoom, **so that** I can inspect my character and
+equipment from any angle before making decisions.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -115,9 +113,9 @@ character and equipment from any angle before making decisions.
 
 ## US-10.4.10 Design 3D Preview Panels With Simplified Lighting
 
-**As a** designer (P-5), **I want** 3D-in-UI preview panels with simplified lighting setup
-that render at reduced resolution and upscale, **so that** item and character previews look
-good without excessive GPU cost.
+**As a** designer (P-5), **I want** 3D-in-UI preview panels with simplified lighting setup that
+render at reduced resolution and upscale, **so that** item and character previews look good without
+excessive GPU cost.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -128,9 +126,9 @@ good without excessive GPU cost.
 
 ## US-10.4.11 Render Nameplates and Signs in the 3D World
 
-**As a** developer (P-15), **I want** UI elements rendered as textured quads in 3D world
-space with perspective, lighting, and depth testing, **so that** nameplates, holographic
-displays, and in-world signs exist naturally in the game world.
+**As a** developer (P-15), **I want** UI elements rendered as textured quads in 3D world space with
+perspective, lighting, and depth testing, **so that** nameplates, holographic displays, and in-world
+signs exist naturally in the game world.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -141,9 +139,9 @@ displays, and in-world signs exist naturally in the game world.
 
 ## US-10.4.12 Verify World-Space UI Depth Sorts Correctly
 
-**As a** QA engineer (P-19), **I want** to verify that world-space UI elements depth-sort
-correctly against 3D scene geometry, **so that** nameplates and signs are occluded by walls
-and rendered in front of transparent objects as expected.
+**As a** QA engineer (P-19), **I want** to verify that world-space UI elements depth-sort correctly
+against 3D scene geometry, **so that** nameplates and signs are occluded by walls and rendered in
+front of transparent objects as expected.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -154,8 +152,8 @@ and rendered in front of transparent objects as expected.
 ## US-10.4.13 See Anti-Aliased UI Edges at All Scale Factors
 
 **As a** player (P-23), **I want** UI element edges to be anti-aliased and sharp at all scale
-factors without blurring adjacent elements, **so that** rounded buttons, circles, and vector
-paths look clean at any DPI.
+factors without blurring adjacent elements, **so that** rounded buttons, circles, and vector paths
+look clean at any DPI.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -166,9 +164,9 @@ paths look clean at any DPI.
 
 ## US-10.4.14 Implement SDF Edge Anti-Aliasing and Stencil Clipping
 
-**As an** engine developer (P-26), **I want** to implement SDF-based anti-aliasing for UI
-edges and stencil-based clipping for masked containers, **so that** child widgets are
-confined to parent bounds in scroll views with clean anti-aliased edges.
+**As an** engine developer (P-26), **I want** to implement SDF-based anti-aliasing for UI edges and
+stencil-based clipping for masked containers, **so that** child widgets are confined to parent
+bounds in scroll views with clean anti-aliased edges.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

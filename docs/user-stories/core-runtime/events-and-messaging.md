@@ -4,9 +4,9 @@
 
 ## US-1.5.1 Send Events via Double-Buffered Typed Channels
 
-**As a** game developer (P-15), **I want** strongly-typed event channels with double buffering
-that swap at frame boundaries, **so that** events are visible to all readers for exactly one
-frame with no contention between parallel consumers.
+**As a** game developer (P-15), **I want** strongly-typed event channels with double buffering that
+swap at frame boundaries, **so that** events are visible to all readers for exactly one frame with
+no contention between parallel consumers.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -17,9 +17,9 @@ frame with no contention between parallel consumers.
 
 ## US-1.5.2 Implement Typed Event Channels With Zero Contention
 
-**As an** engine developer (P-26), **I want** per-type event channels that avoid contention
-between parallel readers, **so that** event consumption does not become a bottleneck when many
-systems read the same event type simultaneously.
+**As an** engine developer (P-26), **I want** per-type event channels that avoid contention between
+parallel readers, **so that** event consumption does not become a bottleneck when many systems read
+the same event type simultaneously.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -29,9 +29,9 @@ systems read the same event type simultaneously.
 
 ## US-1.5.3 Verify Event Channel Frame Boundary Behavior
 
-**As an** engine tester (P-27), **I want** to verify that events written in frame N are
-visible to all readers in frame N+1 and gone by frame N+2, **so that** the double-buffer
-swap semantics are correct and no events leak across frame boundaries.
+**As an** engine tester (P-27), **I want** to verify that events written in frame N are visible to
+all readers in frame N+1 and gone by frame N+2, **so that** the double-buffer swap semantics are
+correct and no events leak across frame boundaries.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -41,9 +41,9 @@ swap semantics are correct and no events leak across frame boundaries.
 
 ## US-1.5.4 Consume Events at Different Tick Rates via Cursors
 
-**As a** game developer (P-15), **I want** persistent event streams where each reader
-maintains an independent cursor, **so that** systems running at different tick rates (physics
-at 60Hz, AI at 10Hz) consume events at their own pace without loss.
+**As a** game developer (P-15), **I want** persistent event streams where each reader maintains an
+independent cursor, **so that** systems running at different tick rates (physics at 60Hz, AI at
+10Hz) consume events at their own pace without loss.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -54,9 +54,9 @@ at 60Hz, AI at 10Hz) consume events at their own pace without loss.
 
 ## US-1.5.5 Stress-Test Event Streams Under High Throughput
 
-**As an** engine tester (P-27), **I want** to stress-test persistent event streams with
-readers at varying tick rates and writers at high throughput, **so that** I can verify no
-events are lost and cursors advance correctly under contention.
+**As an** engine tester (P-27), **I want** to stress-test persistent event streams with readers at
+varying tick rates and writers at high throughput, **so that** I can verify no events are lost and
+cursors advance correctly under contention.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -69,8 +69,8 @@ events are lost and cursors advance correctly under contention.
 ## US-1.5.6 React to Component Lifecycle Changes via Observers
 
 **As a** game developer (P-15), **I want** observer callbacks invoked during command buffer
-application when components are added, removed, or mutated, **so that** I can implement
-reactive patterns like spatial index updates with deterministic execution order.
+application when components are added, removed, or mutated, **so that** I can implement reactive
+patterns like spatial index updates with deterministic execution order.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -81,8 +81,8 @@ reactive patterns like spatial index updates with deterministic execution order.
 ## US-1.5.7 Implement Observer Dispatch at Sync Points
 
 **As an** engine developer (P-26), **I want** to implement observer dispatch that processes
-lifecycle events at sync points in deterministic order, **so that** observers can safely
-perform structural changes without invalidating concurrent iteration.
+lifecycle events at sync points in deterministic order, **so that** observers can safely perform
+structural changes without invalidating concurrent iteration.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -94,9 +94,9 @@ perform structural changes without invalidating concurrent iteration.
 
 ## US-1.5.8 Defer World Mutations for Deterministic Replay
 
-**As an** engine developer (P-26), **I want** per-system command buffers that record spawn,
-despawn, insert, remove, and send-event operations for deferred execution at sync points,
-**so that** parallel systems record mutations without exclusive world access.
+**As an** engine developer (P-26), **I want** per-system command buffers that record spawn, despawn,
+insert, remove, and send-event operations for deferred execution at sync points, **so that**
+parallel systems record mutations without exclusive world access.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -106,9 +106,9 @@ despawn, insert, remove, and send-event operations for deferred execution at syn
 
 ## US-1.5.9 Verify Command Buffer Flush Ordering Is Deterministic
 
-**As an** engine tester (P-27), **I want** to verify that command buffer flush produces
-identical world state regardless of parallel system scheduling, **so that** deterministic
-simulation is maintained across different hardware and thread configurations.
+**As an** engine tester (P-27), **I want** to verify that command buffer flush produces identical
+world state regardless of parallel system scheduling, **so that** deterministic simulation is
+maintained across different hardware and thread configurations.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -146,9 +146,9 @@ measure the scheduling cost reduction from skipping idle systems.
 
 ## US-1.5.12 Share Cross-Cutting State via Typed Resources
 
-**As a** game developer (P-15), **I want** typed singleton resources within each ECS world
-that participate in the scheduler's dependency analysis, **so that** cross-cutting state like
-time, input, and configuration is accessed safely across systems.
+**As a** game developer (P-15), **I want** typed singleton resources within each ECS world that
+participate in the scheduler's dependency analysis, **so that** cross-cutting state like time,
+input, and configuration is accessed safely across systems.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -158,9 +158,9 @@ time, input, and configuration is accessed safely across systems.
 
 ## US-1.5.13 Understand Resources as Global State in the Visual Editor
 
-**As a** designer (P-5), **I want** to inspect world resource values in the visual editor,
-**so that** I can see and understand global state like time, input, and configuration that
-affects system behavior.
+**As a** designer (P-5), **I want** to inspect world resource values in the visual editor, **so
+that** I can see and understand global state like time, input, and configuration that affects system
+behavior.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -170,9 +170,9 @@ affects system behavior.
 
 ## US-1.5.14 Route Events Between Independent ECS Worlds
 
-**As a** game developer (P-15), **I want** event bridges that route events between independent
-ECS worlds with optional transformation and filtering, **so that** instanced zones, lobbies,
-and the overworld exchange gameplay events without tight coupling.
+**As a** game developer (P-15), **I want** event bridges that route events between independent ECS
+worlds with optional transformation and filtering, **so that** instanced zones, lobbies, and the
+overworld exchange gameplay events without tight coupling.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -182,9 +182,9 @@ and the overworld exchange gameplay events without tight coupling.
 
 ## US-1.5.15 Implement Cross-World Event Bridges With Filtering
 
-**As an** engine developer (P-26), **I want** to implement cross-world event bridges that
-subscribe, filter, optionally transform, and re-publish events between worlds, **so that**
-MMO architectures with separate zone worlds can communicate without shared state.
+**As an** engine developer (P-26), **I want** to implement cross-world event bridges that subscribe,
+filter, optionally transform, and re-publish events between worlds, **so that** MMO architectures
+with separate zone worlds can communicate without shared state.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

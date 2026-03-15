@@ -2,14 +2,14 @@
 
 ## R-12.3.1 Content-Addressable Storage
 The engine **SHALL** store all processed assets in a content-addressable store keyed by BLAKE3
-cryptographic hash, automatically deduplicating identical assets and enabling retrieval of any
-asset version by its hash.
+cryptographic hash, automatically deduplicating identical assets and enabling retrieval of any asset
+version by its hash.
 - **Derived from:** [F-12.3.1](../../features/content-pipeline/asset-database.md)
 - **Rationale:** Content-addressable storage eliminates redundant data in large-scale repositories
   where overlapping content is produced across expansion packs and live-ops updates.
-- **Verification:** Store two identical assets and confirm only one copy exists on disk; retrieve
-  an asset by its hash and confirm the content matches the original; store a modified asset and
-  confirm both versions are retrievable.
+- **Verification:** Store two identical assets and confirm only one copy exists on disk; retrieve an
+  asset by its hash and confirm the content matches the original; store a modified asset and confirm
+  both versions are retrievable.
 
 ## R-12.3.2 Asset Metadata Store
 The engine **SHALL** maintain a persistent metadata database mapping asset IDs to source paths,
@@ -24,14 +24,14 @@ outputs, serving as the single source of truth for the content pipeline and edit
 
 ## R-12.3.3 Hash-Based Import Caching
 The engine **SHALL** cache processed asset outputs keyed by the hash of source content, import
-settings, and tool version, and skip all import and processing stages on a cache hit, returning
-the previously built output directly.
+settings, and tool version, and skip all import and processing stages on a cache hit, returning the
+previously built output directly.
 - **Derived from:** [F-12.3.3](../../features/content-pipeline/asset-database.md)
-- **Rationale:** Hash-based caching reduces full rebuild times from hours to minutes by
-  reprocessing only changed assets in large-scale builds.
+- **Rationale:** Hash-based caching reduces full rebuild times from hours to minutes by reprocessing
+  only changed assets in large-scale builds.
 - **Verification:** Import an asset, confirm the output is cached; re-import with identical source
-  and settings and confirm the processing stages are skipped; change the import settings and
-  confirm a cache miss triggers reprocessing.
+  and settings and confirm the processing stages are skipped; change the import settings and confirm
+  a cache miss triggers reprocessing.
 
 ## R-12.3.4 Incremental Builds
 The engine **SHALL** rebuild only those assets whose source files, import settings, or transitive
@@ -45,8 +45,8 @@ dependency graph.
 
 ## R-12.3.5 Asset Search and Tagging
 The engine **SHALL** support full-text and tag-based search across the asset database with faceted
-filtering by type, tag, modification date, file size, and dependency count, and support both
-manual and automatic tagging.
+filtering by type, tag, modification date, file size, and dependency count, and support both manual
+and automatic tagging.
 - **Derived from:** [F-12.3.5](../../features/content-pipeline/asset-database.md)
 - **Rationale:** Fast faceted search is essential for locating assets in libraries containing
   millions of entries without relying on memorized naming conventions.
@@ -59,8 +59,8 @@ The engine **SHALL** asynchronously generate thumbnails during import for meshes
 preview), textures (downscaled preview), materials (sphere preview), and audio (waveform
 visualization), and store them in the metadata database.
 - **Derived from:** [F-12.3.6](../../features/content-pipeline/asset-database.md)
-- **Rationale:** Pre-generated thumbnails enable instant visual browsing in the editor asset
-  browser without on-demand rendering delays.
+- **Rationale:** Pre-generated thumbnails enable instant visual browsing in the editor asset browser
+  without on-demand rendering delays.
 - **Verification:** Import assets of each type (mesh, texture, material, audio) and confirm a
   thumbnail is generated and stored; confirm the editor asset browser displays thumbnails without
   triggering additional rendering.
@@ -78,8 +78,8 @@ classifying meshes by function, textures by usage, and audio by role.
 
 ## R-12.3.8 LLM-Based Semantic Asset Search
 The engine **SHALL** support natural language queries against the asset database by encoding asset
-thumbnails, descriptions, tags, and file names into a vector index and returning ranked results
-with confidence scores via similarity search.
+thumbnails, descriptions, tags, and file names into a vector index and returning ranked results with
+confidence scores via similarity search.
 - **Derived from:** [F-12.3.8](../../features/content-pipeline/asset-database.md)
 - **Rationale:** Semantic search enables artists and designers to find assets by intent rather than
   exact naming conventions, improving discoverability.
@@ -87,22 +87,22 @@ with confidence scores via similarity search.
   results are semantically relevant; confirm confidence scores decrease with decreasing relevance.
 
 ## R-12.3.9 Smart Collections and Recommendations
-The engine **SHALL** automatically generate asset collections based on usage patterns,
-co-occurrence in scenes, and semantic similarity, and recommend related assets when an asset is
-selected, surfacing underused assets and flagging near-duplicate imports.
+The engine **SHALL** automatically generate asset collections based on usage patterns, co-occurrence
+in scenes, and semantic similarity, and recommend related assets when an asset is selected,
+surfacing underused assets and flagging near-duplicate imports.
 - **Derived from:** [F-12.3.9](../../features/content-pipeline/asset-database.md)
-- **Rationale:** Recommendations and smart collections reduce manual curation work and help
-  identify redundant or underused assets.
+- **Rationale:** Recommendations and smart collections reduce manual curation work and help identify
+  redundant or underused assets.
 - **Verification:** Select an asset and confirm the system recommends semantically related assets;
   confirm near-duplicate imports are flagged; confirm underused assets are surfaced in collections.
 
 ## R-12.3.10 Asset Versioning
 The engine **SHALL** track the full revision history of each asset including source file changes,
-import setting modifications, and processing outputs, enable restoration of any previous version
-by its content hash, and store version history using the structural diffing system.
+import setting modifications, and processing outputs, enable restoration of any previous version by
+its content hash, and store version history using the structural diffing system.
 - **Derived from:** [F-12.3.10](../../features/content-pipeline/asset-database.md)
-- **Rationale:** Full version history with hash-based restoration supports live-ops workflows
-  where content rollback must be fast and reliable.
+- **Rationale:** Full version history with hash-based restoration supports live-ops workflows where
+  content rollback must be fast and reliable.
 - **Verification:** Import an asset, modify it, and confirm both versions appear in the revision
   history; restore a previous version by hash and confirm the content matches the original; confirm
   structural diffs are stored between consecutive versions.

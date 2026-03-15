@@ -6,9 +6,9 @@ The engine **SHALL** provide a data-driven block type registry where each block 
 display name, visual representation (mesh or texture atlas UV), collision mode, hardness, tool
 requirement, drop table, light emission, light attenuation, transparency, flammability, blast
 resistance, and extensible custom properties via gameplay databases. Block types **SHALL** be
-authored as data assets in the visual editor. The registry **SHALL** support O(1) lookup by ID
-for at least 1,024 block types. Blocks **SHALL** be able to reference logic graph behaviors for
-custom interactions.
+authored as data assets in the visual editor. The registry **SHALL** support O(1) lookup by ID for
+at least 1,024 block types. Blocks **SHALL** be able to reference logic graph behaviors for custom
+interactions.
 
 - **Derived from:** [F-13.27.1](../../features/game-framework/block-voxel.md)
 - **Rationale:** A data-driven registry allows designers to add, modify, and balance block types
@@ -31,14 +31,14 @@ In multiplayer, block modifications **SHALL** be server-authoritative.
 
 - **Derived from:** [F-13.27.2](../../features/game-framework/block-voxel.md)
 - **Rationale:** Raycast-based face targeting provides precise block placement, and
-  server-authoritative modification prevents cheating in multiplayer while incremental updates
-  avoid full-chunk rebuilds on single-block changes.
+  server-authoritative modification prevents cheating in multiplayer while incremental updates avoid
+  full-chunk rebuilds on single-block changes.
 - **Verification:** Place a block on each face of an existing block and verify correct adjacency.
   Attempt to place a block inside the player and verify rejection. Mine a stone block with and
   without a pickaxe and verify the duration difference matches configured hardness and tool tier
   modifiers. Verify the cracking overlay progresses linearly. Confirm dropped items appear at the
-  block position. In multiplayer, verify a client-side placement attempt is rejected when the
-  server denies it.
+  block position. In multiplayer, verify a client-side placement attempt is rejected when the server
+  denies it.
 
 ## R-13.27.3 Chunk-Based Block Storage
 
@@ -49,8 +49,8 @@ palette indices. Fully uniform chunks **SHALL** be stored as a single value. The
 scaling render distance by platform capability.
 
 - **Derived from:** [F-13.27.3](../../features/game-framework/block-voxel.md)
-- **Rationale:** Palette compression reduces per-chunk memory by up to 50% for typical chunks,
-  and single-value storage for uniform chunks (common in air-heavy worlds) reduces memory further.
+- **Rationale:** Palette compression reduces per-chunk memory by up to 50% for typical chunks, and
+  single-value storage for uniform chunks (common in air-heavy worlds) reduces memory further.
   Platform-scaled render distance ensures acceptable performance on all target hardware.
 - **Verification:** Create a chunk with 8 unique block types and verify 4-bit palette storage is
   used (2,048 bytes). Create a uniform air chunk and verify single-value storage. Load chunks at
@@ -59,18 +59,18 @@ scaling render distance by platform capability.
 
 ## R-13.27.4 Block Chunk Meshing
 
-The engine **SHALL** convert chunk block data into renderable meshes using greedy meshing that merges
-adjacent coplanar faces of the same block type into larger quads. Interior faces between two opaque
-blocks **SHALL** be culled. Transparent blocks **SHALL** be meshed into a separate draw call for
-correct ordering. Per-vertex ambient occlusion **SHALL** be computed from neighboring block
+The engine **SHALL** convert chunk block data into renderable meshes using greedy meshing that
+merges adjacent coplanar faces of the same block type into larger quads. Interior faces between two
+opaque blocks **SHALL** be culled. Transparent blocks **SHALL** be meshed into a separate draw call
+for correct ordering. Per-vertex ambient occlusion **SHALL** be computed from neighboring block
 occupancy. Meshing **SHALL** be incremental — modifying one block re-meshes only the affected chunk
 and adjacent boundary chunks. Meshing **SHALL** run on worker threads without blocking the main
 thread.
 
 - **Derived from:** [F-13.27.4](../../features/game-framework/block-voxel.md)
 - **Rationale:** Greedy meshing dramatically reduces polygon count (up to 90% for large flat
-  surfaces), and incremental re-meshing keeps block modifications responsive. Worker-thread
-  meshing prevents frame drops during world modification.
+  surfaces), and incremental re-meshing keeps block modifications responsive. Worker-thread meshing
+  prevents frame drops during world modification.
 - **Verification:** Create a 16x16x1 flat surface of the same block type and verify greedy meshing
   produces a single quad per face direction. Verify a fully enclosed block generates zero mesh
   faces. Place a glass block adjacent to an opaque block and verify separate draw calls. Modify a
@@ -81,87 +81,84 @@ thread.
 
 The engine **SHALL** implement a flood-fill lighting system with two channels: sunlight (full
 intensity downward, attenuated horizontally) and block light (emitted by light-emitting blocks,
-attenuated in all directions). Light values **SHALL** be stored per-block as two 4-bit values
-(0-15 per channel). Light propagation **SHALL** update incrementally using BFS when blocks are
-placed or removed. Smooth lighting **SHALL** interpolate light values across block faces for soft
-ambient occlusion gradients.
+attenuated in all directions). Light values **SHALL** be stored per-block as two 4-bit values (0-15
+per channel). Light propagation **SHALL** update incrementally using BFS when blocks are placed or
+removed. Smooth lighting **SHALL** interpolate light values across block faces for soft ambient
+occlusion gradients.
 
 - **Derived from:** [F-13.27.5](../../features/game-framework/block-voxel.md)
 - **Rationale:** Per-block dual-channel lighting with BFS propagation provides visually correct
   lighting at minimal memory cost (1 byte per block). Incremental updates keep light changes
   responsive when blocks are modified.
-- **Verification:** Place a torch in a dark room and verify light propagates outward with
-  decreasing intensity over 15 blocks. Remove a ceiling block and verify sunlight floods downward
-  at full intensity. Place a block that occludes a torch and verify affected blocks are
-  recalculated without a full-chunk relight. Verify smooth lighting produces visible gradients
-  across block face vertices rather than flat per-face shading.
+- **Verification:** Place a torch in a dark room and verify light propagates outward with decreasing
+  intensity over 15 blocks. Remove a ceiling block and verify sunlight floods downward at full
+  intensity. Place a block that occludes a torch and verify affected blocks are recalculated without
+  a full-chunk relight. Verify smooth lighting produces visible gradients across block face vertices
+  rather than flat per-face shading.
 
 ## R-13.27.6a Gravity Block Physics
 
 The engine **SHALL** support gravity-affected blocks that fall when unsupported, converting to
-falling entities until landing on a solid surface. Block physics **SHALL** run in a dedicated
-ECS system at a configurable tick rate (default 20 ticks/second) and **SHALL** be deterministic
-for multiplayer consistency.
+falling entities until landing on a solid surface. Block physics **SHALL** run in a dedicated ECS
+system at a configurable tick rate (default 20 ticks/second) and **SHALL** be deterministic for
+multiplayer consistency.
 
 - **Derived from:** [F-13.27.6a](../../features/game-framework/block-voxel.md)
-- **Rationale:** Deterministic tick-based gravity ensures consistent falling block behavior
-  across clients in multiplayer.
-- **Verification:** Place a sand block with no support below and verify it falls and lands on
-  the nearest solid surface. Run the same scenario on two clients and verify identical final
-  state.
+- **Rationale:** Deterministic tick-based gravity ensures consistent falling block behavior across
+  clients in multiplayer.
+- **Verification:** Place a sand block with no support below and verify it falls and lands on the
+  nearest solid surface. Run the same scenario on two clients and verify identical final state.
 
 ## R-13.27.6b Fluid Flow Simulation
 
-The engine **SHALL** simulate fluid blocks (water, lava) flowing outward and downward from
-source blocks with 7 decreasing flow levels. Fluids **SHALL** apply current force to entities
-standing in them. Fluid propagation **SHALL** be deterministic for multiplayer consistency.
+The engine **SHALL** simulate fluid blocks (water, lava) flowing outward and downward from source
+blocks with 7 decreasing flow levels. Fluids **SHALL** apply current force to entities standing in
+them. Fluid propagation **SHALL** be deterministic for multiplayer consistency.
 
 - **Derived from:** [F-13.27.6b](../../features/game-framework/block-voxel.md)
-- **Rationale:** Fluid simulation with flow levels creates natural-looking water and lava
-  without the cost of full fluid dynamics.
-- **Verification:** Place a water source at the top of a staircase and verify it flows
-  downward with decreasing flow levels. Verify fluids apply current force to a standing
-  entity. Run the same scenario on two clients and verify identical state.
+- **Rationale:** Fluid simulation with flow levels creates natural-looking water and lava without
+  the cost of full fluid dynamics.
+- **Verification:** Place a water source at the top of a staircase and verify it flows downward with
+  decreasing flow levels. Verify fluids apply current force to a standing entity. Run the same
+  scenario on two clients and verify identical state.
 
 ## R-13.27.6c Fluid-Block Interactions
 
-The engine **SHALL** support data-driven fluid-block interactions: lava **SHALL** ignite
-flammable blocks within range, and water **SHALL** extinguish fire and convert lava to
-cobblestone or obsidian. Interaction rules **SHALL** be configurable per fluid-block pair
-in gameplay databases.
+The engine **SHALL** support data-driven fluid-block interactions: lava **SHALL** ignite flammable
+blocks within range, and water **SHALL** extinguish fire and convert lava to cobblestone or
+obsidian. Interaction rules **SHALL** be configurable per fluid-block pair in gameplay databases.
 
 - **Derived from:** [F-13.27.6c](../../features/game-framework/block-voxel.md)
-- **Rationale:** Data-driven interaction rules enable designers to define fluid behaviors
-  without code changes and support modded fluid types.
-- **Verification:** Place lava adjacent to a wood block and verify ignition. Pour water on
-  lava and verify cobblestone/obsidian generation. Add a custom interaction rule via
-  gameplay database and verify it activates.
+- **Rationale:** Data-driven interaction rules enable designers to define fluid behaviors without
+  code changes and support modded fluid types.
+- **Verification:** Place lava adjacent to a wood block and verify ignition. Pour water on lava and
+  verify cobblestone/obsidian generation. Add a custom interaction rule via gameplay database and
+  verify it activates.
 
 ## R-13.27.7a Signal Source and Wire Blocks
 
 The engine **SHALL** support signal source blocks (buttons, levers, pressure plates, daylight
-sensors) that emit power and wire blocks that transmit power with distance attenuation
-(15-block range), with incremental propagation updates on source state changes.
+sensors) that emit power and wire blocks that transmit power with distance attenuation (15-block
+range), with incremental propagation updates on source state changes.
 
 - **Derived from:** [F-13.27.7a](../../features/game-framework/block-voxel.md)
 - **Rationale:** Signal sources and wires form the foundation of block-based logic circuits,
   enabling player-created automation without scripting.
-- **Verification:** Build a circuit with a lever and 15 blocks of wire. Toggle the lever and
-  verify the signal propagates. Extend the wire to 16 blocks and verify the signal does not
-  reach.
+- **Verification:** Build a circuit with a lever and 15 blocks of wire. Toggle the lever and verify
+  the signal propagates. Extend the wire to 16 blocks and verify the signal does not reach.
 
 ## R-13.27.7b Logic Gate Blocks
 
-The engine **SHALL** support logic gate blocks — repeaters (delay and boost), comparators
-(measure container contents), and NOT gates (torches invert) — that manipulate signals in
-the circuit network.
+The engine **SHALL** support logic gate blocks — repeaters (delay and boost), comparators (measure
+container contents), and NOT gates (torches invert) — that manipulate signals in the circuit
+network.
 
 - **Derived from:** [F-13.27.7b](../../features/game-framework/block-voxel.md)
-- **Rationale:** Logic gates enable complex circuit designs including memory cells, clocks,
-  and conditional logic using only block placement.
-- **Verification:** Build a NOT gate (torch on block) and verify signal inversion. Build a
-  repeater chain and verify signal delay and boost. Place a comparator on a container and
-  verify proportional output.
+- **Rationale:** Logic gates enable complex circuit designs including memory cells, clocks, and
+  conditional logic using only block placement.
+- **Verification:** Build a NOT gate (torch on block) and verify signal inversion. Build a repeater
+  chain and verify signal delay and boost. Place a comparator on a container and verify proportional
+  output.
 
 ## R-13.27.7c Mechanism Blocks
 
@@ -170,75 +167,73 @@ blocks), doors (open/close), dispensers (fire projectiles), hoppers (transfer it
 (toggle), and note blocks (play sounds).
 
 - **Derived from:** [F-13.27.7c](../../features/game-framework/block-voxel.md)
-- **Rationale:** Mechanism blocks translate circuit signals into physical world effects,
-  enabling player-built contraptions and automated systems.
-- **Verification:** Build a piston door and verify it pushes/pulls blocks on activation.
-  Connect a hopper to a container and verify item transfer. Toggle a light via circuit
-  signal and verify state change.
+- **Rationale:** Mechanism blocks translate circuit signals into physical world effects, enabling
+  player-built contraptions and automated systems.
+- **Verification:** Build a piston door and verify it pushes/pulls blocks on activation. Connect a
+  hopper to a container and verify item transfer. Toggle a light via circuit signal and verify state
+  change.
 
 ## R-13.27.7d Circuit Evaluation and Budget
 
 The engine **SHALL** evaluate circuits deterministically with a defined update order. Circuit
-complexity **SHALL** be budgeted per chunk, capping active components and propagation steps
-per tick, with warnings raised and excess components depowered on budget exceeded.
+complexity **SHALL** be budgeted per chunk, capping active components and propagation steps per
+tick, with warnings raised and excess components depowered on budget exceeded.
 
 - **Derived from:** [F-13.27.7d](../../features/game-framework/block-voxel.md)
-- **Rationale:** Deterministic evaluation ensures circuits behave identically in single-player
-  and multiplayer. Per-chunk budgets prevent adversarial designs from degrading performance.
-- **Verification:** Exceed the per-chunk circuit budget and verify a warning is raised and
-  excess components are depowered. Run the same circuit on two clients and verify identical
-  behavior.
+- **Rationale:** Deterministic evaluation ensures circuits behave identically in single-player and
+  multiplayer. Per-chunk budgets prevent adversarial designs from degrading performance.
+- **Verification:** Exceed the per-chunk circuit budget and verify a warning is raised and excess
+  components are depowered. Run the same circuit on two clients and verify identical behavior.
 
 ## R-13.27.8a Block Terrain Generation
 
-The engine **SHALL** generate chunk-sized block data using 2D heightmap noise for surface
-elevation and 3D noise for caves and overhangs. Generation **SHALL** be deterministic from a
-configurable seed across all platforms. Chunk generation **SHALL** run on worker threads
-prioritized by player distance.
+The engine **SHALL** generate chunk-sized block data using 2D heightmap noise for surface elevation
+and 3D noise for caves and overhangs. Generation **SHALL** be deterministic from a configurable seed
+across all platforms. Chunk generation **SHALL** run on worker threads prioritized by player
+distance.
 
 - **Derived from:** [F-13.27.8a](../../features/game-framework/block-voxel.md)
 - **Rationale:** Seed-deterministic generation ensures reproducible worlds for multiplayer
   consistency. Distance-prioritized generation minimizes pop-in.
-- **Verification:** Generate the same terrain with the same seed on two different platforms
-  and verify block-identical output for 100 chunks. Move the player rapidly and verify
-  closest chunks generate first.
+- **Verification:** Generate the same terrain with the same seed on two different platforms and
+  verify block-identical output for 100 chunks. Move the player rapidly and verify closest chunks
+  generate first.
 
 ## R-13.27.8b Block Biome System
 
 The engine **SHALL** select biome types per chunk using biome noise, apply per-biome block
-composition rules, and blend biome boundaries smoothly over a configurable transition width.
-Biome definitions **SHALL** be data assets authored in the visual editor.
+composition rules, and blend biome boundaries smoothly over a configurable transition width. Biome
+definitions **SHALL** be data assets authored in the visual editor.
 
 - **Derived from:** [F-13.27.8b](../../features/game-framework/block-voxel.md)
-- **Rationale:** Biome-driven block composition creates diverse world regions while
-  data-driven definitions enable designer authoring without code.
-- **Verification:** Verify biome boundaries produce correct block compositions (grass/dirt
-  for plains, sand/sandstone for desert). Verify transition zones blend smoothly between
-  adjacent biomes.
+- **Rationale:** Biome-driven block composition creates diverse world regions while data-driven
+  definitions enable designer authoring without code.
+- **Verification:** Verify biome boundaries produce correct block compositions (grass/dirt for
+  plains, sand/sandstone for desert). Verify transition zones blend smoothly between adjacent
+  biomes.
 
 ## R-13.27.8c Block Ore Placement
 
-The engine **SHALL** place ore veins using 3D noise with per-ore frequency, depth constraints,
-and cluster size, configurable through gameplay databases.
+The engine **SHALL** place ore veins using 3D noise with per-ore frequency, depth constraints, and
+cluster size, configurable through gameplay databases.
 
 - **Derived from:** [F-13.27.8c](../../features/game-framework/block-voxel.md)
 - **Rationale:** Noise-based ore placement creates natural distributions while data-driven
   parameters enable mining progression balancing without code.
-- **Verification:** Verify ore veins appear only within configured depth ranges. Verify
-  per-ore frequency matches configured values across 100 generated chunks.
+- **Verification:** Verify ore veins appear only within configured depth ranges. Verify per-ore
+  frequency matches configured values across 100 generated chunks.
 
 ## R-13.27.8d Block Structure Generation
 
 The engine **SHALL** place structures (trees, villages, temples, dungeons) using the rule-based
-placement system with configurable frequency and biome constraints, running after terrain and
-biome generation.
+placement system with configurable frequency and biome constraints, running after terrain and biome
+generation.
 
 - **Derived from:** [F-13.27.8d](../../features/game-framework/block-voxel.md)
-- **Rationale:** Structure generation populates the world with exploration targets and
-  landmarks, running after terrain ensures correct ground placement.
-- **Verification:** Generate a world and verify structures appear with correct biome
-  constraints (villages on plains, not in oceans). Verify structure templates produce
-  correct block layouts.
+- **Rationale:** Structure generation populates the world with exploration targets and landmarks,
+  running after terrain ensures correct ground placement.
+- **Verification:** Generate a world and verify structures appear with correct biome constraints
+  (villages on plains, not in oceans). Verify structure templates produce correct block layouts.
 
 ## Non-Functional Requirements
 
@@ -247,30 +242,30 @@ biome generation.
 Chunk meshing **SHALL** complete within 2ms per chunk on a worker thread. Incremental re-meshing
 after a single block modification **SHALL** complete within 1ms for the modified chunk. Light
 propagation for a single block change **SHALL** complete within 0.5ms. Block placement and
-destruction latency from input to visual update **SHALL** be under 16ms (one frame at 60 fps).
-The block world **SHALL** sustain 60 fps with 32-chunk render distance (32,768 loaded chunks)
-on desktop hardware.
+destruction latency from input to visual update **SHALL** be under 16ms (one frame at 60 fps). The
+block world **SHALL** sustain 60 fps with 32-chunk render distance (32,768 loaded chunks) on desktop
+hardware.
 
 - **Rationale:** Block modification is the core interaction in voxel games. Any perceptible delay
-  between input and visual feedback breaks the building flow. Large render distances are expected
-  by players familiar with Minecraft.
-- **Verification:** Measure chunk meshing time for 1,000 chunks and verify average under 2ms.
-  Modify a single block and measure re-mesh time; verify under 1ms. Place a torch and measure
-  light propagation time; verify under 0.5ms. Measure input-to-visual latency for block
-  placement; verify under 16ms. Load 32,768 chunks and verify sustained 60 fps.
+  between input and visual feedback breaks the building flow. Large render distances are expected by
+  players familiar with Minecraft.
+- **Verification:** Measure chunk meshing time for 1,000 chunks and verify average under 2ms. Modify
+  a single block and measure re-mesh time; verify under 1ms. Place a torch and measure light
+  propagation time; verify under 0.5ms. Measure input-to-visual latency for block placement; verify
+  under 16ms. Load 32,768 chunks and verify sustained 60 fps.
 
 ### NFR-13.27.2 Block World Memory Efficiency
 
 Per-chunk memory for a 16x16x16 chunk with palette compression **SHALL NOT** exceed 2,560 bytes
-(2,048 data + 512 metadata). Uniform chunks **SHALL** consume no more than 64 bytes. Total
-memory for a 32-chunk render distance (32,768 chunks) **SHALL NOT** exceed 80 MB for block data
-alone. Light data (1 byte per block) **SHALL** add no more than 128 MB at maximum render distance.
+(2,048 data + 512 metadata). Uniform chunks **SHALL** consume no more than 64 bytes. Total memory
+for a 32-chunk render distance (32,768 chunks) **SHALL NOT** exceed 80 MB for block data alone.
+Light data (1 byte per block) **SHALL** add no more than 128 MB at maximum render distance.
 
 - **Rationale:** Block worlds contain vast numbers of chunks. Memory efficiency determines maximum
   render distance, which is a primary quality metric for voxel games.
 - **Verification:** Allocate 32,768 chunks with realistic block distributions and measure total
-  memory. Verify block data stays under 80 MB. Verify uniform chunks consume under 64 bytes.
-  Verify light data stays under 128 MB.
+  memory. Verify block data stays under 80 MB. Verify uniform chunks consume under 64 bytes. Verify
+  light data stays under 128 MB.
 
 ### NFR-13.27.3 Block World Data-Driven Configurability
 
@@ -284,6 +279,6 @@ recompilation.
   add new block types, tune mining speeds, adjust fluid behavior, and modify world generation
   without engineering support.
 - **Verification:** Add a new block type with custom hardness and drop table through the visual
-  editor. Verify it appears in-game without recompilation. Modify fluid flow rate and verify
-  the change takes effect. Adjust biome ore distribution and regenerate a chunk to verify the
-  new distribution.
+  editor. Verify it appears in-game without recompilation. Modify fluid flow rate and verify the
+  change takes effect. Adjust biome ore distribution and regenerate a chunk to verify the new
+  distribution.

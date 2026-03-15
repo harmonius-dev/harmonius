@@ -31,10 +31,9 @@ tier, enemies flash on damage.
 
 - **Requirements:** R-2.11.2
 - **Dependencies:** F-2.11.1, F-2.9.1 (Post-Processing Pipeline), F-2.10.1 (ECS-to-Renderer Bridge)
-- **Platform notes:** Mobile: flat color inner glow only (no Gaussian blur or fresnel
-  rim); max 4 highlighted entities. Switch: Gaussian blur at half-res; max 8
-  highlighted entities. Desktop/High-end: full glow with blur, fresnel, and pulsing;
-  unlimited highlighted entities.
+- **Platform notes:** Mobile: flat color inner glow only (no Gaussian blur or fresnel rim); max 4
+  highlighted entities. Switch: Gaussian blur at half-res; max 8 highlighted entities.
+  Desktop/High-end: full glow with blur, fresnel, and pulsing; unlimited highlighted entities.
 
 ## Toon and Stylized Shading
 
@@ -51,9 +50,9 @@ complete toon aesthetic.
 
 - **Requirements:** R-2.11.3
 - **Dependencies:** F-2.3.1 (Lighting Pipeline), F-2.10.5 (Material Parameter Binding)
-- **Platform notes:** Mobile: 2-3 bands; no hatching/stipple patterns; simplified rim
-  lighting. Switch: full band count; hatching patterns on hero characters only.
-  Desktop/High-end: full toon pipeline with all band, specular, and rim options.
+- **Platform notes:** Mobile: 2-3 bands; no hatching/stipple patterns; simplified rim lighting.
+  Switch: full band count; hatching patterns on hero characters only. Desktop/High-end: full toon
+  pipeline with all band, specular, and rim options.
 
 ## Gameplay Visibility Effects
 
@@ -71,9 +70,9 @@ visibility requires roof removal.
 
 - **Requirements:** R-2.11.4
 - **Dependencies:** F-2.10.1 (ECS-to-Renderer Bridge), F-1.9.4 (Unified Spatial Query)
-- **Platform notes:** Mobile: layer-based and volume-based modes only (no ray-based);
-  dither-only dissolve (no smooth alpha). Switch: all modes; dither dissolve. Desktop/
-  High-end: all modes with smooth alpha and cross-hatch patterns.
+- **Platform notes:** Mobile: layer-based and volume-based modes only (no ray-based); dither-only
+  dissolve (no smooth alpha). Switch: all modes; dither dissolve. Desktop/ High-end: all modes with
+  smooth alpha and cross-hatch patterns.
 
 ### F-2.11.5 X-Ray and See-Through Silhouette Rendering
 
@@ -88,6 +87,6 @@ cover, and important object highlighting in puzzle games.
 
 - **Requirements:** R-2.11.5
 - **Dependencies:** F-2.11.1 (Outline Rendering), F-2.10.1 (ECS-to-Renderer Bridge)
-- **Platform notes:** Mobile: flat color silhouettes only (no fresnel); max 8 x-ray
-  entities. Switch: flat color + team tint; max 16 entities. Desktop/High-end: full
-  silhouette modes with fresnel outline; unlimited entities.
+- **Platform notes:** Mobile: flat color silhouettes only (no fresnel); max 8 x-ray entities.
+  Switch: flat color + team tint; max 16 entities. Desktop/High-end: full silhouette modes with
+  fresnel outline; unlimited entities.

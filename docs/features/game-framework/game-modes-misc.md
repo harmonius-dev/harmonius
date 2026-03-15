@@ -38,9 +38,9 @@ Reusable scoring framework with per-event point values, multipliers, and combo c
 are awarded for game events (enemy kill, objective capture, trick completion). Combo counters
 increment on successive scoring events within a timing window and multiply points (2x, 3x, etc.).
 Combo breaks reset the counter after the window expires. Score multipliers from temporary power-ups
-or performance streaks stack multiplicatively. Final grade calculation (S/A/B/C/D or 1-3 stars)
-maps total score to configurable thresholds. High scores are tracked per level and globally. The
-system is generic — used for action games, rhythm games, racing, and arcade modes.
+or performance streaks stack multiplicatively. Final grade calculation (S/A/B/C/D or 1-3 stars) maps
+total score to configurable thresholds. High scores are tracked per level and globally. The system
+is generic — used for action games, rhythm games, racing, and arcade modes.
 
 - **Requirements:** R-13.24.3
 - **Dependencies:** F-1.1.30 (Observers), F-13.7.5 (Formula DSL)
@@ -50,48 +50,47 @@ system is generic — used for action games, rhythm games, racing, and arcade mo
 
 Composable feedback presets that chain multiple juice effects into a single triggerable asset. A
 feedback stack asset contains an ordered list of feedback entries, each with a type identifier,
-timing (delay offset, duration), intensity scalar, and parallel-vs-sequential execution flag.
-Stacks are triggered by gameplay events (hit confirmed, ability activated, level up) through the
-observer system (F-1.1.30). Multiple stacks can fire concurrently with independent lifetimes.
-Feedback stacks are authored visually in the asset editor — never in code.
+timing (delay offset, duration), intensity scalar, and parallel-vs-sequential execution flag. Stacks
+are triggered by gameplay events (hit confirmed, ability activated, level up) through the observer
+system (F-1.1.30). Multiple stacks can fire concurrently with independent lifetimes. Feedback stacks
+are authored visually in the asset editor — never in code.
 
 - **Requirements:** R-13.24.4a
 - **Dependencies:** F-1.1.30 (Observers)
 - **Platform notes:** None
-- **User story:** As a designer, I want to compose feedback stacks from reusable entries so that
-  I can iterate on game feel without programmer support.
+- **User story:** As a designer, I want to compose feedback stacks from reusable entries so that I
+  can iterate on game feel without programmer support.
 
 ### F-13.24.4b Hit-Stop and Time Scale Effects
 
 Frame-precise time manipulation effects for combat feedback. Hit-stop freezes all or selective
-entities for a configurable frame count on hit confirmation. Slow-motion ramps smoothly
-interpolate the global time scale from 1.0 to a target value (e.g., 0.1) and back over a
-configured duration. Per-entity time scale overrides enable bullet-time effects where one entity
-runs at normal speed while the world slows. Time scale effects are feedback entry types usable
-within feedback stacks (F-13.24.4a). Hit-stop and time scale respect multiplayer constraints
-(local-only in networked games).
+entities for a configurable frame count on hit confirmation. Slow-motion ramps smoothly interpolate
+the global time scale from 1.0 to a target value (e.g., 0.1) and back over a configured duration.
+Per-entity time scale overrides enable bullet-time effects where one entity runs at normal speed
+while the world slows. Time scale effects are feedback entry types usable within feedback stacks
+(F-13.24.4a). Hit-stop and time scale respect multiplayer constraints (local-only in networked
+games).
 
 - **Requirements:** R-13.24.4b
 - **Dependencies:** F-13.24.4a, F-1.1.1 (ECS)
 - **Platform notes:** None
-- **User story:** As a designer, I want hit-stop and slow-motion effects so that impactful
-  moments in combat have dramatic emphasis.
+- **User story:** As a designer, I want hit-stop and slow-motion effects so that impactful moments
+  in combat have dramatic emphasis.
 
 ### F-13.24.4c Feedback Entry Types Library
 
 Built-in library of feedback entry types usable in feedback stacks. Entry types include: camera
-shake (frequency, amplitude, decay), haptic pulse (intensity, duration per F-6.4.1), particle
-burst (asset reference, spawn count), sound cue (audio asset, volume, pitch), chromatic
-aberration (intensity ramp), screen flash (color, opacity, fade curve), and squash-and-stretch
-(scale axes, intensity, spring parameters). Each type defines its parameter schema for the
-visual editor. New entry types are registerable via the extensibility API.
+shake (frequency, amplitude, decay), haptic pulse (intensity, duration per F-6.4.1), particle burst
+(asset reference, spawn count), sound cue (audio asset, volume, pitch), chromatic aberration
+(intensity ramp), screen flash (color, opacity, fade curve), and squash-and-stretch (scale axes,
+intensity, spring parameters). Each type defines its parameter schema for the visual editor. New
+entry types are registerable via the extensibility API.
 
 - **Requirements:** R-13.24.4c
-- **Dependencies:** F-13.24.4a, F-11.3.1 (Screen Shake), F-6.4.1 (Haptics),
-  F-5.1.1 (Audio Engine)
+- **Dependencies:** F-13.24.4a, F-11.3.1 (Screen Shake), F-6.4.1 (Haptics), F-5.1.1 (Audio Engine)
 - **Platform notes:** None
-- **User story:** As a designer, I want a library of ready-made feedback types so that I can
-  build rich multi-sensory effects from standard building blocks.
+- **User story:** As a designer, I want a library of ready-made feedback types so that I can build
+  rich multi-sensory effects from standard building blocks.
 
 ## Exploration
 
@@ -106,8 +105,7 @@ zone streaming) and repositions the player at the destination. Hearthstone/recal
 placing waypoint entities with discovery trigger volumes.
 
 - **Requirements:** R-13.24.5
-- **Dependencies:** F-13.17.1 (Interaction), F-13.2.1 (Level Streaming),
-  F-4.2.8 (Trigger Volumes)
+- **Dependencies:** F-13.17.1 (Interaction), F-13.2.1 (Level Streaming), F-4.2.8 (Trigger Volumes)
 - **Platform notes:** None
 
 ### F-13.24.6 Respawn and Graveyard System
@@ -126,12 +124,12 @@ configurable per game mode (instant in casual, delayed in competitive).
 
 ### F-13.24.7a Tutorial Step System
 
-Data-driven tutorial framework with sequential step definitions, triggers, and progression
-tracking. Each tutorial step is a data asset specifying: trigger condition (enter zone, open
-menu, first login), instruction text, required player input or action for completion, and
-next step reference. Tutorial progress persists across sessions so interrupted tutorials
-resume at the correct step. A skip option allows players to dismiss the entire tutorial.
-Steps execute through the logic graph system (F-15.8.4) for custom completion conditions.
+Data-driven tutorial framework with sequential step definitions, triggers, and progression tracking.
+Each tutorial step is a data asset specifying: trigger condition (enter zone, open menu, first
+login), instruction text, required player input or action for completion, and next step reference.
+Tutorial progress persists across sessions so interrupted tutorials resume at the correct step. A
+skip option allows players to dismiss the entire tutorial. Steps execute through the logic graph
+system (F-15.8.4) for custom completion conditions.
 
 - **Requirements:** R-13.24.7a
 - **Dependencies:** F-6.2.1 (Input Actions), F-15.8.4 (Logic Graphs)
@@ -142,42 +140,41 @@ Steps execute through the logic graph system (F-15.8.4) for custom completion co
 ### F-13.24.7b Tutorial Visual Overlays
 
 Visual overlay system for tutorial highlighting and callouts. Spotlight overlays dim the screen
-except for a highlighted UI widget or world entity, drawing player attention. Arrow callouts
-point from instruction text to the relevant control or object. Tooltip callouts display
-contextual help text anchored to a widget or world position. Overlays are defined per tutorial
-step (F-13.24.7a) by referencing a widget ID or world entity. Forced input sequences block
-progression until the player performs the instructed action.
+except for a highlighted UI widget or world entity, drawing player attention. Arrow callouts point
+from instruction text to the relevant control or object. Tooltip callouts display contextual help
+text anchored to a widget or world position. Overlays are defined per tutorial step (F-13.24.7a) by
+referencing a widget ID or world entity. Forced input sequences block progression until the player
+performs the instructed action.
 
 - **Requirements:** R-13.24.7b
 - **Dependencies:** F-13.24.7a, F-10.1.1 (Widget Tree)
 - **Platform notes:** None
-- **User story:** As a player, I want spotlight overlays and arrow callouts so that I know
-  exactly where to look and what to do during tutorials.
+- **User story:** As a player, I want spotlight overlays and arrow callouts so that I know exactly
+  where to look and what to do during tutorials.
 
 ### F-13.24.7c Toast Notification System
 
-Non-blocking pop-up notification system independent of the tutorial framework. Toast
-notifications display brief messages for achievements, loot pickups, quest updates, and
-status changes. Toasts appear in a configurable screen region (top, bottom, corner), queue
-if multiple fire simultaneously, and auto-dismiss after a configurable duration. Each toast
-defines: icon, title text, body text, duration, and optional action button. Toast priority
-levels control display order. The system is usable by any gameplay system via the observer
-pattern (F-1.1.30).
+Non-blocking pop-up notification system independent of the tutorial framework. Toast notifications
+display brief messages for achievements, loot pickups, quest updates, and status changes. Toasts
+appear in a configurable screen region (top, bottom, corner), queue if multiple fire simultaneously,
+and auto-dismiss after a configurable duration. Each toast defines: icon, title text, body text,
+duration, and optional action button. Toast priority levels control display order. The system is
+usable by any gameplay system via the observer pattern (F-1.1.30).
 
 - **Requirements:** R-13.24.7c
 - **Dependencies:** F-10.1.1 (Widget Tree), F-1.1.30 (Observers)
 - **Platform notes:** None
-- **User story:** As a player, I want non-blocking pop-up notifications so that I am informed
-  of achievements and loot without interrupting gameplay.
+- **User story:** As a player, I want non-blocking pop-up notifications so that I am informed of
+  achievements and loot without interrupting gameplay.
 
 ### F-13.24.8a Free Camera Controller
 
-Free-flight camera activated from the pause menu for virtual photography. Controls include:
-position (free flight with configurable speed), rotation (pitch, yaw), roll, and FOV/zoom
-slider. Gameplay pauses in single-player when photo mode is active. In multiplayer, the camera
-is constrained to prevent passing through walls and time does not pause. Entering photo mode
-optionally hides the player character and UI. The camera controller is a dedicated ECS system
-that overrides the gameplay camera while active.
+Free-flight camera activated from the pause menu for virtual photography. Controls include: position
+(free flight with configurable speed), rotation (pitch, yaw), roll, and FOV/zoom slider. Gameplay
+pauses in single-player when photo mode is active. In multiplayer, the camera is constrained to
+prevent passing through walls and time does not pause. Entering photo mode optionally hides the
+player character and UI. The camera controller is a dedicated ECS system that overrides the gameplay
+camera while active.
 
 - **Requirements:** R-13.24.8a
 - **Dependencies:** F-13.5.2 (Camera Tracks)
@@ -190,9 +187,9 @@ that overrides the gameplay camera while active.
 Post-processing and visual overrides for photo mode composition. Controls include: depth of field
 (focus distance, aperture), exposure compensation, brightness/contrast/saturation sliders, color
 grading filters (vintage, noir, warm, cool, custom LUT), time-of-day override, and chromatic
-aberration. Composition aids overlay rule-of-thirds grid and golden ratio lines. All adjustments
-are temporary and revert when exiting photo mode. Controls are exposed through a photo mode UI
-panel with real-time preview.
+aberration. Composition aids overlay rule-of-thirds grid and golden ratio lines. All adjustments are
+temporary and revert when exiting photo mode. Controls are exposed through a photo mode UI panel
+with real-time preview.
 
 - **Requirements:** R-13.24.8b
 - **Dependencies:** F-13.24.8a, F-2.9.1 (Post-Processing), F-10.1.1 (Widget Tree)
@@ -202,16 +199,15 @@ panel with real-time preview.
 
 ### F-13.24.8c Photo Capture and Gallery
 
-Screenshot capture at configurable resolution with optional supersampling (2x, 4x). Captured
-images are saved to disk in PNG format. An in-game gallery stores captured screenshots with
-metadata (date, location, settings). The gallery is accessible from the main menu. Platform
-screenshot APIs are used where available (Steam screenshot, console capture) for platform
-integration. Supersampled captures render at the higher resolution then downsample for the
-final image.
+Screenshot capture at configurable resolution with optional supersampling (2x, 4x). Captured images
+are saved to disk in PNG format. An in-game gallery stores captured screenshots with metadata (date,
+location, settings). The gallery is accessible from the main menu. Platform screenshot APIs are used
+where available (Steam screenshot, console capture) for platform integration. Supersampled captures
+render at the higher resolution then downsample for the final image.
 
 - **Requirements:** R-13.24.8c
 - **Dependencies:** F-13.24.8a, F-13.24.8b
 - **Platform notes:** Screenshots use platform screenshot APIs where available (Steam screenshot,
   console capture).
-- **User story:** As a player, I want to capture high-resolution screenshots and browse them in
-  an in-game gallery so that I can revisit my best virtual photographs.
+- **User story:** As a player, I want to capture high-resolution screenshots and browse them in an
+  in-game gallery so that I can revisit my best virtual photographs.

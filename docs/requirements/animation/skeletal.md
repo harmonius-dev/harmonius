@@ -11,8 +11,8 @@ world-space matrices each frame.
   skinning thousands of characters without CPU bottlenecks.
 - **Verification:** Skin a mesh with a twist joint (e.g., forearm rotation of 180 degrees) using
   both linear blend and dual-quaternion modes. Verify dual-quaternion mode produces no
-  candy-wrapping artifacts by comparing vertex positions against a reference mesh. Confirm all
-  bone matrices are read from a single GPU buffer via GPU capture inspection.
+  candy-wrapping artifacts by comparing vertex positions against a reference mesh. Confirm all bone
+  matrices are read from a single GPU buffer via GPU capture inspection.
 
 ## R-9.1.2 GPU Keyframe Evaluation
 
@@ -23,24 +23,24 @@ compute dispatch.
 - **Derived from:** [F-9.1.2](../../features/animation/skeletal.md)
 - **Rationale:** GPU-side keyframe evaluation eliminates CPU-GPU data transfer for pose computation
   and scales to thousands of animated entities per frame.
-- **Verification:** Play a 60-frame animation clip at 30 FPS and sample at frame 15.5. Compare
-  the interpolated joint transforms against a CPU reference Hermite evaluator and verify
-  positional error is below 0.001 units per joint. Confirm looped, clamped, and ping-pong modes
-  produce correct wrap behavior at clip boundaries.
+- **Verification:** Play a 60-frame animation clip at 30 FPS and sample at frame 15.5. Compare the
+  interpolated joint transforms against a CPU reference Hermite evaluator and verify positional
+  error is below 0.001 units per joint. Confirm looped, clamped, and ping-pong modes produce correct
+  wrap behavior at clip boundaries.
 
 ## R-9.1.3 Animation Blending
 
 The engine **SHALL** blend up to 8 simultaneous animation clips per skeleton using linear
-interpolation or cubic Hermite curves, producing smooth transitions between poses from
-CPU-computed blend descriptors.
+interpolation or cubic Hermite curves, producing smooth transitions between poses from CPU-computed
+blend descriptors.
 
 - **Derived from:** [F-9.1.3](../../features/animation/skeletal.md)
-- **Rationale:** Multi-clip blending enables smooth state transitions and layered animation
-  without requiring a unique authored clip for every combination.
-- **Verification:** Blend 8 clips with equal weights and verify the resulting pose matches a
-  CPU reference weighted average within 0.001 units per joint. Verify cubic blend curves produce
-  smooth second-derivative-continuous transitions by sampling at 10 intermediate blend weights
-  and confirming no discontinuities.
+- **Rationale:** Multi-clip blending enables smooth state transitions and layered animation without
+  requiring a unique authored clip for every combination.
+- **Verification:** Blend 8 clips with equal weights and verify the resulting pose matches a CPU
+  reference weighted average within 0.001 units per joint. Verify cubic blend curves produce smooth
+  second-derivative-continuous transitions by sampling at 10 intermediate blend weights and
+  confirming no discontinuities.
 
 ## R-9.1.4 Animation Layers and Additive Blending
 
@@ -52,9 +52,9 @@ per-combination clip authoring.
 - **Rationale:** Layered animation with bone masks separates upper-body and lower-body animation,
   and additive layers enable composable reactions without combinatorial clip explosion.
 - **Verification:** Apply an upper-body combat animation layer with a bone mask while a lower-body
-  locomotion layer plays. Verify masked bones follow the combat layer exclusively and unmasked
-  bones follow locomotion exclusively. Apply an additive breathing layer and verify the resulting
-  pose equals the base pose plus the additive delta within 0.001 units per joint.
+  locomotion layer plays. Verify masked bones follow the combat layer exclusively and unmasked bones
+  follow locomotion exclusively. Apply an additive breathing layer and verify the resulting pose
+  equals the base pose plus the additive delta within 0.001 units per joint.
 
 ## R-9.1.5 Instanced Skeletal Animation
 
@@ -80,9 +80,9 @@ locomotion from gameplay movement.
 - **Rationale:** Root motion ensures animation-driven movement matches visual displacement exactly,
   preventing foot sliding during authored traversal sequences.
 - **Verification:** Play a dodge-roll animation with root motion enabled. Measure the character's
-  world-space displacement and verify it matches the root bone delta within 0.01 units. Confirm
-  the physics capsule moves with the root motion and that collision detection remains active
-  throughout the traversal.
+  world-space displacement and verify it matches the root bone delta within 0.01 units. Confirm the
+  physics capsule moves with the root motion and that collision detection remains active throughout
+  the traversal.
 
 ## R-9.1.7 Animation Compression
 
@@ -93,16 +93,16 @@ fidelity below a configurable error threshold.
 - **Derived from:** [F-9.1.7](../../features/animation/skeletal.md)
 - **Rationale:** High compression ratios are critical for streaming thousands of unique animations
   in an open-world game without exceeding memory budgets.
-- **Verification:** Compress a humanoid animation clip and verify the compression ratio is at
-  least 10:1. Play the compressed clip alongside the uncompressed original and verify per-joint
-  positional error is below 0.5 mm. Verify rotation tracks use smallest-three quaternion encoding
-  by inspecting the compressed data format.
+- **Verification:** Compress a humanoid animation clip and verify the compression ratio is at least
+  10:1. Play the compressed clip alongside the uncompressed original and verify per-joint positional
+  error is below 0.5 mm. Verify rotation tracks use smallest-three quaternion encoding by inspecting
+  the compressed data format.
 
 ## R-9.1.8 Animation Retargeting
 
 The engine **SHALL** retarget animation clips from a source skeleton to a target skeleton with
-different bone counts and proportions, using a shared canonical pose and per-bone retargeting
-modes (direct copy, scaled translation, rotation only).
+different bone counts and proportions, using a shared canonical pose and per-bone retargeting modes
+(direct copy, scaled translation, rotation only).
 
 - **Derived from:** [F-9.1.8](../../features/animation/skeletal.md)
 - **Rationale:** Retargeting enables animation reuse across character archetypes and species,
@@ -119,12 +119,12 @@ event components through the ECS observer system, supporting branching events, w
 montage-scoped events.
 
 - **Derived from:** [F-9.1.9](../../features/animation/skeletal.md)
-- **Rationale:** Animation events synchronize gameplay logic (sound, VFX, hit detection) with
-  visual playback without polling or manual time checks.
-- **Verification:** Embed a footstep event at frame 10 and a hit-window event spanning frames
-  20-25 in a clip. Play the clip and verify the footstep event fires exactly once when playback
-  crosses frame 10. Verify the hit-window event is active for exactly 6 frames. Verify a
-  montage-scoped event does not fire during non-montage playback.
+- **Rationale:** Animation events synchronize gameplay logic (sound, VFX, hit detection) with visual
+  playback without polling or manual time checks.
+- **Verification:** Embed a footstep event at frame 10 and a hit-window event spanning frames 20-25
+  in a clip. Play the clip and verify the footstep event fires exactly once when playback crosses
+  frame 10. Verify the hit-window event is active for exactly 6 frames. Verify a montage-scoped
+  event does not fire during non-montage playback.
 
 ## R-9.1.10 Animation Level of Detail
 
@@ -133,10 +133,10 @@ least 4 LOD tiers, transitioning smoothly over configurable ranges using the sha
 distance, and maintaining a per-entity LOD bias for hero characters.
 
 - **Derived from:** [F-9.1.10](../../features/animation/skeletal.md)
-- **Rationale:** Animation LOD prevents distant characters from consuming the same compute budget
-  as nearby ones, critical for maintaining frame rate with hundreds of visible characters.
-- **Verification:** Place 200 animated characters at distances from 5 m to 500 m. Verify
-  characters within 10 m use full skeletal evaluation, characters at 50 m use a reduced bone set,
-  characters at 200 m use half bone count at lower update rate, and characters at 500 m use VAT
-  playback. Set a hero character LOD bias and verify it uses full evaluation at 200 m. Verify no
-  visible popping during LOD transitions by recording a flythrough and inspecting frame-by-frame.
+- **Rationale:** Animation LOD prevents distant characters from consuming the same compute budget as
+  nearby ones, critical for maintaining frame rate with hundreds of visible characters.
+- **Verification:** Place 200 animated characters at distances from 5 m to 500 m. Verify characters
+  within 10 m use full skeletal evaluation, characters at 50 m use a reduced bone set, characters at
+  200 m use half bone count at lower update rate, and characters at 500 m use VAT playback. Set a
+  hero character LOD bias and verify it uses full evaluation at 200 m. Verify no visible popping
+  during LOD transitions by recording a flythrough and inspecting frame-by-frame.

@@ -20,8 +20,8 @@ dispatch with zero vtable overhead.
 ## R-2.1.2 Command Buffer Abstraction
 
 The engine **SHALL** provide a trait-based command buffer abstraction supporting graphics, compute,
-and copy operations with type-safe resource binding, where command buffers are recorded independently
-and submitted as ordered batches to a queue.
+and copy operations with type-safe resource binding, where command buffers are recorded
+independently and submitted as ordered batches to a queue.
 
 - **Derived from:** [F-2.1.2](../../features/rendering/gpu-abstraction-layer.md)
 - **Rationale:** A unified command buffer interface decouples rendering logic from backend-specific
@@ -40,8 +40,8 @@ combinations at creation time so that command buffer encoding incurs no validati
 - **Rationale:** Pre-validation at PSO creation time moves error detection to load time and ensures
   zero-cost encoding during frame submission.
 - **Verification:** Create pipeline states with valid and invalid configurations on each backend.
-  Verify that invalid combinations return a structured error at creation time. Measure that PSO
-  bind during command encoding adds zero conditional branches compared to raw backend calls.
+  Verify that invalid combinations return a structured error at creation time. Measure that PSO bind
+  during command encoding adds zero conditional branches compared to raw backend calls.
 
 ## R-2.1.4 Metal Backend via Swift-to-C-to-Bindgen
 
@@ -67,8 +67,8 @@ C++ or windows-rs dependency.
 - **Rationale:** Generating bindings directly from C-compatible COM headers avoids the maintenance
   burden and abstraction leaks of windows-rs while keeping the build dependency-free of C++.
 - **Verification:** Build the D3D12 backend on Windows. Verify no C++ translation units or
-  windows-rs crate appear in the dependency graph. Run the GPU backend conformance suite. Verify
-  COM reference counts reach zero on shutdown with no leaks reported by the debug layer.
+  windows-rs crate appear in the dependency graph. Run the GPU backend conformance suite. Verify COM
+  reference counts reach zero on shutdown with no leaks reported by the debug layer.
 
 ## R-2.1.6 Vulkan Backend via C-to-Bindgen
 
@@ -100,9 +100,9 @@ Metal).
 
 ## R-2.1.8 GPU State Tracking
 
-The engine **SHALL** maintain a CPU-side shadow state tracker per command buffer that records current
-pipeline, binding, and render target state, filtering redundant state transitions before encoding to
-reduce driver overhead.
+The engine **SHALL** maintain a CPU-side shadow state tracker per command buffer that records
+current pipeline, binding, and render target state, filtering redundant state transitions before
+encoding to reduce driver overhead.
 
 - **Derived from:** [F-2.1.8](../../features/rendering/gpu-abstraction-layer.md)
 - **Rationale:** Filtering redundant state changes at the CPU side avoids unnecessary driver
@@ -133,12 +133,12 @@ without CPU round-trips, using the native Work Graphs API on D3D12 and compute-b
 indirect dispatch chains on Metal and Vulkan.
 
 - **Derived from:** [F-2.1.10](../../features/rendering/gpu-abstraction-layer.md)
-- **Rationale:** GPU work graphs eliminate CPU-GPU synchronization for GPU-driven pipelines. Emulation
-  ensures consistent behavior on backends without native support.
-- **Verification:** Execute a work graph with producer and consumer nodes on D3D12 and verify
-  output matches expected results with zero CPU round-trips (measured via timestamp queries). Run
-  the same work graph on Metal and Vulkan via the emulated path and verify output matches the
-  native path within floating-point tolerance.
+- **Rationale:** GPU work graphs eliminate CPU-GPU synchronization for GPU-driven pipelines.
+  Emulation ensures consistent behavior on backends without native support.
+- **Verification:** Execute a work graph with producer and consumer nodes on D3D12 and verify output
+  matches expected results with zero CPU round-trips (measured via timestamp queries). Run the same
+  work graph on Metal and Vulkan via the emulated path and verify output matches the native path
+  within floating-point tolerance.
 
 ## R-2.1.11 Cross-Backend Feature Emulation
 

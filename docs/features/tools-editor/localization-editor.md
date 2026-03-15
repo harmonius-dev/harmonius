@@ -5,9 +5,9 @@
 ### F-15.13.1 String Table Editor
 
 A visual spreadsheet editor for managing all localizable strings in the project. Displays string
-keys, source language text, and translations for each target locale in a filterable, sortable
-table. Supports inline editing, bulk import/export (CSV), translation memory (suggest translations
-from previously translated strings), and context annotations (screenshots, notes for translators).
+keys, source language text, and translations for each target locale in a filterable, sortable table.
+Supports inline editing, bulk import/export (CSV), translation memory (suggest translations from
+previously translated strings), and context annotations (screenshots, notes for translators).
 Missing translations are highlighted. Plural forms, gendered variants, and interpolation variables
 are displayed in structured sub-rows. Integrates with the asset database (F-12.3.1) for versioning
 and search.
