@@ -1,210 +1,288 @@
-# R-7.1 -- Navigation Requirements
+# R-7.1 -- Navigation User Stories
 
-## R-7.1.1 Recast-Style NavMesh Generation
+## US-7.1.1 Recast-Style NavMesh Generation
 
-The engine **SHALL** voxelize static world geometry into a heightfield and build a compact polygonal
-navigation mesh via watershed partitioning and contour tracing, accepting configurable agent radius,
-height, step climb, and slope limits that produce distinct meshes per entity archetype.
+### US-7.1.1.1
+As an **engine dev (P-26)**, I want NavMesh generated via voxelization and watershed
+partitioning
+so that polygonal navigation meshes are built from world geometry automatically.
 
-- **Derived from:** [F-7.1.1](../../features/ai/navigation.md)
-- **Rationale:** Different entity sizes (humanoid, mount, large creature) need tailored meshes to
-  navigate geometry appropriate to their physical dimensions.
-- **Verification:** Generate NavMeshes for three agent archetypes with different radii (0.3 m,
-  0.6 m, 1.5 m) on a test scene with narrow doorways and steep slopes. Verify that the smallest
-  agent's mesh includes narrow passages excluded from the largest agent's mesh, and that polygons
-  respect the configured slope limit within 1 degree tolerance.
+### US-7.1.1.2
+As a **designer (P-5)**, I want configurable agent radius, height, step climb, and slope
+so that different entity archetypes get tailored navigation meshes.
 
-## R-7.1.2 NavMesh Tiling and Streaming
+### US-7.1.1.3
+As an **engine tester (P-27)**, I want to verify a large-radius agent's mesh excludes
+narrow passages
+so that per-archetype mesh generation is regression-tested.
 
-The engine **SHALL** divide the navigation mesh into fixed-size tiles aligned with the world
-streaming grid and load/unload tiles asynchronously as the simulation window moves, without
-requiring the full mesh to reside in memory.
+---
 
-- **Derived from:** [F-7.1.2](../../features/ai/navigation.md)
-- **Rationale:** Open-world navigation requires streaming to stay within server memory budgets
-  while providing seamless cross-tile pathfinding.
-- **Verification:** Configure a world with 100 NavMesh tiles. Stream in a 5x5 window and verify
-  that only 25 tiles are loaded in memory. Move the window by one tile and confirm the leading
-  edge tiles load and trailing edge tiles unload within one streaming tick.
+## US-7.1.2 NavMesh Tiling & Streaming
 
-## R-7.1.3 A* Pathfinding on NavMesh
+### US-7.1.2.1
+As an **engine dev (P-26)**, I want the NavMesh divided into fixed-size tiles
+so that tiles load/unload asynchronously with world streaming.
 
-The engine **SHALL** perform hierarchical A* search over NavMesh polygons with configurable
-heuristics and per-area-type cost weights, batching queries across frames to remain within a
-configurable per-tick CPU budget.
+### US-7.1.2.2
+As a **designer (P-5)**, I want seamless cross-tile pathfinding
+so that AI navigates the open world without hitting tile boundaries.
 
-- **Derived from:** [F-7.1.3](../../features/ai/navigation.md)
-- **Rationale:** Area-type weighting lets AI prefer contextually appropriate routes (roads over
-  swamps), and batching prevents pathfinding from monopolizing CPU time.
-- **Verification:** Issue 500 path queries on a NavMesh with road (cost 1.0), swamp (cost 5.0),
-  and lava (cost infinity) areas. Verify all paths prefer roads over swamps and never cross lava.
-  Confirm per-tick CPU time stays within the configured budget by measuring wall-clock time.
+### US-7.1.2.3
+As a **server admin (P-22)**, I want NavMesh tiles streaming to stay within memory budget
+so that server memory is bounded regardless of world size.
 
-## R-7.1.4 String Pulling (Funnel Algorithm)
+### US-7.1.2.4
+As an **engine tester (P-27)**, I want to verify only tiles within the streaming window
+are loaded
+so that tile streaming correctness is regression-tested.
 
-The engine **SHALL** convert a corridor of NavMesh polygons into a minimal waypoint sequence using
-the funnel algorithm, producing corner-hugging paths with no unnecessary intermediate waypoints.
+---
 
-- **Derived from:** [F-7.1.4](../../features/ai/navigation.md)
-- **Rationale:** The funnel algorithm eliminates redundant waypoints, producing tighter paths
-  that avoid unnecessary detours and reduce steering input complexity.
-- **Verification:** Given a corridor of 20 polygons with two sharp turns, verify the funnel
-  algorithm outputs exactly the minimal set of waypoints (no more than turn count + 2). Confirm
-  each waypoint lies on a polygon boundary or start/end position.
+## US-7.1.3 A* Pathfinding on NavMesh
 
-## R-7.1.5 Path Smoothing
+### US-7.1.3.1
+As a **designer (P-5)**, I want per-area-type cost weights (road, swamp, lava)
+so that AI prefers contextually appropriate routes.
 
-The engine **SHALL** post-process waypoint paths with NavMesh raycasts to remove redundant turns
-and optionally apply Catmull-Rom or cubic Bezier interpolation for curved trajectories.
+### US-7.1.3.2
+As a **designer (P-5)**, I want batched path queries spread across frames
+so that pathfinding does not spike frame time.
 
-- **Derived from:** [F-7.1.5](../../features/ai/navigation.md)
-- **Rationale:** Smoothed paths produce natural-looking movement for patrol routes and aesthetic
-  scenarios where sharp angular turns look artificial.
-- **Verification:** Smooth a 10-waypoint path and verify the output has fewer waypoints than the
-  input. Confirm all interpolated positions lie on valid NavMesh polygons by raycasting each
-  sample point. Visually compare smoothed vs. unsmoothed paths and verify no path segment exits
-  the NavMesh.
+### US-7.1.3.3
+As a **player (P-23)**, I want NPCs to take sensible paths avoiding hazards
+so that AI movement looks intelligent.
 
-## R-7.1.6 Dynamic Obstacle Carving
+### US-7.1.3.4
+As an **engine dev (P-26)**, I want configurable per-tick CPU budget for pathfinding
+so that path queries are bounded on each platform.
 
-The engine **SHALL** mark NavMesh regions as temporarily blocked when dynamic obstacles appear or
-move, using tile-local re-carving that invalidates only affected polygons and triggers localized
-repath requests for agents whose corridors intersect the modified area.
+### US-7.1.3.5
+As an **engine tester (P-27)**, I want to verify paths never cross lava (infinite cost)
+areas
+so that cost-based routing correctness is regression-tested.
 
-- **Derived from:** [F-7.1.6](../../features/ai/navigation.md)
-- **Rationale:** Dynamic obstacles (barricades, vehicles) must immediately affect navigation
-  without a full mesh rebuild to maintain responsive AI movement.
-- **Verification:** Place a dynamic obstacle blocking an agent's active corridor. Verify the
-  affected polygons are invalidated within one tick, the agent receives a repath request, and
-  unaffected tiles remain unchanged. Remove the obstacle and confirm the original polygons are
-  restored.
+---
 
-## R-7.1.7 NavMesh Links (Off-Mesh Connections)
+## US-7.1.4 String Pulling (Funnel Algorithm)
 
-The engine **SHALL** support traversal connections between disjoint NavMesh regions, each carrying
-a cost, animation tag, and optional precondition, so the planner can evaluate feasibility of
-actions like jumping, climbing, or swimming.
+### US-7.1.4.1
+As an **engine dev (P-26)**, I want corridors converted to minimal waypoint sequences
+so that paths are tight and corner-hugging.
 
-- **Derived from:** [F-7.1.7](../../features/ai/navigation.md)
-- **Rationale:** Real-world navigation includes non-walking transitions (ladders, gaps, doors)
-  that require explicit links between disconnected mesh regions.
-- **Verification:** Create two NavMesh regions separated by a gap with a jump link (cost 5.0,
-  precondition: ability_jump = true). Verify an agent with the ability uses the link and an
-  agent without it finds an alternative path. Confirm the link cost is included in A* total
-  path cost.
+### US-7.1.4.2
+As a **player (P-23)**, I want AI to move smoothly around corners without wide detours
+so that NPC movement looks natural.
 
-## R-7.1.8 Incremental Tile Rebuild
+### US-7.1.4.3
+As an **engine tester (P-27)**, I want to verify the funnel produces no more than
+turn count + 2 waypoints
+so that waypoint minimality is regression-tested.
 
-The engine **SHALL** rebuild individual NavMesh tiles at runtime when world geometry changes,
-revoxelizing only the affected tile and its immediate neighbors while leaving unaffected tiles
-untouched, driven by `NavMeshDirtyRegion` ECS components processed in priority order.
+---
 
-- **Derived from:** [F-7.1.8](../../features/ai/navigation.md)
-- **Rationale:** Full mesh rebuilds are too expensive for runtime geometry changes; incremental
-  rebuilds keep navigation current with bounded cost.
-- **Verification:** Modify geometry in a single tile region. Verify only that tile and its
-  direct neighbors are rebuilt (measure rebuild count). Confirm agents on distant tiles
-  experience no navigation disruption. Verify `NavMeshDirtyRegion` components are consumed
-  after processing.
+## US-7.1.5 Path Smoothing
 
-## R-7.1.9 Background NavMesh Generation
+### US-7.1.5.1
+As a **designer (P-5)**, I want Catmull-Rom or Bezier interpolation for curved paths
+so that patrol routes look natural and aesthetic.
 
-The engine **SHALL** run NavMesh tile generation and rebuild on background worker threads via the
-job system, never blocking the main simulation tick, with pending tiles marked as `Pending` in the
-`NavMeshTileMap` ECS resource and completed tiles swapped in atomically at the next sync point.
+### US-7.1.5.2
+As a **player (P-23)**, I want NPCs to move with smooth curved trajectories
+so that movement does not look robotic.
 
-- **Derived from:** [F-7.1.9](../../features/ai/navigation.md)
-- **Rationale:** Blocking the main simulation for mesh generation would cause frame-time spikes;
-  background generation keeps the tick rate stable.
-- **Verification:** Trigger a tile rebuild and measure main-thread frame time during generation.
-  Verify frame time does not exceed the baseline by more than 5%. Confirm agents in the pending
-  tile receive fallback movement (straight-line with collision avoidance) until the new tile is
-  swapped in.
+### US-7.1.5.3
+As an **engine tester (P-27)**, I want to verify all smoothed path points lie on valid
+NavMesh polygons
+so that path validity after smoothing is regression-tested.
 
-## R-7.1.10 Destruction-Triggered NavMesh Updates
+---
 
-The engine **SHALL** observe `NavMeshInvalidation` ECS events emitted by the destruction system
-when a `Destructible` entity fractures, and enqueue incremental tile rebuilds for the affected
-bounding region with priority scaled by the number of active agents whose paths intersect the
-region.
+## US-7.1.6 Dynamic Obstacle Carving
 
-- **Derived from:** [F-7.1.10](../../features/ai/navigation.md)
-- **Rationale:** Collapsed buildings open new pathways and rubble creates obstacles; navigation
-  must reflect destruction outcomes for believable AI behavior.
-- **Verification:** Destroy a building entity and verify a `NavMeshInvalidation` event is
-  emitted. Confirm the rebuild system enqueues the affected tiles. Place 10 agents with paths
-  through the region and 2 agents elsewhere; verify the affected-region rebuild has higher
-  priority. Confirm agents repath through newly opened areas after rebuild completes.
+### US-7.1.6.1
+As a **designer (P-5)**, I want dynamic obstacles (barricades, vehicles) to block paths
+so that AI reacts to world changes.
 
-## R-7.1.11 Player-Built Structure Integration
+### US-7.1.6.2
+As a **player (P-23)**, I want AI to reroute around newly placed obstacles
+so that NPC behavior reflects the current world state.
 
-The engine **SHALL** register player-placed structures as NavMesh obstacles via a
-`NavMeshObstacle` ECS component with shape data and area type override, queuing affected tiles
-for incremental rebuild when structures are placed or removed, and auto-generating NavMesh links
-for stairs and ladders.
+### US-7.1.6.3
+As an **engine dev (P-26)**, I want tile-local re-carving for affected polygons only
+so that obstacle carving is efficient.
 
-- **Derived from:** [F-7.1.11](../../features/ai/navigation.md)
-- **Rationale:** Player-built structures dynamically alter the navigable world; AI must route
-  around walls and over ramps placed by players.
-- **Verification:** Place a player wall structure and verify AI agents repath around it after
-  tile rebuild. Place a ramp structure and verify a NavMesh link is auto-generated connecting
-  the ground to the elevated platform. Remove the structure and confirm the NavMesh reverts to
-  its prior state.
+### US-7.1.6.4
+As an **engine tester (P-27)**, I want to verify agents repath when their corridor is
+carved
+so that dynamic repath triggering is regression-tested.
 
-## R-7.1.12 Multi-Size Agent NavMeshes
+---
 
-The engine **SHALL** maintain multiple NavMesh layers for different agent size classes, each
-defined by a `NavMeshAgentConfig` (radius, height, step climb, max slope), sharing the same
-spatial tile grid so streaming loads all layers for a region together, with agent entities
-referencing their layer via a `NavMeshAgent` ECS component.
+## US-7.1.7 NavMesh Links (Off-Mesh Connections)
 
-- **Derived from:** [F-7.1.12](../../features/ai/navigation.md)
-- **Rationale:** Different agent sizes require separate mesh layers to ensure each agent
-  navigates only through geometry it physically fits through.
-- **Verification:** Define three agent configs (small: 0.3 m, medium: 0.6 m, large: 1.5 m).
-  Stream in one tile region and verify all three layers load together. Pathfind a large agent
-  through a narrow doorway and verify the query fails. Pathfind a small agent through the same
-  doorway and verify success.
+### US-7.1.7.1
+As a **designer (P-5)**, I want off-mesh links for jumping, climbing, and swimming
+so that AI can traverse disjoint NavMesh regions.
 
-## R-7.1.13 Dynamic Area Cost Modification
+### US-7.1.7.2
+As a **designer (P-5)**, I want links with cost, animation tag, and preconditions
+so that the planner evaluates link feasibility per agent.
 
-The engine **SHALL** support modifying NavMesh polygon area costs at runtime without rebuilding
-geometry, stored in a `NavMeshAreaCosts` ECS resource and applied during A* expansion, with
-per-agent cost overrides for faction-specific routing.
+### US-7.1.7.3
+As a **player (P-23)**, I want AI to climb ladders and jump gaps when capable
+so that NPC navigation uses all available traversal options.
 
-- **Derived from:** [F-7.1.13](../../features/ai/navigation.md)
-- **Rationale:** Runtime cost changes (flooded zones, danger areas, road buffs) must influence
-  pathfinding immediately without the latency of a mesh rebuild.
-- **Verification:** Set a water area cost to 10.0 at runtime. Verify agents repath to avoid
-  the flooded zone on next query without any mesh rebuild occurring. Apply a faction-specific
-  override reducing friendly territory cost and confirm agents of that faction prefer the
-  cheaper route while other factions do not.
+### US-7.1.7.4
+As an **engine tester (P-27)**, I want to verify an agent without the required ability
+avoids the link
+so that precondition enforcement is regression-tested.
 
-## R-7.1.14 Hierarchical Pathfinding (HPA*)
+---
 
-The engine **SHALL** build a coarse navigation graph from NavMesh tile connectivity and perform
-hierarchical pathfinding that plans on the coarse graph first, then refines to full NavMesh
-resolution only for the tiles the agent is currently traversing, keeping pathfinding cost bounded
-regardless of world size.
+## US-7.1.8 Incremental Tile Rebuild
 
-- **Derived from:** [F-7.1.14](../../features/ai/navigation.md)
-- **Rationale:** Per-polygon A* across an entire open world is prohibitively expensive for
-  thousands of NPCs with long-distance goals; hierarchical planning bounds the cost.
-- **Verification:** Issue a path query spanning 50 tiles. Measure query time and verify it is
-  within 2x of a 5-tile query (demonstrating bounded cost). Confirm the coarse path visits
-  the correct tile sequence and the refined path within the current tile matches full-
-  resolution A*.
+### US-7.1.8.1
+As an **engine dev (P-26)**, I want individual tiles rebuilt when geometry changes
+so that only affected areas are revoxelized.
 
-## R-7.1.15 NavMesh Runtime Visualization
+### US-7.1.8.2
+As a **designer (P-5)**, I want terrain deformation to update navigation automatically
+so that AI adapts to player-caused world changes.
 
-The engine **SHALL** render NavMesh polygons, tile boundaries, area types, obstacle carve regions,
-off-mesh links, and pending rebuild zones as debug overlays controlled by `NavMeshDebug` ECS
-components, with color-coded area types and agent-path trails.
+### US-7.1.8.3
+As an **engine tester (P-27)**, I want to verify only the affected tile and neighbors
+are rebuilt
+so that rebuild scope is regression-tested.
 
-- **Derived from:** [F-7.1.15](../../features/ai/navigation.md)
-- **Rationale:** Visual debugging is essential for designers to diagnose navigation failures in
-  complex open-world geometry.
-- **Verification:** Enable NavMesh debug visualization and verify polygons render with correct
-  area-type colors. Place an obstacle carve and confirm the carve region is visually distinct.
-  Add an off-mesh link and verify it renders as a visible connection. Trigger a tile rebuild and
-  confirm the pending zone is highlighted until rebuild completes.
+---
+
+## US-7.1.9 Background NavMesh Generation
+
+### US-7.1.9.1
+As an **engine dev (P-26)**, I want NavMesh generation on background worker threads
+so that the main simulation tick is never blocked.
+
+### US-7.1.9.2
+As a **player (P-23)**, I want AI to continue moving during NavMesh rebuilds
+so that navigation never visibly stalls.
+
+### US-7.1.9.3
+As an **engine tester (P-27)**, I want to verify main-thread frame time does not
+increase more than 5% during generation
+so that background generation performance is regression-tested.
+
+---
+
+## US-7.1.10 Destruction-Triggered NavMesh Updates
+
+### US-7.1.10.1
+As a **designer (P-5)**, I want collapsed buildings to open new pathways
+so that destruction creates new navigation opportunities.
+
+### US-7.1.10.2
+As a **player (P-23)**, I want AI to use paths through destroyed structures
+so that destruction visibly changes AI behavior.
+
+### US-7.1.10.3
+As an **engine dev (P-26)**, I want rebuild priority scaled by active agent count
+so that heavily-trafficked areas rebuild first.
+
+### US-7.1.10.4
+As an **engine tester (P-27)**, I want to verify NavMeshInvalidation events trigger
+rebuilds for the affected region
+so that destruction-to-rebuild pipeline is regression-tested.
+
+---
+
+## US-7.1.11 Player-Built Structure Integration
+
+### US-7.1.11.1
+As a **designer (P-5)**, I want player-placed structures to register as NavMesh obstacles
+so that AI routes around player buildings.
+
+### US-7.1.11.2
+As a **designer (P-5)**, I want auto-generated NavMesh links for stairs and ladders
+so that AI navigates player-built vertical structures.
+
+### US-7.1.11.3
+As a **player (P-23)**, I want AI to respect my fortifications and route around walls
+so that building has tactical impact on AI behavior.
+
+### US-7.1.11.4
+As an **engine tester (P-27)**, I want to verify a ramp structure generates a NavMesh
+link connecting ground to elevated platform
+so that auto-link generation is regression-tested.
+
+---
+
+## US-7.1.12 Multi-Size Agent NavMeshes
+
+### US-7.1.12.1
+As a **designer (P-5)**, I want separate NavMesh layers for humanoid, mount, and large
+creature agents
+so that each agent navigates geometry it physically fits through.
+
+### US-7.1.12.2
+As an **engine dev (P-26)**, I want all layers sharing the same spatial tile grid
+so that streaming loads all layers for a region together.
+
+### US-7.1.12.3
+As an **engine tester (P-27)**, I want to verify a large agent fails to pathfind through
+a narrow doorway
+so that per-size mesh filtering is regression-tested.
+
+---
+
+## US-7.1.13 Dynamic Area Cost Modification
+
+### US-7.1.13.1
+As a **designer (P-5)**, I want to modify area costs at runtime without mesh rebuild
+so that flooded zones and danger areas affect pathing immediately.
+
+### US-7.1.13.2
+As a **designer (P-5)**, I want per-agent cost overrides for faction-specific routing
+so that friendly territory is cheaper for allied agents.
+
+### US-7.1.13.3
+As an **engine tester (P-27)**, I want to verify agents repath when area costs change
+without any mesh rebuild occurring
+so that runtime cost modification is regression-tested.
+
+---
+
+## US-7.1.14 Hierarchical Pathfinding (HPA*)
+
+### US-7.1.14.1
+As an **engine dev (P-26)**, I want coarse-graph planning for long-distance paths
+so that pathfinding cost is bounded regardless of world size.
+
+### US-7.1.14.2
+As a **server admin (P-22)**, I want thousands of NPCs with cross-continent goals
+so that server-side AI scales to MMO populations.
+
+### US-7.1.14.3
+As an **engine tester (P-27)**, I want to verify a 50-tile query completes within
+2x of a 5-tile query
+so that bounded-cost pathfinding is regression-tested.
+
+---
+
+## US-7.1.15 NavMesh Runtime Visualization
+
+### US-7.1.15.1
+As a **designer (P-5)**, I want debug overlays showing NavMesh polygons and area types
+so that I can verify walkable regions visually.
+
+### US-7.1.15.2
+As a **designer (P-5)**, I want agent-path trails in the overlay
+so that I can trace AI movement for debugging.
+
+### US-7.1.15.3
+As an **engine dev (P-26)**, I want visualization stripped from shipping builds
+so that debug overlays have no runtime cost in production.
+
+### US-7.1.15.4
+As an **engine tester (P-27)**, I want to verify obstacle carve regions are visually
+distinct in the overlay
+so that visualization accuracy is regression-tested.

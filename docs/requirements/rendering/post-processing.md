@@ -161,6 +161,55 @@ reduce straight-line warping at wide field-of-view angles while preserving cente
   verify straight lines near screen edges are less warped with panini enabled; confirm
   center region geometry is unchanged between both modes.
 
+## R-2.9.13 Screen-Space Cavity and Curvature
+
+The engine **SHALL** render a screen-space cavity and curvature effect that darkens concavities
+and brightens convexities by sampling the normal buffer (or depth-reconstructed normals) at
+configurable pixel-radius (curvature) and world-radius (cavity) offsets, computing per-pixel
+normal differences, and compositing the resulting single-channel cavity map multiplicatively
+over the lit scene color with independent ridge brightness and valley darkness intensity controls.
+
+- **Derived from:** [F-2.9.13](../../features/rendering/post-processing.md)
+- **Rationale:** Screen-space cavity reveals micro-surface detail (creases, edges, crevices) that
+  standard lighting misses, enhancing visual depth and readability of complex geometry without
+  additional geometry or texture authoring. Used by Blender's viewport cavity, the Unity "Screen
+  Space Cavity & Curvature" asset (Jolly Theory), and stylized renderers for surface detail
+  enhancement.
+- **Verification:** Render a scene with detailed geometry (cloth folds, rocky surfaces, mechanical
+  parts); enable curvature mode and verify ridges are brightened and valleys are darkened at
+  small pixel-scale offsets; enable cavity mode and verify similar enhancement at larger
+  world-space-scaled offsets; set ridge intensity to zero and confirm only valley darkening is
+  visible; set valley intensity to zero and confirm only ridge brightening; enable distance
+  fade and verify the effect attenuates beyond the configured start distance; disable the
+  G-buffer normal texture and verify the system falls back to depth-reconstructed normals
+  with visually comparable output.
+
+## R-2.9.14 Post-Process Graph Editor
+
+The engine **SHALL** provide a visual node-based graph editor that composes full-screen image
+processing operations (input buffer reads, spatial filters, color operations, blend modes,
+UV transforms, mask generation, and output writes) as typed-edge-connected nodes in a directed
+acyclic graph, compiles the graph to an optimized sequence of GPU compute dispatches executed
+within the post-processing pipeline, supports multi-pass chains with intermediate render targets,
+and integrates with the universal logic graph runtime for parameter binding, hot reload, and
+asset management.
+
+- **Derived from:** [F-2.9.14](../../features/rendering/post-processing.md)
+- **Rationale:** A node-based post-process editor enables artists and technical designers to
+  create custom full-screen effects (stylization, color grading presets, screen-space detail
+  enhancement, artistic filters) without writing shader code, consistent with the engine's
+  no-code philosophy. Comparable to Blender's GPU Compositor, Unreal Engine's Post Process
+  Materials in the material graph, and Babylon.js's Node Material system.
+- **Verification:** Create a post-process graph that reads scene color and depth, applies a
+  Gaussian blur masked by a depth threshold, blends the blurred result with the original using
+  screen blend mode, and outputs the final color; compile the graph and verify it produces a
+  valid GPU dispatch sequence; apply the graph in the viewport and verify the expected selective
+  blur effect is visible; modify a parameter at runtime and verify the effect updates within
+  one frame; insert the graph before tonemapping and verify it operates on HDR data; insert
+  after tonemapping and verify it operates on LDR data; create a multi-pass graph with an
+  intermediate target and verify correct resource allocation and barrier insertion through the
+  render graph.
+
 ## Non-Functional Requirements
 
 ### NFR-2.9.1 Post-Processing Pipeline Budget

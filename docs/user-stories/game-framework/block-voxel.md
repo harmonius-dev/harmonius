@@ -1,244 +1,371 @@
-# User Stories — 13.27 Block-Based Voxel Games
+# User Stories -- Block-Based Voxel Games (13.27)
 
-## Block Registry
+## Block Type Registry (F-13.27.1)
 
-### US-13.27.1 Register Block Types Through the Visual Editor
+## US-13.27.1.1
+**As a** player (P-23), **I want** each block type to have a distinct visual texture and
+properties, **so that** I can identify blocks at a glance.
 
-**As a** game designer (P-5), **I want** to define new block types in the visual editor by
-specifying an ID, texture, collision mode, hardness, tool requirement, drop table, and custom
-properties, **so that** I can add content to the block world without writing code or waiting for
-a programmer.
+## US-13.27.1.2
+**As a** designer (P-5), **I want** to define block types with ID, texture, collision mode,
+hardness, tool requirement, drop table, and custom properties as data assets, **so that** block
+creation requires no code.
 
-### US-13.27.2 Attach Custom Logic to Interactive Blocks
+## US-13.27.1.3
+**As a** designer (P-5), **I want** to wire logic graph behaviors to block types (furnaces
+smelt, doors toggle, note blocks play sounds), **so that** interactive blocks have complex
+functionality.
 
-**As a** game designer (P-5), **I want** to wire logic graph behaviors to block types (furnaces
-smelt items, doors toggle, note blocks play sounds), **so that** I can create interactive blocks
-with complex functionality using the visual scripting system.
+## US-13.27.1.4
+**As a** level designer (P-6), **I want** O(1) lookup by block ID in the registry, **so that**
+large worlds with many block types perform well.
 
-### US-13.27.3 Add Modded Block Types to the Registry
-
+## US-13.27.1.5
 **As a** modder (P-24), **I want** to register new block types with custom textures, properties,
-and logic graph behaviors through the mod SDK, **so that** I can extend the block palette with
-community-created content that integrates seamlessly with the base game.
+and logic via the mod SDK, **so that** community-created blocks integrate seamlessly.
 
-## Block Placement and Destruction
+## US-13.27.1.6
+**As a** tester (P-27), **I want** to verify that a block with a pickaxe tool requirement
+cannot be mined by an axe, **so that** tool requirements are enforced.
 
-### US-13.27.4 Place and Break Blocks With Satisfying Feedback
+## Block Placement and Destruction (F-13.27.2)
 
-**As a** player (P-23), **I want** to point at a block face to place a new block and hold the
-interact button to mine blocks with a cracking overlay that shows progress, **so that** building
-and mining feel responsive, precise, and visually clear.
+## US-13.27.2.1
+**As a** player (P-23), **I want** to raycast from my view to identify the target block face
+and place a new block there, **so that** placement is precise.
 
-### US-13.27.5 Configure Tool Tiers and Mining Speeds
+## US-13.27.2.2
+**As a** player (P-23), **I want** to hold the interact action to mine a block with a cracking
+overlay showing progress, **so that** mining feedback is clear.
 
-**As a** game designer (P-5), **I want** to set per-block hardness values and per-tool tier
-multipliers in gameplay databases, **so that** I can balance the mining progression curve (wood
-pickaxe mines slowly, diamond pickaxe mines quickly) without code changes.
+## US-13.27.2.3
+**As a** player (P-23), **I want** destroyed blocks to drop items at the block position, **so
+that** mining yields resources.
 
-### US-13.27.6 Trust That Block Changes Are Fair in Multiplayer
+## US-13.27.2.4
+**As a** designer (P-5), **I want** to configure mining time proportional to hardness and tool
+tier, **so that** progression creates meaningful mining speed differences.
 
-**As a** player (P-23), **I want** block placement and destruction to be server-authoritative,
-**so that** other players cannot cheat by instantly mining or placing blocks through hacks.
+## US-13.27.2.5
+**As a** level designer (P-6), **I want** placement restriction zones and custom adjacency
+rules, **so that** I can design puzzle environments with block constraints.
 
-### US-13.27.7 Design Block Placement Rules for Puzzle Levels
+## US-13.27.2.6
+**As a** modder (P-24), **I want** custom placement rules definable for modded blocks, **so
+that** mod blocks can have unique placement behavior.
 
-**As a** level designer (P-6), **I want** to define placement restriction zones and custom
-adjacency rules per block type, **so that** I can create puzzle environments where players must
-figure out valid block arrangements to progress.
+## US-13.27.2.7
+**As a** tester (P-27), **I want** to verify that block placement inside the player's collision
+volume is rejected, **so that** self-entombment is prevented.
 
-## Chunk-Based Block Storage
+## US-13.27.2.8
+**As a** tester (P-27), **I want** to verify that block modifications in multiplayer are
+server-authoritative, **so that** cheating is prevented.
 
-### US-13.27.8 Explore a Large Block World Without Lag
+## Chunk-Based Block Storage (F-13.27.3)
 
-**As a** player (P-23), **I want** the block world to stream chunks smoothly as I move, with
-distant chunks loading before I reach them, **so that** I can explore freely without stuttering
-or visible pop-in.
+## US-13.27.3.1
+**As a** player (P-23), **I want** the block world to stream chunks smoothly as I move, **so
+that** I explore freely without stuttering.
 
-### US-13.27.9 Configure Render Distance Per Platform
+## US-13.27.3.2
+**As a** player (P-23), **I want** palette compression for diverse chunks and single-value
+storage for uniform chunks, **so that** memory usage is efficient.
 
-**As a** game designer (P-5), **I want** to set render distance per platform (8 chunks on mobile,
-16-32 on desktop) in a configuration asset, **so that** I can optimize performance for each target
-device without code changes.
+## US-13.27.3.3
+**As a** designer (P-5), **I want** to configure render distance per platform (8 chunks on
+mobile, 16-32 on desktop), **so that** performance scales per device.
 
-### US-13.27.10 Build Massive Structures Without Memory Issues
+## US-13.27.3.4
+**As a** level designer (P-6), **I want** chunks to be the unit of streaming, meshing, lighting,
+and network replication, **so that** all systems operate on the same spatial unit.
 
-**As a** player (P-23), **I want** the chunk system to compress block data efficiently (palette
-compression for diverse chunks, single-value for uniform chunks), **so that** I can build in
-worlds with long render distances without running out of memory.
+## US-13.27.3.5
+**As a** tester (P-27), **I want** to verify that chunks beyond render distance are unloaded,
+**so that** memory is reclaimed for distant chunks.
 
-## Block Chunk Meshing
+## Block Chunk Meshing (F-13.27.4)
 
-### US-13.27.11 See Smooth Ambient Occlusion on Block Edges
+## US-13.27.4.1
+**As a** player (P-23), **I want** chunk meshes to update within one frame when I place or
+break a block, **so that** modifications are immediately visible.
 
-**As a** player (P-23), **I want** block edges and corners to show smooth ambient occlusion
-shading based on neighboring blocks, **so that** the voxel world looks polished and three-
-dimensional rather than flat and sterile.
+## US-13.27.4.2
+**As a** player (P-23), **I want** smooth ambient occlusion on block edges based on
+neighboring occupancy, **so that** the voxel world looks polished.
 
-### US-13.27.12 Place a Block and See the Mesh Update Instantly
+## US-13.27.4.3
+**As a** player (P-23), **I want** transparent blocks like glass and water to render with
+correct draw ordering, **so that** no flickering or sorting artifacts occur.
 
-**As a** player (P-23), **I want** chunk meshes to update within one frame when I place or break
-a block, **so that** my modifications are visible immediately without waiting for background
-processing.
+## US-13.27.4.4
+**As a** designer (P-5), **I want** greedy meshing to merge coplanar faces of the same type
+into larger quads, **so that** polygon count is minimized.
 
-### US-13.27.13 See Through Glass and Water Correctly
+## US-13.27.4.5
+**As a** level designer (P-6), **I want** only exposed faces meshed with internal faces culled,
+**so that** rendering performance is optimal for large structures.
 
-**As a** player (P-23), **I want** transparent blocks like glass and water to render with correct
-draw ordering (no flickering or sorting artifacts), **so that** underwater bases and glass
-structures look correct from every angle.
+## US-13.27.4.6
+**As a** modder (P-24), **I want** custom block meshes from modded blocks to feed into the same
+meshing pipeline, **so that** mod visuals are consistent.
 
-### US-13.27.14 Optimize Meshing for Large Flat Surfaces
+## US-13.27.4.7
+**As a** tester (P-27), **I want** to verify that modifying one block re-meshes only the
+affected chunk and neighbors, **so that** incremental meshing is correct.
 
-**As a** level designer (P-6), **I want** greedy meshing to merge large flat surfaces of the same
-block type into fewer polygons, **so that** superflat worlds and large builds run at high frame
-rates with minimal triangle count.
+## Block Light Propagation (F-13.27.5)
 
-## Block Light Propagation
+## US-13.27.5.1
+**As a** player (P-23), **I want** torches to cast warm light with smooth gradients fading over
+distance, **so that** caves feel atmospheric.
 
-### US-13.27.15 Light a Cave With Torches and See Smooth Gradients
+## US-13.27.5.2
+**As a** player (P-23), **I want** sunlight to propagate downward when I open a ceiling, **so
+that** natural light enters underground spaces realistically.
 
-**As a** player (P-23), **I want** to place torches that cast warm light with smooth gradients
-fading over distance, **so that** caves and underground builds feel atmospheric and I can see
-where I need more light sources.
+## US-13.27.5.3
+**As a** designer (P-5), **I want** per-block light emission levels (0-15) for two channels
+(sun and block), **so that** lighting is data-driven.
 
-### US-13.27.16 See Sunlight Flood In When Opening a Ceiling
+## US-13.27.5.4
+**As a** designer (P-5), **I want** light values exposed to gameplay logic for mob spawning
+rules, **so that** lighting is a strategic gameplay element.
 
-**As a** player (P-23), **I want** sunlight to immediately propagate downward when I remove a
-block from the ceiling of an underground room, **so that** natural light behaves realistically
-and I can design skylights and open-roof builds.
+## US-13.27.5.5
+**As a** level designer (P-6), **I want** light propagation using incremental BFS that only
+recalculates affected blocks, **so that** placing lights does not stall.
 
-### US-13.27.17 Use Darkness for Mob Spawning Rules
+## US-13.27.5.6
+**As a** modder (P-24), **I want** to set light emission levels on custom block types, **so
+that** modded blocks can glow or illuminate.
 
-**As a** game designer (P-5), **I want** the block lighting system to expose per-block light
-levels to gameplay logic so I can configure mob spawning rules (monsters spawn below light
-level 7), **so that** lighting becomes a strategic gameplay element, not just a visual feature.
+## US-13.27.5.7
+**As a** tester (P-27), **I want** to verify that blocking all paths between a light source
+and a block drops the block's light to zero, **so that** occlusion is correct.
 
-### US-13.27.18 Create Custom Light-Emitting Blocks
+## Gravity Block Physics (F-13.27.6a)
 
-**As a** modder (P-24), **I want** to set the light emission level (0-15) on any block type I
-create, **so that** I can add glowing ores, magical crystals, or decorative lanterns that
-integrate with the flood-fill lighting system.
+## US-13.27.6a.1
+**As a** player (P-23), **I want** sand and gravel to fall smoothly when I break the block
+beneath them, **so that** gravity creates dynamic cave-ins.
 
-## Block Physics and Fluid Simulation
+## US-13.27.6a.2
+**As a** designer (P-5), **I want** gravity block fall speed and tick rate configurable, **so
+that** physics pace matches the game style.
 
-### US-13.27.19 Watch Sand Fall When I Remove Support
+## US-13.27.6a.3
+**As a** level designer (P-6), **I want** gravity-affected blocks to create traps and puzzles,
+**so that** falling blocks are design elements.
 
-**As a** player (P-23), **I want** gravity-affected blocks like sand and gravel to fall smoothly
-when I break the block beneath them, **so that** cave-ins and sand traps feel dynamic and I can
-use gravity in creative builds.
+## US-13.27.6a.4
+**As a** tester (P-27), **I want** to verify that gravity physics is deterministic for
+multiplayer consistency, **so that** all clients see the same result.
 
-### US-13.27.20 Create Water Features With Natural Flow
+## Fluid Flow Simulation (F-13.27.6b)
 
-**As a** player (P-23), **I want** to place a water source and watch it flow outward and downhill
-with decreasing levels, filling depressions and draining through openings, **so that** I can
-build fountains, moats, canals, and irrigation channels.
+## US-13.27.6b.1
+**As a** player (P-23), **I want** water to flow outward and downward from source blocks with
+decreasing levels, **so that** I can build fountains and canals.
 
-### US-13.27.21 Design Lava Puzzle Hazards
+## US-13.27.6b.2
+**As a** player (P-23), **I want** fluids to apply current force to me when I stand in them,
+**so that** flowing water pushes me.
 
-**As a** level designer (P-6), **I want** lava to ignite nearby flammable blocks and water to
-convert lava into cobblestone or obsidian, **so that** I can design environmental puzzle
-challenges where players use fluid interactions to create safe paths.
+## US-13.27.6b.3
+**As a** designer (P-5), **I want** to configure fluid flow speed, level count, and propagation
+tick rate, **so that** fluid behavior is tunable.
 
-### US-13.27.21a Define Custom Fluid Interaction Rules
+## US-13.27.6b.4
+**As a** tester (P-27), **I want** to verify that fluid propagation is deterministic for
+multiplayer, **so that** all clients see identical water flow.
 
-**As a** game designer (P-5), **I want** to define fluid-block interaction rules (what happens
-when water meets lava, when lava meets wood) as data entries per fluid-block pair, **so that**
-I can customize fluid behaviors for my game without code changes.
+## Fluid-Block Interactions (F-13.27.6c)
 
-### US-13.27.22 Tune Fluid and Gravity Physics Per Game
+## US-13.27.6c.1
+**As a** player (P-23), **I want** lava to ignite nearby flammable blocks, **so that** lava
+creates fire hazards.
 
-**As a** game designer (P-5), **I want** to configure the block physics tick rate, fluid flow
-speed, gravity block fall speed, and fluid interaction rules through data assets, **so that**
-I can make physics feel snappy for an action game or deliberate for a puzzle game without code
-changes.
+## US-13.27.6c.2
+**As a** player (P-23), **I want** water flowing over lava to produce cobblestone and covering
+a lava source to produce obsidian, **so that** fluid interactions create new materials.
 
-## Redstone-Style Logic Circuits
+## US-13.27.6c.3
+**As a** designer (P-5), **I want** fluid-block interaction rules authored per pair in gameplay
+databases, **so that** I can customize reactions without code.
 
-### US-13.27.23 Build a Redstone Door That Opens With a Lever
+## US-13.27.6c.4
+**As a** level designer (P-6), **I want** fluid interactions to create puzzle elements, **so
+that** players use water and lava to solve environmental challenges.
 
-**As a** player (P-23), **I want** to connect a lever to a door using wire blocks, **so that**
-I can build mechanical contraptions like hidden entrances, drawbridges, and trap doors.
+## US-13.27.6c.5
+**As a** tester (P-27), **I want** to verify that water extinguishes fire blocks on contact,
+**so that** the water-fire interaction rule works.
 
-### US-13.27.23a Use Pressure Plates and Daylight Sensors
+## Signal Source and Wire Blocks (F-13.27.7a)
 
+## US-13.27.7a.1
+**As a** player (P-23), **I want** to connect levers, buttons, and pressure plates to doors
+and mechanisms using wire blocks, **so that** I can build contraptions.
+
+## US-13.27.7a.2
 **As a** player (P-23), **I want** pressure plates that activate when I step on them and
-daylight sensors that activate based on time of day, **so that** I can build automated
-mechanisms triggered by presence and time.
+daylight sensors that respond to time, **so that** automated triggers are available.
 
-### US-13.27.24 Design a Dungeon With Block Logic Puzzles
+## US-13.27.7a.3
+**As a** designer (P-5), **I want** signal propagation to update incrementally when a source
+changes, **so that** circuit updates are efficient.
 
-**As a** level designer (P-6), **I want** to use pressure plates, repeaters, comparators, and
-pistons to build logic puzzles in dungeons, **so that** players must solve wiring challenges to
-open doors, reveal treasure, and progress through the level.
+## US-13.27.7a.4
+**As a** level designer (P-6), **I want** to design dungeon puzzles using signal sources and
+wires, **so that** players solve wiring challenges to progress.
 
-### US-13.27.25 Create Automated Farms With Hoppers and Dispensers
+## US-13.27.7a.5
+**As a** modder (P-24), **I want** to create custom signal sources and wire blocks via the mod
+SDK, **so that** community-created circuit components extend the system.
 
-**As a** player (P-23), **I want** to chain hoppers to transfer items between containers and use
-dispensers to automate planting and harvesting, **so that** I can build automated resource farms
-that run while I explore.
+## US-13.27.7a.6
+**As a** tester (P-27), **I want** to verify that a signal attenuates over 15 wire blocks to
+zero, **so that** distance attenuation is correct.
 
-### US-13.27.25a Build Piston Doors and Moving Block Structures
+## Logic Gate Blocks (F-13.27.7b)
 
-**As a** player (P-23), **I want** pistons to push and pull blocks when powered, **so that** I
-can build moving doors, hidden passages, and mechanical structures.
+## US-13.27.7b.1
+**As a** player (P-23), **I want** repeaters to delay and boost signal strength, **so that**
+I can build timed circuits.
 
-### US-13.27.26 Trust That Circuits Behave Identically Every Time
+## US-13.27.7b.2
+**As a** player (P-23), **I want** comparators to measure container contents and output
+proportional signal, **so that** I can build item-counting circuits.
 
-**As a** player (P-23), **I want** circuit evaluation to be deterministic with a defined update
-order, **so that** my complex contraptions produce the same result every time and I can design
-reliable machines.
+## US-13.27.7b.3
+**As a** designer (P-5), **I want** NOT, AND, and OR logic achievable via gate combinations,
+**so that** full boolean logic is possible.
 
-### US-13.27.26a Have Circuit Complexity Limits Prevent Server Lag
+## US-13.27.7b.4
+**As a** tester (P-27), **I want** to verify that a NOT gate inverts its input signal, **so
+that** logic inversion is correct.
 
-**As a** player (P-23), **I want** per-chunk circuit complexity budgets to prevent massive
-circuits from causing lag, **so that** the server stays responsive for all players.
+## Mechanism Blocks (F-13.27.7c)
 
-### US-13.27.27 Create Custom Circuit Components as Mod Blocks
+## US-13.27.7c.1
+**As a** player (P-23), **I want** pistons to push and pull adjacent blocks when powered, **so
+that** I can build moving structures.
 
-**As a** modder (P-24), **I want** to create new signal-emitting, transmitting, or receiving
-blocks through the mod SDK, **so that** I can add logic gates, sensors, or actuators that
-community members can use in their circuit designs.
+## US-13.27.7c.2
+**As a** player (P-23), **I want** hoppers to transfer items between containers, **so that**
+I can build automated resource farms.
 
-## Procedural Block World Generation
+## US-13.27.7c.3
+**As a** player (P-23), **I want** dispensers to fire projectiles when powered, **so that**
+I can build automated defenses.
 
-### US-13.27.28 Explore a Unique World From a Shared Seed
+## US-13.27.7c.4
+**As a** designer (P-5), **I want** mechanism activation behavior and power consumption defined
+per block in the registry, **so that** mechanisms are data-driven.
 
-**As a** player (P-23), **I want** to enter a world seed and generate a deterministic world that
-is identical across all platforms, **so that** I can share seeds with friends and explore the
-same landscapes, caves, and biome layouts they discovered.
+## US-13.27.7c.5
+**As a** modder (P-24), **I want** to create custom mechanism blocks with unique activation
+behaviors, **so that** community-created mechanisms extend gameplay.
 
-### US-13.27.28a Explore Caves and Overhangs
+## US-13.27.7c.6
+**As a** tester (P-27), **I want** to verify that a piston pushes exactly one block per
+activation, **so that** piston displacement is correct.
 
-**As a** player (P-23), **I want** 3D noise to carve caves and overhangs into the terrain,
-**so that** exploration feels three-dimensional with tunnels, caverns, and cliff formations.
+## Circuit Evaluation and Budget (F-13.27.7d)
 
-### US-13.27.29 Configure Biome Rules and Ore Distribution
+## US-13.27.7d.1
+**As a** player (P-23), **I want** circuits to evaluate deterministically with defined update
+order, **so that** complex contraptions produce the same result every time.
 
-**As a** game designer (P-5), **I want** to define biome types (plains, desert, forest, ocean,
-mountains, tundra) with per-biome block composition rules in the visual editor, **so that**
-I can create diverse worlds without writing generation code.
+## US-13.27.7d.2
+**As a** player (P-23), **I want** per-chunk circuit budgets to prevent massive circuits from
+causing lag, **so that** the server stays responsive.
 
-### US-13.27.29a Configure Per-Ore Frequency and Depth
+## US-13.27.7d.3
+**As a** designer (P-5), **I want** to configure circuit complexity budgets per chunk, **so
+that** I can balance between creative freedom and performance.
 
-**As a** game designer (P-5), **I want** to set per-ore spawn frequency, depth range, and
-cluster size in gameplay databases, **so that** I can balance the mining progression curve
-without code changes.
+## US-13.27.7d.4
+**As a** tester (P-27), **I want** to verify that exceeding the budget depowers excess
+components with a warning, **so that** budget enforcement works.
 
-### US-13.27.30 Place Structures in Generated Worlds
+## Block Terrain Generation (F-13.27.8a)
 
-**As a** level designer (P-6), **I want** the world generator to place structures (trees,
-villages, temples, dungeons) using the rule-based placement system with configurable frequency
-and biome constraints, **so that** generated worlds contain interesting landmarks and exploration
-targets.
+## US-13.27.8a.1
+**As a** player (P-23), **I want** to enter a world seed and generate a deterministic world
+identical across all platforms, **so that** I can share seeds with friends.
 
-### US-13.27.31 Create Custom Biomes and Structures as Mods
+## US-13.27.8a.2
+**As a** player (P-23), **I want** 3D noise to carve caves and overhangs into the terrain, **so
+that** exploration is three-dimensional.
 
-**As a** modder (P-24), **I want** to define new biome types with custom block compositions and
-new structure templates that the world generator can place, **so that** I can create entirely new
-world themes (volcanic islands, crystal caverns, floating islands) that feel native to the
-generation system.
+## US-13.27.8a.3
+**As a** designer (P-5), **I want** generation to run on worker threads prioritized by player
+distance, **so that** nearby terrain generates first.
 
-### US-13.27.32 Explore Without Waiting for World Generation
+## US-13.27.8a.4
+**As a** level designer (P-6), **I want** heightmap and cave noise configurable per world, **so
+that** I can create diverse terrain profiles.
 
-**As a** player (P-23), **I want** chunk generation to run on background threads prioritized by
-my distance, **so that** the terrain ahead of me is always ready by the time I walk there and I
-never stall waiting for world generation.
+## US-13.27.8a.5
+**As a** tester (P-27), **I want** to verify that the same seed produces identical terrain
+across platforms, **so that** cross-platform determinism works.
+
+## Block Biome System (F-13.27.8b)
+
+## US-13.27.8b.1
+**As a** player (P-23), **I want** diverse biomes (plains, desert, forest, ocean, mountains,
+tundra) with distinct block compositions, **so that** exploration reveals varied landscapes.
+
+## US-13.27.8b.2
+**As a** designer (P-5), **I want** to define biome types with per-biome block composition
+rules and smooth boundary blending, **so that** biome authoring is visual.
+
+## US-13.27.8b.3
+**As a** modder (P-24), **I want** to create custom biome types with unique block compositions,
+**so that** mods can add entirely new world themes.
+
+## US-13.27.8b.4
+**As a** tester (P-27), **I want** to verify that biome boundaries blend smoothly over the
+configured transition width, **so that** no hard edges appear.
+
+## Block Ore Placement (F-13.27.8c)
+
+## US-13.27.8c.1
+**As a** player (P-23), **I want** ore veins placed at varying depths with configurable
+frequency, **so that** mining deeper reveals rarer ores.
+
+## US-13.27.8c.2
+**As a** designer (P-5), **I want** to configure per-ore cluster size, spawn depth range, and
+density in gameplay databases, **so that** ore progression is data-driven.
+
+## US-13.27.8c.3
+**As a** level designer (P-6), **I want** ore placement as a post-processing pass after terrain
+generation, **so that** ores embed naturally in generated terrain.
+
+## US-13.27.8c.4
+**As a** tester (P-27), **I want** to verify that an ore configured for depth 32-64 does not
+appear above depth 32, **so that** depth constraints are enforced.
+
+## Block Structure Generation (F-13.27.8d)
+
+## US-13.27.8d.1
+**As a** player (P-23), **I want** generated worlds to contain trees, villages, temples, and
+dungeons, **so that** exploration reveals interesting landmarks.
+
+## US-13.27.8d.2
+**As a** designer (P-5), **I want** structure templates with block layouts, loot tables, and
+spawner placements, **so that** generated structures are content-rich.
+
+## US-13.27.8d.3
+**As a** level designer (P-6), **I want** structure placement configurable by frequency and
+biome constraints, **so that** I control where structures appear.
+
+## US-13.27.8d.4
+**As a** modder (P-24), **I want** to create custom structure templates for the world generator,
+**so that** mod structures appear naturally in generated worlds.
+
+## US-13.27.8d.5
+**As a** tester (P-27), **I want** to verify that structures generate after terrain and biome
+passes to ensure correct ground placement, **so that** structures do not float or bury.

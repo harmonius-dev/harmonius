@@ -1,263 +1,417 @@
-# R-15.8 — Visual Logic Graph Requirements
+# R-15.8 -- Visual Logic Graph User Stories
 
-## Graph Runtime
+## US-15.8.1 Universal Logic Graph Runtime
 
-### R-15.8.1 Universal Logic Graph Runtime
+### US-15.8.1.1
+As a **designer (P-5)**, I want all engine logic authored as visual graphs
+so that I can create gameplay without writing code.
 
-The engine **SHALL** provide a typed, functional graph execution model as the sole authoring
-mechanism for all engine logic, where nodes are pure functions with statically typed pins, graphs
-compile to optimized bytecode or AOT native code achieving zero overhead versus hand-written logic,
-and the runtime supports generics, pattern matching, and higher-order functions as first-class
-node types.
+### US-15.8.1.2
+As a **designer (P-5)**, I want nodes as pure functions with typed pins
+so that I can reason about data flow through the graph.
 
-- **Derived from:** [F-15.8.1](../../features/tools-editor/logic-graph.md)
-- **Rationale:** A universal logic graph is the foundation of the no-code engine, ensuring all
-  logic is authored visually without textual code while maintaining native performance.
-- **Verification:** Author a gameplay graph performing 10,000 ECS queries per frame; benchmark
-  the compiled graph against an equivalent hand-written implementation and verify throughput is
-  within 5%. Confirm generics, pattern matching, and higher-order function nodes execute
-  correctly via unit tests.
+### US-15.8.1.3
+As a **developer (P-15)**, I want graphs compiled to bytecode or AOT native code
+so that visual logic runs at native performance.
 
-### R-15.8.2 Static Type System
+### US-15.8.1.4
+As a **developer (P-15)**, I want generics, pattern matching, and higher-order functions
+as node types
+so that complex logic can be expressed without textual code.
 
-The engine **SHALL** enforce static types on every node pin with bidirectional type inference
-through connections, catching type errors at graph-edit time with inline error display, supporting
-primitives, structs, enums, arrays, optionals, generics with trait bounds, and user-defined types,
-with no implicit coercion permitted.
+### US-15.8.1.5
+As an **engine dev (P-26)**, I want zero overhead vs hand-written logic
+so that the no-code approach has no performance penalty.
 
-- **Derived from:** [F-15.8.2](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Static typing at edit time prevents runtime type errors and guides users toward
-  correct graph construction without requiring manual type annotations.
-- **Verification:** Connect incompatible pin types and verify an inline error appears before
-  save. Create a generic node and verify type inference propagates the concrete type through
-  downstream connections. Attempt implicit coercion and verify it is rejected.
+### US-15.8.1.6
+As an **engine tester (P-27)**, I want to benchmark compiled graphs against hand-written
+equivalents within 5% throughput
+so that performance parity is regression-tested.
 
-### R-15.8.3 Strict Validation Before Use
+---
 
-The engine **SHALL** require graphs to pass a comprehensive validation pass (type correctness,
-no dangling pins, cycle detection in pure dataflow subgraphs, all required inputs connected, all
-outputs consumed or explicitly discarded) before they can be saved, compiled, or referenced, with
-error messages pinpointing the exact node and pin with suggested fixes.
+## US-15.8.2 Static Type System
 
-- **Derived from:** [F-15.8.3](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Strict validation prevents invalid graphs from entering the asset pipeline,
-  eliminating an entire class of runtime errors from shipped content.
-- **Verification:** Create graphs with each validation violation (type mismatch, dangling pin,
-  cycle, missing input, unconsumed output); verify each is rejected with a message identifying
-  the exact node and pin. Fix each violation and confirm the graph passes validation.
+### US-15.8.2.1
+As a **designer (P-5)**, I want type errors caught at graph-edit time
+so that I discover mistakes before running the game.
 
-## Gameplay Logic
+### US-15.8.2.2
+As a **designer (P-5)**, I want bidirectional type inference through connections
+so that I rarely need to annotate types manually.
 
-### R-15.8.4 Gameplay Logic Graphs
+### US-15.8.2.3
+As a **developer (P-15)**, I want support for structs, enums, arrays, optionals,
+and generics with trait bounds
+so that the type system covers all data modeling needs.
 
-The engine **SHALL** support visual logic graphs for all gameplay logic (ability logic, AI behavior,
-quest conditions, dialogue branching, UI event handlers, game mode rules, input processing) with
-typed nodes auto-generated from the type registry for ECS component, resource, event, and command
-access, and coroutine-style execution for multi-frame sequences.
+### US-15.8.2.4
+As a **developer (P-15)**, I want no implicit coercion with explicit conversion nodes
+so that type transformations are always intentional and visible.
 
-- **Derived from:** [F-15.8.4](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Gameplay logic graphs are the primary interface for designers in a no-code
-  engine, replacing all textual scripting with visual authoring.
-- **Verification:** Author a multi-frame boss encounter graph using coroutine nodes; verify
-  it executes across 3 phases with correct timing. Verify auto-generated nodes for 5 ECS
-  component types provide read/write access and query filtering.
+### US-15.8.2.5
+As a **technical artist (P-13)**, I want user-defined types from the reflection system
+so that I can create domain-specific node types without code.
 
-## Shader and Material Authoring
+### US-15.8.2.6
+As an **engine tester (P-27)**, I want to verify incompatible pin connections are
+rejected with inline errors
+so that type safety is regression-tested.
 
-### R-15.8.5a Shader Graph Core
+---
 
-The engine **SHALL** support visual authoring of GPU shaders (vertex, fragment, compute stages)
-through the logic graph system with nodes for math operations, texture samples, interpolation,
-branching, and buffer access, validating stage-specific constraints at edit time.
+## US-15.8.3 Strict Validation Before Use
 
-- **Derived from:** [F-15.8.5a](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Visual shader node authoring enables technical artists to create shader logic
-  without writing code, consistent with the no-code philosophy.
-- **Verification:** Author a vertex and fragment shader graph; verify stage-specific
-  constraints (vertex output must include position) are validated at edit time.
+### US-15.8.3.1
+As a **designer (P-5)**, I want validation before save, compile, or reference
+so that invalid graphs never enter the asset pipeline.
 
-### R-15.8.5b Shader Graph to HLSL Compilation
+### US-15.8.3.2
+As a **designer (P-5)**, I want error messages pinpointing the exact node and pin
+so that I can find and fix problems quickly.
 
-The engine **SHALL** compile shader graphs to HLSL, which DXC compiles to DXIL and SPIR-V and
-Metal Shader Converter translates DXIL to MSL per target platform. DXC and Metal Shader
-Converter are C++ libraries accessed via cxx.rs FFI bindings. HLSL is the sole shader
-intermediate language. Compilation errors **SHALL** map back to the originating graph node.
+### US-15.8.3.3
+As a **designer (P-5)**, I want suggested fixes with error messages
+so that common mistakes guide me toward corrections.
 
-- **Derived from:** [F-15.8.5b](../../features/tools-editor/logic-graph.md)
-- **Rationale:** A single HLSL intermediate language simplifies the compilation pipeline
-  while DXC and MSC produce platform-optimized output.
-- **Verification:** Compile a shader graph and verify correct output format per platform
-  (DXIL on Windows, SPIR-V on Linux, MSL on macOS). Introduce an error and verify the
-  diagnostic maps to the originating graph node.
+### US-15.8.3.4
+As a **developer (P-15)**, I want cycle detection in pure dataflow subgraphs
+so that infinite loops are caught at edit time.
 
-### R-15.8.5c Material Graph Variant
+### US-15.8.3.5
+As an **engine tester (P-27)**, I want to verify each validation violation type is
+reported with the correct node and pin
+so that validation diagnostics are regression-tested.
 
-The engine **SHALL** provide a material graph variant with PBR inputs (base color, metallic,
-roughness, normal, emissive) that compiles through the same HLSL pipeline and provides live
-viewport preview with real-time parameter updates.
+---
 
-- **Derived from:** [F-15.8.5c](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Material graphs give artists direct control over PBR material authoring with
-  immediate visual feedback, replacing hand-written shader code.
-- **Verification:** Author a PBR material graph; verify it renders correctly in the viewport.
-  Modify a parameter and confirm live preview updates within one frame.
+## US-15.8.4 Gameplay Logic Graphs
 
-### R-15.8.6 Render Graph Configuration
+### US-15.8.4.1
+As a **designer (P-5)**, I want to author ability logic as visual graphs
+so that I can design combat abilities without code.
 
-The engine **SHALL** support visual configuration of the rendering pipeline (passes, resources,
-dependencies) through a graph where nodes represent render passes and edges represent resource
-dependencies, with the compiler producing a frame graph execution plan with automatic barrier
-insertion and resource aliasing.
+### US-15.8.4.2
+As a **designer (P-5)**, I want quest conditions and dialogue branching as graphs
+so that I can build narrative logic visually.
 
-- **Derived from:** [F-15.8.6](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Visual render graph configuration allows technical directors to adjust the
-  rendering pipeline without code, while automatic barrier insertion prevents synchronization
-  errors.
-- **Verification:** Configure a render graph with geometry, lighting, shadow, and post-process
-  passes via the visual editor; verify the compiled execution plan inserts correct barriers
-  between dependent passes and aliases non-overlapping resources.
+### US-15.8.4.3
+As a **designer (P-5)**, I want coroutine-style nodes for multi-frame sequences
+so that phased encounters execute across multiple frames.
 
-## Animation and Audio
+### US-15.8.4.4
+As a **designer (P-5)**, I want auto-generated nodes for ECS components and events
+so that I can access all engine data from graph nodes.
 
-### R-15.8.7 Animation Logic Graphs
+### US-15.8.4.5
+As a **designer (P-5)**, I want game mode rules authored as graphs
+so that I can define win/loss conditions without code.
 
-The engine **SHALL** support visual authoring of animation state machines, blend trees (linear,
-additive, masked), and IK setups (two-bone, FABRIK, full-body) through logic graphs that read
-animation parameters from ECS components and drive the animation system, replacing all code-driven
-animation configuration.
+### US-15.8.4.6
+As an **engine dev (P-26)**, I want nodes auto-generated from type registry
+so that new component types are immediately available in graphs.
 
-- **Derived from:** [F-15.8.7](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Visual animation graphs give animators direct control over state machines and
-  blend logic without requiring programmer support.
-- **Verification:** Author an animation state machine with 3 states and conditional transitions;
-  verify state changes occur when ECS component values meet transition conditions. Test blend
-  tree output and IK solver positioning against expected results.
+### US-15.8.4.7
+As an **engine tester (P-27)**, I want to verify a multi-frame boss encounter graph
+executes across 3 phases with correct timing
+so that coroutine execution is regression-tested.
 
-### R-15.8.8 Audio Logic Graphs
+---
 
-The engine **SHALL** support visual authoring of adaptive audio behavior (music layer mixing, RTPC
-effects, dialogue sequencing, spatial audio configuration) through logic graphs that read game
-state from ECS components and drive audio parameters (volume, pitch, reverb, music stems).
+## US-15.8.5a Shader Graph Core
 
-- **Derived from:** [F-15.8.8](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Visual audio graphs enable sound designers to build reactive soundscapes without
-  writing code, maintaining the no-code authoring philosophy across all engine domains.
-- **Verification:** Author an audio graph that crossfades 2 music layers based on an ECS
-  component value; verify the crossfade occurs at the correct threshold. Test RTPC-driven
-  reverb parameter changes and confirm audio output matches expected values.
+### US-15.8.5a.1
+As a **technical artist (P-13)**, I want to author GPU shaders visually
+so that I can create vertex, fragment, and compute shaders without code.
 
-## Custom Tooling
+### US-15.8.5a.2
+As a **technical artist (P-13)**, I want math, texture, and buffer access nodes
+so that all GPU operations are available as graph nodes.
 
-### R-15.8.9 Custom Tool Graphs
+### US-15.8.5a.3
+As a **technical artist (P-13)**, I want stage-specific constraint validation
+so that vertex shaders require position output at edit time.
 
-The engine **SHALL** support extending the editor with custom tools authored entirely in the logic
-graph system, defining UI panels, responding to input events, manipulating assets, and invoking
-engine commands, with no plugin code or external toolchain required.
+### US-15.8.5a.4
+As an **engine tester (P-27)**, I want to verify stage constraints are validated
+at edit time
+so that shader graph validation is regression-tested.
 
-- **Derived from:** [F-15.8.9](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Graph-authored custom tools let studios build project-specific editors (quest
-  editors, loot table configurators) using the same visual system used for gameplay, eliminating
-  the need for compiled plugins.
-- **Verification:** Author a custom tool graph that creates a UI panel with a button; verify
-  clicking the button invokes an engine command (e.g., spawning an entity). Confirm the tool
-  loads without any compiled plugin or external toolchain.
+---
 
-## Node Library
+## US-15.8.5b Shader Graph to HLSL Compilation
 
-### R-15.8.10 Graph Node Library
+### US-15.8.5b.1
+As a **technical artist (P-13)**, I want shader graphs to compile to HLSL
+so that a single intermediate language targets all platforms.
 
-The engine **SHALL** provide a standard node library organized by domain (math, string, collection,
-ECS, physics, audio, rendering, input, networking, UI) with nodes auto-generated from ECS
-component, resource, and event type registrations via the reflection system, and user-created
-custom node types composed from existing nodes saved as reusable subgraph assets.
+### US-15.8.5b.2
+As an **engine dev (P-26)**, I want DXC and Metal Shader Converter via cxx.rs FFI
+so that HLSL produces DXIL, SPIR-V, and MSL per platform.
 
-- **Derived from:** [F-15.8.10](../../features/tools-editor/logic-graph.md)
-- **Rationale:** A comprehensive node library with auto-generated ECS nodes ensures the graph
-  system covers all engine functionality without manual node authoring for each new type.
-- **Verification:** Register a new ECS component type; verify a corresponding node appears in
-  the library automatically. Compose 3 existing nodes into a subgraph, save it, and verify it
-  appears as a reusable node in the library. Confirm nodes exist for each listed domain.
+### US-15.8.5b.3
+As an **engine dev (P-26)**, I want compilation errors mapped to graph nodes
+so that shader errors are diagnosable from the graph editor.
 
-## Debugging and Profiling
+### US-15.8.5b.4
+As an **engine tester (P-27)**, I want to verify correct output format per platform
+(DXIL, SPIR-V, MSL)
+so that cross-platform compilation is regression-tested.
 
-### R-15.8.11 Graph Debugging
+---
 
-The engine **SHALL** provide breakpoints on nodes, step-through execution, live pin value
-inspection during play mode, visual execution flow highlighting showing which nodes fire and in
-what order, and an integrated per-node performance profiler displaying timing and invocation
-counts.
+## US-15.8.5c Material Graph Variant
 
-- **Derived from:** [F-15.8.11](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Graph debugging tools are essential in a no-code engine where all logic is
-  visual, giving designers the same diagnostic power as traditional code debuggers.
-- **Verification:** Set a breakpoint on a node; verify execution pauses at that node during play
-  mode and pin values are inspectable. Step through 3 nodes and verify execution advances
-  correctly. Confirm the profiler reports per-node timing for at least 100 invocations.
+### US-15.8.5c.1
+As a **artist (P-8)**, I want a material graph with PBR inputs
+so that I can author base color, metallic, roughness, normal, and emissive.
 
-## Compilation and Optimization
+### US-15.8.5c.2
+As a **artist (P-8)**, I want live viewport preview of material graphs
+so that I can see results immediately while authoring.
 
-### R-15.8.12 Graph Compilation and Optimization
+### US-15.8.5c.3
+As a **artist (P-8)**, I want real-time parameter updates in the viewport
+so that parameter tweaks reflect instantly without recompilation.
 
-The engine **SHALL** compile graphs to optimized bytecode or AOT native code through a multi-pass
-compiler performing dead node elimination, constant folding, subgraph inlining, and type
-specialization (monomorphization of generics), achieving performance comparable to hand-written
-logic, with node-level compilation error diagnostics.
+### US-15.8.5c.4
+As an **engine tester (P-27)**, I want to verify material graph preview updates within
+one frame
+so that live preview latency is regression-tested.
 
-- **Derived from:** [F-15.8.12](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Compiler optimizations ensure visual logic graphs achieve native performance,
-  removing any incentive to bypass the no-code system for performance reasons.
-- **Verification:** Compile a graph with dead nodes, constant expressions, a small subgraph,
-  and generic nodes; verify the output eliminates dead nodes, folds constants, inlines the
-  subgraph, and monomorphizes generics. Benchmark the optimized output against an unoptimized
-  baseline and verify measurable improvement.
+---
 
-## Version Control Integration
+## US-15.8.6 Render Graph Configuration
 
-### R-15.8.13 Graph Diffing and Merge
+### US-15.8.6.1
+As a **technical artist (P-13)**, I want to configure the rendering pipeline visually
+so that I can add or remove render passes without code.
 
-The engine **SHALL** provide a visual diff tool showing added, removed, and modified nodes between
-two graph versions with color-coded overlays, three-way merge with per-node conflict markers
-(accept-mine, accept-theirs, manual-resolve), and Git integration via a custom diff and merge
-driver.
+### US-15.8.6.2
+As a **technical artist (P-13)**, I want nodes for geometry, lighting, shadow, and
+post-process passes
+so that all pipeline stages are configurable.
 
-- **Derived from:** [F-15.8.13](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Visual diff and merge enable collaborative graph editing in teams using version
-  control, preventing conflicts from blocking the no-code workflow.
-- **Verification:** Modify the same graph on two branches; verify the visual diff highlights
-  added, removed, and modified nodes. Perform a three-way merge with a conflict on one node;
-  verify conflict markers appear and accept-mine/accept-theirs resolve correctly.
+### US-15.8.6.3
+As an **engine dev (P-26)**, I want automatic barrier insertion and resource aliasing
+so that the compiled frame graph handles GPU synchronization correctly.
 
-## Non-Functional Requirements
+### US-15.8.6.4
+As a **creative director (P-2)**, I want to adjust the rendering pipeline visually
+so that I can evaluate quality vs. performance tradeoffs interactively.
 
-### R-15.8.NF1 Graph Editor Responsiveness
+### US-15.8.6.5
+As an **engine tester (P-27)**, I want to verify barriers are inserted between
+dependent passes
+so that render graph compilation is regression-tested.
 
-The graph editor **SHALL** maintain interactive frame rates (above 30 FPS) while displaying graphs
-containing up to 10,000 nodes with 50,000 connections. Node creation, deletion, and connection
-operations **SHALL** complete within one frame (under 33ms). Type inference propagation after a
-connection change **SHALL** complete within 100ms for graphs up to 10,000 nodes. Validation
-**SHALL** complete within 500ms for graphs up to 10,000 nodes.
+---
 
-- **Derived from:** F-15.8.1 through F-15.8.14 (all logic graph features).
-- **Rationale:** Large gameplay and shader graphs in production projects can reach thousands of
-  nodes. The editor must remain responsive at this scale to support iterative authoring.
-- **Verification:** Load a synthetic graph with 10,000 nodes and 50,000 connections. Measure
-  render frame rate and assert it stays above 30 FPS during pan and zoom. Create a node and assert
-  the operation completes within 33ms. Change a connection and assert type inference completes
-  within 100ms. Trigger full validation and assert completion within 500ms.
+## US-15.8.7 Animation Logic Graphs
 
-## Search and Refactoring
+### US-15.8.7.1
+As a **artist (P-8)**, I want visual authoring of animation state machines
+so that I can define locomotion logic without code.
 
-### R-15.8.14 Graph Search and Refactoring
+### US-15.8.7.2
+As a **artist (P-8)**, I want blend tree nodes (linear, additive, masked)
+so that I can compose complex animation blends visually.
 
-The engine **SHALL** support finding all uses of a node type, variable, subgraph reference, or type
-across the entire project, rename refactoring that propagates through all referencing graphs,
-structural find-and-replace for bulk node pattern updates, and one-click navigation from search
-results to node locations.
+### US-15.8.7.3
+As a **artist (P-8)**, I want IK solver nodes (two-bone, FABRIK, full-body)
+so that I can set up inverse kinematics in the graph.
 
-- **Derived from:** [F-15.8.14](../../features/tools-editor/logic-graph.md)
-- **Rationale:** Project-wide search and refactoring are critical for maintaining large no-code
-  projects where hundreds of graphs may reference shared node types and subgraphs.
-- **Verification:** Create a custom node type used in 5 graphs; rename it and verify all 5
-  graphs update to the new name. Use structural find-and-replace to swap a deprecated node
-  type in 3 graphs; verify all instances are replaced. Click a search result and verify
-  navigation opens the correct graph at the correct node.
+### US-15.8.7.4
+As a **artist (P-8)**, I want animation parameters read from ECS components
+so that gameplay state drives animation automatically.
+
+### US-15.8.7.5
+As an **engine tester (P-27)**, I want to verify state changes trigger when ECS
+values meet transition conditions
+so that animation graph logic is regression-tested.
+
+---
+
+## US-15.8.8 Audio Logic Graphs
+
+### US-15.8.8.1
+As a **artist (P-8)**, I want visual authoring of adaptive audio behavior
+so that I can build reactive soundscapes without code.
+
+### US-15.8.8.2
+As a **artist (P-8)**, I want music layer mixing nodes driven by game state
+so that background music adapts to gameplay dynamically.
+
+### US-15.8.8.3
+As a **artist (P-8)**, I want RTPC-driven effect nodes for reverb and pitch
+so that audio parameters respond to game state changes.
+
+### US-15.8.8.4
+As a **artist (P-8)**, I want dialogue sequencing nodes
+so that I can orchestrate voice lines with timing control.
+
+### US-15.8.8.5
+As an **engine tester (P-27)**, I want to verify music layer crossfade triggers at
+the correct ECS threshold value
+so that audio graph logic is regression-tested.
+
+---
+
+## US-15.8.9 Custom Tool Graphs
+
+### US-15.8.9.1
+As a **developer (P-15)**, I want to extend the editor with custom tools authored
+entirely as logic graphs
+so that project-specific tools require no compiled plugin code.
+
+### US-15.8.9.2
+As a **developer (P-15)**, I want tool graphs that define UI panels
+so that custom tools have visual interfaces.
+
+### US-15.8.9.3
+As a **designer (P-5)**, I want tool graphs that manipulate assets and invoke commands
+so that studio-specific workflows are automated visually.
+
+### US-15.8.9.4
+As a **technical artist (P-13)**, I want to build quest editors and loot configurators
+as graph-authored tools
+so that I can create domain-specific editors for our project.
+
+### US-15.8.9.5
+As an **engine tester (P-27)**, I want to verify a custom tool graph runs without any
+compiled plugin or external toolchain
+so that plugin-free tooling is regression-tested.
+
+---
+
+## US-15.8.10 Graph Node Library
+
+### US-15.8.10.1
+As a **designer (P-5)**, I want a standard node library organized by domain
+so that I can find nodes for math, ECS, physics, audio, and more.
+
+### US-15.8.10.2
+As a **designer (P-5)**, I want nodes auto-generated from ECS type registrations
+so that new component types are immediately available as nodes.
+
+### US-15.8.10.3
+As a **designer (P-5)**, I want to create custom nodes by composing existing nodes
+into reusable subgraphs
+so that I can build domain-specific node types.
+
+### US-15.8.10.4
+As a **developer (P-15)**, I want subgraph nodes saved as assets
+so that custom nodes are reusable across graphs and projects.
+
+### US-15.8.10.5
+As an **engine tester (P-27)**, I want to verify registering a new ECS component type
+adds a corresponding node automatically
+so that auto-generation is regression-tested.
+
+---
+
+## US-15.8.11 Graph Debugging
+
+### US-15.8.11.1
+As a **designer (P-5)**, I want breakpoints on graph nodes during play mode
+so that I can pause execution at a specific node.
+
+### US-15.8.11.2
+As a **designer (P-5)**, I want step-through execution in the graph
+so that I can follow logic one node at a time.
+
+### US-15.8.11.3
+As a **designer (P-5)**, I want live pin value inspection during play mode
+so that I can see data flowing through the graph in real time.
+
+### US-15.8.11.4
+As a **designer (P-5)**, I want visual execution flow highlighting
+so that I can see which nodes fire and in what order.
+
+### US-15.8.11.5
+As a **developer (P-15)**, I want an integrated per-node performance profiler
+so that I can identify bottleneck nodes without leaving the graph editor.
+
+### US-15.8.11.6
+As an **engine tester (P-27)**, I want to verify breakpoints pause execution and
+show inspectable pin values
+so that graph debugging is regression-tested.
+
+---
+
+## US-15.8.12 Graph Compilation and Optimization
+
+### US-15.8.12.1
+As a **developer (P-15)**, I want dead node elimination in the compiler
+so that unreachable subgraphs do not affect performance.
+
+### US-15.8.12.2
+As a **developer (P-15)**, I want constant folding at compile time
+so that static expressions are pre-computed.
+
+### US-15.8.12.3
+As a **developer (P-15)**, I want subgraph inlining for small functions
+so that call overhead is eliminated.
+
+### US-15.8.12.4
+As a **developer (P-15)**, I want type specialization (monomorphization) of generics
+so that generic nodes produce optimized platform-native code.
+
+### US-15.8.12.5
+As an **engine dev (P-26)**, I want AOT native code generation via LLVM
+so that compiled graphs achieve maximum performance on each platform.
+
+### US-15.8.12.6
+As an **engine tester (P-27)**, I want to verify the optimized compiler output is
+measurably faster than unoptimized baseline
+so that optimization effectiveness is regression-tested.
+
+---
+
+## US-15.8.13 Graph Diffing and Merge
+
+### US-15.8.13.1
+As a **developer (P-15)**, I want visual diff showing added, removed, and modified nodes
+so that I can understand graph changes between versions.
+
+### US-15.8.13.2
+As a **developer (P-15)**, I want three-way merge for collaborative graph editing
+so that concurrent edits merge automatically when compatible.
+
+### US-15.8.13.3
+As a **developer (P-15)**, I want per-node conflict markers with resolve options
+so that I can handle merge conflicts at the node level.
+
+### US-15.8.13.4
+As a **DevOps (P-16)**, I want a custom Git diff and merge driver for graphs
+so that version control handles graph files natively.
+
+### US-15.8.13.5
+As an **engine tester (P-27)**, I want to verify three-way merge resolves compatible
+edits and flags conflicting edits
+so that graph merge correctness is regression-tested.
+
+---
+
+## US-15.8.14 Graph Search and Refactoring
+
+### US-15.8.14.1
+As a **designer (P-5)**, I want to find all uses of a node type across the project
+so that I can understand usage patterns before making changes.
+
+### US-15.8.14.2
+As a **developer (P-15)**, I want rename refactoring that propagates through all graphs
+so that renaming a node type or variable updates all references.
+
+### US-15.8.14.3
+As a **developer (P-15)**, I want structural find-and-replace for node patterns
+so that I can bulk-replace deprecated node types with successors.
+
+### US-15.8.14.4
+As a **developer (P-15)**, I want one-click navigation from search results to nodes
+so that I can jump directly to the node location in each graph.
+
+### US-15.8.14.5
+As an **engine tester (P-27)**, I want to verify rename refactoring updates all
+referencing graphs
+so that refactoring propagation is regression-tested.

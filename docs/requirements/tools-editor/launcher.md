@@ -1,83 +1,184 @@
-# R-15.15 Engine Launcher
+# R-15.15 -- Engine Launcher User Stories
 
-## R-15.15.1 Engine Version Management
-The engine **SHALL** provide a standalone launcher application that installs, updates, and manages
-multiple engine versions side-by-side with isolated installations, version-pinned projects, update
-notifications for stable and preview releases, rollback to previous versions, and per-version disk
-space management with one-click uninstall.
-- **Derived from:** [F-15.15.1](../../features/tools-editor/launcher.md)
-- **Rationale:** Side-by-side version management enables teams to maintain projects on different
-  engine versions without conflicts and to evaluate new releases before committing to an upgrade.
-- **Verification:** Install two engine versions side-by-side and confirm they are isolated; pin a
-  project to a specific version and confirm the correct engine launches; roll back to a previous
-  version and confirm the project opens correctly; uninstall a version and confirm disk space is
-  reclaimed; confirm update notifications appear for new releases.
+## US-15.15.1 Engine Version Management
 
-## R-15.15.2 Automatic Project Upgrades
-The engine **SHALL** automatically upgrade projects opened with a newer engine version by running
-versioned migration scripts that update the .harmonius project file format, re-cook assets, migrate
-deprecated logic graph APIs, create a pre-upgrade backup, execute migrations incrementally across
-intermediate versions, and produce a migration report detailing all changes, warnings, and
-deprecations.
-- **Derived from:** [F-15.15.2](../../features/tools-editor/launcher.md)
-- **Rationale:** Automatic incremental migration with backup and reporting reduces the manual effort
-  and risk of upgrading projects across multiple engine versions.
-- **Verification:** Create a project on an older engine version; open it with a newer version and
-  confirm the migration runs automatically; confirm a pre-upgrade backup exists; confirm the
-  .harmonius project file is updated to the new format; confirm migrations run incrementally through
-  each intermediate version; confirm the migration report lists all changes and warnings.
+### US-15.15.1.1
+As a **developer (P-15)**, I want to install multiple engine versions side by side
+so that different projects can use different engine versions.
 
-## R-15.15.3 Project Browser and Creation Wizard
-The engine **SHALL** display recent projects on the launcher home screen with thumbnails,
-last-modified dates, engine versions, and team members, and provide a creation wizard that guides
-project setup through genre template selection (RPG, FPS, RTS, 2D platformer, VR, empty), target
-platform selection, initial asset pack selection, and Git repository initialization.
-- **Derived from:** [F-15.15.3](../../features/tools-editor/launcher.md)
-- **Rationale:** A guided creation wizard with genre templates accelerates project bootstrapping by
-  pre-configuring gameplay systems, input mappings, and starter content appropriate to the game
-  type.
-- **Verification:** Confirm recent projects appear on the home screen with correct metadata; create
-  a new project using each genre template and confirm the project directory structure, .harmonius
-  file, and pre-configured systems match the template; confirm Git repository is initialized when
-  selected; confirm the editor opens after wizard completion.
+### US-15.15.1.2
+As a **developer (P-15)**, I want to rollback to a previous engine version
+so that I can revert if a new version introduces regressions.
 
-## R-15.15.4 Project File Format and Association
-The engine **SHALL** use a human-readable TOML-format .harmonius project file at the project root
-storing engine version pin, enabled modules, target platforms, team configuration, Git remote URL,
-and project metadata, and register as the default handler for .harmonius files on all platforms so
-double-clicking opens the project in the correct engine version.
-- **Derived from:** [F-15.15.4](../../features/tools-editor/launcher.md)
-- **Rationale:** A human-readable, version-controlled project file ensures project configuration is
-  transparent, diffable, and mergeable across team members using standard version control tools.
-- **Verification:** Create a project and confirm a .harmonius file exists at the root in valid TOML
-  format containing all specified fields; modify the file in a text editor, reopen the project, and
-  confirm changes are respected; double-click the .harmonius file from the OS file manager and
-  confirm the launcher opens the project with the pinned engine version.
+### US-15.15.1.3
+As a **developer (P-15)**, I want update notifications for stable and preview releases
+so that I am aware of new versions without checking manually.
 
-## R-15.15.5 Cross-Game Preferences and Account Management
-The engine **SHALL** maintain global preferences (editor theme, keybindings, viewport defaults,
-recent projects, telemetry opt-in) and account management (GitHub/GitLab/Bitbucket linking, team
-collaboration accounts, AI service credentials) with multi-account support and cloud-based
-preference syncing across machines.
-- **Derived from:** [F-15.15.5](../../features/tools-editor/launcher.md)
-- **Rationale:** Global preferences and account management reduce repetitive per-project
-  configuration and enable seamless transitions between workstations.
-- **Verification:** Set global preferences (theme, keybindings) and confirm they apply across
-  multiple projects; link a platform account and confirm authentication succeeds; switch between
-  personal and organization accounts and confirm correct context; modify preferences on one machine
-  and confirm they sync to another machine via the cloud service.
+### US-15.15.1.4
+As a **developer (P-15)**, I want per-version disk space display with one-click uninstall
+so that I can manage storage for installed engine versions.
 
-## R-15.15.6 Collaboration Setup Wizard
-The engine **SHALL** provide a guided collaboration setup wizard that connects a Git hosting
-provider, configures LFS storage, sets up the real-time collaboration server, invites team members
-with role assignment (admin, developer, artist, designer), configures shared build cache endpoints,
-validates connectivity and authentication, and stores team configuration in the .harmonius project
-file for automatic inheritance by new team members.
-- **Derived from:** [F-15.15.6](../../features/tools-editor/launcher.md)
-- **Rationale:** A guided setup wizard reduces the complexity of configuring multi-service team
-  collaboration, ensuring all team members share a consistent and validated configuration.
-- **Verification:** Run the collaboration wizard; connect a Git provider and confirm authentication
-  succeeds; configure LFS and confirm large file storage works; invite a team member and confirm
-  they receive the invitation with the assigned role; confirm the team configuration is written to
-  the .harmonius project file; clone the project as a new team member and confirm the collaboration
-  configuration is inherited automatically.
+### US-15.15.1.5
+As a **DevOps (P-16)**, I want each installed version isolated so projects pin to a
+specific version
+so that version upgrades are project-by-project decisions.
+
+### US-15.15.1.6
+As an **engine dev (P-26)**, I want platform-native auto-update (Sparkle, WinSparkle,
+AppImage delta)
+so that launcher updates use the platform's standard mechanism.
+
+### US-15.15.1.7
+As an **engine tester (P-27)**, I want to verify two side-by-side versions are fully
+isolated
+so that version isolation is regression-tested.
+
+---
+
+## US-15.15.2 Automatic Project Upgrades
+
+### US-15.15.2.1
+As a **developer (P-15)**, I want automatic project upgrade when opening with a newer
+engine version
+so that migration happens without manual steps.
+
+### US-15.15.2.2
+As a **developer (P-15)**, I want a pre-upgrade backup created automatically
+so that I can restore the project if migration fails.
+
+### US-15.15.2.3
+As a **developer (P-15)**, I want incremental migration across intermediate versions
+so that skipping versions does not break the upgrade path.
+
+### US-15.15.2.4
+As a **developer (P-15)**, I want a migration report detailing all changes and warnings
+so that I understand what changed and what needs manual review.
+
+### US-15.15.2.5
+As a **developer (P-15)**, I want deprecated logic graph APIs migrated to replacements
+so that my graphs work on the new version without manual editing.
+
+### US-15.15.2.6
+As an **engine tester (P-27)**, I want to verify incremental migration from v1.2 to v1.5
+runs 1.2-1.3, 1.3-1.4, and 1.4-1.5 in sequence
+so that incremental migration is regression-tested.
+
+---
+
+## US-15.15.3 Project Browser and Creation Wizard
+
+### US-15.15.3.1
+As a **designer (P-5)**, I want recent projects displayed with thumbnails and metadata
+so that I can open projects quickly from the launcher.
+
+### US-15.15.3.2
+As a **designer (P-5)**, I want a creation wizard with genre template selection
+so that new projects start with pre-configured gameplay systems.
+
+### US-15.15.3.3
+As a **designer (P-5)**, I want target platform selection during project creation
+so that the project is configured for my deployment targets from the start.
+
+### US-15.15.3.4
+As a **developer (P-15)**, I want Git repository initialization during project creation
+so that version control is set up from the beginning.
+
+### US-15.15.3.5
+As a **creative director (P-2)**, I want genre templates (RPG, FPS, RTS, 2D, VR, empty)
+so that teams start with appropriate defaults for their game type.
+
+### US-15.15.3.6
+As an **engine tester (P-27)**, I want to verify each genre template creates a valid
+project with expected pre-configured systems
+so that template correctness is regression-tested.
+
+---
+
+## US-15.15.4 Project File Format and Association
+
+### US-15.15.4.1
+As a **developer (P-15)**, I want a human-readable TOML .harmonius project file
+so that project configuration is diffable and mergeable in VCS.
+
+### US-15.15.4.2
+As a **developer (P-15)**, I want the project file to store engine version pin and
+enabled modules
+so that project configuration is explicit and reproducible.
+
+### US-15.15.4.3
+As a **developer (P-15)**, I want double-clicking .harmonius files to open the project
+in the correct engine version
+so that file association works natively on all platforms.
+
+### US-15.15.4.4
+As an **engine dev (P-26)**, I want file association via Launch Services, registry,
+and XDG MIME
+so that association uses platform-native mechanisms.
+
+### US-15.15.4.5
+As an **engine tester (P-27)**, I want to verify double-clicking a .harmonius file
+launches the pinned engine version
+so that file association is regression-tested.
+
+---
+
+## US-15.15.5 Cross-Game Preferences and Account Management
+
+### US-15.15.5.1
+As a **developer (P-15)**, I want global preferences (theme, keybindings) across projects
+so that my editor settings are consistent regardless of which project I open.
+
+### US-15.15.5.2
+As a **developer (P-15)**, I want to link GitHub, GitLab, and Bitbucket accounts
+so that version control authentication is configured once.
+
+### US-15.15.5.3
+As a **developer (P-15)**, I want multi-account support for personal and organization
+accounts
+so that I can switch contexts without re-authenticating.
+
+### US-15.15.5.4
+As a **developer (P-15)**, I want preference sync across machines via cloud service
+so that my settings follow me when I switch workstations.
+
+### US-15.15.5.5
+As an **engine dev (P-26)**, I want credentials stored in platform keychain
+so that secrets are secured natively per platform.
+
+### US-15.15.5.6
+As an **engine tester (P-27)**, I want to verify preferences sync between two machines
+so that cloud sync is regression-tested.
+
+---
+
+## US-15.15.6 Collaboration Setup Wizard
+
+### US-15.15.6.1
+As a **developer (P-15)**, I want guided setup for Git hosting provider connection
+so that version control is configured correctly without manual steps.
+
+### US-15.15.6.2
+As a **developer (P-15)**, I want LFS storage configuration in the wizard
+so that large file handling is set up from the start.
+
+### US-15.15.6.3
+As a **developer (P-15)**, I want real-time collaboration server setup in the wizard
+so that team collaboration is configured in a single flow.
+
+### US-15.15.6.4
+As a **creative director (P-2)**, I want to invite team members with role assignment
+so that onboarding is a guided process with correct permissions.
+
+### US-15.15.6.5
+As a **DevOps (P-16)**, I want shared build cache endpoint configuration in the wizard
+so that the cache is connected as part of team setup.
+
+### US-15.15.6.6
+As a **DevOps (P-16)**, I want connectivity and authentication validation before
+completing setup
+so that misconfigurations are caught during the wizard.
+
+### US-15.15.6.7
+As an **engine tester (P-27)**, I want to verify team configuration is written to
+.harmonius and inherited by new clones
+so that configuration inheritance is regression-tested.

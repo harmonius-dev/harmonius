@@ -1,134 +1,187 @@
-# R-15.11 -- Shared Build Cache Requirements
+# R-15.11 -- Shared Build Cache User Stories
 
-## R-15.11.1 Centralized Compiled Asset Cache
+## US-15.11.1 Centralized Compiled Asset Cache
 
-The engine **SHALL** provide a web service that stores compiled assets keyed by content hash (source
-content, build settings, tool version) and serves cached results to other developers, ensuring each
-unique asset version is built at most once across the organization.
+### US-15.11.1.1
+As a **developer (P-15)**, I want compiled assets cached by content hash
+so that identical builds are never repeated across the team.
 
-- **Derived from:** [F-15.11.1](../../features/tools-editor/shared-cache.md)
-- **Rationale:** Eliminating redundant builds across developers saves hours of daily compute time
-  and ensures all team members work with identical compiled assets for a given source version.
-- **Verification:** Build an asset on developer A's machine and verify it is uploaded to the cache.
-  Trigger the same build on developer B's machine and verify the cached result is downloaded
-  instead of rebuilt. Modify the source and verify the new build produces a distinct cache entry.
-  Verify authentication via project-scoped API tokens and SSO integration.
+### US-15.11.1.2
+As a **developer (P-15)**, I want to download cached results instead of rebuilding
+so that my build times are reduced to cache fetch times.
 
-## R-15.11.2 Shader Compilation Cache
+### US-15.11.1.3
+As a **DevOps (P-16)**, I want the cache keyed by source content, build settings,
+and tool version
+so that cache entries are invalidated correctly on toolchain changes.
 
-The engine **SHALL** cache compiled shader variants (SPIR-V, MSL, DXIL) keyed by shader source
-hash, target platform, and feature permutation flags, enabling developers to download pre-compiled
-variants from the shared cache instead of rebuilding locally.
+### US-15.11.1.4
+As a **DevOps (P-16)**, I want REST API over HTTPS with token authentication
+so that cache access is secure and auditable.
 
-- **Derived from:** [F-15.11.2](../../features/tools-editor/shared-cache.md)
-- **Rationale:** Shader compilation across all permutations is one of the most time-consuming
-  build steps; caching eliminates redundant compilation and accelerates iteration.
-- **Verification:** Compile shaders for all target platforms via CI and verify cache entries are
-  created per platform (DXIL, SPIR-V, MSL). Fetch a shader variant on a developer machine and
-  verify it matches the CI-compiled output byte-for-byte. Modify the shader source and verify
-  the old cache entry is not served for the new hash.
+### US-15.11.1.5
+As an **engine tester (P-27)**, I want to verify a cache hit returns the identical
+compiled asset without rebuild
+so that cache correctness is regression-tested.
 
-## R-15.11.3 Logic Graph Compilation Cache
+---
 
-The engine **SHALL** cache compiled logic graph bytecode and AOT native code keyed by graph content
-hash and target platform, serving cached outputs instead of recompiling unchanged graphs.
+## US-15.11.2 Shader Compilation Cache
 
-- **Derived from:** [F-15.11.3](../../features/tools-editor/shared-cache.md)
-- **Rationale:** Large projects contain thousands of logic graphs whose recompilation on every
-  editor launch or branch switch wastes significant developer time.
-- **Verification:** Compile a logic graph and verify the bytecode and AOT native code are uploaded
-  to the cache. Launch the editor on a clean workspace and verify the cached output is
-  downloaded. Verify platform-specific AOT entries (x86-64, ARM64) are cached independently.
-  Verify platform-agnostic bytecode entries are shared across platforms.
+### US-15.11.2.1
+As a **developer (P-15)**, I want shader variants cached per platform
+so that I download pre-compiled shaders instead of rebuilding.
 
-## R-15.11.4 New Developer Onboarding Acceleration
+### US-15.11.2.2
+As a **developer (P-15)**, I want cache keyed by shader source hash and feature
+permutation flags
+so that variant-level caching is precise.
 
-The engine **SHALL** fetch all compiled assets, shaders, and graph bytecode from the shared cache on
-first editor launch after a fresh clone, running cache prefetch in parallel with Git LFS downloads,
-with a progress dashboard showing per-category status and estimated time remaining.
+### US-15.11.2.3
+As a **DevOps (P-16)**, I want CI builds to populate shader cache for all platforms
+so that developers always have pre-compiled shaders available.
 
-- **Derived from:** [F-15.11.4](../../features/tools-editor/shared-cache.md)
-- **Rationale:** Reducing first-launch time from hours to minutes removes a major friction point
-  in developer onboarding and branch switching.
-- **Verification:** Perform a fresh repository clone and launch the editor. Verify compiled assets
-  are fetched from the cache instead of built from source. Verify cache prefetch runs in parallel
-  with LFS downloads. Measure first-launch time and verify it is under 10 minutes for a project
-  that takes over 1 hour to build from source. Verify the progress dashboard displays accurate
-  per-category download status.
+### US-15.11.2.4
+As an **engine tester (P-27)**, I want to verify cached shader output matches CI-compiled
+output byte-for-byte
+so that shader cache integrity is regression-tested.
 
-## R-15.11.5 Cache Invalidation and Garbage Collection
+---
 
-The engine **SHALL** invalidate cache entries when the build tool version changes or the source
-content hash is no longer referenced by any active branch, with configurable garbage collection
-schedules, a retention window (default 30 days), and LRU eviction when storage quotas are exceeded.
+## US-15.11.3 Logic Graph Compilation Cache
 
-- **Derived from:** [F-15.11.5](../../features/tools-editor/shared-cache.md)
-- **Rationale:** Automatic invalidation and garbage collection prevent unbounded storage growth
-  and ensure developers never receive stale compiled assets.
-- **Verification:** Change the build tool version and verify all cache entries compiled with the
-  old version are invalidated. Delete all branches referencing a source hash and run garbage
-  collection after the retention window. Verify the orphaned entry is removed. Exceed the storage
-  quota and verify the least-recently-used entry is evicted. Verify administrators can trigger
-  manual garbage collection and view invalidation logs.
+### US-15.11.3.1
+As a **developer (P-15)**, I want compiled graph bytecode cached by content hash
+so that unchanged graphs are not recompiled on every launch.
 
-## R-15.11.6 Cache Transport and Storage
+### US-15.11.3.2
+As a **developer (P-15)**, I want AOT native code cached per target platform
+so that platform-specific compiled graphs are reused.
 
-The engine **SHALL** support multiple storage backends (local filesystem, S3, GCS, Azure Blob
-Storage, on-premise HTTP) with Zstd-compressed content-addressable transfers over HTTPS and
-configurable parallel download concurrency and bandwidth limits.
+### US-15.11.3.3
+As an **engine tester (P-27)**, I want to verify unchanged graphs fetch from cache
+instead of recompiling
+so that graph cache hit behavior is regression-tested.
 
-- **Derived from:** [F-15.11.6](../../features/tools-editor/shared-cache.md)
-- **Rationale:** Flexible backend support accommodates teams ranging from small local setups to
-  large cloud deployments and air-gapped environments.
-- **Verification:** Configure the cache service with S3 and local filesystem backends. Upload and
-  download an asset via each backend and verify content integrity. Verify content is Zstd-
-  compressed in transit. Set a bandwidth limit and verify download throughput does not exceed the
-  configured limit. Verify platform-native HTTP clients are used (NSURLSession, WinHTTP,
-  libcurl).
+---
 
-## R-15.11.7 CI/CD Cache Population
+## US-15.11.4 New Developer Onboarding Acceleration
 
-The engine **SHALL** automatically populate the shared cache from CI build pipelines for all target
-platforms, with idempotent uploads that skip entries with existing keys, and nightly full builds
-that warm the cache for all active branches including recent feature branches.
+### US-15.11.4.1
+As a **developer (P-15)**, I want first editor launch to fetch all compiled assets
+from cache
+so that my first build takes minutes instead of hours.
 
-- **Derived from:** [F-15.11.7](../../features/tools-editor/shared-cache.md)
-- **Rationale:** CI-driven cache population ensures developers always have pre-built assets
-  available without relying on other developers to build first.
-- **Verification:** Run a CI build and verify cache entries are created for all target platforms.
-  Run the same CI build again and verify no redundant uploads occur (idempotent). Verify the
-  standalone CLI tool operates correctly outside the editor on a headless build server. Verify
-  nightly builds produce entries for all active feature branches.
+### US-15.11.4.2
+As a **developer (P-15)**, I want cache prefetch running in parallel with Git LFS
+downloads
+so that both operations saturate available bandwidth.
 
-## Non-Functional Requirements
+### US-15.11.4.3
+As a **developer (P-15)**, I want a progress dashboard showing download status
+so that I can monitor onboarding progress with ETAs.
 
-### R-15.11.NF1 Cache Service Availability and Performance
+### US-15.11.4.4
+As an **engine tester (P-27)**, I want to verify first-launch time is under 10 minutes
+for a project taking 1+ hours to build from source
+so that onboarding acceleration is regression-tested.
 
-The shared build cache service **SHALL** maintain 99.9% availability (less than 8.8 hours downtime
-per year). Cache lookups (hit or miss) **SHALL** complete within 200ms at the 99th percentile.
-Cache uploads **SHALL** complete within 5 seconds for assets up to 100 MB over a 1 Gbps connection.
-The service **SHALL** support at least 100 concurrent developer connections without degradation.
-When the cache service is unavailable, the editor **SHALL** fall back to local builds without
-blocking or error dialogs.
+---
 
-- **Derived from:** F-15.11.1 through F-15.11.8 (all shared cache features).
-- **Rationale:** The shared cache is on the critical path of every developer's build workflow.
-  Slow lookups or downtime negate the time savings the cache provides.
-- **Verification:** Load test the cache service with 100 concurrent clients performing lookups and
-  uploads. Assert 99th percentile lookup latency is under 200ms. Upload a 100 MB asset over 1 Gbps
-  and assert completion within 5 seconds. Simulate cache service downtime and verify the editor
-  builds locally without errors. Measure uptime over a 30-day period and assert 99.9% availability.
+## US-15.11.5 Cache Invalidation and Garbage Collection
 
-## R-15.11.8 Cache Hit Metrics and Monitoring
+### US-15.11.5.1
+As a **DevOps (P-16)**, I want cache entries invalidated on tool version change
+so that stale compiled assets are never served.
 
-The engine **SHALL** export cache hit rate, miss rate, storage usage, download bandwidth, and per-
-asset build time savings to a monitoring dashboard, with configurable alerts when the hit rate drops
-below a threshold, and per-developer and per-team breakdowns with historical trends.
+### US-15.11.5.2
+As a **DevOps (P-16)**, I want configurable garbage collection schedules
+so that orphaned entries are cleaned up automatically.
 
-- **Derived from:** [F-15.11.8](../../features/tools-editor/shared-cache.md)
-- **Rationale:** Monitoring cache effectiveness identifies workflow bottlenecks, tool version
-  regressions, and misconfigurations that degrade build times.
-- **Verification:** Build assets with and without cache hits and verify the dashboard reports
-  accurate hit and miss rates. Configure a hit rate alert threshold, drop the hit rate below it,
-  and verify the alert fires. Verify per-developer breakdowns show distinct usage patterns.
-  Verify metrics are exported in OpenTelemetry format.
+### US-15.11.5.3
+As a **DevOps (P-16)**, I want LRU eviction when storage quota is exceeded
+so that the cache does not grow unboundedly.
+
+### US-15.11.5.4
+As a **server admin (P-22)**, I want manual garbage collection and invalidation logs
+so that I can audit and trigger cleanup when needed.
+
+### US-15.11.5.5
+As an **engine tester (P-27)**, I want to verify tool version change invalidates all
+old entries
+so that invalidation correctness is regression-tested.
+
+---
+
+## US-15.11.6 Cache Transport and Storage
+
+### US-15.11.6.1
+As a **DevOps (P-16)**, I want multiple storage backends (S3, GCS, Azure, local, HTTP)
+so that the cache fits our infrastructure.
+
+### US-15.11.6.2
+As a **DevOps (P-16)**, I want Zstd compression for cache transfers
+so that network bandwidth is used efficiently.
+
+### US-15.11.6.3
+As a **DevOps (P-16)**, I want configurable download concurrency and bandwidth limits
+so that cache traffic does not saturate the office network.
+
+### US-15.11.6.4
+As an **engine dev (P-26)**, I want platform-native HTTP clients (NSURLSession, WinHTTP,
+libcurl)
+so that transfers use the most performant stack per platform.
+
+### US-15.11.6.5
+As an **engine tester (P-27)**, I want to verify bandwidth limit is respected during
+downloads
+so that throttling is regression-tested.
+
+---
+
+## US-15.11.7 CI/CD Cache Population
+
+### US-15.11.7.1
+As a **DevOps (P-16)**, I want CI builds to auto-populate the cache for all platforms
+so that developers have pre-built assets without building themselves.
+
+### US-15.11.7.2
+As a **DevOps (P-16)**, I want idempotent uploads that skip existing entries
+so that duplicate uploads do not waste bandwidth.
+
+### US-15.11.7.3
+As a **DevOps (P-16)**, I want nightly builds warming cache for all active branches
+so that feature branch developers benefit from the cache.
+
+### US-15.11.7.4
+As a **DevOps (P-16)**, I want a standalone CLI for headless build servers
+so that cache population works outside the editor.
+
+### US-15.11.7.5
+As an **engine tester (P-27)**, I want to verify duplicate upload is a no-op
+so that idempotent upload behavior is regression-tested.
+
+---
+
+## US-15.11.8 Cache Hit Metrics and Monitoring
+
+### US-15.11.8.1
+As a **DevOps (P-16)**, I want a monitoring dashboard with hit rate and storage usage
+so that I can track cache effectiveness.
+
+### US-15.11.8.2
+As a **DevOps (P-16)**, I want configurable alerts when hit rate drops below threshold
+so that cache misconfigurations are detected quickly.
+
+### US-15.11.8.3
+As a **DevOps (P-16)**, I want per-developer and per-team usage breakdowns
+so that I can identify workflow bottlenecks.
+
+### US-15.11.8.4
+As a **DevOps (P-16)**, I want metrics exported in OpenTelemetry format
+so that I can integrate with Grafana, Datadog, or other observability tools.
+
+### US-15.11.8.5
+As an **engine tester (P-27)**, I want to verify the alert fires when hit rate drops
+below threshold
+so that alerting is regression-tested.

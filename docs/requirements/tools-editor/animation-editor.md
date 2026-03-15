@@ -1,130 +1,223 @@
-# R-15.4 — Animation Editor Requirements
+# R-15.4 -- Animation Editor User Stories
 
-## Timeline and Curves
+## US-15.4.1 Animation Timeline
 
-### R-15.4.1 Animation Timeline
+### US-15.4.1.1
+As a **artist (P-8)**, I want a multi-track timeline for animation clips
+so that I can view keyframes across translation, rotation, and scale channels.
 
-The engine **SHALL** provide a multi-track timeline for viewing and editing animation clips with
-color-coded keyframe tracks for translation, rotation, scale, and custom properties, supporting
-playback controls, scrubbing, frame stepping, looping, speed adjustment, and keyframe move, copy,
-and snap operations.
+### US-15.4.1.2
+As a **artist (P-8)**, I want color-coded tracks for each property type
+so that I can distinguish translation from rotation at a glance.
 
-- **Derived from:** [F-15.4.1](../../features/tools-editor/animation-editor.md)
-- **Rationale:** A multi-track timeline is the standard animation editing paradigm, and keyframe
-  manipulation with playback controls is essential for authoring and reviewing animation clips.
-- **Verification:** Integration test: load an animation clip with translation and rotation tracks.
-  Verify keyframes display on correct tracks with distinct colors. Move a keyframe to a new frame,
-  scrub to that frame, and verify the pose matches the keyframe value. Copy a keyframe, paste it
-  at a different time, and verify the pose is duplicated. Toggle looping and verify playback wraps.
+### US-15.4.1.3
+As a **artist (P-8)**, I want playback controls with scrubbing and frame stepping
+so that I can review animation frame-by-frame.
 
-### R-15.4.2 Curve Editor
+### US-15.4.1.4
+As a **artist (P-8)**, I want to move and copy keyframes along the timeline
+so that I can retime animation events without re-keying.
 
-The engine **SHALL** provide an animation curve editor with Bezier and Hermite tangent modes,
-per-channel visibility toggles, tangent manipulation handles, auto-tangent computation, curve
-presets (ease-in, ease-out, linear, stepped), and box selection for multi-curve batch editing.
+### US-15.4.1.5
+As a **artist (P-8)**, I want keyframe snapping to frame boundaries
+so that keys align precisely to frame numbers.
 
-- **Derived from:** [F-15.4.2](../../features/tools-editor/animation-editor.md)
-- **Rationale:** Fine-grained curve editing controls interpolation quality between keyframes, which
-  directly determines whether animation motion appears natural or mechanical.
-- **Verification:** Integration test: create a two-keyframe animation, switch to the curve editor,
-  and set Bezier tangent mode. Drag a tangent handle and verify the interpolated value at the
-  midpoint changes accordingly. Apply the ease-in preset and verify the curve shape matches the
-  expected ease-in profile. Select multiple curves via box selection, apply stepped mode, and
-  verify all selected curves switch to stepped interpolation.
+### US-15.4.1.6
+As a **artist (P-8)**, I want configurable playback speed and looping
+so that I can evaluate animations at different rates.
 
-## Skeleton and Preview
+### US-15.4.1.7
+As a **designer (P-5)**, I want to preview custom property tracks on the timeline
+so that I can synchronize gameplay events with animation frames.
 
-### R-15.4.3 Skeleton Viewer
+### US-15.4.1.8
+As an **engine tester (P-27)**, I want to verify scrubbing at 300 bones stays above
+30 FPS
+so that timeline performance is regression-tested.
 
-The engine **SHALL** render the skeleton hierarchy as a 3D bone visualization overlaid on the mesh,
-with selectable bones that highlight children, constraints, and IK chains, supporting toggleable
-display modes (octahedral, stick, axes) and multi-skeleton overlay for comparison.
+---
 
-- **Derived from:** [F-15.4.3](../../features/tools-editor/animation-editor.md)
-- **Rationale:** Visual bone selection with hierarchy highlighting and constraint display is
-  essential for animators to understand and debug complex rigs and IK setups.
-- **Verification:** Integration test: load a rigged character, select a bone, and verify its
-  children and associated IK chain highlight. Switch between octahedral, stick, and axes display
-  modes and verify the bone visualization changes. Load a second skeleton, enable overlay, and
-  verify both skeletons render simultaneously with distinguishable colors.
+## US-15.4.2 Curve Editor
 
-### R-15.4.4 Animation Preview
+### US-15.4.2.1
+As a **artist (P-8)**, I want Bezier and Hermite tangent modes for curves
+so that I can control interpolation smoothness precisely.
 
-The engine **SHALL** provide a dedicated animation preview viewport with configurable ground plane,
-lighting, and camera orbit, supporting playback of blend results, layered animations, and root
-motion trajectories, with both game-quality rendering and debug overlays (velocity vectors,
-contact points, bone trails).
+### US-15.4.2.2
+As a **artist (P-8)**, I want per-channel visibility toggles
+so that I can isolate individual curves for focused editing.
 
-- **Derived from:** [F-15.4.4](../../features/tools-editor/animation-editor.md)
-- **Rationale:** Previewing animations in isolation with debug overlays enables animators to
-  evaluate motion quality, blending artifacts, and root motion paths without running the full game.
-- **Verification:** Integration test: play an animation in the preview viewport and verify the
-  character mesh animates correctly on the ground plane. Enable root motion visualization and
-  verify the trajectory path renders. Layer two animations and verify the blended result plays.
-  Toggle debug overlays (velocity vectors, bone trails) and verify they render over the mesh.
+### US-15.4.2.3
+As a **artist (P-8)**, I want tangent manipulation handles on keyframes
+so that I can adjust ease-in and ease-out directly on the curve.
 
-## Non-Functional Requirements
+### US-15.4.2.4
+As a **artist (P-8)**, I want auto-tangent computation
+so that smooth curves are generated automatically from keyframe positions.
 
-### R-15.4.NF1 Animation Playback and Scrubbing Performance
+### US-15.4.2.5
+As a **artist (P-8)**, I want curve presets (ease-in, ease-out, linear, stepped)
+so that I can apply common interpolation patterns with one click.
 
-The animation timeline **SHALL** support scrubbing at interactive frame rates (above 30 FPS) for
-characters with up to 300 bones. Keyframe insertion, deletion, and move operations **SHALL** complete
-within one frame (under 33ms). The curve editor **SHALL** maintain interactive performance with up
-to 10,000 keyframes visible simultaneously. Blend space preview **SHALL** update within one frame
-when the parameter crosshair is moved.
+### US-15.4.2.6
+As a **artist (P-8)**, I want box selection for multi-curve batch editing
+so that I can adjust timing across many bones simultaneously.
 
-- **Derived from:** F-15.4.1 through F-15.4.7 (all animation editor features).
-- **Rationale:** Animators scrub through timelines continuously while evaluating motion quality.
-  Dropped frames during scrub or slow keyframe operations break the evaluation workflow.
-- **Verification:** Load a 300-bone character with a 5,000-frame animation. Scrub through the
-  timeline and assert frame rate stays above 30 FPS. Insert 100 keyframes sequentially and assert
-  each completes within 33ms. Display 10,000 keyframes in the curve editor and assert pan/zoom
-  remains interactive.
+### US-15.4.2.7
+As an **engine tester (P-27)**, I want to verify curve presets produce mathematically
+correct interpolation profiles
+so that preset accuracy is regression-tested.
 
-## Blend and State Authoring
+---
 
-### R-15.4.5 Blend Space Editor
+## US-15.4.3 Skeleton Viewer
 
-The engine **SHALL** provide a 1D and 2D blend space editor where animation clips are positioned
-in parameter space, with drag-based sample repositioning, interpolation region visualization,
-and real-time blended output preview driven by a movable parameter-space crosshair.
+### US-15.4.3.1
+As a **artist (P-8)**, I want 3D bone visualization overlaid on the mesh
+so that I can see the skeleton driving the character's deformation.
 
-- **Derived from:** [F-15.4.5](../../features/tools-editor/animation-editor.md)
-- **Rationale:** Blend spaces drive locomotion systems (speed vs. direction blending), and visual
-  editing with live preview enables animators to tune interpolation without code changes.
-- **Verification:** Integration test: create a 2D blend space with four animation samples at corner
-  positions. Move the crosshair to the center and verify the preview shows an equal blend of all
-  four samples. Move a sample to a new position, move the crosshair near it, and verify that
-  sample dominates the blend. Verify interpolation region boundaries update when samples are
-  repositioned.
+### US-15.4.3.2
+As a **artist (P-8)**, I want selectable bones that highlight children and IK chains
+so that I can understand hierarchy relationships at a glance.
 
-### R-15.4.6 State Machine Editor
+### US-15.4.3.3
+As a **artist (P-8)**, I want toggleable display modes (octahedral, stick, axes)
+so that I can choose the visualization best suited to my current task.
 
-The engine **SHALL** provide a visual node-graph editor for authoring animation state machines
-with states (clips or blend spaces), transitions (blend durations, conditions, interruption
-rules), active-state highlighting during preview playback, and real-time transition evaluation
-display.
+### US-15.4.3.4
+As a **artist (P-8)**, I want multi-skeleton overlay for comparison
+so that I can compare source and target rigs side by side.
 
-- **Derived from:** [F-15.4.6](../../features/tools-editor/animation-editor.md)
-- **Rationale:** Visual state machine editing with live debugging enables animators to author and
-  troubleshoot complex locomotion graphs without inspecting code or log output.
-- **Verification:** Integration test: create a state machine with idle and walk states connected by
-  a speed-threshold transition. Play the preview, set speed above the threshold, and verify the
-  active-state highlight moves from idle to walk. Verify the transition evaluator displays the
-  blend duration and condition status in real time. Add an interruption rule and verify a mid-
-  transition interrupt triggers correctly.
+### US-15.4.3.5
+As a **technical artist (P-13)**, I want constraint visualization on selected bones
+so that I can verify IK and constraint setups visually.
 
-### R-15.4.7 Retargeting Setup
+### US-15.4.3.6
+As an **engine tester (P-27)**, I want to verify bone selection highlights the correct
+child chain
+so that hierarchy visualization is regression-tested.
 
-The engine **SHALL** provide a retargeting editor with side-by-side source and target skeleton
-views, bone-pair assignment, limb length ratio adjustment, and real-time retargeted animation
-preview, enabling animation sharing across differently proportioned rigs.
+---
 
-- **Derived from:** [F-15.4.7](../../features/tools-editor/animation-editor.md)
-- **Rationale:** Retargeting enables sharing animation libraries across humanoid, creature, and
-  mount rigs, reducing the animation authoring workload for large character rosters.
-- **Verification:** Integration test: load a source and target skeleton with different proportions.
-  Assign bone pairs for all major joints. Play an animation on the source and verify the target
-  plays a retargeted version with correct joint mapping. Adjust limb length ratios and verify the
-  retargeted animation updates in the preview. Verify foot contact positions are preserved within
-  a configurable tolerance.
+## US-15.4.4 Animation Preview
+
+### US-15.4.4.1
+As a **artist (P-8)**, I want a dedicated preview viewport with configurable ground plane
+so that I can evaluate animation in isolation from the scene.
+
+### US-15.4.4.2
+As a **artist (P-8)**, I want adjustable lighting and camera orbit in the preview
+so that I can view the animation from any angle with clear lighting.
+
+### US-15.4.4.3
+As a **artist (P-8)**, I want to preview blend results and layered animations
+so that I can evaluate how multiple clips combine before use in-game.
+
+### US-15.4.4.4
+As a **artist (P-8)**, I want root motion trajectory visualization
+so that I can verify the character's travel path during the animation.
+
+### US-15.4.4.5
+As a **artist (P-8)**, I want debug overlays for velocity vectors and bone trails
+so that I can diagnose motion issues without external tools.
+
+### US-15.4.4.6
+As a **designer (P-5)**, I want game-quality rendering in the animation preview
+so that I can evaluate animation with final visual fidelity.
+
+### US-15.4.4.7
+As an **engine tester (P-27)**, I want to verify root motion trajectory matches
+expected travel distance
+so that root motion accuracy is regression-tested.
+
+---
+
+## US-15.4.5 Blend Space Editor
+
+### US-15.4.5.1
+As a **artist (P-8)**, I want a 2D blend space where I position animation clips
+so that I can define speed-vs-direction locomotion blending visually.
+
+### US-15.4.5.2
+As a **artist (P-8)**, I want drag-based repositioning of blend samples
+so that I can tune blend behavior interactively.
+
+### US-15.4.5.3
+As a **artist (P-8)**, I want interpolation region visualization
+so that I can see which clips contribute at each parameter-space position.
+
+### US-15.4.5.4
+As a **artist (P-8)**, I want real-time blended output preview via crosshair
+so that I can evaluate blend quality by moving through parameter space.
+
+### US-15.4.5.5
+As a **artist (P-8)**, I want 1D blend space support for simpler parameters
+so that I can blend walk-to-run along a single speed axis.
+
+### US-15.4.5.6
+As an **engine tester (P-27)**, I want to verify the crosshair at center produces equal
+blend of corner samples
+so that interpolation correctness is regression-tested.
+
+---
+
+## US-15.4.6 State Machine Editor
+
+### US-15.4.6.1
+As a **artist (P-8)**, I want a visual node-graph editor for animation state machines
+so that I can author locomotion logic without code.
+
+### US-15.4.6.2
+As a **artist (P-8)**, I want states representing clips or blend spaces
+so that I can reference existing animation assets as machine states.
+
+### US-15.4.6.3
+As a **artist (P-8)**, I want transitions with configurable blend durations and conditions
+so that I can define when and how states change.
+
+### US-15.4.6.4
+As a **artist (P-8)**, I want active-state highlighting during preview playback
+so that I can see which state the machine is in while previewing.
+
+### US-15.4.6.5
+As a **artist (P-8)**, I want real-time transition evaluation display
+so that I can debug why transitions fire or fail to fire.
+
+### US-15.4.6.6
+As a **artist (P-8)**, I want interruption rules for mid-transition overrides
+so that high-priority state changes can preempt ongoing transitions.
+
+### US-15.4.6.7
+As an **engine tester (P-27)**, I want to verify transition conditions trigger state
+changes at the correct parameter values
+so that state machine logic is regression-tested.
+
+---
+
+## US-15.4.7 Retargeting Setup
+
+### US-15.4.7.1
+As a **artist (P-8)**, I want a side-by-side skeleton comparison view
+so that I can see source and target rigs simultaneously during mapping.
+
+### US-15.4.7.2
+As a **artist (P-8)**, I want bone-pair assignment between source and target skeletons
+so that I can map corresponding joints across different rigs.
+
+### US-15.4.7.3
+As a **artist (P-8)**, I want limb length ratio adjustment
+so that retargeted animations account for proportion differences.
+
+### US-15.4.7.4
+As a **artist (P-8)**, I want real-time retargeted animation preview
+so that I can evaluate retargeting quality before committing the mapping.
+
+### US-15.4.7.5
+As a **technical artist (P-13)**, I want retargeting to work across humanoid, creature,
+and mount rigs
+so that animation libraries are shared across the entire character roster.
+
+### US-15.4.7.6
+As an **engine tester (P-27)**, I want to verify foot contact positions are preserved
+within configurable tolerance
+so that retargeting accuracy is regression-tested.

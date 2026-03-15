@@ -1,144 +1,242 @@
-# R-15.10 -- Version Control & Git Integration Requirements
+# R-15.10 -- Version Control & Git Integration User Stories
 
-## R-15.10.1 Native Git Integration
+## US-15.10.1 Native Git Integration
 
-The engine **SHALL** embed a fully integrated Git client using libgit2 that provides stage, commit,
-push, pull, branch, merge, rebase, and stash operations through the editor UI, including a commit
-history browser with a visual branch graph and per-asset structural diffs.
+### US-15.10.1.1
+As a **developer (P-15)**, I want stage, commit, push, and pull from the editor UI
+so that I can perform version control without a command line.
 
-- **Derived from:** [F-15.10.1](../../features/tools-editor/version-control.md)
-- **Rationale:** An embedded Git client eliminates context switching to external tools and enables
-  asset-aware diffs that raw text-based Git tools cannot provide.
-- **Verification:** Clone a repository from the editor UI. Stage, commit, and push a modified
-  asset. Verify the commit appears in the branch graph. Perform a branch, merge, and rebase
-  operation and verify repository state matches the equivalent command-line operations. Verify
-  SSH key access uses the platform credential store (Keychain, Credential Manager, libsecret).
+### US-15.10.1.2
+As a **developer (P-15)**, I want a visual branch graph in the commit history browser
+so that I can understand branch topology at a glance.
 
-## R-15.10.2 Git LFS Management
+### US-15.10.1.3
+As a **developer (P-15)**, I want per-asset structural diffs in the history browser
+so that I can see what changed in binary assets without external tools.
 
-The engine **SHALL** automatically track binary assets via Git LFS based on file extension and
-configurable size thresholds, display lock owner icons on LFS-tracked assets in the asset browser,
-and provide lock/unlock and bulk LFS operations (migrate, fetch, prune) from the version control
-panel.
+### US-15.10.1.4
+As a **developer (P-15)**, I want branch, merge, rebase, and stash operations in-editor
+so that I can manage complex branch workflows without leaving the editor.
 
-- **Derived from:** [F-15.10.2](../../features/tools-editor/version-control.md)
-- **Rationale:** Automatic LFS tracking prevents accidental storage of large binaries in the Git
-  object store, and integrated lock management avoids merge conflicts on non-mergeable assets.
-- **Verification:** Add a binary asset exceeding the size threshold and verify it is automatically
-  tracked by LFS. Lock an asset, verify the lock icon appears for other users, and verify a
-  second user cannot edit the locked asset. Run a bulk fetch operation and verify all LFS objects
-  download. Verify the storage quota monitor displays accurate usage.
+### US-15.10.1.5
+As a **artist (P-8)**, I want a simplified commit workflow with staging and commit
+so that I can save my work to version control without Git expertise.
 
-## R-15.10.3 Asset-Aware Merge Driver
+### US-15.10.1.6
+As an **engine dev (P-26)**, I want libgit2-based Git operations for cross-platform
+consistency
+so that repository operations behave identically on macOS, Windows, and Linux.
 
-The engine **SHALL** register a custom Git merge driver that invokes the engine's structural merge
-system for binary and structured asset formats, performing three-way structural merge on assets such
-as logic graphs, material graphs, prefabs, and data tables, with fallback to the visual diff tool
-for unresolvable conflicts.
+### US-15.10.1.7
+As an **engine dev (P-26)**, I want SSH key access via platform credential stores
+so that authentication uses Keychain, Credential Manager, or libsecret.
 
-- **Derived from:** [F-15.10.3](../../features/tools-editor/version-control.md)
-- **Rationale:** Structural merge resolves asset conflicts at the semantic level (per-node,
-  per-property) instead of failing outright on binary files, reducing merge friction for asset-
-  heavy workflows.
-- **Verification:** Create conflicting edits on a logic graph asset in two branches. Merge the
-  branches and verify the merge driver performs a three-way structural merge resolving compatible
-  changes automatically. Introduce an unresolvable conflict and verify the visual diff tool opens
-  for manual resolution. Confirm the driver is registered via `.gitattributes`.
+### US-15.10.1.8
+As an **engine tester (P-27)**, I want to verify all Git operations produce identical
+results to command-line equivalents
+so that the embedded client is regression-tested against git CLI.
 
-## R-15.10.4 Branch-Per-Feature Workflow
+---
 
-The engine **SHALL** support creating feature branches, switching branches with asset cache
-preservation, and creating pull/merge requests from the editor UI, with warnings on unsaved changes
-and auto-populated pull request descriptions from the branch commit history.
+## US-15.10.2 Git LFS Management
 
-- **Derived from:** [F-15.10.4](../../features/tools-editor/version-control.md)
-- **Rationale:** Integrated branch workflow reduces the barrier to adopting branch-per-feature
-  practices, especially for non-programmers who may not be comfortable with command-line Git.
-- **Verification:** Create a feature branch from the editor. Make changes and switch back to the
-  main branch. Verify a warning appears for unsaved changes with stash/shelve options. Switch
-  branches and verify compiled asset caches are preserved. Create a pull request and verify the
-  description is auto-populated from commit messages. Verify integration with GitHub, GitLab,
-  Bitbucket, and Azure DevOps APIs.
+### US-15.10.2.1
+As a **developer (P-15)**, I want automatic LFS tracking based on file extension
+so that binary assets are tracked by LFS without manual configuration.
 
-## R-15.10.5 Collaborative Presence
+### US-15.10.2.2
+As a **developer (P-15)**, I want configurable size thresholds for LFS tracking
+so that files above a set size are automatically LFS-managed.
 
-The engine **SHALL** display real-time presence indicators showing which team members are editing
-which assets, with colored avatar badges in the asset browser, and provide optional pessimistic
-locking for non-mergeable assets with automatic lock queue management and holder notification.
+### US-15.10.2.3
+As a **artist (P-8)**, I want lock owner icons on LFS-tracked assets in the browser
+so that I can see who is editing a binary asset before opening it.
 
-- **Derived from:** [F-15.10.5](../../features/tools-editor/version-control.md)
-- **Rationale:** Presence visibility prevents wasted effort from concurrent edits on non-mergeable
-  assets and enables coordination without external communication tools.
-- **Verification:** Open the same project in two editor instances. Verify user A sees user B's
-  avatar badge on the asset user B has open. Enable pessimistic locking on a terrain heightmap.
-  Verify a second user's edit attempt queues a lock request and the lock holder receives a
-  notification. Verify presence falls back to LFS lock state polling when the WebSocket service
-  is unavailable.
+### US-15.10.2.4
+As a **artist (P-8)**, I want lock/unlock from the asset context menu
+so that I can claim exclusive edit rights on non-mergeable assets.
 
-## R-15.10.6 Partial Clone and Sparse Checkout
+### US-15.10.2.5
+As a **DevOps (P-16)**, I want bulk LFS operations (migrate, fetch, prune)
+so that I can manage LFS storage efficiently.
 
-The engine **SHALL** support Git partial clone (blobless and treeless modes) and sparse checkout with
-role-configurable patterns so developers download only the assets relevant to their role, with
-placeholder thumbnails and one-click on-demand fetch for missing assets.
+### US-15.10.2.6
+As a **DevOps (P-16)**, I want an LFS storage quota monitor
+so that I can track usage against team or organization limits.
 
-- **Derived from:** [F-15.10.6](../../features/tools-editor/version-control.md)
-- **Rationale:** Partial clone and sparse checkout reduce clone times and local disk usage for
-  massive repositories where individual developers need only a subset of assets.
-- **Verification:** Clone a repository using blobless mode and verify the clone size is
-  significantly smaller than a full clone. Configure sparse checkout patterns for an artist role
-  and verify only art assets are checked out. Verify missing assets display placeholder
-  thumbnails. Click the on-demand fetch button and verify the asset downloads in the background
-  without blocking the editor.
+### US-15.10.2.7
+As an **engine tester (P-27)**, I want to verify assets exceeding the size threshold
+are automatically LFS-tracked
+so that auto-tracking is regression-tested.
 
-## R-15.10.7 Shelving and Local Stash
+---
 
-The engine **SHALL** allow saving work-in-progress changes to named shelves that store modified
-assets with structural diffs, support sharing shelves via the shared cache, and merge shelved
-changes with the current working state using the structural merge system.
+## US-15.10.3 Asset-Aware Merge Driver
 
-- **Derived from:** [F-15.10.7](../../features/tools-editor/version-control.md)
-- **Rationale:** Named shelves provide richer work-in-progress management than plain Git stash by
-  preserving structural diffs and enabling team handoff scenarios.
-- **Verification:** Create a named shelf with modified assets. Verify the shelf includes
-  structural diffs. Apply the shelf to a modified working state and verify the structural merge
-  system resolves compatible changes. Share a shelf via the shared cache and verify another
-  developer can retrieve and apply it. Verify shelf data is stored in `.harmonius/shelves/` and
-  excluded from version control.
+### US-15.10.3.1
+As a **developer (P-15)**, I want a custom merge driver for structured asset formats
+so that binary assets merge at the semantic level instead of failing.
 
-## Non-Functional Requirements
+### US-15.10.3.2
+As a **developer (P-15)**, I want three-way structural merge on logic graphs and prefabs
+so that concurrent graph edits merge automatically when compatible.
 
-### R-15.10.NF1 Version Control Operation Performance
+### US-15.10.3.3
+As a **developer (P-15)**, I want fallback to visual diff for unresolvable conflicts
+so that I can resolve asset conflicts per-node or per-property.
 
-Git operations invoked through the editor **SHALL** meet the following performance targets:
-- `git status` equivalent: under 500ms for repositories with up to 100,000 tracked files.
-- `git commit` (staged files): under 2 seconds for commits touching up to 1,000 files.
-- Branch switch with asset cache preservation: under 10 seconds for branches diverging by up to
-  5,000 files.
-- LFS lock query: under 1 second for repositories with up to 10,000 LFS-tracked files.
+### US-15.10.3.4
+As a **DevOps (P-16)**, I want the merge driver auto-registered via .gitattributes
+so that it works automatically on project clone without manual setup.
 
-All Git operations **SHALL** execute on a background thread and **SHALL NOT** block the editor UI.
-Progress indicators **SHALL** display for operations exceeding 1 second.
+### US-15.10.3.5
+As an **engine tester (P-27)**, I want to verify structural merge resolves compatible
+changes automatically
+so that merge correctness is regression-tested with known conflict scenarios.
 
-- **Derived from:** F-15.10.1 through F-15.10.8 (all version control features).
-- **Rationale:** Version control operations occur frequently during development. Blocking the UI
-  during Git operations disrupts the editing workflow and discourages frequent commits.
-- **Verification:** Create a repository with 100,000 tracked files. Measure `git status` time and
-  assert under 500ms. Stage 1,000 files and measure commit time; assert under 2 seconds. Switch
-  branches with 5,000 file differences and assert completion under 10 seconds. Verify a progress
-  indicator appears for operations exceeding 1 second. Verify the UI remains interactive during
-  all operations.
+---
 
-## R-15.10.8 Multi-Provider Git Hosting Support
+## US-15.10.4 Branch-Per-Feature Workflow
 
-The engine **SHALL** support GitHub, GitLab, Bitbucket, and self-hosted Git servers through a
-provider abstraction layer, with auto-detection from the remote URL, provider-specific features
-(pull requests, code review, issue linking, CI status), and all provider interactions accessible
-within the editor.
+### US-15.10.4.1
+As a **developer (P-15)**, I want to create feature branches from the editor UI
+so that I can start isolated work without the command line.
 
-- **Derived from:** [F-15.10.8](../../features/tools-editor/version-control.md)
-- **Rationale:** A provider abstraction ensures teams are not locked into a single hosting
-  platform and can perform all version control workflows without leaving the editor.
-- **Verification:** Configure projects with GitHub, GitLab, and Bitbucket remotes. Verify the
-  provider is auto-detected from each remote URL. Create a pull request, add a review comment,
-  and merge -- all from the editor UI. Verify API tokens are stored in the platform credential
-  store. Verify a self-hosted instance works with a manually configured base URL.
+### US-15.10.4.2
+As a **developer (P-15)**, I want branch switching with asset cache preservation
+so that switching branches does not require full rebuild.
+
+### US-15.10.4.3
+As a **developer (P-15)**, I want pull/merge request creation from the editor
+so that I can submit work for review without a web browser.
+
+### US-15.10.4.4
+As a **developer (P-15)**, I want warnings on unsaved changes before branch switch
+so that I do not lose work when changing branches.
+
+### US-15.10.4.5
+As a **artist (P-8)**, I want auto-populated PR descriptions from commit history
+so that my pull request summarizes my work automatically.
+
+### US-15.10.4.6
+As a **DevOps (P-16)**, I want integration with GitHub, GitLab, Bitbucket, and
+Azure DevOps APIs
+so that PR workflows work with any hosting provider.
+
+### US-15.10.4.7
+As an **engine tester (P-27)**, I want to verify branch switch preserves compiled asset
+caches
+so that cache preservation is regression-tested.
+
+---
+
+## US-15.10.5 Collaborative Presence
+
+### US-15.10.5.1
+As a **developer (P-15)**, I want real-time presence indicators showing who edits what
+so that I can avoid concurrent edits on the same asset.
+
+### US-15.10.5.2
+As a **artist (P-8)**, I want colored avatar badges on assets in the browser
+so that I can see at a glance which assets are being edited.
+
+### US-15.10.5.3
+As a **artist (P-8)**, I want pessimistic locking for non-mergeable assets
+so that concurrent edits on heightmaps and lightmaps are prevented.
+
+### US-15.10.5.4
+As a **artist (P-8)**, I want automatic lock queue with holder notification
+so that I can wait for a lock without repeatedly checking.
+
+### US-15.10.5.5
+As an **engine dev (P-26)**, I want WebSocket-based presence with LFS lock fallback
+so that presence works even when the WebSocket service is unavailable.
+
+### US-15.10.5.6
+As an **engine tester (P-27)**, I want to verify presence indicators show correct
+editing user across two editor instances
+so that presence accuracy is regression-tested.
+
+---
+
+## US-15.10.6 Partial Clone and Sparse Checkout
+
+### US-15.10.6.1
+As a **developer (P-15)**, I want Git partial clone (blobless/treeless) support
+so that initial clone downloads minimal data.
+
+### US-15.10.6.2
+As a **developer (P-15)**, I want sparse checkout with role-configurable patterns
+so that artists get art assets and programmers get source code.
+
+### US-15.10.6.3
+As a **artist (P-8)**, I want placeholder thumbnails for missing assets
+so that the browser is usable even when assets are not checked out.
+
+### US-15.10.6.4
+As a **artist (P-8)**, I want one-click on-demand fetch for missing assets
+so that I can download specific assets without fetching the entire repo.
+
+### US-15.10.6.5
+As a **DevOps (P-16)**, I want fetch operations to run in the background
+so that downloading missing assets does not block the editor.
+
+### US-15.10.6.6
+As an **engine tester (P-27)**, I want to verify partial clone size is significantly
+smaller than full clone
+so that partial clone effectiveness is regression-tested.
+
+---
+
+## US-15.10.7 Shelving and Local Stash
+
+### US-15.10.7.1
+As a **developer (P-15)**, I want named shelves for work-in-progress changes
+so that I can save uncommitted work with descriptive names.
+
+### US-15.10.7.2
+As a **developer (P-15)**, I want shelves to store structural diffs alongside assets
+so that I can review shelved changes with rich context.
+
+### US-15.10.7.3
+As a **developer (P-15)**, I want to share shelves via the shared cache
+so that I can hand off work-in-progress to a colleague.
+
+### US-15.10.7.4
+As a **developer (P-15)**, I want shelf application to use structural merge
+so that applying a shelf handles overlapping edits correctly.
+
+### US-15.10.7.5
+As an **engine tester (P-27)**, I want to verify shelf data is stored in
+.harmonius/shelves/ and excluded from VCS
+so that shelf isolation is regression-tested.
+
+---
+
+## US-15.10.8 Multi-Provider Git Hosting Support
+
+### US-15.10.8.1
+As a **developer (P-15)**, I want auto-detection of hosting provider from remote URL
+so that the editor configures itself without manual provider selection.
+
+### US-15.10.8.2
+As a **developer (P-15)**, I want pull request creation, review, and merge in-editor
+so that I never need to open a web browser for PR workflows.
+
+### US-15.10.8.3
+As a **developer (P-15)**, I want issue linking and CI status display in-editor
+so that I can track work items alongside code changes.
+
+### US-15.10.8.4
+As a **DevOps (P-16)**, I want support for self-hosted instances with configurable
+base URL
+so that the editor works with on-premise Git servers.
+
+### US-15.10.8.5
+As a **DevOps (P-16)**, I want API tokens stored in the platform credential store
+so that hosting credentials are secured natively per platform.
+
+### US-15.10.8.6
+As an **engine tester (P-27)**, I want to verify PR workflows against GitHub, GitLab,
+and Bitbucket
+so that multi-provider support is regression-tested.

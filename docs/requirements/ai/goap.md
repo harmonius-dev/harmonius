@@ -1,88 +1,109 @@
-# R-7.5 -- Goal-Oriented Action Planning Requirements
+# R-7.5 -- Goal-Oriented Action Planning User Stories
 
-## R-7.5.1 World State Representation
+## US-7.5.1 World State Representation
 
-The engine **SHALL** model AI-relevant world state as a fixed-size bitset of named boolean and
-integer properties that is copyable, comparable, and diffable in constant time, enabling fast
-forward-search planning for thousands of NPCs per tick.
+### US-7.5.1.1
+As an **engine dev (P-26)**, I want world state as a fixed-size bitset
+so that copy, compare, and diff operations are O(1).
 
-- **Derived from:** [F-7.5.1](../../features/ai/goap.md)
-- **Rationale:** Planner performance depends on cheap state operations; a fixed-size bitset
-  enables O(1) copy, compare, and diff without heap allocation.
-- **Verification:** Create a world state with 64 properties. Measure copy, compare, and diff
-  operations and verify each completes in constant time (no scaling with property count up to
-  the fixed size). Verify named property access returns correct values after set/clear
-  operations. Verify two independently constructed identical states compare as equal.
+### US-7.5.1.2
+As a **designer (P-5)**, I want named boolean and integer properties in world state
+so that I can define AI-relevant state declaratively.
 
-## R-7.5.2 GOAP Forward-Search Planner
+### US-7.5.1.3
+As an **engine tester (P-27)**, I want to verify state operations complete in constant
+time regardless of property count
+so that bitset performance is regression-tested.
 
-The engine **SHALL** perform A* search over the action space from the current world state toward
-a goal state, finding a minimal-cost sequence of actions whose preconditions are satisfied and
-whose cumulative effects produce the goal state.
+---
 
-- **Derived from:** [F-7.5.2](../../features/ai/goap.md)
-- **Rationale:** Forward-search planning lets NPCs dynamically compose behavior sequences
-  instead of requiring hand-authored paths for every situation.
-- **Verification:** Define 5 actions with known costs, preconditions, and effects. Set a goal
-  state reachable by two valid action sequences (costs 10 and 15). Verify the planner returns
-  the cost-10 sequence. Verify the plan's cumulative effects transform the initial state into
-  the goal state. Verify an unreachable goal returns a planning failure within the configured
-  iteration limit.
+## US-7.5.2 GOAP Forward-Search Planner
 
-## R-7.5.3 Action Preconditions and Effects
+### US-7.5.2.1
+As a **designer (P-5)**, I want A* search over the action space toward goals
+so that NPCs compose behavior sequences dynamically.
 
-The engine **SHALL** require each GOAP action to declare a set of world-state preconditions that
-must hold before execution and a set of effects that modify the world state upon completion,
-along with a cost used by the planner to prefer cheaper plans.
+### US-7.5.2.2
+As a **player (P-23)**, I want NPCs to figure out multi-step plans on their own
+so that AI feels intelligent rather than scripted.
 
-- **Derived from:** [F-7.5.3](../../features/ai/goap.md)
-- **Rationale:** Explicit preconditions and effects enable the planner to reason about action
-  applicability and chain actions into valid sequences automatically.
-- **Verification:** Define an action "equip_weapon" with precondition (has_weapon_in_inventory
-  = true) and effect (has_weapon = true, cost = 2). Verify the planner considers this action
-  only when the precondition holds. Execute the action and verify the world state reflects the
-  declared effects. Verify the cost is accumulated correctly across a multi-action plan.
+### US-7.5.2.3
+As an **engine dev (P-26)**, I want the planner to find minimal-cost action sequences
+so that plans prefer cheaper actions when available.
 
-## R-7.5.4 Plan Caching and Reuse
+### US-7.5.2.4
+As an **engine tester (P-27)**, I want to verify the planner returns the cheapest valid
+sequence from two alternatives
+so that cost optimization is regression-tested.
 
-The engine **SHALL** cache recently computed plans keyed by (goal, initial-state-hash) and reuse
-them for identical planning requests across NPCs of the same archetype, invalidating cache
-entries when registered actions change or a configurable TTL expires.
+---
 
-- **Derived from:** [F-7.5.4](../../features/ai/goap.md)
-- **Rationale:** Many NPCs of the same archetype plan for identical goals from similar states;
-  caching avoids redundant A* searches and reduces CPU cost.
-- **Verification:** Issue identical planning requests from 10 NPCs with the same archetype,
-  goal, and initial state. Verify the planner executes A* only once and the remaining 9
-  requests return the cached plan. Modify a registered action and verify the cache entry is
-  invalidated. Wait for the TTL to expire and verify the next request triggers a fresh search.
+## US-7.5.3 Action Preconditions & Effects
 
-## R-7.5.5 Replanning Triggers
+### US-7.5.3.1
+As a **designer (P-5)**, I want preconditions and effects declared per action
+so that the planner reasons about action applicability automatically.
 
-The engine **SHALL** monitor executing plans for invalidation conditions (action preconditions
-no longer hold, goal changed, high-priority blackboard event) and trigger partial or full
-replan with a cooldown to prevent replanning thrash.
+### US-7.5.3.2
+As an **engine dev (P-26)**, I want actions with cost values for plan optimization
+so that the planner prefers cheap actions over expensive ones.
 
-- **Derived from:** [F-7.5.5](../../features/ai/goap.md)
-- **Rationale:** Plans become invalid when world state changes unexpectedly; replanning
-  maintains coherent NPC behavior while cooldowns prevent CPU waste from rapid state churn.
-- **Verification:** Execute a plan and invalidate the current action's precondition mid-
-  execution. Verify a replan triggers within one tick. Set a replan cooldown of 1 second and
-  rapidly invalidate conditions 5 times within that window. Verify only one replan occurs
-  during the cooldown period. Verify a goal change triggers immediate replanning regardless
-  of cooldown.
+### US-7.5.3.3
+As an **engine tester (P-27)**, I want to verify an action is only considered when its
+preconditions hold
+so that precondition enforcement is regression-tested.
 
-## R-7.5.6 Goal Prioritization
+---
 
-The engine **SHALL** maintain a scored list of goals per agent with dynamic priorities derived
-from utility considerations or blackboard values, driving the planner with the highest-priority
-unsatisfied goal and replanning when a higher-priority goal emerges.
+## US-7.5.4 Plan Caching & Reuse
 
-- **Derived from:** [F-7.5.6](../../features/ai/goap.md)
-- **Rationale:** NPCs must dynamically switch goals based on changing circumstances (combat
-  overrides exploration, survival overrides combat) without manual scripting.
-- **Verification:** Configure an agent with goals "explore" (priority 0.3), "fight" (priority
-  0.7), and "survive" (priority 0.9, condition: health < 25%). Verify the agent plans for
-  "fight" when health is full. Reduce health below 25% and verify the agent abandons the
-  current plan and replans for "survive" within one tick. Satisfy the "survive" goal and
-  verify the agent resumes planning for "fight."
+### US-7.5.4.1
+As an **engine dev (P-26)**, I want plans cached by (goal, state-hash)
+so that identical requests reuse existing plans.
+
+### US-7.5.4.2
+As a **server admin (P-22)**, I want plan caching for same-archetype NPCs
+so that server CPU is not wasted on redundant planning.
+
+### US-7.5.4.3
+As an **engine tester (P-27)**, I want to verify 10 identical requests produce only
+one A* search
+so that cache hit behavior is regression-tested.
+
+---
+
+## US-7.5.5 Replanning Triggers
+
+### US-7.5.5.1
+As a **designer (P-5)**, I want replanning when action preconditions become invalid
+so that NPCs adapt when the world changes.
+
+### US-7.5.5.2
+As a **designer (P-5)**, I want a replan cooldown to prevent thrashing
+so that rapid state changes do not waste CPU.
+
+### US-7.5.5.3
+As a **player (P-23)**, I want NPCs to react when I disrupt their plans
+so that AI adapts to player interference.
+
+### US-7.5.5.4
+As an **engine tester (P-27)**, I want to verify only one replan occurs during the
+cooldown period
+so that cooldown throttling is regression-tested.
+
+---
+
+## US-7.5.6 Goal Prioritization
+
+### US-7.5.6.1
+As a **designer (P-5)**, I want a scored goal list with dynamic priorities
+so that NPCs switch goals based on changing circumstances.
+
+### US-7.5.6.2
+As a **player (P-23)**, I want NPCs to abandon combat goals when near death
+so that survival instincts feel realistic.
+
+### US-7.5.6.3
+As an **engine tester (P-27)**, I want to verify a higher-priority goal causes immediate
+replan within one tick
+so that goal priority response time is regression-tested.

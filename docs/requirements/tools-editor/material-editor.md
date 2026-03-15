@@ -1,111 +1,179 @@
-# R-15.3 — Material Editor Requirements
+# R-15.3 -- Material Editor User Stories
 
-## Node Graph
+## US-15.3.1 Node-Based Material Graph
 
-### R-15.3.1 Node-Based Material Graph
+### US-15.3.1.1
+As a **artist (P-8)**, I want a visual node graph editor for authoring materials
+so that I can create shaders by connecting nodes without writing code.
 
-The engine **SHALL** provide a visual node graph editor for material authoring with type-safe
-pin connections (scalar, vector, color, texture), compilation to optimized GPU shader code, and
-graph management features including copy/paste, node grouping, comments, and minimap navigation.
-The material node graph is implemented as a specialized view of the universal logic graph system
-(R-15.8.5). The material editor provides a domain-specific UX layer (material preview, parameter
-sliders, shader compilation feedback) on top of the shared graph runtime.
+### US-15.3.1.2
+As a **artist (P-8)**, I want type-safe pin connections (scalar, vector, color, texture)
+so that invalid connections are rejected before compilation.
 
-- **Derived from:** [F-15.3.1](../../features/tools-editor/material-editor.md)
-- **Rationale:** A visual node graph enables material artists to author shaders without writing code
-  while type-safe pins prevent invalid connections that would produce shader compilation errors.
-- **Verification:** Integration test: create a material graph connecting a texture sample node to a
-  base color output. Compile and verify valid shader code is generated. Attempt to connect a scalar
-  output to a texture input and verify the connection is rejected. Verify copy/paste duplicates
-  selected nodes with correct connections. Verify node grouping collapses and expands correctly.
+### US-15.3.1.3
+As a **artist (P-8)**, I want copy/paste of selected nodes with connections preserved
+so that I can duplicate graph sections quickly.
 
-### R-15.3.2 Material Functions and Subgraphs
+### US-15.3.1.4
+As a **artist (P-8)**, I want node grouping with collapsible regions
+so that I can organize large material graphs into logical sections.
 
-The engine **SHALL** support reusable material function assets (subgraphs) with input/output
-parameter pins and default values, referenceable by multiple materials and updatable from a
-single source.
+### US-15.3.1.5
+As a **artist (P-8)**, I want comment nodes for annotating graph sections
+so that other artists understand my material setup.
 
-- **Derived from:** [F-15.3.2](../../features/tools-editor/material-editor.md)
-- **Rationale:** Shared material functions (triplanar mapping, detail normal blending) eliminate
-  duplication and ensure consistency when updating common patterns across many materials.
-- **Verification:** Unit test: create a material function with two inputs and one output. Reference
-  it from two materials with different input values and verify both compile correctly. Modify the
-  function's internal logic and verify both referencing materials produce updated shader output
-  without manual intervention.
+### US-15.3.1.6
+As a **artist (P-8)**, I want minimap navigation for large graphs
+so that I can orient within complex material networks quickly.
 
-## Preview and Iteration
+### US-15.3.1.7
+As a **technical artist (P-13)**, I want the graph to compile to optimized GPU shader code
+so that visual authoring produces performant shaders.
 
-### R-15.3.3 Live Material Preview
+### US-15.3.1.8
+As a **developer (P-15)**, I want material graph compilation errors to reference the
+originating node
+so that I can locate and fix shader issues from the graph view.
 
-The engine **SHALL** render a real-time 3D preview of the material on configurable meshes (sphere,
-cube, plane, custom asset) with adjustable lighting, updating instantly as parameters and graph
-connections change, and supporting split-view comparison of two material variants.
+### US-15.3.1.9
+As an **engine dev (P-26)**, I want material graphs implemented on the universal logic
+graph runtime
+so that the same graph infrastructure serves all visual authoring domains.
 
-- **Derived from:** [F-15.3.3](../../features/tools-editor/material-editor.md)
-- **Rationale:** Instant visual feedback during material authoring eliminates the compile-and-check
-  cycle, and side-by-side comparison helps artists evaluate variations efficiently.
-- **Verification:** Integration test: open the material preview on a sphere, change a color
-  parameter, and verify the preview updates within one frame. Switch the preview mesh to a custom
-  asset and verify the material renders correctly. Activate split-view with two material variants
-  and verify both previews render simultaneously with independent parameters.
+### US-15.3.1.10
+As an **engine tester (P-27)**, I want to verify connecting incompatible pin types is
+rejected at edit time
+so that type safety is regression-tested.
 
-### R-15.3.4 Shader Parameter Tweaking
+---
 
-The engine **SHALL** expose all material parameters (colors, scalars, textures, toggles) in an
-inspector panel with appropriate controls (sliders, color pickers, curve editors), applying
-changes instantly to all viewports without shader recompilation.
+## US-15.3.2 Material Functions and Subgraphs
 
-- **Derived from:** [F-15.3.4](../../features/tools-editor/material-editor.md)
-- **Rationale:** Parameter tweaking without recompilation enables rapid artist iteration on material
-  appearance directly in the scene context.
-- **Verification:** Integration test: open a material in the inspector, adjust a scalar slider, and
-  verify the change is visible in all open viewports within one frame. Verify no shader
-  recompilation occurs by monitoring GPU pipeline state. Toggle a boolean parameter and verify the
-  material variant switches instantly.
+### US-15.3.2.1
+As a **artist (P-8)**, I want reusable material functions saved as assets
+so that common patterns like triplanar mapping are authored once.
 
-## Non-Functional Requirements
+### US-15.3.2.2
+As a **artist (P-8)**, I want material functions with input/output parameter pins
+so that I can customize function behavior per-material.
 
-### R-15.3.NF1 Material Preview Update Latency
+### US-15.3.2.3
+As a **technical artist (P-13)**, I want to update a shared material function in one place
+so that all referencing materials receive the updated logic.
 
-Live material preview updates **SHALL** appear within one frame (under 16ms) after a parameter
-change. Shader recompilation triggered by graph topology changes **SHALL** complete within 2
-seconds for materials with up to 200 nodes. The material library browser **SHALL** render thumbnail
-previews for up to 1,000 materials within 5 seconds of opening.
+### US-15.3.2.4
+As an **engine tester (P-27)**, I want to verify modifying a material function updates
+all referencing materials
+so that function propagation is regression-tested.
 
-- **Derived from:** F-15.3.1 through F-15.3.6 (all material editor features).
-- **Rationale:** Material artists iterate rapidly on parameter values and expect instant visual
-  feedback. Slow shader recompilation or preview lag interrupts the creative flow.
-- **Verification:** Change a color parameter in the material inspector; measure time to preview
-  update and assert under 16ms. Modify the graph topology of a 200-node material; measure
-  recompilation time and assert under 2 seconds. Open the material library with 1,000 materials and
-  assert all thumbnails render within 5 seconds.
+---
 
-## Material Instancing and Library
+## US-15.3.3 Live Material Preview
 
-### R-15.3.5 Material Instances
+### US-15.3.3.1
+As a **artist (P-8)**, I want a real-time 3D preview on configurable meshes
+so that I can see the material on sphere, cube, plane, or custom geometry.
 
-The engine **SHALL** support lightweight material instances that override specific parameters of a
-parent material without duplicating the compiled shader, sharing the shader program and changing
-only uniform values.
+### US-15.3.3.2
+As a **artist (P-8)**, I want preview updates instantly when parameters change
+so that I get immediate visual feedback during authoring.
 
-- **Derived from:** [F-15.3.5](../../features/tools-editor/material-editor.md)
-- **Rationale:** Shader sharing across instances enables thousands of visual variations (armor tints,
-  weathering levels) without multiplying shader permutations or GPU memory usage.
-- **Verification:** Unit test: create 100 material instances from one parent, each overriding a
-  different color parameter. Verify all instances reference the same compiled shader handle. Verify
-  each instance renders with its unique color. Verify GPU memory usage does not scale linearly
-  with instance count beyond uniform buffer growth.
+### US-15.3.3.3
+As a **artist (P-8)**, I want adjustable lighting in the preview
+so that I can evaluate the material under different lighting conditions.
 
-### R-15.3.6 Material Library and Browser
+### US-15.3.3.4
+As a **artist (P-8)**, I want split-view comparison of two material variants
+so that I can evaluate A/B variations side by side.
 
-The engine **SHALL** provide a searchable, filterable material library with thumbnail previews,
-tagging, categorization, favorites, usage tracking, and drag-and-drop application of materials
-to meshes in the viewport or inspector.
+### US-15.3.3.5
+As an **engine tester (P-27)**, I want to verify preview updates within one frame after
+a parameter change
+so that preview latency meets the 16ms target.
 
-- **Derived from:** [F-15.3.6](../../features/tools-editor/material-editor.md)
-- **Rationale:** A centralized library with search and usage tracking prevents duplicate materials
-  and enables artists to discover and reuse existing assets efficiently.
-- **Verification:** Integration test: add three materials with distinct tags. Search by tag and
-  verify only matching materials appear. Verify thumbnail previews render correctly. Drag a
-  material from the library onto a mesh and verify the material is assigned. Query usage tracking
-  and verify it reports the correct list of assets referencing the material.
+---
+
+## US-15.3.4 Shader Parameter Tweaking
+
+### US-15.3.4.1
+As a **artist (P-8)**, I want sliders for scalar material parameters
+so that I can adjust values interactively in the inspector.
+
+### US-15.3.4.2
+As a **artist (P-8)**, I want color pickers for color parameters
+so that I can select exact colors visually.
+
+### US-15.3.4.3
+As a **artist (P-8)**, I want curve editors for gradient parameters
+so that I can define non-linear parameter distributions.
+
+### US-15.3.4.4
+As a **artist (P-8)**, I want parameter changes to apply without shader recompilation
+so that iteration speed is not limited by compile time.
+
+### US-15.3.4.5
+As a **designer (P-5)**, I want to tweak material parameters on placed entities
+so that I can adjust look in context without opening the material editor.
+
+### US-15.3.4.6
+As an **engine tester (P-27)**, I want to verify no shader recompilation occurs during
+parameter-only changes
+so that the uniform-only update path is regression-tested.
+
+---
+
+## US-15.3.5 Material Instances
+
+### US-15.3.5.1
+As a **artist (P-8)**, I want lightweight material instances that override parent params
+so that I can create thousands of visual variations from one base material.
+
+### US-15.3.5.2
+As a **artist (P-8)**, I want instances to share the compiled shader program
+so that GPU memory scales with uniform buffers, not shader count.
+
+### US-15.3.5.3
+As a **designer (P-5)**, I want to create material instances for per-entity tinting
+so that identical objects can have distinct colors without new materials.
+
+### US-15.3.5.4
+As an **engine dev (P-26)**, I want material instances to avoid shader duplication
+so that draw call batching is not fragmented by material variants.
+
+### US-15.3.5.5
+As an **engine tester (P-27)**, I want to verify 100 instances share one compiled shader
+so that instance efficiency is regression-tested.
+
+---
+
+## US-15.3.6 Material Library and Browser
+
+### US-15.3.6.1
+As a **artist (P-8)**, I want a searchable library of all project materials
+so that I can find existing materials instead of creating duplicates.
+
+### US-15.3.6.2
+As a **artist (P-8)**, I want thumbnail previews in the material browser
+so that I can visually identify materials without opening each one.
+
+### US-15.3.6.3
+As a **artist (P-8)**, I want tagging and categorization of materials
+so that I can organize materials by surface type or environment.
+
+### US-15.3.6.4
+As a **artist (P-8)**, I want drag-and-drop material application to meshes
+so that I can assign materials directly from the library to the viewport.
+
+### US-15.3.6.5
+As a **artist (P-8)**, I want favorites for frequently used materials
+so that I can access my most-used materials with one click.
+
+### US-15.3.6.6
+As a **technical artist (P-13)**, I want usage tracking showing which assets reference
+a material
+so that I can assess impact before modifying a shared material.
+
+### US-15.3.6.7
+As an **engine tester (P-27)**, I want to verify search by tag returns only matching
+materials
+so that library filtering is regression-tested.

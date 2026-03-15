@@ -9,22 +9,22 @@ first requirement in category 2.3). Requirements trace to features in [docs/feat
 | # | Module | Files | Requirements |
 |---|--------|-------|--------------|
 | 1 | [Core Runtime](core-runtime/) | 9 | 128 |
-| 2 | [Rendering](rendering/) | 13 | 317 |
+| 2 | [Rendering](rendering/) | 13 | 129 |
 | 3 | [Geometry & World](geometry-world/) | 6 | 106 |
-| 4 | [Physics](physics/) | 8 | 85 |
-| 5 | [Audio](audio/) | 5 | 48 |
-| 6 | [Input](input/) | 5 | 39 |
-| 7 | [AI](ai/) | 9 | 77 |
+| 4 | [Physics](physics/) | 8 | 23 |
+| 5 | [Audio](audio/) | 5 | 10 |
+| 6 | [Input](input/) | 5 | 8 |
+| 7 | [AI](ai/) | 9 | 11 |
 | 8 | [Networking](networking/) | 9 | 68 |
 | 9 | [Animation](animation/) | 6 | 46 |
 | 10 | [UI & 2D](ui-2d/) | 6 | 75 |
 | 11 | [VFX](vfx/) | 6 | 38 |
 | 12 | [Content Pipeline](content-pipeline/) | 7 | 75 |
-| 13 | [Game Framework](game-framework/) | 28 | 408 |
-| 14 | [Platform](platform/) | 6 | 37 |
-| 15 | [Tools & Editor](tools-editor/) | 18 | 169 |
+| 13 | [Game Framework](game-framework/) | 28 | 379 |
+| 14 | [Platform](platform/) | 6 | 42 |
+| 15 | [Tools & Editor](tools-editor/) | 19 | 0 |
 | X | [Cross-Cutting](cross-cutting.md) | 1 | 33 |
-| | **Total** | **142** | **1749** |
+| | **Total** | **143** | **1,171** |
 
 ## Complete Requirement Index
 

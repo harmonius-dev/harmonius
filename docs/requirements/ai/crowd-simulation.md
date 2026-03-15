@@ -1,163 +1,239 @@
-# R-7.7 -- Crowd Simulation Requirements
+# R-7.7 -- Crowd Simulation User Stories
 
-## R-7.7.1 Flocking Behaviors (Separation, Alignment, Cohesion)
+## US-7.7.1 Flocking Behaviors (Separation, Alignment, Cohesion)
 
-The engine **SHALL** implement Reynolds flocking with three independently weighted forces --
-separation (avoid crowding), alignment (match average heading), and cohesion (steer toward
-average position) -- tunable per crowd archetype.
+### US-7.7.1.1
+As a **designer (P-5)**, I want Reynolds flocking with tunable weights per archetype
+so that I can create tight columns, loose herds, or panicked mobs.
 
-- **Derived from:** [F-7.7.1](../../features/ai/crowd-simulation.md)
-- **Rationale:** Flocking produces emergent group behaviors (herds, columns, panicked mobs)
-  from simple per-agent rules without hand-scripted group movement.
-- **Verification:** Configure a flock of 50 agents with equal weights. Verify separation keeps
-  minimum pairwise distance above 0.5 m. Verify alignment converges the heading variance to
-  below 15 degrees within 100 ticks. Verify cohesion keeps the flock bounding radius below
-  2x the initial radius. Adjust weights to zero out cohesion and verify the flock disperses.
+### US-7.7.1.2
+As a **player (P-23)**, I want flocks and herds to move naturally
+so that wildlife and crowds feel alive.
 
-## R-7.7.2 Flow Field Navigation
+### US-7.7.1.3
+As an **engine tester (P-27)**, I want to verify separation maintains minimum pairwise
+distance above 0.5m
+so that flocking correctness is regression-tested.
 
-The engine **SHALL** generate a 2D grid-based flow field from a goal position using Dijkstra
-propagation, where each cell stores a direction vector along the cheapest path, enabling
-thousands of agents to sample the field at constant per-agent cost instead of running
-individual A* queries.
+---
 
-- **Derived from:** [F-7.7.2](../../features/ai/crowd-simulation.md)
-- **Rationale:** Per-agent A* is prohibitively expensive at crowd scale; flow fields amortize
-  pathfinding cost across all agents sharing the same goal.
-- **Verification:** Generate a flow field for a goal on a 100x100 grid with obstacles. Verify
-  1000 agents all reach the goal by following the field vectors. Measure per-agent cost and
-  verify it is constant regardless of agent count. Verify no agent follows a vector into an
-  obstacle cell.
+## US-7.7.2 Flow Field Navigation
 
-## R-7.7.3 Flow Field Streaming and Caching
+### US-7.7.2.1
+As an **engine dev (P-26)**, I want Dijkstra-propagated flow fields from goal positions
+so that thousands of agents navigate at constant per-agent cost.
 
-The engine **SHALL** tile flow fields to match the world streaming grid, cache computed fields
-keyed by (goal cell, cost layer version), invalidate stale fields when dynamic obstacles modify
-the cost grid, and share cached fields across multiple goals with overlapping regions.
+### US-7.7.2.2
+As a **designer (P-5)**, I want flow fields for mass crowd movement
+so that city populations navigate efficiently.
 
-- **Derived from:** [F-7.7.3](../../features/ai/crowd-simulation.md)
-- **Rationale:** Recomputing flow fields every tick is wasteful; caching with invalidation
-  provides up-to-date fields at minimal cost.
-- **Verification:** Generate a flow field and verify a subsequent request with the same goal
-  and cost version returns the cached field (zero recomputation). Add a dynamic obstacle and
-  verify the affected field is invalidated and recomputed. Create two goals in overlapping
-  regions and verify the overlapping tiles share a single cached computation.
+### US-7.7.2.3
+As an **engine tester (P-27)**, I want to verify per-agent flow field cost is constant
+regardless of agent count
+so that O(1) per-agent scaling is regression-tested.
 
-## R-7.7.4 Mass Entity Simulation
+---
 
-The engine **SHALL** process crowd NPCs as lightweight entities with minimal per-agent state
-(position, velocity, archetype ID, flow field sample), driven entirely by flow fields and
-flocking forces without behavior tree evaluation, supporting tens of thousands of simultaneous
-agents within a bounded CPU footprint.
+## US-7.7.3 Flow Field Streaming & Caching
 
-- **Derived from:** [F-7.7.4](../../features/ai/crowd-simulation.md)
-- **Rationale:** Full AI evaluation per ambient NPC is too expensive at city scale; lightweight
-  entities provide believable crowd density at minimal CPU cost.
-- **Verification:** Spawn 10,000 crowd entities and measure per-tick CPU time. Verify the time
-  scales linearly with entity count (no super-linear blowup). Verify no behavior tree is
-  allocated or ticked for these entities. Verify each entity moves along flow field vectors
-  with flocking corrections applied.
+### US-7.7.3.1
+As an **engine dev (P-26)**, I want flow fields tiled and cached by goal/cost version
+so that recomputation is avoided when the world is stable.
 
-## R-7.7.5 AI Level of Detail (Processing Budget)
+### US-7.7.3.2
+As an **engine dev (P-26)**, I want cache invalidation on dynamic obstacle changes
+so that stale flow fields are recomputed.
 
-The engine **SHALL** assign each AI agent a LOD tier based on distance to the nearest player and
-gameplay relevance, with high-LOD agents running full behavior trees, mid-LOD agents ticking at
-reduced frequency, and low-LOD agents using flow-field-only movement, managed by a global budget
-scheduler that maintains a stable frame rate.
+### US-7.7.3.3
+As an **engine tester (P-27)**, I want to verify cached fields are reused for identical
+goal/cost requests
+so that cache hit behavior is regression-tested.
 
-- **Derived from:** [F-7.7.5](../../features/ai/crowd-simulation.md)
-- **Rationale:** Not all NPCs require full AI processing; LOD tiers allocate CPU where it has
-  the most gameplay impact while keeping total AI cost bounded.
-- **Verification:** Place agents at distances of 10 m, 50 m, and 200 m from a player. Verify
-  the 10 m agent is assigned high LOD (full BT tick every frame), the 50 m agent mid LOD
-  (BT tick every 4th frame), and the 200 m agent low LOD (flow-field only). Set the global
-  budget to 4 ms and verify total AI processing time does not exceed 4 ms by demoting agents
-  to lower tiers as needed.
+---
 
-## R-7.7.6 Density Management
+## US-7.7.4 Mass Entity Simulation
 
-The engine **SHALL** monitor crowd density per spatial cell, enforce configurable density caps,
-and redirect or despawn overflow agents when density exceeds the threshold to prevent
-unrealistic pileups and maintain server performance.
+### US-7.7.4.1
+As an **engine dev (P-26)**, I want lightweight crowd entities with minimal state
+so that tens of thousands simulate within bounded CPU.
 
-- **Derived from:** [F-7.7.6](../../features/ai/crowd-simulation.md)
-- **Rationale:** Uncapped density at chokepoints causes both visual implausibility (agent
-  stacking) and server performance degradation from excessive collision processing.
-- **Verification:** Set a density cap of 20 agents per cell. Spawn 30 agents targeting the
-  same cell. Verify the cell never contains more than 20 agents at any tick. Verify overflow
-  agents are either redirected to adjacent cells or despawned (for ambient entities). Verify
-  the density check runs in O(1) per cell via spatial hashing.
+### US-7.7.4.2
+As a **player (P-23)**, I want bustling city crowds with thousands of NPCs
+so that the world feels populated and alive.
 
-## R-7.7.7 Knowledge Sharing and Event Propagation
+### US-7.7.4.3
+As a **server admin (P-22)**, I want crowd count scaling by platform tier
+so that each platform runs within its CPU budget.
 
-The engine **SHALL** allow AI agents to broadcast perception and investigation events to
-allied agents within a configurable communication radius. Recipients **SHALL** update their
-perception state with shared knowledge. Knowledge **SHALL** decay using the same aging rules
-as direct perception. At least 4 communication types **SHALL** be supported (alert,
-investigation request, all-clear, deferred report).
+### US-7.7.4.4
+As an **engine tester (P-27)**, I want to verify 10,000 crowd entities maintain linear
+CPU scaling
+so that mass simulation scalability is regression-tested.
 
-- **Derived from:** [F-7.7.7](../../features/ai/crowd-simulation.md)
-- **Rationale:** Knowledge sharing creates coordinated AI responses where guards alert each
-  other, making stealth gameplay more challenging and rewarding.
-- **Verification:** Have one guard spot an intruder; verify all guards within communication
-  radius enter alert state within 2 ticks. Verify knowledge decays at the same rate as
-  direct perception.
+---
 
-## R-7.7.8 Shared Awareness and Synchronized Group Reactions
+## US-7.7.5 AI Level of Detail (Processing Budget)
 
-The engine **SHALL** propagate alarm stimuli through animal/NPC groups with a spatial delay
-producing a wave effect. At least 5 group reaction patterns **SHALL** be supported (bird
-scatter, fish school turn, herd stampede, civilian panic, guard formation). Group members
-**SHALL** maintain cohesion during flight and reassemble after the threat clears.
+### US-7.7.5.1
+As a **designer (P-5)**, I want AI LOD tiers based on distance and relevance
+so that nearby NPCs get full behavior while distant ones use cheap movement.
 
-- **Derived from:** [F-7.7.8](../../features/ai/crowd-simulation.md)
-- **Rationale:** Synchronized group reactions (bird flocks scattering, herds stampeding)
-  create immersive wildlife and crowd behavior.
-- **Verification:** Trigger an alarm near a flock of 50 birds; verify they scatter with a
-  visible wave delay from nearest to farthest. Verify they regroup at a safe distance
-  within 30 seconds.
+### US-7.7.5.2
+As an **engine dev (P-26)**, I want a global budget scheduler for AI processing
+so that total AI CPU stays within frame budget.
 
-## R-7.7.9 Faction-Based Behavioral Relationships
+### US-7.7.5.3
+As a **server admin (P-22)**, I want configurable LOD tier thresholds per platform
+so that mobile and desktop have appropriate AI budgets.
 
-The engine **SHALL** determine AI behavior based on a runtime faction relationship matrix
-with at least 6 relationship types (aggressive, hostile, wary, neutral, friendly, allied).
-Relationships **SHALL** be modifiable at runtime by gameplay systems. Individual NPC
-overrides **SHALL** take precedence over faction defaults.
+### US-7.7.5.4
+As an **engine tester (P-27)**, I want to verify total AI processing stays within the
+configured budget
+so that budget enforcement is regression-tested.
 
-- **Derived from:** [F-7.7.9](../../features/ai/crowd-simulation.md)
-- **Rationale:** Dynamic faction relationships enable emergent political gameplay where
-  player actions reshape the world's social fabric.
-- **Verification:** Set faction A to hostile toward the player; verify faction A NPCs attack
-  on sight. Complete a quest; shift faction A to friendly; verify the same NPCs no longer
-  attack. Override one NPC to hostile; verify only that NPC attacks.
+---
 
-## R-7.7.10 Threat Table and Aggro Targeting
+## US-7.7.6 Density Management
 
-The engine **SHALL** maintain a per-enemy threat table tracking hate from damage, healing,
-taunts, debuffs, and proximity. The highest-threat target **SHALL** be attacked. Aggro
-transfer **SHALL** require exceeding current target's threat by a configurable threshold
-(default: 110% melee, 130% ranged). Threat **SHALL** decay over time out of combat range.
-At least 4 AI targeting archetypes **SHALL** be supported (berserker, tactical, protector,
-coward).
+### US-7.7.6.1
+As a **designer (P-5)**, I want configurable density caps per spatial cell
+so that chokepoints do not have unrealistic agent pileups.
 
-- **Derived from:** [F-7.7.10](../../features/ai/crowd-simulation.md)
-- **Rationale:** Threat-based targeting is the foundation of MMO tank/healer/DPS combat
-  roles and creates strategic depth.
-- **Verification:** Have a tank generate 1000 threat; have a DPS generate 1050 threat;
-  verify aggro does NOT transfer (below 110% threshold). DPS generates 1100 threat; verify
-  aggro transfers. Verify threat decays when the source moves out of range.
+### US-7.7.6.2
+As a **player (P-23)**, I want crowd density to look realistic at events and chokepoints
+so that agent stacking does not break immersion.
 
-## R-7.7.11 Animal Tracking and Hunting Behaviors
+### US-7.7.6.3
+As an **engine tester (P-27)**, I want to verify cells never exceed the configured
+density cap
+so that density enforcement is regression-tested.
 
-The engine **SHALL** provide predator-prey AI with: stalking (approach using cover,
-downwind), ambush (wait at prey paths/water), chase (with stamina), pack hunting
-(coordinated driver/ambusher roles), prey flee (stamina-aware, terrain-aware), herd defense
-(protective circles, stand-and-fight), and evidence-based tracking (scent, footprints,
-visual). Hunting success rate **SHALL** be configurable per predator-prey pair.
+---
 
-- **Derived from:** [F-7.7.11](../../features/ai/crowd-simulation.md)
-- **Rationale:** Realistic wildlife hunting creates immersive ecosystems and meaningful
-  survival gameplay.
-- **Verification:** Spawn a wolf pack and deer herd; verify wolves stalk downwind,
-  coordinate a chase, and achieve kills within the configured success rate over 100 trials.
-  Verify deer flee as a herd with protective behavior.
+## US-7.7.7 Knowledge Sharing and Event Propagation
+
+### US-7.7.7.1
+As a **designer (P-5)**, I want guards to alert nearby allies when they spot an intruder
+so that detection creates coordinated response.
+
+### US-7.7.7.2
+As a **designer (P-5)**, I want 4 communication types (alert, investigation request,
+all-clear, report)
+so that AI coordination uses varied message types.
+
+### US-7.7.7.3
+As a **player (P-23)**, I want a guard's alert to bring reinforcements
+so that detection has escalating consequences.
+
+### US-7.7.7.4
+As an **engine tester (P-27)**, I want to verify all allies within communication radius
+enter alert state within 2 ticks
+so that knowledge propagation speed is regression-tested.
+
+---
+
+## US-7.7.8 Shared Awareness and Synchronized Group Reactions
+
+### US-7.7.8.1
+As a **designer (P-5)**, I want alarm propagation with spatial delay (wave effect)
+so that group reactions look natural rather than instant.
+
+### US-7.7.8.2
+As a **designer (P-5)**, I want 5 reaction patterns (scatter, school turn, stampede,
+panic, formation)
+so that different creature types react distinctively.
+
+### US-7.7.8.3
+As a **player (P-23)**, I want bird flocks to scatter when I approach
+so that wildlife reacts visibly to my presence.
+
+### US-7.7.8.4
+As a **player (P-23)**, I want groups to reassemble after threats clear
+so that wildlife returns to normal behavior.
+
+### US-7.7.8.5
+As an **engine tester (P-27)**, I want to verify alarm wave delay propagates from nearest
+to farthest member
+so that spatial delay ordering is regression-tested.
+
+---
+
+## US-7.7.9 Faction-Based Behavioral Relationships
+
+### US-7.7.9.1
+As a **designer (P-5)**, I want 6 relationship types (aggressive through allied)
+so that AI behavior spans the full hostility spectrum.
+
+### US-7.7.9.2
+As a **designer (P-5)**, I want runtime-modifiable faction relationships
+so that quest completion changes NPC behavior.
+
+### US-7.7.9.3
+As a **designer (P-5)**, I want individual NPC relationship overrides
+so that specific NPCs deviate from faction defaults.
+
+### US-7.7.9.4
+As a **player (P-23)**, I want my reputation to visibly change NPC reactions
+so that my choices have consequences in the world.
+
+### US-7.7.9.5
+As an **engine tester (P-27)**, I want to verify an individual override takes precedence
+over the faction default
+so that override priority is regression-tested.
+
+---
+
+## US-7.7.10 Threat Table and Aggro Targeting
+
+### US-7.7.10.1
+As a **designer (P-5)**, I want threat tables tracking damage, healing, taunts, debuffs,
+and proximity
+so that combat targeting is based on accumulated hate.
+
+### US-7.7.10.2
+As a **designer (P-5)**, I want configurable aggro transfer thresholds (110% melee,
+130% ranged)
+so that tanks can hold aggro with appropriate effort.
+
+### US-7.7.10.3
+As a **designer (P-5)**, I want 4 targeting archetypes (berserker, tactical, protector,
+coward)
+so that different enemies use different target selection strategies.
+
+### US-7.7.10.4
+As a **player (P-23)**, I want tanks to hold aggro reliably when maintaining threat
+so that the tank/healer/DPS combat role system works.
+
+### US-7.7.10.5
+As an **engine tester (P-27)**, I want to verify aggro does NOT transfer below 110%
+threshold
+so that aggro transfer precision is regression-tested.
+
+---
+
+## US-7.7.11 Animal Tracking and Hunting Behaviors
+
+### US-7.7.11.1
+As a **designer (P-5)**, I want predator AI with stalk, ambush, and chase behaviors
+so that wildlife hunting looks realistic.
+
+### US-7.7.11.2
+As a **designer (P-5)**, I want pack hunting with driver/ambusher coordination
+so that wolf packs feel tactically organized.
+
+### US-7.7.11.3
+As a **designer (P-5)**, I want prey AI with flee, herd defense, and stamina management
+so that prey animals react realistically to predators.
+
+### US-7.7.11.4
+As a **designer (P-5)**, I want configurable hunting success rate per predator-prey pair
+so that ecological balance is tunable.
+
+### US-7.7.11.5
+As a **player (P-23)**, I want to observe realistic wildlife hunting in the game world
+so that the ecosystem feels alive and immersive.
+
+### US-7.7.11.6
+As an **engine tester (P-27)**, I want to verify hunting success rate matches the
+configured percentage over 100 trials
+so that success rate accuracy is regression-tested.

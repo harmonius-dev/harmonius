@@ -1,102 +1,165 @@
-# R-7.8 -- Tactical Combat AI Requirements
+# R-7.8 -- Tactical Combat AI User Stories
 
-## R-7.8.1 Cover Evaluation and Scoring
+## US-7.8.1 Cover Evaluation and Scoring
 
-The engine **SHALL** evaluate cover positions by protection angle, sight lines to targets,
-flanking exposure, distance to target, and proximity to objectives, selecting the highest-
-scoring position given the current tactical situation, with re-evaluation triggered by
-significant target movement, unexpected damage, or cover destruction, and scoring weights
-configurable per AI archetype.
+### US-7.8.1.1
+As a **designer (P-5)**, I want cover scored by protection angle, sight lines, flanking
+exposure, and distance
+so that AI selects tactically optimal positions.
 
-- **Derived from:** [F-7.8.1](../../features/ai/tactical-combat.md)
-- **Rationale:** Believable combat AI requires agents to select tactically sound positions
-  based on multiple criteria rather than simply hiding behind the nearest wall.
-- **Verification:** Place 5 cover positions with varying protection angles (30-180 degrees)
-  and distances to a target. Verify the system ranks full-cover positions higher than partial-
-  cover positions. Move the target 10 m and verify re-evaluation triggers and the agent
-  selects a new optimal position. Destroy the agent's current cover and verify it transitions
-  to the next-best position within 2 ticks.
+### US-7.8.1.2
+As a **designer (P-5)**, I want cover re-evaluation on target movement or cover
+destruction
+so that AI adapts to changing tactical situations.
 
-## R-7.8.2 Flanking and Pincer Behavior
+### US-7.8.1.3
+As a **designer (P-5)**, I want scoring weights configurable per AI archetype
+so that cautious AI prioritizes protection while aggressive AI prioritizes sight lines.
 
-The engine **SHALL** coordinate multiple AI agents engaging the same target to approach from
-different angles, with a squad leader designating flanking assignments, flanking paths avoiding
-the target's line-of-sight, and flankers synchronizing at staging positions before simultaneous
-attack.
+### US-7.8.1.4
+As a **player (P-23)**, I want enemies to use cover intelligently
+so that combat encounters feel tactically challenging.
 
-- **Derived from:** [F-7.8.2](../../features/ai/tactical-combat.md)
-- **Rationale:** Coordinated multi-angle attacks create challenging and believable tactical
-  encounters that test player positioning and awareness.
-- **Verification:** Assign a 4-agent squad against a single target. Verify at least 2 agents
-  are assigned flanking positions with approach angles differing by at least 60 degrees from
-  the frontal agents. Verify flanking paths do not cross the target's vision cone. Verify
-  flankers wait at staging positions until all flankers arrive (within a 3-second timeout)
-  before attacking simultaneously.
+### US-7.8.1.5
+As an **engine tester (P-27)**, I want to verify full-cover positions rank higher than
+partial-cover
+so that cover scoring order is regression-tested.
 
-## R-7.8.3 Squad Formation and Communication
+---
 
-The engine **SHALL** maintain squad formations (line, wedge, column, diamond, staggered) with
-configurable spacing during movement, with the squad leader selecting formation based on terrain
-context, and squad members communicating target positions, flanking calls, retreat orders, and
-regroup commands that are both functional (affect AI decisions) and presentational (trigger bark
-audio and floating text). Formation movement geometry delegates to the steering-domain formation
-system (R-7.2.5). This requirement adds tactical context selection and squad communication on top
-of the base formation movement.
+## US-7.8.2 Flanking and Pincer Behavior
 
-- **Derived from:** [F-7.8.3](../../features/ai/tactical-combat.md)
-- **Rationale:** Formation-based movement and inter-agent communication produce organized
-  military behavior that is both tactically effective and readable by the player.
-- **Verification:** Move a 4-agent squad through open terrain and verify wedge formation with
-  spacing within 0.5 m of the configured value. Enter a narrow corridor and verify automatic
-  switch to column formation. Issue a "contact front-left" communication and verify all squad
-  members orient toward the indicated direction. Verify the communication triggers a bark
-  audio event. Kill 2 squad members and verify the remaining agents regroup at a rally point.
+### US-7.8.2.1
+As a **designer (P-5)**, I want coordinated multi-angle approaches when multiple AI
+engage the same target
+so that flanking creates challenging tactical encounters.
 
-## R-7.8.4 Suppressive Fire and Pinning
+### US-7.8.2.2
+As a **designer (P-5)**, I want flanking paths avoiding the target's line of sight
+so that flankers approach undetected.
 
-The engine **SHALL** enable AI agents to fire at a zone to suppress targets, applying a
-"suppressed" debuff to entities in the fire zone that increases accuracy penalty, triggers
-suppression camera effects, and inhibits return fire, with suppression duration and ammo
-consumption configurable per weapon type.
+### US-7.8.2.3
+As a **designer (P-5)**, I want flankers to synchronize at staging positions before
+simultaneous attack
+so that the pincer is coordinated.
 
-- **Derived from:** [F-7.8.4](../../features/ai/tactical-combat.md)
-- **Rationale:** Suppressive fire adds tactical depth by allowing AI to pin down targets while
-  teammates maneuver, creating dynamic combat encounters.
-- **Verification:** Designate a suppression zone and fire for 5 seconds. Verify entities
-  within the zone receive the "suppressed" debuff. Verify the debuff increases accuracy
-  penalty by the configured amount. Verify the debuff is removed within 2 seconds after
-  suppressive fire ceases. Configure two weapon types with different ammo-per-second rates
-  and verify each consumes ammo at its configured rate during suppression.
+### US-7.8.2.4
+As a **player (P-23)**, I want enemies to try to surround me
+so that combat requires positional awareness.
 
-## R-7.8.5 Search and Investigation Patterns
+### US-7.8.2.5
+As an **engine tester (P-27)**, I want to verify flanking angles differ by at least
+60 degrees
+so that angle spread is regression-tested.
 
-The engine **SHALL** execute systematic search patterns when AI loses visual contact with a
-target, expanding from the last-known position via spiral, priority-ordered cover checks, and
-room-by-room scanning, with squad members dividing the search area, and search intensity
-decreasing over a configurable timeout before returning to patrol state.
+---
 
-- **Derived from:** [F-7.8.5](../../features/ai/tactical-combat.md)
-- **Rationale:** Believable AI must actively search for lost targets rather than instantly
-  forgetting or omnisciently re-acquiring them.
-- **Verification:** Break line-of-sight with an agent. Verify the agent begins searching from
-  the target's last-known position. Verify the search pattern visits at least 80% of nearby
-  cover points within the configured search duration. Assign a 3-agent squad to search and
-  verify they divide the area (no two agents search the same sub-region simultaneously).
-  Wait for the timeout and verify all agents return to patrol state.
+## US-7.8.3 Squad Formation and Communication
 
-## R-7.8.6 Retreat and Fallback Behavior
+### US-7.8.3.1
+As a **designer (P-5)**, I want squad formations (line, wedge, column, diamond) with
+configurable spacing
+so that squads move tactically.
 
-The engine **SHALL** trigger retreat to secondary positions when health drops below a threshold,
-current cover is destroyed, the agent is outnumbered beyond a configurable ratio, or the squad
-leader orders retreat, with retreating agents selecting fallback positions further from threats
-and using available abilities (smoke, suppressive fire) to cover their withdrawal.
+### US-7.8.3.2
+As a **designer (P-5)**, I want context-adaptive formation selection (wedge in open,
+column in corridors)
+so that squads adapt to terrain.
 
-- **Derived from:** [F-7.8.6](../../features/ai/tactical-combat.md)
-- **Rationale:** AI that fights to the death regardless of circumstances is neither believable
-  nor tactically interesting; retreat adds dynamic flow to combat encounters.
-- **Verification:** Reduce an agent's health below the retreat threshold (e.g., 20%). Verify
-  the agent begins retreating within 2 ticks. Verify the selected fallback position is farther
-  from the threat than the current position. If the agent has a smoke grenade ability, verify
-  it is used during withdrawal. Set a squad casualty threshold of 50% and kill half the squad;
-  verify all surviving members retreat. After reaching fallback, verify the agent re-engages
-  if conditions improve (e.g., health restored above threshold).
+### US-7.8.3.3
+As a **designer (P-5)**, I want squad communication (contact calls, flanking calls,
+retreat orders)
+so that AI coordination is both functional and presentational.
+
+### US-7.8.3.4
+As a **player (P-23)**, I want to hear enemy squads calling out my position
+so that combat communication adds immersion.
+
+### US-7.8.3.5
+As an **engine tester (P-27)**, I want to verify formation switches from wedge to column
+in narrow terrain
+so that context-adaptive formation is regression-tested.
+
+---
+
+## US-7.8.4 Suppressive Fire and Pinning
+
+### US-7.8.4.1
+As a **designer (P-5)**, I want AI to suppress a zone rather than aim at an entity
+so that pinning fire prevents the target from moving.
+
+### US-7.8.4.2
+As a **designer (P-5)**, I want a "suppressed" debuff with accuracy penalty and camera
+effects
+so that being suppressed feels impactful.
+
+### US-7.8.4.3
+As a **designer (P-5)**, I want suppression duration and ammo consumption configurable
+per weapon
+so that different weapons have different suppression characteristics.
+
+### US-7.8.4.4
+As a **player (P-23)**, I want to feel pinned down by enemy fire
+so that taking cover during suppression is a compelling tactical choice.
+
+### US-7.8.4.5
+As an **engine tester (P-27)**, I want to verify the suppressed debuff is removed within
+2 seconds after fire ceases
+so that debuff lifecycle is regression-tested.
+
+---
+
+## US-7.8.5 Search and Investigation Patterns
+
+### US-7.8.5.1
+As a **designer (P-5)**, I want systematic search patterns from last-known position
+so that AI actively hunts for lost targets.
+
+### US-7.8.5.2
+As a **designer (P-5)**, I want squad members dividing the search area
+so that coordinated search covers more ground.
+
+### US-7.8.5.3
+As a **designer (P-5)**, I want search intensity decreasing over configurable timeout
+so that AI eventually returns to patrol.
+
+### US-7.8.5.4
+As a **player (P-23)**, I want enemies to search methodically when I break contact
+so that stealth re-engagement requires skill.
+
+### US-7.8.5.5
+As an **engine tester (P-27)**, I want to verify search visits at least 80% of nearby
+cover points
+so that search thoroughness is regression-tested.
+
+---
+
+## US-7.8.6 Retreat and Fallback Behavior
+
+### US-7.8.6.1
+As a **designer (P-5)**, I want AI retreat triggered by low health, destroyed cover,
+or being outnumbered
+so that AI self-preservation creates dynamic combat flow.
+
+### US-7.8.6.2
+As a **designer (P-5)**, I want retreating agents using smoke or suppressive fire for
+cover
+so that withdrawal is tactically sophisticated.
+
+### US-7.8.6.3
+As a **designer (P-5)**, I want morale-based squad retreat when casualties exceed
+threshold
+so that entire squads fall back when outmatched.
+
+### US-7.8.6.4
+As a **player (P-23)**, I want enemies to retreat when I am winning
+so that combat feels responsive to my success.
+
+### US-7.8.6.5
+As a **player (P-23)**, I want retreated enemies to re-engage if conditions improve
+so that combat has dynamic ebb and flow.
+
+### US-7.8.6.6
+As an **engine tester (P-27)**, I want to verify retreat triggers within 2 ticks of
+health dropping below threshold
+so that retreat response time is regression-tested.

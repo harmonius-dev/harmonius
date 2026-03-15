@@ -9,7 +9,7 @@ is the first feature in category 2.3). Features reference requirements from [doc
 | # | Module | Files | Features |
 |---|--------|-------|----------|
 | 1 | [Core Runtime](core-runtime/) | 9 | 100 |
-| 2 | [Rendering](rendering/) | 12 | 140 |
+| 2 | [Rendering](rendering/) | 12 | 142 |
 | 3 | [Geometry & World](geometry-world/) | 6 | 106 |
 | 4 | [Physics](physics/) | 8 | 62 |
 | 5 | [Audio](audio/) | 5 | 38 |
@@ -20,10 +20,10 @@ is the first feature in category 2.3). Features reference requirements from [doc
 | 10 | [UI & 2D](ui-2d/) | 6 | 75 |
 | 11 | [VFX](vfx/) | 6 | 38 |
 | 12 | [Content Pipeline](content-pipeline/) | 7 | 75 |
-| 13 | [Game Framework](game-framework/) | 28 | 341 |
-| 14 | [Platform](platform/) | 6 | 37 |
+| 13 | [Game Framework](game-framework/) | 28 | 347 |
+| 14 | [Platform](platform/) | 6 | 42 |
 | 15 | [Tools & Editor](tools-editor/) | 19 | 160 |
-| | **Total** | **139** | **1368** |
+| | **Total** | **139** | **1381** |
 
 ## Complete Feature Index
 
@@ -245,6 +245,8 @@ is the first feature in category 2.3). Features reference requirements from [doc
 | rendering | post-processing | F-2.9.10 | Post-Process Materials |
 | rendering | post-processing | F-2.9.11 | Local Exposure |
 | rendering | post-processing | F-2.9.12 | Panini Projection |
+| rendering | post-processing | F-2.9.13 | Screen-Space Cavity and Curvature |
+| rendering | post-processing | F-2.9.14 | Post-Process Graph Editor |
 | rendering | scene-rendering-pipeline | F-2.10.1 | Render Proxy Extraction |
 | rendering | scene-rendering-pipeline | F-2.10.2 | Render Component System |
 | rendering | scene-rendering-pipeline | F-2.10.3 | Change Detection and Incremental Update |
@@ -1079,6 +1081,12 @@ is the first feature in category 2.3). Features reference requirements from [doc
 | game-framework | npc-simulation | F-13.19.4c | Schedule-Gated Interactions |
 | game-framework | npc-simulation | F-13.19.5 | Ambient Bark System |
 | game-framework | npc-simulation | F-13.19.6 | Threat and Aggro Table System |
+| game-framework | npc-simulation | F-13.19.7 | NPC-to-NPC Conversation System |
+| game-framework | npc-simulation | F-13.19.8 | NPC Independent Memory System |
+| game-framework | npc-simulation | F-13.19.9 | NPC Environmental Interaction |
+| game-framework | npc-simulation | F-13.19.10 | Social-Cue Player Search |
+| game-framework | npc-simulation | F-13.19.11 | Quest and Story State NPC Awareness |
+| game-framework | npc-simulation | F-13.19.12 | Player-Witnessed NPC Social Behaviors |
 | game-framework | fog-of-war | F-13.20.1 | Fog of War Grid System |
 | game-framework | fog-of-war | F-13.20.2 | Vision Source and Sight Radius |
 | game-framework | fog-of-war | F-13.20.3 | Vision Modifier Volumes |

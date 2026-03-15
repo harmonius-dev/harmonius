@@ -1,126 +1,194 @@
-# R-15.19 — Documentation and Learning Requirements
+# R-15.19 -- Documentation and Learning User Stories
 
-## API Reference
+## US-15.19.1 Auto-Generated API Reference
 
-### R-15.19.1 Auto-Generated API Reference Coverage
+### US-15.19.1.1
+As a **developer (P-15)**, I want auto-generated API docs from Rust doc comments
+so that I can discover engine APIs without reading source code.
 
-100% of public API types, traits, functions, and methods across all engine crates **SHALL** have
-doc comments. The CI pipeline **SHALL** enforce this by failing the build when any public item
-lacks a doc comment (`#![deny(missing_docs)]`). The generated API reference **SHALL** be published
-as a searchable static website with each engine release, and the in-editor help panel **SHALL**
-open the relevant documentation page within 500 ms of clicking "?" on any inspector property or
-node type.
+### US-15.19.1.2
+As a **developer (P-15)**, I want a searchable static website published per release
+so that I can find API documentation quickly.
 
-- **Derived from:** [F-15.19.1](../../features/tools-editor/documentation.md)
-- **Rationale:** Complete API documentation enables plugin developers and engine contributors to
-  discover and use engine APIs without reading source code. CI enforcement prevents documentation
-  from going stale.
-- **Verification:** Run `cargo doc` with `#![deny(missing_docs)]` on all public crates; verify
-  the build succeeds with zero warnings. Spot-check 20 randomly selected public types and confirm
-  each has a description, parameter types, return type, and at least one example. Click "?" on 10
-  different inspector properties in the editor and verify the help panel opens the correct page
-  within 500 ms.
+### US-15.19.1.3
+As a **developer (P-15)**, I want in-editor "?" buttons opening the relevant doc page
+so that I can access documentation in context.
 
-### R-15.19.2 Logic Graph Node Documentation Completeness
+### US-15.19.1.4
+As a **DevOps (P-16)**, I want CI enforcing #![deny(missing_docs)] on all public items
+so that documentation completeness is guaranteed.
 
-Every built-in logic graph node **SHALL** have a description, input/output port documentation with
-types and valid ranges, and at least one usage example as an embedded mini-graph. The editor
-**SHALL** display the node description in a tooltip on hover (within 200 ms) and show the full
-documentation in a dedicated panel when the node is selected. Custom nodes **SHALL** inherit a
-documentation template that prompts the author to fill in descriptions for each port.
+### US-15.19.1.5
+As an **engine tester (P-27)**, I want to verify the in-editor help panel opens within
+500ms
+so that help response time is regression-tested.
 
-- **Derived from:** [F-15.19.2](../../features/tools-editor/documentation.md)
-- **Rationale:** Inline node documentation eliminates the need to leave the graph editor to look
-  up node behavior, reducing context switching and errors.
-- **Verification:** Enumerate all built-in nodes; verify each has a non-empty description, port
-  documentation for every input and output, and at least one example graph. Hover over 10 nodes
-  and verify tooltips appear within 200 ms. Create a custom node and verify the documentation
-  template is presented with prompts for each port.
+---
 
-## In-Editor Tutorials
+## US-15.19.2 Logic Graph Node Documentation
 
-### R-15.19.3 Interactive Tutorial Coverage and Completion Time
+### US-15.19.2.1
+As a **designer (P-5)**, I want description tooltips when hovering over graph nodes
+so that I can understand node behavior without leaving the editor.
 
-The engine **SHALL** ship with at least 6 tutorial categories (Getting Started, Gameplay, Art,
-Audio, Networking, Advanced), each completable in under 30 minutes by a first-time user following
-the instructions. Each tutorial step **SHALL** highlight the relevant UI element with a spotlight
-overlay and wait for the user to complete the action before advancing. Tutorials **SHALL** support
-pause, resume, and restart. Tutorial assets **SHALL** be authored using the logic graph system,
-enabling community-created tutorials.
+### US-15.19.2.2
+As a **designer (P-5)**, I want input/output port documentation with types and ranges
+so that I know valid values for each node pin.
 
-- **Derived from:** [F-15.19.3](../../features/tools-editor/documentation.md)
-- **Rationale:** Interactive tutorials reduce time-to-productivity for new users and provide a
-  guided onboarding path that covers all major engine areas.
-- **Verification:** Complete each of the 6 tutorial categories from a fresh project; record
-  completion time and verify each finishes under 30 minutes. Verify spotlight overlays appear on
-  the correct UI elements at each step. Pause, close the editor, reopen, resume, and verify
-  progress is preserved. Restart a tutorial and verify it begins from step 1.
+### US-15.19.2.3
+As a **designer (P-5)**, I want usage examples as embedded mini-graphs
+so that I can see how nodes are used in context.
 
-### R-15.19.4 Video Tutorial Offline Playback
+### US-15.19.2.4
+As a **designer (P-5)**, I want a dedicated doc panel when selecting a node
+so that I can read full documentation alongside the graph.
 
-The embedded video player **SHALL** support offline playback from a local cache. When a video is
-first streamed, it **SHALL** be cached locally for subsequent offline viewing. The video panel
-**SHALL** be dockable alongside the viewport. Chapter timestamps **SHALL** be clickable and
-optionally open the relevant editor panel or tool. The video library **SHALL** be organized by
-topic and difficulty level and accessible from the Help menu.
+### US-15.19.2.5
+As a **developer (P-15)**, I want custom nodes to inherit a documentation template
+so that user-created nodes are prompted for documentation.
 
-- **Derived from:** [F-15.19.4](../../features/tools-editor/documentation.md)
-- **Rationale:** Many development environments have intermittent or restricted internet access.
-  Local caching ensures tutorials remain accessible regardless of connectivity.
-- **Verification:** Stream a tutorial video with internet connected; disconnect the network and
-  replay the same video from cache; verify uninterrupted playback. Dock the video panel beside
-  the viewport and verify both remain functional. Click a chapter timestamp and verify the
-  linked editor panel opens. Browse the video library and verify entries are grouped by topic
-  and difficulty.
+### US-15.19.2.6
+As an **engine tester (P-27)**, I want to verify all built-in nodes have description,
+port docs, and examples
+so that node documentation completeness is regression-tested.
 
-### R-15.19.5 Contextual Help Coverage for Inspector Properties
+---
 
-100% of inspector properties **SHALL** have tooltips showing a short description, value type,
-valid range, and default value. The tooltip **SHALL** appear within 200 ms of hovering. Every
-editor panel, toolbar button, and menu item **SHALL** include contextual help accessible via
-hover, "?" button, or F1 key. Help content **SHALL** be stored as localized string assets
-and updatable independently of engine releases. A "What's This?" mode **SHALL** allow clicking
-any UI element to see its full documentation.
+## US-15.19.3 Interactive In-Editor Tutorials
 
-- **Derived from:** [F-15.19.5](../../features/tools-editor/documentation.md)
-- **Rationale:** Contextual help eliminates the need to search external documentation for
-  common questions about property meanings, valid values, and effects.
-- **Verification:** Enumerate all inspector properties across all built-in component types;
-  hover over each and verify a tooltip appears within 200 ms containing a description, type,
-  range, and default. Activate "What's This?" mode, click 10 different UI elements, and verify
-  documentation is displayed for each. Change the locale and verify tooltips appear in the
-  selected language.
+### US-15.19.3.1
+As a **designer (P-5)**, I want step-by-step guided tutorials inside the editor
+so that I can learn features through hands-on exercises.
 
-## Sample Projects
+### US-15.19.3.2
+As a **designer (P-5)**, I want spotlight overlays highlighting UI elements at each step
+so that I can locate the correct button or panel.
 
-### R-15.19.6 Genre Sample Project Coverage
+### US-15.19.3.3
+As a **designer (P-5)**, I want tutorials that wait for me to complete each step
+so that I learn by doing rather than just reading.
 
-The engine **SHALL** ship with at least 8 genre sample projects: 3D action/adventure, 2D
-platformer, FPS, RTS, RPG, racing, VR experience, and survival. Each sample **SHALL** include
-a playable build, annotated logic graphs with explanatory comments, an organized asset structure,
-and a companion walkthrough document. Samples **SHALL** be downloadable from the project creation
-wizard and the asset store.
+### US-15.19.3.4
+As a **designer (P-5)**, I want pause, resume, and restart for tutorials
+so that I can learn at my own pace.
 
-- **Derived from:** [F-15.19.6](../../features/tools-editor/documentation.md)
-- **Rationale:** Genre-specific samples demonstrate engine capabilities in realistic production
-  contexts and provide starting points for new projects.
-- **Verification:** Download each of the 8 sample projects from the creation wizard; open each
-  and verify it loads without errors. Build and run each sample; verify gameplay is functional.
-  Open 3 logic graphs per sample and verify explanatory comments are present. Verify each sample
-  has a companion walkthrough document.
+### US-15.19.3.5
+As a **modder (P-24)**, I want community-created tutorials via the asset store
+so that I can learn from content created by other users.
 
-### R-15.19.7 Documentation Code Example CI Validation
+### US-15.19.3.6
+As a **creative director (P-2)**, I want tutorials covering all major areas (gameplay,
+art, audio, networking, advanced)
+so that every team role has guided onboarding.
 
-100% of code examples in engine API documentation **SHALL** compile successfully against the
-current engine version. Stale examples that fail to compile **SHALL** fail the CI build. The
-CI pipeline **SHALL** extract and compile all doc-test examples as part of the standard test
-suite. Visual examples (logic graph screenshots) **SHALL** be versioned alongside engine source
-and updated by the project upgrade system.
+### US-15.19.3.7
+As an **engine tester (P-27)**, I want to verify each tutorial category completes
+under 30 minutes
+so that tutorial length is regression-tested.
 
-- **Derived from:** [F-15.19.7](../../features/tools-editor/documentation.md)
-- **Rationale:** Untested code examples become incorrect over time as APIs evolve. CI validation
-  guarantees every published example works with the current engine version.
-- **Verification:** Run `cargo test --doc` across all engine crates; verify all doc-test examples
-  compile and pass. Intentionally break an API used in an example; verify the CI build fails
-  with a clear error referencing the stale example. Fix the example and verify the build passes.
-  Upgrade a project and verify visual examples are updated to match the new version.
+---
+
+## US-15.19.4 Video Tutorial Integration
+
+### US-15.19.4.1
+As a **designer (P-5)**, I want an embedded video player within the editor
+so that I can follow tutorials without leaving the editor.
+
+### US-15.19.4.2
+As a **designer (P-5)**, I want the video panel dockable alongside the viewport
+so that I can follow along step-by-step while working.
+
+### US-15.19.4.3
+As a **designer (P-5)**, I want chapter timestamps that link to editor panels
+so that clicking a chapter opens the relevant tool.
+
+### US-15.19.4.4
+As a **developer (P-15)**, I want videos cached locally for offline playback
+so that tutorials work without internet connectivity.
+
+### US-15.19.4.5
+As an **engine tester (P-27)**, I want to verify cached videos play without network
+connectivity
+so that offline playback is regression-tested.
+
+---
+
+## US-15.19.5 Contextual Help and Tooltip System
+
+### US-15.19.5.1
+As a **designer (P-5)**, I want tooltips on every inspector property showing
+description, type, range, and default
+so that I understand each property without external docs.
+
+### US-15.19.5.2
+As a **designer (P-5)**, I want "?" button and F1 key access to contextual help
+so that I can access detailed documentation from any UI element.
+
+### US-15.19.5.3
+As a **designer (P-5)**, I want a "What's This?" mode for clicking any UI element
+so that I can explore editor features by direct interaction.
+
+### US-15.19.5.4
+As a **developer (P-15)**, I want help content as localized string assets updated
+independently of engine releases
+so that documentation stays current between versions.
+
+### US-15.19.5.5
+As an **engine tester (P-27)**, I want to verify tooltips appear within 200ms on hover
+for all inspector properties
+so that tooltip response time is regression-tested.
+
+---
+
+## US-15.19.6 Sample Projects and Template Library
+
+### US-15.19.6.1
+As a **designer (P-5)**, I want sample projects for each major game genre
+so that I have a working reference for my target game type.
+
+### US-15.19.6.2
+As a **designer (P-5)**, I want annotated logic graphs with explanatory comments
+so that I can learn graph patterns from working examples.
+
+### US-15.19.6.3
+As a **developer (P-15)**, I want playable builds included with each sample
+so that I can test the sample without building from source.
+
+### US-15.19.6.4
+As a **developer (P-15)**, I want companion walkthrough documents per sample
+so that key design decisions are explained.
+
+### US-15.19.6.5
+As a **creative director (P-2)**, I want at least 8 genre samples (action, platformer,
+FPS, RTS, RPG, racing, VR, survival)
+so that the engine demonstrates breadth across game types.
+
+### US-15.19.6.6
+As an **engine tester (P-27)**, I want to verify each sample project loads and runs
+without errors
+so that sample project integrity is regression-tested.
+
+---
+
+## US-15.19.7 Inline Code Examples in Documentation
+
+### US-15.19.7.1
+As a **developer (P-15)**, I want runnable code examples in API documentation
+so that I can copy working code directly from docs.
+
+### US-15.19.7.2
+As a **developer (P-15)**, I want visual examples (logic graph screenshots) for
+no-code users
+so that non-programmers can follow along.
+
+### US-15.19.7.3
+As a **DevOps (P-16)**, I want code examples compiled as CI doc-tests
+so that stale examples fail the build before shipping.
+
+### US-15.19.7.4
+As a **DevOps (P-16)**, I want visual examples updated by the project upgrade system
+so that screenshots match the current engine version.
+
+### US-15.19.7.5
+As an **engine tester (P-27)**, I want to verify all doc-test examples compile and pass
+so that example correctness is regression-tested.

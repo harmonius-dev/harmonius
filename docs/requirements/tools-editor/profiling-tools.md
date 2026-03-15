@@ -1,127 +1,213 @@
-# R-15.5 — Profiling Tools Requirements
+# R-15.5 -- Profiling Tools User Stories
 
-## CPU Profiling
+## US-15.5.1 Frame Profiler (CPU Timeline)
 
-### R-15.5.1 Frame Profiler (CPU Timeline)
+### US-15.5.1.1
+As a **developer (P-15)**, I want a per-frame CPU timeline with swimlane chart
+so that I can see all job system tasks and subsystem ticks per frame.
 
-The engine **SHALL** capture and display a per-frame CPU timeline showing all job system tasks,
-engine subsystem ticks, and visual logic graph execution as color-coded bars on a swimlane chart,
-with flame graph and flat profile views, thread/subsystem filtering, and frame-to-frame comparison,
-while introducing no more than 1% measurement overhead.
+### US-15.5.1.2
+As a **developer (P-15)**, I want flame graph and flat profile views
+so that I can analyze call depth and flat time distribution.
 
-- **Derived from:** [F-15.5.1](../../features/tools-editor/profiling-tools.md)
-- **Rationale:** Frame-level CPU profiling is essential for identifying performance bottlenecks in
-  gameplay logic, job scheduling, and subsystem ticks across hundreds of FPS.
-- **Verification:** Enable the CPU profiler on a scene running at 300+ FPS; measure that average
-  frame time increases by no more than 1%. Validate swimlane accuracy by instrumenting a known
-  workload with fixed sleep durations and asserting reported durations match within 5% tolerance.
+### US-15.5.1.3
+As a **developer (P-15)**, I want filtering by thread or subsystem
+so that I can isolate specific systems for targeted analysis.
 
-## GPU Profiling
+### US-15.5.1.4
+As a **developer (P-15)**, I want frame-to-frame comparison
+so that I can identify regressions by comparing two captures.
 
-### R-15.5.2 GPU Profiler (Pass Timing and Occupancy)
+### US-15.5.1.5
+As an **engine dev (P-26)**, I want measurement overhead under 1% of frame time
+so that profiling data reflects real production performance.
 
-The engine **SHALL** capture GPU timestamps per render graph pass and present them on a timeline
-aligned with the CPU frame profiler, reporting per-pass duration, shader occupancy, wave
-utilization, and overdraw statistics, with vendor-specific counter support on AMD (RGPMT),
-NVIDIA (Nsight), and Apple (Metal System Trace) GPUs.
+### US-15.5.1.6
+As an **engine dev (P-26)**, I want ETW integration on Windows for kernel-level data
+so that thread scheduling information supplements the CPU timeline.
 
-- **Derived from:** [F-15.5.2](../../features/tools-editor/profiling-tools.md)
-- **Rationale:** GPU pass timing and occupancy data enable artists and engineers to identify
-  rendering bottlenecks and optimize shader workloads per target hardware.
-- **Verification:** Run a scene with 10+ render passes; verify each pass reports a non-zero
-  duration and that the sum of pass durations approximates the total GPU frame time within 10%.
-  On each vendor GPU, confirm at least one vendor-specific counter is reported.
+### US-15.5.1.7
+As an **engine dev (P-26)**, I want os_signpost integration on macOS
+so that profiler data is compatible with Instruments for deep analysis.
 
-## Memory Profiling
+### US-15.5.1.8
+As an **engine tester (P-27)**, I want to verify profiler overhead stays under 1%
+at 300+ FPS
+so that the overhead target is regression-tested under high frame rates.
 
-### R-15.5.3 Memory Profiler (Allocation Tracking)
+### US-15.5.1.9
+As a **technical artist (P-13)**, I want to profile logic graph execution time
+so that I can identify expensive graph nodes affecting performance.
 
-The engine **SHALL** track all CPU and GPU memory allocations by subsystem, asset type, and
-allocation site, displaying a live treemap, historical timeline, per-frame allocation rate, and
-call-stack capture for each allocation.
+---
 
-- **Derived from:** [F-15.5.3](../../features/tools-editor/profiling-tools.md)
-- **Rationale:** Detailed allocation tracking is critical for enforcing memory budgets on clients
-  that must run for extended sessions without memory growth.
-- **Verification:** Allocate 1000 objects from a known subsystem; verify the treemap attributes
-  100% of allocations to that subsystem. Validate call stacks resolve to correct source locations
-  on Windows (CaptureStackBackTrace) and macOS/Linux (backtrace).
+## US-15.5.2 GPU Profiler (Pass Timing and Occupancy)
 
-### R-15.5.4 Leak Detection
+### US-15.5.2.1
+As a **developer (P-15)**, I want GPU timestamps per render graph pass
+so that I can identify which render passes consume the most GPU time.
 
-The engine **SHALL** detect memory leaks by comparing allocation snapshots taken at different points
-in time, reporting allocations present in the later snapshot but absent in the earlier one, grouped
-by allocation site and asset type, with CI-compatible automated leak checks.
+### US-15.5.2.2
+As a **developer (P-15)**, I want the GPU timeline aligned with the CPU profiler
+so that I can correlate CPU and GPU work within the same frame.
 
-- **Derived from:** [F-15.5.4](../../features/tools-editor/profiling-tools.md)
-- **Rationale:** Automated leak detection prevents slow memory growth that degrades stability
-  during long play sessions and catches regressions in CI before they ship.
-- **Verification:** Intentionally leak 100 allocations between two snapshots; verify the leak
-  report lists exactly 100 allocations grouped by their allocation site. Run the same test in
-  CI mode and assert a non-zero exit code.
+### US-15.5.2.3
+As a **developer (P-15)**, I want shader occupancy and wave utilization metrics
+so that I can diagnose underutilized GPU shaders.
 
-## Network Profiling
+### US-15.5.2.4
+As a **developer (P-15)**, I want overdraw statistics per pass
+so that I can identify scenes with excessive pixel re-rendering.
 
-### R-15.5.5 Network Profiler (Bandwidth and Packet Inspector)
+### US-15.5.2.5
+As a **artist (P-8)**, I want to see per-pass GPU timing on my materials
+so that I can understand which material changes impact GPU performance.
 
-The engine **SHALL** monitor network bandwidth per replication channel, RPC category, and entity
-relevance set, providing a packet inspector that decodes packets into structured fields, graphing
-upstream/downstream bandwidth over time, and flagging spikes exceeding budget thresholds.
+### US-15.5.2.6
+As an **engine dev (P-26)**, I want vendor-specific counters (AMD RGPMT, NVIDIA Nsight,
+Apple Metal System Trace)
+so that I can access hardware-specific performance data.
 
-- **Derived from:** [F-15.5.5](../../features/tools-editor/profiling-tools.md)
-- **Rationale:** Network bandwidth profiling is essential for tuning replication in crowded zones
-  where bandwidth spikes can cause packet loss and desynchronization.
-- **Verification:** Simulate 50 entities replicating across 3 channels; verify per-channel
-  bandwidth sums match total bandwidth within 1%. Inject a bandwidth spike and assert the
-  threshold alert fires within one sampling interval.
+### US-15.5.2.7
+As an **engine tester (P-27)**, I want to verify pass timing sums approximate total
+GPU frame time within 10%
+so that GPU profiler accuracy is regression-tested.
 
-## Non-Functional Requirements
+---
 
-### R-15.5.NF1 Profiler Measurement Overhead
+## US-15.5.3 Memory Profiler (Allocation Tracking)
 
-All profiling tools **SHALL** introduce no more than the following overhead when active:
-- CPU frame profiler: under 1% of total frame time (as stated in R-15.5.1).
-- GPU profiler: under 2% of total GPU frame time from timestamp query insertion.
-- Memory profiler with call-stack capture: under 5% of total frame time.
-- Network profiler: under 0.5% of total frame time.
-- Stat overlays (all enabled): under 0.5ms rendering overhead per frame.
+### US-15.5.3.1
+As a **developer (P-15)**, I want allocation tracking by subsystem and asset type
+so that I can identify which systems consume the most memory.
 
-When all profilers are enabled simultaneously, the combined overhead **SHALL NOT** exceed 8% of
-total frame time.
+### US-15.5.3.2
+As a **developer (P-15)**, I want a live treemap of memory consumption
+so that I can visualize memory distribution interactively.
 
-- **Derived from:** F-15.5.1 through F-15.5.7 (all profiling features).
-- **Rationale:** Profiling tools that significantly perturb the system under measurement produce
-  misleading results. Low overhead ensures profiling data reflects real production performance.
-- **Verification:** Enable all profilers simultaneously on a scene running at 300+ FPS. Measure
-  frame time with and without profiling and assert the difference is under 8%. Measure each
-  profiler's individual overhead by enabling them one at a time and assert each stays within its
-  specified budget.
+### US-15.5.3.3
+As a **developer (P-15)**, I want historical allocation timeline
+so that I can see memory growth patterns over time.
 
-## Overlays and Remote Profiling
+### US-15.5.3.4
+As a **developer (P-15)**, I want per-frame allocation rate display
+so that I can identify frames with excessive allocations.
 
-### R-15.5.6 Stat Overlays
+### US-15.5.3.5
+As a **developer (P-15)**, I want call-stack capture for each allocation
+so that I can trace allocations to their source code location.
 
-The engine **SHALL** render configurable HUD overlays on the game viewport showing real-time FPS,
-frame time, draw call count, triangle count, GPU memory, CPU thread utilization, network bandwidth,
-and entity count, with individual toggle control and CSV export for post-session analysis.
+### US-15.5.3.6
+As an **engine dev (P-26)**, I want platform-specific stack capture APIs used
+(CaptureStackBackTrace, backtrace)
+so that call stacks resolve correctly on each platform.
 
-- **Derived from:** [F-15.5.6](../../features/tools-editor/profiling-tools.md)
-- **Rationale:** On-screen stat overlays give immediate visual feedback during play testing
-  without switching to external profiling tools.
-- **Verification:** Enable all overlays; verify each displays a non-zero value during an active
-  scene. Toggle each overlay off individually and confirm it disappears. Export to CSV and
-  validate the file parses correctly with at least 60 rows of data for a 1-second capture.
+### US-15.5.3.7
+As an **engine tester (P-27)**, I want to verify all allocations from a known subsystem
+attribute to that subsystem in the treemap
+so that allocation attribution is regression-tested.
 
-### R-15.5.7 Remote Profiling
+---
 
-The engine **SHALL** connect editor-side profiling tools to a live game server or client over TCP
-for remote data collection, with all profiler views (CPU timeline, GPU passes, memory, network)
-functioning identically when driven by remote data, supporting dedicated servers, development kits,
-and mobile devices, while limiting capture bandwidth to under 10 Mbps.
+## US-15.5.4 Leak Detection
 
-- **Derived from:** [F-15.5.7](../../features/tools-editor/profiling-tools.md)
-- **Rationale:** Remote profiling enables performance analysis of dedicated servers under real
-  player load and mobile devices that lack local profiling UI.
-- **Verification:** Connect the editor profiler to a remote game instance on the local network;
-  verify CPU timeline, GPU pass, memory, and network views display valid data. Measure capture
-  stream bandwidth and assert it remains below 10 Mbps at default granularity.
+### US-15.5.4.1
+As a **developer (P-15)**, I want to compare allocation snapshots for leak detection
+so that I can find allocations that persist between checkpoints.
+
+### US-15.5.4.2
+As a **developer (P-15)**, I want leak reports grouped by allocation site and asset type
+so that I can prioritize fixes by impact.
+
+### US-15.5.4.3
+As a **DevOps (P-16)**, I want automated leak checks in CI
+so that memory leaks are caught before they reach production.
+
+### US-15.5.4.4
+As an **engine tester (P-27)**, I want to verify intentional leaks are detected between
+snapshots
+so that leak detection accuracy is regression-tested.
+
+---
+
+## US-15.5.5 Network Profiler (Bandwidth and Packet Inspector)
+
+### US-15.5.5.1
+As a **developer (P-15)**, I want bandwidth monitoring per replication channel
+so that I can identify which data channels consume the most bandwidth.
+
+### US-15.5.5.2
+As a **developer (P-15)**, I want a packet inspector decoding individual packets
+so that I can debug serialization issues at the field level.
+
+### US-15.5.5.3
+As a **developer (P-15)**, I want bandwidth graphing over time with spike alerts
+so that I can identify bandwidth budget violations.
+
+### US-15.5.5.4
+As a **server admin (P-22)**, I want per-entity-relevance bandwidth breakdown
+so that I can tune replication for crowded zones.
+
+### US-15.5.5.5
+As an **engine tester (P-27)**, I want to verify per-channel bandwidth sums match total
+within 1%
+so that bandwidth accounting is regression-tested.
+
+---
+
+## US-15.5.6 Stat Overlays
+
+### US-15.5.6.1
+As a **designer (P-5)**, I want FPS and frame time overlays on the game viewport
+so that I can monitor performance during play testing.
+
+### US-15.5.6.2
+As a **developer (P-15)**, I want draw call count and triangle count overlays
+so that I can monitor rendering complexity during gameplay.
+
+### US-15.5.6.3
+As a **developer (P-15)**, I want GPU memory and CPU thread utilization overlays
+so that I can watch resource usage in real time.
+
+### US-15.5.6.4
+As a **developer (P-15)**, I want overlays individually toggleable
+so that I can show only the stats relevant to my current task.
+
+### US-15.5.6.5
+As a **developer (P-15)**, I want CSV export of overlay data for post-session analysis
+so that I can process performance data in external tools.
+
+### US-15.5.6.6
+As an **engine tester (P-27)**, I want to verify each overlay displays non-zero values
+during an active scene
+so that overlay data accuracy is regression-tested.
+
+---
+
+## US-15.5.7 Remote Profiling
+
+### US-15.5.7.1
+As a **developer (P-15)**, I want to connect editor profiling tools to a remote server
+so that I can profile dedicated servers under real player load.
+
+### US-15.5.7.2
+As a **developer (P-15)**, I want all profiler views to function identically with remote
+data
+so that remote profiling provides the same insights as local profiling.
+
+### US-15.5.7.3
+As a **developer (P-15)**, I want remote profiling of mobile devices on the local network
+so that I can analyze mobile performance without on-device tools.
+
+### US-15.5.7.4
+As a **server admin (P-22)**, I want to connect profiling tools to live game servers
+so that I can diagnose production performance issues.
+
+### US-15.5.7.5
+As an **engine dev (P-26)**, I want capture bandwidth limited to under 10 Mbps
+so that profiling does not saturate the network connection.
+
+### US-15.5.7.6
+As an **engine tester (P-27)**, I want to verify remote profiling data matches local
+profiling for the same workload
+so that remote data fidelity is regression-tested.

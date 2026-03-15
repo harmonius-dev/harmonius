@@ -121,3 +121,131 @@ the AI behavior tree (F-7.3.4) for target-switching decisions.
 - **Requirements:** R-13.19.6
 - **Dependencies:** F-13.10.1 (Ability Definition), F-7.3.1 (Behavior Trees), F-1.9.4 (Spatial Query)
 - **Platform notes:** None
+
+## NPC Social Interactions
+
+### F-13.19.7 NPC-to-NPC Conversation System
+
+NPCs autonomously engage in conversations with other NPCs they encounter during their daily
+routines (F-13.19.4). Conversations are triggered by proximity, shared faction, relationship
+level, and topic relevance. Each conversation follows a mini-dialogue template: greeting,
+topic exchange (1-3 topics), farewell. Topics include: recent events they witnessed
+(F-13.19.8), player sightings (F-13.19.10), quest state changes, rumors from other NPCs
+(F-13.19.3b gossip), and ambient world state (weather, time of day, faction events).
+Conversations are visible to the player as overhead speech bubbles with optional audio barks
+(F-13.19.5). Conversation outcomes modify both NPCs' memory (F-13.19.8) — information learned
+during conversation is stored as a memory with source attribution. NPCs prioritize
+conversation topics by urgency: threat warnings first, quest-relevant info second, social
+gossip third. Conversations can be interrupted by threats, player interaction, or schedule
+obligations.
+
+- **Requirements:** R-13.19.7
+- **Dependencies:** F-13.19.1 (Relationships), F-13.19.2 (Personality),
+  F-13.19.4a (Schedule), F-13.19.5 (Barks), F-13.19.8 (Memory)
+- **Platform notes:** Mobile limits simultaneous NPC conversations to 4
+  (vs 16 on desktop).
+
+### F-13.19.8 NPC Independent Memory System
+
+Each NPC maintains a personal memory store of events they directly witnessed, information
+received from other NPCs (with source attribution and confidence decay), and interactions
+with players and other NPCs. Memory entries contain: event type (sighting, conversation,
+combat, theft, gift, quest event), involved entities, location, timestamp, emotional weight
+(how strongly the NPC felt about the event), and reliability score (direct witness: 1.0,
+heard from trusted NPC: 0.7, heard from stranger: 0.3, multi-hop rumor: degrades per hop).
+Memories decay over time based on emotional weight — traumatic memories (witnessing murder)
+persist indefinitely, routine events (seeing the player walk by) fade within game-hours.
+Memory capacity is capped per NPC (configurable, default 50 entries) with lowest-weight
+memories evicted when full. The memory system integrates with: behavior trees (F-7.3.1)
+for decision-making ("I saw the player near the market 10 minutes ago"), dialogue (F-13.6.4)
+for contextual responses ("Last time you were here, you stole from the baker"), and the
+gossip system (F-13.19.3a) which reads from and writes to memory.
+
+- **Requirements:** R-13.19.8
+- **Dependencies:** F-13.19.2 (Personality), F-7.3.1 (Behavior Trees),
+  F-13.6.4 (Dialogue)
+- **Platform notes:** Mobile: 20 memories per NPC (vs 50 desktop). Low-LOD NPCs
+  (F-7.7.5) freeze memory updates until promoted to high LOD.
+
+### F-13.19.9 NPC Environmental Interaction
+
+NPCs interact with the same environmental objects as players: opening and closing doors
+(F-13.17.2), pulling levers and pressing buttons, sitting in chairs, eating at tables,
+using crafting stations (F-13.12.4), sleeping in beds, and taking shortcuts (ladders, gates,
+bridges). Each interactable object (F-13.17.1) defines an NPC interaction profile: which
+NPC archetypes can use it, required items (keys for locked doors), interaction animation,
+and navigation cost (pathfinding weights to route through interactive shortcuts). NPCs
+evaluate whether to use environmental shortcuts during pathfinding — a locked door that the
+NPC has a key for is traversable; a lever that opens a shortcut is used if it saves travel
+time. Door state changes by NPCs are visible to players and affect gameplay: a guard opening
+a previously locked door creates new stealth routes. NPC environmental interactions trigger
+animation events (F-9.1.9) and sound events (F-7.6.2) that can alert other NPCs and players.
+
+- **Requirements:** R-13.19.9
+- **Dependencies:** F-13.17.1 (World Interaction), F-13.17.2 (Doors),
+  F-7.1.1 (NavMesh), F-9.1.9 (Animation Events)
+- **Platform notes:** None
+
+### F-13.19.10 Social-Cue Player Search
+
+When searching for a player or target, NPCs use social cues instead of omniscient knowledge.
+Search methods: **ask nearby NPCs** — the searching NPC approaches allied or neutral NPCs and
+initiates a "have you seen [target]?" query. The queried NPC checks their memory (F-13.19.8)
+for recent sightings and responds with the last known position and timestamp (if they have
+one) or "no" (if they don't). The searcher then investigates the reported position. **Check
+evidence** — the searcher examines environmental evidence (F-7.6.9): footprints, opened
+doors that should be closed, disturbed objects, missing items. **Query faction network** —
+for organized factions (guard patrols, guild members), the searcher sends a broadcast query
+(F-7.7.7) to all faction members within communication range. Responses trickle in over time
+(not instant) simulating radio/messenger delay. Social search is slower than omniscient
+tracking but feels fair to the player — NPCs only know what they or their allies have
+personally observed. The search radiates outward from the last known position, checking
+NPCs and evidence along the way.
+
+- **Requirements:** R-13.19.10
+- **Dependencies:** F-13.19.8 (Memory), F-13.19.7 (NPC Conversations),
+  F-7.7.7 (Knowledge Sharing), F-7.6.9 (Evidence), F-7.6.10 (Investigation)
+- **Platform notes:** Mobile: query limited to 4 nearby NPCs (vs 8 on desktop).
+
+### F-13.19.11 Quest and Story State NPC Awareness
+
+NPCs are aware of the game's quest and story progression and modify their behavior, dialogue,
+and social interactions accordingly. Each NPC has a `StoryAwareness` component listing which
+quest states they react to. Reactions: **dialogue changes** — an NPC who knows the player
+completed a quest greets them differently ("I heard you dealt with those bandits").
+**Behavior changes** — a merchant who heard about a dragon attack in a neighboring town
+increases weapon prices and stocks healing potions. **Social topic** — NPCs discuss quest
+events in their conversations (F-13.19.7), spreading quest-relevant information through the
+social network. **Faction response** — major quest completions shift faction behaviors
+(F-7.7.9) across all members. Story awareness integrates with the quest phasing system
+(F-13.6.7b) — NPCs in phased zones see the appropriate quest state. NPC reactions to quest
+state are configured in the visual quest editor as "NPC Reaction" nodes attached to quest
+state transitions.
+
+- **Requirements:** R-13.19.11
+- **Dependencies:** F-13.6.1 (Quest System), F-13.6.4 (Dialogue),
+  F-13.19.7 (Conversations), F-7.7.9 (Faction Relationships),
+  F-13.6.7b (Quest Phasing)
+- **Platform notes:** None
+
+### F-13.19.12 Player-Witnessed NPC Social Behaviors
+
+NPC social interactions are performed visibly in the game world, creating a living, believable
+environment. Players can: **overhear NPC conversations** — speech bubbles and optional voiced
+barks play when NPCs talk to each other within player earshot, potentially revealing quest
+hints, gossip about the player's actions, or faction politics. **Observe NPC routines** —
+NPCs visibly go about their daily schedules (F-13.19.4a), eating, working, socializing,
+sleeping, creating a sense of a lived-in world. **Interrupt NPC conversations** — approaching
+conversing NPCs interrupts their dialogue; they acknowledge the player and can be spoken to.
+**Witness NPC reactions** — when quest events occur, nearby NPCs visibly react (cheer, panic,
+argue), reinforcing the impact of the player's actions. **Eavesdrop for information** — some
+conversations contain actionable intelligence (quest hints, hidden item locations, NPC
+schedules) that the player can use if they are close enough to overhear, rewarding
+exploration and attention. Eavesdropping range is affected by the player's stealth state
+(F-13.18.1).
+
+- **Requirements:** R-13.19.12
+- **Dependencies:** F-13.19.7 (NPC Conversations), F-13.19.4a (Schedules),
+  F-13.18.1 (Stealth), F-5.2.1 (Spatial Audio)
+- **Platform notes:** Mobile: fewer visible NPC social interactions (limited by
+  crowd budget).

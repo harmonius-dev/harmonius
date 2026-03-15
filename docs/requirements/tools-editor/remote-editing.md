@@ -1,248 +1,362 @@
-# R-15.12 -- Remote Editing & Collaboration Requirements
+# R-15.12 -- Remote Editing & Collaboration User Stories
 
-## R-15.12.1 Remote Desktop Optimized Rendering
+## US-15.12.1 Remote Desktop Optimized Rendering
 
-The engine **SHALL** render the editor viewport to a compressed video stream (H.264 or H.265) with
-adaptive bitrate based on measured network bandwidth, GPU-accelerated encoding with overhead below
-2ms per frame, and input event forwarding with prediction to mask network latency.
+### US-15.12.1.1
+As a **developer (P-15)**, I want the viewport streamed as H.264/H.265 video
+so that I can work remotely without a local GPU.
 
-- **Derived from:** [F-15.12.1](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Remote rendering enables developers to work from any location using a remote GPU
-  server, eliminating the need to ship dedicated GPU hardware to each team member.
-- **Verification:** Connect to a remote editor session over a 50 Mbps link. Verify the viewport
-  streams at the configured resolution and frame rate. Measure encoding time per frame and verify
-  it is below 2ms. Verify input prediction masks latency up to 50ms without visible artifacts.
-  Verify platform-appropriate hardware encoders are used (VideoToolbox, NVENC, VA-API).
+### US-15.12.1.2
+As a **developer (P-15)**, I want adaptive bitrate based on network bandwidth
+so that quality adjusts automatically without manual configuration.
 
-## R-15.12.2 Remote Editor Protocol
+### US-15.12.1.3
+As a **developer (P-15)**, I want input event forwarding with prediction
+so that remote editing feels responsive despite network latency.
 
-The engine **SHALL** implement a custom protocol over QUIC (with TCP+TLS 1.3 fallback) that encodes
-viewport frames at high quality and full frame rate, UI panels at lower quality with change-
-detection driven updates, and skips idle regions, achieving 60-80% bandwidth reduction compared to
-generic RDP or VNC solutions.
+### US-15.12.1.4
+As an **engine dev (P-26)**, I want GPU-accelerated encoding under 2ms per frame
+so that encoding overhead does not reduce the editor frame rate.
 
-- **Derived from:** [F-15.12.2](../../features/tools-editor/remote-editing.md)
-- **Rationale:** A purpose-built protocol optimized for editor semantics delivers better visual
-  fidelity and lower bandwidth than generic remote desktop solutions.
-- **Verification:** Measure total bandwidth during an active editing session and compare against
-  a generic VNC connection of the same session. Verify bandwidth reduction of at least 60%.
-  Verify viewport frames render at full frame rate while idle UI panels do not retransmit.
-  Verify fallback to TCP+TLS 1.3 when UDP is blocked.
+### US-15.12.1.5
+As an **engine dev (P-26)**, I want platform-native encoders (VideoToolbox, NVENC,
+VA-API)
+so that encoding leverages hardware acceleration on each platform.
 
-## R-15.12.3 CRDT-Based Real-Time Collaborative Editing
+### US-15.12.1.6
+As an **engine tester (P-27)**, I want to verify encoding overhead stays below 2ms
+so that the encoding budget is regression-tested.
 
-The engine **SHALL** enable multiple users to edit the same shared world simultaneously with
-independent viewports and selection states, synchronizing all edits in real time via CRDTs that
-merge concurrent edits without conflicts, with per-user undo stacks, presence indicators, and
-integrated chat and voice channels, backed by a Rust collaboration service using PostgreSQL for
-persistent data and S3-compatible storage for CRDT snapshots.
+---
 
-- **Derived from:** [F-15.12.3](../../features/tools-editor/remote-editing.md)
-- **Rationale:** CRDT-based collaboration eliminates merge conflicts during concurrent editing,
-  enabling real-time multi-user workflows that traditional lock-based systems cannot support.
-- **Verification:** Connect three users to the same shared world. Have all three edit different
-  entities concurrently and verify all edits converge to the same state on all clients. Have two
-  users edit the same entity concurrently and verify the CRDT merges both edits without conflict.
-  Verify per-user undo only reverts the issuing user's changes. Verify presence indicators show
-  all connected users' cursor positions. Verify the collaboration service persists session data
-  to PostgreSQL and CRDT snapshots to S3.
+## US-15.12.2 Remote Editor Protocol
 
-## R-15.12.4 Remote GPU Server Support
+### US-15.12.2.1
+As a **developer (P-15)**, I want viewport frames at high quality and full frame rate
+so that the 3D viewport is crisp during remote editing.
 
-The engine **SHALL** run headless on a remote GPU server, streaming viewport and UI to thin clients
-via the remote editor protocol with sub-frame latency targeting under 16ms round-trip on LAN, with
-multi-GPU support assigning each concurrent session to a dedicated GPU managed by an orchestrator
-service.
+### US-15.12.2.2
+As a **developer (P-15)**, I want UI panels encoded with change-detection driven
+updates
+so that idle panels do not consume bandwidth.
 
-- **Derived from:** [F-15.12.4](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Centralized GPU servers reduce hardware costs and simplify management compared to
-  distributing dedicated GPUs to each developer workstation.
-- **Verification:** Launch the editor in headless mode on a multi-GPU server. Connect two thin
-  clients and verify each session is assigned to a separate GPU. Measure input-to-display
-  round-trip latency on LAN and verify it is under 16ms. Verify headless GPU context creation
-  works on all platforms (EGL on Linux, headless Metal on macOS, WDDM on Windows).
+### US-15.12.2.3
+As an **engine dev (P-26)**, I want QUIC transport with TCP+TLS 1.3 fallback
+so that the protocol works even when UDP is blocked by firewalls.
 
-## R-15.12.5 Session Handoff and Persistence
+### US-15.12.2.4
+As an **engine dev (P-26)**, I want 60-80% bandwidth reduction vs generic RDP/VNC
+so that the protocol is efficient for editor semantics.
 
-The engine **SHALL** serialize full session state (open panels, viewport cameras, selection, undo
-history, unsaved modifications) to server-local storage on suspend and restore the editor to the
-exact visual and functional state on resume, enabling session handoff across client devices.
+### US-15.12.2.5
+As an **engine tester (P-27)**, I want to verify bandwidth reduction of at least 60%
+compared to VNC for the same session
+so that protocol efficiency is regression-tested.
 
-- **Derived from:** [F-15.12.5](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Session persistence enables developers to move between locations and devices
-  without losing context, supporting hybrid office/remote workflows.
-- **Verification:** Open several panels, position the viewport camera, select entities, and make
-  unsaved modifications. Suspend the session. Resume on a different client device and verify all
-  panels, camera positions, selections, undo history, and unsaved modifications are restored
-  exactly. Verify session state serialization uses the same format as crash recovery.
+---
 
-## R-15.12.6 Bandwidth Adaptation and Quality Tiers
+## US-15.12.3 CRDT-Based Real-Time Collaborative Editing
 
-The engine **SHALL** automatically adjust stream quality based on continuously measured network
-conditions across three tiers -- high (over 100 Mbps, near-lossless), medium (10-100 Mbps, lossy
-60fps), low (under 10 Mbps, 30fps with aggressive compression) -- with manual override to pin a
-specific quality level.
+### US-15.12.3.1
+As a **designer (P-5)**, I want to edit the same world simultaneously with teammates
+so that we can collaborate on level design in real time.
 
-- **Derived from:** [F-15.12.6](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Automatic quality adaptation ensures a usable editing experience across varying
-  network conditions without manual configuration.
-- **Verification:** Simulate bandwidth at 150 Mbps, 50 Mbps, and 5 Mbps. Verify the stream
-  automatically selects the high, medium, and low tiers respectively. Verify frame rate and
-  compression level match the tier specification. Pin a specific quality level and verify the
-  stream does not change tiers regardless of bandwidth variation.
+### US-15.12.3.2
+As a **designer (P-5)**, I want per-user undo stacks during collaboration
+so that I can undo my own changes without affecting others.
 
-## R-15.12.7 Collaboration Cloud Service
+### US-15.12.3.3
+As a **artist (P-8)**, I want presence indicators showing other users' cursors
+so that I can see what my collaborators are doing.
 
-The engine **SHALL** provide a centralized cloud service written in Rust (tokio + axum) that manages
-real-time CRDT synchronization, session state, presence, and collaboration metadata, using
-PostgreSQL for persistent relational data and S3-compatible object storage for CRDT snapshots and
-asset deltas, supporting hundreds of concurrent sessions with horizontal scaling.
+### US-15.12.3.4
+As a **developer (P-15)**, I want CRDT-based synchronization that merges concurrent
+edits without conflicts
+so that no one's work is lost during simultaneous editing.
 
-- **Derived from:** [F-15.12.7](../../features/tools-editor/remote-editing.md)
-- **Rationale:** A dedicated collaboration service decouples real-time synchronization from the
-  editor process, enabling horizontal scaling and persistent state across client reconnections.
-- **Verification:** Deploy the service behind a load balancer with two replicas. Connect 100
-  concurrent sessions and verify CRDT operations synchronize correctly across all participants.
-  Verify session and user data persists in PostgreSQL. Verify CRDT snapshots are stored in S3.
-  Verify WebSocket transport for real-time sync and REST API for administration. Verify
-  container deployment via Docker/Kubernetes.
+### US-15.12.3.5
+As a **developer (P-15)**, I want integrated chat and voice channels
+so that I can coordinate with collaborators without external tools.
 
-## R-15.12.8 CRDT Document Model for Engine Assets
+### US-15.12.3.6
+As an **engine dev (P-26)**, I want peer-to-peer mode on LAN with mDNS discovery
+so that collaboration works without a cloud server on local networks.
 
-The engine **SHALL** define a CRDT document schema for each asset type -- tree CRDT for scene
-hierarchies (entity add/remove/reparent), operation log CRDT for logic graphs (node
-add/remove/connect/disconnect), map CRDT for data tables (per-row, per-cell), and last-writer-wins
-register per tile for terrain heightmaps -- with editors reading and writing through CRDT accessors.
+### US-15.12.3.7
+As an **engine tester (P-27)**, I want to verify three concurrent users' edits converge
+to the same state
+so that CRDT convergence is regression-tested.
 
-- **Derived from:** [F-15.12.8](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Asset-specific CRDT schemas preserve semantic intent during concurrent edits,
-  producing correct merges that generic text-based CRDTs cannot achieve.
-- **Verification:** Concurrently add and reparent entities in a scene hierarchy from two clients
-  and verify the tree CRDT produces a valid hierarchy. Concurrently add and connect nodes in a
-  logic graph and verify the operation log CRDT preserves both additions. Concurrently edit
-  different cells in a data table and verify the map CRDT merges without data loss. Edit
-  adjacent terrain tiles concurrently and verify last-writer-wins resolves per tile.
+---
 
-## R-15.12.9 Collaboration Access Control and Permissions
+## US-15.12.4 Remote GPU Server Support
 
-The engine **SHALL** enforce server-side per-project and per-asset access control with role-based
-permissions (viewer, editor, admin) stored in PostgreSQL, asset-level exclusive locks within
-collaborative sessions, and authentication via OAuth2/OIDC for enterprise SSO.
+### US-15.12.4.1
+As a **developer (P-15)**, I want the editor running headless on a remote GPU server
+so that I can use a thin client without a dedicated GPU.
 
-- **Derived from:** [F-15.12.9](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Server-side access control prevents unauthorized edits and ensures asset
-  integrity in multi-user environments where client-side enforcement is insufficient.
-- **Verification:** Assign a user the viewer role and verify they can observe but not edit.
-  Assign the editor role and verify edit access. Lock an asset and verify other editors cannot
-  modify it until unlocked. Verify permissions are enforced server-side by attempting to bypass
-  via direct API calls. Verify OAuth2/OIDC authentication and API key access for CI/CD.
+### US-15.12.4.2
+As a **developer (P-15)**, I want sub-frame latency targeting under 16ms on LAN
+so that remote editing feels local.
 
-## R-15.12.10 Integrated Voice and Text Chat
+### US-15.12.4.3
+As a **server admin (P-22)**, I want multi-GPU support with per-session GPU assignment
+so that a single server hosts multiple concurrent editing sessions.
 
-The engine **SHALL** provide built-in voice chat (Opus codec over QUIC with echo cancellation and
-noise suppression) and text chat (threaded, with mentions, reactions, and inline asset references)
-within collaborative sessions, with chat history persisted in PostgreSQL and searchable.
+### US-15.12.4.4
+As a **server admin (P-22)**, I want an orchestrator service for session scheduling
+so that GPU assignment is managed automatically.
 
-- **Derived from:** [F-15.12.10](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Integrated communication eliminates the need for external tools, and inline asset
-  references enable contextual coordination directly tied to the work being discussed.
-- **Verification:** Join a voice channel and verify audio quality with echo cancellation and noise
-  suppression active. Send a text message with an @mention and verify the mentioned user
-  receives a notification. Insert an inline asset reference in chat, click it, and verify the
-  editor navigates to that asset. Search chat history and verify results include messages from
-  prior sessions.
+### US-15.12.4.5
+As an **engine dev (P-26)**, I want headless GPU context creation on all platforms
+(EGL, headless Metal, WDDM)
+so that the server runs without a display.
 
-## R-15.12.11 Work Groups and Isolated Workspaces
+### US-15.12.4.6
+As an **engine tester (P-27)**, I want to verify input-to-display round-trip latency
+under 16ms on LAN
+so that remote session responsiveness is regression-tested.
 
-The engine **SHALL** support named work groups with dedicated voice channels, text threads, and
-optional isolated workspace layers where edits are invisible to other groups until explicitly
-shared, with dynamic membership and traceability to work items.
+---
 
-- **Derived from:** [F-15.12.11](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Work groups enable parallel team workflows on separate areas of a project without
-  interference, while isolated workspaces prevent unfinished work from affecting other teams.
-- **Verification:** Create two work groups. Verify each group has independent voice and text
-  channels. Enable isolated workspaces and make edits in group A. Verify group B does not see
-  group A's edits until explicitly shared. Verify dynamic membership by joining and leaving
-  groups without disrupting other members. Verify groups map to work items for traceability.
+## US-15.12.5 Session Handoff and Persistence
 
-## R-15.12.12 AI Agent Collaboration
+### US-15.12.5.1
+As a **developer (P-15)**, I want to suspend a remote session and resume later
+so that I can move between locations without losing state.
 
-The engine **SHALL** enable AI agents to participate in collaborative sessions as virtual users,
-receiving instructions via text chat, executing editor operations visible to the group with real-
-time cursor and selection indicators, and tagging all actions with AI provenance metadata.
+### US-15.12.5.2
+As a **developer (P-15)**, I want session resume on a different client device
+so that I can start at the office and continue from home.
 
-- **Derived from:** [F-15.12.12](../../features/tools-editor/remote-editing.md)
-- **Rationale:** AI agents as collaborative participants enable automated content generation
-  tasks to run alongside human editing without separate tooling or workflows.
-- **Verification:** Add an AI agent to a collaborative session. Send a task instruction via text
-  chat and verify the agent executes the requested editor operations. Verify other users see
-  the agent's cursor, selections, and edits in real time. Verify all agent actions carry AI
-  provenance metadata. Verify the agent can work independently while humans edit other areas.
+### US-15.12.5.3
+As a **developer (P-15)**, I want undo history preserved across suspend/resume
+so that I can undo actions from before the suspension.
 
-## Non-Functional Requirements
+### US-15.12.5.4
+As an **engine tester (P-27)**, I want to verify session resume restores exact visual
+and functional state
+so that session persistence is regression-tested.
 
-### R-15.12.NF1 Collaboration Latency
+---
 
-CRDT operations **SHALL** propagate between connected clients within 100ms on a LAN (under 1ms
-round-trip) and within 500ms over a WAN connection with up to 100ms round-trip latency. Presence
-indicator updates (cursor position, selection changes) **SHALL** propagate within 200ms under the
-same WAN conditions. The collaboration cloud service **SHALL** process and rebroadcast a CRDT
-operation within 10ms of receipt at the server. End-to-end latency from one client's edit to
-another client's screen update **SHALL NOT** exceed 1 second under any supported network condition.
+## US-15.12.6 Bandwidth Adaptation and Quality Tiers
 
-- **Derived from:** F-15.12.3 (CRDT Collaborative Editing), F-15.12.7 (Collaboration Cloud
-  Service).
-- **Rationale:** Real-time collaboration requires low-latency synchronization so that users
-  perceive concurrent edits as instantaneous. High latency causes confusion about the current state
-  and increases the risk of conflicting spatial edits.
-- **Verification:** Connect two clients over a simulated 100ms RTT WAN link. Have client A edit an
-  entity and measure the time until client B's viewport reflects the change; assert it is under
-  500ms. Repeat with 50 concurrent users on the same session and assert the 500ms threshold holds.
-  Measure server-side CRDT processing time and assert it is under 10ms per operation.
+### US-15.12.6.1
+As a **developer (P-15)**, I want automatic quality adjustment based on network speed
+so that the stream remains usable across varying connections.
 
-### R-15.12.NF2 Remote Editing Input Latency
+### US-15.12.6.2
+As a **developer (P-15)**, I want manual quality override to pin a specific tier
+so that I can force high quality when I know my bandwidth is stable.
 
-For remote editing sessions (F-15.12.1, F-15.12.2), the end-to-end latency from client input event
-to visible viewport update **SHALL** be under 50ms on LAN (under 1ms RTT) and under 150ms on a
-broadband connection (30ms RTT). Input prediction **SHALL** mask latency up to 100ms without visible
-correction artifacts for translation and rotation gizmo operations.
+### US-15.12.6.3
+As an **engine tester (P-27)**, I want to verify tier selection at 150, 50, and 5 Mbps
+matches high, medium, and low respectively
+so that auto-tier selection is regression-tested.
 
-- **Derived from:** F-15.12.1 (Remote Desktop Rendering), F-15.12.2 (Remote Editor Protocol),
-  F-15.12.4 (Remote GPU Server).
-- **Rationale:** Remote editing must feel responsive enough for precision spatial work. Visible
-  input lag or prediction correction jitter makes gizmo manipulation imprecise and frustrating.
-- **Verification:** Measure input-to-photon latency on a LAN remote session by timing from key
-  press to viewport frame containing the result; assert under 50ms. Simulate 30ms RTT and repeat;
-  assert under 150ms. Perform a continuous gizmo drag over 100ms simulated latency and assert no
-  visible correction snaps in the recorded frame sequence.
+---
 
-## R-15.12.13 Asset and Scene Comments
+## US-15.12.7 Collaboration Cloud Service
 
-The engine **SHALL** support threaded comments attached to any asset, entity, node, property, or
-spatial location, with @mention notifications, viewport pins and editor margin markers, storage in
-the collaboration cloud service, and real-time sync across connected clients.
+### US-15.12.7.1
+As a **server admin (P-22)**, I want a Rust-based cloud service for collaboration
+so that real-time sync is managed by a dedicated, scalable backend.
 
-- **Derived from:** [F-15.12.13](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Contextual comments anchored to specific assets and locations enable precise
-  feedback that is difficult to convey through external communication tools.
-- **Verification:** Attach a comment to a scene entity. Verify the comment appears as a pin in
-  the viewport. Reply to the comment to create a thread. Add an @mention and verify the
-  mentioned user receives a notification. Resolve the comment and verify it collapses but
-  remains accessible. Verify comments sync to all connected clients in real time.
+### US-15.12.7.2
+As a **server admin (P-22)**, I want PostgreSQL for session/user/permission data
+so that relational data is stored reliably.
 
-## R-15.12.14 Pull Request Review in Editor
+### US-15.12.7.3
+As a **server admin (P-22)**, I want S3-compatible storage for CRDT snapshots
+so that document state persists durably.
 
-The engine **SHALL** display pull request changed assets with structural diffs rendered in their
-native visual editors, support adding review comments on specific nodes, properties, or regions via
-the comment system, and push approve/request-changes status back to the Git hosting service API.
+### US-15.12.7.4
+As a **server admin (P-22)**, I want horizontal scaling behind a load balancer
+so that the service handles hundreds of concurrent sessions.
 
-- **Derived from:** [F-15.12.14](../../features/tools-editor/remote-editing.md)
-- **Rationale:** Visual structural diffs in native editors provide far more useful review context
-  than text diffs for binary and structured assets, enabling effective code review without
-  leaving the editor.
-- **Verification:** Open a pull request containing modified logic graph and material assets.
-  Verify the PR review panel shows structural diffs in the graph and material editors. Add a
-  review comment on a specific node and verify it appears via the comment system. Approve the
-  PR from the editor and verify the approval status is pushed to the Git hosting service API.
-  Verify support for GitHub, GitLab, and Bitbucket.
+### US-15.12.7.5
+As a **DevOps (P-16)**, I want container deployment via Docker/Kubernetes
+so that the service integrates with standard infrastructure.
+
+### US-15.12.7.6
+As an **engine tester (P-27)**, I want to verify 100 concurrent sessions sync correctly
+so that service scalability is regression-tested.
+
+---
+
+## US-15.12.8 CRDT Document Model for Engine Assets
+
+### US-15.12.8.1
+As an **engine dev (P-26)**, I want tree CRDT for scene hierarchies
+so that entity add/remove/reparent merges correctly.
+
+### US-15.12.8.2
+As an **engine dev (P-26)**, I want operation log CRDT for logic graphs
+so that node add/remove/connect operations merge correctly.
+
+### US-15.12.8.3
+As an **engine dev (P-26)**, I want map CRDT for data tables (per-row, per-cell)
+so that concurrent table edits merge without data loss.
+
+### US-15.12.8.4
+As an **engine dev (P-26)**, I want last-writer-wins register per tile for terrain
+so that heightmap edits resolve deterministically.
+
+### US-15.12.8.5
+As an **engine tester (P-27)**, I want to verify concurrent scene reparenting produces
+a valid hierarchy via tree CRDT
+so that CRDT correctness is regression-tested per asset type.
+
+---
+
+## US-15.12.9 Collaboration Access Control and Permissions
+
+### US-15.12.9.1
+As a **server admin (P-22)**, I want role-based permissions (viewer, editor, admin)
+so that access is controlled per-project and per-asset.
+
+### US-15.12.9.2
+As a **server admin (P-22)**, I want asset-level exclusive locks within sessions
+so that specific assets can be edited by only one user at a time.
+
+### US-15.12.9.3
+As a **server admin (P-22)**, I want OAuth2/OIDC authentication for enterprise SSO
+so that the service integrates with corporate identity providers.
+
+### US-15.12.9.4
+As an **engine tester (P-27)**, I want to verify viewer role prevents edits
+so that access control enforcement is regression-tested.
+
+---
+
+## US-15.12.10 Integrated Voice and Text Chat
+
+### US-15.12.10.1
+As a **designer (P-5)**, I want voice chat within collaborative sessions
+so that I can coordinate with teammates without alt-tabbing.
+
+### US-15.12.10.2
+As a **designer (P-5)**, I want text chat with threaded replies and mentions
+so that I can have structured conversations about specific topics.
+
+### US-15.12.10.3
+As a **designer (P-5)**, I want inline asset references in chat messages
+so that clicking a reference navigates to that asset in the editor.
+
+### US-15.12.10.4
+As a **developer (P-15)**, I want searchable chat history persisted in PostgreSQL
+so that I can find past discussions about project decisions.
+
+### US-15.12.10.5
+As an **engine dev (P-26)**, I want Opus codec over QUIC with echo cancellation
+so that voice quality is high with minimal bandwidth.
+
+### US-15.12.10.6
+As an **engine tester (P-27)**, I want to verify chat message delivery and mention
+notifications
+so that communication features are regression-tested.
+
+---
+
+## US-15.12.11 Work Groups and Isolated Workspaces
+
+### US-15.12.11.1
+As a **creative director (P-2)**, I want named work groups per team
+so that level designers and shader artists work in separate contexts.
+
+### US-15.12.11.2
+As a **designer (P-5)**, I want isolated workspace layers per group
+so that my unfinished edits are invisible to other groups.
+
+### US-15.12.11.3
+As a **designer (P-5)**, I want to explicitly share workspace changes
+so that I control when other groups see my work.
+
+### US-15.12.11.4
+As a **developer (P-15)**, I want dynamic group membership
+so that I can join and leave groups without disrupting others.
+
+### US-15.12.11.5
+As an **engine tester (P-27)**, I want to verify isolated workspace edits are
+invisible to other groups until shared
+so that workspace isolation is regression-tested.
+
+---
+
+## US-15.12.12 AI Agent Collaboration
+
+### US-15.12.12.1
+As a **designer (P-5)**, I want AI agents as virtual users in collaborative sessions
+so that I can delegate content generation tasks to agents.
+
+### US-15.12.12.2
+As a **designer (P-5)**, I want to instruct AI agents via text chat
+so that I can assign tasks using natural language.
+
+### US-15.12.12.3
+As a **developer (P-15)**, I want to see AI agent cursors, selections, and edits
+so that I can monitor what the agent is doing in real time.
+
+### US-15.12.12.4
+As a **developer (P-15)**, I want all AI agent actions tagged with provenance metadata
+so that AI-generated content is traceable.
+
+### US-15.12.12.5
+As an **engine tester (P-27)**, I want to verify AI agent edits are visible to other
+users and carry provenance tags
+so that agent collaboration is regression-tested.
+
+---
+
+## US-15.12.13 Asset and Scene Comments
+
+### US-15.12.13.1
+As a **creative director (P-2)**, I want to attach comments to entities or locations
+so that I can provide spatial feedback to the team.
+
+### US-15.12.13.2
+As a **designer (P-5)**, I want threaded comment replies on assets
+so that feedback conversations are structured and traceable.
+
+### US-15.12.13.3
+As a **artist (P-8)**, I want @mention notifications in comments
+so that I am alerted when someone needs my input on an asset.
+
+### US-15.12.13.4
+As a **artist (P-8)**, I want viewport pins showing comment locations
+so that I can click a pin to read feedback in spatial context.
+
+### US-15.12.13.5
+As a **developer (P-15)**, I want comments synced in real time across clients
+so that all team members see the latest feedback.
+
+### US-15.12.13.6
+As an **engine tester (P-27)**, I want to verify comments sync across connected clients
+and persist across sessions
+so that comment persistence is regression-tested.
+
+---
+
+## US-15.12.14 Pull Request Review in Editor
+
+### US-15.12.14.1
+As a **developer (P-15)**, I want to view PR changed assets with structural diffs
+so that I can review binary asset changes in native editors.
+
+### US-15.12.14.2
+As a **developer (P-15)**, I want to add review comments on specific nodes or properties
+so that my feedback is anchored to exact change locations.
+
+### US-15.12.14.3
+As a **developer (P-15)**, I want approve/request-changes actions from the editor
+so that I can complete the review cycle without a web browser.
+
+### US-15.12.14.4
+As a **DevOps (P-16)**, I want review status pushed to GitHub, GitLab, and Bitbucket APIs
+so that in-editor reviews integrate with the hosting provider's workflow.
+
+### US-15.12.14.5
+As an **engine tester (P-27)**, I want to verify approval status is pushed to the
+Git hosting service API
+so that PR integration is regression-tested.

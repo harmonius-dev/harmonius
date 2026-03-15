@@ -1,77 +1,91 @@
-# R-7.4 -- Utility AI Requirements
+# R-7.4 -- Utility AI User Stories
 
-## R-7.4.1 Scoring Functions and Response Curves
+## US-7.4.1 Scoring Functions & Response Curves
 
-The engine **SHALL** evaluate each candidate action's considerations by mapping input values
-(health percentage, distance, ammo count) to a 0-1 score via configurable response curves
-(linear, quadratic, logistic, step, custom piecewise) defined as data assets.
+### US-7.4.1.1
+As a **designer (P-5)**, I want configurable response curves (linear, quadratic,
+logistic, step, custom)
+so that I can tune NPC priorities as data assets without code.
 
-- **Derived from:** [F-7.4.1](../../features/ai/utility-ai.md)
-- **Rationale:** Data-driven response curves let designers tune NPC priorities without code
-  changes, and the 0-1 normalization enables consistent cross-consideration comparison.
-- **Verification:** Configure a logistic curve mapping health percentage to score. Verify that
-  health=100% produces score >= 0.95, health=50% produces score ~0.5 (within 0.05), and
-  health=0% produces score <= 0.05. Swap to a step curve with threshold at 30% and verify
-  score is 0.0 above 30% and 1.0 at or below 30%. Verify all curve types produce outputs
-  clamped to [0.0, 1.0].
+### US-7.4.1.2
+As a **designer (P-5)**, I want each consideration to map inputs to a 0-1 score
+so that different considerations are comparable.
 
-## R-7.4.2 Action Selection and Compensation
+### US-7.4.1.3
+As a **player (P-23)**, I want NPCs to make contextually appropriate decisions
+so that AI behavior feels intelligent and varied.
 
-The engine **SHALL** multiply consideration scores for each action, apply a compensation factor
-based on the number of considerations to avoid penalizing actions with more inputs, and select
-the winning action using a configurable strategy (highest score, weighted random among top N,
-or threshold-based filtering).
+### US-7.4.1.4
+As an **engine tester (P-27)**, I want to verify all curve types produce outputs clamped
+to [0.0, 1.0]
+so that score normalization is regression-tested.
 
-- **Derived from:** [F-7.4.2](../../features/ai/utility-ai.md)
-- **Rationale:** Raw score multiplication penalizes actions with many considerations;
-  compensation ensures fair comparison between simple and complex actions.
-- **Verification:** Create two actions: action A with 2 considerations (scores 0.8, 0.8 =
-  raw 0.64) and action B with 5 considerations (scores 0.8 each = raw 0.328). Verify the
-  compensation factor adjusts both to comparable final scores (within 10% of each other).
-  Test weighted-random selection over 1000 trials and verify the top-3 actions are selected
-  with frequency proportional to their scores.
+---
 
-## R-7.4.3 Considerations and Input Axes
+## US-7.4.2 Action Selection & Compensation
 
-The engine **SHALL** provide a standard library of reusable consideration types (distance to
-target, line of sight, health ratio, threat level, time since last action, resource
-availability) and allow registration of custom considerations through a trait interface.
+### US-7.4.2.1
+As an **engine dev (P-26)**, I want compensation factors based on consideration count
+so that actions with more inputs are not penalized unfairly.
 
-- **Derived from:** [F-7.4.3](../../features/ai/utility-ai.md)
-- **Rationale:** A shared library of considerations avoids reimplementing common evaluations
-  per NPC type and ensures consistency across AI archetypes.
-- **Verification:** Instantiate each built-in consideration type and verify it returns a valid
-  0-1 score given known test inputs. Register a custom "magic_mana_ratio" consideration via
-  the trait interface and verify it is evaluated alongside built-in considerations during
-  action scoring. Verify that an unregistered consideration name produces a descriptive error
-  at load time.
+### US-7.4.2.2
+As a **designer (P-5)**, I want configurable selection strategies (highest, weighted
+random, threshold)
+so that I can control action variety per NPC archetype.
 
-## R-7.4.4 Dual Utility System
+### US-7.4.2.3
+As an **engine tester (P-27)**, I want to verify compensation adjusts 2-consideration
+and 5-consideration actions to comparable final scores
+so that compensation fairness is regression-tested.
 
-The engine **SHALL** support a two-axis utility model where one axis ranks action categories
-(combat, social, survival) and a second axis ranks specific actions within the chosen category,
-preventing low-urgency actions in critical categories from being outscored by high-scoring
-actions in less important categories.
+---
 
-- **Derived from:** [F-7.4.4](../../features/ai/utility-ai.md)
-- **Rationale:** Single-axis scoring can cause survival-critical actions to lose to high-scoring
-  but non-urgent social actions; dual-axis preserves category priority.
-- **Verification:** Configure a survival category (score 0.9) containing "heal" (score 0.4)
-  and a social category (score 0.3) containing "chat" (score 0.95). Verify the system selects
-  "heal" because survival outranks social, even though "chat" has a higher within-category
-  score. Swap category scores and verify the selection reverses.
+## US-7.4.3 Considerations & Input Axes
 
-## R-7.4.5 Context-Based Reasoning
+### US-7.4.3.1
+As a **designer (P-5)**, I want built-in considerations (distance, LOS, health, threat)
+so that common evaluations are available without custom code.
 
-The engine **SHALL** group actions into context sets (in-combat, exploring, fleeing, socializing)
-and evaluate only the active context's action pool each tick, with context transitions governed
-by hysteresis thresholds to prevent rapid switching.
+### US-7.4.3.2
+As an **engine dev (P-26)**, I want custom considerations registered via a trait interface
+so that project-specific inputs are supported.
 
-- **Derived from:** [F-7.4.5](../../features/ai/utility-ai.md)
-- **Rationale:** Evaluating all actions every tick is wasteful for NPCs with large repertoires;
-  context grouping reduces per-tick cost and prevents erratic behavior switching.
-- **Verification:** Configure an NPC with 20 actions across 4 contexts. Verify only the active
-  context's actions (5) are evaluated per tick, not all 20. Set a hysteresis threshold of 0.1
-  and verify that a context switch requires the new context's score to exceed the current
-  context's score by at least 0.1. Oscillate the input signal near the threshold and confirm
-  no context switch occurs for at least 10 consecutive ticks.
+### US-7.4.3.3
+As an **engine tester (P-27)**, I want to verify each built-in consideration returns
+valid 0-1 scores
+so that consideration correctness is regression-tested.
+
+---
+
+## US-7.4.4 Dual Utility System
+
+### US-7.4.4.1
+As a **designer (P-5)**, I want two-axis scoring (category priority + action score)
+so that critical categories are not outscored by non-urgent actions.
+
+### US-7.4.4.2
+As a **player (P-23)**, I want NPCs to prioritize survival over socializing when hurt
+so that AI decisions reflect appropriate urgency.
+
+### US-7.4.4.3
+As an **engine tester (P-27)**, I want to verify survival category outranks social even
+when social actions score higher within-category
+so that dual-axis priority is regression-tested.
+
+---
+
+## US-7.4.5 Context-Based Reasoning
+
+### US-7.4.5.1
+As a **designer (P-5)**, I want actions grouped into context sets (combat, exploring,
+fleeing)
+so that only the active context is evaluated per tick.
+
+### US-7.4.5.2
+As an **engine dev (P-26)**, I want hysteresis thresholds for context transitions
+so that rapid switching between contexts is prevented.
+
+### US-7.4.5.3
+As an **engine tester (P-27)**, I want to verify only the active context's actions are
+evaluated per tick
+so that context filtering is regression-tested.

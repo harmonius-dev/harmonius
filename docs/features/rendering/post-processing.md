@@ -139,3 +139,83 @@ while preserving center fidelity.
 - **Dependencies:** None
 - **Platform notes:** All platforms: full quality. Lightweight single-pass UV remap with
   negligible cost.
+
+### F-2.9.13 Screen-Space Cavity and Curvature
+
+Screen-space surface detail enhancement that darkens concavities and brightens convexities to
+reveal micro-surface shape invisible to standard lighting. Inspired by Blender's viewport cavity
+effect and the Unity "Screen Space Cavity & Curvature" asset by Jolly Theory. The effect operates
+in two complementary modes:
+
+1. **Curvature** (small-scale, pixel-radius): Samples the screen-space normal buffer at small
+   offsets (1-4 pixels) in X and Y, computing the first-order normal difference
+   `(N_center - N_offset)` per channel. Positive differences indicate ridges (convex edges);
+   negative differences indicate valleys (concave edges). Multiple samples at varying offsets
+   are weighted and summed. The result is a per-pixel scalar: values above 0.5 represent ridges,
+   below 0.5 represent valleys.
+2. **Cavity** (large-scale, world-radius): Uses the same normal-difference technique but samples
+   at wider, world-space-scaled offsets (configurable radius in meters, converted to pixel
+   offsets via the depth buffer). An optional multi-sample blur (2-4 passes at widths 2, 3, 7)
+   softens the result. This produces ambient-occlusion-like darkening in crevices and
+   brightening on exposed ridges at a configurable spatial scale.
+
+Both modes read the G-buffer normal texture (or reconstruct normals from the depth buffer via
+`dFdx`/`dFdy` partial derivatives when normals are unavailable). Output is a single-channel
+cavity map composited multiplicatively over the lit scene color, with separate intensity controls
+for ridge brightness and valley darkness. Supports distance-based and height-based fade to avoid
+artifacts at extreme distances.
+
+- **Requirements:** R-2.9.13
+- **Dependencies:** F-2.4.2 (G-Buffer normals) or depth buffer with normal reconstruction
+- **Platform notes:** Mobile: curvature-only mode at half-res with 4 samples; cavity disabled.
+  Switch: curvature at native res, cavity at half-res with 8 samples. Desktop: both modes at
+  native res, 16 samples. High-end: full quality with multi-pass cavity blur.
+
+### F-2.9.14 Post-Process Graph Editor
+
+A visual, node-based graph editor for authoring custom post-process effect chains without writing
+shader code. Users compose full-screen image processing pipelines by connecting typed nodes in a
+directed acyclic graph. The graph compiles to an optimized sequence of GPU compute dispatches
+executed within the post-processing pipeline. Built on the universal logic graph runtime
+(F-15.8.1) with a specialized node library for image processing operations.
+
+**Node categories:**
+
+| Category | Nodes | Description |
+|----------|-------|-------------|
+| Input | Scene Color, Scene Depth, Scene Normals, Velocity, Stencil, G-Buffer Channel, Custom Texture, Time, Resolution | Read render targets and per-frame constants |
+| Filter | Gaussian Blur, Box Blur, Kawase Blur, Bilateral Blur, Sharpen, Median, Sobel Edge, Laplacian, Kuwahara | Spatial convolution and filtering operations |
+| Color | Brightness/Contrast, Hue/Saturation, Levels, Curves, Channel Mixer, Color Remap, LUT Apply, Threshold, Posterize | Per-pixel color manipulation |
+| Math | Add, Subtract, Multiply, Lerp, Clamp, Remap, Step, Smoothstep, Abs, Min, Max, Dot, Cross, Normalize | Scalar and vector arithmetic |
+| Blend | Normal, Multiply, Screen, Overlay, Soft Light, Add, Subtract, Difference, Linear Dodge | Porter-Duff and Photoshop-style blend modes |
+| Transform | UV Offset, UV Scale, UV Rotate, Radial Warp, Barrel Distortion, Pixelate, Tile | UV coordinate manipulation |
+| Mask | Circle, Rectangle, Gradient (Linear/Radial), Depth Threshold, Normal Threshold, Stencil Mask, Screen Position | Procedural mask generation for selective application |
+| Sample | Downsample, Upsample, Mip Sample, Custom Kernel, Gather (NxN) | Resolution control and multi-tap sampling |
+| Utility | Preview, Split Screen, Side-by-Side Compare, Debug Value Display | Development and debugging aids |
+| Output | Final Color, Intermediate Target (named, typed, sized) | Write to output or intermediate render targets |
+
+**Multi-pass support:** Graphs can declare intermediate render targets as named, typed, and sized
+resources. An upstream subgraph writes to an intermediate target; downstream nodes read from it.
+The graph compiler allocates transient resources via the render graph (F-2.2.3) and inserts
+barriers automatically (F-2.2.5).
+
+**Execution model:** The compiled graph produces a sequence of fullscreen compute dispatches
+injected into the post-processing pipeline at a configurable insertion point (before tonemapping,
+after tonemapping, or at a custom slot). Each dispatch corresponds to one or more fused nodes.
+The compiler performs dead-node elimination, constant folding, and pass merging (combining
+compatible single-pass nodes into one dispatch).
+
+**Integration with existing systems:**
+
+- Compiles through the shader graph HLSL pipeline (F-15.8.5b)
+- Graphs are assets managed by the asset database (F-12.5.1)
+- Parameters are exposed as typed slots with per-instance overrides and ECS data binding
+  (same parameter model as effect graphs, F-11.6.3)
+- Live preview in the editor viewport with hot reload on graph changes (F-12.4.1)
+
+- **Requirements:** R-2.9.14
+- **Dependencies:** F-15.8.1 (Logic Graph Runtime), F-15.8.5a (Shader Graph Core),
+  F-2.2.1 (Render Graph), F-2.9.10 (Post-Process Materials)
+- **Platform notes:** Mobile: max 4 nodes per graph; intermediate targets at half-res;
+  no multi-pass. Switch: max 8 nodes; half-res intermediates. Desktop: unlimited nodes
+  and passes. High-end: same as desktop with full-res intermediates.

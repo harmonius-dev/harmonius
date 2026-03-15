@@ -1,121 +1,372 @@
-# R-4.2 — Collision Detection Requirements
+# R-4.2 — Collision Detection User Stories
 
-## R-4.2.1 Broadphase via Shared Spatial Index
+## F-4.2.1 Broadphase Acceleration Structures
 
-The engine **SHALL** perform broadphase collision pair culling by querying the shared BVH
-spatial index (F-1.9.1) rather than maintaining a physics-private acceleration structure, and
-produce identical candidate pairs to an exhaustive AABB overlap test.
+## US-4.2.1.1 Query Shared BVH for Collision Pairs
 
-- **Derived from:** [F-4.2.1](../../features/physics/collision-detection.md)
-- **Rationale:** Sharing the spatial index with rendering, networking, and AI avoids redundant
-  structure rebuilds and reduces memory overhead.
-- **Verification:** Integration test — populate 1,000 entities with random `Collider` and
-  `Transform` components; compare `BroadphasePairs` output against a brute-force AABB overlap
-  reference; assert zero false negatives.
+**As a** game developer (P-15), **I want** broadphase collision culling to query the shared BVH
+spatial index rather than a physics-private structure, **so that** physics, rendering, and AI
+share one acceleration structure without redundancy.
 
-## R-4.2.2 Narrowphase Contact Generation
+## US-4.2.1.2 Verify Broadphase Pair Accuracy
 
-The engine **SHALL** generate contact manifolds with position error (penetration depth) within
-1 mm of the analytical solution for all supported primitive-vs-primitive shape pairs.
+**As an** engine tester (P-27), **I want to** populate 1000 entities with random colliders and
+compare `BroadphasePairs` output against brute-force AABB overlap, asserting zero false
+negatives, **so that** broadphase correctness is confirmed.
 
-- **Derived from:** [F-4.2.2](../../features/physics/collision-detection.md)
-- **Rationale:** Accurate contact points and normals are the foundation for stable impulse
-  resolution and constraint solving.
-- **Verification:** Unit test — for each pair of supported primitives (sphere-sphere,
-  sphere-box, capsule-box, etc.), position shapes at known overlapping configurations with
-  analytically computable penetration; assert generated contact depth differs from the
-  analytical value by less than 1 mm.
+## US-4.2.1.3 Benchmark Broadphase Throughput
 
-## R-4.2.3 Primitive and Convex Collision Shapes
+**As an** engine tester (P-27), **I want to** benchmark broadphase pair culling with 50000
+AABB-bearing entities and assert it completes within 1ms, **so that** broadphase performance
+meets the throughput requirement.
 
-The engine **SHALL** support `Box`, `Sphere`, `Capsule`, and `ConvexHull` variants in the
-`ColliderShape` enum, and dispatch narrowphase evaluation for primitive-vs-primitive pairs
-through specialized fast-path routines rather than generic GJK.
+## US-4.2.1.4 Implement Shared BVH Integration for Broadphase
 
-- **Derived from:** [F-4.2.3](../../features/physics/collision-detection.md)
-- **Rationale:** Specialized routines for common primitive pairs are significantly faster than
-  generic algorithms and dominate real-world collision workloads.
-- **Verification:** Benchmark — measure narrowphase evaluation time for 10,000
-  sphere-vs-sphere pairs using the specialized path vs. generic GJK; assert the specialized
-  path is at least 2x faster. Unit test — verify all four shape types produce correct contact
-  manifolds.
+**As an** engine developer (P-26), **I want to** implement the `BroadphaseQuerySystem` that
+reads the shared BVH resource and writes overlapping AABB pairs filtered by `CollisionLayers`
+to the `BroadphasePairs` resource, **so that** broadphase runs through the shared spatial
+index.
 
-## R-4.2.4 Triangle Mesh and Heightfield Shapes
+## US-4.2.1.5 Experience Physics Not Causing Frame Drops in Dense Scenes
 
-The engine **SHALL** support `TriMesh` and `Heightfield` collider shape variants that resolve
-per-triangle material indices to `PhysicsMaterial` entries for surface-specific friction and
-restitution.
+**As a** player (P-23), **I want** physics collision detection to run efficiently even in
+scenes with hundreds of objects, **so that** frame rates remain smooth during chaotic gameplay.
 
-- **Derived from:** [F-4.2.4](../../features/physics/collision-detection.md)
-- **Rationale:** Terrain and static environment geometry require concave collision support with
-  per-surface material variation for correct physical response and gameplay effects.
-- **Verification:** Integration test — create a heightfield with two regions assigned different
-  `PhysicsMaterial` entries; drop a sphere onto each region; assert friction and restitution
-  values applied during contact resolution match the respective material.
+## US-4.2.1.6 Configure Broadphase Pair Budget Per Platform
 
-## R-4.2.5 Compound Shapes
+**As a** designer (P-5), **I want to** see the platform-specific broadphase pair budget in
+the editor (2048 mobile, 32K desktop), **so that** I can design scenes within performance
+limits.
 
-The engine **SHALL** support a `CompoundCollider` component that combines multiple primitive or
-convex child shapes with independent `CollisionLayers` and `PhysicsMaterial` data per child.
+---
 
-- **Derived from:** [F-4.2.5](../../features/physics/collision-detection.md)
-- **Rationale:** Complex object silhouettes (vehicles, furniture, characters) need multi-shape
-  colliders without expensive concave decomposition.
-- **Verification:** Unit test — create a compound collider with three child shapes on different
-  collision layers; fire a ray that intersects only one child; assert the hit reports the
-  correct child's `CollisionLayers` and `PhysicsMaterial` values.
+## F-4.2.2 Narrowphase Contact Generation
 
-## R-4.2.6 Collision Filtering and Layers
+## US-4.2.2.1 Set Up Colliders for Narrowphase
 
-The engine **SHALL** reject broadphase collision pairs whose `CollisionLayers` membership and
-mask bitsets have no overlapping bits, preventing those pairs from reaching narrowphase.
+**As a** game developer (P-15), **I want to** attach `Collider` components to entities and
+have the narrowphase system automatically generate `ContactManifold` components for overlapping
+pairs, **so that** contact data is available for resolution without manual wiring.
 
-- **Derived from:** [F-4.2.6](../../features/physics/collision-detection.md)
-- **Rationale:** Layer-based filtering is the primary mechanism for separating collision domains
-  (player, enemy, projectile, trigger) and reducing narrowphase workload.
-- **Verification:** Unit test — create two overlapping entities on non-interacting layers;
-  assert no `ContactManifold` is generated. Create two overlapping entities on interacting
-  layers; assert a `ContactManifold` is generated.
+## US-4.2.2.2 Verify Contact Point Accuracy
 
-## R-4.2.7 Collision Events
+**As an** engine tester (P-27), **I want to** position known primitive pairs at analytically
+computable overlaps and assert penetration depth accuracy within 1mm, **so that** narrowphase
+geometric precision is confirmed.
 
-The engine **SHALL** emit `CollisionStarted`, `CollisionPersisted`, and `CollisionEnded` ECS
-events with correct transition semantics: `CollisionStarted` fires on the first frame of
-contact, `CollisionPersisted` fires on each subsequent frame, and `CollisionEnded` fires on the
-first frame after separation.
+## US-4.2.2.3 Verify Deterministic Contact Generation
 
-- **Derived from:** [F-4.2.7](../../features/physics/collision-detection.md)
-- **Rationale:** Gameplay systems (damage, sound, VFX) rely on precise collision lifecycle
-  events to trigger effects at the correct moment.
-- **Verification:** Integration test — move two spheres into contact, hold for 5 frames, then
-  separate; assert exactly one `CollisionStarted`, exactly 4 `CollisionPersisted`, and exactly
-  one `CollisionEnded` event are emitted in the correct frame order.
+**As an** engine tester (P-27), **I want to** run the same narrowphase scenario twice and
+assert bit-identical contact manifolds, **so that** narrowphase determinism is verified for
+server-authoritative simulation.
 
-## R-4.2.8 Trigger Volumes
+## US-4.2.2.4 Benchmark Narrowphase Throughput
 
-The engine **SHALL** emit `TriggerEnter`, `TriggerStay`, and `TriggerExit` events for entities
-overlapping a `TriggerVolume` entity without generating contact response forces.
+**As an** engine tester (P-27), **I want to** process 10000 primitive-vs-primitive candidate
+pairs and assert completion within 2ms, **so that** narrowphase throughput meets the
+performance requirement.
 
-- **Derived from:** [F-4.2.8](../../features/physics/collision-detection.md)
-- **Rationale:** Non-physical overlap detection is essential for quest zones, area-of-effect
-  abilities, loading zone transitions, and trap activation.
-- **Verification:** Integration test — move a dynamic rigid body through a trigger volume;
-  assert `TriggerEnter` fires on entry, `TriggerStay` fires each frame while overlapping,
-  `TriggerExit` fires on exit, and the rigid body's velocity is unaffected by the volume.
+## US-4.2.2.5 Implement GJK/EPA/SAT Contact Generation
 
-## R-4.2.9 Physics Material Assets
+**As an** engine developer (P-26), **I want to** implement the `NarrowphaseSystem` using GJK
+for distance, EPA for penetration, and SAT for feature-based contacts, **so that** precise
+contact manifolds are generated for all shape combinations.
 
-The engine **SHALL** resolve effective friction and restitution for a collision pair by
-combining the `PhysicsMaterial` of both colliders using the configured combine mode (average,
-minimum, maximum, multiply) and produce combined values within floating-point epsilon of the
-expected result.
+## US-4.2.2.6 Experience Accurate Collision Responses
 
-- **Derived from:** [F-4.2.9](../../features/physics/collision-detection.md)
-- **Rationale:** Material combination rules let designers control surface interactions (ice,
-  rubber, metal) without per-pair authoring.
-- **Verification:** Unit test — for each combine mode, create two colliders with known friction
-  and restitution values; assert the combined effective values equal the expected result (e.g.,
-  average of 0.2 and 0.8 = 0.5) within floating-point epsilon.
+**As a** player (P-23), **I want** objects to collide at their visible surfaces without
+clipping or ghosting through each other, **so that** interactions look physically correct.
+
+---
+
+## F-4.2.3 Primitive and Convex Collision Shapes
+
+## US-4.2.3.1 Assign Primitive Collider Shapes
+
+**As a** game developer (P-15), **I want to** set a `Collider` component to `Box`, `Sphere`,
+`Capsule`, or `ConvexHull` shape, **so that** entities have appropriate collision geometry.
+
+## US-4.2.3.2 Configure Convex Hull Vertex Limits
+
+**As a** designer (P-5), **I want to** set the maximum vertex count for convex hull generation
+in the build pipeline settings, **so that** hull complexity matches platform budgets.
+
+## US-4.2.3.3 Verify Fast-Path Primitive Dispatch
+
+**As an** engine tester (P-27), **I want to** benchmark 10000 sphere-vs-sphere pairs using
+the specialized path versus generic GJK and assert at least 2x speedup, **so that** fast-path
+dispatch effectiveness is quantified.
+
+## US-4.2.3.4 Verify All Four Shape Types Generate Correct Contacts
+
+**As an** engine tester (P-27), **I want to** verify that box, sphere, capsule, and convex
+hull shapes all produce correct contact manifolds, **so that** all primitive types are
+validated.
+
+## US-4.2.3.5 Implement Specialized Primitive-vs-Primitive Routines
+
+**As an** engine developer (P-26), **I want to** implement specialized narrowphase routines
+for common primitive pairs (sphere-sphere, sphere-box, capsule-box) that bypass generic GJK,
+**so that** the most frequent collision pairs are evaluated with minimal cost.
+
+## US-4.2.3.6 Select Collider Shapes in Editor
+
+**As a** level designer (P-6), **I want to** select and preview collider shapes (box, sphere,
+capsule) on entities in the editor, **so that** I can visually verify collision geometry
+matches the visual mesh.
+
+---
+
+## F-4.2.4 Triangle Mesh and Heightfield Shapes
+
+## US-4.2.4.1 Set Up Triangle Mesh Colliders
+
+**As a** game developer (P-15), **I want to** assign `ColliderShape::TriMesh` to static
+environment entities, **so that** complex concave geometry has accurate collision.
+
+## US-4.2.4.2 Set Up Heightfield Colliders for Terrain
+
+**As a** game developer (P-15), **I want to** assign `ColliderShape::Heightfield` to terrain
+entities, **so that** terrain collision uses the optimized heightfield path.
+
+## US-4.2.4.3 Verify Per-Triangle Material Indices
+
+**As an** engine tester (P-27), **I want to** create a heightfield with two regions assigned
+different physics materials, drop a sphere onto each, and assert correct friction and
+restitution, **so that** per-triangle material mapping is verified.
+
+## US-4.2.4.4 Benchmark Triangle Mesh Collision at Platform Limits
+
+**As an** engine tester (P-27), **I want to** benchmark collision against a 256K triangle
+mesh on desktop and verify acceptable frame time, **so that** mesh collision scales to
+platform limits.
+
+## US-4.2.4.5 Implement TriMesh and Heightfield Narrowphase
+
+**As an** engine developer (P-26), **I want to** implement narrowphase contact generation for
+`TriMesh` and `Heightfield` shapes integrated with the shared BVH, **so that** concave
+environment geometry is fully supported.
+
+## US-4.2.4.6 Assign Per-Surface Materials to Terrain
+
+**As a** level designer (P-6), **I want to** paint different physics materials (dirt, stone,
+mud) onto heightfield terrain regions in the editor, **so that** surface properties vary
+across the landscape.
+
+## US-4.2.4.7 Experience Correct Terrain Collision
+
+**As a** player (P-23), **I want** my character and objects to collide accurately with terrain
+hills and valleys, **so that** the ground feels solid and reliable.
+
+---
+
+## F-4.2.5 Compound Shapes
+
+## US-4.2.5.1 Create Compound Colliders
+
+**As a** game developer (P-15), **I want to** attach a `CompoundCollider` component combining
+multiple primitive shapes with local-space offsets, **so that** complex objects have accurate
+collision without concave decomposition.
+
+## US-4.2.5.2 Assign Independent Materials to Compound Children
+
+**As a** game developer (P-15), **I want** each child shape in a `CompoundCollider` to carry
+its own `CollisionLayers` and `PhysicsMaterial`, **so that** different parts of the same entity
+have different surface properties.
+
+## US-4.2.5.3 Verify Compound Collider Child Filtering
+
+**As an** engine tester (P-27), **I want to** fire a ray that intersects only one child of a
+compound collider and assert the hit reports that child's layer and material, **so that**
+per-child filtering is correct.
+
+## US-4.2.5.4 Implement Compound Shape Broadphase Integration
+
+**As an** engine developer (P-26), **I want to** implement compound shape support in
+broadphase and narrowphase, testing each child shape independently, **so that** compound
+shapes participate correctly in collision detection.
+
+## US-4.2.5.5 Build Compound Colliders in Editor
+
+**As a** level designer (P-6), **I want to** visually compose multiple primitive shapes into
+a compound collider in the editor, **so that** complex object collision is easy to author.
+
+---
+
+## F-4.2.6 Collision Filtering and Layers
+
+## US-4.2.6.1 Configure Collision Layers
+
+**As a** game developer (P-15), **I want to** assign `CollisionLayers` components with
+membership and mask bitsets to entities, **so that** I can control which entities collide with
+each other.
+
+## US-4.2.6.2 Set Up Layer Interaction Matrix in Editor
+
+**As a** designer (P-5), **I want to** configure the collision layer interaction matrix in the
+editor, **so that** I can visually define which layers interact without editing code.
+
+## US-4.2.6.3 Register Custom Collision Filter Callbacks
+
+**As a** game developer (P-15), **I want to** register a `CollisionFilterCallback` system for
+fine-grained runtime filtering (team-based rules, ignore-owner logic), **so that** advanced
+filtering beyond layers is possible.
+
+## US-4.2.6.4 Verify Layer-Based Pair Rejection
+
+**As an** engine tester (P-27), **I want to** create two overlapping entities on non-
+interacting layers and assert no `ContactManifold` is generated, **so that** layer filtering
+prevents unwanted collisions.
+
+## US-4.2.6.5 Verify Layer-Based Pair Acceptance
+
+**As an** engine tester (P-27), **I want to** create two overlapping entities on interacting
+layers and assert a `ContactManifold` is generated, **so that** intended collisions are not
+filtered out.
+
+## US-4.2.6.6 Implement Layer Evaluation at Broadphase
+
+**As an** engine developer (P-26), **I want to** implement layer compatibility evaluation in
+the `BroadphaseUpdateSystem` to reject pairs before narrowphase, **so that** filtered pairs
+never incur narrowphase cost.
+
+## US-4.2.6.7 Assign Collision Layers to Level Objects
+
+**As a** level designer (P-6), **I want to** assign collision layers (player, enemy,
+projectile, trigger) to entities in the editor, **so that** collision domains are defined
+visually.
+
+---
+
+## F-4.2.7 Collision Events
+
+## US-4.2.7.1 Subscribe to Collision Events in Gameplay Systems
+
+**As a** game developer (P-15), **I want to** query `CollisionStarted`, `CollisionPersisted`,
+and `CollisionEnded` events in gameplay systems, **so that** I can trigger damage, sound, and
+VFX on collision.
+
+## US-4.2.7.2 Verify Collision Event Lifecycle
+
+**As an** engine tester (P-27), **I want to** move two spheres into contact for 5 frames then
+separate and assert exactly one `CollisionStarted`, four `CollisionPersisted`, and one
+`CollisionEnded` event in the correct order, **so that** event lifecycle semantics are
+verified.
+
+## US-4.2.7.3 Verify Same-Frame Event Delivery
+
+**As an** engine tester (P-27), **I want to** trigger a collision and assert the event is
+readable by a system scheduled after the collision event system in the same frame, **so that**
+zero-frame delivery latency is confirmed.
+
+## US-4.2.7.4 Implement Collision Event System
+
+**As an** engine developer (P-26), **I want to** implement the `CollisionEventSystem` that
+compares current `ContactManifold` components against the previous frame's
+`ActiveCollisions` resource and emits typed events, **so that** gameplay systems receive
+precise collision lifecycle notifications.
+
+## US-4.2.7.5 Experience Impact Feedback on Collision
+
+**As a** player (P-23), **I want** visual and audio effects to trigger immediately when
+objects collide, **so that** impacts feel responsive and impactful.
+
+## US-4.2.7.6 Set Up Collision-Triggered Effects in Editor
+
+**As a** designer (P-5), **I want to** bind collision events to VFX and sound effects in the
+visual editor, **so that** impacts produce appropriate feedback without code.
+
+---
+
+## F-4.2.8 Trigger Volumes
+
+## US-4.2.8.1 Set Up Trigger Volumes
+
+**As a** game developer (P-15), **I want to** add a `TriggerVolume` component and a collider
+shape to an entity, **so that** it detects overlap without generating contact responses.
+
+## US-4.2.8.2 Configure Trigger Types
+
+**As a** designer (P-5), **I want to** configure triggers as one-shot, persistent, or
+filtered in the editor, **so that** trigger behavior matches the gameplay intent.
+
+## US-4.2.8.3 Verify Trigger Event Lifecycle
+
+**As an** engine tester (P-27), **I want to** move a rigid body through a trigger volume and
+assert `TriggerEnter`, `TriggerStay`, and `TriggerExit` fire correctly with the body's
+velocity unaffected, **so that** trigger volumes are non-physical.
+
+## US-4.2.8.4 Verify One-Shot Trigger Fires Once
+
+**As an** engine tester (P-27), **I want to** verify a one-shot trigger fires once then
+disables itself, **so that** one-shot behavior is correct.
+
+## US-4.2.8.5 Place Trigger Volumes for Quest Objectives
+
+**As a** level designer (P-6), **I want to** place trigger volumes in the editor for quest
+objective regions, loading zone transitions, and trap activation areas, **so that** gameplay
+zones are defined spatially.
+
+## US-4.2.8.6 Place Area-of-Effect Zones
+
+**As a** level designer (P-6), **I want to** place trigger volumes as area-of-effect zones
+(poison, fire, healing) that affect entities while they overlap, **so that** environmental
+hazards are easy to author.
+
+## US-4.2.8.7 Implement Trigger Volume Detection System
+
+**As an** engine developer (P-26), **I want to** implement the trigger system that emits
+`TriggerEnter`, `TriggerStay`, and `TriggerExit` events via the observer system without
+generating contact forces, **so that** non-physical overlap detection is available.
+
+## US-4.2.8.8 Experience Entering Areas That Trigger Events
+
+**As a** player (P-23), **I want** walking into quest zones and hazard areas to trigger the
+appropriate effects immediately, **so that** the world reacts to my presence.
+
+---
+
+## F-4.2.9 Physics Material Assets
+
+## US-4.2.9.1 Author Physics Materials in Editor
+
+**As a** designer (P-5), **I want to** create physics material assets with friction,
+restitution, density, and surface type tag in the visual editor, **so that** surface
+properties are data-driven.
+
+## US-4.2.9.2 Assign Physics Materials to Colliders
+
+**As a** game developer (P-15), **I want to** assign a `PhysicsMaterialHandle` component to
+any collider entity, **so that** surface properties are associated with collision geometry.
+
+## US-4.2.9.3 Verify Material Combination Accuracy
+
+**As an** engine tester (P-27), **I want to** test each combine mode (average, min, max,
+multiply) with known friction and restitution values and assert combined values match expected
+results within floating-point epsilon, **so that** material combination is mathematically
+correct.
+
+## US-4.2.9.4 Verify Surface Tags Drive Audio and VFX
+
+**As an** engine tester (P-27), **I want to** verify that surface type tags (metal, wood, ice)
+drive footstep sound selection and impact particle selection, **so that** material tags are
+consumed by downstream systems.
+
+## US-4.2.9.5 Implement Material Combination Logic
+
+**As an** engine developer (P-26), **I want to** implement the material combination system
+that resolves effective friction and restitution from the `PhysicsMaterial` of both colliders
+using the configured combine mode, **so that** surface interactions are resolved automatically.
+
+## US-4.2.9.6 Experience Different Surface Feels
+
+**As a** player (P-23), **I want** ice surfaces to be slippery, rubber to be bouncy, and
+metal to clang, **so that** each material feels physically distinct.
+
+## US-4.2.9.7 Paint Surface Types on Level Geometry
+
+**As a** level designer (P-6), **I want to** assign physics materials to different surfaces
+in the level, **so that** the entire environment has correct physical properties.
 
 ---
 
@@ -129,7 +380,7 @@ on minimum-spec hardware, including shared BVH traversal and collision layer fil
 - **Derived from:** R-4.2.1, R-4.2.6
 - **Rationale:** Broadphase is the first stage of every physics tick; its cost scales with
   total entity count and must remain a small fraction of the total physics budget.
-- **Verification:** Benchmark — populate 50,000 entities with random AABB extents; measure
+- **Verification:** Benchmark -- populate 50,000 entities with random AABB extents; measure
   broadphase query time; assert it completes within 1 ms.
 
 ### R-4.2.NF2 Narrowphase Throughput
@@ -140,7 +391,7 @@ on minimum-spec hardware for primitive-vs-primitive pair types.
 - **Derived from:** R-4.2.2, R-4.2.3
 - **Rationale:** Narrowphase dominates collision detection cost; it must handle peak contact
   loads during explosions, collapses, and dense combat without exceeding the physics budget.
-- **Verification:** Benchmark — generate 10,000 overlapping primitive pairs; measure
+- **Verification:** Benchmark -- generate 10,000 overlapping primitive pairs; measure
   narrowphase contact generation time; assert it completes within 2 ms.
 
 ### R-4.2.NF3 Collision Event Latency
@@ -152,5 +403,5 @@ event delivery delay.
 - **Derived from:** R-4.2.7, R-4.2.8
 - **Rationale:** Gameplay systems (damage application, sound triggers, VFX spawning) rely on
   same-frame event delivery to avoid visible desyncs between physics and effects.
-- **Verification:** Integration test — trigger a collision; assert the event is readable by
+- **Verification:** Integration test -- trigger a collision; assert the event is readable by
   a system scheduled after the collision event system in the same frame.

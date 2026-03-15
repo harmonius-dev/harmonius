@@ -1,189 +1,339 @@
-# R-15.9 -- AI Editor Assistant Requirements
+# R-15.9 -- AI Editor Assistant User Stories
 
-## R-15.9.1a Speech-to-Text Pipeline
+## US-15.9.1a Speech-to-Text Pipeline
 
-The engine **SHALL** capture live voice input from the system microphone and process it through
-a configurable speech-to-text backend (local or remote), streaming transcription results with
-word-level timestamps to the command interpreter.
+### US-15.9.1a.1
+As a **designer (P-5)**, I want live voice input captured from my microphone
+so that I can issue commands by speaking.
 
-- **Derived from:** [F-15.9.1a](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** Reliable speech-to-text is the foundation of voice-controlled editing,
-  requiring platform-specific audio capture and flexible backend selection.
-- **Verification:** Speak a command and verify the transcription is accurate. Verify
-  word-level timestamps are present. Test on macOS (TCC), Windows (WASAPI), and Linux
-  (PipeWire/PulseAudio).
+### US-15.9.1a.2
+As a **designer (P-5)**, I want word-level timestamps on transcription results
+so that the system can precisely identify command boundaries.
 
-## R-15.9.1b Voice Command Interpretation
+### US-15.9.1a.3
+As an **engine dev (P-26)**, I want configurable local or remote STT backend
+so that teams choose between privacy and accuracy tradeoffs.
 
-The engine **SHALL** translate transcribed voice input into structured editor tool invocations
-via an LLM agent that maintains conversational context across follow-up commands.
+### US-15.9.1a.4
+As an **engine dev (P-26)**, I want platform-specific audio capture (TCC, WASAPI,
+PipeWire)
+so that microphone access works natively on each platform.
 
-- **Derived from:** [F-15.9.1b](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** LLM-based interpretation enables natural language commands and contextual
-  follow-ups without requiring users to memorize rigid command syntax.
-- **Verification:** Issue the voice command "place a directional light facing east at 45
-  degrees" and verify the entity is created. Follow up with "rotate it 10 degrees north"
-  and verify the same light is rotated.
+### US-15.9.1a.5
+As an **engine tester (P-27)**, I want to verify transcription accuracy for common
+editor commands
+so that STT quality is regression-tested.
 
-## R-15.9.1c Voice Activation Modes
+---
 
-The engine **SHALL** support push-to-talk and always-listening voice activation modes,
-configurable per user preference and stored in editor preferences.
+## US-15.9.1b Voice Command Interpretation
 
-- **Derived from:** [F-15.9.1c](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** Different work environments require different activation modes: push-to-talk
-  for noisy offices, always-listening for solo work.
-- **Verification:** Enable push-to-talk; verify the microphone activates only while the
-  configured key is held. Enable always-listening; verify commands are detected from
-  continuous speech.
+### US-15.9.1b.1
+As a **designer (P-5)**, I want natural language commands translated to editor actions
+so that I can say "place a directional light" and have it created.
 
-## R-15.9.2 AI Assistant Tool Interface
+### US-15.9.1b.2
+As a **designer (P-5)**, I want conversational context for follow-up commands
+so that "rotate it 10 degrees" refers to the last created object.
 
-The engine **SHALL** expose every user-facing editor feature as a tool definition with parameter
-schemas, validation rules, and undo integration so the AI assistant can invoke any editor operation
-programmatically through a unified tool API.
+### US-15.9.1b.3
+As a **artist (P-8)**, I want voice commands for material parameter adjustment
+so that I can say "make it more metallic" while viewing the preview.
 
-- **Derived from:** [F-15.9.2](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** A complete tool interface ensures the assistant has no capability gaps relative to
-  manual interaction, and undo integration prevents assistant-driven actions from being
-  irreversible.
-- **Verification:** Enumerate all editor features exposed via the plugin API (F-15.1.8) and verify
-  each has a corresponding tool definition. Invoke a tool to create an entity, modify a material
-  parameter, and trigger a build. Verify each action appears in the undo stack and can be undone.
+### US-15.9.1b.4
+As an **engine tester (P-27)**, I want to verify follow-up commands resolve to the
+previously referenced object
+so that conversational context is regression-tested.
 
-## R-15.9.3 Visual and Graphical Tool Access
+---
 
-The engine **SHALL** allow the AI assistant to manipulate visual editor elements -- including
-material color parameters, graph nodes, splines, terrain maps, and entity transforms -- through the
-same input-action APIs used by mouse and keyboard input, with identical validation, snapping, and
-constraint behavior.
+## US-15.9.1c Voice Activation Modes
 
-- **Derived from:** [F-15.9.3](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** Routing assistant actions through the same input-action pipeline guarantees
-  consistent behavior and prevents the assistant from bypassing editor constraints.
-- **Verification:** Use the assistant to connect two nodes in a logic graph and verify the
-  connection passes validation. Use the assistant to paint a terrain heightmap region and verify
-  the result matches an equivalent manual paint stroke. Confirm all operations are recorded as
-  undoable commands.
+### US-15.9.1c.1
+As a **designer (P-5)**, I want push-to-talk activation with a configurable key
+so that the microphone activates only when I hold a key.
 
-## R-15.9.4 Keyboard Shortcut Recommendations
+### US-15.9.1c.2
+As a **designer (P-5)**, I want always-listening activation with wake word detection
+so that I can speak commands hands-free.
 
-The engine **SHALL** display a transient, non-intrusive tooltip showing the keyboard shortcut when
-the user performs an action through menus or toolbars that has a shortcut binding, shown at most
-once per shortcut per session.
+### US-15.9.1c.3
+As a **developer (P-15)**, I want mode selection stored in per-user preferences
+so that each team member uses their preferred activation mode.
 
-- **Derived from:** [F-15.9.4](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** Progressive shortcut discovery accelerates user proficiency without requiring
-  users to study keybinding documentation.
-- **Verification:** Perform an action via the menu that has a keyboard shortcut. Verify a tooltip
-  appears near the action site displaying the correct shortcut. Repeat the same menu action and
-  verify the tooltip does not reappear in the same session. Verify the tooltip uses platform-
-  appropriate modifier keys (Cmd on macOS, Ctrl on Windows/Linux).
+### US-15.9.1c.4
+As an **engine tester (P-27)**, I want to verify push-to-talk only captures while
+the key is held
+so that activation mode correctness is regression-tested.
 
-## R-15.9.5 Contextual Action Reminders
+---
 
-The engine **SHALL** respond to user help queries with step-by-step visual overlays that highlight
-target UI elements in sequence using the accessibility tree for widget location, with overlays that
-fade after completion or dismissal.
+## US-15.9.2 AI Assistant Tool Interface
 
-- **Derived from:** [F-15.9.5](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** Visual guided walkthroughs are more effective than text instructions for spatial
-  editor tasks, reducing the learning curve for new users.
-- **Verification:** Ask the assistant "how do I create a material?" and verify sequential highlight
-  overlays appear on each required UI element. Verify overlays reference accurate widget
-  positions regardless of panel layout. Verify overlays dismiss after the user completes the
-  guided action.
+### US-15.9.2.1
+As a **designer (P-5)**, I want the assistant to invoke any editor feature
+so that voice commands cover the full editor capability set.
 
-## R-15.9.6a Headless Editor API Layer
+### US-15.9.2.2
+As a **designer (P-5)**, I want assistant-driven actions in the undo stack
+so that I can undo anything the assistant does.
 
-The engine **SHALL** provide a headless API layer that mirrors the UI interaction model without
-a visible display, exposing the same tool interface as the interactive assistant plus low-level
-UI automation primitives for widget interaction.
+### US-15.9.2.3
+As a **developer (P-15)**, I want every editor feature exposed as a tool definition
+so that the assistant has no capability gaps vs manual interaction.
 
-- **Derived from:** [F-15.9.6a](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** A headless API enables programmatic editor control for automation scenarios
-  where no display is available.
-- **Verification:** Launch the editor in headless mode. Execute a script that creates an
-  entity, sets its properties, and triggers a build. Verify the output matches the
-  equivalent interactive workflow.
+### US-15.9.2.4
+As a **developer (P-15)**, I want tool definitions with parameter schemas and validation
+so that the assistant invokes features with correct parameters.
 
-## R-15.9.6b Agent Orchestration
+### US-15.9.2.5
+As an **engine dev (P-26)**, I want tool definitions auto-generated from plugin API
+metadata
+so that assistant capabilities stay in sync with the editor.
 
-The engine **SHALL** support multiple concurrent AI agents operating in isolated command
-contexts with independent undo stacks, selection state, and tool invocation history.
+### US-15.9.2.6
+As an **engine tester (P-27)**, I want to verify every plugin API feature has a
+corresponding tool definition
+so that tool coverage is regression-tested.
 
-- **Derived from:** [F-15.9.6b](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** Isolated agent contexts prevent cross-contamination when multiple agents
-  operate concurrently on the same editor instance.
-- **Verification:** Run two concurrent agents and verify their command contexts are isolated
-  with no cross-contamination of state.
+---
 
-## R-15.9.6c CI/CD Agent Integration
+## US-15.9.3 Visual and Graphical Tool Access
 
-The engine **SHALL** integrate headless agents with CI/CD pipelines for automated content
-generation and regression testing, exposing build triggers, test execution, and result
-reporting as headless API operations.
+### US-15.9.3.1
+As a **artist (P-8)**, I want the assistant to adjust material color parameters
+so that I can refine materials via voice commands.
 
-- **Derived from:** [F-15.9.6c](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** CI/CD integration enables automated asset production and regression testing
-  as part of the standard build pipeline.
-- **Verification:** Configure a CI pipeline that launches a headless agent, generates content,
-  runs tests, and reports results. Verify the pipeline completes successfully.
+### US-15.9.3.2
+As a **designer (P-5)**, I want the assistant to connect graph nodes
+so that I can build logic graphs by describing connections.
 
-## R-15.9.7 Screenshot and Screen Recording Capture
+### US-15.9.3.3
+As a **designer (P-5)**, I want the assistant to reshape splines in the viewport
+so that I can adjust road paths via voice instructions.
 
-The engine **SHALL** capture screenshots and screen recordings of the editor viewport, individual
-panels, or the full window, and feed captures into the AI visual understanding pipeline for
-context-aware assistance.
+### US-15.9.3.4
+As a **artist (P-8)**, I want the assistant to paint terrain heightmaps
+so that I can describe terrain features and have them sculpted.
 
-- **Derived from:** [F-15.9.7](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** Visual capture enables the assistant to diagnose spatial problems (lighting,
-  material, layout) that are difficult to describe through structured data alone.
-- **Verification:** Capture a screenshot of the viewport and verify the image dimensions and format
-  match the configured settings. Start and stop a screen recording and verify the output file is
-  playable. Submit a viewport capture to the AI pipeline and verify the assistant can identify
-  visible objects in the scene.
+### US-15.9.3.5
+As a **developer (P-15)**, I want assistant visual operations to use the same
+input-action APIs as mouse/keyboard
+so that validation and snapping behavior is identical.
 
-## R-15.9.8 UI Accessibility Tree Analysis
+### US-15.9.3.6
+As an **engine tester (P-27)**, I want to verify assistant-driven terrain paint matches
+equivalent manual paint
+so that API parity is regression-tested.
 
-The engine **SHALL** expose a structured accessibility tree of all editor panels, widgets, menus,
-and tool modes -- including widget types, labels, values, enabled/disabled state, focus state, and
-parent-child hierarchy -- readable by the AI assistant at interaction speed.
+---
 
-- **Derived from:** [F-15.9.8](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** A structured accessibility tree provides fast, reliable editor state introspection
-  without the latency and ambiguity of pixel-level screenshot analysis.
-- **Verification:** Query the accessibility tree and verify it contains entries for all visible
-  panels and widgets. Select an object in a property grid and verify the tree reflects the
-  selection. Verify tree queries complete within 5ms. Confirm integration with platform
-  accessibility APIs (NSAccessibility, UIA, AT-SPI2).
+## US-15.9.4 Keyboard Shortcut Recommendations
 
-## R-15.9.9 Multi-Modal Understanding
+### US-15.9.4.1
+As a **designer (P-5)**, I want shortcut tooltips when I use menus for shortcutable
+actions
+so that I discover faster workflows progressively.
 
-The engine **SHALL** combine voice input, screenshot analysis, accessibility tree state, and
-conversation history into a unified context window for LLM-based intent resolution, with structured
-data (accessibility tree, selection state) taking precedence over pixel analysis when both are
-available.
+### US-15.9.4.2
+As a **designer (P-5)**, I want tooltips shown at most once per shortcut per session
+so that recommendations do not become intrusive.
 
-- **Derived from:** [F-15.9.9](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** Multi-modal context resolution enables the assistant to interpret ambiguous
-  references like "make that brighter" by cross-referencing selection state with visual context.
-- **Verification:** Select a light in the viewport and issue the voice command "make that
-  brighter." Verify the assistant correctly identifies the selected light and increases its
-  intensity. Verify that when accessibility tree data is available, it is prioritized over
-  screenshot analysis for object identification.
+### US-15.9.4.3
+As a **developer (P-15)**, I want platform-appropriate modifier keys in tooltips
+(Cmd/Ctrl)
+so that displayed shortcuts match my operating system.
 
-## R-15.9.10 AI Assistance Administration
+### US-15.9.4.4
+As an **engine tester (P-27)**, I want to verify tooltips do not reappear for the same
+shortcut in one session
+so that once-per-session behavior is regression-tested.
 
-The engine **SHALL** provide administrator controls to enable or disable voice control per user or
-team, restrict permitted tool invocations via allowlist or blocklist, configure the AI provider and
-model, set usage quotas and rate limits, and log all assistant interactions to a separate audit
-trail.
+---
 
-- **Derived from:** [F-15.9.10](../../features/tools-editor/ai-assistant.md)
-- **Rationale:** Enterprise deployments require granular control over AI capabilities, usage
-  limits, and audit logging for cost management and compliance.
-- **Verification:** Configure a tool blocklist excluding build operations. Verify the assistant
-  rejects build invocation requests. Set a per-user quota of 10 requests per hour, exceed the
-  quota, and verify the assistant returns a rate-limit response. Verify all interactions appear
-  in the audit trail with timestamps, user identity, and tool invocations.
+## US-15.9.5 Contextual Action Reminders
+
+### US-15.9.5.1
+As a **designer (P-5)**, I want step-by-step visual overlays for "how do I" queries
+so that I learn editor features through guided walkthroughs.
+
+### US-15.9.5.2
+As a **designer (P-5)**, I want overlays that highlight target UI elements with a pulse
+so that I can locate the correct button or panel.
+
+### US-15.9.5.3
+As a **designer (P-5)**, I want overlays that fade after completing the guided action
+so that the assistant guidance is non-intrusive.
+
+### US-15.9.5.4
+As an **engine tester (P-27)**, I want to verify overlay positions match the correct
+widgets regardless of panel layout
+so that layout-independent guidance is regression-tested.
+
+---
+
+## US-15.9.6a Headless Editor API Layer
+
+### US-15.9.6a.1
+As a **DevOps (P-16)**, I want a headless API that mirrors the UI interaction model
+so that I can automate editor operations without a display.
+
+### US-15.9.6a.2
+As a **DevOps (P-16)**, I want low-level UI automation primitives for widget interaction
+so that automated scripts can open panels and enter values.
+
+### US-15.9.6a.3
+As an **engine dev (P-26)**, I want headless mode with a GPU context via EGL or
+headless Metal
+so that viewport operations work on CI servers without a display.
+
+### US-15.9.6a.4
+As an **engine tester (P-27)**, I want to verify headless operations produce identical
+results to interactive workflows
+so that headless parity is regression-tested.
+
+---
+
+## US-15.9.6b Agent Orchestration
+
+### US-15.9.6b.1
+As a **developer (P-15)**, I want multiple concurrent AI agents with isolated contexts
+so that agents can work on different tasks independently.
+
+### US-15.9.6b.2
+As a **developer (P-15)**, I want independent undo stacks per agent
+so that one agent's undo does not affect another.
+
+### US-15.9.6b.3
+As a **developer (P-15)**, I want agent lifecycle management (create, run, terminate)
+so that agents are controlled programmatically.
+
+### US-15.9.6b.4
+As an **engine tester (P-27)**, I want to verify two concurrent agents have fully
+isolated command contexts
+so that agent isolation is regression-tested.
+
+---
+
+## US-15.9.6c CI/CD Agent Integration
+
+### US-15.9.6c.1
+As a **DevOps (P-16)**, I want agents that run in CI pipelines for content generation
+so that automated asset production is part of the build process.
+
+### US-15.9.6c.2
+As a **DevOps (P-16)**, I want agents that execute regression tests headlessly
+so that visual and functional tests run on build servers.
+
+### US-15.9.6c.3
+As a **DevOps (P-16)**, I want build triggers and result reporting as headless API ops
+so that CI integration is seamless.
+
+### US-15.9.6c.4
+As an **engine tester (P-27)**, I want to verify a CI pipeline agent produces artifacts
+and reports results
+so that CI agent integration is regression-tested.
+
+---
+
+## US-15.9.7 Screenshot and Screen Recording Capture
+
+### US-15.9.7.1
+As a **designer (P-5)**, I want the assistant to capture viewport screenshots
+so that it can analyze my scene for context-aware help.
+
+### US-15.9.7.2
+As a **designer (P-5)**, I want screen recordings saved to disk
+so that I can share sessions for documentation or bug reports.
+
+### US-15.9.7.3
+As a **developer (P-15)**, I want captures fed into the AI visual understanding pipeline
+so that the assistant can diagnose lighting and material issues.
+
+### US-15.9.7.4
+As an **engine dev (P-26)**, I want platform-specific capture APIs (ScreenCaptureKit,
+DXGI, PipeWire)
+so that capture is hardware-accelerated on each platform.
+
+### US-15.9.7.5
+As an **engine tester (P-27)**, I want to verify screenshot dimensions match configured
+settings
+so that capture correctness is regression-tested.
+
+---
+
+## US-15.9.8 UI Accessibility Tree Analysis
+
+### US-15.9.8.1
+As an **engine dev (P-26)**, I want the assistant to read the UI accessibility tree
+so that it understands editor state without pixel analysis.
+
+### US-15.9.8.2
+As an **engine dev (P-26)**, I want the tree exposing widget types, labels, values,
+and hierarchy
+so that the assistant can identify active panels and selected objects.
+
+### US-15.9.8.3
+As an **engine dev (P-26)**, I want tree queries completing within 5ms
+so that accessibility introspection is fast enough for real-time use.
+
+### US-15.9.8.4
+As an **engine dev (P-26)**, I want integration with NSAccessibility, UIA, and AT-SPI2
+so that the tree uses platform-native accessibility APIs.
+
+### US-15.9.8.5
+As an **engine tester (P-27)**, I want to verify the tree reflects the current selection
+and panel state
+so that accessibility tree accuracy is regression-tested.
+
+---
+
+## US-15.9.9 Multi-Modal Understanding
+
+### US-15.9.9.1
+As a **designer (P-5)**, I want the assistant to combine voice, screenshots, and
+selection state
+so that "make that brighter" resolves correctly to the selected light.
+
+### US-15.9.9.2
+As a **designer (P-5)**, I want structured data to take precedence over pixel analysis
+so that the assistant uses the most reliable input source.
+
+### US-15.9.9.3
+As an **engine dev (P-26)**, I want a unified context window for the LLM agent
+so that all input modalities are available for intent resolution.
+
+### US-15.9.9.4
+As an **engine tester (P-27)**, I want to verify ambiguous voice commands resolve
+correctly using selection context
+so that multi-modal resolution is regression-tested.
+
+---
+
+## US-15.9.10 AI Assistance Administration
+
+### US-15.9.10.1
+As a **server admin (P-22)**, I want to enable or disable voice control per user or team
+so that AI assistance is granted selectively.
+
+### US-15.9.10.2
+As a **server admin (P-22)**, I want tool invocation allowlists and blocklists
+so that I can restrict which operations the assistant can perform.
+
+### US-15.9.10.3
+As a **server admin (P-22)**, I want per-user usage quotas and rate limits
+so that AI service costs are controlled.
+
+### US-15.9.10.4
+As a **server admin (P-22)**, I want all assistant interactions logged to a separate
+audit trail
+so that AI assistance usage is auditable independently from content generation.
+
+### US-15.9.10.5
+As a **developer (P-15)**, I want configurable AI provider and model selection
+so that I can choose the best LLM for my team's needs.
+
+### US-15.9.10.6
+As an **engine tester (P-27)**, I want to verify a blocked tool invocation is rejected
+by the assistant
+so that tool restriction enforcement is regression-tested.

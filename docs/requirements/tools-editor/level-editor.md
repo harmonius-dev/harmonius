@@ -1,108 +1,222 @@
-# R-15.2 — Level Editor Requirements
+# R-15.2 -- Level Editor User Stories
 
-## Entity Placement
+## US-15.2.1 Entity Placement and Snapping
 
-### R-15.2.1 Entity Placement and Snapping
+### US-15.2.1.1
+As a **designer (P-5)**, I want to drag entities from the asset browser into the viewport
+so that I can place objects without navigating menus.
 
-The engine **SHALL** support entity placement via drag-and-drop from the asset browser and
-duplication, with grid snapping (configurable cell size), surface snapping (projection onto
-terrain or meshes), and vertex snapping (alignment to geometry vertices), all integrated with
-undo/redo and multi-selection.
+### US-15.2.1.2
+As a **designer (P-5)**, I want grid snapping with configurable cell size
+so that I can align entities to a uniform grid for consistent layout.
 
-- **Derived from:** [F-15.2.1](../../features/tools-editor/level-editor.md)
-- **Rationale:** Precise placement with multiple snap modes eliminates manual coordinate entry and
-  accelerates blockout and final art placement workflows.
-- **Verification:** Integration test: drag an asset from the browser into the viewport and assert
-  an entity is created at the drop location. Enable grid snap at 1.0 units, place an entity, and
-  verify its position is quantized to integer coordinates. Enable surface snap, place an entity
-  above terrain, and verify its Y position matches the terrain height at that XZ. Undo placement
-  and verify the entity is removed.
+### US-15.2.1.3
+As a **designer (P-5)**, I want surface snapping that projects entities onto terrain
+so that placed objects sit flush on uneven ground.
 
-### R-15.2.2 Prefab System with Nested Prefabs
+### US-15.2.1.4
+As a **designer (P-5)**, I want vertex snapping for alignment to geometry
+so that I can position two meshes at exact vertex positions.
 
-The engine **SHALL** support reusable prefab assets containing entity hierarchies with arbitrary
-nesting depth, where modifications to a parent prefab propagate to all instances unless a
-property has been overridden at the instance level.
+### US-15.2.1.5
+As a **designer (P-5)**, I want to duplicate existing entities with their transforms
+so that I can repeat placement patterns without re-dragging from the browser.
 
-- **Derived from:** [F-15.2.2](../../features/tools-editor/level-editor.md)
-- **Rationale:** Compositional prefabs (e.g., village from houses from furniture) enable large-scale
-  world building with consistent propagation of design changes across thousands of instances.
-- **Verification:** Unit test: create a three-level nested prefab (A contains B contains C). Modify
-  a property on C's source prefab and assert the change propagates to all instances of A that have
-  not overridden that property. Integration test: place 100 instances of a prefab, modify the
-  source, and verify all instances update within one editor frame.
+### US-15.2.1.6
+As a **artist (P-8)**, I want placement to respect undo/redo
+so that I can revert any accidental placements instantly.
 
-### R-15.2.3 Prefab Instance Overrides
+### US-15.2.1.7
+As a **artist (P-8)**, I want multi-selection placement for batch positioning
+so that I can move groups of entities while maintaining relative offsets.
 
-The engine **SHALL** allow prefab instances to override any property of their source prefab while
-preserving the prefab link, visually indicating overridden properties in the inspector, and
-supporting per-property revert and apply-back-to-source operations.
+### US-15.2.1.8
+As an **engine tester (P-27)**, I want to verify surface snapping projects entities
+correctly onto terrain normals
+so that placement accuracy on slopes is regression-tested.
 
-- **Derived from:** [F-15.2.3](../../features/tools-editor/level-editor.md)
-- **Rationale:** Instance overrides enable localized variation (e.g., unique shop signs in a
-  village) without breaking the shared prefab link needed for global updates.
-- **Verification:** Unit test: instantiate a prefab, override a material property, and assert the
-  override persists while non-overridden properties still track the source. Revert the override
-  and assert the property returns to the source value. Apply the override back to the source and
-  assert all other instances adopt the new value.
+---
 
-## Brush and Shape Tools
+## US-15.2.2 Prefab System with Nested Prefabs
 
-### R-15.2.4 Brush and CSG Tools
+### US-15.2.2.1
+As a **designer (P-5)**, I want to define reusable entity hierarchies as prefab assets
+so that I can instantiate consistent structures across the world.
 
-The engine **SHALL** provide additive and subtractive CSG primitives (box, cylinder, sphere,
-stairs, arch) with boolean operations between brushes, and support converting brush geometry to
-static mesh assets.
+### US-15.2.2.2
+As a **designer (P-5)**, I want prefabs that contain other prefabs (nesting)
+so that I can compose complex structures from simpler building blocks.
 
-- **Derived from:** [F-15.2.4](../../features/tools-editor/level-editor.md)
-- **Rationale:** CSG tools enable rapid blockout and prototyping without requiring external DCC
-  tools, supporting the standard blockout-to-art level design workflow.
-- **Verification:** Integration test: create an additive box and a subtractive cylinder, perform a
-  boolean subtraction, and verify the resulting mesh has a cylindrical hole. Convert the brush to a
-  static mesh and verify it renders identically. Undo the conversion and verify the brush geometry
-  is restored.
+### US-15.2.2.3
+As a **designer (P-5)**, I want changes to a parent prefab to propagate to all instances
+so that updating a base design automatically updates every placed instance.
 
-### R-15.2.5 Spline Editing
+### US-15.2.2.4
+As a **artist (P-8)**, I want to create a prefab from a selection of entities
+so that I can save a finished art composition as a reusable asset.
 
-The engine **SHALL** support viewport editing of Bezier and Catmull-Rom splines with tangent
-handles, automatic smoothing, per-point width and roll parameters, and configurable distribution
-of meshes and entities along the spline with spacing and randomization controls.
+### US-15.2.2.5
+As a **developer (P-15)**, I want prefab data stored as serializable assets
+so that prefabs version-control cleanly and merge predictably.
 
-- **Derived from:** [F-15.2.5](../../features/tools-editor/level-editor.md)
-- **Rationale:** Spline-based authoring is the standard workflow for roads, rivers, fences, and
-  rail paths, requiring direct viewport manipulation for intuitive spatial editing.
-- **Verification:** Integration test: create a Bezier spline with four control points, adjust
-  tangent handles, and verify the curve passes through all control points with correct tangent
-  directions. Distribute mesh instances along the spline at 2-unit spacing and verify instance
-  count matches spline length divided by spacing. Enable randomization and verify instance
-  transforms vary within configured bounds.
+### US-15.2.2.6
+As a **creative director (P-2)**, I want nested prefabs for compositional design
+so that a village built from house prefabs updates when house design changes.
 
-## Painting
+### US-15.2.2.7
+As an **engine tester (P-27)**, I want to verify nested prefab changes propagate
+through all nesting levels
+so that cascading updates are validated for correctness.
 
-### R-15.2.6 Landscape Painting
+---
 
-The engine **SHALL** provide landscape material painting through the world-building terrain painting
-system (R-15.6.3). The level editor **SHALL** expose the terrain painting tools in its viewport
-toolbar.
+## US-15.2.3 Prefab Instance Overrides
 
-- **Derived from:** [F-15.2.6](../../features/tools-editor/level-editor.md)
-- **Rationale:** Direct viewport painting with real-time preview enables artists to iterate on
-  terrain materials in context without switching between external tools.
-- **Verification:** Integration test: paint two material layers onto a terrain tile with a circular
-  brush. Verify the blend weights are correct at the brush center (full layer A) and at the
-  falloff edge (blended A+B). Verify painting a layer beyond the per-tile limit is either clamped
-  or reported as an error. Verify the preview matches the final rendered result.
+### US-15.2.3.1
+As a **designer (P-5)**, I want to override any property on a prefab instance
+so that I can create localized variations while keeping the base link.
 
-### R-15.2.7 Foliage Painting
+### US-15.2.3.2
+As a **designer (P-5)**, I want override state visualized with bold or colored labels
+so that I can see which properties differ from the source prefab.
 
-The engine **SHALL** provide foliage painting through the world-building vegetation system
-(R-15.6.5). The level editor **SHALL** expose the vegetation painting tools in its viewport
-toolbar.
+### US-15.2.3.3
+As a **designer (P-5)**, I want to revert a single overridden property to the source value
+so that I can selectively undo customizations per-property.
 
-- **Derived from:** [F-15.2.7](../../features/tools-editor/level-editor.md)
-- **Rationale:** Density-based foliage painting with constraint rules produces natural distribution
-  patterns faster than manual placement across large open-world environments.
-- **Verification:** Integration test: paint grass foliage onto a slope exceeding the configured
-  slope limit and verify no instances are placed. Paint onto a valid surface and verify instance
-  density matches the brush density setting. Verify instances within an exclusion zone are removed.
-  Verify painted instances appear in the spatial grid and stream correctly when moving the camera.
+### US-15.2.3.4
+As a **designer (P-5)**, I want to apply an override back to the source prefab
+so that a successful variation becomes the new default for all instances.
+
+### US-15.2.3.5
+As a **artist (P-8)**, I want per-instance material overrides on prefab meshes
+so that I can tint or weather individual instances of the same building.
+
+### US-15.2.3.6
+As an **engine tester (P-27)**, I want to verify reverting an override restores the
+source prefab value exactly
+so that override revert correctness is regression-tested.
+
+---
+
+## US-15.2.4 Brush and CSG Tools
+
+### US-15.2.4.1
+As a **designer (P-5)**, I want additive CSG primitives (box, cylinder, sphere, stairs)
+so that I can block out level geometry rapidly during prototyping.
+
+### US-15.2.4.2
+As a **designer (P-5)**, I want subtractive CSG primitives for carving holes
+so that I can create doorways and windows in existing geometry.
+
+### US-15.2.4.3
+As a **designer (P-5)**, I want boolean operations between brushes
+so that I can combine and subtract shapes to produce complex forms.
+
+### US-15.2.4.4
+As a **designer (P-5)**, I want to convert brush geometry to static meshes
+so that finalized blockouts transition to production art assets.
+
+### US-15.2.4.5
+As a **artist (P-8)**, I want arch and stair CSG primitives
+so that I can prototype architectural elements quickly.
+
+### US-15.2.4.6
+As an **engine tester (P-27)**, I want to verify boolean operations produce watertight
+meshes
+so that CSG output is validated for rendering and collision correctness.
+
+---
+
+## US-15.2.5 Spline Editing
+
+### US-15.2.5.1
+As a **designer (P-5)**, I want to create Bezier and Catmull-Rom splines in the viewport
+so that I can define paths for roads, rivers, fences, and rail routes.
+
+### US-15.2.5.2
+As a **designer (P-5)**, I want to add, move, and delete spline control points
+so that I can adjust path shapes interactively.
+
+### US-15.2.5.3
+As a **designer (P-5)**, I want tangent handles on control points
+so that I can control curve sharpness and direction at each point.
+
+### US-15.2.5.4
+As a **designer (P-5)**, I want per-point width and roll parameters
+so that roads can widen at intersections and bank through curves.
+
+### US-15.2.5.5
+As a **artist (P-8)**, I want meshes distributed along splines with spacing control
+so that fence posts or power poles auto-populate along a drawn path.
+
+### US-15.2.5.6
+As a **artist (P-8)**, I want randomization rules for spline-distributed entities
+so that foliage along a river path varies naturally.
+
+### US-15.2.5.7
+As an **engine tester (P-27)**, I want to verify that automatic smoothing produces
+C1-continuous curves
+so that spline continuity is regression-tested.
+
+---
+
+## US-15.2.6 Landscape Painting
+
+### US-15.2.6.1
+As a **designer (P-5)**, I want to paint terrain material layers in the viewport
+so that I can texture the landscape without leaving the 3D view.
+
+### US-15.2.6.2
+As a **designer (P-5)**, I want configurable brush shapes, sizes, and falloff curves
+so that I can paint with precision from broad strokes to fine detail.
+
+### US-15.2.6.3
+As a **designer (P-5)**, I want height-based and slope-based auto-painting rules
+so that snow accumulates on peaks and rock appears on cliffs automatically.
+
+### US-15.2.6.4
+As a **artist (P-8)**, I want real-time preview at full material quality
+so that I can evaluate painted results immediately without a bake step.
+
+### US-15.2.6.5
+As a **artist (P-8)**, I want blending up to the material layer limit per tile
+so that I can create rich, multi-layer terrain surfaces.
+
+### US-15.2.6.6
+As an **engine tester (P-27)**, I want to verify auto-painting rules apply correct
+layers based on heightmap slope values
+so that rule-based painting is validated against known test terrain.
+
+---
+
+## US-15.2.7 Foliage Painting
+
+### US-15.2.7.1
+As a **designer (P-5)**, I want to paint foliage instances with density brushes
+so that I can populate terrain with vegetation interactively.
+
+### US-15.2.7.2
+As a **designer (P-5)**, I want per-foliage-type slope and altitude limits
+so that trees do not appear on cliff faces or above the treeline.
+
+### US-15.2.7.3
+As a **designer (P-5)**, I want exclusion zones that prevent foliage
+so that paths, buildings, and clearings remain foliage-free.
+
+### US-15.2.7.4
+As a **artist (P-8)**, I want random scale and rotation variation per instance
+so that foliage looks natural rather than uniformly placed.
+
+### US-15.2.7.5
+As a **artist (P-8)**, I want real-time LOD transition preview while painting
+so that I can verify foliage appearance at all viewing distances.
+
+### US-15.2.7.6
+As a **artist (P-8)**, I want painted instances stored in spatial grids for streaming
+so that foliage loads efficiently in large open worlds.
+
+### US-15.2.7.7
+As an **engine tester (P-27)**, I want to verify slope-limited foliage does not appear
+on surfaces exceeding the configured angle
+so that placement rules are regression-tested.

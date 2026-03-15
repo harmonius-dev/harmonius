@@ -1,120 +1,222 @@
-# R-15.14 Build and Deployment
+# R-15.14 -- Build and Deployment User Stories
 
-## R-15.14.1 Platform Build Packaging
-The engine **SHALL** package the game project into platform-native distributable formats (macOS
-.app, Windows .exe with installer, Linux AppImage, iOS IPA, Android APK/AAB, and console-specific
-packages) by cooking assets for the target platform, stripping editor-only content, optimizing
-binary size, and supporting debug/development/shipping build configurations, invocable from the
-editor UI or CLI.
-- **Derived from:** [F-15.14.1](../../features/tools-editor/deployment.md)
-- **Rationale:** Automated platform-native packaging eliminates manual build steps and ensures
-  consistent, reproducible distributable output across all target platforms.
-- **Verification:** Package a project for each supported platform and confirm the output is a valid
-  platform-native distributable; confirm editor-only content is absent from the shipping build;
-  confirm debug, development, and shipping configurations produce different optimization levels and
-  symbol inclusion; invoke packaging from CLI and confirm identical output to editor-initiated
-  builds.
+## US-15.14.1 Platform Build Packaging
 
-## R-15.14.2 Deploy-to-Device Workflow
-The engine **SHALL** provide one-click deployment from the editor to connected development devices
-(iOS via USB/WiFi, Android via ADB, console devkits via network), with incremental asset transfer,
-a device manager panel showing connected devices with status and storage, remote launch with
-configurable arguments, and console output streaming back to the editor.
-- **Derived from:** [F-15.14.2](../../features/tools-editor/deployment.md)
-- **Rationale:** Incremental deploy-to-device with remote console output minimizes iteration time
-  during on-device testing, which is critical for platform-specific bug reproduction and performance
-  profiling.
-- **Verification:** Connect a development device; deploy a project and confirm the game launches on
-  the device; modify an asset, redeploy, and confirm only the changed asset is transferred; confirm
-  console output from the device appears in the editor's console panel; confirm the device manager
-  displays correct device status and storage information.
+### US-15.14.1.1
+As a **developer (P-15)**, I want to package the game for macOS, Windows, Linux, iOS,
+Android, and consoles
+so that I produce platform-native distributables from a single project.
 
-## R-15.14.3 Certification Compliance Checker
-The engine **SHALL** run automated validation against platform certification requirements before
-submission, checking required UI elements, button glyph correctness, save data compliance,
-accessibility requirements, content rating metadata, network connectivity handling, and performance
-baselines, with each platform's checklist maintained as an independently updatable data asset and
-results reported as pass/fail with remediation guidance.
-- **Derived from:** [F-15.14.3](../../features/tools-editor/deployment.md)
-- **Rationale:** Automated certification checks catch compliance failures early, avoiding costly
-  submission rejections and resubmission delays from platform holders.
-- **Verification:** Run the compliance checker against a project with known certification violations
-  and confirm each violation is reported with pass/fail status and remediation guidance; fix the
-  violations and re-run to confirm all checks pass; update a platform checklist data asset and
-  confirm the checker uses the updated rules without an engine update.
+### US-15.14.1.2
+As a **developer (P-15)**, I want debug, development, and shipping build configurations
+so that I control optimization level and symbol inclusion per build.
 
-## R-15.14.4 Code Signing Pipeline
-The engine **SHALL** automatically sign all distributable artifacts with platform-appropriate
-certificates as part of the packaging pipeline. iOS builds SHALL be signed with either Ad Hoc or App
-Store distribution profiles. macOS .app bundles SHALL be signed with a Developer ID certificate and
-submitted for Apple notarization. Android APK/AAB SHALL be signed with release keystores using APK
-Signature Scheme v2+. Windows executables and installers SHALL be Authenticode-signed. Signing
-credentials SHALL be stored in the platform keychain and SHALL NOT be committed to version control.
-- **Derived from:** [F-15.14.4](../../features/tools-editor/deployment.md)
-- **Rationale:** Unsigned binaries are rejected by modern OS gatekeepers and app stores. Automated
-  signing prevents manual errors and enables CI/CD.
-- **Verification:** Package a build for each platform; verify the signature is valid using platform
-  verification tools (codesign --verify, apksigner verify, signtool verify).
+### US-15.14.1.3
+As a **developer (P-15)**, I want packaging invocable from the editor UI or CLI
+so that builds can be triggered manually or via CI.
 
-## R-15.14.5 Platform-Specific Installers
-The engine **SHALL** generate platform-native installer packages: macOS .dmg with drag-to-install
-layout, Windows .msi with silent install support and file associations, Linux AppImage and .deb
-packages with apt repository metadata, and SteamOS-verified builds. Each format SHALL be generated
-as a post-packaging step invocable from CLI.
-- **Derived from:** [F-15.14.5](../../features/tools-editor/deployment.md)
-- **Rationale:** Platform-native installers provide the expected installation experience and are
-  required for some distribution channels.
-- **Verification:** Generate each installer type; verify installation and uninstallation completes
-  without errors on the target platform.
+### US-15.14.1.4
+As a **DevOps (P-16)**, I want editor-only content stripped from shipping builds
+so that development tools are not exposed to players.
 
-## R-15.14.6 Asset Bundle and DLC Packaging
-The engine **SHALL** package content subsets into signed, versioned asset bundles with content-hash
-manifests. DLC bundles SHALL require entitlement verification (R-14.5.6) before mounting. Patch
-bundles SHALL contain only changed assets relative to a specified base version. Bundle integrity
-SHALL be verified via BLAKE3 hashes on load.
-- **Derived from:** [F-15.14.6](../../features/tools-editor/deployment.md)
-- **Rationale:** Separating content into bundles enables DLC monetization, incremental updates, and
-  reduced initial download sizes.
-- **Verification:** Create a DLC bundle; verify it loads only when the entitlement is present and is
-  rejected when the entitlement is absent. Create a patch bundle; verify it contains only changed
-  assets.
+### US-15.14.1.5
+As a **DevOps (P-16)**, I want assets cooked for the target platform during packaging
+so that textures and shaders are in platform-optimal format.
 
-## R-15.14.7 Delta Patching
-The engine **SHALL** generate binary delta patches between game versions using content-defined
-chunking. Patch size SHALL be less than 25% of the full update size for typical content changes. The
-runtime patcher SHALL apply patches and verify the result matches the full new build via BLAKE3 hash
-comparison.
-- **Derived from:** [F-15.14.7](../../features/tools-editor/deployment.md)
-- **Rationale:** Delta patching reduces download sizes for updates, improving player experience and
-  reducing bandwidth costs.
-- **Verification:** Generate a delta patch between two builds with 10% content changes; verify patch
-  size is under 25% of full update; apply patch and verify hash matches full build.
+### US-15.14.1.6
+As an **engine tester (P-27)**, I want to verify shipping builds exclude editor-only
+content
+so that build content filtering is regression-tested.
 
-## Non-Functional Requirements
+---
 
-### R-15.14.NF1 Build and Packaging Performance
+## US-15.14.2 Deploy-to-Device Workflow
 
-Incremental asset cooking **SHALL** process only changed assets, completing within 5 minutes for
-projects with up to 100,000 assets when fewer than 1% of assets have changed. Full platform
-packaging (cook + package + sign) **SHALL** complete within 2 hours for projects with up to 100,000
-assets on a CI build server with 32 cores. Deploy-to-device incremental transfer **SHALL** complete
-within 30 seconds when fewer than 100 assets have changed.
+### US-15.14.2.1
+As a **developer (P-15)**, I want one-click deployment to connected devices
+so that I can test on real hardware without manual file transfer.
 
-- **Derived from:** F-15.14.1 through F-15.14.8 (all deployment features).
-- **Rationale:** Build and packaging time directly impacts iteration speed and CI pipeline
-  throughput. Incremental cooking avoids reprocessing unchanged content.
-- **Verification:** Modify 500 assets in a 100,000-asset project and run incremental cook; assert
-  completion within 5 minutes. Run a full packaging pipeline on a 32-core CI server and assert
-  completion within 2 hours. Change 50 assets and deploy to a connected device; assert transfer
-  completes within 30 seconds.
+### US-15.14.2.2
+As a **developer (P-15)**, I want incremental asset transfer for changed files only
+so that iteration time is minimized.
 
-## R-15.14.8 Store Distribution Pipeline
-The engine **SHALL** provide CLI-invocable submission to Steam (via SteamCMD), App Store (via
-Transporter/altool), Windows Store (via MSIX + Partner Center CLI), and Xbox (via Partner Center).
-Each submission SHALL include pre-submission validation (R-15.14.3) and status polling with team
-notification on review completion.
-- **Derived from:** [F-15.14.8](../../features/tools-editor/deployment.md)
-- **Rationale:** Automated store submission reduces manual error and integrates distribution into
-  CI/CD pipelines.
-- **Verification:** Submit a test build to each store's staging/sandbox environment; verify the
-  submission is accepted and status polling reports the correct review state.
+### US-15.14.2.3
+As a **developer (P-15)**, I want a device manager panel showing connected devices
+so that I can see device status and storage at a glance.
+
+### US-15.14.2.4
+As a **developer (P-15)**, I want remote launch with configurable command-line arguments
+so that I can start the game with specific options on the device.
+
+### US-15.14.2.5
+As a **developer (P-15)**, I want console output from remote devices streamed to
+the editor
+so that I can debug device issues from my workstation.
+
+### US-15.14.2.6
+As an **engine tester (P-27)**, I want to verify incremental transfer sends only changed
+assets
+so that transfer efficiency is regression-tested.
+
+---
+
+## US-15.14.3 Certification Compliance Checker
+
+### US-15.14.3.1
+As a **developer (P-15)**, I want automated platform certification checks
+so that compliance is validated before store submission.
+
+### US-15.14.3.2
+As a **developer (P-15)**, I want pass/fail reports with remediation guidance
+so that I know exactly what to fix for certification.
+
+### US-15.14.3.3
+As a **DevOps (P-16)**, I want platform checklists maintained as updatable data assets
+so that certification rules update without engine updates.
+
+### US-15.14.3.4
+As a **designer (P-5)**, I want button glyph correctness validation
+so that UI glyphs match the target platform's requirements.
+
+### US-15.14.3.5
+As an **engine tester (P-27)**, I want to verify known certification violations are
+reported with pass/fail and remediation
+so that checker accuracy is regression-tested.
+
+---
+
+## US-15.14.4 Code Signing Pipeline
+
+### US-15.14.4.1
+As a **DevOps (P-16)**, I want automated code signing as part of the packaging pipeline
+so that signed builds are produced without manual steps.
+
+### US-15.14.4.2
+As a **DevOps (P-16)**, I want iOS signing with Ad Hoc and App Store profiles
+so that both testing and distribution builds are signed correctly.
+
+### US-15.14.4.3
+As a **DevOps (P-16)**, I want macOS notarization submission and ticket stapling
+so that macOS builds pass Gatekeeper without warnings.
+
+### US-15.14.4.4
+As a **DevOps (P-16)**, I want Android APK/AAB signing with release keystores
+so that Play Store submissions have valid signatures.
+
+### US-15.14.4.5
+As a **DevOps (P-16)**, I want Windows Authenticode signing via signtool
+so that Windows executables are trusted by SmartScreen.
+
+### US-15.14.4.6
+As a **DevOps (P-16)**, I want signing credentials stored in platform keychain only
+so that credentials are never committed to version control.
+
+### US-15.14.4.7
+As an **engine tester (P-27)**, I want to verify signed artifacts pass platform
+verification tools
+so that signing correctness is regression-tested per platform.
+
+---
+
+## US-15.14.5 Platform-Specific Installers
+
+### US-15.14.5.1
+As a **DevOps (P-16)**, I want macOS .dmg with drag-to-install layout
+so that macOS users get the standard installation experience.
+
+### US-15.14.5.2
+As a **DevOps (P-16)**, I want Windows .msi with silent install and file associations
+so that Windows deployment is automated and complete.
+
+### US-15.14.5.3
+As a **DevOps (P-16)**, I want Linux AppImage and .deb with apt repository metadata
+so that Linux users can install via their preferred method.
+
+### US-15.14.5.4
+As a **DevOps (P-16)**, I want SteamOS-verified builds with controller configuration
+so that Steam Deck deployment meets Valve's requirements.
+
+### US-15.14.5.5
+As an **engine tester (P-27)**, I want to verify each installer type installs and
+uninstalls without errors
+so that installer correctness is regression-tested per platform.
+
+---
+
+## US-15.14.6 Asset Bundle and DLC Packaging
+
+### US-15.14.6.1
+As a **developer (P-15)**, I want to package content subsets as signed asset bundles
+so that DLC and seasonal content are distributed separately.
+
+### US-15.14.6.2
+As a **developer (P-15)**, I want DLC bundles gated by platform entitlements
+so that paid content requires purchase verification.
+
+### US-15.14.6.3
+As a **developer (P-15)**, I want patch bundles containing only changed assets
+so that updates are small incremental downloads.
+
+### US-15.14.6.4
+As a **developer (P-15)**, I want bundle integrity verified via BLAKE3 hashes on load
+so that corrupted bundles are detected before use.
+
+### US-15.14.6.5
+As an **engine tester (P-27)**, I want to verify a DLC bundle loads only with valid
+entitlement
+so that entitlement gating is regression-tested.
+
+---
+
+## US-15.14.7 Delta Patching System
+
+### US-15.14.7.1
+As a **developer (P-15)**, I want binary delta patches between game versions
+so that update downloads are minimized.
+
+### US-15.14.7.2
+As a **developer (P-15)**, I want content-defined chunking for shift-resilient diffs
+so that patch sizes are consistently small.
+
+### US-15.14.7.3
+As a **developer (P-15)**, I want the patcher to verify patched results via hash
+comparison
+so that post-patch integrity is guaranteed.
+
+### US-15.14.7.4
+As a **DevOps (P-16)**, I want patch generation as a CI pipeline step
+so that patches are produced automatically for each release.
+
+### US-15.14.7.5
+As an **engine tester (P-27)**, I want to verify patch size is under 25% of full update
+for typical changes
+so that patch efficiency is regression-tested.
+
+---
+
+## US-15.14.8 Store Distribution Pipeline
+
+### US-15.14.8.1
+As a **DevOps (P-16)**, I want CLI-invocable submission to Steam via SteamCMD
+so that Steam builds are deployed from the CI pipeline.
+
+### US-15.14.8.2
+As a **DevOps (P-16)**, I want submission to App Store via Transporter CLI
+so that iOS/macOS builds are submitted automatically.
+
+### US-15.14.8.3
+As a **DevOps (P-16)**, I want submission to Windows Store via MSIX + Partner Center CLI
+so that Windows Store builds are automated.
+
+### US-15.14.8.4
+As a **DevOps (P-16)**, I want pre-submission certification validation
+so that submissions fail fast before reaching store review.
+
+### US-15.14.8.5
+As a **DevOps (P-16)**, I want status polling with team notification on review completion
+so that the team knows when builds pass or fail store review.
+
+### US-15.14.8.6
+As an **engine tester (P-27)**, I want to verify submission to each store's
+staging/sandbox environment
+so that store submission integration is regression-tested.

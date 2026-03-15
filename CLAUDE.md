@@ -7,7 +7,7 @@ This handbook provides guidelines and best practices for agents working on the H
 - Put all documentation in the `docs/` directory. Use Markdown format for all documentation.
 - Never create ASCII diagrams. Instead, create Mermaid diagrams. Always render Mermaid diagrams with
   the MCP to ensure correctness and readability.
-- Always limit lines to 120 characters for all code, configuration, documentation, and comments. The
+- Always limit lines to 100 characters for all code, configuration, documentation, and comments. The
   limit may be exceeded if the line cannot be split without changing semantics. The line length
   limit does not apply to tables in Markdown documents.
 - Always sort JSON documents by keys in lexicographical order. Do not sort JSON arrays, only JSON
@@ -24,7 +24,7 @@ This handbook provides guidelines and best practices for agents working on the H
   the design in a message if feasible. The design should include references to requirements, a quick
   overview, architecture diagrams, flowcharts, sequence diagrams, and class diagrams (data
   structures, enums, relationships)
-- Use lists and tables to display requirements, OS API usage, tabluar data, comparisons, matrices,
+- Use lists and tables to display requirements, OS API usage, tabular data, comparisons, matrices,
   features and any other structured or semi-structured information.
 - Start from requirements, and rethink the design periodically to see if it needs to be redone. In
   this case, you should stash the current state, create a new branch, then delete all of the

@@ -1,137 +1,227 @@
-# R-15.6 — World Building Requirements
+# R-15.6 -- World Building User Stories
 
-## Terrain Sculpting
+## US-15.6.1 Terrain Sculpting Brushes
 
-### R-15.6.1 Terrain Sculpting Brushes
+### US-15.6.1.1
+As a **artist (P-8)**, I want raise, lower, smooth, flatten, erode, and noise brushes
+so that I can shape terrain heightmaps directly in the viewport.
 
-The engine **SHALL** provide sculpting brushes (raise, lower, smooth, flatten, erode, noise) for
-shaping terrain heightmaps in the viewport, with configurable radius, strength, falloff curve, and
-shape mask, streaming operations to disk incrementally so that massive terrains do not require
-loading the entire heightmap into memory.
+### US-15.6.1.2
+As a **artist (P-8)**, I want configurable brush radius, strength, and falloff curve
+so that I can sculpt at any scale from fine detail to broad strokes.
 
-- **Derived from:** [F-15.6.1](../../features/tools-editor/world-building.md)
-- **Rationale:** Interactive terrain sculpting with incremental disk streaming allows artists to
-  shape open-world terrains of arbitrary size without memory constraints.
-- **Verification:** Sculpt a 16k x 16k heightmap using each brush type; verify the operation
-  completes without loading the full heightmap (peak memory stays below 512 MB). Confirm each
-  brush produces visually distinct terrain modifications and that undo restores prior state.
+### US-15.6.1.3
+As a **artist (P-8)**, I want shape masks on sculpting brushes
+so that I can create patterned terrain features (footprints, tire tracks).
 
-### R-15.6.2 Terrain Erosion
+### US-15.6.1.4
+As a **artist (P-8)**, I want incremental streaming to disk during sculpting
+so that I can shape massive heightmaps without loading them entirely into memory.
 
-The engine **SHALL** simulate hydraulic and thermal erosion on selected terrain regions with
-artist-configurable parameters (rain amount, sediment capacity, thermal angle), previewing
-results in real time via GPU compute and committing on brush release.
+### US-15.6.1.5
+As a **designer (P-5)**, I want sculpting operations integrated with undo/redo
+so that I can revert terrain changes incrementally.
 
-- **Derived from:** [F-15.6.2](../../features/tools-editor/world-building.md)
-- **Rationale:** Procedural erosion produces natural-looking terrain features that would be
-  prohibitively time-consuming to sculpt by hand.
-- **Verification:** Apply hydraulic erosion to a 2048x2048 sample region; verify the preview
-  updates at interactive frame rates (above 15 FPS). Compare pre- and post-erosion heightmaps
-  to confirm altitude changes are non-zero and concentrated along drainage paths.
+### US-15.6.1.6
+As an **engine tester (P-27)**, I want to verify sculpting a 16k x 16k heightmap stays
+under 512 MB peak memory
+so that streaming sculpt performance is regression-tested.
 
-## Terrain Painting and Water
+---
 
-### R-15.6.3 Terrain Material Painting
+## US-15.6.2 Terrain Erosion
 
-The engine **SHALL** paint material layers onto terrain tiles with per-layer weight maps, supporting
-height-based and slope-based automatic painting rules, triplanar projection for cliff faces, and
-macro-variation textures to break tiling, with a bounded layer count per tile to maintain shader
-performance.
+### US-15.6.2.1
+As a **artist (P-8)**, I want hydraulic erosion simulation on selected terrain regions
+so that I can create natural-looking valleys and drainage patterns.
 
-- **Derived from:** [F-15.6.3](../../features/tools-editor/world-building.md)
-- **Rationale:** Multi-layer material painting with automatic rules enables rapid coverage of
-  large terrains while maintaining artistic control over local details.
-- **Verification:** Paint 4 material layers on a terrain tile; verify weight maps sum to 1.0 at
-  every texel. Enable slope-based auto-painting and confirm rock material appears only on slopes
-  exceeding the configured angle threshold.
+### US-15.6.2.2
+As a **artist (P-8)**, I want thermal erosion for cliff weathering
+so that I can add realistic sediment deposits and talus slopes.
 
-### R-15.6.4 Water Body Placement
+### US-15.6.2.3
+As a **artist (P-8)**, I want configurable erosion parameters
+so that I can control rain amount, sediment capacity, and thermal angle.
 
-The engine **SHALL** place water volumes (rivers, lakes, oceans) by defining boundary splines and
-surface elevation, with rivers following spline paths with configurable width, depth, and flow
-speed, and lakes filling to a specified altitude with automatic shoreline masking, integrating with
-the rendering pipeline for reflections, refraction, caustics, and foam.
+### US-15.6.2.4
+As a **artist (P-8)**, I want real-time erosion preview via GPU compute
+so that I can see results interactively before committing.
 
-- **Derived from:** [F-15.6.4](../../features/tools-editor/world-building.md)
-- **Rationale:** Spline-driven water placement gives designers precise control over water body
-  shape while automating shoreline blending and rendering integration.
-- **Verification:** Place a river spline with 5 control points and a lake at a fixed altitude;
-  verify the river follows the spline path and the lake fills to the specified elevation. Confirm
-  reflections and refraction render correctly on the water surface.
+### US-15.6.2.5
+As an **engine tester (P-27)**, I want to verify erosion preview runs above 15 FPS
+on 2048x2048 regions
+so that GPU erosion performance is regression-tested.
 
-## Vegetation and Lighting
+---
 
-### R-15.6.5 Vegetation Painting with Density Rules
+## US-15.6.3 Terrain Material Painting
 
-The engine **SHALL** paint vegetation instances across terrain using density brushes with per-species
-placement rules defining slope limits, altitude bands, proximity exclusion radii, clustering
-behavior, and random scale/rotation ranges, with a biome rule system for declarative vegetation
-distributions that can be auto-populated and then hand-refined.
+### US-15.6.3.1
+As a **artist (P-8)**, I want to paint material layers onto terrain tiles
+so that I can texture landscapes with grass, rock, dirt, and snow.
 
-- **Derived from:** [F-15.6.5](../../features/tools-editor/world-building.md)
-- **Rationale:** Rule-based vegetation placement automates populating large regions while biome
-  rules ensure ecological consistency across diverse terrain.
-- **Verification:** Define a biome with 3 species and altitude/slope constraints; auto-populate a
-  1 km^2 region and verify no instance violates its placement rules. Hand-paint additional
-  instances and confirm they persist after re-running auto-population.
+### US-15.6.3.2
+As a **artist (P-8)**, I want per-layer weight maps for precise blending
+so that I can control exactly where each material appears.
 
-### R-15.6.6 Lighting Setup (Light Probes and Reflection Probes)
+### US-15.6.3.3
+As a **artist (P-8)**, I want height-based and slope-based auto-painting rules
+so that rock auto-applies to steep slopes and snow to high elevations.
 
-The engine **SHALL** provide placement and configuration tools for light probes on tetrahedral grids
-or manual positions and reflection probes with capture volumes and blend distances, supporting
-baking, real-time update, and visualization overlays showing probe influence regions.
+### US-15.6.3.4
+As a **artist (P-8)**, I want triplanar projection for cliff faces
+so that vertical surfaces receive properly oriented textures.
 
-- **Derived from:** [F-15.6.6](../../features/tools-editor/world-building.md)
-- **Rationale:** Probe-based indirect lighting requires precise placement tools so artists can
-  ensure correct illumination and reflections across all scene regions.
-- **Verification:** Place 10 light probes and 3 reflection probes; bake and verify indirect
-  lighting changes are visible in the viewport. Toggle the influence overlay and confirm probe
-  volumes render correctly. Move a probe and verify real-time update reflects the change.
+### US-15.6.3.5
+As a **artist (P-8)**, I want macro-variation textures to break tiling
+so that large terrain expanses avoid visible repetition patterns.
 
-## Non-Functional Requirements
+### US-15.6.3.6
+As an **engine tester (P-27)**, I want to verify weight maps sum to 1.0 at every texel
+so that material blending correctness is regression-tested.
 
-### R-15.6.NF1 Terrain Sculpting Responsiveness
+---
 
-Terrain sculpting brush strokes **SHALL** produce visible heightmap changes within one frame (under
-33ms) for brush radii up to 256 meters. GPU-accelerated erosion preview **SHALL** maintain above
-15 FPS on regions up to 2048x2048 samples. Terrain material painting **SHALL** update the viewport
-preview within one frame for brush sizes up to 128 meters. Sculpting on terrains exceeding 16k x
-16k samples **SHALL** maintain interactive performance by streaming only the affected region.
+## US-15.6.4 Water Body Placement
 
-- **Derived from:** F-15.6.1 through F-15.6.5 (terrain and vegetation features).
-- **Rationale:** Real-time visual feedback during sculpting and painting is essential for artistic
-  iteration. Delays between brush stroke and visible result break the direct-manipulation paradigm.
-- **Verification:** Sculpt a 16k x 16k heightmap with a 256-meter brush. Measure time from input
-  to visible heightmap change and assert under 33ms. Run erosion on a 2048x2048 region and assert
-  frame rate stays above 15 FPS. Paint a terrain material with a 128-meter brush and assert the
-  preview updates within one frame.
+### US-15.6.4.1
+As a **designer (P-5)**, I want to place rivers using boundary splines
+so that I can define water paths with precise control.
 
-## Navigation and World Partition
+### US-15.6.4.2
+As a **designer (P-5)**, I want configurable river width, depth, and flow speed
+so that each river segment has distinct visual and gameplay characteristics.
 
-### R-15.6.7 Navmesh Preview
+### US-15.6.4.3
+As a **designer (P-5)**, I want lakes that fill to a specified altitude
+so that standing water volumes conform to terrain automatically.
 
-The engine **SHALL** render the navigation mesh as a translucent viewport overlay with color-coded
-walkable areas, slope limits, and agent radius offsets, supporting real-time navmesh regeneration
-for selected regions and displaying pathfinding test results between user-placed start and goal
-markers.
+### US-15.6.4.4
+As a **artist (P-8)**, I want automatic shoreline masking for lakes
+so that water edges blend naturally with terrain materials.
 
-- **Derived from:** [F-15.6.7](../../features/tools-editor/world-building.md)
-- **Rationale:** Navmesh preview with pathfinding tests lets designers verify AI navigation
-  immediately after terrain or geometry edits without leaving the editor.
-- **Verification:** Generate a navmesh for a terrain with slopes and obstacles; verify the overlay
-  correctly marks steep slopes as non-walkable. Place start and goal markers and confirm the
-  displayed path avoids obstacles and non-walkable regions.
+### US-15.6.4.5
+As a **artist (P-8)**, I want water bodies to integrate with reflections, refraction,
+caustics, and foam rendering
+so that water looks realistic without manual shader setup.
 
-### R-15.6.8 World Partition Visualization
+### US-15.6.4.6
+As an **engine tester (P-27)**, I want to verify lake surface height matches the
+specified altitude
+so that water placement precision is regression-tested.
 
-The engine **SHALL** display the world partition grid as a 2D minimap and 3D viewport overlay
-showing cell boundaries, streaming states (loaded, pending, unloaded), and cell ownership in
-multiplayer editing, enabling designers to assess LOD streaming distances and identify cells
-exceeding entity or triangle budgets.
+---
 
-- **Derived from:** [F-15.6.8](../../features/tools-editor/world-building.md)
-- **Rationale:** World partition visualization is essential for managing large open worlds where
-  streaming boundaries, budget overruns, and team coordination must be visible at a glance.
-- **Verification:** Load a partitioned world with 20+ cells; verify the minimap and viewport
-  overlay display all cells with correct streaming states. Exceed the triangle budget in one cell
-  and confirm the visualization flags it with a warning indicator.
+## US-15.6.5 Vegetation Painting with Density Rules
+
+### US-15.6.5.1
+As a **artist (P-8)**, I want density brushes for painting vegetation instances
+so that I can populate terrain with per-species control.
+
+### US-15.6.5.2
+As a **artist (P-8)**, I want per-species slope limits and altitude bands
+so that vegetation respects ecological distribution rules.
+
+### US-15.6.5.3
+As a **artist (P-8)**, I want proximity exclusion radii between species
+so that trees do not overlap or crowd unnaturally.
+
+### US-15.6.5.4
+As a **artist (P-8)**, I want clustering behavior for grouped vegetation
+so that forest patches form naturally rather than uniformly.
+
+### US-15.6.5.5
+As a **designer (P-5)**, I want a biome rule system for declarative vegetation
+so that large regions auto-populate with ecologically consistent flora.
+
+### US-15.6.5.6
+As a **designer (P-5)**, I want hand-refinement after auto-population
+so that auto-generated vegetation can be adjusted per-instance.
+
+### US-15.6.5.7
+As an **engine tester (P-27)**, I want to verify no instances violate placement rules
+after auto-population
+so that biome rule enforcement is regression-tested.
+
+---
+
+## US-15.6.6 Lighting Setup (Light Probes and Reflection Probes)
+
+### US-15.6.6.1
+As a **artist (P-8)**, I want to place light probes on tetrahedral grids or manually
+so that I can control indirect lighting sample distribution.
+
+### US-15.6.6.2
+As a **artist (P-8)**, I want reflection probes with configurable capture volumes
+so that reflections match the local environment accurately.
+
+### US-15.6.6.3
+As a **artist (P-8)**, I want blend distances on reflection probes
+so that transitions between probe volumes are smooth.
+
+### US-15.6.6.4
+As a **artist (P-8)**, I want visualization overlays showing probe influence regions
+so that I can verify coverage and identify gaps.
+
+### US-15.6.6.5
+As a **artist (P-8)**, I want baking and real-time update support for probes
+so that I can choose quality vs. performance per probe.
+
+### US-15.6.6.6
+As an **engine tester (P-27)**, I want to verify probe influence regions render
+correctly in the overlay
+so that visualization accuracy is regression-tested.
+
+---
+
+## US-15.6.7 Navmesh Preview
+
+### US-15.6.7.1
+As a **designer (P-5)**, I want a translucent navmesh overlay in the viewport
+so that I can see walkable areas while editing the world.
+
+### US-15.6.7.2
+As a **designer (P-5)**, I want color-coded walkable areas and slope limits
+so that I can identify non-walkable zones visually.
+
+### US-15.6.7.3
+As a **designer (P-5)**, I want real-time navmesh regeneration for selected regions
+so that I can verify pathing after terrain edits immediately.
+
+### US-15.6.7.4
+As a **designer (P-5)**, I want pathfinding test markers for start and goal
+so that I can test AI paths directly in the viewport.
+
+### US-15.6.7.5
+As an **engine tester (P-27)**, I want to verify the navmesh overlay marks steep slopes
+as non-walkable
+so that slope limit visualization is regression-tested.
+
+---
+
+## US-15.6.8 World Partition Visualization
+
+### US-15.6.8.1
+As a **designer (P-5)**, I want a 2D minimap showing world partition cell boundaries
+so that I can see the full world grid layout at a glance.
+
+### US-15.6.8.2
+As a **designer (P-5)**, I want 3D viewport overlay of streaming states
+so that I can see which cells are loaded, pending, or unloaded.
+
+### US-15.6.8.3
+As a **designer (P-5)**, I want cell ownership display for multiplayer editing
+so that I can see which team member is editing which zone.
+
+### US-15.6.8.4
+As a **designer (P-5)**, I want cells exceeding entity or triangle budgets flagged
+so that I can identify and fix over-budget zones.
+
+### US-15.6.8.5
+As a **creative director (P-2)**, I want LOD streaming distance visualization
+so that I can verify draw distance settings across the world.
+
+### US-15.6.8.6
+As an **engine tester (P-27)**, I want to verify over-budget cells display a warning
+indicator
+so that budget violation visualization is regression-tested.

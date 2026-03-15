@@ -1,90 +1,254 @@
-# R-6.5 — VR and Spatial Input Requirements
+# R-6.5 — VR and Spatial Input User Stories
 
-## Head and Hand Tracking
+## F-6.5.1 Head-Mounted Display Tracking
 
-### R-6.5.1 Head-Mounted Display Tracking
+## US-6.5.1.1 Configure Play Area Mode
 
-The engine **SHALL** provide 6DOF head tracking from VR headsets as ECS components (`HmdPose`,
-`HmdVelocity`) at refresh rates up to 120Hz with late-latching pose updates, support room-scale,
-seated, and standing play areas with configurable guardian boundaries, and detect tracking loss
-within one frame.
+**As a** designer (P-5), **I want to** select room-scale, seated, or standing play area modes
+with configurable guardian boundaries in the editor, **so that** VR play space is defined per
+project.
 
-- **Derived from:** [F-6.5.1](../../features/input/vr-input.md)
-- **Rationale:** Low-latency 6DOF head tracking is foundational for VR presence; late-latching
-  minimizes motion-to-photon latency, and tracking loss detection prevents disorienting experiences.
-- **Verification:** Integration test on a VR headset: read the `HmdPose` component each frame;
-  assert position and orientation values update at the headset's native refresh rate. Measure
-  the timestamp delta between the last pose update and scanout; assert it is within one frame
-  interval. Occlude tracking; assert a tracking-loss event fires within one frame. Verify
-  room-scale boundaries trigger a guardian event when the headset position exceeds the configured
-  play area.
+## US-6.5.1.2 Configure Tracking Loss Response
 
-### R-6.5.2 Motion Controller Input
+**As a** designer (P-5), **I want to** configure the tracking loss response (freeze, warning
+overlay) in the editor, **so that** loss-of-tracking behavior is authored without code.
 
-The engine **SHALL** provide 6DOF hand controller tracking with pose (position + orientation),
-velocity, angular velocity, button states, analog axes, and capacitive touch sensors as ECS
-components, and **SHALL** map controller inputs to game actions through the input action system
-identically to gamepad inputs.
+## US-6.5.1.3 Verify 6DOF Head Tracking Rate
 
-- **Derived from:** [F-6.5.2](../../features/input/vr-input.md)
-- **Rationale:** Unified action mapping between flat-screen and VR modes enables shared input
-  configurations and reduces per-mode authoring burden.
-- **Verification:** Integration test: connect VR motion controllers; verify `ControllerPose`,
-  button, trigger, and thumbstick ECS components update each frame. Bind a "Fire" action to
-  both a gamepad trigger and a VR controller trigger; assert the same action fires from either
-  device. Verify capacitive touch sensor data is exposed for controllers that support it (e.g.,
-  Oculus Touch) and absent for controllers that do not.
+**As an** engine tester (P-27), **I want to** read `HmdPose` each frame and assert position
+and orientation update at the headset's native refresh rate, **so that** tracking runs at
+full speed.
 
-### R-6.5.3 Hand Tracking and Skeletal Input
+## US-6.5.1.4 Verify Late-Latching Pose Timing
 
-The engine **SHALL** provide camera-based hand tracking with a 26-joint skeletal model per hand
-as ECS components (`HandSkeleton`, `HandJointPose`), detect predefined gestures (pinch, grab,
-point, thumbs-up, open palm) as input actions, and support custom gesture recognition authored
-visually in the logic graph without code.
+**As an** engine tester (P-27), **I want to** measure timestamp delta between last pose update
+and scanout and assert it is within one frame interval, **so that** late-latching minimizes
+latency.
 
-- **Derived from:** [F-6.5.3](../../features/input/vr-input.md)
-- **Rationale:** Skeletal hand tracking enables natural VR interaction; predefined and custom
-  gestures provide input without physical controllers, supporting the no-code engine constraint.
-- **Verification:** Integration test on a hand-tracking-capable headset: display a hand; verify
-  all 26 joints of `HandSkeleton` update each frame with valid positions and orientations. Perform
-  a pinch gesture; assert the pinch input action fires. Author a custom "thumbs-up" gesture in the
-  logic graph using joint angle thresholds; perform the gesture and assert the custom action fires.
-  Hold controllers; assert the system switches from hand tracking to controller tracking
-  automatically.
+## US-6.5.1.5 Verify Tracking Loss Detection
 
-### R-6.5.4 Eye Tracking and Gaze Input
+**As an** engine tester (P-27), **I want to** occlude tracking and assert a tracking-loss event
+fires within one frame, **so that** loss detection is responsive.
 
-The engine **SHALL** expose eye tracking data as ECS components (`GazeRay`, per-eye openness,
-pupil dilation) providing gaze direction usable for foveated rendering and gaze-based UI
-interaction, with saccade and fixation classification for analytics.
+## US-6.5.1.6 Verify Guardian Boundary Events
 
-- **Derived from:** [F-6.5.4](../../features/input/vr-input.md)
-- **Rationale:** Gaze direction drives foveated rendering for GPU optimization and enables
-  look-and-select interaction patterns; fixation detection supports adaptive difficulty systems.
-- **Verification:** Integration test on an eye-tracking-capable headset: read the `GazeRay`
-  component; assert it updates each frame with a valid direction vector. Look at a UI element;
-  assert gaze-based selection highlights the element. Fixate on a point for 500ms; assert a
-  fixation event fires. Perform a rapid eye movement; assert a saccade event fires. Verify
-  `GazeRay` data is consumable by the foveated rendering system.
+**As an** engine tester (P-27), **I want to** move the headset past the play area boundary and
+verify a guardian event fires, **so that** boundary protection works.
 
-## VR Haptics
+## US-6.5.1.7 Implement HMD Tracking Layer
 
-### R-6.5.5 VR Controller Haptics
+**As an** engine developer (P-26), **I want to** implement 6DOF head tracking via OpenXR on PC,
+OVR on Quest, and PSVR2 SDK, with late-latching pose updates and tracking loss detection,
+**so that** HMD tracking is cross-platform.
 
-The engine **SHALL** provide per-hand haptic feedback on VR controllers with amplitude, frequency,
-and duration control, supporting continuous vibration patterns, impulse events, and spatially-driven
-haptics where vibration intensity varies with proximity to objects, with haptic patterns authored as
-visual editor assets.
+## US-6.5.1.8 Test HMD Tracking on All Supported Headsets
 
-- **Derived from:** [F-6.5.5](../../features/input/vr-input.md)
-- **Rationale:** Per-hand haptic channels enable asymmetric feedback (sword impact in right hand,
-  shield block in left), and spatial haptics increase immersion through proximity-based tactile cues.
-- **Verification:** Integration test: trigger an impulse haptic on the right controller at 0.8
-  amplitude and 150Hz; verify the output matches the requested parameters. Trigger a continuous
-  pattern on the left controller; verify it sustains for the configured duration. Place a virtual
-  object at 1m distance; verify haptic intensity increases as the controller approaches and
-  decreases as it moves away, scaling linearly with inverse distance. Verify haptic pattern
-  assets load and play correctly from the visual editor.
+**As a** QA tester (P-19), **I want to** test head tracking on PCVR, Quest, and PSVR2,
+**so that** tracking quality is verified across headsets.
+
+## US-6.5.1.9 Look Around Freely in VR
+
+**As a** player (P-23), **I want** my head movements to track smoothly and accurately,
+**so that** VR feels natural and not nauseating.
+
+---
+
+## F-6.5.2 Motion Controller Input
+
+## US-6.5.2.1 Configure VR Controller Bindings in Editor
+
+**As a** designer (P-5), **I want to** bind VR controller buttons, triggers, and sticks to
+game actions in the editor, sharing bindings with gamepad where possible, **so that** VR input
+uses the standard action system.
+
+## US-6.5.2.2 Verify 6DOF Controller Tracking
+
+**As an** engine tester (P-27), **I want to** verify `ControllerPose`, button, trigger, and
+thumbstick ECS components update each frame, **so that** controller tracking is complete.
+
+## US-6.5.2.3 Verify Shared Action Mapping
+
+**As an** engine tester (P-27), **I want to** bind a Fire action to both gamepad trigger and
+VR trigger and assert the same action fires from either, **so that** action mapping is
+unified.
+
+## US-6.5.2.4 Verify Capacitive Touch Sensors
+
+**As an** engine tester (P-27), **I want to** verify capacitive touch data is exposed on
+controllers that support it and absent on those that do not, **so that** capability detection
+works.
+
+## US-6.5.2.5 Implement Motion Controller Input
+
+**As an** engine developer (P-26), **I want to** implement 6DOF controller tracking with
+buttons, triggers, thumbsticks, and capacitive touch via OpenXR interaction profiles,
+**so that** VR controllers are fully supported.
+
+## US-6.5.2.6 Test Controllers on All VR Platforms
+
+**As a** QA tester (P-19), **I want to** test Oculus Touch, Index, PSVR2 Sense, and Quest
+Touch controllers, **so that** all supported controllers work.
+
+## US-6.5.2.7 Interact with the VR World Using Controllers
+
+**As a** player (P-23), **I want** my hand controllers to track precisely and respond to
+button presses instantly, **so that** VR interaction is natural.
+
+---
+
+## F-6.5.3 Hand Tracking and Skeletal Input
+
+## US-6.5.3.1 Configure Hand Gesture Actions in Editor
+
+**As a** designer (P-5), **I want to** bind predefined hand gestures (pinch, grab, point) to
+game actions in the editor, **so that** hand tracking drives gameplay without code.
+
+## US-6.5.3.2 Author Custom Hand Gestures in Logic Graph
+
+**As a** designer (P-5), **I want to** author custom hand gestures using joint angle thresholds
+in the visual logic graph, **so that** game-specific gestures are data-driven.
+
+## US-6.5.3.3 Verify 26-Joint Skeletal Tracking
+
+**As an** engine tester (P-27), **I want to** display a hand and verify all 26 joints of
+`HandSkeleton` update each frame with valid positions, **so that** full skeletal tracking
+works.
+
+## US-6.5.3.4 Verify Predefined Gesture Recognition
+
+**As an** engine tester (P-27), **I want to** perform a pinch gesture and assert the pinch
+action fires, **so that** built-in gesture recognition works.
+
+## US-6.5.3.5 Verify Custom Gesture Recognition
+
+**As an** engine tester (P-27), **I want to** author a thumbs-up gesture in the logic graph,
+perform it, and assert the action fires, **so that** custom hand gestures work.
+
+## US-6.5.3.6 Verify Controller/Hand Auto-Switch
+
+**As an** engine tester (P-27), **I want to** hold controllers and verify controller tracking,
+then release and verify automatic switch to hand tracking, **so that** auto-switching works.
+
+## US-6.5.3.7 Implement Hand Tracking System
+
+**As an** engine developer (P-26), **I want to** implement camera-based hand tracking with
+26-joint skeleton, predefined gesture recognition, and auto-switching between controllers and
+hands, **so that** hand tracking is available.
+
+## US-6.5.3.8 Test Hand Tracking on Supported Headsets
+
+**As a** QA tester (P-19), **I want to** test hand tracking on Quest and PC (via OpenXR),
+**so that** hand tracking works on all supported headsets.
+
+## US-6.5.3.9 Grab and Interact Without Controllers
+
+**As a** player (P-23), **I want to** use my hands to grab, point, and interact in VR without
+needing controllers, **so that** VR interaction is natural and controller-free.
+
+---
+
+## F-6.5.4 Eye Tracking and Gaze Input
+
+## US-6.5.4.1 Configure Gaze-Based UI Interaction
+
+**As a** designer (P-5), **I want to** enable gaze-based UI selection (look-and-select) in
+the editor, **so that** eye tracking drives UI interaction.
+
+## US-6.5.4.2 Configure Gaze-Driven Gameplay
+
+**As a** designer (P-5), **I want to** bind gaze direction to gameplay mechanics (enemies react
+to being looked at) in the editor, **so that** eye tracking enhances gameplay.
+
+## US-6.5.4.3 Verify Gaze Ray Updates Each Frame
+
+**As an** engine tester (P-27), **I want to** read `GazeRay` each frame and assert it contains
+a valid direction vector, **so that** eye tracking data is available.
+
+## US-6.5.4.4 Verify Gaze-Based Selection
+
+**As an** engine tester (P-27), **I want to** look at a UI element and assert gaze-based
+selection highlights it, **so that** look-and-select works.
+
+## US-6.5.4.5 Verify Fixation Detection
+
+**As an** engine tester (P-27), **I want to** fixate on a point for 500ms and assert a
+fixation event fires, **so that** fixation detection works.
+
+## US-6.5.4.6 Verify Saccade Detection
+
+**As an** engine tester (P-27), **I want to** perform a rapid eye movement and assert a
+saccade event fires, **so that** saccade classification works.
+
+## US-6.5.4.7 Verify Foveated Rendering Integration
+
+**As an** engine tester (P-27), **I want to** verify `GazeRay` data is consumable by the
+foveated rendering system, **so that** GPU optimization uses eye tracking.
+
+## US-6.5.4.8 Implement Eye Tracking System
+
+**As an** engine developer (P-26), **I want to** implement eye tracking via OpenXR and platform
+SDKs exposing gaze direction, fixation, saccade detection, and pupil data as ECS components,
+**so that** eye tracking is available for rendering and interaction.
+
+## US-6.5.4.9 Test Eye Tracking on Supported Headsets
+
+**As a** QA tester (P-19), **I want to** test eye tracking on PSVR2, Quest Pro, and PC headsets
+with Tobii, **so that** tracking works on all supported hardware.
+
+## US-6.5.4.10 Select UI Elements by Looking
+
+**As a** player (P-23), **I want to** select menu items and interact with the world by looking
+at them, **so that** VR interaction uses natural gaze.
+
+---
+
+## F-6.5.5 VR Controller Haptics
+
+## US-6.5.5.1 Author VR Haptic Patterns in Editor
+
+**As a** designer (P-5), **I want to** create VR controller haptic patterns as visual editor
+assets with amplitude, frequency, and duration, **so that** VR tactile feedback is data-driven.
+
+## US-6.5.5.2 Configure Spatial Haptics
+
+**As a** designer (P-5), **I want to** configure spatially-driven haptics where vibration
+intensity varies with proximity to objects, **so that** VR haptics reinforce spatial awareness.
+
+## US-6.5.5.3 Verify Impulse Haptic Output
+
+**As an** engine tester (P-27), **I want to** trigger an impulse at 0.8 amplitude and 150Hz on
+the right controller and verify output matches parameters, **so that** impulse haptics work.
+
+## US-6.5.5.4 Verify Continuous Haptic Duration
+
+**As an** engine tester (P-27), **I want to** trigger a continuous pattern and verify it
+sustains for the configured duration, **so that** sustained haptics work.
+
+## US-6.5.5.5 Verify Proximity-Based Haptic Scaling
+
+**As an** engine tester (P-27), **I want to** move a controller toward a virtual object and
+verify haptic intensity increases with proximity, **so that** spatial haptics work.
+
+## US-6.5.5.6 Verify Per-Hand Asymmetric Haptics
+
+**As an** engine tester (P-27), **I want to** trigger different haptics on left and right
+controllers simultaneously and verify independence, **so that** per-hand channels work.
+
+## US-6.5.5.7 Implement VR Controller Haptics
+
+**As an** engine developer (P-26), **I want to** implement per-hand haptic feedback via OpenXR
+and platform SDKs with continuous, impulse, and spatially-driven patterns, **so that** VR
+haptics are available.
+
+## US-6.5.5.8 Test VR Haptics on All Supported Controllers
+
+**As a** QA tester (P-19), **I want to** test haptic patterns on Oculus Touch, Index, PSVR2
+Sense, and Quest Touch controllers, **so that** VR haptic compatibility is verified.
+
+## US-6.5.5.9 Feel Objects When Reaching Near Them
+
+**As a** player (P-23), **I want** my controllers to vibrate when I reach near objects in VR,
+**so that** I can feel the virtual world.
 
 ---
 
@@ -92,27 +256,21 @@ visual editor assets.
 
 ### R-6.5.NF1 Motion-to-Photon Latency
 
-The engine **SHALL** achieve motion-to-photon latency (head movement to updated frame on
-display) not exceeding 20 ms at the headset's native refresh rate, using late-latching pose
-updates submitted after the main simulation tick.
+The engine **SHALL** achieve motion-to-photon latency not exceeding 20 ms at the headset's
+native refresh rate, using late-latching pose updates.
 
-- **Derived from:** [F-6.5.1](../../features/input/vr-input.md),
-  [R-X.1.1](../cross-cutting.md) (Frame Time Budget)
-- **Rationale:** Motion-to-photon latency above 20 ms causes motion sickness in VR. Late-
-  latching minimizes the gap between the last pose sample and scanout.
-- **Verification:** Integration test: on a VR headset with motion tracking, measure the
-  timestamp delta between the pose used for rendering and the display scanout. Assert the
-  delta does not exceed 20 ms at 90 Hz and 120 Hz refresh rates.
+- **Derived from:** F-6.5.1
+- **Rationale:** Motion-to-photon latency above 20 ms causes motion sickness in VR.
+- **Verification:** Integration test: measure timestamp delta between pose and scanout. Assert
+  it does not exceed 20 ms at 90 Hz and 120 Hz.
 
 ### R-6.5.NF2 Hand Tracking Joint Update Rate
 
 The engine **SHALL** update the 26-joint skeletal hand model at a minimum of 30 Hz with
-per-joint position accuracy within 5 mm of the platform SDK's reported values.
+per-joint position accuracy within 5 mm.
 
-- **Derived from:** [F-6.5.3](../../features/input/vr-input.md)
-- **Rationale:** Hand tracking below 30 Hz causes visible jitter in hand-rendered models
-  and gesture recognition failures. Positional accuracy within 5 mm ensures gestures are
-  recognized reliably.
-- **Verification:** Integration test: track a hand performing a pinch gesture over 10
-  seconds. Assert joint updates arrive at >= 30 Hz. Compare engine-reported joint positions
-  against the platform SDK's raw values; assert < 5 mm RMS error per joint.
+- **Derived from:** F-6.5.3
+- **Rationale:** Below 30 Hz causes visible jitter and gesture failures. 5 mm accuracy
+  ensures reliable gesture recognition.
+- **Verification:** Integration test: track a hand for 10 seconds. Assert joint updates at
+  >= 30 Hz. Compare engine positions against SDK values. Assert < 5 mm RMS error.

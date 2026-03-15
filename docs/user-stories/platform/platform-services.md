@@ -98,3 +98,75 @@ cause API throttling or certification failures.
 **As an** engine tester (P-27), **I want** tests that verify platform voice chat bridging
 works for cross-play parties using Vivox as fallback when platform voice is unavailable,
 **so that** voice communication works reliably in all party configurations.
+
+## US-14.5.17 Keep My Settings When Switching PCs
+
+**As a** player (P-23), **I want** my graphics settings, keybindings, and audio volumes to
+sync to the cloud and restore automatically when I log in on a different PC, **so that** I
+don't have to reconfigure everything when I play on my laptop vs my desktop.
+
+## US-14.5.18 Resolve Settings Conflict After Offline Play
+
+**As a** player (P-23), **I want** a clear dialog showing which settings differ when my
+local and cloud preferences diverge after offline play on two machines, **so that** I can
+choose which version to keep rather than losing my carefully tuned keybindings.
+
+## US-14.5.19 Recover From Corrupted Settings
+
+**As a** game developer (P-15), **I want** the preferences API to use atomic writes and
+return defaults for missing keys, **so that** a crash mid-save never corrupts the
+preferences file and missing entries don't cause errors.
+
+## US-14.5.20 Manage Downloaded Content Cache
+
+**As a** player (P-23), **I want** to see how much disk space downloaded DLC, mods, and
+streaming content are using and clear specific categories from the settings menu, **so
+that** I can free disk space without uninstalling the game.
+
+## US-14.5.21 Cache Evicts Automatically When Full
+
+**As an** engine developer (P-26), **I want** the local cache manager to evict
+least-recently-used entries by category priority when the cache exceeds its configured
+maximum, **so that** the game never fails a download due to disk-full errors.
+
+## US-14.5.22 Reduce Rebuild Times With Local Cache
+
+**As a** game developer (P-15), **I want** compiled assets, shader bytecode, and logic
+graph bytecode cached locally in `.harmonius/cache/` with hash-based invalidation, **so
+that** incremental builds take seconds instead of minutes for unchanged assets.
+
+## US-14.5.23 Fall Back to Network Cache When Local Misses
+
+**As a** DevOps engineer (P-16), **I want** the build system to check the local cache
+first, then the shared S3-backed network cache, before doing a full rebuild, **so that**
+team members benefit from each other's cached builds without duplicating compilation.
+
+## US-14.5.24 Eliminate Shader Compilation Stutter
+
+**As a** player (P-23), **I want** the game to cache compiled pipeline states to disk so
+that shader compilation stutter only happens once per material, **so that** I don't
+experience hitches every time I enter a new area or encounter a new effect.
+
+## US-14.5.25 Ship Pre-Built PSO Cache With the Game
+
+**As a** DevOps engineer (P-16), **I want** the cook process to generate a pre-built PSO
+cache from a reference playthrough that ships with the game, **so that** players experience
+zero shader stutter on first launch with no warmup needed.
+
+## US-14.5.26 Verify PSO Cache Invalidates on Driver Update
+
+**As an** engine tester (P-27), **I want** tests that verify PSO cache entries are
+invalidated when the GPU driver version changes, **so that** players don't load stale
+bytecode that could cause rendering artifacts after updating drivers.
+
+## US-14.5.27 Clean Up Temp Files After a Crash
+
+**As a** player (P-23), **I want** the engine to clean up leftover temp files from previous
+crashed sessions on startup, **so that** temporary data doesn't accumulate and waste disk
+space over time.
+
+## US-14.5.28 Temp Files Never Contain Important Data
+
+**As an** engine developer (P-26), **I want** the temp file system to guarantee that all
+temp data is recreatable from non-temp sources via RAII handles that auto-delete on drop,
+**so that** deleting the entire temp directory never causes data loss.

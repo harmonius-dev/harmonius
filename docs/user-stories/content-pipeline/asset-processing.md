@@ -1,85 +1,123 @@
-# User Stories — 12.2 Asset Processing
+# User Stories -- 12.2 Asset Processing
 
-## US-12.2.1 Automatically Optimize Assets for Every Target Platform
+## US-12.2.1 Compress Textures for Every Target Platform Automatically
 
-**As a** DevOps engineer, **I want** automatic texture compression, LOD generation, meshlet
-building, vertex optimization, lightmap UVs, audio encoding, and shader compilation, **so that**
-assets are optimally processed for each platform without manual per-asset configuration.
+**As a** designer (P-5), **I want** imported textures automatically compressed to GPU-native
+formats (BC7 for desktop, ASTC for mobile/Apple Silicon, ETC2 as fallback) based on import
+presets and per-platform overrides, **so that** textures are optimally compressed without
+manual per-platform configuration.
 
-| Acceptance criteria | Features | Requirements |
-|---|---|---|
-| BC7/ASTC/ETC2 compression per platform | F-12.2.1 | R-12.2.1 |
-| Automatic LOD chains via edge-collapse simplification | F-12.2.2 | R-12.2.2 |
-| Meshlet partitioning with AABB and normal cone bounds | F-12.2.3 | R-12.2.3 |
-| Vertex cache and overdraw optimization per meshlet | F-12.2.4 | R-12.2.4 |
-| Non-overlapping lightmap UV atlas generation | F-12.2.5 | R-12.2.5 |
-| Opus, ADPCM, and PCM audio encoding by preset | F-12.2.6 | R-12.2.6 |
-| DAG dependency tracking with circular reference detection | F-12.2.8 | R-12.2.8 |
+## US-12.2.2 Generate LOD Chains Without Manual Artist Work
 
-## US-12.2.2 Generate Human-Readable HLSL from Shader Graphs
+**As a** designer (P-5), **I want** automatic LOD chain generation via edge-collapse
+simplification with configurable error thresholds, **so that** every mesh has performance
+LODs without requiring manual decimation by artists.
 
-**As a** technical artist, **I want** the shader graph compiler to produce clean, readable
-HLSL source files with comments tracing each section to its graph node, **so that** I can
-debug shaders in Visual Studio with full HLSL Tools support (IntelliSense, error squiggles,
-go-to-definition) and understand what the graph compiled to.
+## US-12.2.3 Build Meshlets for GPU-Driven Rendering
 
-| Acceptance criteria | Features | Requirements |
-|---|---|---|
-| Generated .hlsl files are valid standalone HLSL | F-12.2.7 | R-12.2.7 |
-| No template markers or non-standard syntax in output | F-12.2.7 | R-12.2.7 |
-| Comments annotate which graph node produced each section | F-12.2.7 | R-12.2.7 |
-| HLSL Tools IntelliSense works on generated files | F-12.2.7 | R-12.2.7 |
-| Only reachable variants are generated | F-12.2.7 | R-12.2.7 |
+**As an** engine developer (P-26), **I want** automatic meshlet partitioning (64 vertices,
+124 triangles) with precomputed AABB and normal cone bounds, **so that** the GPU-driven
+rendering pipeline can perform per-meshlet culling.
 
-## US-12.2.3 Author Custom Shader Nodes as HLSL Snippets
+## US-12.2.4 Optimize Vertex Cache and Overdraw per Meshlet
 
-**As a** technical artist, **I want** to write custom shader graph nodes as HLSL function
-snippets with typed inputs and outputs, **so that** I can extend the material system with
-custom effects without modifying the engine, and my snippets appear as reusable nodes in
-the shader graph palette.
+**As an** engine developer (P-26), **I want** triangle and vertex reordering within meshlets
+to maximize post-transform cache hit rates and minimize overdraw, **so that** GPU rendering
+performance is optimal without manual mesh optimization.
 
-| Acceptance criteria | Features | Requirements |
-|---|---|---|
-| Custom node is an HLSL function with typed parameters | F-12.2.7 | R-12.2.7 |
-| Custom node appears in the graph editor node palette | F-12.2.7, F-15.8.10 | R-12.2.7 |
-| Graph compiler calls the function with resolved inputs | F-12.2.7 | R-12.2.7 |
-| Generated HLSL includes the custom function definition | F-12.2.7 | R-12.2.7 |
+## US-12.2.5 Generate Lightmap UVs Automatically
 
-## US-12.2.4 Compile Shaders to All GPU Backends
+**As a** designer (P-5), **I want** automatic non-overlapping lightmap UV atlas generation
+with uniform texel density and chart packing, **so that** static geometry has correct
+lightmap UVs without manual unwrapping.
 
-**As a** DevOps engineer, **I want** the build pipeline to automatically compile generated
-HLSL to DXIL (D3D12), SPIR-V (Vulkan), and MSL (Metal) using DXC and Metal Shader Converter,
-**so that** every platform gets optimized shader bytecode without manual per-platform steps.
+## US-12.2.6 Encode Audio for Runtime with Correct Presets
 
-| Acceptance criteria | Features | Requirements |
-|---|---|---|
-| DXC compiles HLSL to DXIL for D3D12 | F-12.2.9 | R-12.2.9 |
-| DXC compiles HLSL to SPIR-V for Vulkan | F-12.2.9 | R-12.2.9 |
-| Metal Shader Converter translates DXIL to MSL | F-12.2.9 | R-12.2.9 |
-| Compiled bytecode is cached by HLSL source hash | F-12.2.9 | R-12.2.9, R-15.11.2 |
-| Both compilers accessed via cxx.rs FFI | F-12.2.9 | R-12.2.9 |
+**As a** designer (P-5), **I want** imported audio encoded to Opus (voice/music), ADPCM
+(short SFX), or raw PCM (latency-critical) based on import presets, **so that** audio
+assets are compressed appropriately for their runtime usage pattern.
 
-## US-12.2.5 Navigate from Shader Errors to Graph Nodes
+## US-12.2.7 Generate Clean HLSL from Shader Graphs
 
-**As a** technical artist, **I want** shader compilation errors to show both the HLSL line
-number and the graph node that generated the offending code, **so that** I can click the error
-in the editor and navigate directly to the visual graph node to fix it.
+**As a** game developer (P-15), **I want** the shader graph compiler to produce valid,
+human-readable HLSL source files with comments mapping sections to graph nodes, **so that**
+I can debug generated shaders in any IDE with full HLSL Tools support.
 
-| Acceptance criteria | Features | Requirements |
-|---|---|---|
-| Compilation error includes HLSL line number | F-12.2.9 | R-12.2.9 |
-| Error maps to the originating graph node ID | F-12.2.9 | R-12.2.9 |
-| Clicking the error in the editor selects the graph node | F-12.2.9, F-15.8.11 | R-12.2.9 |
+## US-12.2.8 Compile Shaders to All GPU Backends
 
-## US-12.2.6 Track Asset Dependencies for Incremental Builds
+**As a** DevOps engineer (P-16), **I want** the build pipeline to compile HLSL to DXIL
+(D3D12), SPIR-V (Vulkan), and MSL (Metal) using DXC and Metal Shader Converter, with
+bytecode cached by HLSL source hash, **so that** every platform gets optimized shader
+bytecode without manual per-platform steps.
 
-**As a** DevOps engineer, **I want** the asset pipeline to track dependencies between all
-assets and only rebuild what changed, **so that** CI builds complete in minutes instead of
-hours when only a few assets are modified.
+## US-12.2.9 Track Asset Dependencies for Incremental Rebuilds
 
-| Acceptance criteria | Features | Requirements |
-|---|---|---|
-| DAG tracks all asset cross-references | F-12.2.8 | R-12.2.8 |
-| Modifying one texture rebuilds only dependent materials | F-12.2.8 | R-12.2.8 |
-| Circular references are detected and reported | F-12.2.8 | R-12.2.8 |
-| Incremental builds are 10x+ faster than full rebuilds | F-12.2.8 | R-X.14.1 |
+**As a** DevOps engineer (P-16), **I want** directed acyclic dependency graphs tracking all
+asset cross-references with circular reference detection, **so that** modifying a shared
+texture rebuilds only dependent materials and CI builds complete in minutes.
+
+## US-12.2.10 Navigate from Shader Errors to Graph Nodes
+
+**As a** game developer (P-15), **I want** shader compilation errors to include both the
+HLSL line number and the originating graph node ID, **so that** clicking an error navigates
+directly to the visual graph node that caused it.
+
+## US-12.2.11 Author Custom Shader Nodes as HLSL Snippets
+
+**As a** game developer (P-15), **I want** to write custom shader graph nodes as HLSL
+function snippets with typed inputs and outputs that appear in the graph editor palette,
+**so that** I can extend the material system without modifying the engine.
+
+## US-12.2.12 Verify Texture Compression Quality per Platform
+
+**As an** engine tester (P-27), **I want** automated tests that compress reference textures
+with BC7, ASTC, and ETC2 and compare against quality baselines (PSNR thresholds), **so
+that** compression quality regressions are caught per platform in CI.
+
+## US-12.2.13 Verify LOD Generation Preserves Silhouettes
+
+**As an** engine tester (P-27), **I want** tests that generate LOD chains for reference
+meshes and verify triangle count ratios and bounding box deviations stay within configured
+thresholds, **so that** LOD generation does not produce visually broken meshes.
+
+## US-12.2.14 Verify Shader Compilation Succeeds on All Backends
+
+**As an** engine tester (P-27), **I want** CI tests that compile all shader graph
+permutations to DXIL, SPIR-V, and MSL and verify zero compilation errors, **so that**
+shader compilation regressions are caught before they reach artists.
+
+## US-12.2.15 Benchmark Asset Processing Throughput
+
+**As an** engine tester (P-27), **I want** benchmarks measuring texture compression, LOD
+generation, and meshlet building throughput on reference hardware, **so that** processing
+performance regressions are detected and build times stay within budget.
+
+## US-12.2.16 Only Compile Reachable Shader Variants
+
+**As a** DevOps engineer (P-16), **I want** the shader graph compiler to identify and
+compile only reachable variants through static analysis of material parameter usage, **so
+that** permutation explosion does not cause build time or binary size bloat.
+
+## US-12.2.17 Configure Texture Compression Quality per Import Preset
+
+**As a** game developer (P-15), **I want** configurable quality levels per texture import
+preset with per-platform format override tables, **so that** I can balance visual quality
+against texture size for each asset category (hero textures vs. background fill).
+
+## US-12.2.18 Verify Audio Encoding Latency Meets Playback Requirements
+
+**As an** engine tester (P-27), **I want** tests that decode Opus, ADPCM, and PCM encoded
+audio and measure decode latency, verifying ADPCM decodes within 1 ms for short SFX and
+PCM decodes instantly, **so that** runtime playback latency targets are met.
+
+## US-12.2.19 Verify Meshlet Bounds Enable Correct GPU Culling
+
+**As an** engine tester (P-27), **I want** tests that render reference scenes with meshlet
+culling enabled and verify no visible meshlets are incorrectly culled, **so that**
+precomputed AABB and normal cone bounds are validated against the GPU culling shader.
+
+## US-12.2.20 Verify Lightmap UV Atlas Has No Overlapping Charts
+
+**As an** engine tester (P-27), **I want** automated tests that generate lightmap UV atlases
+for reference meshes and verify no chart overlaps exist and texel density variance is
+within threshold, **so that** lightmap baking produces correct results.
