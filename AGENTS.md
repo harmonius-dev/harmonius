@@ -51,6 +51,12 @@ standard before writing or reviewing code in any language.
   effects
 - **Immutable test data** — use constants for test fixtures; never mutate shared test state
 
+## Architecture
+
+The engine architecture overview with clickable Mermaid diagrams and cross-references to all design
+documents, test cases, features, requirements, and user stories is at
+[docs/architecture.md](docs/architecture.md). Read it before starting work on any subsystem.
+
 ## Design constraints
 
 All project-wide design constraints (language, platform I/O, architecture, async model, etc.) are
