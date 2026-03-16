@@ -26,8 +26,6 @@ until reload completes. Reserve ammo is shared or per-weapon depending on config
 - **Requirements:** R-13.16.2a
 - **Dependencies:** F-13.16.1, F-13.9.1 (Inventory), F-10.3.1 (HUD)
 - **Platform notes:** None
-- **User story:** As a designer, I want to configure magazine capacity and reserve pools per weapon
-  so that ammo economy varies by weapon archetype.
 
 ### F-13.16.2b Reload Mechanics
 
@@ -40,8 +38,6 @@ ability activation system (F-13.10.2).
 - **Requirements:** R-13.16.2b
 - **Dependencies:** F-13.16.2a, F-13.10.2 (Ability Activation), F-9.4.1 (Animation)
 - **Platform notes:** None
-- **User story:** As a player, I want tactical and empty reloads to feel distinct so that I am
-  rewarded for reloading before my magazine empties.
 
 ### F-13.16.2c Ammo Type System
 
@@ -54,8 +50,6 @@ status effect, tracer color, and muzzle VFX. Ammo types are gameplay database en
 - **Requirements:** R-13.16.2c
 - **Dependencies:** F-13.16.2a, F-13.7.1 (Table Schema), F-13.10.3 (Gameplay Effects)
 - **Platform notes:** None
-- **User story:** As a player, I want to switch ammo types on the fly so that I can adapt to
-  different enemy resistances mid-combat.
 
 ### F-13.16.3 Recoil Pattern and Weapon Spread
 
@@ -84,8 +78,6 @@ drag individually.
 - **Requirements:** R-13.16.4a
 - **Dependencies:** F-13.10.5 (Ranged Combat), F-4.1.1 (Rigid Body ECS)
 - **Platform notes:** None
-- **User story:** As a designer, I want to configure bullet drop and drag per ammo type so that
-  snipers and shotguns feel physically distinct at range.
 
 ### F-13.16.4b Wind Deflection
 
@@ -98,8 +90,6 @@ sniper scope UI. Disableable independently for arcade modes.
 - **Requirements:** R-13.16.4b
 - **Dependencies:** F-13.16.4a, F-11.4.1 (Weather)
 - **Platform notes:** None
-- **User story:** As a player, I want wind to deflect my shots so that long-range marksmanship
-  requires reading environmental conditions.
 
 ### F-13.16.4c Surface Penetration and Ricochet
 
@@ -114,8 +104,6 @@ independently.
 - **Requirements:** R-13.16.4c
 - **Dependencies:** F-13.16.4a, F-4.2.9 (Physics Materials)
 - **Platform notes:** None
-- **User story:** As a player, I want bullets to penetrate thin walls and ricochet off metal so that
-  cover material matters tactically.
 
 ### F-13.16.4d Weapon Zeroing
 
@@ -129,8 +117,6 @@ optic attachments (F-13.16.5a).
 - **Requirements:** R-13.16.4d
 - **Dependencies:** F-13.16.4a, F-13.16.5a (Attachment Slot Model)
 - **Platform notes:** None
-- **User story:** As a player, I want to zero my scope to a specific range so that I can make
-  accurate first shots at known distances.
 
 ## Weapon Customization
 
@@ -146,8 +132,6 @@ Slot definitions and attachment stats are gameplay database entries.
 - **Requirements:** R-13.16.5a
 - **Dependencies:** F-13.16.1, F-13.9.5 (Item Sockets), F-13.7.1 (Table Schema)
 - **Platform notes:** None
-- **User story:** As a designer, I want to define attachment slots and stat modifiers in data so
-  that weapon customization is extensible without code changes.
 
 ### F-13.16.5b Attachment Visual Integration
 
@@ -161,8 +145,6 @@ bridge (F-2.10.1) propagates attachment mesh changes to the render scene.
 - **Requirements:** R-13.16.5b
 - **Dependencies:** F-13.16.5a, F-2.10.1 (ECS-to-Renderer Bridge)
 - **Platform notes:** None
-- **User story:** As a player, I want to see attachments on my weapon model so that customization
-  has visible impact in gameplay.
 
 ### F-13.16.5c Attachment Customization UI
 
@@ -175,8 +157,6 @@ UI is accessible from the inventory screen or a dedicated weapon bench interacti
 - **Requirements:** R-13.16.5c
 - **Dependencies:** F-13.16.5a, F-13.16.5b, F-10.1.1 (Widget Tree), F-13.17.1 (Interaction)
 - **Platform notes:** None
-- **User story:** As a player, I want a visual weapon customization screen so that I can preview
-  attachments on a 3D model before committing changes.
 
 ## Surface Response
 
@@ -192,8 +172,6 @@ shape casts, collision contacts) for downstream systems to consume.
 - **Requirements:** R-13.16.6a
 - **Dependencies:** F-4.2.9 (Physics Materials), F-3.2.4 (Terrain Splatmap)
 - **Platform notes:** None
-- **User story:** As a designer, I want every surface to carry a material type tag so that impacts
-  produce context-appropriate responses automatically.
 
 ### F-13.16.6b Impact VFX Response
 
@@ -206,8 +184,6 @@ the visual editor. The system integrates with event-driven VFX (F-11.6.4) for sp
 - **Requirements:** R-13.16.6b
 - **Dependencies:** F-13.16.6a, F-11.6.4 (Event-Driven VFX)
 - **Platform notes:** None
-- **User story:** As a player, I want to see sparks on metal and dust on concrete so that impacts
-  feel physically grounded.
 
 ### F-13.16.6c Impact Audio Response
 
@@ -220,8 +196,6 @@ Playback uses the spatial audio system (F-5.1.1) positioned at the impact point.
 - **Requirements:** R-13.16.6c
 - **Dependencies:** F-13.16.6a, F-5.1.1 (Audio Engine)
 - **Platform notes:** None
-- **User story:** As a player, I want to hear distinct impact sounds per surface material so that
-  audio reinforces the physical context of each hit.
 
 ### F-13.16.6d Impact Decal Response
 
@@ -235,5 +209,3 @@ editor.
 - **Requirements:** R-13.16.6d
 - **Dependencies:** F-13.16.6a, F-11.2.1 (Decals)
 - **Platform notes:** None
-- **User story:** As a player, I want to see bullet holes and damage marks on surfaces so that
-  combat leaves visible environmental traces.

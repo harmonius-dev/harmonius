@@ -58,8 +58,6 @@ are authored visually in the asset editor — never in code.
 - **Requirements:** R-13.24.4a
 - **Dependencies:** F-1.1.30 (Observers)
 - **Platform notes:** None
-- **User story:** As a designer, I want to compose feedback stacks from reusable entries so that I
-  can iterate on game feel without programmer support.
 
 ### F-13.24.4b Hit-Stop and Time Scale Effects
 
@@ -74,8 +72,6 @@ games).
 - **Requirements:** R-13.24.4b
 - **Dependencies:** F-13.24.4a, F-1.1.1 (ECS)
 - **Platform notes:** None
-- **User story:** As a designer, I want hit-stop and slow-motion effects so that impactful moments
-  in combat have dramatic emphasis.
 
 ### F-13.24.4c Feedback Entry Types Library
 
@@ -89,8 +85,6 @@ entry types are registerable via the extensibility API.
 - **Requirements:** R-13.24.4c
 - **Dependencies:** F-13.24.4a, F-11.3.1 (Screen Shake), F-6.4.1 (Haptics), F-5.1.1 (Audio Engine)
 - **Platform notes:** None
-- **User story:** As a designer, I want a library of ready-made feedback types so that I can build
-  rich multi-sensory effects from standard building blocks.
 
 ## Exploration
 
@@ -134,8 +128,6 @@ system (F-15.8.4) for custom completion conditions.
 - **Requirements:** R-13.24.7a
 - **Dependencies:** F-6.2.1 (Input Actions), F-15.8.4 (Logic Graphs)
 - **Platform notes:** None
-- **User story:** As a designer, I want to author tutorial sequences as data assets so that
-  onboarding flows can be iterated without code changes.
 
 ### F-13.24.7b Tutorial Visual Overlays
 
@@ -149,8 +141,6 @@ performs the instructed action.
 - **Requirements:** R-13.24.7b
 - **Dependencies:** F-13.24.7a, F-10.1.1 (Widget Tree)
 - **Platform notes:** None
-- **User story:** As a player, I want spotlight overlays and arrow callouts so that I know exactly
-  where to look and what to do during tutorials.
 
 ### F-13.24.7c Toast Notification System
 
@@ -164,8 +154,6 @@ usable by any gameplay system via the observer pattern (F-1.1.30).
 - **Requirements:** R-13.24.7c
 - **Dependencies:** F-10.1.1 (Widget Tree), F-1.1.30 (Observers)
 - **Platform notes:** None
-- **User story:** As a player, I want non-blocking pop-up notifications so that I am informed of
-  achievements and loot without interrupting gameplay.
 
 ### F-13.24.8a Free Camera Controller
 
@@ -179,8 +167,6 @@ camera while active.
 - **Requirements:** R-13.24.8a
 - **Dependencies:** F-13.5.2 (Camera Tracks)
 - **Platform notes:** None
-- **User story:** As a player, I want a free-flight camera in photo mode so that I can frame
-  screenshots from any angle.
 
 ### F-13.24.8b Photo Mode Visual Controls
 
@@ -194,8 +180,6 @@ with real-time preview.
 - **Requirements:** R-13.24.8b
 - **Dependencies:** F-13.24.8a, F-2.9.1 (Post-Processing), F-10.1.1 (Widget Tree)
 - **Platform notes:** None
-- **User story:** As a player, I want DOF, color grading, and composition guides so that I can
-  create visually polished screenshots.
 
 ### F-13.24.8c Photo Capture and Gallery
 
@@ -209,5 +193,3 @@ render at the higher resolution then downsample for the final image.
 - **Dependencies:** F-13.24.8a, F-13.24.8b
 - **Platform notes:** Screenshots use platform screenshot APIs where available (Steam screenshot,
   console capture).
-- **User story:** As a player, I want to capture high-resolution screenshots and browse them in an
-  in-game gallery so that I can revisit my best virtual photographs.

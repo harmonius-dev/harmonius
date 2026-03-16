@@ -58,8 +58,6 @@ the level editor or auto-detected from collision shapes at runtime.
 - **Requirements:** R-13.17.4a
 - **Dependencies:** F-4.1.8 (Character Controller), F-4.4.1 (Shape Casts)
 - **Platform notes:** None
-- **User story:** As a designer, I want the engine to auto-detect traversal geometry so that level
-  artists do not need to manually tag every obstacle.
 
 ### F-13.17.4b Vault and Mantle Actions
 
@@ -73,8 +71,6 @@ surface. Root motion drives character displacement during the traversal.
 - **Requirements:** R-13.17.4b
 - **Dependencies:** F-13.17.4a, F-9.4.1 (Animation State Machine), F-9.3.1 (IK Solvers)
 - **Platform notes:** None
-- **User story:** As a player, I want to vault over low walls and mantle onto ledges without
-  stopping so that movement feels fluid during traversal.
 
 ### F-13.17.4c Wall Run
 
@@ -88,8 +84,6 @@ continuous forward input to sustain.
 - **Requirements:** R-13.17.4c
 - **Dependencies:** F-13.17.4a, F-9.4.1 (Animation State Machine), F-9.3.1 (IK Solvers)
 - **Platform notes:** None
-- **User story:** As a player, I want to run along walls to reach otherwise inaccessible areas so
-  that vertical surfaces become traversal opportunities.
 
 ### F-13.17.4d Crouch Slide
 
@@ -103,8 +97,6 @@ detected by the traversal system (F-13.17.4a).
 - **Requirements:** R-13.17.4d
 - **Dependencies:** F-13.17.4a, F-4.1.8 (Character Controller), F-9.4.1 (Animation State Machine)
 - **Platform notes:** None
-- **User story:** As a player, I want to slide under low gaps while sprinting so that I can maintain
-  momentum through tight spaces.
 
 ### F-13.17.4e Balance Beam
 
@@ -118,8 +110,6 @@ editor.
 - **Requirements:** R-13.17.4e
 - **Dependencies:** F-13.17.4a, F-9.4.1 (Animation State Machine)
 - **Platform notes:** None
-- **User story:** As a player, I want narrow surfaces to require careful movement so that traversal
-  includes tension and skill-based challenge.
 
 ### F-13.17.5a Free-Climb System
 
@@ -134,8 +124,6 @@ surfaces can pause stamina drain.
 - **Requirements:** R-13.17.5a
 - **Dependencies:** F-13.17.4a, F-9.3.1 (IK Solvers), F-9.3.5 (Foot Placement)
 - **Platform notes:** None
-- **User story:** As a player, I want to climb tagged surfaces with visible hand and foot placement
-  so that vertical traversal feels physical and skill-based.
 
 ### F-13.17.5b Ladder System
 
@@ -148,8 +136,6 @@ not consume stamina. AI NPCs can use ladders for vertical pathfinding.
 - **Requirements:** R-13.17.5b
 - **Dependencies:** F-13.17.1 (Interaction), F-9.4.1 (Animation State Machine)
 - **Platform notes:** None
-- **User story:** As a player, I want ladders to provide simple, reliable vertical movement so that
-  basic elevation changes do not require the full climbing system.
 
 ### F-13.17.5c Ledge Grab and Shimmy
 
@@ -164,8 +150,6 @@ ledge surface.
 - **Requirements:** R-13.17.5c
 - **Dependencies:** F-13.17.4a, F-9.3.1 (IK Solvers), F-9.4.1 (Animation State Machine)
 - **Platform notes:** None
-- **User story:** As a player, I want to grab ledges, shimmy along them, and pull up so that edges
-  become viable traversal paths.
 
 ### F-13.17.6 Swimming and Diving
 
