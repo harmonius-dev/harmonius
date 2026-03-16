@@ -9,9 +9,11 @@ engine.
 |------------|--------|
 | Primary language | Rust (stable only — no nightly features) |
 | C++ FFI | cxx.rs for C++ library interop (DXC, Metal Shader Converter) |
-| Swift FFI | Swift wrappers accessed through cxx.rs for Apple APIs (NSWindow, GCD) |
+| Swift FFI | Swift with C++ interop exposes Apple APIs via cxx.rs to Rust |
+| Swift build | CMake is the Swift build system |
 | C FFI | bindgen for C header interop (xcb, Wayland, Linux syscalls) |
-| No C++ or Obj-C authored | We do not write C++ or Objective-C source. C++ wrappers are thin FFI bridges only. |
+| No Obj-C/Obj-C++ | No Objective-C or Objective-C++ source. Use Swift with C++ interop instead. |
+| No objc2-metal | Use metal-cpp (Apple's C++ Metal wrapper) for Metal FFI, not objc2-metal. |
 
 ## Shader Pipeline
 
@@ -53,10 +55,10 @@ engine.
   use GCD dispatch queues and blocks.
 - **Metal uses Dispatch.** Command buffer completion handlers are dispatch blocks. GCD integration
   is a hard requirement for GPU synchronization.
-- **All GCD/Dispatch IO accessed through C++ wrappers via cxx.rs.**
-- **Metal FFI alternative.** If the Rust -> cxx.rs -> C++ -> Swift chain proves too complex,
-  consider `objc2-metal` (Rust bindings to Metal via Objective-C runtime) as a simpler FFI path.
-  This eliminates the Swift layer. Evaluate during IoReactor prototype phase.
+- **All GCD/Dispatch IO accessed through Swift wrappers via cxx.rs.** Swift uses C++ interop to
+  implement the cxx.rs bridge interface, exposing GCD to Rust.
+- **Metal via metal-cpp.** Metal is accessed through metal-cpp (Apple's C++ wrapper) exposed to Rust
+  via cxx.rs. No objc2-metal.
 
 ## Architecture
 

@@ -2,8 +2,9 @@
 
 ## Scope
 
-Apple platform wrappers only. Swift wraps macOS/iOS APIs (NSWindow, GCD, Metal) accessed through
-cxx.rs from Rust. No SwiftUI or Combine.
+Apple platform wrappers only. Swift wraps macOS/iOS APIs (NSWindow, GCD) and uses C++ interop to
+implement cxx.rs bridge interfaces, exposing Apple APIs to Rust. Built with CMake. No SwiftUI, no
+Combine, no Objective-C, no Objective-C++.
 
 ## Naming Conventions
 
@@ -50,16 +51,19 @@ cxx.rs from Rust. No SwiftUI or Combine.
 | Format | `swift-format lint` | `swift-format format -i` |
 | Lint | `swiftlint` | `swiftlint --fix` |
 | Type-check | `swiftc -typecheck` | (manual) |
-| Test | `swift test` | (manual) |
+| Test | `ctest` (via CMake) | (manual) |
+| Build | `cmake --build` | (manual) |
 
 ## Project-Specific Rules
 
 1. **Apple platform wrappers only** — no application logic in Swift
 2. **No SwiftUI** — use AppKit/UIKit directly
 3. **No Combine** — use GCD and completion handlers at the Swift layer
-4. **cxx.rs bridge** — Swift types exposed through C++ wrappers for Rust interop
-5. **GCD for concurrency** — dispatch queues, not Swift concurrency (`async`/`await` in Swift)
-6. **Metal via Dispatch** — command buffer completion uses dispatch blocks
+4. **C++ interop via cxx.rs** — Swift uses C++ interop to implement cxx.rs bridge interfaces
+5. **CMake build** — all Swift code is built with CMake, not SwiftPM or Xcode
+6. **GCD for concurrency** — dispatch queues, not Swift concurrency (`async`/`await` in Swift)
+7. **No Objective-C** — no `@objc`, no Objective-C bridging headers, no Objective-C++
+8. **Metal via metal-cpp** — Metal accessed through metal-cpp (C++), not directly from Swift
 
 ## Cache-Friendly Patterns
 
@@ -87,7 +91,7 @@ cxx.rs from Rust. No SwiftUI or Combine.
 1. Use `let` by default; `var` only when mutation is required
 2. Use `guard` for early returns
 3. Prefer `enum` with associated values over class hierarchies
-4. Use `@objc` only when required for Objective-C interop
+4. Never use `@objc` — no Objective-C interop
 5. Mark classes as `final` unless inheritance is needed
 6. Use `Result<T, Error>` for fallible operations
 7. Document all public API with `///` comments
