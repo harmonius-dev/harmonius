@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/animation/](../../features/animation/),
+> [requirements/animation/](../../requirements/animation/), and
+> [user-stories/animation/](../../user-stories/animation/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-9.3.1 | R-9.3.1 | US-9.3.1.1, US-9.3.1.2, US-9.3.1.3 | Analytical two-bone IK with pole vectors, GPU post-process |
@@ -919,7 +925,7 @@ pub fn foot_placement_system(
     >,
     mut ik_chains: Query<&mut IkChain>,
     bones: Query<&GlobalTransform>,
-    spatial: Res<SpatialQueryPipeline>,
+    spatial: Res<QueryEngine>,
     time: Res<Time>,
 ) {
     // Gather all foot rays across all entities

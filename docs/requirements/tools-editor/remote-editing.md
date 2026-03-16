@@ -1,4 +1,221 @@
-# R-15.12 -- Remote Editing & Collaboration User Stories
+# R-15.12 -- Remote Editing & Collaboration Requirements
+
+## Remote Rendering
+
+### R-15.12.1 Remote Desktop Optimized Rendering
+
+The editor **SHALL** stream the viewport as H.264/H.265
+video with adaptive bitrate, input event forwarding with
+prediction, and GPU-accelerated encoding under 2 ms per
+frame using platform-native encoders (VideoToolbox, NVENC,
+VA-API).
+
+- **Derived from:**
+  [F-15.12.1](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Remote editing without a local GPU
+  requires efficient viewport streaming.
+- **Verification:** Benchmark: measure encoding overhead
+  and verify it stays below 2 ms per frame.
+
+### R-15.12.2 Remote Editor Protocol
+
+The editor **SHALL** use a custom protocol for editor UI
+streaming with high-quality viewport frames,
+change-detection driven UI panel updates, and QUIC
+transport with TCP+TLS 1.3 fallback, achieving at least
+60% bandwidth reduction versus generic RDP/VNC.
+
+- **Derived from:**
+  [F-15.12.2](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Editor-specific protocol semantics enable
+  far better bandwidth efficiency than generic solutions.
+- **Verification:** Benchmark: compare bandwidth with VNC
+  for the same session and verify at least 60% reduction.
+
+## Multi-User Collaboration
+
+### R-15.12.3 CRDT-Based Real-Time Collaborative Editing
+
+The editor **SHALL** support simultaneous multi-user
+editing with CRDT-based synchronization, per-user undo
+stacks, presence indicators showing other users' cursors,
+integrated chat and voice channels, and peer-to-peer mode
+on LAN with mDNS discovery.
+
+- **Derived from:**
+  [F-15.12.3](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Real-time collaboration without conflicts
+  requires CRDTs; per-user undo prevents cross-user
+  interference.
+- **Verification:** Integration test: connect three users,
+  make concurrent edits, and verify all states converge.
+
+## Server Infrastructure
+
+### R-15.12.4 Remote GPU Server Support
+
+The editor **SHALL** run headless on a remote GPU server
+with sub-frame latency targeting under 16 ms round-trip on
+LAN, multi-GPU support with per-session GPU assignment, and
+headless GPU context creation on all platforms (EGL,
+headless Metal, WDDM).
+
+- **Derived from:**
+  [F-15.12.4](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Centralized GPU servers reduce hardware
+  costs for distributed teams.
+- **Verification:** Benchmark: measure input-to-display
+  round-trip latency on LAN and verify under 16 ms.
+
+## Session Management
+
+### R-15.12.5 Session Handoff and Persistence
+
+The editor **SHALL** support suspending and resuming remote
+sessions with full state preservation (panels, cameras,
+selection, undo history, unsaved modifications), including
+resume on a different client device.
+
+- **Derived from:**
+  [F-15.12.5](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Developers must move between office and
+  home without losing state.
+- **Verification:** Integration test: suspend a session,
+  resume on a different client, and verify exact visual
+  and functional state restoration.
+
+### R-15.12.6 Bandwidth Adaptation and Quality Tiers
+
+The editor **SHALL** automatically adjust stream quality
+based on network speed (high >100 Mbps, medium 10-100,
+low <10), with manual quality override to pin a specific
+tier.
+
+- **Derived from:**
+  [F-15.12.6](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Automatic quality adaptation ensures
+  usability across varying network conditions.
+- **Verification:** Unit test: simulate 150, 50, and 5
+  Mbps and verify tier selection matches high, medium,
+  and low respectively.
+
+## Cloud Service
+
+### R-15.12.7 Collaboration Cloud Service
+
+The editor **SHALL** use a Rust-based cloud service with
+PostgreSQL for session/user/permission data, S3-compatible
+storage for CRDT snapshots, horizontal scaling behind a
+load balancer, and container deployment via
+Docker/Kubernetes.
+
+- **Derived from:**
+  [F-15.12.7](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Scalable cloud infrastructure is required
+  for enterprise real-time collaboration.
+- **Verification:** Load test: verify 100 concurrent
+  sessions sync correctly.
+
+### R-15.12.8 CRDT Document Model for Engine Assets
+
+The engine **SHALL** provide tree CRDT for scene
+hierarchies, operation log CRDT for logic graphs, map CRDT
+for data tables, and last-writer-wins register per tile
+for terrain.
+
+- **Derived from:**
+  [F-15.12.8](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Each asset type requires a CRDT model
+  matched to its semantics for correct concurrent editing.
+- **Verification:** Unit test: perform concurrent scene
+  reparenting and verify tree CRDT produces a valid
+  hierarchy.
+
+### R-15.12.9 Collaboration Access Control
+
+The engine **SHALL** provide role-based permissions
+(viewer, editor, admin), asset-level exclusive locks,
+and OAuth2/OIDC authentication for enterprise SSO.
+
+- **Derived from:**
+  [F-15.12.9](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Enterprise collaboration requires
+  fine-grained access control and SSO integration.
+- **Verification:** Unit test: verify viewer role prevents
+  edits.
+
+### R-15.12.10 Integrated Voice and Text Chat
+
+The editor **SHALL** provide voice chat (Opus over QUIC
+with echo cancellation), text chat with threaded replies
+and mentions, inline asset references, and searchable
+history persisted in PostgreSQL.
+
+- **Derived from:**
+  [F-15.12.10](../../features/tools-editor/remote-editing.md)
+- **Rationale:** In-editor communication eliminates
+  context switching to external tools.
+- **Verification:** Integration test: send a chat message
+  and verify delivery and mention notification.
+
+### R-15.12.11 Work Groups and Isolated Workspaces
+
+The editor **SHALL** support named work groups per team
+with isolated workspace layers, explicit sharing of
+changes between groups, and dynamic group membership.
+
+- **Derived from:**
+  [F-15.12.11](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Teams need isolation for unfinished work
+  with controlled sharing.
+- **Verification:** Unit test: verify isolated workspace
+  edits are invisible to other groups until shared.
+
+### R-15.12.12 AI Agent Collaboration
+
+The editor **SHALL** support AI agents as virtual users in
+collaborative sessions, instructable via text chat, with
+visible cursors, selections, and edits, and provenance
+metadata on all agent actions.
+
+- **Derived from:**
+  [F-15.12.12](../../features/tools-editor/remote-editing.md)
+- **Rationale:** AI agents must integrate into the
+  collaboration model with full traceability.
+- **Verification:** Unit test: verify AI agent edits are
+  visible to other users and carry provenance tags.
+
+### R-15.12.13 Asset and Scene Comments
+
+The editor **SHALL** support spatial comments attached to
+entities or locations with threaded replies, @mention
+notifications, viewport pins, and real-time sync across
+clients with session persistence.
+
+- **Derived from:**
+  [F-15.12.13](../../features/tools-editor/remote-editing.md)
+- **Rationale:** Spatial feedback is essential for art
+  direction and design review.
+- **Verification:** Integration test: add a comment, verify
+  it syncs across clients and persists across sessions.
+
+### R-15.12.14 Pull Request Review in Editor
+
+The editor **SHALL** support viewing PR changed assets with
+structural diffs, adding review comments on specific nodes
+or properties, approve/request-changes actions, and status
+pushed to GitHub, GitLab, and Bitbucket APIs.
+
+- **Derived from:**
+  [F-15.12.14](../../features/tools-editor/remote-editing.md)
+- **Rationale:** In-editor review eliminates context
+  switching for binary asset PRs.
+- **Verification:** Integration test: approve a PR and
+  verify status is pushed to the hosting service API.
+
+---
+
+## User Stories
 
 ## US-15.12.1 Remote Desktop Optimized Rendering
 

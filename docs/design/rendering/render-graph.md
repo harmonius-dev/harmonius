@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/rendering/](../../features/rendering/),
+> [requirements/rendering/](../../requirements/rendering/), and
+> [user-stories/rendering/](../../user-stories/rendering/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-2.2.1 | RG-1.1, RG-1.2, RG-1.3 | Declarative pass registration with typed resource I/O |

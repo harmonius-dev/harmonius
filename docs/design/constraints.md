@@ -66,10 +66,24 @@ across every domain in the Harmonius engine.
 
 - **Static dispatch preferred.** No virtual methods,
   vtables, abstract base classes, or dynamic dispatch
-  unless required for runtime polymorphism.
+  unless absolutely necessary. Use enum dispatch,
+  generics, or function pointers instead. `dyn` is
+  greatly discouraged and requires explicit
+  justification. Acceptable uses:
+  - `dyn Reflect` — inherent to the reflection API
+  - `dyn FnOnce` / `dyn Fn` — command buffer closures
+  - `dyn Plugin` — cold initialization path only
+  - `dyn` in editor/tool paths (not game runtime)
 - **100% ECS-based.** All simulation data lives as
   components, all logic as systems. No separate physics
   world or other parallel data stores.
+  - **Exception: audio runtime.** The audio mixer,
+    voice pool, and DSP chain run on a dedicated
+    real-time thread with < 0.5 ms latency budget.
+    ECS components (`AudioSource`, `AudioListener`)
+    bridge game state to the audio runtime via a
+    lock-free SPSC command queue. The audio thread
+    owns its own mix buffers and effect chains.
 - **Shared spatial index.** A single BVH/octree is shared
   across physics, rendering, networking, AI, audio, and
   gameplay.

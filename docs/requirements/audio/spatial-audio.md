@@ -1,4 +1,233 @@
-# R-5.2 — Spatial Audio User Stories
+# R-5.2 — Spatial Audio Requirements
+
+## 3D Positioning
+
+### R-5.2.1 3D Sound Positioning and Doppler
+
+The engine **SHALL** position sound sources in world
+space and resolve per-listener panning, distance gain,
+and Doppler pitch shift every audio frame. The engine
+**SHALL** interpolate source and listener transforms
+between game ticks to produce smooth, artifact-free
+motion at audio buffer rates.
+
+- **Derived from:**
+  [F-5.2.1](../../features/audio/spatial-audio.md)
+- **Rationale:** Players localize events by sound
+  direction; interpolation eliminates clicks and
+  discontinuities when the game tick rate is lower
+  than the audio buffer rate.
+- **Verification:** Integration test: move a source at
+  constant velocity past a listener and verify Doppler
+  pitch shift matches the expected ratio within 1%.
+  Verify no audible clicks when game tick rate is 30 Hz
+  and audio buffer rate is 100 Hz.
+
+### R-5.2.2 Distance Attenuation Curves
+
+The engine **SHALL** support inverse, inverse-squared,
+linear, logarithmic, and custom user-defined attenuation
+curves per sound source. Each source **SHALL** have
+configurable minimum and maximum distance parameters
+controlling the rolloff range.
+
+- **Derived from:**
+  [F-5.2.2](../../features/audio/spatial-audio.md)
+- **Rationale:** Different sound types require different
+  rolloff behaviors; per-source min/max distance enables
+  designers to balance audibility of distant siege
+  weaponry against nearby footsteps.
+- **Verification:** Unit test: place a source at 10
+  distances between min and max for each attenuation
+  model and verify gain matches the model formula
+  within 0.1%.
+
+## Binaural and Ambisonics
+
+### R-5.2.3 HRTF Binaural Rendering
+
+The engine **SHALL** render spatialized audio through
+head-related transfer functions using SOFA-format
+datasets for headphone output. HRTF profiles **SHALL**
+be swappable at runtime within one audio buffer.
+Per-voice HRTF filtering **SHALL** use frequency-domain
+convolution.
+
+- **Derived from:**
+  [F-5.2.3](../../features/audio/spatial-audio.md)
+- **Rationale:** HRTF provides accurate elevation and
+  front-back cues on headphones, enabling players to
+  pinpoint sound sources in 3D space. Runtime profile
+  swapping accommodates different head sizes.
+- **Verification:** Integration test: render a source at
+  0, 90, 180, and 270 degrees azimuth and verify channel
+  differences match the HRTF dataset within 1 dB and
+  0.1 ms. Swap the HRTF profile at runtime and verify
+  the new profile takes effect within one buffer.
+
+### R-5.2.4 Ambisonics Encoding and Decoding
+
+The engine **SHALL** encode sound sources into first-
+or third-order Ambisonics for intermediate mixing and
+decode to stereo, 5.1, 7.1, and binaural output. Sound
+field rotation **SHALL** produce correct coefficient
+shifts for listener head tracking.
+
+- **Derived from:**
+  [F-5.2.4](../../features/audio/spatial-audio.md)
+- **Rationale:** Ambisonics provides a speaker-layout-
+  agnostic representation that simplifies rotation,
+  reverb return mixing, and smooth panning across
+  arbitrary channel configurations.
+- **Verification:** Unit test: encode a mono source at
+  a known azimuth into first-order Ambisonics and verify
+  W, X, Y, Z coefficients match spherical harmonics
+  within 0.1%. Rotate the field 90 degrees and verify
+  coefficients shift accordingly.
+
+### R-5.2.4a Ambisonics Order Per Platform
+
+The engine **SHALL** support first-order Ambisonics on
+mobile and up to third-order on desktop. The Ambisonics
+order **SHALL** be configurable per platform tier at
+engine initialization.
+
+- **Derived from:**
+  [F-5.2.4](../../features/audio/spatial-audio.md)
+- **Rationale:** Higher Ambisonics orders require more
+  channels and CPU for rotation; mobile platforms cannot
+  afford the overhead of third-order processing.
+- **Verification:** Unit test: initialize with first-
+  order on mobile config and verify only 4 channels are
+  allocated. Initialize with third-order on desktop
+  config and verify 16 channels are allocated.
+
+## Occlusion and Propagation
+
+### R-5.2.5 Occlusion and Obstruction Filtering
+
+The engine **SHALL** attenuate and low-pass filter sounds
+whose direct path to the listener is blocked by geometry.
+Occlusion queries **SHALL** ray-cast against the shared
+BVH spatial index (not a separate structure). The engine
+**SHALL** support per-material transmission loss
+coefficients so different barrier materials produce
+different muffling levels.
+
+- **Derived from:**
+  [F-5.2.5](../../features/audio/spatial-audio.md)
+- **Rationale:** Sound occlusion matching visual geometry
+  reinforces spatial immersion. Using the shared BVH
+  avoids maintaining a duplicate spatial index.
+- **Verification:** Integration test: place a source
+  behind a wood wall (12 dB loss) and verify output is
+  attenuated by 12 dB +/- 1 dB with low-pass filtering.
+  Verify occlusion queries use the shared BVH via
+  instrumentation.
+
+### R-5.2.5a Occlusion Ray Count Per Platform
+
+The engine **SHALL** support configurable occlusion ray
+count per voice per platform tier: 1 ray on mobile,
+2 on Switch, and 4 on desktop. Mobile **SHALL** use
+simplified binary occlusion (occluded/not). Desktop
+**SHALL** use multi-ray material-weighted transmission.
+
+- **Derived from:**
+  [F-5.2.5](../../features/audio/spatial-audio.md)
+- **Rationale:** Multi-ray occlusion is expensive;
+  per-tier scaling prevents exceeding audio CPU budget
+  on constrained platforms.
+- **Verification:** Unit test: verify the configured ray
+  count per platform tier. Benchmark: measure per-voice
+  occlusion cost at each tier's ray count and verify it
+  stays within the spatialization budget.
+
+### R-5.2.6 Sound Propagation via Portals and Rays
+
+The engine **SHALL** model indirect sound paths through
+portals and reflective surfaces using a hybrid ray-and-
+portal graph. The propagation solver **SHALL** run
+asynchronously on a worker thread without blocking the
+audio thread. The solver **SHALL** feed delay, gain, and
+filter parameters into per-voice diffraction and
+reflection taps.
+
+- **Derived from:**
+  [F-5.2.6](../../features/audio/spatial-audio.md)
+- **Rationale:** Indirect sound paths enable realistic
+  acoustic behavior in indoor environments where sound
+  echoes through corridors and doorways.
+- **Verification:** Integration test: place a source
+  in room A and listener in room B connected by a
+  portal; verify the indirect path produces delayed and
+  attenuated sound. Close the portal and verify the path
+  is removed. Verify the solver runs asynchronously
+  without blocking the audio thread.
+
+### R-5.2.6a Propagation Complexity Per Platform
+
+The engine **SHALL** support configurable propagation
+complexity per platform tier: portal-only on mobile,
+1-bounce reflections on Switch, and full multi-bounce
+ray + portal propagation on desktop. Solver update rate
+**SHALL** be configurable: every 4-8 frames on mobile,
+every 1-2 frames on desktop.
+
+- **Derived from:**
+  [F-5.2.6](../../features/audio/spatial-audio.md)
+- **Rationale:** Full multi-bounce propagation is too
+  expensive for mobile; per-tier complexity prevents
+  exceeding the audio CPU budget.
+- **Verification:** Unit test: verify propagation mode
+  matches the configured tier. Benchmark: run the solver
+  with 20 portals, 50 surfaces, and 64 sources at each
+  tier and verify p99 update time stays within budget.
+
+## Reverb
+
+### R-5.2.7 Reverb Zones and Early Reflections
+
+The engine **SHALL** support axis-aligned or convex
+reverb volumes with configurable decay time, diffusion,
+and early reflection patterns. Nested zones **SHALL**
+combine via priority ordering. The engine **SHALL**
+blend smoothly at zone boundaries with no audible pop
+or discontinuity during listener transitions.
+
+- **Derived from:**
+  [F-5.2.7](../../features/audio/spatial-audio.md)
+- **Rationale:** Different spaces require distinct
+  acoustic character; smooth blending prevents jarring
+  transitions when players move between rooms.
+- **Verification:** Integration test: move the listener
+  between two reverb zones with decay times 1.0s and
+  3.0s and verify smooth crossfade with no pop or
+  discontinuity. Nest a small zone inside a larger one
+  with higher priority and verify the inner zone
+  overrides.
+
+### R-5.2.7a Reverb Zone Count Per Platform
+
+The engine **SHALL** support configurable active reverb
+zone count per platform tier: 1-2 concurrent on mobile,
+3-4 on Switch, and 6+ on desktop. Early reflections
+**SHALL** be disabled on mobile, using algorithmic
+reverb only.
+
+- **Derived from:**
+  [F-5.2.7](../../features/audio/spatial-audio.md)
+- **Rationale:** Multiple concurrent reverb zones
+  consume significant CPU; per-tier caps prevent
+  exceeding audio thread budget on constrained
+  platforms.
+- **Verification:** Unit test: verify the maximum active
+  zone count matches the configured tier. Verify early
+  reflections are disabled on mobile configuration.
+
+---
+
+## User Stories
 
 ## F-5.2.1 3D Sound Positioning and Doppler
 

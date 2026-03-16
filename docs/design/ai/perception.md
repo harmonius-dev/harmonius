@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/ai/](../../features/ai/),
+> [requirements/ai/](../../requirements/ai/), and
+> [user-stories/ai/](../../user-stories/ai/). The table
+> below traces design elements to those definitions.
+
 ### Core Senses (F-7.6.1--4 / R-7.6.1--4)
 
 | Feature | Requirement | Description |
@@ -711,7 +717,7 @@ pub trait SenseEvaluator {
         agent_pos: Vec3,
         agent_forward: Vec3,
         config: &PerceptionConfig,
-        spatial: &dyn SpatialQuery,
+        spatial: &QueryEngine<'_>,
         stimuli: &StimulusRegistry,
     ) -> SmallVec<[SenseResult; 8]>;
 
@@ -744,7 +750,7 @@ impl SenseEvaluator for SightSense {
         agent_pos: Vec3,
         agent_forward: Vec3,
         config: &PerceptionConfig,
-        spatial: &dyn SpatialQuery,
+        spatial: &QueryEngine<'_>,
         _stimuli: &StimulusRegistry,
     ) -> SmallVec<[SenseResult; 8]> {
         let sight = match &config.sight {
@@ -854,7 +860,7 @@ impl SenseEvaluator for HearingSense {
         agent_pos: Vec3,
         _agent_forward: Vec3,
         config: &PerceptionConfig,
-        spatial: &dyn SpatialQuery,
+        spatial: &QueryEngine<'_>,
         stimuli: &StimulusRegistry,
     ) -> SmallVec<[SenseResult; 8]> {
         let hearing = match &config.hearing {
@@ -1344,8 +1350,8 @@ impl SenseScheduler {
     pub fn evaluate_batch(
         &self,
         agents: &[Entity],
-        senses: &[&dyn SenseEvaluator],
-        spatial: &dyn SpatialQuery,
+        senses: &[&SenseKind],
+        spatial: &QueryEngine<'_>,
         stimuli: &StimulusRegistry,
         pool: &ThreadPool,
         // ECS component accessors omitted for
@@ -1815,7 +1821,7 @@ pub trait CustomSense: SenseEvaluator + Send + Sync {
 /// Registry of project-specific senses. Stored as
 /// ECS resource: `Res<CustomSenseRegistry>`.
 pub struct CustomSenseRegistry {
-    senses: Vec<Box<dyn CustomSense>>,
+    senses: Vec<CustomSenseKind>,
 }
 
 impl CustomSenseRegistry {
@@ -1825,20 +1831,20 @@ impl CustomSenseRegistry {
     /// if the custom_id is already registered.
     pub fn register(
         &mut self,
-        sense: Box<dyn CustomSense>,
+        sense: CustomSenseKind,
     ) -> Result<(), PerceptionError>;
 
     /// Get all registered custom senses, sorted
     /// by priority ascending.
     pub fn senses(
         &self,
-    ) -> &[Box<dyn CustomSense>];
+    ) -> &[CustomSenseKind];
 
     /// Get a specific sense by custom_id.
     pub fn get(
         &self,
         id: u16,
-    ) -> Option<&dyn CustomSense>;
+    ) -> Option<&CustomSenseKind>;
 }
 ```
 
@@ -2192,7 +2198,7 @@ double-buffered output grid. No contention.
    fragmentation but lose ECS query ergonomics.
 
 5. **Custom sense dynamic dispatch** -- The
-   `CustomSenseRegistry` uses `Box<dyn CustomSense>`
+   `CustomSenseRegistry` uses `CustomSenseKind`
    (dynamic dispatch) because custom senses are
    registered at runtime. This is the one exception
    to the static dispatch preference. Is there a

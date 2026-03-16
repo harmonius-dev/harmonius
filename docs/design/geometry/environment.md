@@ -3,6 +3,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/geometry-world/](../../features/geometry-world/),
+> [requirements/geometry-world/](../../requirements/geometry-world/), and
+> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table
+> below traces design elements to those definitions.
+
 ### Foliage (F-3.3.1-7 / R-3.3.1-7)
 
 | Feature | Requirement | User Story | Description |

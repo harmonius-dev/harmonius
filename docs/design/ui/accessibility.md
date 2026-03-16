@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/ui-2d/](../../features/ui-2d/),
+> [requirements/ui-2d/](../../requirements/ui-2d/), and
+> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Story | Description |
 |---------|-------------|------------|-------------|
 | F-10.6.1 | R-10.6.1 | US-10.6.1, US-10.6.2, US-10.6.3 | Screen reader support |

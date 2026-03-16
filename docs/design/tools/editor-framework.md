@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> [requirements/tools-editor/](../../requirements/tools-editor/), and
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-15.1.1 | R-15.1.1 | US-15.1.1.1--US-15.1.1.13 | Dockable panel layout with drag, drop, split, tab, float, and persistent profiles |

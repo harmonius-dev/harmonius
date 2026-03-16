@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/rendering/](../../features/rendering/),
+> [requirements/rendering/](../../requirements/rendering/), and
+> [user-stories/rendering/](../../user-stories/rendering/). The table
+> below traces design elements to those definitions.
+
 ### Acceleration Structures (F-2.5.1 / R-2.5.1)
 
 | Feature | Requirement | User Stories | Description |

@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/animation/](../../features/animation/),
+> [requirements/animation/](../../requirements/animation/), and
+> [user-stories/animation/](../../user-stories/animation/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-9.5.1 | R-9.5.1 | US-9.5.1.1, US-9.5.1.2, US-9.5.1.3 | GPU cloth simulation via PBD with distance, bending, self-collision constraints |

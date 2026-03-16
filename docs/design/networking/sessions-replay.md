@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/networking/](../../features/networking/),
+> [requirements/networking/](../../requirements/networking/), and
+> [user-stories/networking/](../../user-stories/networking/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-8.5.1 | R-8.5.1 | Login and authentication via OAuth 2.0 / platform accounts |

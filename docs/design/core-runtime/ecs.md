@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/core-runtime/](../../features/core-runtime/),
+> [requirements/core-runtime/](../../requirements/core-runtime/), and
+> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-1.1.1 | R-1.1.1, R-1.1.1a | Archetype-based dense storage, SoA layout, chunked |

@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> [requirements/tools-editor/](../../requirements/tools-editor/), and
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-15.12.1 | R-15.12.1 | Remote desktop rendering with H.264/H.265 streaming |

@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/ai/](../../features/ai/),
+> [requirements/ai/](../../requirements/ai/), and
+> [user-stories/ai/](../../user-stories/ai/). The table
+> below traces design elements to those definitions.
+
 ### Steering & Avoidance (F-7.2 / R-7.2)
 
 | Feature | Requirement | Description |
@@ -836,7 +842,7 @@ pub fn compute_obstacle_avoidance(
     heading: Vec3,
     feeler_count: u8,
     feeler_length: f32,
-    spatial: &SpatialQuery,
+    spatial: &QueryEngine<'_>,
 ) -> Vec3 {
     let mut force = Vec3::ZERO;
     let angles = distribute_feeler_angles(
@@ -1423,7 +1429,7 @@ pub fn tick_mass_entities(
         &mut SteeringAgent,
     )>,
     flow_cache: &FlowFieldCache,
-    spatial: &SpatialQuery,
+    spatial: &QueryEngine<'_>,
 ) {
     // Batch process all crowd agents.
     // For each agent:

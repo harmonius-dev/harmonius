@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/networking/](../../features/networking/),
+> [requirements/networking/](../../requirements/networking/), and
+> [user-stories/networking/](../../user-stories/networking/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-8.7.1 | R-8.7.1 | World sharding and instancing |
@@ -772,7 +778,7 @@ impl DatabaseAccessLayer {
     pub async fn query<T: FromRow>(
         &self,
         sql: &str,
-        params: &[&dyn ToParam],
+        params: &[&ParamValue],
     ) -> Result<Vec<T>, DbError>;
 
     /// Execute a statement (INSERT, UPDATE,
@@ -780,7 +786,7 @@ impl DatabaseAccessLayer {
     pub async fn execute(
         &self,
         sql: &str,
-        params: &[&dyn ToParam],
+        params: &[&ParamValue],
     ) -> Result<u64, DbError>;
 
     /// Begin a transaction.
@@ -800,13 +806,13 @@ impl TransactionHandle {
     pub async fn execute(
         &self,
         sql: &str,
-        params: &[&dyn ToParam],
+        params: &[&ParamValue],
     ) -> Result<u64, DbError>;
 
     pub async fn query<T: FromRow>(
         &self,
         sql: &str,
-        params: &[&dyn ToParam],
+        params: &[&ParamValue],
     ) -> Result<Vec<T>, DbError>;
 
     /// Commit the transaction.

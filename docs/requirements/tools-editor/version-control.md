@@ -1,4 +1,146 @@
-# R-15.10 -- Version Control & Git Integration User Stories
+# R-15.10 -- Version Control & Git Integration Requirements
+
+## Native Git
+
+### R-15.10.1 Native Git Integration
+
+The editor **SHALL** provide an embedded Git client via
+libgit2 supporting stage, commit, push, pull, branch,
+merge, rebase, and stash operations through the editor UI,
+with a visual branch graph, per-asset structural diffs,
+and SSH key access via platform credential stores (Keychain,
+Credential Manager, libsecret).
+
+- **Derived from:**
+  [F-15.10.1](../../features/tools-editor/version-control.md)
+- **Rationale:** Version control without command-line access
+  is essential for non-programmer team members.
+- **Verification:** Integration test: perform all Git
+  operations in-editor and verify results match git CLI
+  equivalents.
+
+### R-15.10.2 Git LFS Management
+
+The editor **SHALL** automatically track binary assets via
+LFS based on file extension and configurable size
+thresholds, display lock owner icons in the asset browser,
+provide lock/unlock from context menus, and support bulk
+LFS operations (migrate, fetch, prune) with a storage
+quota monitor.
+
+- **Derived from:**
+  [F-15.10.2](../../features/tools-editor/version-control.md)
+- **Rationale:** Binary assets require LFS for efficient
+  storage; locking prevents concurrent edits on
+  non-mergeable files.
+- **Verification:** Unit test: add a file exceeding the
+  size threshold and verify it is automatically
+  LFS-tracked.
+
+## Merge and Diff
+
+### R-15.10.3 Asset-Aware Merge Driver
+
+The editor **SHALL** provide a custom Git merge driver
+auto-registered via .gitattributes that performs three-way
+structural merge on logic graphs, prefabs, and data
+tables, with fallback to visual diff for unresolvable
+conflicts.
+
+- **Derived from:**
+  [F-15.10.3](../../features/tools-editor/version-control.md)
+- **Rationale:** Binary assets fail with standard merge;
+  structural merge enables collaboration on graph and
+  prefab assets.
+- **Verification:** Integration test: merge two compatible
+  changes and verify automatic resolution. Merge
+  conflicting changes and verify visual diff fallback.
+
+## Branch Workflow
+
+### R-15.10.4 Branch-Per-Feature Workflow
+
+The editor **SHALL** support creating feature branches,
+switching branches with asset cache preservation, creating
+pull/merge requests from the editor UI, and integration
+with GitHub, GitLab, Bitbucket, and Azure DevOps APIs.
+
+- **Derived from:**
+  [F-15.10.4](../../features/tools-editor/version-control.md)
+- **Rationale:** In-editor branch management reduces
+  context switching; cache preservation avoids full
+  rebuilds on branch switch.
+- **Verification:** Unit test: switch branches and verify
+  compiled asset caches are preserved.
+
+## Collaboration
+
+### R-15.10.5 Collaborative Presence
+
+The editor **SHALL** show real-time presence indicators for
+which users are editing which assets, with colored avatar
+badges, pessimistic locking for non-mergeable assets, and
+automatic lock queue with holder notification, using
+WebSocket with LFS lock fallback.
+
+- **Derived from:**
+  [F-15.10.5](../../features/tools-editor/version-control.md)
+- **Rationale:** Concurrent edit awareness prevents wasted
+  work on non-mergeable assets.
+- **Verification:** Integration test: verify presence
+  indicators show correct editing user across two editor
+  instances.
+
+## Repository Optimization
+
+### R-15.10.6 Partial Clone and Sparse Checkout
+
+The editor **SHALL** support Git partial clone
+(blobless/treeless) and sparse checkout with
+role-configurable patterns, placeholder thumbnails for
+missing assets, and one-click on-demand fetch with
+background download.
+
+- **Derived from:**
+  [F-15.10.6](../../features/tools-editor/version-control.md)
+- **Rationale:** Large repositories require selective
+  checkout to reduce clone size and disk usage.
+- **Verification:** Unit test: verify partial clone size
+  is significantly smaller than full clone.
+
+### R-15.10.7 Shelving and Local Stash
+
+The editor **SHALL** support named shelves for
+work-in-progress changes with structural diffs, shelf
+sharing via the shared cache, and shelf application using
+structural merge, stored in .harmonius/shelves/ and
+excluded from VCS.
+
+- **Derived from:**
+  [F-15.10.7](../../features/tools-editor/version-control.md)
+- **Rationale:** Named shelves provide richer WIP
+  management than git stash with collaborative sharing.
+- **Verification:** Unit test: save a shelf, verify data
+  is stored in .harmonius/shelves/ and excluded from VCS.
+
+### R-15.10.8 Multi-Provider Git Hosting Support
+
+The editor **SHALL** auto-detect hosting providers from
+remote URLs, support pull request creation/review/merge
+in-editor, issue linking, CI status display, self-hosted
+instances with configurable base URLs, and API tokens
+stored in platform credential stores.
+
+- **Derived from:**
+  [F-15.10.8](../../features/tools-editor/version-control.md)
+- **Rationale:** Teams use diverse Git hosting; the editor
+  must work with any provider without configuration.
+- **Verification:** Integration test: verify PR workflows
+  against GitHub, GitLab, and Bitbucket APIs.
+
+---
+
+## User Stories
 
 ## US-15.10.1 Native Git Integration
 

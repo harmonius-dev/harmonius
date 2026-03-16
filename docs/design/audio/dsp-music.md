@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/audio/](../../features/audio/),
+> [requirements/audio/](../../requirements/audio/), and
+> [user-stories/audio/](../../user-stories/audio/). The table
+> below traces design elements to those definitions.
+
 ### DSP & Effects (5.3)
 
 | Feature | Requirement | Description |
@@ -534,7 +540,7 @@ pub trait DspNode: Send {
 /// supports runtime insert/remove without
 /// reallocation when within inline capacity.
 pub struct EffectChain {
-    nodes: SmallVec<[Box<dyn DspNode>; 8]>,
+    nodes: SmallVec<[DspNodeKind; 8]>,
 }
 
 impl EffectChain {
@@ -551,7 +557,7 @@ impl EffectChain {
     pub fn insert(
         &mut self,
         index: usize,
-        node: Box<dyn DspNode>,
+        node: DspNodeKind,
     );
 
     /// Remove and return the node at the given
@@ -559,7 +565,7 @@ impl EffectChain {
     pub fn remove(
         &mut self,
         index: usize,
-    ) -> Box<dyn DspNode>;
+    ) -> DspNodeKind;
 
     pub fn len(&self) -> usize;
 
@@ -1090,7 +1096,7 @@ impl DspNode for PitchShifter {
 /// Type-erased factory function for custom DSP
 /// nodes registered by plugins.
 pub type DspNodeFactory =
-    Box<dyn Fn() -> Box<dyn DspNode> + Send + Sync>;
+    Box<dyn Fn() -> DspNodeKind + Send + Sync>;
 
 /// Registry for custom DSP node types. Nodes are
 /// registered by name and instantiated when
@@ -1113,7 +1119,7 @@ impl DspNodeRegistry {
     pub fn create(
         &self,
         name: &str,
-    ) -> Option<Box<dyn DspNode>>;
+    ) -> Option<DspNodeKind>;
 
     /// List all registered node type names.
     pub fn registered_names(

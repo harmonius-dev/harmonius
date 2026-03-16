@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/game-framework/](../../features/game-framework/),
+> [requirements/game-framework/](../../requirements/game-framework/), and
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table
+> below traces design elements to those definitions.
+
 ### Character Customization (F-13.8, R-13.8)
 
 | Feature | Requirement | Description |

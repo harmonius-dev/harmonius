@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/animation/](../../features/animation/),
+> [requirements/animation/](../../requirements/animation/), and
+> [user-stories/animation/](../../user-stories/animation/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-9.6.1 | R-9.6.1 | US-9.6.1.1, US-9.6.1.2, US-9.6.1.3 | First-person camera with head-bob, landing impact, lean/peek, tilt, separate viewmodel FOV |

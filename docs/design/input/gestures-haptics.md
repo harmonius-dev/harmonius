@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/input/](../../features/input/),
+> [requirements/input/](../../requirements/input/), and
+> [user-stories/input/](../../user-stories/input/). The table
+> below traces design elements to those definitions.
+
 ### Gestures (6.3)
 
 | Feature | Requirement | Description |

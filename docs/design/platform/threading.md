@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/platform/](../../features/platform/),
+> [requirements/platform/](../../requirements/platform/), and
+> [user-stories/platform/](../../user-stories/platform/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-14.3.1 | R-14.3.1 | Work-stealing thread pool sized to performance cores |

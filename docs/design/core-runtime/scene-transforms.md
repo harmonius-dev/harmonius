@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/core-runtime/](../../features/core-runtime/),
+> [requirements/core-runtime/](../../requirements/core-runtime/), and
+> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-1.2.1 | R-1.2.1 | US-1.2.1, US-1.2.2 | Entity-based scene hierarchy with parent-child ECS relationships and batched modifications |

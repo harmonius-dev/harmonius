@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/ai/](../../features/ai/),
+> [requirements/ai/](../../requirements/ai/), and
+> [user-stories/ai/](../../user-stories/ai/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-7.1.1 | R-7.1.1 | US-7.1.1.1 -- US-7.1.1.12 | Recast-style voxelization NavMesh generation with configurable agent params |

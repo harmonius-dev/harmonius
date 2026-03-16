@@ -1,4 +1,182 @@
-# R-6.4 — Haptics & Feedback User Stories
+# R-6.4 — Haptics & Feedback Requirements
+
+## Rumble
+
+### R-6.4.1 Dual-Motor Rumble Control
+
+The engine **SHALL** drive low-frequency and high-frequency
+rumble motors independently with intensity values in
+[0.0, 1.0], supporting all controller types (Xbox, DualSense,
+Switch Pro) via platform-native output APIs.
+
+- **Derived from:**
+  [F-6.4.1](../../features/input/haptics-and-feedback.md)
+- **Rationale:** Independent motor control enables nuanced
+  tactile feedback (heavy hits use low-freq, light impacts
+  use high-freq).
+- **Verification:** Unit test: set low-frequency to 0.8 and
+  high-frequency to 0.2. Assert the output report contains
+  correct per-motor intensity values.
+
+### R-6.4.1a Rumble Pattern Sequencing
+
+The engine **SHALL** support reusable rumble patterns as
+keyframe sequences with attack, sustain, and decay envelopes,
+looping, blending, and priority-based interruption. Patterns
+**SHALL** be authored in the visual editor as data assets.
+
+- **Derived from:**
+  [F-6.4.1](../../features/input/haptics-and-feedback.md)
+- **Rationale:** Data-driven patterns enable designer iteration
+  without code; priority ordering prevents important effects
+  from being masked.
+- **Verification:** Unit test: define a pattern with 100 ms
+  attack, 200 ms sustain, 100 ms decay. Assert output shape
+  matches within 5 ms tolerance. Trigger a priority-3 pattern
+  during a priority-5 pattern. Assert no interruption. Trigger
+  priority-7. Assert it interrupts.
+
+### R-6.4.1b Rumble Intensity Normalization
+
+The engine **SHALL** normalize motor intensity to [0.0, 1.0]
+across all controller backends, so pattern assets produce
+equivalent haptic output on Xbox, DualSense, and Switch Pro.
+
+- **Derived from:**
+  [F-6.4.1](../../features/input/haptics-and-feedback.md)
+- **Rationale:** Without normalization, the same pattern feels
+  different across controllers, breaking authored intent.
+- **Verification:** Unit test: set intensity 0.5 on all three
+  controller types. Assert output report values map to the
+  equivalent hardware range for each controller.
+
+## Adaptive Triggers
+
+### R-6.4.2 DualSense Adaptive Trigger Effects
+
+The engine **SHALL** control DualSense L2/R2 adaptive trigger
+resistance and vibration via HID output reports, supporting
+resistance, vibration, and sectioned resistance effect modes.
+On controllers without adaptive trigger support, the engine
+**SHALL** gracefully degrade to a no-op without errors.
+
+- **Derived from:**
+  [F-6.4.2](../../features/input/haptics-and-feedback.md)
+- **Rationale:** Adaptive triggers add physicality (bowstring
+  draw, fishing reel, gear notches); graceful degradation
+  ensures portability.
+- **Verification:** Unit test: apply resistance effect at 0.5
+  strength on DualSense. Assert HID report contains correct
+  parameters. Apply the same effect on Xbox. Assert no error
+  and no output report.
+
+### R-6.4.2a Visual Adaptive Trigger Authoring
+
+The engine **SHALL** allow designers to configure adaptive
+trigger effect modes and parameters per trigger in the
+visual editor.
+
+- **Derived from:**
+  [F-6.4.2](../../features/input/haptics-and-feedback.md)
+- **Rationale:** No-code engine constraint; adaptive trigger
+  tuning must be visual.
+- **Verification:** Integration test: configure resistance
+  mode at 0.7 strength on L2 in the editor. Play on DualSense.
+  Assert resistance matches configuration.
+
+## HD Haptics
+
+### R-6.4.3 High-Definition Haptic Playback
+
+The engine **SHALL** play high-fidelity haptic waveforms on
+controllers with HD haptics (Switch HD Rumble, DualSense)
+using a common waveform format with platform-specific
+conversion at the backend. Waveform assets **SHALL** be
+authored in the visual editor.
+
+- **Derived from:**
+  [F-6.4.3](../../features/input/haptics-and-feedback.md)
+- **Rationale:** HD haptics reproduce textures and fine impacts
+  that dual-motor rumble cannot; a common format avoids
+  per-platform authoring.
+- **Verification:** Unit test: load a 100 Hz sine waveform.
+  Assert backend conversion produces valid output for Switch
+  (frequency/amplitude pairs) and DualSense (raw waveform).
+  Verify actuator output matches expected amplitude within
+  10% tolerance.
+
+### R-6.4.4 Audio-Driven Haptic Generation
+
+The engine **SHALL** automatically generate haptic waveforms
+from audio signals by extracting 20-250 Hz frequency bands
+and amplitude envelopes, synchronizing haptic output with
+audio output to within 10 ms.
+
+- **Derived from:**
+  [F-6.4.4](../../features/input/haptics-and-feedback.md)
+- **Rationale:** Manual authoring of haptic assets for every
+  sound is impractical; automatic generation ensures every
+  explosion and impact has matching haptics.
+- **Verification:** Unit test: feed a 100 Hz sine wave at 0.8
+  amplitude. Assert output has dominant frequency in 80-120 Hz
+  and amplitude within 20%. Feed a 5 kHz signal. Assert output
+  amplitude is near zero. Measure audio-to-haptic timestamp
+  delta. Assert under 10 ms.
+
+## Force Feedback Profiles
+
+### R-6.4.5 Custom Force Feedback Profiles
+
+The engine **SHALL** support named profiles combining rumble
+patterns, adaptive trigger effects, and HD haptic waveforms
+into a single data asset with parameter binding (e.g., impact
+force scales intensity). Profiles **SHALL** be authored in the
+visual editor.
+
+- **Derived from:**
+  [F-6.4.5](../../features/input/haptics-and-feedback.md)
+- **Rationale:** Multi-layer haptic experiences must be single
+  reusable assets; parameter binding enables dynamic scaling.
+- **Verification:** Unit test: play a profile with all three
+  layers on DualSense. Assert all layers activate. Bind impact
+  force to 0.5. Assert rumble intensity equals 50% of base.
+
+### R-6.4.5a Profile Fallback Chains
+
+The engine **SHALL** degrade profiles per controller using
+configurable fallback chains (HD haptics -> rumble, adaptive
+triggers -> no-op). The engine **SHALL** validate at build
+time that every profile has a valid fallback for each
+supported controller class.
+
+- **Derived from:**
+  [F-6.4.5](../../features/input/haptics-and-feedback.md)
+- **Rationale:** Every controller must produce some feedback;
+  build-time validation prevents shipping profiles that
+  produce zero output on a controller class.
+- **Verification:** Unit test: play a profile on Xbox. Assert
+  only the rumble layer activates (HD haptics and adaptive
+  triggers fall back). Verify build-time validation rejects a
+  profile that has no fallback for Xbox.
+
+### R-6.4.5b ECS-Based Haptic Dispatch
+
+The engine **SHALL** dispatch haptic effects through the ECS
+event system, triggering profiles from gameplay events
+(hit, explosion, locomotion) authored as ECS observers.
+
+- **Derived from:**
+  [F-6.4.5](../../features/input/haptics-and-feedback.md),
+  [F-6.4.1](../../features/input/haptics-and-feedback.md)
+- **Rationale:** 100% ECS-based constraint; haptic dispatch
+  must integrate with the ECS event and observer system.
+- **Verification:** Unit test: register an observer on a
+  "HitEvent" that triggers a rumble profile. Emit a HitEvent.
+  Assert the rumble profile plays on the active controller.
+
+---
+
+## User Stories
 
 ## F-6.4.1 Dual-Motor Rumble with Pattern Sequencing
 

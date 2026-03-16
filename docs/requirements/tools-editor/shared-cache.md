@@ -1,4 +1,136 @@
-# R-15.11 -- Shared Build Cache User Stories
+# R-15.11 -- Shared Build Cache Requirements
+
+## Compiled Asset Caching
+
+### R-15.11.1 Centralized Compiled Asset Cache
+
+The engine **SHALL** provide a shared cache service storing
+compiled assets keyed by content hash (source content,
+build settings, tool version), with REST API over HTTPS
+and token authentication, so that identical builds are
+never repeated across the team.
+
+- **Derived from:**
+  [F-15.11.1](../../features/tools-editor/shared-cache.md)
+- **Rationale:** Redundant builds waste developer time;
+  content-addressed caching eliminates duplicate work.
+- **Verification:** Unit test: build an asset, upload to
+  cache, fetch from cache on another machine, and verify
+  identical output without rebuild.
+
+### R-15.11.2 Shader Compilation Cache
+
+Compiled shader variants **SHALL** be cached per platform
+keyed by shader source hash and feature permutation flags,
+with CI builds populating the cache for all platforms.
+
+- **Derived from:**
+  [F-15.11.2](../../features/tools-editor/shared-cache.md)
+- **Rationale:** Full shader rebuilds take hours; caching
+  reduces this to download time.
+- **Verification:** Unit test: verify cached shader output
+  matches CI-compiled output byte-for-byte.
+
+### R-15.11.3 Logic Graph Compilation Cache
+
+Compiled graph bytecode and AOT native code **SHALL** be
+cached by content hash and target platform so that
+unchanged graphs are not recompiled on every launch.
+
+- **Derived from:**
+  [F-15.11.3](../../features/tools-editor/shared-cache.md)
+- **Rationale:** Thousands of graphs must not recompile
+  on every editor launch or branch switch.
+- **Verification:** Unit test: verify an unchanged graph
+  fetches from cache instead of recompiling.
+
+## Onboarding
+
+### R-15.11.4 New Developer Onboarding Acceleration
+
+First editor launch **SHALL** fetch all compiled assets
+from the shared cache in parallel with Git LFS downloads,
+with a progress dashboard showing download status and ETAs,
+reducing first-launch time from hours to under 10 minutes
+for projects that take 1+ hours to build from source.
+
+- **Derived from:**
+  [F-15.11.4](../../features/tools-editor/shared-cache.md)
+- **Rationale:** Multi-hour first builds block new
+  developer productivity.
+- **Verification:** Benchmark: verify first-launch time is
+  under 10 minutes for a project taking 1+ hours from
+  source.
+
+## Cache Lifecycle
+
+### R-15.11.5 Cache Invalidation and Garbage Collection
+
+Cache entries **SHALL** be invalidated on tool version
+change, with configurable garbage collection schedules,
+LRU eviction when storage quota is exceeded, and manual
+garbage collection with invalidation logs.
+
+- **Derived from:**
+  [F-15.11.5](../../features/tools-editor/shared-cache.md)
+- **Rationale:** Stale cache entries cause correctness
+  issues; unbounded growth wastes storage.
+- **Verification:** Unit test: change the tool version and
+  verify all old entries are invalidated.
+
+## Transport and Storage
+
+### R-15.11.6 Cache Transport and Storage
+
+The cache **SHALL** support multiple storage backends (S3,
+GCS, Azure, local, HTTP), Zstd compression for transfers,
+configurable download concurrency and bandwidth limits,
+and platform-native HTTP clients (NSURLSession, WinHTTP,
+libcurl).
+
+- **Derived from:**
+  [F-15.11.6](../../features/tools-editor/shared-cache.md)
+- **Rationale:** Infrastructure diversity requires
+  pluggable backends; bandwidth limits prevent network
+  saturation.
+- **Verification:** Unit test: verify bandwidth limit is
+  respected during downloads.
+
+## CI/CD Population
+
+### R-15.11.7 CI/CD Cache Population
+
+CI builds **SHALL** auto-populate the cache for all
+platforms with idempotent uploads that skip existing
+entries, nightly builds warming cache for active branches,
+and a standalone CLI for headless build servers.
+
+- **Derived from:**
+  [F-15.11.7](../../features/tools-editor/shared-cache.md)
+- **Rationale:** CI-populated caches ensure developers
+  always have pre-built assets available.
+- **Verification:** Unit test: upload the same entry twice
+  and verify the second upload is a no-op.
+
+## Monitoring
+
+### R-15.11.8 Cache Hit Metrics and Monitoring
+
+The cache **SHALL** provide a monitoring dashboard with hit
+rate and storage usage, configurable alerts when hit rate
+drops below threshold, per-developer and per-team usage
+breakdowns, and metrics exported in OpenTelemetry format.
+
+- **Derived from:**
+  [F-15.11.8](../../features/tools-editor/shared-cache.md)
+- **Rationale:** Cache effectiveness monitoring catches
+  misconfigurations and tracks ROI.
+- **Verification:** Unit test: drop hit rate below
+  threshold and verify the alert fires.
+
+---
+
+## User Stories
 
 ## US-15.11.1 Centralized Compiled Asset Cache
 

@@ -1,4 +1,153 @@
-# R-15.18 -- Self-Hosted Server Infrastructure User Stories
+# R-15.18 -- Self-Hosted Server Infrastructure Requirements
+
+## AWS CDK Deployment
+
+### R-15.18.1 AWS CDK Deployment Stacks
+
+The engine **SHALL** provide modular AWS CDK stacks
+deployable via a single CLI command with Free Tier and
+Enterprise profiles, IAM roles with least-privilege
+policies, encryption at rest (KMS) and in transit (TLS),
+and stack outputs including endpoint URLs and API keys.
+
+- **Derived from:**
+  [F-15.18.1](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Self-hosted AWS infrastructure must be
+  automated, secure, and scalable from solo to enterprise.
+- **Verification:** Integration test: deploy a full stack
+  and verify completion within 15 minutes.
+
+### R-15.18.2 Live Collaboration Server
+
+The engine **SHALL** provide a self-hosted CRDT
+collaboration server with PostgreSQL for persistent state,
+S3 for binary assets, and WebSocket connections for
+real-time sync.
+
+- **Derived from:**
+  [F-15.18.2](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Real-time editing must stay within the
+  organization's infrastructure.
+- **Verification:** Integration test: connect two editor
+  instances and verify entity edits sync via the
+  self-hosted server.
+
+### R-15.18.3 Git and Git LFS Hosting
+
+The engine **SHALL** provide a self-hosted Git server with
+LFS support, GitHub-compatible REST API, S3-backed LFS
+storage with lifecycle policies, and push/pull/lock
+operations.
+
+- **Derived from:**
+  [F-15.18.3](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Source code and assets must be hostable on
+  the organization's own infrastructure.
+- **Verification:** Integration test: push, pull, and lock
+  via the self-hosted server and verify correct behavior.
+
+### R-15.18.4 Asset and Shader Compilation Server
+
+The engine **SHALL** provide a self-hosted build farm with
+auto-scaling instances based on queue depth, storing
+compiled results in the shared build cache.
+
+- **Derived from:**
+  [F-15.18.4](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Build work offloaded from developer
+  machines accelerates iteration.
+- **Verification:** Integration test: submit a compilation
+  job and verify the result appears in the shared cache.
+
+### R-15.18.5 Signing and Distribution Server
+
+The engine **SHALL** provide a self-hosted code signing
+server with credentials stored in AWS Secrets Manager,
+supporting automated signing for iOS, macOS, Android, and
+Windows.
+
+- **Derived from:**
+  [F-15.18.5](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Signing credentials must never leave
+  secure infrastructure.
+- **Verification:** Integration test: sign an artifact
+  and verify it passes platform verification tools.
+
+### R-15.18.6 Continuous Deployment Pipeline
+
+The engine **SHALL** provide a self-hosted CI/CD pipeline
+triggering on Git push with stages for build, cook, test,
+package, and deploy, where failed tests block the
+deployment pipeline.
+
+- **Derived from:**
+  [F-15.18.6](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Automated build-test-deploy prevents
+  regressions from reaching production.
+- **Verification:** Integration test: introduce a failing
+  test and verify the pipeline halts at the test stage.
+
+### R-15.18.7 Test Runner Infrastructure
+
+The engine **SHALL** provide self-hosted test runners for
+unit, integration, and screenshot tests with golden image
+comparison, test results stored in DynamoDB with CloudWatch
+dashboards, and SNS notifications on failures.
+
+- **Derived from:**
+  [F-15.18.7](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Visual regression testing requires
+  screenshot comparison infrastructure.
+- **Verification:** Integration test: introduce a visual
+  regression and verify the screenshot test fails and
+  blocks the pipeline.
+
+### R-15.18.8 Shared Cache and Database Services
+
+The engine **SHALL** provide self-hosted S3, PostgreSQL,
+DynamoDB, and Redis with data encryption at rest and in
+transit and backup schedules configured in the CDK stack.
+
+- **Derived from:**
+  [F-15.18.8](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Centralized data services with encryption
+  and backups are foundational for all server components.
+- **Verification:** Unit test: verify KMS encryption is
+  enabled on all storage resources.
+
+### R-15.18.9 Backup and Disaster Recovery
+
+The engine **SHALL** provide automated RDS backups with
+configurable retention (7-35 days), S3 versioning with
+lifecycle policies, DynamoDB point-in-time recovery,
+cross-region replication for enterprise DR, and a
+single-command restore CLI.
+
+- **Derived from:**
+  [F-15.18.9](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Data loss is unacceptable; disaster
+  recovery must be automated and tested.
+- **Verification:** Integration test: delete data, restore
+  from RDS backup, and verify recovery.
+
+### R-15.18.10 Enterprise Security Configuration
+
+The engine **SHALL** configure VPC private subnets for
+databases, public subnets for load balancers only, AWS WAF
+blocking SQL injection/XSS with rate limiting, CloudTrail
+audit logging, GuardDuty threat detection, and Secrets
+Manager credential rotation.
+
+- **Derived from:**
+  [F-15.18.10](../../features/tools-editor/server-infrastructure.md)
+- **Rationale:** Enterprise security posture requires
+  defense-in-depth across all infrastructure layers.
+- **Verification:** Unit test: send a SQL injection attempt
+  and verify WAF blocks it.
+
+---
+
+## User Stories
 
 ## US-15.18.1 AWS CDK Deployment Stacks
 

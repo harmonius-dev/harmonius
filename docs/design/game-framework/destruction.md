@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/game-framework/](../../features/game-framework/),
+> [requirements/game-framework/](../../requirements/game-framework/), and
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-4.6.1 | R-4.6.1 | Voronoi fracture generation at build time |

@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/audio/](../../features/audio/),
+> [requirements/audio/](../../requirements/audio/), and
+> [user-stories/audio/](../../user-stories/audio/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-5.1.1 | R-5.1.1 | Sound source component (point, line, area emitters with gain, pitch, looping, attenuation) |
@@ -688,7 +694,7 @@ impl BusId {
 /// A single insert effect slot on a bus.
 pub struct InsertSlot {
     /// The DSP effect processor.
-    pub effect: Box<dyn AudioEffect>,
+    pub effect: AudioEffect,
     /// Bypass flag.
     pub bypassed: bool,
 }
@@ -741,7 +747,7 @@ impl MixerGraph {
         &mut self,
         bus: BusId,
         index: usize,
-        effect: Box<dyn AudioEffect>,
+        effect: AudioEffect,
     );
 
     /// Remove an insert effect from a bus.
@@ -785,19 +791,44 @@ impl MixerGraph {
     fn propagate_gains(&mut self);
 }
 
-/// Trait for insert effects on mixer buses.
-pub trait AudioEffect: Send {
+/// Insert effect on a mixer bus. Uses enum
+/// dispatch for static dispatch on the audio
+/// thread hot path. No trait objects.
+pub enum AudioEffect {
+    BiquadFilter(BiquadFilter),
+    ParametricEq(ParametricEq),
+    Compressor(Compressor),
+    Limiter(Limiter),
+    Reverb(FdnReverb),
+    Delay(Delay),
+    Chorus(ModulatedDelay),
+    PitchShifter(PitchShifter),
+}
+
+impl AudioEffect {
     /// Process samples in-place.
-    fn process(
+    pub fn process(
         &mut self,
         buffer: &mut [f32],
         sample_rate: u32,
         channel_count: u32,
-    );
+    ) {
+        match self {
+            Self::BiquadFilter(e) => e.process(
+                buffer, sample_rate, channel_count,
+            ),
+            // ... each variant delegates
+            _ => {}
+        }
+    }
 
-    /// Reset internal state (e.g., on bus
-    /// rewire).
-    fn reset(&mut self);
+    /// Reset internal state.
+    pub fn reset(&mut self) {
+        match self {
+            Self::BiquadFilter(e) => e.reset(),
+            _ => {}
+        }
+    }
 }
 ```
 
@@ -833,33 +864,48 @@ pub struct AudioClipMeta {
     pub duration_secs: f32,
 }
 
-/// Trait for audio decoders. Implementors decode
-/// compressed audio into PCM f32 samples.
-pub trait AudioDecoder: Send {
-    /// Decode the next `frame_count` samples into
-    /// `output`. Returns the number of samples
-    /// actually decoded.
-    fn decode(
+/// Audio decoder. Enum dispatch avoids trait
+/// objects on the streaming hot path.
+pub enum AudioDecoder {
+    Pcm(PcmDecoder),
+    Vorbis(VorbisDecoder),
+    Opus(OpusDecoder),
+    Adpcm(AdpcmDecoder),
+}
+
+impl AudioDecoder {
+    /// Decode the next `frame_count` samples.
+    pub fn decode(
         &mut self,
         output: &mut [f32],
         frame_count: u32,
-    ) -> u32;
+    ) -> u32 {
+        match self {
+            Self::Pcm(d) => d.decode(
+                output, frame_count,
+            ),
+            Self::Vorbis(d) => d.decode(
+                output, frame_count,
+            ),
+            Self::Opus(d) => d.decode(
+                output, frame_count,
+            ),
+            Self::Adpcm(d) => d.decode(
+                output, frame_count,
+            ),
+        }
+    }
 
-    /// Seek to a sample offset.
-    fn seek(&mut self, sample_offset: u64);
-
-    /// Reset decoder state for reuse.
-    fn reset(&mut self);
-
-    /// Return clip metadata.
-    fn metadata(&self) -> &AudioClipMeta;
+    pub fn seek(&mut self, sample_offset: u64);
+    pub fn reset(&mut self);
+    pub fn metadata(&self) -> &AudioClipMeta;
 }
 
 /// Factory function type for creating decoders.
 pub type DecoderFactory = fn(
     data: &[u8],
     meta: &AudioClipMeta,
-) -> Box<dyn AudioDecoder>;
+) -> AudioDecoder;
 
 /// Registry mapping codecs to decoder factories.
 pub struct CodecRegistry { /* ... */ }
@@ -880,7 +926,7 @@ impl CodecRegistry {
         id: CodecId,
         data: &[u8],
         meta: &AudioClipMeta,
-    ) -> Option<Box<dyn AudioDecoder>>;
+    ) -> Option<AudioDecoder>;
 
     /// Check if a codec is registered.
     pub fn has_codec(&self, id: CodecId) -> bool;

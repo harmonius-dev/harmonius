@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/rendering/](../../features/rendering/),
+> [requirements/rendering/](../../requirements/rendering/), and
+> [user-stories/rendering/](../../user-stories/rendering/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-2.9.1 | R-2.9.1 | Bloom with threshold, multi-pass downsample/upsample blur chain |

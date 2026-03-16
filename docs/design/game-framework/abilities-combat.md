@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/game-framework/](../../features/game-framework/),
+> [requirements/game-framework/](../../requirements/game-framework/), and
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-13.10.1 | R-13.10.1 | US-13.10.1.1 -- US-13.10.1.5 | Data-driven ability composition from modular building blocks |

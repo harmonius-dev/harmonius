@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> [requirements/tools-editor/](../../requirements/tools-editor/), and
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
+> below traces design elements to those definitions.
+
 ### Build and Deployment (F-15.14)
 
 | Feature | Requirement | Description |

@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/networking/](../../features/networking/),
+> [requirements/networking/](../../requirements/networking/), and
+> [user-stories/networking/](../../user-stories/networking/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-8.2.1 | R-8.2.1 | US-8.2.3, US-8.2.10 | Delta-compressed property replication with per-client baselines |
@@ -868,7 +874,7 @@ impl InterestManager {
         client: ClientId,
         client_pos: Vec3,
         world: &World,
-        bvh: &SharedBvh,
+        bvh: &BvhIndex,
     ) -> RelevantSet;
 
     /// Batch-evaluate relevancy for all clients.
@@ -877,7 +883,7 @@ impl InterestManager {
         &self,
         connections: &NetworkConnections,
         world: &World,
-        bvh: &SharedBvh,
+        bvh: &BvhIndex,
         pool: &ThreadPool,
     ) -> HashMap<ClientId, RelevantSet>;
 }
@@ -1566,7 +1572,7 @@ impl RpcDispatcher {
     pub fn register(
         &mut self,
         rpc_id: RpcId,
-        handler: Box<dyn RpcHandler>,
+        handler: RpcHandlerFn,
         mode: RpcReliability,
     );
 
@@ -1747,7 +1753,7 @@ impl MulticastRouter {
         &self,
         filter: &MulticastFilter,
         world: &World,
-        bvh: &SharedBvh,
+        bvh: &BvhIndex,
         connections: &NetworkConnections,
     ) -> Vec<ClientId>;
 }
@@ -1806,7 +1812,7 @@ fn replication_tick_system(
     replication: &mut ReplicationSystem,
     connections: &NetworkConnections,
     transport: &Transport,
-    bvh: &SharedBvh,
+    bvh: &BvhIndex,
     pool: &ThreadPool,
 ) {
     let tick = world.current_tick();

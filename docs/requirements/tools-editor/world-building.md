@@ -1,4 +1,147 @@
-# R-15.6 -- World Building User Stories
+# R-15.6 -- World Building Requirements
+
+## Terrain Sculpting
+
+### R-15.6.1 Terrain Sculpting Brushes
+
+The editor **SHALL** provide raise, lower, smooth, flatten,
+erode, and noise sculpting brushes with configurable radius,
+strength, falloff curve, and shape mask, using incremental
+async disk I/O so that a 16k x 16k heightmap stays under
+512 MB peak memory.
+
+- **Derived from:**
+  [F-15.6.1](../../features/tools-editor/world-building.md)
+- **Rationale:** Massive open-world terrains must be
+  sculptable without loading the entire heightmap into
+  memory.
+- **Verification:** Benchmark: sculpt a 16k x 16k
+  heightmap and verify peak memory stays under 512 MB.
+  Verify async I/O does not block worker threads.
+
+### R-15.6.2 Terrain Erosion
+
+The editor **SHALL** simulate hydraulic and thermal erosion
+on selected terrain regions via GPU compute with
+configurable parameters (rain amount, sediment capacity,
+thermal angle), providing real-time preview above 15 FPS on
+2048x2048 regions.
+
+- **Derived from:**
+  [F-15.6.2](../../features/tools-editor/world-building.md)
+- **Rationale:** Natural-looking valleys and sediment
+  deposits require simulation; GPU compute enables
+  real-time feedback.
+- **Verification:** Benchmark: run erosion on 2048x2048
+  and verify preview stays above 15 FPS. Run twice with
+  same params and verify identical output.
+
+## Terrain Painting
+
+### R-15.6.3 Terrain Material Painting
+
+The editor **SHALL** support painting material layers onto
+terrain tiles with per-layer weight maps, height-based and
+slope-based auto-painting rules, triplanar projection for
+cliff faces, and macro-variation textures.
+
+- **Derived from:**
+  [F-15.6.3](../../features/tools-editor/world-building.md)
+- **Rationale:** Multi-layer terrain texturing with auto
+  rules accelerates large-world coverage.
+- **Verification:** Unit test: verify weight maps sum to
+  1.0 at every texel after painting multiple layers.
+
+## Water
+
+### R-15.6.4 Water Body Placement
+
+The editor **SHALL** place rivers via boundary splines with
+configurable width, depth, and flow speed, and lakes that
+fill to a specified altitude with automatic shoreline
+masking, integrating with reflections, refraction, caustics,
+and foam rendering.
+
+- **Derived from:**
+  [F-15.6.4](../../features/tools-editor/world-building.md)
+- **Rationale:** Water bodies are fundamental to world
+  building; spline-based rivers and altitude-based lakes
+  match artist mental models.
+- **Verification:** Unit test: create a lake at altitude
+  100 and verify surface height equals 100.
+
+## Vegetation
+
+### R-15.6.5 Vegetation Painting with Density Rules
+
+The editor **SHALL** support density brushes for vegetation
+painting with per-species slope limits, altitude bands,
+proximity exclusion radii, clustering behavior, and a
+biome rule system for declarative auto-population with
+deterministic results given the same seed.
+
+- **Derived from:**
+  [F-15.6.5](../../features/tools-editor/world-building.md)
+- **Rationale:** Ecological distribution rules and
+  auto-population accelerate large-world vegetation
+  authoring.
+- **Verification:** Unit test: auto-populate with a seed,
+  verify same result on repeated runs. Verify zero placement
+  rule violations.
+
+## Lighting
+
+### R-15.6.6 Lighting Setup
+
+The editor **SHALL** support light probe placement on
+tetrahedral grids or manually, reflection probes with
+configurable capture volumes and blend distances, baked and
+real-time update modes, and visualization overlays showing
+probe influence regions.
+
+- **Derived from:**
+  [F-15.6.6](../../features/tools-editor/world-building.md)
+- **Rationale:** Indirect lighting and reflection quality
+  depend on correct probe placement and coverage.
+- **Verification:** Unit test: place a tetrahedral grid
+  and verify probe count and spacing match configuration.
+
+## Navigation
+
+### R-15.6.7 Navmesh Preview
+
+The editor **SHALL** display a translucent navmesh overlay
+with color-coded walkable areas and slope limits, real-time
+navmesh regeneration for selected regions, and pathfinding
+test markers for start and goal.
+
+- **Derived from:**
+  [F-15.6.7](../../features/tools-editor/world-building.md)
+- **Rationale:** Immediate navmesh feedback prevents
+  unreachable areas and broken AI paths.
+- **Verification:** Unit test: verify the overlay marks
+  steep slopes as non-walkable.
+
+## World Partition
+
+### R-15.6.8 World Partition Visualization
+
+The editor **SHALL** display a 2D minimap of world
+partition cell boundaries, 3D viewport overlay of streaming
+states (loaded, pending, unloaded), cell ownership for
+multi-user editing, and entity/triangle budget violation
+flags per cell.
+
+- **Derived from:**
+  [F-15.6.8](../../features/tools-editor/world-building.md)
+- **Rationale:** Open-world streaming requires visual
+  budget tracking and multi-user cell ownership awareness.
+- **Verification:** Unit test: add entities exceeding a
+  cell budget and verify the over-budget flag is set.
+
+---
+
+## User Stories
 
 ## US-15.6.1 Terrain Sculpting Brushes
 

@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> [requirements/tools-editor/](../../requirements/tools-editor/), and
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
+> below traces design elements to those definitions.
+
 ### AI Governance (R-15.7)
 
 | Feature | Requirement | User Stories | Description |

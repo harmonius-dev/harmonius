@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/vfx/](../../features/vfx/),
+> [requirements/vfx/](../../requirements/vfx/), and
+> [user-stories/vfx/](../../user-stories/vfx/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-11.1.1 | R-11.1.1 | US-11.1.1.1, US-11.1.1.2, US-11.1.1.3 | GPU compute shader particle simulation with persistent buffers, free-list, and indirect dispatch |

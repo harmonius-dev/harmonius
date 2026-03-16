@@ -1,4 +1,274 @@
-# R-6.5 — VR and Spatial Input User Stories
+# R-6.5 — VR and Spatial Input Requirements
+
+## Head Tracking
+
+### R-6.5.1 6DOF Head-Mounted Display Tracking
+
+The engine **SHALL** provide 6DOF head tracking (position and
+orientation) via platform-native VR APIs (OpenXR on PC, OVR
+on Quest, PSVR2 SDK), exposing `HmdPose` and `HmdVelocity`
+as ECS components updated at the headset's native refresh
+rate (up to 120 Hz).
+
+- **Derived from:**
+  [F-6.5.1](../../features/input/vr-input.md)
+- **Rationale:** Head tracking is the foundation of VR
+  presence; refresh-rate updates prevent judder.
+- **Verification:** Unit test: read `HmdPose` each frame at
+  90 Hz. Assert position and orientation update every frame.
+  Verify pose data contains valid position (meters) and
+  quaternion orientation.
+
+### R-6.5.1a Late-Latching Pose Updates
+
+The engine **SHALL** submit late-latching pose updates as
+close to scanout as possible, achieving motion-to-photon
+latency not exceeding 20 ms at the headset's native refresh
+rate.
+
+- **Derived from:**
+  [F-6.5.1](../../features/input/vr-input.md)
+- **Rationale:** Latency above 20 ms causes motion sickness;
+  late-latching minimizes the interval between pose sample
+  and display.
+- **Verification:** Integration test: measure timestamp delta
+  between last pose update and scanout. Assert within one
+  frame interval. Assert total motion-to-photon latency does
+  not exceed 20 ms at 90 Hz and 120 Hz.
+
+### R-6.5.1b Tracking Loss Detection
+
+The engine **SHALL** detect tracking loss and emit a
+tracking-loss ECS event within one frame. The response
+(freeze, warning overlay) **SHALL** be configurable in the
+visual editor.
+
+- **Derived from:**
+  [F-6.5.1](../../features/input/vr-input.md)
+- **Rationale:** Tracking loss during gameplay is disorienting;
+  immediate detection enables graceful handling.
+- **Verification:** Unit test: simulate tracking occlusion.
+  Assert tracking-loss event fires within one frame. Verify
+  configured response (freeze or overlay) activates.
+
+### R-6.5.1c Play Area Modes and Guardian Boundaries
+
+The engine **SHALL** support room-scale, seated, and standing
+play area modes with configurable guardian/chaperone boundary
+events, selectable in the visual editor per project.
+
+- **Derived from:**
+  [F-6.5.1](../../features/input/vr-input.md)
+- **Rationale:** Different VR experiences require different
+  play areas; guardian events prevent players from hitting
+  walls.
+- **Verification:** Unit test: set room-scale mode. Move
+  headset past boundary. Assert guardian event fires. Set
+  seated mode. Assert boundary constraints match seated
+  configuration.
+
+## Motion Controllers
+
+### R-6.5.2 6DOF Motion Controller Input
+
+The engine **SHALL** expose 6DOF controller tracking
+(position, orientation, velocity, angular velocity), button
+states, analog trigger and thumbstick axes, and capacitive
+touch sensor data as ECS components per hand, via OpenXR
+interaction profiles, PSVR2 Sense, and Quest Touch APIs.
+
+- **Derived from:**
+  [F-6.5.2](../../features/input/vr-input.md)
+- **Rationale:** Full controller state as ECS components
+  enables gameplay systems to query VR input identically to
+  gamepad input (100% ECS-based constraint).
+- **Verification:** Unit test: read `ControllerPose`, button,
+  trigger, and thumbstick components each frame. Assert all
+  update. Verify capacitive touch is present on controllers
+  that support it and absent on those that do not.
+
+### R-6.5.2a Unified VR and Gamepad Action Mapping
+
+The engine **SHALL** map VR controller inputs to the same
+typed action system as gamepad inputs (F-6.2.1), so that
+shared input mappings work across flat and VR modes.
+
+- **Derived from:**
+  [F-6.5.2](../../features/input/vr-input.md)
+- **Rationale:** Shared mappings prevent duplicated binding
+  configurations and enable cross-mode gameplay.
+- **Verification:** Unit test: bind a "Fire" action to both
+  gamepad trigger and VR trigger. Assert both produce the
+  same `ActionState` value.
+
+## Hand Tracking
+
+### R-6.5.3 26-Joint Skeletal Hand Tracking
+
+The engine **SHALL** provide camera-based hand tracking with
+a 26-joint skeletal hand model per hand, exposing joint
+positions, orientations, and radii as ECS components
+(`HandSkeleton`, `HandJointPose`), updated at a minimum of
+30 Hz with per-joint accuracy within 5 mm.
+
+- **Derived from:**
+  [F-6.5.3](../../features/input/vr-input.md)
+- **Rationale:** 26 joints enable full finger articulation
+  for gesture recognition; 30 Hz prevents visible jitter;
+  5 mm accuracy enables reliable pinch and grab detection.
+- **Verification:** Integration test: display hand skeleton
+  and verify all 26 joints update each frame at >= 30 Hz.
+  Compare engine joint positions against SDK reference.
+  Assert < 5 mm RMS error.
+
+### R-6.5.3a Predefined Hand Gesture Recognition
+
+The engine **SHALL** recognize predefined hand gestures
+(pinch, grab, point, thumbs-up, open palm) and expose them
+as input actions through the typed action system (F-6.2.1).
+
+- **Derived from:**
+  [F-6.5.3](../../features/input/vr-input.md)
+- **Rationale:** Common gestures must be recognized out of the
+  box for interaction (grab objects, point at targets).
+- **Verification:** Unit test: perform a pinch gesture. Assert
+  the pinch action fires. Perform a grab gesture. Assert the
+  grab action fires.
+
+### R-6.5.3b Custom Hand Gesture Definition
+
+The engine **SHALL** support custom hand gestures authored in
+the visual logic graph using joint angle and distance
+thresholds, loadable as data assets without recompilation.
+
+- **Derived from:**
+  [F-6.5.3](../../features/input/vr-input.md)
+- **Rationale:** Games need unique gestures (thumbs-up for
+  emotes, custom spell casting) that built-in recognizers
+  do not cover; no-code constraint requires visual authoring.
+- **Verification:** Integration test: author a thumbs-up
+  gesture in the logic graph editor. Perform the gesture.
+  Assert the custom action fires.
+
+### R-6.5.3c Controller-Hand Auto-Switching
+
+The engine **SHALL** automatically switch between controller
+tracking and hand tracking when controllers are picked up or
+put down, without requiring manual mode selection.
+
+- **Derived from:**
+  [F-6.5.3](../../features/input/vr-input.md)
+- **Rationale:** Players expect seamless transitions; manual
+  mode switching breaks immersion.
+- **Verification:** Unit test: hold controllers and verify
+  controller tracking is active. Release controllers. Assert
+  hand tracking activates automatically within 1 second.
+
+## Eye Tracking
+
+### R-6.5.4 Eye Tracking and Gaze Input
+
+The engine **SHALL** expose gaze direction, fixation point,
+and pupil data as ECS components (`GazeRay`), updated each
+frame via platform-native eye tracking APIs (OpenXR, PSVR2,
+Tobii). The engine **SHALL** classify gaze events as fixation
+(sustained gaze) or saccade (rapid eye movement).
+
+- **Derived from:**
+  [F-6.5.4](../../features/input/vr-input.md)
+- **Rationale:** Gaze data drives foveated rendering, UI
+  interaction, and gameplay mechanics.
+- **Verification:** Unit test: read `GazeRay` each frame.
+  Assert it contains a valid direction vector. Fixate for
+  500 ms. Assert fixation event fires. Perform rapid eye
+  movement. Assert saccade event fires.
+
+### R-6.5.4a Gaze-Based UI Selection
+
+The engine **SHALL** support gaze-based UI selection
+(look-and-select) where UI elements highlight when the gaze
+ray intersects them, configurable in the visual editor.
+
+- **Derived from:**
+  [F-6.5.4](../../features/input/vr-input.md)
+- **Rationale:** Gaze selection is the primary UI interaction
+  mode in some VR experiences; no-code constraint requires
+  visual configuration.
+- **Verification:** Unit test: look at a UI element. Assert
+  gaze-based selection highlights it. Look away. Assert
+  highlight is removed.
+
+### R-6.5.4b Foveated Rendering Integration
+
+The engine **SHALL** expose `GazeRay` data in a format
+consumable by the foveated rendering system, enabling GPU
+shading detail allocation based on gaze direction.
+
+- **Derived from:**
+  [F-6.5.4](../../features/input/vr-input.md)
+- **Rationale:** Foveated rendering reduces GPU load by 30-50%
+  by rendering peripheral vision at lower detail; it requires
+  per-frame gaze data.
+- **Verification:** Integration test: verify the rendering
+  system reads `GazeRay` each frame and adjusts shading detail
+  based on gaze direction.
+
+## VR Haptics
+
+### R-6.5.5 Per-Hand VR Controller Haptics
+
+The engine **SHALL** provide per-hand haptic feedback on VR
+controllers with amplitude, frequency, and duration control,
+supporting continuous vibration, impulse events, and
+spatially-driven haptics (intensity varies with proximity to
+virtual objects). Patterns **SHALL** be authored as assets in
+the visual editor.
+
+- **Derived from:**
+  [F-6.5.5](../../features/input/vr-input.md)
+- **Rationale:** Per-hand haptics enable asymmetric feedback
+  (sword in right, shield in left); spatial haptics reinforce
+  presence.
+- **Verification:** Unit test: trigger an impulse at 0.8
+  amplitude and 150 Hz on the right controller. Assert output
+  matches parameters. Trigger different haptics on left and
+  right simultaneously. Assert independence. Move controller
+  toward a virtual object. Assert intensity increases with
+  proximity.
+
+### R-6.5.5a VR Haptic Pattern Authoring
+
+The engine **SHALL** allow authoring VR haptic patterns
+(amplitude, frequency, duration curves) as visual editor
+assets, triggerable through the input action system or
+gameplay ECS events.
+
+- **Derived from:**
+  [F-6.5.5](../../features/input/vr-input.md)
+- **Rationale:** No-code engine constraint; VR haptic patterns
+  must be authorable without code.
+- **Verification:** Integration test: create a continuous
+  vibration pattern in the editor with ramp-up. Play at
+  runtime. Assert the pattern sustains for the configured
+  duration with the authored amplitude curve.
+
+### R-6.5.5b Cross-Platform VR Haptic Abstraction
+
+The engine **SHALL** abstract VR haptic output across OpenXR,
+PSVR2 Sense, and Quest Touch APIs, converting authored
+patterns to platform-specific output at the backend.
+
+- **Derived from:**
+  [F-6.5.5](../../features/input/vr-input.md)
+- **Rationale:** A common authoring format avoids per-platform
+  haptic asset duplication.
+- **Verification:** Integration test: play the same haptic
+  pattern on Oculus Touch and PSVR2 Sense. Assert both produce
+  haptic output matching the authored parameters.
+
+---
+
+## User Stories
 
 ## F-6.5.1 Head-Mounted Display Tracking
 

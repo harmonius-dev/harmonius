@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/physics/](../../features/physics/),
+> [requirements/physics/](../../requirements/physics/), and
+> [user-stories/physics/](../../user-stories/physics/). The table
+> below traces design elements to those definitions.
+
 ### Rigid Body Dynamics (R-4.1)
 
 | Feature | Requirement | Description |
@@ -559,6 +565,11 @@ pub struct CompoundChild {
 /// Two entities collide when:
 ///   (a.membership & b.mask) != 0
 ///   && (b.membership & a.mask) != 0
+/// Custom collision filter as a function pointer.
+/// Avoids trait objects on the broadphase hot path.
+pub type CollisionFilterFn =
+    fn(Entity, Entity) -> bool;
+
 pub struct CollisionLayers {
     /// Bitset of layers this entity belongs to.
     pub membership: u32,
@@ -724,11 +735,11 @@ impl BroadphaseQuerySystem {
     /// System entry point. Queries the shared BVH
     /// and writes candidate pairs.
     pub fn run(
-        bvh: Res<SharedBvh>,
+        bvh: Res<BvhIndex>,
         layers_query: Query<
             &CollisionLayers,
         >,
-        filter: Option<Res<Box<dyn CollisionFilter>>>,
+        filter: Option<Res<CollisionFilterFn>>,
         mut pairs: ResMut<BroadphasePairs>,
     ) {
         pairs.pairs.clear();
@@ -1348,7 +1359,7 @@ pub struct CcdSystem;
 
 impl CcdSystem {
     pub fn run(
-        bvh: Res<SharedBvh>,
+        bvh: Res<BvhIndex>,
         config: Res<PhysicsConfig>,
         mut ccd_query: Query<
             (
@@ -1571,7 +1582,7 @@ pub struct TriggerVolumeSystem;
 
 impl TriggerVolumeSystem {
     pub fn run(
-        bvh: Res<SharedBvh>,
+        bvh: Res<BvhIndex>,
         triggers: Query<(
             Entity,
             &TriggerVolume,
@@ -1648,7 +1659,7 @@ pub struct CharacterControllerSystem;
 
 impl CharacterControllerSystem {
     pub fn run(
-        bvh: Res<SharedBvh>,
+        bvh: Res<BvhIndex>,
         config: Res<PhysicsConfig>,
         mut query: Query<(
             Entity,
@@ -1777,7 +1788,7 @@ impl CharacterControllerSystem {
 /// position to detect ground contact. Uses the
 /// shared BVH for spatial acceleration.
 fn shape_cast_down(
-    bvh: &SharedBvh,
+    bvh: &BvhIndex,
     controller: &CharacterController,
     tf: &Transform,
     max_distance: f32,
@@ -2042,7 +2053,7 @@ physics_schedule.advance(frame_dt, &mut world);
 // │               Transform                  │
 // │                                          │
 // │     BroadphaseQuerySystem                │
-// │       reads:  SharedBvh, CollisionLayers │
+// │       reads:  BvhIndex, CollisionLayers │
 // │       writes: BroadphasePairs resource   │
 // │                                          │
 // │     NarrowphaseSystem                    │
@@ -2063,7 +2074,7 @@ physics_schedule.advance(frame_dt, &mut world);
 // │                                          │
 // │     CcdSystem                            │
 // │       reads:  CcdEnabled, Collider,      │
-// │               Velocity, SharedBvh        │
+// │               Velocity, BvhIndex        │
 // │       writes: Velocity, Transform        │
 // │                                          │
 // │   SleepSystem                            │
@@ -2078,7 +2089,7 @@ physics_schedule.advance(frame_dt, &mut world);
 // │             Ended events                 │
 // │                                          │
 // │   CharacterControllerSystem              │
-// │     reads:  DesiredMovement, SharedBvh,  │
+// │     reads:  DesiredMovement, BvhIndex,  │
 // │             GroundState, SlopeLimit,     │
 // │             StepHeight                   │
 // │     writes: DesiredVelocity, GroundState │

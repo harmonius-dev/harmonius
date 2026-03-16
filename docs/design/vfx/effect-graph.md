@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/vfx/](../../features/vfx/),
+> [requirements/vfx/](../../requirements/vfx/), and
+> [user-stories/vfx/](../../user-stories/vfx/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-11.6.1 | R-11.6.1 | Node-based effect graph editor with GPU compile and real-time preview |

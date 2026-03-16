@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/physics/](../../features/physics/),
+> [requirements/physics/](../../requirements/physics/), and
+> [user-stories/physics/](../../user-stories/physics/). The table
+> below traces design elements to those definitions.
+
 ### Spatial Queries (4.4)
 
 | Feature | Requirement | Description |
@@ -580,7 +586,7 @@ pub struct ClosestPointResult {
 /// System parameter for single ray casts.
 /// Queries the shared BVH (F-1.9.1).
 pub struct RayCast<'w> {
-    bvh: Res<'w, SharedBvh>,
+    bvh: Res<'w, BvhIndex>,
     colliders: Query<'w, (
         &'static Collider,
         &'static Transform,
@@ -610,7 +616,7 @@ impl<'w> RayCast<'w> {
 
 /// System parameter for shape casts (sweeps).
 pub struct ShapeCast<'w> {
-    bvh: Res<'w, SharedBvh>,
+    bvh: Res<'w, BvhIndex>,
     colliders: Query<'w, (
         &'static Collider,
         &'static Transform,
@@ -642,7 +648,7 @@ impl<'w> ShapeCast<'w> {
 
 /// System parameter for overlap tests.
 pub struct OverlapQuery<'w> {
-    bvh: Res<'w, SharedBvh>,
+    bvh: Res<'w, BvhIndex>,
     colliders: Query<'w, (
         &'static Collider,
         &'static Transform,
@@ -664,7 +670,7 @@ impl<'w> OverlapQuery<'w> {
 
 /// System parameter for closest point queries.
 pub struct ClosestPointQuery<'w> {
-    bvh: Res<'w, SharedBvh>,
+    bvh: Res<'w, BvhIndex>,
     colliders: Query<'w, (
         &'static Collider,
         &'static Transform,
@@ -716,7 +722,7 @@ pub enum SpatialQueryResult {
 /// System parameter for batch spatial queries.
 /// Distributes work across the thread pool.
 pub struct BatchSpatialQuery<'w> {
-    bvh: Res<'w, SharedBvh>,
+    bvh: Res<'w, BvhIndex>,
     pool: Res<'w, ThreadPool>,
     colliders: Query<'w, (
         &'static Collider,

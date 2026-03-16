@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/geometry-world/](../../features/geometry-world/),
+> [requirements/geometry-world/](../../requirements/geometry-world/), and
+> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-3.6.1 | R-3.6.1 | Node-based procedural content graph |
@@ -612,7 +618,7 @@ pub struct NodeRegistryEntry {
     pub name: &'static str,
     pub category: &'static str,
     pub create_fn:
-        fn(&ReflectMap) -> Box<dyn PcgNodeBehavior>,
+        fn(&ReflectMap) -> PcgNodeKind,
     pub default_params: ReflectMap,
     pub input_pins: Vec<PinDesc>,
     pub output_pins: Vec<PinDesc>,

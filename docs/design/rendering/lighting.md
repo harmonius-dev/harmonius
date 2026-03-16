@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/rendering/](../../features/rendering/),
+> [requirements/rendering/](../../requirements/rendering/), and
+> [user-stories/rendering/](../../user-stories/rendering/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-2.4.1 | R-2.4.1, NFR-2.4.1 | US-2.4.1.1, US-2.4.1.2 | Tiled/clustered forward+ light culling via compute pass |

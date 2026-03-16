@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/platform/](../../features/platform/),
+> [requirements/platform/](../../requirements/platform/), and
+> [user-stories/platform/](../../user-stories/platform/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-14.1.1 | R-14.1.1 | Create, resize, minimize, maximize, restore, and destroy native windows with consistent cross-platform API |

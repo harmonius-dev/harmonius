@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/geometry-world/](../../features/geometry-world/),
+> [requirements/geometry-world/](../../requirements/geometry-world/), and
+> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table
+> below traces design elements to those definitions.
+
 ### Heightfield Terrain (F-3.2.1–8 / R-3.2.1–8)
 
 | Feature | Requirement | User Story | Description |

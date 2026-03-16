@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/content-pipeline/](../../features/content-pipeline/),
+> [requirements/content-pipeline/](../../requirements/content-pipeline/), and
+> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-12.2.1 | R-12.2.1 | US-12.2.1, US-12.2.12, US-12.2.17 | Texture compression (BC7, ASTC, ETC2) per platform with quality presets |

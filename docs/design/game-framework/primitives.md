@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/game-framework/](../../features/game-framework/),
+> [requirements/game-framework/](../../requirements/game-framework/), and
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-13.1.1 | R-13.1.1 | US-13.1.1.1 -- US-13.1.1.8 | Hierarchical game mode state machine with nested sub-modes |
@@ -2040,3 +2046,13 @@ constraint is satisfied by:
    points have a maximum concurrent capacity to
    prevent clustering? This matters for PvP modes
    where spawn camping is a concern.
+
+7. **Attribute storage layout** -- The current
+   `HashMap<AttributeId, f32>` is flexible for
+   editor access and serialization, but attribute
+   lookups occur per-damage-event per-frame on
+   the hot path. A compiled flat array indexed by
+   `AttributeId.0` would be faster at runtime.
+   Consider a dual representation: HashMap for
+   editor/serialization, flat `Vec<f32>` for
+   runtime queries.

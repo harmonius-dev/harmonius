@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/game-framework/](../../features/game-framework/),
+> [requirements/game-framework/](../../requirements/game-framework/), and
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-13.20.1 | R-13.20.1 | Fog of war grid with 3-state visibility and GPU fog texture |
@@ -180,7 +186,13 @@ harmonius_game/
 
 ---
 
-## 1. Fog of War
+## API Design
+
+Each genre subsystem is self-contained with its own
+ECS components, systems, and data structures. The
+subsections below define the API for each genre.
+
+### 1. Fog of War
 
 ### Fog of War Data Flow
 
@@ -336,7 +348,7 @@ pub struct FogMemoryCell {
 
 ---
 
-## 2. Turn-Based Combat
+### 2. Turn-Based Combat
 
 ### Turn-Based Combat Sequence
 
@@ -575,7 +587,7 @@ impl HitProbabilityCalc {
 
 ---
 
-## 3. Minigame Framework
+### 3. Minigame Framework
 
 ### Minigame Session Lifecycle
 
@@ -802,7 +814,7 @@ pub struct MinigameEntry {
 
 ---
 
-## 4. Racing Systems
+### 4. Racing Systems
 
 ### Checkpoint Flow
 
@@ -985,7 +997,7 @@ pub struct GhostSample {
 
 ---
 
-## 5. Block/Voxel World
+### 5. Block/Voxel World
 
 ### Chunk Pipeline
 
@@ -1200,7 +1212,7 @@ pub struct FluidState {
 
 ---
 
-## 6. Pets, Companions, and Mounts
+### 6. Pets, Companions, and Mounts
 
 ### Companion State Machine
 

@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/platform/](../../features/platform/),
+> [requirements/platform/](../../requirements/platform/), and
+> [user-stories/platform/](../../user-stories/platform/). The table
+> below traces design elements to those definitions.
+
 ### OS Integration (F-14.2 / R-14.2)
 
 | Feature | Requirement | Description |

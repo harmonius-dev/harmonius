@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/content-pipeline/](../../features/content-pipeline/),
+> [requirements/content-pipeline/](../../requirements/content-pipeline/), and
+> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
 | F-12.4.1 | R-12.4.1 | US-12.4.5 | File watcher daemon with platform-native APIs, debounce, and deduplication |

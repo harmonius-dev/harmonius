@@ -2,6 +2,12 @@
 
 ## Requirements Trace
 
+> **Canonical sources:** Features, requirements, and user
+> stories are defined in [features/animation/](../../features/animation/),
+> [requirements/animation/](../../requirements/animation/), and
+> [user-stories/animation/](../../user-stories/animation/). The table
+> below traces design elements to those definitions.
+
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
 | F-9.1.1 | R-9.1.1 | GPU compute skinning with linear blend and dual-quaternion modes |
