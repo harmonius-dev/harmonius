@@ -1,9 +1,10 @@
 # User Stories — Agent Guide
 
+All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
+
 ## Purpose
 
-This directory contains user stories for all Harmonius engine subsystems. Stories describe WHO wants
-WHAT and WHY from a specific persona's perspective.
+User stories describing WHO wants WHAT and WHY from a specific persona's perspective.
 
 ## Structure
 
@@ -24,7 +25,6 @@ Domains match the design directory structure.
 3. Each story = 1 persona + 1 action + 1 use case + 1 feature — granular, not compound
 4. Reference specific features with F-X.Y.Z IDs
 5. Personas are defined in `personas.md` only
-6. 100-character line limit (tables exempt)
 
 ## What MUST NOT Be Included
 

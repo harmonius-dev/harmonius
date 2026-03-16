@@ -1,9 +1,11 @@
 # Design Documents — Agent Guide
 
+All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
+
 ## Purpose
 
-This directory contains detailed design documents for every subsystem in the Harmonius engine.
-Designs cover architecture, API definitions, data flow, platform considerations, and test plans.
+Design documents for every engine subsystem covering architecture, API, data flow, platform
+considerations, and test plans.
 
 ## Structure
 
@@ -34,9 +36,8 @@ Domains: `ai`, `animation`, `audio`, `content-pipeline`, `core-runtime`, `game-f
 3. Every design MUST have a Mermaid `classDiagram` covering ALL types: structs, enums (with
    variants), traits, type aliases, and their relationships
 4. All Mermaid diagrams must be rendered via MCP to verify correctness
-5. All references to requirements, features, or user stories MUST use specific IDs (R-X.Y.Z,
-   F-X.Y.Z, US-X.Y.Z) — never "see requirements", "as specified", or "per the feature spec"
-6. 100-character line limit (tables exempt)
+5. All references MUST use specific IDs (R-X.Y.Z, F-X.Y.Z, US-X.Y.Z) — never "see requirements" or
+   "as specified"
 
 ## Immutability and Functional Patterns
 

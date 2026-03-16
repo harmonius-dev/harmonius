@@ -1,9 +1,11 @@
 # Requirements — Agent Guide
 
+All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
+
 ## Purpose
 
-This directory contains functional and non-functional requirements for all Harmonius engine
-subsystems. Requirements define what the system SHALL do.
+Functional and non-functional requirements for all engine subsystems. Requirements define what the
+system SHALL do.
 
 ## Structure
 
@@ -25,7 +27,6 @@ Domains match the design directory structure.
 3. Requirements are testable and measurable
 4. Performance requirements include specific targets (e.g., "< 2ms per frame")
 5. Cross-reference features with F-X.Y.Z IDs
-6. 100-character line limit (tables exempt)
 
 ## What MUST NOT Be Included
 

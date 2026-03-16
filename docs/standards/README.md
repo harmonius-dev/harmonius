@@ -1,7 +1,6 @@
 # Coding Standards
 
-Language-specific coding standards for the Harmonius engine. All contributors and agents must follow
-these standards.
+Language-specific coding standards for the Harmonius engine.
 
 ## Standards Index
 

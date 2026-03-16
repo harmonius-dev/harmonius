@@ -1,9 +1,10 @@
 # Features — Agent Guide
 
+All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
+
 ## Purpose
 
-This directory contains feature definitions for all Harmonius engine subsystems. Features define
-WHAT the engine provides, organized by domain.
+Feature definitions for all engine subsystems. Features define WHAT the engine provides.
 
 ## Structure
 
@@ -23,7 +24,6 @@ Domains match the design directory structure.
 3. Features describe capability, not implementation
 4. Group related features under domain headings
 5. Cross-reference requirements with R-X.Y.Z IDs
-6. 100-character line limit (tables exempt)
 
 ## What MUST NOT Be Included
 

@@ -1,17 +1,17 @@
 # Coding Standards — Agent Guide
 
+All rules from the root [AGENTS.md](../../AGENTS.md) apply here.
+
 ## Purpose
 
-This directory contains language-specific coding standards for all languages used in the Harmonius
-engine. Standards define formatting, linting, naming, testing, and best practices.
+Language-specific coding standards defining formatting, linting, naming, testing, and best
+practices.
 
 ## Structure
 
 ```text
 docs/standards/
   README.md                 — standards index
-  AGENTS.md                 — this guide
-  CLAUDE.md                 — redirect
   {language}.md             — per-language standard
 ```
 
@@ -35,7 +35,6 @@ Languages: `rust`, `cpp`, `swift`, `typescript`, `hlsl`, `markdown`, `json`, `to
 2. How to Check and Fix includes exact CLI commands
 3. Testing section forbids mocking in all languages
 4. Cache-Friendly Patterns covers data-oriented design
-5. 100-character line limit (tables exempt)
 
 ## What MUST NOT Be Included
 

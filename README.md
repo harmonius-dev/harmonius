@@ -1,41 +1,48 @@
 # Harmonius
 
-Harmonius is a modern cross-platform game engine for building real-time interactive 2D, 3D, and XR
-games and high performance applications. Harmonius is written in Rust with thin C wrappers to
-OS-level APIs.
+A modern cross-platform game engine for real-time 2D, 3D, and XR games. Written in Rust with
+platform-native async I/O and mesh-shader/ray-tracing-first rendering.
 
-Harmonius supports desktop applications on MacOS, iOS, Linux, Android, Nintendo Switch, Xbox an
-Windows. Harmonius's graphics backend can use Metal 4, Direct3D 12, or Vulkan 1.4, and requires mesh
-shaders and ray tracing as minimum requirements. It supports both hybrid ray tracing and full path
-tracing. Harmonius scales from mobile devices and portable consoles to high-end desktop PCs for the
-most ambitious projects. Harmonius does not support the traditional rendering pipeline, low end
-devices, or any legacy graphics API backends. Harmonius does not support targeting the web.
+## Key Technical Highlights
 
-## Architecture
-
-See [docs/architecture.md](docs/architecture.md) for the full engine architecture with Mermaid
-diagrams covering all 15 subsystems, frame data flow, platform abstraction, and design wave
-structure.
+- **100% ECS architecture** — all simulation data as components, all logic as systems, no parallel
+  stores
+- **Rust stable only** — no nightly, no unsafe without `// SAFETY:` justification
+- **Platform-native async** — IOCP (Windows), GCD (macOS), io_uring (Linux); no tokio, no external
+  runtime
+- **Custom windowing** — NSWindow, Win32, xcb/Wayland directly; no winit
+- **Mesh shaders + ray tracing required** — no legacy pipeline fallback
+- **No-code authoring** — all user logic via visual graphs, all assets via visual editors
+- **Shared spatial index** — single BVH across physics, rendering, networking, AI, audio, and
+  gameplay
 
 ## Supported Platforms
 
-| OS | Graphics API | Async I/O |
-|----|-------------|-----------|
-| macOS | Metal 4 | GCD / Dispatch IO |
-| Windows | Direct3D 12 | IOCP |
-| Linux | Vulkan 1.4 | io_uring |
-| iOS | Metal 4 | GCD / Dispatch IO |
-| Android | Vulkan 1.4 | io_uring |
-| Nintendo Switch | Platform SDK | Platform SDK |
-| Xbox | Direct3D 12 | Platform SDK |
+| OS | Graphics | Async I/O | Status |
+|----|----------|-----------|--------|
+| macOS | Metal 4 | GCD / Dispatch IO | Design complete |
+| Windows | Direct3D 12 | IOCP | Design complete |
+| Linux | Vulkan 1.4 | io_uring | Design complete |
+| iOS | Metal 4 | GCD / Dispatch IO | Design complete |
+| Android | Vulkan 1.4 | io_uring | Design complete |
+| Switch | Platform SDK | Platform SDK | Planned |
+| Xbox | Direct3D 12 | Platform SDK | Planned |
+
+## Architecture
+
+The engine has 15 subsystems across 6 layers. See [docs/architecture.md](docs/architecture.md) for
+clickable diagrams, frame data flow, and links to every design document, test case, feature spec,
+requirement, and user story per module.
 
 ## Documentation
 
-| Directory | Contents |
-|-----------|----------|
-| [docs/design/](docs/design/) | 87 design documents across 15 domains |
-| [docs/features/](docs/features/) | 1,381 feature definitions |
-| [docs/requirements/](docs/requirements/) | 1,171 requirements |
-| [docs/user-stories/](docs/user-stories/) | 5,859 user stories |
-| [docs/standards/](docs/standards/) | Language coding standards |
-| [docs/architecture.md](docs/architecture.md) | Engine architecture overview |
+| Directory | What you will find |
+|-----------|-------------------|
+| [docs/architecture.md](docs/architecture.md) | Engine overview with Mermaid diagrams and per-module cross-references |
+| [docs/design/](docs/design/) | 87 design documents with API pseudocode, class diagrams, and companion test cases |
+| [docs/features/](docs/features/) | 1,381 feature definitions organized by domain |
+| [docs/requirements/](docs/requirements/) | 1,171 functional and non-functional requirements |
+| [docs/user-stories/](docs/user-stories/) | 5,859 user stories across 27 personas |
+| [docs/standards/](docs/standards/) | Coding standards for Rust, C++, Swift, TypeScript, HLSL, Markdown, JSON, TOML, YAML |
+| [docs/design/constraints.md](docs/design/constraints.md) | Project-wide design constraints (language, platform, async model) |
+| [docs/design/plan.md](docs/design/plan.md) | Design wave schedule and dependency DAG |
