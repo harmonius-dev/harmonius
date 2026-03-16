@@ -40,7 +40,7 @@ prerequisites are satisfied by completion of prior waves.
 
 The longest chain through the DAG:
 
-```
+```text
 Platform.Threading → CoreRuntime.ECS → Rendering.GPUAbstraction → Rendering.RenderGraph
   → Rendering.CoreRendering → Rendering.Lighting → Rendering.AdvancedRendering
     → GeometryWorld.ProceduralGeneration
@@ -293,8 +293,8 @@ feedback.
 
 ### One-Sentence Pitch
 
-> "The first AI-accelerated, Rust-native game engine with no-code authoring, planet-scale procedural generation,
-> and built-in MMO infrastructure — open source at its core."
+> "The first AI-accelerated, Rust-native game engine with no-code authoring, planet-scale procedural
+> generation, and built-in MMO infrastructure — open source at its core."
 
 ### Positioning Statement (Long Form)
 
@@ -329,21 +329,21 @@ AI-assisted development, and planet-scale procedural worlds — without writing 
 
 ### Top 3 Risk Mitigations
 
-**Risk #1: Never reaching feature parity**
+#### Risk #1: Never reaching feature parity
 
 - Accept that 100% feature parity is impossible and unnecessary
 - The DAG model lets you cut entire Wave 6 capstone features without affecting Waves 0–5
 - Use the 80/20 rule: 80% of users need 20% of features
 - Track features shipped per wave; adjust scope based on velocity
 
-**Risk #2: Solo developer burnout**
+#### Risk #2: Solo developer burnout
 
 - Sustainable pace: 30 hours/week of focused development, not 60
 - The DAG enables parallel AI agent work — the human focuses on design and architecture
 - Celebrate milestones publicly (wave completions, demo videos)
 - Budget for hiring a second developer when revenue hits $5K MRR
 
-**Risk #3: No early adopter traction**
+#### Risk #3: No early adopter traction
 
 - Track leading indicators: GitHub stars, Discord members, crate downloads, blog post views
 - If foundational modules see no adoption, reassess scope

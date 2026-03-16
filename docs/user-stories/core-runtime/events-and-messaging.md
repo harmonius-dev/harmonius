@@ -158,9 +158,9 @@ input, and configuration is accessed safely across systems.
 
 ## US-1.5.13 Understand Resources as Global State in the Visual Editor
 
-**As a** designer (P-5), **I want** to inspect world resource values in the visual editor, **so
-that** I can see and understand global state like time, input, and configuration that affects system
-behavior.
+**As a** designer (P-5), **I want** to inspect world resource values in the visual editor,
+**so that** I can see and understand global state like time, input, and configuration that affects
+system behavior.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

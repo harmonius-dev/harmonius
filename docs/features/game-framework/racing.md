@@ -1,6 +1,6 @@
 # 13.22 — Racing Systems
 
-### F-13.22.1 Track and Checkpoint System
+## F-13.22.1 Track and Checkpoint System
 
 Define race tracks using ordered checkpoint volumes placed in the world. Checkpoints are trigger
 volumes (F-4.2.8) that record passage order and timestamps. The system enforces checkpoint order —

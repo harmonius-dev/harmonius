@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -37,25 +37,18 @@
 
 ## Overview
 
-The monetization subsystem provides a complete
-set of revenue systems for free-to-play, premium,
-and hybrid business models. All state is stored
-as ECS resources. All configuration is data-driven
-and authored through the visual editor. Server-side
-validation and storage prevent client-side
+The monetization subsystem provides a complete set of revenue systems for free-to-play, premium, and
+hybrid business models. All state is stored as ECS resources. All configuration is data-driven and
+authored through the visual editor. Server-side validation and storage prevent client-side
 tampering.
 
 Key design principles:
 
-- **Cosmetic-only defaults** -- no pay-to-win items
-  in the default configuration
-- **Server-authoritative** -- currency balances,
-  receipts, and entitlements are server-side
-- **Engine-enforced safeguards** -- ad frequency
-  caps, deceptive UI prevention, and minor
+- **Cosmetic-only defaults** -- no pay-to-win items in the default configuration
+- **Server-authoritative** -- currency balances, receipts, and entitlements are server-side
+- **Engine-enforced safeguards** -- ad frequency caps, deceptive UI prevention, and minor
   protections are compiled into the binary
-- **Live-ops friendly** -- battle pass, challenges,
-  and store content deploy server-side without
+- **Live-ops friendly** -- battle pass, challenges, and store content deploy server-side without
   client updates
 
 ## Architecture
@@ -116,7 +109,7 @@ graph TD
 
 ### File Structure
 
-```
+```text
 harmonius_game/
 ├── monetization/
 │   ├── battle_pass/
@@ -942,31 +935,25 @@ pub struct ContentTrial {
 
 ### Live-Ops Content Refresh
 
-Server-synced live-ops data (battle pass, store
-catalog, challenges, login calendar) uses the shared
-`LiveOpsResource<T>` wrapper (see
-[shared-primitives.md](../core-runtime/shared-primitives.md)).
+Server-synced live-ops data (battle pass, store catalog, challenges, login calendar) uses the shared
+`LiveOpsResource<T>` wrapper (see [shared-primitives.md](../core-runtime/shared-primitives.md)).
 Challenge conditions use the shared `ConditionExpr`.
 
-Server-deployed content (battle pass definitions,
-challenge rotations, store catalog, login calendar)
-follows a consistent refresh pattern:
+Server-deployed content (battle pass definitions, challenge rotations, store catalog, login
+calendar) follows a consistent refresh pattern:
 
-1. Client polls server at configurable intervals
-   (default: 60 seconds)
+1. Client polls server at configurable intervals (default: 60 seconds)
 2. Server responds with version hash
-3. If version differs, client fetches updated
-   definitions
+3. If version differs, client fetches updated definitions
 4. Client replaces the corresponding ECS resource
 5. UI observes the resource change and re-renders
 
-No client restart or update is required. New content
-is visible within 60 seconds of server deployment
-(NFR-13.23.2).
+No client restart or update is required. New content is visible within 60 seconds of server
+deployment (NFR-13.23.2).
 
 ### Purchase Flow Integration
 
-```
+```text
 Player -> Client -> Platform SDK -> Server
                                       |
                                       v
@@ -979,9 +966,8 @@ Player -> Client -> Platform SDK -> Server
                               Client notified
 ```
 
-All currency credits and entitlement grants
-happen server-side after validation. The client
-never modifies currency balances directly.
+All currency credits and entitlement grants happen server-side after validation. The client never
+modifies currency balances directly.
 
 ### Ad Revenue Pipeline
 
@@ -1134,42 +1120,23 @@ never modifies currency balances directly.
 
 ## Open Questions
 
-1. **A/B testing hooks** -- How should the
-   monetization system expose A/B testing
-   variants for store pricing, reward tiers, and
-   ad frequency? Server-side variant assignment
-   with client-side feature flags is the likely
-   approach, but the API surface needs definition.
-2. **Cross-platform purchase sync** -- If a
-   player buys premium currency on iOS, should
-   it be available on Steam? Platform TOS may
-   prohibit cross-platform currency balances.
-   Server-side accounts decouple from platform,
-   but compliance varies.
-3. **Offline purchase recovery** -- If the server
-   is unreachable after a platform purchase
-   completes, how long should the client retry
-   before surfacing an error? Current design
-   retries with exponential backoff, but a
-   maximum retry window needs specification.
-4. **Subscription tier migration** -- When
-   subscription tier definitions change
-   server-side (new benefits, renamed tiers),
-   how should existing subscribers be migrated?
-   Options: grandfather old tier, auto-migrate,
-   or prompt user.
-5. **Ad mediation waterfall vs bidding** --
-   Should the mediation layer default to
-   waterfall (sequential) or bidding (parallel)?
-   Bidding yields higher eCPM but requires all
-   networks to support in-app bidding.
-6. **DLC asset bundle signing key rotation** --
-   How should signing keys be rotated without
-   invalidating previously downloaded DLC
-   bundles? Multi-key verification with a
-   grace period is one approach.
-7. **Console ad restrictions** -- Console
-   platforms generally prohibit in-game
-   advertising. Should the ad modules be
-   entirely excluded from console builds via
-   cfg attributes, or stubbed?
+1. **A/B testing hooks** -- How should the monetization system expose A/B testing variants for store
+   pricing, reward tiers, and ad frequency? Server-side variant assignment with client-side feature
+   flags is the likely approach, but the API surface needs definition.
+2. **Cross-platform purchase sync** -- If a player buys premium currency on iOS, should it be
+   available on Steam? Platform TOS may prohibit cross-platform currency balances. Server-side
+   accounts decouple from platform, but compliance varies.
+3. **Offline purchase recovery** -- If the server is unreachable after a platform purchase
+   completes, how long should the client retry before surfacing an error? Current design retries
+   with exponential backoff, but a maximum retry window needs specification.
+4. **Subscription tier migration** -- When subscription tier definitions change server-side (new
+   benefits, renamed tiers), how should existing subscribers be migrated? Options: grandfather old
+   tier, auto-migrate, or prompt user.
+5. **Ad mediation waterfall vs bidding** -- Should the mediation layer default to waterfall
+   (sequential) or bidding (parallel)? Bidding yields higher eCPM but requires all networks to
+   support in-app bidding.
+6. **DLC asset bundle signing key rotation** -- How should signing keys be rotated without
+   invalidating previously downloaded DLC bundles? Multi-key verification with a grace period is one
+   approach.
+7. **Console ad restrictions** -- Console platforms generally prohibit in-game advertising. Should
+   the ad modules be entirely excluded from console builds via cfg attributes, or stubbed?

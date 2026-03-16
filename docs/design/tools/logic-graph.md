@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 ### Graph Runtime (F-15.8.1, R-15.8.1)
 
@@ -46,32 +46,27 @@
 
 ## Overview
 
-The Visual Logic Graph is the sole authoring surface for
-all engine logic in Harmonius. Users never write textual
-code. Every gameplay behavior, shader, material, animation
-state machine, audio mix, render pipeline, and editor tool
-is expressed as a typed, functional node graph.
+The Visual Logic Graph is the sole authoring surface for all engine logic in Harmonius. Users never
+write textual code. Every gameplay behavior, shader, material, animation state machine, audio mix,
+render pipeline, and editor tool is expressed as a typed, functional node graph.
 
 ### Core Principles
 
-1. **No-code.** The graph editor is the only way to
-   author logic. No scripting language, no code editor.
-2. **Compile, never interpret.** Gameplay graphs compile
-   to native ECS systems at edit time. No runtime
-   bytecode interpreter exists in shipping builds.
-3. **100% ECS.** Compiled graphs become systems that
-   query and mutate components. All simulation data
-   lives as ECS components.
-4. **Static dispatch.** The compiler monomorphizes all
-   generic nodes. No vtables, no dynamic dispatch on
-   the hot path.
-5. **Edit-time safety.** The type system catches errors
-   at graph-edit time. Invalid graphs cannot be saved.
+1. **No-code.** The graph editor is the only way to author logic. No scripting language, no code
+   editor.
+2. **Compile, never interpret.** Gameplay graphs compile to native ECS systems at edit time. No
+   runtime bytecode interpreter exists in shipping builds.
+3. **100% ECS.** Compiled graphs become systems that query and mutate components. All simulation
+   data lives as ECS components.
+4. **Static dispatch.** The compiler monomorphizes all generic nodes. No vtables, no dynamic
+   dispatch on the hot path.
+5. **Edit-time safety.** The type system catches errors at graph-edit time. Invalid graphs cannot be
+   saved.
 
 ### Domain Coverage
 
-The logic graph system serves seven domains through a
-shared IR and type system, with domain-specific compilers.
+The logic graph system serves seven domains through a shared IR and type system, with
+domain-specific compilers.
 
 | Domain | Compiles To | Runtime |
 |--------|-------------|---------|
@@ -85,7 +80,7 @@ shared IR and type system, with domain-specific compilers.
 
 ### Crate Structure
 
-```
+```text
 harmonius_logic_graph/        # Graph IR, type system,
                               # validator, optimizer
 harmonius_logic_graph_nodes/  # Standard node library,
@@ -182,7 +177,7 @@ graph TD
 
 ### Crate File Layout
 
-```
+```text
 harmonius_logic_graph/
 ├── ir/
 │   ├── graph.rs       # LogicGraph, GraphId,
@@ -278,9 +273,8 @@ harmonius_logic_graph_editor/
 
 ### Compilation Pipeline
 
-The compilation pipeline transforms a visual graph into
-registered ECS systems. This happens at edit time in the
-editor, not at game runtime.
+The compilation pipeline transforms a visual graph into registered ECS systems. This happens at edit
+time in the editor, not at game runtime.
 
 ```mermaid
 flowchart LR
@@ -298,18 +292,14 @@ flowchart LR
 
 ### Execution Model
 
-Compiled graphs become ECS systems. Two execution
-triggers exist.
+Compiled graphs become ECS systems. Two execution triggers exist.
 
-1. **Event-driven.** An Event node in the graph
-   subscribes to a typed ECS event channel. When the
+1. **Event-driven.** An Event node in the graph subscribes to a typed ECS event channel. When the
    event fires, the compiled system runs.
-2. **Tick-driven.** A Tick node runs every frame
-   during a specified schedule phase (PreUpdate,
+2. **Tick-driven.** A Tick node runs every frame during a specified schedule phase (PreUpdate,
    Update, PostUpdate, FixedUpdate).
 
-Both produce identical ECS systems. The only difference
-is how the ECS scheduler triggers them.
+Both produce identical ECS systems. The only difference is how the ECS scheduler triggers them.
 
 ```mermaid
 sequenceDiagram
@@ -332,10 +322,8 @@ sequenceDiagram
 
 ### Coroutine Lowering
 
-Multi-frame sequences (boss encounters, quest phases,
-timed abilities) use coroutine-style Yield nodes. The
-compiler lowers these into state machines stored as
-ECS components.
+Multi-frame sequences (boss encounters, quest phases, timed abilities) use coroutine-style Yield
+nodes. The compiler lowers these into state machines stored as ECS components.
 
 ```mermaid
 stateDiagram-v2
@@ -347,10 +335,9 @@ stateDiagram-v2
     Phase3 --> [*]: complete
 ```
 
-Each yield point becomes a state variant in an enum.
-The compiled system checks the current state, resumes
-from that point, and writes the next state back to the
-component. No heap allocation, no runtime stack.
+Each yield point becomes a state variant in an enum. The compiled system checks the current state,
+resumes from that point, and writes the next state back to the component. No heap allocation, no
+runtime stack.
 
 ```rust
 /// Compiler-generated coroutine state.
@@ -380,6 +367,11 @@ pub struct GraphId(pub Uuid);
     Clone, Copy, Debug, PartialEq, Eq, Hash,
 )]
 pub struct NodeId(pub(crate) u32);
+
+/// **Note:** `NodeId` is canonically defined in
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)
+/// as `NodeId(pub u32)`. All graph systems should
+/// use this canonical definition.
 
 /// Unique identifier for a pin within a node.
 #[derive(
@@ -682,9 +674,8 @@ pub struct TraitBound {
 
 ### Pin Type Compatibility Matrix
 
-Connections are only valid between compatible pin
-types. No implicit coercion is permitted. Users must
-insert explicit conversion nodes.
+Connections are only valid between compatible pin types. No implicit coercion is permitted. Users
+must insert explicit conversion nodes.
 
 | Source | Target | Valid? | Notes |
 |--------|--------|--------|-------|
@@ -732,8 +723,7 @@ pub enum VariableScope {
 
 ### Subgraphs and Macros
 
-Subgraphs are reusable graph fragments saved as
-separate assets. They act as user-defined function
+Subgraphs are reusable graph fragments saved as separate assets. They act as user-defined function
 nodes.
 
 ```rust
@@ -1401,29 +1391,18 @@ pub enum ShaderCompileError {
 
 ### Edit-Time Compilation Flow
 
-The full lifecycle from user edit to running ECS
-system.
+The full lifecycle from user edit to running ECS system.
 
 1. User edits a graph in the editor canvas.
-2. On each edit, the type inference engine runs
-   incrementally, updating resolved types.
-3. The validator runs continuously, showing inline
-   errors and warnings.
-4. On save, the validator runs a full pass. If
-   errors exist, save is rejected.
-5. On successful save, the graph asset is written
-   to disk in RON format.
-6. The compiler picks up the changed asset:
-   a. Dead node elimination
-   b. Constant folding
-   c. Subgraph inlining
-   d. Monomorphization
-   e. Coroutine lowering (if Yield nodes present)
-   f. ECS system emission
-7. The compiled system is registered with the ECS
-   scheduler under the appropriate trigger.
-8. If play mode is active, the live editor hot-swaps
-   the old system with the new one.
+2. On each edit, the type inference engine runs incrementally, updating resolved types.
+3. The validator runs continuously, showing inline errors and warnings.
+4. On save, the validator runs a full pass. If errors exist, save is rejected.
+5. On successful save, the graph asset is written to disk in RON format.
+6. The compiler picks up the changed asset: a. Dead node elimination b. Constant folding c. Subgraph
+   inlining d. Monomorphization e. Coroutine lowering (if Yield nodes present) f. ECS system
+   emission
+7. The compiled system is registered with the ECS scheduler under the appropriate trigger.
+8. If play mode is active, the live editor hot-swaps the old system with the new one.
 
 ### Runtime Execution Flow
 
@@ -1456,10 +1435,9 @@ fn compiled_damage_system(
 }
 ```
 
-The above is what the compiler emits from a graph
-containing: Event(DamageTaken) -> GetComponent(Health)
--> GetComponent(DamageResistance) -> Multiply ->
-Subtract -> Branch(hp <= 0) -> SendEvent(EntityDied).
+The above is what the compiler emits from a graph containing: Event(DamageTaken) ->
+GetComponent(Health) -> GetComponent(DamageResistance) -> Multiply -> Subtract -> Branch(hp <= 0) ->
+SendEvent(EntityDied).
 
 ### Coroutine Execution Flow
 
@@ -1603,9 +1581,8 @@ sequenceDiagram
 
 ### Compilation Targets
 
-The ECS compiler emits platform-independent Rust code.
-The shader compiler emits HLSL, which is then compiled
-per platform.
+The ECS compiler emits platform-independent Rust code. The shader compiler emits HLSL, which is then
+compiled per platform.
 
 | Platform | Gameplay Graphs | Shader Graphs |
 |----------|-----------------|---------------|
@@ -1617,8 +1594,7 @@ per platform.
 
 ### Editor-Only Features
 
-The following features are desktop-only and not
-included in shipping game builds.
+The following features are desktop-only and not included in shipping game builds.
 
 | Feature | Reason |
 |---------|--------|
@@ -1632,26 +1608,21 @@ included in shipping game builds.
 
 ### Async Integration
 
-Graph compilation uses the engine's async I/O for
-reading graph assets from disk. The compilation itself
-runs on the thread pool as a scoped task.
+Graph compilation uses the engine's async I/O for reading graph assets from disk. The compilation
+itself runs on the thread pool as a scoped task.
 
-- **Asset loading:** `IoReactor` reads `.logicgraph`
-  files via platform-native async I/O (IOCP, GCD,
+- **Asset loading:** `IoReactor` reads `.logicgraph` files via platform-native async I/O (IOCP, GCD,
   io_uring).
-- **Parallel compilation:** Independent graphs compile
-  in parallel on the `ThreadPool` via scoped tasks.
-- **Incremental compilation:** Only changed graphs
-  are recompiled. The cache stores compiled artifacts
-  keyed by graph content hash.
+- **Parallel compilation:** Independent graphs compile in parallel on the `ThreadPool` via scoped
+  tasks.
+- **Incremental compilation:** Only changed graphs are recompiled. The cache stores compiled
+  artifacts keyed by graph content hash.
 
 ### Memory Layout
 
-Compiled systems are ordinary ECS systems. They follow
-the same memory access patterns as hand-written
-systems. Coroutine state components are stored in ECS
-archetypes alongside other components, benefiting
-from the same cache-friendly iteration.
+Compiled systems are ordinary ECS systems. They follow the same memory access patterns as
+hand-written systems. Coroutine state components are stored in ECS archetypes alongside other
+components, benefiting from the same cache-friendly iteration.
 
 | Data | Storage | Lifetime |
 |------|---------|----------|
@@ -1740,60 +1711,39 @@ from the same cache-friendly iteration.
 
 ## Open Questions
 
-1. **Compilation strategy.** The compiler currently
-   targets ECS system function pointers. An
-   alternative is to emit Rust source code that is
-   compiled by `rustc`. Function pointers give
-   faster iteration (no `rustc` invocation) but
-   limit optimizations. Source emission enables
-   `rustc` optimizations but adds compilation
-   latency. Hybrid approach: function pointers for
-   editor iteration, `rustc` for shipping builds.
+1. **Compilation strategy.** The compiler currently targets ECS system function pointers. An
+   alternative is to emit Rust source code that is compiled by `rustc`. Function pointers give
+   faster iteration (no `rustc` invocation) but limit optimizations. Source emission enables `rustc`
+   optimizations but adds compilation latency. Hybrid approach: function pointers for editor
+   iteration, `rustc` for shipping builds.
 
-2. **Debug instrumentation overhead.** Breakpoints
-   and execution tracing require instrumentation in
-   compiled systems. This instrumentation must be
-   zero-cost when debugging is disabled. Compile
-   two variants (debug and release) or use a single
-   variant with runtime-checked debug flag?
+2. **Debug instrumentation overhead.** Breakpoints and execution tracing require instrumentation in
+   compiled systems. This instrumentation must be zero-cost when debugging is disabled. Compile two
+   variants (debug and release) or use a single variant with runtime-checked debug flag?
 
-3. **Subgraph inlining depth limit.** Deeply nested
-   subgraph calls could cause code bloat if inlined
-   aggressively. Need a heuristic for inlining
-   threshold (node count, call depth) versus keeping
-   as a function call.
+3. **Subgraph inlining depth limit.** Deeply nested subgraph calls could cause code bloat if inlined
+   aggressively. Need a heuristic for inlining threshold (node count, call depth) versus keeping as
+   a function call.
 
-4. **Coroutine state size limit.** Each yield point
-   adds a variant to the state enum. Graphs with
-   many yield points could produce large state
-   components. Need to define a maximum yield count
-   or provide guidance to designers.
+4. **Coroutine state size limit.** Each yield point adds a variant to the state enum. Graphs with
+   many yield points could produce large state components. Need to define a maximum yield count or
+   provide guidance to designers.
 
-5. **Shader graph type mapping.** Not all Rust types
-   map cleanly to HLSL types. Need a definitive
-   mapping table and clear error messages when users
-   attempt to use unmappable types in shader graphs.
+5. **Shader graph type mapping.** Not all Rust types map cleanly to HLSL types. Need a definitive
+   mapping table and clear error messages when users attempt to use unmappable types in shader
+   graphs.
 
-6. **Graph asset format stability.** The `.logicgraph`
-   RON format needs schema versioning and migration
-   support. How many schema versions back should the
-   migration pipeline support?
+6. **Graph asset format stability.** The `.logicgraph` RON format needs schema versioning and
+   migration support. How many schema versions back should the migration pipeline support?
 
-7. **Deterministic compilation output.** For
-   reproducible builds, the compiler must produce
-   identical output for identical inputs regardless
-   of compilation order, thread scheduling, or
-   HashMap iteration order. Need to audit all
-   non-deterministic operations.
+7. **Deterministic compilation output.** For reproducible builds, the compiler must produce
+   identical output for identical inputs regardless of compilation order, thread scheduling, or
+   HashMap iteration order. Need to audit all non-deterministic operations.
 
-8. **Custom tool graph sandboxing.** Tool graphs run
-   in the editor and can manipulate assets. Need to
-   define a permission model that prevents tool
-   graphs from corrupting project state or accessing
+8. **Custom tool graph sandboxing.** Tool graphs run in the editor and can manipulate assets. Need
+   to define a permission model that prevents tool graphs from corrupting project state or accessing
    the filesystem outside the project directory.
 
-9. **Remote debugging protocol.** For server-side
-   graph inspection (US-15.8.11.4), need to define
-   a network protocol for breakpoint control, value
-   inspection, and execution trace streaming between
+9. **Remote debugging protocol.** For server-side graph inspection (US-15.8.11.4), need to define a
+   network protocol for breakpoint control, value inspection, and execution trace streaming between
    the editor and a remote game instance.

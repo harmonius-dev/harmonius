@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -20,27 +20,20 @@
 
 ## Overview
 
-The destruction system provides pre-computed fracture,
-runtime activation, structural collapse, and debris
-lifecycle management. All data lives as ECS components
-and all logic runs as ECS systems.
+The destruction system provides pre-computed fracture, runtime activation, structural collapse, and
+debris lifecycle management. All data lives as ECS components and all logic runs as ECS systems.
 
 Key design principles:
 
-1. **Build-time fracture.** Voronoi decomposition and
-   DCC-authored fractures are baked into fracture assets
-   at import time. No runtime mesh generation.
-2. **Threshold activation.** Cumulative damage tracked
-   by `DamageHealth` triggers fracture when integrity
-   reaches zero.
-3. **ECS-only structural analysis.** Connectivity
-   traversal over fragment and Joint entities determines
-   structural support without a separate physics world.
-4. **Budgeted spawning.** Fragment spawning is capped
-   per frame per platform to prevent hitches.
-5. **Pooled debris.** Entity recycling eliminates
-   allocation churn. Distance-based LOD removes physics
-   from distant fragments.
+1. **Build-time fracture.** Voronoi decomposition and DCC-authored fractures are baked into fracture
+   assets at import time. No runtime mesh generation.
+2. **Threshold activation.** Cumulative damage tracked by `DamageHealth` triggers fracture when
+   integrity reaches zero.
+3. **ECS-only structural analysis.** Connectivity traversal over fragment and Joint entities
+   determines structural support without a separate physics world.
+4. **Budgeted spawning.** Fragment spawning is capped per frame per platform to prevent hitches.
+5. **Pooled debris.** Entity recycling eliminates allocation churn. Distance-based LOD removes
+   physics from distant fragments.
 
 ## Architecture
 
@@ -90,7 +83,7 @@ graph TD
     SI --> SAS
 ```
 
-```
+```text
 harmonius_game/
 ├── destruction/
 │   ├── asset.rs        # FractureAsset,
@@ -543,32 +536,22 @@ impl System for DebrisLodSystem {
 
 ### Frame Lifecycle
 
-Each frame, destruction systems execute in order
-within the ECS schedule:
+Each frame, destruction systems execute in order within the ECS schedule:
 
-1. **DamageAccumulationSystem** reads contact events,
-   subtracts damage from `DamageHealth`, and advances
-   visual crack stages.
-2. **FractureActivationSystem** queries entities where
-   `integrity <= 0`. For each, up to
-   `max_activations_per_frame`, it despawns the intact
-   entity and spawns fragment + joint entities from the
-   fracture asset. Spawning is staggered across frames
-   when fragment count exceeds the per-frame budget.
-3. **StructuralAnalysisSystem** traverses the
-   connectivity graph of all fragment entities connected
-   by joints. BFS from each `StructuralAnchor` marks
-   reachable fragments. Unreachable fragments have their
-   joints despawned, releasing them to fall under
-   gravity.
-4. **DebrisLifetimeSystem** decrements timers, despawns
-   expired debris, and enforces the global cap by
-   removing the oldest fragments.
-5. **DebrisLodSystem** queries camera distance to each
-   debris entity via the shared spatial index. Beyond
-   `lod_distance`, collision shapes are simplified.
-   Beyond `particle_distance`, `RigidBody` and
-   `Collider` are removed entirely.
+1. **DamageAccumulationSystem** reads contact events, subtracts damage from `DamageHealth`, and
+   advances visual crack stages.
+2. **FractureActivationSystem** queries entities where `integrity <= 0`. For each, up to
+   `max_activations_per_frame`, it despawns the intact entity and spawns fragment + joint entities
+   from the fracture asset. Spawning is staggered across frames when fragment count exceeds the
+   per-frame budget.
+3. **StructuralAnalysisSystem** traverses the connectivity graph of all fragment entities connected
+   by joints. BFS from each `StructuralAnchor` marks reachable fragments. Unreachable fragments have
+   their joints despawned, releasing them to fall under gravity.
+4. **DebrisLifetimeSystem** decrements timers, despawns expired debris, and enforces the global cap
+   by removing the oldest fragments.
+5. **DebrisLodSystem** queries camera distance to each debris entity via the shared spatial index.
+   Beyond `lod_distance`, collision shapes are simplified. Beyond `particle_distance`, `RigidBody`
+   and `Collider` are removed entirely.
 
 ### Structural Connectivity Traversal
 
@@ -668,23 +651,18 @@ stateDiagram-v2
 
 ### Platform-Specific Notes
 
-- **All platforms:** Fracture assets baked at build
-  time with platform-appropriate fragment counts.
+- **All platforms:** Fracture assets baked at build time with platform-appropriate fragment counts.
   No runtime mesh generation.
-- **Mobile:** Structural analysis disabled; collapse
-  sequences are pre-authored in the editor and played
-  back as canned animations.
-- **Desktop/High-end:** Parallel BFS via scoped tasks
-  on the thread pool for large connectivity graphs
-  (> 128 nodes).
-- **Networking:** `DamageHealth` is server-authoritative
-  and replicated via the ECS state replication system.
-  Clients cannot modify integrity locally.
+- **Mobile:** Structural analysis disabled; collapse sequences are pre-authored in the editor and
+  played back as canned animations.
+- **Desktop/High-end:** Parallel BFS via scoped tasks on the thread pool for large connectivity
+  graphs (> 128 nodes).
+- **Networking:** `DamageHealth` is server-authoritative and replicated via the ECS state
+  replication system. Clients cannot modify integrity locally.
 
 ### Proposed Dependencies
 
-No new external dependencies required. The destruction
-system uses existing engine modules:
+No new external dependencies required. The destruction system uses existing engine modules:
 
 | Module | Usage |
 |--------|-------|
@@ -741,24 +719,16 @@ system uses existing engine modules:
 
 ## Open Questions
 
-1. **Voronoi library.** Use an existing Voronoi crate
-   (e.g., `voronoi-rs`) or implement custom 3D Voronoi
-   decomposition in the content pipeline? Custom
-   implementation gives control over convex hull
-   quality.
-2. **Fragment merging.** Should adjacent sleeping
-   fragments merge back into a single rigid body to
-   reduce entity count? This adds complexity but
-   reduces long-term simulation cost.
-3. **Networked fracture determinism.** Fracture
-   activation is server-authoritative, but fragment
-   physics may diverge on clients. Should fragment
-   spawning be replicated per-fragment, or should
+1. **Voronoi library.** Use an existing Voronoi crate (e.g., `voronoi-rs`) or implement custom 3D
+   Voronoi decomposition in the content pipeline? Custom implementation gives control over convex
+   hull quality.
+2. **Fragment merging.** Should adjacent sleeping fragments merge back into a single rigid body to
+   reduce entity count? This adds complexity but reduces long-term simulation cost.
+3. **Networked fracture determinism.** Fracture activation is server-authoritative, but fragment
+   physics may diverge on clients. Should fragment spawning be replicated per-fragment, or should
    clients replay from the fracture asset locally?
-4. **Destruction VFX integration.** How do dust, smoke,
-   and spark VFX attach to fracture events? Per-fragment
-   emitters vs. a single burst at the fracture origin.
-5. **Partial fracture.** The current design fractures
-   the entire object when integrity reaches zero. Should
-   localized fracture (breaking only fragments near the
-   impact point) be supported as a separate mode?
+4. **Destruction VFX integration.** How do dust, smoke, and spark VFX attach to fracture events?
+   Per-fragment emitters vs. a single burst at the fracture origin.
+5. **Partial fracture.** The current design fractures the entire object when integrity reaches zero.
+   Should localized fracture (breaking only fragments near the impact point) be supported as a
+   separate mode?

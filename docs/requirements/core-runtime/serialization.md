@@ -118,133 +118,97 @@ migration step.
 
 ### R-1.4.7 Full Scene Serialization and Deserialization
 
-The engine **SHALL** serialize an entire ECS world —
-entities, components, hierarchy, and resources — into a
-portable scene format, with entity ID remapping during
-deserialization to avoid collisions when merging scenes.
+The engine **SHALL** serialize an entire ECS world — entities, components, hierarchy, and resources
+— into a portable scene format, with entity ID remapping during deserialization to avoid collisions
+when merging scenes.
 
 - **Derived from:**
   [F-1.4.7](../../features/core-runtime/serialization.md)
-- **Rationale:** Full scene serialization powers
-  save/load, level streaming, and server-to-server world
-  migration.
-- **Verification:** Integration test: populate a world
-  with 1,000 entities including hierarchy, relationships,
-  and resources. Serialize and deserialize into a new
-  world. Verify entity count, hierarchy structure,
-  component values, and resource values all match.
-  Deserialize the same scene twice into one world and
-  verify entity IDs are remapped without collisions.
+- **Rationale:** Full scene serialization powers save/load, level streaming, and server-to-server
+  world migration.
+- **Verification:** Integration test: populate a world with 1,000 entities including hierarchy,
+  relationships, and resources. Serialize and deserialize into a new world. Verify entity count,
+  hierarchy structure, component values, and resource values all match. Deserialize the same scene
+  twice into one world and verify entity IDs are remapped without collisions.
 
 ## Mixed-Format Serialization
 
 ### R-1.4.8 Mixed-Format Serialization with Binary Companions
 
-The engine **SHALL** support a mixed serialization mode
-where a human-readable text file (RON or TOML) references
-bulk data stored in a binary companion `.bin` file via
-`$binary("path", offset, len)` directives. The serializer
-**SHALL** write both files atomically. The deserializer
-**SHALL** resolve binary references transparently,
-presenting a unified data view to the caller.
+The engine **SHALL** support a mixed serialization mode where a human-readable text file (RON or
+TOML) references bulk data stored in a binary companion `.bin` file via
+`$binary("path", offset, len)` directives. The serializer **SHALL** write both files atomically. The
+deserializer **SHALL** resolve binary references transparently, presenting a unified data view to
+the caller.
 
 - **Derived from:**
   [F-1.4.8](../../features/core-runtime/serialization.md)
-- **Rationale:** Keeping metadata in text and bulk data in
-  binary gives the best of both worlds: human-readable,
-  diff-friendly structure with efficient binary storage
-  for large payloads.
-- **Verification:** Integration test: serialize a scene
-  containing a mesh component (vertices as bulk data) and
-  a transform component (small structured data). Verify
-  the text file contains the transform inline and a
-  `$binary` reference for the mesh vertices. Verify the
-  binary companion contains the vertex data at the
-  referenced offset and length. Deserialize and verify
-  the reconstructed scene matches the original.
+- **Rationale:** Keeping metadata in text and bulk data in binary gives the best of both worlds:
+  human-readable, diff-friendly structure with efficient binary storage for large payloads.
+- **Verification:** Integration test: serialize a scene containing a mesh component (vertices as
+  bulk data) and a transform component (small structured data). Verify the text file contains the
+  transform inline and a `$binary` reference for the mesh vertices. Verify the binary companion
+  contains the vertex data at the referenced offset and length. Deserialize and verify the
+  reconstructed scene matches the original.
 
 ### R-1.4.8a Atomic Write Guarantee for Mixed-Format
 
-When writing mixed-format files, the engine **SHALL**
-write to temporary files and rename atomically, ensuring
-that a crash during serialization never leaves a
-partially-written text file referencing a missing or
-incomplete binary companion.
+When writing mixed-format files, the engine **SHALL** write to temporary files and rename
+atomically, ensuring that a crash during serialization never leaves a partially-written text file
+referencing a missing or incomplete binary companion.
 
 - **Derived from:**
   [F-1.4.8](../../features/core-runtime/serialization.md)
-- **Rationale:** Partial writes during crash would corrupt
-  asset files; atomic rename ensures consistency.
-- **Verification:** Unit test: simulate a write
-  interrupted after the text file but before the binary
-  companion. Verify neither file exists at the final
-  path. Verify a successful write leaves both files in a
-  consistent state.
+- **Rationale:** Partial writes during crash would corrupt asset files; atomic rename ensures
+  consistency.
+- **Verification:** Unit test: simulate a write interrupted after the text file but before the
+  binary companion. Verify neither file exists at the final path. Verify a successful write leaves
+  both files in a consistent state.
 
 ### R-1.4.9 Binary Companion File Format
 
-The engine **SHALL** define a binary companion file format
-(`.bin`) with a header containing a magic number, format
-version, and a table of contents listing named blobs with
-offset, length, compression method, and content hash.
-Blobs **SHALL** be stored contiguously after the TOC.
-The format **SHALL** support optional per-blob LZ4
-compression and content-addressable deduplication via
-hash comparison.
+The engine **SHALL** define a binary companion file format (`.bin`) with a header containing a magic
+number, format version, and a table of contents listing named blobs with offset, length, compression
+method, and content hash. Blobs **SHALL** be stored contiguously after the TOC. The format **SHALL**
+support optional per-blob LZ4 compression and content-addressable deduplication via hash comparison.
 
 - **Derived from:**
   [F-1.4.9](../../features/core-runtime/serialization.md)
-- **Rationale:** A structured binary container with TOC
-  enables efficient random access to individual blobs,
-  deduplication across assets, and incremental builds.
-- **Verification:** Unit test: write three named blobs
-  (one compressed, two uncompressed) to a companion file.
-  Read each by name and verify data integrity via content
-  hash. Write a duplicate blob and verify deduplication
-  (no additional storage consumed). Verify the TOC lists
-  all entries with correct offsets and lengths.
+- **Rationale:** A structured binary container with TOC enables efficient random access to
+  individual blobs, deduplication across assets, and incremental builds.
+- **Verification:** Unit test: write three named blobs (one compressed, two uncompressed) to a
+  companion file. Read each by name and verify data integrity via content hash. Write a duplicate
+  blob and verify deduplication (no additional storage consumed). Verify the TOC lists all entries
+  with correct offsets and lengths.
 
 ### R-1.4.9a Binary Companion Append-Friendly Layout
 
-The binary companion format **SHALL** support appending
-new blobs without rewriting existing data. The TOC
-**SHALL** be updatable in place or relocatable to the end
-of the file to enable append operations during
-incremental asset builds.
+The binary companion format **SHALL** support appending new blobs without rewriting existing data.
+The TOC **SHALL** be updatable in place or relocatable to the end of the file to enable append
+operations during incremental asset builds.
 
 - **Derived from:**
   [F-1.4.9](../../features/core-runtime/serialization.md)
-- **Rationale:** Incremental asset builds must add new
-  blobs without reprocessing existing ones, keeping build
-  times proportional to changed content.
-- **Verification:** Unit test: create a companion file
-  with two blobs. Append a third blob. Verify all three
-  blobs are readable and the first two were not rewritten
-  (check file modification via byte comparison). Verify
-  the TOC includes all three entries.
+- **Rationale:** Incremental asset builds must add new blobs without reprocessing existing ones,
+  keeping build times proportional to changed content.
+- **Verification:** Unit test: create a companion file with two blobs. Append a third blob. Verify
+  all three blobs are readable and the first two were not rewritten (check file modification via
+  byte comparison). Verify the TOC includes all three entries.
 
 ### R-1.4.10 Reflection-Driven Binary Reference Attributes
 
-The engine **SHALL** support a `#[binary]` field attribute
-that instructs the mixed-format serializer to store the
-field's data in the binary companion rather than inline in
-the text file. The attribute **SHALL** accept optional
-parameters: `compress` (compression algorithm, default
-none) and `align` (byte alignment, default 1). During
-text serialization, `#[binary]` fields **SHALL** emit a
-`$binary` reference. During deserialization, references
-**SHALL** be resolved from the companion transparently.
+The engine **SHALL** support a `#[binary]` field attribute that instructs the mixed-format
+serializer to store the field's data in the binary companion rather than inline in the text file.
+The attribute **SHALL** accept optional parameters: `compress` (compression algorithm, default none)
+and `align` (byte alignment, default 1). During text serialization, `#[binary]` fields **SHALL**
+emit a `$binary` reference. During deserialization, references **SHALL** be resolved from the
+companion transparently.
 
 - **Derived from:**
   [F-1.4.10](../../features/core-runtime/serialization.md)
-- **Rationale:** Per-field binary annotation gives type
-  authors control over which data goes to binary
-  companions, keeping small structured data readable in
-  text while offloading large buffers.
-- **Verification:** Unit test: define a struct with a
-  `#[binary(compress = "lz4")]` `Vec<u8>` field and a
-  regular `String` field. Serialize in mixed mode. Verify
-  the text file contains the string inline and a
-  `$binary` reference for the byte vector. Verify the
-  companion file contains the LZ4-compressed bytes.
-  Deserialize and verify both fields match the original.
+- **Rationale:** Per-field binary annotation gives type authors control over which data goes to
+  binary companions, keeping small structured data readable in text while offloading large buffers.
+- **Verification:** Unit test: define a struct with a `#[binary(compress = "lz4")]` `Vec<u8>` field
+  and a regular `String` field. Serialize in mixed mode. Verify the text file contains the string
+  inline and a `$binary` reference for the byte vector. Verify the companion file contains the
+  LZ4-compressed bytes. Deserialize and verify both fields match the original.

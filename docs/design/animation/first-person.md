@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/animation/](../../features/animation/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/animation/](../../features/animation/),
 > [requirements/animation/](../../requirements/animation/), and
-> [user-stories/animation/](../../user-stories/animation/). The table
-> below traces design elements to those definitions.
+> [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -31,27 +31,19 @@
 
 ## Overview
 
-The first-person animation system drives camera
-motion, weapon viewmodel behavior, and hand
-placement for first-person games. All state lives
-as ECS components. All logic runs as ECS systems.
+The first-person animation system drives camera motion, weapon viewmodel behavior, and hand
+placement for first-person games. All state lives as ECS components. All logic runs as ECS systems.
 
 The design follows four principles:
 
-1. **Spring-damper everywhere.** Every motion
-   effect (head-bob, sway, recoil, lean) is a
-   spring-damper system with configurable stiffness,
-   damping, and mass. Springs compose additively.
-2. **Per-weapon data assets.** Sway, bob, recoil,
-   and ADS parameters are data assets edited in the
+1. **Spring-damper everywhere.** Every motion effect (head-bob, sway, recoil, lean) is a
+   spring-damper system with configurable stiffness, damping, and mass. Springs compose additively.
+2. **Per-weapon data assets.** Sway, bob, recoil, and ADS parameters are data assets edited in the
    visual editor. No code changes for tuning.
-3. **Separate viewmodel FOV.** Weapons render at a
-   narrower FOV than the world, preventing
+3. **Separate viewmodel FOV.** Weapons render at a narrower FOV than the world, preventing
    distortion at wide world FOVs.
-4. **Dual wield independence.** Each hand has its
-   own spring system, fire state, and reload state.
-   Dual wield is two independent viewmodel
-   instances sharing the same camera.
+4. **Dual wield independence.** Each hand has its own spring system, fire state, and reload state.
+   Dual wield is two independent viewmodel instances sharing the same camera.
 
 ### Performance Targets
 
@@ -130,7 +122,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_animation/
 ├── first_person/
 │   ├── mod.rs            # Re-exports
@@ -925,25 +917,18 @@ pub fn dual_wield_system(
 
 ### Camera Motion Composition
 
-Every frame, the camera system reads character
-controller state and evaluates springs:
+Every frame, the camera system reads character controller state and evaluates springs:
 
-1. **Head-bob** -- Sinusoidal target driven by
-   `bob_frequency * time`. Amplitude scales with
-   movement speed via `bob_amplitude`. Spring
-   smooths the oscillation.
-2. **Landing impact** -- On ground contact, apply
-   impulse proportional to `fall_distance *
-   landing_snap_scale`. Spring recovers to zero.
-3. **Lean/peek** -- When lean input active, spring
-   targets `lean_direction * lean_max_offset`.
+1. **Head-bob** -- Sinusoidal target driven by `bob_frequency * time`. Amplitude scales with
+   movement speed via `bob_amplitude`. Spring smooths the oscillation.
+2. **Landing impact** -- On ground contact, apply impulse proportional to
+   `fall_distance * landing_snap_scale`. Spring recovers to zero.
+3. **Lean/peek** -- When lean input active, spring targets `lean_direction * lean_max_offset`.
    Camera translates laterally.
-4. **Strafe tilt** -- Lateral velocity drives a
-   roll target up to `tilt_max_degrees`. Spring
-   smooths the tilt.
+4. **Strafe tilt** -- Lateral velocity drives a roll target up to `tilt_max_degrees`. Spring smooths
+   the tilt.
 
-All four spring outputs are applied additively to
-the base camera transform from the character
+All four spring outputs are applied additively to the base camera transform from the character
 controller.
 
 ### Weapon Transform Composition
@@ -991,12 +976,10 @@ sequenceDiagram
 
 ### Recoil Pattern Sampling
 
-Each shot increments `shot_index` into the recoil
-pattern data asset. The pattern provides base kick
-vectors (position + rotation). Randomization is
-applied per-shot:
+Each shot increments `shot_index` into the recoil pattern data asset. The pattern provides base kick
+vectors (position + rotation). Randomization is applied per-shot:
 
-```
+```text
 kick = pattern.sample(shot_index)
 randomized_kick = kick * lerp(
     config.randomization_range.0,
@@ -1007,17 +990,14 @@ recoil_spring.apply_impulse(randomized_kick)
 shot_index += 1
 ```
 
-The spring recovery naturally pulls the weapon back
-toward rest. Because each shot has a different
-randomization factor, sustained fire produces non-
-repetitive visual recoil (R-9.6.3).
+The spring recovery naturally pulls the weapon back toward rest. Because each shot has a different
+randomization factor, sustained fire produces non- repetitive visual recoil (R-9.6.3).
 
 ### ADS Interpolation
 
-The ADS system interpolates all viewmodel
-parameters between hip and sight positions:
+The ADS system interpolates all viewmodel parameters between hip and sight positions:
 
-```
+```text
 blend = ads_state.blend_alpha
 position = lerp(hip_pos, sight_pos, blend)
 rotation = slerp(hip_rot, sight_rot, blend)
@@ -1027,10 +1007,8 @@ bob_mult = lerp(1.0, ads_config.bob_multiplier,
                 blend)
 ```
 
-When a sight has `fov_override`, the viewmodel FOV
-interpolates to the override value. If
-`uses_scope_rtt` is true, the scope render-to-
-texture pass activates at `blend_alpha >= 1.0`.
+When a sight has `fov_override`, the viewmodel FOV interpolates to the override value. If
+`uses_scope_rtt` is true, the scope render-to- texture pass activates at `blend_alpha >= 1.0`.
 
 ### Dual Wield Fire Routing
 
@@ -1064,10 +1042,8 @@ sequenceDiagram
 
 ### Uniform Behavior
 
-Camera spring evaluation, weapon sway, bob, and
-recoil are lightweight CPU-side spring systems.
-They run identically on all platforms with no
-scaling or gating required.
+Camera spring evaluation, weapon sway, bob, and recoil are lightweight CPU-side spring systems. They
+run identically on all platforms with no scaling or gating required.
 
 | Component | Cost | Platform Variance |
 |-----------|------|-------------------|
@@ -1087,23 +1063,15 @@ scaling or gating required.
 
 ### Rendering Notes
 
-- **Separate projection matrix.** Viewmodel
-  rendering uses a projection matrix derived from
-  `viewmodel_fov`, not `world_fov`. The viewmodel
-  is rendered into the same framebuffer but with a
-  different projection. Depth is cleared between
-  world and viewmodel passes to prevent world
+- **Separate projection matrix.** Viewmodel rendering uses a projection matrix derived from
+  `viewmodel_fov`, not `world_fov`. The viewmodel is rendered into the same framebuffer but with a
+  different projection. Depth is cleared between world and viewmodel passes to prevent world
   geometry from occluding the weapon.
-- **Scope RTT.** Magnified optics render the world
-  from the scope's viewpoint into an offscreen
-  texture at the configured resolution. The scope
-  lens material samples this texture with a
-  vignette mask. On mobile, half-res rendering
-  saves ~50% of the scope pass cost.
-- **Dual wield draw calls.** Two viewmodels means
-  two draw calls per frame. On mobile, the off-hand
-  weapon uses a simplified mesh LOD to reduce
-  vertex processing cost.
+- **Scope RTT.** Magnified optics render the world from the scope's viewpoint into an offscreen
+  texture at the configured resolution. The scope lens material samples this texture with a vignette
+  mask. On mobile, half-res rendering saves ~50% of the scope pass cost.
+- **Dual wield draw calls.** Two viewmodels means two draw calls per frame. On mobile, the off-hand
+  weapon uses a simplified mesh LOD to reduce vertex processing cost.
 
 ## Test Plan
 
@@ -1161,42 +1129,27 @@ scaling or gating required.
 
 ### Shared Type References
 
-Spring-damper primitives (`SpringDamper<T>` for f32,
-Vec3, and Quat) are defined in
-[shared-primitives.md](../core-runtime/shared-primitives.md)
-and shared with physics constraints, procedural
-animation, and cloth simulation.
+Spring-damper primitives (`SpringDamper<T>` for f32, Vec3, and Quat) are defined in
+[shared-primitives.md](../core-runtime/shared-primitives.md) and shared with physics constraints,
+procedural animation, and cloth simulation.
 
 ## Open Questions
 
-1. **Spring integrator** -- Semi-implicit Euler is
-   simple and stable for moderate stiffness. Very
-   stiff springs (high stiffness, low mass) may
-   require Verlet or RK4 integration. Need to
-   profile maximum stiffness values before deciding.
-2. **Bob curve asset format** -- The speed-to-
-   amplitude mapping (`speed_curve` in
-   `WeaponBobConfig`) could be a piecewise linear
-   curve or a Bezier curve. Piecewise linear is
-   simpler to evaluate; Bezier is smoother. Need to
-   decide on the curve asset format shared with the
+1. **Spring integrator** -- Semi-implicit Euler is simple and stable for moderate stiffness. Very
+   stiff springs (high stiffness, low mass) may require Verlet or RK4 integration. Need to profile
+   maximum stiffness values before deciding.
+2. **Bob curve asset format** -- The speed-to- amplitude mapping (`speed_curve` in
+   `WeaponBobConfig`) could be a piecewise linear curve or a Bezier curve. Piecewise linear is
+   simpler to evaluate; Bezier is smoother. Need to decide on the curve asset format shared with the
    animation editor.
-3. **Dual wield off-hand LOD threshold** -- Mobile
-   uses simplified viewmodel LOD for the off-hand
-   weapon. The vertex/triangle budget for the
-   simplified mesh needs profiling on target mobile
+3. **Dual wield off-hand LOD threshold** -- Mobile uses simplified viewmodel LOD for the off-hand
+   weapon. The vertex/triangle budget for the simplified mesh needs profiling on target mobile
    hardware.
-4. **Scope RTT resolution on Switch** -- Currently
-   specified as full-res. May need half-res on
-   Switch depending on GPU fill rate budget during
-   scope rendering. Needs profiling.
-5. **Hand IK solver** -- The viewmodel compose
-   system feeds into hand IK for weapon grip
-   placement. The IK solver (two-bone IK vs
-   analytical) and its convergence criteria need
-   specification in the IK design document.
-6. **Input smoothing** -- Raw mouse delta for sway
-   input may produce jittery motion at low frame
-   rates. May need a pre-filter (exponential moving
-   average) before feeding into the sway spring.
+4. **Scope RTT resolution on Switch** -- Currently specified as full-res. May need half-res on
+   Switch depending on GPU fill rate budget during scope rendering. Needs profiling.
+5. **Hand IK solver** -- The viewmodel compose system feeds into hand IK for weapon grip placement.
+   The IK solver (two-bone IK vs analytical) and its convergence criteria need specification in the
+   IK design document.
+6. **Input smoothing** -- Raw mouse delta for sway input may produce jittery motion at low frame
+   rates. May need a pre-filter (exponential moving average) before feeding into the sway spring.
    Adds latency vs. responsiveness tradeoff.

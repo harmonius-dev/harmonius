@@ -40,10 +40,10 @@ animation domain owns character garment authoring and LOD.
 ### F-4.7.3 Cloth Self-Collision
 
 Entities with both `ClothSimulation` and a `SelfCollisionEnabled` marker component participate in
-self-collision detection. The `ClothSelfCollisionSystem` queries all `(ClothSimulation,
-SelfCollisionEnabled)` entities and runs spatial hashing or BVH-based continuous collision detection
-on their particles. Configurable thickness and skip-distance parameters live on the
-`SelfCollisionEnabled` component to manage per-instance budgets.
+self-collision detection. The `ClothSelfCollisionSystem` queries all
+`(ClothSimulation, SelfCollisionEnabled)` entities and runs spatial hashing or BVH-based continuous
+collision detection on their particles. Configurable thickness and skip-distance parameters live on
+the `SelfCollisionEnabled` component to manage per-instance budgets.
 
 - **Requirements:** R-4.7.3
 - **Dependencies:** F-4.7.2, F-1.1.1

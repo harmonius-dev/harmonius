@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -21,10 +21,8 @@
 | F-13.1.9 | R-13.1.9 | US-13.1.9.1 -- US-13.1.9.6 | Modular system registration with dependency graph |
 | F-13.1.10 | R-13.1.10 | US-13.1.10.1 -- US-13.1.10.7 | Rust plugin API for third-party developers |
 
-**Note:** The Rust plugin API (F-13.1.10) is for
-editor-time extensions only, not runtime game logic.
-All runtime gameplay logic is authored via visual
-logic graphs (no-code), consistent with
+**Note:** The Rust plugin API (F-13.1.10) is for editor-time extensions only, not runtime game
+logic. All runtime gameplay logic is authored via visual logic graphs (no-code), consistent with
 constraints.md.
 
 ### Non-Functional Requirements
@@ -52,32 +50,23 @@ constraints.md.
 
 ## Overview
 
-The gameplay primitives subsystem provides the
-foundational building blocks that all game genres
-share: state management, entity archetypes, health
-and damage, teams, tags, timers, and spawn
-templates. Every primitive is a pure ECS construct
--- components hold data, systems hold logic, events
-carry messages.
+The gameplay primitives subsystem provides the foundational building blocks that all game genres
+share: state management, entity archetypes, health and damage, teams, tags, timers, and spawn
+templates. Every primitive is a pure ECS construct -- components hold data, systems hold logic,
+events carry messages.
 
 ### Design Principles
 
-1. **100% ECS-based.** All state lives in
-   components and resources. No parallel data
-   stores, no object hierarchies, no manager
-   singletons.
-2. **Data-driven and no-code.** Every primitive is
-   configurable through visual editors and asset
+1. **100% ECS-based.** All state lives in components and resources. No parallel data stores, no
+   object hierarchies, no manager singletons.
+2. **Data-driven and no-code.** Every primitive is configurable through visual editors and asset
    files. Users never write Rust code.
-3. **Modular plug-and-play.** Each subsystem is an
-   independent plugin with declared dependencies.
+3. **Modular plug-and-play.** Each subsystem is an independent plugin with declared dependencies.
    Projects enable only what they need.
-4. **Static dispatch.** Monomorphized generics on
-   hot paths. No trait objects except at plugin
+4. **Static dispatch.** Monomorphized generics on hot paths. No trait objects except at plugin
    boundary FFI layers.
-5. **Deterministic.** Identical inputs produce
-   identical outputs. All randomness is seeded.
-   All ordering is explicit.
+5. **Deterministic.** Identical inputs produce identical outputs. All randomness is seeded. All
+   ordering is explicit.
 
 ### Performance Targets
 
@@ -156,7 +145,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_game/
 ├── primitives/
 │   ├── mod.rs              # Re-exports
@@ -1840,15 +1829,11 @@ fn team_roster_sync_system(
 
 ### Frame Lifecycle
 
-The gameplay primitives execute within the
-standard ECS frame in three phases:
+The gameplay primitives execute within the standard ECS frame in three phases:
 
-1. **PreUpdate** -- State transitions, timer
-   ticks, cooldown ticks, input routing.
-2. **Update** -- Damage pipeline, health
-   application, death detection, targeting.
-3. **PostUpdate** -- Spawn processing, team
-   roster sync, mode cleanup.
+1. **PreUpdate** -- State transitions, timer ticks, cooldown ticks, input routing.
+2. **Update** -- Damage pipeline, health application, death detection, targeting.
+3. **PostUpdate** -- Spawn processing, team roster sync, mode cleanup.
 
 ```rust
 // System execution order within a frame
@@ -1874,52 +1859,35 @@ standard ECS frame in three phases:
 
 ### State Transition Data Flow
 
-1. External trigger (UI button, logic graph
-   event) calls
-   `GameStateManager::request_transition()`.
-2. `game_state_transition_system` reads the
-   pending transition, validates it.
-3. On valid transition: fires
-   `GameStateTransitionEvent`, enqueues asset
-   load/unload commands.
-4. Systems listening for
-   `GameStateTransitionEvent` react (UI swaps
-   layers, input remaps context).
-5. Asset loads complete asynchronously. Loading
-   state shown until all required assets ready.
+1. External trigger (UI button, logic graph event) calls `GameStateManager::request_transition()`.
+2. `game_state_transition_system` reads the pending transition, validates it.
+3. On valid transition: fires `GameStateTransitionEvent`, enqueues asset load/unload commands.
+4. Systems listening for `GameStateTransitionEvent` react (UI swaps layers, input remaps context).
+5. Asset loads complete asynchronously. Loading state shown until all required assets ready.
 
 ### Damage Data Flow
 
-1. Gameplay logic creates a `DamageRequest` event
-   (from ability, DoT tick, environmental).
-2. `damage_pipeline_system` reads requests, runs
-   each through the configured pipeline stages.
-3. Each stage queries source/target components
-   (`Attributes`, `Resistances`, `AbsorbShield`).
+1. Gameplay logic creates a `DamageRequest` event (from ability, DoT tick, environmental).
+2. `damage_pipeline_system` reads requests, runs each through the configured pipeline stages.
+3. Each stage queries source/target components (`Attributes`, `Resistances`, `AbsorbShield`).
 4. Final `DamageEvent` is broadcast.
 5. `health_apply_system` reduces `Health`.
 6. `death_detection_system` checks for zero HP.
-7. Combat log, floating text, and networking
-   systems independently read `DamageEvent`.
+7. Combat log, floating text, and networking systems independently read `DamageEvent`.
 
 ### Spawn Data Flow
 
 1. Logic graph or system sends `SpawnRequest`.
-2. `spawn_template_system` resolves the
-   `TemplateId` against the asset store.
-3. For each `ComponentBlob`, the system uses the
-   `TypeRegistry` to deserialize and insert the
+2. `spawn_template_system` resolves the `TemplateId` against the asset store.
+3. For each `ComponentBlob`, the system uses the `TypeRegistry` to deserialize and insert the
    component via `CommandBuffer`.
-4. Child templates are spawned recursively with
-   `ChildOf` relationships.
-5. `SpawnedEvent` is broadcast with the new
-   entity ID.
+4. Child templates are spawned recursively with `ChildOf` relationships.
+5. `SpawnedEvent` is broadcast with the new entity ID.
 
 ## Platform Considerations
 
-The gameplay primitives subsystem has no
-platform-specific code. All platform
-dependencies are abstracted by lower layers:
+The gameplay primitives subsystem has no platform-specific code. All platform dependencies are
+abstracted by lower layers:
 
 | Concern | Abstraction | Source |
 |---------|-------------|--------|
@@ -1930,22 +1898,15 @@ dependencies are abstracted by lower layers:
 | Networking | Event-based replication | Transport layer |
 | Serialization | `Reflect` derive | bevy_reflect-style |
 
-All components derive `Reflect` for automatic
-editor integration and serialization. The no-code
+All components derive `Reflect` for automatic editor integration and serialization. The no-code
 constraint is satisfied by:
 
-1. **Game state configs** -- authored as assets
-   in the visual editor.
-2. **Game mode graphs** -- authored as directed
-   graph assets with node/edge editing.
-3. **Damage pipeline** -- stages configured as
-   ordered lists with logic graph nodes.
-4. **Entity templates** -- composed visually from
-   components in the entity inspector.
-5. **Tag definitions** -- registered as named
-   assets; assigned to entities via checkboxes.
-6. **Faction/allegiance** -- edited as a
-   relationship matrix in the editor.
+1. **Game state configs** -- authored as assets in the visual editor.
+2. **Game mode graphs** -- authored as directed graph assets with node/edge editing.
+3. **Damage pipeline** -- stages configured as ordered lists with logic graph nodes.
+4. **Entity templates** -- composed visually from components in the entity inspector.
+5. **Tag definitions** -- registered as named assets; assigned to entities via checkboxes.
+6. **Faction/allegiance** -- edited as a relationship matrix in the editor.
 
 ## Test Plan
 
@@ -2015,50 +1976,30 @@ constraint is satisfied by:
 
 ## Open Questions
 
-1. **Damage pipeline extensibility** -- Should
-   custom pipeline stages be pure logic graph
-   nodes, or should plugin-authored Rust
-   functions also be insertable? Logic graph
-   keeps the no-code guarantee but may limit
-   performance for complex formulas.
+1. **Damage pipeline extensibility** -- Should custom pipeline stages be pure logic graph nodes, or
+   should plugin-authored Rust functions also be insertable? Logic graph keeps the no-code guarantee
+   but may limit performance for complex formulas.
 
-2. **Tag set size** -- `MAX_TAGS = 1024` uses
-   128 bytes per entity. This is sufficient for
-   most projects but may be excessive for simple
-   games. Should projects declare their max tag
-   count in the project file to optimize storage?
+2. **Tag set size** -- `MAX_TAGS = 1024` uses 128 bytes per entity. This is sufficient for most
+   projects but may be excessive for simple games. Should projects declare their max tag count in
+   the project file to optimize storage?
 
-3. **Allegiance table symmetry** -- The current
-   design enforces symmetric relations (A hostile
-   to B means B hostile to A). Some games need
-   asymmetric relations (A neutral to B, B
-   hostile to A). Should the table support both
-   modes?
+3. **Allegiance table symmetry** -- The current design enforces symmetric relations (A hostile to B
+   means B hostile to A). Some games need asymmetric relations (A neutral to B, B hostile to A).
+   Should the table support both modes?
 
-4. **Entity template inheritance** -- Should
-   templates support single inheritance (a
-   "Goblin" template inherits from "NPC"
-   template)? This reduces duplication but adds
-   resolution complexity and potential for
-   diamond problems.
+4. **Entity template inheritance** -- Should templates support single inheritance (a "Goblin"
+   template inherits from "NPC" template)? This reduces duplication but adds resolution complexity
+   and potential for diamond problems.
 
-5. **Cooldown reduction modifiers** -- Abilities
-   like "haste" reduce cooldowns by a percentage.
-   Should cooldown reduction be a first-class
-   modifier on the `Cooldown` component, or
-   handled externally through the effect system?
+5. **Cooldown reduction modifiers** -- Abilities like "haste" reduce cooldowns by a percentage.
+   Should cooldown reduction be a first-class modifier on the `Cooldown` component, or handled
+   externally through the effect system?
 
-6. **Respawn point capacity** -- Should respawn
-   points have a maximum concurrent capacity to
-   prevent clustering? This matters for PvP modes
-   where spawn camping is a concern.
+6. **Respawn point capacity** -- Should respawn points have a maximum concurrent capacity to prevent
+   clustering? This matters for PvP modes where spawn camping is a concern.
 
-7. **Attribute storage layout** -- The current
-   `HashMap<AttributeId, f32>` is flexible for
-   editor access and serialization, but attribute
-   lookups occur per-damage-event per-frame on
-   the hot path. A compiled flat array indexed by
-   `AttributeId.0` would be faster at runtime.
-   Consider a dual representation: HashMap for
-   editor/serialization, flat `Vec<f32>` for
-   runtime queries.
+7. **Attribute storage layout** -- The current `HashMap<AttributeId, f32>` is flexible for editor
+   access and serialization, but attribute lookups occur per-damage-event per-frame on the hot path.
+   A compiled flat array indexed by `AttributeId.0` would be faster at runtime. Consider a dual
+   representation: HashMap for editor/serialization, flat `Vec<f32>` for runtime queries.

@@ -101,9 +101,9 @@ slider-driven settings feel responsive and precise.
 
 ## US-10.2.9 Filter Long Option Lists in Dropdown Menus
 
-**As a** player (P-23), **I want** searchable dropdown menus that filter options as I type, **so
-that** I can quickly find the right server, item category, or setting from lists with hundreds of
-entries.
+**As a** player (P-23), **I want** searchable dropdown menus that filter options as I type,
+**so that** I can quickly find the right server, item category, or setting from lists with hundreds
+of entries.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

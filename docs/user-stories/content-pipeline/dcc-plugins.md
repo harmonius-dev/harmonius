@@ -175,8 +175,8 @@ expected structure, **so that** Photoshop-to-UI conversion is reliable.
 ## US-12.6.26 Export Vector Assets from Illustrator
 
 **As a** designer (P-5), **I want** Illustrator vector artwork exported as resolution- independent
-vector graphics or rasterized atlases, with artboard-to-asset and symbol-to- instance mapping, **so
-that** icons, HUD elements, and decals render crisply at any scale.
+vector graphics or rasterized atlases, with artboard-to-asset and symbol-to- instance mapping,
+**so that** icons, HUD elements, and decals render crisply at any scale.
 
 ## US-12.6.27 Verify Illustrator Vector Export Fidelity
 
@@ -248,8 +248,8 @@ tool I am using.
 ## US-12.6.37 Verify Git LFS Lock Workflow in Multi-User Scenarios
 
 **As an** engine tester (P-27), **I want** tests that simulate two users attempting to lock the same
-file and verify correct lock acquisition, conflict notification, and lock release behavior, **so
-that** the collaborative locking workflow is reliable.
+file and verify correct lock acquisition, conflict notification, and lock release behavior,
+**so that** the collaborative locking workflow is reliable.
 
 ## US-12.6.38 Verify Review Comments Sync Across DCC Plugins
 

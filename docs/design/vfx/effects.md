@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/vfx/](../../features/vfx/),
-> [requirements/vfx/](../../requirements/vfx/), and
-> [user-stories/vfx/](../../user-stories/vfx/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/vfx/](../../features/vfx/), [requirements/vfx/](../../requirements/vfx/), and
+> [user-stories/vfx/](../../user-stories/vfx/). The table below traces design elements to those
+> definitions.
 
 ### Decals (11.2)
 
@@ -56,37 +55,26 @@
 
 ## Overview
 
-The VFX Effects module implements four visual effect
-subsystems -- decals, screen effects, weather, and
-destruction VFX -- as pure ECS systems operating on
-component data. All simulation data lives as components;
-all logic runs as systems. No separate VFX world exists.
+The VFX Effects module implements four visual effect subsystems -- decals, screen effects, weather,
+and destruction VFX -- as pure ECS systems operating on component data. All simulation data lives as
+components; all logic runs as systems. No separate VFX world exists.
 
-Each subsystem registers systems that query their
-respective components, perform simulation on the CPU or
-GPU compute, and submit draw commands through the render
-graph. A shared `EffectBudget` resource coordinates
-resource limits across all four subsystems to maintain
-frame time targets.
+Each subsystem registers systems that query their respective components, perform simulation on the
+CPU or GPU compute, and submit draw commands through the render graph. A shared `EffectBudget`
+resource coordinates resource limits across all four subsystems to maintain frame time targets.
 
 Key design principles:
 
-1. **ECS-native.** Every decal, overlay, weather
-   emitter, and destruction effect is an entity with
+1. **ECS-native.** Every decal, overlay, weather emitter, and destruction effect is an entity with
    components. Systems read and write components only.
-2. **GPU-first.** Particle simulation, decal projection,
-   distortion accumulation, and weather heightfields run
-   as GPU compute dispatches where applicable.
-3. **Budget-aware.** Global budgets cap decal pools,
-   debris fragments, particle counts, and overlay counts
-   per platform tier.
-4. **Event-driven.** Destruction VFX spawn via ECS
-   observers reacting to physics fracture events.
-   Weather transitions are driven by `WeatherState`
-   component changes.
-5. **Platform-scaled.** Each subsystem defines mobile,
-   Switch, console, and desktop quality tiers with
-   automatic feature fallbacks.
+2. **GPU-first.** Particle simulation, decal projection, distortion accumulation, and weather
+   heightfields run as GPU compute dispatches where applicable.
+3. **Budget-aware.** Global budgets cap decal pools, debris fragments, particle counts, and overlay
+   counts per platform tier.
+4. **Event-driven.** Destruction VFX spawn via ECS observers reacting to physics fracture events.
+   Weather transitions are driven by `WeatherState` component changes.
+5. **Platform-scaled.** Each subsystem defines mobile, Switch, console, and desktop quality tiers
+   with automatic feature fallbacks.
 
 ## Architecture
 
@@ -166,7 +154,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_vfx/
 ├── effects/
 │   ├── decals/
@@ -648,7 +636,14 @@ pub enum PlatformTier {
     Console,
     Desktop,
 }
+```
 
+**Note:** This `PlatformTier` enum uses `Console` instead of the canonical `HighEnd` variant. During
+implementation, replace with the canonical `PlatformTier` from
+[shared-primitives.md](../core-runtime/shared-primitives.md) which defines
+`Mobile, Switch, Desktop, HighEnd`.
+
+```rust
 /// Blend mode for decal compositing.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Reflect,
@@ -2245,86 +2240,58 @@ pub fn scorch_mark_system(
 
 ### Decal Frame Lifecycle
 
-1. `decal_lifecycle_system` advances all decal
-   timers, transitions phases, and despawns
-   expired decals.
-2. `decal_pool_reclaim_system` checks budget
-   utilization and reclaims oldest low-priority
-   decals if the pool exceeds 90%.
-3. `decal_render_system` queries the shared
-   spatial index for frustum-visible decals,
-   sorts by priority/layer/atlas page, packs
-   dirty textures into the atlas, and submits
-   indirect draw batches to the render graph.
-4. GPU deferred decal pass rasterizes each OBB
-   against G-buffer depth, projects world
-   position into decal UV space, samples the
-   atlas texture, and blends into selected
-   G-buffer channels with per-axis fade and
-   angle attenuation.
+1. `decal_lifecycle_system` advances all decal timers, transitions phases, and despawns expired
+   decals.
+2. `decal_pool_reclaim_system` checks budget utilization and reclaims oldest low-priority decals if
+   the pool exceeds 90%.
+3. `decal_render_system` queries the shared spatial index for frustum-visible decals, sorts by
+   priority/layer/atlas page, packs dirty textures into the atlas, and submits indirect draw batches
+   to the render graph.
+4. GPU deferred decal pass rasterizes each OBB against G-buffer depth, projects world position into
+   decal UV space, samples the atlas texture, and blends into selected G-buffer channels with
+   per-axis fade and angle attenuation.
 
 ### Screen Effects Frame Lifecycle
 
-1. `shake_system` sums Perlin noise from all
-   active `ShakeSource` components, applies
-   accessibility attenuation, clamps amplitude,
-   and writes `CameraShakeOffset`.
-2. `overlay_system` advances lifecycles, despawns
-   expired overlays, and submits draw commands.
-3. `distortion_system` projects distortion
-   sources to screen space and writes vectors
-   into the half-resolution distortion buffer.
-4. `lens_flare_system` performs depth-query
-   occlusion, temporal smoothing, and submits
-   flare element billboards.
-5. Post-process pipeline executes in order:
-   motion blur, distortion apply, lens flare
-   composite, chromatic aberration + film grain,
-   overlay composite, vignette.
+1. `shake_system` sums Perlin noise from all active `ShakeSource` components, applies accessibility
+   attenuation, clamps amplitude, and writes `CameraShakeOffset`.
+2. `overlay_system` advances lifecycles, despawns expired overlays, and submits draw commands.
+3. `distortion_system` projects distortion sources to screen space and writes vectors into the
+   half-resolution distortion buffer.
+4. `lens_flare_system` performs depth-query occlusion, temporal smoothing, and submits flare element
+   billboards.
+5. Post-process pipeline executes in order: motion blur, distortion apply, lens flare composite,
+   chromatic aberration + film grain, overlay composite, vignette.
 
 ### Weather Frame Lifecycle
 
-1. `rain_system` reads `WeatherState` intensity,
-   spawns GPU particle streaks, and drives
-   screen droplet simulation.
-2. `puddle_system` dispatches compute to update
-   heightfield accumulation from rainfall and
-   terrain concavity.
-3. `wet_surface_system` lerps material roughness
-   and albedo based on wetness, with
-   material-specific response curves.
-4. `snow_system` updates snow height texture and
-   processes deformation stamps.
-5. `fog_volume_system` injects density into the
-   global froxel grid (or screen-space height
-   fog on mobile).
-6. `lightning_system` generates L-system bolt
-   geometry and emits light bursts.
-7. `wind_debris_system` spawns wind-driven
-   particles and injects atmospheric scattering
-   for dust storms.
-8. `underwater_system` applies caustics, depth
-   fog, bubbles, refraction, and god rays when
-   the camera is submerged.
+1. `rain_system` reads `WeatherState` intensity, spawns GPU particle streaks, and drives screen
+   droplet simulation.
+2. `puddle_system` dispatches compute to update heightfield accumulation from rainfall and terrain
+   concavity.
+3. `wet_surface_system` lerps material roughness and albedo based on wetness, with material-specific
+   response curves.
+4. `snow_system` updates snow height texture and processes deformation stamps.
+5. `fog_volume_system` injects density into the global froxel grid (or screen-space height fog on
+   mobile).
+6. `lightning_system` generates L-system bolt geometry and emits light bursts.
+7. `wind_debris_system` spawns wind-driven particles and injects atmospheric scattering for dust
+   storms.
+8. `underwater_system` applies caustics, depth fog, bubbles, refraction, and god rays when the
+   camera is submerged.
 
 ### Destruction Event Lifecycle
 
-1. Physics fracture system emits a
-   `DestructionEvent` when an object breaks.
-2. `on_destruction_event` observer receives the
-   event and spawns:
+1. Physics fracture system emits a `DestructionEvent` when an object breaks.
+2. `on_destruction_event` observer receives the event and spawns:
    - Debris mesh fragments (budget-capped).
    - Material-colored dust burst and smoke plume.
    - Sparks (metal) or embers (fire).
    - Shockwave (if force exceeds threshold).
-3. `crack_growth_system` continuously advances
-   crack overlays based on accumulated damage.
-4. `shockwave_system` expands rings, applies
-   distortion and shake, despawns on completion.
-5. `fire_spread_system` propagates burn state
-   across surfaces each frame.
-6. `scorch_mark_system` fades scorch decals over
-   world time.
+3. `crack_growth_system` continuously advances crack overlays based on accumulated damage.
+4. `shockwave_system` expands rings, applies distortion and shake, despawns on completion.
+5. `fire_spread_system` propagates burn state across surfaces each frame.
+6. `scorch_mark_system` fades scorch decals over world time.
 
 ## Platform Considerations
 
@@ -2479,59 +2446,37 @@ pub fn scorch_mark_system(
 | Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
 | Mobile | Limited dispatch size | No mesh shaders | Reduced effect budgets (PlatformTier::Mobile). |
 
-Falloff attenuation uses the shared `FalloffCurve` type
-(see
+Falloff attenuation uses the shared `FalloffCurve` type (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).
 
 ## Open Questions
 
-1. **Decal atlas format.** BC7 compressed or
-   uncompressed RGBA8? BC7 saves VRAM but
-   requires runtime compression or pre-compressed
-   source textures. Decision affects atlas
-   packing speed and quality.
+1. **Decal atlas format.** BC7 compressed or uncompressed RGBA8? BC7 saves VRAM but requires runtime
+   compression or pre-compressed source textures. Decision affects atlas packing speed and quality.
 
-2. **Triplanar decal blending weights.** Fixed
-   axis-aligned blending or normal-based adaptive
-   weights? Normal-based produces better results
-   on arbitrary geometry but costs an extra
-   texture sample per axis.
+2. **Triplanar decal blending weights.** Fixed axis-aligned blending or normal-based adaptive
+   weights? Normal-based produces better results on arbitrary geometry but costs an extra texture
+   sample per axis.
 
-3. **Screen droplet simulation fidelity.** Full
-   fluid sim on the GPU or baked droplet paths
-   with randomized selection? Fluid sim is more
-   convincing but may be excessive for a
-   background weather effect.
+3. **Screen droplet simulation fidelity.** Full fluid sim on the GPU or baked droplet paths with
+   randomized selection? Fluid sim is more convincing but may be excessive for a background weather
+   effect.
 
-4. **Snow height texture resolution.** World-space
-   resolution per terrain patch. Higher resolution
-   (512x512 per 64m patch) gives better
-   deformation detail but consumes VRAM. Need to
-   benchmark memory impact for large open-world
-   maps.
+4. **Snow height texture resolution.** World-space resolution per terrain patch. Higher resolution
+   (512x512 per 64m patch) gives better deformation detail but consumes VRAM. Need to benchmark
+   memory impact for large open-world maps.
 
-5. **Fire propagation cellular automaton rules.**
-   Simple 4-neighbor spread or 8-neighbor with
-   diagonal penalty? 8-neighbor produces rounder
-   fire fronts but doubles compute cost per
-   texel.
+5. **Fire propagation cellular automaton rules.** Simple 4-neighbor spread or 8-neighbor with
+   diagonal penalty? 8-neighbor produces rounder fire fronts but doubles compute cost per texel.
 
-6. **Shockwave distortion cap value.** Maximum
-   composite distortion displacement in pixels.
-   Too low and overlapping explosions look weak;
-   too high causes disorientation. Needs
-   playtesting to determine the right threshold.
+6. **Shockwave distortion cap value.** Maximum composite distortion displacement in pixels. Too low
+   and overlapping explosions look weak; too high causes disorientation. Needs playtesting to
+   determine the right threshold.
 
-7. **Debris physics integration.** Should debris
-   fragments use full rigid-body simulation or
-   simplified ballistic trajectories? Full
-   rigid-body enables realistic bouncing and
-   piling but is expensive at high fragment
-   counts.
+7. **Debris physics integration.** Should debris fragments use full rigid-body simulation or
+   simplified ballistic trajectories? Full rigid-body enables realistic bouncing and piling but is
+   expensive at high fragment counts.
 
-8. **Crack overlay shader approach.** SDF-based
-   procedural cracks vs. atlas-based texture
-   cracks. SDF allows infinite resolution and
-   smooth growth animation but is more complex
-   to author and more expensive to evaluate per
-   pixel.
+8. **Crack overlay shader approach.** SDF-based procedural cracks vs. atlas-based texture cracks.
+   SDF allows infinite resolution and smooth growth animation but is more complex to author and more
+   expensive to evaluate per pixel.

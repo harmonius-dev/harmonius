@@ -1,6 +1,6 @@
 # 2.4 — Lighting and Materials
 
-### F-2.4.1 Forward+ Lighting (Tiled/Clustered)
+## F-2.4.1 Forward+ Lighting (Tiled/Clustered)
 
 Tiled or clustered light culling via a compute pass that assigns visible lights to screen-space
 tiles. Fragment shading evaluates only the lights relevant to each tile, enabling hundreds of

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 ### Localization Editor
 
@@ -32,22 +32,16 @@
 
 This document covers two closely related editor subsystems:
 
-1. **Localization** -- string table management, ICU
-   MessageFormat plural/gender forms, RTL layout,
-   font fallback chains, translation memory, XLIFF
-   2.1 export/import, pseudo-localization testing, and
-   a visual localization editor.
-2. **Documentation** -- auto-generated API reference
-   from `Reflect` metadata and doc attributes,
-   interactive tutorials, contextual help tooltips,
-   a searchable documentation browser, and versioned
-   docs per engine release.
+1. **Localization** -- string table management, ICU MessageFormat plural/gender forms, RTL layout,
+   font fallback chains, translation memory, XLIFF 2.1 export/import, pseudo-localization testing,
+   and a visual localization editor.
+2. **Documentation** -- auto-generated API reference from `Reflect` metadata and doc attributes,
+   interactive tutorials, contextual help tooltips, a searchable documentation browser, and
+   versioned docs per engine release.
 
-Both subsystems are editor-only (desktop). They share
-the `LocaleRegistry` for language selection and the
-`AssetDatabase` for versioning. All I/O is async via
-the `IoReactor`. No dynamic dispatch -- all platform
-paths are `cfg`-gated.
+Both subsystems are editor-only (desktop). They share the `LocaleRegistry` for language selection
+and the `AssetDatabase` for versioning. All I/O is async via the `IoReactor`. No dynamic dispatch --
+all platform paths are `cfg`-gated.
 
 ## Architecture
 
@@ -117,7 +111,7 @@ graph TD
     CTX -.-> LOC
 ```
 
-```
+```text
 harmonius_editor/
 ├── localization/
 │   ├── model.rs           # StringTableModel, StringEntry
@@ -1283,56 +1277,42 @@ pub enum DocError {
 
 ### String Edit Lifecycle
 
-1. Designer edits a string in the `StringTableEditor`
-   spreadsheet view.
-2. `StringTableModel::set_translation()` validates the
-   ICU pattern via `IcuFormatter::validate_pattern()`.
-3. On success, `TranslationMemory::index()` records the
-   source-translation pair for future suggestions.
+1. Designer edits a string in the `StringTableEditor` spreadsheet view.
+2. `StringTableModel::set_translation()` validates the ICU pattern via
+   `IcuFormatter::validate_pattern()`.
+3. On success, `TranslationMemory::index()` records the source-translation pair for future
+   suggestions.
 4. The model marks the asset dirty in `AssetDatabase`.
-5. On save, the model serializes to a `.strings.ron`
-   asset via async I/O through the `IoReactor`.
+5. On save, the model serializes to a `.strings.ron` asset via async I/O through the `IoReactor`.
 
 ### Validation Pipeline
 
 1. Designer requests validation for a target locale.
 2. `LocaleValidator` runs all checks in parallel:
    - Missing translations: compare entry count.
-   - Text overflow: measure each string against its
-     widget bounds via `LayoutEngine`.
-   - Broken interpolation: compare variable names
-     between source and translation.
-   - RTL issues: verify bidi algorithm results against
-     widget layout expectations.
-   - Plural correctness: verify all required
-     `PluralCategory` forms are present.
+   - Text overflow: measure each string against its widget bounds via `LayoutEngine`.
+   - Broken interpolation: compare variable names between source and translation.
+   - RTL issues: verify bidi algorithm results against widget layout expectations.
+   - Plural correctness: verify all required `PluralCategory` forms are present.
 3. Findings are aggregated into a `ValidationReport`.
 4. The editor displays findings in a report panel.
 5. One-click navigation jumps to the offending widget.
 
 ### Documentation Build
 
-1. CI triggers `ReflectMetadataExtractor::extract_all()`
-   against the full `TypeRegistry`.
-2. `ApiRefGenerator::generate()` renders HTML pages with
-   cross-reference hyperlinks.
+1. CI triggers `ReflectMetadataExtractor::extract_all()` against the full `TypeRegistry`.
+2. `ApiRefGenerator::generate()` renders HTML pages with cross-reference hyperlinks.
 3. `SearchIndex::build()` produces a trigram index.
-4. `VersionedDocStore::store()` writes the snapshot via
-   async I/O, tagged with the engine version.
-5. The static site is deployed to the documentation
-   server (self-hosted AWS).
+4. `VersionedDocStore::store()` writes the snapshot via async I/O, tagged with the engine version.
+5. The static site is deployed to the documentation server (self-hosted AWS).
 
 ### Help Tooltip Lifecycle
 
 1. User hovers over a widget or presses F1.
-2. The widget emits a help lookup request with its
-   registered `widget_type_id`.
-3. `ContextualHelpProvider::lookup()` queries the
-   `SearchIndex` for the active locale.
-4. The matching `HelpEntry` is resolved from the
-   `VersionedDocStore` for the current engine version.
-5. The tooltip displays: short description, type,
-   range, default, keyboard shortcut, and links to
+2. The widget emits a help lookup request with its registered `widget_type_id`.
+3. `ContextualHelpProvider::lookup()` queries the `SearchIndex` for the active locale.
+4. The matching `HelpEntry` is resolved from the `VersionedDocStore` for the current engine version.
+5. The tooltip displays: short description, type, range, default, keyboard shortcut, and links to
    the full doc page and relevant tutorial.
 
 ## Platform Considerations
@@ -1444,31 +1424,19 @@ pub enum DocError {
 
 ## Open Questions
 
-1. **ICU data size** -- Full CLDR data is ~30 MB. Ship
-   all locales or only configured ones? Shipping only
-   configured locales reduces distribution size but
-   requires re-cooking when adding a locale.
-2. **Translation memory persistence** -- Store TM as a
-   project-level asset (versioned in asset database) or
-   as a user-level file (roams with developer prefs)?
-   Project-level is shared across team; user-level is
-   personal.
-3. **TMS API authentication** -- Crowdin/Lokalise/Phrase
-   each have different OAuth flows. Should the editor
-   store API tokens in the project settings (shared) or
-   in user preferences (per-developer)?
-4. **Font atlas strategy for CJK** -- CJK locales may
-   need 10,000+ glyphs. Pre-bake a full atlas (large
-   memory) or use dynamic atlas with LRU eviction
-   (potential stalls)?
-5. **Doc versioning granularity** -- One snapshot per
-   major.minor or per patch release? Patch-level is more
-   accurate but multiplies storage.
-6. **Video hosting** -- Self-hosted AWS S3 or a
-   dedicated video CDN? S3 is simpler but lacks adaptive
-   bitrate streaming without additional infrastructure.
-7. **Tutorial authoring format** -- Tutorials are
-   defined as data assets using logic graphs (F-15.8.4).
-   Should the tutorial schema be a dedicated asset type
-   or reuse the generic logic graph format with tutorial
-   nodes?
+1. **ICU data size** -- Full CLDR data is ~30 MB. Ship all locales or only configured ones? Shipping
+   only configured locales reduces distribution size but requires re-cooking when adding a locale.
+2. **Translation memory persistence** -- Store TM as a project-level asset (versioned in asset
+   database) or as a user-level file (roams with developer prefs)? Project-level is shared across
+   team; user-level is personal.
+3. **TMS API authentication** -- Crowdin/Lokalise/Phrase each have different OAuth flows. Should the
+   editor store API tokens in the project settings (shared) or in user preferences (per-developer)?
+4. **Font atlas strategy for CJK** -- CJK locales may need 10,000+ glyphs. Pre-bake a full atlas
+   (large memory) or use dynamic atlas with LRU eviction (potential stalls)?
+5. **Doc versioning granularity** -- One snapshot per major.minor or per patch release? Patch-level
+   is more accurate but multiplies storage.
+6. **Video hosting** -- Self-hosted AWS S3 or a dedicated video CDN? S3 is simpler but lacks
+   adaptive bitrate streaming without additional infrastructure.
+7. **Tutorial authoring format** -- Tutorials are defined as data assets using logic graphs
+   (F-15.8.4). Should the tutorial schema be a dedicated asset type or reuse the generic logic graph
+   format with tutorial nodes?

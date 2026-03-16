@@ -1,6 +1,6 @@
 # 13.20 — Fog of War
 
-### F-13.20.1 Fog of War Grid System
+## F-13.20.1 Fog of War Grid System
 
 Grid-based visibility tracking with three states per cell per player/faction: unexplored (fully
 hidden), shrouded (previously seen, shows terrain but not entities), and visible (currently seen,

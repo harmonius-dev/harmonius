@@ -45,8 +45,8 @@ without modifying the core import infrastructure.
 ## US-12.1.8 Verify Import Handles Corrupt and Edge-Case Files
 
 **As an** engine tester (P-27), **I want** automated tests that import truncated, zero-length,
-wrong-version, and malformed asset files, verifying graceful error reporting without crashes, **so
-that** the import pipeline is robust against all file corruption scenarios.
+wrong-version, and malformed asset files, verifying graceful error reporting without crashes,
+**so that** the import pipeline is robust against all file corruption scenarios.
 
 ## US-12.1.9 Verify Batch Import Rollback on Cancellation
 

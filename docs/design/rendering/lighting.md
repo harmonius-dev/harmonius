@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/rendering/](../../features/rendering/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/rendering/](../../features/rendering/),
 > [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table
-> below traces design elements to those definitions.
+> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -52,33 +52,22 @@
 
 ## Overview
 
-The lighting system is 100% ECS-based. Every light
-is a bundle of components on an entity -- there is
-no separate "light manager" or parallel data store.
-Systems query light components each frame, cull them
-against the camera frustum using the shared spatial
-index, upload a packed GPU buffer, and feed it into
-either the forward+ clustered path or the deferred
-accumulation path.
+The lighting system is 100% ECS-based. Every light is a bundle of components on an entity -- there
+is no separate "light manager" or parallel data store. Systems query light components each frame,
+cull them against the camera frustum using the shared spatial index, upload a packed GPU buffer, and
+feed it into either the forward+ clustered path or the deferred accumulation path.
 
 The design follows four principles:
 
-1. **Lights are ECS components.** A directional,
-   point, spot, or area light is a component on an
-   entity that also carries `GlobalTransform`. No
-   singletons, no light lists.
-2. **GPU-driven culling.** A compute pass builds a
-   3D cluster grid (X tiles x Y tiles x Z depth
-   slices) and writes per-cluster light index lists
-   into an SSBO. Fragment shaders read only their
+1. **Lights are ECS components.** A directional, point, spot, or area light is a component on an
+   entity that also carries `GlobalTransform`. No singletons, no light lists.
+2. **GPU-driven culling.** A compute pass builds a 3D cluster grid (X tiles x Y tiles x Z depth
+   slices) and writes per-cluster light index lists into an SSBO. Fragment shaders read only their
    cluster's list.
-3. **Unified shadow atlas.** All shadow maps
-   (cascaded, cubemap, spot, virtual) are tiles in a
-   single GPU texture atlas. A CPU-side allocator
-   assigns tiles based on screen-space contribution.
-4. **Tiered quality.** Every subsystem (shadows, AO,
-   area lights, light functions) scales across four
-   platform tiers: Mobile, Switch, Desktop, High-end.
+3. **Unified shadow atlas.** All shadow maps (cascaded, cubemap, spot, virtual) are tiles in a
+   single GPU texture atlas. A CPU-side allocator assigns tiles based on screen-space contribution.
+4. **Tiered quality.** Every subsystem (shadows, AO, area lights, light functions) scales across
+   four platform tiers: Mobile, Switch, Desktop, High-end.
 
 ### Performance Targets
 
@@ -155,7 +144,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_rendering/
 ├── lighting/
 │   ├── components.rs     # Light ECS components
@@ -375,10 +364,9 @@ sequenceDiagram
 
 ### Light Components
 
-All lights are ECS components attached to entities
-that also carry `GlobalTransform`. The transform's
-translation is the light position; the forward
-direction (-Z in local space) is the light direction.
+All lights are ECS components attached to entities that also carry `GlobalTransform`. The
+transform's translation is the light position; the forward direction (-Z in local space) is the
+light direction.
 
 ```rust
 /// Linear HDR color. Pre-multiplied alpha is not
@@ -1563,47 +1551,34 @@ pub enum LightingError {
 
 ### Per-Frame Lighting Pipeline
 
-The lighting pipeline executes in this order each
-frame, integrated into the render graph:
+The lighting pipeline executes in this order each frame, integrated into the render graph:
 
-1. **Light extraction** (CPU, parallel) -- ECS
-   queries all light components. Frustum cull via
-   shared spatial index. Pack into `GpuLight`
-   array. Sort by screen-space contribution.
+1. **Light extraction** (CPU, parallel) -- ECS queries all light components. Frustum cull via shared
+   spatial index. Pack into `GpuLight` array. Sort by screen-space contribution.
 
-2. **GPU light buffer upload** -- Upload packed
-   `GpuLight` array to the GPU SSBO.
+2. **GPU light buffer upload** -- Upload packed `GpuLight` array to the GPU SSBO.
 
-3. **Shadow pass scheduling** -- For each
-   shadow-casting light (priority-sorted), allocate
-   shadow atlas tiles. Add render passes to the
-   render graph:
+3. **Shadow pass scheduling** -- For each shadow-casting light (priority-sorted), allocate shadow
+   atlas tiles. Add render passes to the render graph:
    - CSM: 1-4 cascade passes per directional light
-   - Point: 6 cubemap face passes (or 2
-     dual-paraboloid on mobile)
+   - Point: 6 cubemap face passes (or 2 dual-paraboloid on mobile)
    - Spot: 1 pass per spot light
 
-4. **Shadow rendering** (GPU) -- Execute all shadow
-   passes, writing depth into atlas tiles.
+4. **Shadow rendering** (GPU) -- Execute all shadow passes, writing depth into atlas tiles.
 
-5. **Cluster assignment** (GPU compute) -- Build
-   the 3D cluster grid. Each cluster stores a list
-   of light indices that intersect it.
+5. **Cluster assignment** (GPU compute) -- Build the 3D cluster grid. Each cluster stores a list of
+   light indices that intersect it.
 
-6. **AO pass** (GPU compute) -- SSAO, GTAO, or
-   RT AO depending on tier. Outputs an AO texture
-   and optional bent normals.
+6. **AO pass** (GPU compute) -- SSAO, GTAO, or RT AO depending on tier. Outputs an AO texture and
+   optional bent normals.
 
 7. **Lighting evaluation** (GPU) -- Either:
-   - **Forward+**: Fragment shader reads cluster
-     light list, evaluates BRDF per light, samples
+   - **Forward+**: Fragment shader reads cluster light list, evaluates BRDF per light, samples
      shadow atlas, applies AO.
-   - **Deferred**: Fullscreen compute reads
-     G-buffer, iterates all lights per pixel,
-     samples shadows, applies AO.
+   - **Deferred**: Fullscreen compute reads G-buffer, iterates all lights per pixel, samples
+     shadows, applies AO.
 
-8. **Post-lighting** -- Contact shadows, light
-   function animation updates, probe blending.
+8. **Post-lighting** -- Contact shadows, light function animation updates, probe blending.
 
 ### Shadow Atlas Allocation Strategy
 
@@ -1668,22 +1643,18 @@ fn allocate_shadow_budget(
 
 ### Cluster Assignment Algorithm
 
-The compute shader divides the view frustum into
-a 3D grid of clusters. Each cluster is a
-screen-space tile extruded along logarithmic depth
-slices.
+The compute shader divides the view frustum into a 3D grid of clusters. Each cluster is a
+screen-space tile extruded along logarithmic depth slices.
 
-```
+```text
 Cluster index = tile_x + tile_y * tiles_x
               + slice * tiles_x * tiles_y
 
 Slice depth = near * (far/near) ^ (slice / slices)
 ```
 
-The assignment pass runs one thread group per
-cluster. Each thread tests a subset of lights
-against the cluster's AABB. Passing lights are
-appended to a per-cluster list via atomic counter.
+The assignment pass runs one thread group per cluster. Each thread tests a subset of lights against
+the cluster's AABB. Passing lights are appended to a per-cluster list via atomic counter.
 
 ### Cascade Split Computation
 
@@ -1759,31 +1730,23 @@ pub fn compute_cascade_splits(
 | D3D12 | `DXGI_FORMAT_D32_FLOAT` | Structured buffer (SRV/UAV) | Dispatch compute |
 | Vulkan | `VK_FORMAT_D32_SFLOAT` | Storage buffer (SSBO) | Dispatch compute |
 
-All shaders are authored in HLSL and compiled via
-DXC to DXIL (D3D12) or SPIR-V (Vulkan). DXIL is
-converted to MSL via Metal Shader Converter for
-the Metal backend. No backend-specific shader
+All shaders are authored in HLSL and compiled via DXC to DXIL (D3D12) or SPIR-V (Vulkan). DXIL is
+converted to MSL via Metal Shader Converter for the Metal backend. No backend-specific shader
 authoring.
 
 ### Async Integration
 
-Shadow atlas allocation and light extraction run
-on the CPU and are parallelized via the thread
-pool's scoped execution. GPU passes (cluster
-assignment, shadow rendering, AO) are submitted
-as render graph nodes and execute asynchronously
-on the GPU. GPU synchronization uses async/await
-through the platform's command buffer completion
-mechanism (Metal dispatch handler, D3D12 fence,
+Shadow atlas allocation and light extraction run on the CPU and are parallelized via the thread
+pool's scoped execution. GPU passes (cluster assignment, shadow rendering, AO) are submitted as
+render graph nodes and execute asynchronously on the GPU. GPU synchronization uses async/await
+through the platform's command buffer completion mechanism (Metal dispatch handler, D3D12 fence,
 Vulkan timeline semaphore).
 
 ### VFX Integration
 
-Particle systems that emit light register `PointLight`
-components on particle entities. The clustered light
-culling system treats these identically to scene
-lights. Particle light count is budget-capped by the
-VFX LOD system to avoid overwhelming the light grid.
+Particle systems that emit light register `PointLight` components on particle entities. The
+clustered light culling system treats these identically to scene lights. Particle light count is
+budget-capped by the VFX LOD system to avoid overwhelming the light grid.
 
 ## Test Plan
 
@@ -1851,47 +1814,29 @@ VFX LOD system to avoid overwhelming the light grid.
 
 ## Open Questions
 
-1. **Cluster grid tile size** -- 64 px tiles are
-   standard but 32 px may reduce light-per-cluster
-   overflow at the cost of more clusters and higher
-   assignment overhead. Needs profiling on target
+1. **Cluster grid tile size** -- 64 px tiles are standard but 32 px may reduce light-per-cluster
+   overflow at the cost of more clusters and higher assignment overhead. Needs profiling on target
    hardware.
 
-2. **Dual-paraboloid vs cubemap on mobile** --
-   Dual-paraboloid point shadows use 2 faces
-   instead of 6 but introduce warping artifacts.
-   Need to evaluate quality/cost tradeoff on mobile
-   GPUs.
+2. **Dual-paraboloid vs cubemap on mobile** -- Dual-paraboloid point shadows use 2 faces instead of
+   6 but introduce warping artifacts. Need to evaluate quality/cost tradeoff on mobile GPUs.
 
-3. **VSM page cache eviction policy** -- LRU is
-   simple but may thrash on camera rotation.
-   Consider a priority-weighted scheme that factors
-   in page screen-space coverage.
+3. **VSM page cache eviction policy** -- LRU is simple but may thrash on camera rotation. Consider a
+   priority-weighted scheme that factors in page screen-space coverage.
 
-4. **Stochastic sampling denoiser integration** --
-   The temporal accumulation denoiser must cooperate
-   with TAA. Shared history buffers or a unified
-   temporal pass could reduce memory and bandwidth.
+4. **Stochastic sampling denoiser integration** -- The temporal accumulation denoiser must cooperate
+   with TAA. Shared history buffers or a unified temporal pass could reduce memory and bandwidth.
 
-5. **Shadow atlas fragmentation** -- Long-running
-   sessions may fragment the atlas. Consider
-   periodic defragmentation passes or a buddy
-   allocator for power-of-two tile sizes.
+5. **Shadow atlas fragmentation** -- Long-running sessions may fragment the atlas. Consider periodic
+   defragmentation passes or a buddy allocator for power-of-two tile sizes.
 
-6. **GTAO vs HBAO** -- GTAO is specified but HBAO
-   (horizon-based AO) is another option at the same
-   tier. Need to compare quality and performance to
-   confirm GTAO as the mid-tier choice.
+6. **GTAO vs HBAO** -- GTAO is specified but HBAO (horizon-based AO) is another option at the same
+   tier. Need to compare quality and performance to confirm GTAO as the mid-tier choice.
 
-7. **Area light shadow mapping** -- LTC handles
-   lighting but area light shadows are not covered
-   by traditional shadow maps. The stochastic
-   sampling path handles this for high-end, but
-   desktop needs a solution (possibly contact
-   shadows only).
+7. **Area light shadow mapping** -- LTC handles lighting but area light shadows are not covered by
+   traditional shadow maps. The stochastic sampling path handles this for high-end, but desktop
+   needs a solution (possibly contact shadows only).
 
-8. **Reflection probe parallax correction** --
-   Box projection is standard but sphere projection
-   may be needed for outdoor scenes. Determine
-   whether both should be supported or if box
-   projection suffices.
+8. **Reflection probe parallax correction** -- Box projection is standard but sphere projection may
+   be needed for outdoor scenes. Determine whether both should be supported or if box projection
+   suffices.

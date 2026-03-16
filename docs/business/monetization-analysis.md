@@ -406,21 +406,16 @@ critical secondary revenue streams that together with marketplace commission clo
 
 ## Sources
 
-- [Epic Games reduces royalty to
-  3.5%](https://www.cgchannel.com/2024/10/epic-games-to-cut-royalty-rate-on-unreal-engine-games/)
+- [Epic Games reduces royalty to 3.5%](https://www.cgchannel.com/2024/10/epic-games-to-cut-royalty-rate-on-unreal-engine-games/)
 - [Unreal Engine licensing](https://www.unrealengine.com/en-US/license)
-- [Unity cancels Runtime
-  Fee](https://www.gamedeveloper.com/business/unity-is-killing-its-controversial-runtime-fee)
+- [Unity cancels Runtime Fee](https://www.gamedeveloper.com/business/unity-is-killing-its-controversial-runtime-fee)
 - [Unity pricing updates](https://unity.com/products/pricing-updates)
-- [W4 Games raises $15M for
-  Godot](https://www.gamedeveloper.com/production/w4-games-nets-15-million-to-help-godot-scale-exponentially)
+- [W4 Games raises $15M for Godot](https://www.gamedeveloper.com/production/w4-games-nets-15-million-to-help-godot-scale-exponentially)
 - [Godot Foundation](https://godot.foundation/)
 - [CryEngine licensing](https://www.cryengine.com/support/view/licensing)
 - [O3DE open-source announcement](https://www.theregister.com/2021/07/07/open_3d_engine/)
-- [Epic Marketplace 88/12
-  split](https://www.unrealengine.com/en-US/blog/epic-announces-unreal-engine-marketplace-88-12-revenue-share)
+- [Epic Marketplace 88/12 split](https://www.unrealengine.com/en-US/blog/epic-announces-unreal-engine-marketplace-88-12-revenue-share)
 - [AWS S3 pricing](https://aws.amazon.com/s3/pricing/)
 - [AWS RDS pricing](https://aws.amazon.com/rds/postgresql/pricing/)
 - [AWS CloudFront pricing](https://aws.amazon.com/cloudfront/pricing/)
-- [LLM API pricing comparison
-  2025](https://intuitionlabs.ai/articles/llm-api-pricing-comparison-2025)
+- [LLM API pricing comparison 2025](https://intuitionlabs.ai/articles/llm-api-pricing-comparison-2025)

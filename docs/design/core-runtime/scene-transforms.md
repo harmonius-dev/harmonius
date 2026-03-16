@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/core-runtime/](../../features/core-runtime/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/core-runtime/](../../features/core-runtime/),
 > [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table
-> below traces design elements to those definitions.
+> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -34,52 +34,34 @@
 
 ## Overview
 
-The scene and transform system is the backbone
-connecting all spatial subsystems in the engine.
-It defines how entities relate to each other
-hierarchically and how local positions compose
-into world-space coordinates consumed by rendering,
-physics, animation, and audio.
+The scene and transform system is the backbone connecting all spatial subsystems in the engine. It
+defines how entities relate to each other hierarchically and how local positions compose into
+world-space coordinates consumed by rendering, physics, animation, and audio.
 
 The design follows three principles:
 
-1. **Hierarchy is ECS-native.** Parent-child
-   relationships use the ECS `ChildOf`
-   relationship (F-1.1.16), not a separate tree.
-   `Parent` and `Children` are derived components
-   maintained automatically by the relationship
-   system.
-2. **Transform propagation is parallel and
-   incremental.** Independent root subtrees are
-   processed concurrently. Dirty tracking skips
-   static geometry entirely.
-3. **Scenes are serializable entity collections.**
-   A scene is a tagged set of entities with their
-   components and hierarchy, serialized through the
-   reflection system.
+1. **Hierarchy is ECS-native.** Parent-child relationships use the ECS `ChildOf` relationship
+   (F-1.1.16), not a separate tree. `Parent` and `Children` are derived components maintained
+   automatically by the relationship system.
+2. **Transform propagation is parallel and incremental.** Independent root subtrees are processed
+   concurrently. Dirty tracking skips static geometry entirely.
+3. **Scenes are serializable entity collections.** A scene is a tagged set of entities with their
+   components and hierarchy, serialized through the reflection system.
 
 ### Key Abstractions
 
-- **Transform** -- local position, rotation, and
-  scale relative to the entity's parent. Stored as
-  a Vec3 translation, Quat rotation, and Vec3 scale.
-- **GlobalTransform** -- world-space 4x4 matrix
-  derived by composing the entire ancestor chain.
-  Read by rendering, physics, audio, and AI.
-- **Hierarchy** -- parent-child relationships use
-  the ECS `ChildOf` relationship (F-1.1.16), not a
-  separate tree data structure. `Parent` and
-  `Children` are derived components maintained
+- **Transform** -- local position, rotation, and scale relative to the entity's parent. Stored as a
+  Vec3 translation, Quat rotation, and Vec3 scale.
+- **GlobalTransform** -- world-space 4x4 matrix derived by composing the entire ancestor chain. Read
+  by rendering, physics, audio, and AI.
+- **Hierarchy** -- parent-child relationships use the ECS `ChildOf` relationship (F-1.1.16), not a
+  separate tree data structure. `Parent` and `Children` are derived components maintained
   automatically.
-- **Dirty tracking** -- ECS tick-based change
-  detection marks modified `Transform` components.
-  Propagation skips entire subtrees whose root and
-  descendants are all clean.
-- **Propagation** -- parallel top-down traversal
-  multiplies each parent's `GlobalTransform` by the
-  child's `Transform` to produce the child's
-  `GlobalTransform`. Independent root subtrees run
-  as separate scoped tasks.
+- **Dirty tracking** -- ECS tick-based change detection marks modified `Transform` components.
+  Propagation skips entire subtrees whose root and descendants are all clean.
+- **Propagation** -- parallel top-down traversal multiplies each parent's `GlobalTransform` by the
+  child's `Transform` to produce the child's `GlobalTransform`. Independent root subtrees run as
+  separate scoped tasks.
 
 ### Performance Targets (R-1.2.4a)
 
@@ -150,7 +132,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_core/
 ├── scene/
 │   ├── mod.rs             # Re-exports
@@ -225,10 +207,8 @@ classDiagram
 
 ### Parallel Propagation Strategy
 
-Independent root subtrees are distributed across
-worker threads. Each color below represents a
-separate parallel task — no synchronization needed
-between subtrees.
+Independent root subtrees are distributed across worker threads. Each color below represents a
+separate parallel task — no synchronization needed between subtrees.
 
 ```mermaid
 graph TD
@@ -260,17 +240,11 @@ graph TD
 
 The algorithm:
 
-1. Query all root entities (entities with
-   `Transform` but no `Parent`).
-2. Filter to roots whose subtree contains at least
-   one dirty `Transform` (via change detection).
-3. Fan out: assign each dirty root subtree to a
-   scoped task on the thread pool.
-4. Within each subtree, propagate top-down
-   iteratively using an explicit stack (no
-   recursion).
-5. Skip clean sub-branches where no ancestor
-   is dirty.
+1. Query all root entities (entities with `Transform` but no `Parent`).
+2. Filter to roots whose subtree contains at least one dirty `Transform` (via change detection).
+3. Fan out: assign each dirty root subtree to a scoped task on the thread pool.
+4. Within each subtree, propagate top-down iteratively using an explicit stack (no recursion).
+5. Skip clean sub-branches where no ancestor is dirty.
 
 ## API Design
 
@@ -508,6 +482,12 @@ impl Default for GlobalTransform {
     }
 }
 ```
+
+### GlobalTransform Size (Performance -- High)
+
+`GlobalTransform` stores a full `Mat4` (64 bytes). For entities with uniform scale (the common
+case), a compact TRS representation (Vec3 + Quat + f32 = 32 bytes) halves cache pressure during
+propagation. Consider a `CompactGlobalTransform` variant with `Mat4` fallback for non-uniform scale.
 
 ### Hierarchy Components
 
@@ -1144,8 +1124,7 @@ sequenceDiagram
 
 ### Phase Ordering
 
-Transform propagation sits between gameplay and
-rendering in the system schedule:
+Transform propagation sits between gameplay and rendering in the system schedule:
 
 | Phase | Systems | Notes |
 |-------|---------|-------|
@@ -1179,32 +1158,23 @@ flowchart LR
 
 ### Entity Remap on Scene Spawn
 
-When a scene is spawned into a world, entity
-references must be remapped:
+When a scene is spawned into a world, entity references must be remapped:
 
-1. Spawn each entity from the scene's staging
-   world into the target world, recording the
-   mapping (old ID -> new ID) in `EntityMap`.
-2. Walk all spawned entities' components. For
-   each component field of type `Entity`, look up
-   the remapped ID and patch it.
-3. Rebuild `Parent`/`Children` from the remapped
-   `ChildOf` relationships.
-4. Mark all spawned `Transform` components as
-   dirty to trigger propagation in the next
-   `PostUpdate`.
+1. Spawn each entity from the scene's staging world into the target world, recording the mapping
+   (old ID -> new ID) in `EntityMap`.
+2. Walk all spawned entities' components. For each component field of type `Entity`, look up the
+   remapped ID and patch it.
+3. Rebuild `Parent`/`Children` from the remapped `ChildOf` relationships.
+4. Mark all spawned `Transform` components as dirty to trigger propagation in the next `PostUpdate`.
 
 ### Dirty Tracking Detail
 
-The change detection system (F-1.1.22) tracks
-mutations at chunk granularity. When a system
-obtains a mutable reference to `Transform` via
-`&mut Transform`, the ECS automatically bumps
-the chunk's change tick.
+The change detection system (F-1.1.22) tracks mutations at chunk granularity. When a system obtains
+a mutable reference to `Transform` via `&mut Transform`, the ECS automatically bumps the chunk's
+change tick.
 
-The propagation system reads `Changed<Transform>`
-to identify dirty entities. Within a subtree,
-the `ancestor_dirty` flag propagates downward:
+The propagation system reads `Changed<Transform>` to identify dirty entities. Within a subtree, the
+`ancestor_dirty` flag propagates downward:
 
 | Parent dirty? | Self dirty? | Action |
 |--------------|-------------|--------|
@@ -1213,21 +1183,15 @@ the `ancestor_dirty` flag propagates downward:
 | Yes | No | Recompute self + propagate down |
 | Yes | Yes | Recompute self + propagate down |
 
-This means modification of a single leaf entity
-recomputes only that leaf's `GlobalTransform`.
-Modification of a root recomputes the entire
-subtree. In typical open-world scenes where
-under 1% of entities move per frame, this
-reduces propagation cost by 99%+.
+This means modification of a single leaf entity recomputes only that leaf's `GlobalTransform`.
+Modification of a root recomputes the entire subtree. In typical open-world scenes where under 1% of
+entities move per frame, this reduces propagation cost by 99%+.
 
 ## Platform Considerations
 
-Transform propagation is platform-agnostic. SIMD
-acceleration of matrix multiplication is delegated
-to the math library (`glam`). Non-send resources
-(e.g., Metal main-thread constraints) are handled
-by the ECS scheduler, not transforms. Platform
-dependencies are indirect, through the thread pool.
+Transform propagation is platform-agnostic. SIMD acceleration of matrix multiplication is delegated
+to the math library (`glam`). Non-send resources (e.g., Metal main-thread constraints) are handled
+by the ECS scheduler, not transforms. Platform dependencies are indirect, through the thread pool.
 
 ### Parallel Propagation Scaling
 
@@ -1238,15 +1202,11 @@ dependencies are indirect, through the thread pool.
 | Desktop | 4-16 | 128 entities | 256 |
 | High-end | 16+ | 64 entities | 256 |
 
-- **Parallel threshold**: subtrees smaller than
-  this are processed inline rather than spawned
-  as separate tasks (avoids scheduling overhead
-  exceeding computation).
-- **Max depth**: configurable per platform. The
-  iterative propagation algorithm handles
-  arbitrary depth without stack overflow, but
-  deeper hierarchies should trigger a diagnostic
-  warning (R-1.2.2a warns at depth 128).
+- **Parallel threshold**: subtrees smaller than this are processed inline rather than spawned as
+  separate tasks (avoids scheduling overhead exceeding computation).
+- **Max depth**: configurable per platform. The iterative propagation algorithm handles arbitrary
+  depth without stack overflow, but deeper hierarchies should trigger a diagnostic warning (R-1.2.2a
+  warns at depth 128).
 
 ### Memory Layout
 
@@ -1257,19 +1217,14 @@ dependencies are indirect, through the thread pool.
 | `Parent` | 8 bytes | 4 | Single Entity (u32 index + u32 gen) |
 | `Children` | 72 bytes | 8 | SmallVec inline (8 entities) |
 
-The `Transform` and `GlobalTransform` components
-are stored in archetype tables with SoA layout.
-During propagation, the hot path reads
-`Transform` and writes `GlobalTransform` in
-adjacent memory, maximizing cache line
-utilization.
+The `Transform` and `GlobalTransform` components are stored in archetype tables with SoA layout.
+During propagation, the hot path reads `Transform` and writes `GlobalTransform` in adjacent memory,
+maximizing cache line utilization.
 
 ### SIMD Considerations
 
-Matrix multiplication (`Mat4 * Mat4`) is the
-hot inner operation of propagation. The `glam`
-math library provides SIMD-accelerated Mat4
-operations on all platforms:
+Matrix multiplication (`Mat4 * Mat4`) is the hot inner operation of propagation. The `glam` math
+library provides SIMD-accelerated Mat4 operations on all platforms:
 
 | Platform | SIMD | Notes |
 |----------|------|-------|
@@ -1277,8 +1232,7 @@ operations on all platforms:
 | ARM64 | NEON | Default on Apple Silicon, mobile |
 | WASM | SIMD128 | Optional feature |
 
-No custom SIMD code is needed; `glam` handles
-this transparently.
+No custom SIMD code is needed; `glam` handles this transparently.
 
 ### Proposed Dependencies
 
@@ -1350,47 +1304,25 @@ this transparently.
 
 ## Open Questions
 
-1. **GlobalTransform storage format** — The
-   current design stores a full `Mat4` (64 bytes).
-   An alternative is to store translation +
-   rotation + scale separately (40 bytes), saving
-   24 bytes per entity but requiring recomposition
-   for rendering. At 1M entities this is 24 MB.
-   The Mat4 approach avoids per-frame
-   decomposition cost. Need to benchmark both.
-2. **Large subtree splitting** — When a single
-   root has 100K+ descendants, fan-out at the root
-   level yields only one task. Should we split
-   large subtrees at depth 1 or 2 to improve
-   parallelism? This adds synchronization
-   complexity (children at the split boundary need
-   the parent's GlobalTransform before they can
-   proceed).
-3. **Dirty subtree detection cost** — The current
-   `subtree_has_dirty_transform` function does a
-   full BFS to check if any descendant is dirty.
-   For large static hierarchies this could be
-   expensive. A per-root dirty flag (set by an
-   observer on any descendant's Transform change)
-   would be O(1) but adds complexity. Need to
-   measure the BFS cost at scale.
-4. **Scene format** — RON is human-readable but
-   verbose. Binary is compact but not
-   diff-friendly. The reflection system supports
-   mixed textual+binary (constraints.md), but the
-   exact scene file format (header structure,
-   entity ordering, companion file layout) needs
-   to be finalized in the serialization design
-   (1.3).
-5. **Hierarchy depth limits** — R-1.2.2a
-   specifies a warning at depth 128 and
-   stack-allocated traversal up to depth 256. Are
-   there real-world game scenarios that exceed 256
-   levels? If not, we could hard-error instead
-   of falling back to heap allocation.
-6. **Transform interpolation** — For fixed
-   timestep physics, should GlobalTransform store
-   both the current and previous frame's matrices
-   for rendering interpolation? Or should
-   interpolation be handled by a separate
-   `PreviousGlobalTransform` component?
+1. **GlobalTransform storage format** — The current design stores a full `Mat4` (64 bytes). An
+   alternative is to store translation + rotation + scale separately (40 bytes), saving 24 bytes per
+   entity but requiring recomposition for rendering. At 1M entities this is 24 MB. The Mat4 approach
+   avoids per-frame decomposition cost. Need to benchmark both.
+2. **Large subtree splitting** — When a single root has 100K+ descendants, fan-out at the root level
+   yields only one task. Should we split large subtrees at depth 1 or 2 to improve parallelism? This
+   adds synchronization complexity (children at the split boundary need the parent's GlobalTransform
+   before they can proceed).
+3. **Dirty subtree detection cost** — The current `subtree_has_dirty_transform` function does a full
+   BFS to check if any descendant is dirty. For large static hierarchies this could be expensive. A
+   per-root dirty flag (set by an observer on any descendant's Transform change) would be O(1) but
+   adds complexity. Need to measure the BFS cost at scale.
+4. **Scene format** — RON is human-readable but verbose. Binary is compact but not diff-friendly.
+   The reflection system supports mixed textual+binary (constraints.md), but the exact scene file
+   format (header structure, entity ordering, companion file layout) needs to be finalized in the
+   serialization design (1.3).
+5. **Hierarchy depth limits** — R-1.2.2a specifies a warning at depth 128 and stack-allocated
+   traversal up to depth 256. Are there real-world game scenarios that exceed 256 levels? If not, we
+   could hard-error instead of falling back to heap allocation.
+6. **Transform interpolation** — For fixed timestep physics, should GlobalTransform store both the
+   current and previous frame's matrices for rendering interpolation? Or should interpolation be
+   handled by a separate `PreviousGlobalTransform` component?

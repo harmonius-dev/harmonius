@@ -83,8 +83,8 @@ efficiently, **so that** gameplay targeting feels instant even in crowded areas.
 
 ## US-13.2.3.3 Monitor Spatial Query Latency on Live Servers
 
-**As a** server admin (P-22), **I want to** view spatial query latency percentiles per tick, **so
-that** I can detect degraded query performance before it affects gameplay.
+**As a** server admin (P-22), **I want to** view spatial query latency percentiles per tick,
+**so that** I can detect degraded query performance before it affects gameplay.
 
 ## US-13.2.3.4 Verify Incremental Tree Update Amortization
 

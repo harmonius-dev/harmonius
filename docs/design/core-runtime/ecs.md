@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/core-runtime/](../../features/core-runtime/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/core-runtime/](../../features/core-runtime/),
 > [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table
-> below traces design elements to those definitions.
+> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -51,50 +51,37 @@
 
 ## Overview
 
-The ECS is the foundational data model and execution framework
-for every domain in the Harmonius engine. All simulation data
-lives as components, all logic runs as systems, and all state is
-owned by a `World`. There are no parallel data stores, no
-separate physics world, no renderer scene graph diverging from
-the ECS. The ECS defines the interoperability contracts consumed
-by every downstream design: `Component`, `Entity`, `System`,
-and `World`.
+The ECS is the foundational data model and execution framework for every domain in the Harmonius
+engine. All simulation data lives as components, all logic runs as systems, and all state is owned
+by a `World`. There are no parallel data stores, no separate physics world, no renderer scene graph
+diverging from the ECS. The ECS defines the interoperability contracts consumed by every downstream
+design: `Component`, `Entity`, `System`, and `World`.
 
 Key architectural choices:
 
-1. **Archetype table storage** as the default. Components
-   grouped by archetype in contiguous SoA arrays within
-   fixed-size chunks (16 KiB default) for cache-friendly
-   iteration.
-2. **Sparse-set storage** as an opt-in alternative for
-   high-churn or rarely-queried components, avoiding
-   archetype fragmentation.
-3. **Archetype graph** with cached edges for O(1) structural
-   transitions when adding or removing components.
-4. **Generational entity indices** (32-bit index + 32-bit
-   generation) for O(1) allocation, deallocation, and
-   stale-reference detection.
-5. **Relationship pairs** encoded as 64-bit component IDs
-   for hierarchies, prefabs, and graph-based data modeling.
-6. **Tick-based change detection** at chunk granularity for
-   reactive patterns like dirty-flag propagation and
-   network delta compression.
-7. **Automatic system scheduling** via dependency analysis
-   on declared access sets, producing a `TaskGraph` (from
-   `threading.md`) for parallel execution on the
-   `ThreadPool`.
-8. **Command buffers** for deferred structural changes,
-   flushed at sync points in deterministic order.
-9. **Observers** for reactive callbacks on component
-   add/remove/change, evaluated during command buffer flush.
+1. **Archetype table storage** as the default. Components grouped by archetype in contiguous SoA
+   arrays within fixed-size chunks (16 KiB default) for cache-friendly iteration.
+2. **Sparse-set storage** as an opt-in alternative for high-churn or rarely-queried components,
+   avoiding archetype fragmentation.
+3. **Archetype graph** with cached edges for O(1) structural transitions when adding or removing
+   components.
+4. **Generational entity indices** (32-bit index + 32-bit generation) for O(1) allocation,
+   deallocation, and stale-reference detection.
+5. **Relationship pairs** encoded as 64-bit component IDs for hierarchies, prefabs, and graph-based
+   data modeling.
+6. **Tick-based change detection** at chunk granularity for reactive patterns like dirty-flag
+   propagation and network delta compression.
+7. **Automatic system scheduling** via dependency analysis on declared access sets, producing a
+   `TaskGraph` (from `threading.md`) for parallel execution on the `ThreadPool`.
+8. **Command buffers** for deferred structural changes, flushed at sync points in deterministic
+   order.
+9. **Observers** for reactive callbacks on component add/remove/change, evaluated during command
+   buffer flush.
 
-**Audio runtime exception.** Per constraints.md, the
-audio mixer runs on a dedicated real-time thread with
-a < 0.5 ms latency budget. ECS components
-(`AudioSource`, `AudioListener`) bridge game state to
-the audio runtime via a lock-free SPSC command queue.
-The audio thread owns its own mix buffers and effect
-chains outside the ECS.
+**Audio runtime exception.** Per constraints.md, the audio mixer runs on a dedicated real-time
+thread with a < 0.5 ms latency budget. ECS components (`AudioSource`, `AudioListener`) bridge game
+state to the audio runtime via a lock-free SPSC command queue. The audio thread owns its own mix
+buffers and effect chains outside the ECS.
 
 ## Architecture
 
@@ -167,7 +154,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_ecs/
 ├── entity/
 │   ├── allocator.rs   # EntityAllocator, free list,
@@ -2405,8 +2392,8 @@ sequenceDiagram
 
 ### Schedule Build and Execution
 
-The schedule build process runs at startup and whenever the
-active system set changes. It does not run every frame.
+The schedule build process runs at startup and whenever the active system set changes. It does not
+run every frame.
 
 ```rust
 // --- Schedule Build (startup or system change) ---
@@ -2450,9 +2437,8 @@ loop {
 
 ### Archetype Migration on Component Add
 
-When a system adds a component to an entity, the entity
-migrates from its current archetype to a new archetype that
-includes the added component.
+When a system adds a component to an entity, the entity migrates from its current archetype to a new
+archetype that includes the added component.
 
 ```rust
 // Entity currently in Archetype {Position, Velocity}
@@ -2571,31 +2557,22 @@ for transform in query_changed.iter() {
 
 ### Thread Pool Integration
 
-System scheduling produces a `TaskGraph`
-(defined in `platform/threading.md`) that the
-`ThreadPool` executes via work-stealing. Each
-system becomes a task node. Dependencies between
-systems become DAG edges. The scheduler inserts
-sync-point barrier nodes between phases where
-command buffers are flushed.
+System scheduling produces a `TaskGraph` (defined in `platform/threading.md`) that the `ThreadPool`
+executes via work-stealing. Each system becomes a task node. Dependencies between systems become DAG
+edges. The scheduler inserts sync-point barrier nodes between phases where command buffers are
+flushed.
 
-Non-send systems are pinned to the main thread by
-the scheduler. They run at designated points in
+Non-send systems are pinned to the main thread by the scheduler. They run at designated points in
 the phase, never dispatched to worker threads.
 
-Parallel query iteration uses `ThreadPool::scope`
-so that query borrows from the calling system are
-valid across worker tasks without `'static` or
-`Arc` overhead.
+Parallel query iteration uses `ThreadPool::scope` so that query borrows from the calling system are
+valid across worker tasks without `'static` or `Arc` overhead.
 
 ### Alignment and SIMD
 
-All chunk base addresses are 64-byte aligned
-(cache-line boundary). Component arrays within a
-chunk are aligned to the component type's natural
-alignment. Numeric component types (`f32`, `Vec3`,
-`Mat4`) with proper alignment can be processed
-with SIMD intrinsics without additional alignment
+All chunk base addresses are 64-byte aligned (cache-line boundary). Component arrays within a chunk
+are aligned to the component type's natural alignment. Numeric component types (`f32`, `Vec3`,
+`Mat4`) with proper alignment can be processed with SIMD intrinsics without additional alignment
 adjustments.
 
 ### Proposed Dependencies
@@ -2606,6 +2583,69 @@ adjustments.
 | `smallvec` | Inline-allocated small vectors | Matched archetype lists, hook arrays, command component lists |
 | `crossbeam-utils` | `CachePadded` for atomics | Prevents false sharing on change tick counters |
 | `glam` | Math types (Vec3, Quat, Mat4) | SIMD-accelerated math implied by Transform components and spatial operations |
+
+## Safety Invariants
+
+The following safety-critical invariants must be enforced by the implementation:
+
+### Column Access (Critical)
+
+`Column::get_unchecked` returns `*const u8`. Callers must cast to the correct type. Add
+`debug_assert!` comparing `TypeId::of::<T>()` against the column's `ComponentDescriptor::type_id`.
+The safe public API (`Column::get<T>`) performs this check unconditionally.
+
+### WorldQuery::fetch Contract (High)
+
+`unsafe fn fetch` requires:
+
+1. Row index is within `archetype.len()`.
+2. No structural changes between `matches_archetype` and `fetch`.
+3. The `AccessSet` has been validated by the scheduler.
+
+Aliased `&mut` access through concurrent fetch calls is undefined behavior.
+
+### Bundle Write Ordering (High)
+
+`Bundle::write_components` writes fields in the order returned by `component_ids()`. The derive
+macro must guarantee field order matches `component_ids()` order. Add `debug_assert!` verifying each
+component's offset and layout against `ComponentDescriptor`.
+
+### RelationPair Entity Generation (High)
+
+`RelationPair` encodes only `Entity.index` (32 bits), not the generation. Relationship queries must
+validate the target entity's generation against the `EntityAllocator` before returning results.
+Stale relationships to despawned-and-reused entities must be detected and cleaned up.
+
+### ComponentDescriptor::drop_fn (High)
+
+`drop_fn: Option<unsafe fn(*mut u8)>` must match the type at the pointer. `register_dynamic` callers
+must provide a `TypeId` witness. Add `debug_assert!` comparing `TypeId` when invoking `drop_fn`.
+
+### Enableable Components (Critical)
+
+`set_enabled` claims atomic safety but `FixedBitSet` is not atomic. Implementation must use
+`Vec<AtomicU64>` with `fetch_or`/`fetch_and` (Release/Acquire ordering) for bit toggles, or require
+`&mut self` and defer through command buffers.
+
+### ParallelCommandWriter (High)
+
+`writer(worker_index)` returns `&mut CommandSegment`. Two threads with the same `worker_index`
+create aliased `&mut` -- undefined behavior. Use a `!Copy` `WorkerToken` issued once per worker to
+enforce unique access, or use `thread_local!` indexing.
+
+### Observer Callbacks (Medium)
+
+Observer dispatch during command buffer flush is sequential (single-threaded at sync points).
+Closures need `Send` but not `Sync`. Document this invariant.
+
+## Performance Notes
+
+### Archetype Column Lookup
+
+Archetype columns are stored in `HashMap<ComponentId, Column>`. For hot-path query iteration, this
+hash lookup occurs per-archetype per query. Implementation should use a flat array indexed by
+per-archetype column index (assigned at archetype creation), with the `HashMap` only for dynamic
+lookups. This avoids hash overhead in the inner loop.
 
 ## Test Plan
 
@@ -2697,50 +2737,34 @@ adjustments.
 
 ## Open Questions
 
-1. **Chunk capacity calculation** -- The chunk capacity
-   depends on the sum of component sizes in the archetype
-   and the target chunk byte size. Archetypes with many
-   large components may have very small chunk capacities
-   (e.g., 2-3 entities per chunk). Should there be a
-   minimum chunk capacity floor (e.g., 8 entities)?
+1. **Chunk capacity calculation** -- The chunk capacity depends on the sum of component sizes in the
+   archetype and the target chunk byte size. Archetypes with many large components may have very
+   small chunk capacities (e.g., 2-3 entities per chunk). Should there be a minimum chunk capacity
+   floor (e.g., 8 entities)?
 
-2. **Sparse set paging strategy** -- The sparse array in
-   `SparseSet` uses paged allocation to avoid allocating
-   a slot for every possible entity index. Page size
-   (e.g., 4096 entries) trades memory for lookup speed.
-   Optimal page size depends on entity density patterns.
+2. **Sparse set paging strategy** -- The sparse array in `SparseSet` uses paged allocation to avoid
+   allocating a slot for every possible entity index. Page size (e.g., 4096 entries) trades memory
+   for lookup speed. Optimal page size depends on entity density patterns.
 
-3. **Observer recursion depth** -- Observers can record
-   commands that trigger further observers when flushed.
-   A depth limit of 16 prevents infinite loops, but some
-   valid cascade patterns (e.g., deep hierarchy events)
-   may need more depth. Should the limit be configurable?
+3. **Observer recursion depth** -- Observers can record commands that trigger further observers when
+   flushed. A depth limit of 16 prevents infinite loops, but some valid cascade patterns (e.g., deep
+   hierarchy events) may need more depth. Should the limit be configurable?
 
-4. **Query variable compilation** -- Pattern-matching
-   queries with variables (`$parent`, `$target`) require
-   a query planner to determine join order. The planner
-   complexity and query planning cost at cache-build time
-   need benchmarking to ensure they stay within the 50 ms
-   schedule-build target.
+4. **Query variable compilation** -- Pattern-matching queries with variables (`$parent`, `$target`)
+   require a query planner to determine join order. The planner complexity and query planning cost
+   at cache-build time need benchmarking to ensure they stay within the 50 ms schedule-build target.
 
-5. **Shared component hash equality** -- Shared components
-   are stored once per unique value per chunk. This
-   requires hashing or equality comparison of component
-   values. Large shared components (e.g., complex material
-   descriptors) may have expensive equality checks. Should
-   we require `Hash + Eq` on shared components, or use a
-   content-addressed approach?
+5. **Shared component hash equality** -- Shared components are stored once per unique value per
+   chunk. This requires hashing or equality comparison of component values. Large shared components
+   (e.g., complex material descriptors) may have expensive equality checks. Should we require
+   `Hash + Eq` on shared components, or use a content-addressed approach?
 
-6. **Prefab override granularity** -- Copy-on-write
-   overrides currently operate at the whole-component
-   level. A field-level override system (like Unity's
-   prefab property overrides) would be more memory
-   efficient but significantly more complex. Is
-   component-level granularity sufficient?
+6. **Prefab override granularity** -- Copy-on-write overrides currently operate at the
+   whole-component level. A field-level override system (like Unity's prefab property overrides)
+   would be more memory efficient but significantly more complex. Is component-level granularity
+   sufficient?
 
-7. **Dynamic component performance parity** -- Runtime-
-   registered dynamic components use type-erased paths
-   that may be slower than statically-registered
-   components. What is the acceptable performance gap?
-   Should dynamic components be excluded from parallel
-   iteration if they cannot guarantee Send + Sync?
+7. **Dynamic component performance parity** -- Runtime- registered dynamic components use
+   type-erased paths that may be slower than statically-registered components. What is the
+   acceptable performance gap? Should dynamic components be excluded from parallel iteration if they
+   cannot guarantee Send + Sync?

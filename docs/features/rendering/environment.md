@@ -1,6 +1,6 @@
 # 2.7 — Environment and Atmosphere
 
-### F-2.7.1 Procedural Sky (Bruneton/Hillaire Atmosphere)
+## F-2.7.1 Procedural Sky (Bruneton/Hillaire Atmosphere)
 
 Physically-based sky rendering using precomputed atmosphere LUTs (transmittance, multi-scattering,
 sky view, aerial perspective). Supports time-of-day transitions with sun position and Rayleigh/Mie

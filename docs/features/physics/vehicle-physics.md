@@ -18,11 +18,12 @@ links it to its wheel children via the ECS parent-child hierarchy.
 ### F-4.5.2 Tire Friction Model
 
 Each wheel entity carries a `TireFriction` component storing Pacejka Magic Formula coefficients and
-a surface-type friction curve table. `TireForceSystem` queries all `(TireFriction, WheelSuspension,
-Transform)` tuples, reads the contact normal and suspension compression from `WheelSuspension`, and
-computes lateral and longitudinal forces from slip angle and slip ratio. Surface type is determined
-from the collider material on the contacted entity. Computed forces are written to a
-`WheelForceOutput` component on each wheel entity for downstream systems to consume.
+a surface-type friction curve table. `TireForceSystem` queries all
+`(TireFriction, WheelSuspension, Transform)` tuples, reads the contact normal and suspension
+compression from `WheelSuspension`, and computes lateral and longitudinal forces from slip angle and
+slip ratio. Surface type is determined from the collider material on the contacted entity. Computed
+forces are written to a `WheelForceOutput` component on each wheel entity for downstream systems to
+consume.
 
 - **Requirements:** R-4.5.2
 - **Dependencies:** F-1.1.1, F-4.5.1, F-4.1.3
@@ -54,10 +55,10 @@ runs within the same system based on configurable shift points in the `Drivetrai
 The chassis entity carries `AntiRollBar` and `StabilityControl` components. `AntiRollBarSystem`
 queries `(AntiRollBar, Vehicle)`, iterates paired wheel entities via the parent-child hierarchy,
 reads their `WheelSuspension` compression values, and applies a corrective force that transfers load
-between paired wheels to resist body roll. `StabilityControlSystem` queries `(StabilityControl,
-Drivetrain, Vehicle)` and applies traction control and electronic stability corrections by modifying
-brake and throttle values on individual wheel entities. Both components expose tuning parameters and
-can be disabled per entity.
+between paired wheels to resist body roll. `StabilityControlSystem` queries
+`(StabilityControl, Drivetrain, Vehicle)` and applies traction control and electronic stability
+corrections by modifying brake and throttle values on individual wheel entities. Both components
+expose tuning parameters and can be disabled per entity.
 
 - **Requirements:** R-4.5.4
 - **Dependencies:** F-1.1.1, F-4.5.1, F-4.5.3
@@ -86,11 +87,11 @@ achieved by varying left and right track speeds within the `TrackedVehicle` comp
 
 Hover vehicles use `HoverRepulsor` components on child entities positioned at repulsion points
 beneath the chassis. Each `HoverRepulsor` stores height-dependent force falloff, maximum hover
-height, and lateral friction coefficients. `HoverRepulsorSystem` queries all `(HoverRepulsor,
-Transform)` pairs, casts a ray downward from each repulsor entity, and computes a repulsion force
-that is applied to the parent chassis entity. A `HoverStabilizationSystem` queries the chassis
-`(Vehicle, Transform)` and applies tilt correction torques to keep the vehicle level over terrain
-edges and water surfaces.
+height, and lateral friction coefficients. `HoverRepulsorSystem` queries all
+`(HoverRepulsor, Transform)` pairs, casts a ray downward from each repulsor entity, and computes a
+repulsion force that is applied to the parent chassis entity. A `HoverStabilizationSystem` queries
+the chassis `(Vehicle, Transform)` and applies tilt correction torques to keep the vehicle level
+over terrain edges and water surfaces.
 
 - **Requirements:** R-4.5.6
 - **Dependencies:** F-1.1.1, F-4.4.1, F-4.1.1

@@ -1,6 +1,6 @@
 # 13.28 — Advertising Integration
 
-### F-13.28.1 Rewarded Video Ads
+## F-13.28.1 Rewarded Video Ads
 
 Opt-in video advertisements that grant in-game rewards on completion. The ad system provides a
 request-show-complete lifecycle: gameplay requests an ad, the SDK fetches and caches a video from

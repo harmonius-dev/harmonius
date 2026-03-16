@@ -13,7 +13,7 @@ for efficient network transmission.
 - **Verification:** Place a unit on a fog grid with 256x256 cells. Verify cells within sight radius
   are visible, previously seen cells are shrouded, and unvisited cells are unexplored. Remove the
   unit; verify visible cells transition to shrouded. Confirm the fog texture renders correct
-  darkening per state. Serialize fog state and verify the payload is exactly 2 * 256 * 256 / 8 =
+  darkening per state. Serialize fog state and verify the payload is exactly 2 *256* 256 / 8 =
   16,384 bytes per faction.
 
 ## R-13.20.2 Vision Source and Sight Radius
@@ -84,5 +84,5 @@ steady-state gameplay.
 - **Rationale:** RTS games transmit fog state frequently. Compact encoding and delta updates
   minimize bandwidth consumption in multiplayer.
 - **Verification:** Serialize a full 512x512 fog grid for 4 factions. Verify payload size equals 2 *
-  512 * 512 * 4 / 8 = 262,144 bytes. Reveal 5% of cells and verify delta update size is at least 90%
+  512 *512* 4 / 8 = 262,144 bytes. Reveal 5% of cells and verify delta update size is at least 90%
   smaller than full sync.

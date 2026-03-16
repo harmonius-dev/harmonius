@@ -4,34 +4,28 @@
 
 ### R-4.7.1 XPBD Solver System
 
-The engine **SHALL** implement an `XpbdSolverSystem` that
-resolves distance, bending, volume preservation, and
-shape-matching constraints on GPU buffers for entities with
-`ClothSimulation` components. Constraint compliance
-**SHALL** be configurable per entity for timestep-
-independent stiffness.
+The engine **SHALL** implement an `XpbdSolverSystem` that resolves distance, bending, volume
+preservation, and shape-matching constraints on GPU buffers for entities with `ClothSimulation`
+components. Constraint compliance **SHALL** be configurable per entity for timestep- independent
+stiffness.
 
 - **Derived from:**
   [F-4.7.1](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** XPBD provides stable soft body simulation
-  with compliance-based stiffness that does not depend on
-  iteration count or timestep size.
-- **Verification:** Create a 10x10 cloth grid. Apply
-  gravity for 100 ticks at 10 iterations. Assert all
-  distance constraints are within 1% of rest length.
+- **Rationale:** XPBD provides stable soft body simulation with compliance-based stiffness that does
+  not depend on iteration count or timestep size.
+- **Verification:** Create a 10x10 cloth grid. Apply gravity for 100 ticks at 10 iterations. Assert
+  all distance constraints are within 1% of rest length.
 
 ### R-4.7.1a Single Cloth Performance Budget
 
-A single cloth instance (20x20 particle grid, 10 solver
-iterations) **SHALL** complete its simulation step within
-0.5 ms on minimum-spec hardware.
+A single cloth instance (20x20 particle grid, 10 solver iterations) **SHALL** complete its
+simulation step within 0.5 ms on minimum-spec hardware.
 
 - **Derived from:**
   [F-4.7.1](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Multiple cloth instances must fit within
-  the physics budget; each must be individually cheap.
-- **Verification:** Benchmark a 20x20 cloth grid at 10
-  iterations. Assert completion within 0.5 ms.
+- **Rationale:** Multiple cloth instances must fit within the physics budget; each must be
+  individually cheap.
+- **Verification:** Benchmark a 20x20 cloth grid at 10 iterations. Assert completion within 0.5 ms.
 
 ---
 
@@ -73,46 +67,39 @@ characters, **so that** soft materials look physically believable.
 
 ### R-4.7.2 ECS Cloth Entities
 
-Each cloth instance **SHALL** be an ECS entity with a
-`ClothSimulation` component storing particle positions,
-velocities, constraint buffers, and material parameters
-(stretch, shear, bend resistance).
+Each cloth instance **SHALL** be an ECS entity with a `ClothSimulation` component storing particle
+positions, velocities, constraint buffers, and material parameters (stretch, shear, bend
+resistance).
 
 - **Derived from:**
   [F-4.7.2](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Standard ECS entities ensure cloth is
-  queryable, serializable, and manageable by the same
-  systems as all other physics objects.
-- **Verification:** Create a cloth entity. Assert it is
-  queryable via `(ClothSimulation, Transform)`.
+- **Rationale:** Standard ECS entities ensure cloth is queryable, serializable, and manageable by
+  the same systems as all other physics objects.
+- **Verification:** Create a cloth entity. Assert it is queryable via
+  `(ClothSimulation, Transform)`.
 
 ### R-4.7.2a Skeleton Attachment Accuracy
 
-Cloth particles attached to skeleton bones via
-`ClothAttachment` components **SHALL** remain within 0.1 mm
-of their bone positions during simulation.
+Cloth particles attached to skeleton bones via `ClothAttachment` components **SHALL** remain within
+0.1 mm of their bone positions during simulation.
 
 - **Derived from:**
   [F-4.7.2](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Detached cloth particles produce visible
-  stretching at attachment points on character capes and
-  banners.
-- **Verification:** Attach a 20x20 cloth to two animated
-  bone entities. Simulate 200 ticks. Assert attached
-  particles stay within 0.1 mm of bone positions.
+- **Rationale:** Detached cloth particles produce visible stretching at attachment points on
+  character capes and banners.
+- **Verification:** Attach a 20x20 cloth to two animated bone entities. Simulate 200 ticks. Assert
+  attached particles stay within 0.1 mm of bone positions.
 
 ### R-4.7.2b Cloth Memory Budget
 
-Per-cloth memory consumption (particle positions,
-velocities, constraint descriptors, attachment data)
-**SHALL NOT** exceed 64 KB for a 20x20 particle grid.
+Per-cloth memory consumption (particle positions, velocities, constraint descriptors, attachment
+data) **SHALL NOT** exceed 64 KB for a 20x20 particle grid.
 
 - **Derived from:**
   [F-4.7.2](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Many cloth instances must fit within GPU
-  memory alongside rendering and fluid data.
-- **Verification:** Create a 20x20 cloth instance. Measure
-  total buffer size. Assert it does not exceed 64 KB.
+- **Rationale:** Many cloth instances must fit within GPU memory alongside rendering and fluid data.
+- **Verification:** Create a 20x20 cloth instance. Measure total buffer size. Assert it does not
+  exceed 64 KB.
 
 ---
 
@@ -136,8 +123,8 @@ instance in the editor, **so that** different fabrics feel distinct.
 ## US-4.7.2.4 Verify Cloth Attachment Accuracy
 
 **As an** engine tester (P-27), **I want to** attach a 20x20 cloth to two animated bone entities,
-simulate 200 ticks, and assert attached particles stay within 0.1mm of their bone positions, **so
-that** attachment accuracy is verified.
+simulate 200 ticks, and assert attached particles stay within 0.1mm of their bone positions,
+**so that** attachment accuracy is verified.
 
 ## US-4.7.2.5 Verify Free Particles Respond to Gravity
 
@@ -157,8 +144,8 @@ simulation runs on the GPU.
 
 ## US-4.7.2.8 Experience Character Capes Flowing in Movement
 
-**As a** player (P-23), **I want** character capes and robes to flow and react to movement, **so
-that** characters look dynamic and alive.
+**As a** player (P-23), **I want** character capes and robes to flow and react to movement,
+**so that** characters look dynamic and alive.
 
 ---
 
@@ -166,19 +153,15 @@ that** characters look dynamic and alive.
 
 ### R-4.7.3 Self-Collision Prevention
 
-Entities with both `ClothSimulation` and
-`SelfCollisionEnabled` components **SHALL** prevent
-non-adjacent particles from interpenetrating closer than
-the configured thickness during simulation.
+Entities with both `ClothSimulation` and `SelfCollisionEnabled` components **SHALL** prevent
+non-adjacent particles from interpenetrating closer than the configured thickness during simulation.
 
 - **Derived from:**
   [F-4.7.3](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Cloth folding over itself without
-  self-collision produces visible clipping artifacts that
-  break visual fidelity.
-- **Verification:** Drop a 20x20 cloth onto a sphere so it
-  folds. Simulate 500 ticks. Assert no non-adjacent
-  particles are closer than the thickness value.
+- **Rationale:** Cloth folding over itself without self-collision produces visible clipping
+  artifacts that break visual fidelity.
+- **Verification:** Drop a 20x20 cloth onto a sphere so it folds. Simulate 500 ticks. Assert no
+  non-adjacent particles are closer than the thickness value.
 
 ---
 
@@ -215,20 +198,16 @@ self-intersection is prevented.
 
 ### R-4.7.4 Bidirectional Cloth-Rigid Body Forces
 
-The `XpbdSolverSystem` **SHALL** generate contact
-constraints between cloth particles and nearby `Collider`
-entities, writing reaction forces as `ExternalForce`
-components on rigid bodies. Cloth **SHALL** drape over
-rigid bodies and push them via reaction forces.
+The `XpbdSolverSystem` **SHALL** generate contact constraints between cloth particles and nearby
+`Collider` entities, writing reaction forces as `ExternalForce` components on rigid bodies. Cloth
+**SHALL** drape over rigid bodies and push them via reaction forces.
 
 - **Derived from:**
   [F-4.7.4](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** One-way coupling where cloth only receives
-  forces looks unrealistic; two-way coupling enables cloth
-  to deflect lightweight objects.
-- **Verification:** Drape a 10 kg cloth over a 1 kg rigid
-  body. Assert the rigid body's `ExternalForce` is
-  non-zero and its position decreases.
+- **Rationale:** One-way coupling where cloth only receives forces looks unrealistic; two-way
+  coupling enables cloth to deflect lightweight objects.
+- **Verification:** Drape a 10 kg cloth over a 1 kg rigid body. Assert the rigid body's
+  `ExternalForce` is non-zero and its position decreases.
 
 ---
 
@@ -260,57 +239,47 @@ furniture realistically, **so that** cloth interacts with the physical world.
 
 ### R-4.7.5 Shared 3D Wind Field
 
-The engine **SHALL** support `WindSource` entities
-(directional, point, vortex) that are sampled into a shared
-3D wind field texture. All wind consumers (cloth, hair,
-foliage, particles) **SHALL** read wind forces from this
-shared texture rather than querying `WindSource` entities
-directly.
+The engine **SHALL** support `WindSource` entities (directional, point, vortex) that are sampled
+into a shared 3D wind field texture. All wind consumers (cloth, hair, foliage, particles) **SHALL**
+read wind forces from this shared texture rather than querying `WindSource` entities directly.
 
 - **Derived from:**
   [F-4.7.5](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** A shared wind field ensures consistent
-  wind behavior across all systems and avoids per-consumer
-  sampling of individual wind sources.
-- **Verification:** Verify cloth reads wind from the shared
-  texture. Verify changing a `WindSource` affects cloth,
-  foliage, and particles equally.
+- **Rationale:** A shared wind field ensures consistent wind behavior across all systems and avoids
+  per-consumer sampling of individual wind sources.
+- **Verification:** Verify cloth reads wind from the shared texture. Verify changing a `WindSource`
+  affects cloth, foliage, and particles equally.
 
 ### R-4.7.5a Wind Force Proportionality
 
-Cloth displacement **SHALL** increase by at least 50% when
-wind strength is doubled, demonstrating proportional
-response to wind magnitude.
+Cloth displacement **SHALL** increase by at least 50% when wind strength is doubled, demonstrating
+proportional response to wind magnitude.
 
 - **Derived from:**
   [F-4.7.5](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Wind response must scale with strength to
-  produce visually meaningful variation between light and
-  heavy wind.
-- **Verification:** Place stationary cloth with wind at
-  strength S. Simulate 100 ticks. Double S. Assert
-  displacement increases by at least 50%.
+- **Rationale:** Wind response must scale with strength to produce visually meaningful variation
+  between light and heavy wind.
+- **Verification:** Place stationary cloth with wind at strength S. Simulate 100 ticks. Double S.
+  Assert displacement increases by at least 50%.
 
 ### R-4.7.5b Wind Field Update Cost
 
-Wind field generation **SHALL** complete within 0.2 ms per
-frame for up to 16 active wind sources.
+Wind field generation **SHALL** complete within 0.2 ms per frame for up to 16 active wind sources.
 
 - **Derived from:**
   [F-4.7.5](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Wind affects many systems; its update must
-  be cheap to avoid compounding cost across all consumers.
-- **Verification:** Create 16 active wind sources. Measure
-  wind field generation time. Assert completion within
-  0.2 ms.
+- **Rationale:** Wind affects many systems; its update must be cheap to avoid compounding cost
+  across all consumers.
+- **Verification:** Create 16 active wind sources. Measure wind field generation time. Assert
+  completion within 0.2 ms.
 
 ---
 
 ## US-4.7.5.1 Place Wind Source Entities
 
 **As a** game developer (P-15), **I want to** create wind source entities with `WindSource`
-components (directional, point, vortex) that are sampled into a shared 3D wind field texture, **so
-that** wind affects all consumers consistently.
+components (directional, point, vortex) that are sampled into a shared 3D wind field texture,
+**so that** wind affects all consumers consistently.
 
 ## US-4.7.5.2 Configure Wind Parameters in Editor
 
@@ -325,8 +294,8 @@ banners, and trees in the level, **so that** environmental wind brings the world
 ## US-4.7.5.4 Verify Wind Affects Cloth Proportionally
 
 **As an** engine tester (P-27), **I want to** place a stationary cloth with a directional wind at
-strength S, simulate 100 ticks, double S, and assert displacement increases by at least 50%, **so
-that** wind response scales with strength.
+strength S, simulate 100 ticks, double S, and assert displacement increases by at least 50%,
+**so that** wind response scales with strength.
 
 ## US-4.7.5.5 Verify Cloth Reads Shared Wind Field
 
@@ -347,8 +316,8 @@ sampled forces to cloth entities, **so that** wind is a unified system.
 
 ## US-4.7.5.8 Experience Banners and Flags Blowing in Wind
 
-**As a** player (P-23), **I want** banners, flags, and sails to flutter and ripple in the wind, **so
-that** the environment feels dynamic and alive.
+**As a** player (P-23), **I want** banners, flags, and sails to flutter and ripple in the wind,
+**so that** the environment feels dynamic and alive.
 
 ---
 
@@ -356,22 +325,17 @@ that** the environment feels dynamic and alive.
 
 ### R-4.7.6 Strain-Based Cloth Tearing
 
-The `ClothTearingSystem` **SHALL** check constraint strain
-against a configurable threshold on the `ClothSimulation`
-component. When strain exceeds the limit, the system
-**SHALL** split mesh topology, update constraint buffers,
-and spawn new cloth entities for separated patches within
-one frame with total particle count preserved.
+The `ClothTearingSystem` **SHALL** check constraint strain against a configurable threshold on the
+`ClothSimulation` component. When strain exceeds the limit, the system **SHALL** split mesh
+topology, update constraint buffers, and spawn new cloth entities for separated patches within one
+frame with total particle count preserved.
 
 - **Derived from:**
   [F-4.7.6](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Cloth tearing enables destructible sails,
-  banners, and garments for combat and environmental
-  storytelling.
-- **Verification:** Anchor cloth at two corners. Apply
-  force exceeding the tear threshold. Assert the cloth
-  splits into separate entities within one frame with
-  total particle count preserved.
+- **Rationale:** Cloth tearing enables destructible sails, banners, and garments for combat and
+  environmental storytelling.
+- **Verification:** Anchor cloth at two corners. Apply force exceeding the tear threshold. Assert
+  the cloth splits into separate entities within one frame with total particle count preserved.
 
 ---
 
@@ -394,8 +358,8 @@ particle count preserved, **so that** tearing mechanics are correct.
 ## US-4.7.6.4 Implement Cloth Tearing System
 
 **As an** engine developer (P-26), **I want to** implement `ClothTearingSystem` that splits mesh
-topology, updates constraint buffers, and spawns new cloth entities for separated patches, **so
-that** dynamic cloth tearing is supported.
+topology, updates constraint buffers, and spawns new cloth entities for separated patches,
+**so that** dynamic cloth tearing is supported.
 
 ## US-4.7.6.5 Experience Sails Tearing in Battle
 
@@ -408,45 +372,39 @@ naval and siege battles have visible cloth destruction.
 
 ### R-4.7.7 Distance-Based Cloth LOD
 
-The `ClothLodSystem` **SHALL** adjust simulation fidelity
-(particle count, constraint iterations, update frequency)
-based on camera distance, controlled by a `ClothLod`
-component on cloth entities. At the maximum LOD distance,
-the system **SHALL** replace physics with an animation-
-driven fallback at zero simulation cost.
+The `ClothLodSystem` **SHALL** adjust simulation fidelity (particle count, constraint iterations,
+update frequency) based on camera distance, controlled by a `ClothLod` component on cloth entities.
+At the maximum LOD distance, the system **SHALL** replace physics with an animation- driven fallback
+at zero simulation cost.
 
 - **Derived from:**
   [F-4.7.7](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Distant cloth does not need full
-  simulation fidelity; LOD enables many cloth instances
-  in a scene without exhausting the physics budget.
-- **Verification:** Place 100 cloth entities at varying
-  distances with LOD enabled vs disabled. Assert at least
-  50% simulation time reduction with LOD enabled.
+- **Rationale:** Distant cloth does not need full simulation fidelity; LOD enables many cloth
+  instances in a scene without exhausting the physics budget.
+- **Verification:** Place 100 cloth entities at varying distances with LOD enabled vs disabled.
+  Assert at least 50% simulation time reduction with LOD enabled.
 
 ### R-4.7.7a Maximum LOD Disables Simulation
 
-Cloth beyond the maximum LOD distance **SHALL** have zero
-solver invocations per frame.
+Cloth beyond the maximum LOD distance **SHALL** have zero solver invocations per frame.
 
 - **Derived from:**
   [F-4.7.7](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Zero simulation cost at extreme distances
-  ensures cloth does not consume resources when invisible.
-- **Verification:** Place cloth beyond the maximum LOD
-  distance. Assert zero solver invocations per frame.
+- **Rationale:** Zero simulation cost at extreme distances ensures cloth does not consume resources
+  when invisible.
+- **Verification:** Place cloth beyond the maximum LOD distance. Assert zero solver invocations per
+  frame.
 
 ### R-4.7.7b Smooth LOD Transitions
 
-LOD transitions **SHALL** interpolate particle positions
-without visible popping.
+LOD transitions **SHALL** interpolate particle positions without visible popping.
 
 - **Derived from:**
   [F-4.7.7](../../features/physics/soft-body-and-cloth.md)
-- **Rationale:** Abrupt LOD transitions are visually
-  distracting; interpolation hides the transition.
-- **Verification:** Move the camera through LOD transition
-  boundaries. Assert no visible particle popping.
+- **Rationale:** Abrupt LOD transitions are visually distracting; interpolation hides the
+  transition.
+- **Verification:** Move the camera through LOD transition boundaries. Assert no visible particle
+  popping.
 
 ---
 

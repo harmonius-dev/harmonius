@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/animation/](../../features/animation/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/animation/](../../features/animation/),
 > [requirements/animation/](../../requirements/animation/), and
-> [user-stories/animation/](../../user-stories/animation/). The table
-> below traces design elements to those definitions.
+> [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
+> to those definitions.
 
 ### State Machine
 
@@ -55,32 +55,21 @@
 
 ## Overview
 
-The animation state machine and morph target system
-is a CPU-side graph evaluator that produces blend
-descriptors uploaded to the GPU each frame. It
-separates the **what to blend** (CPU) from the
+The animation state machine and morph target system is a CPU-side graph evaluator that produces
+blend descriptors uploaded to the GPU each frame. It separates the **what to blend** (CPU) from the
 **how to blend** (GPU compute).
 
 Key design principles:
 
-1. **Shared definitions, lightweight instances.**
-   A `StateGraph` is an immutable asset shared by
-   thousands of entities. Each entity owns only a
-   `StateInstance` with per-entity state (current
-   node, elapsed time, parameter values). Instance
-   memory is under 1 KB.
-2. **100% ECS-based.** All animation state lives as
-   components. All evaluation runs as systems.
-   No separate animation world or manager object.
-3. **No-code authoring.** State graphs, blend
-   spaces, transition rules, and morph target
-   assignments are authored entirely in the visual
-   animation editor. Parameters are bound from
-   logic graphs.
-4. **GPU-side morph evaluation.** Morph target
-   deltas are accumulated via compute shaders
-   with sparse delta storage, applied before
-   skinning in the deformation pipeline.
+1. **Shared definitions, lightweight instances.** A `StateGraph` is an immutable asset shared by
+   thousands of entities. Each entity owns only a `StateInstance` with per-entity state (current
+   node, elapsed time, parameter values). Instance memory is under 1 KB.
+2. **100% ECS-based.** All animation state lives as components. All evaluation runs as systems. No
+   separate animation world or manager object.
+3. **No-code authoring.** State graphs, blend spaces, transition rules, and morph target assignments
+   are authored entirely in the visual animation editor. Parameters are bound from logic graphs.
+4. **GPU-side morph evaluation.** Morph target deltas are accumulated via compute shaders with
+   sparse delta storage, applied before skinning in the deformation pipeline.
 
 ### Performance Targets
 
@@ -176,7 +165,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_animation/
 ├── state_machine/
 │   ├── graph.rs         # StateGraph, StateNodeId,
@@ -1453,8 +1442,7 @@ pub struct MorphWeight {
 
 ### ECS Components
 
-All animation state lives as ECS components.
-No separate animation world or manager.
+All animation state lives as ECS components. No separate animation world or manager.
 
 ```rust
 // ---- State Machine Components ----
@@ -1730,9 +1718,8 @@ impl AnimationQuery {
 
 ### Per-Frame State Machine Evaluation
 
-The following pseudocode shows the evaluation
-algorithm for a single entity's state machine
-per frame.
+The following pseudocode shows the evaluation algorithm for a single entity's state machine per
+frame.
 
 ```rust
 fn evaluate_single_instance(
@@ -2000,8 +1987,7 @@ sequenceDiagram
 
 ### Layer Composition Algorithm
 
-The layer stack is evaluated bottom-to-top. Each
-layer's output is composited onto the accumulator
+The layer stack is evaluated bottom-to-top. Each layer's output is composited onto the accumulator
 using its blend mode and bone mask.
 
 ```rust
@@ -2086,34 +2072,23 @@ fn compose_layers(
 
 ### No-Code Visual Editor Integration
 
-All types marked `Reflect` are exposed to the
-visual animation editor. The editor serializes
-`StateGraphDef`, `MontageDef`, `BlendSpace2DDef`,
-`BoneMaskDef`, `FacialRigDef`, `AimOffsetDef`,
-and `MorphTargetSet` as assets. Parameters are
-bound from logic graphs (F-15.8.4) at runtime.
+All types marked `Reflect` are exposed to the visual animation editor. The editor serializes
+`StateGraphDef`, `MontageDef`, `BlendSpace2DDef`, `BoneMaskDef`, `FacialRigDef`, `AimOffsetDef`, and
+`MorphTargetSet` as assets. Parameters are bound from logic graphs (F-15.8.4) at runtime.
 
 The visual state machine editor provides:
 
-1. **Node canvas** for placing states and
-   drawing transitions.
-2. **Blend space editor** with 2D sample
-   placement and live triangulation preview.
-3. **Bone mask painter** on a 3D skeleton
-   viewport.
-4. **Montage timeline** with section markers
-   and notify placement.
-5. **Morph target slider panel** for weight
-   previewing.
+1. **Node canvas** for placing states and drawing transitions.
+2. **Blend space editor** with 2D sample placement and live triangulation preview.
+3. **Bone mask painter** on a 3D skeleton viewport.
+4. **Montage timeline** with section markers and notify placement.
+5. **Morph target slider panel** for weight previewing.
 
 ### Networking Integration
 
-State machine replication includes: current state ID,
-transition progress, and parameter values (floats,
-bools, triggers). Parameters are replicated as a
-compact struct. State transitions are derived
-client-side from replicated parameters, reducing
-bandwidth.
+State machine replication includes: current state ID, transition progress, and parameter values
+(floats, bools, triggers). Parameters are replicated as a compact struct. State transitions are
+derived client-side from replicated parameters, reducing bandwidth.
 
 Blend curves use the shared `Curve<T>` type (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).
@@ -2196,55 +2171,34 @@ Blend curves use the shared `Curve<T>` type (see
 
 ## Open Questions
 
-1. **Blend space triangulation algorithm** --
-   Delaunay triangulation is standard for 2D
-   blend spaces. Should we use incremental
-   Delaunay (simpler, O(n log n)) or constrained
-   Delaunay (supports non-convex sample layouts)?
-   Non-convex layouts may be needed for complex
-   locomotion blend spaces.
+1. **Blend space triangulation algorithm** -- Delaunay triangulation is standard for 2D blend
+   spaces. Should we use incremental Delaunay (simpler, O(n log n)) or constrained Delaunay
+   (supports non-convex sample layouts)? Non-convex layouts may be needed for complex locomotion
+   blend spaces.
 
-2. **Morph target GPU dispatch strategy** --
-   The current design uses a binary search per
-   vertex per target in the compute shader. An
-   alternative is to scatter-write from a
-   per-target dispatch (one thread per delta).
-   Scatter-write avoids the binary search but
-   requires atomics for accumulation. Profile
-   both approaches on target hardware.
+2. **Morph target GPU dispatch strategy** -- The current design uses a binary search per vertex per
+   target in the compute shader. An alternative is to scatter-write from a per-target dispatch (one
+   thread per delta). Scatter-write avoids the binary search but requires atomics for accumulation.
+   Profile both approaches on target hardware.
 
-3. **State graph hot-reload** -- When the visual
-   editor modifies a state graph asset, should
-   all active instances reset to the default
-   state, or should they attempt to preserve
-   their current state if the node still exists?
-   Preserving state is more designer-friendly
-   but risks invalid state references.
+3. **State graph hot-reload** -- When the visual editor modifies a state graph asset, should all
+   active instances reset to the default state, or should they attempt to preserve their current
+   state if the node still exists? Preserving state is more designer-friendly but risks invalid
+   state references.
 
-4. **Sync group leader selection** -- Currently
-   the highest-weight clip leads the sync group.
-   Should there be an explicit leader designation
-   per group, or is weight-based selection always
-   sufficient? Edge case: two clips at 0.5/0.5
-   weight may cause leader oscillation.
+4. **Sync group leader selection** -- Currently the highest-weight clip leads the sync group. Should
+   there be an explicit leader designation per group, or is weight-based selection always
+   sufficient? Edge case: two clips at 0.5/0.5 weight may cause leader oscillation.
 
-5. **Corrective shape evaluation location** --
-   Corrective shapes currently evaluate CPU-side
-   (reading bone transforms to compute weights)
-   then upload weights to GPU. Could corrective
-   weight computation move entirely to GPU
-   compute, reading bone matrices directly? This
-   would eliminate a CPU-GPU dependency.
+5. **Corrective shape evaluation location** -- Corrective shapes currently evaluate CPU-side
+   (reading bone transforms to compute weights) then upload weights to GPU. Could corrective weight
+   computation move entirely to GPU compute, reading bone matrices directly? This would eliminate a
+   CPU-GPU dependency.
 
-6. **Facial animation LOD** -- At what distance
-   should facial animation be disabled entirely?
-   Current plan disables for distant NPCs on
-   mobile, but desktop threshold is unspecified.
-   Need per-tier distance thresholds integrated
-   with the animation LOD system (F-9.1.10).
+6. **Facial animation LOD** -- At what distance should facial animation be disabled entirely?
+   Current plan disables for distant NPCs on mobile, but desktop threshold is unspecified. Need
+   per-tier distance thresholds integrated with the animation LOD system (F-9.1.10).
 
-7. **Montage priority when multiple are active**
-   -- If two montages affect overlapping bone
-   groups, which takes priority? Options:
-   last-played-wins, explicit priority field,
-   or reject overlapping montages.
+7. **Montage priority when multiple are active** -- If two montages affect overlapping bone groups,
+   which takes priority? Options: last-played-wins, explicit priority field, or reject overlapping
+   montages.

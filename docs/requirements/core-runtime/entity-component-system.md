@@ -367,8 +367,8 @@ the same component storage.
 ### R-1.1.21 Component Aspects
 
 The engine **SHALL** support named aspect structs that group a subset of an entity's components into
-a single type parameter for use in queries, with per-field access mode declarations (`&T` vs `&mut
-T`) and support for nested aspects.
+a single type parameter for use in queries, with per-field access mode declarations (`&T` vs
+`&mut T`) and support for nested aspects.
 
 - **Derived from:** [F-1.1.21](../../features/core-runtime/entity-component-system.md)
 - **Rationale:** Aspects reduce query boilerplate and enforce consistent component groupings across

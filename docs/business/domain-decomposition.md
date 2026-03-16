@@ -585,7 +585,7 @@ stage.
 | 2 | Platform.Threading | 5 |
 | 3 | Platform.OS | 12 |
 
-**Max parallelism: 3 agents**
+#### Max parallelism: 3 agents
 
 ---
 
@@ -600,7 +600,7 @@ stage.
 | 8 | CoreRuntime.MemoryAsyncIO | 10 |
 | 9 | CoreRuntime.SpatialIndex | 12 |
 
-**Max parallelism: 6 agents**
+#### Max parallelism: 6 agents
 
 Internal ordering: CoreRuntime.ECS should lead. SceneTransforms, EventsPlugins, and SpatialIndex
 depend on ECS primitives. ReflectionSerialization and MemoryAsyncIO can proceed in parallel with
@@ -622,7 +622,7 @@ ECS.
 | 17 | Animation.Skeletal | 12 | CoreRuntime.ECS, CoreRuntime.SceneTransforms |
 | 18 | Networking.Transport | 8 | Platform.Threading, CoreRuntime.ECS |
 
-**Max parallelism: 9 agents**
+#### Max parallelism: 9 agents
 
 ---
 
@@ -643,7 +643,7 @@ ECS.
 | 29 | UI2D.WidgetFramework | 12 | CoreRuntime.ECS, Input.DeviceAbstraction |
 | 30 | VFX.Particles | 10 | Rendering.GPUAbstraction, CoreRuntime.ECS |
 
-**Max parallelism: 12 agents**
+#### Max parallelism: 12 agents
 
 ---
 
@@ -671,7 +671,7 @@ ECS.
 | 48 | GeometryWorld.Foliage | 8 | Rendering.CoreRendering, CoreRuntime.SpatialIndex, ContentPipeline.Streaming |
 | 49 | Input.Gestures | 6 | Input.DeviceAbstraction |
 
-**Max parallelism: 19 agents**
+#### Max parallelism: 19 agents
 
 ---
 
@@ -700,7 +700,7 @@ ECS.
 | 68 | UI2D.2DGames | 15 | UI2D.WidgetFramework, Physics.RigidBody, Rendering.CoreRendering |
 | 69 | Networking.AntiCheat | 6 | Networking.Replication, GameFramework.GameplayPrimitives |
 
-**Max parallelism: 20 agents**
+#### Max parallelism: 20 agents
 
 ---
 
@@ -727,7 +727,7 @@ ECS.
 | 86 | UI2D.Accessibility | 8 | UI2D.WidgetFramework, Audio.Engine, Input.ActionsMapping |
 | 87 | Input.VRInput | 6 | Input.DeviceAbstraction, Rendering.AdvancedRendering |
 
-**Max parallelism: 18 agents**
+#### Max parallelism: 18 agents
 
 ---
 
@@ -735,7 +735,7 @@ ECS.
 
 The longest chain through the DAG determines the minimum calendar time.
 
-```
+```text
 Platform.Threading → CoreRuntime.ECS → Rendering.GPUAbstraction → Rendering.RenderGraph
   → Rendering.CoreRendering → Rendering.Lighting → Rendering.AdvancedRendering
     → GeometryWorld.ProceduralGeneration
@@ -745,7 +745,7 @@ Platform.Threading → CoreRuntime.ECS → Rendering.GPUAbstraction → Renderin
 
 Secondary critical paths:
 
-```
+```text
 Platform.Threading → CoreRuntime.ECS → Physics.RigidBody → Physics.Constraints
   → Animation.Procedural → ... → GameFramework.GenreSpecific
 

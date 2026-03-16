@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/vfx/](../../features/vfx/),
-> [requirements/vfx/](../../requirements/vfx/), and
-> [user-stories/vfx/](../../user-stories/vfx/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/vfx/](../../features/vfx/), [requirements/vfx/](../../requirements/vfx/), and
+> [user-stories/vfx/](../../user-stories/vfx/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -21,47 +20,33 @@
 
 ## Overview
 
-The Effect Graph is the sole VFX authoring surface in
-Harmonius. Designers compose spawn, update, and output
-behaviors as nodes in a visual graph. The graph compiler
-translates this visual representation into HLSL compute
-shaders that execute entirely on the GPU.
+The Effect Graph is the sole VFX authoring surface in Harmonius. Designers compose spawn, update,
+and output behaviors as nodes in a visual graph. The graph compiler translates this visual
+representation into HLSL compute shaders that execute entirely on the GPU.
 
 The system is built on four pillars:
 
-1. **Visual authoring.** No-code node graph with typed
-   pins and edges. Context nodes (spawn, initialize,
-   update, output) define the particle lifecycle.
-   Attribute, operator, and output nodes compose
-   simulation and rendering behavior.
-2. **GPU compilation.** The graph compiler produces HLSL
-   compute shaders. DXC compiles HLSL to DXIL and
-   SPIR-V. Metal Shader Converter translates DXIL to
-   MSL. One compile per unique graph variant.
-3. **100% ECS integration.** Effect instances, emitters,
-   particle buffers, parameters, LOD state, and budget
-   tracking are all ECS components. All logic runs as
-   ECS systems.
-4. **Event-driven spawning.** ECS observers trigger VFX
-   from gameplay events (collisions, animation notifies,
-   ability activations) with context data.
+1. **Visual authoring.** No-code node graph with typed pins and edges. Context nodes (spawn,
+   initialize, update, output) define the particle lifecycle. Attribute, operator, and output nodes
+   compose simulation and rendering behavior.
+2. **GPU compilation.** The graph compiler produces HLSL compute shaders. DXC compiles HLSL to DXIL
+   and SPIR-V. Metal Shader Converter translates DXIL to MSL. One compile per unique graph variant.
+3. **100% ECS integration.** Effect instances, emitters, particle buffers, parameters, LOD state,
+   and budget tracking are all ECS components. All logic runs as ECS systems.
+4. **Event-driven spawning.** ECS observers trigger VFX from gameplay events (collisions, animation
+   notifies, ability activations) with context data.
 
 ### Design Principles
 
-- **Static dispatch.** All node types are enum variants.
-  No trait objects, no vtables on the hot path.
-- **Graph-to-shader compilation.** The visual graph
-  compiles to a single fused compute dispatch per
+- **Static dispatch.** All node types are enum variants. No trait objects, no vtables on the hot
+  path.
+- **Graph-to-shader compilation.** The visual graph compiles to a single fused compute dispatch per
   emitter per lifecycle stage. No per-node dispatch.
-- **Typed edges.** Every connection carries a static
-  type. Type errors are caught at edit time.
-- **Platform-aware compilation.** Mobile graphs are
-  compiled with reduced node count limits (32 vs 128).
-  Custom per-particle nodes are restricted to
-  per-emitter on mobile.
-- **Deterministic execution.** Identical graphs with
-  identical inputs produce identical particle state
-  across frames and platforms.
+- **Typed edges.** Every connection carries a static type. Type errors are caught at edit time.
+- **Platform-aware compilation.** Mobile graphs are compiled with reduced node count limits (32 vs
+  128). Custom per-particle nodes are restricted to per-emitter on mobile.
+- **Deterministic execution.** Identical graphs with identical inputs produce identical particle
+  state across frames and platforms.
 
 ## Architecture
 
@@ -126,7 +111,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_vfx/
 ├── effect_graph/
 │   ├── graph.rs          # EffectGraph, EffectNode,
@@ -188,26 +173,17 @@ flowchart LR
 
 The compilation pipeline proceeds in six phases:
 
-1. **Validate.** Check graph connectivity, required
-   context nodes, pin connections, and platform node
-   count limits.
-2. **Flatten.** Inline custom subgraph nodes. Eliminate
-   dead nodes not reachable from any output.
-3. **Type check.** Verify all edge data types match
-   between source and target pins. Insert implicit
-   conversion nodes where safe (e.g., float to vec4
-   splat).
-4. **Topological sort.** Order nodes by data dependency
-   to produce a linear evaluation sequence per context
-   stage.
-5. **HLSL codegen.** Emit one compute shader per context
-   stage (spawn, initialize, update, output). Each
-   node's sorted evaluation becomes sequential HLSL
-   statements within a single kernel function.
-6. **Platform compile.** DXC compiles HLSL to DXIL and
-   SPIR-V. Metal Shader Converter translates DXIL to
-   MSL. Compiled shaders are cached by graph content
-   hash.
+1. **Validate.** Check graph connectivity, required context nodes, pin connections, and platform
+   node count limits.
+2. **Flatten.** Inline custom subgraph nodes. Eliminate dead nodes not reachable from any output.
+3. **Type check.** Verify all edge data types match between source and target pins. Insert implicit
+   conversion nodes where safe (e.g., float to vec4 splat).
+4. **Topological sort.** Order nodes by data dependency to produce a linear evaluation sequence per
+   context stage.
+5. **HLSL codegen.** Emit one compute shader per context stage (spawn, initialize, update, output).
+   Each node's sorted evaluation becomes sequential HLSL statements within a single kernel function.
+6. **Platform compile.** DXC compiles HLSL to DXIL and SPIR-V. Metal Shader Converter translates
+   DXIL to MSL. Compiled shaders are cached by graph content hash.
 
 ### Frame Execution Sequence
 
@@ -592,7 +568,14 @@ pub enum PlatformTier {
     /// nodes disallowed.
     Mobile,
 }
+```
 
+**Note:** This `PlatformTier` enum defines only `Desktop` and `Mobile` variants. The canonical
+`PlatformTier` (see [shared-primitives.md](../core-runtime/shared-primitives.md)) defines four
+tiers: `Mobile, Switch, Desktop, HighEnd`. During implementation, use the full canonical enum to
+ensure consistent budget scaling.
+
+```rust
 /// An exposed parameter on the effect graph.
 pub struct ExposedParam {
     pub name: StringId,
@@ -1079,57 +1062,43 @@ impl EffectPreview {
 
 ### Effect Graph Lifecycle
 
-The lifecycle of an effect graph from authoring to
-runtime execution proceeds through these stages.
+The lifecycle of an effect graph from authoring to runtime execution proceeds through these stages.
 
-1. **Author.** The effects artist opens the visual graph
-   editor, drags nodes from the palette, and connects
-   typed pins. The editor validates in real-time,
-   highlighting type mismatches and disconnected pins.
+1. **Author.** The effects artist opens the visual graph editor, drags nodes from the palette, and
+   connects typed pins. The editor validates in real-time, highlighting type mismatches and
+   disconnected pins.
 
-2. **Preview.** The artist opens the preview viewport.
-   The graph compiles on save and the preview world
-   simulates the effect with scrubbing, looping, and
-   live per-emitter stats.
+2. **Preview.** The artist opens the preview viewport. The graph compiles on save and the preview
+   world simulates the effect with scrubbing, looping, and live per-emitter stats.
 
-3. **Compile.** On asset save or build, the graph
-   compiler runs the full pipeline: validate, flatten,
-   type check, topological sort, HLSL codegen, DXC
-   compile. Results are cached by content hash.
+3. **Compile.** On asset save or build, the graph compiler runs the full pipeline: validate,
+   flatten, type check, topological sort, HLSL codegen, DXC compile. Results are cached by content
+   hash.
 
-4. **Load.** At runtime, the asset system loads the
-   `CompiledEffect` binary. No graph interpretation
+4. **Load.** At runtime, the asset system loads the `CompiledEffect` binary. No graph interpretation
    occurs at runtime -- only pre-compiled GPU kernels.
 
-5. **Spawn.** A gameplay event (collision, animation
-   notify, ability activation) emits a `VfxSpawnEvent`.
-   The `EffectSpawnSystem` creates ECS entities with
-   `EffectInstanceComponent`, `EmitterComponent`, and
-   `EmitterLodComponent`.
+5. **Spawn.** A gameplay event (collision, animation notify, ability activation) emits a
+   `VfxSpawnEvent`. The `EffectSpawnSystem` creates ECS entities with `EffectInstanceComponent`,
+   `EmitterComponent`, and `EmitterLodComponent`.
 
-6. **Simulate.** Each frame, the `EffectUpdateSystem`
-   dispatches compute shaders per emitter:
+6. **Simulate.** Each frame, the `EffectUpdateSystem` dispatches compute shaders per emitter:
    - Spawn kernel: emit new particles
    - Update kernel: evaluate forces, noise, curves
    - Output kernel: write draw-indirect arguments
 
-7. **Render.** The rendering system reads draw-indirect
-   buffers and issues draw calls (sprites, meshes,
-   ribbons) with zero CPU per-particle overhead.
+7. **Render.** The rendering system reads draw-indirect buffers and issues draw calls (sprites,
+   meshes, ribbons) with zero CPU per-particle overhead.
 
-8. **Budget.** The `BudgetEnforcementSystem` monitors
-   total particle counts and GPU compute time. When
-   budget is exceeded, low-priority effects are scaled
-   down or culled.
+8. **Budget.** The `BudgetEnforcementSystem` monitors total particle counts and GPU compute time.
+   When budget is exceeded, low-priority effects are scaled down or culled.
 
-9. **Destroy.** When an effect's lifetime expires or the
-   owning entity is despawned, the emitter entities are
-   destroyed and GPU buffers returned to the pool.
+9. **Destroy.** When an effect's lifetime expires or the owning entity is despawned, the emitter
+   entities are destroyed and GPU buffers returned to the pool.
 
 ### HLSL Codegen Example
 
-A simple update graph with gravity and color-over-life
-compiles to a single fused kernel:
+A simple update graph with gravity and color-over-life compiles to a single fused kernel:
 
 ```hlsl
 // Generated by HlslCodeGen -- do not edit.
@@ -1180,7 +1149,7 @@ void UpdateMain(uint3 id : SV_DispatchThreadID) {
 
 ### Parameter Binding Flow
 
-```
+```text
 Game State (ECS Component)
     |
     v
@@ -1196,10 +1165,8 @@ ParamOverride written to constant buffer
 cbuffer Params in HLSL kernel
 ```
 
-Parameters flow from game state through reactive data
-bindings into the per-instance constant buffer uploaded
-to the GPU each frame. Changes propagate within one
-frame.
+Parameters flow from game state through reactive data bindings into the per-instance constant buffer
+uploaded to the GPU each frame. Changes propagate within one frame.
 
 ## Platform Considerations
 
@@ -1213,9 +1180,8 @@ frame.
 | macOS (Metal) | HLSL | DXIL | MSL (via Metal Shader Converter) |
 | iOS (Metal) | HLSL | DXIL | MSL (via Metal Shader Converter) |
 
-All shader compilation uses DXC (C++ via cxx.rs) and
-Metal Shader Converter (C++ via cxx.rs). HLSL is the
-sole shader intermediate language.
+All shader compilation uses DXC (C++ via cxx.rs) and Metal Shader Converter (C++ via cxx.rs). HLSL
+is the sole shader intermediate language.
 
 ### Platform Compute Capabilities
 
@@ -1227,8 +1193,7 @@ sole shader intermediate language.
 | Metal (iOS) | Graphics queue | 512 threads | 16 KiB |
 | Mobile Vulkan | Graphics queue | 256 threads | 16 KiB |
 
-Effects compiled for mobile use smaller thread group
-sizes (256 vs desktop 1024) and simpler kernels
+Effects compiled for mobile use smaller thread group sizes (256 vs desktop 1024) and simpler kernels
 (fewer node evaluations per thread).
 
 ### Node Count Limits
@@ -1249,17 +1214,14 @@ sizes (256 vs desktop 1024) and simpler kernels
 
 ### Async I/O for Asset Loading
 
-Effect graph assets (compiled kernels + metadata) are
-loaded via the platform async I/O system:
+Effect graph assets (compiled kernels + metadata) are loaded via the platform async I/O system:
 
 - **Windows:** IOCP
 - **macOS:** GCD / Dispatch IO (C++ wrappers via cxx.rs)
 - **Linux:** io_uring
 
-Loading is non-blocking. The `IoReactor` poll point
-wakes the loading future when the OS completes the
-read. Effect instances are not spawned until their
-compiled kernels are resident.
+Loading is non-blocking. The `IoReactor` poll point wakes the loading future when the OS completes
+the read. Effect instances are not spawned until their compiled kernels are resident.
 
 ## Test Plan
 
@@ -1331,61 +1293,41 @@ compiled kernels are resident.
 | Vulkan | DXC | SPIR-V | HLSL -> SPIR-V via DXC. |
 | Metal | DXC + MSC | metallib | HLSL -> DXIL -> MSL via Metal Shader Converter. |
 
-The effect graph compiler shares the `GraphCompiler`
-framework (see
-[shared-primitives.md](../core-runtime/shared-primitives.md))
-with the material graph and shader graph for consistent
-compilation infrastructure.
+The effect graph compiler shares the `GraphCompiler` framework (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)) with the material graph and shader
+graph for consistent compilation infrastructure.
 
 ## Open Questions
 
-1. **Shader variant explosion.** Each unique graph
-   topology produces a unique shader. How aggressively
-   should we canonicalize equivalent subgraphs to
-   reduce variant count? A content-hash-based cache
-   covers identical graphs, but semantically equivalent
-   graphs with different node ordering would produce
-   separate shaders.
+1. **Shader variant explosion.** Each unique graph topology produces a unique shader. How
+   aggressively should we canonicalize equivalent subgraphs to reduce variant count? A
+   content-hash-based cache covers identical graphs, but semantically equivalent graphs with
+   different node ordering would produce separate shaders.
 
-2. **Warm-up latency.** DXC compilation is expensive
-   (up to 500 ms for complex graphs). Should the editor
-   pre-compile all known platform variants on save, or
-   compile on-demand with a loading placeholder effect?
-   Pre-compilation increases save time but eliminates
-   runtime stalls.
+2. **Warm-up latency.** DXC compilation is expensive (up to 500 ms for complex graphs). Should the
+   editor pre-compile all known platform variants on save, or compile on-demand with a loading
+   placeholder effect? Pre-compilation increases save time but eliminates runtime stalls.
 
-3. **GPU readback for particle counts.** Budget
-   enforcement needs alive particle counts from the GPU.
-   A one-frame-latency readback via a staging buffer is
-   the current plan. Is one frame of latency acceptable,
-   or should the budget system use a CPU-side estimate
-   based on spawn rate and lifetime?
+3. **GPU readback for particle counts.** Budget enforcement needs alive particle counts from the
+   GPU. A one-frame-latency readback via a staging buffer is the current plan. Is one frame of
+   latency acceptable, or should the budget system use a CPU-side estimate based on spawn rate and
+   lifetime?
 
-4. **Sub-emitter graph composition.** Sub-emitters
-   (F-11.1.5) spawn child effects from particle events.
-   Should sub-emitter references be edges within the
-   same graph, or separate graph assets linked by
-   asset reference? Intra-graph edges enable tighter
-   optimization but increase graph complexity.
+4. **Sub-emitter graph composition.** Sub-emitters (F-11.1.5) spawn child effects from particle
+   events. Should sub-emitter references be edges within the same graph, or separate graph assets
+   linked by asset reference? Intra-graph edges enable tighter optimization but increase graph
+   complexity.
 
-5. **Debug visualization.** Should the runtime support a
-   debug overlay showing per-emitter bounding volumes,
-   LOD tiers, and particle counts in the game viewport?
-   This aids effects artists working in play mode but
-   requires additional GPU draw calls.
+5. **Debug visualization.** Should the runtime support a debug overlay showing per-emitter bounding
+   volumes, LOD tiers, and particle counts in the game viewport? This aids effects artists working
+   in play mode but requires additional GPU draw calls.
 
-6. **Deterministic random seeds.** The Random operator
-   node needs per-particle seeds. Should seeds be
-   derived from particle index + frame number (fully
-   deterministic, reproducible in preview scrubbing) or
-   from a global PRNG state (less predictable but
-   avoids visible patterns)?
+6. **Deterministic random seeds.** The Random operator node needs per-particle seeds. Should seeds
+   be derived from particle index + frame number (fully deterministic, reproducible in preview
+   scrubbing) or from a global PRNG state (less predictable but avoids visible patterns)?
 
-7. **Custom node compilation target.** Per-particle
-   custom nodes authored in the logic graph currently
-   compile to HLSL inline functions. If the logic graph
-   uses a bytecode VM, how is per-particle execution on
-   the GPU achieved? The current assumption is that
-   per-particle custom nodes must compile to HLSL, not
-   bytecode. This needs alignment with the logic graph
-   AOT compilation path (F-15.8.12).
+7. **Custom node compilation target.** Per-particle custom nodes authored in the logic graph
+   currently compile to HLSL inline functions. If the logic graph uses a bytecode VM, how is
+   per-particle execution on the GPU achieved? The current assumption is that per-particle custom
+   nodes must compile to HLSL, not bytecode. This needs alignment with the logic graph AOT
+   compilation path (F-15.8.12).

@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/input/](../../features/input/),
-> [requirements/input/](../../requirements/input/), and
-> [user-stories/input/](../../user-stories/input/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/input/](../../features/input/), [requirements/input/](../../requirements/input/), and
+> [user-stories/input/](../../user-stories/input/). The table below traces design elements to those
+> definitions.
 
 ### Device Abstraction (R-6.1)
 
@@ -42,25 +41,17 @@
 
 The input system is divided into two layers:
 
-1. **Device Abstraction** -- platform-native capture of
-   raw events from keyboard, mouse, gamepad, and touch.
-   Each device backend uses OS-specific APIs
-   (Win32 raw input, macOS HID/GCController, Linux evdev)
-   and normalizes events into a common `RawInputEvent`
-   type written to the ECS world.
-2. **Action Mapping** -- a data-driven pipeline that maps
-   raw events to named, typed gameplay actions. Bindings
-   are grouped into priority-stacked mapping contexts.
-   Raw values pass through a composable modifier chain
-   (dead zones, response curves, scalars) and trigger
-   evaluators (pressed, hold, tap, chord, combo) before
-   producing `ActionState` components that gameplay
-   systems query.
+1. **Device Abstraction** -- platform-native capture of raw events from keyboard, mouse, gamepad,
+   and touch. Each device backend uses OS-specific APIs (Win32 raw input, macOS HID/GCController,
+   Linux evdev) and normalizes events into a common `RawInputEvent` type written to the ECS world.
+2. **Action Mapping** -- a data-driven pipeline that maps raw events to named, typed gameplay
+   actions. Bindings are grouped into priority-stacked mapping contexts. Raw values pass through a
+   composable modifier chain (dead zones, response curves, scalars) and trigger evaluators (pressed,
+   hold, tap, chord, combo) before producing `ActionState` components that gameplay systems query.
 
-All input state lives as ECS components and resources.
-All bindings are authored in the visual editor (no-code).
-Static dispatch is used throughout -- platform backends
-are selected via `cfg` attributes, not trait objects.
+All input state lives as ECS components and resources. All bindings are authored in the visual
+editor (no-code). Static dispatch is used throughout -- platform backends are selected via `cfg`
+attributes, not trait objects.
 
 ## Architecture
 
@@ -155,7 +146,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_input/
 ├── devices/
 │   ├── mod.rs           # DeviceManager, DeviceId,
@@ -1787,8 +1778,7 @@ pub enum InputError {
 
 ### Per-Frame Pipeline
 
-The input system executes as a sequence of ECS
-systems each frame:
+The input system executes as a sequence of ECS systems each frame:
 
 ```rust
 // 1. Poll devices, write raw events
@@ -1813,74 +1803,52 @@ InputRecordingSystem::run();
 
 For each `RawInputEvent` in the frame:
 
-1. Walk the `ContextStack` from highest to
-   lowest priority.
-2. For each active context, check if any
-   `ActionBinding` matches the event's
-   `InputSource`.
+1. Walk the `ContextStack` from highest to lowest priority.
+2. For each active context, check if any `ActionBinding` matches the event's `InputSource`.
 3. On first match:
    - Extract the raw value from the event.
    - Run the `ModifierChain::apply()` pipeline.
    - Evaluate `TriggerCondition::evaluate()`.
-   - Write the resulting `ActionState` to the
-     ECS world.
-   - If `consumes_input` is true, stop walking.
-     Otherwise continue to lower contexts.
+   - Write the resulting `ActionState` to the ECS world.
+   - If `consumes_input` is true, stop walking. Otherwise continue to lower contexts.
 4. If no context matches, the input is dropped.
 
 ### Modifier Chain Evaluation
 
-Each modifier in the chain transforms the value
-in sequence:
+Each modifier in the chain transforms the value in sequence:
 
-1. **Dead Zone** -- zero values below threshold.
-   Radial dead zone remaps [threshold, 1.0] to
+1. **Dead Zone** -- zero values below threshold. Radial dead zone remaps [threshold, 1.0] to
    [0.0, 1.0] to avoid a jump at the edge.
-2. **Response Curve** -- apply power function.
-   Exponential: `sign(v) * |v|^exponent`.
-   S-curve: hermite interpolation.
+2. **Response Curve** -- apply power function. Exponential: `sign(v) * |v|^exponent`. S-curve:
+   hermite interpolation.
 3. **Swizzle** -- remap axis order.
 4. **Negate** -- invert specified axes.
 5. **Scalar** -- multiply by sensitivity.
-6. **Smoothing** -- exponential moving average:
-   `smoothed = lerp(prev, raw, dt / time_const)`.
-7. **Acceleration** -- scale by input velocity:
-   `output = value * (1.0 + velocity * accel)`.
+6. **Smoothing** -- exponential moving average: `smoothed = lerp(prev, raw, dt / time_const)`.
+7. **Acceleration** -- scale by input velocity: `output = value * (1.0 + velocity * accel)`.
 
 ### Trigger State Transitions
 
 Each trigger type follows a state machine:
 
-- **Pressed**: Idle -> Fired (on key_down) ->
-  Idle (next frame).
-- **Released**: Idle -> Fired (on key_up) ->
-  Idle (next frame).
-- **Hold**: Idle -> Ongoing (key_down, counting)
-  -> Fired (elapsed >= duration) -> Idle (key_up).
-- **Tap**: Idle -> Ongoing (key_down) -> Fired
-  (key_up within threshold) OR Idle (timeout).
-- **Pulse**: Idle -> Ongoing (key_down) -> Fired
-  (each interval) -> Idle (key_up).
-- **Chord**: Idle -> Ongoing (first key) -> Fired
-  (all keys within window) -> Idle (any key up).
-- **Combo**: Idle -> Ongoing (step 0 matched) ->
-  ... -> Fired (final step matched) -> Idle.
+- **Pressed**: Idle -> Fired (on key_down) -> Idle (next frame).
+- **Released**: Idle -> Fired (on key_up) -> Idle (next frame).
+- **Hold**: Idle -> Ongoing (key_down, counting) -> Fired (elapsed >= duration) -> Idle (key_up).
+- **Tap**: Idle -> Ongoing (key_down) -> Fired (key_up within threshold) OR Idle (timeout).
+- **Pulse**: Idle -> Ongoing (key_down) -> Fired (each interval) -> Idle (key_up).
+- **Chord**: Idle -> Ongoing (first key) -> Fired (all keys within window) -> Idle (any key up).
+- **Combo**: Idle -> Ongoing (step 0 matched) -> ... -> Fired (final step matched) -> Idle.
 - **Down**: Fired every frame while input active.
 
 ### Rebinding Persistence
 
 1. Player selects an action in the rebinding UI.
-2. Engine enters "listen" mode, capturing the
-   next raw input event.
-3. `RebindManager::request_rebind()` checks for
-   conflicts in overlapping active contexts.
+2. Engine enters "listen" mode, capturing the next raw input event.
+3. `RebindManager::request_rebind()` checks for conflicts in overlapping active contexts.
 4. If conflict, UI shows swap/unbind/cancel.
-5. On resolution, the binding is updated in the
-   `MappingContext`.
-6. `save_bindings()` serializes all contexts to
-   async persistent storage (< 100 ms).
-7. On next startup, `load_bindings()` restores
-   all rebindings (< 50 ms).
+5. On resolution, the binding is updated in the `MappingContext`.
+6. `save_bindings()` serializes all contexts to async persistent storage (< 100 ms).
+7. On next startup, `load_bindings()` restores all rebindings (< 50 ms).
 
 ## Platform Considerations
 
@@ -1934,9 +1902,8 @@ Each trigger type follows a state machine:
 | Mouse | `UIHoverGestureRecognizer` (iPadOS) | `MotionEvent` with `SOURCE_MOUSE` |
 | Hot-plug | `GCController.didConnectNotification` | `InputManager` callback |
 
-Touch is the primary input on mobile. Gamepad support is
-optional. All mobile input flows through the same
-`RawInputEvent` pipeline as desktop.
+Touch is the primary input on mobile. Gamepad support is optional. All mobile input flows through
+the same `RawInputEvent` pipeline as desktop.
 
 ### Scancode Normalization
 
@@ -2047,49 +2014,30 @@ All platforms normalize to USB HID usage codes:
 
 ## Open Questions
 
-1. **Keyboard text input integration** -- Scancode
-   and keycode capture handles gameplay bindings,
-   but text input (chat, naming) requires OS IME
-   integration (TSM on macOS, IMM32 on Windows,
-   iBus/fcitx on Linux). Should the text input
-   subsystem be part of the input module or the
-   UI module?
+1. **Keyboard text input integration** -- Scancode and keycode capture handles gameplay bindings,
+   but text input (chat, naming) requires OS IME integration (TSM on macOS, IMM32 on Windows,
+   iBus/fcitx on Linux). Should the text input subsystem be part of the input module or the UI
+   module?
 
-2. **Gyroscope calibration** -- Madgwick sensor
-   fusion requires a calibration phase to zero
-   out gyro bias. Should calibration happen
-   automatically on device connect, or should it
-   be exposed as an explicit API?
+2. **Gyroscope calibration** -- Madgwick sensor fusion requires a calibration phase to zero out gyro
+   bias. Should calibration happen automatically on device connect, or should it be exposed as an
+   explicit API?
 
-3. **Multi-gamepad player assignment** -- When
-   multiple gamepads are connected, how are they
-   assigned to players? Options: first-come,
-   explicit assignment in lobby, or OS-level
-   player mapping (GCController player index).
+3. **Multi-gamepad player assignment** -- When multiple gamepads are connected, how are they
+   assigned to players? Options: first-come, explicit assignment in lobby, or OS-level player
+   mapping (GCController player index).
 
-4. **Aim assist spatial query cost** -- Aim assist
-   magnetism queries the shared spatial index
-   (F-1.9.4) each frame. If many targets are
-   nearby, the query may be expensive. Should
-   aim assist use a separate, lower-resolution
-   spatial index, or is the shared BVH fast
-   enough?
+4. **Aim assist spatial query cost** -- Aim assist magnetism queries the shared spatial index
+   (F-1.9.4) each frame. If many targets are nearby, the query may be expensive. Should aim assist
+   use a separate, lower-resolution spatial index, or is the shared BVH fast enough?
 
-5. **Combo tree asset format** -- Combo trees are
-   authored as visual graph assets. Should they
-   use the same graph format as logic graphs
-   (F-15.8) or a specialized compact format?
+5. **Combo tree asset format** -- Combo trees are authored as visual graph assets. Should they use
+   the same graph format as logic graphs (F-15.8) or a specialized compact format?
 
-6. **Touch virtual joystick** -- Virtual joystick
-   zones are defined as touch regions in the
-   editor. Should the virtual joystick be a
-   built-in device type (alongside keyboard,
-   mouse, gamepad) or a higher-level construct
-   that synthesizes GamepadAxis events?
+6. **Touch virtual joystick** -- Virtual joystick zones are defined as touch regions in the editor.
+   Should the virtual joystick be a built-in device type (alongside keyboard, mouse, gamepad) or a
+   higher-level construct that synthesizes GamepadAxis events?
 
-7. **Console-specific reserved keys** -- Each
-   console platform reserves different buttons
-   (PS button, Xbox Guide, Switch Home). Should
-   the reserved key list be loaded from a
-   platform-specific config asset or hardcoded
-   per `cfg` target?
+7. **Console-specific reserved keys** -- Each console platform reserves different buttons (PS
+   button, Xbox Guide, Switch Home). Should the reserved key list be loaded from a platform-specific
+   config asset or hardcoded per `cfg` target?

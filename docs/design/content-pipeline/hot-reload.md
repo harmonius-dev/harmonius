@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/content-pipeline/](../../features/content-pipeline/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/content-pipeline/](../../features/content-pipeline/),
 > [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table
-> below traces design elements to those definitions.
+> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
+> design elements to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -38,36 +38,26 @@
 
 ## Overview
 
-The hot reload subsystem provides sub-second feedback
-during content authoring by detecting file changes,
-re-importing only affected assets, and atomically
-swapping runtime representations without restarting the
-application. It builds on the platform `FileWatcher`
-(F-14.6.5) and `ContentHasher` (F-14.6.6) from the OS
-integration design, adding asset-pipeline-aware change
-detection, dependency resolution, and type-specific
-swap strategies.
+The hot reload subsystem provides sub-second feedback during content authoring by detecting file
+changes, re-importing only affected assets, and atomically swapping runtime representations without
+restarting the application. It builds on the platform `FileWatcher` (F-14.6.5) and `ContentHasher`
+(F-14.6.6) from the OS integration design, adding asset-pipeline-aware change detection, dependency
+resolution, and type-specific swap strategies.
 
 The system is organized into four layers:
 
-1. **Watch** -- `AssetWatcher` subscribes to the
-   platform `FileWatcher` and maps file events to
+1. **Watch** -- `AssetWatcher` subscribes to the platform `FileWatcher` and maps file events to
    asset IDs via the asset database.
-2. **Detect** -- `ChangeDetector` filters false
-   positives with BLAKE3 hashing, resolves transitive
+2. **Detect** -- `ChangeDetector` filters false positives with BLAKE3 hashing, resolves transitive
    dependents, and batches reload requests.
-3. **Reload** -- `ReloadCoordinator` orchestrates
-   re-import, reprocessing, and type-specific reload
+3. **Reload** -- `ReloadCoordinator` orchestrates re-import, reprocessing, and type-specific reload
    (shader, logic graph, UI) as async tasks.
-4. **Swap** -- `SwapScheduler` applies changes at safe
-   frame sync points using handle indirection, atomic
-   pointer replacement, and GPU fence retirement.
+4. **Swap** -- `SwapScheduler` applies changes at safe frame sync points using handle indirection,
+   atomic pointer replacement, and GPU fence retirement.
 
-All I/O and processing is async. File reads flow through
-the `IoReactor` poll point. Reload tasks execute on the
-`ThreadPool`. Swaps occur only at frame boundaries
-(US-12.4.9). Asset handles use double indirection so
-live references remain valid across reloads.
+All I/O and processing is async. File reads flow through the `IoReactor` poll point. Reload tasks
+execute on the `ThreadPool`. Swaps occur only at frame boundaries (US-12.4.9). Asset handles use
+double indirection so live references remain valid across reloads.
 
 ## Architecture
 
@@ -129,7 +119,7 @@ graph TD
 
 ### Module Structure
 
-```
+```text
 harmonius_content/
 ├── hot_reload/
 │   ├── watcher.rs         # AssetWatcher: file event
@@ -158,8 +148,8 @@ harmonius_content/
 
 ### Asset Handle Indirection
 
-Asset handles use double indirection so that all live
-references survive a reload without patching callsites.
+Asset handles use double indirection so that all live references survive a reload without patching
+callsites.
 
 ```mermaid
 graph LR
@@ -184,13 +174,10 @@ graph LR
     S -.->|ptr after swap| A2
 ```
 
-- `AssetHandle<T>` stores an index and a generation
-  counter into a central handle table.
-- On reload, the `SwapScheduler` atomically replaces
-  the pointer in the slot. Existing handles
+- `AssetHandle<T>` stores an index and a generation counter into a central handle table.
+- On reload, the `SwapScheduler` atomically replaces the pointer in the slot. Existing handles
   transparently resolve to the new data.
-- The old data is retired after the GPU fence for the
-  last frame that referenced it.
+- The old data is retired after the GPU fence for the last frame that referenced it.
 
 ### Hot Reload Pipeline Flow
 
@@ -372,9 +359,8 @@ classDiagram
 
 ### Asset Watcher (F-12.4.1 / R-12.4.1)
 
-The `AssetWatcher` bridges the platform `FileWatcher`
-to the asset pipeline. It maps filesystem paths to
-asset IDs and batches changes for the detector.
+The `AssetWatcher` bridges the platform `FileWatcher` to the asset pipeline. It maps filesystem
+paths to asset IDs and batches changes for the detector.
 
 ```rust
 /// Identifies an asset in the content database.
@@ -469,10 +455,8 @@ impl AssetWatcher {
 
 ### Change Detector (F-12.4.1, F-12.4.6)
 
-The `ChangeDetector` filters false positives via
-BLAKE3 hashing, resolves transitive dependents from
-the asset database dependency graph, and produces
-`ReloadRequest` batches.
+The `ChangeDetector` filters false positives via BLAKE3 hashing, resolves transitive dependents from
+the asset database dependency graph, and produces `ReloadRequest` batches.
 
 ```rust
 /// Classifies the type of reload needed.
@@ -549,10 +533,8 @@ impl ChangeDetector {
 
 ### Reload Coordinator (F-12.4.2 / R-12.4.2)
 
-The `ReloadCoordinator` is the central orchestrator.
-It receives reload requests, dispatches re-import and
-reprocessing as async tasks, and delegates to
-type-specific reloaders.
+The `ReloadCoordinator` is the central orchestrator. It receives reload requests, dispatches
+re-import and reprocessing as async tasks, and delegates to type-specific reloaders.
 
 ```rust
 /// Status of a reload operation.
@@ -643,10 +625,8 @@ impl ReloadCoordinator {
 
 ### Swap Scheduler (F-12.4.2, US-12.4.9)
 
-The `SwapScheduler` ensures that asset replacements
-occur only at frame sync points. Old assets are
-retired after the GPU fence for the last frame that
-referenced them.
+The `SwapScheduler` ensures that asset replacements occur only at frame sync points. Old assets are
+retired after the GPU fence for the last frame that referenced them.
 
 ```rust
 /// A pending asset swap waiting for a frame boundary.
@@ -738,8 +718,7 @@ impl SwapScheduler {
 
 ### Asset Handle Table
 
-The handle table provides the indirection layer that
-keeps all live references valid across reloads.
+The handle table provides the indirection layer that keeps all live references valid across reloads.
 
 ```rust
 /// A type-erased handle slot in the handle table.
@@ -1067,14 +1046,11 @@ pub struct UiReloadResult {
 
 ### Audio Asset Hot Reload
 
-Audio clips and sound banks support hot reload. When the
-file watcher detects a changed audio source file, the
-pipeline re-imports and re-encodes the audio asset. The
-audio runtime receives a reload event via the SPSC command
-queue (see [engine.md](../audio/engine.md)). Playing voices
-that reference the reloaded asset crossfade to the new
-version over a configurable duration (default 100ms) to
-avoid audible pops.
+Audio clips and sound banks support hot reload. When the file watcher detects a changed audio source
+file, the pipeline re-imports and re-encodes the audio asset. The audio runtime receives a reload
+event via the SPSC command queue (see [engine.md](../audio/engine.md)). Playing voices that
+reference the reloaded asset crossfade to the new version over a configurable duration (default
+100ms) to avoid audible pops.
 
 ### Editor-Runtime Sync (F-12.4.7 / R-12.4.7)
 
@@ -1222,88 +1198,54 @@ pub enum HotReloadError {
 
 ### End-to-End Hot Reload
 
-1. The platform `FileWatcher` (ReadDirectoryChangesW /
-   FSEvents / inotify) delivers a raw filesystem event
-   to the `AssetWatcher`.
-2. The `AssetWatcher` accumulates events for the batch
-   window (default 50 ms), deduplicates by path, and
-   maps each path to an `AssetId` via the asset
-   database.
-3. The `ChangeDetector` receives the batch. For each
-   `Modified` event, it computes a BLAKE3 hash of the
-   file and compares it against the stored hash in the
-   asset database. False positives (metadata-only
-   changes) are discarded.
-4. For each genuine content change, the detector walks
-   the dependency graph bottom-up to find all
-   transitive dependents. It classifies each change
-   by `ReloadKind` (asset, shader, logic graph, UI).
-5. The `ReloadCoordinator` receives the
-   `ReloadRequest` batch. It spawns async re-import
-   and reprocess tasks on the thread pool, respecting
-   the concurrency limit.
-6. For partial re-imports (F-12.4.6), only the changed
-   sub-asset indices are re-imported. The coordinator
-   checks the import cache (F-12.3.3) and skips
-   reprocessing if the output hash matches.
+1. The platform `FileWatcher` (ReadDirectoryChangesW / FSEvents / inotify) delivers a raw filesystem
+   event to the `AssetWatcher`.
+2. The `AssetWatcher` accumulates events for the batch window (default 50 ms), deduplicates by path,
+   and maps each path to an `AssetId` via the asset database.
+3. The `ChangeDetector` receives the batch. For each `Modified` event, it computes a BLAKE3 hash of
+   the file and compares it against the stored hash in the asset database. False positives
+   (metadata-only changes) are discarded.
+4. For each genuine content change, the detector walks the dependency graph bottom-up to find all
+   transitive dependents. It classifies each change by `ReloadKind` (asset, shader, logic graph,
+   UI).
+5. The `ReloadCoordinator` receives the `ReloadRequest` batch. It spawns async re-import and
+   reprocess tasks on the thread pool, respecting the concurrency limit.
+6. For partial re-imports (F-12.4.6), only the changed sub-asset indices are re-imported. The
+   coordinator checks the import cache (F-12.3.3) and skips reprocessing if the output hash matches.
 7. Type-specific reloaders handle domain logic:
-   - **Shader**: identify affected permutations,
-     recompile via DXC, build new PSOs.
-   - **Logic graph**: recompile bytecode, check
-     variable layout compatibility, patch or restart.
-   - **UI**: capture state snapshot, rebuild subtree,
-     restore state.
-8. The `SwapScheduler` enqueues a `PendingSwap` for
-   each completed reload.
-9. At the next frame sync point, the main loop calls
-   `apply_pending_swaps()`. For each swap:
-   - **AtomicPointer**: the handle table slot pointer
-     is replaced. The old pointer is enqueued for
+   - **Shader**: identify affected permutations, recompile via DXC, build new PSOs.
+   - **Logic graph**: recompile bytecode, check variable layout compatibility, patch or restart.
+   - **UI**: capture state snapshot, rebuild subtree, restore state.
+8. The `SwapScheduler` enqueues a `PendingSwap` for each completed reload.
+9. At the next frame sync point, the main loop calls `apply_pending_swaps()`. For each swap:
+   - **AtomicPointer**: the handle table slot pointer is replaced. The old pointer is enqueued for
      retirement.
-   - **DescriptorHeap**: the texture descriptor is
-     updated in the GPU descriptor heap.
-   - **PipelineState**: the PSO reference in the
-     pipeline cache is replaced.
-   - **BytecodePatch**: graph instances receive the
-     new bytecode.
-   - **SubtreeRebuild**: the UI subtree is rebuilt
-     and state restored.
-10. Old asset data is retired after the GPU fence for
-    the last frame that referenced it. The
-    `SwapScheduler` calls `retire_old_assets()` each
-    frame, freeing data whose fence has been reached.
+   - **DescriptorHeap**: the texture descriptor is updated in the GPU descriptor heap.
+   - **PipelineState**: the PSO reference in the pipeline cache is replaced.
+   - **BytecodePatch**: graph instances receive the new bytecode.
+   - **SubtreeRebuild**: the UI subtree is rebuilt and state restored.
+10. Old asset data is retired after the GPU fence for the last frame that referenced it. The
+    `SwapScheduler` calls `retire_old_assets()` each frame, freeing data whose fence has been
+    reached.
 
 ### Partial Re-Import (F-12.4.6)
 
-1. A composite source file (e.g., FBX with 10
-   animation clips) is modified.
-2. The `ChangeDetector` computes BLAKE3 hashes for
-   each sub-asset region within the file.
-3. Only sub-assets whose hashes changed are submitted
-   for re-import.
-4. The `ReloadCoordinator` passes the sub-asset
-   indices to the importer, which extracts and
+1. A composite source file (e.g., FBX with 10 animation clips) is modified.
+2. The `ChangeDetector` computes BLAKE3 hashes for each sub-asset region within the file.
+3. Only sub-assets whose hashes changed are submitted for re-import.
+4. The `ReloadCoordinator` passes the sub-asset indices to the importer, which extracts and
    reimports only those sub-assets.
-5. Unchanged sub-assets retain their existing
-   processed output in the cache.
+5. Unchanged sub-assets retain their existing processed output in the cache.
 
 ### Editor-Runtime Sync (F-12.4.7)
 
-1. The editor modifies a material parameter, entity
-   transform, or light value.
-2. The editor sends a `SyncMessage::PropertyChanged`
-   over the sync channel.
-3. The runtime's `EditorSync` receives the message
-   and either:
-   - Applies the property change directly to the
-     ECS component (for live-preview tweaks), or
-   - Routes the change through the reload pipeline
-     (for asset-level changes).
-4. The runtime streams back
-   `SyncMessage::CameraUpdate` and
-   `SyncMessage::PerfCounters` each frame.
-5. If the connection drops, the runtime buffers
-   outgoing messages and reconnects automatically.
+1. The editor modifies a material parameter, entity transform, or light value.
+2. The editor sends a `SyncMessage::PropertyChanged` over the sync channel.
+3. The runtime's `EditorSync` receives the message and either:
+   - Applies the property change directly to the ECS component (for live-preview tweaks), or
+   - Routes the change through the reload pipeline (for asset-level changes).
+4. The runtime streams back `SyncMessage::CameraUpdate` and `SyncMessage::PerfCounters` each frame.
+5. If the connection drops, the runtime buffers outgoing messages and reconnects automatically.
 
 ### Frame Integration
 
@@ -1375,58 +1317,39 @@ loop {
 
 ### Texture Hot Reload (Descriptor Heap)
 
-1. New texture data is uploaded to a staging buffer
-   via async I/O.
-2. A GPU copy command transfers the data to a new
-   texture resource.
-3. The descriptor heap entry is updated to point to
-   the new texture.
-4. The old texture resource is enqueued for
-   retirement after the GPU fence.
+1. New texture data is uploaded to a staging buffer via async I/O.
+2. A GPU copy command transfers the data to a new texture resource.
+3. The descriptor heap entry is updated to point to the new texture.
+4. The old texture resource is enqueued for retirement after the GPU fence.
 
-No atomic pointer swap is needed because the
-descriptor heap indirection serves the same purpose.
+No atomic pointer swap is needed because the descriptor heap indirection serves the same purpose.
 
 ### Mesh Hot Reload (Atomic Pointer)
 
-1. New vertex and index buffers are uploaded via async
-   GPU copy.
-2. At the frame boundary, the handle table slot is
-   atomically swapped to point to the new buffers.
-3. In-flight draw calls on frame N continue using the
-   old buffers (they were bound before the swap).
-4. Frame N+1 picks up the new buffers via handle
-   resolution.
-5. After frame N's GPU fence completes, the old
-   buffers are freed.
+1. New vertex and index buffers are uploaded via async GPU copy.
+2. At the frame boundary, the handle table slot is atomically swapped to point to the new buffers.
+3. In-flight draw calls on frame N continue using the old buffers (they were bound before the swap).
+4. Frame N+1 picks up the new buffers via handle resolution.
+5. After frame N's GPU fence completes, the old buffers are freed.
 
 ### Shader Hot Reload (PSO Replacement)
 
-1. The `ShaderReloader` identifies all permutations
-   that reference the changed source.
-2. Permutations are recompiled in parallel via DXC
-   (HLSL to DXIL/SPIR-V) and Metal Shader Converter
+1. The `ShaderReloader` identifies all permutations that reference the changed source.
+2. Permutations are recompiled in parallel via DXC (HLSL to DXIL/SPIR-V) and Metal Shader Converter
    (DXIL to MSL) as needed.
-3. New pipeline state objects are created from the
-   compiled bytecode.
-4. At the frame boundary, the pipeline cache entries
-   are swapped to the new PSOs.
-5. If compilation fails, the error overlay is
-   activated and the previous valid PSOs remain.
+3. New pipeline state objects are created from the compiled bytecode.
+4. At the frame boundary, the pipeline cache entries are swapped to the new PSOs.
+5. If compilation fails, the error overlay is activated and the previous valid PSOs remain.
 
 ### Buffer Overflow Recovery
 
-On Windows, `ReadDirectoryChangesExW` can lose events
-if the kernel buffer overflows during rapid changes.
-On Linux, inotify emits `IN_Q_OVERFLOW`. Recovery
-strategy:
+On Windows, `ReadDirectoryChangesExW` can lose events if the kernel buffer overflows during rapid
+changes. On Linux, inotify emits `IN_Q_OVERFLOW`. Recovery strategy:
 
 1. Detect the overflow event.
 2. Perform a full directory scan of all watched paths.
-3. Compare BLAKE3 hashes of all source files against
-   the asset database.
-4. Generate synthetic `AssetChange::Modified` events
-   for any mismatches.
+3. Compare BLAKE3 hashes of all source files against the asset database.
+4. Generate synthetic `AssetChange::Modified` events for any mismatches.
 5. Resume normal watching.
 
 ## Test Plan
@@ -1486,49 +1409,31 @@ strategy:
 
 ## Open Questions
 
-1. **Descriptor heap update atomicity** -- On Vulkan,
-   descriptor set updates require
-   `vkUpdateDescriptorSets` which is not inherently
-   atomic with respect to in-flight draws. Need to
-   determine whether to use descriptor indexing with
-   a secondary descriptor or double-buffer descriptor
-   sets for texture hot reload.
+1. **Descriptor heap update atomicity** -- On Vulkan, descriptor set updates require
+   `vkUpdateDescriptorSets` which is not inherently atomic with respect to in-flight draws. Need to
+   determine whether to use descriptor indexing with a secondary descriptor or double-buffer
+   descriptor sets for texture hot reload.
 
-2. **Partial re-import granularity** -- The current
-   design assumes sub-assets can be identified by
-   index within a composite file. DCC formats (FBX,
-   glTF) may require format-specific sub-asset
-   boundary detection. The DCC plugin design
-   (F-12.6) may influence this.
+2. **Partial re-import granularity** -- The current design assumes sub-assets can be identified by
+   index within a composite file. DCC formats (FBX, glTF) may require format-specific sub-asset
+   boundary detection. The DCC plugin design (F-12.6) may influence this.
 
-3. **Editor sync transport** -- The bidirectional sync
-   channel needs a transport protocol. Options:
+3. **Editor sync transport** -- The bidirectional sync channel needs a transport protocol. Options:
    - Local Unix domain sockets / named pipes
    - Shared memory ring buffer (lowest latency)
    - TCP for remote device preview
-   The choice may depend on whether remote editing
-   (F-15.12) requires network transport.
+   The choice may depend on whether remote editing    (F-15.12) requires network transport.
 
-4. **Shader permutation explosion** -- A material
-   with many feature flags can produce hundreds of
-   permutations. Recompiling all permutations on
-   every shader change may exceed the 5-second
-   latency target. May need to recompile only
-   permutations that are currently loaded in the
-   pipeline cache.
+4. **Shader permutation explosion** -- A material with many feature flags can produce hundreds of
+   permutations. Recompiling all permutations on every shader change may exceed the 5-second latency
+   target. May need to recompile only permutations that are currently loaded in the pipeline cache.
 
-5. **Logic graph coroutine position preservation** --
-   When a graph's bytecode changes but the variable
-   layout is compatible, preserving the coroutine
-   instruction pointer requires mapping old bytecode
-   offsets to new offsets. This may not always be
-   possible if the control flow graph changed
-   significantly. Need to define the exact conditions
-   under which coroutine position is preserved vs.
-   reset.
+5. **Logic graph coroutine position preservation** -- When a graph's bytecode changes but the
+   variable layout is compatible, preserving the coroutine instruction pointer requires mapping old
+   bytecode offsets to new offsets. This may not always be possible if the control flow graph
+   changed significantly. Need to define the exact conditions under which coroutine position is
+   preserved vs. reset.
 
-6. **GPU resource creation latency** -- PSO creation
-   and texture upload are GPU operations that may
-   take multiple frames on some hardware. The swap
-   scheduler may need to support multi-frame reload
+6. **GPU resource creation latency** -- PSO creation and texture upload are GPU operations that may
+   take multiple frames on some hardware. The swap scheduler may need to support multi-frame reload
    tasks and report progress to the editor.

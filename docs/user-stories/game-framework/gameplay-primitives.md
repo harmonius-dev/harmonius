@@ -72,8 +72,8 @@ network interruption.
 ## US-13.1.2.4 Implement the State Manager Core Lifecycle
 
 **As an** engine developer (P-26), **I want to** implement the state lifecycle so transitions
-trigger resource loading/unloading, UI layer swaps, and input context changes atomically, **so
-that** no partial state is ever visible to the player or game systems.
+trigger resource loading/unloading, UI layer swaps, and input context changes atomically,
+**so that** no partial state is ever visible to the player or game systems.
 
 ## US-13.1.2.5 Verify State Transitions Under Rapid Input
 

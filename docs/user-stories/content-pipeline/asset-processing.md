@@ -77,8 +77,8 @@ quality regressions are caught per platform in CI.
 ## US-12.2.13 Verify LOD Generation Preserves Silhouettes
 
 **As an** engine tester (P-27), **I want** tests that generate LOD chains for reference meshes and
-verify triangle count ratios and bounding box deviations stay within configured thresholds, **so
-that** LOD generation does not produce visually broken meshes.
+verify triangle count ratios and bounding box deviations stay within configured thresholds,
+**so that** LOD generation does not produce visually broken meshes.
 
 ## US-12.2.14 Verify Shader Compilation Succeeds on All Backends
 

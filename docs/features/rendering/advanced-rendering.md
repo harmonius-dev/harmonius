@@ -1,6 +1,6 @@
 # 2.5 — Advanced Rendering (Ray Tracing and GI)
 
-### F-2.5.1 Acceleration Structure Management (BLAS/TLAS)
+## F-2.5.1 Acceleration Structure Management (BLAS/TLAS)
 
 Bottom-level acceleration structure (BLAS) building from meshlet geometry with post-build compaction
 to reduce memory. Top-level acceleration structure (TLAS) rebuilt or refit each frame for dynamic

@@ -6,9 +6,9 @@
 
 Each joint is an ECS entity carrying a `Joint` component that stores entity references to the two
 connected body entities, plus a `JointType` component selecting one of: `Revolute` (hinge),
-`Prismatic` (slider), `Fixed` (weld), or `Distance`. The `ConstraintSolverSystem` queries `(Joint,
-JointType)` entities each substep to resolve positional and velocity constraints between the linked
-bodies.
+`Prismatic` (slider), `Fixed` (weld), or `Distance`. The `ConstraintSolverSystem` queries
+`(Joint, JointType)` entities each substep to resolve positional and velocity constraints between
+the linked bodies.
 
 - **Requirements:** R-4.3.1
 - **Dependencies:** F-1.1.1 (Archetype Storage), F-1.1.11 (Entity Lifecycle with Generational

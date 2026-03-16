@@ -2,14 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in
+> **Canonical sources:** Features, requirements, and user stories are defined in
 > [features/rendering/](../../features/rendering/),
-> [requirements/rendering/](../../requirements/rendering/),
-> and
-> [user-stories/rendering/](../../user-stories/rendering/).
-> The table below traces design elements to those
-> definitions.
+> [requirements/rendering/](../../requirements/rendering/), and
+> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
+> to those definitions.
 
 ### Functional Requirements
 
@@ -83,37 +80,24 @@
 
 ## Overview
 
-The core rendering subsystem bridges the ECS
-simulation world and the GPU. It follows an
-**extract-prepare-render** pattern that decouples
-simulation from rendering, enabling pipelined
+The core rendering subsystem bridges the ECS simulation world and the GPU. It follows an
+**extract-prepare-render** pattern that decouples simulation from rendering, enabling pipelined
 parallelism.
 
 Four principles drive the design:
 
-1. **ECS is the single source of truth.** All
-   render state lives as components. The renderer
-   reads via immutable queries and never owns
-   persistent scene data outside the extracted
-   frame snapshot.
-2. **Decoupled snapshot.** Extraction copies only
-   changed ECS data into a renderer-owned proxy
-   store. The simulation is free to advance once
-   extraction completes.
-3. **GPU-driven pipeline.** Frustum culling,
-   backface culling, occlusion culling, LOD
-   selection, and instance compaction all run as
-   GPU compute passes. The CPU issues a small,
-   fixed number of indirect dispatches per frame.
-4. **Dual rendering paths.** Forward+ (tiled
-   clustered) and deferred (G-buffer) paths share
-   the same culling pipeline, light buffer, and
-   material system. Path selection is per-view.
+1. **ECS is the single source of truth.** All render state lives as components. The renderer reads
+   via immutable queries and never owns persistent scene data outside the extracted frame snapshot.
+2. **Decoupled snapshot.** Extraction copies only changed ECS data into a renderer-owned proxy
+   store. The simulation is free to advance once extraction completes.
+3. **GPU-driven pipeline.** Frustum culling, backface culling, occlusion culling, LOD selection, and
+   instance compaction all run as GPU compute passes. The CPU issues a small, fixed number of
+   indirect dispatches per frame.
+4. **Dual rendering paths.** Forward+ (tiled clustered) and deferred (G-buffer) paths share the same
+   culling pipeline, light buffer, and material system. Path selection is per-view.
 
-Static dispatch is used throughout. The entire
-pipeline is generic over `GpuBackend`. No trait
-objects, no vtables, no dynamic dispatch in the
-hot path.
+Static dispatch is used throughout. The entire pipeline is generic over `GpuBackend`. No trait
+objects, no vtables, no dynamic dispatch in the hot path.
 
 ## Architecture
 
@@ -208,7 +192,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_rendering/
 ├── core/
 │   ├── extract.rs        # RenderExtractor system
@@ -298,20 +282,13 @@ sequenceDiagram
 
 The pipeline stages are:
 
-1. **Extract** (`PreRender` phase) -- Read-only
-   ECS access. Copies changed transforms, meshes,
-   materials, and bounds into the renderer-owned
-   `ProxyStore`. Extracts cameras and lights.
-2. **Prepare** (`Render` phase, before encoding)
-   -- Operates exclusively on the proxy store.
-   Sets up views, runs visibility against the
-   shared BVH, builds per-view draw lists, sorts
-   by sort key, runs GPU batch compaction, and
-   uploads material parameters.
-3. **Render** (`Render` phase, encoding and
-   submit) -- Encodes GPU command buffers in
-   parallel across worker threads, then submits
-   to the GPU.
+1. **Extract** (`PreRender` phase) -- Read-only ECS access. Copies changed transforms, meshes,
+   materials, and bounds into the renderer-owned `ProxyStore`. Extracts cameras and lights.
+2. **Prepare** (`Render` phase, before encoding) -- Operates exclusively on the proxy store. Sets up
+   views, runs visibility against the shared BVH, builds per-view draw lists, sorts by sort key,
+   runs GPU batch compaction, and uploads material parameters.
+3. **Render** (`Render` phase, encoding and submit) -- Encodes GPU command buffers in parallel
+   across worker threads, then submits to the GPU.
 
 ### System Execution Order
 
@@ -353,8 +330,7 @@ graph TD
 
 ### Render Component Class Diagram
 
-All render state lives as ECS components. The
-extractor copies a minimal SoA snapshot each frame.
+All render state lives as ECS components. The extractor copies a minimal SoA snapshot each frame.
 
 ```mermaid
 classDiagram
@@ -418,10 +394,8 @@ classDiagram
     SceneCaptureComponent --> CameraComponent
 ```
 
-> **Note:** `Viewport` is defined in
-> `harmonius_gpu` (see gpu-abstraction.md) and
-> consumed here by reference. It is not redefined
-> in this module.
+> **Note:** `Viewport` is defined in `harmonius_gpu` (see gpu-abstraction.md) and consumed here by
+> reference. It is not redefined in this module.
 
 ### ECS Components
 
@@ -685,27 +659,16 @@ pub fn extract_lights_system(
 
 ### Incremental Extraction Detail
 
-The extraction system uses ECS change detection
-(F-1.1.22) to minimize per-frame work:
+The extraction system uses ECS change detection (F-1.1.22) to minimize per-frame work:
 
-1. **New entities** -- Entities with `Renderable`
-   but no `RenderProxy` component. Insert into
-   proxy store, attach `RenderProxy` component
-   via command buffer.
-2. **Changed entities** -- Entities with
-   `Changed<GlobalTransform>`,
-   `Changed<MeshHandle>`, or
-   `Changed<MaterialHandle>`. Update only the
-   changed fields in the proxy store.
-3. **Removed entities** -- Entities with
-   `RenderProxy` that no longer match the
-   `Renderable` query (despawned or component
-   removed). Remove from proxy store, recycle
-   index.
+1. **New entities** -- Entities with `Renderable` but no `RenderProxy` component. Insert into proxy
+   store, attach `RenderProxy` component via command buffer.
+2. **Changed entities** -- Entities with `Changed<GlobalTransform>`, `Changed<MeshHandle>`, or
+   `Changed<MaterialHandle>`. Update only the changed fields in the proxy store.
+3. **Removed entities** -- Entities with `RenderProxy` that no longer match the `Renderable` query
+   (despawned or component removed). Remove from proxy store, recycle index.
 
-This bounds extraction cost to
-`O(new + changed + removed)` rather than
-`O(total)`.
+This bounds extraction cost to `O(new + changed + removed)` rather than `O(total)`.
 
 ## CPU-Side Preparation
 
@@ -909,7 +872,7 @@ bitflags::bitflags! {
 
 ### Instance Buffer Layout
 
-```
+```text
 Offset  Field                Size
 ------  -------------------  ----
 0       world_matrix         64 B
@@ -1177,8 +1140,7 @@ pub fn select_lod(
 
 ### Multi-View Parallelism
 
-Visibility and draw list construction are
-parallelized across views using scoped tasks:
+Visibility and draw list construction are parallelized across views using scoped tasks:
 
 ```rust
 fn visibility_system(
@@ -1205,17 +1167,13 @@ fn visibility_system(
 }
 ```
 
-Each view's frustum query reads the shared BVH
-(immutable) and writes only to its own
-`visibility_bits` (no contention). Views are fully
-independent and scale linearly with worker count.
+Each view's frustum query reads the shared BVH (immutable) and writes only to its own
+`visibility_bits` (no contention). Views are fully independent and scale linearly with worker count.
 
 ### Multi-View Rendering Flow
 
-Shadow cascades, VR eyes, scene captures, and
-split-screen views all share the extracted proxy
-store. Each view gets its own ViewUniform, culling
-pass, and draw submission but reads from the same
+Shadow cascades, VR eyes, scene captures, and split-screen views all share the extracted proxy
+store. Each view gets its own ViewUniform, culling pass, and draw submission but reads from the same
 instance buffer.
 
 ```mermaid
@@ -1237,12 +1195,9 @@ flowchart TD
 
 ## GPU Culling Pipeline
 
-The culling pipeline is a chain of GPU compute
-passes that progressively eliminates invisible
-meshlets before any rasterization occurs. Each
-stage reads from a global instance buffer and
-writes a visibility bitmask or compacted index
-list.
+The culling pipeline is a chain of GPU compute passes that progressively eliminates invisible
+meshlets before any rasterization occurs. Each stage reads from a global instance buffer and writes
+a visibility bitmask or compacted index list.
 
 ```mermaid
 flowchart TD
@@ -1452,12 +1407,9 @@ graph LR
 | Material | 24-39 | 16 | Material ID (groups identical descriptor bindings) |
 | Depth | 0-23 | 24 | Quantized depth (front-to-back for opaque, inverted for transparent) |
 
-Opaque draws sort ascending (front-to-back for
-early-Z rejection). Transparent draws sort
-descending (back-to-front for correct blending).
-The translucency bit in the MSB ensures all opaque
-draws precede all transparent draws in a single
-radix sort pass.
+Opaque draws sort ascending (front-to-back for early-Z rejection). Transparent draws sort descending
+(back-to-front for correct blending). The translucency bit in the MSB ensures all opaque draws
+precede all transparent draws in a single radix sort pass.
 
 ### Draw List and Sort Key
 
@@ -1746,22 +1698,14 @@ pub fn batch_compaction_system<B: GpuBackend>(
 
 ### GPU Batch Compaction Pipeline
 
-1. CPU sorts draw commands by sort key
-   (radix sort).
-2. CPU uploads sorted draw commands to a GPU
-   staging buffer.
-3. GPU compute shader reads the staging buffer,
-   performs GPU-driven occlusion culling (HiZ
-   test), and writes surviving draws into
-   contiguous indirect draw buffers grouped by
-   material.
-4. A draw count buffer is atomically incremented
-   per material group.
-5. The render pass issues one
-   `draw_indirect_count` call per material group.
+1. CPU sorts draw commands by sort key (radix sort).
+2. CPU uploads sorted draw commands to a GPU staging buffer.
+3. GPU compute shader reads the staging buffer, performs GPU-driven occlusion culling (HiZ test),
+   and writes surviving draws into contiguous indirect draw buffers grouped by material.
+4. A draw count buffer is atomically incremented per material group.
+5. The render pass issues one `draw_indirect_count` call per material group.
 
-This reduces CPU draw submission from O(draws) to
-O(material_groups), enabling hundreds of thousands
+This reduces CPU draw submission from O(draws) to O(material_groups), enabling hundreds of thousands
 of meshlet instances with minimal CPU overhead.
 
 ## Draw Submission
@@ -2307,8 +2251,7 @@ impl<B: GpuBackend> LightBuffer<B> {
 
 ### Forward+ vs Deferred Data Flow
 
-Both rendering paths share the culling pipeline,
-light buffer, material system, and PBR evaluator.
+Both rendering paths share the culling pipeline, light buffer, material system, and PBR evaluator.
 The path divergence happens at the shading stage.
 
 ```mermaid
@@ -2351,14 +2294,12 @@ flowchart LR
 | GBuffer2 | RG16_FLOAT | Motion Vectors (RG) |
 | Depth | D32_FLOAT | Reverse-Z depth |
 
-The deferred lighting pass reads all G-buffer
-targets plus the light buffer and outputs the lit
+The deferred lighting pass reads all G-buffer targets plus the light buffer and outputs the lit
 result to an HDR render target.
 
 ### PBR BRDF (HLSL Reference)
 
-The Cook-Torrance microfacet BRDF is implemented
-in HLSL and shared across all lighting paths.
+The Cook-Torrance microfacet BRDF is implemented in HLSL and shared across all lighting paths.
 
 ```hlsl
 // pbr_brdf.hlsl -- Cook-Torrance BRDF
@@ -2971,8 +2912,7 @@ sequenceDiagram
 | D3D12 | `DXGI_FORMAT_D32_FLOAT` | 0.0 |
 | Vulkan | `VK_FORMAT_D32_SFLOAT` | 0.0 |
 
-All backends use reverse-Z with depth cleared to
-0.0 (far plane). The near plane maps to depth 1.0.
+All backends use reverse-Z with depth cleared to 0.0 (far plane). The near plane maps to depth 1.0.
 Depth comparison uses `GREATER` instead of `LESS`.
 
 ### Shader Compilation Pipeline
@@ -2991,6 +2931,20 @@ Depth comparison uses `GREATER` instead of `LESS`.
 | `bitflags` | `InstanceFlags`, `ShaderFeatures`, `RenderLayerMask` | Standard Rust bitflag pattern |
 | `bytemuck` | Safe transmute for GPU buffer types (`Pod`, `Zeroable`) | Zero-cost GPU buffer mapping |
 | `smallvec` | Inline-allocated light lists, face lists | Avoids heap allocation in hot paths |
+
+## Performance Notes
+
+### TLAS Rebuild Strategy (High)
+
+Full TLAS rebuild every frame costs 0.5-2.0 ms GPU. When fewer than 10% of instances moved, use
+incremental refit (update AABBs in place) instead of full rebuild. Track a `tlas_dirty_count` and
+switch strategies based on the ratio of moved instances.
+
+### Visibility Buffer 64-bit Atomics (High)
+
+The meshlet visibility buffer uses 64-bit atomic writes. Many mobile GPUs lack 64-bit atomic
+support. Provide a fallback path using 32-bit atomics with a two-pass resolve (first pass writes
+triangle ID, second pass resolves material). Gate via `PlatformTier::Mobile` capability detection.
 
 ## Test Plan
 
@@ -3051,62 +3005,36 @@ Depth comparison uses `GREATER` instead of `LESS`.
 
 ## Open Questions
 
-1. **Clustered vs tiled forward+.** Tiled forward
-   uses 2D screen tiles; clustered forward adds
-   depth slices (froxels). Clustered reduces
-   per-tile light count for scenes with depth
-   variance but increases memory and dispatch
-   complexity. Recommended: clustered for desktop,
-   tiled for mobile. Needs profiling on target
-   hardware.
+1. **Clustered vs tiled forward+.** Tiled forward uses 2D screen tiles; clustered forward adds depth
+   slices (froxels). Clustered reduces per-tile light count for scenes with depth variance but
+   increases memory and dispatch complexity. Recommended: clustered for desktop, tiled for mobile.
+   Needs profiling on target hardware.
 
-2. **Meshlet LOD selection integration.** The
-   meshlet DAG (F-3.1.1) supports continuous LOD
-   selection on the GPU. The culling pipeline
-   needs to integrate LOD cut selection before
-   frustum culling. Should LOD selection be a
-   separate compute pass or merged into the
-   frustum cull dispatch?
+2. **Meshlet LOD selection integration.** The meshlet DAG (F-3.1.1) supports continuous LOD
+   selection on the GPU. The culling pipeline needs to integrate LOD cut selection before frustum
+   culling. Should LOD selection be a separate compute pass or merged into the frustum cull
+   dispatch?
 
-3. **Transparent object limit.** Transparent
-   objects are sorted CPU-side and drawn
-   individually. At high transparent object
-   counts (>1000) this becomes a CPU bottleneck.
-   Order-independent transparency (F-2.4.18) can
-   eliminate sorting but has high bandwidth cost.
-   Need to determine the transition threshold.
+3. **Transparent object limit.** Transparent objects are sorted CPU-side and drawn individually. At
+   high transparent object counts (>1000) this becomes a CPU bottleneck. Order-independent
+   transparency (F-2.4.18) can eliminate sorting but has high bandwidth cost. Need to determine the
+   transition threshold.
 
-4. **Shader permutation explosion.** With 10
-   shading models x 10 feature flags x 2 render
-   paths x N vertex formats, the permutation
-   space is large. Strategies: uber-shader with
-   runtime branching (simple but slower),
-   compile-time specialization constants (smaller
-   binaries, driver-specific perf), or lazy
-   compilation (first-use hitching). Recommended:
-   specialization constants on Vulkan/Metal,
-   static permutations on D3D12.
+4. **Shader permutation explosion.** With 10 shading models x 10 feature flags x 2 render paths x N
+   vertex formats, the permutation space is large. Strategies: uber-shader with runtime branching
+   (simple but slower), compile-time specialization constants (smaller binaries, driver-specific
+   perf), or lazy compilation (first-use hitching). Recommended: specialization constants on
+   Vulkan/Metal, static permutations on D3D12.
 
-5. **HZB temporal stability.** Using the previous
-   frame's HZB for phase 1 introduces a one-frame
-   lag. Fast camera motion can cause transient
-   over-culling. Phase 2 mitigates this but adds
-   GPU cost. Should phase 1 use camera-motion
-   extrapolation to expand meshlet bounds
-   conservatively?
+5. **HZB temporal stability.** Using the previous frame's HZB for phase 1 introduces a one-frame
+   lag. Fast camera motion can cause transient over-culling. Phase 2 mitigates this but adds GPU
+   cost. Should phase 1 use camera-motion extrapolation to expand meshlet bounds conservatively?
 
-6. **Multi-draw-indirect-count availability.**
-   `DrawIndexedIndirectCount` (Vulkan) /
+6. **Multi-draw-indirect-count availability.** `DrawIndexedIndirectCount` (Vulkan) /
    `ExecuteIndirect` with count buffer (D3D12) /
-   `drawIndexedPrimitives(indirectBuffer:
-   indirectBufferOffset:)` (Metal) vary in
-   availability. Need to determine fallback
-   strategy for backends that lack GPU-driven
-   draw count.
+   `drawIndexedPrimitives(indirectBuffer: indirectBufferOffset:)` (Metal) vary in availability. Need
+   to determine fallback strategy for backends that lack GPU-driven draw count.
 
-7. **VR single-pass instanced stereo.** VR views
-   can share a single culling pass and use
-   viewport instancing to render both eyes in one
-   draw call. Requires `VK_KHR_multiview` /
-   Metal viewport array / D3D12 view instancing.
-   Need to confirm minimum hardware tier.
+7. **VR single-pass instanced stereo.** VR views can share a single culling pass and use viewport
+   instancing to render both eyes in one draw call. Requires `VK_KHR_multiview` / Metal viewport
+   array / D3D12 view instancing. Need to confirm minimum hardware tier.

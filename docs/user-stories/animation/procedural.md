@@ -127,8 +127,8 @@ mobile and scales to multiple characters on desktop.
 ## US-9.3.10.1 Sever a Dragon's Wing and Watch It Ragdoll Away
 
 **As a** player (P-23), **I want** dismemberment to sever a bone chain from a skeleton, spawning the
-detached sub-mesh as a physics-simulated entity while the remaining skeleton adapts locomotion, **so
-that** combat dismemberment feels visceral and consequential.
+detached sub-mesh as a physics-simulated entity while the remaining skeleton adapts locomotion,
+**so that** combat dismemberment feels visceral and consequential.
 
 ## US-9.3.10.2 Attach and Detach Equipment at Runtime via ECS Commands
 

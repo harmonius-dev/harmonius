@@ -163,8 +163,9 @@ PSO cache generated from a reference playthrough during the cook process. Loadin
 The engine **SHALL** provide a managed temporary directory at the platform-appropriate path with
 automatic cleanup of orphaned files from crashed sessions (files older than 24 hours) on startup. A
 `TempFileHandle` RAII type **SHALL** guarantee deletion when dropped. Temp directory size **SHALL**
-be capped at a configurable maximum (default 1 GB) with oldest-first eviction. Temp files **SHALL
-NOT** contain player-important data — all temp data **SHALL** be recreatable from non-temp sources.
+be capped at a configurable maximum (default 1 GB) with oldest-first eviction. Temp files
+**SHALL NOT** contain player-important data — all temp data **SHALL** be recreatable from non-temp
+sources.
 
 - **Derived from:** [F-14.5.12](../../features/platform/platform-services.md)
 - **Rationale:** Unmanaged temp files accumulate across sessions and crashes, wasting disk space.

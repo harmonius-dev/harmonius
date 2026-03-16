@@ -1,7 +1,7 @@
 # R-2.1 -- GPU Abstraction Layer Requirements
 
-> **Scope:** Backend trait interface and platform-specific GPU backends (Metal via Swift, D3D12
-> via COM, Vulkan via C). For GPU runtime internals (memory, state tracking, work graphs), see
+> **Scope:** Backend trait interface and platform-specific GPU backends (Metal via Swift, D3D12 via
+> COM, Vulkan via C). For GPU runtime internals (memory, state tracking, work graphs), see
 > [gpu-abstraction.md](gpu-abstraction.md).
 
 ## R-2.1.1 GPU Backend Trait

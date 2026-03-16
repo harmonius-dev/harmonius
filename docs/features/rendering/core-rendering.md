@@ -1,6 +1,6 @@
 # 2.3 — Core Rendering
 
-### F-2.3.1 Direct Lighting
+## F-2.3.1 Direct Lighting
 
 Point, spot, and directional light evaluation with physically-based attenuation. All light types
 contribute to the same unified light buffer consumed by both forward and deferred paths.

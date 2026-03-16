@@ -4,21 +4,17 @@
 
 ### R-4.5.1 ECS Wheel Suspension Components
 
-The engine **SHALL** support `WheelSuspension` components on
-wheel child entities with configurable rest length, spring
-stiffness, damping coefficient, and travel limits. The
-`SuspensionSystem` **SHALL** cast rays downward from wheel
-entities to detect ground contact and write compression and
+The engine **SHALL** support `WheelSuspension` components on wheel child entities with configurable
+rest length, spring stiffness, damping coefficient, and travel limits. The `SuspensionSystem`
+**SHALL** cast rays downward from wheel entities to detect ground contact and write compression and
 contact normal back into `WheelSuspension`.
 
 - **Derived from:**
   [F-4.5.1](../../features/physics/vehicle-physics.md)
-- **Rationale:** Suspension is the foundation of vehicle
-  handling; ECS components enable per-wheel tuning and
-  standard query access.
-- **Verification:** Place a 1500 kg vehicle on flat ground.
-  Assert each wheel's compression converges to within
-  1 mm of the analytical rest position within 2 seconds.
+- **Rationale:** Suspension is the foundation of vehicle handling; ECS components enable per-wheel
+  tuning and standard query access.
+- **Verification:** Place a 1500 kg vehicle on flat ground. Assert each wheel's compression
+  converges to within 1 mm of the analytical rest position within 2 seconds.
 
 ---
 
@@ -62,32 +58,28 @@ downward from wheel entities, computes spring forces from compression, and write
 
 ### R-4.5.2 Pacejka Magic Formula Implementation
 
-The engine **SHALL** compute lateral and longitudinal tire
-forces using the Pacejka Magic Formula via a
-`TireForceSystem` that reads `TireFriction` and
-`WheelSuspension` components. Computed forces **SHALL** be
-written to a `WheelForceOutput` component on each wheel.
+The engine **SHALL** compute lateral and longitudinal tire forces using the Pacejka Magic Formula
+via a `TireForceSystem` that reads `TireFriction` and `WheelSuspension` components. Computed forces
+**SHALL** be written to a `WheelForceOutput` component on each wheel.
 
 - **Derived from:**
   [F-4.5.2](../../features/physics/vehicle-physics.md)
-- **Rationale:** Pacejka provides industry-standard tire
-  force curves that enable realistic handling profiles.
-- **Verification:** Sweep slip angle from 0 to 20 degrees
-  with known coefficients. Assert lateral force values
-  differ from reference by less than 5%.
+- **Rationale:** Pacejka provides industry-standard tire force curves that enable realistic handling
+  profiles.
+- **Verification:** Sweep slip angle from 0 to 20 degrees with known coefficients. Assert lateral
+  force values differ from reference by less than 5%.
 
 ### R-4.5.2a Surface-Dependent Friction
 
-Tire friction **SHALL** vary by surface type using per-
-surface friction curve tables stored in the `TireFriction`
-component.
+Tire friction **SHALL** vary by surface type using per- surface friction curve tables stored in the
+`TireFriction` component.
 
 - **Derived from:**
   [F-4.5.2](../../features/physics/vehicle-physics.md)
-- **Rationale:** Driving from asphalt onto ice must produce
-  noticeably different grip to create varied handling.
-- **Verification:** Drive a vehicle from asphalt onto ice.
-  Assert reduced lateral grip on the ice surface.
+- **Rationale:** Driving from asphalt onto ice must produce noticeably different grip to create
+  varied handling.
+- **Verification:** Drive a vehicle from asphalt onto ice. Assert reduced lateral grip on the ice
+  surface.
 
 ---
 
@@ -134,36 +126,29 @@ sections, **so that** vehicles have varied grip throughout the course.
 
 ### R-4.5.3 Drivetrain Component
 
-The engine **SHALL** support a `Drivetrain` component
-storing engine torque curve, gear ratios, current gear,
-differential type (open, limited-slip, locked), and drive
-layout (front, rear, all-wheel). The `DrivetrainSystem`
-**SHALL** compute engine RPM and distribute torque to driven
+The engine **SHALL** support a `Drivetrain` component storing engine torque curve, gear ratios,
+current gear, differential type (open, limited-slip, locked), and drive layout (front, rear,
+all-wheel). The `DrivetrainSystem` **SHALL** compute engine RPM and distribute torque to driven
 wheels.
 
 - **Derived from:**
   [F-4.5.3](../../features/physics/vehicle-physics.md)
-- **Rationale:** Drivetrain simulation is essential for
-  authentic vehicle acceleration, gear shifting, and
-  torque distribution behavior.
-- **Verification:** Apply full throttle to a rear-wheel-
-  drive vehicle. Assert driven wheel torque sums to engine
-  torque times gear ratio within 1%.
+- **Rationale:** Drivetrain simulation is essential for authentic vehicle acceleration, gear
+  shifting, and torque distribution behavior.
+- **Verification:** Apply full throttle to a rear-wheel- drive vehicle. Assert driven wheel torque
+  sums to engine torque times gear ratio within 1%.
 
 ### R-4.5.3a Differential Types
 
-The engine **SHALL** support open, limited-slip, and locked
-differentials with correct torque split behavior.
+The engine **SHALL** support open, limited-slip, and locked differentials with correct torque split
+behavior.
 
 - **Derived from:**
   [F-4.5.3](../../features/physics/vehicle-physics.md)
-- **Rationale:** Different differential types produce
-  different handling characteristics; all three are needed
-  for vehicle variety.
-- **Verification:** Test each differential type. Assert
-  open splits torque equally, limited-slip transfers
-  torque to the gripping wheel, and locked keeps wheels
-  at the same speed.
+- **Rationale:** Different differential types produce different handling characteristics; all three
+  are needed for vehicle variety.
+- **Verification:** Test each differential type. Assert open splits torque equally, limited-slip
+  transfers torque to the gripping wheel, and locked keeps wheels at the same speed.
 
 ---
 
@@ -207,34 +192,27 @@ shifting pauses, **so that** driving feels mechanically authentic.
 
 ### R-4.5.4 Anti-Roll Bar System
 
-The engine **SHALL** support `AntiRollBar` components that
-transfer load between paired wheels to resist body roll
-during cornering.
+The engine **SHALL** support `AntiRollBar` components that transfer load between paired wheels to
+resist body roll during cornering.
 
 - **Derived from:**
   [F-4.5.4](../../features/physics/vehicle-physics.md)
-- **Rationale:** Uncontrolled body roll makes vehicles tip
-  over during cornering; anti-roll bars are standard in
-  vehicle simulation.
-- **Verification:** Corner at 0.5g with and without
-  anti-roll bars. Assert at least 30% less roll with
-  bars enabled.
+- **Rationale:** Uncontrolled body roll makes vehicles tip over during cornering; anti-roll bars are
+  standard in vehicle simulation.
+- **Verification:** Corner at 0.5g with and without anti-roll bars. Assert at least 30% less roll
+  with bars enabled.
 
 ### R-4.5.4a Stability Control System
 
-The engine **SHALL** support `StabilityControl` components
-that apply traction control and electronic stability
-corrections by modifying brake and throttle values on
-individual wheels.
+The engine **SHALL** support `StabilityControl` components that apply traction control and
+electronic stability corrections by modifying brake and throttle values on individual wheels.
 
 - **Derived from:**
   [F-4.5.4](../../features/physics/vehicle-physics.md)
-- **Rationale:** Stability aids prevent arcade-style spin-
-  outs and make vehicles controllable for non-expert
-  players.
-- **Verification:** Enable stability control. Induce a
-  skid by oversteering. Assert the system reduces throttle
-  or applies brake to the appropriate wheels.
+- **Rationale:** Stability aids prevent arcade-style spin- outs and make vehicles controllable for
+  non-expert players.
+- **Verification:** Enable stability control. Induce a skid by oversteering. Assert the system
+  reduces throttle or applies brake to the appropriate wheels.
 
 ---
 
@@ -261,8 +239,8 @@ aids are available.
 
 ## US-4.5.4.5 Experience Stable Vehicle Handling
 
-**As a** player (P-23), **I want** vehicles to corner without tipping over unpredictably, **so
-that** driving feels controllable.
+**As a** player (P-23), **I want** vehicles to corner without tipping over unpredictably,
+**so that** driving feels controllable.
 
 ---
 
@@ -270,20 +248,16 @@ that** driving feels controllable.
 
 ### R-4.5.5 TrackedVehicle Component
 
-The engine **SHALL** support a `TrackedVehicle` component
-storing track friction, tension, and per-side speed values.
-The `TrackedVehicleSystem` **SHALL** compute ground contact
-via shape casts and drive forces from differential track
-speeds.
+The engine **SHALL** support a `TrackedVehicle` component storing track friction, tension, and
+per-side speed values. The `TrackedVehicleSystem` **SHALL** compute ground contact via shape casts
+and drive forces from differential track speeds.
 
 - **Derived from:**
   [F-4.5.5](../../features/physics/vehicle-physics.md)
-- **Rationale:** Tanks, bulldozers, and construction
-  vehicles steer by varying track speeds; this model is
-  distinct from wheeled suspension.
-- **Verification:** Set left track to 5 m/s and right to
-  3 m/s. Simulate 10 seconds. Assert the turning radius
-  is within 10% of the expected value.
+- **Rationale:** Tanks, bulldozers, and construction vehicles steer by varying track speeds; this
+  model is distinct from wheeled suspension.
+- **Verification:** Set left track to 5 m/s and right to 3 m/s. Simulate 10 seconds. Assert the
+  turning radius is within 10% of the expected value.
 
 ---
 
@@ -312,8 +286,8 @@ vehicle physics is fully ECS-based.
 
 ## US-4.5.5.5 Experience Driving Tanks and Treaded Vehicles
 
-**As a** player (P-23), **I want** tanks to pivot-steer by running tracks at different speeds, **so
-that** tracked vehicle control feels authentic.
+**As a** player (P-23), **I want** tanks to pivot-steer by running tracks at different speeds,
+**so that** tracked vehicle control feels authentic.
 
 ## US-4.5.5.6 Place Tracked Vehicles in Levels
 
@@ -326,35 +300,28 @@ parameters, **so that** tracked vehicles are part of the level without code.
 
 ### R-4.5.6 Hover Repulsor System
 
-The engine **SHALL** support `HoverRepulsor` child entities
-with configurable hover height, force falloff, and lateral
-friction. The `HoverRepulsorSystem` **SHALL** cast rays
-downward and compute height-dependent repulsion forces
-applied to the parent chassis entity.
+The engine **SHALL** support `HoverRepulsor` child entities with configurable hover height, force
+falloff, and lateral friction. The `HoverRepulsorSystem` **SHALL** cast rays downward and compute
+height-dependent repulsion forces applied to the parent chassis entity.
 
 - **Derived from:**
   [F-4.5.6](../../features/physics/vehicle-physics.md)
-- **Rationale:** Hover vehicles are a distinct vehicle
-  archetype requiring ground-proximity force computation
-  rather than wheel contact.
-- **Verification:** Place a hover vehicle with 4 repulsors
-  at 2 m target height. Simulate 5 seconds. Assert height
-  stabilizes within 5% of 2 m with vertical velocity
-  below 0.01 m/s.
+- **Rationale:** Hover vehicles are a distinct vehicle archetype requiring ground-proximity force
+  computation rather than wheel contact.
+- **Verification:** Place a hover vehicle with 4 repulsors at 2 m target height. Simulate 5 seconds.
+  Assert height stabilizes within 5% of 2 m with vertical velocity below 0.01 m/s.
 
 ### R-4.5.6a Hover Stabilization
 
-The engine **SHALL** apply tilt correction torques via a
-`HoverStabilizationSystem` to keep hover vehicles level
-over terrain edges and water surfaces.
+The engine **SHALL** apply tilt correction torques via a `HoverStabilizationSystem` to keep hover
+vehicles level over terrain edges and water surfaces.
 
 - **Derived from:**
   [F-4.5.6](../../features/physics/vehicle-physics.md)
-- **Rationale:** Without tilt correction, hover vehicles
-  flip on terrain edges, making them unusable.
-- **Verification:** Drive a hover vehicle over a terrain
-  edge. Assert the vehicle remains within 15 degrees of
-  level throughout the transition.
+- **Rationale:** Without tilt correction, hover vehicles flip on terrain edges, making them
+  unusable.
+- **Verification:** Drive a hover vehicle over a terrain edge. Assert the vehicle remains within 15
+  degrees of level throughout the transition.
 
 ---
 
@@ -398,32 +365,25 @@ over terrain edges, **so that** hover driving feels unique and fun.
 
 ### R-4.5.7 Vehicle State Replication
 
-`WheelSuspension`, `Drivetrain`, and `Vehicle` components
-**SHALL** be replicable via the ECS state replication
-system. Clients **SHALL** predict locally and reconcile on
-server snapshots.
+`WheelSuspension`, `Drivetrain`, and `Vehicle` components **SHALL** be replicable via the ECS state
+replication system. Clients **SHALL** predict locally and reconcile on server snapshots.
 
 - **Derived from:**
   [F-4.5.7](../../features/physics/vehicle-physics.md)
-- **Rationale:** Multiplayer vehicles must synchronize
-  state via standard ECS replication without custom
-  serialization.
-- **Verification:** Run server and client with 100 ms
-  latency. Assert position divergence stays below 10 cm
-  after reconciliation.
+- **Rationale:** Multiplayer vehicles must synchronize state via standard ECS replication without
+  custom serialization.
+- **Verification:** Run server and client with 100 ms latency. Assert position divergence stays
+  below 10 cm after reconciliation.
 
 ### R-4.5.7a Vehicle Replication Bandwidth
 
-Replicated vehicle state (suspension, drivetrain, wheel
-positions) **SHALL NOT** exceed 256 bytes per vehicle per
-network snapshot after delta compression.
+Replicated vehicle state (suspension, drivetrain, wheel positions) **SHALL NOT** exceed 256 bytes
+per vehicle per network snapshot after delta compression.
 
 - **Derived from:**
   [F-4.5.7](../../features/physics/vehicle-physics.md)
-- **Rationale:** Bandwidth is constrained in multiplayer;
-  vehicle state must compress efficiently.
-- **Verification:** Capture 100 consecutive vehicle
-  snapshots during active driving. Assert average
+- **Rationale:** Bandwidth is constrained in multiplayer; vehicle state must compress efficiently.
+- **Verification:** Capture 100 consecutive vehicle snapshots during active driving. Assert average
   delta-compressed payload is below 256 bytes per vehicle.
 
 ---
@@ -443,8 +403,8 @@ accuracy meets requirements.
 ## US-4.5.7.3 Verify Replication Bandwidth
 
 **As an** engine tester (P-27), **I want to** capture 100 consecutive vehicle snapshots during
-active driving and assert average delta-compressed payload is below 256 bytes per vehicle, **so
-that** bandwidth usage meets the requirement.
+active driving and assert average delta-compressed payload is below 256 bytes per vehicle,
+**so that** bandwidth usage meets the requirement.
 
 ## US-4.5.7.4 Implement Vehicle State Replication
 

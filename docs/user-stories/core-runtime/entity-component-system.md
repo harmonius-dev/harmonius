@@ -434,8 +434,8 @@ manually order hundreds of systems while guaranteeing correctness.
 ## US-1.1.35 Organize Systems Into Groups and Phases
 
 **As a** game developer (P-15), **I want** systems organized into hierarchical groups and phases
-(PreUpdate, Update, PostUpdate, FixedUpdate, PreRender, Render) with before/after ordering, **so
-that** I can cleanly separate gameplay, physics, and rendering execution.
+(PreUpdate, Update, PostUpdate, FixedUpdate, PreRender, Render) with before/after ordering,
+**so that** I can cleanly separate gameplay, physics, and rendering execution.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

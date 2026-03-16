@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 ### Material Editor (15.3)
 
@@ -33,31 +33,22 @@
 
 ## Overview
 
-The material editor and animation editor are the two
-primary visual authoring tools for shaders and motion.
-Both are no-code, graph-based editors built on the
-universal logic graph runtime. Artists author all
-materials and animation logic visually.
+The material editor and animation editor are the two primary visual authoring tools for shaders and
+motion. Both are no-code, graph-based editors built on the universal logic graph runtime. Artists
+author all materials and animation logic visually.
 
 Key principles:
 
-- **No-code authoring.** Materials are node graphs that
-  compile to HLSL. Animation state machines are visual
-  graphs. No shader or script code is written.
-- **100% ECS-based.** Material assets, animation clips,
-  and state machines are ECS components on asset
-  entities. Preview viewports render via the standard
-  render graph.
-- **HLSL generation.** The material graph compiles to
-  HLSL, which DXC compiles to DXIL/SPIR-V. Metal
+- **No-code authoring.** Materials are node graphs that compile to HLSL. Animation state machines
+  are visual graphs. No shader or script code is written.
+- **100% ECS-based.** Material assets, animation clips, and state machines are ECS components on
+  asset entities. Preview viewports render via the standard render graph.
+- **HLSL generation.** The material graph compiles to HLSL, which DXC compiles to DXIL/SPIR-V. Metal
   Shader Converter produces MSL from DXIL.
-- **Static dispatch.** Graph node evaluation uses
-  monomorphized trait impls. No vtable dispatch in the
-  hot compilation path.
-- **Instant feedback.** Parameter-only changes update
-  uniform buffers without shader recompilation.
-  Graph topology changes trigger incremental HLSL
-  regeneration.
+- **Static dispatch.** Graph node evaluation uses monomorphized trait impls. No vtable dispatch in
+  the hot compilation path.
+- **Instant feedback.** Parameter-only changes update uniform buffers without shader recompilation.
+  Graph topology changes trigger incremental HLSL regeneration.
 
 ## Architecture
 
@@ -117,7 +108,7 @@ graph TD
     SM --> AR
 ```
 
-```
+```text
 harmonius_editor/
 ├── material/
 │   ├── graph.rs          # MaterialGraph, node types,
@@ -1362,57 +1353,40 @@ pub enum StateMachineError {
 
 ### Material Authoring Pipeline
 
-1. Artist adds nodes to the material graph via the
-   visual editor.
-2. On each connection change, `MaterialGraph::validate()`
-   checks type safety. Invalid connections are rejected
-   at edit time (US-15.3.1.10).
-3. On save or preview refresh,
-   `MaterialCompiler::compile()` performs topological
-   sort, dead code elimination, and constant folding,
-   then emits HLSL.
-4. DXC compiles HLSL to DXIL (Windows) and SPIR-V
-   (Vulkan). On macOS, Metal Shader Converter produces
-   MSL from DXIL.
-5. The compiled shader is registered with the render
-   graph. The preview updates next frame.
-6. Parameter-only changes (slider drags) write directly
-   to the uniform buffer -- no recompilation.
+1. Artist adds nodes to the material graph via the visual editor.
+2. On each connection change, `MaterialGraph::validate()` checks type safety. Invalid connections
+   are rejected at edit time (US-15.3.1.10).
+3. On save or preview refresh, `MaterialCompiler::compile()` performs topological sort, dead code
+   elimination, and constant folding, then emits HLSL.
+4. DXC compiles HLSL to DXIL (Windows) and SPIR-V (Vulkan). On macOS, Metal Shader Converter
+   produces MSL from DXIL.
+5. The compiled shader is registered with the render graph. The preview updates next frame.
+6. Parameter-only changes (slider drags) write directly to the uniform buffer -- no recompilation.
 
 ### Material Instance Flow
 
-1. Artist creates a `MaterialInstance` from a parent
-   material.
+1. Artist creates a `MaterialInstance` from a parent material.
 2. The instance stores only overridden parameter values.
-3. At render time, the instance uses the parent's
-   compiled shader handle. Only the uniform buffer
+3. At render time, the instance uses the parent's compiled shader handle. Only the uniform buffer
    differs.
-4. 100 instances share one compiled shader program
-   (US-15.3.5.5).
+4. 100 instances share one compiled shader program (US-15.3.5.5).
 
 ### Animation Authoring Pipeline
 
 1. Animator opens a clip in the timeline editor.
-2. Keyframes are edited with tangent handles in the
-   curve editor.
+2. Keyframes are edited with tangent handles in the curve editor.
 3. Blend spaces position clips in parameter space.
-4. State machines wire states (clips or blend spaces)
-   with conditional transitions.
-5. The animation preview renders the character with
-   the current state machine evaluation, highlighting
-   the active state and transition.
+4. State machines wire states (clips or blend spaces) with conditional transitions.
+5. The animation preview renders the character with the current state machine evaluation,
+   highlighting the active state and transition.
 
 ### Retargeting Pipeline
 
-1. Tech artist sets source and target skeletons in
-   the side-by-side viewer.
+1. Tech artist sets source and target skeletons in the side-by-side viewer.
 2. `auto_map()` matches bones by name convention.
-3. Manual adjustments correct mismatches and set limb
-   length ratios.
-4. Real-time preview shows the retargeted animation
-   on the target rig.
-5. The saved `RetargetConfig` enables sharing
-   animation libraries across the character roster
+3. Manual adjustments correct mismatches and set limb length ratios.
+4. Real-time preview shows the retargeted animation on the target rig.
+5. The saved `RetargetConfig` enables sharing animation libraries across the character roster
    (US-15.4.7.5).
 
 ## Platform Considerations
@@ -1427,9 +1401,8 @@ pub enum StateMachineError {
 | Preview viewport | Render graph compute | Render graph compute | Render graph compute |
 | Asset I/O | IOCP via IoReactor | GCD Dispatch IO | io_uring |
 
-All shader compilation uses DXC accessed through cxx.rs
-C++ interop. The material compiler is platform-agnostic;
-only the final bytecode format varies by target.
+All shader compilation uses DXC accessed through cxx.rs C++ interop. The material compiler is
+platform-agnostic; only the final bytecode format varies by target.
 
 ## Test Plan
 
@@ -1488,37 +1461,24 @@ only the final bytecode format varies by target.
 
 ## Cross-References
 
-The material graph compiler shares the `GraphCompiler`
-framework (see
-[shared-primitives.md](../core-runtime/shared-primitives.md))
-with the effect graph and shader graph. Topological sort,
-type checking, HLSL emission, and DXC/MSC compilation are
-reused from this shared framework.
+The material graph compiler shares the `GraphCompiler` framework (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)) with the effect graph and shader
+graph. Topological sort, type checking, HLSL emission, and DXC/MSC compilation are reused from this
+shared framework.
 
 ## Open Questions
 
-1. **HLSL optimization level** -- DXC supports multiple
-   optimization levels (-O0 to -O3). Higher levels
-   produce faster shaders but slower compile times.
-   Determine the default for preview vs. shipping
-   builds.
-2. **Material graph serialization** -- RON format for
-   human readability and version control, or binary for
-   fast loading. The constraints specify mixed
-   textual+binary; determine which parts are textual.
-3. **Blend space triangulation** -- Delaunay
-   triangulation vs. Voronoi for 2D blend space
-   interpolation regions. Delaunay is simpler but may
-   produce thin triangles at edge samples.
-4. **State machine interruption priority** -- How to
-   handle multiple competing interruptions in the same
-   frame. Priority ordering vs. first-match vs. highest
-   blend weight.
-5. **Retarget hip correction** -- Retargeting between
-   rigs with different hip heights requires ground
-   contact correction. Evaluate IK-based foot planting
-   vs. pelvis offset.
-6. **Material function versioning** -- When a shared
-   function changes signature (add/remove pins), how to
-   handle materials with stale references. Automated
-   migration vs. manual fixup.
+1. **HLSL optimization level** -- DXC supports multiple optimization levels (-O0 to -O3). Higher
+   levels produce faster shaders but slower compile times. Determine the default for preview vs.
+   shipping builds.
+2. **Material graph serialization** -- RON format for human readability and version control, or
+   binary for fast loading. The constraints specify mixed textual+binary; determine which parts are
+   textual.
+3. **Blend space triangulation** -- Delaunay triangulation vs. Voronoi for 2D blend space
+   interpolation regions. Delaunay is simpler but may produce thin triangles at edge samples.
+4. **State machine interruption priority** -- How to handle multiple competing interruptions in the
+   same frame. Priority ordering vs. first-match vs. highest blend weight.
+5. **Retarget hip correction** -- Retargeting between rigs with different hip heights requires
+   ground contact correction. Evaluate IK-based foot planting vs. pelvis offset.
+6. **Material function versioning** -- When a shared function changes signature (add/remove pins),
+   how to handle materials with stale references. Automated migration vs. manual fixup.

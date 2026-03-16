@@ -201,8 +201,8 @@ client and server regardless of OS.
 ## US-10.5.17 Use Box, Circle, and Polygon Colliders for 2D Objects
 
 **As a** developer (P-15), **I want** 2D collider shapes (box, circle, capsule, convex polygon, edge
-chain, composite) with tilemap collision layers that auto-generate optimized edge chains, **so
-that** 2D worlds have efficient collision without manual collider setup.
+chain, composite) with tilemap collision layers that auto-generate optimized edge chains,
+**so that** 2D worlds have efficient collision without manual collider setup.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

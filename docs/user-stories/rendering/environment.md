@@ -115,8 +115,8 @@ match the artistic vision for each coastal environment.
 ## US-2.7.9.2 Validate Breaking Wave Instance Count Per Platform
 
 **As an** engine tester (P-27), **I want** to confirm that mobile disables breaking waves, Switch
-supports max 2 active instances with reduced vertex density, and desktop is fully configurable, **so
-that** wave complexity scales with hardware capability.
+supports max 2 active instances with reduced vertex density, and desktop is fully configurable,
+**so that** wave complexity scales with hardware capability.
 
 ## US-2.7.10.1 Author a Full Weather Cycle (Clear to Rain to Thunderstorm)
 
@@ -133,5 +133,5 @@ than being a cosmetic overlay.
 ## US-2.7.10.3 Validate Weather-Driven Material Wetness on Desktop vs Mobile
 
 **As an** engine tester (P-27), **I want** to trigger a rain state and verify that desktop shows
-full puddle rendering and material wetness while mobile only drives fog and lighting changes, **so
-that** weather effects scale per platform without visual errors.
+full puddle rendering and material wetness while mobile only drives fog and lighting changes,
+**so that** weather effects scale per platform without visual errors.

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/networking/](../../features/networking/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/networking/](../../features/networking/),
 > [requirements/networking/](../../requirements/networking/), and
-> [user-stories/networking/](../../user-stories/networking/). The table
-> below traces design elements to those definitions.
+> [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -27,20 +27,15 @@
 
 ## Overview
 
-The session subsystem manages every stage of a player's
-connection lifecycle: authentication, matchmaking, lobby
-formation, server assignment, reconnection, and graceful
-teardown. The replay subsystem records authoritative world
-state as periodic full snapshots interleaved with per-tick
-deltas, enabling deterministic playback, timeline scrubbing,
-live spectating, kill cams, and highlight extraction.
+The session subsystem manages every stage of a player's connection lifecycle: authentication,
+matchmaking, lobby formation, server assignment, reconnection, and graceful teardown. The replay
+subsystem records authoritative world state as periodic full snapshots interleaved with per-tick
+deltas, enabling deterministic playback, timeline scrubbing, live spectating, kill cams, and
+highlight extraction.
 
-Both subsystems are 100% ECS-based. Session state lives as
-components on per-player entities. Replay recording and
-playback are ECS systems that observe or replay the
-replication stream. All I/O is async (IOCP / GCD /
-io_uring). Infrastructure runs self-hosted on AWS via
-Kubernetes.
+Both subsystems are 100% ECS-based. Session state lives as components on per-player entities. Replay
+recording and playback are ECS systems that observe or replay the replication stream. All I/O is
+async (IOCP / GCD / io_uring). Infrastructure runs self-hosted on AWS via Kubernetes.
 
 ## Architecture
 
@@ -105,7 +100,7 @@ graph TD
     ECS --> TP
 ```
 
-```
+```text
 harmonius_net/
 ├── session/
 │   ├── auth.rs          # AuthService, platform
@@ -1268,66 +1263,53 @@ pub enum QueueError {
 
 ### Session Lifecycle
 
-1. **Authenticate.** Client sends platform token to the
-   gateway. `AuthService` contacts the identity provider,
-   validates credentials, and issues a signed
-   `SessionToken` (JWT-like). The token is short-lived
-   (configurable TTL, default 24 h).
+1. **Authenticate.** Client sends platform token to the gateway. `AuthService` contacts the identity
+   provider, validates credentials, and issues a signed `SessionToken` (JWT-like). The token is
+   short-lived (configurable TTL, default 24 h).
 
-2. **Discover.** Client queries `SessionDirectory` with
-   the session token. The directory returns the endpoint
-   of the assigned game server (based on shard, zone, or
-   matchmaking result).
+2. **Discover.** Client queries `SessionDirectory` with the session token. The directory returns the
+   endpoint of the assigned game server (based on shard, zone, or matchmaking result).
 
-3. **Connect.** Client performs a transport handshake with
-   the game server, presenting the session token. The
-   server validates the token locally (signature + expiry)
-   and registers the session in the directory.
+3. **Connect.** Client performs a transport handshake with the game server, presenting the session
+   token. The server validates the token locally (signature + expiry) and registers the session in
+   the directory.
 
-4. **Play.** Session state is tracked as ECS components on
-   the player entity: `SessionComponent` (state,
-   heartbeat), `PartyComponent` (party membership),
-   `MatchmakingComponent` (rating, queue status).
+4. **Play.** Session state is tracked as ECS components on the player entity: `SessionComponent`
+   (state, heartbeat), `PartyComponent` (party membership), `MatchmakingComponent` (rating, queue
+   status).
 
-5. **Reconnect.** On disconnect, the server starts a grace
-   timer via `ReconnectHandler`. The player entity and all
-   owned entities are preserved. If the client reconnects
-   within the grace window, state is restored atomically.
+5. **Reconnect.** On disconnect, the server starts a grace timer via `ReconnectHandler`. The player
+   entity and all owned entities are preserved. If the client reconnects within the grace window,
+   state is restored atomically.
 
-6. **Logout.** On graceful disconnect or grace expiry, the
-   session is removed from the directory and the player
-   entity is despawned (after persisting to database).
+6. **Logout.** On graceful disconnect or grace expiry, the session is removed from the directory and
+   the player entity is despawned (after persisting to database).
 
 ### Replay Data Pipeline
 
-1. **Record.** The `ReplayRecorder` system observes the
-   replication stream each tick. It computes a delta
-   (changed component fields) and appends it to a write
-   buffer. Every N ticks (configurable), it captures a
-   full snapshot and records a keyframe in the index.
+1. **Record.** The `ReplayRecorder` system observes the replication stream each tick. It computes a
+   delta (changed component fields) and appends it to a write buffer. Every N ticks (configurable),
+   it captures a full snapshot and records a keyframe in the index.
 
-2. **Flush.** Buffered data is flushed to disk via async
-   I/O. The recorder never blocks the simulation tick.
+2. **Flush.** Buffered data is flushed to disk via async I/O. The recorder never blocks the
+   simulation tick.
 
-3. **Finalize.** When recording ends, the header and index
-   are written. The file is a self-contained replay.
+3. **Finalize.** When recording ends, the header and index are written. The file is a self-contained
+   replay.
 
-4. **Seek.** On playback, `ReplayPlayer` loads the nearest
-   keyframe snapshot (binary search in the index) and
-   replays deltas forward to the target tick.
+4. **Seek.** On playback, `ReplayPlayer` loads the nearest keyframe snapshot (binary search in the
+   index) and replays deltas forward to the target tick.
 
-5. **Kill cam.** `KillCamBuffer` maintains a rolling ring
-   buffer of the last 15 s of deltas on the server. On a
-   death event, it extracts the relevant window from the
-   attacker's perspective and sends it as a mini-replay.
+5. **Kill cam.** `KillCamBuffer` maintains a rolling ring buffer of the last 15 s of deltas on the
+   server. On a death event, it extracts the relevant window from the attacker's perspective and
+   sends it as a mini-replay.
 
-6. **Spectate.** `SpectatorRelay` buffers the replication
-   stream with a configurable delay, then fans it out to
-   all connected spectators via relay servers.
+6. **Spectate.** `SpectatorRelay` buffers the replication stream with a configurable delay, then
+   fans it out to all connected spectators via relay servers.
 
 ### Replay File Format
 
-```
+```text
 +--------------------------------------------------+
 | ReplayHeader (fixed size, 128 bytes)             |
 +--------------------------------------------------+
@@ -1441,36 +1423,25 @@ pub enum QueueError {
 
 ## Open Questions
 
-1. **Session token rotation.** Should the server issue a
-   new token on each reconnect to prevent replay attacks,
-   or is the original token valid for the full session
-   TTL?
+1. **Session token rotation.** Should the server issue a new token on each reconnect to prevent
+   replay attacks, or is the original token valid for the full session TTL?
 
-2. **Cross-shard party persistence.** Parties currently
-   live in-process on the game server. Should they be
-   promoted to a cross-shard microservice so members on
-   different shards stay in the same party without the
-   inter-server bus?
+2. **Cross-shard party persistence.** Parties currently live in-process on the game server. Should
+   they be promoted to a cross-shard microservice so members on different shards stay in the same
+   party without the inter-server bus?
 
-3. **Replay format versioning.** When the ECS schema
-   changes between builds, old replays may not be
-   decodable. Strategy options: (a) replay-embedded schema
-   (larger files), (b) separate schema registry, (c)
-   version-locked replay player.
+3. **Replay format versioning.** When the ECS schema changes between builds, old replays may not be
+   decodable. Strategy options: (a) replay-embedded schema (larger files), (b) separate schema
+   registry, (c) version-locked replay player.
 
-4. **Spectator stream encryption.** Should the spectator
-   relay stream be encrypted? Encryption adds CPU cost per
-   spectator but prevents stream interception for
-   competitive integrity beyond the delay mechanism.
+4. **Spectator stream encryption.** Should the spectator relay stream be encrypted? Encryption adds
+   CPU cost per spectator but prevents stream interception for competitive integrity beyond the
+   delay mechanism.
 
-5. **Matchmaking service database.** Glicko-2 ratings need
-   persistence. Candidates: DynamoDB (managed, key-value),
-   PostgreSQL (transactional, relational). DynamoDB aligns
-   with session directory choice; PostgreSQL enables
-   complex rating queries.
+5. **Matchmaking service database.** Glicko-2 ratings need persistence. Candidates: DynamoDB
+   (managed, key-value), PostgreSQL (transactional, relational). DynamoDB aligns with session
+   directory choice; PostgreSQL enables complex rating queries.
 
-6. **Kill cam attacker POV reconstruction.** The kill cam
-   needs to reconstruct the attacker's camera. Options:
-   (a) record camera state as part of the delta stream,
-   (b) infer from attacker position and aim direction.
-   Option (a) is more accurate but increases delta size.
+6. **Kill cam attacker POV reconstruction.** The kill cam needs to reconstruct the attacker's
+   camera. Options: (a) record camera state as part of the delta stream, (b) infer from attacker
+   position and aim direction. Option (a) is more accurate but increases delta size.

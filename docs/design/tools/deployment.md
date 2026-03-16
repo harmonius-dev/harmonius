@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 ### Build and Deployment (F-15.14)
 
@@ -36,24 +36,18 @@
 
 This document covers two tightly coupled domains:
 
-1. **Build and deployment** — packaging game projects
-   into platform-native distributables, signing them,
-   generating installers, running certification checks,
-   producing delta patches, and submitting to stores.
-2. **Mod support** — a mod SDK for content authoring,
-   a sandboxed mod runtime, a packaging format, and
-   distribution through Steam Workshop or a self-hosted
-   AWS mod repository.
+1. **Build and deployment** — packaging game projects into platform-native distributables, signing
+   them, generating installers, running certification checks, producing delta patches, and
+   submitting to stores.
+2. **Mod support** — a mod SDK for content authoring, a sandboxed mod runtime, a packaging format,
+   and distribution through Steam Workshop or a self-hosted AWS mod repository.
 
-Both domains share the asset bundle format, BLAKE3
-integrity verification, and the self-hosted AWS
-infrastructure. The mod packaging pipeline reuses the
-same `BundleBuilder` and `ContentChunker` as the
-deployment pipeline.
+Both domains share the asset bundle format, BLAKE3 integrity verification, and the self-hosted AWS
+infrastructure. The mod packaging pipeline reuses the same `BundleBuilder` and `ContentChunker` as
+the deployment pipeline.
 
-All I/O is async. All network requests go through
-the engine's `IoReactor`. No stdlib file I/O. Static
-dispatch throughout. Rust stable only.
+All I/O is async. All network requests go through the engine's `IoReactor`. No stdlib file I/O.
+Static dispatch throughout. Rust stable only.
 
 ## Architecture
 
@@ -130,7 +124,7 @@ graph TD
 
 ### Crate Layout
 
-```
+```text
 harmonius_deploy/
 ├── pipeline.rs       # PackagingPipeline orchestrator
 ├── cooker.rs         # AssetCooker — platform cooking
@@ -1359,63 +1353,46 @@ pub enum SandboxError {
 
 ### CI/CD Build Pipeline
 
-The packaging pipeline integrates into a CI/CD
-workflow. Each stage is a discrete async step:
+The packaging pipeline integrates into a CI/CD workflow. Each stage is a discrete async step:
 
-1. **Cook** -- `AssetCooker` processes all assets for
-   the target platform. Textures are compressed (BC7,
-   ASTC), shaders are compiled (HLSL via DXC), and
-   editor-only content is stripped for shipping
-   profiles.
-2. **Bundle** -- `BundleBuilder` assembles cooked
-   assets into pak files using content-defined
+1. **Cook** -- `AssetCooker` processes all assets for the target platform. Textures are compressed
+   (BC7, ASTC), shaders are compiled (HLSL via DXC), and editor-only content is stripped for
+   shipping profiles.
+2. **Bundle** -- `BundleBuilder` assembles cooked assets into pak files using content-defined
    chunking. Each bundle gets a BLAKE3 manifest.
-3. **Sign** -- `CodeSigner` dispatches to the
-   platform-native signing tool. Credentials come from
+3. **Sign** -- `CodeSigner` dispatches to the platform-native signing tool. Credentials come from
    environment variables or AWS Secrets Manager.
-4. **Install** -- `InstallerGenerator` wraps signed
-   artifacts into platform installers.
-5. **Certify** -- `CertChecker` runs platform rules.
-   Failures abort the pipeline with remediation.
-6. **Submit** -- `StoreSubmitter` uploads to the target
-   store and returns a receipt for status polling.
+4. **Install** -- `InstallerGenerator` wraps signed artifacts into platform installers.
+5. **Certify** -- `CertChecker` runs platform rules. Failures abort the pipeline with remediation.
+6. **Submit** -- `StoreSubmitter` uploads to the target store and returns a receipt for status
+   polling.
 
 ### Delta Patch Generation
 
-1. CI receives old version bundles and new version
-   bundles as inputs.
-2. `ContentChunker` splits both into content-defined
-   chunks using Rabin fingerprinting (64 KiB target).
-3. `DeltaGenerator` compares chunk hashes. Only chunks
-   with different hashes are included in the patch.
-4. The patch bundle includes the new chunk data, a
-   chunk index, and the BLAKE3 hash of the expected
+1. CI receives old version bundles and new version bundles as inputs.
+2. `ContentChunker` splits both into content-defined chunks using Rabin fingerprinting (64 KiB
+   target).
+3. `DeltaGenerator` compares chunk hashes. Only chunks with different hashes are included in the
+   patch.
+4. The patch bundle includes the new chunk data, a chunk index, and the BLAKE3 hash of the expected
    post-patch result.
-5. `PatchApplier` replaces chunks in-place and verifies
-   the final hash matches.
+5. `PatchApplier` replaces chunks in-place and verifies the final hash matches.
 
 ### Mod Lifecycle
 
-1. **Author** -- Modder creates content in the Mod SDK
-   (editor in mod-mode). Base game assets are read-only
-   references.
-2. **Package** -- `ModPackager` creates a signed bundle
-   with manifest, dependencies, and preview images.
-3. **Distribute** -- Upload to Steam Workshop via
-   `WorkshopClient` or self-hosted repository via
+1. **Author** -- Modder creates content in the Mod SDK (editor in mod-mode). Base game assets are
+   read-only references.
+2. **Package** -- `ModPackager` creates a signed bundle with manifest, dependencies, and preview
+   images.
+3. **Distribute** -- Upload to Steam Workshop via `WorkshopClient` or self-hosted repository via
    `ModRepositoryClient`.
-4. **Moderate** -- `AutomatedScanner` runs budget,
-   node, and malware checks. Moderator approves/rejects
-   via the dashboard.
-5. **Install** -- `ModRegistry` downloads, verifies
-   integrity (BLAKE3), and stores locally.
-6. **Load** -- `ModLoader` validates constraints,
-   creates an ECS world partition, and binds logic
+4. **Moderate** -- `AutomatedScanner` runs budget, node, and malware checks. Moderator
+   approves/rejects via the dashboard.
+5. **Install** -- `ModRegistry` downloads, verifies integrity (BLAKE3), and stores locally.
+6. **Load** -- `ModLoader` validates constraints, creates an ECS world partition, and binds logic
    graphs into a `ModSandbox`.
-7. **Run** -- Sandbox monitors memory and entity
-   budgets. Violations trigger deactivation.
-8. **Update** -- `ModRegistry` checks for updates on
-   game launch and applies them automatically.
+7. **Run** -- Sandbox monitors memory and entity budgets. Violations trigger deactivation.
+8. **Update** -- `ModRegistry` checks for updates on game launch and applies them automatically.
 
 ## Platform Considerations
 
@@ -1530,37 +1507,23 @@ workflow. Each stage is a discrete async step:
 
 ## Open Questions
 
-1. **Content-defined chunk target size** -- 64 KiB is
-   the initial target. Smaller chunks improve patch
-   granularity but increase manifest size and hashing
-   overhead. Need benchmarks to find the optimal size
-   for game assets.
-2. **Mod signing key distribution** -- Ed25519 keys for
-   mod signing. Should the engine generate a keypair per
-   game, or should modders register keys with the mod
-   repository? Centralized key management simplifies
-   revocation but adds infrastructure.
-3. **Console mod certification** -- Each console
-   platform holder has unique requirements for
-   user-generated content. Need per-platform research
-   to determine which mod capabilities (if any) are
-   allowed on each console.
-4. **Mod sandbox memory tracking** -- Precise per-mod
-   memory tracking requires either a custom allocator
-   per mod partition or OS-level memory accounting (e.g.,
-   `mmap` regions). Custom allocators add complexity;
-   OS accounting may lack precision.
-5. **Delta patch rollback** -- If patch application
-   fails mid-way (power loss, disk error), the installed
-   game may be corrupted. Options: atomic swap (double
-   disk space), journaled patching (write-ahead log), or
-   full re-download on corruption.
-6. **Mod load-order conflict UI** -- When two mods
-   modify the same asset, the resolution prompt needs
-   a clear UI. Should this be a simple priority list or
-   a per-asset override selector?
-7. **CI/CD runner platform** -- Store submission tools
-   (SteamCMD, Transporter, signtool) require specific
-   OS environments. Determine whether to use
-   platform-specific CI runners or cross-compile
+1. **Content-defined chunk target size** -- 64 KiB is the initial target. Smaller chunks improve
+   patch granularity but increase manifest size and hashing overhead. Need benchmarks to find the
+   optimal size for game assets.
+2. **Mod signing key distribution** -- Ed25519 keys for mod signing. Should the engine generate a
+   keypair per game, or should modders register keys with the mod repository? Centralized key
+   management simplifies revocation but adds infrastructure.
+3. **Console mod certification** -- Each console platform holder has unique requirements for
+   user-generated content. Need per-platform research to determine which mod capabilities (if any)
+   are allowed on each console.
+4. **Mod sandbox memory tracking** -- Precise per-mod memory tracking requires either a custom
+   allocator per mod partition or OS-level memory accounting (e.g., `mmap` regions). Custom
+   allocators add complexity; OS accounting may lack precision.
+5. **Delta patch rollback** -- If patch application fails mid-way (power loss, disk error), the
+   installed game may be corrupted. Options: atomic swap (double disk space), journaled patching
+   (write-ahead log), or full re-download on corruption.
+6. **Mod load-order conflict UI** -- When two mods modify the same asset, the resolution prompt
+   needs a clear UI. Should this be a simple priority list or a per-asset override selector?
+7. **CI/CD runner platform** -- Store submission tools (SteamCMD, Transporter, signtool) require
+   specific OS environments. Determine whether to use platform-specific CI runners or cross-compile
    submission artifacts.

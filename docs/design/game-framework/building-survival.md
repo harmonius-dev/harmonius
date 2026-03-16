@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 ### Building
 
@@ -47,40 +47,30 @@
 
 ## Overview
 
-The building and survival subsystems provide
-construction, structural simulation, survival meters,
-resource gathering, farming, and animal husbandry for
-the Harmonius engine. Every piece of data is an ECS
-component. Every piece of logic is an ECS system. All
-authoring surfaces are visual (no-code).
+The building and survival subsystems provide construction, structural simulation, survival meters,
+resource gathering, farming, and animal husbandry for the Harmonius engine. Every piece of data is
+an ECS component. Every piece of logic is an ECS system. All authoring surfaces are visual
+(no-code).
 
 Building covers:
 
-- **Placement** -- socket/snap system with ghost
-  preview, grid and free-form modes, collision and
+- **Placement** -- socket/snap system with ghost preview, grid and free-form modes, collision and
   slope validation
-- **Construction** -- scaffold phases, resource costs,
-  progress bars, visual stage transitions
-- **Structural integrity** -- stability propagation
-  from foundations, cascade collapse, material bonuses
-- **Upgrade and repair** -- material tier progression,
-  proportional repair costs, time-based decay
-- **Housing** -- instanced plots, visitor permissions,
-  furniture placement, functional effects
+- **Construction** -- scaffold phases, resource costs, progress bars, visual stage transitions
+- **Structural integrity** -- stability propagation from foundations, cascade collapse, material
+  bonuses
+- **Upgrade and repair** -- material tier progression, proportional repair costs, time-based decay
+- **Housing** -- instanced plots, visitor permissions, furniture placement, functional effects
 
 Survival covers:
 
-- **Vital meters** -- hunger, thirst, warmth, stamina
-  with drain rates, activity multipliers, and biome
-  modifiers
-- **Vital debuffs** -- starvation, dehydration,
-  hypothermia penalties at critical thresholds
-- **Resource gathering** -- harvestable nodes, tool
-  requirements, skill-scaled yields, respawn timers
-- **Farming** -- multi-stage crop growth, watering,
-  fertilizer, seasonal constraints, withering
-- **Animal husbandry** -- needs/happiness, production
-  rates, housing structures, breeding with trait
+- **Vital meters** -- hunger, thirst, warmth, stamina with drain rates, activity multipliers, and
+  biome modifiers
+- **Vital debuffs** -- starvation, dehydration, hypothermia penalties at critical thresholds
+- **Resource gathering** -- harvestable nodes, tool requirements, skill-scaled yields, respawn
+  timers
+- **Farming** -- multi-stage crop growth, watering, fertilizer, seasonal constraints, withering
+- **Animal husbandry** -- needs/happiness, production rates, housing structures, breeding with trait
   inheritance
 
 ## Architecture
@@ -147,7 +137,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_game/
 ├── building/
 │   ├── placement/
@@ -1285,103 +1275,71 @@ pub fn breeding_system(
 
 ### Building Piece Placement
 
-1. Player enters placement mode, selecting a building
-   piece type from the build menu.
-2. Each frame, `placement_preview_system` queries the
-   shared spatial index for nearby sockets within
+1. Player enters placement mode, selecting a building piece type from the build menu.
+2. Each frame, `placement_preview_system` queries the shared spatial index for nearby sockets within
    snap range.
-3. The system evaluates each candidate socket for
-   type compatibility, rotation alignment, collision
+3. The system evaluates each candidate socket for type compatibility, rotation alignment, collision
    clearance, and slope angle.
-4. The best valid snap is chosen. The ghost mesh is
-   positioned and colored green (valid) or red
+4. The best valid snap is chosen. The ghost mesh is positioned and colored green (valid) or red
    (invalid).
-5. On confirm, `commit_placement_system` spawns the
-   entity, deducts materials, connects sockets, and
+5. On confirm, `commit_placement_system` spawns the entity, deducts materials, connects sockets, and
    starts construction if applicable.
-6. `structural_integrity_system` receives the
-   `PiecePlacedEvent` and incrementally recomputes
+6. `structural_integrity_system` receives the `PiecePlacedEvent` and incrementally recomputes
    stability for the affected subgraph.
 
 ### Structural Integrity on Removal
 
-1. A piece is destroyed (combat, siege, or manual
-   demolition).
+1. A piece is destroyed (combat, siege, or manual demolition).
 2. `PieceRemovedEvent` is emitted.
-3. `structural_integrity_system` removes the node
-   from the stability graph.
-4. BFS propagation from all foundations recomputes
-   stability for every piece reachable from the
+3. `structural_integrity_system` removes the node from the stability graph.
+4. BFS propagation from all foundations recomputes stability for every piece reachable from the
    removed node.
-5. Pieces with stability <= 0 are marked for
-   cascade collapse.
-6. `cascade_collapse_system` destroys marked pieces
-   in wave order, spawning debris VFX and emitting
+5. Pieces with stability <= 0 are marked for cascade collapse.
+6. `cascade_collapse_system` destroys marked pieces in wave order, spawning debris VFX and emitting
    `PieceDestroyedEvent` for each.
-7. Each destruction may trigger further propagation
-   (iterative until stable).
-8. Budget: under 5 ms for 1,000 pieces
-   (NFR-13.14.1).
+7. Each destruction may trigger further propagation (iterative until stable).
+8. Budget: under 5 ms for 1,000 pieces (NFR-13.14.1).
 
 ### Vital Meter Frame Tick
 
-1. `vital_tick_system` iterates all entities with
-   `VitalMeter`, `ActivityState`, and
+1. `vital_tick_system` iterates all entities with `VitalMeter`, `ActivityState`, and
    `BiomeModifier`.
-2. For each vital, compute effective drain:
-   `drain = base_rate * activity_mult * biome_mult`
-3. Subtract drain from `current`. Clamp to
-   [0, max].
-4. `vital_debuff_system` checks each vital against
-   its debuff threshold.
-5. If below threshold and no active debuff, emit
-   `ApplyEffectEvent` for the critical debuff.
-6. If restored above threshold with active debuff,
-   emit `RemoveEffectEvent`.
+2. For each vital, compute effective drain: `drain = base_rate * activity_mult * biome_mult`
+3. Subtract drain from `current`. Clamp to [0, max].
+4. `vital_debuff_system` checks each vital against its debuff threshold.
+5. If below threshold and no active debuff, emit `ApplyEffectEvent` for the critical debuff.
+6. If restored above threshold with active debuff, emit `RemoveEffectEvent`.
 
 ### Crop Growth Cycle
 
-1. Player tills a `SoilPlot`, plants a seed (spawns
-   `PlantedCrop` entity).
-2. Each tick, `crop_growth_system` advances
-   `growth_progress` based on elapsed time, soil
-   quality, and fertilizer.
-3. If the crop is not watered, the wither timer
-   decrements. If it reaches zero, the crop state
+1. Player tills a `SoilPlot`, plants a seed (spawns `PlantedCrop` entity).
+2. Each tick, `crop_growth_system` advances `growth_progress` based on elapsed time, soil quality,
+   and fertilizer.
+3. If the crop is not watered, the wither timer decrements. If it reaches zero, the crop state
    transitions to `Withered`.
-4. Growth progress transitions the crop through
-   visual stages (mesh swap at each threshold).
-5. When progress reaches 1.0, state transitions to
-   `Harvestable`.
-6. Player harvests: yield is computed from base
-   yield, soil quality, and fertilizer multiplier.
+4. Growth progress transitions the crop through visual stages (mesh swap at each threshold).
+5. When progress reaches 1.0, state transitions to `Harvestable`.
+6. Player harvests: yield is computed from base yield, soil quality, and fertilizer multiplier.
    Items are added to inventory.
 
 ### Animal Production Loop
 
-1. `animal_needs_system` decreases hunger and
-   happiness each tick.
-2. Care interactions (feed, pet, clean) restore
-   needs values.
-3. `animal_production_system` computes effective
-   production interval:
+1. `animal_needs_system` decreases hunger and happiness each tick.
+2. Care interactions (feed, pet, clean) restore needs values.
+3. `animal_production_system` computes effective production interval:
    `interval = base / (happiness * multiplier)`
-4. When the timer reaches zero, the product item is
-   spawned.
-5. Breeding: two compatible animals with a housing
-   structure start a gestation timer. On completion,
-   offspring is spawned with traits inherited from
-   both parents using weighted random selection with
+4. When the timer reaches zero, the product item is spawned.
+5. Breeding: two compatible animals with a housing structure start a gestation timer. On completion,
+   offspring is spawned with traits inherited from both parents using weighted random selection with
    configurable variation.
 
 ## Platform Considerations
 
 ### Mobile Building Piece Cap
 
-Mobile platforms cap placed building pieces at 500
-(vs. 2,000+ on desktop) to limit structural integrity
-graph traversal cost. The cap is enforced in
-`commit_placement_system` via a `cfg`-gated constant.
+Mobile platforms cap placed building pieces at 500 (vs. 2,000+ on desktop) to limit structural
+integrity graph traversal cost. The cap is enforced in `commit_placement_system` via a `cfg`-gated
+constant.
 
 | Platform | Max Pieces | Stability Budget |
 |----------|-----------|-----------------|
@@ -1391,40 +1349,32 @@ graph traversal cost. The cap is enforced in
 
 ### Spatial Index Integration
 
-Building placement queries use the shared spatial
-index (BVH/octree) for socket proximity searches and
-collision checks. The spatial index is updated when
-pieces are placed or destroyed. This is the same
-index shared across physics, rendering, networking,
-AI, audio, and gameplay.
+Building placement queries use the shared spatial index (BVH/octree) for socket proximity searches
+and collision checks. The spatial index is updated when pieces are placed or destroyed. This is the
+same index shared across physics, rendering, networking, AI, audio, and gameplay.
 
 ### Physics Integration
 
-- Collision shapes from `BuildingPieceDefinition` are
-  registered with the ECS physics system on placement.
-- Cascade collapse spawns rigid body debris entities
-  for visual breakage, integrating with the
+- Collision shapes from `BuildingPieceDefinition` are registered with the ECS physics system on
+  placement.
+- Cascade collapse spawns rigid body debris entities for visual breakage, integrating with the
   destruction and fracture system (F-4.6.5).
-- Free-form placement uses physics raycasts for
-  ground alignment.
+- Free-form placement uses physics raycasts for ground alignment.
 
 ### Save System Integration
 
-Building and survival state persists through the save
-system (F-13.3.1):
+Building and survival state persists through the save system (F-13.3.1):
 
-- All `BuildingPiece`, `SocketConnections`,
-  `ConstructionProgress`, `BuildingDecay` components
-  are serialized.
+- All `BuildingPiece`, `SocketConnections`, `ConstructionProgress`, `BuildingDecay` components are
+  serialized.
 - `HousingInstance` with permissions is persisted.
 - `PlacedFurniture` and its effects are persisted.
 - `VitalMeter` values are saved/restored.
 - `PlantedCrop` growth progress is saved.
 - `DomesticAnimal` needs and traits are saved.
 
-All components use `bevy_reflect`-style reflection for
-serialization. Mixed textual+binary format per project
-constraints.
+All components use `bevy_reflect`-style reflection for serialization. Mixed textual+binary format
+per project constraints.
 
 ## Test Plan
 
@@ -1523,44 +1473,29 @@ constraints.
 
 ## Open Questions
 
-1. **Snap search radius** -- How far from the cursor
-   should the placement system search for valid
-   sockets? Larger radius is more forgiving but
-   increases spatial query cost.
+1. **Snap search radius** -- How far from the cursor should the placement system search for valid
+   sockets? Larger radius is more forgiving but increases spatial query cost.
 
-2. **Stability algorithm variant** -- BFS from
-   foundations (current design) vs. force-directed
-   simulation. BFS is simpler and faster but cannot
-   model tension/compression. Need to decide if
+2. **Stability algorithm variant** -- BFS from foundations (current design) vs. force-directed
+   simulation. BFS is simpler and faster but cannot model tension/compression. Need to decide if
    advanced structural physics is worth the cost.
 
-3. **Cascade collapse visual pacing** -- Should all
-   collapses happen in one frame or spread across
-   multiple frames for dramatic effect? Spreading
-   improves visual quality but complicates the
+3. **Cascade collapse visual pacing** -- Should all collapses happen in one frame or spread across
+   multiple frames for dramatic effect? Spreading improves visual quality but complicates the
    integrity system.
 
-4. **Decay persistence across sessions** -- Does
-   decay timer run while the player is offline?
-   Always-on decay (like Rust) drives engagement but
-   frustrates casual players. Need a design decision.
+4. **Decay persistence across sessions** -- Does decay timer run while the player is offline?
+   Always-on decay (like Rust) drives engagement but frustrates casual players. Need a design
+   decision.
 
-5. **Farming tick rate** -- Real-time growth vs.
-   accelerated game-time growth. Survival games vary
-   widely here. The tick rate should be configurable
-   per server/game mode.
+5. **Farming tick rate** -- Real-time growth vs. accelerated game-time growth. Survival games vary
+   widely here. The tick rate should be configurable per server/game mode.
 
-6. **Animal pathfinding** -- Do domesticated animals
-   need navigation within housing areas? If so, they
-   need NavMesh integration. Current design assumes
-   stationary or simple wander behavior.
+6. **Animal pathfinding** -- Do domesticated animals need navigation within housing areas? If so,
+   they need NavMesh integration. Current design assumes stationary or simple wander behavior.
 
-7. **Building piece limit enforcement** -- Hard cap
-   (placement rejected) vs. soft cap (performance
-   warning). Platforms have different budgets.
-   Need to define the UX for hitting the cap.
+7. **Building piece limit enforcement** -- Hard cap (placement rejected) vs. soft cap (performance
+   warning). Platforms have different budgets. Need to define the UX for hitting the cap.
 
-8. **Free-form placement physics granularity** --
-   Raycast per frame vs. swept collision for ground
-   alignment. Raycast is cheaper but may miss thin
-   geometry.
+8. **Free-form placement physics granularity** -- Raycast per frame vs. swept collision for ground
+   alignment. Raycast is cheaper but may miss thin geometry.

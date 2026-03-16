@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 ### Level Editor (15.2)
 
@@ -35,28 +35,22 @@
 
 ## Overview
 
-The level editor and world building subsystems provide all
-visual authoring tools for populating, sculpting, painting,
-and partitioning game worlds. All tools operate on the live
-ECS world -- entities are components, brushes write to
-component data, and the shared spatial index drives both
+The level editor and world building subsystems provide all visual authoring tools for populating,
+sculpting, painting, and partitioning game worlds. All tools operate on the live ECS world --
+entities are components, brushes write to component data, and the shared spatial index drives both
 raycasting and streaming.
 
 Key principles:
 
-- **100% ECS-based.** Every placed entity, terrain tile,
-  foliage instance, and probe is an ECS entity with
-  components. No parallel data stores.
-- **No-code authoring.** All operations are visual
-  interactions in the viewport. No scripting required.
-- **Shared spatial index.** Placement raycasts, foliage
-  queries, navmesh generation, and partition budgets all
-  query the same BVH/octree.
-- **Async streaming.** Terrain sculpting, heightmap I/O,
-  and foliage storage use platform-native async I/O via
-  the `IoReactor`.
-- **Multi-user editing.** Cell-based locking enables
-  concurrent editing of disjoint world regions by
+- **100% ECS-based.** Every placed entity, terrain tile, foliage instance, and probe is an ECS
+  entity with components. No parallel data stores.
+- **No-code authoring.** All operations are visual interactions in the viewport. No scripting
+  required.
+- **Shared spatial index.** Placement raycasts, foliage queries, navmesh generation, and partition
+  budgets all query the same BVH/octree.
+- **Async streaming.** Terrain sculpting, heightmap I/O, and foliage storage use platform-native
+  async I/O via the `IoReactor`.
+- **Multi-user editing.** Cell-based locking enables concurrent editing of disjoint world regions by
   multiple artists.
 
 ## Architecture
@@ -123,7 +117,7 @@ graph TD
     VG --> RG
 ```
 
-```
+```text
 harmonius_editor/
 ├── level/
 │   ├── placer.rs          # EntityPlacer, drag-drop
@@ -1261,55 +1255,40 @@ impl UndoHistory {
 
 ### Entity Lifecycle
 
-1. User drags an asset from the browser into the
-   viewport.
-2. `EntityPlacer` calls `SnapEngine::snap()` to
-   compute a snapped transform using the shared
-   spatial index raycast.
+1. User drags an asset from the browser into the viewport.
+2. `EntityPlacer` calls `SnapEngine::snap()` to compute a snapped transform using the shared spatial
+   index raycast.
 3. A preview ghost renders at the snapped position.
-4. On release, `EntityPlacer` pushes a
-   `PlaceEntity` command to `UndoHistory` and
-   spawns the entity in the ECS world.
-5. The ECS inserts the entity into the shared
-   spatial index. It becomes visible next frame.
+4. On release, `EntityPlacer` pushes a `PlaceEntity` command to `UndoHistory` and spawns the entity
+   in the ECS world.
+5. The ECS inserts the entity into the shared spatial index. It becomes visible next frame.
 
 ### Prefab Propagation
 
 1. An artist modifies a source prefab asset.
-2. `PrefabManager::propagate_changes()` queries all
-   entities with a matching `PrefabInstanceComponent`.
-3. For each instance, properties without overrides
-   receive the updated source value.
+2. `PrefabManager::propagate_changes()` queries all entities with a matching
+   `PrefabInstanceComponent`.
+3. For each instance, properties without overrides receive the updated source value.
 4. Overridden properties are left unchanged.
-5. The inspector shows overrides with bold labels
-   via `OverrideMap::has_override()`.
+5. The inspector shows overrides with bold labels via `OverrideMap::has_override()`.
 
 ### Terrain Sculpting Streaming
 
 1. User paints with a sculpt brush.
-2. `TerrainSculptor` computes the set of affected
-   tile coordinates.
-3. Unloaded tiles are fetched via
-   `IoReactor::read()` (async, non-blocking).
-4. The brush kernel runs on loaded tile data (GPU
-   compute for erosion, CPU for simple brushes).
+2. `TerrainSculptor` computes the set of affected tile coordinates.
+3. Unloaded tiles are fetched via `IoReactor::read()` (async, non-blocking).
+4. The brush kernel runs on loaded tile data (GPU compute for erosion, CPU for simple brushes).
 5. Modified tiles are marked dirty.
-6. On brush release, dirty tiles are flushed to
-   disk via `IoReactor::write()`.
-7. Peak memory is bounded by loading only the
-   affected tile window.
+6. On brush release, dirty tiles are flushed to disk via `IoReactor::write()`.
+7. Peak memory is bounded by loading only the affected tile window.
 
 ### World Partition Multi-User
 
-1. An artist requests a cell lock via
-   `MultiUserSession::request_lock()`.
-2. The server checks ownership. If available, the
-   lock is granted.
+1. An artist requests a cell lock via `MultiUserSession::request_lock()`.
+2. The server checks ownership. If available, the lock is granted.
 3. The artist edits entities within the locked cell.
-4. On release, `sync_changes()` pushes the undo
-   history delta to the shared state.
-5. Other artists see the updated cell. The partition
-   overlay shows ownership changes.
+4. On release, `sync_changes()` pushes the undo history delta to the shared state.
+5. Other artists see the updated cell. The partition overlay shows ownership changes.
 
 ## Platform Considerations
 
@@ -1321,8 +1300,7 @@ impl UndoHistory {
 | Multi-user transport | TCP via IOCP | TCP via GCD | TCP via io_uring |
 | Spatial index raycast | Shared BVH (all platforms) | Shared BVH | Shared BVH |
 
-All platform I/O uses the `IoReactor` controlled
-drain at the frame poll point. No stdlib file I/O.
+All platform I/O uses the `IoReactor` controlled drain at the frame poll point. No stdlib file I/O.
 
 ## Test Plan
 
@@ -1384,27 +1362,15 @@ drain at the frame poll point. No stdlib file I/O.
 
 ## Open Questions
 
-1. **CSG precision** -- Floating-point CSG boolean
-   operations may produce degenerate triangles at
-   edge intersections. Evaluate exact arithmetic
-   libraries vs epsilon-based cleanup.
-2. **Heightmap tile size** -- Larger tiles (512x512)
-   reduce tile count but increase per-tile I/O.
-   Smaller tiles (128x128) improve streaming
-   granularity but increase overhead.
-3. **Multi-user conflict resolution** -- Cell-level
-   locking is coarse. Sub-cell locking (per-entity)
-   would allow finer concurrency but adds
-   complexity. Determine optimal granularity.
-4. **Foliage storage format** -- Spatial grid cell
-   size affects streaming efficiency. Need profiling
-   data to determine optimal cell dimensions for
-   typical foliage densities.
-5. **Erosion GPU backend** -- GPU compute erosion
-   requires a render graph compute pass. Determine
-   whether to run erosion as a standalone compute
-   dispatch or integrate into the frame render graph.
-6. **Prefab serialization format** -- RON with
-   binary companion files (per constraints) or a
-   dedicated prefab binary format for faster
-   loading. Evaluate load-time impact.
+1. **CSG precision** -- Floating-point CSG boolean operations may produce degenerate triangles at
+   edge intersections. Evaluate exact arithmetic libraries vs epsilon-based cleanup.
+2. **Heightmap tile size** -- Larger tiles (512x512) reduce tile count but increase per-tile I/O.
+   Smaller tiles (128x128) improve streaming granularity but increase overhead.
+3. **Multi-user conflict resolution** -- Cell-level locking is coarse. Sub-cell locking (per-entity)
+   would allow finer concurrency but adds complexity. Determine optimal granularity.
+4. **Foliage storage format** -- Spatial grid cell size affects streaming efficiency. Need profiling
+   data to determine optimal cell dimensions for typical foliage densities.
+5. **Erosion GPU backend** -- GPU compute erosion requires a render graph compute pass. Determine
+   whether to run erosion as a standalone compute dispatch or integrate into the frame render graph.
+6. **Prefab serialization format** -- RON with binary companion files (per constraints) or a
+   dedicated prefab binary format for faster loading. Evaluate load-time impact.

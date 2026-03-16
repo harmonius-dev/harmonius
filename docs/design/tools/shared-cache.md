@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -21,33 +21,24 @@
 
 ## Overview
 
-The shared asset cache eliminates redundant builds across the
-team. When any developer (or CI build) compiles an asset, the
-result is uploaded to a centralized cache keyed by a BLAKE3
-content hash. Other developers download the cached result
-instead of rebuilding locally.
+The shared asset cache eliminates redundant builds across the team. When any developer (or CI build)
+compiles an asset, the result is uploaded to a centralized cache keyed by a BLAKE3 content hash.
+Other developers download the cached result instead of rebuilding locally.
 
 Key design decisions:
 
-1. **Content-addressable storage (CAS)** — cache keys are
-   BLAKE3 hashes computed from source content + build
-   settings + tool version. Identical inputs always produce
-   identical keys.
-2. **Three cache entry types** — compiled assets, compiled
-   shader variants (SPIR-V/MSL/DXIL), and compiled logic
-   graph bytecode/AOT native code.
-3. **Two-tier cache** — local disk cache (L1) for instant
-   hits, remote S3-backed cache (L2) for shared access.
-4. **CI/CD population** — build servers populate the cache
-   for all target platforms. Nightly builds warm the cache
-   for all active branches.
-5. **Zstd compression** — all cache entries are compressed
-   before transfer and storage.
-6. **Self-hosted AWS** — S3 for storage, REST API (Rust +
-   axum) for cache operations, deployed as containers on
-   ECS or Kubernetes.
-7. **Platform-native HTTP** — NSURLSession on macOS, WinHTTP
-   on Windows, libcurl on Linux.
+1. **Content-addressable storage (CAS)** — cache keys are BLAKE3 hashes computed from source content
+   + build settings + tool version. Identical inputs always produce identical keys.
+2. **Three cache entry types** — compiled assets, compiled shader variants (SPIR-V/MSL/DXIL), and
+   compiled logic graph bytecode/AOT native code.
+3. **Two-tier cache** — local disk cache (L1) for instant hits, remote S3-backed cache (L2) for
+   shared access.
+4. **CI/CD population** — build servers populate the cache for all target platforms. Nightly builds
+   warm the cache for all active branches.
+5. **Zstd compression** — all cache entries are compressed before transfer and storage.
+6. **Self-hosted AWS** — S3 for storage, REST API (Rust + IoReactor) for cache operations, deployed
+   as containers on ECS or Kubernetes.
+7. **Platform-native HTTP** — NSURLSession on macOS, WinHTTP on Windows, libcurl on Linux.
 
 ## Architecture
 
@@ -131,7 +122,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_cache/
 ├── client/
 │   ├── key.rs           # CacheKey — BLAKE3 hash
@@ -929,49 +920,40 @@ pub enum CacheError {
 ### Asset Build with Cache
 
 1. The content pipeline requests a compiled asset.
-2. `CacheResolver::resolve` computes the BLAKE3 key
-   from source content + build settings + tool version.
-3. L1 (local disk) is checked first. On hit, the entry
-   is returned immediately with no network I/O.
-4. On L1 miss, L2 (remote cache service) is queried via
-   `GET /cache/{key}`.
-5. On L2 hit, the compressed entry is downloaded,
-   decompressed, stored in L1, and returned.
-6. On L2 miss, the asset is compiled locally. The result
-   is stored in both L1 and L2 via `CacheResolver::store`.
+2. `CacheResolver::resolve` computes the BLAKE3 key from source content + build settings + tool
+   version.
+3. L1 (local disk) is checked first. On hit, the entry is returned immediately with no network I/O.
+4. On L1 miss, L2 (remote cache service) is queried via `GET /cache/{key}`.
+5. On L2 hit, the compressed entry is downloaded, decompressed, stored in L1, and returned.
+6. On L2 miss, the asset is compiled locally. The result is stored in both L1 and L2 via
+   `CacheResolver::store`.
 
 ### First-Launch Onboarding
 
 1. A new developer clones the repository.
-2. On first editor launch, the prefetcher collects all
-   required cache keys from the asset database.
-3. `Prefetcher::prefetch_all` downloads missing entries
-   from L2 in parallel (configurable concurrency,
-   bandwidth limits).
-4. Prefetch runs concurrently with Git LFS downloads,
-   saturating available bandwidth.
-5. A progress dashboard shows per-category status
-   (compiled assets, shaders, graphs) with ETA.
-6. Target: first-launch time under 10 minutes for a
-   project that takes 1+ hours to build from source.
+2. On first editor launch, the prefetcher collects all required cache keys from the asset database.
+3. `Prefetcher::prefetch_all` downloads missing entries from L2 in parallel (configurable
+   concurrency, bandwidth limits).
+4. Prefetch runs concurrently with Git LFS downloads, saturating available bandwidth.
+5. A progress dashboard shows per-category status (compiled assets, shaders, graphs) with ETA.
+6. Target: first-launch time under 10 minutes for a project that takes 1+ hours to build from
+   source.
 
 ### CI/CD Population
 
 1. CI build compiles all assets for all target platforms.
 2. The standalone CLI tool computes BLAKE3 keys.
 3. For each key, `HEAD /cache/{key}` checks existence.
-4. If not present, the CLI compresses with Zstd and
-   uploads via `PUT /cache/{key}`.
+4. If not present, the CLI compresses with Zstd and uploads via `PUT /cache/{key}`.
 5. Idempotent: uploading an existing key is a no-op.
-6. Nightly builds warm the cache for all active branches
-   (main + feature branches with recent activity).
+6. Nightly builds warm the cache for all active branches (main + feature branches with recent
+   activity).
 
 ### Cache Key Computation
 
-The cache key is a BLAKE3 hash of a domain-separated
-input:
+The cache key is a BLAKE3 hash of a domain-separated input:
 
-```
+```text
 BLAKE3(
     domain_tag ||
     source_content_hash ||
@@ -1038,10 +1020,8 @@ Domain tags prevent collisions across entry types:
 |-------|---------|---------------|
 | `blake3` | Content hashing | Fast, 256-bit, SIMD-accelerated |
 | `zstd` | Compression | High ratio at fast speed |
-| `tokio` | Async runtime (server) | Standard Rust async runtime |
-| `axum` | HTTP framework (server) | Minimal, tokio-native |
-| `aws-sdk-s3` | S3 client | Official AWS SDK for Rust |
-| `sqlx` | Database driver | Async PostgreSQL/SQLite |
+| `aws-sdk-s3` | S3 client | Official AWS SDK; sync mode on I/O threads |
+| `postgres` | PostgreSQL driver | Sync client on dedicated I/O threads |
 | `opentelemetry` | Metrics export | Standard observability format |
 | `serde` | Serialization | Config and metadata encoding |
 | `native-tls` | Platform TLS | Secure HTTP transfers |
@@ -1100,30 +1080,19 @@ Domain tags prevent collisions across entry types:
 
 ## Open Questions
 
-1. **Index database choice** — PostgreSQL for the server
-   index provides full-text search and ACID guarantees.
-   SQLite is simpler for small teams running the cache
-   locally. Consider supporting both via the `sqlx` crate's
-   multi-database support.
-2. **Zstd compression level** — Level 3 balances speed and
-   ratio. Higher levels (6-9) improve ratio for large
-   textures but increase CPU cost. Consider per-entry-type
-   compression levels.
-3. **Cache warming strategy** — Nightly builds warm all
-   active branches. Should the system also warm on PR
-   creation or on every push to a feature branch? More
-   warming increases CI cost but improves developer
-   experience.
-4. **Local cache size default** — What is a reasonable
-   default L1 cache size? 10 GB covers most working sets.
-   Larger projects may need 50-100 GB. Consider auto-sizing
-   based on available disk space (e.g., 10% of free space,
-   capped at 100 GB).
-5. **Multi-region S3** — For globally distributed teams,
-   should the cache service replicate across S3 regions?
-   CloudFront could serve as a CDN layer. Consider the
-   cost/latency tradeoff.
-6. **Cache entry versioning** — When the domain tag version
-   changes (e.g., `v1` to `v2`), all old entries become
-   unreachable by key. Need a migration strategy or
-   parallel lookup across versions during rollout.
+1. **Index database choice** — PostgreSQL for the server index provides full-text search and ACID
+   guarantees. SQLite is simpler for small teams running the cache locally. Consider supporting both
+   via the synchronous `postgres` and `rusqlite` crates on I/O threads.
+2. **Zstd compression level** — Level 3 balances speed and ratio. Higher levels (6-9) improve ratio
+   for large textures but increase CPU cost. Consider per-entry-type compression levels.
+3. **Cache warming strategy** — Nightly builds warm all active branches. Should the system also warm
+   on PR creation or on every push to a feature branch? More warming increases CI cost but improves
+   developer experience.
+4. **Local cache size default** — What is a reasonable default L1 cache size? 10 GB covers most
+   working sets. Larger projects may need 50-100 GB. Consider auto-sizing based on available disk
+   space (e.g., 10% of free space, capped at 100 GB).
+5. **Multi-region S3** — For globally distributed teams, should the cache service replicate across
+   S3 regions? CloudFront could serve as a CDN layer. Consider the cost/latency tradeoff.
+6. **Cache entry versioning** — When the domain tag version changes (e.g., `v1` to `v2`), all old
+   entries become unreachable by key. Need a migration strategy or parallel lookup across versions
+   during rollout.

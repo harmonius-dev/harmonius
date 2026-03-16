@@ -204,11 +204,9 @@ memory constraints (1 MB staging buffer, 64 MB max scene).
 
 ## US-1.4.17 Verify Scene Round-Trip Preserves Full World State
 
-**As an** engine tester (P-27), **I want** to verify
-that serializing and deserializing a complex ECS world
-produces identical entity state, hierarchy, and
-resources, **so that** save/load and migration preserve
-complete world fidelity.
+**As an** engine tester (P-27), **I want** to verify that serializing and deserializing a complex
+ECS world produces identical entity state, hierarchy, and resources, **so that** save/load and
+migration preserve complete world fidelity.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -221,12 +219,10 @@ complete world fidelity.
 
 ## US-1.4.18 Serialize a Scene with Text Metadata and Binary Mesh Data
 
-**As a** game developer (P-15), **I want** to serialize
-a scene so that transforms and component metadata are
-stored in a human-readable RON file while mesh vertex
-data is stored in a binary companion `.bin` file,
-**so that** I can diff and review scene metadata in
-version control while keeping bulk data efficient.
+**As a** game developer (P-15), **I want** to serialize a scene so that transforms and component
+metadata are stored in a human-readable RON file while mesh vertex data is stored in a binary
+companion `.bin` file, **so that** I can diff and review scene metadata in version control while
+keeping bulk data efficient.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -236,11 +232,9 @@ version control while keeping bulk data efficient.
 
 ## US-1.4.19 Deserialize a Mixed-Format Scene Transparently
 
-**As a** game developer (P-15), **I want** to
-deserialize a mixed-format scene file and have binary
-references resolved automatically, **so that** my
-loading code sees a unified data view without handling
-text vs. binary separately.
+**As a** game developer (P-15), **I want** to deserialize a mixed-format scene file and have binary
+references resolved automatically, **so that** my loading code sees a unified data view without
+handling text vs. binary separately.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -250,11 +244,9 @@ text vs. binary separately.
 
 ## US-1.4.20 Review Scene Changes in Version Control Diffs
 
-**As a** game developer (P-15), **I want** scene
-metadata stored in human-readable text so that version
-control diffs show meaningful changes to transforms,
-component configs, and entity hierarchy, **so that**
-code reviews catch unintended scene modifications.
+**As a** game developer (P-15), **I want** scene metadata stored in human-readable text so that
+version control diffs show meaningful changes to transforms, component configs, and entity
+hierarchy, **so that** code reviews catch unintended scene modifications.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -264,11 +256,9 @@ code reviews catch unintended scene modifications.
 
 ## US-1.4.21 Annotate Fields for Binary Companion Storage
 
-**As a** game developer (P-15), **I want** to mark
-specific fields with `#[binary]` so the mixed-format
-serializer stores them in the binary companion file,
-**so that** large data (vertex buffers, heightmaps)
-stays in binary while small fields remain readable.
+**As a** game developer (P-15), **I want** to mark specific fields with `#[binary]` so the
+mixed-format serializer stores them in the binary companion file, **so that** large data (vertex
+buffers, heightmaps) stays in binary while small fields remain readable.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -278,11 +268,9 @@ stays in binary while small fields remain readable.
 
 ## US-1.4.22 Share Binary Companions Across Multiple Assets
 
-**As an** engine developer (P-26), **I want** multiple
-text asset files to reference the same binary companion
-file, **so that** shared bulk data (e.g., a common
-terrain heightmap) is stored once and deduplicated via
-content hashing.
+**As an** engine developer (P-26), **I want** multiple text asset files to reference the same binary
+companion file, **so that** shared bulk data (e.g., a common terrain heightmap) is stored once and
+deduplicated via content hashing.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -292,11 +280,9 @@ content hashing.
 
 ## US-1.4.23 Append Blobs to Companion During Incremental Build
 
-**As an** engine developer (P-26), **I want** to
-append new blobs to an existing binary companion file
-without rewriting the entire file, **so that**
-incremental asset builds are fast and proportional to
-changed content.
+**As an** engine developer (P-26), **I want** to append new blobs to an existing binary companion
+file without rewriting the entire file, **so that** incremental asset builds are fast and
+proportional to changed content.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -306,11 +292,9 @@ changed content.
 
 ## US-1.4.24 Verify Mixed-Format Round-Trip Fidelity
 
-**As an** engine tester (P-27), **I want** to verify
-that serializing data in mixed format and deserializing
-it produces identical values for both the text-inline
-and binary-companion portions, **so that** the mixed
-format is lossless.
+**As an** engine tester (P-27), **I want** to verify that serializing data in mixed format and
+deserializing it produces identical values for both the text-inline and binary-companion portions,
+**so that** the mixed format is lossless.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -320,10 +304,9 @@ format is lossless.
 
 ## US-1.4.25 Verify Atomic Write Safety on Crash
 
-**As an** engine tester (P-27), **I want** to verify
-that a simulated crash during mixed-format write does
-not leave partial files at the final paths, **so that**
-asset integrity is maintained even under failure.
+**As an** engine tester (P-27), **I want** to verify that a simulated crash during mixed-format
+write does not leave partial files at the final paths, **so that** asset integrity is maintained
+even under failure.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

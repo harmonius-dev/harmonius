@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/rendering/](../../features/rendering/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/rendering/](../../features/rendering/),
 > [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table
-> below traces design elements to those definitions.
+> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
+> to those definitions.
 
 ### Acceleration Structures (F-2.5.1 / R-2.5.1)
 
@@ -72,28 +72,21 @@
 
 ## Overview
 
-The advanced rendering subsystem adds hardware ray tracing
-and global illumination to the Harmonius engine. It is
-designed as a **hybrid renderer**: rasterization handles
-primary visibility and base shading, while ray tracing
-provides reflections, shadows, ambient occlusion, and
-indirect lighting at configurable quality tiers.
+The advanced rendering subsystem adds hardware ray tracing and global illumination to the Harmonius
+engine. It is designed as a **hybrid renderer**: rasterization handles primary visibility and base
+shading, while ray tracing provides reflections, shadows, ambient occlusion, and indirect lighting
+at configurable quality tiers.
 
 The design follows four principles:
 
-1. **Acceleration structures are ECS-driven.** BLAS and
-   TLAS are built from meshlet render proxies extracted
-   from the ECS world. No separate scene representation.
-2. **Tiered fallback.** Every RT effect has a
-   rasterization-only fallback. The `FallbackSelector`
+1. **Acceleration structures are ECS-driven.** BLAS and TLAS are built from meshlet render proxies
+   extracted from the ECS world. No separate scene representation.
+2. **Tiered fallback.** Every RT effect has a rasterization-only fallback. The `FallbackSelector`
    chooses the best technique per platform and budget.
-3. **Unified denoising.** All stochastic RT outputs
-   (reflections, GI, shadows, AO) route through a shared
-   `Denoiser` with pluggable algorithms (NRD, neural).
-4. **Render-graph integrated.** Every RT pass is a
-   render graph node with declared resource I/O. The
-   graph compiler handles barriers, aliasing, and
-   scheduling automatically.
+3. **Unified denoising.** All stochastic RT outputs (reflections, GI, shadows, AO) route through a
+   shared `Denoiser` with pluggable algorithms (NRD, neural).
+4. **Render-graph integrated.** Every RT pass is a render graph node with declared resource I/O. The
+   graph compiler handles barriers, aliasing, and scheduling automatically.
 
 ### Performance Targets
 
@@ -183,7 +176,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_rendering/
 ├── advanced/
 │   ├── accel_struct.rs     # AccelStructManager,
@@ -1572,8 +1565,7 @@ pub fn tlas_update_system<B: GpuBackend>(
 
 ### Per-Frame RT Pipeline
 
-The RT pipeline runs within the frame's render
-graph after G-buffer generation:
+The RT pipeline runs within the frame's render graph after G-buffer generation:
 
 ```rust
 // Pseudocode: RT frame flow
@@ -1658,20 +1650,14 @@ fn build_rt_graph<B: GpuBackend>(
 
 ### BLAS Lifecycle
 
-1. **Mesh imported** -- asset pipeline produces
-   meshlet vertex/index buffers.
-2. **Entity spawned with `RtEnabled`** --
-   `blas_update_system` checks if a BLAS exists for
-   this `MeshId` in the cache.
-3. **Cache miss** -- `build_blas()` records a build
-   command. A compaction query is issued.
-4. **Next frame** -- `finish_compaction()` reads
-   back compacted sizes, copies BLAS to tight
+1. **Mesh imported** -- asset pipeline produces meshlet vertex/index buffers.
+2. **Entity spawned with `RtEnabled`** -- `blas_update_system` checks if a BLAS exists for this
+   `MeshId` in the cache.
+3. **Cache miss** -- `build_blas()` records a build command. A compaction query is issued.
+4. **Next frame** -- `finish_compaction()` reads back compacted sizes, copies BLAS to tight
    allocations, frees originals.
-5. **Entity despawned** -- reference count on BLAS
-   decrements. When zero, BLAS memory is freed.
-6. **Deforming mesh** -- `build_blas()` called with
-   `BlasBuildMode::Refit` for fast update.
+5. **Entity despawned** -- reference count on BLAS decrements. When zero, BLAS memory is freed.
+6. **Deforming mesh** -- `build_blas()` called with `BlasBuildMode::Refit` for fast update.
 
 ### TLAS Rebuild vs Refit Decision
 
@@ -1685,14 +1671,12 @@ fn build_rt_graph<B: GpuBackend>(
 
 ### Denoiser History Management
 
-The denoiser maintains per-signal history buffers
-(previous frame color, moments, hit distance). On
-disocclusion (detected via motion vectors and depth
-comparison), history is invalidated per-pixel and
-the spatial filter increases its kernel radius to
-compensate.
+The denoiser maintains per-signal history buffers (previous frame color, moments, hit distance). On
+disocclusion (detected via motion vectors and depth comparison), history is invalidated per-pixel
+and the spatial filter increases its kernel radius to compensate.
 
 History is fully reset on:
+
 - Scene cuts / teleportation
 - Quality tier change
 - Resolution change
@@ -1800,12 +1784,9 @@ All RT shaders are authored in HLSL:
 
 ### VFX and Ray Tracing
 
-Particle systems do not contribute to RT acceleration
-structures by default (too dynamic, too numerous).
-Mesh-based VFX (debris, large projectiles) can opt in
-to BLAS registration via a `RtVisible` component. VFX
-materials are evaluated in RT hit shaders when
-`RtVisible` is present.
+Particle systems do not contribute to RT acceleration structures by default (too dynamic, too
+numerous). Mesh-based VFX (debris, large projectiles) can opt in to BLAS registration via a
+`RtVisible` component. VFX materials are evaluated in RT hit shaders when `RtVisible` is present.
 
 ## Test Plan
 
@@ -1869,60 +1850,39 @@ materials are evaluated in RT hit shaders when
 
 ## Open Questions
 
-1. **TLAS refit quality degradation** -- After many
-   consecutive refits without rebuild, BVH quality
-   degrades and trace cost increases. Need to
-   determine the optimal rebuild interval (every N
-   frames vs quality-threshold-triggered).
+1. **TLAS refit quality degradation** -- After many consecutive refits without rebuild, BVH quality
+   degrades and trace cost increases. Need to determine the optimal rebuild interval (every N frames
+   vs quality-threshold-triggered).
 
-2. **BLAS compaction latency** -- Compaction requires
-   a GPU readback of compacted sizes, introducing a
-   1-frame delay. Should we pipeline compaction
-   across 2 frames (build frame N, compact frame
-   N+1) or accept the temporary memory overhead?
+2. **BLAS compaction latency** -- Compaction requires a GPU readback of compacted sizes, introducing
+   a 1-frame delay. Should we pipeline compaction across 2 frames (build frame N, compact frame N+1)
+   or accept the temporary memory overhead?
 
-3. **Denoiser selection per signal** -- Should each
-   RT signal (shadows, reflections, GI, AO) use the
-   same denoiser algorithm, or should each signal
-   select independently (e.g., ReLAX for specular,
+3. **Denoiser selection per signal** -- Should each RT signal (shadows, reflections, GI, AO) use the
+   same denoiser algorithm, or should each signal select independently (e.g., ReLAX for specular,
    ReBLUR for diffuse)?
 
-4. **ReSTIR reservoir precision** -- 16-bit vs
-   32-bit reservoir weights. 16-bit halves memory
-   but may cause bias in high-dynamic-range scenes.
-   Need numerical analysis.
+4. **ReSTIR reservoir precision** -- 16-bit vs 32-bit reservoir weights. 16-bit halves memory but
+   may cause bias in high-dynamic-range scenes. Need numerical analysis.
 
-5. **Neural radiance cache training convergence** --
-   How many frames does the network need to converge
-   on a new scene? If convergence is slow, should we
-   fall back to traditional path tracing during the
-   warmup period?
+5. **Neural radiance cache training convergence** -- How many frames does the network need to
+   converge on a new scene? If convergence is slow, should we fall back to traditional path tracing
+   during the warmup period?
 
-6. **Surfel vs DDGI default** -- For the desktop RT
-   tier, should DDGI or surfel GI be the default
-   mode? Surfel handles fully dynamic scenes better
-   but has higher base cost. DDGI is cheaper but
+6. **Surfel vs DDGI default** -- For the desktop RT tier, should DDGI or surfel GI be the default
+   mode? Surfel handles fully dynamic scenes better but has higher base cost. DDGI is cheaper but
    requires a grid that may not cover all geometry.
 
-7. **Metal RT BLAS budget** -- Apple M3+/A17+ have
-   limited BLAS budgets compared to desktop GPUs.
-   Need to determine maximum instance counts and
-   geometry complexity thresholds for Metal RT.
+7. **Metal RT BLAS budget** -- Apple M3+/A17+ have limited BLAS budgets compared to desktop GPUs.
+   Need to determine maximum instance counts and geometry complexity thresholds for Metal RT.
 
-8. **Shader binding table management** -- SBT
-   layout differs between D3D12 (DXR) and Vulkan.
-   Should the SBT be managed per-backend with a
-   shared descriptor, or abstracted behind the GPU
-   backend trait?
+8. **Shader binding table management** -- SBT layout differs between D3D12 (DXR) and Vulkan. Should
+   the SBT be managed per-backend with a shared descriptor, or abstracted behind the GPU backend
+   trait?
 
-9. **Voxel GI and surfel GI coexistence** -- Can
-   voxel GI serve as a fallback within a surfel GI
-   pipeline (e.g., for distant geometry beyond
-   clipmap range), or must they be mutually
-   exclusive?
+9. **Voxel GI and surfel GI coexistence** -- Can voxel GI serve as a fallback within a surfel GI
+   pipeline (e.g., for distant geometry beyond clipmap range), or must they be mutually exclusive?
 
-10. **GPU work graphs for RT** -- D3D12 work graphs
-    could replace CPU-driven RT dispatch with
-    GPU-autonomous scheduling. Should the AS build
-    and RT dispatch pipeline use work graphs on
+10. **GPU work graphs for RT** -- D3D12 work graphs could replace CPU-driven RT dispatch with
+    GPU-autonomous scheduling. Should the AS build and RT dispatch pipeline use work graphs on
     supported hardware (F-2.1.10)?

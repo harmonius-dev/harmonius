@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/rendering/](../../features/rendering/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/rendering/](../../features/rendering/),
 > [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table
-> below traces design elements to those definitions.
+> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
+> to those definitions.
 
 ### Backend Trait and Interface
 
@@ -49,35 +49,26 @@
 
 ## Overview
 
-The GPU abstraction layer provides a unified, type-safe
-interface across Metal (macOS/iOS), Direct3D 12 (Windows),
-and Vulkan (Linux/Android). It consists of two crates:
+The GPU abstraction layer provides a unified, type-safe interface across Metal (macOS/iOS), Direct3D
+12 (Windows), and Vulkan (Linux/Android). It consists of two crates:
 
-1. **`harmonius_gpu`** -- The backend trait interface.
-   Defines `GpuBackend`, `CommandBuffer`, `PipelineState`,
-   resource types, swapchain, and shader compilation.
-   Each platform provides a concrete struct implementing
-   these traits. Static dispatch via `cfg`-gated type
-   aliases eliminates all vtable overhead.
+1. **`harmonius_gpu`** -- The backend trait interface. Defines `GpuBackend`, `CommandBuffer`,
+   `PipelineState`, resource types, swapchain, and shader compilation. Each platform provides a
+   concrete struct implementing these traits. Static dispatch via `cfg`-gated type aliases
+   eliminates all vtable overhead.
 
-2. **`harmonius_gpu_runtime`** -- Shared services built on
-   top of the backend trait. Memory sub-allocation, state
-   tracking, barrier optimization, descriptor binding,
-   work graph execution, feature emulation, and profiling
-   queries.
+2. **`harmonius_gpu_runtime`** -- Shared services built on top of the backend trait. Memory
+   sub-allocation, state tracking, barrier optimization, descriptor binding, work graph execution,
+   feature emulation, and profiling queries.
 
-All GPU synchronization uses `async`/`await` integrated
-with the engine's `IoReactor`. Timeline semaphores (Vulkan,
-D3D12) and `MTLEvent` (Metal) are polled at the reactor's
-frame poll point -- the GPU never fires callbacks
-asynchronously. GPU resources used by the ECS are
-represented as components (e.g., `GpuMesh`, `GpuTexture`,
-`GpuMaterial`) managed by systems.
+All GPU synchronization uses `async`/`await` integrated with the engine's `IoReactor`. Timeline
+semaphores (Vulkan, D3D12) and `MTLEvent` (Metal) are polled at the reactor's frame poll point --
+the GPU never fires callbacks asynchronously. GPU resources used by the ECS are represented as
+components (e.g., `GpuMesh`, `GpuTexture`, `GpuMaterial`) managed by systems.
 
-HLSL is the sole shader language. DXC (via cxx.rs) compiles
-HLSL to DXIL and SPIR-V. Metal Shader Converter (via
-cxx.rs) translates DXIL to metallib. No runtime shader
-compilation occurs in shipping builds.
+HLSL is the sole shader language. DXC (via cxx.rs) compiles HLSL to DXIL and SPIR-V. Metal Shader
+Converter (via cxx.rs) translates DXIL to metallib. No runtime shader compilation occurs in shipping
+builds.
 
 ## Architecture
 
@@ -136,7 +127,7 @@ graph TD
 
 ### Source Layout
 
-```
+```text
 harmonius_gpu/
 ├── lib.rs             # GpuBackend trait, type aliases
 ├── types.rs           # Format, TextureUsage, enums
@@ -197,9 +188,8 @@ flowchart LR
 
 ### Static Dispatch via cfg-Gated Type Aliases
 
-The engine never uses `dyn GpuBackend`. Instead, a
-platform-gated type alias selects the concrete backend
-at compile time:
+The engine never uses `dyn GpuBackend`. Instead, a platform-gated type alias selects the concrete
+backend at compile time:
 
 ```rust
 #[cfg(target_os = "macos")]
@@ -272,22 +262,18 @@ sequenceDiagram
     RE-->>RS: wake future
 ```
 
-GPU fence waits are integrated with the engine's
-`IoReactor`. Each backend registers its fence/semaphore
-polling in the reactor's platform completion queue:
+GPU fence waits are integrated with the engine's `IoReactor`. Each backend registers its
+fence/semaphore polling in the reactor's platform completion queue:
 
-- **D3D12:** `ID3D12Fence::SetEventOnCompletion` signals
-  an event that IOCP can monitor, or the reactor polls
-  `GetCompletedValue` at each poll point.
-- **Vulkan:** `vkGetSemaphoreCounterValue` polled at
-  the reactor poll point. Timeline semaphores provide
-  monotonically increasing values.
-- **Metal:** `MTLEvent` completion is signaled via a
-  GCD dispatch block routed to the controlled drain
-  queue. The reactor drains it at poll time.
+- **D3D12:** `ID3D12Fence::SetEventOnCompletion` signals an event that IOCP can monitor, or the
+  reactor polls `GetCompletedValue` at each poll point.
+- **Vulkan:** `vkGetSemaphoreCounterValue` polled at the reactor poll point. Timeline semaphores
+  provide monotonically increasing values.
+- **Metal:** `MTLEvent` completion is signaled via a GCD dispatch block routed to the controlled
+  drain queue. The reactor drains it at poll time.
 
-No CPU spin-waits. The worker thread yields at `.await`
-and the reactor wakes it when the GPU signals.
+No CPU spin-waits. The worker thread yields at `.await` and the reactor wakes it when the GPU
+signals.
 
 ### Descriptor Binding Model
 
@@ -323,8 +309,7 @@ graph LR
     AE --> AB
 ```
 
-The engine uses a four-tier bind group model sorted by
-update frequency:
+The engine uses a four-tier bind group model sorted by update frequency:
 
 | Bind Group | Frequency | Contents |
 |------------|-----------|----------|
@@ -333,10 +318,8 @@ update frequency:
 | 2 | Per-material | Textures, material parameters, samplers |
 | 3 | Per-draw | Transform, instance data, per-draw constants |
 
-Higher-numbered bind groups change more frequently.
-Lower-numbered groups persist across draws, minimizing
-re-binding cost. Each backend maps bind groups to its
-native binding model:
+Higher-numbered bind groups change more frequently. Lower-numbered groups persist across draws,
+minimizing re-binding cost. Each backend maps bind groups to its native binding model:
 
 | Backend | BindGroup mapping |
 |---------|-------------------|
@@ -386,7 +369,16 @@ classDiagram
         +alloc(size, align) Result~RingSlice~
         +advance_frame()
     }
+```
 
+### RingBuffer GPU Fence Safety (High)
+
+The GPU `RingBuffer` must track per-frame fence values. Before writing, verify the GPU has completed
+past the region being overwritten by checking `fence_completed_value`. Block or grow the buffer if
+the GPU is still using the target region. Without fence guards, the CPU can overwrite in-flight GPU
+data when the GPU is 2-3 frames behind.
+
+```mermaid
     class FreeList {
         -free_blocks Vec~FreeBlock~
         +alloc(size, align) Option~u64~
@@ -430,10 +422,9 @@ sequenceDiagram
 
 ### Core Enums and Types
 
-**Note:** `Format` is the canonical GPU format enum for
-the engine. Other rendering files (render-graph,
-core-rendering) should reference this enum rather than
-defining their own `TextureFormat` subsets.
+**Note:** `Format` is the canonical GPU format enum for the engine. Other rendering files
+(render-graph, core-rendering) should reference this enum rather than defining their own
+`TextureFormat` subsets.
 
 ```rust
 /// Pixel/vertex format.
@@ -2007,8 +1998,7 @@ pub enum GpuError {
 
 ### ECS Integration
 
-GPU resources that participate in the ECS are
-represented as components. Systems manage their
+GPU resources that participate in the ECS are represented as components. Systems manage their
 lifecycle.
 
 ```rust
@@ -2109,29 +2099,22 @@ loop {
 
 ### Upload Path
 
-Per-frame constant and vertex data flows through the
-ring buffer allocator to avoid heap allocations on the
-hot path:
+Per-frame constant and vertex data flows through the ring buffer allocator to avoid heap allocations
+on the hot path:
 
-1. `alloc_ring(size, alignment)` returns a `RingSlice`
-   pointing into the upload ring buffer.
+1. `alloc_ring(size, alignment)` returns a `RingSlice` pointing into the upload ring buffer.
 2. The CPU writes data to the mapped pointer.
 3. The command buffer binds the ring slice offset.
-4. After GPU signals fence, `advance_frame()` reclaims
-   the ring region.
+4. After GPU signals fence, `advance_frame()` reclaims the ring region.
 
 ### Resource Lifecycle
 
-1. **Create** -- `device.create_buffer(desc)` returns a
-   `BufferHandle`. The allocator sub-allocates from a
-   heap or creates a committed allocation.
-2. **Use** -- Command buffers reference handles. The
-   state tracker records current states.
-3. **Transition** -- The barrier optimizer batches state
-   transitions. Flushed once before each pass.
-4. **Destroy** -- `device.destroy_buffer(handle)`.
-   Deferred until the GPU fence confirms the resource
-   is no longer in flight.
+1. **Create** -- `device.create_buffer(desc)` returns a `BufferHandle`. The allocator sub-allocates
+   from a heap or creates a committed allocation.
+2. **Use** -- Command buffers reference handles. The state tracker records current states.
+3. **Transition** -- The barrier optimizer batches state transitions. Flushed once before each pass.
+4. **Destroy** -- `device.destroy_buffer(handle)`. Deferred until the GPU fence confirms the
+   resource is no longer in flight.
 
 ## Platform Considerations
 
@@ -2281,52 +2264,35 @@ hot path:
 
 ## Open Questions
 
-1. **ash vs raw bindgen for Vulkan** -- `ash` provides a
-   thin function loader with zero overhead. Raw bindgen
-   from vulkan.h gives maximum control but requires
-   manual function pointer loading. Recommend ash for
-   faster iteration; switch to raw bindgen only if ash
-   proves limiting.
+1. **ash vs raw bindgen for Vulkan** -- `ash` provides a thin function loader with zero overhead.
+   Raw bindgen from vulkan.h gives maximum control but requires manual function pointer loading.
+   Recommend ash for faster iteration; switch to raw bindgen only if ash proves limiting.
 
-2. **Descriptor heap management on D3D12** -- Single
-   monolithic shader-visible descriptor heap vs
-   ring-allocated regions. Monolithic is simpler but
-   wastes memory. Ring allocation matches the engine's
-   ring buffer pattern but requires careful index
-   management.
+2. **Descriptor heap management on D3D12** -- Single monolithic shader-visible descriptor heap vs
+   ring-allocated regions. Monolithic is simpler but wastes memory. Ring allocation matches the
+   engine's ring buffer pattern but requires careful index management.
 
-3. **Metal argument buffer tier** -- Tier 1 argument
-   buffers have a 31-entry limit. Tier 2 (Apple 6+)
-   removes this limit. Decide whether to require Tier 2
-   or provide a Tier 1 fallback path with descriptor
-   indexing workarounds.
+3. **Metal argument buffer tier** -- Tier 1 argument buffers have a 31-entry limit. Tier 2 (Apple
+   6+) removes this limit. Decide whether to require Tier 2 or provide a Tier 1 fallback path with
+   descriptor indexing workarounds.
 
-4. **Sparse resource granularity** -- Vulkan sparse
-   binding granularity varies by GPU. Metal requires
-   tile-aligned virtual textures. Need to define a
-   common sparse tile size or query per-backend.
+4. **Sparse resource granularity** -- Vulkan sparse binding granularity varies by GPU. Metal
+   requires tile-aligned virtual textures. Need to define a common sparse tile size or query
+   per-backend.
 
-5. **GPU fence reactor integration strategy** -- Two
-   options for fence polling:
-   - **Event-based:** D3D12 `SetEventOnCompletion`
-     signals an IOCP event. Metal uses GCD completion
-     handler on the controlled drain queue. Vulkan uses
-     `VK_KHR_external_semaphore` + eventfd.
-   - **Poll-based:** `GetCompletedValue` /
-     `vkGetSemaphoreCounterValue` / `MTLEvent`
-     `signaledValue` checked at each reactor poll.
-   Event-based is more efficient but more complex.
-   Poll-based is simpler but adds per-fence overhead
-   at every poll point.
+5. **GPU fence reactor integration strategy** -- Two options for fence polling:
+   - **Event-based:** D3D12 `SetEventOnCompletion` signals an IOCP event. Metal uses GCD completion
+     handler on the controlled drain queue. Vulkan uses `VK_KHR_external_semaphore` + eventfd.
+   - **Poll-based:** `GetCompletedValue` / `vkGetSemaphoreCounterValue` / `MTLEvent` `signaledValue`
+     checked at each reactor poll.
+Event-based is more efficient but more complex. Poll-based is simpler but adds per-fence overhead at
+every poll point.
 
-6. **Command allocator pooling** -- D3D12 command
-   allocators must be reset only after the GPU finishes
-   executing. Pool size and recycling strategy need
-   benchmarking to balance memory use vs allocation
-   latency.
+6. **Command allocator pooling** -- D3D12 command allocators must be reset only after the GPU
+   finishes executing. Pool size and recycling strategy need benchmarking to balance memory use vs
+   allocation latency.
 
-7. **Pipeline cache persistence** -- Vulkan
-   `VkPipelineCache` and Metal pipeline archives can be
-   serialized to disk for faster startup. Define the
-   cache format and invalidation strategy (shader hash
-   + driver version).
+7. **Pipeline cache persistence** -- Vulkan `VkPipelineCache` and Metal pipeline archives can be
+   serialized to disk for faster startup. Define the cache format and invalidation strategy (shader
+   hash
+   - driver version).

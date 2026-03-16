@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/content-pipeline/](../../features/content-pipeline/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/content-pipeline/](../../features/content-pipeline/),
 > [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table
-> below traces design elements to those definitions.
+> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
+> design elements to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -38,41 +38,27 @@
 
 ## Overview
 
-The streaming subsystem is responsible for loading
-all engine assets from storage into CPU and GPU
-memory without blocking the game loop. It provides
-four layers:
+The streaming subsystem is responsible for loading all engine assets from storage into CPU and GPU
+memory without blocking the game loop. It provides four layers:
 
-1. **Virtual File System (VFS).** A unified path
-   namespace that abstracts over loose files, pak
-   archives, and remote CDN stores. All engine
-   subsystems access assets exclusively through
-   the VFS.
-2. **Streaming Manager.** An async orchestrator
-   that accepts load requests, prioritizes them,
-   dispatches I/O through the `IoReactor`, and
-   delivers completed assets to consumers.
-3. **LOD Residency.** Texture and mesh residency
-   managers that track which mip levels and LOD
-   groups are resident, request streaming of
-   missing data, and evict under memory pressure.
-4. **Archive and Compression.** Seekable pak files
-   organized by streaming region with per-chunk
+1. **Virtual File System (VFS).** A unified path namespace that abstracts over loose files, pak
+   archives, and remote CDN stores. All engine subsystems access assets exclusively through the VFS.
+2. **Streaming Manager.** An async orchestrator that accepts load requests, prioritizes them,
+   dispatches I/O through the `IoReactor`, and delivers completed assets to consumers.
+3. **LOD Residency.** Texture and mesh residency managers that track which mip levels and LOD groups
+   are resident, request streaming of missing data, and evict under memory pressure.
+4. **Archive and Compression.** Seekable pak files organized by streaming region with per-chunk
    LZ4/Zstd compression for shipping builds.
 
 ### Design Principles
 
-- **All I/O is async.** Every file read flows
-  through `IoReactor`. No stdlib `std::fs` or
+- **All I/O is async.** Every file read flows through `IoReactor`. No stdlib `std::fs` or
   `std::io::Read` anywhere in the path.
-- **Priority drives everything.** Frame-critical
-  assets load before background prefetch. Stale
+- **Priority drives everything.** Frame-critical assets load before background prefetch. Stale
   requests age to prevent starvation.
-- **Budget-aware.** Memory pressure triggers
-  progressive eviction, not crashes.
-- **GPU-direct where supported.** DirectStorage
-  and Metal IO bypass CPU for bulk texture and
-  mesh transfers.
+- **Budget-aware.** Memory pressure triggers progressive eviction, not crashes.
+- **GPU-direct where supported.** DirectStorage and Metal IO bypass CPU for bulk texture and mesh
+  transfers.
 
 ### Performance Targets
 
@@ -158,7 +144,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_content/
 ├── streaming/
 │   ├── vfs.rs            # VirtualFileSystem,
@@ -209,10 +195,8 @@ flowchart TD
     M4 -->|Not found| ERR[AssetNotFound error]
 ```
 
-Mounts are searched in priority order (highest
-first). DLC and expansion packs override base
-content by mounting at higher priority. The first
-mount containing the requested path wins.
+Mounts are searched in priority order (highest first). DLC and expansion packs override base content
+by mounting at higher priority. The first mount containing the requested path wins.
 
 ### Asset Load Sequence
 
@@ -897,6 +881,10 @@ pub enum CompressionCodec {
     Zstd,
 }
 
+/// **Note:** `CompressionCodec` is canonically defined
+/// in
+/// [shared-primitives.md](../core-runtime/shared-primitives.md).
+
 /// A streaming region within the archive.
 /// Entries in the same region are stored
 /// contiguously for sequential read performance.
@@ -1450,31 +1438,20 @@ pub enum DownloadError {
 
 ### Frame Lifecycle Integration
 
-The streaming manager runs as an ECS system in
-the `PreUpdate` phase. Each frame:
+The streaming manager runs as an ECS system in the `PreUpdate` phase. Each frame:
 
-1. **Budget tick.** `BudgetMonitor::tick()` reads
-   GPU/CPU memory counters and updates the
-   pressure level.
-2. **Residency update.** The rendering system
-   writes `screen_texel_density` and
-   `screen_projected_size` into residency tables
-   based on the current camera.
-3. **Request generation.** `TextureResidency` and
-   `MeshResidency` enqueue `StreamRequest`s for
+1. **Budget tick.** `BudgetMonitor::tick()` reads GPU/CPU memory counters and updates the pressure
+   level.
+2. **Residency update.** The rendering system writes `screen_texel_density` and
+   `screen_projected_size` into residency tables based on the current camera.
+3. **Request generation.** `TextureResidency` and `MeshResidency` enqueue `StreamRequest`s for
    non-resident mips/LODs into the priority queue.
-4. **Scheduler tick.** `StreamingManager::tick()`
-   ages stale requests, coalesces adjacent reads,
-   dequeues a batch within the bandwidth budget,
-   and submits I/O to the `IoReactor`.
-5. **I/O completion.** At the frame's reactor poll
-   point, completed reads wake their futures.
-   Decompression runs on worker threads. Loaded
-   data is handed to residency managers.
-6. **Eviction.** If pressure is `Warning` or
-   higher, residency managers evict
-   least-recently-used entries until within
-   budget.
+4. **Scheduler tick.** `StreamingManager::tick()` ages stale requests, coalesces adjacent reads,
+   dequeues a batch within the bandwidth budget, and submits I/O to the `IoReactor`.
+5. **I/O completion.** At the frame's reactor poll point, completed reads wake their futures.
+   Decompression runs on worker threads. Loaded data is handed to residency managers.
+6. **Eviction.** If pressure is `Warning` or higher, residency managers evict least-recently-used
+   entries until within budget.
 
 ```rust
 // ECS system: streaming_tick_system
@@ -1583,8 +1560,7 @@ async fn download_and_cache(
 
 ### Priority Computation
 
-The composite priority score determines queue
-ordering. Higher scores are dequeued first.
+The composite priority score determines queue ordering. Higher scores are dequeued first.
 
 ```rust
 fn compute_priority_score(
@@ -1638,9 +1614,8 @@ fn compute_priority_score(
 
 ### Direct I/O Alignment
 
-All async reads use direct I/O (O_DIRECT /
-FILE_FLAG_NO_BUFFERING) to bypass the OS page
-cache. This requires:
+All async reads use direct I/O (O_DIRECT / FILE_FLAG_NO_BUFFERING) to bypass the OS page cache. This
+requires:
 
 | Constraint | Value |
 |------------|-------|
@@ -1648,10 +1623,8 @@ cache. This requires:
 | Read offset alignment | 512 bytes (sector) |
 | Read size alignment | 512 bytes (sector) |
 
-The `BufferPool` pre-allocates page-aligned
-buffers. Pak entry offsets and sizes are
-padded to sector boundaries during archive
-creation.
+The `BufferPool` pre-allocates page-aligned buffers. Pak entry offsets and sizes are padded to
+sector boundaries during archive creation.
 
 ### Streaming Budget Tiers
 
@@ -1663,22 +1636,15 @@ creation.
 
 ### Mobile-Specific Behavior
 
-- **iOS `didReceiveMemoryWarning`:** Triggers
-  `Emergency` pressure level immediately. Evicts
-  all non-visible assets.
-- **Android `onTrimMemory`:** Maps trim levels to
-  `Warning`/`Critical`/`Emergency`.
-- **Metered connections:** `DownloadManager`
-  auto-pauses on cellular. User must explicitly
-  enable cellular downloads.
-- **Chunk sizes:** Mobile uses 64 KB chunks
-  (vs 256 KB on desktop) for finer-grained
-  download resumption.
-- **Background downloads:** Uses platform
-  background download APIs
-  (`NSURLSessionDownloadTask` on iOS,
-  `DownloadManager` on Android) for large
-  transfers.
+- **iOS `didReceiveMemoryWarning`:** Triggers `Emergency` pressure level immediately. Evicts all
+  non-visible assets.
+- **Android `onTrimMemory`:** Maps trim levels to `Warning`/`Critical`/`Emergency`.
+- **Metered connections:** `DownloadManager` auto-pauses on cellular. User must explicitly enable
+  cellular downloads.
+- **Chunk sizes:** Mobile uses 64 KB chunks (vs 256 KB on desktop) for finer-grained download
+  resumption.
+- **Background downloads:** Uses platform background download APIs (`NSURLSessionDownloadTask` on
+  iOS, `DownloadManager` on Android) for large transfers.
 
 ### Windows DirectStorage Integration
 
@@ -1847,58 +1813,35 @@ impl DirectStorageBackend {
 
 ## Open Questions
 
-1. **Pak archive alignment granularity.** Entries
-   must be sector-aligned for direct I/O (512 B).
-   Should we align to 4 KB (page size) instead
-   for memory-mapped I/O compatibility? Larger
-   alignment wastes space in archives with many
-   small assets.
+1. **Pak archive alignment granularity.** Entries must be sector-aligned for direct I/O (512 B).
+   Should we align to 4 KB (page size) instead for memory-mapped I/O compatibility? Larger alignment
+   wastes space in archives with many small assets.
 
-2. **Memory-mapped I/O for read-only archives.**
-   Memory mapping avoids explicit buffer
-   management but bypasses direct I/O. Should
-   the VFS support an optional mmap path for
-   platforms where the page cache is beneficial
-   (spinning HDDs with slow random I/O)?
+2. **Memory-mapped I/O for read-only archives.** Memory mapping avoids explicit buffer management
+   but bypasses direct I/O. Should the VFS support an optional mmap path for platforms where the
+   page cache is beneficial (spinning HDDs with slow random I/O)?
 
-3. **GPU decompression codec.** DirectStorage
-   supports GDeflate natively. Zstd requires
-   a custom compute shader. Should we ship a
-   GPU Zstd decompressor, use GDeflate for GPU
-   paths, or support both with per-asset codec
-   selection?
+3. **GPU decompression codec.** DirectStorage supports GDeflate natively. Zstd requires a custom
+   compute shader. Should we ship a GPU Zstd decompressor, use GDeflate for GPU paths, or support
+   both with per-asset codec selection?
 
-4. **Download chunk size.** Smaller chunks enable
-   finer-grained resumption but increase HTTP
-   request overhead. Optimal chunk size depends
-   on CDN latency and mobile network conditions.
-   Current proposal: 256 KB desktop, 64 KB mobile.
+4. **Download chunk size.** Smaller chunks enable finer-grained resumption but increase HTTP request
+   overhead. Optimal chunk size depends on CDN latency and mobile network conditions. Current
+   proposal: 256 KB desktop, 64 KB mobile.
 
-5. **Prefetch prediction model.** The priority
-   queue accepts speculative `Prefetch` requests
-   based on camera velocity. Should prefetch use
-   simple linear extrapolation, or integrate with
-   the navigation mesh / world streaming regions
-   for path-aware prediction?
+5. **Prefetch prediction model.** The priority queue accepts speculative `Prefetch` requests based
+   on camera velocity. Should prefetch use simple linear extrapolation, or integrate with the
+   navigation mesh / world streaming regions for path-aware prediction?
 
-6. **Archive patching strategy.** When DLC or
-   patches add/replace assets, should we create
-   overlay archives (mount at higher priority)
-   or rebuild the base archive? Overlays are
-   faster to deploy but accumulate fragmentation
-   over many patches.
+6. **Archive patching strategy.** When DLC or patches add/replace assets, should we create overlay
+   archives (mount at higher priority) or rebuild the base archive? Overlays are faster to deploy
+   but accumulate fragmentation over many patches.
 
-7. **io_uring fixed file registration.** Linux
-   io_uring supports registering file descriptors
-   for reduced per-operation overhead. Should pak
-   archive handles be registered at mount time?
-   Requires kernel 5.6+, which is above the
-   current minimum (5.1+).
+7. **io_uring fixed file registration.** Linux io_uring supports registering file descriptors for
+   reduced per-operation overhead. Should pak archive handles be registered at mount time? Requires
+   kernel 5.6+, which is above the current minimum (5.1+).
 
-8. **Streaming region authoring.** How are
-   streaming regions defined? Options include
-   artist-authored region volumes in the level
-   editor, automatic spatial clustering during
-   pak creation, or a hybrid approach. This
-   affects the content pipeline and level editor
-   more than the runtime.
+8. **Streaming region authoring.** How are streaming regions defined? Options include
+   artist-authored region volumes in the level editor, automatic spatial clustering during pak
+   creation, or a hybrid approach. This affects the content pipeline and level editor more than the
+   runtime.

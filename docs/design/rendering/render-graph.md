@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/rendering/](../../features/rendering/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/rendering/](../../features/rendering/),
 > [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table
-> below traces design elements to those definitions.
+> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -26,33 +26,25 @@
 
 ## Overview
 
-The render graph is a DAG-based frame graph that models an
-entire frame's GPU work as a set of typed passes connected by
-resource dependencies. Passes declare what they read and write;
-the compiler derives barriers, queue assignments, resource
-lifetimes, memory aliasing, and execution order automatically.
+The render graph is a DAG-based frame graph that models an entire frame's GPU work as a set of typed
+passes connected by resource dependencies. Passes declare what they read and write; the compiler
+derives barriers, queue assignments, resource lifetimes, memory aliasing, and execution order
+automatically.
 
-The graph is compiled once when the pass topology or device
-capabilities change. Per-frame parameter updates (viewport
-size, quality settings, enable flags) do not trigger
-recompilation. At execution time the compiled plan distributes
-command encoding across the thread pool, submits to
-multi-queue GPU backends, and collects timestamp diagnostics.
+The graph is compiled once when the pass topology or device capabilities change. Per-frame parameter
+updates (viewport size, quality settings, enable flags) do not trigger recompilation. At execution
+time the compiled plan distributes command encoding across the thread pool, submits to multi-queue
+GPU backends, and collects timestamp diagnostics.
 
 Key design goals:
 
-1. **Zero manual barriers.** All synchronization derived from
-   resource declarations.
-2. **Minimal VRAM.** Transient resources share physical memory
-   via interference-graph-based aliasing.
-3. **Multi-queue overlap.** Async compute and transfer passes
-   overlap with graphics.
-4. **Parallel encoding.** Independent passes encode on
-   separate threads.
-5. **Compile once, execute many.** Topology-data separation
-   avoids per-frame recompilation.
-6. **Budget-aware.** GPU timing feedback drives automatic
-   pass culling.
+1. **Zero manual barriers.** All synchronization derived from resource declarations.
+2. **Minimal VRAM.** Transient resources share physical memory via interference-graph-based
+   aliasing.
+3. **Multi-queue overlap.** Async compute and transfer passes overlap with graphics.
+4. **Parallel encoding.** Independent passes encode on separate threads.
+5. **Compile once, execute many.** Topology-data separation avoids per-frame recompilation.
+6. **Budget-aware.** GPU timing feedback drives automatic pass culling.
 
 ## Architecture
 
@@ -105,7 +97,7 @@ graph TD
     DG --> BT
 ```
 
-```
+```text
 harmonius_rg/
 ├── builder.rs        # GraphBuilder, PassBuilder,
 │                     # ResourceBuilder
@@ -466,10 +458,8 @@ pub enum CapabilityGate {
 
 ### Resource Descriptors
 
-**Note:** This enum will be replaced by the canonical
-`Format` enum from
-[gpu-abstraction.md](gpu-abstraction.md) during
-implementation. Defined here as a design-time subset
+**Note:** This enum will be replaced by the canonical `Format` enum from
+[gpu-abstraction.md](gpu-abstraction.md) during implementation. Defined here as a design-time subset
 for clarity.
 
 ```rust
@@ -1612,22 +1602,17 @@ sequenceDiagram
 
 ### Resource Lifetime and Aliasing
 
-The aliasing allocator computes lifetime intervals from the
-sorted execution order:
+The aliasing allocator computes lifetime intervals from the sorted execution order:
 
-1. **Lifetime interval:** For each transient resource, find
-   the first pass that writes it and the last pass that reads
-   it. The interval `[first_write, last_read]` is the
-   resource's active lifetime.
-2. **Interference graph:** Two resources interfere if their
-   lifetime intervals overlap. Build an undirected graph where
-   edges connect interfering resources.
-3. **Graph coloring:** Assign resources to heap slots using
-   greedy graph coloring. Non-interfering resources sharing a
-   color alias to the same physical memory.
-4. **Heap packing:** For each color, allocate a contiguous
-   heap region sized to the largest resource in that color
-   class. Record heap offset per resource.
+1. **Lifetime interval:** For each transient resource, find the first pass that writes it and the
+   last pass that reads it. The interval `[first_write, last_read]` is the resource's active
+   lifetime.
+2. **Interference graph:** Two resources interfere if their lifetime intervals overlap. Build an
+   undirected graph where edges connect interfering resources.
+3. **Graph coloring:** Assign resources to heap slots using greedy graph coloring. Non-interfering
+   resources sharing a color alias to the same physical memory.
+4. **Heap packing:** For each color, allocate a contiguous heap region sized to the largest resource
+   in that color class. Record heap offset per resource.
 
 ```mermaid
 flowchart TD
@@ -1668,28 +1653,20 @@ flowchart TD
 
 ### Barrier Analysis Algorithm
 
-The barrier analyzer processes the topologically sorted pass
-list and emits the minimal barrier set:
+The barrier analyzer processes the topologically sorted pass list and emits the minimal barrier set:
 
-1. **Track resource state.** Maintain a map from
-   `ResourceHandle` to current `(AccessMode, UsageType,
-   QueueAffinity)`.
+1. **Track resource state.** Maintain a map from `ResourceHandle` to current
+   `(AccessMode, UsageType, QueueAffinity)`.
 2. **For each pass in execution order:**
-   - For each resource read/write declaration, compare against
-     the resource's current state.
-   - If a transition is needed (different usage type, access
-     mode, or queue), emit a barrier.
-   - If the backend supports split barriers, emit the begin
-     half as early as possible (immediately after the
-     producing pass) and the end half immediately before the
-     consuming pass.
-3. **Merge compatible barriers.** Barriers at the same
-   synchronization point targeting the same resource are
-   merged into a single API call.
-4. **Cross-queue transfers.** When source and destination
-   queues differ, emit a release barrier on the source queue
-   and an acquire barrier on the destination queue, with a
-   timeline fence between them.
+   - For each resource read/write declaration, compare against the resource's current state.
+   - If a transition is needed (different usage type, access mode, or queue), emit a barrier.
+   - If the backend supports split barriers, emit the begin half as early as possible (immediately
+     after the producing pass) and the end half immediately before the consuming pass.
+3. **Merge compatible barriers.** Barriers at the same synchronization point targeting the same
+   resource are merged into a single API call.
+4. **Cross-queue transfers.** When source and destination queues differ, emit a release barrier on
+   the source queue and an acquire barrier on the destination queue, with a timeline fence between
+   them.
 
 ### Budget Culling Flow
 
@@ -1757,9 +1734,8 @@ flowchart TD
 | `smallvec` | Inline-allocated small vectors for pass dependency lists | Avoids heap allocation for common case (< 8 deps) |
 | `bitflags` | Usage flag bitfields | Ergonomic bitflag operations |
 
-All GPU backend interaction goes through `harmonius_gpu` and
-`harmonius_gpu_runtime`. No direct backend API calls from the
-render graph crate.
+All GPU backend interaction goes through `harmonius_gpu` and `harmonius_gpu_runtime`. No direct
+backend API calls from the render graph crate.
 
 ## Test Plan
 
@@ -1837,46 +1813,33 @@ render graph crate.
 
 ## Open Questions
 
-1. **Aliasing heuristic** -- Greedy graph coloring is simple
-   but may not minimize heap size optimally. Should we use
-   interval scheduling (optimal for interval graphs) or a
-   more sophisticated register-allocation-style algorithm?
-   Interval scheduling is O(n log n) and optimal when
-   lifetimes are contiguous intervals, which they are for
-   topologically sorted passes.
+1. **Aliasing heuristic** -- Greedy graph coloring is simple but may not minimize heap size
+   optimally. Should we use interval scheduling (optimal for interval graphs) or a more
+   sophisticated register-allocation-style algorithm? Interval scheduling is O(n log n) and optimal
+   when lifetimes are contiguous intervals, which they are for topologically sorted passes.
 
-2. **Split barrier placement** -- The current design places
-   split barrier begins immediately after the producing pass.
-   An alternative is to defer the begin until the last pass
-   that does not need the resource, maximizing overlap. This
-   requires a second backward pass over the schedule. Is the
+2. **Split barrier placement** -- The current design places split barrier begins immediately after
+   the producing pass. An alternative is to defer the begin until the last pass that does not need
+   the resource, maximizing overlap. This requires a second backward pass over the schedule. Is the
    additional compile-time complexity justified?
 
-3. **Dynamic transfer pass injection** -- RG-11.4 and RG-14.7
-   require runtime injection of transfer passes without full
-   recompilation. The current design supports this via
-   designated injection points in the compiled plan. The open
-   question is whether injected passes should participate in
-   aliasing (requiring partial recompilation) or use dedicated
-   staging memory outside the aliased heap.
+3. **Dynamic transfer pass injection** -- RG-11.4 and RG-14.7 require runtime injection of transfer
+   passes without full recompilation. The current design supports this via designated injection
+   points in the compiled plan. The open question is whether injected passes should participate in
+   aliasing (requiring partial recompilation) or use dedicated staging memory outside the aliased
+   heap.
 
-4. **Work graph integration** -- RG-1.13 requires a GPU work
-   graph pass type. When the `WorkGraphRuntime` (GR-3.x) is
-   used, the render graph's barrier and scheduling analysis
-   may conflict with GPU-side self-scheduling. The boundary
-   between render-graph-managed and GPU-managed scheduling
-   needs to be defined.
+4. **Work graph integration** -- RG-1.13 requires a GPU work graph pass type. When the
+   `WorkGraphRuntime` (GR-3.x) is used, the render graph's barrier and scheduling analysis may
+   conflict with GPU-side self-scheduling. The boundary between render-graph-managed and GPU-managed
+   scheduling needs to be defined.
 
-5. **Incremental recompilation scope** -- RG-13.6 asks for
-   partial recompilation on residency changes. The minimum
-   recompilation unit needs to be defined: per-pass barrier
-   recomputation, per-encoding-group, or per-queue-timeline.
+5. **Incremental recompilation scope** -- RG-13.6 asks for partial recompilation on residency
+   changes. The minimum recompilation unit needs to be defined: per-pass barrier recomputation,
+   per-encoding-group, or per-queue-timeline.
 
-6. **Diagnostic overhead opt-in granularity** -- RG-12.7
-   requires per-query opt-out. Should diagnostic
-   instrumentation be controlled via a compile-time feature
-   flag (`cfg(feature = "rg-diagnostics")`), a runtime flag
-   in `CompilationConfig`, or both? The current design uses
-   `CompilationConfig::diagnostics_enabled` for runtime
-   control and `cfg` for zero-cost stripping in shipping
-   builds.
+6. **Diagnostic overhead opt-in granularity** -- RG-12.7 requires per-query opt-out. Should
+   diagnostic instrumentation be controlled via a compile-time feature flag
+   (`cfg(feature = "rg-diagnostics")`), a runtime flag in `CompilationConfig`, or both? The current
+   design uses `CompilationConfig::diagnostics_enabled` for runtime control and `cfg` for zero-cost
+   stripping in shipping builds.

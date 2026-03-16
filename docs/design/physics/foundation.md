@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/physics/](../../features/physics/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/physics/](../../features/physics/),
 > [requirements/physics/](../../requirements/physics/), and
-> [user-stories/physics/](../../user-stories/physics/). The table
-> below traces design elements to those definitions.
+> [user-stories/physics/](../../user-stories/physics/). The table below traces design elements to
+> those definitions.
 
 ### Rigid Body Dynamics (R-4.1)
 
@@ -51,53 +51,38 @@
 
 ## Overview
 
-The physics foundation is 100% ECS-based. There is no separate
-physics world, no PhysX-style scene, and no parallel data
-store. All physics state lives as ECS components. All
-simulation logic runs as ECS systems. The shared BVH spatial
-index serves as the broadphase -- physics does not maintain its
+The physics foundation is 100% ECS-based. There is no separate physics world, no PhysX-style scene,
+and no parallel data store. All physics state lives as ECS components. All simulation logic runs as
+ECS systems. The shared BVH spatial index serves as the broadphase -- physics does not maintain its
 own acceleration structure.
 
-The simulation runs on a fixed timestep with an accumulator
-that decouples physics tick rate from render frame rate.
-Each tick executes a configurable number of substeps, each of
-which runs the full pipeline: integration, broadphase,
-narrowphase, island computation, constraint solve, and CCD.
-Independent simulation islands are solved in parallel across
-the engine's work-stealing thread pool.
+The simulation runs on a fixed timestep with an accumulator that decouples physics tick rate from
+render frame rate. Each tick executes a configurable number of substeps, each of which runs the full
+pipeline: integration, broadphase, narrowphase, island computation, constraint solve, and CCD.
+Independent simulation islands are solved in parallel across the engine's work-stealing thread pool.
 
-Determinism is a first-class requirement. IEEE 754 strict
-compliance, no fast-math, and deterministic iteration order
-guarantee bit-identical results across platforms for
+Determinism is a first-class requirement. IEEE 754 strict compliance, no fast-math, and
+deterministic iteration order guarantee bit-identical results across platforms for
 server-authoritative simulation and replay.
 
 ### Key Abstractions
 
-- **Rigid body** -- mass, inertia tensor, and motion
-  type (Dynamic, Kinematic, Static). The fundamental
-  unit of simulation.
-- **Velocity** -- linear and angular velocity,
-  updated by forces and the constraint solver each
+- **Rigid body** -- mass, inertia tensor, and motion type (Dynamic, Kinematic, Static). The
+  fundamental unit of simulation.
+- **Velocity** -- linear and angular velocity, updated by forces and the constraint solver each
   substep.
-- **Collider** -- geometric shape attached to an
-  entity for contact detection. Primitives, convex
+- **Collider** -- geometric shape attached to an entity for contact detection. Primitives, convex
   hulls, triangle meshes, and heightfields.
-- **Contact manifold** -- set of contact points
-  between two colliders, each with a normal vector
-  and penetration depth.
-- **Island** -- connected group of interacting bodies
-  solved together. Enables sleeping and parallel
+- **Contact manifold** -- set of contact points between two colliders, each with a normal vector and
+  penetration depth.
+- **Island** -- connected group of interacting bodies solved together. Enables sleeping and parallel
   solving per island.
-- **Sleeping** -- bodies at rest are excluded from
-  simulation until disturbed by a force, contact,
+- **Sleeping** -- bodies at rest are excluded from simulation until disturbed by a force, contact,
   or user wake event.
-- **CCD** -- continuous collision detection prevents
-  fast-moving objects from tunneling through thin
+- **CCD** -- continuous collision detection prevents fast-moving objects from tunneling through thin
   geometry via swept-volume tests.
-- **Broadphase** -- the shared BVH culls distant
-  pairs before expensive narrowphase evaluation.
-- **Narrowphase** -- GJK/EPA/SAT algorithms compute
-  exact contact geometry between overlapping
+- **Broadphase** -- the shared BVH culls distant pairs before expensive narrowphase evaluation.
+- **Narrowphase** -- GJK/EPA/SAT algorithms compute exact contact geometry between overlapping
   collider pairs.
 
 ## Architecture
@@ -157,7 +142,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_physics/
 ├── foundation/
 │   ├── config.rs          # PhysicsConfig, SleepConfig,
@@ -637,15 +622,11 @@ pub trait CollisionFilter: Send + Sync {
 }
 ```
 
-**Justification:** `CollisionFilter` uses a trait for
-user-extensible filter logic. In practice, the engine
-provides a default bitfield filter (`LayerFilter`)
-that covers >95% of use cases via static dispatch.
-Custom filters are rare, editor-authored, and
-evaluated on broadphase culling paths (not
-per-contact). Consider converting to
-`fn(&EntityRef, &EntityRef) -> bool` function pointer
-for the custom case.
+**Justification:** `CollisionFilter` uses a trait for user-extensible filter logic. In practice, the
+engine provides a default bitfield filter (`LayerFilter`) that covers >95% of use cases via static
+dispatch. Custom filters are rare, editor-authored, and evaluated on broadphase culling paths (not
+per-contact). Consider converting to `fn(&EntityRef, &EntityRef) -> bool` function pointer for the
+custom case.
 
 ### Physics Materials
 
@@ -2146,11 +2127,9 @@ physics_schedule.advance(frame_dt, &mut world);
 
 ### Island Parallel Solve
 
-Independent islands are dispatched to the work-stealing
-thread pool via `pool.scope()`. Each island's constraint
-solve runs on a separate worker thread. Scoped execution
-lets the solver borrow component data from the calling
-frame without `'static` or `Arc` overhead.
+Independent islands are dispatched to the work-stealing thread pool via `pool.scope()`. Each
+island's constraint solve runs on a separate worker thread. Scoped execution lets the solver borrow
+component data from the calling frame without `'static` or `Arc` overhead.
 
 ```rust
 pool.scope(|scope| {
@@ -2166,31 +2145,23 @@ pool.scope(|scope| {
 
 ### Determinism Guarantees
 
-1. **Fixed timestep** -- physics tick rate is decoupled
-   from frame rate. Same dt every tick.
-2. **IEEE 754 strict** -- no fast-math, no FMA fusion
-   unless both platforms support it identically.
-3. **Deterministic iteration** -- entity iteration
-   follows archetype storage order, which is
+1. **Fixed timestep** -- physics tick rate is decoupled from frame rate. Same dt every tick.
+2. **IEEE 754 strict** -- no fast-math, no FMA fusion unless both platforms support it identically.
+3. **Deterministic iteration** -- entity iteration follows archetype storage order, which is
    deterministic given the same entity creation order.
-4. **Deterministic island solve** -- islands are sorted
-   by ID before parallel dispatch. Each island's solve
-   is independent and deterministic.
-5. **Platform-invariant math** -- no platform-specific
-   intrinsics in physics math. All operations use
-   Rust's default f32 semantics with strict compliance.
+4. **Deterministic island solve** -- islands are sorted by ID before parallel dispatch. Each
+   island's solve is independent and deterministic.
+5. **Platform-invariant math** -- no platform-specific intrinsics in physics math. All operations
+   use Rust's default f32 semantics with strict compliance.
 
 ## Platform Considerations
 
 ### SIMD Acceleration
 
-Narrowphase algorithms (GJK, EPA, SAT) and solver
-Jacobian computations are amenable to SIMD
-acceleration. The math library (glam) provides
-transparent SSE4.1/AVX2 (x86_64) and NEON
-(ARM/Apple Silicon) acceleration for Vec3/Vec4/Mat4
-operations. Explicit SIMD intrinsics are not used at
-the design level.
+Narrowphase algorithms (GJK, EPA, SAT) and solver Jacobian computations are amenable to SIMD
+acceleration. The math library (glam) provides transparent SSE4.1/AVX2 (x86_64) and NEON (ARM/Apple
+Silicon) acceleration for Vec3/Vec4/Mat4 operations. Explicit SIMD intrinsics are not used at the
+design level.
 
 ### Substep Limits Per Platform
 
@@ -2275,12 +2246,10 @@ the design level.
 
 ### Threading
 
-Physics uses the engine's work-stealing thread pool
-(see [Platform Threading Design](../platform/threading.md)).
-Island solving is parallelized via `pool.scope()` with
-scoped tasks that borrow component data. No `'static`
-requirement, no `Arc` overhead. The thread pool is
-sized to performance core count.
+Physics uses the engine's work-stealing thread pool (see
+[Platform Threading Design](../platform/threading.md)). Island solving is parallelized via
+`pool.scope()` with scoped tasks that borrow component data. No `'static` requirement, no `Arc`
+overhead. The thread pool is sized to performance core count.
 
 ## Test Plan
 
@@ -2348,78 +2317,51 @@ sized to performance core count.
 
 ### Debug Visualization
 
-The physics debug draw system renders collision
-shapes, contact points, contact normals, body AABBs,
-velocity vectors, and sleep state indicators. Debug
-draw is implemented as an ECS system that queries
-physics components and emits draw commands to the
-render graph's debug overlay pass. Debug draw is
-compile-time stripped from shipping builds via
-`cfg(debug_assertions)`.
+The physics debug draw system renders collision shapes, contact points, contact normals, body AABBs,
+velocity vectors, and sleep state indicators. Debug draw is implemented as an ECS system that
+queries physics components and emits draw commands to the render graph's debug overlay pass. Debug
+draw is compile-time stripped from shipping builds via `cfg(debug_assertions)`.
 
 ### Networking Integration
 
-Physics state replication is handled by the
-networking domain (see
-[replication.md](../networking/replication.md)).
-Physics components (`RigidBody`, `Velocity`,
-`Transform`) carry `#[reflect(Replicate)]`
-attributes. The fixed-timestep deterministic
-simulation enables server-authoritative physics
-with client-side prediction and rollback. The
-networking layer snapshots physics state per tick
-and applies corrections when server state diverges
-from client prediction.
+Physics state replication is handled by the networking domain (see
+[replication.md](../networking/replication.md)). Physics components (`RigidBody`, `Velocity`,
+`Transform`) carry `#[reflect(Replicate)]` attributes. The fixed-timestep deterministic simulation
+enables server-authoritative physics with client-side prediction and rollback. The networking layer
+snapshots physics state per tick and applies corrections when server state diverges from client
+prediction.
 
 ## Open Questions
 
-1. **Warm-starting strategy** -- How many frames of
-   accumulated impulse history to retain for warm-
-   starting the constraint solver. More history
-   improves convergence but requires matching contact
+1. **Warm-starting strategy** -- How many frames of accumulated impulse history to retain for warm-
+   starting the constraint solver. More history improves convergence but requires matching contact
    points across frames (contact point caching).
 
-2. **Contact point caching** -- Whether to cache
-   contact points across frames for warm-starting and
-   temporal coherence. Caching requires a matching
-   algorithm (feature-based or nearest-point) that
-   adds complexity but significantly improves solver
-   convergence for stacking scenarios.
+2. **Contact point caching** -- Whether to cache contact points across frames for warm-starting and
+   temporal coherence. Caching requires a matching algorithm (feature-based or nearest-point) that
+   adds complexity but significantly improves solver convergence for stacking scenarios.
 
-3. **Speculative contacts** -- Whether to generate
-   contacts for nearly-touching pairs (within a
-   tolerance) before actual penetration occurs. This
-   prevents objects from visibly intersecting before
-   correction but adds to narrowphase cost.
+3. **Speculative contacts** -- Whether to generate contacts for nearly-touching pairs (within a
+   tolerance) before actual penetration occurs. This prevents objects from visibly intersecting
+   before correction but adds to narrowphase cost.
 
-4. **Position correction method** -- Baumgarte
-   stabilization (velocity-level correction) vs.
-   split impulses (separate position solve pass) vs.
-   pseudo-velocity approach. Baumgarte is simpler but
-   adds energy. Split impulses are more accurate but
-   require an extra pass.
+4. **Position correction method** -- Baumgarte stabilization (velocity-level correction) vs. split
+   impulses (separate position solve pass) vs. pseudo-velocity approach. Baumgarte is simpler but
+   adds energy. Split impulses are more accurate but require an extra pass.
 
-5. **Shared BVH update frequency** -- Whether the
-   shared BVH is rebuilt or incrementally updated each
-   frame. Full rebuild is simpler and more cache-
-   friendly for static scenes. Incremental update is
-   better for dynamic scenes with many moving objects.
-   The spatial index design must resolve this.
+5. **Shared BVH update frequency** -- Whether the shared BVH is rebuilt or incrementally updated
+   each frame. Full rebuild is simpler and more cache- friendly for static scenes. Incremental
+   update is better for dynamic scenes with many moving objects. The spatial index design must
+   resolve this.
 
-6. **GJK termination tolerance** -- The epsilon value
-   for GJK convergence and whether it should adapt to
-   shape scale. Too tight wastes iterations; too loose
-   causes visible penetration.
+6. **GJK termination tolerance** -- The epsilon value for GJK convergence and whether it should
+   adapt to shape scale. Too tight wastes iterations; too loose causes visible penetration.
 
-7. **Joint constraint integration** -- Joint types
-   (hinge, ball, prismatic, fixed, spring) are listed
-   in the constraints-and-joints feature but not
-   covered here. Whether they share the same PGS
-   solver loop or run in a separate pass needs to be
-   decided alongside the joint constraint design.
+7. **Joint constraint integration** -- Joint types (hinge, ball, prismatic, fixed, spring) are
+   listed in the constraints-and-joints feature but not covered here. Whether they share the same
+   PGS solver loop or run in a separate pass needs to be decided alongside the joint constraint
+   design.
 
-8. **Compound collider broadphase strategy** --
-   Whether compound shapes use a single encompassing
-   AABB in the shared BVH (simpler, more false
-   positives) or insert each child shape separately
+8. **Compound collider broadphase strategy** -- Whether compound shapes use a single encompassing
+   AABB in the shared BVH (simpler, more false positives) or insert each child shape separately
    (more BVH nodes, fewer false positives).

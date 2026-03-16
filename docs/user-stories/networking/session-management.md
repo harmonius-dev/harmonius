@@ -73,8 +73,8 @@ rolling restarts, **so that** patches deploy without disconnecting any player.
 ## US-8.5.13 Manage Login Queue Priorities During Peak Load
 
 **As a** server admin (P-22), **I want** a managed login queue with priority tiers (subscribers,
-founders), position display, estimated wait time, and reconnection position preservation, **so
-that** players receive a fair and transparent waiting experience when servers are at capacity.
+founders), position display, estimated wait time, and reconnection position preservation,
+**so that** players receive a fair and transparent waiting experience when servers are at capacity.
 
 ## US-8.5.14 Configure Headless Server via Environment Variables
 

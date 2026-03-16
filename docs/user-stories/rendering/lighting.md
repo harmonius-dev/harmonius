@@ -33,8 +33,8 @@ final in-game look without exporting to a separate preview tool.
 ## US-2.4.3.2 Verify Bindless Texture Access Across Backends
 
 **As an** engine developer (P-26), **I want** to run a test with 1,000 unique materials using
-bindless descriptor indices and confirm correct texture sampling on Metal, D3D12, and Vulkan, **so
-that** bindless material access works reliably across all GPU backends.
+bindless descriptor indices and confirm correct texture sampling on Metal, D3D12, and Vulkan,
+**so that** bindless material access works reliably across all GPU backends.
 
 ## US-2.4.4.1 Create Skin and Fabric Materials With Extended BSDF Lobes
 
@@ -129,8 +129,8 @@ mobile (1-2 cascades at 512), Switch, and desktop (3-4 at 2048+).
 ## US-2.4.11.2 Verify Cascade Temporal Stabilization Eliminates Shimmer
 
 **As an** engine tester (P-27), **I want** to slowly rotate a directional light through a shadow
-test scene and verify that temporal stabilization prevents texel shimmer at cascade boundaries, **so
-that** shadow quality is stable during time-of-day transitions.
+test scene and verify that temporal stabilization prevents texel shimmer at cascade boundaries,
+**so that** shadow quality is stable during time-of-day transitions.
 
 ## US-2.4.12.1 See Realistic Soft Penumbra From Area Light Sources
 
@@ -168,8 +168,8 @@ allocation failures.
 
 ## US-2.4.15.1 See Fine Shadow Contact at Geometry Edges
 
-**As a** player (P-23), **I want** per-pixel contact shadows at geometry crevices and edges, **so
-that** objects feel physically connected to surfaces rather than floating.
+**As a** player (P-23), **I want** per-pixel contact shadows at geometry crevices and edges,
+**so that** objects feel physically connected to surfaces rather than floating.
 
 ## US-2.4.15.2 Profile Contact Shadow Ray March Cost Per Light Type
 
@@ -264,8 +264,8 @@ hardware tiers.
 ## US-2.4.23.1 Animate Window Blind Shadows With Light Functions
 
 **As a** environment artist (P-8), **I want** to author a material-driven light function that
-projects a gobo pattern (window blinds, animated flicker) per-pixel in the light's volume, **so
-that** I can create dynamic shadow patterns without extra shadow-casting geometry.
+projects a gobo pattern (window blinds, animated flicker) per-pixel in the light's volume,
+**so that** I can create dynamic shadow patterns without extra shadow-casting geometry.
 
 ## US-2.4.23.2 Verify Light Function Baking on Mobile
 

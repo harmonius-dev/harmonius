@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/animation/](../../features/animation/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/animation/](../../features/animation/),
 > [requirements/animation/](../../requirements/animation/), and
-> [user-stories/animation/](../../user-stories/animation/). The table
-> below traces design elements to those definitions.
+> [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -23,48 +23,34 @@
 
 ## Overview
 
-The skeletal animation subsystem evaluates, blends, and
-skins character animation entirely on the GPU. All
-skeleton data, animation playback state, bone palettes,
-and LOD parameters live as ECS components. All logic
-runs as ECS systems scheduled by the engine's task graph.
+The skeletal animation subsystem evaluates, blends, and skins character animation entirely on the
+GPU. All skeleton data, animation playback state, bone palettes, and LOD parameters live as ECS
+components. All logic runs as ECS systems scheduled by the engine's task graph.
 
 The pipeline has three GPU compute stages per frame:
 
-1. **Keyframe evaluation** -- sample animation curves
-   at the current time offset using Hermite
+1. **Keyframe evaluation** -- sample animation curves at the current time offset using Hermite
    interpolation, producing per-clip local-space poses.
-2. **Blend and layer** -- combine local poses using
-   blend weights and per-bone masks, applying linear,
-   cubic, and additive blending modes.
-3. **Skinning** -- transform mesh vertices by the
-   resulting world-space bone matrices using either
-   linear blend skinning (LBS) or dual-quaternion
-   skinning (DQS).
+2. **Blend and layer** -- combine local poses using blend weights and per-bone masks, applying
+   linear, cubic, and additive blending modes.
+3. **Skinning** -- transform mesh vertices by the resulting world-space bone matrices using either
+   linear blend skinning (LBS) or dual-quaternion skinning (DQS).
 
-Root motion deltas are extracted from the root bone
-before zeroing it in local space, then applied to the
-entity's `Transform` component. Animation events fire
-through the ECS observer system as typed event
-components. Animation LOD uses the shared spatial index
-distance to select one of four evaluation tiers:
-full, reduced bones, half bones at lower update rate,
-or vertex animation texture (VAT) playback.
+Root motion deltas are extracted from the root bone before zeroing it in local space, then applied
+to the entity's `Transform` component. Animation events fire through the ECS observer system as
+typed event components. Animation LOD uses the shared spatial index distance to select one of four
+evaluation tiers: full, reduced bones, half bones at lower update rate, or vertex animation texture
+(VAT) playback.
 
 Key design decisions:
 
-1. **GPU-first** -- all per-bone math runs in HLSL
-   compute shaders, not on the CPU. The CPU only
+1. **GPU-first** -- all per-bone math runs in HLSL compute shaders, not on the CPU. The CPU only
    computes blend descriptors and uploads them.
-2. **Instanced arena** -- thousands of skeleton
-   instances share a single GPU arena buffer and are
+2. **Instanced arena** -- thousands of skeleton instances share a single GPU arena buffer and are
    evaluated in one dispatch, grouped by clip.
-3. **Compression at rest** -- clips are stored
-   compressed (smallest-three quaternion, range-reduced
-   fixed-point) and decompressed on the GPU during
-   keyframe evaluation.
-4. **Static dispatch** -- no trait objects; skinning
-   mode (LBS vs DQS) is selected via enum variant
+3. **Compression at rest** -- clips are stored compressed (smallest-three quaternion, range-reduced
+   fixed-point) and decompressed on the GPU during keyframe evaluation.
+4. **Static dispatch** -- no trait objects; skinning mode (LBS vs DQS) is selected via enum variant
    and compiled into separate pipeline permutations.
 
 ## Architecture
@@ -131,7 +117,7 @@ graph TD
 
 ### Module Layout
 
-```
+```text
 harmonius_animation/
 +-- skeletal/
 |   +-- mod.rs          # Re-exports public API
@@ -1280,11 +1266,8 @@ pub enum AnimationError {
 
 ### Per-Frame Animation Pipeline
 
-The following pseudocode shows the per-frame
-data flow through the animation ECS systems.
-Each system is a node in the frame task graph
-and may run in parallel with non-conflicting
-systems.
+The following pseudocode shows the per-frame data flow through the animation ECS systems. Each
+system is a node in the frame task graph and may run in parallel with non-conflicting systems.
 
 ```rust
 // Phase 1: LOD evaluation (reads Transform,
@@ -1341,11 +1324,9 @@ gpu_animation_system(
 
 ### Parallel Bone Evaluation
 
-Within `gpu_animation_system`, the CPU stages
-(building blend descriptors, uploading buffer
-data) run as scoped parallel tasks on the
-thread pool. Each entity's upload is
-independent and can proceed concurrently.
+Within `gpu_animation_system`, the CPU stages (building blend descriptors, uploading buffer data)
+run as scoped parallel tasks on the thread pool. Each entity's upload is independent and can proceed
+concurrently.
 
 ```rust
 pool.scope(|scope| {
@@ -1376,29 +1357,20 @@ pool.scope(|scope| {
 
 For instanced evaluation (F-9.1.5):
 
-1. The `InstancedAnimator` groups all crowd
-   entities by their active animation clip.
-2. Per-group instance data (time offsets, arena
-   offsets) is uploaded to a staging buffer.
-3. A single `GpuKeyframeEval` dispatch
-   evaluates all instances in the arena.
-4. A single `GpuSkinner` dispatch skins all
-   instances.
-5. The renderer draws all instances using the
-   arena as a shared bone palette.
+1. The `InstancedAnimator` groups all crowd entities by their active animation clip.
+2. Per-group instance data (time offsets, arena offsets) is uploaded to a staging buffer.
+3. A single `GpuKeyframeEval` dispatch evaluates all instances in the arena.
+4. A single `GpuSkinner` dispatch skins all instances.
+5. The renderer draws all instances using the arena as a shared bone palette.
 
 ### Event Dispatch Flow
 
 Animation events follow this path:
 
-1. `animation_advance_system` detects that
-   playback crossed an event marker time.
-2. The system constructs an `AnimEvent`
-   component from the `AnimEventPayload`.
-3. The event is written to the ECS
-   `EventWriter<AnimEvent>`.
-4. Downstream systems (audio, VFX, gameplay)
-   observe events via `EventReader<AnimEvent>`.
+1. `animation_advance_system` detects that playback crossed an event marker time.
+2. The system constructs an `AnimEvent` component from the `AnimEventPayload`.
+3. The event is written to the ECS `EventWriter<AnimEvent>`.
+4. Downstream systems (audio, VFX, gameplay) observe events via `EventReader<AnimEvent>`.
 
 ## Platform Considerations
 
@@ -1428,11 +1400,9 @@ Animation events follow this path:
 
 ### Compute Shader Dispatch
 
-All three compute stages (keyframe eval, blend,
-skinning) use HLSL compiled via DXC. On macOS,
-DXIL is translated to MSL via Metal Shader
-Converter (both accessed through C++ wrappers
-via cxx.rs per project constraints).
+All three compute stages (keyframe eval, blend, skinning) use HLSL compiled via DXC. On macOS, DXIL
+is translated to MSL via Metal Shader Converter (both accessed through C++ wrappers via cxx.rs per
+project constraints).
 
 Thread group sizes:
 
@@ -1454,15 +1424,11 @@ Thread group sizes:
 
 ### Networking Integration
 
-Animation state replication includes: active clip
-index, playback time, blend weights, and animation
-events. These are replicated as components via
-standard replication. Skeleton LOD level is
-determined per-client based on distance, not
-replicated.
+Animation state replication includes: active clip index, playback time, blend weights, and animation
+events. These are replicated as components via standard replication. Skeleton LOD level is
+determined per-client based on distance, not replicated.
 
-Curve evaluation for animation clips uses the shared
-`Curve<T>` type (see
+Curve evaluation for animation clips uses the shared `Curve<T>` type (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).
 
 ## Test Plan
@@ -1523,51 +1489,26 @@ Curve evaluation for animation clips uses the shared
 
 ## Open Questions
 
-1. **Blend descriptor upload strategy** -- A
-   single large `StructuredBuffer` with all
-   entities' blend descriptors packed
-   contiguously, vs per-entity constant buffers.
-   The former reduces draw call overhead but
-   requires an allocation scheme in the arena.
-2. **DQS on mobile** -- DQS is currently
-   excluded on mobile due to the higher ALU cost
-   of dual-quaternion blending. If future mobile
-   GPUs have sufficient ALU throughput, this
-   restriction could be lifted per-device.
-3. **Compression decompression location** -- The
-   current design decompresses on the GPU during
-   keyframe evaluation. An alternative is to
-   decompress on the CPU during asset load and
-   store uncompressed curves in GPU memory. The
-   GPU approach saves memory but adds ALU cost.
-4. **VAT format** -- The VAT playback tier
-   (LodTier::Vat) requires a vertex animation
-   texture format. The specific texture layout
-   (bone matrices baked into RGBA texels vs.
-   position offsets) is not yet defined. This
-   depends on the rendering pipeline design
-   (Wave 3).
-5. **Animation state machine boundary** -- The
-   `animation_advance_system` in this design
-   handles basic time advancement and event
-   dispatch. Full state machine evaluation
-   (transitions, blend spaces, montages) is
-   designed in Wave 3 (`animation/state-machine
-   .md`). The boundary between the two needs
-   to be clearly defined: specifically, which
-   system owns the `AnimationBlendDescriptor`.
-6. **Retarget caching** -- Retargeting the same
-   clip to the same target skeleton produces
-   identical results. A cache of retargeted
-   poses keyed on (clip, time, retarget_map)
-   could avoid redundant GPU work for NPCs
-   sharing the same archetype. The cache
-   invalidation strategy needs design.
-7. **Half-rate update synchronization** -- The
-   `LodTier::HalfRate` tier updates every other
-   frame. On the skipped frame, the previous
-   bone palette is reused. This introduces one
-   frame of staleness. Whether to interpolate
-   between the two most recent palettes (adding
-   a read-back) or accept the staleness needs
-   profiling.
+1. **Blend descriptor upload strategy** -- A single large `StructuredBuffer` with all entities'
+   blend descriptors packed contiguously, vs per-entity constant buffers. The former reduces draw
+   call overhead but requires an allocation scheme in the arena.
+2. **DQS on mobile** -- DQS is currently excluded on mobile due to the higher ALU cost of
+   dual-quaternion blending. If future mobile GPUs have sufficient ALU throughput, this restriction
+   could be lifted per-device.
+3. **Compression decompression location** -- The current design decompresses on the GPU during
+   keyframe evaluation. An alternative is to decompress on the CPU during asset load and store
+   uncompressed curves in GPU memory. The GPU approach saves memory but adds ALU cost.
+4. **VAT format** -- The VAT playback tier (LodTier::Vat) requires a vertex animation texture
+   format. The specific texture layout (bone matrices baked into RGBA texels vs. position offsets)
+   is not yet defined. This depends on the rendering pipeline design (Wave 3).
+5. **Animation state machine boundary** -- The `animation_advance_system` in this design handles
+   basic time advancement and event dispatch. Full state machine evaluation (transitions, blend
+   spaces, montages) is designed in Wave 3 (`animation/state-machine .md`). The boundary between the
+   two needs to be clearly defined: specifically, which system owns the `AnimationBlendDescriptor`.
+6. **Retarget caching** -- Retargeting the same clip to the same target skeleton produces identical
+   results. A cache of retargeted poses keyed on (clip, time, retarget_map) could avoid redundant
+   GPU work for NPCs sharing the same archetype. The cache invalidation strategy needs design.
+7. **Half-rate update synchronization** -- The `LodTier::HalfRate` tier updates every other frame.
+   On the skipped frame, the previous bone palette is reused. This introduces one frame of
+   staleness. Whether to interpolate between the two most recent palettes (adding a read-back) or
+   accept the staleness needs profiling.

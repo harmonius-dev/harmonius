@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/core-runtime/](../../features/core-runtime/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/core-runtime/](../../features/core-runtime/),
 > [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table
-> below traces design elements to those definitions.
+> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
+> elements to those definitions.
 
 ### Reflection (F-1.3 / R-1.3)
 
@@ -40,17 +40,13 @@
 
 ## Overview
 
-The reflection and serialization subsystem provides runtime
-type introspection, property access, and data persistence for
-the Harmonius engine. It is the data backbone that enables
-the ECS, editor, networking, and content pipeline to operate
-on types generically without compile-time knowledge.
+The reflection and serialization subsystem provides runtime type introspection, property access, and
+data persistence for the Harmonius engine. It is the data backbone that enables the ECS, editor,
+networking, and content pipeline to operate on types generically without compile-time knowledge.
 
-The design is modeled after bevy_reflect. A `Reflect` trait
-with sub-traits per type category (struct, enum, list, map,
-value) provides uniform access. A `TypeRegistry` stores rich
-type descriptors that are immutable after startup for
-lock-free concurrent reads.
+The design is modeled after bevy_reflect. A `Reflect` trait with sub-traits per type category
+(struct, enum, list, map, value) provides uniform access. A `TypeRegistry` stores rich type
+descriptors that are immutable after startup for lock-free concurrent reads.
 
 Serialization builds on reflection with three codec paths:
 
@@ -58,12 +54,11 @@ Serialization builds on reflection with three codec paths:
 2. **Text** -- RON format, human-readable, diff-friendly
 3. **Mixed** -- RON metadata + binary companion `.bin` files
 
-Schema versioning and a migration pipeline ensure forward
-compatibility across game updates.
+Schema versioning and a migration pipeline ensure forward compatibility across game updates.
 
 ### Crate Structure
 
-```
+```text
 harmonius_reflect_derive/  # proc-macro crate
 harmonius_reflect/         # Reflect trait, sub-traits,
                            # DynamicValue, PropertyPath,
@@ -485,7 +480,7 @@ block-beta
 
 ### File Layout
 
-```
+```text
 harmonius_reflect_derive/
 ├── lib.rs             # proc-macro entry point
 ├── reflect.rs         # #[derive(Reflect)] expansion
@@ -646,6 +641,12 @@ pub enum ReflectMut<'a> {
     Value(&'a mut dyn ReflectValue),
 }
 ```
+
+### Reflect::apply Safety (Medium)
+
+`Reflect::apply` panics on type mismatch. For production resilience, prefer `try_apply` which
+returns `Result`. Engine systems should use `try_apply` and handle errors gracefully. Reserve
+`apply` for tests and debug tooling where panics are acceptable.
 
 ### Reflect Sub-Traits
 
@@ -1891,79 +1892,57 @@ pub enum PatchError {
 
 ### Registration at Startup
 
-1. The derive macro generates `inventory::submit!` calls
-   that register each `#[derive(Reflect)]` type.
-2. At engine startup, `TypeRegistry::new()` collects all
-   submitted registrations into the hash map.
-3. ECS component registration reads from the same
-   `TypeRegistry` to build archetype metadata.
-4. `TypeRegistry::freeze()` is called after all plugins
-   have loaded, making all subsequent reads lock-free.
+1. The derive macro generates `inventory::submit!` calls that register each `#[derive(Reflect)]`
+   type.
+2. At engine startup, `TypeRegistry::new()` collects all submitted registrations into the hash map.
+3. ECS component registration reads from the same `TypeRegistry` to build archetype metadata.
+4. `TypeRegistry::freeze()` is called after all plugins have loaded, making all subsequent reads
+   lock-free.
 
 ### Serialization Pipeline
 
-Serialization follows one of three paths depending on
-the requested format.
+Serialization follows one of three paths depending on the requested format.
 
 **Binary path (save files, network, baked assets):**
 
-1. `BinarySerializer` reads `TypeRegistration` to get
-   the type ID hash and current `SchemaVersion`.
-2. Writes a `BinaryHeader` (32 bytes) with magic, type
-   ID, schema version, and payload length.
-3. Walks the `Reflect` tree depth-first, writing fields
-   in declaration order. Primitives are written inline.
-   Collections write a length prefix then elements.
+1. `BinarySerializer` reads `TypeRegistration` to get the type ID hash and current `SchemaVersion`.
+2. Writes a `BinaryHeader` (32 bytes) with magic, type ID, schema version, and payload length.
+3. Walks the `Reflect` tree depth-first, writing fields in declaration order. Primitives are written
+   inline. Collections write a length prefix then elements.
 4. All data is little-endian on all platforms.
 
 **Text path (config files, debug inspection):**
 
-1. `TextSerializer` walks the `Reflect` tree and emits
-   RON-formatted output with type annotations.
-2. Struct fields emit `field_name: value`. Enums emit
-   `VariantName(fields)`. Collections emit `[...]` or
-   `{key: value}`.
-3. Round-trip fidelity is guaranteed: parsing the output
-   reproduces the original value bit-exactly.
+1. `TextSerializer` walks the `Reflect` tree and emits RON-formatted output with type annotations.
+2. Struct fields emit `field_name: value`. Enums emit `VariantName(fields)`. Collections emit
+   `[...]` or `{key: value}`.
+3. Round-trip fidelity is guaranteed: parsing the output reproduces the original value bit-exactly.
 
 **Mixed path (scenes, prefabs, assets):**
 
 1. `MixedFormatWriter` walks the `Reflect` tree.
 2. For each field, checks `FieldAttributes::binary`.
-3. If `binary` is set: writes the field data to the
-   `BinaryCompanion`, gets back offset and length, then
-   emits `$binary("companion.bin", offset, len)` in the
-   RON output.
-4. If `binary` is not set: writes the field inline in
-   RON as normal.
-5. Both files are written atomically: write to temporary
-   files, then rename both.
+3. If `binary` is set: writes the field data to the `BinaryCompanion`, gets back offset and length,
+   then emits `$binary("companion.bin", offset, len)` in the RON output.
+4. If `binary` is not set: writes the field inline in RON as normal.
+5. Both files are written atomically: write to temporary files, then rename both.
 
 ### Deserialization with Migration
 
-1. Deserializer reads the header to extract `type_id`
-   and `SchemaVersion`.
+1. Deserializer reads the header to extract `type_id` and `SchemaVersion`.
 2. Looks up the type in `TypeRegistry`.
-3. Compares stored version with current version from
-   `MigrationRegistry`.
-4. If versions match: deserialize directly into the
-   target type.
-5. If versions differ: deserialize into a `DynamicValue`,
-   resolve the migration chain, apply each step
-   sequentially, then use `FromReflect` to construct
-   the concrete typed value.
+3. Compares stored version with current version from `MigrationRegistry`.
+4. If versions match: deserialize directly into the target type.
+5. If versions differ: deserialize into a `DynamicValue`, resolve the migration chain, apply each
+   step sequentially, then use `FromReflect` to construct the concrete typed value.
 
 ### Diff/Patch for Network Delta Compression
 
 1. Server holds the last-acknowledged state per client.
-2. On state change, calls `diff(old_state, new_state)`
-   to produce a `Patch`.
-3. Patch is serialized to binary via `Patch::to_bytes()`
-   and sent over the network.
-4. Client deserializes the `Patch` and calls
-   `patch.apply(&mut local_state)`.
-5. Only changed fields are transmitted, reducing
-   bandwidth.
+2. On state change, calls `diff(old_state, new_state)` to produce a `Patch`.
+3. Patch is serialized to binary via `Patch::to_bytes()` and sent over the network.
+4. Client deserializes the `Patch` and calls `patch.apply(&mut local_state)`.
+5. Only changed fields are transmitted, reducing bandwidth.
 
 ### Scene Round-Trip
 
@@ -1989,19 +1968,16 @@ let new_player = entity_map
 
 ## Platform Considerations
 
-Binary serialization uses little-endian byte order,
-matching all target platforms (x86, ARM in LE mode).
-Atomic file writes use platform-specific primitives:
-POSIX `rename(2)` on macOS/Linux, `ReplaceFile` on
-Windows. These guarantee atomicity of the commit step
-in the write-to-temp-then-rename pattern.
+Binary serialization uses little-endian byte order, matching all target platforms (x86, ARM in LE
+mode). Atomic file writes use platform-specific primitives: POSIX `rename(2)` on macOS/Linux,
+`ReplaceFile` on Windows. These guarantee atomicity of the commit step in the
+write-to-temp-then-rename pattern.
 
 ### Byte Order
 
-All binary formats use **little-endian** on every
-platform. No byte-swapping is needed on x86, ARM
-(little-endian mode), or RISC-V. This is consistent
-with the binary serialization requirement R-1.4.1.
+All binary formats use **little-endian** on every platform. No byte-swapping is needed on x86, ARM
+(little-endian mode), or RISC-V. This is consistent with the binary serialization requirement
+R-1.4.1.
 
 ### Memory Mapping
 
@@ -2012,8 +1988,8 @@ with the binary serialization requirement R-1.4.1.
 | Linux | `mmap` | Via libc crate |
 | Mobile | `mmap` | Streaming deserialization with 1 MB staging buffer on iOS/Android (R-1.4.7) |
 
-Zero-copy deserialization requires the mapped file to
-remain open for the lifetime of the `MappedAsset`.
+Zero-copy deserialization requires the mapped file to remain open for the lifetime of the
+`MappedAsset`.
 
 ### Atomic File Writes
 
@@ -2029,14 +2005,13 @@ Mixed-format writes use this sequence:
 3. `rename("companion.bin.tmp", "companion.bin")`
 4. `rename("scene.ron.tmp", "scene.ron")`
 
-If a crash occurs between steps 3 and 4, the text
-file still references the old companion. On next
+If a crash occurs between steps 3 and 4, the text file still references the old companion. On next
 write, both are replaced atomically.
 
 ### Streaming Deserialization
 
-On memory-constrained platforms (mobile, Switch), scene
-deserialization uses a configurable staging buffer:
+On memory-constrained platforms (mobile, Switch), scene deserialization uses a configurable staging
+buffer:
 
 | Platform | Staging Buffer | Max Scene Size |
 |----------|---------------|----------------|
@@ -2044,8 +2019,7 @@ deserialization uses a configurable staging buffer:
 | Switch handheld | 2 MB | 256 MB |
 | Desktop | Configurable | No cap |
 
-The deserializer reads in chunks, constructing entities
-incrementally to avoid memory spikes.
+The deserializer reads in chunks, constructing entities incrementally to avoid memory spikes.
 
 ### Proposed Dependencies
 
@@ -2135,55 +2109,37 @@ incrementally to avoid memory spikes.
 
 ## Open Questions
 
-1. **RON vs custom text format** -- RON is the leading
-   candidate for human-readable serialization. Alternatives
-   include TOML (limited nesting) and a custom format.
-   RON has the best Rust ecosystem support but lacks a
-   formal spec. Should we commit to RON or define a
-   custom format?
+1. **RON vs custom text format** -- RON is the leading candidate for human-readable serialization.
+   Alternatives include TOML (limited nesting) and a custom format. RON has the best Rust ecosystem
+   support but lacks a formal spec. Should we commit to RON or define a custom format?
 
-2. **Inventory vs explicit registration** -- The
-   `inventory` crate provides distributed registration
-   via linker sections, but it relies on platform-specific
-   behavior. Alternative: require explicit
-   `registry.register::<T>()` calls in plugin init
-   functions. Explicit registration is more portable but
-   requires boilerplate.
+2. **Inventory vs explicit registration** -- The `inventory` crate provides distributed registration
+   via linker sections, but it relies on platform-specific behavior. Alternative: require explicit
+   `registry.register::<T>()` calls in plugin init functions. Explicit registration is more portable
+   but requires boilerplate.
 
-3. **Binary header size** -- The current 32-byte binary
-   header includes type ID, schema version, and payload
-   length. Should it also include a content hash for
-   integrity checking? Adding BLAKE3 would increase the
-   header to 64 bytes but enable corruption detection.
+3. **Binary header size** -- The current 32-byte binary header includes type ID, schema version, and
+   payload length. Should it also include a content hash for integrity checking? Adding BLAKE3 would
+   increase the header to 64 bytes but enable corruption detection.
 
-4. **DynamicValue memory layout** -- `DynamicValue` uses
-   heap allocation for each field. For networking hot
-   paths, a bump-allocated arena-backed `DynamicValue`
-   could reduce allocation pressure. This adds complexity
-   and lifetime management.
+4. **DynamicValue memory layout** -- `DynamicValue` uses heap allocation for each field. For
+   networking hot paths, a bump-allocated arena-backed `DynamicValue` could reduce allocation
+   pressure. This adds complexity and lifetime management.
 
-5. **Patch binary encoding** -- The `Patch` type needs a
-   compact binary encoding for network transmission. The
-   encoding should minimize overhead for common operations
-   (single field change). Varint-encoded path indices vs
-   string-based paths is an open tradeoff between size
-   and debuggability.
+5. **Patch binary encoding** -- The `Patch` type needs a compact binary encoding for network
+   transmission. The encoding should minimize overhead for common operations (single field change).
+   Varint-encoded path indices vs string-based paths is an open tradeoff between size and
+   debuggability.
 
-6. **Zero-copy safety model** -- `MappedAsset::field_as`
-   is unsafe because it reinterprets bytes as a typed
-   reference. Should we provide a safe wrapper that
-   validates alignment and layout at runtime, accepting
-   the performance cost? Or keep the unsafe API and
-   rely on asset pipeline validation?
+6. **Zero-copy safety model** -- `MappedAsset::field_as` is unsafe because it reinterprets bytes as
+   a typed reference. Should we provide a safe wrapper that validates alignment and layout at
+   runtime, accepting the performance cost? Or keep the unsafe API and rely on asset pipeline
+   validation?
 
-7. **Scene format: binary vs text default** -- Scenes
-   could default to binary (fastest) or mixed (most
-   flexible). The mixed format adds I/O for the companion
-   file. Should scene format be configurable per-project
-   or per-scene?
+7. **Scene format: binary vs text default** -- Scenes could default to binary (fastest) or mixed
+   (most flexible). The mixed format adds I/O for the companion file. Should scene format be
+   configurable per-project or per-scene?
 
-8. **Companion file sharing policy** -- Multiple text
-   files can reference the same companion binary. Should
-   the engine enforce a 1:1 mapping by default and require
-   explicit opt-in for shared companions, or default to
-   shared companions with automatic deduplication?
+8. **Companion file sharing policy** -- Multiple text files can reference the same companion binary.
+   Should the engine enforce a 1:1 mapping by default and require explicit opt-in for shared
+   companions, or default to shared companions with automatic deduplication?

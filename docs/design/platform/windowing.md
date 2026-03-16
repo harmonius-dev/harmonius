@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/platform/](../../features/platform/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/platform/](../../features/platform/),
 > [requirements/platform/](../../requirements/platform/), and
-> [user-stories/platform/](../../user-stories/platform/). The table
-> below traces design elements to those definitions.
+> [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
+> those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -107,7 +107,7 @@ graph TD
 
 ### Module Layout
 
-```
+```text
 harmonius_platform/
 ├── windowing/
 │   ├── mod.rs           # Re-exports public API
@@ -1158,13 +1158,10 @@ The windowing subsystem is responsible for:
 | Android | `ANativeWindow` via NDK/bindgen | `NativeActivity` lifecycle. Surface created/destroyed events. |
 | Consoles | Platform SDK | Single fullscreen output. Vendor NDA APIs. |
 
-Mobile windowing is single-fullscreen-only. The `Window`
-abstraction degrades gracefully: `set_size`, `set_position`,
-and `set_mode` return `Err(Unsupported)` on platforms that
-do not support them. iOS lifecycle events
-(`willResignActive`, `didBecomeActive`) and Android lifecycle
-events (`onPause`, `onResume`) are mapped to
-`WindowEvent::FocusChanged`.
+Mobile windowing is single-fullscreen-only. The `Window` abstraction degrades gracefully:
+`set_size`, `set_position`, and `set_mode` return `Err(Unsupported)` on platforms that do not
+support them. iOS lifecycle events (`willResignActive`, `didBecomeActive`) and Android lifecycle
+events (`onPause`, `onResume`) are mapped to `WindowEvent::FocusChanged`.
 
 ## Test Plan
 

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/networking/](../../features/networking/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/networking/](../../features/networking/),
 > [requirements/networking/](../../requirements/networking/), and
-> [user-stories/networking/](../../user-stories/networking/). The table
-> below traces design elements to those definitions.
+> [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -46,36 +46,25 @@
 
 ## Overview
 
-This design covers the three pillars of
-Harmonius network gameplay: **state replication**
-(server to clients), **prediction and rollback**
-(client-side responsiveness), and **remote
-procedure calls** (bidirectional event invocation).
+This design covers the three pillars of Harmonius network gameplay: **state replication** (server to
+clients), **prediction and rollback** (client-side responsiveness), and **remote procedure calls**
+(bidirectional event invocation).
 
-The system is 100% ECS-based. Replicated state
-lives as components. Replication logic runs as
-systems. The `Reflect` trait drives field-level
-diffing and patching. The shared BVH provides
-spatial relevancy queries. The transport layer
-delivers packets. This design adds no parallel
-data stores outside the ECS world.
+The system is 100% ECS-based. Replicated state lives as components. Replication logic runs as
+systems. The `Reflect` trait drives field-level diffing and patching. The shared BVH provides
+spatial relevancy queries. The transport layer delivers packets. This design adds no parallel data
+stores outside the ECS world.
 
 Core design principles:
 
-1. **Server-authoritative.** The server owns all
-   gameplay state. Clients predict locally but
-   always defer to server corrections.
-2. **Component-level granularity.** Replication
-   operates on ECS components, not monolithic
-   entity blobs. Only changed fields are sent.
-3. **Bandwidth-first.** Delta compression,
-   interest management, priority scheduling, and
-   dormancy work together to fit within per-client
-   bandwidth budgets.
-4. **Latency-hiding.** Client prediction,
-   snapshot interpolation, extrapolation, and lag
-   compensation make gameplay feel responsive
-   despite 80-150 ms RTT.
+1. **Server-authoritative.** The server owns all gameplay state. Clients predict locally but always
+   defer to server corrections.
+2. **Component-level granularity.** Replication operates on ECS components, not monolithic entity
+   blobs. Only changed fields are sent.
+3. **Bandwidth-first.** Delta compression, interest management, priority scheduling, and dormancy
+   work together to fit within per-client bandwidth budgets.
+4. **Latency-hiding.** Client prediction, snapshot interpolation, extrapolation, and lag
+   compensation make gameplay feel responsive despite 80-150 ms RTT.
 
 ## Architecture
 
@@ -151,7 +140,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_net/
 ├── replication/
 │   ├── system.rs         # ReplicationSystem,
@@ -1802,8 +1791,7 @@ pub enum PredictionError {
 
 ### Server-Side Replication Tick
 
-Each server tick, the replication system runs
-as a post-simulation ECS system:
+Each server tick, the replication system runs as a post-simulation ECS system:
 
 ```rust
 // Pseudocode: server replication system
@@ -1983,50 +1971,36 @@ fn client_net_frame(
 
 ### Delta Compression Algorithm
 
-The delta encoder operates on individual
-components using the `Reflect` trait:
+The delta encoder operates on individual components using the `Reflect` trait:
 
-1. **Field enumeration.** Iterate all fields of
-   the component via `Reflect::fields()`.
-2. **Baseline lookup.** Retrieve the client's
-   last-acknowledged value for this component from
-   the `Baseline`.
-3. **Field-by-field comparison.** For each field,
-   compare current value against baseline using
+1. **Field enumeration.** Iterate all fields of the component via `Reflect::fields()`.
+2. **Baseline lookup.** Retrieve the client's last-acknowledged value for this component from the
+   `Baseline`.
+3. **Field-by-field comparison.** For each field, compare current value against baseline using
    `PartialEq` via the reflection system.
-4. **Changed mask.** Set bit `i` in a `u64`
-   bitmask for each changed field index `i`.
-5. **Encode changed fields.** Serialize only the
-   changed field values in field-index order using
+4. **Changed mask.** Set bit `i` in a `u64` bitmask for each changed field index `i`.
+5. **Encode changed fields.** Serialize only the changed field values in field-index order using
    compact binary encoding.
-6. **Quantization.** For `f32` position and
-   rotation fields, apply configurable quantization
-   (e.g., 0.01 m precision = 16-bit delta) to
-   further reduce payload size.
+6. **Quantization.** For `f32` position and rotation fields, apply configurable quantization (e.g.,
+   0.01 m precision = 16-bit delta) to further reduce payload size.
 
 The client reverses this process:
 
 1. Read the changed bitmask.
 2. For each set bit, deserialize the field value.
-3. Patch the local component via
-   `Reflect::set_field()`.
+3. Patch the local component via `Reflect::set_field()`.
 4. Unchanged fields retain their current value.
 
 ### Bandwidth Budget Allocation
 
 Per client per tick:
 
-1. **Query congestion controller** for current
-   send rate (bytes/s).
+1. **Query congestion controller** for current send rate (bytes/s).
 2. **Divide by tick rate** to get per-tick budget.
 3. **Reserve** 20% for RPCs and control traffic.
-4. **Sort** entity deltas by computed priority
-   (descending).
-5. **Pack** deltas into the remaining budget,
-   highest priority first.
-6. **Defer** remaining deltas — their staleness
-   counter increases, raising their priority next
-   tick.
+4. **Sort** entity deltas by computed priority (descending).
+5. **Pack** deltas into the remaining budget, highest priority first.
+6. **Defer** remaining deltas — their staleness counter increases, raising their priority next tick.
 
 ## Platform Considerations
 
@@ -2047,31 +2021,32 @@ Per client per tick:
 
 ### Async I/O Integration
 
-All network I/O uses the engine's async transport
-layer (F-8.1). The replication system never blocks
-on sends or receives. Sends are submitted as
-async operations. Receives arrive via the reactor
-poll point and are processed each frame. Platform
-backend selection (IOCP, GCD, io_uring) is handled
-by the transport layer — the replication system
-is platform-agnostic.
+All network I/O uses the engine's async transport layer (F-8.1). The replication system never blocks
+on sends or receives. Sends are submitted as async operations. Receives arrive via the reactor poll
+point and are processed each frame. Platform backend selection (IOCP, GCD, io_uring) is handled by
+the transport layer — the replication system is platform-agnostic.
 
 ### Thread Pool Usage
 
-These operations are parallelized via the thread
-pool's scoped execution:
+These operations are parallelized via the thread pool's scoped execution:
 
-- **Interest evaluation.** One task per client,
-  each performing an independent BVH query.
-- **Delta computation.** One task per client,
-  diffing that client's relevant entities against
-  its baseline.
-- **Snapshot recording.** Parallel iteration over
-  archetype chunks to snapshot replicated
+- **Interest evaluation.** One task per client, each performing an independent BVH query.
+- **Delta computation.** One task per client, diffing that client's relevant entities against its
+  baseline.
+- **Snapshot recording.** Parallel iteration over archetype chunks to snapshot replicated
   components.
 
-All parallel work uses `pool.scope()` to borrow
-from the current frame without `Arc` overhead.
+All parallel work uses `pool.scope()` to borrow from the current frame without `Arc` overhead.
+
+## Safety Invariants
+
+### HitboxBuffer Rewinding (High)
+
+`HistoryRewinder` must operate on a read-only copy of the hitbox buffer (ring of immutable
+snapshots), not by mutating live ECS components. Rewinding live components creates torn reads if
+another system (rendering, interpolation) reads hitbox positions concurrently. The `HitboxBuffer`
+stores historical snapshots as a ring of immutable data; the rewinder queries the ring without
+modifying world state.
 
 ## Test Plan
 
@@ -2152,50 +2127,31 @@ from the current frame without `Arc` overhead.
 
 ## Open Questions
 
-1. **Quantization precision per component type.**
-   Position fields likely use 16-bit deltas at
-   0.01 m precision. Rotation may use smallest-
-   three quaternion encoding. Should quantization
-   be configurable per-field via a `#[quantize]`
-   attribute, or fixed per data type?
+1. **Quantization precision per component type.** Position fields likely use 16-bit deltas at 0.01 m
+   precision. Rotation may use smallest- three quaternion encoding. Should quantization be
+   configurable per-field via a `#[quantize]` attribute, or fixed per data type?
 
-2. **Snapshot memory budget.** The snapshot buffer
-   serves both interpolation (client, ~10
-   snapshots) and lag compensation (server, ~30
-   snapshots of full world state). Server-side
-   snapshot memory for 100K entities could be
-   substantial. Should the server snapshot only
-   hitbox data rather than full component state?
+2. **Snapshot memory budget.** The snapshot buffer serves both interpolation (client, ~10 snapshots)
+   and lag compensation (server, ~30 snapshots of full world state). Server-side snapshot memory for
+   100K entities could be substantial. Should the server snapshot only hitbox data rather than full
+   component state?
 
-3. **Prediction eligibility scope.** Currently
-   limited to the owning client's controlled
-   entities. Should prediction extend to physics
-   objects the player interacts with (e.g.,
-   pushed crates, driven vehicles)? This adds
-   complexity to the rollback system.
+3. **Prediction eligibility scope.** Currently limited to the owning client's controlled entities.
+   Should prediction extend to physics objects the player interacts with (e.g., pushed crates,
+   driven vehicles)? This adds complexity to the rollback system.
 
-4. **RPC batching under mobile bandwidth
-   pressure.** The spec says the server may batch
-   or throttle cosmetic client RPCs to mobile
-   clients. What batching strategy should be used
-   (time-based, count-based, size-based)?
+4. **RPC batching under mobile bandwidth pressure.** The spec says the server may batch or throttle
+   cosmetic client RPCs to mobile clients. What batching strategy should be used (time-based,
+   count-based, size-based)?
 
-5. **Cross-entity dependencies during rollback.**
-   When replaying inputs, entity A's state may
-   depend on entity B (e.g., standing on a
-   platform). The replay order must be
-   deterministic. Should the reconciler sort
-   entities topologically by dependency, or
-   replay the entire ECS schedule?
+5. **Cross-entity dependencies during rollback.** When replaying inputs, entity A's state may depend
+   on entity B (e.g., standing on a platform). The replay order must be deterministic. Should the
+   reconciler sort entities topologically by dependency, or replay the entire ECS schedule?
 
-6. **Schema migration complexity.** The current
-   design handles field additions with defaults
-   and field removals. Should it also support
-   field renames and type changes via explicit
-   migration functions?
+6. **Schema migration complexity.** The current design handles field additions with defaults and
+   field removals. Should it also support field renames and type changes via explicit migration
+   functions?
 
-7. **Dormancy threshold tuning.** The default 5-
-   second threshold suits idle NPCs. Interactive
-   objects (doors, levers) may need per-entity
-   thresholds. Should dormancy threshold be a
-   component field rather than a global config?
+7. **Dormancy threshold tuning.** The default 5- second threshold suits idle NPCs. Interactive
+   objects (doors, levers) may need per-entity thresholds. Should dormancy threshold be a component
+   field rather than a global config?

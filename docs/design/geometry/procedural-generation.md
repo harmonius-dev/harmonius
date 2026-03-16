@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/geometry-world/](../../features/geometry-world/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/geometry-world/](../../features/geometry-world/),
 > [requirements/geometry-world/](../../requirements/geometry-world/), and
-> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table
-> below traces design elements to those definitions.
+> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -77,31 +77,25 @@
 
 ## Overview
 
-The Procedural Generation (PCG) system is Harmonius's content
-creation backbone. It enables worlds from a single dungeon room
-to an observable universe, all authored through a visual
-no-code node graph.
+The Procedural Generation (PCG) system is Harmonius's content creation backbone. It enables worlds
+from a single dungeon room to an observable universe, all authored through a visual no-code node
+graph.
 
 The system has four layers:
 
-1. **PCG Graph** -- a DAG of typed nodes that produce, filter,
-   transform, and consume data streams (points, meshes,
-   splines, heightmaps). Evaluated by a topological-sort
-   executor on the thread pool.
-2. **Planet-Scale Simulation** -- plate tectonics, climate,
-   hydrology, biomes, settlements, factions, and ecosystems
-   chained in a physically-motivated pipeline.
-3. **Universe Pipeline** -- seven phases from density
-   perturbations through civilization seeding, stored in sparse
-   octrees with 128-bit keys.
-4. **Runtime Streaming** -- chunk-based generation on background
-   threads and GPU compute, with deterministic seeding for
-   reproducible infinite worlds.
+1. **PCG Graph** -- a DAG of typed nodes that produce, filter, transform, and consume data streams
+   (points, meshes, splines, heightmaps). Evaluated by a topological-sort executor on the thread
+   pool.
+2. **Planet-Scale Simulation** -- plate tectonics, climate, hydrology, biomes, settlements,
+   factions, and ecosystems chained in a physically-motivated pipeline.
+3. **Universe Pipeline** -- seven phases from density perturbations through civilization seeding,
+   stored in sparse octrees with 128-bit keys.
+4. **Runtime Streaming** -- chunk-based generation on background threads and GPU compute, with
+   deterministic seeding for reproducible infinite worlds.
 
-All PCG state is 100% ECS-based. Graphs, nodes, seeds, chunks,
-and outputs are components. Evaluation, streaming, and
-spawning are systems. No separate procedural world exists
-outside the ECS.
+All PCG state is 100% ECS-based. Graphs, nodes, seeds, chunks, and outputs are components.
+Evaluation, streaming, and spawning are systems. No separate procedural world exists outside the
+ECS.
 
 ## Architecture
 
@@ -162,7 +156,7 @@ graph TD
     CK -.-> SI
 ```
 
-```
+```text
 harmonius_pcg/
 ├── graph/
 │   ├── graph.rs          # PcgGraph, PcgEdge,
@@ -1560,9 +1554,8 @@ pub enum GpuGenError {
 
 ### Graph Evaluation Pipeline
 
-The evaluator performs a topological sort on the graph and
-partitions independent nodes into parallel wavefronts. Within
-each wavefront, nodes execute concurrently on the thread pool.
+The evaluator performs a topological sort on the graph and partitions independent nodes into
+parallel wavefronts. Within each wavefront, nodes execute concurrently on the thread pool.
 
 ```rust
 // Simplified graph evaluation loop
@@ -1596,10 +1589,9 @@ for wavefront in partition_wavefronts(&sorted) {
 
 ### Seed Derivation Hierarchy
 
-Seed derivation is strictly hierarchical. No seed depends on
-evaluation order or thread scheduling.
+Seed derivation is strictly hierarchical. No seed depends on evaluation order or thread scheduling.
 
-```
+```text
 world_seed
 ├── chunk_seed = xxhash(world_seed, x, y, z, lod)
 │   ├── node_seed = xxhash(chunk_seed, node_idx)
@@ -1611,40 +1603,29 @@ world_seed
 
 ### Runtime Chunk Lifecycle
 
-1. Camera moves. `ChunkManager::update` computes which
-   `ChunkCoord`s fall within the activation radius.
-2. New coords transition to `Queued`. A priority queue
-   orders them by distance to camera.
-3. The manager picks the highest-priority queued chunk,
-   derives its seed, and dispatches graph evaluation on a
-   background thread (via `ThreadPool::spawn`).
-4. On completion, the chunk transitions to `Ready`. The
-   spawned ECS entities are inserted into the world. The
-   chunk enters the shared spatial index.
-5. When the camera moves close enough, `Ready` transitions
-   to `Active` (visible, fully simulated).
-6. When a chunk leaves the view distance, it returns to
-   `Ready` (invisible but resident).
-7. When total memory exceeds the budget, the most distant
-   `Ready` chunks transition to `Evicting` and then
-   `Unloaded`. Their entities are despawned and memory freed.
-8. Revisiting an unloaded chunk regenerates it identically
-   from the same seed.
+1. Camera moves. `ChunkManager::update` computes which `ChunkCoord`s fall within the activation
+   radius.
+2. New coords transition to `Queued`. A priority queue orders them by distance to camera.
+3. The manager picks the highest-priority queued chunk, derives its seed, and dispatches graph
+   evaluation on a background thread (via `ThreadPool::spawn`).
+4. On completion, the chunk transitions to `Ready`. The spawned ECS entities are inserted into the
+   world. The chunk enters the shared spatial index.
+5. When the camera moves close enough, `Ready` transitions to `Active` (visible, fully simulated).
+6. When a chunk leaves the view distance, it returns to `Ready` (invisible but resident).
+7. When total memory exceeds the budget, the most distant `Ready` chunks transition to `Evicting`
+   and then `Unloaded`. Their entities are despawned and memory freed.
+8. Revisiting an unloaded chunk regenerates it identically from the same seed.
 
 ### GPU Generation Data Flow
 
-1. `GpuGenerator::generate_heightmap` allocates a UAV texture
-   on the GPU.
-2. A compute shader dispatch fills the texture with noise. The
-   HLSL noise kernels produce bit-identical results to the CPU
-   `NoiseLibrary` for the same seed and parameters.
-3. The result is read back via an async GPU-to-CPU copy. The
-   future resolves at the next reactor poll point.
-4. For vegetation scatter, an indirect dispatch compute shader
-   evaluates placement rules against the heightmap and biome
-   map, writing to an instance buffer. No CPU readback needed;
-   the instance buffer feeds directly into the GPU instanced
-   draw.
+1. `GpuGenerator::generate_heightmap` allocates a UAV texture on the GPU.
+2. A compute shader dispatch fills the texture with noise. The HLSL noise kernels produce
+   bit-identical results to the CPU `NoiseLibrary` for the same seed and parameters.
+3. The result is read back via an async GPU-to-CPU copy. The future resolves at the next reactor
+   poll point.
+4. For vegetation scatter, an indirect dispatch compute shader evaluates placement rules against the
+   heightmap and biome map, writing to an instance buffer. No CPU readback needed; the instance
+   buffer feeds directly into the GPU instanced draw.
 
 ## Platform Considerations
 
@@ -1793,56 +1774,39 @@ world_seed
 | Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
 | Mobile | Limited dispatch size | No mesh shaders | Reduced procgen budgets. |
 
-**Note:** The procedural generation graph is a
-specialization of the universal logic graph runtime (see
-[logic-graph.md](../tools/logic-graph.md)). It reuses
-the logic graph's type system, validation, node
-evaluation, and visual editor infrastructure,
-parameterized with procedural-generation-specific node
-types.
+**Note:** The procedural generation graph is a specialization of the universal logic graph runtime
+(see [logic-graph.md](../tools/logic-graph.md)). It reuses the logic graph's type system,
+validation, node evaluation, and visual editor infrastructure, parameterized with
+procedural-generation-specific node types.
 
 ## Open Questions
 
-1. **Node evaluation granularity** -- Should each PCG node be
-   an individual task on the thread pool, or should wavefronts
-   batch small nodes together? Individual dispatch maximizes
-   parallelism but adds overhead for trivial nodes.
-2. **GPU readback latency** -- GPU-generated heightmaps
-   require readback for CPU-side collision and navigation mesh
-   generation. Should we double-buffer to hide latency, or
-   keep collision/navmesh generation on the GPU as well?
-3. **WFC contradiction recovery** -- Backtracking is
-   exponential in the worst case. Should the engine impose a
-   hard timeout and fall back to `ClearNeighborhood` strategy,
-   or let the artist control the strategy per graph?
-4. **Streaming chunk overlap** -- Adjacent chunks need
-   consistent borders (terrain height, vegetation, WFC tiles).
-   Should we use shared boundary margins (generate slightly
-   oversized chunks that overlap) or a separate boundary
-   reconciliation pass?
-5. **Houdini Engine licensing** -- F-3.6.25 requires Houdini
-   Engine at edit time. Should we design a fallback path that
-   bakes Houdini results to a portable format so runtime does
-   not require a Houdini license?
-6. **Floating point determinism across GPU vendors** -- GPU
-   noise must match CPU results bit-identically. IEEE 754
-   compliance varies across GPU vendors. Should we use integer
-   arithmetic in noise shaders to guarantee determinism, or
-   accept vendor-specific ULP differences and define an
-   acceptable tolerance?
-7. **Planet simulation resolution** -- Icosahedral subdivision
-   level determines global simulation fidelity vs generation
-   time. Should we expose this as a quality slider in the
-   editor, or fix it per platform tier?
-8. **Sparse octree memory layout** -- Should `CosmicOctree`
-   use pointer-based tree nodes or a flat arena with index-
-   based addressing? Arena layout is cache-friendlier but
-   complicates insertion.
-9. **AI-driven generation integration** -- R-3.6.29 requires
-   an AI agent interface. Should this be a first-class PCG
-   node type, or an external API that drives existing nodes
-   programmatically?
-10. **Ecosystem simulation tick rate** -- Lotka-Volterra
-    dynamics on the server need a simulation tick rate.
-    Should it run at a fixed real-time interval (e.g. once
-    per game-day) or in batch during world generation only?
+1. **Node evaluation granularity** -- Should each PCG node be an individual task on the thread pool,
+   or should wavefronts batch small nodes together? Individual dispatch maximizes parallelism but
+   adds overhead for trivial nodes.
+2. **GPU readback latency** -- GPU-generated heightmaps require readback for CPU-side collision and
+   navigation mesh generation. Should we double-buffer to hide latency, or keep collision/navmesh
+   generation on the GPU as well?
+3. **WFC contradiction recovery** -- Backtracking is exponential in the worst case. Should the
+   engine impose a hard timeout and fall back to `ClearNeighborhood` strategy, or let the artist
+   control the strategy per graph?
+4. **Streaming chunk overlap** -- Adjacent chunks need consistent borders (terrain height,
+   vegetation, WFC tiles). Should we use shared boundary margins (generate slightly oversized chunks
+   that overlap) or a separate boundary reconciliation pass?
+5. **Houdini Engine licensing** -- F-3.6.25 requires Houdini Engine at edit time. Should we design a
+   fallback path that bakes Houdini results to a portable format so runtime does not require a
+   Houdini license?
+6. **Floating point determinism across GPU vendors** -- GPU noise must match CPU results
+   bit-identically. IEEE 754 compliance varies across GPU vendors. Should we use integer arithmetic
+   in noise shaders to guarantee determinism, or accept vendor-specific ULP differences and define
+   an acceptable tolerance?
+7. **Planet simulation resolution** -- Icosahedral subdivision level determines global simulation
+   fidelity vs generation time. Should we expose this as a quality slider in the editor, or fix it
+   per platform tier?
+8. **Sparse octree memory layout** -- Should `CosmicOctree` use pointer-based tree nodes or a flat
+   arena with index- based addressing? Arena layout is cache-friendlier but complicates insertion.
+9. **AI-driven generation integration** -- R-3.6.29 requires an AI agent interface. Should this be a
+   first-class PCG node type, or an external API that drives existing nodes programmatically?
+10. **Ecosystem simulation tick rate** -- Lotka-Volterra dynamics on the server need a simulation
+    tick rate. Should it run at a fixed real-time interval (e.g. once per game-day) or in batch
+    during world generation only?

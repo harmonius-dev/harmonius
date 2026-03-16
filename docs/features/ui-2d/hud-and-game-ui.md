@@ -177,12 +177,13 @@ Generate a full world map from terrain, biome, political, and infrastructure dat
 **terrain** (heightmap-derived elevation shading with relief), **biome** (color-coded regions),
 **political** (faction territory borders and colors from F-3.6.36), **roads and paths** (from road
 network F-3.6.15), **settlements** (city/town/village icons from F-3.6.35), **water** (rivers,
-lakes, oceans), **fog of war** (unexplored regions hidden/shrouded from F-13.20.1), and **player
-annotations** (waypoints, notes, custom pins). The world map supports: continuous zoom from world
-overview to local detail, smooth panning, click-to-set-waypoint, click-to- fast-travel (F-13.24.5),
-and search-by-name for discovered locations. For planet-scale worlds (F-3.2.11), the world map
-renders on a globe with zoom-to-surface transitions. Map data is generated from the procedural
-generation output (F-3.6.x) and cached as tiled image pyramids for efficient zoom rendering.
+lakes, oceans), **fog of war** (unexplored regions hidden/shrouded from F-13.20.1), and
+**player annotations** (waypoints, notes, custom pins). The world map supports: continuous zoom from
+world overview to local detail, smooth panning, click-to-set-waypoint, click-to- fast-travel
+(F-13.24.5), and search-by-name for discovered locations. For planet-scale worlds (F-3.2.11), the
+world map renders on a globe with zoom-to-surface transitions. Map data is generated from the
+procedural generation output (F-3.6.x) and cached as tiled image pyramids for efficient zoom
+rendering.
 
 - **Requirements:** R-10.3.13
 - **Dependencies:** F-10.3.6 (Minimap Widget), F-3.6.36 (Factions), F-3.6.35 (Cities), F-13.20.1

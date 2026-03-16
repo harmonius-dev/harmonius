@@ -64,10 +64,10 @@ ensure one-shot events fire exactly once.
 - **Derived from:** [F-9.4.5](../../features/animation/state-machine.md)
 - **Rationale:** Named parameters decouple gameplay logic from animation graph internals, and
   auto-resetting triggers prevent duplicate event firing.
-- **Verification:** Set a float parameter `speed` to 2.0 and verify the transition rule `speed >
-  1.0` evaluates to true, triggering the expected state change. Set a trigger parameter `jump` and
-  verify it fires exactly once and auto-resets to false on the next frame. Set `jump` again on the
-  same frame and verify it does not fire a second transition.
+- **Verification:** Set a float parameter `speed` to 2.0 and verify the transition rule
+  `speed > 1.0` evaluates to true, triggering the expected state change. Set a trigger parameter
+  `jump` and verify it fires exactly once and auto-resets to false on the next frame. Set `jump`
+  again on the same frame and verify it does not fire a second transition.
 
 ## R-9.4.6 Sync Groups
 

@@ -1,6 +1,6 @@
 # 7.8 — Tactical Combat AI
 
-### F-7.8.1 Cover Evaluation and Scoring
+## F-7.8.1 Cover Evaluation and Scoring
 
 AI agents evaluate cover positions by quality: protection angle (how much of the threat arc is
 blocked), sight lines to targets, flanking exposure (how vulnerable the position is from the

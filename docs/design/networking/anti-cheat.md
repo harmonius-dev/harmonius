@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/networking/](../../features/networking/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/networking/](../../features/networking/),
 > [requirements/networking/](../../requirements/networking/), and
-> [user-stories/networking/](../../user-stories/networking/). The table
-> below traces design elements to those definitions.
+> [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -18,21 +18,15 @@
 
 ## Overview
 
-The anti-cheat subsystem provides layered, server-
-authoritative security for all game systems. The primary
-defense is server-side validation: the server independently
-simulates all game logic and compares client-reported state
-against computed bounds. Secondary defenses include client
-integrity verification, statistical behavioral analysis,
-economy validation, and rate limiting.
+The anti-cheat subsystem provides layered, server- authoritative security for all game systems. The
+primary defense is server-side validation: the server independently simulates all game logic and
+compares client-reported state against computed bounds. Secondary defenses include client integrity
+verification, statistical behavioral analysis, economy validation, and rate limiting.
 
-All anti-cheat logic runs as ECS systems on the server.
-Violation scoring, escalation, and rate limiting are
-components attached to player entities. Detection
-thresholds account for legitimate network latency and
-platform-specific input characteristics. The system uses
-configurable severity tiers (warn, flag, kick, ban) with
-hot-reloadable configuration. All I/O is async.
+All anti-cheat logic runs as ECS systems on the server. Violation scoring, escalation, and rate
+limiting are components attached to player entities. Detection thresholds account for legitimate
+network latency and platform-specific input characteristics. The system uses configurable severity
+tiers (warn, flag, kick, ban) with hot-reloadable configuration. All I/O is async.
 
 ## Architecture
 
@@ -82,7 +76,7 @@ graph TD
     EV --> ECS
 ```
 
-```
+```text
 harmonius_net/
 ├── anti_cheat/
 │   ├── movement.rs      # MovementValidator,
@@ -1015,105 +1009,80 @@ pub enum AntiCheatError {
 
 ### Server-Side Validation Pipeline
 
-Every client input passes through the validation pipeline
-before the server commits it to the authoritative world
-state:
+Every client input passes through the validation pipeline before the server commits it to the
+authoritative world state:
 
-1. **Rate limit check.** The `RateLimiter` checks the
-   per-RPC token bucket. If empty, the RPC is throttled
-   or rejected.
+1. **Rate limit check.** The `RateLimiter` checks the per-RPC token bucket. If empty, the RPC is
+   throttled or rejected.
 
-2. **Movement validation.** For movement inputs, the
-   `MovementValidator` compares the client-reported
-   position against the server's authoritative position.
-   The maximum allowable distance accounts for the
-   player's speed, delta time, and RTT-based tolerance.
+2. **Movement validation.** For movement inputs, the `MovementValidator` compares the
+   client-reported position against the server's authoritative position. The maximum allowable
+   distance accounts for the player's speed, delta time, and RTT-based tolerance.
 
-3. **Damage validation.** For combat actions, the
-   `DamageValidator` compares reported damage against
-   computed bounds (weapon base damage * active
-   multipliers * tolerance).
+3. **Damage validation.** For combat actions, the `DamageValidator` compares reported damage against
+   computed bounds (weapon base damage *active multipliers* tolerance).
 
-4. **Economy validation.** For transactions, the
-   `EconomyValidator` checks ownership, recipe
-   requirements, value bounds, and double-spend via
-   transaction sequencing.
+4. **Economy validation.** For transactions, the `EconomyValidator` checks ownership, recipe
+   requirements, value bounds, and double-spend via transaction sequencing.
 
-5. **Violation scoring.** Failed validations report to the
-   `ViolationScorer`, which accumulates a per-player score
-   with time decay. Each violation type has a configurable
-   severity weight.
+5. **Violation scoring.** Failed validations report to the `ViolationScorer`, which accumulates a
+   per-player score with time decay. Each violation type has a configurable severity weight.
 
-6. **Escalation.** The `EscalationManager` checks the
-   accumulated score against tier thresholds and executes
-   the appropriate action (warn, flag, kick, ban).
+6. **Escalation.** The `EscalationManager` checks the accumulated score against tier thresholds and
+   executes the appropriate action (warn, flag, kick, ban).
 
 ### Latency-Aware Thresholds
 
 Detection thresholds are parameterized by RTT:
 
-```
+```text
 max_distance = max_speed * dt * (1.0 + rtt_tolerance * rtt)
 ```
 
-Mobile clients receive an additional multiplier
-(`mobile_tolerance_multiplier`) to account for cellular
-jitter. This prevents false positives for legitimate
-high-latency players (US-8.8.3).
+Mobile clients receive an additional multiplier (`mobile_tolerance_multiplier`) to account for
+cellular jitter. This prevents false positives for legitimate high-latency players (US-8.8.3).
 
 ### Score Decay
 
 Violation scores decay over time at a configurable rate:
 
-```
+```text
 score = score - decay_rate * dt
 ```
 
-This ensures that occasional false detections (from lag
-spikes) do not accumulate to action thresholds. Only
-sustained or severe violations trigger escalation.
+This ensures that occasional false detections (from lag spikes) do not accumulate to action
+thresholds. Only sustained or severe violations trigger escalation.
 
 ### Behavioral Analysis Data Flow
 
-1. Each completed match records per-player metrics
-   (aim accuracy, reaction time, movement entropy,
+1. Each completed match records per-player metrics (aim accuracy, reaction time, movement entropy,
    resource acquisition) into telemetry storage.
 
-2. The `BehavioralAnalyzer` runs periodically (not in
-   real-time) on aggregated telemetry. It computes
-   per-player baselines using Welford's online algorithm
-   for incremental mean and variance.
+2. The `BehavioralAnalyzer` runs periodically (not in real-time) on aggregated telemetry. It
+   computes per-player baselines using Welford's online algorithm for incremental mean and variance.
 
-3. Recent sessions are compared against the baseline using
-   Z-scores. A score exceeding the configured threshold
-   (e.g., 3.0 standard deviations) flags the player.
+3. Recent sessions are compared against the baseline using Z-scores. A score exceeding the
+   configured threshold (e.g., 3.0 standard deviations) flags the player.
 
-4. Baselines are segmented by `InputType` (touch,
-   controller, keyboard/mouse) so that platform-
+4. Baselines are segmented by `InputType` (touch, controller, keyboard/mouse) so that platform-
    appropriate norms are applied (US-8.8.13).
 
-5. Gradual improvement (increasing accuracy over 50
-   matches) produces a slowly shifting baseline, not an
-   anomaly. Only sudden jumps trigger flags.
+5. Gradual improvement (increasing accuracy over 50 matches) produces a slowly shifting baseline,
+   not an anomaly. Only sudden jumps trigger flags.
 
 ### Economy Validation Pipeline
 
-1. Every economy RPC (trade, craft, auction, loot) is
-   validated against server-side game rules before
-   execution.
+1. Every economy RPC (trade, craft, auction, loot) is validated against server-side game rules
+   before execution.
 
-2. The `TransactionSequencer` prevents double-spend by
-   acquiring a per-player sequence lock. Only one
-   transaction can be in-flight per player at a time.
+2. The `TransactionSequencer` prevents double-spend by acquiring a per-player sequence lock. Only
+   one transaction can be in-flight per player at a time.
 
-3. Gold farming detection runs on historical transaction
-   records, looking for repetitive patterns (same
-   resource loop N times) followed by bulk transfers to
-   a different account.
+3. Gold farming detection runs on historical transaction records, looking for repetitive patterns
+   (same resource loop N times) followed by bulk transfers to a different account.
 
-4. High-value transactions trigger escalating delays
-   (e.g., 5 s delay for trades above 10,000 gold) to slow
-   down exploit attempts.
+4. High-value transactions trigger escalating delays (e.g., 5 s delay for trades above 10,000 gold)
+   to slow down exploit attempts.
 
 ## Platform Considerations
 
@@ -1142,11 +1111,9 @@ sustained or severe violations trigger escalation.
 
 ### Encrypted Protocol
 
-All anti-cheat traffic (integrity challenges, violation
-reports) uses the same encrypted channel as gameplay
-traffic (F-8.1.5). Challenge payloads are additionally
-encrypted with the per-session key to prevent
-capture/replay between sessions.
+All anti-cheat traffic (integrity challenges, violation reports) uses the same encrypted channel as
+gameplay traffic (F-8.1.5). Challenge payloads are additionally encrypted with the per-session key
+to prevent capture/replay between sessions.
 
 ## Test Plan
 
@@ -1215,35 +1182,24 @@ capture/replay between sessions.
 
 ## Open Questions
 
-1. **Replay-based verification.** The replay system
-   (F-8.6.x) can be used for post-hoc cheat detection by
-   replaying suspicious sessions with full validation.
-   Should this be an automated pipeline (every flagged
-   player) or a manual review tool?
+1. **Replay-based verification.** The replay system (F-8.6.x) can be used for post-hoc cheat
+   detection by replaying suspicious sessions with full validation. Should this be an automated
+   pipeline (every flagged player) or a manual review tool?
 
-2. **Machine learning for behavioral analysis.** The
-   current design uses Z-score thresholds. A trained model
-   could improve detection accuracy but adds complexity
-   and requires a labeled training dataset. Worth pursuing
-   after the statistical baseline is established?
+2. **Machine learning for behavioral analysis.** The current design uses Z-score thresholds. A
+   trained model could improve detection accuracy but adds complexity and requires a labeled
+   training dataset. Worth pursuing after the statistical baseline is established?
 
-3. **Client integrity on open platforms.** On PC, client
-   integrity is always bypassable given sufficient effort.
-   Should we invest more in server-side validation depth
-   (simulating more systems) rather than client integrity
-   checks?
+3. **Client integrity on open platforms.** On PC, client integrity is always bypassable given
+   sufficient effort. Should we invest more in server-side validation depth (simulating more
+   systems) rather than client integrity checks?
 
-4. **Ban appeal automation.** When a player is banned,
-   should the system automatically provide the violation
-   history and replay evidence, or should appeals be
-   handled entirely by human moderators?
+4. **Ban appeal automation.** When a player is banned, should the system automatically provide the
+   violation history and replay evidence, or should appeals be handled entirely by human moderators?
 
-5. **Cross-session scoring persistence.** Should violation
-   scores persist across sessions (database-backed) or
-   reset each session? Persistent scores catch repeat
-   offenders but risk punishing legitimate players who
-   had a bad network day.
+5. **Cross-session scoring persistence.** Should violation scores persist across sessions
+   (database-backed) or reset each session? Persistent scores catch repeat offenders but risk
+   punishing legitimate players who had a bad network day.
 
-6. **Rate limit profiles per game mode.** Competitive
-   modes may need tighter limits than casual modes. Should
-   rate limit profiles be per-game-mode or global?
+6. **Rate limit profiles per game mode.** Competitive modes may need tighter limits than casual
+   modes. Should rate limit profiles be per-game-mode or global?

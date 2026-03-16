@@ -51,8 +51,8 @@ within the GPU frame budget without manual occlusion volumes.
 ## US-2.3.4.2 Confirm Phase-2 Retest Recovers Newly Revealed Geometry
 
 **As an** engine tester (P-27), **I want** to record a fast camera pan that reveals previously
-occluded geometry and verify that phase-2 HZB retesting renders it within the same frame, **so
-that** players never see single-frame pop-in when turning quickly.
+occluded geometry and verify that phase-2 HZB retesting renders it within the same frame,
+**so that** players never see single-frame pop-in when turning quickly.
 
 ## US-2.3.4.3 Debug HZB Mip Chain Accuracy
 

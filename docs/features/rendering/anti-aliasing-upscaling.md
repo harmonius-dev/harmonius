@@ -1,6 +1,6 @@
 # 2.6 — Anti-Aliasing and Upscaling
 
-### F-2.6.1 Temporal Anti-Aliasing (TAA)
+## F-2.6.1 Temporal Anti-Aliasing (TAA)
 
 Multi-frame jittered sample accumulation that blends the current frame with reprojected history
 using motion vectors. Reduces geometric aliasing and specular shimmer. Temporal weighting clamps

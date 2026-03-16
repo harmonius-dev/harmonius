@@ -67,8 +67,8 @@ platforms achieve full resolution output at half the rendering cost.
 ## US-2.6.5.2 Test Checkerboard Resolve Quality on Diagonal Edges
 
 **As an** engine tester (P-27), **I want** to render a scene with strong diagonal geometry and
-verify that the checkerboard resolve filter handles diagonal edges without staircase artifacts, **so
-that** reconstructed output is visually clean.
+verify that the checkerboard resolve filter handles diagonal edges without staircase artifacts,
+**so that** reconstructed output is visually clean.
 
 ## US-2.6.6.1 Get the Best Upscaler for Each GPU Vendor Automatically
 

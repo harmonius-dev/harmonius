@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 ### AI Governance (R-15.7)
 
@@ -42,32 +42,24 @@
 
 ## Overview
 
-This design covers two closely related subsystems that
-share infrastructure but serve distinct purposes:
+This design covers two closely related subsystems that share infrastructure but serve distinct
+purposes:
 
-1. **AI Governance** -- provenance tagging, modification
-   tracking, feature toggles, audit trails, review
-   workflows, and enterprise policy administration.
-   Ensures studios control how generative AI is used and
-   can prove compliance with internal and external
-   policies.
+1. **AI Governance** -- provenance tagging, modification tracking, feature toggles, audit trails,
+   review workflows, and enterprise policy administration. Ensures studios control how generative AI
+   is used and can prove compliance with internal and external policies.
 
-2. **AI Assistant** -- natural language editor commands
-   (voice and text), multi-modal context assembly, LLM
-   tool calling, agent orchestration, and administration
-   (rate limiting, quotas, provider configuration).
-   Gives editors an AI-powered productivity layer.
+2. **AI Assistant** -- natural language editor commands (voice and text), multi-modal context
+   assembly, LLM tool calling, agent orchestration, and administration (rate limiting, quotas,
+   provider configuration). Gives editors an AI-powered productivity layer.
 
-Both subsystems are **API-based, not embedded**. All LLM
-inference runs on self-hosted AWS infrastructure and is
-accessed via async HTTPS. No model weights ship with the
-engine. All state is stored as ECS resources. All I/O
-uses the engine's `IoReactor` for async operations.
+Both subsystems are **API-based, not embedded**. All LLM inference runs on self-hosted AWS
+infrastructure and is accessed via async HTTPS. No model weights ship with the engine. All state is
+stored as ECS resources. All I/O uses the engine's `IoReactor` for async operations.
 
-The governance layer is always available (even with AI
-features disabled -- it tracks what already exists). The
-assistant layer is gated behind the AI assistance toggle
-(F-15.7.4) and the enterprise policy system (F-15.7.5).
+The governance layer is always available (even with AI features disabled -- it tracks what already
+exists). The assistant layer is gated behind the AI assistance toggle (F-15.7.4) and the enterprise
+policy system (F-15.7.5).
 
 ## Architecture
 
@@ -142,7 +134,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_ai/
 ├── governance/
 │   ├── provenance.rs       # ProvenanceTag,
@@ -304,11 +296,9 @@ flowchart LR
     E4 --> H4["hash(hash_3 + entry_4)"]
 ```
 
-Each entry is hashed with the previous entry's hash,
-forming a tamper-evident chain. Log rotation preserves the
-chain across segment boundaries by carrying the final hash
-of the previous segment into the first entry of the new
-segment.
+Each entry is hashed with the previous entry's hash, forming a tamper-evident chain. Log rotation
+preserves the chain across segment boundaries by carrying the final hash of the previous segment
+into the first entry of the new segment.
 
 ## API Design
 
@@ -1516,79 +1506,56 @@ pub enum LlmError {
 ### AI Content Generation Lifecycle
 
 1. A generative AI system produces an asset.
-2. `ProvenanceTracker::tag_asset` attaches a
-   provenance tag (AI system, model, timestamp,
-   prompt hash) to the asset metadata in the
-   `AssetRegistry`.
-3. `AuditLog::append` records the generation event
-   with hash chaining.
-4. `ModificationTracker::start_tracking` initializes
-   a bitmask for the asset's regions.
-5. The asset enters the pipeline. If review is
-   required (per `ReviewConfig`), `ReviewWorkflow`
-   routes it to reviewers before it can enter the
-   production database.
-6. As artists modify regions, `ModificationTracker`
-   updates the bitmask. When modification percentage
-   exceeds the auto-approve threshold, the asset is
-   auto-approved.
-7. When all regions are replaced, `ProvenanceTracker`
-   removes the tag and the audit log records the
+2. `ProvenanceTracker::tag_asset` attaches a provenance tag (AI system, model, timestamp, prompt
+   hash) to the asset metadata in the `AssetRegistry`.
+3. `AuditLog::append` records the generation event with hash chaining.
+4. `ModificationTracker::start_tracking` initializes a bitmask for the asset's regions.
+5. The asset enters the pipeline. If review is required (per `ReviewConfig`), `ReviewWorkflow`
+   routes it to reviewers before it can enter the production database.
+6. As artists modify regions, `ModificationTracker` updates the bitmask. When modification
+   percentage exceeds the auto-approve threshold, the asset is auto-approved.
+7. When all regions are replaced, `ProvenanceTracker` removes the tag and the audit log records the
    removal.
 
 ### AI Assistant Interaction Lifecycle
 
 1. User speaks or types a command.
-2. Voice input goes through `SpeechToText` to
-   produce a `Transcript`.
-3. `MultiModalContext` assembles all available
-   modalities: transcript/text, screenshot,
+2. Voice input goes through `SpeechToText` to produce a `Transcript`.
+3. `MultiModalContext` assembles all available modalities: transcript/text, screenshot,
    accessibility tree snapshot, conversation history.
-4. `CommandInterpreter` checks `FeatureToggles` to
-   verify AI assistance is enabled.
+4. `CommandInterpreter` checks `FeatureToggles` to verify AI assistance is enabled.
 5. `RateLimiter` checks the user's token bucket.
-6. `MultiModalContext::build_prompt` constructs the
-   `LlmRequest` with tool definitions from
+6. `MultiModalContext::build_prompt` constructs the `LlmRequest` with tool definitions from
    `ToolInterface`.
-7. `LlmClient::send_request` sends the request to
-   the self-hosted AWS LLM API via async HTTPS over
+7. `LlmClient::send_request` sends the request to the self-hosted AWS LLM API via async HTTPS over
    TLS 1.3 through the `IoReactor`.
 8. The LLM response contains tool calls.
 9. `ToolAccessControl` verifies each tool is allowed.
-10. `ToolInterface::execute` validates parameters and
-    runs each tool, recording in the undo stack.
+10. `ToolInterface::execute` validates parameters and runs each tool, recording in the undo stack.
 11. `AuditLog::append` records the interaction.
 12. Results are returned to the user.
 
 ### Enterprise Policy Distribution
 
-1. Admin server signs a `PolicyDocument` with
-   Ed25519.
-2. Policy is pushed via WebSocket or pulled via
-   HTTPS polling.
-3. `PolicyAdmin::receive_policy` verifies the
-   signature against trusted public keys and checks
-   the version is newer than the current policy.
-4. On success, `FeatureToggles::apply_policy` updates
-   toggle state and persists to disk.
+1. Admin server signs a `PolicyDocument` with Ed25519.
+2. Policy is pushed via WebSocket or pulled via HTTPS polling.
+3. `PolicyAdmin::receive_policy` verifies the signature against trusted public keys and checks the
+   version is newer than the current policy.
+4. On success, `FeatureToggles::apply_policy` updates toggle state and persists to disk.
 5. `AuditLog` records the policy change event.
-6. The editor must be restarted for subsystem-level
-   changes (generative AI toggle, assistance toggle)
-   to take full effect.
+6. The editor must be restarted for subsystem-level changes (generative AI toggle, assistance
+   toggle) to take full effect.
 
 ### Offline Behavior
 
-When the editor lacks connectivity to the admin policy
-server:
+When the editor lacks connectivity to the admin policy server:
 
 - The last-synced policy is loaded from disk.
 - All assistant interactions are logged locally.
-- When connectivity is restored, local logs are
-  replicated to the central server via
+- When connectivity is restored, local logs are replicated to the central server via
   `AuditLog::replicate_to`.
-- Rate limits and quotas operate against local
-  counters. Reconciliation with the server happens
-  on reconnect.
+- Rate limits and quotas operate against local counters. Reconciliation with the server happens on
+  reconnect.
 
 ## Platform Considerations
 
@@ -1600,12 +1567,10 @@ server:
 | macOS | GCD | Dispatch IO for async HTTPS. TLS 1.3 via `rustls`. C++ wrappers via `cxx.rs`. |
 | Linux | io_uring | Async HTTPS through `IoReactor`. TLS 1.3 via `rustls`. Kernel 5.1+. |
 
-**Note:** Text-to-speech uses the shared platform TTS
-service also used by the accessibility system (see
-[accessibility.md](../ui/accessibility.md)). A single
-`TextToSpeech` abstraction wraps platform-native APIs
-(AVSpeechSynthesizer on macOS/iOS, SAPI on Windows,
-Speech Dispatcher on Linux).
+**Note:** Text-to-speech uses the shared platform TTS service also used by the accessibility system
+(see [accessibility.md](../ui/accessibility.md)). A single `TextToSpeech` abstraction wraps
+platform-native APIs (AVSpeechSynthesizer on macOS/iOS, SAPI on Windows, Speech Dispatcher on
+Linux).
 
 ### Voice Input (Speech-to-Text)
 
@@ -1736,61 +1701,41 @@ Speech Dispatcher on Linux).
 
 ## Open Questions
 
-1. **LLM provider abstraction depth.** The current
-   design uses a single `ProviderConfig` struct.
-   Different providers (OpenAI, Anthropic, self-hosted
-   vLLM) have different API shapes. Should we define
-   a provider trait with per-provider implementations,
-   or normalize at the HTTP request layer?
+1. **LLM provider abstraction depth.** The current design uses a single `ProviderConfig` struct.
+   Different providers (OpenAI, Anthropic, self-hosted vLLM) have different API shapes. Should we
+   define a provider trait with per-provider implementations, or normalize at the HTTP request
+   layer?
 
-2. **Streaming response handling.** Streamed LLM
-   responses arrive as incremental chunks. Should the
-   assistant display partial text to the user during
-   streaming, or wait for the complete response before
-   executing tool calls?
+2. **Streaming response handling.** Streamed LLM responses arrive as incremental chunks. Should the
+   assistant display partial text to the user during streaming, or wait for the complete response
+   before executing tool calls?
 
-3. **Audit log storage format.** The design uses an
-   append-only file with hash chaining. Should we use
-   a compact binary format (e.g. FlatBuffers) for
-   performance, or a textual format (RON) for human
-   readability?
+3. **Audit log storage format.** The design uses an append-only file with hash chaining. Should we
+   use a compact binary format (e.g. FlatBuffers) for performance, or a textual format (RON) for
+   human readability?
 
-4. **Voice activation privacy.** Always-listening
-   mode captures audio continuously. What is the
-   retention policy for audio data that does not
-   contain a command? Should audio be discarded
+4. **Voice activation privacy.** Always-listening mode captures audio continuously. What is the
+   retention policy for audio data that does not contain a command? Should audio be discarded
    immediately after wake-word analysis?
 
-5. **Tool definition versioning.** When the editor
-   plugin API changes, tool definitions change. How
-   should the assistant handle mid-conversation tool
-   definition changes? Should it restart the
+5. **Tool definition versioning.** When the editor plugin API changes, tool definitions change. How
+   should the assistant handle mid-conversation tool definition changes? Should it restart the
    conversation context?
 
-6. **Agent resource limits.** Multiple concurrent
-   agents each hold an isolated context (undo stack,
-   selection, history). What is the maximum number
-   of concurrent agents? Should there be memory
+6. **Agent resource limits.** Multiple concurrent agents each hold an isolated context (undo stack,
+   selection, history). What is the maximum number of concurrent agents? Should there be memory
    limits per agent context?
 
-7. **Offline LLM fallback.** The assistant requires
-   API connectivity. Should there be a reduced-
-   capability offline mode (e.g. cached shortcut
-   recommendations, pre-computed help overlays)
-   when the LLM API is unreachable?
+7. **Offline LLM fallback.** The assistant requires API connectivity. Should there be a reduced-
+   capability offline mode (e.g. cached shortcut recommendations, pre-computed help overlays) when
+   the LLM API is unreachable?
 
-8. **Review workflow notification.** When an asset
-   is routed to review, how are reviewers notified?
-   Should this integrate with the editor's
-   notification system, or with external tools
-   (Slack, email)?
+8. **Review workflow notification.** When an asset is routed to review, how are reviewers notified?
+   Should this integrate with the editor's notification system, or with external tools (Slack,
+   email)?
 
-9. **Prompt injection mitigation.** User voice and
-   text input is included in LLM prompts. What
-   safeguards prevent prompt injection that could
-   cause the assistant to invoke unintended tools?
+9. **Prompt injection mitigation.** User voice and text input is included in LLM prompts. What
+   safeguards prevent prompt injection that could cause the assistant to invoke unintended tools?
 
-10. **Token cost attribution.** Token usage is tracked
-    per user. Should cost attribution also track
-    per-project, per-team, or per-agent granularity
-    for enterprise billing?
+10. **Token cost attribution.** Token usage is tracked per user. Should cost attribution also track
+    per-project, per-team, or per-agent granularity for enterprise billing?

@@ -21,8 +21,8 @@ rendering work independently and submit ordered batches without unsafe casts.
 ## US-2.1.2.2 Validate Command Buffer Mapping to Platform APIs
 
 **As an** engine tester (P-27), **I want** to trace command buffer submission and verify that Metal
-uses MTLCommandBuffer, D3D12 uses ID3D12GraphicsCommandList, and Vulkan uses VkCommandBuffer, **so
-that** the abstraction maps correctly to native APIs.
+uses MTLCommandBuffer, D3D12 uses ID3D12GraphicsCommandList, and Vulkan uses VkCommandBuffer,
+**so that** the abstraction maps correctly to native APIs.
 
 ## US-2.1.3.1 Create Pipeline States With Zero-Cost Encoding
 
@@ -128,8 +128,8 @@ graphs, and enhanced barriers work on all backends without runtime branching.
 ## US-2.1.11.2 Test Emulated Mesh Shaders on Older Vulkan Drivers
 
 **As an** engine tester (P-27), **I want** to run on Vulkan drivers that lack mesh shader support
-and verify that the emulation path produces correct output matching native mesh shader results, **so
-that** emulated features are visually identical to native.
+and verify that the emulation path produces correct output matching native mesh shader results,
+**so that** emulated features are visually identical to native.
 
 ## US-2.1.12.1 Profile Per-Pass GPU Time With Timestamp Queries
 
@@ -140,8 +140,8 @@ and optimize art content accordingly.
 ## US-2.1.12.2 Verify GPU Profiling Queries Across All Backends
 
 **As an** engine tester (P-27), **I want** to confirm that timestamp queries use
-MTLCounterSampleBuffer on Metal, ID3D12QueryHeap on D3D12, and vkCmdWriteTimestamp on Vulkan, **so
-that** GPU profiling data is accurate on each platform.
+MTLCounterSampleBuffer on Metal, ID3D12QueryHeap on D3D12, and vkCmdWriteTimestamp on Vulkan,
+**so that** GPU profiling data is accurate on each platform.
 
 ## US-2.1.12.3 Read Back Profiling Data One Frame Later to Avoid Stalls
 

@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/vfx/](../../features/vfx/),
-> [requirements/vfx/](../../requirements/vfx/), and
-> [user-stories/vfx/](../../user-stories/vfx/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/vfx/](../../features/vfx/), [requirements/vfx/](../../requirements/vfx/), and
+> [user-stories/vfx/](../../user-stories/vfx/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -38,35 +37,21 @@
 
 ## Overview
 
-The GPU particle system simulates and renders
-millions of particles entirely on the GPU using
-compute shaders. The CPU is responsible only for
-emitter lifecycle management, LOD evaluation,
-and issuing compute dispatches. All per-particle
-state lives in persistent GPU buffers with
-free-list allocation, and rendering uses GPU
-indirect draw to avoid CPU readback.
+The GPU particle system simulates and renders millions of particles entirely on the GPU using
+compute shaders. The CPU is responsible only for emitter lifecycle management, LOD evaluation, and
+issuing compute dispatches. All per-particle state lives in persistent GPU buffers with free-list
+allocation, and rendering uses GPU indirect draw to avoid CPU readback.
 
 The design follows four principles:
 
-1. **GPU-driven simulation.** All per-particle
-   work runs in compute shaders. The CPU never
-   reads particle data back. Emitters are
-   entities with components; systems dispatch
-   GPU work.
-2. **Fused module pipeline.** Simulation modules
-   (gravity, noise, collision, color-over-life)
-   are compiled into a single compute dispatch
-   per emitter, eliminating per-module dispatch
-   overhead.
-3. **Budget-aware LOD.** A global budget manager
-   caps total alive particles per platform. LOD
-   tiers reduce spawn rate and rendering cost
-   at distance with hysteresis.
-4. **No-code authoring.** The effect graph editor
-   (F-11.6.1) compiles visual node graphs into
-   the emitter configurations consumed by this
-   system. Artists never write code or shaders.
+1. **GPU-driven simulation.** All per-particle work runs in compute shaders. The CPU never reads
+   particle data back. Emitters are entities with components; systems dispatch GPU work.
+2. **Fused module pipeline.** Simulation modules (gravity, noise, collision, color-over-life) are
+   compiled into a single compute dispatch per emitter, eliminating per-module dispatch overhead.
+3. **Budget-aware LOD.** A global budget manager caps total alive particles per platform. LOD tiers
+   reduce spawn rate and rendering cost at distance with hysteresis.
+4. **No-code authoring.** The effect graph editor (F-11.6.1) compiles visual node graphs into the
+   emitter configurations consumed by this system. Artists never write code or shaders.
 
 ### Performance Targets
 
@@ -143,7 +128,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_vfx/
 ├── particles/
 │   ├── mod.rs            # Re-exports
@@ -290,9 +275,8 @@ classDiagram
 
 ### LOD State Machine
 
-Emitters transition through four LOD tiers
-based on camera distance with hysteresis to
-prevent popping.
+Emitters transition through four LOD tiers based on camera distance with hysteresis to prevent
+popping.
 
 ```mermaid
 stateDiagram-v2
@@ -314,8 +298,7 @@ stateDiagram-v2
 
 ### GPU Buffer Layout
 
-Each emitter owns a contiguous GPU buffer set.
-Particle data uses a struct-of-arrays layout for
+Each emitter owns a contiguous GPU buffer set. Particle data uses a struct-of-arrays layout for
 cache-efficient compute shader access.
 
 ```mermaid
@@ -956,6 +939,11 @@ pub enum PlatformTier {
     Desktop,
 }
 ```
+
+**Note:** This `PlatformTier` enum uses `Console` instead of the canonical `HighEnd` variant. During
+implementation, replace with the canonical `PlatformTier` from
+[shared-primitives.md](../core-runtime/shared-primitives.md) which defines
+`Mobile, Switch, Desktop, HighEnd`.
 
 ### GPU Particle Buffers
 
@@ -1669,9 +1657,8 @@ pub enum ParticleError {
 
 ### Per-Frame Simulation Pipeline
 
-The particle system runs in the ECS `PostUpdate`
-phase after transform propagation ensures
-emitter world positions are current.
+The particle system runs in the ECS `PostUpdate` phase after transform propagation ensures emitter
+world positions are current.
 
 ```rust
 // Phase ordering within PostUpdate:
@@ -1690,80 +1677,59 @@ emitter world positions are current.
 
 ### Emit Phase (GPU)
 
-1. Read emitter spawn config and LOD-adjusted
-   spawn count from a constant buffer.
+1. Read emitter spawn config and LOD-adjusted spawn count from a constant buffer.
 2. Atomically pop indices from the free list.
-3. Initialize particle state (position from
-   shape, velocity from config, random lifetime
-   within range, initial color/size).
+3. Initialize particle state (position from shape, velocity from config, random lifetime within
+   range, initial color/size).
 4. Append new indices to the alive list.
 
 ### Simulate Phase (GPU)
 
 1. For each alive particle (thread per particle):
    - Increment age by `dt`.
-   - If `age >= lifetime`, append to dead list
-     and write to event buffer (death event).
-   - Otherwise, evaluate fused module chain in
-     order: velocity, gravity, noise, drag,
-     color, size, rotation, collision.
-   - If collision detected, write to event buffer
-     (collision event).
+   - If `age >= lifetime`, append to dead list and write to event buffer (death event).
+   - Otherwise, evaluate fused module chain in order: velocity, gravity, noise, drag, color, size,
+     rotation, collision.
+   - If collision detected, write to event buffer (collision event).
    - Append to next alive list.
-2. Dead particles' indices return to the free
-   list.
+2. Dead particles' indices return to the free list.
 
 ### Sub-Emit Phase (GPU)
 
 1. Read the event buffer written during simulate.
-2. For each death/collision/birth event, spawn
-   child particles at the parent position with
-   inherited velocity.
-3. Child particles go into the sub-emitter's own
-   `GpuParticleBuffer`.
+2. For each death/collision/birth event, spawn child particles at the parent position with inherited
+   velocity.
+3. Child particles go into the sub-emitter's own `GpuParticleBuffer`.
 
 ### Sort Phase (GPU)
 
-1. Compute sort key = float-to-uint distance from
-   camera for each alive particle.
-2. GPU radix sort (8-bit passes, 4 passes for
-   32-bit keys) on the alive list.
+1. Compute sort key = float-to-uint distance from camera for each alive particle.
+2. GPU radix sort (8-bit passes, 4 passes for 32-bit keys) on the alive list.
 3. Sorted alive list used for draw order.
 
 ### Build Indirect Args Phase (GPU)
 
 1. Read alive count from atomic counter.
-2. Write `DrawIndirectArgs` for sprites
-   (vertex_count = alive * 4 for quads).
-3. Write `DrawIndexedIndirectArgs` for mesh
-   particles.
-4. Write `DispatchIndirectArgs` for next frame's
-   simulate dispatch.
+2. Write `DrawIndirectArgs` for sprites (vertex_count = alive * 4 for quads).
+3. Write `DrawIndexedIndirectArgs` for mesh particles.
+4. Write `DispatchIndirectArgs` for next frame's simulate dispatch.
 
 ### Render Phase
 
-1. Render graph executes `particle_render` pass
-   after the opaque pass.
+1. Render graph executes `particle_render` pass after the opaque pass.
 2. For each emitter:
-   - Sprites: vertex shader expands quads from
-     particle position/size/rotation. Fragment
-     shader samples flipbook atlas, applies blend
-     mode and soft depth fade.
-   - Ribbons: compute shader builds Catmull-Rom
-     spline geometry from sequential positions.
-     Draw the generated triangle strip.
-   - Mesh particles: instanced draw with
-     per-instance position/rotation/size/color
-     from storage buffers.
-3. Transparent particles are rendered after
-   opaques and before post-processing.
+   - Sprites: vertex shader expands quads from particle position/size/rotation. Fragment shader
+     samples flipbook atlas, applies blend mode and soft depth fade.
+   - Ribbons: compute shader builds Catmull-Rom spline geometry from sequential positions. Draw the
+     generated triangle strip.
+   - Mesh particles: instanced draw with per-instance position/rotation/size/color from storage
+     buffers.
+3. Transparent particles are rendered after opaques and before post-processing.
 
 ### Alive List Ping-Pong
 
-The system double-buffers the alive list. Each
-frame, simulate reads from the current alive list
-and writes survivors to the next alive list. This
-avoids read-write hazards within a single compute
+The system double-buffers the alive list. Each frame, simulate reads from the current alive list and
+writes survivors to the next alive list. This avoids read-write hazards within a single compute
 dispatch.
 
 ```mermaid
@@ -1814,11 +1780,9 @@ graph LR
 
 ### Async Compute Scheduling
 
-Particle simulation runs on the async compute
-queue when available, overlapping with the
-previous frame's graphics work. On GPUs without
-async compute (some mobile), simulation falls
-back to the graphics queue.
+Particle simulation runs on the async compute queue when available, overlapping with the previous
+frame's graphics work. On GPUs without async compute (some mobile), simulation falls back to the
+graphics queue.
 
 ```mermaid
 gantt
@@ -1839,29 +1803,22 @@ gantt
 
 ### Shader Pipeline
 
-All particle shaders are authored in HLSL
-(the project's sole shader IL). The build
-pipeline compiles them:
+All particle shaders are authored in HLSL (the project's sole shader IL). The build pipeline
+compiles them:
 
 1. **HLSL source** authored per-module.
-2. **DXC** compiles HLSL to DXIL (D3D12) and
-   SPIR-V (Vulkan) via cxx.rs bridge.
-3. **Metal Shader Converter** transpiles DXIL
-   to MSL (Metal) via cxx.rs bridge.
-4. Effect graph compiler generates specialized
-   HLSL by concatenating selected module
-   functions into a single entry point.
+2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via cxx.rs bridge.
+3. **Metal Shader Converter** transpiles DXIL to MSL (Metal) via cxx.rs bridge.
+4. Effect graph compiler generates specialized HLSL by concatenating selected module functions into
+   a single entry point.
 
 ### Module Fusion
 
-The effect graph compiler fuses selected
-simulation modules into a single compute shader
-entry point per emitter. This eliminates
-per-module dispatch overhead and enables the
-HLSL compiler to optimize across module
-boundaries.
+The effect graph compiler fuses selected simulation modules into a single compute shader entry point
+per emitter. This eliminates per-module dispatch overhead and enables the HLSL compiler to optimize
+across module boundaries.
 
-```
+```text
 // Generated fused shader (pseudocode):
 [numthreads(256, 1, 1)]
 void SimulateParticles(uint3 id : SV_DispatchThreadID) {
@@ -1979,50 +1936,34 @@ void SimulateParticles(uint3 id : SV_DispatchThreadID) {
 | Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
 | Mobile | Limited dispatch size | No mesh shaders | Reduced particle budgets (PlatformTier::Mobile). |
 
-The VFX effect graph editor (see
-[effect-graph.md](effect-graph.md)) is the visual
-authoring surface for particle system configurations.
+The VFX effect graph editor (see [effect-graph.md](effect-graph.md)) is the visual authoring surface
+for particle system configurations.
 
 ## Open Questions
 
-1. **Thread group size for simulation dispatch.**
-   256 threads per group is standard, but optimal
-   size depends on register pressure from fused
-   modules. May need per-emitter tuning or
+1. **Thread group size for simulation dispatch.** 256 threads per group is standard, but optimal
+   size depends on register pressure from fused modules. May need per-emitter tuning or
    occupancy-based selection.
 
-2. **Alive list compaction strategy.** Current
-   design uses ping-pong alive lists. An
-   alternative is stream compaction with parallel
-   prefix sum on a single buffer. Prefix sum
-   avoids double memory but adds a dispatch.
+2. **Alive list compaction strategy.** Current design uses ping-pong alive lists. An alternative is
+   stream compaction with parallel prefix sum on a single buffer. Prefix sum avoids double memory
+   but adds a dispatch.
 
-3. **Event buffer sizing for sub-emitters.** The
-   event buffer must be large enough to hold all
-   death/collision events in a frame. Fixed-size
-   with overflow detection, or dynamically sized
-   via atomic append?
+3. **Event buffer sizing for sub-emitters.** The event buffer must be large enough to hold all
+   death/collision events in a frame. Fixed-size with overflow detection, or dynamically sized via
+   atomic append?
 
-4. **Ribbon particle memory model.** Ribbons need
-   ordered particle history per trail. Current
-   design stores ribbon points in the same SoA
-   buffers. An alternative is a per-ribbon ring
-   buffer for temporal coherence.
+4. **Ribbon particle memory model.** Ribbons need ordered particle history per trail. Current design
+   stores ribbon points in the same SoA buffers. An alternative is a per-ribbon ring buffer for
+   temporal coherence.
 
-5. **Fluid simulation integration.** R-11.1.7
-   describes grid-based Eulerian fluid sim. This
-   is architecturally distinct from the particle
-   system (3D grid vs. point particles). Should
-   it share the GpuParticleBuffer infrastructure
-   or use its own buffer set?
+5. **Fluid simulation integration.** R-11.1.7 describes grid-based Eulerian fluid sim. This is
+   architecturally distinct from the particle system (3D grid vs. point particles). Should it share
+   the GpuParticleBuffer infrastructure or use its own buffer set?
 
-6. **Sort key precision.** 32-bit radix sort is 4
-   passes. For mobile, 16-bit keys halve sort
-   cost but reduce precision at distance. Need
-   profiling to determine if 16-bit is sufficient.
+6. **Sort key precision.** 32-bit radix sort is 4 passes. For mobile, 16-bit keys halve sort cost
+   but reduce precision at distance. Need profiling to determine if 16-bit is sufficient.
 
-7. **Effect graph hot-reload.** When an artist
-   modifies an effect graph in the editor, the
-   fused shader must be recompiled. Should this
-   invalidate only the affected emitter's pipeline
-   state, or rebuild all emitter shaders?
+7. **Effect graph hot-reload.** When an artist modifies an effect graph in the editor, the fused
+   shader must be recompiled. Should this invalidate only the affected emitter's pipeline state, or
+   rebuild all emitter shaders?

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -50,48 +50,36 @@
 
 ## Overview
 
-The editor framework is the top-level shell that hosts
-all visual editing tools in the Harmonius engine. It
-provides the panel/dock system, viewport rendering,
-undo/redo, selection, gizmos, property inspection, asset
-browsing, console/log, hotkeys, preferences, and plugin
-extensibility.
+The editor framework is the top-level shell that hosts all visual editing tools in the Harmonius
+engine. It provides the panel/dock system, viewport rendering, undo/redo, selection, gizmos,
+property inspection, asset browsing, console/log, hotkeys, preferences, and plugin extensibility.
 
-The editor runs as a **separate ECS world** alongside
-the game world. Editor-only entities (gizmo handles,
-selection highlights, dock tree nodes) live in the editor
-world and never pollute the game world. A cross-world
-`EventBridge` synchronizes state changes between the two
-worlds so that editor actions (move entity, change
-property) are applied to the game world and game world
-changes (runtime simulation) are reflected in the editor.
+The editor runs as a **separate ECS world** alongside the game world. Editor-only entities (gizmo
+handles, selection highlights, dock tree nodes) live in the editor world and never pollute the game
+world. A cross-world `EventBridge` synchronizes state changes between the two worlds so that editor
+actions (move entity, change property) are applied to the game world and game world changes (runtime
+simulation) are reflected in the editor.
 
-All editor UI is built with the engine's own widget
-framework (F-13.1). No external GUI libraries. This
-guarantees visual consistency between editor and game UI,
-and allows the editor to dogfood the widget system.
+All editor UI is built with the engine's own widget framework (F-13.1). No external GUI libraries.
+This guarantees visual consistency between editor and game UI, and allows the editor to dogfood the
+widget system.
 
 ### Design Principles
 
-- **Two-world isolation.** Editor state never leaks into
-  the game world. The game world can run in play mode
-  without editor overhead.
-- **Command-driven mutation.** Every game world mutation
-  flows through the undo/redo command stack. Direct
-  writes bypass undo and are forbidden outside play mode.
-- **Reflect-powered inspection.** The property inspector
-  auto-generates UI for any component implementing
-  `Reflect`. No manual editor code per type.
-- **Plugin-first extensibility.** Every built-in panel,
-  gizmo, and importer uses the same plugin API available
-  to third parties.
-- **Static dispatch.** No trait objects on hot paths.
-  Generic `EditorCommand<T>` and `Gizmo<T>` are
+- **Two-world isolation.** Editor state never leaks into the game world. The game world can run in
+  play mode without editor overhead.
+- **Command-driven mutation.** Every game world mutation flows through the undo/redo command stack.
+  Direct writes bypass undo and are forbidden outside play mode.
+- **Reflect-powered inspection.** The property inspector auto-generates UI for any component
+  implementing `Reflect`. No manual editor code per type.
+- **Plugin-first extensibility.** Every built-in panel, gizmo, and importer uses the same plugin API
+  available to third parties.
+- **Static dispatch.** No trait objects on hot paths. Generic `EditorCommand<T>` and `Gizmo<T>` are
   monomorphized.
 
 ### Crate Structure
 
-```
+```text
 harmonius_editor/
 ├── framework/
 │   ├── dock.rs          # DockTree, DockNode,
@@ -209,11 +197,9 @@ graph TD
 
 ### Dual-World Architecture
 
-The editor and game run as two separate ECS worlds. The
-editor world contains UI state, selection, gizmo handles,
-and dock layout entities. The game world contains the
-actual scene being edited. An `EventBridge` routes typed
-events between worlds.
+The editor and game run as two separate ECS worlds. The editor world contains UI state, selection,
+gizmo handles, and dock layout entities. The game world contains the actual scene being edited. An
+`EventBridge` routes typed events between worlds.
 
 ```mermaid
 graph LR
@@ -243,11 +229,9 @@ graph LR
     ES -->|"notify"| EB2
 ```
 
-In **edit mode**, the game world is paused. Editor
-commands modify the game world through the event bridge.
-In **play mode**, the game world runs its full system
-schedule. The editor world snapshots the game world
-before play so it can restore on stop.
+In **edit mode**, the game world is paused. Editor commands modify the game world through the event
+bridge. In **play mode**, the game world runs its full system schedule. The editor world snapshots
+the game world before play so it can restore on stop.
 
 ### Editor Frame Loop
 
@@ -285,10 +269,8 @@ sequenceDiagram
 
 ### Dock Tree Structure
 
-The dock layout is a binary tree where each leaf is a
-panel slot and each internal node is a split (horizontal
-or vertical). Tab groups are leaves that contain multiple
-panels sharing one slot.
+The dock layout is a binary tree where each leaf is a panel slot and each internal node is a split
+(horizontal or vertical). Tab groups are leaves that contain multiple panels sharing one slot.
 
 ```mermaid
 graph TD
@@ -1755,9 +1737,8 @@ pub enum PreferenceError {
 
 ### Edit Mode: Property Change
 
-A user modifies a component property through the
-property inspector. The change flows through the undo
-system and event bridge to the game world.
+A user modifies a component property through the property inspector. The change flows through the
+undo system and event bridge to the game world.
 
 ```rust
 // 1. Inspector detects value change via widget
@@ -1900,10 +1881,8 @@ if recovery_file_exists(&recovery_path) {
 
 ### Multi-Monitor Layout Persistence
 
-Layout profiles store display-relative positions for
-floating panels. On load, if a display is no longer
-connected, floating panels are repositioned to the
-nearest available display.
+Layout profiles store display-relative positions for floating panels. On load, if a display is no
+longer connected, floating panels are repositioned to the nearest available display.
 
 ```rust
 pub struct FloatingPanelLayout {
@@ -2005,56 +1984,35 @@ pub struct FloatingPanelLayout {
 
 ## Open Questions
 
-1. **Undo memory budget.** Unlimited history could
-   consume unbounded memory for large scenes. Should
-   we cap history by byte count (e.g. 512 MB) and
-   evict oldest entries, or keep unlimited history
+1. **Undo memory budget.** Unlimited history could consume unbounded memory for large scenes. Should
+   we cap history by byte count (e.g. 512 MB) and evict oldest entries, or keep unlimited history
    with on-disk paging?
 
-2. **Floating panel window type.** On Linux Wayland,
-   true floating windows are constrained by the
-   compositor. Should floating panels use
-   `xdg_popup` (limited positioning) or
-   `layer_shell` (requires compositor support)?
+2. **Floating panel window type.** On Linux Wayland, true floating windows are constrained by the
+   compositor. Should floating panels use `xdg_popup` (limited positioning) or `layer_shell`
+   (requires compositor support)?
 
-3. **Command serialization format.** Crash recovery
-   requires serializing the undo stack. Should
-   commands use the binary codec (fast, compact)
-   or the text codec (debuggable) for the recovery
+3. **Command serialization format.** Crash recovery requires serializing the undo stack. Should
+   commands use the binary codec (fast, compact) or the text codec (debuggable) for the recovery
    file?
 
-4. **Gizmo constant screen size.** Gizmos should
-   maintain a constant pixel size regardless of
-   camera distance. The scaling factor must be
-   computed per-frame from the viewport's projection
-   matrix. Need to determine the target pixel size
-   (e.g. 120 px) and whether it should be
-   configurable.
+4. **Gizmo constant screen size.** Gizmos should maintain a constant pixel size regardless of camera
+   distance. The scaling factor must be computed per-frame from the viewport's projection matrix.
+   Need to determine the target pixel size (e.g. 120 px) and whether it should be configurable.
 
-5. **Inspector widget latency.** Auto-generating
-   widgets from reflection is convenient but may be
-   slow for components with many fields. Should
-   there be a widget cache per component archetype
-   to avoid rebuilding every frame?
+5. **Inspector widget latency.** Auto-generating widgets from reflection is convenient but may be
+   slow for components with many fields. Should there be a widget cache per component archetype to
+   avoid rebuilding every frame?
 
-6. **Plugin ABI stability.** Hot-reloading dynamic
-   libraries requires a stable ABI across versions.
-   Should the plugin API use a C ABI boundary or a
-   versioned trait vtable? The engine plugin system
-   (F-1.6.6) defines semantic versioning metadata
-   that could be leveraged.
+6. **Plugin ABI stability.** Hot-reloading dynamic libraries requires a stable ABI across versions.
+   Should the plugin API use a C ABI boundary or a versioned trait vtable? The engine plugin system
+   (F-1.6.6) defines semantic versioning metadata that could be leveraged.
 
-7. **VR editor mode integration.** The VR editor
-   mode (F-15.1.9) requires mapping motion
-   controller input to gizmo operations. Should VR
-   gizmos use the same `GizmoManager` with a
-   different input adapter, or a separate VR-specific
-   gizmo system?
+7. **VR editor mode integration.** The VR editor mode (F-15.1.9) requires mapping motion controller
+   input to gizmo operations. Should VR gizmos use the same `GizmoManager` with a different input
+   adapter, or a separate VR-specific gizmo system?
 
-8. **Multi-user collaborative editing.** Future
-   requirement. If multiple users edit the same scene
-   simultaneously, the undo stack and selection state
-   become per-user. The command pattern is
-   well-suited to this (operational transform / CRDT
-   over commands), but the current design assumes a
-   single user. Flagging for future consideration.
+8. **Multi-user collaborative editing.** Future requirement. If multiple users edit the same scene
+   simultaneously, the undo stack and selection state become per-user. The command pattern is
+   well-suited to this (operational transform / CRDT over commands), but the current design assumes
+   a single user. Flagging for future consideration.

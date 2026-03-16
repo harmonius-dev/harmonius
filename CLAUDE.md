@@ -49,6 +49,34 @@ starting any design or implementation work.
   test planning, test-driven implementation, verification, documentation, and release into distinct
   phases. Do not start implementation until the design is approved and finalized.
 
+## Markdown linting
+
+This project uses [rumdl](https://github.com/rvben/rumdl) to lint and
+format all Markdown files. Configuration is in `.rumdl.toml`.
+
+### Check for violations
+
+```sh
+rumdl check .
+```
+
+### Fix violations automatically
+
+```sh
+rumdl fmt .
+```
+
+Use `rumdl fmt` exclusively for fixing line length limit violations in
+Markdown files. Do not manually rewrap prose — let rumdl handle it via
+the MD013 reflow rule configured in `.rumdl.toml`.
+
+### CI integration
+
+The GitHub Actions workflow `.github/workflows/markdown.yml` runs
+`rumdl check` on every push and pull request that touches `.md` files.
+If violations are found, it runs `rumdl fmt` to auto-fix them, commits
+the fix, and pushes it to the branch.
+
 ## Development guidelines
 
 - Write implementation comments sparingly. Always write documentation comments and generate an API

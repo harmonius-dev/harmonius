@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -22,26 +22,22 @@
 
 ## Overview
 
-The abilities and combat system is a GAS-style (Gameplay Ability
-System) framework where every ability is a data asset composed
-from reusable building blocks. Designers author abilities entirely
-in the visual editor -- no code. All runtime state lives as ECS
-components, all logic runs as ECS systems, and all hit detection
-flows through the shared spatial index.
+The abilities and combat system is a GAS-style (Gameplay Ability System) framework where every
+ability is a data asset composed from reusable building blocks. Designers author abilities entirely
+in the visual editor -- no code. All runtime state lives as ECS components, all logic runs as ECS
+systems, and all hit detection flows through the shared spatial index.
 
 The system has two major domains:
 
-1. **Ability System** -- definition, activation, cooldowns,
-   combos, gameplay tags, and the composable effect pipeline.
-2. **Combat System** -- melee hit detection, ranged projectiles,
-   hitbox/hurtbox management, hit reactions, and
-   network lag compensation.
+1. **Ability System** -- definition, activation, cooldowns, combos, gameplay tags, and the
+   composable effect pipeline.
+2. **Combat System** -- melee hit detection, ranged projectiles, hitbox/hurtbox management, hit
+   reactions, and network lag compensation.
 
-Abilities drive combat: an attack is an ability whose effect
-window triggers a melee sweep or projectile spawn. Defensive
-moves (block, parry, dodge) are abilities that set
-invulnerability-frame components. Buffs, debuffs, heals, and
-damage-over-time are all gameplay effects stacked on entities.
+Abilities drive combat: an attack is an ability whose effect window triggers a melee sweep or
+projectile spawn. Defensive moves (block, parry, dodge) are abilities that set invulnerability-frame
+components. Buffs, debuffs, heals, and damage-over-time are all gameplay effects stacked on
+entities.
 
 ## Architecture
 
@@ -106,7 +102,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_abilities/
 ├── definition.rs     # AbilityInstance, AbilitySet,
 │                     # AbilityAsset
@@ -348,9 +344,8 @@ classDiagram
 
 ### Gameplay Tags
 
-Gameplay tags are the foundation for ability categorization,
-effect interactions, and conditional logic. Tags are stored
-as a 128-bit bitmask for O(1) set operations.
+Gameplay tags are the foundation for ability categorization, effect interactions, and conditional
+logic. Tags are stored as a 128-bit bitmask for O(1) set operations.
 
 ```rust
 /// A set of gameplay tags stored as a bitmask.
@@ -407,8 +402,7 @@ impl TagRegistry {
 
 ### Tag Interaction Rules
 
-Tag interactions define cross-effect behaviors (e.g.,
-fire damage removes frozen debuff). Rules are
+Tag interactions define cross-effect behaviors (e.g., fire damage removes frozen debuff). Rules are
 data-driven, loaded from gameplay databases.
 
 ```rust
@@ -439,9 +433,8 @@ pub enum TagInteractionAction {
 
 ### Ability Definition and Composition
 
-Each ability is a data asset composed from reusable
-building blocks. Designers assemble them in the visual
-ability editor.
+Each ability is a data asset composed from reusable building blocks. Designers assemble them in the
+visual ability editor.
 
 ```rust
 /// Unique identifier for an ability definition
@@ -514,9 +507,8 @@ pub struct ResourceCost {
 
 ### Ability Activation
 
-The activation system validates and executes ability
-requests. Both player input and AI synthetic events
-use the same path.
+The activation system validates and executes ability requests. Both player input and AI synthetic
+events use the same path.
 
 ```rust
 /// Request to activate an ability. Sent by
@@ -580,8 +572,7 @@ pub struct CooldownSystem;
 
 ### Combo System
 
-Combos are chains of abilities executed in sequence
-within timing windows. Each step can branch into
+Combos are chains of abilities executed in sequence within timing windows. Each step can branch into
 different abilities depending on input.
 
 ```rust
@@ -627,8 +618,7 @@ pub struct ComboSystem;
 
 ### Gameplay Effect System
 
-The effect system is the core combat math engine.
-All damage, healing, buffs, debuffs, and status
+The effect system is the core combat math engine. All damage, healing, buffs, debuffs, and status
 changes flow through it.
 
 ```rust
@@ -897,58 +887,39 @@ pub struct LagCompensationSystem;
 
 ### Per-Frame System Execution Order
 
-The ECS scheduler runs these systems in
-dependency order each frame:
+The ECS scheduler runs these systems in dependency order each frame:
 
-1. **InputSystem** -- reads raw input, produces
-   `ActivateAbilityRequest` events.
-2. **AbilityActivationSystem** -- validates
-   requests, deducts resources, starts cooldowns,
-   triggers animation montages.
-3. **CooldownSystem** -- decrements all active
-   cooldown timers.
-4. **ComboSystem** -- advances combo state,
-   resets expired windows.
-5. **AnimationSystem** -- evaluates animation state
-   machines, fires animation events (hitbox
+1. **InputSystem** -- reads raw input, produces `ActivateAbilityRequest` events.
+2. **AbilityActivationSystem** -- validates requests, deducts resources, starts cooldowns, triggers
+   animation montages.
+3. **CooldownSystem** -- decrements all active cooldown timers.
+4. **ComboSystem** -- advances combo state, resets expired windows.
+5. **AnimationSystem** -- evaluates animation state machines, fires animation events (hitbox
    activate/deactivate, effect window).
-6. **MeleeCombatSystem** -- processes active hitboxes,
-   queries shared spatial index, resolves hits.
-7. **ProjectileSystem** -- integrates projectile
-   trajectories, runs CCD, resolves impacts.
-8. **GameplayEffectSystem** -- applies pending
-   effects, evaluates stacking, ticks periodic
-   effects, expires durations, resolves tag
-   interactions.
-9. **HitReactionSystem** -- plays hit reactions,
-   applies hit-stop dilation.
-10. **LagCompensationSystem** -- records hitbox
-    snapshots (server only).
+6. **MeleeCombatSystem** -- processes active hitboxes, queries shared spatial index, resolves hits.
+7. **ProjectileSystem** -- integrates projectile trajectories, runs CCD, resolves impacts.
+8. **GameplayEffectSystem** -- applies pending effects, evaluates stacking, ticks periodic effects,
+   expires durations, resolves tag interactions.
+9. **HitReactionSystem** -- plays hit reactions, applies hit-stop dilation.
+10. **LagCompensationSystem** -- records hitbox snapshots (server only).
 
 ### Effect Application Pipeline
 
 When a melee hit or projectile impact occurs:
 
-1. The combat system determines the base damage
-   from the ability's effect payload.
-2. The hurtbox region multiplier is applied
-   (e.g., head x2.0).
-3. The directional bonus is applied
-   (e.g., back x1.5).
-4. The final `GameplayEffect` is submitted to
-   `ActiveEffects` on the target entity.
-5. The `GameplayEffectSystem` evaluates stacking
-   rules against existing effects.
-6. Tag interactions fire (e.g., fire damage
-   removes frozen debuff).
-7. The stat aggregation system recalculates
-   derived stats (health, speed, etc.).
+1. The combat system determines the base damage from the ability's effect payload.
+2. The hurtbox region multiplier is applied (e.g., head x2.0).
+3. The directional bonus is applied (e.g., back x1.5).
+4. The final `GameplayEffect` is submitted to `ActiveEffects` on the target entity.
+5. The `GameplayEffectSystem` evaluates stacking rules against existing effects.
+6. Tag interactions fire (e.g., fire damage removes frozen debuff).
+7. The stat aggregation system recalculates derived stats (health, speed, etc.).
 
 ### Combo Chain Example
 
 A three-hit melee combo might flow as:
 
-```
+```text
 Step 0: Light Attack (press within idle)
    ├─ press within 0.3s → Step 1: Heavy Slash
    └─ hold within 0.3s  → Step 1: Upward Sweep
@@ -962,8 +933,7 @@ Step 1: Upward Sweep
 (window expires → reset to Step 0)
 ```
 
-Each step is a separate ability with its own
-hitbox timing, damage, and animation section.
+Each step is a separate ability with its own hitbox timing, damage, and animation section.
 
 ## Platform Considerations
 
@@ -1042,31 +1012,22 @@ hitbox timing, damage, and animation section.
 
 ## Open Questions
 
-1. **Tag capacity** -- 128 tags (u128 bitmask) may be
-   insufficient for large games. Consider a tiered approach:
-   128-bit fast path for common tags, plus a fallback
-   `HashSet` for overflow. Measure actual tag counts from
-   shipped game ability databases.
-2. **Effect evaluation order** -- When multiple effects
-   modify the same stat, the evaluation order (flat before
-   percent, or percent before flat) affects the final value.
-   Define a canonical ordering or make it configurable per
-   stat.
-3. **Network authority for effects** -- In multiplayer,
-   should effects be applied client-side with server
-   reconciliation (responsive but divergence-prone), or
-   server-authoritative with client prediction (consistent
-   but adds latency)? This interacts with the networking
-   system's prediction and rollback design.
-4. **Combo graph complexity** -- The current design supports
-   branching combo trees. Determine whether cycles (loop
-   combos) should be allowed, and if so, how to prevent
-   infinite combo exploits.
-5. **Hit-stop and networking** -- Hit-stop dilates local
-   time. In multiplayer, should hit-stop be local-only
-   (cosmetic) or synchronized (gameplay-affecting)? Local
-   avoids desyncs but creates frame-count divergence.
-6. **Visual ability editor scope** -- The editor must
-   expose all activation modes, targeting, effects, and
-   combo chains. Define the exact node graph vocabulary
-   for the logic graph integration (F-15.8.4).
+1. **Tag capacity** -- 128 tags (u128 bitmask) may be insufficient for large games. Consider a
+   tiered approach: 128-bit fast path for common tags, plus a fallback `HashSet` for overflow.
+   Measure actual tag counts from shipped game ability databases.
+2. **Effect evaluation order** -- When multiple effects modify the same stat, the evaluation order
+   (flat before percent, or percent before flat) affects the final value. Define a canonical
+   ordering or make it configurable per stat.
+3. **Network authority for effects** -- In multiplayer, should effects be applied client-side with
+   server reconciliation (responsive but divergence-prone), or server-authoritative with client
+   prediction (consistent but adds latency)? This interacts with the networking system's prediction
+   and rollback design.
+4. **Combo graph complexity** -- The current design supports branching combo trees. Determine
+   whether cycles (loop combos) should be allowed, and if so, how to prevent infinite combo
+   exploits.
+5. **Hit-stop and networking** -- Hit-stop dilates local time. In multiplayer, should hit-stop be
+   local-only (cosmetic) or synchronized (gameplay-affecting)? Local avoids desyncs but creates
+   frame-count divergence.
+6. **Visual ability editor scope** -- The editor must expose all activation modes, targeting,
+   effects, and combo chains. Define the exact node graph vocabulary for the logic graph integration
+   (F-15.8.4).

@@ -128,8 +128,8 @@ automatic DPI scaling works correctly.
 ## US-14.1.24 Verify ApplicationScaled Window Does Not Resize
 
 **As an** engine tester (P-27), **I want** a test that triggers a DPI change on an
-`ApplicationScaled` window and verifies it emits the `DpiChanged` event but does not resize, **so
-that** fixed-layout windows are not disrupted by DPI changes.
+`ApplicationScaled` window and verifies it emits the `DpiChanged` event but does not resize,
+**so that** fixed-layout windows are not disrupted by DPI changes.
 
 ## US-14.1.25 Receive All Event Types from a Single Poller
 

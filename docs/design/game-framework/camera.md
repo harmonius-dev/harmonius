@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 ### Virtual Camera Framework
 
@@ -100,30 +100,21 @@
 
 ## Overview
 
-The camera system is a data-driven virtual camera
-framework modeled after Unity CineMachine and UE5
-Gameplay Cameras. Each camera behavior is an ECS
-entity. A per-player Camera Brain selects the
+The camera system is a data-driven virtual camera framework modeled after Unity CineMachine and UE5
+Gameplay Cameras. Each camera behavior is an ECS entity. A per-player Camera Brain selects the
 highest-priority camera and drives the rendered view.
 
 Key design principles:
 
-1. **Composition over monolith.** Position control,
-   rotation control, collision, shake, and extensions
-   are separate components on the same entity. Mix
-   and match to build any camera style.
-2. **Priority-based selection.** Multiple virtual
-   cameras coexist. The brain activates the highest
-   priority. Priority changes at runtime from gameplay
-   events (trigger volumes, combat, mounts).
-3. **Smooth blending.** Eight blend curve types with
-   per-camera-pair custom blend assets. Sub-frame
+1. **Composition over monolith.** Position control, rotation control, collision, shake, and
+   extensions are separate components on the same entity. Mix and match to build any camera style.
+2. **Priority-based selection.** Multiple virtual cameras coexist. The brain activates the highest
+   priority. Priority changes at runtime from gameplay events (trigger volumes, combat, mounts).
+3. **Smooth blending.** Eight blend curve types with per-camera-pair custom blend assets. Sub-frame
    interpolation prevents discontinuities.
-4. **No-code authoring.** All camera parameters are
-   editable in the visual editor. Camera behaviors are
-   configured by adding/removing components.
-5. **Split-screen native.** Multiple brains coexist
-   with independent channel masks.
+4. **No-code authoring.** All camera parameters are editable in the visual editor. Camera behaviors
+   are configured by adding/removing components.
+5. **Split-screen native.** Multiple brains coexist with independent channel masks.
 
 ## Architecture
 
@@ -193,7 +184,7 @@ graph TD
     ext --> CB
 ```
 
-```
+```text
 harmonius_game/
 ├── camera/
 │   ├── brain.rs          # CameraBrain, channel
@@ -1096,32 +1087,25 @@ pub struct GroupFramingSystem;
 
 Each frame the camera pipeline executes:
 
-1. **CameraEvaluationSystem** runs for each entity
-   with `VirtualCamera`. For each:
+1. **CameraEvaluationSystem** runs for each entity with `VirtualCamera`. For each:
    - Position behavior computes world position
    - Rotation behavior computes world rotation
-   - Collision (spring arm, deoccluder, decollider)
-     adjusts position
+   - Collision (spring arm, deoccluder, decollider) adjusts position
    - Shake offsets are applied
-   - Extensions (confiners, follow zoom, auto focus)
-     post-process the output
+   - Extensions (confiners, follow zoom, auto focus) post-process the output
    - The result is written to `CameraOutput`
-2. **Intelligence systems** (state-driven, clear shot,
-   sequencer) may change camera priorities based on
-   gameplay state.
+2. **Intelligence systems** (state-driven, clear shot, sequencer) may change camera priorities based
+   on gameplay state.
 3. **CameraBrainSystem** runs for each `CameraBrain`:
-   - Queries all `VirtualCamera` entities matching the
-     brain's channel mask
+   - Queries all `VirtualCamera` entities matching the brain's channel mask
    - Selects the highest-priority camera
-   - If the active camera changed, starts a blend
-     using custom blend rules or the default blend
-   - Interpolates position, rotation, FOV, and
-     post-process between outgoing and incoming
-     cameras using the blend curve
+   - If the active camera changed, starts a blend using custom blend rules or the default blend
+   - Interpolates position, rotation, FOV, and post-process between outgoing and incoming cameras
+     using the blend curve
    - Applies the modifier stack
    - Writes the final render view
-4. **ImpulseDispatchSystem** propagates impulse source
-   events to listeners with distance attenuation.
+4. **ImpulseDispatchSystem** propagates impulse source events to listeners with distance
+   attenuation.
 
 ### Blend Interpolation
 
@@ -1163,10 +1147,9 @@ fn blend_cameras(
 
 ### Split-Screen
 
-Multiple `CameraBrain` entities coexist, each with a
-different `channel_mask`. Virtual cameras belong to
-channels via their own mask. Each brain independently
-selects, blends, and outputs to its assigned viewport.
+Multiple `CameraBrain` entities coexist, each with a different `channel_mask`. Virtual cameras
+belong to channels via their own mask. Each brain independently selects, blends, and outputs to its
+assigned viewport.
 
 ```rust
 // Example: 2-player split-screen setup.
@@ -1189,27 +1172,19 @@ selects, blends, and outputs to its assigned viewport.
 
 ### Platform-Specific Notes
 
-- **All platforms:** Camera evaluation is
-  single-threaded per brain. Multiple brains can
-  evaluate in parallel on the thread pool.
-- **Mobile:** PiP limited to one viewport at quarter
-  resolution.
-- **Desktop:** Multiple PiP viewports at configurable
-  resolution.
-- **Networking:** Camera state is client-only. Only
-  the tracking target entity positions are replicated.
-  Virtual camera evaluation runs entirely on the
-  client.
-- **No-code:** All camera components are exposed to
-  the visual editor. Designers create cameras by
-  adding components to entities. Camera presets
-  (third-person action, top-down RPG, side-scroller)
+- **All platforms:** Camera evaluation is single-threaded per brain. Multiple brains can evaluate in
+  parallel on the thread pool.
+- **Mobile:** PiP limited to one viewport at quarter resolution.
+- **Desktop:** Multiple PiP viewports at configurable resolution.
+- **Networking:** Camera state is client-only. Only the tracking target entity positions are
+  replicated. Virtual camera evaluation runs entirely on the client.
+- **No-code:** All camera components are exposed to the visual editor. Designers create cameras by
+  adding components to entities. Camera presets (third-person action, top-down RPG, side-scroller)
   are available as entity templates.
 
 ### Proposed Dependencies
 
-No new external dependencies. Uses existing engine
-modules:
+No new external dependencies. Uses existing engine modules:
 
 | Module | Usage |
 |--------|-------|
@@ -1308,33 +1283,21 @@ modules:
 
 ## Open Questions
 
-1. **Camera-per-entity limit.** Should an entity have
-   at most one position behavior and one rotation
-   behavior, or should multiple be supported with a
-   priority override? Multiple adds flexibility but
+1. **Camera-per-entity limit.** Should an entity have at most one position behavior and one rotation
+   behavior, or should multiple be supported with a priority override? Multiple adds flexibility but
    complicates evaluation order.
-2. **Blend curve interpolation.** Quaternion slerp
-   produces the shortest-arc rotation blend. Should
-   we support squad (spherical cubic interpolation)
-   for multi-waypoint blends with smoother curvature?
-3. **Impulse signal filtering.** Impulse listeners
-   have a gain multiplier. Should they also support
-   frequency filtering (low-pass, high-pass) to allow
-   cameras to respond only to certain shake
+2. **Blend curve interpolation.** Quaternion slerp produces the shortest-arc rotation blend. Should
+   we support squad (spherical cubic interpolation) for multi-waypoint blends with smoother
+   curvature?
+3. **Impulse signal filtering.** Impulse listeners have a gain multiplier. Should they also support
+   frequency filtering (low-pass, high-pass) to allow cameras to respond only to certain shake
    frequencies?
-4. **Camera persistence across level loads.** Should
-   virtual camera entities persist across level
-   transitions, or be destroyed and recreated? Cinematic
-   cameras may need to survive transitions; gameplay
-   cameras may not.
-5. **Editor camera preview.** The no-code editor needs
-   a live preview of each virtual camera's output.
-   Should the editor render thumbnails per camera, or
-   cycle through a full-viewport preview? Thumbnails
-   add rendering cost but provide at-a-glance
-   comparison.
-6. **VR stereo cameras.** VR requires two cameras with
-   IPD offset. Should VR be a modifier on the brain,
-   or a special dual-output brain variant? VR-specific
-   timing constraints (must match HMD refresh rate)
-   also affect update mode.
+4. **Camera persistence across level loads.** Should virtual camera entities persist across level
+   transitions, or be destroyed and recreated? Cinematic cameras may need to survive transitions;
+   gameplay cameras may not.
+5. **Editor camera preview.** The no-code editor needs a live preview of each virtual camera's
+   output. Should the editor render thumbnails per camera, or cycle through a full-viewport preview?
+   Thumbnails add rendering cost but provide at-a-glance comparison.
+6. **VR stereo cameras.** VR requires two cameras with IPD offset. Should VR be a modifier on the
+   brain, or a special dual-output brain variant? VR-specific timing constraints (must match HMD
+   refresh rate) also affect update mode.

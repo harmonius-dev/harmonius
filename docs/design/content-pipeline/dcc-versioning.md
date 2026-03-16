@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/content-pipeline/](../../features/content-pipeline/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/content-pipeline/](../../features/content-pipeline/),
 > [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table
-> below traces design elements to those definitions.
+> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
+> design elements to those definitions.
 
 ### DCC Tool Plugins (F-12.6 / R-12.6)
 
@@ -54,29 +54,22 @@
 
 ## Overview
 
-This design covers two tightly coupled content-pipeline
-subsystems:
+This design covers two tightly coupled content-pipeline subsystems:
 
-1. **DCC Plugins** -- native plugins for Houdini, Maya,
-   Blender, Marvelous Designer, Substance, Photoshop,
-   Illustrator, ZBrush, and MotionBuilder that export
-   directly to the engine's native binary format. No
-   intermediate formats (FBX, glTF, USD) in the
-   production pipeline.
+1. **DCC Plugins** -- native plugins for Houdini, Maya, Blender, Marvelous Designer, Substance,
+   Photoshop, Illustrator, ZBrush, and MotionBuilder that export directly to the engine's native
+   binary format. No intermediate formats (FBX, glTF, USD) in the production pipeline.
 
-2. **Asset Versioning** -- the universal binary asset
-   format, compressed bundles, structural diffing,
-   three-way merge, dependency graph, and binary diff
-   patching that enable team collaboration on binary
-   assets through Git.
+2. **Asset Versioning** -- the universal binary asset format, compressed bundles, structural
+   diffing, three-way merge, dependency graph, and binary diff patching that enable team
+   collaboration on binary assets through Git.
 
-The two subsystems share the native binary format as
-their integration surface. DCC plugins are the producers;
-asset versioning is the storage and collaboration layer.
+The two subsystems share the native binary format as their integration surface. DCC plugins are the
+producers; asset versioning is the storage and collaboration layer.
 
 ### Crate Structure
 
-```
+```text
 harmonius_dcc_sdk/
     # C API shared library loaded by DCC hosts.
     # Python/C++ binding wrappers.
@@ -166,7 +159,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_dcc_sdk/
 ├── ffi/
 │   ├── c_api.rs          # extern "C" functions
@@ -2011,10 +2004,8 @@ sequenceDiagram
 
 ### Asset Versioning and Migration
 
-When an asset is loaded whose `SchemaVersion` does not
-match the current version registered in the
-`MigrationRegistry`, the deserialization pipeline
-automatically migrates it.
+When an asset is loaded whose `SchemaVersion` does not match the current version registered in the
+`MigrationRegistry`, the deserialization pipeline automatically migrates it.
 
 ```rust
 // Asset loading with automatic migration
@@ -2065,25 +2056,22 @@ let mesh = AssetReader::from_bytes(&mesh_data)?;
 
 ### Git Merge Driver Integration
 
-The custom merge driver is registered in
-`.gitattributes`:
+The custom merge driver is registered in `.gitattributes`:
 
-```
+```text
 *.hast merge=harmonius-merge
 ```
 
 And configured in `.gitconfig`:
 
-```
+```text
 [merge "harmonius-merge"]
     name = Harmonius structural merge
     driver = harmonius-merge %O %A %B %P
 ```
 
-The driver reads the three files (ancestor, ours,
-theirs), invokes the structural diff and three-way
-merge, and writes the result. Exit code 0 means
-success; non-zero means unresolved conflicts.
+The driver reads the three files (ancestor, ours, theirs), invokes the structural diff and three-way
+merge, and writes the result. Exit code 0 means success; non-zero means unresolved conflicts.
 
 ## Platform Considerations
 
@@ -2103,8 +2091,7 @@ success; non-zero means unresolved conflicts.
 
 ### SDK Shared Library
 
-The `harmonius_dcc_sdk` crate compiles to a
-platform-native shared library:
+The `harmonius_dcc_sdk` crate compiles to a platform-native shared library:
 
 | Platform | Output | Notes |
 |----------|--------|-------|
@@ -2112,9 +2099,8 @@ platform-native shared library:
 | macOS | `harmonius_dcc_sdk.dylib` | Loaded by Maya, Houdini, Blender |
 | Linux | `harmonius_dcc_sdk.so` | Loaded by Maya, Houdini, Blender |
 
-All C API symbols are exported with `extern "C"` and
-`#[no_mangle]`. The library links statically against
-all Rust dependencies -- DCC hosts see only the C ABI.
+All C API symbols are exported with `extern "C"` and `#[no_mangle]`. The library links statically
+against all Rust dependencies -- DCC hosts see only the C ABI.
 
 ### Async I/O Integration
 
@@ -2126,11 +2112,9 @@ all Rust dependencies -- DCC hosts see only the C ABI.
 | BLAKE3 hashing | ThreadPool | Parallel hashing for large assets |
 | DCC plugin socket | OS native | Plugin side uses blocking sockets (DCC thread) |
 
-The engine side of the live link uses async I/O via
-the `IoReactor`. The DCC plugin side uses blocking
-sockets since DCC tools do not share the engine's
-async runtime. The SDK shared library manages its own
-I/O thread for the plugin-side socket.
+The engine side of the live link uses async I/O via the `IoReactor`. The DCC plugin side uses
+blocking sockets since DCC tools do not share the engine's async runtime. The SDK shared library
+manages its own I/O thread for the plugin-side socket.
 
 ### Compression Strategy
 
@@ -2219,53 +2203,36 @@ I/O thread for the plugin-side socket.
 
 ## Open Questions
 
-1. **Live link transport** -- TCP localhost is simple
-   and cross-platform but adds kernel overhead. Shared
-   memory would be faster for same-machine DCC-to-engine
-   communication. Should both transports be supported,
-   with automatic fallback from shared memory to TCP?
+1. **Live link transport** -- TCP localhost is simple and cross-platform but adds kernel overhead.
+   Shared memory would be faster for same-machine DCC-to-engine communication. Should both
+   transports be supported, with automatic fallback from shared memory to TCP?
 
-2. **Plugin SDK versioning** -- The C ABI must remain
-   stable across engine versions so that DCC plugins
-   built against an older SDK still work. Need to define
-   the ABI stability contract and version negotiation
-   protocol (har_sdk_version handshake).
+2. **Plugin SDK versioning** -- The C ABI must remain stable across engine versions so that DCC
+   plugins built against an older SDK still work. Need to define the ABI stability contract and
+   version negotiation protocol (har_sdk_version handshake).
 
-3. **Houdini Engine licensing** -- Houdini Engine
-   requires a license for edit-time HDA cooking. Need to
-   define the license acquisition strategy for CI build
-   machines (Houdini Engine Indie vs commercial license
-   pools) and the fallback when no license is available.
+3. **Houdini Engine licensing** -- Houdini Engine requires a license for edit-time HDA cooking. Need
+   to define the license acquisition strategy for CI build machines (Houdini Engine Indie vs
+   commercial license pools) and the fallback when no license is available.
 
-4. **Structural diff granularity** -- For meshes, should
-   the diff report per-vertex changes (expensive but
-   precise) or summary statistics (vertex count delta,
-   bounding box delta)? Per-vertex diff enables visual
-   highlighting in the editor but may be too slow for
-   high-poly meshes.
+4. **Structural diff granularity** -- For meshes, should the diff report per-vertex changes
+   (expensive but precise) or summary statistics (vertex count delta, bounding box delta)?
+   Per-vertex diff enables visual highlighting in the editor but may be too slow for high-poly
+   meshes.
 
-5. **Binary diff block size** -- The block size for
-   the binary diff encoder affects patch size vs
-   computation time. Smaller blocks (512 B) produce
-   smaller patches but slower encoding. Larger blocks
-   (4 KiB) encode faster but produce larger patches.
-   Need benchmarking to find the optimal default.
+5. **Binary diff block size** -- The block size for the binary diff encoder affects patch size vs
+   computation time. Smaller blocks (512 B) produce smaller patches but slower encoding. Larger
+   blocks (4 KiB) encode faster but produce larger patches. Need benchmarking to find the optimal
+   default.
 
-6. **Merge strategy persistence** -- Should merge
-   strategies be stored per-project in a config file
-   or per-asset-type in the asset metadata? Per-project
-   is simpler; per-asset-type is more granular but
-   requires strategy propagation through the dependency
-   graph.
+6. **Merge strategy persistence** -- Should merge strategies be stored per-project in a config file
+   or per-asset-type in the asset metadata? Per-project is simpler; per-asset-type is more granular
+   but requires strategy propagation through the dependency graph.
 
-7. **DCC plugin auto-update** -- Should the SDK shared
-   library auto-update when the engine version changes,
-   or should artists manually install plugin updates?
-   Auto-update risks breaking DCC tool sessions;
-   manual update risks version skew.
+7. **DCC plugin auto-update** -- Should the SDK shared library auto-update when the engine version
+   changes, or should artists manually install plugin updates? Auto-update risks breaking DCC tool
+   sessions; manual update risks version skew.
 
-8. **Substance runtime budget** -- The per-frame budget
-   for runtime .sbsar evaluation needs tuning. A fixed
-   millisecond budget risks underutilization on fast
-   hardware and overutilization on slow hardware. Should
-   the budget be adaptive based on frame time headroom?
+8. **Substance runtime budget** -- The per-frame budget for runtime .sbsar evaluation needs tuning.
+   A fixed millisecond budget risks underutilization on fast hardware and overutilization on slow
+   hardware. Should the budget be adaptive based on frame time headroom?

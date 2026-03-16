@@ -15,8 +15,8 @@ per-platform strand budgets that fit within the character rendering allocation.
 ## US-2.8.1.3 Verify Strand Hair Is Disabled on Mobile and Switch
 
 **As an** engine tester (P-27), **I want** to confirm that strand-based hair is automatically
-disabled on mobile and Switch and that card-based hair (F-2.8.2) activates as the fallback, **so
-that** characters render correctly on lower-tier platforms.
+disabled on mobile and Switch and that card-based hair (F-2.8.2) activates as the fallback,
+**so that** characters render correctly on lower-tier platforms.
 
 ## US-2.8.2.1 Author Card-Based Hair for NPCs and Crowd Characters
 
@@ -87,8 +87,8 @@ anti-aliasing and transparency ordering via froxel-based line registration.
 ## US-2.8.7.2 Validate Compute Hair Rasterizer Activates Only on Desktop+
 
 **As an** engine tester (P-27), **I want** to confirm that compute software rasterized hair is
-enabled alongside strand rendering on desktop and high-end, and disabled on mobile and Switch, **so
-that** the feature only runs where strand rendering is active.
+enabled alongside strand rendering on desktop and high-end, and disabled on mobile and Switch,
+**so that** the feature only runs where strand rendering is active.
 
 ## US-2.8.8.1 See Peach Fuzz on Character Faces in Close-Up Views
 
@@ -99,8 +99,8 @@ perfectly smooth.
 ## US-2.8.8.2 Verify Peach Fuzz Activates Only Within Screen-Size Threshold
 
 **As an** engine tester (P-27), **I want** to dolly the camera toward a character face and verify
-that peach fuzz enables only when the face exceeds the configurable screen-size threshold, **so
-that** GPU cost is spent only when the effect is visible.
+that peach fuzz enables only when the face exceeds the configurable screen-size threshold,
+**so that** GPU cost is spent only when the effect is visible.
 
 ## US-2.8.9.1 Author Diverse Skin Tones With Melanin and Blood Maps
 

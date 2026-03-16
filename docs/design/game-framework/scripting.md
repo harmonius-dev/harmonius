@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -21,39 +21,31 @@
 
 ## Overview
 
-The gameplay scripting subsystem is the runtime that executes
-compiled visual logic graphs as ECS systems. Users never write
-code. All gameplay logic -- ability rules, quest conditions,
-dialogue branching, game mode rules, AI blackboard access --
-is authored in the visual logic graph editor (F-15.8.4) and
-compiled to an efficient bytecode format or ahead-of-time
-native code (F-15.8.12). This document covers the runtime
-that loads and executes those compiled artifacts.
+The gameplay scripting subsystem is the runtime that executes compiled visual logic graphs as ECS
+systems. Users never write code. All gameplay logic -- ability rules, quest conditions, dialogue
+branching, game mode rules, AI blackboard access -- is authored in the visual logic graph editor
+(F-15.8.4) and compiled to an efficient bytecode format or ahead-of-time native code (F-15.8.12).
+This document covers the runtime that loads and executes those compiled artifacts.
 
 Key architectural choices:
 
-1. **Compiled, not interpreted.** Visual graphs are compiled
-   to a typed bytecode (`GraphProgram`) by the editor's graph
-   compiler. The runtime never parses or interprets graph
-   topology at execution time.
-2. **100% ECS-based.** Compiled graphs attach to entities as
-   `GraphInstance` components. A `GraphExecutionSystem` runs
-   in the ECS schedule like any other system.
-3. **Static dispatch.** All node operations resolve to typed
-   function pointers at compile time. No vtables, no dynamic
-   dispatch in the hot path.
-4. **Sandboxed.** User graphs cannot perform unsafe operations,
-   raw memory access, or unbounded loops. All ECS access goes
-   through validated accessor opcodes.
-5. **Coroutine support.** Multi-frame sequences (boss phases,
-   timed objectives) use async yield points that suspend and
-   resume across frames via the `IoReactor`.
-6. **Hot reload.** The runtime patches running graph instances
-   with recompiled bytecode while preserving compatible state.
+1. **Compiled, not interpreted.** Visual graphs are compiled to a typed bytecode (`GraphProgram`) by
+   the editor's graph compiler. The runtime never parses or interprets graph topology at execution
+   time.
+2. **100% ECS-based.** Compiled graphs attach to entities as `GraphInstance` components. A
+   `GraphExecutionSystem` runs in the ECS schedule like any other system.
+3. **Static dispatch.** All node operations resolve to typed function pointers at compile time. No
+   vtables, no dynamic dispatch in the hot path.
+4. **Sandboxed.** User graphs cannot perform unsafe operations, raw memory access, or unbounded
+   loops. All ECS access goes through validated accessor opcodes.
+5. **Coroutine support.** Multi-frame sequences (boss phases, timed objectives) use async yield
+   points that suspend and resume across frames via the `IoReactor`.
+6. **Hot reload.** The runtime patches running graph instances with recompiled bytecode while
+   preserving compatible state.
 
 ### Crate Structure
 
-```
+```text
 harmonius_scripting/
 ├── compiler/
 │   ├── ir.rs          # Intermediate representation
@@ -156,9 +148,8 @@ graph TD
 
 ### Compilation Pipeline
 
-The visual editor produces a serialized graph asset. The
-compiler transforms it through several stages into a
-`GraphProgram` -- the runtime-executable artifact.
+The visual editor produces a serialized graph asset. The compiler transforms it through several
+stages into a `GraphProgram` -- the runtime-executable artifact.
 
 ```mermaid
 flowchart LR
@@ -177,9 +168,8 @@ flowchart LR
 
 ### Graph Execution Within ECS Schedule
 
-Compiled graphs execute as part of the standard ECS system
-schedule. The `GraphExecutionSystem` queries all entities
-with `GraphInstance` components and runs their programs.
+Compiled graphs execute as part of the standard ECS system schedule. The `GraphExecutionSystem`
+queries all entities with `GraphInstance` components and runs their programs.
 
 ```mermaid
 sequenceDiagram
@@ -278,8 +268,8 @@ classDiagram
 
 ### Variable Scoping
 
-Variables exist at three scopes. The runtime manages each
-scope independently with separate storage lifetimes.
+Variables exist at three scopes. The runtime manages each scope independently with separate storage
+lifetimes.
 
 ```mermaid
 graph TD
@@ -492,6 +482,11 @@ pub struct GraphInstanceId(pub u64);
 /// Node identifier for debug source mapping.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct NodeId(pub u32);
+
+/// **Note:** `NodeId` is canonically defined in
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)
+/// as `NodeId(pub u32)`. All graph systems should
+/// use this canonical definition.
 ```
 
 ### Graph Instance Component
@@ -1207,6 +1202,16 @@ pub struct IrEdge {
 /// The graph compiler. Transforms a visual graph
 /// asset into a GraphProgram through multiple
 /// passes.
+///
+/// **Note:** The scripting graph compiler produces
+/// bytecode (not GPU shaders) and is distinct from
+/// the shader `GraphCompiler` defined in
+/// [shared-primitives.md](../core-runtime/shared-primitives.md).
+/// To avoid confusion, this compiler should be
+/// referred to as `LogicGraphCompiler` in
+/// implementation. The shared `GraphCompiler`
+/// handles shader-emitting compilation (material,
+/// effect, shader graphs).
 pub struct GraphCompiler;
 
 impl GraphCompiler {
@@ -1262,8 +1267,7 @@ pub enum CompileError {
 
 ### Frame Execution Flow
 
-Each frame, graph instances move through a
-lifecycle driven by three ECS systems running in
+Each frame, graph instances move through a lifecycle driven by three ECS systems running in
 sequence.
 
 ```rust
@@ -1354,8 +1358,7 @@ sequenceDiagram
 
 ### Event Handling in Graphs
 
-Graphs can both emit and respond to typed events.
-Event-triggered graphs use entry points that are
+Graphs can both emit and respond to typed events. Event-triggered graphs use entry points that are
 invoked when a matching event fires.
 
 ```mermaid
@@ -1379,8 +1382,7 @@ sequenceDiagram
 
 ## Platform Considerations
 
-The gameplay scripting runtime is platform-agnostic.
-All platform-specific behavior is delegated to
+The gameplay scripting runtime is platform-agnostic. All platform-specific behavior is delegated to
 underlying subsystems (ECS, threading, I/O reactor).
 
 | Concern | Approach | Notes |
@@ -1409,8 +1411,7 @@ underlying subsystems (ECS, threading, I/O reactor).
 | GraphInstance metadata | 64 bytes | ~62.5 KiB |
 | Total per instance | ~1,280 bytes | ~1.25 MiB |
 
-GraphProgram bytecode is shared (not per-instance).
-A typical 50-node graph compiles to ~2 KiB of
+GraphProgram bytecode is shared (not per-instance). A typical 50-node graph compiles to ~2 KiB of
 bytecode + ~512 bytes of constant pool.
 
 ## Test Plan
@@ -1483,49 +1484,33 @@ bytecode + ~512 bytes of constant pool.
 
 ## Open Questions
 
-1. **AOT native code compilation** -- The design currently
-   uses bytecode execution. AOT compilation to native code
-   via LLVM (F-15.8.12) would eliminate interpreter overhead
-   entirely but requires a separate compilation pipeline and
-   platform-specific code generation. Should AOT be a
-   second-tier optimization applied to hot graphs identified
-   by the profiler?
+1. **AOT native code compilation** -- The design currently uses bytecode execution. AOT compilation
+   to native code via LLVM (F-15.8.12) would eliminate interpreter overhead entirely but requires a
+   separate compilation pipeline and platform-specific code generation. Should AOT be a second-tier
+   optimization applied to hot graphs identified by the profiler?
 
-2. **Parallel graph execution granularity** -- Currently,
-   `graph_execution_system` iterates all `GraphInstance`
-   entities sequentially. For 1,000+ instances, batched
-   parallel iteration via `ParQueryIter` could improve
-   throughput. However, graphs that emit events or write to
-   overlapping components create ordering dependencies.
-   Should graphs declare their access sets like systems for
+2. **Parallel graph execution granularity** -- Currently, `graph_execution_system` iterates all
+   `GraphInstance` entities sequentially. For 1,000+ instances, batched parallel iteration via
+   `ParQueryIter` could improve throughput. However, graphs that emit events or write to overlapping
+   components create ordering dependencies. Should graphs declare their access sets like systems for
    automatic parallelism?
 
-3. **Maximum variable slot size** -- `TypedSlot` is fixed at
-   16 bytes (f32x4, mat4 column, entity reference). Larger
-   types (strings, arrays) require heap allocation. Is 16
-   bytes sufficient for the majority of gameplay variables,
-   or should we support 32-byte slots for matrix types?
+3. **Maximum variable slot size** -- `TypedSlot` is fixed at 16 bytes (f32x4, mat4 column, entity
+   reference). Larger types (strings, arrays) require heap allocation. Is 16 bytes sufficient for
+   the majority of gameplay variables, or should we support 32-byte slots for matrix types?
 
-4. **Coroutine nesting** -- The current design supports a
-   single coroutine per graph instance. Should nested
-   coroutines (a coroutine that calls a subgraph which also
-   yields) be supported? This adds a coroutine stack to each
-   instance.
+4. **Coroutine nesting** -- The current design supports a single coroutine per graph instance.
+   Should nested coroutines (a coroutine that calls a subgraph which also yields) be supported? This
+   adds a coroutine stack to each instance.
 
-5. **Event-triggered entry points** -- Should event-triggered
-   graph executions run in the same frame as the event
-   emission, or be deferred to the next frame? Same-frame
-   execution enables tighter feedback loops but risks
-   cascading event storms.
+5. **Event-triggered entry points** -- Should event-triggered graph executions run in the same frame
+   as the event emission, or be deferred to the next frame? Same-frame execution enables tighter
+   feedback loops but risks cascading event storms.
 
-6. **Debug protocol format** -- The remote debug bridge needs
-   a wire protocol. Should this reuse an existing standard
-   (DAP -- Debug Adapter Protocol) for editor integration,
-   or define a custom binary protocol optimized for graph
-   debugging?
+6. **Debug protocol format** -- The remote debug bridge needs a wire protocol. Should this reuse an
+   existing standard (DAP -- Debug Adapter Protocol) for editor integration, or define a custom
+   binary protocol optimized for graph debugging?
 
-7. **Graph instance pooling** -- For entities that frequently
-   spawn and despawn (projectiles, particles), should
-   `GraphInstance` components use a pool to avoid allocation
-   overhead? The `VariableStore` heap allocation is the main
-   cost per instance.
+7. **Graph instance pooling** -- For entities that frequently spawn and despawn (projectiles,
+   particles), should `GraphInstance` components use a pool to avoid allocation overhead? The
+   `VariableStore` heap allocation is the main cost per instance.

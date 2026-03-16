@@ -102,7 +102,7 @@ with horizontal scaling behind a load balancer.
 
 - **Requirements:** R-15.12.7
 - **Dependencies:** F-15.12.3, F-1.8.4 (Async Network I/O)
-- **Platform notes:** Service stack: Rust (tokio + axum), PostgreSQL for relational data (sessions,
+- **Platform notes:** Service stack: Rust (IoReactor), PostgreSQL for relational data (sessions,
   users, permissions, audit log), S3 for CRDT snapshots and binary deltas. Deployed as containers
   (Docker/Kubernetes). WebSocket transport for real-time sync; REST API for session management and
   administration.

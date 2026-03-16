@@ -1,15 +1,16 @@
 # Environment Systems Design
-# Foliage, Water, Sky/Atmosphere
 
-## Requirements Trace
+## Foliage, Water, Sky/Atmosphere
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/geometry-world/](../../features/geometry-world/),
+### Requirements Trace
+
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/geometry-world/](../../features/geometry-world/),
 > [requirements/geometry-world/](../../requirements/geometry-world/), and
-> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table
-> below traces design elements to those definitions.
+> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table below traces design
+> elements to those definitions.
 
-### Foliage (F-3.3.1-7 / R-3.3.1-7)
+#### Foliage (F-3.3.1-7 / R-3.3.1-7)
 
 | Feature | Requirement | User Story | Description |
 |---------|-------------|------------|-------------|
@@ -21,7 +22,7 @@
 | F-3.3.6 | R-3.3.6 | US-3.3.6 | Procedural grass blade rendering via mesh shader |
 | F-3.3.7 | R-3.3.7 | US-3.3.7 | Tree rendering with subsurface leaf transmission |
 
-### Water (F-3.4.1-7 / R-3.4.1-7)
+#### Water (F-3.4.1-7 / R-3.4.1-7)
 
 | Feature | Requirement | User Story | Description |
 |---------|-------------|------------|-------------|
@@ -33,7 +34,7 @@
 | F-3.4.6 | R-3.4.6 | US-3.4.6 | Flow map river simulation |
 | F-3.4.7 | R-3.4.7 | US-3.4.7 | Dynamic foam from waves, shore, flow, wakes |
 
-### Sky/Atmosphere (F-3.5.1-7 / R-3.5.1-7)
+#### Sky/Atmosphere (F-3.5.1-7 / R-3.5.1-7)
 
 | Feature | Requirement | User Story | Description |
 |---------|-------------|------------|-------------|
@@ -45,7 +46,7 @@
 | F-3.5.6 | R-3.5.6 | US-3.5.6 | Celestial body rendering (sun, moon, stars) |
 | F-3.5.7 | R-3.5.7 | US-3.5.7 | Environment cubemap capture for IBL |
 
-### Cross-Cutting Dependencies
+#### Cross-Cutting Dependencies
 
 | Dependency | Source | Consumed API |
 |------------|--------|--------------|
@@ -59,35 +60,25 @@
 
 ---
 
-## Overview
+### Overview
 
-The environment systems render the natural world:
-foliage covering terrain, water bodies filling
-oceans/rivers/lakes, and sky/atmosphere overhead.
-All three subsystems are 100% ECS-based with data
+The environment systems render the natural world: foliage covering terrain, water bodies filling
+oceans/rivers/lakes, and sky/atmosphere overhead. All three subsystems are 100% ECS-based with data
 stored as components and logic as systems.
 
 Key design principles:
 
-1. **GPU-driven.** Placement, culling, animation,
-   and simulation run as HLSL compute shaders.
-   CPU systems dispatch work and manage resources
-   but never touch per-instance data.
-2. **Shared data.** Foliage reads the shared wind
-   field texture (F-4.7.5). Water exposes wave
-   heights for physics buoyancy (F-4.8.5). Sky
-   provides the environment cubemap for all IBL.
-3. **Tiered scaling.** Every GPU workload has
-   per-platform quality tiers (mobile, Switch,
-   desktop, high-end) controlled by config
-   components, not code branches.
-4. **Temporal amortization.** Expensive operations
-   (cloud ray march, atmosphere LUTs, cubemap
-   capture, foliage placement) spread across
-   multiple frames via temporal reprojection or
+1. **GPU-driven.** Placement, culling, animation, and simulation run as HLSL compute shaders. CPU
+   systems dispatch work and manage resources but never touch per-instance data.
+2. **Shared data.** Foliage reads the shared wind field texture (F-4.7.5). Water exposes wave
+   heights for physics buoyancy (F-4.8.5). Sky provides the environment cubemap for all IBL.
+3. **Tiered scaling.** Every GPU workload has per-platform quality tiers (mobile, Switch, desktop,
+   high-end) controlled by config components, not code branches.
+4. **Temporal amortization.** Expensive operations (cloud ray march, atmosphere LUTs, cubemap
+   capture, foliage placement) spread across multiple frames via temporal reprojection or
    round-robin scheduling.
 
-### Performance Targets
+#### Performance Targets
 
 | Metric | Target |
 |--------|--------|
@@ -102,9 +93,9 @@ Key design principles:
 
 ---
 
-## Architecture
+### Architecture
 
-### Module Boundaries
+#### Module Boundaries
 
 ```mermaid
 graph TD
@@ -165,9 +156,9 @@ graph TD
     TD --> ECS
 ```
 
-### Directory Layout
+#### Directory Layout
 
-```
+```text
 harmonius_geometry/
 ├── environment/
 │   ├── foliage/
@@ -258,7 +249,7 @@ harmonius_geometry/
         └── env_cubemap.hlsl
 ```
 
-### Foliage Data Structures
+#### Foliage Data Structures
 
 ```mermaid
 classDiagram
@@ -307,7 +298,7 @@ classDiagram
     FoliageCluster --> FoliageSpecies
 ```
 
-### Water Data Structures
+#### Water Data Structures
 
 ```mermaid
 classDiagram
@@ -354,7 +345,7 @@ classDiagram
     RiverSegment --> FoamConfig
 ```
 
-### Sky/Atmosphere Data Structures
+#### Sky/Atmosphere Data Structures
 
 ```mermaid
 classDiagram
@@ -413,7 +404,7 @@ classDiagram
     CloudLayer --> AtmosphereConfig
 ```
 
-### Foliage Pipeline
+#### Foliage Pipeline
 
 ```mermaid
 flowchart LR
@@ -432,7 +423,7 @@ flowchart LR
     WA --> GR
 ```
 
-### Ocean FFT Pipeline
+#### Ocean FFT Pipeline
 
 ```mermaid
 flowchart LR
@@ -450,7 +441,7 @@ flowchart LR
     NM --> UW[Underwater FX]
 ```
 
-### Sky/Atmosphere Pipeline
+#### Sky/Atmosphere Pipeline
 
 ```mermaid
 flowchart LR
@@ -470,7 +461,7 @@ flowchart LR
     CEL --> ENV
 ```
 
-### Frame Execution Order
+#### Frame Execution Order
 
 ```mermaid
 sequenceDiagram
@@ -502,9 +493,9 @@ sequenceDiagram
 
 ---
 
-## API Design
+### API Design
 
-### Foliage Components
+#### Foliage Components
 
 ```rust
 /// Unique identifier for a foliage species asset.
@@ -650,7 +641,7 @@ pub struct TreeSpecies {
 }
 ```
 
-### Foliage Systems
+#### Foliage Systems
 
 ```rust
 /// Dispatches the placement compute shader for
@@ -718,7 +709,7 @@ pub struct GrassGenerationSystem;
 pub struct TreeRenderSystem;
 ```
 
-### Water Components
+#### Water Components
 
 ```rust
 /// Spectrum type for FFT ocean simulation.
@@ -850,7 +841,7 @@ pub struct WaterReflection {
 }
 ```
 
-### Water Systems
+#### Water Systems
 
 ```rust
 /// Initializes the frequency-domain spectrum
@@ -918,7 +909,7 @@ pub struct WaterFoamSystem;
 pub struct RiverFlowSystem;
 ```
 
-### Sky/Atmosphere Components
+#### Sky/Atmosphere Components
 
 ```rust
 /// Atmosphere scattering parameters for
@@ -1088,7 +1079,7 @@ pub struct VolumetricFog {
 }
 ```
 
-### Sky/Atmosphere Systems
+#### Sky/Atmosphere Systems
 
 ```rust
 /// Evaluates analytical sky color using
@@ -1191,7 +1182,7 @@ pub struct CelestialBodySystem;
 pub struct EnvCubemapSystem;
 ```
 
-### Foliage Quality Tiers
+#### Foliage Quality Tiers
 
 ```rust
 /// Platform quality tier for foliage. Set at
@@ -1232,7 +1223,7 @@ pub struct FoliageQuality {
 }
 ```
 
-### Water Quality Tiers
+#### Water Quality Tiers
 
 ```rust
 /// Platform quality tier for water.
@@ -1284,7 +1275,7 @@ pub enum ReflectionMode {
 }
 ```
 
-### Sky Quality Tiers
+#### Sky Quality Tiers
 
 ```rust
 /// Platform quality tier for sky/atmosphere.
@@ -1332,145 +1323,93 @@ pub struct SkyQuality {
 
 ---
 
-## Data Flow
+### Data Flow
 
-### Foliage Lifecycle
+#### Foliage Lifecycle
 
-1. **Terrain tile loads.** A tile entity spawns
-   with `FoliageBiome` and `TerrainHeightmap`
+1. **Terrain tile loads.** A tile entity spawns with `FoliageBiome` and `TerrainHeightmap`
    components.
-2. **Placement.** `FoliagePlacementSystem` detects
-   `Changed<FoliageBiome>` or
-   `Changed<TerrainHeightmap>`, dispatches the
-   placement compute shader with the density map,
+2. **Placement.** `FoliagePlacementSystem` detects `Changed<FoliageBiome>` or
+   `Changed<TerrainHeightmap>`, dispatches the placement compute shader with the density map,
    slope/altitude rules, and species list.
-3. **Instance buffer fill.** The compute shader
-   evaluates each texel of the density map,
-   stochastically generates instance transforms
-   respecting constraints, and writes to the
-   cluster's GPU instance buffer.
-4. **Spatial registration.** The cluster's AABB is
-   registered in the shared spatial index for
+3. **Instance buffer fill.** The compute shader evaluates each texel of the density map,
+   stochastically generates instance transforms respecting constraints, and writes to the cluster's
+   GPU instance buffer.
+4. **Spatial registration.** The cluster's AABB is registered in the shared spatial index for
    frustum culling.
-5. **Culling.** `FoliageCullSystem` dispatches a
-   compute shader that reads frustum planes and
-   HiZ occlusion from the render graph, tests each
-   cluster AABB, then tests individual instances
-   within surviving clusters. Survivors are
-   compacted into indirect draw argument buffers
-   with per-instance LOD indices.
-6. **Wind.** `FoliageWindSystem` uploads the
-   per-species `WindResponseCurve` to a GPU
-   constant buffer. The foliage vertex shader
-   samples wind velocity from the shared wind
-   field texture, multiplies by the response
-   curve, and adds per-instance phase-offset
-   sinusoidal displacement at three frequency
-   layers (trunk, branch, leaf).
-7. **Interaction.** `FoliageInteractionSystem`
-   writes character positions and velocities into
-   the `InteractionBuffer` texture. The vertex
-   shader reads this buffer to bend nearby foliage.
-   Displacement decays each frame at the configured
-   rate.
-8. **Render.** `FoliageRenderSystem` submits
-   indirect draw calls grouped by LOD level:
-   full mesh, billboard, impostor. Crossfade
-   dithering is applied in the pixel shader during
-   LOD transitions.
+5. **Culling.** `FoliageCullSystem` dispatches a compute shader that reads frustum planes and HiZ
+   occlusion from the render graph, tests each cluster AABB, then tests individual instances within
+   surviving clusters. Survivors are compacted into indirect draw argument buffers with per-instance
+   LOD indices.
+6. **Wind.** `FoliageWindSystem` uploads the per-species `WindResponseCurve` to a GPU constant
+   buffer. The foliage vertex shader samples wind velocity from the shared wind field texture,
+   multiplies by the response curve, and adds per-instance phase-offset sinusoidal displacement at
+   three frequency layers (trunk, branch, leaf).
+7. **Interaction.** `FoliageInteractionSystem` writes character positions and velocities into the
+   `InteractionBuffer` texture. The vertex shader reads this buffer to bend nearby foliage.
+   Displacement decays each frame at the configured rate.
+8. **Render.** `FoliageRenderSystem` submits indirect draw calls grouped by LOD level: full mesh,
+   billboard, impostor. Crossfade dithering is applied in the pixel shader during LOD transitions.
 
-### Ocean Simulation Lifecycle
+#### Ocean Simulation Lifecycle
 
-1. **Spectrum init.** `OceanSpectrumSystem` runs on
-   `Added<OceanBody>` or `Changed<OceanBody>`.
-   Dispatches `spectrum_init.hlsl` which generates
-   the frequency-domain spectrum texture from
+1. **Spectrum init.** `OceanSpectrumSystem` runs on `Added<OceanBody>` or `Changed<OceanBody>`.
+   Dispatches `spectrum_init.hlsl` which generates the frequency-domain spectrum texture from
    Phillips/JONSWAP/TMA parameters.
-2. **FFT each frame.** `OceanFFTSystem` dispatches
-   a chain of compute shaders:
+2. **FFT each frame.** `OceanFFTSystem` dispatches a chain of compute shaders:
    - Time-dependent phase modulation.
    - Horizontal IFFT butterfly passes (log2 N).
    - Vertical IFFT butterfly passes (log2 N).
-   - Normal map generation from displacement
-     gradients.
+   - Normal map generation from displacement gradients.
    - Fold map (Jacobian determinant) for foam.
-3. **Surface output.** Results are written to the
-   `WaterSurface` component textures. Physics
-   `BuoyancySystem` (F-4.8.5) reads displacement
-   for wave height queries.
-4. **Foam.** `WaterFoamSystem` accumulates foam
-   coverage from: fold map whitecaps (Jacobian <
-   threshold), shoreline depth, flow map
-   turbulence, and object wake trails. Coverage
-   decays over the configured lifetime.
-5. **Render.** `WaterRenderSystem` draws the ocean
-   grid with distance-based LOD tessellation. The
-   pixel shader applies displacement, computes
-   Fresnel-weighted reflection/refraction blend,
-   and modulates by foam coverage.
-6. **Shoreline.** `ShorelineBlendSystem` reads scene
-   depth at water edges, fades opacity and wave
-   amplitude, and generates an animated foam mask
-   from the depth gradient.
-7. **Underwater.** When the camera submerges,
-   `UnderwaterSystem` activates: Beer-Lambert fog,
-   absorption color shift, distorted surface
-   refraction from below, and volumetric god rays.
-8. **Caustics.** `CausticsSystem` projects refracted
-   light patterns from the ocean normal map onto
+3. **Surface output.** Results are written to the `WaterSurface` component textures. Physics
+   `BuoyancySystem` (F-4.8.5) reads displacement for wave height queries.
+4. **Foam.** `WaterFoamSystem` accumulates foam coverage from: fold map whitecaps (Jacobian <
+   threshold), shoreline depth, flow map turbulence, and object wake trails. Coverage decays over
+   the configured lifetime.
+5. **Render.** `WaterRenderSystem` draws the ocean grid with distance-based LOD tessellation. The
+   pixel shader applies displacement, computes Fresnel-weighted reflection/refraction blend, and
+   modulates by foam coverage.
+6. **Shoreline.** `ShorelineBlendSystem` reads scene depth at water edges, fades opacity and wave
+   amplitude, and generates an animated foam mask from the depth gradient.
+7. **Underwater.** When the camera submerges, `UnderwaterSystem` activates: Beer-Lambert fog,
+   absorption color shift, distorted surface refraction from below, and volumetric god rays.
+8. **Caustics.** `CausticsSystem` projects refracted light patterns from the ocean normal map onto
    underwater geometry.
 
-### Sky/Atmosphere Lifecycle
+#### Sky/Atmosphere Lifecycle
 
-1. **Time advance.** `TimeOfDaySystem` advances
-   `time_seconds` by `delta_time * time_scale`.
-   Computes sun and moon directions from
-   astronomical formulae using latitude, longitude,
-   and day of year.
-2. **Atmosphere LUTs.** `AtmosphereLutSystem`
-   checks the `dirty` flag on `AtmosphereLuts`.
-   When dirty (atmosphere params changed, or sun
-   angle changed significantly), dispatches three
-   compute passes:
+1. **Time advance.** `TimeOfDaySystem` advances `time_seconds` by `delta_time * time_scale`.
+   Computes sun and moon directions from astronomical formulae using latitude, longitude, and day of
+   year.
+2. **Atmosphere LUTs.** `AtmosphereLutSystem` checks the `dirty` flag on `AtmosphereLuts`. When
+   dirty (atmosphere params changed, or sun angle changed significantly), dispatches three compute
+   passes:
    - Transmittance LUT (2D).
    - Single-scattering LUT (3D).
    - Multi-scattering LUT (2D).
-3. **Cloud ray march.** `VolumetricCloudSystem`
-   dispatches a per-pixel ray march at reduced
-   resolution. The shader samples 3D noise textures
-   modulated by the weather map, evaluates lighting
-   via cone-sampled in-scattering, and writes cloud
-   color + alpha. Temporal reprojection reprojects
-   previous frames and blends with the current
-   sample to reduce noise.
-4. **Cloud shadows.** `CloudShadowSystem` renders
-   the cloud density field from the sun's view
-   into a 2D shadow map. Terrain, foliage, and
-   water systems read this map to modulate direct
-   lighting.
+3. **Cloud ray march.** `VolumetricCloudSystem` dispatches a per-pixel ray march at reduced
+   resolution. The shader samples 3D noise textures modulated by the weather map, evaluates lighting
+   via cone-sampled in-scattering, and writes cloud color + alpha. Temporal reprojection reprojects
+   previous frames and blends with the current sample to reduce noise.
+4. **Cloud shadows.** `CloudShadowSystem` renders the cloud density field from the sun's view into a
+   2D shadow map. Terrain, foliage, and water systems read this map to modulate direct lighting.
 5. **Celestials.** `CelestialBodySystem` renders:
    - Sun disc with configurable limb darkening.
    - Moon disc with phase-accurate illumination.
-   - Stars from the catalog buffer, with
-     magnitude-based brightness, twinkling
-     animation, and atmospheric extinction near
-     the horizon.
-6. **Aerial perspective.** A froxel volume pass
-   applies in-scattered atmosphere color to all
-   scene geometry based on depth, fading distant
-   objects into haze.
-7. **Cubemap capture.** `EnvCubemapSystem` renders
-   the current sky (atmosphere + clouds +
-   celestials) into one cubemap face per frame,
-   cycling through all six faces. The cubemap
-   provides ambient diffuse and specular IBL for
-   the entire scene.
+   - Stars from the catalog buffer, with magnitude-based brightness, twinkling animation, and
+     atmospheric extinction near the horizon.
+6. **Aerial perspective.** A froxel volume pass applies in-scattered atmosphere color to all scene
+   geometry based on depth, fading distant objects into haze.
+7. **Cubemap capture.** `EnvCubemapSystem` renders the current sky (atmosphere + clouds +
+   celestials) into one cubemap face per frame, cycling through all six faces. The cubemap provides
+   ambient diffuse and specular IBL for the entire scene.
 
 ---
 
-## Platform Considerations
+### Platform Considerations
 
-### Foliage Scaling
+#### Foliage Scaling
 
 | Parameter | Mobile | Switch | Desktop |
 |-----------|--------|--------|---------|
@@ -1486,7 +1425,7 @@ pub struct SkyQuality {
 | Placement radius | Reduced | Medium | Full |
 | Cull cluster size | Coarse | Medium | Fine |
 
-### Water Scaling
+#### Water Scaling
 
 | Parameter | Mobile | Switch | Desktop |
 |-----------|--------|--------|---------|
@@ -1501,7 +1440,7 @@ pub struct SkyQuality {
 | River normal layers | 1 | 2 | 2-3 |
 | Shore blend width | Reduced | Full | Full |
 
-### Sky/Atmosphere Scaling
+#### Sky/Atmosphere Scaling
 
 | Parameter | Mobile | Switch | Desktop |
 |-----------|--------|--------|---------|
@@ -1520,7 +1459,7 @@ pub struct SkyQuality {
 | Star twinkling | Off | On | On |
 | Moon texture res | Low | Medium | High |
 
-### GPU Backend Notes
+#### GPU Backend Notes
 
 | Platform | API | Notes |
 |----------|-----|-------|
@@ -1528,16 +1467,14 @@ pub struct SkyQuality {
 | macOS | Metal | HLSL compiled to MSL via Metal Shader Converter. Indirect command buffers. |
 | Linux | Vulkan | HLSL compiled to SPIR-V via DXC. VkCmdDrawIndirect. |
 
-All shaders are authored in HLSL and compiled via
-DXC to DXIL (D3D12) or SPIR-V (Vulkan), then
-optionally to MSL via Metal Shader Converter for
-macOS. No platform-specific shader code.
+All shaders are authored in HLSL and compiled via DXC to DXIL (D3D12) or SPIR-V (Vulkan), then
+optionally to MSL via Metal Shader Converter for macOS. No platform-specific shader code.
 
 ---
 
-## Test Plan
+### Test Plan
 
-### Unit Tests — Foliage
+#### Unit Tests — Foliage
 
 | Test | Req | Description |
 |------|-----|-------------|
@@ -1552,7 +1489,7 @@ macOS. No platform-specific shader code.
 | `test_grass_density_scales` | R-3.3.6 | Verify grass blade count decreases with camera distance. |
 | `test_tree_subsurface` | R-3.3.7 | Render backlit tree. Verify leaf pixels have subsurface transmission contribution > 0. |
 
-### Unit Tests — Water
+#### Unit Tests — Water
 
 | Test | Req | Description |
 |------|-----|-------------|
@@ -1569,7 +1506,7 @@ macOS. No platform-specific shader code.
 | `test_foam_coverage_decay` | R-3.4.7 | Enable all foam sources. Assert coverage decays to zero over configured lifetime. |
 | `test_foam_jacobian_whitecaps` | R-3.4.7 | Verify foam appears where Jacobian < whitecap threshold. |
 
-### Unit Tests — Sky/Atmosphere
+#### Unit Tests — Sky/Atmosphere
 
 | Test | Req | Description |
 |------|-----|-------------|
@@ -1589,7 +1526,7 @@ macOS. No platform-specific shader code.
 | `test_moon_phase_illumination` | R-3.5.6 | First quarter phase. Assert half the moon disc is illuminated. |
 | `test_cubemap_ambient_shift` | R-3.5.7 | Change sky from clear to overcast. Assert cubemap ambient color shifts within update period. |
 
-### Integration Tests
+#### Integration Tests
 
 | Test | Req | Description |
 |------|-----|-------------|
@@ -1604,7 +1541,7 @@ macOS. No platform-specific shader code.
 | `test_tier_mobile_budget` | All | Run mobile tier. Verify frame time < 16 ms on target hardware. |
 | `test_tier_desktop_quality` | All | Run desktop tier. Verify all features enabled and correct. |
 
-### Benchmarks
+#### Benchmarks
 
 | Benchmark | Target | Source |
 |-----------|--------|--------|
@@ -1619,7 +1556,7 @@ macOS. No platform-specific shader code.
 
 ---
 
-### GPU Compute Availability
+#### GPU Compute Availability
 
 | Backend | Compute Shaders | Mesh Shaders | Notes |
 |---------|----------------|-------------|-------|
@@ -1628,55 +1565,34 @@ macOS. No platform-specific shader code.
 | Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
 | Mobile | Limited dispatch size | No mesh shaders | Reduced foliage/water detail. |
 
-### Shared Wind Field
+#### Shared Wind Field
 
-The wind field texture is a shared ECS resource consumed
-by foliage sway, VFX particle forces (see
-[particles.md](../vfx/particles.md)), cloth simulation
-(see [cloth-hair.md](../animation/cloth-hair.md)), and AI
-scent propagation (see
-[perception.md](../ai/perception.md)). A single
-`WindField` system updates the GPU texture each frame.
+The wind field texture is a shared ECS resource consumed by foliage sway, VFX particle forces (see
+[particles.md](../vfx/particles.md)), cloth simulation (see
+[cloth-hair.md](../animation/cloth-hair.md)), and AI scent propagation (see
+[perception.md](../ai/perception.md)). A single `WindField` system updates the GPU texture each
+frame.
 
-## Open Questions
+### Open Questions
 
-1. **Foliage streaming granularity.** Should
-   clusters be streamed per terrain tile or in
-   finer chunks? Per-tile is simpler but wastes
-   memory on partially visible tiles.
-2. **Impostor atlas generation pipeline.** Should
-   impostor sprite sheets be baked offline in the
-   content pipeline, or generated at runtime on
-   first encounter? Offline is faster at runtime
-   but increases asset size.
-3. **Ocean FFT precision.** FP16 vs FP32 for FFT
-   textures. FP16 saves bandwidth but may cause
-   visible artifacts on large swells with high
-   choppiness.
-4. **Gerstner wave count.** Maximum number of
-   analytical Gerstner waves layered on FFT.
-   Each adds vertex shader cost. Need to benchmark
-   4, 8, and 16 waves.
-5. **River-ocean estuary blending.** The exact
-   interpolation scheme for transitioning from
-   flow-map river to FFT ocean at estuary points.
-   UV-space blending, height blending, or both.
-6. **Atmosphere LUT dirty threshold.** How much
-   sun angle must change before triggering a LUT
-   recompute. Too sensitive wastes GPU; too coarse
-   shows discontinuities.
-7. **Cloud noise texture resolution.** 3D noise
-   for cloud shape vs detail erosion. 128^3 for
-   shape and 32^3 for detail is standard, but
-   memory impact on mobile needs measurement.
-8. **Volumetric fog integration.** Whether foliage,
-   water, and sky systems write into a unified
-   froxel fog volume or maintain separate volumes
-   composited in the final pass.
-9. **Star catalog source.** Which stellar catalog
-   to use (Hipparcos ~118K stars, Tycho-2 ~2.5M).
-   Need to determine memory budget vs visual
-   quality tradeoff.
-10. **Aurora and special celestial effects.** Design
-    for aurora, meteor showers, eclipses, and other
+1. **Foliage streaming granularity.** Should clusters be streamed per terrain tile or in finer
+   chunks? Per-tile is simpler but wastes memory on partially visible tiles.
+2. **Impostor atlas generation pipeline.** Should impostor sprite sheets be baked offline in the
+   content pipeline, or generated at runtime on first encounter? Offline is faster at runtime but
+   increases asset size.
+3. **Ocean FFT precision.** FP16 vs FP32 for FFT textures. FP16 saves bandwidth but may cause
+   visible artifacts on large swells with high choppiness.
+4. **Gerstner wave count.** Maximum number of analytical Gerstner waves layered on FFT. Each adds
+   vertex shader cost. Need to benchmark 4, 8, and 16 waves.
+5. **River-ocean estuary blending.** The exact interpolation scheme for transitioning from flow-map
+   river to FFT ocean at estuary points. UV-space blending, height blending, or both.
+6. **Atmosphere LUT dirty threshold.** How much sun angle must change before triggering a LUT
+   recompute. Too sensitive wastes GPU; too coarse shows discontinuities.
+7. **Cloud noise texture resolution.** 3D noise for cloud shape vs detail erosion. 128^3 for shape
+   and 32^3 for detail is standard, but memory impact on mobile needs measurement.
+8. **Volumetric fog integration.** Whether foliage, water, and sky systems write into a unified
+   froxel fog volume or maintain separate volumes composited in the final pass.
+9. **Star catalog source.** Which stellar catalog to use (Hipparcos ~118K stars, Tycho-2 ~2.5M).
+   Need to determine memory budget vs visual quality tradeoff.
+10. **Aurora and special celestial effects.** Design for aurora, meteor showers, eclipses, and other
     rare events deferred to a later phase.

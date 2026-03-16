@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -27,33 +27,28 @@
 
 ## Overview
 
-The collaboration subsystem enables multiple users to work
-on the same project simultaneously. It has two major modes:
+The collaboration subsystem enables multiple users to work on the same project simultaneously. It
+has two major modes:
 
-1. **Remote rendering** — a headless editor runs on a GPU
-   server and streams viewport frames to thin clients over
-   QUIC. Input events are forwarded with prediction to mask
-   latency. Quality adapts to network bandwidth.
-2. **Real-time co-editing** — multiple editor instances
-   connect to a shared world. Edits sync via CRDTs so
-   concurrent changes merge without conflicts. Each user has
-   an independent viewport, selection state, and undo stack.
+1. **Remote rendering** — a headless editor runs on a GPU server and streams viewport frames to thin
+   clients over QUIC. Input events are forwarded with prediction to mask latency. Quality adapts to
+   network bandwidth.
+2. **Real-time co-editing** — multiple editor instances connect to a shared world. Edits sync via
+   CRDTs so concurrent changes merge without conflicts. Each user has an independent viewport,
+   selection state, and undo stack.
 
 Both modes share infrastructure:
 
-- A **collaboration cloud service** (Rust, tokio + axum)
-  manages CRDT sync, sessions, presence, permissions, and
-  chat.
-- **PostgreSQL** stores relational data (sessions, users,
-  permissions, audit logs, chat history).
+- A **collaboration cloud service** (Rust, IoReactor) manages CRDT sync, sessions, presence,
+  permissions, and chat.
+- **PostgreSQL** stores relational data (sessions, users, permissions, audit logs, chat history).
 - **S3** stores CRDT document snapshots and binary deltas.
-- **WebSocket** transports real-time sync. REST API handles
-  session management and administration.
+- **WebSocket** transports real-time sync. REST API handles session management and administration.
 - **QUIC** transports the remote rendering stream with TCP
-  + TLS 1.3 fallback when UDP is blocked.
+  - TLS 1.3 fallback when UDP is blocked.
 
-LAN collaboration works peer-to-peer via mDNS discovery,
-bypassing the cloud service for local setups.
+LAN collaboration works peer-to-peer via mDNS discovery, bypassing the cloud service for local
+setups.
 
 ## Architecture
 
@@ -145,7 +140,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_collab/
 ├── client/
 │   ├── crdt_client.rs   # CrdtClient — connect, push ops,
@@ -917,17 +912,13 @@ pub enum CollabError {
 ### CRDT Operation Pipeline
 
 1. User edits an asset in their local editor.
-2. The editor generates a CRDT operation (e.g.,
-   `TreeOp::AddNode` for a new entity in a scene).
-3. The operation is applied to the local CRDT state
-   immediately (optimistic local apply).
+2. The editor generates a CRDT operation (e.g., `TreeOp::AddNode` for a new entity in a scene).
+3. The operation is applied to the local CRDT state immediately (optimistic local apply).
 4. The operation is recorded in the per-user undo stack.
-5. `CrdtClient::push_ops` sends the operation to the
-   collaboration service via WebSocket.
-6. The service merges the operation into the server-side
-   CRDT state and rebroadcasts to all other participants.
-7. Remote editors receive the operation and apply it to
-   their local state via `apply_remote`.
+5. `CrdtClient::push_ops` sends the operation to the collaboration service via WebSocket.
+6. The service merges the operation into the server-side CRDT state and rebroadcasts to all other
+   participants.
+7. Remote editors receive the operation and apply it to their local state via `apply_remote`.
 8. All editors converge to the same state.
 
 ### Remote Rendering Pipeline
@@ -935,44 +926,34 @@ pub enum CollabError {
 1. Thin client connects to the headless server via QUIC.
 2. The `Orchestrator` assigns a GPU to the session.
 3. The headless editor renders each frame to a GPU texture.
-4. `VideoEncoder` encodes the texture using platform-native
-   hardware (VideoToolbox, NVENC, VA-API). Target: under
-   2 ms per frame.
+4. `VideoEncoder` encodes the texture using platform-native hardware (VideoToolbox, NVENC, VA-API).
+   Target: under 2 ms per frame.
 5. The encoded frame is sent to the client via QUIC.
-6. The viewport stream uses high quality. UI panels use
-   change-detection driven updates to reduce bandwidth.
-7. `BandwidthAdapter` continuously measures throughput
-   and switches quality tiers:
+6. The viewport stream uses high quality. UI panels use change-detection driven updates to reduce
+   bandwidth.
+7. `BandwidthAdapter` continuously measures throughput and switches quality tiers:
    - High (>100 Mbps): near-lossless, full framerate
    - Medium (10-100 Mbps): lossy 60 fps
    - Low (<10 Mbps): 30 fps, aggressive compression
-8. Input events from the client are forwarded to the
-   server. `InputPredictor` applies prediction locally
-   on the client to mask network latency.
+8. Input events from the client are forwarded to the server. `InputPredictor` applies prediction
+   locally on the client to mask network latency.
 
 ### Session Suspend and Resume
 
 1. User clicks "Suspend Session" or disconnects.
-2. The server serializes all session state: open panels,
-   camera positions, selections, undo history, unsaved
-   modifications. Uses the same binary format as crash
-   recovery.
-3. State is written to the server's project workspace
-   directory and referenced in PostgreSQL.
-4. On resume (possibly from a different client device),
-   the server restores the serialized state and
-   reconnects the user to the exact visual and functional
-   state at suspension time.
+2. The server serializes all session state: open panels, camera positions, selections, undo history,
+   unsaved modifications. Uses the same binary format as crash recovery.
+3. State is written to the server's project workspace directory and referenced in PostgreSQL.
+4. On resume (possibly from a different client device), the server restores the serialized state and
+   reconnects the user to the exact visual and functional state at suspension time.
 
 ### Work Group Isolation
 
 1. Users join a named work group (e.g., "Level Design").
 2. The group receives an isolated CRDT workspace layer.
-3. Edits within the group are invisible to other groups
-   until explicitly shared.
-4. Sharing merges the group's CRDT state into the shared
-   project state, resolving any conflicts via standard
-   CRDT merge semantics.
+3. Edits within the group are invisible to other groups until explicitly shared.
+4. Sharing merges the group's CRDT state into the shared project state, resolving any conflicts via
+   standard CRDT merge semantics.
 
 ## Platform Considerations
 
@@ -1011,8 +992,8 @@ pub enum CollabError {
 
 | Component | Technology | Notes |
 |-----------|------------|-------|
-| Runtime | Rust (tokio) | Async, multi-threaded |
-| HTTP framework | axum | REST API + WebSocket upgrade |
+| Runtime | Rust (IoReactor) | Async, multi-threaded |
+| HTTP framework | Custom (IoReactor) | REST API + WebSocket upgrade |
 | Database | PostgreSQL | Sessions, users, permissions, chat |
 | Object storage | S3 | CRDT snapshots, binary deltas |
 | Deployment | Docker / Kubernetes | Horizontal scaling |
@@ -1022,22 +1003,18 @@ pub enum CollabError {
 
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
-| `tokio` | Async runtime (server) | Industry standard for Rust servers |
-| `axum` | HTTP/WebSocket framework | Minimal, tokio-native |
-
-**Dependency conflict:** `tokio` and `axum` conflict with
-the engine's custom `IoReactor`. The collaboration server
-runs as a separate process (not in-engine), so tokio usage
-is acceptable for the server binary. The editor client
-must use the engine's `IoReactor` for all networking. The
-QUIC client (`quinn`) can integrate with `IoReactor` via
-its `AsyncUdpSocket` trait.
-| `quinn` | QUIC transport | Pure-Rust QUIC implementation |
-| `sqlx` | PostgreSQL driver | Async, compile-time query checking |
+| `quinn` | QUIC transport | Pure-Rust; `AsyncUdpSocket` on IoReactor |
+| `tungstenite` | WebSocket protocol | Non-async; manual I/O via IoReactor |
+| `postgres` | PostgreSQL driver | Sync client on dedicated I/O threads |
 | `aws-sdk-s3` | S3 client | Official AWS SDK for Rust |
 | `opus` | Voice codec | Low-latency audio codec |
 | `serde` | Serialization | Protocol message encoding |
 | `blake3` | Content hashing | CRDT snapshot integrity |
+
+> **Runtime policy:** The collaboration server uses the same custom `IoReactor` as the engine. HTTP
+> serving uses a custom HTTP/1.1 server on the IoReactor. WebSocket uses `tungstenite` with manual
+> I/O via IoReactor. The QUIC client (`quinn`) integrates with `IoReactor` via its `AsyncUdpSocket`
+> trait. Database access uses the synchronous `postgres` crate on dedicated I/O threads.
 
 ## Test Plan
 
@@ -1087,28 +1064,19 @@ its `AsyncUdpSocket` trait.
 
 ## Open Questions
 
-1. **CRDT library vs custom** — Build CRDTs from scratch or
-   adopt an existing library (e.g., `yrs` for Yjs-compatible
-   CRDTs)? Custom gives full control over serialization and
-   memory layout. Yrs provides a battle-tested foundation.
-2. **Snapshot frequency** — How often should the server
-   snapshot CRDT state to S3? Frequent snapshots reduce
-   recovery time but increase storage cost. Consider
-   periodic snapshots (every 5 minutes) plus on session
-   suspend.
-3. **Voice codec integration** — Opus encoding runs on the
-   client CPU. Need to determine buffer sizes and jitter
-   buffer strategy for acceptable voice latency (target
-   <150 ms mouth-to-ear).
-4. **AI agent CRDT identity** — AI agents participate as
-   virtual users (F-15.12.12). How to distinguish AI ops
-   in the CRDT log for provenance tracking? Options: a
-   reserved `node_id` range for AI agents, or a provenance
-   flag in the operation header.
-5. **Conflict resolution UX for work groups** — When a group
-   shares its isolated workspace, conflicts with the main
-   state need resolution. Should this be automatic (CRDT
-   merge) or require user confirmation?
-6. **Multi-GPU assignment policy** — Round-robin, least-loaded,
-   or user-specified GPU assignment? Consider exposing a
-   configurable policy with sensible defaults.
+1. **CRDT library vs custom** — Build CRDTs from scratch or adopt an existing library (e.g., `yrs`
+   for Yjs-compatible CRDTs)? Custom gives full control over serialization and memory layout. Yrs
+   provides a battle-tested foundation.
+2. **Snapshot frequency** — How often should the server snapshot CRDT state to S3? Frequent
+   snapshots reduce recovery time but increase storage cost. Consider periodic snapshots (every 5
+   minutes) plus on session suspend.
+3. **Voice codec integration** — Opus encoding runs on the client CPU. Need to determine buffer
+   sizes and jitter buffer strategy for acceptable voice latency (target <150 ms mouth-to-ear).
+4. **AI agent CRDT identity** — AI agents participate as virtual users (F-15.12.12). How to
+   distinguish AI ops in the CRDT log for provenance tracking? Options: a reserved `node_id` range
+   for AI agents, or a provenance flag in the operation header.
+5. **Conflict resolution UX for work groups** — When a group shares its isolated workspace,
+   conflicts with the main state need resolution. Should this be automatic (CRDT merge) or require
+   user confirmation?
+6. **Multi-GPU assignment policy** — Round-robin, least-loaded, or user-specified GPU assignment?
+   Consider exposing a configurable policy with sensible defaults.

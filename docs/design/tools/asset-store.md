@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -21,29 +21,23 @@
 
 ## Overview
 
-The asset marketplace is a self-hosted platform for
-discovering, purchasing, publishing, and distributing
-engine assets. It consists of three layers:
+The asset marketplace is a self-hosted platform for discovering, purchasing, publishing, and
+distributing engine assets. It consists of three layers:
 
-1. **Editor client** -- In-editor browser with search,
-   preview, purchase, and one-click import
+1. **Editor client** -- In-editor browser with search, preview, purchase, and one-click import
 2. **Backend API** -- REST services on AWS (API Gateway
-   + Lambda) for catalog, purchases, reviews, and
+   - Lambda) for catalog, purchases, reviews, and
    publisher management
-3. **Storage and CDN** -- S3 for asset packages and
-   previews, CloudFront for global distribution
+3. **Storage and CDN** -- S3 for asset packages and previews, CloudFront for global distribution
 
 Key principles:
 
-- **No runtime DRM.** Once imported, assets work fully
-  offline. License enforcement is contractual, not
-  technical.
-- **Dependency resolution.** Import automatically pulls
-  transitive dependencies (plugins, material libraries).
-- **Compatibility badges.** Automated CI tests every
-  asset against each engine release.
-- **Self-hosted.** All infrastructure runs in the
-  studio's own AWS account via CDK stacks from the
+- **No runtime DRM.** Once imported, assets work fully offline. License enforcement is contractual,
+  not technical.
+- **Dependency resolution.** Import automatically pulls transitive dependencies (plugins, material
+  libraries).
+- **Compatibility badges.** Automated CI tests every asset against each engine release.
+- **Self-hosted.** All infrastructure runs in the studio's own AWS account via CDK stacks from the
   server infrastructure (F-15.18.1).
 
 ## Architecture
@@ -310,7 +304,7 @@ classDiagram
 
 ### Module Layout
 
-```
+```text
 harmonius_asset_store/
 ├── client/                   # Editor-side code
 │   ├── browser.rs            # Store browser UI panel
@@ -1106,67 +1100,46 @@ pub enum StoreError {
 
 ### Asset Discovery to Import
 
-1. User opens the store browser in the editor or
-   launcher.
-2. Browser calls `CatalogClient::search()` with
-   query text, category filters, and engine version.
-3. API Gateway routes to the Search Lambda, which
-   queries OpenSearch for full-text + semantic
+1. User opens the store browser in the editor or launcher.
+2. Browser calls `CatalogClient::search()` with query text, category filters, and engine version.
+3. API Gateway routes to the Search Lambda, which queries OpenSearch for full-text + semantic
    matching.
-4. Results are enriched with ratings, download
-   counts, and compat badges from PostgreSQL
-   (hot data served from Redis).
-5. User selects an asset. Browser fetches the full
-   listing, versions, and reviews.
-6. User clicks "Import." Browser calls
-   `PurchaseClient::purchase()`.
-7. For paid assets, Stripe processes the payment.
-   For free assets, the step is skipped.
-8. API returns a presigned S3 download URL and the
-   asset manifest.
-9. Browser calls `ImportPipeline::resolve_dependencies()`
-   to build the full dependency tree.
+4. Results are enriched with ratings, download counts, and compat badges from PostgreSQL (hot data
+   served from Redis).
+5. User selects an asset. Browser fetches the full listing, versions, and reviews.
+6. User clicks "Import." Browser calls `PurchaseClient::purchase()`.
+7. For paid assets, Stripe processes the payment. For free assets, the step is skipped.
+8. API returns a presigned S3 download URL and the asset manifest.
+9. Browser calls `ImportPipeline::resolve_dependencies()` to build the full dependency tree.
 10. Browser downloads all packages from CloudFront.
-11. Import pipeline validates engine version and
-    plugin requirements.
-12. Assets are extracted to the marketplace folder
-    and registered in the asset database.
-13. Asset browser refreshes -- new assets appear
-    immediately.
+11. Import pipeline validates engine version and plugin requirements.
+12. Assets are extracted to the marketplace folder and registered in the asset database.
+13. Asset browser refreshes -- new assets appear immediately.
 
 ### Revenue Cycle
 
-1. Buyer purchases an asset. Stripe collects
-   payment.
+1. Buyer purchases an asset. Stripe collects payment.
 2. Purchase record created in PostgreSQL.
 3. Commission (12% default) deducted.
 4. Net revenue credited to publisher's balance.
 5. Monthly payout Lambda calculates totals.
-6. Payout initiated via Stripe Connect (bank
-   transfer or PayPal).
+6. Payout initiated via Stripe Connect (bank transfer or PayPal).
 7. Revenue report updated in publisher dashboard.
 8. If buyer requests refund within 14 days:
    - Stripe processes refund.
    - Publisher revenue reversed.
-   - Asset remains in buyer's project (no
-     technical removal, contractual only).
+   - Asset remains in buyer's project (no technical removal, contractual only).
 
 ### Compatibility Test Cycle
 
 1. New engine version is released.
 2. Compat Lambda scans all published assets.
 3. For each asset, a test job is queued to SQS.
-4. CodeBuild picks up the job:
-   a. Creates a test project with the new engine
-      version.
-   b. Imports the asset.
-   c. Verifies the asset loads without errors.
-   d. Runs any included automated tests.
-   e. Generates a compatibility report.
-5. On pass, a compat badge is awarded in
-   PostgreSQL and the listing is updated.
-6. On fail, the publisher receives an SNS
-   notification with error details.
+4. CodeBuild picks up the job: a. Creates a test project with the new engine version. b. Imports the
+   asset. c. Verifies the asset loads without errors. d. Runs any included automated tests. e.
+   Generates a compatibility report.
+5. On pass, a compat badge is awarded in PostgreSQL and the listing is updated.
+6. On fail, the publisher receives an SNS notification with error details.
 
 ## Platform Considerations
 
@@ -1187,12 +1160,9 @@ pub enum StoreError {
 
 ### Editor Client Async I/O
 
-All editor-side HTTP calls use `async`/`await` with
-the engine's `IoReactor`. The download manager
-streams large packages through the reactor's async
-read pipeline, writing to the local asset folder
-via platform-native async file I/O (IOCP, GCD
-Dispatch IO, io_uring).
+All editor-side HTTP calls use `async`/`await` with the engine's `IoReactor`. The download manager
+streams large packages through the reactor's async read pipeline, writing to the local asset folder
+via platform-native async file I/O (IOCP, GCD Dispatch IO, io_uring).
 
 ```rust
 // Example: download asset package
@@ -1229,36 +1199,26 @@ async fn download_package(
 
 ### Preview Rendering
 
-Asset previews are generated server-side during
-upload and cached in S3. The editor client
+Asset previews are generated server-side during upload and cached in S3. The editor client
 additionally supports:
 
-- **3D models:** Rendered in the editor's viewport
-  widget with rotate/zoom controls.
-- **Materials:** Rendered on standard sphere/cube
-  meshes using the editor's material preview
+- **3D models:** Rendered in the editor's viewport widget with rotate/zoom controls.
+- **Materials:** Rendered on standard sphere/cube meshes using the editor's material preview
   renderer.
-- **Audio:** Played through the engine's audio
-  system with waveform display.
-- **Logic graphs:** Rendered as a read-only node
-  graph thumbnail.
+- **Audio:** Played through the engine's audio system with waveform display.
+- **Logic graphs:** Rendered as a read-only node graph thumbnail.
 
-All preview rendering reuses existing editor
-subsystems. No custom rendering code is needed.
+All preview rendering reuses existing editor subsystems. No custom rendering code is needed.
 
 ### Security
 
-- **Payment data** never touches our servers.
-  Stripe.js tokenizes card details client-side.
-  Only tokens are sent to the API.
-- **Presigned URLs** for S3 downloads expire after
-  1 hour. No permanent public access to packages.
-- **API authentication** uses JWT tokens issued by
-  the account service. Tokens expire after 24 hours.
-- **Rate limiting** via API Gateway throttling and
-  Redis-backed per-user counters.
-- **Content moderation** is a manual review step
-  before assets are published. Automated spam
+- **Payment data** never touches our servers. Stripe.js tokenizes card details client-side. Only
+  tokens are sent to the API.
+- **Presigned URLs** for S3 downloads expire after 1 hour. No permanent public access to packages.
+- **API authentication** uses JWT tokens issued by the account service. Tokens expire after 24
+  hours.
+- **Rate limiting** via API Gateway throttling and Redis-backed per-user counters.
+- **Content moderation** is a manual review step before assets are published. Automated spam
   detection flags suspicious reviews.
 
 ## Test Plan
@@ -1319,40 +1279,23 @@ subsystems. No custom rendering code is needed.
 
 ## Open Questions
 
-1. **OpenSearch vs PostgreSQL full-text** --
-   OpenSearch provides semantic search and relevance
-   scoring but adds operational complexity. PostgreSQL
-   `tsvector` + `pg_trgm` may suffice for keyword
-   search. Evaluate whether semantic search
-   (US-15.17.1.3) justifies the added service.
-2. **Stripe Connect vs custom payouts** -- Stripe
-   Connect handles multi-party payouts, tax
-   reporting, and KYC. Custom implementation would
-   avoid Stripe Connect fees (~0.25% + $0.25 per
-   payout) but requires building compliance
-   infrastructure.
-3. **Asset package format** -- Should marketplace
-   packages use the engine's native binary asset
-   format (F-12.7.1) or a portable archive (.tar.gz)
-   that the import pipeline processes? Native format
-   is faster to import but ties packages to a
-   specific engine version.
-4. **Content moderation at scale** -- Manual review
-   does not scale. Evaluate automated content
-   scanning (AWS Rekognition for images, custom
-   rules for metadata) with human review only for
+1. **OpenSearch vs PostgreSQL full-text** -- OpenSearch provides semantic search and relevance
+   scoring but adds operational complexity. PostgreSQL `tsvector` + `pg_trgm` may suffice for
+   keyword search. Evaluate whether semantic search (US-15.17.1.3) justifies the added service.
+2. **Stripe Connect vs custom payouts** -- Stripe Connect handles multi-party payouts, tax
+   reporting, and KYC. Custom implementation would avoid Stripe Connect fees (~0.25% + $0.25 per
+   payout) but requires building compliance infrastructure.
+3. **Asset package format** -- Should marketplace packages use the engine's native binary asset
+   format (F-12.7.1) or a portable archive (.tar.gz) that the import pipeline processes? Native
+   format is faster to import but ties packages to a specific engine version.
+4. **Content moderation at scale** -- Manual review does not scale. Evaluate automated content
+   scanning (AWS Rekognition for images, custom rules for metadata) with human review only for
    flagged items.
-5. **FAB marketplace integration** -- F-15.17.1
-   mentions considering Epic's FAB marketplace API.
-   Cross-engine asset access requires format
-   conversion and license interoperability. Evaluate
+5. **FAB marketplace integration** -- F-15.17.1 mentions considering Epic's FAB marketplace API.
+   Cross-engine asset access requires format conversion and license interoperability. Evaluate
    feasibility and legal constraints.
-6. **Rust plugin sandboxing** -- Rust plugins are
-   compiled dynamic libraries with full system
-   access. Evaluate WASM sandboxing for marketplace
-   plugins to prevent malicious code execution.
-7. **CDN cache invalidation strategy** -- When a
-   publisher updates an asset version, CloudFront
-   cache must be invalidated. Evaluate using
-   versioned S3 keys (no invalidation needed) vs
-   cache invalidation API calls.
+6. **Rust plugin sandboxing** -- Rust plugins are compiled dynamic libraries with full system
+   access. Evaluate WASM sandboxing for marketplace plugins to prevent malicious code execution.
+7. **CDN cache invalidation strategy** -- When a publisher updates an asset version, CloudFront
+   cache must be invalidated. Evaluate using versioned S3 keys (no invalidation needed) vs cache
+   invalidation API calls.

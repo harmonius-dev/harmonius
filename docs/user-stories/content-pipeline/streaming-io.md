@@ -2,8 +2,8 @@
 
 ## US-12.5.1 Explore the World Without Loading Screens
 
-**As a** player (P-23), **I want** seamless asset streaming as I traverse the open world, **so
-that** I never encounter a loading screen or visible pop-in during continuous exploration.
+**As a** player (P-23), **I want** seamless asset streaming as I traverse the open world,
+**so that** I never encounter a loading screen or visible pop-in during continuous exploration.
 
 ## US-12.5.2 See High-Resolution Textures Load in Smoothly
 
@@ -87,8 +87,8 @@ re-fetched.
 ## US-12.5.15 Verify Streaming Produces No Visual Artifacts
 
 **As an** engine tester (P-27), **I want** automated tests that fly a camera through a dense open
-world at maximum speed and verify no missing textures, missing meshes, or LOD pops are visible, **so
-that** streaming quality is validated under worst-case traversal.
+world at maximum speed and verify no missing textures, missing meshes, or LOD pops are visible,
+**so that** streaming quality is validated under worst-case traversal.
 
 ## US-12.5.16 Verify Memory Pressure Response Does Not Drop Critical Assets
 

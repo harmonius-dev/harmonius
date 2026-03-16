@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/networking/](../../features/networking/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/networking/](../../features/networking/),
 > [requirements/networking/](../../requirements/networking/), and
-> [user-stories/networking/](../../user-stories/networking/). The table
-> below traces design elements to those definitions.
+> [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -21,21 +21,16 @@
 
 ## Overview
 
-The MMO infrastructure subsystem manages the server-side
-architecture for persistent, massively multiplayer worlds.
-It partitions the game world into shards and zones, runs a
-dynamic server mesh that scales spatially based on entity
-density, migrates players seamlessly between zone servers,
-persists all world state through an async database layer,
-and provides cross-shard services for economy, social, and
-communication features.
+The MMO infrastructure subsystem manages the server-side architecture for persistent, massively
+multiplayer worlds. It partitions the game world into shards and zones, runs a dynamic server mesh
+that scales spatially based on entity density, migrates players seamlessly between zone servers,
+persists all world state through an async database layer, and provides cross-shard services for
+economy, social, and communication features.
 
-All components are 100% ECS-based. Zone servers run the
-full ECS simulation in headless mode. The server mesh
-controller, cross-shard services, and inter-server bus
-run as independent microservices on self-hosted AWS
-infrastructure (Kubernetes). All I/O is async (IOCP / GCD /
-io_uring). Database access never blocks the simulation tick.
+All components are 100% ECS-based. Zone servers run the full ECS simulation in headless mode. The
+server mesh controller, cross-shard services, and inter-server bus run as independent microservices
+on self-hosted AWS infrastructure (Kubernetes). All I/O is async (IOCP / GCD / io_uring). Database
+access never blocks the simulation tick.
 
 ## Architecture
 
@@ -97,7 +92,7 @@ graph TD
     LB --> ZS3
 ```
 
-```
+```text
 harmonius_net/
 ├── mmo/
 │   ├── shard.rs         # ShardManager, ShardId,
@@ -1188,66 +1183,55 @@ pub enum MailError {
 
 The game world is organized in three layers:
 
-1. **Shards.** Full copies of the world for population
-   management. Each shard has its own set of zone servers.
-   Players are assigned to a shard at login.
+1. **Shards.** Full copies of the world for population management. Each shard has its own set of
+   zone servers. Players are assigned to a shard at login.
 
-2. **Zones.** Spatial subdivisions of the world within a
-   shard. Each zone is owned by one server process.
-   The mesh controller dynamically splits and merges
-   zones based on entity density.
+2. **Zones.** Spatial subdivisions of the world within a shard. Each zone is owned by one server
+   process. The mesh controller dynamically splits and merges zones based on entity density.
 
-3. **Instances.** Isolated copies of specific zones for
-   dungeons, raids, and battlegrounds. Group-scoped
-   state, difficulty parameters, lockout timers.
+3. **Instances.** Isolated copies of specific zones for dungeons, raids, and battlegrounds.
+   Group-scoped state, difficulty parameters, lockout timers.
 
 ### Seamless Zone Transition Pipeline
 
-1. Player approaches a zone boundary. The source server
-   detects the player is in the overlap region.
+1. Player approaches a zone boundary. The source server detects the player is in the overlap region.
 
-2. Source server requests handoff from the mesh controller.
-   The controller identifies the destination zone server.
+2. Source server requests handoff from the mesh controller. The controller identifies the
+   destination zone server.
 
 3. Destination server acknowledges readiness.
 
-4. Source server serializes the player's full state into a
-   `MigrationPayload`: ECS entity snapshot, active buffs,
-   cooldown timers, pending RPCs, prediction history.
+4. Source server serializes the player's full state into a `MigrationPayload`: ECS entity snapshot,
+   active buffs, cooldown timers, pending RPCs, prediction history.
 
-5. Payload is transferred to the destination server via
-   the inter-server bus (at-least-once delivery).
+5. Payload is transferred to the destination server via the inter-server bus (at-least-once
+   delivery).
 
-6. Client receives a redirect to the destination server
-   endpoint. During the brief handoff (< 100 ms), the
-   client extrapolates using its last known state.
+6. Client receives a redirect to the destination server endpoint. During the brief handoff (< 100
+   ms), the client extrapolates using its last known state.
 
-7. Client reconnects to the destination server. The server
-   applies the transferred state and sends a full snapshot
-   for reconciliation.
+7. Client reconnects to the destination server. The server applies the transferred state and sends a
+   full snapshot for reconciliation.
 
 ### Boundary Overlap Co-Simulation
 
-Entities within the overlap width of a zone boundary are
-co-simulated by both adjacent servers. The authoritative
-server replicates overlap entities to the neighbor at the
-configured sync interval. The neighbor renders them as
-ghost entities. This prevents pop-in when players or NPCs
-cross zone edges.
+Entities within the overlap width of a zone boundary are co-simulated by both adjacent servers. The
+authoritative server replicates overlap entities to the neighbor at the configured sync interval.
+The neighbor renders them as ghost entities. This prevents pop-in when players or NPCs cross zone
+edges.
 
 ### Persistence Pipeline
 
-All database access flows through the
-`DatabaseAccessLayer`, which uses platform-native async I/O
-(IOCP on Windows, GCD on macOS, io_uring on Linux). The
-simulation tick never blocks on database operations.
+All database access flows through the `DatabaseAccessLayer`, which uses platform-native async I/O
+(IOCP on Windows, GCD on macOS, io_uring on Linux). The simulation tick never blocks on database
+operations.
 
-- **Character saves:** periodic background flushes (every
-  30 s) plus event-triggered saves (level up, trade).
-- **Transactions:** trades, auction settlements, and mail
-  with attachments use `TransactionHandle` for atomicity.
-- **Write throughput:** sustained 10,000+ TPS across the
-  server fleet via connection pooling and batched writes.
+- **Character saves:** periodic background flushes (every 30 s) plus event-triggered saves (level
+  up, trade).
+- **Transactions:** trades, auction settlements, and mail with attachments use `TransactionHandle`
+  for atomicity.
+- **Write throughput:** sustained 10,000+ TPS across the server fleet via connection pooling and
+  batched writes.
 
 ### Inter-Server Bus Delivery
 
@@ -1357,35 +1341,25 @@ simulation tick never blocks on database operations.
 
 ## Open Questions
 
-1. **Database choice for persistence.** PostgreSQL (RDS)
-   provides transactions and relational queries.
-   DynamoDB provides lower latency for key-value access.
-   Hybrid approach (DynamoDB for session/ephemeral,
-   PostgreSQL for economy/social) vs. single database?
+1. **Database choice for persistence.** PostgreSQL (RDS) provides transactions and relational
+   queries. DynamoDB provides lower latency for key-value access. Hybrid approach (DynamoDB for
+   session/ephemeral, PostgreSQL for economy/social) vs. single database?
 
-2. **Mesh split granularity.** Should the mesh controller
-   split along the longest axis only, or allow arbitrary
-   Voronoi-style partitions for better load balance at the
-   cost of more complex overlap regions?
+2. **Mesh split granularity.** Should the mesh controller split along the longest axis only, or
+   allow arbitrary Voronoi-style partitions for better load balance at the cost of more complex
+   overlap regions?
 
-3. **Cross-shard consistency model.** Auction bids from
-   different shards require exactly-once semantics.
-   Options: (a) single-leader per auction, (b) distributed
-   consensus (Raft), (c) optimistic concurrency with
-   database-level conflict resolution.
+3. **Cross-shard consistency model.** Auction bids from different shards require exactly-once
+   semantics. Options: (a) single-leader per auction, (b) distributed consensus (Raft), (c)
+   optimistic concurrency with database-level conflict resolution.
 
-4. **Overlap entity authority.** When an entity is in the
-   overlap zone, which server is authoritative? Options:
-   (a) always the source server until handoff, (b)
-   whichever server the entity is closer to the center of.
+4. **Overlap entity authority.** When an entity is in the overlap zone, which server is
+   authoritative? Options: (a) always the source server until handoff, (b) whichever server the
+   entity is closer to the center of.
 
-5. **Container orchestration.** Kubernetes is the primary
-   target, but should the CDK stack also support
-   bare-metal deployment for studios that self-host on
-   dedicated hardware?
+5. **Container orchestration.** Kubernetes is the primary target, but should the CDK stack also
+   support bare-metal deployment for studios that self-host on dedicated hardware?
 
-6. **Mobile entity budget.** The 500-entity mobile budget
-   may be too low for populated cities. Should the
-   relevancy filter prioritize player entities over NPCs
-   on mobile, or should a separate mobile LOD system
-   replace distant NPCs with static meshes?
+6. **Mobile entity budget.** The 500-entity mobile budget may be too low for populated cities.
+   Should the relevancy filter prioritize player entities over NPCs on mobile, or should a separate
+   mobile LOD system replace distant NPCs with static meshes?

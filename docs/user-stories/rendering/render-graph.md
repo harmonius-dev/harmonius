@@ -51,14 +51,14 @@ Metal, **so that** aliasing is correct per backend.
 ## US-2.2.5.1 Insert Minimal Barriers at the Latest Possible Point
 
 **As an** engine developer (P-26), **I want** the graph compiler to analyze read/write sets and
-insert the minimal barrier set at the latest point, using split barriers where supported, **so
-that** GPU pipeline stalls are minimized.
+insert the minimal barrier set at the latest point, using split barriers where supported,
+**so that** GPU pipeline stalls are minimized.
 
 ## US-2.2.5.2 Verify Metal Emits Fences Only at Queue Boundaries
 
 **As an** engine tester (P-27), **I want** to confirm that Metal relies on driver hazard tracking
-with fences emitted only at queue boundaries, while D3D12 and Vulkan use explicit barriers, **so
-that** barrier strategy is correct per backend.
+with fences emitted only at queue boundaries, while D3D12 and Vulkan use explicit barriers,
+**so that** barrier strategy is correct per backend.
 
 ## US-2.2.6.1 Overlap Async Compute With Graphics Work
 

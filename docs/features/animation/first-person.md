@@ -1,6 +1,6 @@
 # 9.6 — First-Person Animation
 
-### F-9.6.1 First-Person Camera Controller
+## F-9.6.1 First-Person Camera Controller
 
 Specialized camera system for first-person games with head-bob synchronized to locomotion speed and
 gait, landing impact (downward snap on ground contact proportional to fall distance), procedural

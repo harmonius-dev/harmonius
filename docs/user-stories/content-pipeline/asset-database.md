@@ -39,8 +39,8 @@ complete in minutes instead of hours.
 ## US-12.3.7 Rebuild Only Changed Assets and Their Dependents
 
 **As a** DevOps engineer (P-16), **I want** incremental builds that walk the dependency graph
-bottom-up and rebuild only assets whose source, settings, or transitive dependencies changed, **so
-that** CI build times are proportional to the number of changes.
+bottom-up and rebuild only assets whose source, settings, or transitive dependencies changed,
+**so that** CI build times are proportional to the number of changes.
 
 ## US-12.3.8 Roll Back Assets to Any Previous Version
 

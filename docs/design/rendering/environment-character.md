@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/rendering/](../../features/rendering/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/rendering/](../../features/rendering/),
 > [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table
-> below traces design elements to those definitions.
+> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
+> to those definitions.
 
 ### Anti-Aliasing and Upscaling (2.6)
 
@@ -32,16 +32,13 @@
 | F-2.7.5 | R-2.7.5 | Analytical distance/height fog with height falloff |
 | F-2.7.6 | R-2.7.6 | FFT ocean rendering with reflections, foam, underwater |
 | F-2.7.7 | R-2.7.7 | Heterogeneous volumes (OpenVDB) with volumetric BSDF |
-
-> **Dependency note:** OpenVDB is a large C++ library
-> requiring separate approval per project dependency
-> policy. Consider lighter alternatives (sparse voxel
-> octree) if volumetric cloud density does not require
-> OpenVDB's full feature set.
-
 | F-2.7.8 | R-2.7.8 | Voxel-based volumetric clouds with SDF acceleration |
 | F-2.7.9 | R-2.7.9 | Art-directable breaking waves with Coons surface eval |
 | F-2.7.10 | R-2.7.10 | Weather state machine driving all environment systems |
+
+> **Dependency note:** OpenVDB is a large C++ library requiring separate approval per project
+> dependency policy. Consider lighter alternatives (sparse voxel octree) if volumetric cloud density
+> does not require OpenVDB's full feature set.
 
 ### Character Rendering (2.8)
 
@@ -82,26 +79,20 @@
 
 ## Overview
 
-This document covers the rendering design for three tightly
-coupled subsystems:
+This document covers the rendering design for three tightly coupled subsystems:
 
-1. **Anti-aliasing and upscaling** -- temporal and spatial AA
-   methods, temporal super resolution, vendor upscaler
-   integration, frame generation, and latency reduction.
-2. **Environment rendering** -- sky atmosphere, volumetric fog,
-   clouds, god rays, water, heterogeneous volumes, weather,
-   decal projectors, and detail meshes with LOD transitions.
-3. **Character rendering** -- strand and card hair, eye shading,
-   cloth shading, skin subsurface scattering, peach fuzz,
-   biometric skin, and compute software rasterization.
+1. **Anti-aliasing and upscaling** -- temporal and spatial AA methods, temporal super resolution,
+   vendor upscaler integration, frame generation, and latency reduction.
+2. **Environment rendering** -- sky atmosphere, volumetric fog, clouds, god rays, water,
+   heterogeneous volumes, weather, decal projectors, and detail meshes with LOD transitions.
+3. **Character rendering** -- strand and card hair, eye shading, cloth shading, skin subsurface
+   scattering, peach fuzz, biometric skin, and compute software rasterization.
 
-All state lives as ECS components. All logic runs as ECS
-systems registered in the render graph. No separate rendering
-world exists -- proxy extraction (F-2.10.1) copies the
-minimal data needed for GPU submission each frame. Platform
-selection uses `cfg` attributes with static dispatch. Shaders
-are authored in HLSL, compiled via DXC to DXIL/SPIR-V, and
-converted to MSL via Metal Shader Converter.
+All state lives as ECS components. All logic runs as ECS systems registered in the render graph. No
+separate rendering world exists -- proxy extraction (F-2.10.1) copies the minimal data needed for
+GPU submission each frame. Platform selection uses `cfg` attributes with static dispatch. Shaders
+are authored in HLSL, compiled via DXC to DXIL/SPIR-V, and converted to MSL via Metal Shader
+Converter.
 
 ## Architecture
 
@@ -190,7 +181,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_rendering/
 ├── aa_upscale/
 │   ├── taa.rs          # TaaPass, TaaParams,
@@ -1211,9 +1202,8 @@ pub fn lod_crossfade_system(
 
 ### Anti-Aliasing Pipeline
 
-The AA pipeline runs after the lighting composite and before
-final output. The method selection depends on the camera's
-`AntiAliasingConfig` component and the rendering path.
+The AA pipeline runs after the lighting composite and before final output. The method selection
+depends on the camera's `AntiAliasingConfig` component and the rendering path.
 
 ```mermaid
 flowchart TD
@@ -1249,37 +1239,25 @@ flowchart TD
 
 ### TAA Resolve Data Flow
 
-1. Camera projection receives jitter offset from
-   `TaaPass::jitter_offset()`.
-2. G-buffer and lighting run at internal resolution
-   with the jittered projection.
-3. TAA resolve reads current color, depth, motion
-   vectors, and the history buffer.
-4. Per-pixel: reproject history using motion vectors,
-   clamp reprojected color to the current frame's
+1. Camera projection receives jitter offset from `TaaPass::jitter_offset()`.
+2. G-buffer and lighting run at internal resolution with the jittered projection.
+3. TAA resolve reads current color, depth, motion vectors, and the history buffer.
+4. Per-pixel: reproject history using motion vectors, clamp reprojected color to the current frame's
    local neighborhood (MinMax or Variance).
-5. Blend clamped history with current sample using
-   `history_weight`.
-6. Write result to the history ping-pong buffer and
-   output.
+5. Blend clamped history with current sample using `history_weight`.
+6. Write result to the history ping-pong buffer and output.
 
 ### Skin SSS Data Flow
 
-1. During G-buffer, skin-shaded pixels write a
-   stencil bit identifying SSS surfaces.
-2. After lighting, the `SkinSssPass` runs a
-   separable Gaussian blur weighted by the Burley
+1. During G-buffer, skin-shaded pixels write a stencil bit identifying SSS surfaces.
+2. After lighting, the `SkinSssPass` runs a separable Gaussian blur weighted by the Burley
    normalized diffusion kernel.
-3. The blur samples only pixels with the SSS stencil
-   bit, preventing bleed from non-skin surfaces.
-4. Scatter radius and color are read from the
-   `SkinSssComponent` uniform buffer.
-5. If `BiometricSkinComponent` is present, melanin
-   and blood maps replace explicit scatter color
+3. The blur samples only pixels with the SSS stencil bit, preventing bleed from non-skin surfaces.
+4. Scatter radius and color are read from the `SkinSssComponent` uniform buffer.
+5. If `BiometricSkinComponent` is present, melanin and blood maps replace explicit scatter color
    with computed pigment-layer scattering.
-6. `PeachFuzzComponent` applies a screen-space fuzz
-   layer on top of the SSS result when the character
-   exceeds the screen-size threshold.
+6. `PeachFuzzComponent` applies a screen-space fuzz layer on top of the SSS result when the
+   character exceeds the screen-size threshold.
 
 ### Hair Rendering Data Flow
 
@@ -1302,41 +1280,28 @@ flowchart TD
     PRX --> OUT
 ```
 
-1. `hair_lod_system` evaluates screen-size and
-   platform tier, writing `HairMethod` to each
+1. `hair_lod_system` evaluates screen-size and platform tier, writing `HairMethod` to each
    character's `HairRenderComponent`.
-2. **Strand path:** A compute pass generates the
-   deep opacity map for self-shadowing. The mesh
-   shader pipeline rasterizes curve geometry with
-   the Marschner BSDF. Sub-pixel strands are routed
-   to the compute software rasterizer (froxel-based
-   line drawing with early termination).
-3. **Card path:** Layered polygon strips are drawn
-   with alpha test (mobile) or alpha blend (desktop).
-   Sort order is back-to-front within each character.
-4. **Mesh proxy path:** A simplified opaque mesh is
-   drawn as standard geometry.
-5. Cross-fade dithering blends between tiers during
-   LOD transitions (driven by
+2. **Strand path:** A compute pass generates the deep opacity map for self-shadowing. The mesh
+   shader pipeline rasterizes curve geometry with the Marschner BSDF. Sub-pixel strands are routed
+   to the compute software rasterizer (froxel-based line drawing with early termination).
+3. **Card path:** Layered polygon strips are drawn with alpha test (mobile) or alpha blend
+   (desktop). Sort order is back-to-front within each character.
+4. **Mesh proxy path:** A simplified opaque mesh is drawn as standard geometry.
+5. Cross-fade dithering blends between tiers during LOD transitions (driven by
    `lod_crossfade_system`).
 
 ### Decal Projection Data Flow
 
-1. `decal_atlas_system` packs decal textures into
-   shared atlas pages and manages LRU eviction.
-2. Decals are culled against the camera frustum via
-   the shared spatial index (OBB test).
+1. `decal_atlas_system` packs decal textures into shared atlas pages and manages LRU eviction.
+2. Decals are culled against the camera frustum via the shared spatial index (OBB test).
 3. Visible decals are sorted by priority.
-4. Each decal's OBB is rasterized. The pixel shader
-   reads G-buffer depth, reconstructs world position,
-   tests containment within the OBB, and writes to
-   the selected G-buffer channels (albedo, normal,
-   roughness, metallic) using the configured blend
-   mode.
-5. Angle-based attenuation fades the decal when the
-   surface normal diverges from the projection axis.
-6. Triplanar projection (if enabled) blends three
-   axis-aligned projections for complex geometry.
+4. Each decal's OBB is rasterized. The pixel shader reads G-buffer depth, reconstructs world
+   position, tests containment within the OBB, and writes to the selected G-buffer channels (albedo,
+   normal, roughness, metallic) using the configured blend mode.
+5. Angle-based attenuation fades the decal when the surface normal diverges from the projection
+   axis.
+6. Triplanar projection (if enabled) blends three axis-aligned projections for complex geometry.
 
 ### Environment Composite Flow
 
@@ -1455,21 +1420,15 @@ All shaders are authored in HLSL per the project constraints.
 
 ### Weather and VFX Integration
 
-Weather state machine parameters (rain intensity,
-wind direction, snow density) are shared with the VFX
-particle system via ECS resources. Particle emitters
-query weather state to modulate spawn rates and
-forces. See [effects.md](../vfx/effects.md) for
-weather VFX design.
+Weather state machine parameters (rain intensity, wind direction, snow density) are shared with the
+VFX particle system via ECS resources. Particle emitters query weather state to modulate spawn rates
+and forces. See [effects.md](../vfx/effects.md) for weather VFX design.
 
 ### Water and Physics Integration
 
-Ocean surface height is queried by the physics
-buoyancy system (see
-[advanced.md](../physics/advanced.md)) via the
-`WaterSurface` ECS resource. Wave displacement is
-sampled at physics tick rate, not render rate, to
-maintain simulation stability.
+Ocean surface height is queried by the physics buoyancy system (see
+[advanced.md](../physics/advanced.md)) via the `WaterSurface` ECS resource. Wave displacement is
+sampled at physics tick rate, not render rate, to maintain simulation stability.
 
 ## Test Plan
 
@@ -1563,54 +1522,31 @@ maintain simulation stability.
 
 ## Open Questions
 
-1. **SMAA area/search LUT generation** -- Should the
-   SMAA lookup textures be precomputed at build time
-   or generated at GPU init? Precomputed avoids
-   startup cost; runtime generation avoids shipping
-   platform-specific binary blobs.
-2. **TAA history buffer format** -- R11G11B10F saves
-   bandwidth but loses sign. R16G16B16A16F preserves
-   HDR range but doubles history buffer size. The
-   choice affects NFR-2.6.2 (TAA < 0.5 ms) and mobile
-   bandwidth.
-3. **TSR detail reconstruction filter** -- Heuristic
-   (edge-directed) vs learned (neural network
-   weights). Learned filters require weight storage
-   and compute; heuristic filters are deterministic
-   but lower quality. Both must meet NFR-2.6.1
-   (within 1 dB PSNR).
-4. **Vendor upscaler SDK versioning** -- How to handle
-   SDK updates (DLSS 3 -> 4, FSR 2 -> 3) without
-   engine code changes. R-2.6.6 requires SDK
-   replacement only; need to define the ABI boundary.
-5. **MetalFX integration depth** -- MetalFX temporal
-   scaler is Metal-only. Should it be a first-class
-   `UpscaleMethod` variant or always deferred to TSR
-   on macOS? MetalFX may outperform TSR on Apple
-   Silicon.
-6. **Froxel depth distribution** -- Exponential vs
-   logarithmic vs hybrid depth slicing for the froxel
-   grid. Exponential gives more slices near the camera
-   (better for close fog) but wastes slices at
-   distance.
-7. **Deep opacity map vs per-pixel linked lists** --
-   Deep opacity maps have fixed memory but limited
-   depth layers. Per-pixel linked lists handle
-   arbitrary depth complexity but require atomic
-   buffer allocation. Performance trade-off depends
-   on strand density.
-8. **Compute hair rasterizer tile size** -- 8x8 vs
-   16x16 tiles. Larger tiles reduce dispatch overhead
-   but increase occupancy pressure. Optimal size
-   depends on strand density per tile.
-9. **Biometric skin bake pipeline** -- On mobile,
-   melanin/blood maps are baked to diffuse at import.
-   The bake pipeline needs to evaluate the full
-   multi-layer pigment model offline. Define whether
-   this runs in the asset processor or as a DCC plugin
-   export step.
-10. **Weather state interpolation curve** -- Linear
-    interpolation between weather states may produce
-    unrealistic intermediate values (e.g., 50%
-    rain/50% snow). Consider per-parameter easing
-    curves or explicit intermediate states.
+1. **SMAA area/search LUT generation** -- Should the SMAA lookup textures be precomputed at build
+   time or generated at GPU init? Precomputed avoids startup cost; runtime generation avoids
+   shipping platform-specific binary blobs.
+2. **TAA history buffer format** -- R11G11B10F saves bandwidth but loses sign. R16G16B16A16F
+   preserves HDR range but doubles history buffer size. The choice affects NFR-2.6.2 (TAA < 0.5 ms)
+   and mobile bandwidth.
+3. **TSR detail reconstruction filter** -- Heuristic (edge-directed) vs learned (neural network
+   weights). Learned filters require weight storage and compute; heuristic filters are deterministic
+   but lower quality. Both must meet NFR-2.6.1 (within 1 dB PSNR).
+4. **Vendor upscaler SDK versioning** -- How to handle SDK updates (DLSS 3 -> 4, FSR 2 -> 3) without
+   engine code changes. R-2.6.6 requires SDK replacement only; need to define the ABI boundary.
+5. **MetalFX integration depth** -- MetalFX temporal scaler is Metal-only. Should it be a
+   first-class `UpscaleMethod` variant or always deferred to TSR on macOS? MetalFX may outperform
+   TSR on Apple Silicon.
+6. **Froxel depth distribution** -- Exponential vs logarithmic vs hybrid depth slicing for the
+   froxel grid. Exponential gives more slices near the camera (better for close fog) but wastes
+   slices at distance.
+7. **Deep opacity map vs per-pixel linked lists** -- Deep opacity maps have fixed memory but limited
+   depth layers. Per-pixel linked lists handle arbitrary depth complexity but require atomic buffer
+   allocation. Performance trade-off depends on strand density.
+8. **Compute hair rasterizer tile size** -- 8x8 vs 16x16 tiles. Larger tiles reduce dispatch
+   overhead but increase occupancy pressure. Optimal size depends on strand density per tile.
+9. **Biometric skin bake pipeline** -- On mobile, melanin/blood maps are baked to diffuse at import.
+   The bake pipeline needs to evaluate the full multi-layer pigment model offline. Define whether
+   this runs in the asset processor or as a DCC plugin export step.
+10. **Weather state interpolation curve** -- Linear interpolation between weather states may produce
+    unrealistic intermediate values (e.g., 50% rain/50% snow). Consider per-parameter easing curves
+    or explicit intermediate states.

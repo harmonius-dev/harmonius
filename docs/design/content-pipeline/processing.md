@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/content-pipeline/](../../features/content-pipeline/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/content-pipeline/](../../features/content-pipeline/),
 > [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table
-> below traces design elements to those definitions.
+> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
+> design elements to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -36,32 +36,21 @@
 
 ## Overview
 
-The asset processing subsystem transforms imported
-source assets into GPU-ready, platform-optimized
-runtime artifacts. It sits between the import
-layer (DCC plugins, source ingestion) and the CAS
+The asset processing subsystem transforms imported source assets into GPU-ready, platform-optimized
+runtime artifacts. It sits between the import layer (DCC plugins, source ingestion) and the CAS
 store (content-addressable artifact storage).
 
 The design follows four principles:
 
-1. **Processor-per-concern.** Each processing step
-   (texture compression, mesh optimization, shader
-   compilation) is an independent, stateless
-   processor implementing a common trait. Processors
+1. **Processor-per-concern.** Each processing step (texture compression, mesh optimization, shader
+   compilation) is an independent, stateless processor implementing a common trait. Processors
    compose into a DAG via the processing graph.
-2. **Incremental by default.** BLAKE3 content
-   hashes track source inputs and processor
-   configurations. Only assets whose hash has
-   changed are reprocessed.
-3. **Platform-aware.** Platform profiles select
-   format targets (BC7 vs ASTC), quality tiers,
-   and shader backends per target platform. A single
-   source asset produces multiple platform artifacts.
-4. **Parallel.** The processing graph fans out
-   independent processors across the thread pool.
-   Scoped execution borrows source data without
-   `Arc` overhead. All I/O is async through the
-   `IoReactor`.
+2. **Incremental by default.** BLAKE3 content hashes track source inputs and processor
+   configurations. Only assets whose hash has changed are reprocessed.
+3. **Platform-aware.** Platform profiles select format targets (BC7 vs ASTC), quality tiers, and
+   shader backends per target platform. A single source asset produces multiple platform artifacts.
+4. **Parallel.** The processing graph fans out independent processors across the thread pool. Scoped
+   execution borrows source data without `Arc` overhead. All I/O is async through the `IoReactor`.
 
 ### Performance Targets
 
@@ -142,7 +131,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_content/
 ├── processing/
 │   ├── mod.rs            # Re-exports
@@ -1187,6 +1176,14 @@ pub struct PushConstantRange {
 }
 
 /// Compiled shader bytecode for one backend.
+///
+/// **Note:** `CompiledShader` should reference the
+/// canonical definition in
+/// [shared-primitives.md](../core-runtime/shared-primitives.md).
+/// The canonical version includes multi-target fields
+/// (`dxil_bytecode`, `spirv_bytecode`, `msl_source`).
+/// The `reflection` field in this file should be added
+/// to the canonical definition.
 pub struct CompiledShader {
     pub backend: ShaderBackend,
     pub bytecode: Vec<u8>,
@@ -1395,10 +1392,8 @@ impl AssetProcessor for LightmapUvProcessor {
 | Collision mesh baking | Convex hulls | Optimized broadphase-ready collider data |
 | Physics material compilation | Material properties | Binary physics material asset |
 
-Convex hull decomposition uses V-HACD (Volumetric
-Hierarchical Approximate Convex Decomposition) to split
-concave meshes into convex parts suitable for the physics
-solver.
+Convex hull decomposition uses V-HACD (Volumetric Hierarchical Approximate Convex Decomposition) to
+split concave meshes into convex parts suitable for the physics solver.
 
 ### Error Types
 
@@ -1441,27 +1436,19 @@ pub struct ProcessingWarning {
 
 ### Incremental Processing Flow
 
-The processing manager orchestrates the full
-pipeline. On each invocation:
+The processing manager orchestrates the full pipeline. On each invocation:
 
-1. **Hash.** Compute BLAKE3 content hash of each
-   source asset combined with its processor
+1. **Hash.** Compute BLAKE3 content hash of each source asset combined with its processor
    configuration and platform profile.
-2. **Filter.** Compare hashes against the
-   incremental cache. Only assets with changed
-   hashes enter the processing graph.
-3. **Build graph.** Query each processor's
-   `dependencies()` to construct the DAG. Run
-   cycle detection.
-4. **Dispatch.** Submit the graph to the thread
-   pool. Root nodes (no dependencies) run first.
-   As each node completes, dependents with zero
-   remaining dependencies are dispatched.
-5. **Write.** Each processor writes its artifact
-   to the CAS store via async I/O. The cache entry
-   is updated with the new hash and artifact key.
-6. **Report.** Collect per-asset results into a
-   `ProcessingReport`.
+2. **Filter.** Compare hashes against the incremental cache. Only assets with changed hashes enter
+   the processing graph.
+3. **Build graph.** Query each processor's `dependencies()` to construct the DAG. Run cycle
+   detection.
+4. **Dispatch.** Submit the graph to the thread pool. Root nodes (no dependencies) run first. As
+   each node completes, dependents with zero remaining dependencies are dispatched.
+5. **Write.** Each processor writes its artifact to the CAS store via async I/O. The cache entry is
+   updated with the new hash and artifact key.
+6. **Report.** Collect per-asset results into a `ProcessingReport`.
 
 ```rust
 // Simplified orchestration pseudocode
@@ -1548,8 +1535,7 @@ sequenceDiagram
 
 ### Dependency Invalidation Flow
 
-When a shared asset changes, the dependency graph
-propagates invalidation to all transitive
+When a shared asset changes, the dependency graph propagates invalidation to all transitive
 dependents:
 
 ```mermaid
@@ -1602,35 +1588,29 @@ flowchart TD
 
 ### Concurrency Model
 
-All processing runs on the engine's thread pool.
-The processing graph maps directly to a
-`TaskGraph` (F-14.3.3). Independent processors
-fan out across workers; dependencies enforce
-ordering. Scoped execution (`ThreadPool::scope`)
-allows processors to borrow source data from the
-orchestration frame without `Arc` or `'static`.
+All processing runs on the engine's thread pool. The processing graph maps directly to a `TaskGraph`
+(F-14.3.3). Independent processors fan out across workers; dependencies enforce ordering. Scoped
+execution (`ThreadPool::scope`) allows processors to borrow source data from the orchestration frame
+without `Arc` or `'static`.
 
-All disk I/O (reading sources, writing artifacts)
-goes through the `IoReactor` with async/await. No
+All disk I/O (reading sources, writing artifacts) goes through the `IoReactor` with async/await. No
 processor ever blocks a worker thread on I/O.
 
 ### Platform-Specific Processing Notes
 
 **Windows:**
-- DXC and Metal Shader Converter are available as
-  native C++ libraries. Both accessed via cxx.rs.
-- BC compression uses ISPC Texture Compressor or
-  equivalent Rust crate.
+
+- DXC and Metal Shader Converter are available as native C++ libraries. Both accessed via cxx.rs.
+- BC compression uses ISPC Texture Compressor or equivalent Rust crate.
 
 **macOS:**
-- Async I/O through GCD Dispatch IO (controlled
-  drain at poll point).
-- Metal Shader Converter is Apple's native tool
-  for DXIL-to-MSL translation.
-- ASTC compression is the primary texture format
-  for Apple Silicon.
+
+- Async I/O through GCD Dispatch IO (controlled drain at poll point).
+- Metal Shader Converter is Apple's native tool for DXIL-to-MSL translation.
+- ASTC compression is the primary texture format for Apple Silicon.
 
 **Linux:**
+
 - Async I/O through io_uring.
 - DXC available as a shared library.
 - Same BC/SPIR-V pipeline as Windows Vulkan.
@@ -1716,49 +1696,31 @@ processor ever blocks a worker thread on I/O.
 
 ## Open Questions
 
-1. **ISPC Texture Compressor vs Rust-native BC7.**
-   ISPC provides the fastest BC7 encoding via
-   SIMD intrinsics, but requires an ISPC runtime
-   dependency. A pure-Rust crate would simplify
-   the build. Need to benchmark both options.
+1. **ISPC Texture Compressor vs Rust-native BC7.** ISPC provides the fastest BC7 encoding via SIMD
+   intrinsics, but requires an ISPC runtime dependency. A pure-Rust crate would simplify the build.
+   Need to benchmark both options.
 
-2. **meshoptimizer FFI granularity.** Should we
-   wrap meshoptimizer at the function level (one
-   cxx.rs call per operation) or batch operations
-   into a single C++ helper that runs the full
-   LOD → meshlet → optimize pipeline?
+2. **meshoptimizer FFI granularity.** Should we wrap meshoptimizer at the function level (one cxx.rs
+   call per operation) or batch operations into a single C++ helper that runs the full LOD → meshlet
+   → optimize pipeline?
 
-3. **Shader variant explosion mitigation.** Static
-   analysis prunes unreachable variants, but
-   complex material graphs may still produce
-   hundreds of variants. Should we support on-demand
-   compilation (compile variants at first use) in
-   addition to ahead-of-time?
+3. **Shader variant explosion mitigation.** Static analysis prunes unreachable variants, but complex
+   material graphs may still produce hundreds of variants. Should we support on-demand compilation
+   (compile variants at first use) in addition to ahead-of-time?
 
-4. **DXC version pinning.** DXC releases
-   frequently. Which version to pin to, and how
-   to handle shader model feature availability
-   across versions?
+4. **DXC version pinning.** DXC releases frequently. Which version to pin to, and how to handle
+   shader model feature availability across versions?
 
-5. **ASTC encoder choice.** ARM's reference
-   `astcenc` is high quality but single-threaded
-   per block. Evaluate whether to parallelize at
-   the block level within a single texture or only
-   across textures.
+5. **ASTC encoder choice.** ARM's reference `astcenc` is high quality but single-threaded per block.
+   Evaluate whether to parallelize at the block level within a single texture or only across
+   textures.
 
-6. **Lightmap UV algorithm.** xatlas is the
-   standard open-source UV unwrapper. Evaluate
-   whether to use it via FFI or implement a
-   Rust-native unwrapper optimized for lightmap
-   use cases (uniform texel density, minimal
-   stretching).
+6. **Lightmap UV algorithm.** xatlas is the standard open-source UV unwrapper. Evaluate whether to
+   use it via FFI or implement a Rust-native unwrapper optimized for lightmap use cases (uniform
+   texel density, minimal stretching).
 
-7. **CAS storage compaction.** Over time, stale
-   artifacts accumulate in the CAS store. Define
-   a garbage collection policy (reference counting
-   from the incremental cache, periodic sweep).
+7. **CAS storage compaction.** Over time, stale artifacts accumulate in the CAS store. Define a
+   garbage collection policy (reference counting from the incremental cache, periodic sweep).
 
-8. **Incremental cache persistence format.** The
-   cache must survive across editor sessions.
-   Binary format (fast load) vs RON (human
-   readable, debuggable)?
+8. **Incremental cache persistence format.** The cache must survive across editor sessions. Binary
+   format (fast load) vs RON (human readable, debuggable)?

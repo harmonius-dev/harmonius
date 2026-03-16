@@ -187,8 +187,8 @@ access all game functionality.
 ## US-10.6.16 Listen to Chat Messages Via Text-to-Speech
 
 **As a** player (P-23) who is blind or has low vision, **I want** incoming chat messages and
-notifications converted to speech with configurable voice, speed, and volume per channel, **so
-that** I can follow conversations without reading the screen.
+notifications converted to speech with configurable voice, speed, and volume per channel,
+**so that** I can follow conversations without reading the screen.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

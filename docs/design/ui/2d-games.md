@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/ui-2d/](../../features/ui-2d/),
-> [requirements/ui-2d/](../../requirements/ui-2d/), and
-> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/ui-2d/](../../features/ui-2d/), [requirements/ui-2d/](../../requirements/ui-2d/), and
+> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | User Story | Description |
 |---------|-------------|------------|-------------|
@@ -24,29 +23,25 @@
 
 ## Overview
 
-The 2D game support subsystem provides a complete 2D
-rendering, physics, and gameplay framework built entirely
-on ECS. All 2D data lives as components on entities. All
-2D logic runs as systems in the ECS schedule.
+The 2D game support subsystem provides a complete 2D rendering, physics, and gameplay framework
+built entirely on ECS. All 2D data lives as components on entities. All 2D logic runs as systems in
+the ECS schedule.
 
 Core subsystems:
 
-1. **Sprite rendering** -- instanced textured quads,
-   atlas batching, z-order sorting, layer composition
-2. **Tilemap rendering** -- chunked grids, compute
-   dispatch, orthogonal/isometric/hex layouts
-3. **2D physics** -- rigid bodies, collision shapes,
-   joints, spatial queries, deterministic simulation
-4. **2D camera** -- orthographic projection, parallax
-   scrolling, pixel-perfect snapping, split-screen
-5. **Sprite animation** -- frame sequences, playback
-   modes, animation events
-6. **2D lighting** -- point/spot lights, shadow casting,
-   normal maps, emissive sprites, light map compositing
+1. **Sprite rendering** -- instanced textured quads, atlas batching, z-order sorting, layer
+   composition
+2. **Tilemap rendering** -- chunked grids, compute dispatch, orthogonal/isometric/hex layouts
+3. **2D physics** -- rigid bodies, collision shapes, joints, spatial queries, deterministic
+   simulation
+4. **2D camera** -- orthographic projection, parallax scrolling, pixel-perfect snapping,
+   split-screen
+5. **Sprite animation** -- frame sequences, playback modes, animation events
+6. **2D lighting** -- point/spot lights, shadow casting, normal maps, emissive sprites, light map
+   compositing
 
-Every subsystem integrates with the shared spatial index
-for culling, collision, and queries. The render path feeds
-into the engine's render graph via instanced draw commands.
+Every subsystem integrates with the shared spatial index for culling, collision, and queries. The
+render path feeds into the engine's render graph via instanced draw commands.
 
 ## Architecture
 
@@ -95,7 +90,7 @@ graph TD
     RG --> GPU
 ```
 
-```
+```text
 harmonius_2d/
 ├── sprite/
 │   ├── components.rs    # Sprite, SpriteLayer,
@@ -1072,7 +1067,7 @@ pub enum LightType2D {
 #[derive(Clone, Copy, Debug, Reflect)]
 /// Falloff curves use the shared `FalloffCurve` type
 /// (see
-/// [shared-primitives.md](../../core-runtime/shared-primitives.md)).
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
 pub enum FalloffCurve {
     Linear,
     Quadratic,
@@ -1155,13 +1150,11 @@ pub struct SensorOverlap2D {
 
 ### Frame Lifecycle
 
-The 2D subsystem runs these ECS systems each frame
-in dependency order:
+The 2D subsystem runs these ECS systems each frame in dependency order:
 
-1. **SpriteAnimationSystem** -- advance frame timers,
-   update Sprite UV rects, fire animation events
-2. **CameraFollowSystem** -- update Camera2D position
-   from target entity with smoothing and dead zone
+1. **SpriteAnimationSystem** -- advance frame timers, update Sprite UV rects, fire animation events
+2. **CameraFollowSystem** -- update Camera2D position from target entity with smoothing and dead
+   zone
 3. **CameraShakeSystem** -- apply and decay shake
 4. **Physics2DStep** (fixed timestep schedule):
    - Broadphase spatial index query
@@ -1171,43 +1164,31 @@ in dependency order:
    - CCD sweep for fast bodies
    - Spatial index update
    - Collision event dispatch
-5. **TilemapStreamSystem** -- load/unload chunks
-   based on Camera2D viewport
-6. **TilemapColliderSystem** -- generate edge chain
-   colliders for newly loaded chunks
-7. **SpriteExtractSystem** -- frustum cull sprites
-   against Camera2D viewport
-8. **SpriteSortSystem** -- sort visible sprites by
-   layer and z-order
-9. **SpriteBatchSystem** -- group by atlas page and
-   blend mode, emit instanced draw commands
-10. **LightMapSystem** -- gather Light2D + shadow
-    casters, render shadow maps, composite light map
-11. **ParallaxSystem** -- compute parallax layer
-    offsets from Camera2D delta
-12. **FinalCompositeSystem** -- combine sprite output,
-    light map, parallax layers, emissives
+5. **TilemapStreamSystem** -- load/unload chunks based on Camera2D viewport
+6. **TilemapColliderSystem** -- generate edge chain colliders for newly loaded chunks
+7. **SpriteExtractSystem** -- frustum cull sprites against Camera2D viewport
+8. **SpriteSortSystem** -- sort visible sprites by layer and z-order
+9. **SpriteBatchSystem** -- group by atlas page and blend mode, emit instanced draw commands
+10. **LightMapSystem** -- gather Light2D + shadow casters, render shadow maps, composite light map
+11. **ParallaxSystem** -- compute parallax layer offsets from Camera2D delta
+12. **FinalCompositeSystem** -- combine sprite output, light map, parallax layers, emissives
 
 ### Tilemap Collider Generation
 
-When a `TilemapChunk` loads, the `TilemapColliderSystem`
-generates optimized edge chain colliders:
+When a `TilemapChunk` loads, the `TilemapColliderSystem` generates optimized edge chain colliders:
 
 1. Scan all tiles with `collision = true`
 2. Build a binary grid of solid vs empty tiles
 3. March edges using contour tracing
 4. Merge colinear edges into minimal segments
-5. Create `Collider2D::EdgeChain` entities with
-   per-tile friction, bounciness, and one-way flags
+5. Create `Collider2D::EdgeChain` entities with per-tile friction, bounciness, and one-way flags
 6. Insert colliders into the shared spatial index
 
-This reduces collider count from thousands of per-tile
-boxes to dozens of merged edge segments.
+This reduces collider count from thousands of per-tile boxes to dozens of merged edge segments.
 
 ### Instanced Sprite Batch Format
 
-Each instanced draw call uploads a buffer of
-`SpriteInstance` structs:
+Each instanced draw call uploads a buffer of `SpriteInstance` structs:
 
 ```rust
 /// GPU-side per-sprite instance data.
@@ -1245,24 +1226,19 @@ When `Camera2D::pixel_perfect` is enabled:
 
 - Camera position snaps to the pixel grid
 - Sprite positions snap to the pixel grid
-- Zoom is locked to integer multiples or
-  exact fractions (1x, 2x, 0.5x)
+- Zoom is locked to integer multiples or exact fractions (1x, 2x, 0.5x)
 - Texture sampling uses `NEAREST` filter
-- Sub-pixel motion stored for smooth movement
-  while rendering snaps to whole pixels
+- Sub-pixel motion stored for smooth movement while rendering snaps to whole pixels
 
 ### Deterministic Physics
 
 For server-authoritative and rollback netcode:
 
-- Fixed-point arithmetic option via
-  `i64`-backed `Fixed` type
+- Fixed-point arithmetic option via `i64`-backed `Fixed` type
 - Identical iteration order across platforms
 - No floating-point associativity dependence
-- Deterministic broadphase ordering via
-  stable sort on entity ID
-- Serializable physics state for rollback
-  save/restore
+- Deterministic broadphase ordering via stable sort on entity ID
+- Serializable physics state for rollback save/restore
 
 ## Test Plan
 
@@ -1319,27 +1295,20 @@ For server-authoritative and rollback netcode:
 
 ### 2D Particle Effects
 
-2D particle effects should cross-reference the GPU
-particle system (see [particles.md](../vfx/particles.md))
-for consistent emission, simulation, and rendering.
+2D particle effects should cross-reference the GPU particle system (see
+[particles.md](../vfx/particles.md)) for consistent emission, simulation, and rendering.
 
 ## Open Questions
 
-1. **Sprite batch size limit** -- Maximum sprites per
-   instanced draw call before splitting. GPU-dependent;
-   likely 4096-16384 instances per batch.
-2. **Tilemap chunk dimensions** -- Fixed 16x16 or 32x32
-   tiles per chunk? Larger chunks reduce draw call count
-   but increase streaming granularity.
-3. **Physics solver iterations** -- Default iteration
-   count for the sequential impulse solver (4-8 typical).
-   Configurable per-scene.
-4. **Fixed-point precision** -- 32.32 or 16.16 for
-   deterministic physics? 32.32 offers better range but
-   doubles memory for position data.
-5. **Light map resolution** -- Configurable per camera or
-   global? Half-res on mobile is the floor; quarter-res
-   may be needed for low-end devices.
-6. **Parallax layer count limit** -- Unbounded or capped?
-   Each layer is one draw call. 8-12 layers typical for
-   side-scrollers.
+1. **Sprite batch size limit** -- Maximum sprites per instanced draw call before splitting.
+   GPU-dependent; likely 4096-16384 instances per batch.
+2. **Tilemap chunk dimensions** -- Fixed 16x16 or 32x32 tiles per chunk? Larger chunks reduce draw
+   call count but increase streaming granularity.
+3. **Physics solver iterations** -- Default iteration count for the sequential impulse solver (4-8
+   typical). Configurable per-scene.
+4. **Fixed-point precision** -- 32.32 or 16.16 for deterministic physics? 32.32 offers better range
+   but doubles memory for position data.
+5. **Light map resolution** -- Configurable per camera or global? Half-res on mobile is the floor;
+   quarter-res may be needed for low-end devices.
+6. **Parallax layer count limit** -- Unbounded or capped? Each layer is one draw call. 8-12 layers
+   typical for side-scrollers.

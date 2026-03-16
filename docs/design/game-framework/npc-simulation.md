@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 ### Social Simulation (F-13.19.1--6 / R-13.19.1--6)
 
@@ -43,33 +43,25 @@
 
 ## Overview
 
-The NPC simulation subsystem brings the game world to life
-by giving every non-player character an independent social
-identity: relationships, personality, emotions, memories,
-daily routines, and reactions to player actions and world
-events. All data lives as ECS components. All logic runs
-as ECS systems. There are no parallel data stores.
+The NPC simulation subsystem brings the game world to life by giving every non-player character an
+independent social identity: relationships, personality, emotions, memories, daily routines, and
+reactions to player actions and world events. All data lives as ECS components. All logic runs as
+ECS systems. There are no parallel data stores.
 
 Key architectural choices:
 
-1. **Component-per-concern.** Each NPC aspect (affinity,
-   personality, emotion, memory, schedule, threat) is a
-   separate component. Systems compose freely.
-2. **Data-driven everything.** Gift preferences,
-   personality axes, schedule tables, bark pools, threat
-   modifiers, and conversation templates are authored in
-   the visual editor and stored as data assets.
-3. **Amortized simulation.** Gossip propagation, memory
-   decay, and reputation aggregation are budget-capped
-   per frame to meet the 4 ms target at 200 NPCs.
-4. **Simulation LOD.** Distant NPCs run simplified AI
-   (no memory updates, no conversations, schedule-only).
-   Full simulation activates when the player approaches.
-5. **Static dispatch.** All systems are monomorphic. No
-   trait objects on the hot path.
-6. **No-code authoring.** Every tunable parameter is
-   exposed through the visual NPC editor. Users never
-   write code.
+1. **Component-per-concern.** Each NPC aspect (affinity, personality, emotion, memory, schedule,
+   threat) is a separate component. Systems compose freely.
+2. **Data-driven everything.** Gift preferences, personality axes, schedule tables, bark pools,
+   threat modifiers, and conversation templates are authored in the visual editor and stored as data
+   assets.
+3. **Amortized simulation.** Gossip propagation, memory decay, and reputation aggregation are
+   budget-capped per frame to meet the 4 ms target at 200 NPCs.
+4. **Simulation LOD.** Distant NPCs run simplified AI (no memory updates, no conversations,
+   schedule-only). Full simulation activates when the player approaches.
+5. **Static dispatch.** All systems are monomorphic. No trait objects on the hot path.
+6. **No-code authoring.** Every tunable parameter is exposed through the visual NPC editor. Users
+   never write code.
 
 ## Architecture
 
@@ -163,7 +155,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_npc/
 ├── social/
 │   ├── relationship.rs  # Affinity, AffinityAxis,
@@ -1390,9 +1382,8 @@ pub struct SpawnRule {
 
 ### Visual NPC Editor
 
-All NPC data is authored through the visual editor. The
-editor exposes the following panels, accessible without
-writing code:
+All NPC data is authored through the visual editor. The editor exposes the following panels,
+accessible without writing code:
 
 | Panel | Data Authored | Component |
 |-------|---------------|-----------|
@@ -1412,10 +1403,8 @@ writing code:
 
 ### Per-Frame Simulation Pipeline
 
-The NPC simulation runs within the ECS schedule. Systems
-are grouped into ordered phases to respect data
-dependencies while maximizing parallelism within each
-phase.
+The NPC simulation runs within the ECS schedule. Systems are grouped into ordered phases to respect
+data dependencies while maximizing parallelism within each phase.
 
 ```rust
 // Phase 1: Pre-Simulation
@@ -1459,18 +1448,13 @@ phase.
 
 ### Memory Budget Enforcement
 
-Total deed memory across all NPCs is capped at 4 MB
-(NFR-13.19.2). Each `MemoryEntry` is budgeted at
+Total deed memory across all NPCs is capped at 4 MB (NFR-13.19.2). Each `MemoryEntry` is budgeted at
 256 bytes. The `MemoryEvictionSystem` enforces this:
 
-1. Each NPC's `NpcMemory` has a per-entity cap (50
-   desktop, 20 mobile).
-2. When adding a memory exceeds capacity, the entry
-   with the lowest `emotional_weight` is evicted.
-3. A global `MemoryBudget` resource tracks total
-   memory across all NPCs. If the global cap is
-   reached, the system-wide lowest-weight entry is
-   evicted before any new entry is added.
+1. Each NPC's `NpcMemory` has a per-entity cap (50 desktop, 20 mobile).
+2. When adding a memory exceeds capacity, the entry with the lowest `emotional_weight` is evicted.
+3. A global `MemoryBudget` resource tracks total memory across all NPCs. If the global cap is
+   reached, the system-wide lowest-weight entry is evicted before any new entry is added.
 
 ```rust
 /// ECS resource: global memory budget.
@@ -1494,29 +1478,21 @@ impl MemoryBudget {
 
 ### Gossip Amortization
 
-Gossip events are not processed immediately. When two
-NPCs converse, gossip events are enqueued in the
-`GossipQueue` resource. The `GossipSystem` drains at
-most `budget_per_frame` (default 10) events per frame,
-spreading the cost across multiple frames:
+Gossip events are not processed immediately. When two NPCs converse, gossip events are enqueued in
+the `GossipQueue` resource. The `GossipSystem` drains at most `budget_per_frame` (default 10) events
+per frame, spreading the cost across multiple frames:
 
-1. `ConversationSystem` evaluates gossip eligibility
-   based on `GossipProfile.propagation_rate`.
-2. Eligible memories are wrapped as `GossipEvent` and
-   enqueued.
+1. `ConversationSystem` evaluates gossip eligibility based on `GossipProfile.propagation_rate`.
+2. Eligible memories are wrapped as `GossipEvent` and enqueued.
 3. `GossipSystem` drains up to 10 per frame.
-4. For each drained event, it creates a degraded
-   `MemoryEntry` in the listener's `NpcMemory` with
+4. For each drained event, it creates a degraded `MemoryEntry` in the listener's `NpcMemory` with
    reduced weight and reliability.
-5. The listener's affinity is adjusted based on the
-   degraded emotional weight.
+5. The listener's affinity is adjusted based on the degraded emotional weight.
 
 ### LOD Promotion and Demotion
 
-When a player moves through the world, the
-`SimulationLodSystem` updates each NPC's `SimulationLod`
-component based on distance. Systems check the LOD
-component via a query filter:
+When a player moves through the world, the `SimulationLodSystem` updates each NPC's `SimulationLod`
+component based on distance. Systems check the LOD component via a query filter:
 
 ```rust
 // Full LOD: all systems run.
@@ -1541,9 +1517,8 @@ fn conversation_system(
 // Dormant: system skips entirely.
 ```
 
-On promotion from Reduced to Full, frozen memories
-are kept as-is. On promotion from Dormant, the NPC's
-schedule state is fast-forwarded to the current time.
+On promotion from Reduced to Full, frozen memories are kept as-is. On promotion from Dormant, the
+NPC's schedule state is fast-forwarded to the current time.
 
 ## Platform Considerations
 
@@ -1656,35 +1631,21 @@ schedule state is fast-forwarded to the current time.
 
 ## Open Questions
 
-1. **Gossip graph visualization.** Should the editor
-   provide a real-time visualization of the gossip
-   propagation network for debugging? This would
-   require tracking gossip edges as transient data.
-2. **Memory compression.** At 256 bytes per entry and
-   50 entries per NPC, 200 NPCs consume ~2.5 MB. If
-   the entry count or NPC count grows, a compressed
-   representation (e.g., merging similar memories)
-   may be needed.
-3. **Schedule conflict resolution.** When an NPC is in
-   a conversation or combat at a schedule boundary,
-   the current design skips to the current slot. An
-   alternative is to queue the transition and resume
-   after the interruption.
-4. **Emotion propagation.** Should witnessing another
-   NPC's strong emotion trigger a weaker version in
-   nearby NPCs (emotional contagion)? This would add
-   emergent crowd reactions but increases per-frame
-   cost.
-5. **Gossip budget per platform.** The default is 10
-   events/frame. Mobile may need 5. The optimal
-   budget depends on NPC density and conversation
-   frequency per platform tier.
-6. **Threat table size cap.** Currently uncapped. In
-   large raids (20+ players), the threat table could
-   grow large. A cap with lowest-threat eviction may
-   be needed.
-7. **Cross-zone NPC persistence.** When an NPC is
-   demoted to Dormant and the player re-enters the
-   zone, should the NPC's memory and relationship
-   state reflect time passed (simulated catch-up) or
+1. **Gossip graph visualization.** Should the editor provide a real-time visualization of the gossip
+   propagation network for debugging? This would require tracking gossip edges as transient data.
+2. **Memory compression.** At 256 bytes per entry and 50 entries per NPC, 200 NPCs consume ~2.5 MB.
+   If the entry count or NPC count grows, a compressed representation (e.g., merging similar
+   memories) may be needed.
+3. **Schedule conflict resolution.** When an NPC is in a conversation or combat at a schedule
+   boundary, the current design skips to the current slot. An alternative is to queue the transition
+   and resume after the interruption.
+4. **Emotion propagation.** Should witnessing another NPC's strong emotion trigger a weaker version
+   in nearby NPCs (emotional contagion)? This would add emergent crowd reactions but increases
+   per-frame cost.
+5. **Gossip budget per platform.** The default is 10 events/frame. Mobile may need 5. The optimal
+   budget depends on NPC density and conversation frequency per platform tier.
+6. **Threat table size cap.** Currently uncapped. In large raids (20+ players), the threat table
+   could grow large. A cap with lowest-threat eviction may be needed.
+7. **Cross-zone NPC persistence.** When an NPC is demoted to Dormant and the player re-enters the
+   zone, should the NPC's memory and relationship state reflect time passed (simulated catch-up) or
    freeze exactly where it was?

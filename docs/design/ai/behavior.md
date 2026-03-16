@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/ai/](../../features/ai/),
-> [requirements/ai/](../../requirements/ai/), and
-> [user-stories/ai/](../../user-stories/ai/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/ai/](../../features/ai/), [requirements/ai/](../../requirements/ai/), and
+> [user-stories/ai/](../../user-stories/ai/). The table below traces design elements to those
+> definitions.
 
 ### Behavior Trees (7.3)
 
@@ -43,41 +42,31 @@
 
 ## Overview
 
-The AI Behavior Systems module provides three complementary
-decision-making frameworks, all built on the ECS. Every piece
-of AI state is a component; every AI algorithm is a system.
+The AI Behavior Systems module provides three complementary decision-making frameworks, all built on
+the ECS. Every piece of AI state is a component; every AI algorithm is a system.
 
-- **Behavior Trees** -- deterministic, designer-controlled
-  decision logic for structured NPC behavior.
-- **Utility AI** -- score-based action selection for NPCs
-  that must weigh multiple factors simultaneously.
-- **GOAP** -- goal-oriented planning for NPCs that chain
-  multi-step action sequences toward objectives.
+- **Behavior Trees** -- deterministic, designer-controlled decision logic for structured NPC
+  behavior.
+- **Utility AI** -- score-based action selection for NPCs that must weigh multiple factors
+  simultaneously.
+- **GOAP** -- goal-oriented planning for NPCs that chain multi-step action sequences toward
+  objectives.
 
-All three systems share a common **Blackboard** for per-agent
-data, a common **AiBudget** for time-slicing across frames,
-and a common **AiDebugReporter** for trace logging and editor
-visualization. Designers author all AI via visual editors.
-Users never write code.
+All three systems share a common **Blackboard** for per-agent data, a common **AiBudget** for
+time-slicing across frames, and a common **AiDebugReporter** for trace logging and editor
+visualization. Designers author all AI via visual editors. Users never write code.
 
-Time-sliced execution uses the shared `FrameBudget`
-primitive (see
-[shared-primitives.md](../core-runtime/shared-primitives.md)).
-The `Blackboard` typed key-value store is a general
-engine pattern shared with perception, NPC simulation,
-and quest systems.
+Time-sliced execution uses the shared `FrameBudget` primitive (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)). The `Blackboard` typed key-value
+store is a general engine pattern shared with perception, NPC simulation, and quest systems.
 
 Key design principles:
 
-1. **100% ECS** -- all AI state as components, all logic as
-   systems. No parallel data stores.
+1. **100% ECS** -- all AI state as components, all logic as systems. No parallel data stores.
 2. **Static dispatch** -- enum-based node types, no vtables.
-3. **Data-driven** -- BT trees, utility curves, and GOAP
-   actions are all data assets.
-4. **Budgeted** -- time-slicing ensures AI never exceeds its
-   per-frame CPU allocation.
-5. **Parallel** -- independent agents are evaluated
-   concurrently via the thread pool.
+3. **Data-driven** -- BT trees, utility curves, and GOAP actions are all data assets.
+4. **Budgeted** -- time-slicing ensures AI never exceeds its per-frame CPU allocation.
+5. **Parallel** -- independent agents are evaluated concurrently via the thread pool.
 
 ## Architecture
 
@@ -146,7 +135,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_ai/
 ├── behavior/
 │   ├── bt/
@@ -2451,11 +2440,9 @@ sequenceDiagram
 
 ### Parallel Evaluation
 
-All three AI systems are independent ECS systems that
-the scheduler can run in parallel when they do not share
-mutable component access. Within each system, agents are
-independent and can be evaluated concurrently via scoped
-thread pool tasks.
+All three AI systems are independent ECS systems that the scheduler can run in parallel when they do
+not share mutable component access. Within each system, agents are independent and can be evaluated
+concurrently via scoped thread pool tasks.
 
 ```rust
 // Parallel BT evaluation using scoped tasks.
@@ -2580,34 +2567,21 @@ pool.scope(|scope| {
 
 ## Open Questions
 
-1. **Blackboard value storage** -- `HashMap` per agent is
-   flexible but adds overhead. A fixed-slot array indexed
-   by `BlackboardKey` would be faster but limits key count.
-   Evaluate fixed-slot for mobile, HashMap for desktop.
-2. **GOAP integer properties** -- 8 integer slots in
-   `WorldState` may be limiting for complex games. Consider
-   expanding to 16 with a `[i16; 16]` and `u16` mask, at
-   the cost of larger state copies.
-3. **Utility AI custom input axis cost** -- Custom
-   considerations use a `ConsiderationId` index into a
-   function table. This requires dynamic dispatch. Consider
-   whether an enum-based approach with a capped set of
-   custom axes is preferable for static dispatch.
-4. **BT leaf node registration** -- Leaf nodes use function
-   pointers. In a no-code engine, all leaf behaviors must be
-   engine-provided. The set of available leaf nodes
-   determines what designers can express. Define the
-   canonical leaf node library.
-5. **Cross-system integration** -- An agent may use BT for
-   high-level structure, Utility AI for action selection
-   within a BT leaf, and GOAP for planning within another
-   leaf. Define the composition patterns and data flow
-   between systems.
-6. **Plan cache eviction** -- Simple LRU approximation
-   (evict first HashMap entry) is not true LRU. Consider
-   using an `IndexMap` or a proper LRU cache with a doubly
-   linked list.
-7. **Determinism** -- Weighted random selection uses
-   `fastrand`. For replay determinism, the PRNG seed must
-   be part of the serialized agent state. Define seeding
-   strategy.
+1. **Blackboard value storage** -- `HashMap` per agent is flexible but adds overhead. A fixed-slot
+   array indexed by `BlackboardKey` would be faster but limits key count. Evaluate fixed-slot for
+   mobile, HashMap for desktop.
+2. **GOAP integer properties** -- 8 integer slots in `WorldState` may be limiting for complex games.
+   Consider expanding to 16 with a `[i16; 16]` and `u16` mask, at the cost of larger state copies.
+3. **Utility AI custom input axis cost** -- Custom considerations use a `ConsiderationId` index into
+   a function table. This requires dynamic dispatch. Consider whether an enum-based approach with a
+   capped set of custom axes is preferable for static dispatch.
+4. **BT leaf node registration** -- Leaf nodes use function pointers. In a no-code engine, all leaf
+   behaviors must be engine-provided. The set of available leaf nodes determines what designers can
+   express. Define the canonical leaf node library.
+5. **Cross-system integration** -- An agent may use BT for high-level structure, Utility AI for
+   action selection within a BT leaf, and GOAP for planning within another leaf. Define the
+   composition patterns and data flow between systems.
+6. **Plan cache eviction** -- Simple LRU approximation (evict first HashMap entry) is not true LRU.
+   Consider using an `IndexMap` or a proper LRU cache with a doubly linked list.
+7. **Determinism** -- Weighted random selection uses `fastrand`. For replay determinism, the PRNG
+   seed must be part of the serialized agent state. Define seeding strategy.

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/rendering/](../../features/rendering/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/rendering/](../../features/rendering/),
 > [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table
-> below traces design elements to those definitions.
+> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -35,30 +35,22 @@
 
 ## Overview
 
-The post-processing subsystem applies a configurable chain of
-full-screen image effects after scene rendering and before
-final output. Every effect is an ECS component attached to a
-camera or post-process volume entity. A `PostProcessStack`
-system extracts active effect components each frame, resolves
-volume blending, and registers compute shader passes into the
-render graph.
+The post-processing subsystem applies a configurable chain of full-screen image effects after scene
+rendering and before final output. Every effect is an ECS component attached to a camera or
+post-process volume entity. A `PostProcessStack` system extracts active effect components each
+frame, resolves volume blending, and registers compute shader passes into the render graph.
 
 Key design principles:
 
-1. **100% ECS-based.** All effect parameters are components.
-   All logic runs as systems. No separate post-process world.
-2. **Compute-only pipeline.** Every effect is an HLSL compute
-   shader dispatched through the render graph. No rasterized
-   full-screen triangles.
-3. **Volume blending.** Overlapping post-process volumes
-   blend parameters by priority and weight, producing a
-   single resolved parameter set per camera per frame.
-4. **Platform-adaptive quality.** Each effect declares
-   quality tiers. The render graph's budget culling prunes
-   effects or reduces quality when the frame budget is
-   exceeded.
-5. **Static dispatch.** The `PostProcessPass` trait uses
-   associated types and generics. No vtables.
+1. **100% ECS-based.** All effect parameters are components. All logic runs as systems. No separate
+   post-process world.
+2. **Compute-only pipeline.** Every effect is an HLSL compute shader dispatched through the render
+   graph. No rasterized full-screen triangles.
+3. **Volume blending.** Overlapping post-process volumes blend parameters by priority and weight,
+   producing a single resolved parameter set per camera per frame.
+4. **Platform-adaptive quality.** Each effect declares quality tiers. The render graph's budget
+   culling prunes effects or reduces quality when the frame budget is exceeded.
+5. **Static dispatch.** The `PostProcessPass` trait uses associated types and generics. No vtables.
 
 ## Architecture
 
@@ -119,7 +111,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_rendering/
 ├── post_process/
 │   ├── mod.rs            # PostProcessStack system,
@@ -185,11 +177,9 @@ harmonius_rendering/
 
 ### Pipeline Execution Order
 
-The post-processing stack executes effects in a fixed
-logical order. Each effect reads from the previous
-effect's output (or the original scene buffer if it is the
-first). Effects that are disabled or budget-culled are
-skipped; the pipeline chains around them automatically.
+The post-processing stack executes effects in a fixed logical order. Each effect reads from the
+previous effect's output (or the original scene buffer if it is the first). Effects that are
+disabled or budget-culled are skipped; the pipeline chains around them automatically.
 
 ```mermaid
 flowchart TD
@@ -214,18 +204,14 @@ flowchart TD
     TM --> CA --> FG --> VG --> OUT
 ```
 
-Effects 1-9 operate in HDR linear space. Effect 10
-(tonemap) converts to display space. Effects 11-13
-operate in display space (LDR or HDR output).
+Effects 1-9 operate in HDR linear space. Effect 10 (tonemap) converts to display space. Effects
+11-13 operate in display space (LDR or HDR output).
 
 ### UI Rendering Order
 
-UI renders after tonemapping but before film grain,
-vignette, and chromatic aberration. This ensures UI
-elements appear in display-space colors (not HDR)
-while film effects overlay the entire frame including
-UI. The render graph enforces this ordering via pass
-dependencies.
+UI renders after tonemapping but before film grain, vignette, and chromatic aberration. This ensures
+UI elements appear in display-space colors (not HDR) while film effects overlay the entire frame
+including UI. The render graph enforces this ordering via pass dependencies.
 
 ### Volume Blending
 
@@ -272,11 +258,9 @@ pub enum QualityTier {
 }
 ```
 
-**Note:** `QualityTier` will be replaced by the
-engine-wide `PlatformTier` enum (Mobile, Switch,
-Desktop, HighEnd) defined in
-[shared-primitives.md](../core-runtime/shared-primitives.md)
-during implementation.
+**Note:** `QualityTier` will be replaced by the engine-wide `PlatformTier` enum (Mobile, Switch,
+Desktop, HighEnd) defined in [shared-primitives.md](../core-runtime/shared-primitives.md) during
+implementation.
 
 ### Post-Process Pass Trait
 
@@ -1165,8 +1149,8 @@ impl VolumeSystem {
 
 ### Bloom Pass Detail
 
-The bloom pass uses a progressive downsample/upsample chain
-with ping-pong textures at each mip level.
+The bloom pass uses a progressive downsample/upsample chain with ping-pong textures at each mip
+level.
 
 ```mermaid
 flowchart TD
@@ -1185,11 +1169,10 @@ flowchart TD
     COMP --> OUT[Bloomed Output]
 ```
 
-**Threshold pass (compute):** Extracts pixels above the
-luminance threshold with soft knee. Writes to a half-res
-transient texture.
+**Threshold pass (compute):** Extracts pixels above the luminance threshold with soft knee. Writes
+to a half-res transient texture.
 
-```
+```text
 luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722))
 knee = threshold * soft_knee
 soft = clamp(luminance - threshold + knee, 0, 2*knee)
@@ -1198,14 +1181,11 @@ contribution = max(soft, luminance - threshold)
 result = color * (contribution / max(luminance, 1e-5))
 ```
 
-**Downsample (compute):** Each mip is half the resolution of
-the previous. Uses a 13-tap tent filter (4 bilinear taps
-per texel) to minimize aliasing.
+**Downsample (compute):** Each mip is half the resolution of the previous. Uses a 13-tap tent filter
+(4 bilinear taps per texel) to minimize aliasing.
 
-**Upsample (compute):** Each mip is upscaled by 2x and
-additively blended with the next higher mip. Uses a 9-tap
-tent filter for smooth interpolation. Each level is weighted
-by `iteration_weights[i]`.
+**Upsample (compute):** Each mip is upscaled by 2x and additively blended with the next higher mip.
+Uses a 9-tap tent filter for smooth interpolation. Each level is weighted by `iteration_weights[i]`.
 
 ### Auto Exposure and Histogram Flow
 
@@ -1222,19 +1202,16 @@ flowchart TD
     APPLY --> OUT[Exposed HDR Output]
 ```
 
-**Histogram accumulation (compute):** A single dispatch
-computes `log2(luminance)` per pixel, bins it into the
-histogram using `InterlockedAdd` on a shared buffer, then
-the bin counts are read back as a 1D buffer.
+**Histogram accumulation (compute):** A single dispatch computes `log2(luminance)` per pixel, bins
+it into the histogram using `InterlockedAdd` on a shared buffer, then the bin counts are read back
+as a 1D buffer.
 
-**Percentile average (compute):** Scans the histogram from
-`low_percentile` to `high_percentile`, computing the
-weighted average log-luminance. Converts to EV100.
+**Percentile average (compute):** Scans the histogram from `low_percentile` to `high_percentile`,
+computing the weighted average log-luminance. Converts to EV100.
 
-**Temporal adaptation (compute):** Interpolates between the
-previous frame's EV and the target EV:
+**Temporal adaptation (compute):** Interpolates between the previous frame's EV and the target EV:
 
-```
+```text
 speed = target_ev > prev_ev ? speed_up : speed_down
 current_ev = prev_ev + (target_ev - prev_ev)
            * (1.0 - exp(-delta_time * speed))
@@ -1242,24 +1219,22 @@ current_ev = prev_ev + (target_ev - prev_ev)
 
 ### Depth of Field — Circle of Confusion
 
-The circle of confusion (CoC) radius determines per-pixel
-blur strength based on camera optics.
+The circle of confusion (CoC) radius determines per-pixel blur strength based on camera optics.
 
-```
+```text
 coc = abs(aperture * focal_length
     * (focus_dist - depth)
     / (depth * (focus_dist - focal_length)))
 ```
 
 The CoC pass writes a signed half-float per pixel:
+
 - Positive = far field (behind focus plane)
 - Negative = near field (in front of focus plane)
 
-**Gather pass (compute):** For each pixel, samples a disc
-kernel (circle, hexagon, or octagon) weighted by the CoC
-of each sample. Near-field samples use a dilated CoC to
-prevent sharp foreground silhouettes from leaking into the
-blur.
+**Gather pass (compute):** For each pixel, samples a disc kernel (circle, hexagon, or octagon)
+weighted by the CoC of each sample. Near-field samples use a dilated CoC to prevent sharp foreground
+silhouettes from leaking into the blur.
 
 ### Motion Blur — Tile-Max Optimization
 
@@ -1273,25 +1248,20 @@ flowchart TD
     GATHER --> OUT[Blurred Output]
 ```
 
-**Tile-max (compute):** Divides the velocity buffer into
-NxN tiles (default 16x16). For each tile, computes the
-maximum velocity magnitude. Tiles with negligible velocity
-are marked as skip.
+**Tile-max (compute):** Divides the velocity buffer into NxN tiles (default 16x16). For each tile,
+computes the maximum velocity magnitude. Tiles with negligible velocity are marked as skip.
 
-**Neighbor-max (compute):** For each tile, takes the maximum
-velocity from its 3x3 neighborhood. This prevents blur
-discontinuities at tile boundaries.
+**Neighbor-max (compute):** For each tile, takes the maximum velocity from its 3x3 neighborhood.
+This prevents blur discontinuities at tile boundaries.
 
-**Gather (compute):** For each pixel, samples along the
-velocity direction. The number of samples is proportional
-to the velocity magnitude (up to `sample_count`). Tiles
-marked as skip receive zero blur.
+**Gather (compute):** For each pixel, samples along the velocity direction. The number of samples is
+proportional to the velocity magnitude (up to `sample_count`). Tiles marked as skip receive zero
+blur.
 
 ### Composite Pass Merging (Mobile)
 
-On `QualityTier::Mobile`, lightweight effects (film grain,
-chromatic aberration, vignette) are merged into a single
-composite compute dispatch to minimize bandwidth:
+On `QualityTier::Mobile`, lightweight effects (film grain, chromatic aberration, vignette) are
+merged into a single composite compute dispatch to minimize bandwidth:
 
 ```mermaid
 flowchart LR
@@ -1305,8 +1275,7 @@ flowchart LR
     end
 ```
 
-This avoids three separate texture read/write round-trips
-on bandwidth-constrained tile-based GPUs.
+This avoids three separate texture read/write round-trips on bandwidth-constrained tile-based GPUs.
 
 ## Platform Considerations
 
@@ -1339,34 +1308,26 @@ on bandwidth-constrained tile-based GPUs.
 
 ### Shader Compilation
 
-All post-processing shaders are authored in HLSL and
-compiled through the standard pipeline:
+All post-processing shaders are authored in HLSL and compiled through the standard pipeline:
 
 1. **HLSL source** authored per effect
-2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V
-   (Vulkan) via cxx.rs
-3. **Metal Shader Converter** translates DXIL to MSL
-   (Metal) via cxx.rs
+2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via cxx.rs
+3. **Metal Shader Converter** translates DXIL to MSL (Metal) via cxx.rs
 4. Platform-specific shader objects cached on disk
 
-Shader variants are generated for quality tiers via
-`#define` preprocessor guards (e.g.,
+Shader variants are generated for quality tiers via `#define` preprocessor guards (e.g.,
 `BLOOM_METHOD_DUAL_KAWASE`, `BLOOM_METHOD_GAUSSIAN`).
 
 ### HDR Display Output
 
 When `HdrOutputMode::Hdr10` is selected:
 
-1. Tonemapping outputs to a `R16G16B16A16_FLOAT` target
-   in Rec.709 linear space
+1. Tonemapping outputs to a `R16G16B16A16_FLOAT` target in Rec.709 linear space
 2. A final pass converts Rec.709 to BT.2020 primaries
-3. PQ (Perceptual Quantizer) EOTF is applied per the
-   ST.2084 standard
-4. Peak luminance is mapped to the display's reported
-   max nits (up to 10,000)
+3. PQ (Perceptual Quantizer) EOTF is applied per the ST.2084 standard
+4. Peak luminance is mapped to the display's reported max nits (up to 10,000)
 
-For `DolbyVision`, dynamic metadata is generated per frame
-based on the luminance histogram.
+For `DolbyVision`, dynamic metadata is generated per frame based on the luminance histogram.
 
 ## Test Plan
 
@@ -1449,57 +1410,36 @@ based on the luminance histogram.
 
 ## Open Questions
 
-1. **Ping-pong vs. in-place UAV.** The current design
-   ping-pongs between two transient color textures. An
-   alternative is in-place UAV read-write where the
-   backend supports it (D3D12 with relaxed format rules).
-   In-place halves transient memory but requires careful
-   barrier management.
+1. **Ping-pong vs. in-place UAV.** The current design ping-pongs between two transient color
+   textures. An alternative is in-place UAV read-write where the backend supports it (D3D12 with
+   relaxed format rules). In-place halves transient memory but requires careful barrier management.
 
-2. **Histogram readback strategy.** The auto exposure
-   histogram is computed on GPU but the EV result is
-   needed for the next pass in the same frame. Options:
-   (a) GPU-only -- compute EV in a follow-up dispatch
-   and pass via buffer, (b) async readback -- read EV
-   from the previous frame with one-frame latency. Option
-   (a) avoids latency; option (b) avoids the extra
-   dispatch.
+2. **Histogram readback strategy.** The auto exposure histogram is computed on GPU but the EV result
+   is needed for the next pass in the same frame. Options: (a) GPU-only -- compute EV in a follow-up
+   dispatch and pass via buffer, (b) async readback -- read EV from the previous frame with
+   one-frame latency. Option (a) avoids latency; option (b) avoids the extra dispatch.
 
-3. **Bloom energy conservation.** The current upsample
-   chain uses per-iteration weights. An alternative is
-   to normalize the total energy of the upsample chain
-   so that bloom intensity is independent of iteration
-   count. This simplifies artist tuning but removes
-   per-level control.
+3. **Bloom energy conservation.** The current upsample chain uses per-iteration weights. An
+   alternative is to normalize the total energy of the upsample chain so that bloom intensity is
+   independent of iteration count. This simplifies artist tuning but removes per-level control.
 
-4. **DOF near-field separation.** The gather pass handles
-   near and far field in a single pass. An alternative
-   is to separate near-field into a dedicated prepass
-   that dilates the CoC and composites over the far-field
-   result. Separation improves occlusion quality at the
-   cost of an extra dispatch.
+4. **DOF near-field separation.** The gather pass handles near and far field in a single pass. An
+   alternative is to separate near-field into a dedicated prepass that dilates the CoC and
+   composites over the far-field result. Separation improves occlusion quality at the cost of an
+   extra dispatch.
 
-5. **Custom tone curve authoring.** The `Tonemapper::Custom`
-   variant is currently backed by a LUT. An alternative
-   is a spline-based curve editor that generates the LUT
-   at asset import time, giving artists explicit control
-   points.
+5. **Custom tone curve authoring.** The `Tonemapper::Custom` variant is currently backed by a LUT.
+   An alternative is a spline-based curve editor that generates the LUT at asset import time, giving
+   artists explicit control points.
 
-6. **Volume shape interpolation.** The current design
-   blends volume parameters with a weighted lerp. For
-   non-linear parameters (e.g., LUT blending), a simple
-   lerp may produce incorrect intermediate results. A
-   LUT interpolation scheme (e.g., tetrahedral) may be
-   needed.
+6. **Volume shape interpolation.** The current design blends volume parameters with a weighted lerp.
+   For non-linear parameters (e.g., LUT blending), a simple lerp may produce incorrect intermediate
+   results. A LUT interpolation scheme (e.g., tetrahedral) may be needed.
 
-7. **Post-process graph sandboxing.** User-authored graph
-   nodes compile to HLSL compute shaders. Malicious or
-   buggy graphs could produce GPU hangs. A timeout or
-   resource budget per graph dispatch may be needed to
-   protect the pipeline.
+7. **Post-process graph sandboxing.** User-authored graph nodes compile to HLSL compute shaders.
+   Malicious or buggy graphs could produce GPU hangs. A timeout or resource budget per graph
+   dispatch may be needed to protect the pipeline.
 
-8. **Tile-max tile size tuning.** The default 16x16 tile
-   size for motion blur's tile-max pass balances cost
-   and quality. Larger tiles reduce cost but increase
-   blur discontinuities. The optimal size may vary by
-   resolution and velocity distribution.
+8. **Tile-max tile size tuning.** The default 16x16 tile size for motion blur's tile-max pass
+   balances cost and quality. Larger tiles reduce cost but increase blur discontinuities. The
+   optimal size may vary by resolution and velocity distribution.

@@ -147,8 +147,8 @@ dialogue is clearly audible without manual volume adjustment.
 
 ## US-13.6.5b.3 Focus on NPC Conversations Without Distractions
 
-**As a** player (P-23), **I want to** gameplay inputs to be suppressed during conversations, **so
-that** I do not accidentally attack or move while reading dialogue.
+**As a** player (P-23), **I want to** gameplay inputs to be suppressed during conversations,
+**so that** I do not accidentally attack or move while reading dialogue.
 
 ## US-13.6.5b.4 Verify Gameplay State Restores on Conversation End
 

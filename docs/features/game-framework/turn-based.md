@@ -1,6 +1,6 @@
 # 13.21 — Turn-Based and Tactical Systems
 
-### F-13.21.1 Tactical Grid System
+## F-13.21.1 Tactical Grid System
 
 Square or hexagonal grid overlay on the game world with per-cell data: traversability (walkable,
 blocked, difficult terrain), elevation tier, cover values (none, half, full per edge), terrain type

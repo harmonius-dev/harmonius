@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 ### Save System (F-13.3, R-13.3)
 
@@ -64,25 +64,17 @@
 
 This document designs two game-framework subsystems:
 
-1. **Save System** -- reflection-driven world
-   serialization, incremental dirty-entity saves,
-   schema migration, an async I/O pipeline with
-   compression/encryption/checksumming, save slot
-   management, and cloud sync. All I/O is async
-   via `IoReactor`. All state lives as ECS
-   components.
+1. **Save System** -- reflection-driven world serialization, incremental dirty-entity saves, schema
+   migration, an async I/O pipeline with compression/encryption/checksumming, save slot management,
+   and cloud sync. All I/O is async via `IoReactor`. All state lives as ECS components.
 
-2. **Cinematics** -- a timeline-based sequencer
-   whose tracks drive camera, animation, audio,
-   VFX, dialogue, and gameplay triggers. The
-   sequencer state is 100% ECS components. Playback
-   is deterministic regardless of framerate.
-   Supports skip, pause, fast-forward, letterboxing,
-   and a no-code visual editor.
+2. **Cinematics** -- a timeline-based sequencer whose tracks drive camera, animation, audio, VFX,
+   dialogue, and gameplay triggers. The sequencer state is 100% ECS components. Playback is
+   deterministic regardless of framerate. Supports skip, pause, fast-forward, letterboxing, and a
+   no-code visual editor.
 
-Both subsystems consume the `Reflect` trait and
-`TypeRegistry` for serialization and the `AsyncIo`
-/ `VirtualFileSystem` layer for all disk operations.
+Both subsystems consume the `Reflect` trait and `TypeRegistry` for serialization and the `AsyncIo` /
+`VirtualFileSystem` layer for all disk operations.
 
 ## Architecture
 
@@ -156,7 +148,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_game/
 ├── save/
 │   ├── manager.rs        # SaveManager system,
@@ -1751,19 +1743,14 @@ sequenceDiagram
 
 ### Incremental Save Decision
 
-The save system uses ECS change detection to
-identify dirty entities. Each frame:
+The save system uses ECS change detection to identify dirty entities. Each frame:
 
 1. Systems modify components normally
 2. Change detection marks entities with `Changed<T>`
-3. The save dirty-tracking system queries entities
-   that have both `Saveable` and any `Changed<T>`
-4. It inserts or updates `SaveDirty` with the
-   current tick
-5. On save, the serializer queries entities where
-   `SaveDirty.dirty_tick > SaveMeta.last_saved_tick`
-6. After save, `SaveDirty` is cleared and
-   `SaveMeta.last_saved_tick` is updated
+3. The save dirty-tracking system queries entities that have both `Saveable` and any `Changed<T>`
+4. It inserts or updates `SaveDirty` with the current tick
+5. On save, the serializer queries entities where `SaveDirty.dirty_tick > SaveMeta.last_saved_tick`
+6. After save, `SaveDirty` is cleared and `SaveMeta.last_saved_tick` is updated
 
 ```mermaid
 graph TD
@@ -1786,10 +1773,9 @@ graph TD
 
 ### Save File I/O Backend
 
-All save I/O routes through the `AsyncIo` and
-`VirtualFileSystem` layers defined in
-[memory-async-io.md](../core-runtime/memory-async-io.md).
-Platform backends are selected at compile time.
+All save I/O routes through the `AsyncIo` and `VirtualFileSystem` layers defined in
+[memory-async-io.md](../core-runtime/memory-async-io.md). Platform backends are selected at compile
+time.
 
 | Operation | Windows (IOCP) | macOS (GCD) | Linux (io_uring) |
 |-----------|---------------|-------------|-----------------|
@@ -1823,10 +1809,8 @@ Platform backends are selected at compile time.
 
 ### Cinematic Camera -- Platform Adaptation
 
-Camera shake uses platform-appropriate noise
-generation. No platform-specific rendering code;
-all camera parameters are written as ECS components
-consumed by the rendering pipeline.
+Camera shake uses platform-appropriate noise generation. No platform-specific rendering code; all
+camera parameters are written as ECS components consumed by the rendering pipeline.
 
 ### Proposed Dependencies
 
@@ -1837,8 +1821,7 @@ consumed by the rendering pipeline.
 | `aes-gcm` | AES-256-GCM encryption | Pure Rust, RustCrypto ecosystem |
 | `crc32fast` | CRC-32 checksumming | SIMD-accelerated, widely used |
 
-Note: `blake3` (for content hashing) is already
-approved in
+Note: `blake3` (for content hashing) is already approved in
 [memory-async-io.md](../core-runtime/memory-async-io.md).
 
 ## Test Plan
@@ -1925,50 +1908,30 @@ approved in
 
 ## Open Questions
 
-1. **Incremental save merge strategy** -- When
-   loading, should incremental save files be
-   merged with the most recent full save at load
-   time, or should the save system periodically
-   compact incrementals into a full save? Periodic
-   compaction reduces load time but adds background
-   I/O.
+1. **Incremental save merge strategy** -- When loading, should incremental save files be merged with
+   the most recent full save at load time, or should the save system periodically compact
+   incrementals into a full save? Periodic compaction reduces load time but adds background I/O.
 
-2. **Save thumbnail capture timing** -- Thumbnails
-   require a framebuffer readback. Should this
-   happen synchronously at save time (adds latency),
-   or should the system continuously maintain a
-   low-res thumbnail buffer that is sampled on save
-   (adds per-frame cost)?
+2. **Save thumbnail capture timing** -- Thumbnails require a framebuffer readback. Should this
+   happen synchronously at save time (adds latency), or should the system continuously maintain a
+   low-res thumbnail buffer that is sampled on save (adds per-frame cost)?
 
-3. **Migration test data management** -- Should
-   the test suite maintain a repository of save
-   files from every schema version for regression
-   testing, or generate them on the fly from
-   versioned test fixtures?
+3. **Migration test data management** -- Should the test suite maintain a repository of save files
+   from every schema version for regression testing, or generate them on the fly from versioned test
+   fixtures?
 
-4. **Sequencer sub-sequence ownership** -- Should
-   sub-sequences be value-owned (cloned into the
-   parent timeline) or referenced by `Handle`
-   (shared, potential lifetime issues)? Handle-based
-   sharing reduces memory but complicates timeline
-   editing.
+4. **Sequencer sub-sequence ownership** -- Should sub-sequences be value-owned (cloned into the
+   parent timeline) or referenced by `Handle` (shared, potential lifetime issues)? Handle-based
+   sharing reduces memory but complicates timeline editing.
 
-5. **Actor blend mask granularity** -- The current
-   design uses a simple enum (`UpperBodyOnly`,
-   `LowerBodyOnly`, `Custom(u64)`). Should this be
-   replaced by a per-bone weight map for finer
-   control? Per-bone maps are more flexible but
-   more expensive to evaluate.
+5. **Actor blend mask granularity** -- The current design uses a simple enum (`UpperBodyOnly`,
+   `LowerBodyOnly`, `Custom(u64)`). Should this be replaced by a per-bone weight map for finer
+   control? Per-bone maps are more flexible but more expensive to evaluate.
 
-6. **Cinematic audio during fast-forward** -- At
-   2x/4x speed, should audio be pitch-shifted,
-   played at normal speed with visual desync, or
-   muted? Each approach has different UX tradeoffs.
-   This should be configurable per-sequence.
+6. **Cinematic audio during fast-forward** -- At 2x/4x speed, should audio be pitch-shifted, played
+   at normal speed with visual desync, or muted? Each approach has different UX tradeoffs. This
+   should be configurable per-sequence.
 
-7. **Cloud save quota management** -- Different
-   platforms have different cloud storage quotas
-   (Steam: 1 GB default, iCloud: varies). Should
-   the engine enforce a maximum save count or size
-   per platform, or let the platform API reject
-   uploads that exceed quota?
+7. **Cloud save quota management** -- Different platforms have different cloud storage quotas
+   (Steam: 1 GB default, iCloud: varies). Should the engine enforce a maximum save count or size per
+   platform, or let the platform API reject uploads that exceed quota?

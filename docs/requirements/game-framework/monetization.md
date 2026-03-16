@@ -349,8 +349,8 @@ available in accessibility preferences. These rules **SHALL** be compiled into t
 Ad frequency **SHALL** be hard-capped at maximum 1 interstitial per 10 minutes and 3 rewarded videos
 per hour, enforced engine-side regardless of game developer configuration. Cap timers **SHALL** use
 rolling windows (not calendar boundaries). Attempts to display ads exceeding the cap **SHALL** be
-silently blocked and logged. Cap values **SHALL** be compiled into the engine binary and **SHALL
-NOT** be changeable at runtime.
+silently blocked and logged. Cap values **SHALL** be compiled into the engine binary and
+**SHALL NOT** be changeable at runtime.
 
 - **Derived from:** [F-13.23.9d](../../features/game-framework/monetization.md)
 - **Rationale:** Engine-enforced frequency caps prevent excessive ad exposure regardless of how

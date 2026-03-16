@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/animation/](../../features/animation/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/animation/](../../features/animation/),
 > [requirements/animation/](../../requirements/animation/), and
-> [user-stories/animation/](../../user-stories/animation/). The table
-> below traces design elements to those definitions.
+> [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -43,28 +43,19 @@
 
 ## Overview
 
-The procedural animation system applies runtime
-modifications to poses produced by the skeletal
-animation pipeline. It runs as an ordered chain of
-ECS systems in a **post-process phase** after the
-state machine evaluates blended poses and before
-GPU skinning uploads bone matrices.
+The procedural animation system applies runtime modifications to poses produced by the skeletal
+animation pipeline. It runs as an ordered chain of ECS systems in a **post-process phase** after the
+state machine evaluates blended poses and before GPU skinning uploads bone matrices.
 
 The design follows four principles:
 
-1. **Post-process pipeline.** All procedural
-   effects (IK, look-at, ragdoll blend, secondary
-   motion) are independent systems executed in a
-   fixed order after the animation blend.
-2. **100% ECS-based.** Every solver reads/writes
-   ECS components. No hidden state, no parallel
-   data stores.
-3. **Shared spatial index.** Foot placement and
-   ground adaptation use the shared BVH (F-1.9.1)
-   for raycasts instead of maintaining a separate
-   collision structure.
-4. **Static dispatch.** All solver selection is
-   compile-time via enums. No trait objects, no
+1. **Post-process pipeline.** All procedural effects (IK, look-at, ragdoll blend, secondary motion)
+   are independent systems executed in a fixed order after the animation blend.
+2. **100% ECS-based.** Every solver reads/writes ECS components. No hidden state, no parallel data
+   stores.
+3. **Shared spatial index.** Foot placement and ground adaptation use the shared BVH (F-1.9.1) for
+   raycasts instead of maintaining a separate collision structure.
+4. **Static dispatch.** All solver selection is compile-time via enums. No trait objects, no
    vtables.
 
 ### Performance Targets
@@ -140,7 +131,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_animation/
 ├── procedural/
 │   ├── mod.rs              # Re-exports
@@ -171,8 +162,7 @@ harmonius_animation/
 
 ### Post-Process Pipeline Ordering
 
-All procedural animation systems run in a fixed
-order within the `PostAnimation` schedule phase,
+All procedural animation systems run in a fixed order within the `PostAnimation` schedule phase,
 after animation blending and before GPU skinning.
 
 ```mermaid
@@ -321,8 +311,7 @@ classDiagram
 
 ### Foot Placement Raycast Flow
 
-Foot placement issues batch raycasts through the
-shared spatial query API (F-1.9.5) each frame.
+Foot placement issues batch raycasts through the shared spatial query API (F-1.9.5) each frame.
 
 ```mermaid
 sequenceDiagram
@@ -1736,11 +1725,8 @@ pub fn locomotion_diagnostics_system(
 
 ### Per-Frame Execution Order
 
-The procedural animation pipeline executes in
-a strict order within the `PostAnimation`
-schedule phase. Each system reads the output of
-the previous system and writes to the shared
-pose buffer.
+The procedural animation pipeline executes in a strict order within the `PostAnimation` schedule
+phase. Each system reads the output of the previous system and writes to the shared pose buffer.
 
 ```rust
 // PostAnimation phase execution order:
@@ -1805,10 +1791,8 @@ graph TD
 
 ### Foot Placement Batch Raycast Pattern
 
-All characters' foot placement raycasts are
-gathered into a single batch submitted to the
-shared spatial query API. This amortizes BVH
-traversal overhead.
+All characters' foot placement raycasts are gathered into a single batch submitted to the shared
+spatial query API. This amortizes BVH traversal overhead.
 
 ```rust
 // Conceptual data flow for batch raycasts:
@@ -1859,9 +1843,8 @@ traversal overhead.
 
 ### GPU Compute Considerations
 
-IK solvers (two-bone, CCD, FABRIK) run as GPU
-compute passes when the chain count exceeds the
-CPU threshold:
+IK solvers (two-bone, CCD, FABRIK) run as GPU compute passes when the chain count exceeds the CPU
+threshold:
 
 | Tier | CPU Threshold | GPU Dispatch |
 |------|---------------|-------------|
@@ -1869,14 +1852,12 @@ CPU threshold:
 | Switch | 20 chains | 1 dispatch, 128 threads/group |
 | Desktop | 50 chains | 1 dispatch, 256 threads/group |
 
-Below the threshold, IK solves run CPU-side in
-the ECS system to avoid GPU dispatch overhead
-for small chain counts.
+Below the threshold, IK solves run CPU-side in the ECS system to avoid GPU dispatch overhead for
+small chain counts.
 
 ### Platform-Specific Code
 
-All platform scaling uses `cfg` attributes and
-the `PlatformTier` resource. No dynamic dispatch.
+All platform scaling uses `cfg` attributes and the `PlatformTier` resource. No dynamic dispatch.
 
 ```rust
 /// Platform tier for procedural animation budget
@@ -2020,66 +2001,42 @@ impl PlatformTier {
 
 ### Shared Type References
 
-Joint angular limits use the shared `JointLimit` type
-and spring-damper evaluation uses `SpringDamper<T>`
-(see
-[shared-primitives.md](../core-runtime/shared-primitives.md)).
+Joint angular limits use the shared `JointLimit` type and spring-damper evaluation uses
+`SpringDamper<T>` (see [shared-primitives.md](../core-runtime/shared-primitives.md)).
 
 ## Open Questions
 
-1. **GPU vs CPU IK threshold.** The current design
-   runs IK on GPU when chain count exceeds a
-   per-tier threshold. The exact crossover point
-   depends on GPU dispatch overhead vs CPU SIMD
-   throughput. Benchmarking needed to set final
-   thresholds.
+1. **GPU vs CPU IK threshold.** The current design runs IK on GPU when chain count exceeds a
+   per-tier threshold. The exact crossover point depends on GPU dispatch overhead vs CPU SIMD
+   throughput. Benchmarking needed to set final thresholds.
 
-2. **Motion matching integration point.** Motion
-   matching (F-9.3.6) replaces the state machine
-   for pose selection. It is not part of the
-   post-process pipeline but produces the input
-   pose. The interaction between motion matching
-   foot contacts and the foot placement system
-   needs clarification — should motion matching
-   provide foot contact events that the foot
-   placement system uses as hints?
+2. **Motion matching integration point.** Motion matching (F-9.3.6) replaces the state machine for
+   pose selection. It is not part of the post-process pipeline but produces the input pose. The
+   interaction between motion matching foot contacts and the foot placement system needs
+   clarification — should motion matching provide foot contact events that the foot placement system
+   uses as hints?
 
-3. **Multi-end-effector FABRIK priority scheme.**
-   When multiple end-effectors compete for shared
-   joints, the current design averages by
-   priority weight. An alternative is iterative
-   resolution where higher-priority chains solve
-   first and lower-priority chains solve with
-   fixed shared joints.
+3. **Multi-end-effector FABRIK priority scheme.** When multiple end-effectors compete for shared
+   joints, the current design averages by priority weight. An alternative is iterative resolution
+   where higher-priority chains solve first and lower-priority chains solve with fixed shared
+   joints.
 
-4. **Ragdoll recovery pose selection.** When
-   recovering from ragdoll, the system blends
-   back to the current animation pose. If the
-   ragdoll pose is far from any animation pose,
-   the blend may look unnatural. A pose-matching
-   step (select the closest animation pose to the
-   ragdoll pose) could improve recovery quality.
+4. **Ragdoll recovery pose selection.** When recovering from ragdoll, the system blends back to the
+   current animation pose. If the ragdoll pose is far from any animation pose, the blend may look
+   unnatural. A pose-matching step (select the closest animation pose to the ragdoll pose) could
+   improve recovery quality.
 
-5. **Spring bone collision.** The current
-   `SpringBoneChain` has `collision_radii` but no
-   collision solver. Self-collision between spring
-   bones and body collision with the character
-   mesh needs a lightweight swept-sphere check.
-   Should this reuse the shared BVH or maintain
-   local collision geometry?
+5. **Spring bone collision.** The current `SpringBoneChain` has `collision_radii` but no collision
+   solver. Self-collision between spring bones and body collision with the character mesh needs a
+   lightweight swept-sphere check. Should this reuse the shared BVH or maintain local collision
+   geometry?
 
-6. **Physics locomotion joint mapping.** The
-   `PhysicsLocomotion` component stores
-   `muscle_strength` and `joint_damping` as flat
-   `Vec<f32>` indexed by position. A named mapping
-   (bone entity to strength) would be clearer
-   but more expensive to look up. Need to decide
-   on the indexing strategy.
+6. **Physics locomotion joint mapping.** The `PhysicsLocomotion` component stores `muscle_strength`
+   and `joint_damping` as flat `Vec<f32>` indexed by position. A named mapping (bone entity to
+   strength) would be clearer but more expensive to look up. Need to decide on the indexing
+   strategy.
 
-7. **Dismemberment mesh splitting.** The current
-   design assumes the detached sub-mesh exists
-   as a pre-authored asset. Runtime mesh splitting
-   (cutting a mesh along the sever plane) is
-   significantly more complex and may require a
-   geometry processing pass. Determine whether
+7. **Dismemberment mesh splitting.** The current design assumes the detached sub-mesh exists as a
+   pre-authored asset. Runtime mesh splitting (cutting a mesh along the sever plane) is
+   significantly more complex and may require a geometry processing pass. Determine whether
    pre-authored or runtime splitting is needed.

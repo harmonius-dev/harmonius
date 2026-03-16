@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 ### Character Customization (F-13.8, R-13.8)
 
@@ -80,35 +80,25 @@
 
 This document covers two tightly coupled domains:
 
-1. **Character Customization** -- the data model and
-   systems that define a character's visual appearance
-   through morph targets, modular mesh parts, materials,
-   hair, and equipment attachments.
-2. **Inventory** -- the ECS-based container model for
-   items, with grid/list layouts, stacking, equipment
-   slot binding, loot distribution, and trading.
+1. **Character Customization** -- the data model and systems that define a character's visual
+   appearance through morph targets, modular mesh parts, materials, hair, and equipment attachments.
+2. **Inventory** -- the ECS-based container model for items, with grid/list layouts, stacking,
+   equipment slot binding, loot distribution, and trading.
 
-The two domains intersect at the **equipment slot**
-boundary: equipping an item moves it from inventory
-to a character slot, triggering stat application,
-visual mesh attachment, and animation state changes.
+The two domains intersect at the **equipment slot** boundary: equipping an item moves it from
+inventory to a character slot, triggering stat application, visual mesh attachment, and animation
+state changes.
 
 ### Design Principles
 
-1. **100% ECS-based.** All character appearance data
-   and inventory state are ECS components. All logic
-   is implemented as systems. No parallel data stores.
-2. **No-code authoring.** All customization parameters,
-   item definitions, slot configurations, and loot
-   tables are authored through visual editors and data
-   tables. Users never write code.
-3. **Static dispatch.** No trait objects or dynamic
-   dispatch. Component types are concrete. Systems
+1. **100% ECS-based.** All character appearance data and inventory state are ECS components. All
+   logic is implemented as systems. No parallel data stores.
+2. **No-code authoring.** All customization parameters, item definitions, slot configurations, and
+   loot tables are authored through visual editors and data tables. Users never write code.
+3. **Static dispatch.** No trait objects or dynamic dispatch. Component types are concrete. Systems
    use generic type parameters where needed.
-4. **Server-authoritative inventory.** All inventory
-   mutations are validated server-side. Client
-   prediction provides responsive UI with rollback
-   on rejection.
+4. **Server-authoritative inventory.** All inventory mutations are validated server-side. Client
+   prediction provides responsive UI with rollback on rejection.
 
 ### Performance Targets
 
@@ -215,7 +205,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_game/
 ├── character/
 │   ├── mod.rs
@@ -273,8 +263,7 @@ harmonius_game/
 
 ### Equipment Pipeline
 
-This sequence shows the full equip flow from
-inventory to visual attachment:
+This sequence shows the full equip flow from inventory to visual attachment:
 
 ```mermaid
 sequenceDiagram
@@ -1695,28 +1684,18 @@ pub enum CharacterError {
 
 ### Character Creation Flow
 
-1. Player opens the character creator. The system
-   loads all base meshes, morph target sets, hair
+1. Player opens the character creator. The system loads all base meshes, morph target sets, hair
    assets, and presets (R-13.8.NF1: < 3 s).
-2. Player selects a race. The `CharacterRace`
-   component is set, loading the race-specific
-   skeleton and morph target set.
-3. Player adjusts facial sliders. Each slider
-   change writes to `FacialMorphWeights`. The
-   `MorphEvaluationSystem` reads `Changed<
-   FacialMorphWeights>` and updates vertex
-   positions within the same frame (R-13.8.NF2).
-4. Player adjusts body sliders. `BodyShape`
-   component changes trigger the
-   `BodyMorphSystem` which blends morph targets
-   and adjusts skeleton scale bones.
-   `BodyConstraints` clamp values.
-5. Player customizes skin, eyes, hair, and
-   makeup layers. Each writes to its respective
-   component. Material parameters update
-   reactively.
-6. Player confirms. `AppearanceData` is
-   serialized (< 16 KB) and persisted.
+2. Player selects a race. The `CharacterRace` component is set, loading the race-specific skeleton
+   and morph target set.
+3. Player adjusts facial sliders. Each slider change writes to `FacialMorphWeights`. The
+   `MorphEvaluationSystem` reads `Changed< FacialMorphWeights>` and updates vertex positions within
+   the same frame (R-13.8.NF2).
+4. Player adjusts body sliders. `BodyShape` component changes trigger the `BodyMorphSystem` which
+   blends morph targets and adjusts skeleton scale bones. `BodyConstraints` clamp values.
+5. Player customizes skin, eyes, hair, and makeup layers. Each writes to its respective component.
+   Material parameters update reactively.
+6. Player confirms. `AppearanceData` is serialized (< 16 KB) and persisted.
 
 ### Equipment Equip/Unequip Flow
 
@@ -1778,51 +1757,36 @@ fn equip_system(
 
 ### Inventory Transfer Flow
 
-1. Client initiates drag. `DragPayload` resource
-   is set with the source item and container.
-2. Client drops onto target container. A
-   `TransferCommand` is created.
-3. Client prediction: `TransferOps::validate()`
-   runs locally. On success, the UI optimistically
+1. Client initiates drag. `DragPayload` resource is set with the source item and container.
+2. Client drops onto target container. A `TransferCommand` is created.
+3. Client prediction: `TransferOps::validate()` runs locally. On success, the UI optimistically
    shows the item in the target.
 4. `TransferCommand` is sent to the server via RPC.
-5. Server runs `TransferOps::validate()`. On
-   success, `TransferOps::execute()` reparents
-   the item entity. On failure, a reject reason
-   is sent back.
-6. Client receives confirmation or rolls back the
-   prediction.
+5. Server runs `TransferOps::validate()`. On success, `TransferOps::execute()` reparents the item
+   entity. On failure, a reject reason is sent back.
+6. Client receives confirmation or rolls back the prediction.
 
 ### Mesh Merging Flow
 
-1. The `CharacterLodSystem` evaluates distance
-   from camera to each character using the shared
+1. The `CharacterLodSystem` evaluates distance from camera to each character using the shared
    spatial index.
-2. Characters transitioning from `Close` to
-   `Medium` LOD enqueue a `MeshMergeRequest`.
-3. The `MeshMergeSystem` checks the `MergeCache`.
-   On cache hit, the merged mesh is applied
+2. Characters transitioning from `Close` to `Medium` LOD enqueue a `MeshMergeRequest`.
+3. The `MeshMergeSystem` checks the `MergeCache`. On cache hit, the merged mesh is applied
    immediately.
-4. On cache miss, the merge runs as an async task
-   on the thread pool. The merged mesh is stored
-   in the cache upon completion.
-5. Characters transitioning back to `Close` LOD
-   swap back to separate mesh parts for
-   hot-swappable equipment.
+4. On cache miss, the merge runs as an async task on the thread pool. The merged mesh is stored in
+   the cache upon completion.
+5. Characters transitioning back to `Close` LOD swap back to separate mesh parts for hot-swappable
+   equipment.
 
 ### Body Morph Propagation
 
-1. `BodyShape` changes are detected via
-   `Changed<BodyShape>`.
-2. The `BodyMorphPropagationSystem` iterates
-   all equipment mesh parts that have matching
-   morph targets.
-3. For deformable equipment (cloth, leather),
-   the system copies the body morph weights
-   to the equipment's morph target component.
-4. For rigid equipment (plate, helmets), morph
-   propagation is skipped -- bone transforms
-   alone position the pieces.
+1. `BodyShape` changes are detected via `Changed<BodyShape>`.
+2. The `BodyMorphPropagationSystem` iterates all equipment mesh parts that have matching morph
+   targets.
+3. For deformable equipment (cloth, leather), the system copies the body morph weights to the
+   equipment's morph target component.
+4. For rigid equipment (plate, helmets), morph propagation is skipped -- bone transforms alone
+   position the pieces.
 
 ## Platform Considerations
 
@@ -1956,39 +1920,25 @@ fn equip_system(
 
 ## Open Questions
 
-1. **Morph target storage format** -- Should morph
-   targets use compressed deltas (16-bit fixed point)
-   or full f32 per vertex? Compression reduces memory
-   by 50% but adds a decode step per frame.
-2. **Grid auto-sort algorithm** -- Shelf bin-packing
-   vs. Guillotine vs. MaxRects. Shelf is simplest but
-   wastes more space. MaxRects produces tighter
-   packing but costs more CPU.
-3. **Mesh merge granularity** -- Merge all parts into
-   one mesh, or merge per-material-group (keeping 2-3
-   draw calls)? Single mesh maximizes draw call
-   reduction but requires re-merge on any part change.
-4. **Transmog storage** -- Store wardrobe per-character
-   or per-account? Per-account shares unlocks but
-   requires a cross-character service. Per-character is
-   simpler but duplicates unlock state.
-5. **Loot table evaluation location** -- Server-only
-   or client-predictable? Server-only prevents
-   data-mining but adds latency to loot display.
-   Personal loot mode could predict client-side with
+1. **Morph target storage format** -- Should morph targets use compressed deltas (16-bit fixed
+   point) or full f32 per vertex? Compression reduces memory by 50% but adds a decode step per
+   frame.
+2. **Grid auto-sort algorithm** -- Shelf bin-packing vs. Guillotine vs. MaxRects. Shelf is simplest
+   but wastes more space. MaxRects produces tighter packing but costs more CPU.
+3. **Mesh merge granularity** -- Merge all parts into one mesh, or merge per-material-group (keeping
+   2-3 draw calls)? Single mesh maximizes draw call reduction but requires re-merge on any part
+   change.
+4. **Transmog storage** -- Store wardrobe per-character or per-account? Per-account shares unlocks
+   but requires a cross-character service. Per-character is simpler but duplicates unlock state.
+5. **Loot table evaluation location** -- Server-only or client-predictable? Server-only prevents
+   data-mining but adds latency to loot display. Personal loot mode could predict client-side with
    server confirmation.
-6. **Socket stat merge timing** -- Merge stats eagerly
-   on insert (faster tooltip reads) or lazily on query
-   (simpler insert)? Eager merge requires reverting on
-   removal; lazy merge requires aggregation on every
-   stat query.
-7. **Body morph conform system** -- Vertex projection
-   onto body surface (ray cast per vertex) vs.
-   cage-based deformation (lattice warp)? Ray cast is
-   more accurate but expensive; cage warp is faster
-   but may miss fine detail.
-8. **Inventory network protocol** -- Full snapshot
-   replication vs. delta-compressed incremental
-   updates? Snapshots are simpler but waste bandwidth
-   for single-item changes. Deltas require reliable
-   ordered delivery and rollback complexity.
+6. **Socket stat merge timing** -- Merge stats eagerly on insert (faster tooltip reads) or lazily on
+   query (simpler insert)? Eager merge requires reverting on removal; lazy merge requires
+   aggregation on every stat query.
+7. **Body morph conform system** -- Vertex projection onto body surface (ray cast per vertex) vs.
+   cage-based deformation (lattice warp)? Ray cast is more accurate but expensive; cage warp is
+   faster but may miss fine detail.
+8. **Inventory network protocol** -- Full snapshot replication vs. delta-compressed incremental
+   updates? Snapshots are simpler but waste bandwidth for single-item changes. Deltas require
+   reliable ordered delivery and rollback complexity.

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/core-runtime/](../../features/core-runtime/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/core-runtime/](../../features/core-runtime/),
 > [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table
-> below traces design elements to those definitions.
+> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
+> elements to those definitions.
 
 ### Memory Management (F-1.7 / R-1.7)
 
@@ -38,24 +38,17 @@
 
 ## Overview
 
-This document designs the memory management and async I/O
-subsystems of the Harmonius engine. Together they form the
-allocation and I/O foundation consumed by every other
-domain.
+This document designs the memory management and async I/O subsystems of the Harmonius engine.
+Together they form the allocation and I/O foundation consumed by every other domain.
 
-**Memory management** provides three allocator types
-(frame arena, scoped arena, typed pool), generational
-handles for safe indirect references, a slot map container
-for cache-friendly iteration, per-subsystem memory budgets,
-and allocation profiling/tagging.
+**Memory management** provides three allocator types (frame arena, scoped arena, typed pool),
+generational handles for safe indirect references, a slot map container for cache-friendly
+iteration, per-subsystem memory budgets, and allocation profiling/tagging.
 
-**Async I/O** wraps the `IoReactor` defined in
-[platform/threading.md](../platform/threading.md) with a
-higher-level `AsyncIo` trait, adding priority scheduling,
-cancellation tokens, a virtual file system (VFS) for path
-resolution, and typed operation interfaces for files,
-sockets, and audio streams. All I/O uses `async`/`await`.
-No Rust stdlib file I/O is permitted.
+**Async I/O** wraps the `IoReactor` defined in [platform/threading.md](../platform/threading.md)
+with a higher-level `AsyncIo` trait, adding priority scheduling, cancellation tokens, a virtual file
+system (VFS) for path resolution, and typed operation interfaces for files, sockets, and audio
+streams. All I/O uses `async`/`await`. No Rust stdlib file I/O is permitted.
 
 ### Interop Contracts Defined Here
 
@@ -123,7 +116,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_core/
 ├── memory/
 │   ├── arena.rs          # FrameArena, ScopedArena
@@ -820,11 +813,9 @@ impl MemoryTracker {
 
 ### AsyncIo Trait
 
-The `AsyncIo` layer wraps the `IoReactor` from
-[platform/threading.md](../platform/threading.md) with
-priority scheduling, cancellation, and typed operation
-interfaces. It is the sole I/O path for all engine
-subsystems.
+The `AsyncIo` layer wraps the `IoReactor` from [platform/threading.md](../platform/threading.md)
+with priority scheduling, cancellation, and typed operation interfaces. It is the sole I/O path for
+all engine subsystems.
 
 ```rust
 /// I/O priority levels.
@@ -1105,10 +1096,8 @@ impl VirtualFileSystem {
 
 ### Arbitrary Precision Types
 
-**Note:** Arbitrary-precision numerics (`BigInt`,
-`BigFloat`) address R-1.7.9 but are not related to
-memory management or I/O. These will be relocated to
-a dedicated math/core-types design in a future
+**Note:** Arbitrary-precision numerics (`BigInt`, `BigFloat`) address R-1.7.9 but are not related to
+memory management or I/O. These will be relocated to a dedicated math/core-types design in a future
 revision.
 
 ```rust
@@ -1153,8 +1142,7 @@ impl BigFloat {
 
 ### Frame Lifecycle with Memory and I/O
 
-The game loop owns the `IoReactor`, `FrameArena`, and
-`AsyncIo`. Each frame proceeds as:
+The game loop owns the `IoReactor`, `FrameArena`, and `AsyncIo`. Each frame proceeds as:
 
 ```rust
 loop {
@@ -1207,26 +1195,20 @@ pool.scope(|scope| {
 
 ### VFS Resolution Order
 
-When multiple mounts overlap, the VFS resolves paths
-by mount priority (highest wins):
+When multiple mounts overlap, the VFS resolves paths by mount priority (highest wins):
 
 1. Check mounts in descending priority order
-2. For each mount, test if `physical_path + relative`
-   exists
+2. For each mount, test if `physical_path + relative` exists
 3. First match wins; open the physical file
 4. If no mount matches, return `IoError::NotFound`
 
 ### I/O Cancellation Flow
 
-1. Caller creates `CancelToken` and passes it when
-   submitting I/O
-2. To cancel, caller calls `token.cancel()` which sets
-   an atomic bool
-3. The `AsyncIo` layer passes the cancellation to the
-   platform backend (`CancelIoEx` / `dispatch_io_close`
-   / `io_uring_prep_cancel`)
-4. The completion **always** fires: either with the
-   original result (if the OS completed before
+1. Caller creates `CancelToken` and passes it when submitting I/O
+2. To cancel, caller calls `token.cancel()` which sets an atomic bool
+3. The `AsyncIo` layer passes the cancellation to the platform backend (`CancelIoEx` /
+   `dispatch_io_close` / `io_uring_prep_cancel`)
+4. The completion **always** fires: either with the original result (if the OS completed before
    cancellation) or with `IoError::Cancelled`
 5. The buffer is returned to the pool in either case
 
@@ -1242,10 +1224,8 @@ by mount priority (highest wins):
 
 ### I/O Backend Mapping
 
-AsyncIo delegates to the `IoReactor` from
-[platform/threading.md](../platform/threading.md).
-Each platform backend is selected at compile time via
-`cfg` attributes with zero dynamic dispatch.
+AsyncIo delegates to the `IoReactor` from [platform/threading.md](../platform/threading.md). Each
+platform backend is selected at compile time via `cfg` attributes with zero dynamic dispatch.
 
 | Operation | Windows (IOCP) | macOS (GCD) | Linux (io_uring) |
 |-----------|---------------|-------------|-----------------|
@@ -1290,9 +1270,47 @@ Each platform backend is selected at compile time via
 | `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
 | `cxx` | C++ interop for macOS GCD / Dispatch IO | Safe bridge to Dispatch C++ wrappers |
 
-Note: `crossbeam-deque`, `crossbeam-utils`, and
-`smallvec` are already approved in
+Note: `crossbeam-deque`, `crossbeam-utils`, and `smallvec` are already approved in
 [platform/threading.md](../platform/threading.md).
+
+## Safety Invariants
+
+### FrameArena Lifetime (Critical)
+
+`FrameArena::alloc` returns `*mut T` with no lifetime bound. After `reset()`, all prior allocations
+are invalid. Implementation must return `ArenaRef<'a, T>` borrowing from the arena, tying the
+reference lifetime to the arena scope. `reset()` requires `&mut self` to prevent aliased access
+during reset.
+
+### FrameArena Thread Safety (Critical)
+
+`watermark: AtomicUsize` suggests concurrent alloc. Implementation must use a CAS loop:
+`compare_exchange(old, align_up(old, align) + size)`. Plain `fetch_add` without alignment interleave
+check causes overlapping allocations. Specify `Ordering::Relaxed` for the watermark (single-object
+allocation has no inter-allocation ordering dependency).
+
+### PoolAllocator ABA Problem (Critical)
+
+`free_head: AtomicU32` intrusive free list is susceptible to ABA. Use `AtomicU64` with
+`[count:32][index:32]` tagged pointer, or add a generation counter per slot (matching `Handle<T>`
+pattern). Without ABA protection, concurrent alloc/dealloc silently corrupts the free list.
+
+### PoolSlot Lifetime (Critical)
+
+`PoolSlot<T>::as_ref()` produces `&T` from a raw pointer with no lifetime bound. After `dealloc`,
+the slot is freed. Implementation must tie `PoolSlot<T>` to the allocator's lifetime, or use
+generational indices (like `Handle<T>`) with runtime validation.
+
+### AsyncIo Raw Pointers (Critical)
+
+`AsyncIo` stores `reactor: *const IoReactor` as a raw pointer. If `IoReactor` is dropped while
+`AsyncIo` exists, all operations are use-after-free. Store `&'a IoReactor` with lifetime parameter,
+making `AsyncIo<'a>` a borrowing struct. Raw pointers are not justified here.
+
+### ScopedArena Child Lifetimes (High)
+
+When `ScopedArena` drops, it restores the parent watermark. Allocations from child scopes become
+dangling. `alloc` must return references bounded by the scope's `'parent` lifetime.
 
 ## Test Plan
 
@@ -1366,41 +1384,28 @@ Note: `crossbeam-deque`, `crossbeam-utils`, and
 
 ## Open Questions
 
-1. **Arena page decommit strategy** — On arena reset,
-   should we `madvise(MADV_DONTNEED)` / `VirtualFree`
-   pages beyond a high-water mark to reduce RSS? This
-   trades reset latency for memory pressure relief on
-   constrained platforms.
+1. **Arena page decommit strategy** — On arena reset, should we `madvise(MADV_DONTNEED)` /
+   `VirtualFree` pages beyond a high-water mark to reduce RSS? This trades reset latency for memory
+   pressure relief on constrained platforms.
 
-2. **Pool growth vs. fixed capacity** — Should pool
-   allocators grow (commit more pages) on exhaustion,
-   or return `None` and let the caller evict? Growth is
-   simpler but risks unbounded memory usage.
+2. **Pool growth vs. fixed capacity** — Should pool allocators grow (commit more pages) on
+   exhaustion, or return `None` and let the caller evict? Growth is simpler but risks unbounded
+   memory usage.
 
-3. **SlotMap max capacity** — R-1.7.5a requires 4M
-   entries. Should we support 2^24 (16M) or 2^32 (4B)?
-   Larger capacity increases sparse table memory
-   overhead.
+3. **SlotMap max capacity** — R-1.7.5a requires 4M entries. Should we support 2^24 (16M) or 2^32
+   (4B)? Larger capacity increases sparse table memory overhead.
 
-4. **Handle bit packing** — Current design uses two
-   `u32` fields (index + generation) for 8 bytes total.
-   An alternative packs both into a single `u64` (e.g.,
-   24-bit index + 8-bit generation). Smaller handles
-   improve cache density but limit max entries and
-   generation rollover.
+4. **Handle bit packing** — Current design uses two `u32` fields (index + generation) for 8 bytes
+   total. An alternative packs both into a single `u64` (e.g., 24-bit index + 8-bit generation).
+   Smaller handles improve cache density but limit max entries and generation rollover.
 
-5. **VFS archive support** — Should the VFS support
-   reading from archive files (e.g., zip, custom pak)
-   in addition to directory mounts? This is needed for
-   shipping but may be deferred.
+5. **VFS archive support** — Should the VFS support reading from archive files (e.g., zip, custom
+   pak) in addition to directory mounts? This is needed for shipping but may be deferred.
 
-6. **BLAKE3 streaming hash** — Should `FileMetadata`
-   compute BLAKE3 on `open()` (blocking, expensive for
-   large files) or lazily on first `metadata()` call?
-   Lazy is better for hot paths but complicates the API.
+6. **BLAKE3 streaming hash** — Should `FileMetadata` compute BLAKE3 on `open()` (blocking, expensive
+   for large files) or lazily on first `metadata()` call? Lazy is better for hot paths but
+   complicates the API.
 
-7. **Audio I/O integration depth** — The current design
-   routes audio I/O through `AsyncIo`. Should audio
-   have a completely separate I/O path (dedicated thread
-   with deadline scheduling) to guarantee sub-10 ms
-   latency even under I/O saturation?
+7. **Audio I/O integration depth** — The current design routes audio I/O through `AsyncIo`. Should
+   audio have a completely separate I/O path (dedicated thread with deadline scheduling) to
+   guarantee sub-10 ms latency even under I/O saturation?

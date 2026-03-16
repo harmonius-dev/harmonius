@@ -44,8 +44,8 @@ merges, and migrations in real time and diagnose performance issues.
 ## US-8.7.8 Persist World State Without Blocking the Simulation
 
 **As an** engine developer (P-26), **I want** async database access for all persistent world state
-(characters, inventories, guilds, quests) using platform-native I/O (IOCP, GCD, io_uring), **so
-that** database writes never block the game simulation tick even under tens of thousands of
+(characters, inventories, guilds, quests) using platform-native I/O (IOCP, GCD, io_uring),
+**so that** database writes never block the game simulation tick even under tens of thousands of
 transactions per second.
 
 ## US-8.7.9 Ensure Transactional Integrity for Economy Operations

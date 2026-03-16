@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 ### Progression
 
@@ -74,47 +74,32 @@
 
 ## Overview
 
-The progression and social subsystems provide all character
-advancement, social interaction, and competitive features
-for the Harmonius engine. Every piece of data lives as ECS
-components. Every piece of logic runs as ECS systems. All
-authoring surfaces are visual (no-code).
+The progression and social subsystems provide all character advancement, social interaction, and
+competitive features for the Harmonius engine. Every piece of data lives as ECS components. Every
+piece of logic runs as ECS systems. All authoring surfaces are visual (no-code).
 
 Progression covers:
 
-- **Experience and leveling** -- XP accumulation,
-  level-up thresholds, stat growth curves
-- **Race and class** -- data-driven archetypes with stat
-  modifiers, ability sets, resource types
-- **Talent trees** -- DAG-based node graphs with
-  prerequisites, tier gating, visual editor authoring
-- **Prestige/rebirth** -- max-level reset with permanent
-  bonuses accumulating across cycles
-- **Professions** -- independent skill levels, XP curves,
-  recipe thresholds, gathering/crafting integration
-- **Reputation** -- per-faction tiered standing with
-  asymmetric relationships and gated content
-- **Achievements** -- observer-driven tracking, rewards,
-  platform sync
-- **Item enhancement** -- probabilistic upgrade levels,
-  rarity tiers, affixes, set bonuses, durability
+- **Experience and leveling** -- XP accumulation, level-up thresholds, stat growth curves
+- **Race and class** -- data-driven archetypes with stat modifiers, ability sets, resource types
+- **Talent trees** -- DAG-based node graphs with prerequisites, tier gating, visual editor authoring
+- **Prestige/rebirth** -- max-level reset with permanent bonuses accumulating across cycles
+- **Professions** -- independent skill levels, XP curves, recipe thresholds, gathering/crafting
+  integration
+- **Reputation** -- per-faction tiered standing with asymmetric relationships and gated content
+- **Achievements** -- observer-driven tracking, rewards, platform sync
+- **Item enhancement** -- probabilistic upgrade levels, rarity tiers, affixes, set bonuses,
+  durability
 
 Social covers:
 
-- **Guilds** -- CRUD, ranks, permissions, leveling, bank,
-  territory, wars, sieges, leaderboards
-- **Friends** -- bi-directional list, platform import,
-  status replication, block/ignore
-- **Party/group** -- role-based group finder, cross-shard
-  matchmaking, dungeon queuing
-- **Mail** -- async player mail, attachments, COD, system
-  mail
-- **Chat** -- multi-channel, item linking, profanity
-  filtering, custom channels
-- **PvP** -- arenas, battlegrounds, Elo/Glicko rating,
-  seasonal rewards, stat normalization
-- **Emotes and inspection** -- social expression and
-  read-only character viewing
+- **Guilds** -- CRUD, ranks, permissions, leveling, bank, territory, wars, sieges, leaderboards
+- **Friends** -- bi-directional list, platform import, status replication, block/ignore
+- **Party/group** -- role-based group finder, cross-shard matchmaking, dungeon queuing
+- **Mail** -- async player mail, attachments, COD, system mail
+- **Chat** -- multi-channel, item linking, profanity filtering, custom channels
+- **PvP** -- arenas, battlegrounds, Elo/Glicko rating, seasonal rewards, stat normalization
+- **Emotes and inspection** -- social expression and read-only character viewing
 
 ## Architecture
 
@@ -180,7 +165,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_game/
 ├── progression/
 │   ├── experience.rs     # ExperienceSystem, XP curves
@@ -1190,12 +1175,9 @@ pub struct MatchedGroup {
 ### Experience Gain to Level-Up
 
 1. A gameplay event awards XP (quest, kill, craft).
-2. `ExperienceSystem` adds XP to the `Experience`
-   component.
-3. `LevelUpSystem` compares `current_xp` against the
-   `XpCurve` thresholds.
-4. If threshold crossed, increment `level`, apply
-   `StatGrowthTable` deltas to `CharacterStats`.
+2. `ExperienceSystem` adds XP to the `Experience` component.
+3. `LevelUpSystem` compares `current_xp` against the `XpCurve` thresholds.
+4. If threshold crossed, increment `level`, apply `StatGrowthTable` deltas to `CharacterStats`.
 5. Emit `LevelUpEvent`. Downstream observers:
    - `TalentTreeSystem` grants a talent point.
    - `ClassDefinition` checks level ability unlocks.
@@ -1210,41 +1192,30 @@ pub struct MatchedGroup {
    - Tier gate met (total points >= gate)
    - Points available
    - Max ranks not exceeded
-4. On success: update `TalentState`, apply effects
-   to `CharacterStats`, emit result.
-5. On failure: emit `TalentAllocateResult::Err` with
-   the specific validation error for UI display.
+4. On success: update `TalentState`, apply effects to `CharacterStats`, emit result.
+5. On failure: emit `TalentAllocateResult::Err` with the specific validation error for UI display.
 
 ### Achievement Tracking
 
-1. Gameplay systems emit events (kills, crafts,
-   exploration, quest completions).
-2. `AchievementObserver` listens via the ECS observer
-   system (F-1.1.30).
-3. For each matching event, increment the relevant
-   `AchievementEntry.current`.
-4. When `current >= target`, mark complete, record
-   timestamp, grant rewards, sync to platform.
-5. Budget: all observer evaluation under 0.1 ms/frame
-   for 1,000 achievements (R-13.12.NF2).
+1. Gameplay systems emit events (kills, crafts, exploration, quest completions).
+2. `AchievementObserver` listens via the ECS observer system (F-1.1.30).
+3. For each matching event, increment the relevant `AchievementEntry.current`.
+4. When `current >= target`, mark complete, record timestamp, grant rewards, sync to platform.
+5. Budget: all observer evaluation under 0.1 ms/frame for 1,000 achievements (R-13.12.NF2).
 
 ### Guild Bank Transaction
 
 1. Player interacts with guild bank UI.
-2. `GuildBankSystem` checks the member's rank
-   permissions against the tab's min rank.
+2. `GuildBankSystem` checks the member's rank permissions against the tab's min rank.
 3. For withdrawals, checks daily limit.
-4. On success: move item/gold, append to
-   `transaction_log` with timestamp and member.
-5. Replicate updated bank state to online guild
-   members via state replication.
+4. On success: move item/gold, append to `transaction_log` with timestamp and member.
+5. Replicate updated bank state to online guild members via state replication.
 
 ### Friend Status Updates
 
 1. Player logs in or changes zone.
 2. `OnlineStatus` component is updated.
-3. State replication (F-8.2.1) propagates the change
-   to all entities that have the player in their
+3. State replication (F-8.2.1) propagates the change to all entities that have the player in their
    `FriendsList`.
 4. Client-side UI updates the friends panel.
 5. Delivery within 2 seconds (R-13.13.NF2).
@@ -1253,8 +1224,7 @@ pub struct MatchedGroup {
 
 1. Player sends a message to a channel.
 2. `ChatSystem` validates rate limit per player.
-3. Content pipeline: profanity filter, spam detection,
-   item link resolution.
+3. Content pipeline: profanity filter, spam detection, item link resolution.
 4. Route message based on channel type:
    - Global: broadcast via server to all connected
    - Zone: broadcast to players in same zone
@@ -1273,9 +1243,8 @@ pub struct MatchedGroup {
 | PlayStation | Trophy API | Platform SDK, requires certification |
 | Xbox | `XGameSaveSubmitBlobWrite` + Achievements | Via GDK bindings |
 
-Each engine achievement maps to a `PlatformMapping`
-with a platform-specific ID. Sync is fire-and-forget
-after local completion.
+Each engine achievement maps to a `PlatformMapping` with a platform-specific ID. Sync is
+fire-and-forget after local completion.
 
 ### Platform Friends Import
 
@@ -1285,23 +1254,18 @@ after local completion.
 | PlayStation | PSN Friends API | Requires NP Toolkit |
 | Xbox | `XSocialGetSocialRelationships` | Via GDK |
 
-Import runs once on login. Matched players (by
-linked account) are added to the in-game friends
+Import runs once on login. Matched players (by linked account) are added to the in-game friends
 list.
 
 ### Chat on Consoles
 
-Console platforms may require platform-native text
-input for chat (virtual keyboard). The chat
-infrastructure routes input through the platform
-services layer (F-14.5.1) on consoles.
+Console platforms may require platform-native text input for chat (virtual keyboard). The chat
+infrastructure routes input through the platform services layer (F-14.5.1) on consoles.
 
 ### State Replication
 
-All social state (friend status, guild roster, chat
-messages, leaderboard updates) flows through the
-networking state replication system (F-8.2.1).
-Cross-shard visibility for friends and group finder
+All social state (friend status, guild roster, chat messages, leaderboard updates) flows through the
+networking state replication system (F-8.2.1). Cross-shard visibility for friends and group finder
 uses the cross-shard services layer (F-8.7.7).
 
 ## Test Plan
@@ -1412,41 +1376,26 @@ uses the cross-shard services layer (F-8.7.7).
 
 ## Open Questions
 
-1. **Talent tree maximum size** -- What is the maximum
-   supported node count per tree? 100 nodes keeps
-   validation under 1 ms. Larger trees may need
-   incremental validation caching.
+1. **Talent tree maximum size** -- What is the maximum supported node count per tree? 100 nodes
+   keeps validation under 1 ms. Larger trees may need incremental validation caching.
 
-2. **Achievement observer batching** -- Should
-   achievement observers process events in batches per
-   frame or one at a time? Batching amortizes overhead
-   but adds latency.
+2. **Achievement observer batching** -- Should achievement observers process events in batches per
+   frame or one at a time? Batching amortizes overhead but adds latency.
 
-3. **Guild bank replication granularity** -- Replicate
-   entire bank on every change vs. delta-compressed
-   per-slot updates. Delta reduces bandwidth but adds
-   complexity.
+3. **Guild bank replication granularity** -- Replicate entire bank on every change vs.
+   delta-compressed per-slot updates. Delta reduces bandwidth but adds complexity.
 
-4. **Cross-shard mail delivery** -- Mail to players on
-   different shards requires the cross-shard service
-   layer. Delivery latency target and retry policy
-   need specification.
+4. **Cross-shard mail delivery** -- Mail to players on different shards requires the cross-shard
+   service layer. Delivery latency target and retry policy need specification.
 
-5. **PvP rating algorithm** -- Elo vs Glicko-2. Glicko-2
-   handles rating uncertainty better for infrequent
-   players but is more complex to implement. Need to
-   decide which variant.
+5. **PvP rating algorithm** -- Elo vs Glicko-2. Glicko-2 handles rating uncertainty better for
+   infrequent players but is more complex to implement. Need to decide which variant.
 
-6. **Chat history persistence** -- Session-scoped
-   (current requirement) vs. persistent across
-   sessions. Persistent requires server-side storage
-   and retrieval API.
+6. **Chat history persistence** -- Session-scoped (current requirement) vs. persistent across
+   sessions. Persistent requires server-side storage and retrieval API.
 
-7. **Talent tree visual editor integration** -- The
-   editor produces a `TalentTree` asset. Need to
-   define the serialization format (RON graph with
-   node positions for editor layout).
+7. **Talent tree visual editor integration** -- The editor produces a `TalentTree` asset. Need to
+   define the serialization format (RON graph with node positions for editor layout).
 
-8. **Leaderboard update frequency** -- Real-time vs.
-   periodic batch updates. Real-time is responsive but
-   may cause write contention on high-traffic servers.
+8. **Leaderboard update frequency** -- Real-time vs. periodic batch updates. Real-time is responsive
+   but may cause write contention on high-traffic servers.

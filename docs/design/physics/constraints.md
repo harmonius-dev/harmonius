@@ -19,31 +19,21 @@
 
 ## Overview
 
-The constraints and joints subsystem manages all
-physical connections between rigid bodies. Every joint
-is an ECS entity. All constraint data lives as
-components. All logic runs as systems. There is no
-separate physics world.
+The constraints and joints subsystem manages all physical connections between rigid bodies. Every
+joint is an ECS entity. All constraint data lives as components. All logic runs as systems. There is
+no separate physics world.
 
 Key principles:
 
-1. **100% ECS-based.** Joint entities carry `Joint`,
-   `JointType`, and optional `JointMotor`,
-   `JointLimits`, `BreakForce`, and `WarmStartData`
-   components. The solver queries these directly.
-2. **Island-parallel solving.** The `IslandBuilder`
-   partitions the constraint graph into independent
-   islands. Each island is solved on a separate worker
-   thread via the task graph.
-3. **Warm starting.** Accumulated impulses from the
-   previous substep are cached in `WarmStartData`
-   components and applied at the start of each solve
-   pass to accelerate convergence.
-4. **Dual solver.** Sequential Impulse (SI) for mobile
-   and Temporal Gauss-Seidel (TGS) for desktop,
+1. **100% ECS-based.** Joint entities carry `Joint`, `JointType`, and optional `JointMotor`,
+   `JointLimits`, `BreakForce`, and `WarmStartData` components. The solver queries these directly.
+2. **Island-parallel solving.** The `IslandBuilder` partitions the constraint graph into independent
+   islands. Each island is solved on a separate worker thread via the task graph.
+3. **Warm starting.** Accumulated impulses from the previous substep are cached in `WarmStartData`
+   components and applied at the start of each solve pass to accelerate convergence.
+4. **Dual solver.** Sequential Impulse (SI) for mobile and Temporal Gauss-Seidel (TGS) for desktop,
    selectable via the `SolverConfig` ECS resource.
-5. **Determinism.** Given identical entity ordering,
-   the solver produces bit-identical results for
+5. **Determinism.** Given identical entity ordering, the solver produces bit-identical results for
    server-authoritative prediction and rollback.
 
 ## Architecture
@@ -121,7 +111,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_physics/
 ├── constraints/
 │   ├── components.rs    # Joint, JointType, JointMotor,
@@ -292,10 +282,8 @@ flowchart LR
     W3 --> MRG
 ```
 
-Independent islands share no bodies and can be solved
-in parallel on separate worker threads without
-synchronization. The `IslandBuilder` uses incremental
-union-find: when a joint entity is spawned or
+Independent islands share no bodies and can be solved in parallel on separate worker threads without
+synchronization. The `IslandBuilder` uses incremental union-find: when a joint entity is spawned or
 despawned, only the affected island is rebuilt.
 
 ### Ragdoll Activation Flow
@@ -350,12 +338,9 @@ graph TD
     J11 --- LowerLegR[Lower Leg R]
 ```
 
-Each rectangle is a `RigidBody` + `Collider` +
-`Transform` entity. Each labeled link is a joint entity
-with `Joint` + `JointType` + `JointLimits` components.
-Ball-socket articulations (shoulders, hips, spine) use
-`ConeTwist`. Hinge articulations (elbows, knees) use
-`Revolute`.
+Each rectangle is a `RigidBody` + `Collider` + `Transform` entity. Each labeled link is a joint
+entity with `Joint` + `JointType` + `JointLimits` components. Ball-socket articulations (shoulders,
+hips, spine) use `ConeTwist`. Hinge articulations (elbows, knees) use `Revolute`.
 
 ## API Design
 
@@ -549,11 +534,9 @@ pub struct JointLimits {
 }
 ```
 
-Joint angular limits share the canonical `JointLimit`
-type defined in
-[shared-primitives.md](../core-runtime/shared-primitives.md).
-Both physics constraints and animation IK reference
-this shared type.
+Joint angular limits share the canonical `JointLimit` type defined in
+[shared-primitives.md](../core-runtime/shared-primitives.md). Both physics constraints and animation
+IK reference this shared type.
 
 ### Breakable Joints
 
@@ -1461,27 +1444,17 @@ pub enum ConstraintError {
 
 ### Substep Execution Order
 
-Each physics substep executes the following
-systems in dependency order:
+Each physics substep executes the following systems in dependency order:
 
-1. **IntegrationSystem** -- apply forces, update
-   velocities, advance positions (F-4.1.1).
-2. **BroadphaseQuerySystem** -- update shared BVH
-   AABB overlaps (F-4.2.1).
-3. **NarrowphaseSystem** -- generate contact
-   manifolds (F-4.2.2).
-4. **ContactSolverSystem** -- resolve contact
-   constraints (F-4.1.3).
-5. **IslandBuilder** -- partition constraint graph
-   into islands.
-6. **WarmStartSystem** -- load cached impulses into
-   solver.
-7. **ConstraintSolverSystem** -- iterate constraint
-   rows across all islands in parallel.
-8. **BreakDetectionSystem** -- check thresholds,
-   despawn broken joints, emit events.
-9. **WarmStartSystem** -- store solved impulses for
-   next substep.
+1. **IntegrationSystem** -- apply forces, update velocities, advance positions (F-4.1.1).
+2. **BroadphaseQuerySystem** -- update shared BVH AABB overlaps (F-4.2.1).
+3. **NarrowphaseSystem** -- generate contact manifolds (F-4.2.2).
+4. **ContactSolverSystem** -- resolve contact constraints (F-4.1.3).
+5. **IslandBuilder** -- partition constraint graph into islands.
+6. **WarmStartSystem** -- load cached impulses into solver.
+7. **ConstraintSolverSystem** -- iterate constraint rows across all islands in parallel.
+8. **BreakDetectionSystem** -- check thresholds, despawn broken joints, emit events.
+9. **WarmStartSystem** -- store solved impulses for next substep.
 
 ```rust
 // Simplified substep schedule
@@ -1546,36 +1519,26 @@ fn physics_substep_schedule() -> TaskGraph {
 
 ### Warm Starting Data Flow
 
-1. At the start of each substep, `WarmStartSystem`
-   reads `WarmStartData` components and passes cached
-   impulses to the solver.
-2. The solver applies `impulse * warm_start_factor`
-   to each body before iterating.
-3. After solving, the solver writes new accumulated
-   impulses back to `WarmStartData` components.
-4. On the next substep, step 1 repeats with the
-   updated cache.
-5. When a joint is despawned (breaking or ragdoll
-   deactivation), its `WarmStartData` is discarded.
-6. When a joint is spawned (ragdoll activation or
-   chain creation), `WarmStartData` is initialized to
+1. At the start of each substep, `WarmStartSystem` reads `WarmStartData` components and passes
+   cached impulses to the solver.
+2. The solver applies `impulse * warm_start_factor` to each body before iterating.
+3. After solving, the solver writes new accumulated impulses back to `WarmStartData` components.
+4. On the next substep, step 1 repeats with the updated cache.
+5. When a joint is despawned (breaking or ragdoll deactivation), its `WarmStartData` is discarded.
+6. When a joint is spawned (ragdoll activation or chain creation), `WarmStartData` is initialized to
    zero (cold start for the first substep).
 
 ### Break Detection Flow
 
-1. `ConstraintSolverSystem` solves all constraint
-   rows and writes accumulated impulses to
+1. `ConstraintSolverSystem` solves all constraint rows and writes accumulated impulses to
    `WarmStartData`.
-2. `BreakDetectionSystem` queries all joint entities
-   that have both `BreakForce` and `WarmStartData`.
-3. For each joint, it computes force magnitude
-   (`accumulated_impulse.length()`) and torque
-   magnitude (`accumulated_angular.length()`).
-4. If either exceeds the threshold, the joint entity
-   is despawned via command buffer and a `JointBroken`
-   event is emitted.
-5. Gameplay systems observe `JointBroken` events to
-   trigger VFX, audio, and gameplay effects.
+2. `BreakDetectionSystem` queries all joint entities that have both `BreakForce` and
+   `WarmStartData`.
+3. For each joint, it computes force magnitude (`accumulated_impulse.length()`) and torque magnitude
+   (`accumulated_angular.length()`).
+4. If either exceeds the threshold, the joint entity is despawned via command buffer and a
+   `JointBroken` event is emitted.
+5. Gameplay systems observe `JointBroken` events to trigger VFX, audio, and gameplay effects.
 
 ## Platform Considerations
 
@@ -1590,50 +1553,35 @@ fn physics_substep_schedule() -> TaskGraph {
 
 ### Thread Pool Integration
 
-- Islands are dispatched as parallel tasks via the
-  engine's `ThreadPool` and `TaskGraph` (F-14.3.1,
+- Islands are dispatched as parallel tasks via the engine's `ThreadPool` and `TaskGraph` (F-14.3.1,
   F-14.3.3).
-- Each island's solve is a scoped task that borrows
-  body data without `Arc` overhead.
-- On mobile (4 perf cores), islands are batched to
-  minimize dispatch overhead.
-- On desktop (8+ perf cores), fine-grained island
-  parallelism is used.
+- Each island's solve is a scoped task that borrows body data without `Arc` overhead.
+- On mobile (4 perf cores), islands are batched to minimize dispatch overhead.
+- On desktop (8+ perf cores), fine-grained island parallelism is used.
 
 ### SIMD Opportunities
 
-- Jacobian computation and impulse application use
-  `Vec3` operations that map directly to SIMD
+- Jacobian computation and impulse application use `Vec3` operations that map directly to SIMD
   intrinsics on all target platforms.
-- Constraint rows can be processed in SoA layout for
-  4-wide SIMD (SSE/NEON) batching when an island has
-  4+ rows of the same joint type.
-- No platform-specific SIMD code: Rust auto-
-  vectorization with `#[target_feature]` attributes
-  and the `std::simd` stable subset covers all
-  targets.
+- Constraint rows can be processed in SoA layout for 4-wide SIMD (SSE/NEON) batching when an island
+  has 4+ rows of the same joint type.
+- No platform-specific SIMD code: Rust auto- vectorization with `#[target_feature]` attributes and
+  the `std::simd` stable subset covers all targets.
 
 ### Memory Layout
 
-- Joint components are stored in archetype tables
-  (F-1.1.1), guaranteeing cache-friendly iteration.
-- The solver reads joint and body data in a single
-  linear pass per island, avoiding random memory
+- Joint components are stored in archetype tables (F-1.1.1), guaranteeing cache-friendly iteration.
+- The solver reads joint and body data in a single linear pass per island, avoiding random memory
   access.
-- `ConstraintRow` arrays are stack-allocated per
-  island (max ~768 rows for 128 joints * 6 rows).
-  Islands exceeding this are heap-allocated via a
-  thread-local bump allocator.
+- `ConstraintRow` arrays are stack-allocated per island (max ~768 rows for 128 joints * 6 rows).
+  Islands exceeding this are heap-allocated via a thread-local bump allocator.
 
 ### Floating-Point Determinism
 
-- Strict IEEE 754 compliance on all platforms. No
-  fast-math optimizations.
-- Fixed iteration order (entity index order within
-  each island) guarantees identical results.
-- Cross-platform determinism requires identical
-  compiler flags and rounding modes, as documented
-  in F-4.1.1.
+- Strict IEEE 754 compliance on all platforms. No fast-math optimizations.
+- Fixed iteration order (entity index order within each island) guarantees identical results.
+- Cross-platform determinism requires identical compiler flags and rounding modes, as documented in
+  F-4.1.1.
 
 ## Test Plan
 
@@ -1700,57 +1648,37 @@ fn physics_substep_schedule() -> TaskGraph {
 
 ### Debug Visualization
 
-Joint debug draw renders joint axes, angular limits
-(cone wireframes for cone-twist, arc indicators for
-hinge), linear limit ranges, and ragdoll bone
-connections. Rendered via the shared debug overlay
+Joint debug draw renders joint axes, angular limits (cone wireframes for cone-twist, arc indicators
+for hinge), linear limit ranges, and ragdoll bone connections. Rendered via the shared debug overlay
 pass.
 
 ### Networking Integration
 
-Ragdoll synchronization across network is a known
-challenge. The server runs the authoritative ragdoll
-simulation; clients receive bone transforms via
-standard component replication. Ragdoll
-activation/deactivation events are replicated as
-reliable messages. Joint break events are replicated
-to ensure consistent destruction state.
+Ragdoll synchronization across network is a known challenge. The server runs the authoritative
+ragdoll simulation; clients receive bone transforms via standard component replication. Ragdoll
+activation/deactivation events are replicated as reliable messages. Joint break events are
+replicated to ensure consistent destruction state.
 
 ## Open Questions
 
-1. **Island merge heuristic.** When two islands are
-   small (< 8 joints each), should they be merged
-   into a single task to reduce dispatch overhead?
-   Merging reduces parallelism but avoids the ~1 us
+1. **Island merge heuristic.** When two islands are small (< 8 joints each), should they be merged
+   into a single task to reduce dispatch overhead? Merging reduces parallelism but avoids the ~1 us
    per-task dispatch cost.
-2. **Warm start decay for sleeping bodies.** When a
-   body transitions from sleeping to awake, should
-   its joints' warm start data be zeroed or decayed?
-   Stale cached impulses from before sleep may harm
-   convergence.
-3. **TGS position integration order.** TGS integrates
-   positions after the velocity solve. Should
-   position integration happen once per substep or
-   once per solver iteration? Per-iteration is more
+2. **Warm start decay for sleeping bodies.** When a body transitions from sleeping to awake, should
+   its joints' warm start data be zeroed or decayed? Stale cached impulses from before sleep may
+   harm convergence.
+3. **TGS position integration order.** TGS integrates positions after the velocity solve. Should
+   position integration happen once per substep or once per solver iteration? Per-iteration is more
    accurate but doubles position integration cost.
-4. **Constraint row SoA batching threshold.** At what
-   island size does SoA 4-wide SIMD batching of same-
-   type constraint rows outperform scalar AoS? Likely
-   around 16+ rows of the same type, but requires
-   benchmarking.
-5. **Ragdoll bone reduction on mobile.** The mobile
-   budget allows 8 bones per ragdoll. Which bones
-   should be prioritized? Candidate policy: pelvis,
-   spine, head, upper arms, upper legs (7 bones),
+4. **Constraint row SoA batching threshold.** At what island size does SoA 4-wide SIMD batching of
+   same- type constraint rows outperform scalar AoS? Likely around 16+ rows of the same type, but
+   requires benchmarking.
+5. **Ragdoll bone reduction on mobile.** The mobile budget allows 8 bones per ragdoll. Which bones
+   should be prioritized? Candidate policy: pelvis, spine, head, upper arms, upper legs (7 bones),
    dropping hands, feet, and lower spine.
-6. **Chain verlet fallback distance.** At what camera
-   distance should chains switch from full rigid body
-   simulation to the verlet fallback? Needs visual
-   quality testing to determine the threshold where
-   the simplification is imperceptible.
-7. **Determinism across solver types.** SI and TGS
-   produce different results. If a game switches
-   solver type mid-session (e.g., quality setting
-   change), constraint states will diverge. Should
-   this be blocked, or should warm start data be
-   flushed on solver change?
+6. **Chain verlet fallback distance.** At what camera distance should chains switch from full rigid
+   body simulation to the verlet fallback? Needs visual quality testing to determine the threshold
+   where the simplification is imperceptible.
+7. **Determinism across solver types.** SI and TGS produce different results. If a game switches
+   solver type mid-session (e.g., quality setting change), constraint states will diverge. Should
+   this be blocked, or should warm start data be flushed on solver change?

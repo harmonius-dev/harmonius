@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/geometry-world/](../../features/geometry-world/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/geometry-world/](../../features/geometry-world/),
 > [requirements/geometry-world/](../../requirements/geometry-world/), and
-> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table
-> below traces design elements to those definitions.
+> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table below traces design
+> elements to those definitions.
 
 ### Heightfield Terrain (F-3.2.1–8 / R-3.2.1–8)
 
@@ -49,34 +49,25 @@
 
 ## Overview
 
-The terrain subsystem provides two complementary
-representations -- heightfield tiles and sparse voxel
-volumes -- unified through a hybrid resolver that
-automatically selects the optimal representation per
-region. All terrain data lives as ECS components. All
-terrain logic runs as ECS systems.
+The terrain subsystem provides two complementary representations -- heightfield tiles and sparse
+voxel volumes -- unified through a hybrid resolver that automatically selects the optimal
+representation per region. All terrain data lives as ECS components. All terrain logic runs as ECS
+systems.
 
-**Heightfield terrain** is the primary representation
-for open-world surfaces. Tiles stream via async I/O,
-LOD is managed by a CDLOD geometry clipmap, and
-materials composite through a virtual texture clipmap
-with GPU feedback.
+**Heightfield terrain** is the primary representation for open-world surfaces. Tiles stream via
+async I/O, LOD is managed by a CDLOD geometry clipmap, and materials composite through a virtual
+texture clipmap with GPU feedback.
 
-**Voxel terrain** handles 3D geometry impossible with
-heightmaps: caves, overhangs, tunnels, and player-dug
-holes. A sparse octree stores SDF values and material
-IDs. Four meshing algorithms serve different art styles.
-Runtime editing supports survival/sandbox gameplay.
+**Voxel terrain** handles 3D geometry impossible with heightmaps: caves, overhangs, tunnels, and
+player-dug holes. A sparse octree stores SDF values and material IDs. Four meshing algorithms serve
+different art styles. Runtime editing supports survival/sandbox gameplay.
 
-**Hybrid mode** is the default. The heightmap covers
-most of the world; voxel volumes overlay regions with
-vertical complexity. Boundary stitching (Transvoxel)
-eliminates seams. Physics collision works across both
-representations via the shared spatial index.
+**Hybrid mode** is the default. The heightmap covers most of the world; voxel volumes overlay
+regions with vertical complexity. Boundary stitching (Transvoxel) eliminates seams. Physics
+collision works across both representations via the shared spatial index.
 
-**Planetary mode** wraps voxel terrain around a sphere
-with radial gravity and clipmap LOD from ground to
-orbit.
+**Planetary mode** wraps voxel terrain around a sphere with radial gravity and clipmap LOD from
+ground to orbit.
 
 ### Interop Contracts Defined Here
 
@@ -144,7 +135,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_geometry/
 └── terrain/
     ├── mod.rs            # Public re-exports
@@ -1694,8 +1685,7 @@ virtual_texture_system(
 
 ### Tile Binary Format
 
-Tile files are stored on disk with the following
-layout. All multi-byte values are little-endian.
+Tile files are stored on disk with the following layout. All multi-byte values are little-endian.
 
 | Offset | Size | Field |
 |--------|------|-------|
@@ -1728,17 +1718,13 @@ layout. All multi-byte values are little-endian.
 
 ### Voxel Compression Pipeline
 
-Voxel data uses two-stage compression to achieve
-the 10:1 target ratio (R-3.2.14):
+Voxel data uses two-stage compression to achieve the 10:1 target ratio (R-3.2.14):
 
-1. **RLE (Run-Length Encoding):** Consecutive cells
-   with identical SDF/material values are collapsed
-   to (value, count) pairs. Homogeneous regions
-   (common in underground solid and open air)
-   compress extremely well.
+1. **RLE (Run-Length Encoding):** Consecutive cells with identical SDF/material values are collapsed
+   to (value, count) pairs. Homogeneous regions (common in underground solid and open air) compress
+   extremely well.
 
-2. **LZ4:** The RLE stream is further compressed
-   with LZ4 for fast decompression on load. LZ4
+2. **LZ4:** The RLE stream is further compressed with LZ4 for fast decompression on load. LZ4
    decompression runs at memory bandwidth speed.
 
 | Region Type | Typical RLE Ratio | After LZ4 |
@@ -1754,9 +1740,8 @@ the 10:1 target ratio (R-3.2.14):
 
 ### Async I/O Integration
 
-All terrain streaming uses platform-native async I/O
-through the `AsyncIo` / `VirtualFileSystem` layer.
-No `std::fs` calls.
+All terrain streaming uses platform-native async I/O through the `AsyncIo` / `VirtualFileSystem`
+layer. No `std::fs` calls.
 
 | Platform | I/O Backend | Terrain Notes |
 |----------|-------------|---------------|
@@ -1794,8 +1779,7 @@ No `std::fs` calls.
 
 ### HLSL Shader Notes
 
-All terrain shaders are authored in HLSL per the
-project-wide shader constraint.
+All terrain shaders are authored in HLSL per the project-wide shader constraint.
 
 | Shader | Stage | Purpose |
 |--------|-------|---------|
@@ -1809,8 +1793,7 @@ project-wide shader constraint.
 
 ### Memory Layout
 
-Terrain components are designed for cache-friendly
-ECS iteration. Hot data (coord, LOD, AABB) is
+Terrain components are designed for cache-friendly ECS iteration. Hot data (coord, LOD, AABB) is
 separated from cold data (height arrays, splatmaps).
 
 | Component | Hot Fields | Cold Fields |
@@ -1916,67 +1899,44 @@ separated from cold data (height arrays, splatmaps).
 | Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
 | Mobile | Limited dispatch size | No mesh shaders | Reduced terrain detail (PlatformTier::Mobile). |
 
-Virtual texture streaming uses the shared
-`VirtualResourceStreamer` framework (see
+Virtual texture streaming uses the shared `VirtualResourceStreamer` framework (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).
 
-Terrain sculpting brushes use the shared `BrushConfig`
-type (see also
+Terrain sculpting brushes use the shared `BrushConfig` type (see also
 [level-world.md](../tools/level-world.md)).
 
 ## Open Questions
 
-1. **Heightfield-to-voxel transition heuristic** --
-   How should the HybridResolver detect that a region
-   requires voxel representation? Options: artist-placed
-   voxel zones only, automatic detection from cave
-   entrance geometry, or a "voxel flag" per tile set in
-   the editor. Automatic detection is harder but better
-   for procedural worlds.
+1. **Heightfield-to-voxel transition heuristic** -- How should the HybridResolver detect that a
+   region requires voxel representation? Options: artist-placed voxel zones only, automatic
+   detection from cave entrance geometry, or a "voxel flag" per tile set in the editor. Automatic
+   detection is harder but better for procedural worlds.
 
-2. **Virtual texture page eviction policy** --
-   LRU is simplest but may thrash on camera rotation.
-   A priority-aware policy that weights distance and
-   mip level may perform better. Need profiling data
+2. **Virtual texture page eviction policy** -- LRU is simplest but may thrash on camera rotation. A
+   priority-aware policy that weights distance and mip level may perform better. Need profiling data
    to decide.
 
-3. **GPU compute meshing dispatch model** --
-   Should each dirty chunk be a separate compute
-   dispatch, or should multiple chunks be batched into
-   one dispatch with indirect arguments? Batching
-   reduces dispatch overhead but complicates the shader.
+3. **GPU compute meshing dispatch model** -- Should each dirty chunk be a separate compute dispatch,
+   or should multiple chunks be batched into one dispatch with indirect arguments? Batching reduces
+   dispatch overhead but complicates the shader.
 
-4. **Transvoxel at hybrid boundaries** --
-   The Transvoxel algorithm handles LOD transitions
-   within the voxel volume, but stitching voxel mesh
-   edges to heightfield mesh edges is a separate
-   problem. May need a dedicated boundary stitching
-   pass that samples the heightfield at voxel boundary
+4. **Transvoxel at hybrid boundaries** -- The Transvoxel algorithm handles LOD transitions within
+   the voxel volume, but stitching voxel mesh edges to heightfield mesh edges is a separate problem.
+   May need a dedicated boundary stitching pass that samples the heightfield at voxel boundary
    vertices.
 
-5. **Edit delta compression** --
-   The 1 KB target per edit (R-3.2.13) may be tight
-   for large-radius edits affecting hundreds of cells.
-   Consider delta-encoding SDF values (store difference
-   from previous value) or quantizing the delta to
-   fewer bits.
+5. **Edit delta compression** -- The 1 KB target per edit (R-3.2.13) may be tight for large-radius
+   edits affecting hundreds of cells. Consider delta-encoding SDF values (store difference from
+   previous value) or quantizing the delta to fewer bits.
 
-6. **Planetary LOD at poles** --
-   Cube-sphere projection introduces distortion at
-   face edges and vertices. The clipmap ring
-   calculation needs adjustment near poles to avoid
-   over-tessellation or gaps.
+6. **Planetary LOD at poles** -- Cube-sphere projection introduces distortion at face edges and
+   vertices. The clipmap ring calculation needs adjustment near poles to avoid over-tessellation or
+   gaps.
 
-7. **Collision LOD stability** --
-   If visual LOD changes but collision LOD stays
-   constant, the player may see visual terrain at a
-   different height than the collision surface. Need
-   to define the maximum acceptable divergence and
-   ensure the collision_lod_bias keeps it within
-   tolerance.
+7. **Collision LOD stability** -- If visual LOD changes but collision LOD stays constant, the player
+   may see visual terrain at a different height than the collision surface. Need to define the
+   maximum acceptable divergence and ensure the collision_lod_bias keeps it within tolerance.
 
-8. **Streaming priority vs. I/O priority** --
-   Tile loads use `IoPriority::Normal`. Should tiles
-   directly under the camera use `Critical` priority?
-   This would reduce pop-in on fast camera movement
-   but may starve other I/O (audio, network).
+8. **Streaming priority vs. I/O priority** -- Tile loads use `IoPriority::Normal`. Should tiles
+   directly under the camera use `Critical` priority? This would reduce pop-in on fast camera
+   movement but may starve other I/O (audio, network).

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/content-pipeline/](../../features/content-pipeline/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/content-pipeline/](../../features/content-pipeline/),
 > [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table
-> below traces design elements to those definitions.
+> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
+> design elements to those definitions.
 
 ### Asset Import
 
@@ -40,35 +40,25 @@
 
 ## Overview
 
-The asset import and database subsystem is the entry
-point for all content entering the Harmonius engine.
-It accepts assets from two primary paths:
+The asset import and database subsystem is the entry point for all content entering the Harmonius
+engine. It accepts assets from two primary paths:
 
-1. **DCC plugin exports** — native binary format
-   assets pushed directly from Houdini, Maya,
-   Blender, and other tools via the Plugin SDK
-   (preferred path).
-2. **Source file imports** — raw texture and audio
-   files (PNG, WAV, etc.) as a convenience fallback.
+1. **DCC plugin exports** — native binary format assets pushed directly from Houdini, Maya, Blender,
+   and other tools via the Plugin SDK (preferred path).
+2. **Source file imports** — raw texture and audio files (PNG, WAV, etc.) as a convenience fallback.
 
-All imported content flows through a single pipeline:
-source detection, format-specific decoding, validation,
-BLAKE3 content hashing, content-addressable storage,
-and metadata registration. The system uses the
-`IoReactor` for all file operations (no stdlib I/O)
-and parallelizes batch imports across the `ThreadPool`.
+All imported content flows through a single pipeline: source detection, format-specific decoding,
+validation, BLAKE3 content hashing, content-addressable storage, and metadata registration. The
+system uses the `IoReactor` for all file operations (no stdlib I/O) and parallelizes batch imports
+across the `ThreadPool`.
 
 Key design goals:
 
-- **Deterministic builds.** Identical inputs always
-  produce identical outputs with identical hashes.
-- **Incremental imports.** Only changed sources are
-  re-imported; cache key = hash(source + settings +
-  tool version).
-- **Deduplication.** CAS eliminates redundant storage
-  across expansion packs and live-ops updates.
-- **Rollback safety.** Cancelled batch imports leave
-  no partial entries in the metadata store.
+- **Deterministic builds.** Identical inputs always produce identical outputs with identical hashes.
+- **Incremental imports.** Only changed sources are re-imported; cache key = hash(source + settings
+  - tool version).
+- **Deduplication.** CAS eliminates redundant storage across expansion packs and live-ops updates.
+- **Rollback safety.** Cancelled batch imports leave no partial entries in the metadata store.
 
 ## Architecture
 
@@ -135,7 +125,7 @@ graph TD
     CAS -.-> IO
 ```
 
-```
+```text
 harmonius_content/
 ├── import/
 │   ├── coordinator.rs   # ImportCoordinator,
@@ -231,17 +221,13 @@ graph LR
     SHM --> NI
 ```
 
-DCC plugins export directly to the engine's native
-binary format via the Plugin SDK (F-12.6.1). No
-intermediate formats (FBX, glTF, USD) are used.
-The SDK provides a C API with Python and C++ bindings
-that DCC tools call to submit meshes, skeletons,
-animations, materials, textures, and scene hierarchies.
+DCC plugins export directly to the engine's native binary format via the Plugin SDK (F-12.6.1). No
+intermediate formats (FBX, glTF, USD) are used. The SDK provides a C API with Python and C++
+bindings that DCC tools call to submit meshes, skeletons, animations, materials, textures, and scene
+hierarchies.
 
-Transport uses either a local TCP socket (for
-LiveLink real-time push) or shared memory (for
-batch export). The engine side receives native binary
-payloads and feeds them directly into the
+Transport uses either a local TCP socket (for LiveLink real-time push) or shared memory (for batch
+export). The engine side receives native binary payloads and feeds them directly into the
 `NativeImporter`.
 
 ### Batch Import Sequence
@@ -295,9 +281,8 @@ flowchart TD
 
 The cache key is `BLAKE3(source_bytes ||
 import_settings || tool_version)`. A cache hit skips
-all decoding and processing stages. A CAS hit
-after processing skips the storage write. Both
-layers combine to minimize redundant work.
+all decoding and processing stages. A CAS hit after processing skips the storage write. Both layers
+combine to minimize redundant work.
 
 ### Content-Addressable Storage Layout
 
@@ -331,12 +316,9 @@ graph TD
     FA -.->|referenced by| R2
 ```
 
-Blobs are stored under a two-character hex prefix
-directory derived from the first byte of the BLAKE3
-hash. This fans out into 256 buckets, keeping
-directory listing sizes manageable even with
-millions of blobs. Multiple `AssetId` entries may
-reference the same blob (deduplication).
+Blobs are stored under a two-character hex prefix directory derived from the first byte of the
+BLAKE3 hash. This fans out into 256 buckets, keeping directory listing sizes manageable even with
+millions of blobs. Multiple `AssetId` entries may reference the same blob (deduplication).
 
 ### Core Data Structures
 
@@ -408,6 +390,14 @@ classDiagram
     Clone, Copy, Debug, PartialEq, Eq, Hash,
 )]
 pub struct AssetId(pub Uuid);
+
+/// **Note:** `AssetId` inner type must be reconciled
+/// across the content pipeline. This file uses `Uuid`,
+/// while streaming.md and processing.md use `u64`, and
+/// dcc-versioning.md uses `[u8; 32]`. A single canonical
+/// `AssetId` definition should be established. Consider
+/// `u64` (hash-derived) for runtime efficiency with
+/// `Uuid` conversion at import boundaries.
 
 impl AssetId {
     /// Generate a new random asset ID.
@@ -1141,10 +1131,9 @@ impl Importer for AudioImporter {
 | Physics material | DCC plugin metadata | Friction, restitution, density properties |
 | Ragdoll definition | DCC plugin (bone mapping) | Joint hierarchy with angular limits |
 
-Physics collision meshes are exported directly from DCC
-plugins alongside visual meshes. The importer generates
-convex hull decompositions for complex shapes and stores
-them in the CAS database.
+Physics collision meshes are exported directly from DCC plugins alongside visual meshes. The
+importer generates convex hull decompositions for complex shapes and stores them in the CAS
+database.
 
 ### Import Coordinator
 
@@ -1585,18 +1574,14 @@ async fn batch_import(
 
 ### Dependency Invalidation Propagation
 
-When a source file changes (detected by the file
-watcher, F-12.4.1):
+When a source file changes (detected by the file watcher, F-12.4.1):
 
-1. The `ImportCoordinator` reimports the changed
-   asset.
-2. If the content hash changes, `invalidate()` walks
-   the `DependencyGraph` reverse edges.
+1. The `ImportCoordinator` reimports the changed asset.
+2. If the content hash changes, `invalidate()` walks the `DependencyGraph` reverse edges.
 3. All transitive dependents are collected via BFS.
 4. Each dependent's cache entry is invalidated.
 5. Dependents are re-imported in topological order.
-6. Only assets whose output actually changes trigger
-   further propagation.
+6. Only assets whose output actually changes trigger further propagation.
 
 ```rust
 async fn invalidate(
@@ -1624,8 +1609,7 @@ async fn invalidate(
 
 ### Async I/O
 
-All file operations use the `IoReactor` defined in
-the platform threading design. No stdlib file I/O
+All file operations use the `IoReactor` defined in the platform threading design. No stdlib file I/O
 is used anywhere in the import or database subsystems.
 
 | Platform | I/O Backend | Import Usage |
@@ -1644,10 +1628,9 @@ is used anywhere in the import or database subsystems.
 
 ### Metadata Persistence
 
-The metadata store uses a write-ahead journal for
-crash recovery. The journal is written via async I/O
-before each transaction commit. On startup, any
-incomplete journal entries are replayed or discarded.
+The metadata store uses a write-ahead journal for crash recovery. The journal is written via async
+I/O before each transaction commit. On startup, any incomplete journal entries are replayed or
+discarded.
 
 | Concern | Approach |
 |---------|----------|
@@ -1660,12 +1643,10 @@ incomplete journal entries are replayed or discarded.
 
 BLAKE3 is chosen for content hashing because it is:
 
-- **Fast.** ~1 GB/s on a single core; scales
-  linearly across cores via SIMD and parallelism.
+- **Fast.** ~1 GB/s on a single core; scales linearly across cores via SIMD and parallelism.
 - **Secure.** 256-bit output; collision-resistant.
-- **Incremental.** Supports streaming hash
-  computation, critical for large assets read via
-  async I/O in chunks.
+- **Incremental.** Supports streaming hash computation, critical for large assets read via async I/O
+  in chunks.
 
 | Asset Size | Hashing Time (single core) |
 |-----------|---------------------------|
@@ -1758,51 +1739,32 @@ BLAKE3 is chosen for content hashing because it is:
 
 ## Open Questions
 
-1. **Metadata persistence format.** The metadata
-   store needs durable persistence. Options:
-   - Custom binary format with write-ahead journal
-     (maximum control, minimal dependencies).
-   - SQLite via `rusqlite` (proven durability,
-     adds a dependency).
-   - RON/TOML textual files per-asset (human
-     readable, slower for millions of entries).
+1. **Metadata persistence format.** The metadata store needs durable persistence. Options:
+   - Custom binary format with write-ahead journal (maximum control, minimal dependencies).
+   - SQLite via `rusqlite` (proven durability, adds a dependency).
+   - RON/TOML textual files per-asset (human readable, slower for millions of entries).
    Decision impacts search performance at scale.
 
-2. **CAS blob compression.** Should blobs be
-   compressed in CAS (LZ4/Zstd) or stored raw?
-   Compression saves disk space but adds CPU
-   overhead on every load. The streaming subsystem
-   (F-12.5.9) compresses at the archive level,
-   so CAS compression may be redundant.
+2. **CAS blob compression.** Should blobs be compressed in CAS (LZ4/Zstd) or stored raw? Compression
+   saves disk space but adds CPU overhead on every load. The streaming subsystem (F-12.5.9)
+   compresses at the archive level, so CAS compression may be redundant.
 
-3. **Maximum concurrent imports.** Batch import
-   parallelism should be bounded to avoid starving
-   the editor's interactive systems. The limit
-   could be a fixed count (e.g., `perf_core_count
+3. **Maximum concurrent imports.** Batch import parallelism should be bounded to avoid starving the
+   editor's interactive systems. The limit could be a fixed count (e.g.,`perf_core_count
    - 2`) or adaptive based on system load.
 
-4. **DCC plugin SDK transport.** Local TCP socket
-   vs shared memory vs both. Shared memory is
-   faster for large assets but more complex to
-   implement cross-platform. Socket is simpler
-   but adds serialization overhead.
+4. **DCC plugin SDK transport.** Local TCP socket vs shared memory vs both. Shared memory is faster
+   for large assets but more complex to implement cross-platform. Socket is simpler but adds
+   serialization overhead.
 
-5. **Search index persistence.** The in-memory
-   inverted index needs to be rebuilt on startup
-   unless persisted. Options: persist alongside
-   metadata, or rebuild lazily on first query.
-   At 1M assets, full rebuild could take seconds.
+5. **Search index persistence.** The in-memory inverted index needs to be rebuilt on startup unless
+   persisted. Options: persist alongside metadata, or rebuild lazily on first query. At 1M assets,
+   full rebuild could take seconds.
 
-6. **Thumbnail storage.** Should thumbnails live
-   in CAS (content-addressed, deduplicated) or in
-   a separate thumbnail cache (faster access,
-   simpler eviction)? CAS is cleaner
-   architecturally; a separate cache is faster for
-   the asset browser.
+6. **Thumbnail storage.** Should thumbnails live in CAS (content-addressed, deduplicated) or in a
+   separate thumbnail cache (faster access, simpler eviction)? CAS is cleaner architecturally; a
+   separate cache is faster for the asset browser.
 
-7. **Asset ID stability across branches.** When
-   two Git branches import the same source file
-   independently, they generate different UUIDs.
-   Merging creates duplicates. A deterministic ID
-   derived from the source path could solve this
-   but breaks if the file moves.
+7. **Asset ID stability across branches.** When two Git branches import the same source file
+   independently, they generate different UUIDs. Merging creates duplicates. A deterministic ID
+   derived from the source path could solve this but breaks if the file moves.

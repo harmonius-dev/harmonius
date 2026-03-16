@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/physics/](../../features/physics/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/physics/](../../features/physics/),
 > [requirements/physics/](../../requirements/physics/), and
-> [user-stories/physics/](../../user-stories/physics/). The table
-> below traces design elements to those definitions.
+> [user-stories/physics/](../../user-stories/physics/). The table below traces design elements to
+> those definitions.
 
 ### Spatial Queries (4.4)
 
@@ -69,30 +69,23 @@
 
 ## Overview
 
-This document covers five advanced physics subsystems built
-on top of the core rigid body dynamics (4.1), collision
-detection (4.2), and constraints (4.3) layers:
+This document covers five advanced physics subsystems built on top of the core rigid body dynamics
+(4.1), collision detection (4.2), and constraints (4.3) layers:
 
-1. **Spatial queries** -- ray cast, shape cast, overlap,
-   closest point, batch queries. All traverse the shared
-   BVH (F-1.9.1) and filter via `QueryFilter`.
-2. **Vehicle physics** -- wheel suspension, Pacejka tire
-   friction, drivetrain, stability, tracked and hover
-   vehicles. All 100% ECS with no separate vehicle world.
-3. **Destruction and fracture** -- Voronoi fracture,
-   runtime splitting, progressive damage, structural
-   collapse, debris lifecycle. Fragments are ECS entities.
-4. **Soft body and cloth** -- XPBD solver, GPU cloth,
-   self-collision, wind, tearing, LOD. Particle data lives
-   in GPU buffers referenced by ECS components.
-5. **Fluid simulation** -- SPH, FLIP/PIC, Eulerian grid,
-   surface reconstruction, buoyancy. GPU-accelerated with
-   two-way rigid body coupling.
+1. **Spatial queries** -- ray cast, shape cast, overlap, closest point, batch queries. All traverse
+   the shared BVH (F-1.9.1) and filter via `QueryFilter`.
+2. **Vehicle physics** -- wheel suspension, Pacejka tire friction, drivetrain, stability, tracked
+   and hover vehicles. All 100% ECS with no separate vehicle world.
+3. **Destruction and fracture** -- Voronoi fracture, runtime splitting, progressive damage,
+   structural collapse, debris lifecycle. Fragments are ECS entities.
+4. **Soft body and cloth** -- XPBD solver, GPU cloth, self-collision, wind, tearing, LOD. Particle
+   data lives in GPU buffers referenced by ECS components.
+5. **Fluid simulation** -- SPH, FLIP/PIC, Eulerian grid, surface reconstruction, buoyancy.
+   GPU-accelerated with two-way rigid body coupling.
 
-All subsystems are 100% ECS-based: simulation data lives as
-components, all logic as systems, no parallel data stores.
-The shared BVH is the single spatial acceleration structure
-used across physics, rendering, AI, and networking.
+All subsystems are 100% ECS-based: simulation data lives as components, all logic as systems, no
+parallel data stores. The shared BVH is the single spatial acceleration structure used across
+physics, rendering, AI, and networking.
 
 ## Architecture
 
@@ -167,7 +160,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_physics/
 ├── spatial_query/
 │   ├── ray_cast.rs        # RayCast system parameter
@@ -486,13 +479,10 @@ pub type PredicateFn =
     Box<dyn Fn(&EntityRef) -> bool + Send + Sync>;
 ```
 
-**Justification:** `PredicateFn` uses `Box<dyn Fn>`
-for user-defined spatial query filters. This is a
-query/tool path, not per-frame simulation. The
-predicate is evaluated during spatial queries
-initiated by gameplay code (raycasts, overlap tests),
-which are infrequent relative to the simulation tick.
-Acceptable per constraints.md.
+**Justification:** `PredicateFn` uses `Box<dyn Fn>` for user-defined spatial query filters. This is
+a query/tool path, not per-frame simulation. The predicate is evaluated during spatial queries
+initiated by gameplay code (raycasts, overlap tests), which are infrequent relative to the
+simulation tick. Acceptable per constraints.md.
 
 ```rust
 /// Unified filter for all spatial queries.
@@ -1107,16 +1097,11 @@ pub fn debris_lod_system(
 
 #### Cloth Ownership Boundary
 
-Physics owns the XPBD constraint solver
-(`XpbdSolverSystem`). Animation owns cloth authoring
-components (`ClothGarment`, `ClothPanel`), GPU
-dispatch, and LOD management (see
-[cloth-hair.md](../animation/cloth-hair.md)). Physics
-provides the solver as a service; animation drives
-when and how cloth is simulated. `ClothSimulation`
-in this file defines the solver-side state;
-`ClothGarment` in cloth-hair.md defines the
-authoring-side state.
+Physics owns the XPBD constraint solver (`XpbdSolverSystem`). Animation owns cloth authoring
+components (`ClothGarment`, `ClothPanel`), GPU dispatch, and LOD management (see
+[cloth-hair.md](../animation/cloth-hair.md)). Physics provides the solver as a service; animation
+drives when and how cloth is simulated. `ClothSimulation` in this file defines the solver-side
+state; `ClothGarment` in cloth-hair.md defines the authoring-side state.
 
 #### Components
 
@@ -1471,11 +1456,9 @@ pub fn buoyancy_system(
 
 ### Per-Frame Execution Order
 
-The advanced physics systems run within the ECS
-schedule after core physics (integration, broadphase,
-narrowphase, constraint solve) but before rendering.
-Systems within each subsystem have explicit ordering
-dependencies.
+The advanced physics systems run within the ECS schedule after core physics (integration,
+broadphase, narrowphase, constraint solve) but before rendering. Systems within each subsystem have
+explicit ordering dependencies.
 
 ```rust
 // Simplified ECS schedule ordering
@@ -1531,100 +1514,67 @@ schedule.configure_sets((
 
 All spatial queries follow the same pipeline:
 
-1. **Broadphase traversal** -- BVH node AABB test
-   against the query volume (ray slab, swept AABB,
+1. **Broadphase traversal** -- BVH node AABB test against the query volume (ray slab, swept AABB,
    overlap AABB).
-2. **Layer filter** -- `CollisionLayerMask` bitmask
-   AND at each leaf. Reject before narrowphase.
-3. **Structural filter** -- `With<T>` / `Without<T>`
-   evaluated via archetype metadata. Zero-cost for
-   archetypes that match; immediate rejection for
-   those that do not.
-4. **Narrowphase** -- exact GJK/SAT intersection
-   against the `Collider` shape.
-5. **Custom predicate** -- if set, the predicate
-   closure receives `&EntityRef` for full component
-   read access. Evaluated after narrowphase to
-   minimize invocations.
-6. **Result collection** -- hits sorted by distance
-   (ray/shape cast) or collected unordered (overlap).
+2. **Layer filter** -- `CollisionLayerMask` bitmask AND at each leaf. Reject before narrowphase.
+3. **Structural filter** -- `With<T>` / `Without<T>` evaluated via archetype metadata. Zero-cost for
+   archetypes that match; immediate rejection for those that do not.
+4. **Narrowphase** -- exact GJK/SAT intersection against the `Collider` shape.
+5. **Custom predicate** -- if set, the predicate closure receives `&EntityRef` for full component
+   read access. Evaluated after narrowphase to minimize invocations.
+6. **Result collection** -- hits sorted by distance (ray/shape cast) or collected unordered
+   (overlap).
 
 ### Vehicle Force Pipeline
 
 Each physics tick, vehicle systems execute in order:
 
-1. `drivetrain_system` -- reads input, computes
-   engine RPM and output torque, writes
+1. `drivetrain_system` -- reads input, computes engine RPM and output torque, writes
    `WheelSuspension.drive_torque` per wheel.
-2. `suspension_system` -- ray casts ground contact
-   per wheel, computes spring force, writes
+2. `suspension_system` -- ray casts ground contact per wheel, computes spring force, writes
    compression and contact normal.
-3. `tire_force_system` -- reads compression and
-   contact, computes slip angle/ratio, evaluates
+3. `tire_force_system` -- reads compression and contact, computes slip angle/ratio, evaluates
    Pacejka, writes `WheelForceOutput`.
-4. `anti_roll_bar_system` -- reads paired wheel
-   compression, writes corrective `ExternalForce`.
-5. `stability_control_system` -- applies traction
-   control and ESC corrections.
-6. Core `IntegrationSystem` -- integrates all
-   accumulated forces on the chassis.
+4. `anti_roll_bar_system` -- reads paired wheel compression, writes corrective `ExternalForce`.
+5. `stability_control_system` -- applies traction control and ESC corrections.
+6. Core `IntegrationSystem` -- integrates all accumulated forces on the chassis.
 
 ### Destruction Event Pipeline
 
-1. `damage_accumulation_system` reads
-   `CollisionPersisted` events, subtracts damage
-   from `DamageHealth.integrity`.
-2. When `integrity <= 0`, `fracture_activation_system`
-   despawns the intact entity, spawns fragment entities
-   (budgeted per frame), spawns breakable joint entities
-   between adjacent fragments.
-3. `structural_analysis_system` runs BFS/DFS from
-   `GroundedAnchor` entities. Fragments without a path
-   to any anchor have their joints despawned, causing
-   them to fall as independent rigid bodies.
-4. `debris_lifetime_system` decrements timers each
-   frame, despawns expired debris, enforces the global
-   cap by despawning the oldest when exceeded.
-5. `debris_lod_system` removes `RigidBody` and
-   `Collider` from debris beyond the LOD distance,
+1. `damage_accumulation_system` reads `CollisionPersisted` events, subtracts damage from
+   `DamageHealth.integrity`.
+2. When `integrity <= 0`, `fracture_activation_system` despawns the intact entity, spawns fragment
+   entities (budgeted per frame), spawns breakable joint entities between adjacent fragments.
+3. `structural_analysis_system` runs BFS/DFS from `GroundedAnchor` entities. Fragments without a
+   path to any anchor have their joints despawned, causing them to fall as independent rigid bodies.
+4. `debris_lifetime_system` decrements timers each frame, despawns expired debris, enforces the
+   global cap by despawning the oldest when exceeded.
+5. `debris_lod_system` removes `RigidBody` and `Collider` from debris beyond the LOD distance,
    converting them to visual-only particles.
 
 ### Cloth Simulation Pipeline
 
-1. `wind_field_generation_system` samples all
-   `WindSource` entities into the shared 3D wind
-   texture on the GPU.
-2. `cloth_lod_system` evaluates camera distance and
-   adjusts `ClothSimulation` iteration count and
+1. `wind_field_generation_system` samples all `WindSource` entities into the shared 3D wind texture
+   on the GPU.
+2. `cloth_lod_system` evaluates camera distance and adjusts `ClothSimulation` iteration count and
    particle count per LOD tier.
-3. `xpbd_solver_system` dispatches GPU compute for
-   constraint resolution: distance, bending, volume
-   preservation, shape-matching. Reads `Collider`
-   entities for rigid body coupling.
-4. `cloth_self_collision_system` runs spatial-hash
-   or BVH-based CCD on particles (GPU compute).
-5. `cloth_wind_system` samples the shared wind field
-   texture and applies forces to cloth particles.
-6. `cloth_tearing_system` checks constraint strain;
-   splits topology and spawns new cloth entities when
-   the threshold is exceeded.
+3. `xpbd_solver_system` dispatches GPU compute for constraint resolution: distance, bending, volume
+   preservation, shape-matching. Reads `Collider` entities for rigid body coupling.
+4. `cloth_self_collision_system` runs spatial-hash or BVH-based CCD on particles (GPU compute).
+5. `cloth_wind_system` samples the shared wind field texture and applies forces to cloth particles.
+6. `cloth_tearing_system` checks constraint strain; splits topology and spawns new cloth entities
+   when the threshold is exceeded.
 
 ### Fluid Simulation Pipeline
 
-1. Solver systems (`sph_system`, `flip_system`,
-   `eulerian_system`) run GPU compute passes. They
-   read `RigidBody`, `Velocity`, and `Collider` on
-   nearby entities for two-way coupling displacement.
-2. `surface_reconstruction_system` runs marching
-   cubes (GPU compute) on particle data to produce
+1. Solver systems (`sph_system`, `flip_system`, `eulerian_system`) run GPU compute passes. They read
+   `RigidBody`, `Velocity`, and `Collider` on nearby entities for two-way coupling displacement.
+2. `surface_reconstruction_system` runs marching cubes (GPU compute) on particle data to produce
    renderable meshes written to `FluidRenderer`.
-3. `water_surface_system` evaluates FFT and Gerstner
-   wave synthesis, writes displacement maps for
+3. `water_surface_system` evaluates FFT and Gerstner wave synthesis, writes displacement maps for
    rendering.
-4. `buoyancy_system` tests rigid body colliders
-   against `FluidVolume` domains, computes buoyancy
-   from submerged volume approximation, writes
-   `ExternalForce` components.
+4. `buoyancy_system` tests rigid body colliders against `FluidVolume` domains, computes buoyancy
+   from submerged volume approximation, writes `ExternalForce` components.
 
 ## Platform Considerations
 
@@ -1698,23 +1648,20 @@ Each physics tick, vehicle systems execute in order:
 ### Platform-Specific Notes
 
 **Windows:**
-- GPU compute via Direct3D 12 compute shaders
-  (HLSL compiled by DXC).
-- Fluid and cloth dispatch use compute command
-  lists on the async compute queue when available.
+
+- GPU compute via Direct3D 12 compute shaders (HLSL compiled by DXC).
+- Fluid and cloth dispatch use compute command lists on the async compute queue when available.
 
 **macOS:**
-- GPU compute via Metal compute shaders (HLSL
-  compiled by DXC, converted by Metal Shader
-  Converter via cxx.rs).
-- Command buffer completion handlers are GCD
-  dispatch blocks. Controlled drain at poll point.
+
+- GPU compute via Metal compute shaders (HLSL compiled by DXC, converted by Metal Shader Converter
+  via cxx.rs).
+- Command buffer completion handlers are GCD dispatch blocks. Controlled drain at poll point.
 
 **Linux:**
-- GPU compute via Vulkan compute shaders (HLSL
-  compiled to SPIR-V by DXC).
-- io_uring for any async data loading of fracture
-  assets or fluid initialization data.
+
+- GPU compute via Vulkan compute shaders (HLSL compiled to SPIR-V by DXC).
+- io_uring for any async data loading of fracture assets or fluid initialization data.
 
 ## Test Plan
 
@@ -1834,76 +1781,47 @@ Each physics tick, vehicle systems execute in order:
 
 Advanced physics debug draw covers:
 
-- **Spatial queries** -- ray visualizations (origin,
-  direction, hit point), overlap test volumes
+- **Spatial queries** -- ray visualizations (origin, direction, hit point), overlap test volumes
   (wireframe sphere/box/capsule).
-- **Vehicles** -- wheel suspension lines, tire
-  force vectors, drivetrain torque indicators.
-- **Cloth** -- particle positions (dots), constraint
-  edges (lines), collision proxy wireframes.
-- **Destruction** -- fragment outlines, stress
-  heatmap overlay, fracture pattern wireframes.
+- **Vehicles** -- wheel suspension lines, tire force vectors, drivetrain torque indicators.
+- **Cloth** -- particle positions (dots), constraint edges (lines), collision proxy wireframes.
+- **Destruction** -- fragment outlines, stress heatmap overlay, fracture pattern wireframes.
 
-All debug draw emits commands to the render graph's
-debug overlay pass and is compile-time stripped from
-shipping builds via `cfg(debug_assertions)`.
+All debug draw emits commands to the render graph's debug overlay pass and is compile-time stripped
+from shipping builds via `cfg(debug_assertions)`.
 
 ### Networking Integration
 
-Vehicle replication (F-4.5.7) and destruction state
-replication use standard component replication via
-the networking layer. Vehicle input is replicated;
-physics simulation is server-authoritative.
-Destruction events (fracture activation, fragment
-spawning) are replicated as reliable messages.
+Vehicle replication (F-4.5.7) and destruction state replication use standard component replication
+via the networking layer. Vehicle input is replicated; physics simulation is server-authoritative.
+Destruction events (fracture activation, fragment spawning) are replicated as reliable messages.
 
 ## Open Questions
 
-1. **Fracture asset format** -- binary blob with
-   per-fragment convex hulls, or reference
-   individual mesh assets? The former is simpler
-   for activation; the latter shares the general
-   asset pipeline.
+1. **Fracture asset format** -- binary blob with per-fragment convex hulls, or reference individual
+   mesh assets? The former is simpler for activation; the latter shares the general asset pipeline.
 
-2. **GPU cloth readback** -- cloth particle
-   positions live on the GPU. Two-way rigid body
-   coupling requires reading positions back to the
-   CPU for contact constraint generation. Should
-   readback happen every frame (latency cost) or
-   use a one-frame-delayed approximation?
+2. **GPU cloth readback** -- cloth particle positions live on the GPU. Two-way rigid body coupling
+   requires reading positions back to the CPU for contact constraint generation. Should readback
+   happen every frame (latency cost) or use a one-frame-delayed approximation?
 
-3. **Fluid solver selection** -- SPH is simpler but
-   less stable at low particle counts. FLIP/PIC is
-   more stable but needs a grid. Should the engine
-   expose all three solvers to users, or
-   automatically select based on volume size and
-   platform tier?
+3. **Fluid solver selection** -- SPH is simpler but less stable at low particle counts. FLIP/PIC is
+   more stable but needs a grid. Should the engine expose all three solvers to users, or
+   automatically select based on volume size and platform tier?
 
-4. **Structural analysis parallelism** -- graph
-   traversal for structural collapse is inherently
-   sequential per connected component. For
-   structures with multiple disconnected subgraphs,
-   should each subgraph be a separate task graph
-   node dispatched to the thread pool?
+4. **Structural analysis parallelism** -- graph traversal for structural collapse is inherently
+   sequential per connected component. For structures with multiple disconnected subgraphs, should
+   each subgraph be a separate task graph node dispatched to the thread pool?
 
-5. **Cloth-fluid interaction** -- cloth submerged
-   in fluid should experience drag and buoyancy.
-   This requires coupling the XPBD solver with the
-   fluid solver. Should this be a separate coupling
-   system, or integrated into the existing two-way
-   rigid body coupling path?
+5. **Cloth-fluid interaction** -- cloth submerged in fluid should experience drag and buoyancy. This
+   requires coupling the XPBD solver with the fluid solver. Should this be a separate coupling
+   system, or integrated into the existing two-way rigid body coupling path?
 
-6. **Debris physics-to-particle transition** -- at
-   the LOD distance, debris converts from physics
-   entities to visual-only particles. Should this
-   transition use a velocity-preserving handoff
-   (particle inherits rigid body velocity at
-   conversion) or a simple fade?
+6. **Debris physics-to-particle transition** -- at the LOD distance, debris converts from physics
+   entities to visual-only particles. Should this transition use a velocity-preserving handoff
+   (particle inherits rigid body velocity at conversion) or a simple fade?
 
-7. **Deterministic fluid simulation** -- fluid
-   solvers run on the GPU where floating-point
-   determinism is harder to guarantee. Is strict
-   cross-platform determinism required for fluid
-   (server-authoritative), or is approximate
-   consistency acceptable since fluid is primarily
-   a visual effect?
+7. **Deterministic fluid simulation** -- fluid solvers run on the GPU where floating-point
+   determinism is harder to guarantee. Is strict cross-platform determinism required for fluid
+   (server-authoritative), or is approximate consistency acceptable since fluid is primarily a
+   visual effect?

@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/audio/](../../features/audio/),
-> [requirements/audio/](../../requirements/audio/), and
-> [user-stories/audio/](../../user-stories/audio/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/audio/](../../features/audio/), [requirements/audio/](../../requirements/audio/), and
+> [user-stories/audio/](../../user-stories/audio/). The table below traces design elements to those
+> definitions.
 
 ### DSP & Effects (5.3)
 
@@ -58,28 +57,21 @@
 
 ## Overview
 
-This document covers three tightly coupled audio
-subsystems:
+This document covers three tightly coupled audio subsystems:
 
-1. **DSP & Effects** -- a node-based effect processing
-   pipeline inserted into the mixer bus hierarchy.
-2. **Adaptive Music** -- a state-machine-driven music
-   system with vertical re-mixing, horizontal
+1. **DSP & Effects** -- a node-based effect processing pipeline inserted into the mixer bus
+   hierarchy.
+2. **Adaptive Music** -- a state-machine-driven music system with vertical re-mixing, horizontal
    re-sequencing, beat-synced transitions, and stingers.
-3. **Voice Chat** -- capture, encode, transmit, decode,
-   and spatialize player voice with AEC, VAD, noise
-   suppression, and lip sync viseme generation.
+3. **Voice Chat** -- capture, encode, transmit, decode, and spatialize player voice with AEC, VAD,
+   noise suppression, and lip sync viseme generation.
 
-All three run primarily on a dedicated **audio thread**
-that communicates with the game thread through a
-lock-free SPSC ring buffer. ECS components and
-resources on the game thread describe the desired audio
-state; ECS systems serialize commands into the ring
-buffer each tick. The audio thread drains commands at
-the top of every callback, applies parameter changes,
-processes DSP chains, advances the music state machine,
-decodes voice streams, mixes all buses, and writes the
-final buffer to hardware.
+All three run primarily on a dedicated **audio thread** that communicates with the game thread
+through a lock-free SPSC ring buffer. ECS components and resources on the game thread describe the
+desired audio state; ECS systems serialize commands into the ring buffer each tick. The audio thread
+drains commands at the top of every callback, applies parameter changes, processes DSP chains,
+advances the music state machine, decodes voice streams, mixes all buses, and writes the final
+buffer to hardware.
 
 ## Architecture
 
@@ -166,7 +158,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_audio/
 ├── dsp/
 │   ├── node.rs          # DspNode trait, AudioBuffer,
@@ -2119,56 +2111,37 @@ pub fn viseme_sync_system(
 
 ### Per-Frame Audio Processing
 
-The audio thread runs independently at the
-hardware callback rate (typically 48 kHz / 512
-sample buffer = ~93.75 Hz). Each callback:
+The audio thread runs independently at the hardware callback rate (typically 48 kHz / 512 sample
+buffer = ~93.75 Hz). Each callback:
 
-1. **Drain commands** -- pop all pending
-   `AudioCommand`s from the lock-free SPSC ring
-   buffer. Apply parameter changes, insert/remove
-   effects, update music state.
-2. **Advance beat clock** -- tick the `BeatClock`
-   by `buffer_size` samples. Collect `BeatEvent`s.
-3. **Process music state machine** -- evaluate
-   segment graph transitions, resolve pending
-   quantized transitions, advance the vertical
-   remixer, play stingers.
-4. **Decode voice streams** -- pop packets from
-   each player's jitter buffer, decode with Opus
-   (or PLC), generate visemes for lip-synced
-   characters.
-5. **Mix voices into buses** -- each active voice
-   writes through its per-voice DSP chain (filter,
+1. **Drain commands** -- pop all pending `AudioCommand`s from the lock-free SPSC ring buffer. Apply
+   parameter changes, insert/remove effects, update music state.
+2. **Advance beat clock** -- tick the `BeatClock` by `buffer_size` samples. Collect `BeatEvent`s.
+3. **Process music state machine** -- evaluate segment graph transitions, resolve pending quantized
+   transitions, advance the vertical remixer, play stingers.
+4. **Decode voice streams** -- pop packets from each player's jitter buffer, decode with Opus (or
+   PLC), generate visemes for lip-synced characters.
+5. **Mix voices into buses** -- each active voice writes through its per-voice DSP chain (filter,
    EQ) then routes to the assigned mixer bus.
-6. **Process bus effect chains** -- traverse the
-   mixer bus DAG bottom-up. Each bus processes its
-   `EffectChain` (reverb, compressor, delay, etc.)
-   then sums into its parent.
-7. **Master bus limiter** -- the look-ahead limiter
-   on the master bus ensures output never exceeds
-   0 dBFS.
-8. **Write output** -- the final stereo/surround
-   buffer is written to the platform audio output.
+6. **Process bus effect chains** -- traverse the mixer bus DAG bottom-up. Each bus processes its
+   `EffectChain` (reverb, compressor, delay, etc.) then sums into its parent.
+7. **Master bus limiter** -- the look-ahead limiter on the master bus ensures output never exceeds 0
+   dBFS.
+8. **Write output** -- the final stereo/surround buffer is written to the platform audio output.
 
 ### Lock-Free Communication Protocol
 
-- **Game thread to audio thread**: SPSC ring buffer
-  of `AudioCommand` variants. The game thread is
-  the sole producer; the audio thread is the sole
-  consumer. No locks, no allocation.
-- **Audio thread to game thread**: A separate SPSC
-  ring buffer carries `AudioEvent`s (beat events,
-  voice activity flags, viseme data) back to the
-  game thread. The game thread drains events at
-  the start of each tick.
-- **Voice network thread to audio thread**: A
-  bounded MPSC lock-free queue carries incoming
-  Opus packets indexed by player ID. The audio
-  thread drains into per-player jitter buffers.
+- **Game thread to audio thread**: SPSC ring buffer of `AudioCommand` variants. The game thread is
+  the sole producer; the audio thread is the sole consumer. No locks, no allocation.
+- **Audio thread to game thread**: A separate SPSC ring buffer carries `AudioEvent`s (beat events,
+  voice activity flags, viseme data) back to the game thread. The game thread drains events at the
+  start of each tick.
+- **Voice network thread to audio thread**: A bounded MPSC lock-free queue carries incoming Opus
+  packets indexed by player ID. The audio thread drains into per-player jitter buffers.
 
 ### Intensity-Driven Adaptive Music
 
-```
+```text
 intensity = 0.0 (exploration)
   ├── stems: bass only
   ├── segment: loop-A (peaceful)
@@ -2185,16 +2158,12 @@ intensity = 1.0 (boss fight)
   └── stinger likelihood: high
 ```
 
-The `IntensityParam` resource maps a single
-`f32` (0.0-1.0) through authored curves to
+The `IntensityParam` resource maps a single `f32` (0.0-1.0) through authored curves to
 simultaneously control:
 
-- **VerticalRemixer**: per-stem volume via
-  `IntensityCurve`
-- **SegmentGraph**: edge conditions using the
-  intensity value as a gameplay state parameter
-- **StingerScheduler**: probability multiplier for
-  stinger triggers
+- **VerticalRemixer**: per-stem volume via `IntensityCurve`
+- **SegmentGraph**: edge conditions using the intensity value as a gameplay state parameter
+- **StingerScheduler**: probability multiplier for stinger triggers
 
 ## Platform Considerations
 
@@ -2237,11 +2206,9 @@ simultaneously control:
 
 ### Console Voice Chat
 
-Console platforms require using platform-native
-voice chat APIs for party channels (PlayStation
-Party, Xbox Party Chat) to pass certification.
-Game-managed channels (proximity, raid, custom)
-use the engine's Opus transport.
+Console platforms require using platform-native voice chat APIs for party channels (PlayStation
+Party, Xbox Party Chat) to pass certification. Game-managed channels (proximity, raid, custom) use
+the engine's Opus transport.
 
 ### Proposed Dependencies
 
@@ -2335,54 +2302,35 @@ use the engine's Opus transport.
 
 ## Open Questions
 
-1. **FFT library choice** -- `rustfft` is pure Rust
-   and well-maintained. Should we consider `realfft`
-   (wrapper for real-valued FFTs) or platform SIMD
-   FFT (vDSP on macOS) for convolution reverb and
-   pitch shifting performance?
+1. **FFT library choice** -- `rustfft` is pure Rust and well-maintained. Should we consider
+   `realfft` (wrapper for real-valued FFTs) or platform SIMD FFT (vDSP on macOS) for convolution
+   reverb and pitch shifting performance?
 
-2. **Opus crate selection** -- The `opus` crate
-   wraps libopus via C FFI. Should we use `audiopus`
-   (higher-level Rust wrapper) or bind libopus
-   directly via `bindgen` for finer control over
+2. **Opus crate selection** -- The `opus` crate wraps libopus via C FFI. Should we use `audiopus`
+   (higher-level Rust wrapper) or bind libopus directly via `bindgen` for finer control over
    encoder/decoder options?
 
-3. **Voice chat network protocol** -- Voice packets
-   need sequence numbers, timestamps, and speaker
-   IDs. Should this use the engine's existing
-   reliable/unreliable transport (F-8.1.1) or a
-   separate UDP channel optimized for voice?
+3. **Voice chat network protocol** -- Voice packets need sequence numbers, timestamps, and speaker
+   IDs. Should this use the engine's existing reliable/unreliable transport (F-8.1.1) or a separate
+   UDP channel optimized for voice?
 
-4. **Viseme model complexity** -- Simple energy-band
-   analysis vs. a small ML model (e.g., trained
-   phoneme classifier). Energy bands are cheaper but
-   less accurate. ML would require inference on
+4. **Viseme model complexity** -- Simple energy-band analysis vs. a small ML model (e.g., trained
+   phoneme classifier). Energy bands are cheaper but less accurate. ML would require inference on
    the audio thread or a dedicated worker.
 
-5. **Ring buffer sizing** -- The SPSC ring buffer
-   between game and audio threads must be large
-   enough to avoid drops during frame spikes.
-   Default capacity of 1024 commands should cover
-   most cases, but needs profiling under worst-case
-   raid scenarios.
+5. **Ring buffer sizing** -- The SPSC ring buffer between game and audio threads must be large
+   enough to avoid drops during frame spikes. Default capacity of 1024 commands should cover most
+   cases, but needs profiling under worst-case raid scenarios.
 
-6. **Convolution reverb IR streaming** -- Large IRs
-   (2s+ at 48 kHz stereo = ~384 KB) could be
-   streamed progressively. Should the first
-   partition load synchronously while remaining
-   partitions stream, or should the entire IR be
-   required before playback?
+6. **Convolution reverb IR streaming** -- Large IRs (2s+ at 48 kHz stereo = ~384 KB) could be
+   streamed progressively. Should the first partition load synchronously while remaining partitions
+   stream, or should the entire IR be required before playback?
 
-7. **Sidechain compression routing** -- Sidechain
-   for dialogue ducking requires the compressor to
-   read from a different bus than its insert point.
-   The current `BusId` reference approach works but
-   adds a cross-bus dependency in the mix graph.
-   Should sidechain be modeled as a separate
-   routing mechanism?
+7. **Sidechain compression routing** -- Sidechain for dialogue ducking requires the compressor to
+   read from a different bus than its insert point. The current `BusId` reference approach works but
+   adds a cross-bus dependency in the mix graph. Should sidechain be modeled as a separate routing
+   mechanism?
 
-8. **Console platform voice APIs** -- PlayStation
-   and Xbox require platform-native party chat for
-   certification. The boundary between engine-managed
-   channels and platform-managed channels needs
+8. **Console platform voice APIs** -- PlayStation and Xbox require platform-native party chat for
+   certification. The boundary between engine-managed channels and platform-managed channels needs
    detailed per-console investigation.

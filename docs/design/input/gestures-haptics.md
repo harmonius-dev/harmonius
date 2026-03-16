@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/input/](../../features/input/),
-> [requirements/input/](../../requirements/input/), and
-> [user-stories/input/](../../user-stories/input/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/input/](../../features/input/), [requirements/input/](../../requirements/input/), and
+> [user-stories/input/](../../user-stories/input/). The table below traces design elements to those
+> definitions.
 
 ### Gestures (6.3)
 
@@ -44,33 +43,23 @@
 
 ## Overview
 
-This document covers three tightly related input
-subsystems: touch gesture recognition, haptic
-feedback output, and VR spatial input. All three
-share the same ECS-based data model where every
-piece of input state is a component and every
-processing step is a system.
+This document covers three tightly related input subsystems: touch gesture recognition, haptic
+feedback output, and VR spatial input. All three share the same ECS-based data model where every
+piece of input state is a component and every processing step is a system.
 
-**Gestures** consume raw touch pointer events from
-the device abstraction layer (F-6.1.4) and produce
-typed `GestureEvent` components through a
-state-machine-based recognition pipeline with
+**Gestures** consume raw touch pointer events from the device abstraction layer (F-6.1.4) and
+produce typed `GestureEvent` components through a state-machine-based recognition pipeline with
 configurable conflict resolution.
 
-**Haptics** consume gameplay events and produce
-hardware output reports through a layered profile
-system that degrades gracefully across controller
-capabilities (HD haptics, adaptive triggers,
+**Haptics** consume gameplay events and produce hardware output reports through a layered profile
+system that degrades gracefully across controller capabilities (HD haptics, adaptive triggers,
 dual-motor rumble).
 
-**VR Input** bridges platform VR runtimes (OpenXR,
-OVR, PSVR2 SDK) into ECS components for head
-tracking, controller tracking, hand tracking, and
-eye tracking. VR haptics integrate with the shared
+**VR Input** bridges platform VR runtimes (OpenXR, OVR, PSVR2 SDK) into ECS components for head
+tracking, controller tracking, hand tracking, and eye tracking. VR haptics integrate with the shared
 haptic profile system.
 
-All configuration is exposed through the visual
-editor. Users never write code.
+All configuration is exposed through the visual editor. Users never write code.
 
 ## Architecture
 
@@ -158,7 +147,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_input/
 ├── gestures/
 │   ├── recognizer.rs    # GestureRecognizer trait,
@@ -1659,69 +1648,45 @@ pub fn vr_tracking_system(
 
 ### Gesture Processing Per Frame
 
-1. The touch pointer stream (F-6.1.4) writes raw
-   `TouchEvent` components.
-2. `gesture_recognition_system` feeds each event
-   into all active recognizers.
-3. Each recognizer evaluates its state machine
-   against the configured thresholds (DPI-scaled).
-4. Recognizers that reach `Began`, `Changed`, or
-   `Ended` emit candidates.
-5. The `ConflictResolver` evaluates candidates
-   against authored conflict rules.
-6. Resolved gestures are written as `GestureEvent`
-   components to the ECS world.
-7. Gameplay systems and the input action layer
-   consume `GestureEvent` components.
+1. The touch pointer stream (F-6.1.4) writes raw `TouchEvent` components.
+2. `gesture_recognition_system` feeds each event into all active recognizers.
+3. Each recognizer evaluates its state machine against the configured thresholds (DPI-scaled).
+4. Recognizers that reach `Began`, `Changed`, or `Ended` emit candidates.
+5. The `ConflictResolver` evaluates candidates against authored conflict rules.
+6. Resolved gestures are written as `GestureEvent` components to the ECS world.
+7. Gameplay systems and the input action layer consume `GestureEvent` components.
 
 ### Haptic Output Per Frame
 
 1. A gameplay event triggers a `FeedbackProfile`.
-2. The `FeedbackProfileResolver` queries the
-   device's `ControllerClass` capabilities.
-3. The resolver walks the fallback chain, selecting
-   the highest-fidelity layer supported.
-4. Parameter bindings scale intensity from gameplay
-   values.
-5. The selected layer dispatches to the appropriate
-   player (`PatternPlayer`, `AdaptiveTriggerDriver`,
-   or `HdHapticPlayer`).
-6. The player evaluates keyframes at 5 ms intervals
-   and submits HID output reports.
+2. The `FeedbackProfileResolver` queries the device's `ControllerClass` capabilities.
+3. The resolver walks the fallback chain, selecting the highest-fidelity layer supported.
+4. Parameter bindings scale intensity from gameplay values.
+5. The selected layer dispatches to the appropriate player (`PatternPlayer`,
+   `AdaptiveTriggerDriver`, or `HdHapticPlayer`).
+6. The player evaluates keyframes at 5 ms intervals and submits HID output reports.
 
 ### VR Pose Acquisition Per Frame
 
-1. `VrRuntime::begin_frame()` synchronizes with
-   the VR compositor.
-2. `vr_tracking_system` queries poses via
-   `xrLocateSpace` (OpenXR).
-3. `HmdPose`, `ControllerPose`, `HandSkeleton`,
-   and `GazeRay` components are written to the
-   ECS world.
-4. The hand/controller auto-switch updates
-   `VrInputMode`.
-5. Gameplay and rendering systems consume pose
-   components.
-6. At render submission time, `HmdTracker::late_latch()`
-   fetches the most recent pose for minimum
+1. `VrRuntime::begin_frame()` synchronizes with the VR compositor.
+2. `vr_tracking_system` queries poses via `xrLocateSpace` (OpenXR).
+3. `HmdPose`, `ControllerPose`, `HandSkeleton`, and `GazeRay` components are written to the ECS
+   world.
+4. The hand/controller auto-switch updates `VrInputMode`.
+5. Gameplay and rendering systems consume pose components.
+6. At render submission time, `HmdTracker::late_latch()` fetches the most recent pose for minimum
    motion-to-photon latency.
-7. `VrRuntime::end_frame()` submits composition
-   layers.
+7. `VrRuntime::end_frame()` submits composition layers.
 
 ### Audio-Driven Haptic Pipeline
 
-1. The audio system provides per-channel or final
-   mix output buffers.
-2. `AudioHapticGenerator` applies a band-pass
-   filter (20-250 Hz) to extract the
-   haptic-perceptible frequency range.
-3. Amplitude envelope extraction produces a
-   `HapticWaveform`.
-4. The waveform is submitted to `HdHapticPlayer`
-   or converted to dual-motor approximation.
-5. Audio-to-haptic latency is maintained under
-   10 ms by processing in the same frame as
-   the audio mix.
+1. The audio system provides per-channel or final mix output buffers.
+2. `AudioHapticGenerator` applies a band-pass filter (20-250 Hz) to extract the haptic-perceptible
+   frequency range.
+3. Amplitude envelope extraction produces a `HapticWaveform`.
+4. The waveform is submitted to `HdHapticPlayer` or converted to dual-motor approximation.
+5. Audio-to-haptic latency is maintained under 10 ms by processing in the same frame as the audio
+   mix.
 
 ## Platform Considerations
 
@@ -1870,57 +1835,36 @@ pub fn vr_tracking_system(
 
 ## Open Questions
 
-1. **macOS trackpad gesture passthrough** -- macOS
-   provides built-in gesture recognizers via NSEvent
-   (magnification, rotation, smart zoom). Should we
-   use the platform recognizers directly and map
-   their output into our gesture events, or should
-   we consume raw trackpad touch data and run our
-   own recognizers? Platform recognizers avoid
-   reimplementing Apple's gesture heuristics but
-   limit configurability.
+1. **macOS trackpad gesture passthrough** -- macOS provides built-in gesture recognizers via NSEvent
+   (magnification, rotation, smart zoom). Should we use the platform recognizers directly and map
+   their output into our gesture events, or should we consume raw trackpad touch data and run our
+   own recognizers? Platform recognizers avoid reimplementing Apple's gesture heuristics but limit
+   configurability.
 
-2. **DualSense HID protocol stability** -- The
-   DualSense HID output report format for adaptive
-   triggers is reverse-engineered (no official
-   public documentation). Should we depend on
-   community-maintained HID documentation, or
-   abstract behind platform SDKs where available
-   (e.g., PlayStation SDK on PS5)?
+2. **DualSense HID protocol stability** -- The DualSense HID output report format for adaptive
+   triggers is reverse-engineered (no official public documentation). Should we depend on
+   community-maintained HID documentation, or abstract behind platform SDKs where available (e.g.,
+   PlayStation SDK on PS5)?
 
-3. **OpenXR extension availability** -- Hand
-   tracking (`XR_EXT_hand_tracking`) and eye
-   tracking (`XR_EXT_eye_gaze_interaction`) are
-   extensions, not core. What is the fallback
-   behavior when a runtime does not advertise
-   these extensions? Current design: graceful
-   no-op with capability query.
+3. **OpenXR extension availability** -- Hand tracking (`XR_EXT_hand_tracking`) and eye tracking
+   (`XR_EXT_eye_gaze_interaction`) are extensions, not core. What is the fallback behavior when a
+   runtime does not advertise these extensions? Current design: graceful no-op with capability
+   query.
 
-4. **Audio-haptic generation scope** -- Should
-   audio-driven haptic generation run on every
-   audio source, or only on tagged sources? Running
-   on all sources could be expensive. The current
-   design assumes per-event opt-in configured in
-   the editor.
+4. **Audio-haptic generation scope** -- Should audio-driven haptic generation run on every audio
+   source, or only on tagged sources? Running on all sources could be expensive. The current design
+   assumes per-event opt-in configured in the editor.
 
-5. **HD haptic waveform authoring format** --
-   Should the common waveform format be a simple
-   frequency/amplitude timeline, or a more
-   expressive format supporting multiple frequency
-   bands? The simple format maps directly to Switch
-   HD Rumble but may underutilize DualSense
-   voice-coil capabilities.
+5. **HD haptic waveform authoring format** -- Should the common waveform format be a simple
+   frequency/amplitude timeline, or a more expressive format supporting multiple frequency bands?
+   The simple format maps directly to Switch HD Rumble but may underutilize DualSense voice-coil
+   capabilities.
 
-6. **VR haptic integration depth** -- VR controller
-   haptics currently reuse the `RumblePattern`
-   asset format. Should VR haptics have their own
-   asset format that supports VR-specific features
-   (spatially-driven intensity, per-hand patterns)
-   natively, or should the shared format be
+6. **VR haptic integration depth** -- VR controller haptics currently reuse the `RumblePattern`
+   asset format. Should VR haptics have their own asset format that supports VR-specific features
+   (spatially-driven intensity, per-hand patterns) natively, or should the shared format be
    extended?
 
-7. **Gesture recording and playback** -- The input
-   recording system (F-6.2.7) records action-level
-   events. Should raw touch events and gesture
-   recognizer state also be recorded for gesture
+7. **Gesture recording and playback** -- The input recording system (F-6.2.7) records action-level
+   events. Should raw touch events and gesture recognizer state also be recorded for gesture
    debugging and automated gesture testing?

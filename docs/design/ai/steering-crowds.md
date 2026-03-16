@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/ai/](../../features/ai/),
-> [requirements/ai/](../../requirements/ai/), and
-> [user-stories/ai/](../../user-stories/ai/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/ai/](../../features/ai/), [requirements/ai/](../../requirements/ai/), and
+> [user-stories/ai/](../../user-stories/ai/). The table below traces design elements to those
+> definitions.
 
 ### Steering & Avoidance (F-7.2 / R-7.2)
 
@@ -43,26 +42,20 @@
 
 ## Overview
 
-The steering and crowd simulation subsystem drives all
-agent movement in the Harmonius engine. It is split into
-two modules:
+The steering and crowd simulation subsystem drives all agent movement in the Harmonius engine. It is
+split into two modules:
 
-1. **`harmonius_ai::steering`** -- individual and
-   small-group movement (seek, flee, arrive, ORCA,
+1. **`harmonius_ai::steering`** -- individual and small-group movement (seek, flee, arrive, ORCA,
    formations).
-2. **`harmonius_ai::crowd`** -- mass simulation (flocking,
-   flow fields, LOD, density management).
+2. **`harmonius_ai::crowd`** -- mass simulation (flocking, flow fields, LOD, density management).
 
-Both modules are 100% ECS-based. All data lives as
-components; all logic runs as systems. The shared spatial
-index (BVH + grid) handles every neighbor query, ray
-cast, and density count -- no separate data structures.
+Both modules are 100% ECS-based. All data lives as components; all logic runs as systems. The shared
+spatial index (BVH + grid) handles every neighbor query, ray cast, and density count -- no separate
+data structures.
 
-The steering pipeline runs per-frame for high-LOD agents
-and at reduced frequency for mid-LOD agents. Low-LOD
-agents skip steering entirely and sample flow fields
-directly. A global budget scheduler caps total AI CPU
-time per frame.
+The steering pipeline runs per-frame for high-LOD agents and at reduced frequency for mid-LOD
+agents. Low-LOD agents skip steering entirely and sample flow fields directly. A global budget
+scheduler caps total AI CPU time per frame.
 
 ---
 
@@ -135,7 +128,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_ai/
 ├── steering/
 │   ├── agent.rs         # SteeringAgent component
@@ -1722,8 +1715,7 @@ pub enum FlowFieldError {
 
 ### Per-Frame Steering Flow
 
-The complete per-frame data flow for a high-LOD
-agent with full steering:
+The complete per-frame data flow for a high-LOD agent with full steering:
 
 ```rust
 // Simplified frame tick
@@ -1787,23 +1779,14 @@ fn tick_steering(world: &mut World) {
 
 ### Crowd Agent Lifecycle
 
-1. **Spawn**: `CrowdAgent` + `FlockMember` +
-   `SteeringAgent` + `Transform` + `AiLodConfig`
-   attached to entity.
-2. **LOD assignment**: `AiLodSystem` writes
-   `AiLodTier` based on distance to player.
-3. **Flow field**: `FlowFieldSystem` generates
-   or retrieves cached field. `CrowdAgent`
-   samples it.
-4. **Flocking**: `FlockingSystem` queries
-   neighbors, computes Reynolds forces.
-5. **Density check**: `DensitySystem` enforces
-   caps; overflow agents are redirected or
-   despawned.
-6. **Integration**: `IntegrationSystem` applies
-   velocity to `Transform`.
-7. **Despawn**: agents beyond the despawn radius
-   are removed by the spawn/despawn system.
+1. **Spawn**: `CrowdAgent` + `FlockMember` + `SteeringAgent` + `Transform` + `AiLodConfig` attached
+   to entity.
+2. **LOD assignment**: `AiLodSystem` writes `AiLodTier` based on distance to player.
+3. **Flow field**: `FlowFieldSystem` generates or retrieves cached field. `CrowdAgent` samples it.
+4. **Flocking**: `FlockingSystem` queries neighbors, computes Reynolds forces.
+5. **Density check**: `DensitySystem` enforces caps; overflow agents are redirected or despawned.
+6. **Integration**: `IntegrationSystem` applies velocity to `Transform`.
+7. **Despawn**: agents beyond the despawn radius are removed by the spawn/despawn system.
 
 ### LOD Tier Behavior Matrix
 
@@ -1840,27 +1823,18 @@ fn tick_steering(world: &mut World) {
 
 ### GPU-Accelerated Crowd Simulation
 
-For desktop and console platforms with 5,000+
-crowd agents, the flocking and flow field
-sampling stages can be offloaded to a compute
-shader:
+For desktop and console platforms with 5,000+ crowd agents, the flocking and flow field sampling
+stages can be offloaded to a compute shader:
 
-1. **Upload**: agent positions, velocities, and
-   flock parameters to a GPU storage buffer.
-2. **Dispatch**: one thread per agent. Each
-   thread samples the flow field texture and
-   computes flocking forces using shared memory
-   for neighbor data.
-3. **Readback**: updated velocities are read
-   back to CPU and written to `SteeringAgent`
-   components.
+1. **Upload**: agent positions, velocities, and flock parameters to a GPU storage buffer.
+2. **Dispatch**: one thread per agent. Each thread samples the flow field texture and computes
+   flocking forces using shared memory for neighbor data.
+3. **Readback**: updated velocities are read back to CPU and written to `SteeringAgent` components.
 
-The spatial index neighbor query is replaced by
-a GPU-side grid: agents are binned into cells
-via atomic operations, and each thread reads its
-cell and adjacent cells for neighbor data.
+The spatial index neighbor query is replaced by a GPU-side grid: agents are binned into cells via
+atomic operations, and each thread reads its cell and adjacent cells for neighbor data.
 
-```
+```text
 GPU Crowd Pipeline:
   Buffer upload (positions, velocities)
   → Compute pass: grid binning (atomics)
@@ -1869,8 +1843,7 @@ GPU Crowd Pipeline:
   → CPU writes to SteeringAgent components
 ```
 
-This path is optional. The CPU path is always
-available as fallback on all platforms.
+This path is optional. The CPU path is always available as fallback on all platforms.
 
 ### Platform-Specific Notes
 
@@ -1951,44 +1924,28 @@ available as fallback on all platforms.
 
 ## Open Questions
 
-1. **ORCA LP solver implementation** -- Use an
-   existing Rust LP crate or hand-roll the 2D/3D
-   incremental solver from the RVO2 reference
-   implementation? Hand-rolling avoids a
-   dependency but requires careful validation.
+1. **ORCA LP solver implementation** -- Use an existing Rust LP crate or hand-roll the 2D/3D
+   incremental solver from the RVO2 reference implementation? Hand-rolling avoids a dependency but
+   requires careful validation.
 
-2. **Flow field bilinear interpolation** -- The
-   current `sample_flow_field` uses nearest-cell
-   lookup. Bilinear interpolation of the four
-   surrounding cells would produce smoother
-   agent paths at negligible extra cost. Worth
-   adding to the initial implementation?
+2. **Flow field bilinear interpolation** -- The current `sample_flow_field` uses nearest-cell
+   lookup. Bilinear interpolation of the four surrounding cells would produce smoother agent paths
+   at negligible extra cost. Worth adding to the initial implementation?
 
-3. **GPU readback latency** -- The GPU crowd
-   path introduces a 1-frame latency between
-   position upload and velocity readback. Is this
-   acceptable, or should agents use a predicted
-   position to compensate?
+3. **GPU readback latency** -- The GPU crowd path introduces a 1-frame latency between position
+   upload and velocity readback. Is this acceptable, or should agents use a predicted position to
+   compensate?
 
-4. **Formation shape editor** -- Custom formation
-   shapes need a visual editor in the tools
-   pipeline. Is this part of the level editor or
-   a dedicated formation editor panel?
+4. **Formation shape editor** -- Custom formation shapes need a visual editor in the tools pipeline.
+   Is this part of the level editor or a dedicated formation editor panel?
 
-5. **Flow field tile size** -- Should flow field
-   tiles match the world streaming chunk size
-   exactly, or use an independent grid? Matching
-   simplifies streaming but may waste memory for
-   partially empty chunks.
+5. **Flow field tile size** -- Should flow field tiles match the world streaming chunk size exactly,
+   or use an independent grid? Matching simplifies streaming but may waste memory for partially
+   empty chunks.
 
-6. **Crowd despawn fade** -- The density manager
-   can despawn overflow agents. Should despawn
-   be instant or use a visual fade-out? Fade-out
-   requires coordination with the rendering LOD
-   system.
+6. **Crowd despawn fade** -- The density manager can despawn overflow agents. Should despawn be
+   instant or use a visual fade-out? Fade-out requires coordination with the rendering LOD system.
 
-7. **Mid-LOD ORCA neighbor reduction** -- Mid-LOD
-   agents currently run ORCA with reduced neighbor
-   count. Would it be cheaper and sufficient to
-   skip ORCA entirely for mid-LOD and rely on
-   flocking separation instead?
+7. **Mid-LOD ORCA neighbor reduction** -- Mid-LOD agents currently run ORCA with reduced neighbor
+   count. Would it be cheaper and sufficient to skip ORCA entirely for mid-LOD and rely on flocking
+   separation instead?

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -27,19 +27,13 @@
 
 ## Overview
 
-The selection system provides a unified pipeline
-for picking, selecting, grouping, commanding, and
-visually highlighting entities in both 2D and 3D
-games. It is 100% ECS-based: selection state lives
-as components and resources, all logic runs as
-systems, and all configuration is data-driven.
+The selection system provides a unified pipeline for picking, selecting, grouping, commanding, and
+visually highlighting entities in both 2D and 3D games. It is 100% ECS-based: selection state lives
+as components and resources, all logic runs as systems, and all configuration is data-driven.
 
-The system provides four genre presets (RTS, RPG,
-action, builder) that configure input bindings,
-selection modes, filtering rules, and visual
-feedback. Presets are activated per-project through
-the modular system and customized in the visual
-editor without code.
+The system provides four genre presets (RTS, RPG, action, builder) that configure input bindings,
+selection modes, filtering rules, and visual feedback. Presets are activated per-project through the
+modular system and customized in the visual editor without code.
 
 ## Architecture
 
@@ -88,7 +82,7 @@ graph TD
 
 ### File Structure
 
-```
+```text
 harmonius_game/
 ├── selection/
 │   ├── picking/
@@ -811,31 +805,21 @@ pub fn builder_preset() -> SelectionPreset;
 
 ### Selection Pipeline Per Frame
 
-1. **Input** -- Input system emits click, drag,
-   or modifier events.
-2. **Pick** -- `PickSystem` casts rays (3D) or
-   tests screen coordinates (2D) using the
-   shared spatial index. Filters by `Selectable`
-   component.
-3. **Selection Update** -- `SelectionUpdateSystem`
-   applies the pick result to the `SelectionSet`
-   resource using the active `SelectionMode`.
-   Adds/removes `Selected` components on
-   affected entities.
-4. **Observer Dispatch** -- `SelectionChanged`
-   event fires through the observer system.
-5. **Visual Update** -- `SelectionVisualSystem`
-   updates outlines, ground circles, and hover
-   indicators on all entities with `Selected`
-   or hovered state.
-6. **Command** -- When a command input fires,
-   `CommandDispatchSystem` reads the current
-   selection and dispatches through the ability
-   system.
+1. **Input** -- Input system emits click, drag, or modifier events.
+2. **Pick** -- `PickSystem` casts rays (3D) or tests screen coordinates (2D) using the shared
+   spatial index. Filters by `Selectable` component.
+3. **Selection Update** -- `SelectionUpdateSystem` applies the pick result to the `SelectionSet`
+   resource using the active `SelectionMode`. Adds/removes `Selected` components on affected
+   entities.
+4. **Observer Dispatch** -- `SelectionChanged` event fires through the observer system.
+5. **Visual Update** -- `SelectionVisualSystem` updates outlines, ground circles, and hover
+   indicators on all entities with `Selected` or hovered state.
+6. **Command** -- When a command input fires, `CommandDispatchSystem` reads the current selection
+   and dispatches through the ability system.
 
 ### Marquee Selection Detail
 
-```
+```text
 click+drag start
     -> create MarqueeState
     -> each frame: test all entity screen bounds
@@ -851,13 +835,10 @@ release
 
 ### Multiplayer Replication
 
-- **Selection state** is replicated for spectator
-  and team visibility (R-13.11.3)
-- **Selection groups** are player-local and NOT
-  replicated (R-13.11.5)
-- **Commands** are sent to the server and
-  distributed to all clients for
-  server-authoritative execution
+- **Selection state** is replicated for spectator and team visibility (R-13.11.3)
+- **Selection groups** are player-local and NOT replicated (R-13.11.5)
+- **Commands** are sent to the server and distributed to all clients for server-authoritative
+  execution
 
 ## Platform Considerations
 
@@ -968,41 +949,21 @@ release
 
 ## Open Questions
 
-1. **Marquee projection method** -- Should the
-   marquee test against the full 3D bounding
-   volume projected to screen, or against a
-   simplified screen-space circle from the
-   bounding sphere? The sphere approach is
-   faster but less precise for elongated
-   entities.
-2. **Selection limit enforcement** -- Should
-   there be a hard cap on selection set size
-   (e.g., 500), or should the system degrade
-   gracefully with warnings? A hard cap is
-   simpler but may frustrate players in extreme
-   scenarios.
-3. **Tab-cycle ordering** -- For the RPG preset,
-   should tab-cycle order be strictly distance-
-   based or should quest-target priority override
-   distance? A priority system is more useful
-   but adds configuration complexity.
-4. **Lock-on camera integration** -- How tightly
-   should the action preset's lock-on be coupled
-   to the camera system? A soft constraint (camera
-   suggestion) is more flexible than a hard
-   override.
-5. **Formation slot assignment** -- When a
-   formation has more slots than entities, how
-   should entities be assigned? Center-first
-   preserves formation density; spread-first
-   maximizes coverage.
-6. **Selection group serialization** -- Should
-   groups persist entity references by ID or by
-   tag-based query? IDs break on entity respawn;
-   queries are more robust but less precise.
-7. **Command undo scope** -- Should undo restore
-   the exact pre-command state (position, target,
-   rotation) or only revert the navigation
-   target? Full state restoration is more
-   correct but requires storing more data per
-   command.
+1. **Marquee projection method** -- Should the marquee test against the full 3D bounding volume
+   projected to screen, or against a simplified screen-space circle from the bounding sphere? The
+   sphere approach is faster but less precise for elongated entities.
+2. **Selection limit enforcement** -- Should there be a hard cap on selection set size (e.g., 500),
+   or should the system degrade gracefully with warnings? A hard cap is simpler but may frustrate
+   players in extreme scenarios.
+3. **Tab-cycle ordering** -- For the RPG preset, should tab-cycle order be strictly distance- based
+   or should quest-target priority override distance? A priority system is more useful but adds
+   configuration complexity.
+4. **Lock-on camera integration** -- How tightly should the action preset's lock-on be coupled to
+   the camera system? A soft constraint (camera suggestion) is more flexible than a hard override.
+5. **Formation slot assignment** -- When a formation has more slots than entities, how should
+   entities be assigned? Center-first preserves formation density; spread-first maximizes coverage.
+6. **Selection group serialization** -- Should groups persist entity references by ID or by
+   tag-based query? IDs break on entity respawn; queries are more robust but less precise.
+7. **Command undo scope** -- Should undo restore the exact pre-command state (position, target,
+   rotation) or only revert the navigation target? Full state restoration is more correct but
+   requires storing more data per command.

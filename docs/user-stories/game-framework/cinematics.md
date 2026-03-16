@@ -40,8 +40,8 @@ per camera shot, **so that** cinematic focus draws the player's eye to the inten
 
 ## US-13.5.2.3 Experience Smooth Camera Transitions
 
-**As a** player (P-23), **I want to** camera transitions between shots to blend smoothly, **so
-that** cuts and transitions feel cinematic rather than jarring.
+**As a** player (P-23), **I want to** camera transitions between shots to blend smoothly,
+**so that** cuts and transitions feel cinematic rather than jarring.
 
 ## US-13.5.2.4 Verify Camera Blends Use Configured Transition Curves
 
@@ -155,8 +155,8 @@ triggers fire at their correct timeline positions, **so that** fast-forward does
 
 ## US-13.5.6c.1 Pause and Resume Cutscene Playback
 
-**As a** player (P-23), **I want to** pause cutscene playback and resume from the exact frame, **so
-that** I can step away without missing content.
+**As a** player (P-23), **I want to** pause cutscene playback and resume from the exact frame,
+**so that** I can step away without missing content.
 
 ## US-13.5.6c.2 Verify Pause Freezes All Tracks at Current Frame
 

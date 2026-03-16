@@ -94,16 +94,17 @@ detect subscription lapses or new purchases without requiring a restart.
 Persist player preferences (graphics quality, resolution, keybindings, audio volumes, language,
 accessibility settings, UI layout, controller deadzone calibration) across sessions using a tiered
 storage strategy. **Local storage**: preferences are saved to the platform-appropriate user data
-directory — `%LOCALAPPDATA%\Harmonius\{GameName}\` on Windows, `~/Library/Application
-Support/{GameName}/` on macOS, `~/.local/share/{GameName}/` on Linux (XDG_DATA_HOME). **Cloud
-sync**: when a platform cloud service is available (F-14.5.5), preferences are mirrored to cloud
-storage for cross-device roaming. **Conflict resolution**: if local and cloud preferences diverge
-(played on two machines offline), the system presents a choice dialog showing timestamps and diff
-summary rather than silently overwriting. Preferences are stored as a human-readable TOML file
-(inspectable and manually editable as a recovery option). The preferences API provides typed get/set
-with default values — missing keys return defaults without error. Preferences changes are written to
-disk within 1 second of modification with atomic write (write-to-temp, rename) to prevent corruption
-from crashes. A reset-to- defaults option restores all preferences to the shipping defaults.
+directory — `%LOCALAPPDATA%\Harmonius\{GameName}\` on Windows,
+`~/Library/Application Support/{GameName}/` on macOS, `~/.local/share/{GameName}/` on Linux
+(XDG_DATA_HOME). **Cloud sync**: when a platform cloud service is available (F-14.5.5), preferences
+are mirrored to cloud storage for cross-device roaming. **Conflict resolution**: if local and cloud
+preferences diverge (played on two machines offline), the system presents a choice dialog showing
+timestamps and diff summary rather than silently overwriting. Preferences are stored as a
+human-readable TOML file (inspectable and manually editable as a recovery option). The preferences
+API provides typed get/set with default values — missing keys return defaults without error.
+Preferences changes are written to disk within 1 second of modification with atomic write
+(write-to-temp, rename) to prevent corruption from crashes. A reset-to- defaults option restores all
+preferences to the shipping defaults.
 
 - **Requirements:** R-14.5.8
 - **Dependencies:** F-14.5.5 (Platform Cloud Storage), F-14.6.1 (Async File Operations)

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/platform/](../../features/platform/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/platform/](../../features/platform/),
 > [requirements/platform/](../../requirements/platform/), and
-> [user-stories/platform/](../../user-stories/platform/). The table
-> below traces design elements to those definitions.
+> [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
+> those definitions.
 
 ### Platform Services
 
@@ -32,27 +32,19 @@
 
 ## Overview
 
-The platform services subsystem provides a unified
-cross-platform API for achievements, leaderboards,
-rich presence, cloud storage, entitlements, voice
-integration, and authentication. Gameplay code calls
-a single API; `cfg`-gated backends route to the
-correct platform SDK (Steam, PlayStation, Xbox,
-GameCenter). All calls are async via the `IoReactor`.
-Deferred queues ensure no data is lost during transient
-network failures.
+The platform services subsystem provides a unified cross-platform API for achievements,
+leaderboards, rich presence, cloud storage, entitlements, voice integration, and authentication.
+Gameplay code calls a single API; `cfg`-gated backends route to the correct platform SDK (Steam,
+PlayStation, Xbox, GameCenter). All calls are async via the `IoReactor`. Deferred queues ensure no
+data is lost during transient network failures.
 
-The storage subsystem manages five tiers of local
-data: user preferences (TOML, cloud-synced), player
-cache (LRU-evicted downloads), developer cache
-(BLAKE3-keyed build artifacts), PSO cache (GPU
-pipeline states), and temporary files (RAII-managed).
-Each tier uses platform-appropriate directories and
-async I/O.
+The storage subsystem manages five tiers of local data: user preferences (TOML, cloud-synced),
+player cache (LRU-evicted downloads), developer cache (BLAKE3-keyed build artifacts), PSO cache (GPU
+pipeline states), and temporary files (RAII-managed). Each tier uses platform-appropriate
+directories and async I/O.
 
-Both subsystems use static dispatch exclusively. No
-trait objects or vtables -- platform selection is
-compile-time via `cfg` attributes.
+Both subsystems use static dispatch exclusively. No trait objects or vtables -- platform selection
+is compile-time via `cfg` attributes.
 
 ## Architecture
 
@@ -118,7 +110,7 @@ graph TD
     CS -.->|"cfg(macos)"| GCB
 ```
 
-```
+```text
 harmonius_platform/
 ├── services/
 │   ├── mod.rs            # PlatformServices facade
@@ -1333,68 +1325,47 @@ pub enum TempError {
 
 ### Startup Sequence
 
-1. `PlatformServices::init()` authenticates with
-   the platform SDK via `AuthenticationService`.
-2. `AchievementService::sync()` fetches current
-   unlock state from the platform.
-3. `EntitlementService::refresh()` queries owned
-   entitlements.
-4. `PreferencesStore::load()` reads local TOML,
-   then cloud. If conflict, shows dialog.
-5. `PsoCacheStore::load_all()` pre-loads cached
-   pipeline states for the current GPU/driver.
-6. `TempFileManager::init()` cleans up orphaned
-   temp files from previous sessions.
-7. `AchievementService::flush_deferred()` retries
-   any queued unlocks from the previous session.
+1. `PlatformServices::init()` authenticates with the platform SDK via `AuthenticationService`.
+2. `AchievementService::sync()` fetches current unlock state from the platform.
+3. `EntitlementService::refresh()` queries owned entitlements.
+4. `PreferencesStore::load()` reads local TOML, then cloud. If conflict, shows dialog.
+5. `PsoCacheStore::load_all()` pre-loads cached pipeline states for the current GPU/driver.
+6. `TempFileManager::init()` cleans up orphaned temp files from previous sessions.
+7. `AchievementService::flush_deferred()` retries any queued unlocks from the previous session.
 
 ### Preference Save Pipeline
 
 1. User changes a setting in the UI.
-2. `PreferencesStore::set()` updates the in-memory
-   map and marks dirty.
-3. Within 1 second, `PreferencesStore::save()` is
-   called (debounced timer).
-4. Save writes to a temp file, then atomically
-   renames to the final path.
-5. If cloud is available, the TOML is uploaded via
-   `CloudStorageService::upload()`.
+2. `PreferencesStore::set()` updates the in-memory map and marks dirty.
+3. Within 1 second, `PreferencesStore::save()` is called (debounced timer).
+4. Save writes to a temp file, then atomically renames to the final path.
+5. If cloud is available, the TOML is uploaded via `CloudStorageService::upload()`.
 
 ### Cache Eviction Flow
 
 1. `PlayerCache::put()` is called with new data.
-2. If `total_bytes + new_size > max_bytes`, eviction
-   begins.
+2. If `total_bytes + new_size > max_bytes`, eviction begins.
 3. Entries are sorted by (category_priority, LRU).
-4. The lowest-priority, least-recently-used entry is
-   deleted via async I/O.
-5. Repeat until budget is satisfied or no evictable
-   entries remain.
+4. The lowest-priority, least-recently-used entry is deleted via async I/O.
+5. Repeat until budget is satisfied or no evictable entries remain.
 
 ### Developer Cache Three-Tier Lookup
 
-1. `DeveloperCache::hash()` computes BLAKE3 of
-   the source asset.
+1. `DeveloperCache::hash()` computes BLAKE3 of the source asset.
 2. `DeveloperCache::lookup()` checks:
    - **Local**: `.harmonius/cache/{category}/{hash}`
    - **Shared**: `GET {shared_url}/{category}/{hash}`
    - **Miss**: return `CacheHitTier::Miss`
 3. On miss, the build system performs a full rebuild.
-4. `DeveloperCache::store()` writes the result to
-   local cache.
+4. `DeveloperCache::store()` writes the result to local cache.
 
 ### PSO Warmup
 
-1. On launch, `PsoCacheStore::load_all()` scans the
-   `pso/` directory.
-2. Entries whose `GpuDriverKey` does not match the
-   current GPU/driver are deleted.
-3. Valid entries are loaded into a `HashMap<PsoKey,
-   PathBuf>` for O(1) lookup.
-4. During rendering, the pipeline manager calls
-   `PsoCacheStore::get()` before GPU compilation.
-5. Cache hit: deserialize blob (< 1 ms). Cache miss:
-   compile PSO, then `PsoCacheStore::store()`.
+1. On launch, `PsoCacheStore::load_all()` scans the `pso/` directory.
+2. Entries whose `GpuDriverKey` does not match the current GPU/driver are deleted.
+3. Valid entries are loaded into a `HashMap<PsoKey, PathBuf>` for O(1) lookup.
+4. During rendering, the pipeline manager calls `PsoCacheStore::get()` before GPU compilation.
+5. Cache hit: deserialize blob (< 1 ms). Cache miss: compile PSO, then `PsoCacheStore::store()`.
 
 ## Platform Considerations
 
@@ -1408,7 +1379,7 @@ pub enum TempError {
 | Cloud Storage | `ISteamRemoteStorage` | `sceNpSaveData` | `XGameSaveInitializeProviderAsync` | iCloud Key-Value |
 | Entitlements | `ISteamApps::BIsSubscribedApp`, `BIsDlcInstalled` | `sceNpEntitlementAccess` | `XStoreQueryEntitledProductsAsync` | `SKPaymentQueue` |
 | Auth | Steam App Ticket | PSN SSO | Xbox Live token | `GKLocalPlayer.authenticate` |
-| Android | Google Play Games Services | `play-services` via JNI/bindgen | Achievements, leaderboards, cloud save via Google Play. |
+| Android | Google Play Games Services | `play-services` via JNI/bindgen | Achievements, leaderboards, cloud save via Google Play. |  |
 
 ### Platform Storage Paths
 
@@ -1530,38 +1501,23 @@ pub enum TempError {
 
 ## Open Questions
 
-1. **Console SDK access** -- PlayStation and Xbox SDKs
-   are under NDA. The backend implementations will need
-   access to devkits and licensed SDKs. Should backends
-   be separate crates behind feature flags or inline
-   `cfg` modules?
-2. **Deferred queue persistence** -- Should the deferred
-   queue for achievements be persisted to disk so
-   queued unlocks survive process crashes? If yes,
-   where: preferences TOML or a separate file?
-3. **Cloud save format** -- Should cloud saves use
-   TOML (human-readable, diff-friendly) or a compact
-   binary format (smaller, faster)? TOML is consistent
-   with local preferences but may waste cloud quota.
-4. **Cross-play authentication** -- For games shipping
-   on multiple storefronts simultaneously, should the
-   engine support linking multiple platform identities
-   to a single game account? This requires a custom
-   backend (self-hosted AWS).
-5. **PSO cache distribution** -- Pre-built PSO caches
-   generated during cooking are GPU/driver-specific.
-   Should the cook process generate caches for all
-   supported GPU vendors (NVIDIA, AMD, Intel, Apple),
-   or only the reference hardware?
-6. **Shared cache backend** -- The developer cache
-   shared tier is described as S3-backed. Should the
-   engine also support a local network share (SMB/NFS)
-   for teams without AWS infrastructure?
-7. **Mobile in-app purchases** -- iOS and Android
-   in-app purchase flows are significantly different
-   from PC/console. Should IAP be a separate service
-   or integrated into `EntitlementService`?
-8. **Cache encryption** -- Should cached data
-   (especially PSO blobs and player preferences) be
-   encrypted at rest to prevent tampering? This adds
-   complexity but may be required for anti-cheat.
+1. **Console SDK access** -- PlayStation and Xbox SDKs are under NDA. The backend implementations
+   will need access to devkits and licensed SDKs. Should backends be separate crates behind feature
+   flags or inline `cfg` modules?
+2. **Deferred queue persistence** -- Should the deferred queue for achievements be persisted to disk
+   so queued unlocks survive process crashes? If yes, where: preferences TOML or a separate file?
+3. **Cloud save format** -- Should cloud saves use TOML (human-readable, diff-friendly) or a compact
+   binary format (smaller, faster)? TOML is consistent with local preferences but may waste cloud
+   quota.
+4. **Cross-play authentication** -- For games shipping on multiple storefronts simultaneously,
+   should the engine support linking multiple platform identities to a single game account? This
+   requires a custom backend (self-hosted AWS).
+5. **PSO cache distribution** -- Pre-built PSO caches generated during cooking are
+   GPU/driver-specific. Should the cook process generate caches for all supported GPU vendors
+   (NVIDIA, AMD, Intel, Apple), or only the reference hardware?
+6. **Shared cache backend** -- The developer cache shared tier is described as S3-backed. Should the
+   engine also support a local network share (SMB/NFS) for teams without AWS infrastructure?
+7. **Mobile in-app purchases** -- iOS and Android in-app purchase flows are significantly different
+   from PC/console. Should IAP be a separate service or integrated into `EntitlementService`?
+8. **Cache encryption** -- Should cached data (especially PSO blobs and player preferences) be
+   encrypted at rest to prevent tampering? This adds complexity but may be required for anti-cheat.

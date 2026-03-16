@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/ui-2d/](../../features/ui-2d/),
-> [requirements/ui-2d/](../../requirements/ui-2d/), and
-> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/ui-2d/](../../features/ui-2d/), [requirements/ui-2d/](../../requirements/ui-2d/), and
+> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | User Story | Description |
 |---------|-------------|------------|-------------|
@@ -20,38 +19,27 @@
 
 ## Overview
 
-The accessibility subsystem ensures the engine is usable
-by players with visual, auditory, motor, and cognitive
-disabilities. Every accessibility feature is implemented
-as ECS components and systems, integrated with the widget
-tree and theme system.
+The accessibility subsystem ensures the engine is usable by players with visual, auditory, motor,
+and cognitive disabilities. Every accessibility feature is implemented as ECS components and
+systems, integrated with the widget tree and theme system.
 
 Core subsystems:
 
-1. **Screen reader bridge** -- exposes widget tree to
-   platform accessibility APIs (NSAccessibility, UI
-   Automation, AT-SPI) with ARIA-like roles and live
-   region announcements
-2. **Colorblind filters** -- post-process color
-   remapping for protanopia, deuteranopia, tritanopia,
+1. **Screen reader bridge** -- exposes widget tree to platform accessibility APIs (NSAccessibility,
+   UI Automation, AT-SPI) with ARIA-like roles and live region announcements
+2. **Colorblind filters** -- post-process color remapping for protanopia, deuteranopia, tritanopia,
    plus non-color alternative visual cues
-3. **WCAG compliance** -- automated contrast checking,
-   focus indicators, keyboard operability, timing
-   adjustability
-4. **Keyboard/controller navigation** -- full UI
-   traversal without mouse, focus management, scanning
+3. **WCAG compliance** -- automated contrast checking, focus indicators, keyboard operability,
+   timing adjustability
+4. **Keyboard/controller navigation** -- full UI traversal without mouse, focus management, scanning
    mode for switch devices
-5. **Text-to-speech** -- platform TTS integration for
-   chat, notifications, and UI announcements
-6. **Subtitle/caption system** -- configurable subtitles
-   for dialogue, closed captions for non-speech audio
-   with directional indicators
-7. **Input remapping** -- complete rebinding, one-handed
-   layouts, hold-to-toggle, per-character profiles
-8. **High contrast mode** -- stark color pairs, increased
-   borders, no decorative transparency
-9. **Reduced motion** -- disables or slows animations for
-   vestibular sensitivity
+5. **Text-to-speech** -- platform TTS integration for chat, notifications, and UI announcements
+6. **Subtitle/caption system** -- configurable subtitles for dialogue, closed captions for
+   non-speech audio with directional indicators
+7. **Input remapping** -- complete rebinding, one-handed layouts, hold-to-toggle, per-character
+   profiles
+8. **High contrast mode** -- stark color pairs, increased borders, no decorative transparency
+9. **Reduced motion** -- disables or slows animations for vestibular sensitivity
 
 ## Architecture
 
@@ -103,7 +91,7 @@ graph TD
     TTS -.->|Linux| SPD
 ```
 
-```
+```text
 harmonius_accessibility/
 ├── tree/
 │   ├── node.rs         # AccessibleNode, Role,
@@ -827,11 +815,9 @@ impl InputRemapper {
 }
 ```
 
-**Note:** Text-to-speech uses a shared platform TTS
-service (see also
-[ai-governance.md](../tools/ai-governance.md)). A single
-`TextToSpeech` abstraction should serve both accessibility
-and AI assistant use cases.
+**Note:** Text-to-speech uses a shared platform TTS service (see also
+[ai-governance.md](../tools/ai-governance.md)). A single `TextToSpeech` abstraction should serve
+both accessibility and AI assistant use cases.
 
 ### Text-to-Speech
 
@@ -1128,25 +1114,16 @@ impl AccessibilitySettings {
 
 ### Frame Lifecycle
 
-The accessibility subsystem runs these ECS systems
-each frame:
+The accessibility subsystem runs these ECS systems each frame:
 
-1. **AccessibilityTreeSyncSystem** -- diff widget
-   tree against accessibility tree, mark dirty nodes
-2. **FocusNavigationSystem** -- process tab/dpad
-   input, advance scanning timer, update focus
-3. **ScreenReaderPushSystem** -- drain dirty nodes,
-   push to platform bridge, announce live regions
-4. **SubtitleUpdateSystem** -- advance subtitle/
-   caption timers, expire old entries
-5. **SubtitleRenderSystem** -- render visible
-   subtitles and captions to overlay layer
-6. **ColorblindFilterSystem** -- apply CVD color
-   matrix as post-process pass (if enabled)
-7. **HighContrastSystem** -- apply theme overrides
-   when high contrast is active
-8. **ReducedMotionSystem** -- suppress or slow
-   animations and effects when enabled
+1. **AccessibilityTreeSyncSystem** -- diff widget tree against accessibility tree, mark dirty nodes
+2. **FocusNavigationSystem** -- process tab/dpad input, advance scanning timer, update focus
+3. **ScreenReaderPushSystem** -- drain dirty nodes, push to platform bridge, announce live regions
+4. **SubtitleUpdateSystem** -- advance subtitle/ caption timers, expire old entries
+5. **SubtitleRenderSystem** -- render visible subtitles and captions to overlay layer
+6. **ColorblindFilterSystem** -- apply CVD color matrix as post-process pass (if enabled)
+7. **HighContrastSystem** -- apply theme overrides when high contrast is active
+8. **ReducedMotionSystem** -- suppress or slow animations and effects when enabled
 
 ### Accessibility Tree Sync
 
@@ -1155,8 +1132,7 @@ On each frame, the sync system:
 1. Walk the widget tree depth-first
 2. For each widget with an `AccessibleRole`:
    - If new: create `AccessibleNode`, mark dirty
-   - If changed (label, state, value): update node,
-     mark dirty
+   - If changed (label, state, value): update node, mark dirty
    - If removed: remove node, mark dirty
 3. Rebuild child/parent relationships
 4. Dirty nodes are drained by the bridge push system
@@ -1165,15 +1141,11 @@ On each frame, the sync system:
 
 When `HighContrastSettings.enabled` is true:
 
-1. The `HighContrastSystem` overrides the active
-   theme resource with high-contrast values
-2. All widgets re-resolve their colors from the
-   overridden theme
+1. The `HighContrastSystem` overrides the active theme resource with high-contrast values
+2. All widgets re-resolve their colors from the overridden theme
 3. Border widths increase to `border_width`
-4. Decorative transparency and gradients are
-   replaced with solid fills
-5. Focus indicators use the high-contrast
-   `focus` color
+4. Decorative transparency and gradients are replaced with solid fills
+5. Focus indicators use the high-contrast `focus` color
 
 ### Platform DPI Integration
 
@@ -1276,32 +1248,20 @@ When `HighContrastSettings.enabled` is true:
 
 ## Open Questions
 
-1. **AT-SPI D-Bus transport** -- Should the AT-SPI
-   bridge use `zbus` (pure Rust, async) or the C
-   `libatspi` library via bindgen? `zbus` avoids a
-   C dependency but requires D-Bus protocol handling.
-2. **Screen reader detection** -- How to detect
-   whether a screen reader is active at launch?
-   Windows has `SystemParametersInfoW(SPI_GETSCREENREADER)`.
-   macOS has `NSWorkspace.isVoiceOverEnabled`. Linux
-   requires querying the AT-SPI bus.
-3. **STT integration** -- Speech-to-text for outgoing
-   chat depends on platform availability. macOS has
-   `SFSpeechRecognizer`, Windows has
-   `Windows.Media.SpeechRecognition`. Linux has no
-   standard STT API -- may need an optional dependency
-   on Whisper or Vosk.
-4. **Colorblind filter scope** -- Should the CVD
-   post-process apply to the full scene (including 3D)
-   or only to UI elements? Full-scene is simpler but
-   more expensive; UI-only misses gameplay-critical
-   world colors.
-5. **WCAG automated audit tooling** -- Should the
-   engine include a built-in contrast audit tool in
-   the editor, or rely on external audit scripts?
-   Built-in provides faster feedback for designers.
-6. **Caption localization** -- Non-speech audio
-   descriptions ("footsteps", "explosion") need
-   localization. Should captions use the same
-   localization pipeline as UI text, or a separate
+1. **AT-SPI D-Bus transport** -- Should the AT-SPI bridge use `zbus` (pure Rust, async) or the C
+   `libatspi` library via bindgen? `zbus` avoids a C dependency but requires D-Bus protocol
+   handling.
+2. **Screen reader detection** -- How to detect whether a screen reader is active at launch? Windows
+   has `SystemParametersInfoW(SPI_GETSCREENREADER)`. macOS has `NSWorkspace.isVoiceOverEnabled`.
+   Linux requires querying the AT-SPI bus.
+3. **STT integration** -- Speech-to-text for outgoing chat depends on platform availability. macOS
+   has `SFSpeechRecognizer`, Windows has `Windows.Media.SpeechRecognition`. Linux has no standard
+   STT API -- may need an optional dependency on Whisper or Vosk.
+4. **Colorblind filter scope** -- Should the CVD post-process apply to the full scene (including 3D)
+   or only to UI elements? Full-scene is simpler but more expensive; UI-only misses
+   gameplay-critical world colors.
+5. **WCAG automated audit tooling** -- Should the engine include a built-in contrast audit tool in
+   the editor, or rely on external audit scripts? Built-in provides faster feedback for designers.
+6. **Caption localization** -- Non-speech audio descriptions ("footsteps", "explosion") need
+   localization. Should captions use the same localization pipeline as UI text, or a separate
    caption-specific string table?

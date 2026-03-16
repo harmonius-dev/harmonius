@@ -6,10 +6,10 @@
 
 Each SPH fluid instance is an entity with a `FluidVolume` component (solver type set to SPH, domain
 bounds, viscosity, surface tension) and a `FluidParticleBuffer` component that stores particle
-positions and velocities as a GPU buffer resource. The `SPHSystem` queries all `(FluidVolume,
-FluidParticleBuffer, Transform)` entities where the solver type is SPH, evaluates density and
-pressure kernels, and writes updated particle state back to the `FluidParticleBuffer`. Particle
-counts are bounded per `FluidVolume` to maintain frame budgets.
+positions and velocities as a GPU buffer resource. The `SPHSystem` queries all
+`(FluidVolume, FluidParticleBuffer, Transform)` entities where the solver type is SPH, evaluates
+density and pressure kernels, and writes updated particle state back to the `FluidParticleBuffer`.
+Particle counts are bounded per `FluidVolume` to maintain frame budgets.
 
 - **Requirements:** R-4.8.1
 - **Dependencies:** F-1.1.1, F-1.1.2
@@ -38,10 +38,10 @@ with particle detail preservation for large-scale flooding and river flow.
 
 Bounded water volumes (lakes, harbors, moats) are entities with a `FluidVolume` component (solver
 type set to Eulerian) and a `FluidGrid` component storing velocity, pressure, and boundary condition
-data on a uniform or adaptive grid. The `EulerianSystem` queries all `(FluidVolume, FluidGrid,
-Transform)` entities where the solver type is Eulerian and computes velocity advection, pressure
-projection, and boundary enforcement. Grid resolution is configured per entity on the `FluidGrid`
-component.
+data on a uniform or adaptive grid. The `EulerianSystem` queries all
+`(FluidVolume, FluidGrid, Transform)` entities where the solver type is Eulerian and computes
+velocity advection, pressure projection, and boundary enforcement. Grid resolution is configured per
+entity on the `FluidGrid` component.
 
 - **Requirements:** R-4.8.3
 - **Dependencies:** F-1.1.1, F-1.1.2

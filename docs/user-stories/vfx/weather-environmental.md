@@ -104,8 +104,8 @@ visualization fits within mobile budgets.
 ## US-11.4.7.1 See Caustic Light Patterns on Submerged Geometry
 
 **As a** player (P-23), **I want** animated caustic light patterns projected onto underwater
-surfaces with wavelength-dependent depth fog (reds fade before blues) and bubble streams, **so
-that** diving underwater feels atmospheric and visually rich.
+surfaces with wavelength-dependent depth fog (reds fade before blues) and bubble streams,
+**so that** diving underwater feels atmospheric and visually rich.
 
 ## US-11.4.7.2 Author Underwater Environments With Refraction and God Rays
 

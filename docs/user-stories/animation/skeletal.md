@@ -117,8 +117,8 @@ errors, **so that** cross-species retargeting produces usable results.
 ## US-9.1.9.1 Place Footstep and VFX Events on the Animation Timeline
 
 **As a** character animator (P-11), **I want** to place named events at specific frames in the
-animation editor timeline for footstep sounds, hit windows, VFX spawns, and weapon trails, **so
-that** gameplay systems react to animation timing without hardcoded frame numbers.
+animation editor timeline for footstep sounds, hit windows, VFX spawns, and weapon trails,
+**so that** gameplay systems react to animation timing without hardcoded frame numbers.
 
 ## US-9.1.9.2 Fire Events Through ECS Observers
 

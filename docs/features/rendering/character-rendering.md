@@ -1,6 +1,6 @@
 # 2.8 — Character Rendering
 
-### F-2.8.1 Strand-Based Hair Rendering
+## F-2.8.1 Strand-Based Hair Rendering
 
 Individual hair strand rendering using curve geometry rasterized via the mesh shader pipeline. Each
 strand is shaded with the Marschner anisotropic hair BSDF providing R (reflection), TT

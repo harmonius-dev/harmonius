@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/ui-2d/](../../features/ui-2d/),
-> [requirements/ui-2d/](../../requirements/ui-2d/), and
-> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/ui-2d/](../../features/ui-2d/), [requirements/ui-2d/](../../requirements/ui-2d/), and
+> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -45,27 +44,19 @@
 
 ## Overview
 
-The widget framework is the foundational layer of the
-Harmonius UI system. It manages a retained tree of
-widget entities, each represented as an ECS entity with
-component-driven state. All UI is authored declaratively
-in the visual editor and compiled into binary assets.
+The widget framework is the foundational layer of the Harmonius UI system. It manages a retained
+tree of widget entities, each represented as an ECS entity with component-driven state. All UI is
+authored declaratively in the visual editor and compiled into binary assets.
 
 The design follows four principles:
 
-1. **100% ECS-based.** Every widget is an entity.
-   Every property is a component. Every pipeline
+1. **100% ECS-based.** Every widget is an entity. Every property is a component. Every pipeline
    stage is a system. No parallel data stores.
-2. **Declarative + retained.** Artists author
-   widget trees in the visual editor. The runtime
-   maintains a retained tree and applies minimal
-   diffs when bound data changes.
-3. **No-code.** All event handlers wire to logic
-   graph nodes. All styling, layout, and animation
-   are configured through visual editors. Users
-   never write code.
-4. **Static dispatch.** Layout algorithms, style
-   resolution, and event routing use enum dispatch
+2. **Declarative + retained.** Artists author widget trees in the visual editor. The runtime
+   maintains a retained tree and applies minimal diffs when bound data changes.
+3. **No-code.** All event handlers wire to logic graph nodes. All styling, layout, and animation are
+   configured through visual editors. Users never write code.
+4. **Static dispatch.** Layout algorithms, style resolution, and event routing use enum dispatch
    over concrete types, not trait objects.
 
 ### Performance Targets
@@ -165,7 +156,7 @@ graph TD
     AU -.->|"F-5.1.3"| AUD[AudioMixerBus]
 ```
 
-```
+```text
 harmonius_ui/
 ├── widget/
 │   ├── tree.rs          # WidgetTree root, tree
@@ -218,10 +209,8 @@ harmonius_ui/
 
 ### Widget Tree as ECS Entities
 
-Every widget in the tree is an ECS entity. The
-hierarchy uses the engine's built-in `ChildOf`
-relationship (F-1.1.16). Widget-specific data is
-stored as components on each entity.
+Every widget in the tree is an ECS entity. The hierarchy uses the engine's built-in `ChildOf`
+relationship (F-1.1.16). Widget-specific data is stored as components on each entity.
 
 ```mermaid
 classDiagram
@@ -355,22 +344,15 @@ stateDiagram-v2
 
 ### Frame Update Pipeline
 
-Each frame, the widget framework runs as a
-sequence of ECS systems in the `PostUpdate`
-schedule phase. The pipeline is:
+Each frame, the widget framework runs as a sequence of ECS systems in the `PostUpdate` schedule
+phase. The pipeline is:
 
-1. **Binding collection** -- gather ECS component
-   changes and mark dependent widgets dirty.
-2. **Animation tick** -- advance active animations
-   and mark animated properties dirty.
-3. **Tree diff** -- reconcile declared vs retained
-   tree, apply minimal patches.
-4. **Style resolution** -- cascade styles for dirty
-   nodes, check for layout-affecting changes.
-5. **Layout** -- measure (bottom-up) then place
-   (top-down) for invalidated subtrees.
-6. **Paint** -- emit draw commands for dirty
-   regions to the batched quad renderer.
+1. **Binding collection** -- gather ECS component changes and mark dependent widgets dirty.
+2. **Animation tick** -- advance active animations and mark animated properties dirty.
+3. **Tree diff** -- reconcile declared vs retained tree, apply minimal patches.
+4. **Style resolution** -- cascade styles for dirty nodes, check for layout-affecting changes.
+5. **Layout** -- measure (bottom-up) then place (top-down) for invalidated subtrees.
+6. **Paint** -- emit draw commands for dirty regions to the batched quad renderer.
 
 ```mermaid
 sequenceDiagram
@@ -405,10 +387,8 @@ sequenceDiagram
 
 ### Event Routing
 
-Events flow through three phases: capture
-(root-to-target), target, and bubble
-(target-to-root). Hit testing determines the
-target widget from pointer coordinates.
+Events flow through three phases: capture (root-to-target), target, and bubble (target-to-root). Hit
+testing determines the target widget from pointer coordinates.
 
 ```mermaid
 sequenceDiagram
@@ -444,9 +424,8 @@ sequenceDiagram
 
 ### Data Binding Flow
 
-Bindings connect ECS components to widget
-properties. The binding system uses change
-detection to avoid polling.
+Bindings connect ECS components to widget properties. The binding system uses change detection to
+avoid polling.
 
 ```mermaid
 graph LR
@@ -2400,9 +2379,8 @@ pub enum BindingError {
 
 ### Full Frame Pipeline
 
-The widget framework executes in the ECS system
-schedule. Here is the complete data flow from
-input to pixels.
+The widget framework executes in the ECS system schedule. Here is the complete data flow from input
+to pixels.
 
 ```rust
 // Simplified frame flow
@@ -2477,48 +2455,33 @@ audio_feedback_system(world);
 
 1. Game system writes to a health component.
 2. ECS marks the component as `Changed`.
-3. `binding_collection_system` detects the
-   change via `Changed<Health>` query.
-4. Looks up the `DataBindingComponent` on the
-   bound widget. Reads the new value through
-   reflection.
+3. `binding_collection_system` detects the change via `Changed<Health>` query.
+4. Looks up the `DataBindingComponent` on the bound widget. Reads the new value through reflection.
 5. Applies the binding transform (if any).
-6. Writes the transformed value to the widget
-   property (e.g., progress bar `value`).
+6. Writes the transformed value to the widget property (e.g., progress bar `value`).
 7. Sets `DirtyFlags::BINDING` on the widget.
-8. The style, layout, and paint systems process
-   the dirty widget in the same frame.
+8. The style, layout, and paint systems process the dirty widget in the same frame.
 
-Result: UI updates in the same frame as the
-underlying data change (US-10.1.12).
+Result: UI updates in the same frame as the underlying data change (US-10.1.12).
 
 ### Two-Way Binding (User Input)
 
 1. User drags a slider widget.
-2. `EventRouter` routes the pointer event to the
-   slider.
+2. `EventRouter` routes the pointer event to the slider.
 3. Slider updates its `value` property locally.
-4. `binding_collection_system` detects the widget
-   property change for two-way bindings.
-5. Writes the new value back to the source ECS
-   component through reflection.
+4. `binding_collection_system` detects the widget property change for two-way bindings.
+5. Writes the new value back to the source ECS component through reflection.
 6. Game systems see the updated component.
 
 ### Widget Recycling (Virtualized List)
 
 1. User scrolls a 10,000-item list.
-2. Items scrolling out of view are detached from
-   the tree via `PatchOp::Remove`.
-3. `WidgetPool::release` resets the entity
-   components and adds it to the free list.
-4. Items scrolling into view trigger
-   `PatchOp::Insert`.
-5. `WidgetPool::acquire` pulls a recycled entity
-   from the free list.
-6. The differ rebinds the recycled entity to the
-   new item data.
-7. Zero heap allocations during steady-state
-   scrolling (R-10.1.3).
+2. Items scrolling out of view are detached from the tree via `PatchOp::Remove`.
+3. `WidgetPool::release` resets the entity components and adds it to the free list.
+4. Items scrolling into view trigger `PatchOp::Insert`.
+5. `WidgetPool::acquire` pulls a recycled entity from the free list.
+6. The differ rebinds the recycled entity to the new item data.
+7. Zero heap allocations during steady-state scrolling (R-10.1.3).
 
 ## Platform Considerations
 
@@ -2550,12 +2513,9 @@ underlying data change (US-10.1.12).
 
 ### Text Rendering
 
-Text shaping uses a bundled HarfBuzz-compatible
-library (not OS-provided shapers) to ensure
-consistent rendering across platforms. MSDF
-atlases are generated at asset build time.
-Subpixel positioning avoids reliance on
-platform-specific subpixel layout (RGB vs BGR).
+Text shaping uses a bundled HarfBuzz-compatible library (not OS-provided shapers) to ensure
+consistent rendering across platforms. MSDF atlases are generated at asset build time. Subpixel
+positioning avoids reliance on platform-specific subpixel layout (RGB vs BGR).
 
 ### VR Platform Support
 
@@ -2653,55 +2613,35 @@ platform-specific subpixel layout (RGB vs BGR).
 | VR | Gaze + controller ray | World-space widget panels | Focus follows gaze ray. Haptic feedback on selection. |
 | Consoles | Gamepad (primary) | Focus-based navigation, D-pad traversal | No mouse cursor. Large text for TV viewing distance. |
 
-Widget property animations use the shared `Curve<T>` type
-(see
-[shared-primitives.md](../../core-runtime/shared-primitives.md))
-for easing and interpolation.
+Widget property animations use the shared `Curve<T>` type (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)) for easing and interpolation.
 
 ## Open Questions
 
-1. **Constraint solver algorithm** -- Cassowary
-   (Kiwi-solver) vs custom incremental solver.
-   Cassowary is proven but may be over-engineered
-   for UI constraints. A simpler fixed-iteration
+1. **Constraint solver algorithm** -- Cassowary (Kiwi-solver) vs custom incremental solver.
+   Cassowary is proven but may be over-engineered for UI constraints. A simpler fixed-iteration
    solver may suffice and avoid the dependency.
 
-2. **Style cache invalidation granularity** --
-   Full cache clear on theme swap is simple but
-   expensive for large UIs. Incremental
-   invalidation keyed by changed rule selectors
-   would be more efficient but adds complexity.
+2. **Style cache invalidation granularity** -- Full cache clear on theme swap is simple but
+   expensive for large UIs. Incremental invalidation keyed by changed rule selectors would be more
+   efficient but adds complexity.
 
-3. **Tree diff batching** -- Should patches be
-   applied immediately via command buffers or
-   batched and applied in a single flush? Batching
-   reduces command buffer overhead but increases
-   latency for structural changes.
+3. **Tree diff batching** -- Should patches be applied immediately via command buffers or batched
+   and applied in a single flush? Batching reduces command buffer overhead but increases latency for
+   structural changes.
 
-4. **Computed binding expression language** --
-   The stack-machine `BindingExpression` enum is
-   minimal. Should we support a richer expression
-   language (conditionals, string interpolation)
-   or keep it simple and push complex logic to
-   the logic graph system?
+4. **Computed binding expression language** -- The stack-machine `BindingExpression` enum is
+   minimal. Should we support a richer expression language (conditionals, string interpolation) or
+   keep it simple and push complex logic to the logic graph system?
 
-5. **Custom widget trait object** -- The
-   `CustomWidgetRegistry` uses `Box<dyn
-   CustomWidget>`, which is dynamic dispatch.
-   This is the one place where dynamic dispatch
-   is used. Alternatives: enum-based registration
-   with a fixed set of slots, or code generation.
+5. **Custom widget trait object** -- The `CustomWidgetRegistry` uses `Box<dyn CustomWidget>`, which
+   is dynamic dispatch. This is the one place where dynamic dispatch is used. Alternatives:
+   enum-based registration with a fixed set of slots, or code generation.
 
-6. **World-space panel render target sharing** --
-   Multiple world-space panels could share a
-   single large render target with atlas-style
-   sub-regions, reducing render target switches.
-   Complexity vs performance trade-off needs
-   benchmarking.
+6. **World-space panel render target sharing** -- Multiple world-space panels could share a single
+   large render target with atlas-style sub-regions, reducing render target switches. Complexity vs
+   performance trade-off needs benchmarking.
 
-7. **Accessibility integration** -- This design
-   covers focus management and audio feedback
-   but does not yet define the screen reader
-   bridge or ARIA-like semantic annotations.
-   These belong in the accessibility feature
-   (F-10.6) and will be designed separately.
+7. **Accessibility integration** -- This design covers focus management and audio feedback but does
+   not yet define the screen reader bridge or ARIA-like semantic annotations. These belong in the
+   accessibility feature (F-10.6) and will be designed separately.

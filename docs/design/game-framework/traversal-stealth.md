@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 ### Traversal and Interaction
 
@@ -38,30 +38,22 @@
 
 ## Overview
 
-This design covers two tightly coupled domains:
-traversal (movement actions and environmental
-interaction) and stealth (visibility, noise, cover,
-and AI awareness). Both are 100% ECS-based with all
-data as components and all logic as systems.
+This design covers two tightly coupled domains: traversal (movement actions and environmental
+interaction) and stealth (visibility, noise, cover, and AI awareness). Both are 100% ECS-based with
+all data as components and all logic as systems.
 
 Key design principles:
 
-1. **Data-driven traversal.** All traversal actions
-   (vault, climb, slide, swim, grapple) are configured
-   via components. Designers tune parameters in the
-   visual editor.
-2. **Auto-detection with override.** Traversal geometry
-   is auto-detected from shape casts. Level designers
-   can override with explicit tags.
-3. **Multi-factor stealth.** Visibility scoring
-   combines light, shadow, speed, posture, and
+1. **Data-driven traversal.** All traversal actions (vault, climb, slide, swim, grapple) are
+   configured via components. Designers tune parameters in the visual editor.
+2. **Auto-detection with override.** Traversal geometry is auto-detected from shape casts. Level
+   designers can override with explicit tags.
+3. **Multi-factor stealth.** Visibility scoring combines light, shadow, speed, posture, and
    equipment. No single binary detection check.
-4. **Shared spatial index.** Noise propagation, cover
-   detection, and traversal shape casts all use the
-   shared BVH/octree.
-5. **No-code authoring.** All parameters are exposed
-   to the visual editor. Logic graphs drive interaction
-   behavior.
+4. **Shared spatial index.** Noise propagation, cover detection, and traversal shape casts all use
+   the shared BVH/octree.
+5. **No-code authoring.** All parameters are exposed to the visual editor. Logic graphs drive
+   interaction behavior.
 
 ## Architecture
 
@@ -119,7 +111,7 @@ graph TD
     PR --> AS
 ```
 
-```
+```text
 harmonius_game/
 ├── traversal/
 │   ├── detection.rs    # TraversalDetectionSystem,
@@ -770,22 +762,18 @@ pub struct CoverUsageSystem;
 
 Each frame, traversal proceeds through these stages:
 
-1. **TraversalDetectionSystem** casts shapes forward
-   and downward from the character. Detected surfaces
-   are classified by dimensions and orientation into
-   `TraversalOpportunity` components.
+1. **TraversalDetectionSystem** casts shapes forward and downward from the character. Detected
+   surfaces are classified by dimensions and orientation into `TraversalOpportunity` components.
 2. The character controller checks for traversal input
-   + a matching `TraversalOpportunity`. If both are
+   - a matching `TraversalOpportunity`. If both are
    present, the system sets `TraversalState.active`.
-3. The action-specific system (VaultSystem,
-   WallRunSystem, etc.) drives the character through
-   the traversal:
+3. The action-specific system (VaultSystem, WallRunSystem, etc.) drives the character through the
+   traversal:
    - Deducts stamina
    - Requests animation transition
    - Updates character position via root motion
    - Places hands/feet via IK
-4. On completion, `TraversalState.active` is cleared
-   and normal locomotion resumes.
+4. On completion, `TraversalState.active` is cleared and normal locomotion resumes.
 
 ### Stealth Visibility Pipeline
 
@@ -823,32 +811,23 @@ fn compute_visibility(
 
 ### Noise Propagation
 
-1. Player action generates a `NoiseEvent` with
-   intensity and world-space origin.
-2. `NoisePropagationSystem` queries the shared spatial
-   index for AI hearing entities within the noise
-   radius.
+1. Player action generates a `NoiseEvent` with intensity and world-space origin.
+2. `NoisePropagationSystem` queries the shared spatial index for AI hearing entities within the
+   noise radius.
 3. For each AI, distance attenuation reduces intensity:
    `effective = intensity * (1.0 - dist / max_range)`.
-4. Occlusion test: raycast from noise origin to AI. If
-   the ray passes through closed doors or thick walls,
-   intensity is further reduced by the material's
-   attenuation factor.
-5. If effective intensity exceeds the AI's hearing
-   threshold (modified by `AlertConfig.sensitivity`),
-   the AI receives the stimulus.
+4. Occlusion test: raycast from noise origin to AI. If the ray passes through closed doors or thick
+   walls, intensity is further reduced by the material's attenuation factor.
+5. If effective intensity exceeds the AI's hearing threshold (modified by
+   `AlertConfig.sensitivity`), the AI receives the stimulus.
 
 ### Cover-to-Cover Sprint
 
 1. Player selects target cover while in cover.
-2. `CoverUsageSystem` validates the target is within
-   sprint range and not occupied.
-3. Character transitions to sprint animation, releases
-   current cover.
-4. Character moves along a path to the target cover
-   point.
-5. On arrival, character snaps to the new cover with
-   transition animation.
+2. `CoverUsageSystem` validates the target is within sprint range and not occupied.
+3. Character transitions to sprint animation, releases current cover.
+4. Character moves along a path to the target cover point.
+5. On arrival, character snaps to the new cover with transition animation.
 
 ## Platform Considerations
 
@@ -864,23 +843,18 @@ fn compute_visibility(
 
 ### Platform-Specific Notes
 
-- **All platforms:** Traversal detection uses the
-  shared spatial index for shape casts. No separate
+- **All platforms:** Traversal detection uses the shared spatial index for shape casts. No separate
   traversal acceleration structure.
-- **Mobile:** Reduce traversal shape-cast frequency
-  to every other frame. Limit cover points per
+- **Mobile:** Reduce traversal shape-cast frequency to every other frame. Limit cover points per
   combat area to 200.
-- **Networking:** AlertState is server-authoritative.
-  VisibilityScore is computed on both client (for HUD)
-  and server (for AI decisions).
-- **No-code:** All traversal parameters, interaction
-  definitions, door configurations, stealth modifiers,
-  and cover settings are exposed to the visual editor.
+- **Networking:** AlertState is server-authoritative. VisibilityScore is computed on both client
+  (for HUD) and server (for AI decisions).
+- **No-code:** All traversal parameters, interaction definitions, door configurations, stealth
+  modifiers, and cover settings are exposed to the visual editor.
 
 ### Proposed Dependencies
 
-No new external dependencies. Uses existing engine
-modules:
+No new external dependencies. Uses existing engine modules:
 
 | Module | Usage |
 |--------|-------|
@@ -964,31 +938,20 @@ modules:
 
 ## Open Questions
 
-1. **Traversal priority resolution.** When multiple
-   traversal types are available simultaneously (e.g.,
-   vault and slide both valid), which takes priority?
-   Should there be a priority ordering, or should the
-   player choose via distinct inputs?
-2. **Climb grip point networking.** Grip points are
-   deterministic from the Climbable component, but
-   character hand/foot placement via IK may drift
-   between client and server. How much IK divergence
+1. **Traversal priority resolution.** When multiple traversal types are available simultaneously
+   (e.g., vault and slide both valid), which takes priority? Should there be a priority ordering, or
+   should the player choose via distinct inputs?
+2. **Climb grip point networking.** Grip points are deterministic from the Climbable component, but
+   character hand/foot placement via IK may drift between client and server. How much IK divergence
    is acceptable?
-3. **Cover destruction integration.** When a cover
-   surface is destroyed (destruction system), cover
-   points must be removed from the spatial index. The
-   destruction system should fire an event that the
-   cover system listens to. Define the event contract.
-4. **Stealth in multiplayer.** In PvP, should opposing
-   players see each other's visibility score, or only
-   their own? VisibilityScore may need a
-   per-observer variant for competitive balance.
-5. **Noise propagation fidelity.** The current design
-   uses simple raycasts for occlusion. Should we
-   support multi-bounce noise propagation (e.g., sound
-   traveling through open doorways around corners)?
-   This increases fidelity but adds computation.
-6. **Takedown animation variety.** The current design
-   supports configured variants. Should takedown
-   selection be random, context-dependent (weapon
-   equipped, angle of approach), or player-selectable?
+3. **Cover destruction integration.** When a cover surface is destroyed (destruction system), cover
+   points must be removed from the spatial index. The destruction system should fire an event that
+   the cover system listens to. Define the event contract.
+4. **Stealth in multiplayer.** In PvP, should opposing players see each other's visibility score, or
+   only their own? VisibilityScore may need a per-observer variant for competitive balance.
+5. **Noise propagation fidelity.** The current design uses simple raycasts for occlusion. Should we
+   support multi-bounce noise propagation (e.g., sound traveling through open doorways around
+   corners)? This increases fidelity but adds computation.
+6. **Takedown animation variety.** The current design supports configured variants. Should takedown
+   selection be random, context-dependent (weapon equipped, angle of approach), or
+   player-selectable?

@@ -1,7 +1,7 @@
 # Harmonius Plan
 
-Work plan for the Harmonius game engine. Maps every feature-group from the [domain
-decomposition](domain-decomposition.md) to its requirements, features, design status, and
+Work plan for the Harmonius game engine. Maps every feature-group from the
+[domain decomposition](domain-decomposition.md) to its requirements, features, design status, and
 implementation status. Organized by wave to show what can proceed in parallel at each stage.
 
 **Current state:** Requirements and features are fully specified (1,501 requirements, 1,204 features

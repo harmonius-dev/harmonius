@@ -4,8 +4,8 @@
 
 ## US-13.13.1a.1 Monitor Guild Membership for Server Capacity
 
-**As a** server admin (P-22), **I want to** monitor guild creation rates and membership counts, **so
-that** I can track social system load on the server.
+**As a** server admin (P-22), **I want to** monitor guild creation rates and membership counts,
+**so that** I can track social system load on the server.
 
 ## US-13.13.1a.2 Create a Guild
 
@@ -159,8 +159,8 @@ in the guild UI, **so that** players can identify warring guild members.
 
 ## US-13.13.3c.1 Configure War Windows Per Server
 
-**As a** server admin (P-22), **I want to** configure time-limited war windows per server, **so
-that** siege engagement times are predictable for the server's player base.
+**As a** server admin (P-22), **I want to** configure time-limited war windows per server,
+**so that** siege engagement times are predictable for the server's player base.
 
 ## US-13.13.3c.2 Attack Enemy Structures During War Windows
 
@@ -169,8 +169,8 @@ scheduled war windows, **so that** territory can be contested through organized 
 
 ## US-13.13.3c.3 Repair Structures During and After Sieges
 
-**As a** player (P-23), **I want to** defenders to repair structures during and after sieges, **so
-that** structures are not permanently lost from a single attack.
+**As a** player (P-23), **I want to** defenders to repair structures during and after sieges,
+**so that** structures are not permanently lost from a single attack.
 
 ## US-13.13.3c.4 Verify Structure Destruction Revokes Territory
 
@@ -181,8 +181,8 @@ ownership is revoked, **so that** siege victory mechanics work correctly.
 
 ## US-13.13.3d.1 Configure Seasonal Resets and Archiving
 
-**As a** server admin (P-22), **I want to** seasonal resets to archive historical rankings, **so
-that** past accomplishments are preserved.
+**As a** server admin (P-22), **I want to** seasonal resets to archive historical rankings,
+**so that** past accomplishments are preserved.
 
 ## US-13.13.3d.2 View Guild Leaderboards
 
@@ -271,8 +271,8 @@ attachments without paying the required amount, **so that** COD enforcement work
 
 ## US-13.13.5c.1 Monitor System Mail Delivery
 
-**As a** server admin (P-22), **I want to** monitor system mail delivery rates and failures, **so
-that** I can ensure automated mail reaches all intended recipients.
+**As a** server admin (P-22), **I want to** monitor system mail delivery rates and failures,
+**so that** I can ensure automated mail reaches all intended recipients.
 
 ## US-13.13.5c.2 Receive Automated System Mail
 
@@ -425,8 +425,8 @@ content without manually assembling a party.
 
 ## US-13.13.9.3 See Estimated Wait Time Per Role
 
-**As a** player (P-23), **I want to** the group finder to display estimated wait time per role, **so
-that** I can choose roles with shorter queues.
+**As a** player (P-23), **I want to** the group finder to display estimated wait time per role,
+**so that** I can choose roles with shorter queues.
 
 ## US-13.13.9.4 Receive Bonus Rewards for In-Demand Roles
 

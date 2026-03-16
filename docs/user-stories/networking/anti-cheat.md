@@ -57,8 +57,8 @@ while severe exploits result in immediate action.
 ## US-8.8.10 Detect Gold Farming and Bulk Transfer Patterns
 
 **As a** server admin (P-22), **I want** automated detection of gold farming patterns (repetitive
-behavior, bulk transfers to mule accounts) with rate limiting on high-value transactions, **so
-that** organized economy exploitation is identified and throttled.
+behavior, bulk transfers to mule accounts) with rate limiting on high-value transactions,
+**so that** organized economy exploitation is identified and throttled.
 
 ## US-8.8.11 Verify Cheat Detection Does Not Produce False Positives
 

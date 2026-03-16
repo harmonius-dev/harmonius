@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -23,25 +23,18 @@
 
 ## Overview
 
-The quest and dialogue system provides data-driven quest
-progression and branching NPC conversations. Quests are
-directed acyclic graphs of typed objective nodes with
-conditional edges. Dialogues are trees of NPC lines,
-player responses, and side-effect triggers. Both are
-authored in visual no-code editors and stored as
-serialized assets.
+The quest and dialogue system provides data-driven quest progression and branching NPC
+conversations. Quests are directed acyclic graphs of typed objective nodes with conditional edges.
+Dialogues are trees of NPC lines, player responses, and side-effect triggers. Both are authored in
+visual no-code editors and stored as serialized assets.
 
-All runtime state lives as ECS components. Quest graphs
-and dialogue trees are ECS resources (immutable assets).
-Per-entity state (active quests, conversation progress)
-is stored in components on player and NPC entities. State
-transitions emit typed events consumed by the journal UI,
-map markers, and minimap systems.
+All runtime state lives as ECS components. Quest graphs and dialogue trees are ECS resources
+(immutable assets). Per-entity state (active quests, conversation progress) is stored in components
+on player and NPC entities. State transitions emit typed events consumed by the journal UI, map
+markers, and minimap systems.
 
-The system integrates with gameplay databases for
-prerequisite evaluation, reward distribution, and
-condition checking. Quest completion is
-server-authoritative to prevent client-side exploits.
+The system integrates with gameplay databases for prerequisite evaluation, reward distribution, and
+condition checking. Quest completion is server-authoritative to prevent client-side exploits.
 
 ## Architecture
 
@@ -113,7 +106,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_quest_dialogue/
 ├── quest/
 │   ├── graph.rs        # QuestGraph, QuestNode,
@@ -897,104 +890,67 @@ pub enum DialogueError {
 
 ### Visual Quest Editor (No-Code)
 
-The visual quest editor presents quest graphs as
-node-and-wire diagrams in the editor canvas.
+The visual quest editor presents quest graphs as node-and-wire diagrams in the editor canvas.
 
-- **Node palette:** objective types (kill, collect,
-  escort, reach, interact, defend, craft) are
+- **Node palette:** objective types (kill, collect, escort, reach, interact, defend, craft) are
   dragged from a palette onto the canvas.
-- **Edge wiring:** drag from an output port to an
-  input port to create a directed edge. Optional
-  condition guards are configured via a property
-  panel.
-- **Prerequisite builder:** a nested tree widget
-  for composing AND/OR/NOT expressions over quest
-  completions, levels, reputation, items, and
-  time windows.
-- **Reward editor:** inline reward table editor
-  with rows for each reward entry and choice
-  groups.
-- **DAG validation:** real-time validation
-  highlights cycles and orphan nodes with red
-  overlays and error messages.
+- **Edge wiring:** drag from an output port to an input port to create a directed edge. Optional
+  condition guards are configured via a property panel.
+- **Prerequisite builder:** a nested tree widget for composing AND/OR/NOT expressions over quest
+  completions, levels, reputation, items, and time windows.
+- **Reward editor:** inline reward table editor with rows for each reward entry and choice groups.
+- **DAG validation:** real-time validation highlights cycles and orphan nodes with red overlays and
+  error messages.
 
 ### Visual Dialogue Editor (No-Code)
 
-The visual dialogue editor presents dialogue trees
-as flowchart-style graphs.
+The visual dialogue editor presents dialogue trees as flowchart-style graphs.
 
-- **Node types:** NPC line nodes, player response
-  nodes, effect nodes, and branch nodes.
-- **Condition wiring:** response nodes expose a
-  condition slot. Clicking opens the prerequisite
+- **Node types:** NPC line nodes, player response nodes, effect nodes, and branch nodes.
+- **Condition wiring:** response nodes expose a condition slot. Clicking opens the prerequisite
   builder (shared with the quest editor).
-- **Effect configuration:** effect nodes list
-  available side effects in a dropdown. Parameters
-  are configured inline.
-- **Audio assignment:** each NPC line node has an
-  audio slot for drag-and-drop voice-over asset
+- **Effect configuration:** effect nodes list available side effects in a dropdown. Parameters are
+  configured inline.
+- **Audio assignment:** each NPC line node has an audio slot for drag-and-drop voice-over asset
   assignment.
-- **Localization preview:** a locale selector
-  switches displayed text to any loaded locale for
+- **Localization preview:** a locale selector switches displayed text to any loaded locale for
   in-editor review.
-- **Camera shot preview:** selecting a node shows
-  a camera framing preview in the 3D viewport.
+- **Camera shot preview:** selecting a node shows a camera framing preview in the 3D viewport.
 
 ## Data Flow
 
 ### Quest Lifecycle
 
-1. **Load:** Quest graph assets are deserialized
-   and registered in the `QuestGraphRegistry`
-   (ECS resource).
-2. **Gate:** When a player interacts with a quest
-   giver or enters a trigger volume,
-   `QuestGatingSystem` evaluates the quest's
-   `PrerequisiteExpr`. If met, the quest
-   transitions to `Available`.
-3. **Accept:** On player acceptance, a `QuestState`
-   component is added to the player entity with
-   status `Active`. A `QuestAccepted` event is
-   emitted.
-4. **Progress:** Game events (kill, collect,
-   interact) are matched by `QuestProgressSystem`
-   against active objectives. On match,
-   `ObjectiveProgress.current` increments and an
-   `ObjectiveAdvanced` event is emitted.
-5. **Complete:** When all objectives are met, the
-   quest transitions to `ReadyToTurnIn`. Turning
-   in at the quest giver triggers
-   `RewardDistributionSystem`, which grants
-   rewards transactionally and emits
-   `QuestCompleted`.
-6. **Journal:** All state-change events are
-   consumed by the journal UI, map markers, and
-   minimap systems for reactive display updates.
+1. **Load:** Quest graph assets are deserialized and registered in the `QuestGraphRegistry` (ECS
+   resource).
+2. **Gate:** When a player interacts with a quest giver or enters a trigger volume,
+   `QuestGatingSystem` evaluates the quest's `PrerequisiteExpr`. If met, the quest transitions to
+   `Available`.
+3. **Accept:** On player acceptance, a `QuestState` component is added to the player entity with
+   status `Active`. A `QuestAccepted` event is emitted.
+4. **Progress:** Game events (kill, collect, interact) are matched by `QuestProgressSystem` against
+   active objectives. On match, `ObjectiveProgress.current` increments and an `ObjectiveAdvanced`
+   event is emitted.
+5. **Complete:** When all objectives are met, the quest transitions to `ReadyToTurnIn`. Turning in
+   at the quest giver triggers `RewardDistributionSystem`, which grants rewards transactionally and
+   emits `QuestCompleted`.
+6. **Journal:** All state-change events are consumed by the journal UI, map markers, and minimap
+   systems for reactive display updates.
 
 ### Dialogue Lifecycle
 
-1. **Initiate:** Player interacts with an NPC that
-   has a `DialogueSource` component. The system
-   loads the `DialogueTree` asset and adds a
-   `ConversationActive` component to the player.
-2. **Suppress:** `ConversationStateSystem` applies
-   HUD suppression, audio ducking, and input
+1. **Initiate:** Player interacts with an NPC that has a `DialogueSource` component. The system
+   loads the `DialogueTree` asset and adds a `ConversationActive` component to the player.
+2. **Suppress:** `ConversationStateSystem` applies HUD suppression, audio ducking, and input
    suppression per the conversation config.
-3. **Traverse:** `DialogueTraversalSystem` loads
-   the current node, evaluates response conditions,
-   and presents valid options. On selection, it
-   executes effects and advances to the next node.
-4. **Camera:** `ConversationCameraSystem` sets
-   camera framing per the current node's
-   `CameraShotType`, switching between speakers in
-   multi-NPC conversations.
-5. **End/Interrupt:** On conversation end, the
-   `ConversationActive` component is removed and
-   gameplay state is restored. On interruption
-   (combat, disconnect, area departure),
-   `ConversationInterruptSystem` saves the
-   current node to a `ConversationInterrupted`
-   component for later resumption.
+3. **Traverse:** `DialogueTraversalSystem` loads the current node, evaluates response conditions,
+   and presents valid options. On selection, it executes effects and advances to the next node.
+4. **Camera:** `ConversationCameraSystem` sets camera framing per the current node's
+   `CameraShotType`, switching between speakers in multi-NPC conversations.
+5. **End/Interrupt:** On conversation end, the `ConversationActive` component is removed and
+   gameplay state is restored. On interruption (combat, disconnect, area departure),
+   `ConversationInterruptSystem` saves the current node to a `ConversationInterrupted` component for
+   later resumption.
 
 ### Reward Distribution
 
@@ -1120,33 +1076,20 @@ fn distribute_rewards_impl(
 
 ## Open Questions
 
-1. **Quest graph vs quest tree** — The current
-   design uses DAGs. Some quest designs need
-   convergent paths (diamond patterns). Confirm
-   that DAG semantics (multiple predecessors per
-   node) are sufficient or if full graph support
-   with explicit visited-node tracking is needed.
-2. **Dialogue tree depth limit** — Deep dialogue
-   trees increase memory for the node stack. Should
-   there be a maximum depth (e.g., 50 nodes) to
-   bound memory, or is the 5 ms latency target
+1. **Quest graph vs quest tree** — The current design uses DAGs. Some quest designs need convergent
+   paths (diamond patterns). Confirm that DAG semantics (multiple predecessors per node) are
+   sufficient or if full graph support with explicit visited-node tracking is needed.
+2. **Dialogue tree depth limit** — Deep dialogue trees increase memory for the node stack. Should
+   there be a maximum depth (e.g., 50 nodes) to bound memory, or is the 5 ms latency target
    sufficient as a constraint?
-3. **Conversation multiplayer visibility** — When
-   one player is in a conversation with an NPC, can
-   other players also initiate the same conversation
-   concurrently? If so, the NPC needs per-player
+3. **Conversation multiplayer visibility** — When one player is in a conversation with an NPC, can
+   other players also initiate the same conversation concurrently? If so, the NPC needs per-player
    conversation state rather than a global lock.
-4. **Quest phasing group play** — When grouped
-   players are in different quest phases, which
-   phase does each player see? Current design is
-   per-player. Confirm that grouped players do not
-   need to see a shared phase.
-5. **Dialogue voice-over streaming** — Large
-   voice-over assets should stream rather than
-   preload. Confirm integration with the async I/O
-   reactor for progressive audio streaming during
-   dialogue traversal.
-6. **Prerequisite evaluation caching** — Should
-   prerequisite results be cached per-frame to
-   avoid redundant ECS queries when multiple quests
-   share prerequisite sub-expressions?
+4. **Quest phasing group play** — When grouped players are in different quest phases, which phase
+   does each player see? Current design is per-player. Confirm that grouped players do not need to
+   see a shared phase.
+5. **Dialogue voice-over streaming** — Large voice-over assets should stream rather than preload.
+   Confirm integration with the async I/O reactor for progressive audio streaming during dialogue
+   traversal.
+6. **Prerequisite evaluation caching** — Should prerequisite results be cached per-frame to avoid
+   redundant ECS queries when multiple quests share prerequisite sub-expressions?

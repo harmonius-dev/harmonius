@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/ai/](../../features/ai/),
-> [requirements/ai/](../../requirements/ai/), and
-> [user-stories/ai/](../../user-stories/ai/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/ai/](../../features/ai/), [requirements/ai/](../../requirements/ai/), and
+> [user-stories/ai/](../../user-stories/ai/). The table below traces design elements to those
+> definitions.
 
 ### Core Senses (F-7.6.1--4 / R-7.6.1--4)
 
@@ -38,33 +37,25 @@
 
 ## Overview
 
-The AI perception subsystem gives NPC entities the ability
-to sense the game world through sight, hearing, smell,
-damage, and custom senses. All perception data lives as ECS
-components. All logic runs as ECS systems.
+The AI perception subsystem gives NPC entities the ability to sense the game world through sight,
+hearing, smell, damage, and custom senses. All perception data lives as ECS components. All logic
+runs as ECS systems.
 
 The subsystem has four layers:
 
-1. **Stimulus layer** -- a global registry where gameplay
-   systems broadcast events (noise, flash, scent). Stimuli
-   carry type, intensity, position, radius, and TTL.
-2. **Sense evaluation layer** -- per-agent sense checks
-   (vision cone + LOS raycast, spherical hearing, scent
-   grid queries, damage events) that produce raw
-   `SenseResult` values.
-3. **Memory layer** -- merges raw results into a persistent
-   `PerceivedEntities` component per agent with confidence
-   decay, last-known position, and awareness levels.
-4. **Decision layer** -- threat assessment, target
-   selection, alert state transitions, investigation
+1. **Stimulus layer** -- a global registry where gameplay systems broadcast events (noise, flash,
+   scent). Stimuli carry type, intensity, position, radius, and TTL.
+2. **Sense evaluation layer** -- per-agent sense checks (vision cone + LOS raycast, spherical
+   hearing, scent grid queries, damage events) that produce raw `SenseResult` values.
+3. **Memory layer** -- merges raw results into a persistent `PerceivedEntities` component per agent
+   with confidence decay, last-known position, and awareness levels.
+4. **Decision layer** -- threat assessment, target selection, alert state transitions, investigation
    behavior, and multi-sense tracking.
 
-Sense evaluation uses the shared `SpatialQuery` API for all
-raycasts and overlap tests. A budget-based scheduler
-spreads perception updates across frames so not every agent
-runs every tick. The scent system uses a dedicated
-`ScentGrid` (uniform grid separate from the BVH) optimized
-for density queries and wind-driven propagation.
+Sense evaluation uses the shared `SpatialQuery` API for all raycasts and overlap tests. A
+budget-based scheduler spreads perception updates across frames so not every agent runs every tick.
+The scent system uses a dedicated `ScentGrid` (uniform grid separate from the BVH) optimized for
+density queries and wind-driven propagation.
 
 ---
 
@@ -131,7 +122,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_ai/
 └── perception/
     ├── mod.rs            # Public re-exports
@@ -1895,8 +1886,7 @@ pub enum PerceptionError {
 
 ### Per-Frame Perception Pipeline
 
-The perception pipeline runs as a sequence of ECS
-systems within the frame's task graph. Systems are
+The perception pipeline runs as a sequence of ECS systems within the frame's task graph. Systems are
 ordered via explicit dependencies.
 
 ```rust
@@ -1962,10 +1952,9 @@ ordered via explicit dependencies.
 
 ### Confidence Decay Curve
 
-Confidence decays linearly when a stimulus is not
-re-confirmed. The decay formula is:
+Confidence decays linearly when a stimulus is not re-confirmed. The decay formula is:
 
-```
+```text
 confidence(t) = max(
     0.0,
     initial_confidence
@@ -1974,13 +1963,11 @@ confidence(t) = max(
 ```
 
 Where:
-- `initial_confidence`: confidence at last
-  confirmation (typically 1.0 for sight, variable
-  for hearing/smell)
-- `decay_rate`: configured per archetype
-  (e.g., 0.1/sec for veterans, 0.3/sec for grunts)
-- `t - last_confirmed_time`: seconds since the
-  stimulus was last confirmed
+
+- `initial_confidence`: confidence at last confirmation (typically 1.0 for sight, variable for
+  hearing/smell)
+- `decay_rate`: configured per archetype (e.g., 0.1/sec for veterans, 0.3/sec for grunts)
+- `t - last_confirmed_time`: seconds since the stimulus was last confirmed
 
 Awareness level thresholds:
 
@@ -1993,7 +1980,7 @@ Awareness level thresholds:
 
 ### Hearing Attenuation Formula
 
-```
+```text
 confidence = intensity * dist_atten * occlusion
 
 where:
@@ -2004,7 +1991,7 @@ where:
 
 ### Sight Confidence Formula
 
-```
+```text
 confidence = dist_factor * peripheral_factor
 
 where:
@@ -2039,8 +2026,7 @@ where:
 
 ### Platform-Specific Code
 
-All platform differences are compile-time `cfg`
-gated constants, not runtime branches:
+All platform differences are compile-time `cfg` gated constants, not runtime branches:
 
 ```rust
 #[cfg(target_os = "ios")]
@@ -2080,19 +2066,13 @@ pub const TRACKING_METHODS: TrackingMethodMask =
 
 ### Parallelism
 
-Sense evaluation uses `ThreadPool::scope` for
-parallel processing. Each agent is an independent
-unit of work. Within one agent, senses run
-sequentially (sight then hearing then smell then
-damage then custom). Across agents, evaluation runs
-in parallel on worker threads. The shared
-`SpatialQuery` and `StimulusRegistry` are read-only
-during evaluation -- no locks required.
+Sense evaluation uses `ThreadPool::scope` for parallel processing. Each agent is an independent unit
+of work. Within one agent, senses run sequentially (sight then hearing then smell then damage then
+custom). Across agents, evaluation runs in parallel on worker threads. The shared `SpatialQuery` and
+`StimulusRegistry` are read-only during evaluation -- no locks required.
 
-The scent grid propagation system runs as a single
-parallel-for over grid cells. Each cell's
-propagation reads only from its own data and
-adjacent cells (read-only neighbors), writing to a
+The scent grid propagation system runs as a single parallel-for over grid cells. Each cell's
+propagation reads only from its own data and adjacent cells (read-only neighbors), writing to a
 double-buffered output grid. No contention.
 
 ---
@@ -2177,59 +2157,35 @@ double-buffered output grid. No contention.
 
 ## Open Questions
 
-1. **Scent grid vs. BVH for scent queries** -- The
-   current design uses a dedicated `ScentGrid`
-   separate from the shared BVH. This avoids
-   polluting the BVH with thousands of short-lived
-   scent entries. However, it introduces a second
-   spatial structure. Should scent instead use
-   the shared `OctreeIndex` with a dedicated
-   spatial layer?
+1. **Scent grid vs. BVH for scent queries** -- The current design uses a dedicated `ScentGrid`
+   separate from the shared BVH. This avoids polluting the BVH with thousands of short-lived scent
+   entries. However, it introduces a second spatial structure. Should scent instead use the shared
+   `OctreeIndex` with a dedicated spatial layer?
 
-2. **Perception update frequency tuning** -- The
-   budget scheduler uses a flat round-robin for
-   deferred agents. Should distance-to-player or
-   on-screen visibility influence update frequency?
-   Closer agents perceive more often; distant
-   agents less.
+2. **Perception update frequency tuning** -- The budget scheduler uses a flat round-robin for
+   deferred agents. Should distance-to-player or on-screen visibility influence update frequency?
+   Closer agents perceive more often; distant agents less.
 
-3. **Multi-threaded memory writes** -- Sense
-   evaluation runs in parallel, but
-   `PerceptionMemorySystem` writes to per-agent
-   `PerceivedEntities` components. If two senses
-   detect the same target for the same agent,
-   merging must be sequential. Current design runs
-   all senses for one agent sequentially, agents
-   in parallel. This avoids write contention.
-   Alternative: parallel senses per agent with
-   per-agent merge lock.
+3. **Multi-threaded memory writes** -- Sense evaluation runs in parallel, but
+   `PerceptionMemorySystem` writes to per-agent `PerceivedEntities` components. If two senses detect
+   the same target for the same agent, merging must be sequential. Current design runs all senses
+   for one agent sequentially, agents in parallel. This avoids write contention. Alternative:
+   parallel senses per agent with per-agent merge lock.
 
-4. **Evidence entity budget** -- Environmental
-   evidence entities (footprints, blood) compete
-   with the ECS entity budget. Should evidence use
-   a separate pooled allocation instead of full
-   ECS entities? This would reduce archetype
-   fragmentation but lose ECS query ergonomics.
+4. **Evidence entity budget** -- Environmental evidence entities (footprints, blood) compete with
+   the ECS entity budget. Should evidence use a separate pooled allocation instead of full ECS
+   entities? This would reduce archetype fragmentation but lose ECS query ergonomics.
 
-5. **Custom sense dynamic dispatch** -- The
-   `CustomSenseRegistry` uses `CustomSenseKind`
-   (dynamic dispatch) because custom senses are
-   registered at runtime. This is the one exception
-   to the static dispatch preference. Is there a
-   way to avoid this? Possible approach: enum
-   dispatch with a fixed set of custom sense slots.
+5. **Custom sense dynamic dispatch** -- The `CustomSenseRegistry` uses `CustomSenseKind` (dynamic
+   dispatch) because custom senses are registered at runtime. This is the one exception to the
+   static dispatch preference. Is there a way to avoid this? Possible approach: enum dispatch with a
+   fixed set of custom sense slots.
 
-6. **Damage sense as event vs. stimulus** -- Damage
-   currently bypasses the `StimulusRegistry` and
-   reads from a separate `DamageEvent` queue. This
-   is simpler but inconsistent with other senses.
-   Should damage go through the registry with
-   infinite range and TTL=0?
+6. **Damage sense as event vs. stimulus** -- Damage currently bypasses the `StimulusRegistry` and
+   reads from a separate `DamageEvent` queue. This is simpler but inconsistent with other senses.
+   Should damage go through the registry with infinite range and TTL=0?
 
-7. **Scent trail data structure** -- Trails are
-   currently implicit (a series of decaying grid
-   cells). Should trails be explicit data
-   structures (linked list of points) for more
-   efficient following? Explicit trails would
-   allow the tracker to follow the chain directly
-   instead of searching adjacent cells.
+7. **Scent trail data structure** -- Trails are currently implicit (a series of decaying grid
+   cells). Should trails be explicit data structures (linked list of points) for more efficient
+   following? Explicit trails would allow the tracker to follow the chain directly instead of
+   searching adjacent cells.

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -27,32 +27,24 @@
 
 ## Overview
 
-The gameplay database system provides typed,
-schema-driven data tables that store all gameplay
-content: items, abilities, NPCs, loot, stats,
-currencies, crafting recipes, and progression
-curves. Tables are authored in a visual no-code
-editor, serialized as assets (RON, JSON, CSV, or
-binary), and stored as ECS resources at runtime.
+The gameplay database system provides typed, schema-driven data tables that store all gameplay
+content: items, abilities, NPCs, loot, stats, currencies, crafting recipes, and progression curves.
+Tables are authored in a visual no-code editor, serialized as assets (RON, JSON, CSV, or binary),
+and stored as ECS resources at runtime.
 
 The system supports:
 
 - **Typed schemas** with column-level constraints.
 - **Foreign key references** across tables.
-- **Row inheritance** (prototype chains) for data
-  hierarchies.
-- **Secondary indices** for O(1) key lookup and
-  O(log n) range queries.
+- **Row inheritance** (prototype chains) for data hierarchies.
+- **Secondary indices** for O(1) key lookup and O(log n) range queries.
 - **Visual formula nodes** for computed columns.
 - **Hot reload** with versioned rollback.
-- **ECS component binding** for automatic entity
-  population from table rows.
+- **ECS component binding** for automatic entity population from table rows.
 - **Validation** on load and after hot-reload.
 
-All data is immutable at runtime (copy-on-write
-for hot reload). No user-written code. Content
-designers author everything through the visual
-table editor and visual curve editor.
+All data is immutable at runtime (copy-on-write for hot reload). No user-written code. Content
+designers author everything through the visual table editor and visual curve editor.
 
 ## Architecture
 
@@ -114,7 +106,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_gameplay_db/
 ├── schema/
 │   ├── column.rs       # ColumnDef, ColumnType,
@@ -586,8 +578,7 @@ pub fn detect_cycle(
 
 ### Curves and Formulas
 
-Numeric curve interpolation uses the shared
-`Curve<T>` type (see
+Numeric curve interpolation uses the shared `Curve<T>` type (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).
 
 ```rust
@@ -743,6 +734,15 @@ pub enum ModifierType {
     /// as a product).
     Multiplicative,
 }
+
+/// **Note:** `ModifierType` should align with the
+/// canonical `ModOp` enum in
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)
+/// (`Flat`, `Percent`, `Override`). The `Percentage`
+/// variant maps to `Percent`. The `Multiplicative`
+/// variant represents a distinct composition rule
+/// (multiply base by factor) that may warrant addition
+/// to the canonical `ModOp` as a fourth variant.
 
 /// A single stat modifier from an equipment slot,
 /// buff, or ability.
@@ -1230,63 +1230,41 @@ pub struct TableLoaded {
 
 ### Visual Table Editor (No-Code)
 
-The visual table editor is a spreadsheet-like
-interface in the editor.
+The visual table editor is a spreadsheet-like interface in the editor.
 
-- **Schema designer:** drag-and-drop column types
-  from a palette. Configure constraints, defaults,
+- **Schema designer:** drag-and-drop column types from a palette. Configure constraints, defaults,
   indexing, and foreign key targets per column.
-- **Row editing:** spreadsheet grid with
-  per-cell type-aware editors (numeric spinners,
-  dropdowns for enums, asset pickers for asset
-  refs, row pickers for foreign keys).
-- **Inheritance view:** tree view showing
-  prototype chains with inherited values grayed
-  out and overrides highlighted.
-- **Formula editor:** opens the logic graph editor
-  for formula columns. Math nodes (add, multiply,
-  min, max, clamp, lerp, random range) are
-  connected visually.
-- **Import wizard:** CSV/JSON import with column
-  mapping and type coercion preview.
-- **Validation panel:** real-time error display
-  with table, row, and column references.
-  Clickable to navigate to the offending cell.
+- **Row editing:** spreadsheet grid with per-cell type-aware editors (numeric spinners, dropdowns
+  for enums, asset pickers for asset refs, row pickers for foreign keys).
+- **Inheritance view:** tree view showing prototype chains with inherited values grayed out and
+  overrides highlighted.
+- **Formula editor:** opens the logic graph editor for formula columns. Math nodes (add, multiply,
+  min, max, clamp, lerp, random range) are connected visually.
+- **Import wizard:** CSV/JSON import with column mapping and type coercion preview.
+- **Validation panel:** real-time error display with table, row, and column references. Clickable to
+  navigate to the offending cell.
 
 ### Visual Curve Editor (No-Code)
 
-- **Curve canvas:** 2D plot with draggable
-  keyframes. Handles for Bezier tangents.
-- **Interpolation mode selector:** per-segment
-  toggle between linear, step, and cubic Bezier.
-- **Preview sampler:** live readout of curve
-  output as the mouse hovers over the X axis.
-- **Curve library:** browse and reference named
-  curves from formula nodes.
+- **Curve canvas:** 2D plot with draggable keyframes. Handles for Bezier tangents.
+- **Interpolation mode selector:** per-segment toggle between linear, step, and cubic Bezier.
+- **Preview sampler:** live readout of curve output as the mouse hovers over the X axis.
+- **Curve library:** browse and reference named curves from formula nodes.
 
 ## Data Flow
 
 ### Table Load Pipeline
 
-1. **Discover:** On startup, the asset database
-   provides a manifest of all data table assets
-   with their file paths and schemas.
-2. **Read:** The `import_table` function reads each
-   file via the async I/O reactor. No blocking.
-3. **Deserialize:** The serializer decodes RON,
-   JSON, CSV, or binary into raw `Row` data.
-4. **Validate:** The validator checks every row
-   against the schema, verifies foreign key
-   integrity across all tables, evaluates range
-   constraints, and runs custom validation rules.
-5. **Index:** Secondary indices are built for all
-   columns marked as `indexed`.
-6. **Inherit:** Prototype chains are resolved and
-   cached for fast `get_resolved` lookups.
-7. **Register:** The validated, indexed table is
-   inserted into the `TableRegistry` ECS resource.
-8. **Bind:** The `DatabaseBindingSystem` scans for
-   entities with `DatabaseRow` components and
+1. **Discover:** On startup, the asset database provides a manifest of all data table assets with
+   their file paths and schemas.
+2. **Read:** The `import_table` function reads each file via the async I/O reactor. No blocking.
+3. **Deserialize:** The serializer decodes RON, JSON, CSV, or binary into raw `Row` data.
+4. **Validate:** The validator checks every row against the schema, verifies foreign key integrity
+   across all tables, evaluates range constraints, and runs custom validation rules.
+5. **Index:** Secondary indices are built for all columns marked as `indexed`.
+6. **Inherit:** Prototype chains are resolved and cached for fast `get_resolved` lookups.
+7. **Register:** The validated, indexed table is inserted into the `TableRegistry` ECS resource.
+8. **Bind:** The `DatabaseBindingSystem` scans for entities with `DatabaseRow` components and
    populates their ECS components from table data.
 
 ### Loot Roll Pipeline
@@ -1381,27 +1359,17 @@ fn roll_loot(
 
 ### Hot-Reload Pipeline
 
-1. **Watch:** The file watcher (async I/O)
-   monitors data table directories for changes.
-2. **Debounce:** Rapid successive writes are
-   coalesced into a single reload after 100 ms.
-3. **Deserialize:** The changed file is read and
-   deserialized.
-4. **Validate:** Full schema and cross-table
-   validation runs against the new data.
+1. **Watch:** The file watcher (async I/O) monitors data table directories for changes.
+2. **Debounce:** Rapid successive writes are coalesced into a single reload after 100 ms.
+3. **Deserialize:** The changed file is read and deserialized.
+4. **Validate:** Full schema and cross-table validation runs against the new data.
 5. **Swap or reject:**
-   - If valid, the old table version is stashed
-     and the new version is swapped into the
-     registry. A `TableReloaded` event is emitted.
-   - If invalid, a `ValidationFailed` event is
-     emitted with error details. The old table
-     stays active.
-6. **Rebind:** The `DatabaseBindingSystem`
-   refreshes all entity bindings for the reloaded
-   table.
-7. **Rollback:** If a hot-reload causes runtime
-   issues, `rollback()` restores the stashed
-   version.
+   - If valid, the old table version is stashed and the new version is swapped into the registry. A
+     `TableReloaded` event is emitted.
+   - If invalid, a `ValidationFailed` event is emitted with error details. The old table stays
+     active.
+6. **Rebind:** The `DatabaseBindingSystem` refreshes all entity bindings for the reloaded table.
+7. **Rollback:** If a hot-reload causes runtime issues, `rollback()` restores the stashed version.
 
 ## Platform Considerations
 
@@ -1499,37 +1467,21 @@ fn roll_loot(
 
 ## Open Questions
 
-1. **Column storage layout** — Row-major
-   (`Vec<Row>`) is simpler but column-major
-   (struct-of-arrays) is better for bulk queries
-   on a single column. Current design uses
-   row-major. Should high-frequency query columns
-   use a columnar layout?
-2. **Formula evaluation caching** — Should formula
-   column results be cached per-row and invalidated
-   on dependency change, or re-evaluated on every
-   access? Caching adds memory; re-eval adds CPU.
-3. **Inheritance depth limit** — Should prototype
-   chains have a maximum depth (e.g., 8 levels)
-   to bound resolution cost, or is cycle detection
-   sufficient?
-4. **Table partitioning** — For tables exceeding
-   100k rows, should the system support horizontal
-   partitioning (sharding by key range) to
-   parallelize validation and indexing?
-5. **Binary format versioning** — When table
-   schemas evolve between engine versions, how are
-   binary-serialized tables migrated? Options:
-   version tag + migration functions, or always
+1. **Column storage layout** — Row-major (`Vec<Row>`) is simpler but column-major (struct-of-arrays)
+   is better for bulk queries on a single column. Current design uses row-major. Should
+   high-frequency query columns use a columnar layout?
+2. **Formula evaluation caching** — Should formula column results be cached per-row and invalidated
+   on dependency change, or re-evaluated on every access? Caching adds memory; re-eval adds CPU.
+3. **Inheritance depth limit** — Should prototype chains have a maximum depth (e.g., 8 levels) to
+   bound resolution cost, or is cycle detection sufficient?
+4. **Table partitioning** — For tables exceeding 100k rows, should the system support horizontal
+   partitioning (sharding by key range) to parallelize validation and indexing?
+5. **Binary format versioning** — When table schemas evolve between engine versions, how are
+   binary-serialized tables migrated? Options: version tag + migration functions, or always
    re-import from textual source.
-6. **Custom validation rule authoring** — Custom
-   rules are compiled visual formulas. Should there
-   be a built-in library of common rules (sum-of-
-   weights, unique-per-column, reference-exists)
-   to reduce formula graph complexity?
-7. **Concurrent table access** — Multiple ECS
-   systems may read the same table simultaneously.
-   Current design uses immutable tables behind
-   shared references. Confirm that `&DataTable`
-   is sufficient or if `Arc<DataTable>` is needed
-   for hot-reload atomicity.
+6. **Custom validation rule authoring** — Custom rules are compiled visual formulas. Should there be
+   a built-in library of common rules (sum-of- weights, unique-per-column, reference-exists) to
+   reduce formula graph complexity?
+7. **Concurrent table access** — Multiple ECS systems may read the same table simultaneously.
+   Current design uses immutable tables behind shared references. Confirm that `&DataTable` is
+   sufficient or if `Arc<DataTable>` is needed for hot-reload atomicity.

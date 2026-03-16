@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/ai/](../../features/ai/),
-> [requirements/ai/](../../requirements/ai/), and
-> [user-stories/ai/](../../user-stories/ai/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/ai/](../../features/ai/), [requirements/ai/](../../requirements/ai/), and
+> [user-stories/ai/](../../user-stories/ai/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -44,31 +43,21 @@
 
 ## Overview
 
-The navigation system provides NavMesh-based
-pathfinding for all AI agents in the engine. It
-generates polygonal navigation meshes from world
-geometry via Recast-style voxelization, divides
-them into streamable tiles, and answers path
-queries using A* search with funnel smoothing.
+The navigation system provides NavMesh-based pathfinding for all AI agents in the engine. It
+generates polygonal navigation meshes from world geometry via Recast-style voxelization, divides
+them into streamable tiles, and answers path queries using A* search with funnel smoothing.
 
 The design follows four principles:
 
-1. **100% ECS-based.** All navigation data lives
-   as components and resources. No separate
-   navigation world or parallel data store.
-2. **Shared spatial index.** Obstacle queries,
-   tile lookups, and agent proximity checks all
-   go through the shared BVH (F-1.9.1).
-3. **Async and non-blocking.** Pathfinding
-   queries batch across frames using scoped
-   parallel tasks. Tile generation runs on
-   background workers. Tile streaming uses
-   async I/O. The main thread never blocks.
-4. **Hierarchical for scale.** Long-distance
-   paths plan on a coarse cluster graph (HPA*),
-   refining to full NavMesh only for the
-   agent's current tile. This bounds cost
-   regardless of world size.
+1. **100% ECS-based.** All navigation data lives as components and resources. No separate navigation
+   world or parallel data store.
+2. **Shared spatial index.** Obstacle queries, tile lookups, and agent proximity checks all go
+   through the shared BVH (F-1.9.1).
+3. **Async and non-blocking.** Pathfinding queries batch across frames using scoped parallel tasks.
+   Tile generation runs on background workers. Tile streaming uses async I/O. The main thread never
+   blocks.
+4. **Hierarchical for scale.** Long-distance paths plan on a coarse cluster graph (HPA*), refining
+   to full NavMesh only for the agent's current tile. This bounds cost regardless of world size.
 
 ### Performance Targets
 
@@ -154,7 +143,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_ai/
 ├── navigation/
 │   ├── mod.rs          # Public re-exports
@@ -1408,95 +1397,60 @@ pub fn navmesh_debug_system(
 
 ### Path Request Lifecycle
 
-1. A gameplay system attaches a `PathRequest`
-   component to an entity that has a
-   `NavMeshAgent` component.
-2. The `pathfinding_system` runs in the AI
-   phase. It drains all `PathRequest`
-   components into a batch.
-3. For each request, the system determines
-   the start polygon via
-   `tile_map.find_nearest_poly()` using the
-   entity's `GlobalTransform`.
-4. If the start-to-goal distance exceeds a
-   threshold (3+ tiles), the `ClusterGraph`
-   provides a coarse tile sequence via HPA*.
-   The local A* refines only the current
-   tile's portion.
-5. Short paths run full A* directly on the
-   NavMesh polygon graph.
-6. The resulting polygon corridor passes
-   through the `FunnelSmoother` to produce
-   minimal waypoints.
-7. The `PathSmoother` post-processes waypoints
-   based on the agent's `SmoothingMode`.
-8. A `PathResult` component is written to the
-   entity. The `PathRequest` is removed.
-9. The steering system (F-7.2) reads
-   `PathResult.current_waypoint()` each frame
-   to drive agent movement.
+1. A gameplay system attaches a `PathRequest` component to an entity that has a `NavMeshAgent`
+   component.
+2. The `pathfinding_system` runs in the AI phase. It drains all `PathRequest` components into a
+   batch.
+3. For each request, the system determines the start polygon via `tile_map.find_nearest_poly()`
+   using the entity's `GlobalTransform`.
+4. If the start-to-goal distance exceeds a threshold (3+ tiles), the `ClusterGraph` provides a
+   coarse tile sequence via HPA*. The local A* refines only the current tile's portion.
+5. Short paths run full A* directly on the NavMesh polygon graph.
+6. The resulting polygon corridor passes through the `FunnelSmoother` to produce minimal waypoints.
+7. The `PathSmoother` post-processes waypoints based on the agent's `SmoothingMode`.
+8. A `PathResult` component is written to the entity. The `PathRequest` is removed.
+9. The steering system (F-7.2) reads `PathResult.current_waypoint()` each frame to drive agent
+   movement.
 
 ### Obstacle Carve Lifecycle
 
-1. A gameplay system attaches a
-   `NavMeshObstacle` component to a dynamic
-   entity (barricade, vehicle, etc.).
-2. The `obstacle_carve_system` detects the new
-   component via `Added<NavMeshObstacle>`.
-3. It queries the shared spatial index to find
-   which NavMesh tiles overlap the obstacle's
-   transform and shape.
-4. Overlapping polygons have their flags set
-   to `DISABLED`.
-5. Agents whose `PathResult.corridor`
-   intersects the disabled polygons receive a
-   new `PathRequest` to trigger a repath.
-6. When the obstacle entity is despawned or
-   the `NavMeshObstacle` component removed,
-   the system restores the original polygon
-   flags and triggers repaths again.
+1. A gameplay system attaches a `NavMeshObstacle` component to a dynamic entity (barricade, vehicle,
+   etc.).
+2. The `obstacle_carve_system` detects the new component via `Added<NavMeshObstacle>`.
+3. It queries the shared spatial index to find which NavMesh tiles overlap the obstacle's transform
+   and shape.
+4. Overlapping polygons have their flags set to `DISABLED`.
+5. Agents whose `PathResult.corridor` intersects the disabled polygons receive a new `PathRequest`
+   to trigger a repath.
+6. When the obstacle entity is despawned or the `NavMeshObstacle` component removed, the system
+   restores the original polygon flags and triggers repaths again.
 
 ### Tile Rebuild Lifecycle
 
-1. An event source (destruction, terrain
-   deformation, structure placement) emits a
-   `NavMeshInvalidation` event with the
-   affected AABB.
-2. The `rebuild_system` reads the event and
-   computes which tile coordinates overlap the
-   dirty bounds.
-3. For each affected tile, it counts active
-   agents with paths through the tile to
-   compute rebuild priority.
-4. The `NavMeshRebuilder` enqueues the tiles.
-   If a tile is already queued, the dirty
-   bounds are merged.
-5. Each frame, `NavMeshRebuilder.tick()`
-   dispatches up to `max_concurrent` rebuild
-   tasks to the thread pool.
-6. The tiles are marked `Pending` in the
-   `NavMeshTileMap`. Agents continue to query
-   the stale tile data as a fallback.
-7. When a background task completes, the
-   rebuilt tile is swapped in atomically at
-   the next sync point via
-   `tile_map.swap_tile()`.
-8. Agents whose corridors crossed the rebuilt
-   tile receive a `PathRequest` for repath.
+1. An event source (destruction, terrain deformation, structure placement) emits a
+   `NavMeshInvalidation` event with the affected AABB.
+2. The `rebuild_system` reads the event and computes which tile coordinates overlap the dirty
+   bounds.
+3. For each affected tile, it counts active agents with paths through the tile to compute rebuild
+   priority.
+4. The `NavMeshRebuilder` enqueues the tiles. If a tile is already queued, the dirty bounds are
+   merged.
+5. Each frame, `NavMeshRebuilder.tick()` dispatches up to `max_concurrent` rebuild tasks to the
+   thread pool.
+6. The tiles are marked `Pending` in the `NavMeshTileMap`. Agents continue to query the stale tile
+   data as a fallback.
+7. When a background task completes, the rebuilt tile is swapped in atomically at the next sync
+   point via `tile_map.swap_tile()`.
+8. Agents whose corridors crossed the rebuilt tile receive a `PathRequest` for repath.
 
 ### Tile Streaming Lifecycle
 
 1. The `tile_streaming_system` runs each frame.
-2. It computes the set of tile coordinates
-   within `preload_radius` of any active
-   `NavMeshAgent`.
-3. Tiles entering the radius are loaded via
-   async I/O through the `IoReactor`.
-4. Tiles leaving the radius (and not
-   referenced by any agent's corridor) are
-   unloaded from the `NavMeshTileMap`.
-5. The `ClusterGraph` is updated for any
-   newly loaded or unloaded tiles.
+2. It computes the set of tile coordinates within `preload_radius` of any active `NavMeshAgent`.
+3. Tiles entering the radius are loaded via async I/O through the `IoReactor`.
+4. Tiles leaving the radius (and not referenced by any agent's corridor) are unloaded from the
+   `NavMeshTileMap`.
+5. The `ClusterGraph` is updated for any newly loaded or unloaded tiles.
 
 ## Platform Considerations
 
@@ -1537,18 +1491,13 @@ pub fn navmesh_debug_system(
 
 ### Threading Model
 
-All pathfinding queries execute within a
-`pool.scope()` call, enabling borrowed access
-to the `NavMeshTileMap` without `Arc` overhead.
-Background tile generation uses `pool.spawn()`
-with `'static` data cloned from the ECS world.
+All pathfinding queries execute within a `pool.scope()` call, enabling borrowed access to the
+`NavMeshTileMap` without `Arc` overhead. Background tile generation uses `pool.spawn()` with
+`'static` data cloned from the ECS world.
 
-On macOS, background tile generation dispatches
-to GCD queues through the thread pool's
-platform abstraction. Fibers are available for
-deep-recursion A* searches on very large
-NavMeshes, but the default path is async-friendly
-stack-local search state.
+On macOS, background tile generation dispatches to GCD queues through the thread pool's platform
+abstraction. Fibers are available for deep-recursion A* searches on very large NavMeshes, but the
+default path is async-friendly stack-local search state.
 
 ### Memory Budget
 
@@ -1631,54 +1580,30 @@ stack-local search state.
 
 ## Open Questions
 
-1. **Voxelization library.** Should we
-   implement Recast-style voxelization from
-   scratch in Rust, or wrap an existing C
-   library (e.g., Recast/Detour) via
-   bindgen? Pure Rust gives us memory safety
-   and no FFI overhead but requires
-   significant implementation effort.
+1. **Voxelization library.** Should we implement Recast-style voxelization from scratch in Rust, or
+   wrap an existing C library (e.g., Recast/Detour) via bindgen? Pure Rust gives us memory safety
+   and no FFI overhead but requires significant implementation effort.
 
-2. **Tile size vs. world chunk size.** The
-   tile size must match or subdivide the
-   world streaming chunk size. The optimal
-   tile size depends on agent density, path
-   length distribution, and memory budget.
-   Needs profiling with representative
-   content.
+2. **Tile size vs. world chunk size.** The tile size must match or subdivide the world streaming
+   chunk size. The optimal tile size depends on agent density, path length distribution, and memory
+   budget. Needs profiling with representative content.
 
-3. **HPA* cluster granularity.** One cluster
-   per tile is the simplest mapping, but
-   very large tiles may benefit from
-   sub-tile clusters. Need to determine if
-   tile-level granularity provides
-   sufficient path quality for all game
-   scenarios.
+3. **HPA* cluster granularity.** One cluster per tile is the simplest mapping, but very large tiles
+   may benefit from sub-tile clusters. Need to determine if tile-level granularity provides
+   sufficient path quality for all game scenarios.
 
-4. **Off-mesh link auto-detection.** F-7.1.11
-   requires auto-generation of links for
-   stairs and ladders. The detection
-   heuristic (height differential, surface
-   angle, proximity) needs design iteration
-   with real content.
+4. **Off-mesh link auto-detection.** F-7.1.11 requires auto-generation of links for stairs and
+   ladders. The detection heuristic (height differential, surface angle, proximity) needs design
+   iteration with real content.
 
-5. **Fiber vs. async for deep A*.** Very long
-   A* searches (1000+ node expansions) may
-   benefit from fiber execution to avoid
-   deep async state machines. Need to
-   benchmark both approaches and determine
-   the crossover point.
+5. **Fiber vs. async for deep A*.** Very long A* searches (1000+ node expansions) may benefit from
+   fiber execution to avoid deep async state machines. Need to benchmark both approaches and
+   determine the crossover point.
 
-6. **NavMesh compression for streaming.**
-   Tile data may benefit from compression
-   (quantized vertices, delta-encoded
-   indices) to reduce I/O bandwidth and
-   memory footprint, especially on mobile.
+6. **NavMesh compression for streaming.** Tile data may benefit from compression (quantized
+   vertices, delta-encoded indices) to reduce I/O bandwidth and memory footprint, especially on
+   mobile.
 
-7. **Multi-floor buildings.** Overlapping
-   NavMesh regions at different heights
-   (multi-story buildings) require careful
-   layer management to avoid ambiguity.
-   Current design uses a single heightfield
-   per tile; a stacked-layer approach may
-   be needed.
+7. **Multi-floor buildings.** Overlapping NavMesh regions at different heights (multi-story
+   buildings) require careful layer management to avoid ambiguity. Current design uses a single
+   heightfield per tile; a stacked-layer approach may be needed.

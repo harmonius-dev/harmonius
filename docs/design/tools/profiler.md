@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -20,32 +20,22 @@
 
 ## Overview
 
-The profiling subsystem provides instrumentation,
-collection, visualization, and remote streaming of
-performance data across CPU, GPU, memory, network,
-and ECS systems. All instrumentation uses lock-free
-data structures to keep measurement overhead below
-1% of frame time at 300+ FPS.
+The profiling subsystem provides instrumentation, collection, visualization, and remote streaming of
+performance data across CPU, GPU, memory, network, and ECS systems. All instrumentation uses
+lock-free data structures to keep measurement overhead below 1% of frame time at 300+ FPS.
 
 Key principles:
 
-- **Lock-free instrumentation.** All recording paths
-  use per-thread ring buffers with atomic operations.
-  No mutexes in the hot path.
-- **100% ECS-based.** Profiler state (frame captures,
-  snapshots, overlays) is stored as ECS components on
-  profiler entities. Visualization systems query these
-  components.
-- **Controlled I/O.** Remote streaming and CSV export
-  use the `IoReactor` async I/O path. No stdlib file
-  I/O.
-- **Static dispatch.** Platform-specific backends are
-  selected at compile time via `cfg` attributes. No
-  trait objects for instrumentation.
-- **< 1% overhead.** All instrumentation paths are
-  designed for sub-microsecond per-event cost. The
-  profiler must not perturb the system under
-  measurement.
+- **Lock-free instrumentation.** All recording paths use per-thread ring buffers with atomic
+  operations. No mutexes in the hot path.
+- **100% ECS-based.** Profiler state (frame captures, snapshots, overlays) is stored as ECS
+  components on profiler entities. Visualization systems query these components.
+- **Controlled I/O.** Remote streaming and CSV export use the `IoReactor` async I/O path. No stdlib
+  file I/O.
+- **Static dispatch.** Platform-specific backends are selected at compile time via `cfg` attributes.
+  No trait objects for instrumentation.
+- **< 1% overhead.** All instrumentation paths are designed for sub-microsecond per-event cost. The
+  profiler must not perturb the system under measurement.
 
 ## Architecture
 
@@ -123,7 +113,7 @@ graph TD
     NA -.-> NET
 ```
 
-```
+```text
 harmonius_profiler/
 ├── instrument/
 │   ├── cpu_scope.rs       # CpuScope, begin/end
@@ -1182,50 +1172,34 @@ pub enum DecodeError {
 
 ### Frame Profiling Lifecycle
 
-1. Each worker thread owns a `ProfileRingBuffer`.
-   Systems call `profile_scope!("name")` which
+1. Each worker thread owns a `ProfileRingBuffer`. Systems call `profile_scope!("name")` which
    creates a `CpuScopeGuard`.
-2. On scope entry, the TSC is read (~10 ns). On
-   scope exit, the TSC is read again and a
-   `CpuEvent` is pushed to the ring buffer (atomic,
-   lock-free).
-3. At the frame boundary, `FrameCollector::collect_frame()`
-   drains all per-thread ring buffers and reads
-   resolved GPU timestamp queries.
-4. Events are sorted by timestamp and assembled
-   into a `FrameCapture`.
-5. The CPU timeline, flame graph, GPU timeline,
-   and stat overlays read from the capture.
+2. On scope entry, the TSC is read (~10 ns). On scope exit, the TSC is read again and a `CpuEvent`
+   is pushed to the ring buffer (atomic, lock-free).
+3. At the frame boundary, `FrameCollector::collect_frame()` drains all per-thread ring buffers and
+   reads resolved GPU timestamp queries.
+4. Events are sorted by timestamp and assembled into a `FrameCapture`.
+5. The CPU timeline, flame graph, GPU timeline, and stat overlays read from the capture.
 
 ### Memory Tracking Pipeline
 
-1. The global allocator is hooked to call
-   `MemAllocTracker::record_alloc()` on every
-   allocation and `record_dealloc()` on every free.
-2. Each allocation records its size, subsystem tag,
-   asset type, and call stack.
-3. `take_snapshot()` captures all live allocations at
-   a point in time.
-4. `MemorySnapshot::diff()` compares two snapshots to
-   find leaks (allocations in the later snapshot not
-   present in the earlier one).
-5. The treemap view groups allocations by subsystem or
-   asset type for interactive exploration.
+1. The global allocator is hooked to call `MemAllocTracker::record_alloc()` on every allocation and
+   `record_dealloc()` on every free.
+2. Each allocation records its size, subsystem tag, asset type, and call stack.
+3. `take_snapshot()` captures all live allocations at a point in time.
+4. `MemorySnapshot::diff()` compares two snapshots to find leaks (allocations in the later snapshot
+   not present in the earlier one).
+5. The treemap view groups allocations by subsystem or asset type for interactive exploration.
 
 ### Remote Profiling Pipeline
 
-1. The target runs a `RemoteServer` that listens
-   on a TCP port.
+1. The target runs a `RemoteServer` that listens on a TCP port.
 2. The editor's `RemoteClient` connects to the target.
-3. Each frame, the server encodes the `FrameCapture`
-   with `BinaryProtocol::encode()` (varint compressed)
-   and writes it via `IoReactor::write()`.
-4. The client reads and decodes frame data via
-   `IoReactor::read()`.
-5. All viewer widgets display remote data identically
-   to local data.
-6. `CaptureGranularity` controls how much data is sent
-   to keep bandwidth under 10 Mbps.
+3. Each frame, the server encodes the `FrameCapture` with `BinaryProtocol::encode()` (varint
+   compressed) and writes it via `IoReactor::write()`.
+4. The client reads and decodes frame data via `IoReactor::read()`.
+5. All viewer widgets display remote data identically to local data.
+6. `CaptureGranularity` controls how much data is sent to keep bandwidth under 10 Mbps.
 
 ## Platform Considerations
 
@@ -1239,10 +1213,8 @@ pub enum DecodeError {
 | Remote transport | TCP via IOCP | TCP via GCD | TCP via io_uring |
 | Signpost compat | N/A | `os_signpost_emit_with_type` | N/A |
 
-All timestamps are normalized to nanoseconds using
-per-platform frequency calibration. TSC frequency is
-read once at startup via `cpuid` (x86) or
-`mach_timebase_info` (Apple Silicon).
+All timestamps are normalized to nanoseconds using per-platform frequency calibration. TSC frequency
+is read once at startup via `cpuid` (x86) or `mach_timebase_info` (Apple Silicon).
 
 ### Overhead Budget
 
@@ -1255,8 +1227,7 @@ read once at startup via `cpuid` (x86) or
 | Alloc record | < 50 ns | Lock-free + optional stack capture |
 | Stack capture (16 frames) | < 1 us | Platform-specific unwinder |
 
-At 300 FPS with 1000 CPU events per frame, total
-overhead is ~20 us per frame out of 3.3 ms budget
+At 300 FPS with 1000 CPU events per frame, total overhead is ~20 us per frame out of 3.3 ms budget
 (0.6%).
 
 ## Test Plan
@@ -1322,42 +1293,27 @@ overhead is ~20 us per frame out of 3.3 ms budget
 
 ### VFX Budget Integration
 
-The profiler integrates with the VFX particle budget
-system. Particle count, emitter count, and GPU simulation
-time are tracked as profiler counters. Budget overruns
-trigger profiler markers for identification in the
-timeline view.
+The profiler integrates with the VFX particle budget system. Particle count, emitter count, and GPU
+simulation time are tracked as profiler counters. Budget overruns trigger profiler markers for
+identification in the timeline view.
 
 ## Open Questions
 
-1. **TSC vs. platform timer** -- `rdtsc` is the fastest
-   timestamp source (~10 ns) but requires frequency
-   calibration and is not available on Apple Silicon.
-   `mach_absolute_time` is the macOS equivalent.
-   Determine whether to abstract behind a single
-   `Timestamp::now()` or use platform-specific calls.
-2. **Ring buffer capacity** -- Larger buffers reduce
-   drop risk but consume more memory. With 16 workers
-   at 64K events each, total is ~16 MB. Profile
-   typical event rates to size appropriately.
-3. **Stack capture frequency** -- Capturing call stacks
-   on every allocation adds ~1 us overhead per alloc.
-   Consider sampling (every Nth alloc) for high-
-   frequency allocation paths.
-4. **GPU query pool recycling** -- Timestamp queries
-   must not be read until the GPU has resolved them
-   (typically 1-2 frames later). Triple-buffering
-   the query pool is standard; confirm this suffices.
-5. **Remote protocol versioning** -- The binary
-   protocol needs forward/backward compatibility for
-   editor-target version mismatches. Determine whether
-   to use a self-describing format or fixed schema
-   with version negotiation.
-6. **Vendor counter availability** -- AMD, NVIDIA, and
-   Apple expose different counter sets. Determine the
-   common subset to display by default vs. vendor-
-   specific tabs.
-7. **CI leak detection threshold** -- Zero-tolerance
-   leak detection may produce false positives from
-   intentional caches. Define a configurable allowlist
-   or byte threshold for CI automation.
+1. **TSC vs. platform timer** -- `rdtsc` is the fastest timestamp source (~10 ns) but requires
+   frequency calibration and is not available on Apple Silicon. `mach_absolute_time` is the macOS
+   equivalent. Determine whether to abstract behind a single `Timestamp::now()` or use
+   platform-specific calls.
+2. **Ring buffer capacity** -- Larger buffers reduce drop risk but consume more memory. With 16
+   workers at 64K events each, total is ~16 MB. Profile typical event rates to size appropriately.
+3. **Stack capture frequency** -- Capturing call stacks on every allocation adds ~1 us overhead per
+   alloc. Consider sampling (every Nth alloc) for high- frequency allocation paths.
+4. **GPU query pool recycling** -- Timestamp queries must not be read until the GPU has resolved
+   them (typically 1-2 frames later). Triple-buffering the query pool is standard; confirm this
+   suffices.
+5. **Remote protocol versioning** -- The binary protocol needs forward/backward compatibility for
+   editor-target version mismatches. Determine whether to use a self-describing format or fixed
+   schema with version negotiation.
+6. **Vendor counter availability** -- AMD, NVIDIA, and Apple expose different counter sets.
+   Determine the common subset to display by default vs. vendor- specific tabs.
+7. **CI leak detection threshold** -- Zero-tolerance leak detection may produce false positives from
+   intentional caches. Define a configurable allowlist or byte threshold for CI automation.

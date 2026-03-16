@@ -4,34 +4,29 @@
 
 ### R-4.8.1 ECS SPH Fluid Entities
 
-Each SPH fluid instance **SHALL** be an ECS entity with a
-`FluidVolume` component (solver type SPH, domain bounds,
-viscosity, surface tension) and a `FluidParticleBuffer`
-component storing particle positions and velocities as a
-GPU buffer resource. The `SPHSystem` **SHALL** evaluate
-density and pressure kernels on GPU compute.
+Each SPH fluid instance **SHALL** be an ECS entity with a `FluidVolume` component (solver type SPH,
+domain bounds, viscosity, surface tension) and a `FluidParticleBuffer` component storing particle
+positions and velocities as a GPU buffer resource. The `SPHSystem` **SHALL** evaluate density and
+pressure kernels on GPU compute.
 
 - **Derived from:**
   [F-4.8.1](../../features/physics/fluid-simulation.md)
-- **Rationale:** GPU-accelerated SPH is required for
-  visually convincing fluid at interactive frame rates.
-- **Verification:** Initialize a 1000-particle SPH volume
-  at rest density. Simulate 500 ticks under gravity.
-  Assert no particle density deviates from rest by more
-  than 5%.
+- **Rationale:** GPU-accelerated SPH is required for visually convincing fluid at interactive frame
+  rates.
+- **Verification:** Initialize a 1000-particle SPH volume at rest density. Simulate 500 ticks under
+  gravity. Assert no particle density deviates from rest by more than 5%.
 
 ### R-4.8.1a SPH Particle Budget
 
-SPH simulation **SHALL** support up to 50,000 active
-particles per `FluidVolume` while completing its step
-within 4 ms on minimum-spec hardware (GPU compute).
+SPH simulation **SHALL** support up to 50,000 active particles per `FluidVolume` while completing
+its step within 4 ms on minimum-spec hardware (GPU compute).
 
 - **Derived from:**
   [F-4.8.1](../../features/physics/fluid-simulation.md)
-- **Rationale:** Visual fluid quality scales with particle
-  density; the budget balances quality with frame-time.
-- **Verification:** Benchmark: simulate 50,000 particles.
-  Measure GPU compute time. Assert completion within 4 ms.
+- **Rationale:** Visual fluid quality scales with particle density; the budget balances quality with
+  frame-time.
+- **Verification:** Benchmark: simulate 50,000 particles. Measure GPU compute time. Assert
+  completion within 4 ms.
 
 ---
 
@@ -79,20 +74,16 @@ GPU-accelerated.
 
 ### R-4.8.2 FLIP/PIC Hybrid Solver
 
-The engine **SHALL** support FLIP/PIC fluid entities with
-`FluidVolume`, `FluidParticleBuffer`, and `FluidGrid`
-components. The `FLIPSystem` **SHALL** transfer particle
-velocities to the grid, run pressure projection, and
-update particles from corrected grid velocities.
+The engine **SHALL** support FLIP/PIC fluid entities with `FluidVolume`, `FluidParticleBuffer`, and
+`FluidGrid` components. The `FLIPSystem` **SHALL** transfer particle velocities to the grid, run
+pressure projection, and update particles from corrected grid velocities.
 
 - **Derived from:**
   [F-4.8.2](../../features/physics/fluid-simulation.md)
-- **Rationale:** FLIP/PIC combines grid stability with
-  particle detail preservation, enabling large-scale
-  flooding and river flow.
-- **Verification:** Initialize FLIP/PIC fluid in a sealed
-  box. Simulate 5 seconds with no external forces. Assert
-  kinetic energy loss does not exceed 10% per second.
+- **Rationale:** FLIP/PIC combines grid stability with particle detail preservation, enabling
+  large-scale flooding and river flow.
+- **Verification:** Initialize FLIP/PIC fluid in a sealed box. Simulate 5 seconds with no external
+  forces. Assert kinetic energy loss does not exceed 10% per second.
 
 ---
 
@@ -130,20 +121,16 @@ momentum, **so that** large-scale water scenarios are immersive.
 
 ### R-4.8.3 Eulerian Grid Solver
 
-The engine **SHALL** support Eulerian fluid entities with
-`FluidVolume` (solver type Eulerian) and `FluidGrid`
-components. The `EulerianSystem` **SHALL** compute velocity
-advection, pressure projection, and boundary enforcement
-on the grid, producing a divergence-free velocity field.
+The engine **SHALL** support Eulerian fluid entities with `FluidVolume` (solver type Eulerian) and
+`FluidGrid` components. The `EulerianSystem` **SHALL** compute velocity advection, pressure
+projection, and boundary enforcement on the grid, producing a divergence-free velocity field.
 
 - **Derived from:**
   [F-4.8.3](../../features/physics/fluid-simulation.md)
-- **Rationale:** Grid-based methods are ideal for bounded
-  volumes (lakes, harbors) where stable pressure
-  projection is more important than free-surface detail.
-- **Verification:** Initialize a 64x64x64 grid with a
-  known velocity field. Run pressure projection. Assert
-  residual divergence is below 1e-4.
+- **Rationale:** Grid-based methods are ideal for bounded volumes (lakes, harbors) where stable
+  pressure projection is more important than free-surface detail.
+- **Verification:** Initialize a 64x64x64 grid with a known velocity field. Run pressure projection.
+  Assert residual divergence is below 1e-4.
 
 ---
 
@@ -155,8 +142,8 @@ grid-based simulation.
 
 ## US-4.8.3.2 Configure Grid Resolution in Editor
 
-**As a** designer (P-5), **I want to** set grid resolution per Eulerian volume in the editor, **so
-that** simulation quality matches the scene's visual importance.
+**As a** designer (P-5), **I want to** set grid resolution per Eulerian volume in the editor,
+**so that** simulation quality matches the scene's visual importance.
 
 ## US-4.8.3.3 Verify Divergence-Free Velocity Field
 
@@ -186,33 +173,26 @@ configurable boundaries, **so that** bounded water is part of level design.
 
 ### R-4.8.4 Watertight Surface Mesh Reconstruction
 
-The `SurfaceReconstructionSystem` **SHALL** reconstruct a
-watertight triangle mesh from `FluidParticleBuffer`
-data using marching cubes or a screen-space approach and
-write it to a `FluidRenderer` component for the rendering
-pipeline. The mesh **SHALL** have no boundary edges and
+The `SurfaceReconstructionSystem` **SHALL** reconstruct a watertight triangle mesh from
+`FluidParticleBuffer` data using marching cubes or a screen-space approach and write it to a
+`FluidRenderer` component for the rendering pipeline. The mesh **SHALL** have no boundary edges and
 correct normals.
 
 - **Derived from:**
   [F-4.8.4](../../features/physics/fluid-simulation.md)
-- **Rationale:** Particles alone cannot be rendered as a
-  continuous fluid surface; reconstruction bridges
-  simulation to rendering.
-- **Verification:** Reconstruct a surface from 10,000
-  particles. Assert the mesh is watertight (no boundary
-  edges) with correct normals.
+- **Rationale:** Particles alone cannot be rendered as a continuous fluid surface; reconstruction
+  bridges simulation to rendering.
+- **Verification:** Reconstruct a surface from 10,000 particles. Assert the mesh is watertight (no
+  boundary edges) with correct normals.
 
 ### R-4.8.4a Surface Reconstruction Budget
 
-Surface reconstruction **SHALL** complete within 4 ms for
-10,000 particles.
+Surface reconstruction **SHALL** complete within 4 ms for 10,000 particles.
 
 - **Derived from:**
   [F-4.8.4](../../features/physics/fluid-simulation.md)
-- **Rationale:** Reconstruction runs every frame; it must
-  fit within the rendering budget.
-- **Verification:** Benchmark: reconstruct from 10,000
-  particles. Assert completion within 4 ms.
+- **Rationale:** Reconstruction runs every frame; it must fit within the rendering budget.
+- **Verification:** Benchmark: reconstruct from 10,000 particles. Assert completion within 4 ms.
 
 ---
 
@@ -235,8 +215,8 @@ completion within 4ms, **so that** reconstruction fits within the frame budget.
 ## US-4.8.4.4 Implement Surface Reconstruction System
 
 **As an** engine developer (P-26), **I want to** implement `SurfaceReconstructionSystem` using
-marching cubes or screen-space approach to produce watertight meshes with smooth normals, **so
-that** fluid particles can be rendered as a continuous surface.
+marching cubes or screen-space approach to produce watertight meshes with smooth normals,
+**so that** fluid particles can be rendered as a continuous surface.
 
 ## US-4.8.4.5 Experience Beautiful Water Surfaces
 
@@ -249,33 +229,27 @@ foam effects, **so that** water looks visually stunning.
 
 ### R-4.8.5 FFT and Gerstner Wave Synthesis
 
-The engine **SHALL** support `WaterSurface` entities with
-`WaveConfig` components storing FFT parameters, Gerstner
-wave descriptors, and flow map references. The
-`WaterSurfaceSystem` **SHALL** evaluate wave synthesis and
-produce seamless tiling across streaming zones.
+The engine **SHALL** support `WaterSurface` entities with `WaveConfig` components storing FFT
+parameters, Gerstner wave descriptors, and flow map references. The `WaterSurfaceSystem` **SHALL**
+evaluate wave synthesis and produce seamless tiling across streaming zones.
 
 - **Derived from:**
   [F-4.8.5](../../features/physics/fluid-simulation.md)
-- **Rationale:** Ocean and river surfaces need physically
-  driven wave patterns that tile seamlessly across large
-  areas.
-- **Verification:** Place two adjacent water surface tiles
-  at a zone boundary. Assert maximum displacement
-  difference is below 1 mm at the shared edge.
+- **Rationale:** Ocean and river surfaces need physically driven wave patterns that tile seamlessly
+  across large areas.
+- **Verification:** Place two adjacent water surface tiles at a zone boundary. Assert maximum
+  displacement difference is below 1 mm at the shared edge.
 
 ### R-4.8.5a Water Surface Evaluation Cost
 
-Wave synthesis (FFT + Gerstner) **SHALL** evaluate within
-0.5 ms per frame for a 1 km x 1 km water surface at the
-highest detail LOD.
+Wave synthesis (FFT + Gerstner) **SHALL** evaluate within 0.5 ms per frame for a 1 km x 1 km water
+surface at the highest detail LOD.
 
 - **Derived from:**
   [F-4.8.5](../../features/physics/fluid-simulation.md)
-- **Rationale:** Water surfaces are visible in every
-  outdoor frame; they must evaluate cheaply.
-- **Verification:** Benchmark: evaluate wave synthesis for
-  1 km x 1 km at full LOD. Assert GPU time within 0.5 ms.
+- **Rationale:** Water surfaces are visible in every outdoor frame; they must evaluate cheaply.
+- **Verification:** Benchmark: evaluate wave synthesis for 1 km x 1 km at full LOD. Assert GPU time
+  within 0.5 ms.
 
 ---
 
@@ -324,22 +298,17 @@ level design.
 
 ### R-4.8.6 Automatic Buoyancy and Drag
 
-The `BuoyancySystem` **SHALL** test all `(RigidBody,
-Collider, Transform)` entities against `FluidVolume`
-domains. For overlapping pairs, the system **SHALL** compute
-buoyancy from submerged volume approximation and drag from
-relative velocity, writing results as `ExternalForce`
-components. No special setup **SHALL** be required per
-entity.
+The `BuoyancySystem` **SHALL** test all `(RigidBody, Collider, Transform)` entities against
+`FluidVolume` domains. For overlapping pairs, the system **SHALL** compute buoyancy from submerged
+volume approximation and drag from relative velocity, writing results as `ExternalForce` components.
+No special setup **SHALL** be required per entity.
 
 - **Derived from:**
   [F-4.8.6](../../features/physics/fluid-simulation.md)
-- **Rationale:** Automatic buoyancy from collider overlap
-  means any rigid body can interact with water without
-  designer intervention.
-- **Verification:** Place a body with density equal to the
-  fluid. Simulate 5 seconds. Assert vertical acceleration
-  is below 0.01 m/s^2 (neutral buoyancy).
+- **Rationale:** Automatic buoyancy from collider overlap means any rigid body can interact with
+  water without designer intervention.
+- **Verification:** Place a body with density equal to the fluid. Simulate 5 seconds. Assert
+  vertical acceleration is below 0.01 m/s^2 (neutral buoyancy).
 
 ---
 
@@ -383,37 +352,28 @@ interact with water based on their density.
 
 ### R-4.8.7 Bidirectional Fluid-Rigid Body Interaction
 
-Fluid simulation systems **SHALL** read `RigidBody`,
-`Velocity`, and `Collider` components on nearby entities
-to apply displacement forces into the fluid, while the
-`BuoyancySystem` writes `ExternalForce` components on
-rigid bodies to push them back, producing splashes and
-wakes.
+Fluid simulation systems **SHALL** read `RigidBody`, `Velocity`, and `Collider` components on nearby
+entities to apply displacement forces into the fluid, while the `BuoyancySystem` writes
+`ExternalForce` components on rigid bodies to push them back, producing splashes and wakes.
 
 - **Derived from:**
   [F-4.8.7](../../features/physics/fluid-simulation.md)
-- **Rationale:** One-way coupling produces lifeless water;
-  two-way coupling creates splashes and wakes that make
-  water interactions feel physical.
-- **Verification:** Drop a 10 kg sphere into resting SPH
-  at 5 m/s. Assert peak particle displacement is at least
-  10x rest spacing. Assert the sphere decelerates
-  consistent with fluid reaction forces.
+- **Rationale:** One-way coupling produces lifeless water; two-way coupling creates splashes and
+  wakes that make water interactions feel physical.
+- **Verification:** Drop a 10 kg sphere into resting SPH at 5 m/s. Assert peak particle displacement
+  is at least 10x rest spacing. Assert the sphere decelerates consistent with fluid reaction forces.
 
 ### R-4.8.7a Fluid Memory Budget
 
-Total GPU memory for fluid simulation (particle buffers,
-grid data, surface reconstruction meshes) **SHALL NOT**
-exceed 128 MB across all active `FluidVolume` entities.
+Total GPU memory for fluid simulation (particle buffers, grid data, surface reconstruction meshes)
+**SHALL NOT** exceed 128 MB across all active `FluidVolume` entities.
 
 - **Derived from:**
   [F-4.8.7](../../features/physics/fluid-simulation.md)
-- **Rationale:** Fluid competes with rendering, cloth, and
-  other GPU workloads for VRAM; a fixed budget prevents
-  fluid from starving other systems.
-- **Verification:** Create 4 active fluid volumes at max
-  configured counts. Measure total GPU allocation. Assert
-  it does not exceed 128 MB.
+- **Rationale:** Fluid competes with rendering, cloth, and other GPU workloads for VRAM; a fixed
+  budget prevents fluid from starving other systems.
+- **Verification:** Create 4 active fluid volumes at max configured counts. Measure total GPU
+  allocation. Assert it does not exceed 128 MB.
 
 ---
 
@@ -442,13 +402,13 @@ splashes and wakes.
 
 ## US-4.8.7.5 Experience Splashes When Objects Hit Water
 
-**As a** player (P-23), **I want** objects dropping into water to create splashes and ripples, **so
-that** water interactions look physically realistic.
+**As a** player (P-23), **I want** objects dropping into water to create splashes and ripples,
+**so that** water interactions look physically realistic.
 
 ## US-4.8.7.6 Experience Ship Wakes
 
-**As a** player (P-23), **I want** boats moving through water to leave visible wake trails, **so
-that** naval travel feels impactful.
+**As a** player (P-23), **I want** boats moving through water to leave visible wake trails,
+**so that** naval travel feels impactful.
 
 ---
 

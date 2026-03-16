@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/animation/](../../features/animation/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/animation/](../../features/animation/),
 > [requirements/animation/](../../requirements/animation/), and
-> [user-stories/animation/](../../user-stories/animation/). The table
-> below traces design elements to those definitions.
+> [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -33,49 +33,34 @@
 
 ## Overview
 
-The cloth and hair system provides GPU-accelerated
-simulation for character garments and hair. All
-simulation data lives as ECS components. All logic
-runs as ECS systems. No separate simulation world.
+The cloth and hair system provides GPU-accelerated simulation for character garments and hair. All
+simulation data lives as ECS components. All logic runs as ECS systems. No separate simulation
+world.
 
 The design follows four principles:
 
-1. **GPU-first simulation.** Position-based dynamics
-   (PBD) cloth and strand hair simulation run
-   entirely on GPU compute shaders written in HLSL.
-   The CPU prepares inputs (bone transforms, wind
+1. **GPU-first simulation.** Position-based dynamics (PBD) cloth and strand hair simulation run
+   entirely on GPU compute shaders written in HLSL. The CPU prepares inputs (bone transforms, wind
    samples, collision proxies) and dispatches work.
-2. **Physics delegation.** Cloth constraint solving
-   delegates to the physics XPBD solver (F-4.7.1).
-   The animation system owns garment authoring, LOD,
-   and skinned mesh integration.
-3. **Tiered LOD.** Hair transitions through four
-   tiers (strands, clusters, cards, shell) based on
-   camera distance. Cloth scales constraint
-   complexity per platform.
-4. **Shared wind.** Both cloth and hair sample the
-   shared wind field texture from `WindSource` ECS
-   entities, ensuring visual coherence with foliage
-   and particles.
+2. **Physics delegation.** Cloth constraint solving delegates to the physics XPBD solver (F-4.7.1).
+   The animation system owns garment authoring, LOD, and skinned mesh integration.
+3. **Tiered LOD.** Hair transitions through four tiers (strands, clusters, cards, shell) based on
+   camera distance. Cloth scales constraint complexity per platform.
+4. **Shared wind.** Both cloth and hair sample the shared wind field texture from `WindSource` ECS
+   entities, ensuring visual coherence with foliage and particles.
 
 ### Key Abstractions
 
-- **PBD (Position-Based Dynamics)** -- iterative
-  solver that directly moves particle positions to
-  satisfy constraints, then derives velocities.
-  Stable and controllable.
-- **XPBD** -- extended PBD with compliance-based
-  constraint formulation for physically accurate
+- **PBD (Position-Based Dynamics)** -- iterative solver that directly moves particle positions to
+  satisfy constraints, then derives velocities. Stable and controllable.
+- **XPBD** -- extended PBD with compliance-based constraint formulation for physically accurate
   stiffness.
-- **Strand guides** -- small set of simulated hair
-  curves that define overall motion.
-- **Interpolation** -- dense visible strands are
-  interpolated between guide curves.
-- **Card-based hair** -- simplified representation
-  using textured mesh strips with spring-based
+- **Strand guides** -- small set of simulated hair curves that define overall motion.
+- **Interpolation** -- dense visible strands are interpolated between guide curves.
+- **Card-based hair** -- simplified representation using textured mesh strips with spring-based
   secondary motion.
-- **Collision proxy** -- simplified collision shapes
-  (capsules, spheres) derived from skeleton bones.
+- **Collision proxy** -- simplified collision shapes (capsules, spheres) derived from skeleton
+  bones.
 
 ### Performance Targets
 
@@ -149,7 +134,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_animation/
 ├── cloth_hair/
 │   ├── mod.rs              # Re-exports
@@ -348,19 +333,13 @@ stateDiagram-v2
     Shell --> CardBased : dist < T3 - H
 ```
 
-- **FullStrands** -- Desktop only. 64-256 guide
-  strands. Full per-particle simulation.
-- **SimplifiedClusters** -- Reduced guide count.
-  Temporal blend during transition.
-- **CardBased** -- Alpha-blended polygon strips.
-  Spring physics. Primary on mobile/Switch.
-- **Shell** -- Single textured mesh. No simulation.
-  Extreme distance or lowest platforms.
+- **FullStrands** -- Desktop only. 64-256 guide strands. Full per-particle simulation.
+- **SimplifiedClusters** -- Reduced guide count. Temporal blend during transition.
+- **CardBased** -- Alpha-blended polygon strips. Spring physics. Primary on mobile/Switch.
+- **Shell** -- Single textured mesh. No simulation. Extreme distance or lowest platforms.
 
-Hysteresis `H` prevents oscillation at tier
-boundaries. `blend_duration_sec` controls the
-temporal cross-fade between outgoing and incoming
-representations.
+Hysteresis `H` prevents oscillation at tier boundaries. `blend_duration_sec` controls the temporal
+cross-fade between outgoing and incoming representations.
 
 ## API Design
 
@@ -886,85 +865,61 @@ sequenceDiagram
 
 ### Cloth Constraint Solving (GPU)
 
-The PBD solver runs in a single compute dispatch
-with multiple internal iterations. Each iteration
+The PBD solver runs in a single compute dispatch with multiple internal iterations. Each iteration
 applies constraint projections in sequence:
 
-1. **External forces** -- Gravity and wind from the
-   shared wind field texture. Per-particle force
+1. **External forces** -- Gravity and wind from the shared wind field texture. Per-particle force
    accumulation.
-2. **Position prediction** -- Euler integration of
-   velocities to predicted positions.
-3. **Distance constraints** -- Project particle
-   pairs to satisfy rest-length distances. Gauss-
+2. **Position prediction** -- Euler integration of velocities to predicted positions.
+3. **Distance constraints** -- Project particle pairs to satisfy rest-length distances. Gauss-
    Seidel iteration with SOR relaxation.
-4. **Bending constraints** -- Project dihedral
-   angles between triangle pairs to rest angles.
-5. **Collision constraints** -- Project particles
-   outside capsule/convex hull boundaries. Apply
+4. **Bending constraints** -- Project dihedral angles between triangle pairs to rest angles.
+5. **Collision constraints** -- Project particles outside capsule/convex hull boundaries. Apply
    friction response for sticking contacts.
-6. **Self-collision** -- Spatial hash on GPU to
-   detect and resolve cloth-cloth penetration.
-7. **Velocity update** -- Derive velocities from
-   position delta. Apply damping.
+6. **Self-collision** -- Spatial hash on GPU to detect and resolve cloth-cloth penetration.
+7. **Velocity update** -- Derive velocities from position delta. Apply damping.
 
 ### Hair Strand Solving (GPU)
 
-Each guide strand is a chain of particles. The
-solver processes all guide strands in parallel:
+Each guide strand is a chain of particles. The solver processes all guide strands in parallel:
 
-1. **Root attachment** -- First particle pinned to
-   skeleton bone position (updated from skinned
-   mesh binding).
-2. **External forces** -- Gravity plus per-particle
-   aerodynamic drag from wind field texture sample.
-   Drag force = `drag_coefficient * (wind_velocity
+1. **Root attachment** -- First particle pinned to skeleton bone position (updated from skinned mesh
+   binding).
+2. **External forces** -- Gravity plus per-particle aerodynamic drag from wind field texture sample.
+   Drag force =`drag_coefficient * (wind_velocity
    - particle_velocity) * cross_section`.
-3. **Stretch constraints** -- Distance constraints
-   between consecutive particles maintain strand
+3. **Stretch constraints** -- Distance constraints between consecutive particles maintain strand
    length.
-4. **Bend constraints** -- Angle constraints across
-   three consecutive particles maintain strand
+4. **Bend constraints** -- Angle constraints across three consecutive particles maintain strand
    shape.
-5. **Collision** -- Particles projected outside
-   collision capsules attached to skeleton bones.
-6. **Velocity update** -- Derive from position
-   delta with damping.
+5. **Collision** -- Particles projected outside collision capsules attached to skeleton bones.
+6. **Velocity update** -- Derive from position delta with damping.
 
 ### Guide-to-Render Interpolation
 
-Render strands are interpolated from nearby guide
-strands using precomputed skinning weights:
+Render strands are interpolated from nearby guide strands using precomputed skinning weights:
 
-```
+```text
 render_pos[i] = sum(
     weight[j] * guide_pos[nearest_guide[j]]
 ) for j in 0..K
 ```
 
-Where `K` is typically 3-4 nearest guide strands.
-This runs as a separate GPU compute dispatch after
+Where `K` is typically 3-4 nearest guide strands. This runs as a separate GPU compute dispatch after
 guide strand solving completes.
 
 ### Hair Rendering Pipeline
 
-Strand-based hair uses the Marschner BSDF model
-with three reflection lobes:
+Strand-based hair uses the Marschner BSDF model with three reflection lobes:
 
-- **R** -- Specular reflection off the hair
-  cuticle surface.
-- **TT** -- Transmission through the hair fiber
-  (primary highlight).
-- **TRT** -- Transmission-reflection-transmission
-  (secondary colored highlight).
+- **R** -- Specular reflection off the hair cuticle surface.
+- **TT** -- Transmission through the hair fiber (primary highlight).
+- **TRT** -- Transmission-reflection-transmission (secondary colored highlight).
 
-Order-independent transparency (OIT) composites
-overlapping hair strands correctly. The OIT pass
-uses per-pixel linked lists or weighted blended
-OIT depending on platform capability.
+Order-independent transparency (OIT) composites overlapping hair strands correctly. The OIT pass
+uses per-pixel linked lists or weighted blended OIT depending on platform capability.
 
-Card-based hair uses a simplified anisotropic
-Kajiya-Kay specular model with alpha-tested or
+Card-based hair uses a simplified anisotropic Kajiya-Kay specular model with alpha-tested or
 alpha-blended transparency.
 
 ## Platform Considerations
@@ -997,15 +952,11 @@ alpha-blended transparency.
 
 ### Platform-Specific Notes
 
-- **Windows:** D3D12 compute shaders. DXIL
-  compiled from HLSL via DXC.
-- **macOS:** Metal compute shaders. MSL compiled
-  from DXIL via Metal Shader Converter through
-  cxx.rs C++ bridge.
-- **Linux:** Vulkan compute shaders. SPIR-V
-  compiled from HLSL via DXC.
-- **OIT on mobile:** Weighted blended OIT (no
-  per-pixel linked lists). Mobile primarily uses
+- **Windows:** D3D12 compute shaders. DXIL compiled from HLSL via DXC.
+- **macOS:** Metal compute shaders. MSL compiled from DXIL via Metal Shader Converter through cxx.rs
+  C++ bridge.
+- **Linux:** Vulkan compute shaders. SPIR-V compiled from HLSL via DXC.
+- **OIT on mobile:** Weighted blended OIT (no per-pixel linked lists). Mobile primarily uses
   card-based rendering so OIT is rarely needed.
 
 ### Scaling Tiers
@@ -1067,50 +1018,33 @@ alpha-blended transparency.
 
 ### Cloth Ownership Boundary
 
-Animation owns cloth authoring (`ClothGarment`,
-`ClothPanel`), GPU dispatch, and LOD management.
-Physics owns the XPBD constraint solver (see
-[advanced.md](../physics/advanced.md)). The animation
-system schedules cloth simulation by invoking the
-physics solver, then writes results back to vertex
+Animation owns cloth authoring (`ClothGarment`, `ClothPanel`), GPU dispatch, and LOD management.
+Physics owns the XPBD constraint solver (see [advanced.md](../physics/advanced.md)). The animation
+system schedules cloth simulation by invoking the physics solver, then writes results back to vertex
 buffers for rendering.
 
 ### Shared Type References
 
-Distance and bending constraints reference shared
-physics constraint types. Spring-damper evaluation
+Distance and bending constraints reference shared physics constraint types. Spring-damper evaluation
 for card-based hair uses `SpringDamper<T>` (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).
 
 ## Open Questions
 
-1. **Self-collision spatial hash resolution** --
-   GPU spatial hash cell size for cloth
-   self-collision detection. Smaller cells improve
-   accuracy but increase memory and dispatch cost.
-   Needs profiling across garment complexity tiers.
-2. **Guide strand interpolation weight count** --
-   K=3 vs K=4 nearest guides for render strand
-   interpolation. K=4 produces smoother results but
-   increases interpolation dispatch cost by ~33%.
-3. **OIT method selection** -- Per-pixel linked
-   lists produce correct ordering but require
-   atomic UAV operations (slow on some GPUs).
-   Weighted blended OIT is faster but introduces
-   color bleeding. May need runtime selection based
-   on GPU capability.
-4. **Baked animation fallback format** -- Mobile
-   cloth uses baked animation instead of simulation.
-   Needs decision on whether to bake per-vertex
-   position deltas (high memory) or simplified bone-
+1. **Self-collision spatial hash resolution** -- GPU spatial hash cell size for cloth self-collision
+   detection. Smaller cells improve accuracy but increase memory and dispatch cost. Needs profiling
+   across garment complexity tiers.
+2. **Guide strand interpolation weight count** -- K=3 vs K=4 nearest guides for render strand
+   interpolation. K=4 produces smoother results but increases interpolation dispatch cost by ~33%.
+3. **OIT method selection** -- Per-pixel linked lists produce correct ordering but require atomic
+   UAV operations (slow on some GPUs). Weighted blended OIT is faster but introduces color bleeding.
+   May need runtime selection based on GPU capability.
+4. **Baked animation fallback format** -- Mobile cloth uses baked animation instead of simulation.
+   Needs decision on whether to bake per-vertex position deltas (high memory) or simplified bone-
    driven animation (lower fidelity, lower memory).
-5. **Strand width screen-space clamping** -- Very
-   thin strands may alias at certain distances.
-   Minimum screen-space width clamping prevents
-   aliasing but changes visual thickness. Threshold
+5. **Strand width screen-space clamping** -- Very thin strands may alias at certain distances.
+   Minimum screen-space width clamping prevents aliasing but changes visual thickness. Threshold
    needs tuning per resolution tier.
-6. **Cloth panel authoring pipeline** -- The panel-
-   based authoring model (US-9.5.1.2) requires DCC
-   plugin support for defining constraint regions.
-   Integration with Houdini/Maya/Blender plugins
+6. **Cloth panel authoring pipeline** -- The panel- based authoring model (US-9.5.1.2) requires DCC
+   plugin support for defining constraint regions. Integration with Houdini/Maya/Blender plugins
    (F-4.7.1) needs specification.

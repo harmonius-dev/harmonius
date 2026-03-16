@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/core-runtime/](../../features/core-runtime/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/core-runtime/](../../features/core-runtime/),
 > [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table
-> below traces design elements to those definitions.
+> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
+> elements to those definitions.
 
 ### Events & Messaging (F-1.5, R-1.5)
 
@@ -36,36 +36,28 @@
 
 This document defines two tightly coupled subsystems:
 
-1. **Events** -- the typed, double-buffered channel
-   infrastructure through which all ECS systems
-   communicate. Includes observer dispatch, persistent
-   streams, deferred command buffers, reactive queries,
-   and cross-world event bridges.
-2. **Plugins** -- the module registration, dependency
-   resolution, and hot-reload mechanism that assembles
-   the engine from composable units.
+1. **Events** -- the typed, double-buffered channel infrastructure through which all ECS systems
+   communicate. Includes observer dispatch, persistent streams, deferred command buffers, reactive
+   queries, and cross-world event bridges.
+2. **Plugins** -- the module registration, dependency resolution, and hot-reload mechanism that
+   assembles the engine from composable units.
 
-Events and plugins are co-designed because plugins
-register the systems, components, resources, and events
-they contribute. The `Event<T>` channel API is an
-interoperability contract consumed by every domain in
-the engine.
+Events and plugins are co-designed because plugins register the systems, components, resources, and
+events they contribute. The `Event<T>` channel API is an interoperability contract consumed by every
+domain in the engine.
 
 ### Design Principles
 
-- **Double-buffered isolation.** Writers never contend
-  with readers. Buffers swap at frame boundaries.
-- **Static dispatch.** All event channels are
-  monomorphized per type `T`. No trait objects on the
+- **Double-buffered isolation.** Writers never contend with readers. Buffers swap at frame
+  boundaries.
+- **Static dispatch.** All event channels are monomorphized per type `T`. No trait objects on the
   hot path.
-- **Deterministic ordering.** Observer dispatch and
-  command buffer flush follow system execution order.
-  Identical inputs produce identical outputs.
-- **Topological plugin initialization.** Declared
-  dependencies drive load order. No implicit ordering
-  from registration call sequence.
-- **100% ECS-based.** Events, resources, and observers
-  are all ECS primitives. No parallel data stores.
+- **Deterministic ordering.** Observer dispatch and command buffer flush follow system execution
+  order. Identical inputs produce identical outputs.
+- **Topological plugin initialization.** Declared dependencies drive load order. No implicit
+  ordering from registration call sequence.
+- **100% ECS-based.** Events, resources, and observers are all ECS primitives. No parallel data
+  stores.
 
 ## Architecture
 
@@ -126,7 +118,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_core/
 ├── events/
 │   ├── channel.rs       # EventChannel<T>, double
@@ -350,10 +342,8 @@ classDiagram
 
 ### Event Channel (F-1.5.1, R-1.5.1)
 
-The core abstraction. One channel per event type `T`.
-Writers append to the back buffer; readers iterate the
-front buffer. Buffers swap at the scheduler's frame
-boundary.
+The core abstraction. One channel per event type `T`. Writers append to the back buffer; readers
+iterate the front buffer. Buffers swap at the scheduler's frame boundary.
 
 ```rust
 /// Marker trait for event types. Derive macro
@@ -400,10 +390,8 @@ impl<T: Event> EventChannel<T> {
 
 ### EventWriter (F-1.5.1)
 
-System parameter for writing events. The scheduler
-grants `&mut EventChannel<T>` access through the
-standard dependency analysis — only one writer system
-runs at a time per channel.
+System parameter for writing events. The scheduler grants `&mut EventChannel<T>` access through the
+standard dependency analysis — only one writer system runs at a time per channel.
 
 ```rust
 /// System parameter: mutable access to the back
@@ -448,10 +436,8 @@ impl<'w, T: Event> EventWriter<'w, T> {
 
 ### EventReader (F-1.5.1)
 
-System parameter for reading events. Multiple readers
-can read the front buffer concurrently with no
-contention — the front buffer is immutable during the
-frame.
+System parameter for reading events. Multiple readers can read the front buffer concurrently with no
+contention — the front buffer is immutable during the frame.
 
 ```rust
 /// System parameter: shared access to the front
@@ -483,9 +469,8 @@ impl<'w, T: Event> EventReader<'w, T> {
 
 ### Persistent Event Streams (F-1.5.2, R-1.5.2)
 
-For systems running at different tick rates. Events
-are retained in a ring buffer across frames. Each
-reader owns an independent cursor.
+For systems running at different tick rates. Events are retained in a ring buffer across frames.
+Each reader owns an independent cursor.
 
 ```rust
 /// Ring-buffer-backed event stream that retains
@@ -568,11 +553,9 @@ impl StreamConfig {
 
 ### Component Lifecycle Observers (F-1.5.3, R-1.5.3)
 
-Observers fire at sync points during command buffer
-application. They differ from component hooks
-(F-1.1.9) in that observers match multi-term queries
-and are deferred, making them safe for structural
-changes.
+Observers fire at sync points during command buffer application. They differ from component hooks
+(F-1.1.9) in that observers match multi-term queries and are deferred, making them safe for
+structural changes.
 
 ```rust
 /// Events that trigger component lifecycle
@@ -668,9 +651,8 @@ pub struct ObserverId(u64);
 
 ### Reactive Queries (F-1.5.5, R-1.5.5)
 
-Archetype-level change subscriptions that allow the
-scheduler to skip systems whose query results have
-not changed since the last run.
+Archetype-level change subscriptions that allow the scheduler to skip systems whose query results
+have not changed since the last run.
 
 ```rust
 /// Marker for queries that participate in reactive
@@ -718,20 +700,15 @@ pub fn run_if_changed<Q: Query>(
 
 ### Typed Singleton Resources (F-1.5.6, R-1.5.6)
 
-World resources are typed singletons that participate
-in the scheduler's dependency analysis. Defined in
-the ECS (F-1.1.23) and extended here for inter-system
-communication patterns.
+World resources are typed singletons that participate in the scheduler's dependency analysis.
+Defined in the ECS (F-1.1.23) and extended here for inter-system communication patterns.
 
-`Resource`, `Res<T>`, `ResMut<T>` are defined
-canonically in [ecs.md](ecs.md). The event system
-consumes these types for resource-driven event
-dispatch and reactive queries.
+`Resource`, `Res<T>`, `ResMut<T>` are defined canonically in [ecs.md](ecs.md). The event system
+consumes these types for resource-driven event dispatch and reactive queries.
 
 ### Cross-World Event Bridges (F-1.5.7, R-1.5.7)
 
-Route events between independent ECS worlds with
-optional filtering and transformation.
+Route events between independent ECS worlds with optional filtering and transformation.
 
 ```rust
 // WorldId is defined in [ecs.md](ecs.md).
@@ -802,9 +779,8 @@ impl<T: Event> EventBridge<T> {
 
 ### Plugin Trait (F-1.6.1, R-1.6.1)
 
-The core abstraction for modular engine composition.
-Each plugin declares what it contributes and what it
-depends on.
+The core abstraction for modular engine composition. Each plugin declares what it contributes and
+what it depends on.
 
 ```rust
 /// A plugin is a self-contained module that
@@ -846,9 +822,8 @@ pub trait Plugin: Send + Sync + 'static {
 
 ### Plugin Groups (F-1.6.2, R-1.6.2)
 
-Bundle multiple plugins for convenient registration.
-Individual plugins can be disabled before the group
-is added.
+Bundle multiple plugins for convenient registration. Individual plugins can be disabled before the
+group is added.
 
 ```rust
 /// A named group of plugins registered together.
@@ -923,8 +898,7 @@ impl PluginGroup for ServerPlugins {
 
 ### App Builder (F-1.6.1)
 
-The central registration point. Plugins call methods
-on `App` in their `build()` implementation.
+The central registration point. Plugins call methods on `App` in their `build()` implementation.
 
 ```rust
 /// The application builder. Accumulates plugin
@@ -1001,8 +975,7 @@ pub struct BuiltApp {
 
 ### Dependency Graph (F-1.6.3, F-1.6.4, R-1.6.3, R-1.6.4)
 
-Validates plugin dependencies and resolves load order
-via topological sort.
+Validates plugin dependencies and resolves load order via topological sort.
 
 ```rust
 /// Directed graph of plugin dependencies.
@@ -1063,8 +1036,7 @@ pub enum PluginGraphError {
 
 ### Capability Negotiation (F-1.6.7, R-1.6.7)
 
-Named feature flags with versioning for runtime
-branching on optional functionality.
+Named feature flags with versioning for runtime branching on optional functionality.
 
 ```rust
 /// A named capability with a semantic version.
@@ -1131,8 +1103,7 @@ impl CapabilityRegistry {
 
 ### Semantic Versioning and ABI Hash (F-1.6.6, R-1.6.6)
 
-Prevents loading dynamically-linked plugins compiled
-against incompatible engine versions.
+Prevents loading dynamically-linked plugins compiled against incompatible engine versions.
 
 ```rust
 /// ABI hash derived from the plugin's public
@@ -1165,8 +1136,8 @@ impl AbiHash {
 
 ### Hot Reload Manager (F-1.6.5, R-1.6.5)
 
-Development-only dynamic library reload with state
-preservation through serialization and reflection.
+Development-only dynamic library reload with state preservation through serialization and
+reflection.
 
 ```rust
 /// Handle to a dynamically loaded shared library.
@@ -1305,31 +1276,22 @@ pub enum EventError {
 
 ### Frame Lifecycle with Events
 
-The scheduler owns the event channels and drives the
-double-buffer swap. The sequence within a single frame
-is:
+The scheduler owns the event channels and drives the double-buffer swap. The sequence within a
+single frame is:
 
-1. **Swap event buffers.** All `EventChannel<T>`
-   instances swap front/back. Previous frame's writes
+1. **Swap event buffers.** All `EventChannel<T>` instances swap front/back. Previous frame's writes
    become this frame's reads.
-2. **Transfer cross-world bridges.** For each
-   `EventBridge`, copy matching events from source
+2. **Transfer cross-world bridges.** For each `EventBridge`, copy matching events from source
    world's front buffer to target world's back buffer.
-3. **Run systems.** Systems read via `EventReader<T>`
-   (front buffer) and write via `EventWriter<T>` (back
-   buffer) concurrently. The scheduler resolves data
-   dependencies — readers run in parallel, writers are
-   serialized per channel.
-4. **Sync point: flush command buffers.** Commands are
-   applied in deterministic system execution order.
-   Structural changes trigger observer notifications.
-5. **Observer dispatch.** Matching observers fire in
-   priority order. Observers may record cascading
+3. **Run systems.** Systems read via `EventReader<T>` (front buffer) and write via `EventWriter<T>`
+   (back buffer) concurrently. The scheduler resolves data dependencies — readers run in parallel,
+   writers are serialized per channel.
+4. **Sync point: flush command buffers.** Commands are applied in deterministic system execution
+   order. Structural changes trigger observer notifications.
+5. **Observer dispatch.** Matching observers fire in priority order. Observers may record cascading
    commands, which are flushed in a secondary pass.
-6. **Reactive query bookkeeping.** Archetype change
-   flags are updated. Systems with `ReactiveQuery` run
-   conditions are marked for skip/run on the next
-   frame.
+6. **Reactive query bookkeeping.** Archetype change flags are updated. Systems with `ReactiveQuery`
+   run conditions are marked for skip/run on the next frame.
 
 ```rust
 // Simplified frame event lifecycle
@@ -1371,10 +1333,9 @@ fn frame_tick(
 
 ### Command Buffer Event Integration
 
-Command buffers can record `send_event` operations
-alongside structural changes. Events sent via command
-buffers are flushed into the back buffer at sync
-points, making them visible in the next frame.
+Command buffers can record `send_event` operations alongside structural changes. Events sent via
+command buffers are flushed into the back buffer at sync points, making them visible in the next
+frame.
 
 ```rust
 impl CommandBuffer {
@@ -1391,16 +1352,12 @@ impl CommandBuffer {
 
 Within a single frame:
 
-1. Events written by system A before system B (in
-   topological order) appear in the back buffer in
+1. Events written by system A before system B (in topological order) appear in the back buffer in
    that order.
-2. Events from command buffers appear after direct
-   writes, in system execution order.
-3. Cross-world bridge transfers happen before any
-   target-world system reads.
-4. Observer-generated events appear in the back buffer
-   and are visible in the next frame (not the current
-   one).
+2. Events from command buffers appear after direct writes, in system execution order.
+3. Cross-world bridge transfers happen before any target-world system reads.
+4. Observer-generated events appear in the back buffer and are visible in the next frame (not the
+   current one).
 
 ## Platform Considerations
 
@@ -1412,8 +1369,7 @@ Within a single frame:
 | macOS | `dlopen` | `dlclose` | `dlsym` |
 | Windows | `LoadLibraryW` | `FreeLibrary` | `GetProcAddress` |
 
-All accessed via `cfg`-gated platform modules. No
-trait objects or dynamic dispatch for platform
+All accessed via `cfg`-gated platform modules. No trait objects or dynamic dispatch for platform
 selection.
 
 ### Persistent Stream Platform Defaults
@@ -1426,26 +1382,19 @@ selection.
 
 ### Event Channel Throughput (R-1.5.1a)
 
-The back buffer uses `Vec<T>` with pre-allocated
-capacity. Write is `Vec::push` — O(1) amortized.
-The flood warning threshold fires a diagnostic at
-50,000 events per channel per frame. The target is
-100,000 events/frame with under 1 ms total write time
-for 64-byte events.
+The back buffer uses `Vec<T>` with pre-allocated capacity. Write is `Vec::push` — O(1) amortized.
+The flood warning threshold fires a diagnostic at 50,000 events per channel per frame. The target is
+100,000 events/frame with under 1 ms total write time for 64-byte events.
 
 ### Threading Integration
 
-- **EventWriter** requires exclusive (`&mut`) access
-  to the channel. The scheduler treats it as a write
-  dependency.
-- **EventReader** requires shared (`&`) access. The
-  scheduler treats it as a read dependency.
-- Multiple readers run in parallel. A writer serializes
-  against all other accessors of the same channel.
-- Async event handlers (from `threading.md`
-  `AsyncEventHandler<E>`) are spawned onto the thread
-  pool when dispatched. They cannot directly write to
-  event channels — they must use command buffers.
+- **EventWriter** requires exclusive (`&mut`) access to the channel. The scheduler treats it as a
+  write dependency.
+- **EventReader** requires shared (`&`) access. The scheduler treats it as a read dependency.
+- Multiple readers run in parallel. A writer serializes against all other accessors of the same
+  channel.
+- Async event handlers (from `threading.md` `AsyncEventHandler<E>`) are spawned onto the thread pool
+  when dispatched. They cannot directly write to event channels — they must use command buffers.
 
 ### Dependencies (Proposed)
 
@@ -1527,42 +1476,27 @@ for 64-byte events.
 
 ## Open Questions
 
-1. **Observer cascading depth limit.** Observers can
-   generate commands that trigger further observers.
-   Should there be a maximum cascade depth to prevent
-   infinite loops? Bevy uses a single-pass cascade.
-   Flecs allows configurable depth. A depth limit of
-   8 with a diagnostic panic at overflow is proposed.
+1. **Observer cascading depth limit.** Observers can generate commands that trigger further
+   observers. Should there be a maximum cascade depth to prevent infinite loops? Bevy uses a
+   single-pass cascade. Flecs allows configurable depth. A depth limit of 8 with a diagnostic panic
+   at overflow is proposed.
 
-2. **Event channel memory reclamation.** The back
-   buffer `Vec<T>` grows to peak frame usage and
-   never shrinks. Should channels reclaim memory after
-   N frames below a threshold? This trades allocation
-   churn against memory waste for bursty event
-   patterns.
+2. **Event channel memory reclamation.** The back buffer `Vec<T>` grows to peak frame usage and
+   never shrinks. Should channels reclaim memory after N frames below a threshold? This trades
+   allocation churn against memory waste for bursty event patterns.
 
-3. **Persistent stream garbage collection.** When all
-   cursors have advanced past a region of the ring
-   buffer, those slots are safe to overwrite. Should
-   the stream track the minimum cursor position to
-   enable eager slot reuse, or rely on the fixed ring
-   capacity?
+3. **Persistent stream garbage collection.** When all cursors have advanced past a region of the
+   ring buffer, those slots are safe to overwrite. Should the stream track the minimum cursor
+   position to enable eager slot reuse, or rely on the fixed ring capacity?
 
-4. **Bridge transfer timing.** Bridges currently
-   transfer after swap but before target-world systems
-   run. For multi-world setups with dependencies
-   between worlds, should bridge transfers be
+4. **Bridge transfer timing.** Bridges currently transfer after swap but before target-world systems
+   run. For multi-world setups with dependencies between worlds, should bridge transfers be
    integrated into the task graph as explicit nodes?
 
-5. **Hot reload on macOS with GCD.** Dynamic library
-   unload with active GCD dispatch blocks referencing
-   symbols in the library is undefined behavior.
-   The proposed mitigation is to drain all pending
-   blocks before `dlclose`, but the timing guarantee
-   needs validation.
+5. **Hot reload on macOS with GCD.** Dynamic library unload with active GCD dispatch blocks
+   referencing symbols in the library is undefined behavior. The proposed mitigation is to drain all
+   pending blocks before `dlclose`, but the timing guarantee needs validation.
 
-6. **Plugin initialization parallelism.** Topological
-   sort produces a total order, but independent
-   branches of the dependency DAG could initialize in
-   parallel. Is the complexity justified for startup-
-   only cost?
+6. **Plugin initialization parallelism.** Topological sort produces a total order, but independent
+   branches of the dependency DAG could initialize in parallel. Is the complexity justified for
+   startup- only cost?

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -19,35 +19,25 @@
 
 ## Overview
 
-The Harmonius Launcher is a standalone application
-that manages engine installations, projects, user
-accounts, and team collaboration setup. It is the
-entry point for all engine interactions.
+The Harmonius Launcher is a standalone application that manages engine installations, projects, user
+accounts, and team collaboration setup. It is the entry point for all engine interactions.
 
 Key responsibilities:
 
-- **Version management** -- install, update, and
-  rollback multiple engine versions side-by-side. Each
-  version is fully isolated.
-- **Project management** -- browse recent projects,
-  create new projects from genre templates, and open
-  projects in the correct engine version.
-- **Auto-upgrade** -- when a project is opened with a
-  newer engine, run versioned migration scripts
+- **Version management** -- install, update, and rollback multiple engine versions side-by-side.
+  Each version is fully isolated.
+- **Project management** -- browse recent projects, create new projects from genre templates, and
+  open projects in the correct engine version.
+- **Auto-upgrade** -- when a project is opened with a newer engine, run versioned migration scripts
   incrementally.
-- **Account management** -- link Git hosting accounts,
-  store credentials in platform keychains, sync
+- **Account management** -- link Git hosting accounts, store credentials in platform keychains, sync
   preferences across machines.
-- **Collaboration setup** -- guided wizard for Git
-  hosting, LFS, collaboration server, team roles, and
-  shared build cache.
+- **Collaboration setup** -- guided wizard for Git hosting, LFS, collaboration server, team roles,
+  and shared build cache.
 
-The launcher is a native application built with the
-engine's own UI framework. All I/O is async through
-the `IoReactor`. All network calls (version checks,
-template downloads, preference sync) use async HTTP
-over the reactor. No stdlib file I/O. Static dispatch
-throughout. Rust stable only.
+The launcher is a native application built with the engine's own UI framework. All I/O is async
+through the `IoReactor`. All network calls (version checks, template downloads, preference sync) use
+async HTTP over the reactor. No stdlib file I/O. Static dispatch throughout. Rust stable only.
 
 ## Architecture
 
@@ -107,7 +97,7 @@ graph TD
 
 ### Crate Layout
 
-```
+```text
 harmonius_launcher/
 ├── main.rs            # LauncherMain entry point
 ├── version/
@@ -988,64 +978,47 @@ pub enum KeychainError {
 
 ### Launcher Startup Sequence
 
-1. **Load preferences** -- read `UserPreferences`
-   from local config file.
-2. **Check launcher update** -- `UpdateManager` queries
-   the version API for a newer launcher. If available,
-   download and apply via the platform-native updater
-   (Sparkle/WinSparkle/AppImage delta).
-3. **Fetch version catalog** -- `VersionManager`
-   queries S3/CloudFront for the latest available engine
-   versions. Compare with installed versions.
-4. **Scan projects** -- `ProjectManager` scans the
-   recent projects list, reads each `.harmonius` file
-   for display metadata.
-5. **Display home screen** -- show recent projects with
-   thumbnails, available updates, and version
+1. **Load preferences** -- read `UserPreferences` from local config file.
+2. **Check launcher update** -- `UpdateManager` queries the version API for a newer launcher. If
+   available, download and apply via the platform-native updater (Sparkle/WinSparkle/AppImage
+   delta).
+3. **Fetch version catalog** -- `VersionManager` queries S3/CloudFront for the latest available
+   engine versions. Compare with installed versions.
+4. **Scan projects** -- `ProjectManager` scans the recent projects list, reads each `.harmonius`
+   file for display metadata.
+5. **Display home screen** -- show recent projects with thumbnails, available updates, and version
    notifications.
 
 ### Project Open Flow
 
-1. User selects a project or double-clicks a
-   `.harmonius` file.
+1. User selects a project or double-clicks a `.harmonius` file.
 2. `ProjectFile::read()` parses the TOML file.
-3. Compare `engine_version` pin to the requested
-   engine version.
-4. If versions differ:
-   a. `MigrationRunner::migrate()` creates a backup.
-   b. Runs incremental migration scripts in sequence.
-   c. Re-cooks assets for the new engine version.
-   d. Migrates deprecated logic graph APIs.
-   e. Updates the `.harmonius` version pin.
-   f. Produces a `MigrationReport`.
-5. Launch the editor binary for the pinned engine
-   version with the project path as an argument.
+3. Compare `engine_version` pin to the requested engine version.
+4. If versions differ: a. `MigrationRunner::migrate()` creates a backup. b. Runs incremental
+   migration scripts in sequence. c. Re-cooks assets for the new engine version. d. Migrates
+   deprecated logic graph APIs. e. Updates the `.harmonius` version pin. f. Produces a
+   `MigrationReport`.
+5. Launch the editor binary for the pinned engine version with the project path as an argument.
 
 ### Preference Sync Flow
 
 1. User changes preferences (theme, keybindings).
-2. `PreferenceSync::upload()` sends the preferences
-   to the cloud collaboration service.
-3. On another machine, `PreferenceSync::download()`
-   retrieves the latest preferences on launcher
+2. `PreferenceSync::upload()` sends the preferences to the cloud collaboration service.
+3. On another machine, `PreferenceSync::download()` retrieves the latest preferences on launcher
    startup.
-4. Conflict resolution: latest-write-wins with a
-   timestamp. No merge -- full preference set is
+4. Conflict resolution: latest-write-wins with a timestamp. No merge -- full preference set is
    atomic.
 
 ### Collaboration Setup Flow
 
 1. `CollabWizard` prompts for Git provider selection.
-2. `validate_auth()` checks the OAuth token stored
-   in `KeychainStore`.
+2. `validate_auth()` checks the OAuth token stored in `KeychainStore`.
 3. User selects LFS storage provider and endpoint.
 4. User enters the collaboration server URL.
 5. `validate_connectivity()` tests network access.
 6. User invites team members with role assignments.
-7. `CollabConfig` is written to the `.harmonius`
-   project file under `[team]`.
-8. New team members cloning the repo inherit the
-   configuration automatically.
+7. `CollabConfig` is written to the `.harmonius` project file under `[team]`.
+8. New team members cloning the repo inherit the configuration automatically.
 
 ## Platform Considerations
 
@@ -1057,8 +1030,7 @@ pub enum KeychainError {
 | Windows | WinSparkle | Appcast XML feed, MSI/EXE download, restart |
 | Linux | AppImage | AppImageUpdate, zsync delta download, binary replace |
 
-All update feeds are served from S3/CloudFront.
-Appcast XML is signed with an Ed25519 key to prevent
+All update feeds are served from S3/CloudFront. Appcast XML is signed with an Ed25519 key to prevent
 tampering.
 
 ### File Association
@@ -1085,9 +1057,8 @@ tampering.
 | Windows | `%LOCALAPPDATA%\Harmonius\Versions\` |
 | Linux | `~/.local/share/harmonius/versions/` |
 
-Each version is installed in a subdirectory named by
-its semantic version (e.g., `2.3.0/`). Versions are
-fully isolated -- no shared state between versions.
+Each version is installed in a subdirectory named by its semantic version (e.g., `2.3.0/`). Versions
+are fully isolated -- no shared state between versions.
 
 ### Proposed Dependencies
 
@@ -1097,19 +1068,10 @@ fully isolated -- no shared state between versions.
 | `blake3` | Content hash verification | Fast, parallelizable hash for integrity |
 | `windows-sys` | Win32 registry, Credential Manager | Zero-cost FFI to Windows APIs |
 | `cxx` | C++ interop for macOS Keychain, Launch Services | Safe bridge to Swift/C++ wrappers |
-| `reqwest` or custom HTTP | HTTP client for API calls | Async HTTP over the IoReactor |
-
-**Dependency conflict:** `reqwest` depends on `tokio`. Use
-platform-native HTTP clients (NSURLSession on macOS,
-WinHTTP on Windows, libcurl on Linux) via the `IoReactor`,
-consistent with [shared-cache.md](shared-cache.md) which
-already defines platform-native HTTP.
 | `serde` | Serialization for configs and API responses | Standard Rust serialization |
 
-**Note:** `reqwest` depends on tokio. If we use a
-custom async runtime (which is likely given the
-`IoReactor` design), we may need a custom HTTP client
-built on the reactor. This is an open question.
+**HTTP client:** Uses platform-native HTTP clients (NSURLSession on macOS, WinHTTP on Windows,
+libcurl on Linux) wrapped via the `IoReactor`, consistent with [shared-cache.md](shared-cache.md).
 
 ## Test Plan
 
@@ -1171,41 +1133,24 @@ built on the reactor. This is an open question.
 
 ## Open Questions
 
-1. **HTTP client strategy** -- `reqwest` depends on
-   tokio. Since the engine uses a custom `IoReactor`,
-   we need either: (a) a thin tokio compatibility
-   layer for reqwest, (b) a custom HTTP client built
-   on the reactor, or (c) a standalone HTTP crate
-   (`ureq` is sync, `hyper` is complex). Need to
-   evaluate options.
-2. **Auto-update restart UX** -- When the launcher
-   updates itself, it must restart. On macOS Sparkle
-   handles this natively. On Windows WinSparkle handles
-   it. On Linux AppImage replacement requires the user
-   to relaunch manually. Should we auto-relaunch on
-   Linux?
-3. **Migration script format** -- Should migration
-   scripts be Rust code compiled into the launcher, or
-   a data-driven format (e.g., JSON transform rules)?
-   Compiled scripts are faster and more expressive but
-   require a launcher update for each new migration.
-   Data-driven scripts can be downloaded from S3.
-4. **Offline mode** -- The launcher fetches version
-   catalogs, templates, and preference sync from AWS.
-   Need to define graceful degradation when offline:
-   cached catalog, local-only preferences, and clear
-   error messages for unavailable features.
-5. **Project thumbnail generation** -- The recent
-   projects list shows thumbnails. Who generates them?
-   Options: the editor saves a screenshot on project
-   close, or the launcher renders a scene thumbnail
-   using a headless editor mode.
-6. **Multi-user project files** -- The `.harmonius`
-   file is version-controlled. If two team members
-   change different sections simultaneously, TOML merge
-   conflicts are possible. Need a merge strategy or
-   structured diff tool.
-7. **Template versioning** -- Templates are tied to
-   engine versions. When a template is updated, should
-   the launcher re-download it for existing engine
-   versions, or only for new versions?
+1. **HTTP client strategy** -- Resolved. Use platform-native HTTP clients (NSURLSession on macOS,
+   WinHTTP on Windows, libcurl on Linux) wrapped via the `IoReactor`. This is consistent with the
+   project-wide async runtime policy.
+2. **Auto-update restart UX** -- When the launcher updates itself, it must restart. On macOS Sparkle
+   handles this natively. On Windows WinSparkle handles it. On Linux AppImage replacement requires
+   the user to relaunch manually. Should we auto-relaunch on Linux?
+3. **Migration script format** -- Should migration scripts be Rust code compiled into the launcher,
+   or a data-driven format (e.g., JSON transform rules)? Compiled scripts are faster and more
+   expressive but require a launcher update for each new migration. Data-driven scripts can be
+   downloaded from S3.
+4. **Offline mode** -- The launcher fetches version catalogs, templates, and preference sync from
+   AWS. Need to define graceful degradation when offline: cached catalog, local-only preferences,
+   and clear error messages for unavailable features.
+5. **Project thumbnail generation** -- The recent projects list shows thumbnails. Who generates
+   them? Options: the editor saves a screenshot on project close, or the launcher renders a scene
+   thumbnail using a headless editor mode.
+6. **Multi-user project files** -- The `.harmonius` file is version-controlled. If two team members
+   change different sections simultaneously, TOML merge conflicts are possible. Need a merge
+   strategy or structured diff tool.
+7. **Template versioning** -- Templates are tied to engine versions. When a template is updated,
+   should the launcher re-download it for existing engine versions, or only for new versions?

@@ -4,242 +4,179 @@
 
 ### R-5.1.1 Sound Source Component
 
-The engine **SHALL** provide an ECS component for sound
-emission with point, line, and area emitter variants,
-each storing gain (linear 0.0-1.0), pitch multiplier,
-looping flag, and an attenuation curve reference. Per-
-entity storage for the component **SHALL NOT** exceed
-128 bytes.
+The engine **SHALL** provide an ECS component for sound emission with point, line, and area emitter
+variants, each storing gain (linear 0.0-1.0), pitch multiplier, looping flag, and an attenuation
+curve reference. Per- entity storage for the component **SHALL NOT** exceed 128 bytes.
 
 - **Derived from:**
   [F-5.1.1](../../features/audio/audio-engine.md)
-- **Rationale:** A lightweight ECS component enables
-  hundreds of simultaneous ambient emitters (campfires,
-  waterfalls, machinery) without per-entity overhead
-  degrading frame time.
-- **Verification:** Unit test: create 1,000 entities
-  with sound source components of each emitter type and
-  assert per-entity storage does not exceed 128 bytes.
-  Integration test: attach a sound source to an entity
-  and verify audio output matches configured gain, pitch,
-  and looping settings.
+- **Rationale:** A lightweight ECS component enables hundreds of simultaneous ambient emitters
+  (campfires, waterfalls, machinery) without per-entity overhead degrading frame time.
+- **Verification:** Unit test: create 1,000 entities with sound source components of each emitter
+  type and assert per-entity storage does not exceed 128 bytes. Integration test: attach a sound
+  source to an entity and verify audio output matches configured gain, pitch, and looping settings.
 
 ### R-5.1.1a Sound Source Emitter Type Selection
 
-The engine **SHALL** support point, line, and area
-emitter types per sound source component, where each
-type defines a distinct spatial emission pattern. The
-emitter type **SHALL** be selectable at authoring time
-and changeable at runtime without despawning the entity.
+The engine **SHALL** support point, line, and area emitter types per sound source component, where
+each type defines a distinct spatial emission pattern. The emitter type **SHALL** be selectable at
+authoring time and changeable at runtime without despawning the entity.
 
 - **Derived from:**
   [F-5.1.1](../../features/audio/audio-engine.md)
-- **Rationale:** Different world objects require
-  different emission shapes: torches emit from a point,
-  rivers from a line, and open fields from an area.
-- **Verification:** Unit test: set emitter type to
-  point, line, and area on the same entity and verify
-  each produces the expected spatial distribution.
-  Verify runtime type change does not cause audio
-  discontinuity.
+- **Rationale:** Different world objects require different emission shapes: torches emit from a
+  point, rivers from a line, and open fields from an area.
+- **Verification:** Unit test: set emitter type to point, line, and area on the same entity and
+  verify each produces the expected spatial distribution. Verify runtime type change does not cause
+  audio discontinuity.
 
 ## Listener
 
 ### R-5.1.2 Listener Component
 
-The engine **SHALL** provide an ECS component that
-designates entities as audio listeners with position,
-orientation, and velocity. The engine **SHALL** support
-multiple simultaneous listeners for split-screen. When
-no explicit listener exists, the engine **SHALL** fall
-back to the active camera entity.
+The engine **SHALL** provide an ECS component that designates entities as audio listeners with
+position, orientation, and velocity. The engine **SHALL** support multiple simultaneous listeners
+for split-screen. When no explicit listener exists, the engine **SHALL** fall back to the active
+camera entity.
 
 - **Derived from:**
   [F-5.1.2](../../features/audio/audio-engine.md)
-- **Rationale:** Spatialization requires a reference
-  perspective; split-screen requires independent
-  perspectives per player; a camera fallback prevents
-  silent audio when no listener is configured.
-- **Verification:** Unit test: remove all explicit
-  listeners and verify the active camera entity is used.
-  Integration test: assign separate listeners for two
-  split-screen players and verify each hears audio
-  from their own perspective. Verify listener velocity
-  produces correct Doppler pitch shifts.
+- **Rationale:** Spatialization requires a reference perspective; split-screen requires independent
+  perspectives per player; a camera fallback prevents silent audio when no listener is configured.
+- **Verification:** Unit test: remove all explicit listeners and verify the active camera entity is
+  used. Integration test: assign separate listeners for two split-screen players and verify each
+  hears audio from their own perspective. Verify listener velocity produces correct Doppler pitch
+  shifts.
 
 ## Mixer Bus Hierarchy
 
 ### R-5.1.3 Hierarchical Mixer Bus Graph
 
-The engine **SHALL** provide a directed acyclic graph of
-mixer buses with gain, mute, and solo controls per bus.
-Child buses **SHALL** inherit parent gain. Each bus
-**SHALL** support an ordered chain of insert effects
-using enum dispatch (no trait objects). Buses **SHALL**
-be addable and rewirable at runtime without audio
-discontinuity.
+The engine **SHALL** provide a directed acyclic graph of mixer buses with gain, mute, and solo
+controls per bus. Child buses **SHALL** inherit parent gain. Each bus **SHALL** support an ordered
+chain of insert effects using enum dispatch (no trait objects). Buses **SHALL** be addable and
+rewirable at runtime without audio discontinuity.
 
 - **Derived from:**
   [F-5.1.3](../../features/audio/audio-engine.md)
-- **Rationale:** Hierarchical mixing enables independent
-  volume control for music, SFX, ambient, voice, and UI
-  categories. Runtime rewiring supports dynamic mix
-  states such as underwater ducking or pause menus.
-- **Verification:** Unit test: set master gain to 0.5
-  and verify all descendant bus outputs are halved. Mute
-  a mid-level bus and verify all children are silent.
-  Integration test: rewire a bus at runtime and verify no
-  audible click or gap during the transition.
+- **Rationale:** Hierarchical mixing enables independent volume control for music, SFX, ambient,
+  voice, and UI categories. Runtime rewiring supports dynamic mix states such as underwater ducking
+  or pause menus.
+- **Verification:** Unit test: set master gain to 0.5 and verify all descendant bus outputs are
+  halved. Mute a mid-level bus and verify all children are silent. Integration test: rewire a bus at
+  runtime and verify no audible click or gap during the transition.
 
 ### R-5.1.3a Mixer Bus Insert Chain Dispatch
 
-The engine **SHALL** dispatch insert effects on mixer
-buses via enum-based static dispatch, not dynamic trait
-objects. Each built-in effect type (filter, EQ, reverb,
-compressor, limiter, delay, chorus, flanger, pitch
-shifter) **SHALL** be a variant of a single effect enum.
-Custom DSP nodes **SHALL** be registered via a node
-registry with stateless process callbacks.
+The engine **SHALL** dispatch insert effects on mixer buses via enum-based static dispatch, not
+dynamic trait objects. Each built-in effect type (filter, EQ, reverb, compressor, limiter, delay,
+chorus, flanger, pitch shifter) **SHALL** be a variant of a single effect enum. Custom DSP nodes
+**SHALL** be registered via a node registry with stateless process callbacks.
 
-- **Derived from:**
-  [F-5.1.3](../../features/audio/audio-engine.md),
+- **Derived from:** [F-5.1.3](../../features/audio/audio-engine.md),
   [F-5.3.8](../../features/audio/dsp-and-effects.md)
-- **Rationale:** Enum dispatch avoids vtable indirection
-  on the real-time audio thread, enabling the compiler
-  to inline effect processing and eliminate branch
-  misprediction overhead in tight DSP loops.
-- **Verification:** Inspect generated assembly to confirm
-  no vtable lookups in the mixer bus processing path.
-  Benchmark: compare enum dispatch vs trait object
-  dispatch for a 4-insert chain and verify enum dispatch
-  is faster.
+- **Rationale:** Enum dispatch avoids vtable indirection on the real-time audio thread, enabling the
+  compiler to inline effect processing and eliminate branch misprediction overhead in tight DSP
+  loops.
+- **Verification:** Inspect generated assembly to confirm no vtable lookups in the mixer bus
+  processing path. Benchmark: compare enum dispatch vs trait object dispatch for a 4-insert chain
+  and verify enum dispatch is faster.
 
 ## Voice Management
 
 ### R-5.1.4 Voice Management and Priority System
 
-The engine **SHALL** manage a fixed pool of voices with
-priority-based allocation. Each sound source **SHALL**
-declare a priority class (critical, high, medium, low).
-When the voice pool is exhausted, the engine **SHALL**
-virtualize the lowest-audibility voice (tracked but
-silent) and restore it seamlessly within one buffer
-callback when headroom returns.
+The engine **SHALL** manage a fixed pool of voices with priority-based allocation. Each sound source
+**SHALL** declare a priority class (critical, high, medium, low). When the voice pool is exhausted,
+the engine **SHALL** virtualize the lowest-audibility voice (tracked but silent) and restore it
+seamlessly within one buffer callback when headroom returns.
 
 - **Derived from:**
   [F-5.1.4](../../features/audio/audio-engine.md)
-- **Rationale:** Hardware voice budgets are finite;
-  priority stealing ensures critical gameplay sounds
-  (alerts, dialogue) always play even in chaotic scenes
-  with hundreds of concurrent emitters.
-- **Verification:** Stress test: fill the voice pool,
-  trigger a critical-priority voice, and assert the
-  lowest-audibility voice is virtualized. Free a voice
-  and verify the virtualized voice restores playback
-  within one buffer callback with correct position and
-  offset.
+- **Rationale:** Hardware voice budgets are finite; priority stealing ensures critical gameplay
+  sounds (alerts, dialogue) always play even in chaotic scenes with hundreds of concurrent emitters.
+- **Verification:** Stress test: fill the voice pool, trigger a critical-priority voice, and assert
+  the lowest-audibility voice is virtualized. Free a voice and verify the virtualized voice restores
+  playback within one buffer callback with correct position and offset.
 
 ### R-5.1.4a Voice Pool Size Per Platform
 
-The engine **SHALL** support configurable voice pool
-sizes per platform tier: 16-32 voices on mobile, 32-64
-on Switch, and 128-256 on desktop. The voice pool size
-**SHALL** be configurable at engine initialization.
+The engine **SHALL** support configurable voice pool sizes per platform tier: 16-32 voices on
+mobile, 32-64 on Switch, and 128-256 on desktop. The voice pool size **SHALL** be configurable at
+engine initialization.
 
 - **Derived from:**
   [F-5.1.4](../../features/audio/audio-engine.md)
-- **Rationale:** Mobile and handheld platforms have fewer
-  hardware mixing resources; per-tier sizing prevents
-  exceeding platform audio budgets.
-- **Verification:** Unit test: initialize voice pools at
-  each tier's minimum and maximum sizes and verify the
-  pool accepts exactly the configured number of voices.
+- **Rationale:** Mobile and handheld platforms have fewer hardware mixing resources; per-tier sizing
+  prevents exceeding platform audio budgets.
+- **Verification:** Unit test: initialize voice pools at each tier's minimum and maximum sizes and
+  verify the pool accepts exactly the configured number of voices.
 
 ## Streaming Playback
 
 ### R-5.1.5 Streaming Playback via Platform-Native I/O
 
-The engine **SHALL** stream long-duration audio assets
-from disk in ring-buffer chunks using platform-native
-async I/O (IOCP on Windows, GCD Dispatch IO on macOS,
-io_uring on Linux). The engine **SHALL NOT** use C++
-stdlib file I/O for audio streaming. Peak memory per
-stream **SHALL NOT** exceed 256 KiB.
+The engine **SHALL** stream long-duration audio assets from disk in ring-buffer chunks using
+platform-native async I/O (IOCP on Windows, GCD Dispatch IO on macOS, io_uring on Linux). The engine
+**SHALL NOT** use C++ stdlib file I/O for audio streaming. Peak memory per stream **SHALL NOT**
+exceed 256 KiB.
 
 - **Derived from:**
   [F-5.1.5](../../features/audio/audio-engine.md)
-- **Rationale:** Holding entire music or dialogue files
-  in memory is infeasible for large asset libraries.
-  Platform-native async I/O avoids blocking the audio
-  thread and maximizes throughput.
-- **Verification:** Integration test: stream a 5-minute
-  audio file and assert peak memory stays below 256 KiB
-  per stream. Verify streaming uses the correct
-  platform-native API via platform instrumentation.
+- **Rationale:** Holding entire music or dialogue files in memory is infeasible for large asset
+  libraries. Platform-native async I/O avoids blocking the audio thread and maximizes throughput.
+- **Verification:** Integration test: stream a 5-minute audio file and assert peak memory stays
+  below 256 KiB per stream. Verify streaming uses the correct platform-native API via platform
+  instrumentation.
 
 ### R-5.1.5a Prefetch Hint Support
 
-The engine **SHALL** support prefetch hints that begin
-streaming audio data before playback is triggered.
-Issuing a prefetch hint at least 500 ms before playback
-**SHALL** reduce startup latency to under 10 ms.
+The engine **SHALL** support prefetch hints that begin streaming audio data before playback is
+triggered. Issuing a prefetch hint at least 500 ms before playback **SHALL** reduce startup latency
+to under 10 ms.
 
 - **Derived from:**
   [F-5.1.5](../../features/audio/audio-engine.md)
-- **Rationale:** Cinematic cues and zone transitions
-  require instant audio start; prefetching eliminates
-  audible startup delays.
-- **Verification:** Integration test: issue a prefetch
-  hint 500 ms before playback and assert startup latency
-  is under 10 ms. Verify playback without prefetch has
-  measurably higher startup latency.
+- **Rationale:** Cinematic cues and zone transitions require instant audio start; prefetching
+  eliminates audible startup delays.
+- **Verification:** Integration test: issue a prefetch hint 500 ms before playback and assert
+  startup latency is under 10 ms. Verify playback without prefetch has measurably higher startup
+  latency.
 
 ## Sample-Accurate Scheduling
 
 ### R-5.1.6 Sample-Accurate Command Queue
 
-The engine **SHALL** schedule sound start, stop, and
-parameter changes at precise sample offsets within the
-next audio buffer. Two sounds scheduled at the same
-sample offset **SHALL** produce phase-aligned output
-with zero-sample deviation. The command queue **SHALL**
-be lock-free (SPSC ring buffer) between game thread
-and audio thread.
+The engine **SHALL** schedule sound start, stop, and parameter changes at precise sample offsets
+within the next audio buffer. Two sounds scheduled at the same sample offset **SHALL** produce
+phase-aligned output with zero-sample deviation. The command queue **SHALL** be lock-free (SPSC ring
+buffer) between game thread and audio thread.
 
 - **Derived from:**
   [F-5.1.6](../../features/audio/audio-engine.md)
-- **Rationale:** Layered loops and musical cues require
-  sub-sample synchronization. Lock-free communication
-  prevents priority inversion on the real-time audio
-  thread.
-- **Verification:** Unit test: schedule two sounds at
-  the same sample offset and verify their output buffers
-  are phase-aligned within +/- 0 samples. Measure
-  scheduling jitter over 1,000 commands and verify
-  zero-sample deviation.
+- **Rationale:** Layered loops and musical cues require sub-sample synchronization. Lock-free
+  communication prevents priority inversion on the real-time audio thread.
+- **Verification:** Unit test: schedule two sounds at the same sample offset and verify their output
+  buffers are phase-aligned within +/- 0 samples. Measure scheduling jitter over 1,000 commands and
+  verify zero-sample deviation.
 
 ## Codecs
 
 ### R-5.1.7 Audio Format and Codec Support
 
-The engine **SHALL** decode PCM (WAV), Vorbis, Opus, and
-FLAC formats. Format metadata (sample rate, channel
-count, loop points) **SHALL** be extracted during asset
-import and cached. The codec registry **SHALL** support
-runtime registration of custom codec plugins without
-engine recompilation.
+The engine **SHALL** decode PCM (WAV), Vorbis, Opus, and FLAC formats. Format metadata (sample rate,
+channel count, loop points) **SHALL** be extracted during asset import and cached. The codec
+registry **SHALL** support runtime registration of custom codec plugins without engine
+recompilation.
 
 - **Derived from:**
   [F-5.1.7](../../features/audio/audio-engine.md)
-- **Rationale:** Different asset types benefit from
-  different codecs: Opus for voice chat, Vorbis for
-  legacy assets, FLAC for lossless reference audio.
-  Plugin extensibility supports proprietary formats.
-- **Verification:** Integration test: load and play one
-  asset in each format and verify decoded output matches
-  a reference waveform. Verify metadata extraction
-  returns correct sample rate, channel count, and loop
-  points for each format.
+- **Rationale:** Different asset types benefit from different codecs: Opus for voice chat, Vorbis
+  for legacy assets, FLAC for lossless reference audio. Plugin extensibility supports proprietary
+  formats.
+- **Verification:** Integration test: load and play one asset in each format and verify decoded
+  output matches a reference waveform. Verify metadata extraction returns correct sample rate,
+  channel count, and loop points for each format.
 
 ---
 
@@ -306,8 +243,8 @@ calculations, **so that** moving listeners hear correct pitch shifts.
 ## US-5.1.2.5 Implement Listener Component
 
 **As an** engine developer (P-26), **I want to** implement the listener component with position,
-orientation, and velocity, defaulting to the active camera when no explicit listener exists, **so
-that** audio has a reference perspective.
+orientation, and velocity, defaulting to the active camera when no explicit listener exists,
+**so that** audio has a reference perspective.
 
 ---
 
@@ -321,8 +258,8 @@ independently under global volume.
 
 ## US-5.1.3.2 Add Insert Effects to Buses
 
-**As an** audio designer (P-14), **I want to** add ordered chains of insert effects to any bus, **so
-that** DSP processing is per-category.
+**As an** audio designer (P-14), **I want to** add ordered chains of insert effects to any bus,
+**so that** DSP processing is per-category.
 
 ## US-5.1.3.3 Rewire Buses at Runtime
 
@@ -351,8 +288,8 @@ solo, insert chains, and runtime rewiring, **so that** hierarchical mixing is av
 
 ## US-5.1.3.8 Adjust Volume Categories
 
-**As a** player (P-23), **I want to** adjust music, SFX, and voice volumes independently, **so
-that** the audio mix matches my preferences.
+**As a** player (P-23), **I want to** adjust music, SFX, and voice volumes independently,
+**so that** the audio mix matches my preferences.
 
 ---
 
@@ -459,8 +396,8 @@ sample-accurate.
 
 ## US-5.1.6.5 Hear Perfectly Synchronized Layered Sounds
 
-**As a** player (P-23), **I want** layered sound effects and music to play in perfect sync, **so
-that** audio cues align with gameplay events.
+**As a** player (P-23), **I want** layered sound effects and music to play in perfect sync,
+**so that** audio cues align with gameplay events.
 
 ---
 

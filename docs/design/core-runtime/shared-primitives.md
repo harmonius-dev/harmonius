@@ -2,10 +2,9 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined across all 15 domains. The table below
-> traces each shared primitive to the domain designs where
-> it was previously duplicated and the features it serves.
+> **Canonical sources:** Features, requirements, and user stories are defined across all 15 domains.
+> The table below traces each shared primitive to the domain designs where it was previously
+> duplicated and the features it serves.
 
 ### Tier 1 — Engine-Wide Primitives
 
@@ -19,7 +18,7 @@
 | `ConditionExpr` | quest-dialogue.md (PrerequisiteExpr), progression-social.md (Prerequisites), monetization.md (ChallengeConditions) | F-13.6, F-13.12, F-13.23 |
 | `FrameBudget` | behavior.md (AiBudget), perception.md (PerceptionBudget), steering-crowds.md (LOD scheduler), destruction.md (ActivationBudget) | F-7.3, F-7.6, F-7.7, F-4.6 |
 | `FalloffCurve` | level-world.md, 2d-games.md, effects.md | F-15.2, F-10.5, F-11.2 |
-| `PlatformTier` | post-processing.md (QualityTier), stylized-materials.md (PlatformTier), scene-pipeline.md, particles.md, cloth-hair.md | F-2.9, F-2.11, F-2.10, F-11.1, F-9.5 |
+| `PlatformTier` | post-processing.md (QualityTier), stylized-materials.md (PlatformTier), scene-pipeline.md (merged into core-rendering.md), particles.md, cloth-hair.md | F-2.9, F-2.11, F-2.10, F-11.1, F-9.5 |
 | `CompressionCodec` | streaming.md, dcc-versioning.md | F-12.5, F-12.6 |
 
 ### Tier 2 — Domain-Shared Primitives
@@ -38,24 +37,19 @@
 
 ## Overview
 
-This document defines engine-wide shared abstractions that
-are currently duplicated across multiple domain designs. Each
-primitive is defined once here and consumed by all domains
-that need it, eliminating redundancy and ensuring consistent
-behavior.
+This document defines engine-wide shared abstractions that are currently duplicated across multiple
+domain designs. Each primitive is defined once here and consumed by all domains that need it,
+eliminating redundancy and ensuring consistent behavior.
 
 Primitives are organized into two tiers:
 
-- **Tier 1 (Engine-Wide):** Fundamental types used across
-  three or more domains. These live in `harmonius_core` and
-  have zero domain-specific dependencies.
-- **Tier 2 (Domain-Shared):** Higher-level abstractions
-  shared by two or more specific domains. These live in
-  `harmonius_shared` and may depend on Tier 1 primitives.
+- **Tier 1 (Engine-Wide):** Fundamental types used across three or more domains. These live in
+  `harmonius_core` and have zero domain-specific dependencies.
+- **Tier 2 (Domain-Shared):** Higher-level abstractions shared by two or more specific domains.
+  These live in `harmonius_shared` and may depend on Tier 1 primitives.
 
-All primitives follow the project constraints: static
-dispatch preferred, `async`/`await` for any async work,
-no `dyn` in the game runtime, and Rust stable only.
+All primitives follow the project constraints: static dispatch preferred, `async`/`await` for any
+async work, no `dyn` in the game runtime, and Rust stable only.
 
 ---
 
@@ -191,21 +185,16 @@ graph LR
 
 #### 1. `Handle<T>` + `HandleMap<T>`
 
-Generational index pattern providing safe, O(1) indirect
-references without lifetime tracking. A `Handle<T>` is a
-lightweight value containing a slot index and a generation
-counter. `HandleMap<T>` stores values in a dense array with
-generation-validated lookup. Stale handles (referencing
-deallocated slots) are detected at access time by comparing
-the handle's generation against the slot's current
-generation. Type safety is enforced via `PhantomData<T>`,
-preventing accidental use of a mesh handle where a texture
-handle is expected.
+Generational index pattern providing safe, O(1) indirect references without lifetime tracking. A
+`Handle<T>` is a lightweight value containing a slot index and a generation counter. `HandleMap<T>`
+stores values in a dense array with generation-validated lookup. Stale handles (referencing
+deallocated slots) are detected at access time by comparing the handle's generation against the
+slot's current generation. Type safety is enforced via `PhantomData<T>`, preventing accidental use
+of a mesh handle where a texture handle is expected.
 
-This primitive unifies `Entity` (ecs.md), `Handle<T>`
-(memory-async-io.md), and `BvhHandle` (spatial-index.md)
-into a single definition. The ECS `Entity` type becomes
-a type alias: `type Entity = Handle<EntityMarker>`.
+This primitive unifies `Entity` (ecs.md), `Handle<T>` (memory-async-io.md), and `BvhHandle`
+(spatial-index.md) into a single definition. The ECS `Entity` type becomes a type alias:
+`type Entity = Handle<EntityMarker>`.
 
 ```rust
 /// Generational index handle. Type-safe via phantom.
@@ -269,17 +258,14 @@ pub type Entity = Handle<EntityMarker>;
 
 #### 2. `UniformGrid<T>`
 
-Generic uniform-cell spatial structure supporting cell-based
-iteration, neighbor queries, and world-space bounds mapping.
-Each cell stores a user-defined `T` (e.g., density `f32`,
-scent intensity, fog state, tactical value). The grid maps
-from continuous world coordinates to discrete cell indices
-via a configurable cell size and origin offset.
+Generic uniform-cell spatial structure supporting cell-based iteration, neighbor queries, and
+world-space bounds mapping. Each cell stores a user-defined `T` (e.g., density `f32`, scent
+intensity, fog state, tactical value). The grid maps from continuous world coordinates to discrete
+cell indices via a configurable cell size and origin offset.
 
-Optional GPU upload provides a read-only buffer for shaders
-(fog-of-war rendering, density visualization). This
-formalizes the grid as a first-class spatial primitive
-alongside the BVH defined in spatial-index.md.
+Optional GPU upload provides a read-only buffer for shaders (fog-of-war rendering, density
+visualization). This formalizes the grid as a first-class spatial primitive alongside the BVH
+defined in spatial-index.md.
 
 ```rust
 /// Generic uniform grid over a 2D or 3D region.
@@ -372,15 +358,12 @@ pub enum NeighborMode {
 
 #### 3. `Curve<T>`
 
-Unified curve evaluation supporting multiple interpolation
-methods. A `Curve<T>` stores a sequence of control points
-and evaluates at any parameter `t` in `[0, 1]`. Variants
-include linear interpolation, Catmull-Rom splines, cubic
-Bezier, step functions, and piecewise-linear segments.
+Unified curve evaluation supporting multiple interpolation methods. A `Curve<T>` stores a sequence
+of control points and evaluates at any parameter `t` in `[0, 1]`. Variants include linear
+interpolation, Catmull-Rom splines, cubic Bezier, step functions, and piecewise-linear segments.
 
-This unifies numeric curves (databases), camera splines,
-navigation path smoothing, weapon recoil curves, animation
-blend curves, and AI response curves into one type.
+This unifies numeric curves (databases), camera splines, navigation path smoothing, weapon recoil
+curves, animation blend curves, and AI response curves into one type.
 
 ```rust
 /// Unified curve with multiple interpolation variants.
@@ -450,14 +433,12 @@ pub trait Interpolate: Copy {
 
 #### 4. `SpringDamper<T>`
 
-Second-order spring-damper evaluator for smooth procedural
-motion. Operates on `f32`, `Vec3`, and `Quat`. A single
-`tick` call advances the simulation by `dt`, returning the
-new position and velocity.
+Second-order spring-damper evaluator for smooth procedural motion. Operates on `f32`, `Vec3`, and
+`Quat`. A single `tick` call advances the simulation by `dt`, returning the new position and
+velocity.
 
-This unifies weapon/camera/sway springs (first-person),
-spring bones (procedural animation), card hair springs
-(cloth-hair), and spring constraints (physics).
+This unifies weapon/camera/sway springs (first-person), spring bones (procedural animation), card
+hair springs (cloth-hair), and spring constraints (physics).
 
 ```rust
 /// Spring-damper parameters. Tuned per use case.
@@ -513,17 +494,20 @@ pub trait SpringLerpable: Copy {
 // Implementations provided for f32, Vec3, Quat.
 ```
 
+**Note:** The canonical parameterization uses `frequency` and `damping_ratio`. Some consuming files
+(first-person.md, physics/constraints.md, 2d-games.md) use `stiffness`/`damping`/`mass`
+parameterization. Implementation must provide conversion: `frequency = sqrt(stiffness / mass)`,
+`damping_ratio = damping / (2 * sqrt(stiffness * mass))`. Both parameterizations are supported via
+constructors.
+
 #### 5. `StatModifier` + `ModOp` + `StatAggregator`
 
-Stat modification pipeline for composing layered numeric
-modifiers. Modifiers are tagged with an operation type
-(`Flat`, `Percent`, `Override`) and a source handle for
-removal. The aggregator collects all active modifiers for
-a stat, sorts by operation, and produces a final value.
+Stat modification pipeline for composing layered numeric modifiers. Modifiers are tagged with an
+operation type (`Flat`, `Percent`, `Override`) and a source handle for removal. The aggregator
+collects all active modifiers for a stat, sorts by operation, and produces a final value.
 
-This unifies ability modifiers, weapon stat bonuses,
-character attribute buffs, talent passives, and item
-stat contributions.
+This unifies ability modifiers, weapon stat bonuses, character attribute buffs, talent passives, and
+item stat contributions.
 
 **Data Flow:**
 
@@ -592,15 +576,12 @@ impl StatAggregator {
 
 #### 6. `ConditionExpr`
 
-Composable boolean expression tree for evaluating
-prerequisites and unlock conditions. Supports `And`, `Or`,
-and `Not` combinators with typed leaf predicates. Leaves
-reference a `ConditionId` that maps to a concrete check
-function via a registry.
+Composable boolean expression tree for evaluating prerequisites and unlock conditions. Supports
+`And`, `Or`, and `Not` combinators with typed leaf predicates. Leaves reference a `ConditionId` that
+maps to a concrete check function via a registry.
 
-This unifies quest prerequisites, talent/skill unlock
-conditions, challenge completion checks, and dialogue
-branching guards.
+This unifies quest prerequisites, talent/skill unlock conditions, challenge completion checks, and
+dialogue branching guards.
 
 ```rust
 /// Boolean expression tree for prerequisites.
@@ -651,15 +632,12 @@ impl ConditionExpr {
 
 #### 7. `FrameBudget`
 
-Time-sliced per-frame execution cap with priority
-scheduling. Each domain registers work items with a
-priority. The budget executes items in priority order,
-stopping when the time cap is reached and deferring
-remaining work to the next frame.
+Time-sliced per-frame execution cap with priority scheduling. Each domain registers work items with
+a priority. The budget executes items in priority order, stopping when the time cap is reached and
+deferring remaining work to the next frame.
 
-This unifies AI behavior budgets, perception budgets,
-AI LOD schedulers, destruction activation budgets, and
-pathfinding query budgets.
+This unifies AI behavior budgets, perception budgets, AI LOD schedulers, destruction activation
+budgets, and pathfinding query budgets.
 
 **Execution Flow:**
 
@@ -726,14 +704,11 @@ impl FrameBudget {
 
 #### 8. `FalloffCurve`
 
-Distance-based falloff/attenuation for spatial effects.
-Provides built-in attenuation models: linear, quadratic
-(inverse-square), exponential, and custom (user-supplied
-`Curve<f32>`). Evaluates to a `[0, 1]` intensity given a
-distance and a max range.
+Distance-based falloff/attenuation for spatial effects. Provides built-in attenuation models:
+linear, quadratic (inverse-square), exponential, and custom (user-supplied `Curve<f32>`). Evaluates
+to a `[0, 1]` intensity given a distance and a max range.
 
-Used by area lights, audio attenuation, AoE damage, scent
-propagation, and 2D effect radii.
+Used by area lights, audio attenuation, AoE damage, scent propagation, and 2D effect radii.
 
 ```rust
 /// Distance-based falloff model.
@@ -762,15 +737,12 @@ impl FalloffCurve {
 
 #### 9. `PlatformTier`
 
-Single unified scaling tier enum for all LOD, quality, and
-platform-dependent feature gating. Replaces three or more
-divergent tier enums (`QualityTier`, `PlatformTier`,
-unnamed variants) scattered across rendering, VFX,
-animation, and content pipeline designs.
+Single unified scaling tier enum for all LOD, quality, and platform-dependent feature gating.
+Replaces three or more divergent tier enums (`QualityTier`, `PlatformTier`, unnamed variants)
+scattered across rendering, VFX, animation, and content pipeline designs.
 
-Each tier corresponds to a target hardware class. Systems
-query the current tier at initialization or when the user
-changes quality settings.
+Each tier corresponds to a target hardware class. Systems query the current tier at initialization
+or when the user changes quality settings.
 
 ```rust
 /// Unified platform/quality scaling tier.
@@ -809,9 +781,8 @@ impl PlatformTier {
 
 #### 10. `CompressionCodec`
 
-Enum representing supported compression codecs for asset
-streaming, network payloads, and asset versioning. Defined
-once to avoid identifier drift between subsystems.
+Enum representing supported compression codecs for asset streaming, network payloads, and asset
+versioning. Defined once to avoid identifier drift between subsystems.
 
 ```rust
 /// Compression codec for binary data.
@@ -851,11 +822,9 @@ impl CompressionCodec {
 
 #### 11. `ConditionalGraph<N, E>`
 
-Generic directed acyclic graph with condition-guarded edges.
-Parameterized by node data `N` and edge/condition type `E`.
-Provides topological traversal, reachability queries, and
-serialization hooks for the visual editor. Used for quest
-progression graphs, talent trees, combo chains, and
+Generic directed acyclic graph with condition-guarded edges. Parameterized by node data `N` and
+edge/condition type `E`. Provides topological traversal, reachability queries, and serialization
+hooks for the visual editor. Used for quest progression graphs, talent trees, combo chains, and
 dialogue trees.
 
 ```rust
@@ -904,14 +873,11 @@ impl<N, E> ConditionalGraph<N, E> {
 
 #### 12. `DecayingEntry<T>`
 
-Value that decreases over time and auto-removes below a
-threshold. Each entry stores a value, a current strength
-(initialized to 1.0), and a decay rate. Calling `tick`
-reduces strength by `decay_rate * dt`. When strength falls
-below the threshold, the entry is eligible for removal.
+Value that decreases over time and auto-removes below a threshold. Each entry stores a value, a
+current strength (initialized to 1.0), and a decay rate. Calling `tick` reduces strength by
+`decay_rate * dt`. When strength falls below the threshold, the entry is eligible for removal.
 
-Used by perception memory, NPC deed memory, gossip
-propagation, and threat tables.
+Used by perception memory, NPC deed memory, gossip propagation, and threat tables.
 
 ```rust
 /// An entry whose strength decays over time.
@@ -962,15 +928,12 @@ impl<T> DecayingStore<T> {
 
 #### 13. `ConnectivityAnalyzer`
 
-BFS/DFS traversal from anchor entities over connection
-components for structural integrity analysis. Given a
-set of anchor entities and a neighbor function, determines
-which entities remain connected to at least one anchor.
-Disconnected clusters are returned for destruction or
-detachment.
+BFS/DFS traversal from anchor entities over connection components for structural integrity analysis.
+Given a set of anchor entities and a neighbor function, determines which entities remain connected
+to at least one anchor. Disconnected clusters are returned for destruction or detachment.
 
-Shared by destruction (structural analysis after fracture)
-and building-survival (integrity checks after damage).
+Shared by destruction (structural analysis after fracture) and building-survival (integrity checks
+after damage).
 
 ```rust
 /// Result of connectivity analysis.
@@ -1003,13 +966,11 @@ impl ConnectivityAnalyzer {
 
 #### 14. `TaggedLookupTable<K, V>`
 
-O(1) tag-keyed lookup with optional weighted random
-selection. Stores entries keyed by a tag type `K` with
-associated values `V` and selection weights. Provides both
-exact lookup and weighted-random sampling.
+O(1) tag-keyed lookup with optional weighted random selection. Stores entries keyed by a tag type
+`K` with associated values `V` and selection weights. Provides both exact lookup and weighted-random
+sampling.
 
-Used by weapon impact response tables, ability tag rules,
-loot tables, and NPC bark tables.
+Used by weapon impact response tables, ability tag rules, loot tables, and NPC bark tables.
 
 ```rust
 /// An entry with a weight for random selection.
@@ -1050,14 +1011,11 @@ impl<K: Eq + Hash, V> TaggedLookupTable<K, V> {
 
 #### 15. `LiveOpsResource<T>`
 
-Server-polled resource with version comparison and delta
-fetch for live operations content. Periodically polls a
-server endpoint, compares the remote version against the
-local version, and fetches only the delta if a newer version
-exists. All I/O uses `async`/`await` via `IoReactor`.
+Server-polled resource with version comparison and delta fetch for live operations content.
+Periodically polls a server endpoint, compares the remote version against the local version, and
+fetches only the delta if a newer version exists. All I/O uses `async`/`await` via `IoReactor`.
 
-Used by battle pass definitions, store catalogs,
-challenge rotations, and login calendars.
+Used by battle pass definitions, store catalogs, challenge rotations, and login calendars.
 
 ```rust
 /// A live-ops resource that polls for server updates.
@@ -1104,12 +1062,10 @@ impl<T: DeserializeOwned> LiveOpsResource<T> {
 
 #### 16. `GraphCompiler`
 
-Shared framework for compiling visual node graphs to HLSL
-shader code. Performs topological sort, type checking, dead
-code elimination, HLSL emission, DXC compilation, and Metal
-Shader Converter (MSC) translation. Each graph domain
-(material, effect, shader) supplies node type definitions;
-the compiler provides the shared pipeline.
+Shared framework for compiling visual node graphs to HLSL shader code. Performs topological sort,
+type checking, dead code elimination, HLSL emission, DXC compilation, and Metal Shader Converter
+(MSC) translation. Each graph domain (material, effect, shader) supplies node type definitions; the
+compiler provides the shared pipeline.
 
 ```rust
 /// A compiled shader output.
@@ -1181,14 +1137,11 @@ pub enum CompileTarget {
 
 #### 17. `VirtualResourceStreamer`
 
-GPU-feedback-driven page streaming for virtual resources.
-Reads a GPU feedback buffer to determine which pages are
-requested, prioritizes them, issues async I/O loads via
-`IoReactor`, tracks page residency, and evicts least-
-recently-used pages when memory is full.
+GPU-feedback-driven page streaming for virtual resources. Reads a GPU feedback buffer to determine
+which pages are requested, prioritizes them, issues async I/O loads via `IoReactor`, tracks page
+residency, and evicts least- recently-used pages when memory is full.
 
-Shared by meshlet streaming, virtual texturing, and
-terrain tile streaming.
+Shared by meshlet streaming, virtual texturing, and terrain tile streaming.
 
 **Feedback Loop:**
 
@@ -1270,8 +1223,7 @@ impl VirtualResourceStreamer {
 
 ## Data Flow
 
-Shared primitives are consumed at different points in
-the frame lifecycle:
+Shared primitives are consumed at different points in the frame lifecycle:
 
 | Phase | Primitives Used |
 |-------|----------------|
@@ -1299,8 +1251,8 @@ the frame lifecycle:
 | `LiveOpsResource<T>` | IOCP sockets | GCD sockets | io_uring sockets |
 | `PlatformTier` | Desktop / HighEnd | Mobile / Desktop | Desktop / HighEnd |
 
-All async operations route through `IoReactor` as defined
-in `platform/threading.md`. No Rust stdlib file I/O.
+All async operations route through `IoReactor` as defined in `platform/threading.md`. No Rust stdlib
+file I/O.
 
 ---
 
@@ -1335,52 +1287,38 @@ in `platform/threading.md`. No Rust stdlib file I/O.
 
 ### Integration Tests
 
-1. **Handle interop:** Create entities in ECS via
-   `Handle<EntityMarker>`, store in `HandleMap`, verify
-   cross-system handle validity.
-2. **Grid + spatial index:** Populate `UniformGrid` from
-   `SpatialQuery` results, verify cell contents match.
-3. **Stat pipeline end-to-end:** Attach modifiers from
-   multiple sources (ability, item, buff), verify final
-   value matches manual calculation.
-4. **Virtual streamer + IoReactor:** Load pages via
-   platform I/O backend, verify residency tracking.
+1. **Handle interop:** Create entities in ECS via `Handle<EntityMarker>`, store in `HandleMap`,
+   verify cross-system handle validity.
+2. **Grid + spatial index:** Populate `UniformGrid` from `SpatialQuery` results, verify cell
+   contents match.
+3. **Stat pipeline end-to-end:** Attach modifiers from multiple sources (ability, item, buff),
+   verify final value matches manual calculation.
+4. **Virtual streamer + IoReactor:** Load pages via platform I/O backend, verify residency tracking.
 
 ---
 
 ## Open Questions
 
-1. **Handle bit layout:** Should we use 32+32 (4B entities)
-   or 24+8 (16M entities, 256 generations)? The 32+32
-   layout matches ECS Entity but wastes bits for smaller
-   handle maps. Could `Handle<T>` support configurable
-   bit widths via const generics?
+1. **Handle bit layout:** Should we use 32+32 (4B entities) or 24+8 (16M entities, 256 generations)?
+   The 32+32 layout matches ECS Entity but wastes bits for smaller handle maps. Could `Handle<T>`
+   support configurable bit widths via const generics?
 
-2. **Curve derivative for Quat:** Quaternion curves require
-   `slerp` rather than `lerp`. Should `Interpolate` have
-   a separate `slerp` path, or should `Quat` curves use a
-   dedicated `QuatCurve` type?
+2. **Curve derivative for Quat:** Quaternion curves require `slerp` rather than `lerp`. Should
+   `Interpolate` have a separate `slerp` path, or should `Quat` curves use a dedicated `QuatCurve`
+   type?
 
-3. **FrameBudget thread safety:** Should `FrameBudget` be
-   per-thread or shared across the thread pool? Per-thread
-   avoids contention but complicates global budget
-   accounting.
+3. **FrameBudget thread safety:** Should `FrameBudget` be per-thread or shared across the thread
+   pool? Per-thread avoids contention but complicates global budget accounting.
 
-4. **ConditionalGraph serialization:** Should the graph
-   serialize via `Reflect` (bevy_reflect-style) or have a
-   custom binary format for editor performance?
+4. **ConditionalGraph serialization:** Should the graph serialize via `Reflect` (bevy_reflect-style)
+   or have a custom binary format for editor performance?
 
-5. **GraphCompiler caching:** Should compiled shaders be
-   cached by content hash (BLAKE3) in the CAS database
-   defined in `asset-import.md`, or should `GraphCompiler`
-   maintain its own cache?
+5. **GraphCompiler caching:** Should compiled shaders be cached by content hash (BLAKE3) in the CAS
+   database defined in `asset-import.md`, or should `GraphCompiler` maintain its own cache?
 
-6. **VirtualResourceStreamer feedback format:** Should the
-   feedback buffer use a fixed-size bitfield per page or
-   a variable-length request list? Bitfield is simpler but
-   scales poorly with page count.
+6. **VirtualResourceStreamer feedback format:** Should the feedback buffer use a fixed-size bitfield
+   per page or a variable-length request list? Bitfield is simpler but scales poorly with page
+   count.
 
-7. **StatModifier priority:** Should priority be global
-   (across all ModOps) or per-ModOp? Global priority
-   enables finer control but complicates the evaluation
-   order guarantee.
+7. **StatModifier priority:** Should priority be global (across all ModOps) or per-ModOp? Global
+   priority enables finer control but complicates the evaluation order guarantee.

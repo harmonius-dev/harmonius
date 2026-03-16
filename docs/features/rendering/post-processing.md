@@ -1,6 +1,6 @@
 # 2.9 — Post-Processing
 
-### F-2.9.1 Bloom
+## F-2.9.1 Bloom
 
 Bright-source glow simulating camera lens diffraction and scattering. A threshold pass extracts
 pixels above a luminance cutoff, followed by a multi-pass Gaussian or dual-kawase downscale/upscale
@@ -144,10 +144,11 @@ the Unity "Screen Space Cavity & Curvature" asset by Jolly Theory. The effect op
 complementary modes:
 
 1. **Curvature** (small-scale, pixel-radius): Samples the screen-space normal buffer at small
-   offsets (1-4 pixels) in X and Y, computing the first-order normal difference `(N_center -
-   N_offset)` per channel. Positive differences indicate ridges (convex edges); negative differences
-   indicate valleys (concave edges). Multiple samples at varying offsets are weighted and summed.
-   The result is a per-pixel scalar: values above 0.5 represent ridges, below 0.5 represent valleys.
+   offsets (1-4 pixels) in X and Y, computing the first-order normal difference
+   `(N_center - N_offset)` per channel. Positive differences indicate ridges (convex edges);
+   negative differences indicate valleys (concave edges). Multiple samples at varying offsets are
+   weighted and summed. The result is a per-pixel scalar: values above 0.5 represent ridges, below
+   0.5 represent valleys.
 2. **Cavity** (large-scale, world-radius): Uses the same normal-difference technique but samples at
    wider, world-space-scaled offsets (configurable radius in meters, converted to pixel offsets via
    the depth buffer). An optional multi-sample blur (2-4 passes at widths 2, 3, 7) softens the
@@ -207,7 +208,6 @@ single-pass nodes into one dispatch).
 - Parameters are exposed as typed slots with per-instance overrides and ECS data binding (same
   parameter model as effect graphs, F-11.6.3)
 - Live preview in the editor viewport with hot reload on graph changes (F-12.4.1)
-
 - **Requirements:** R-2.9.14
 - **Dependencies:** F-15.8.1 (Logic Graph Runtime), F-15.8.5a (Shader Graph Core), F-2.2.1 (Render
   Graph), F-2.9.10 (Post-Process Materials)

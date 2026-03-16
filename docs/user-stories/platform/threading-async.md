@@ -98,8 +98,8 @@ ergonomic and zero-overhead.
 
 ## US-14.3.17 Handle Events with Async Handlers
 
-**As a** game developer (P-15), **I want** to register both sync and async event handlers, **so
-that** event responses that require I/O or long computation don't block the dispatch thread.
+**As a** game developer (P-15), **I want** to register both sync and async event handlers,
+**so that** event responses that require I/O or long computation don't block the dispatch thread.
 
 ## US-14.3.19 Control GCD Callback Timing on macOS
 

@@ -1,6 +1,6 @@
 # 13.23 — Monetization and Live Operations
 
-### F-13.23.1 Battle Pass and Season System
+## F-13.23.1 Battle Pass and Season System
 
 Tiered reward track with free and premium tiers, time-limited to seasons (configurable duration,
 typically 60-90 days). Players earn pass XP from gameplay activities (matches, quests, daily/weekly

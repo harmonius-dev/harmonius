@@ -57,8 +57,8 @@ cinematic lens character.
 ## US-11.3.4.2 Validate CA and Grain Disabled by Default on Mobile
 
 **As an** engine tester (P-27), **I want** to verify that chromatic aberration and film grain are
-disabled by default on mobile to save fill rate, with vignette retained as a cheap overlay, **so
-that** post-process cost is minimal on mobile.
+disabled by default on mobile to save fill rate, with vignette retained as a cheap overlay,
+**so that** post-process cost is minimal on mobile.
 
 ## US-11.3.5.1 Create Heat Shimmer Above Fire Sources
 

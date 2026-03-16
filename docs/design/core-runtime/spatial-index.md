@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/core-runtime/](../../features/core-runtime/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/core-runtime/](../../features/core-runtime/),
 > [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table
-> below traces design elements to those definitions.
+> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
+> elements to those definitions.
 
 ### Acceleration Structures (F-1.9.1–3 / R-1.9.1–3)
 
@@ -36,45 +36,34 @@
 
 ### Interoperability Contract
 
-This design **defines** the `SpatialQuery` trait consumed by:
-Physics, Rendering, Networking, AI, Audio, and Gameplay.
+This design **defines** the `SpatialQuery` trait consumed by: Physics, Rendering, Networking, AI,
+Audio, and Gameplay.
 
 ---
 
 ## Overview
 
-The spatial indexing subsystem maintains a single shared
-spatial index as an ECS resource. All subsystems read from
-this one structure instead of building their own. The
-primary acceleration structure is a BVH (Bounding Volume
-Hierarchy) built with Surface Area Heuristic (SAH). An
-optional octree and 2D uniform grid provide cell-based
-spatial partitioning for network relevancy, AI crowd
+The spatial indexing subsystem maintains a single shared spatial index as an ECS resource. All
+subsystems read from this one structure instead of building their own. The primary acceleration
+structure is a BVH (Bounding Volume Hierarchy) built with Surface Area Heuristic (SAH). An optional
+octree and 2D uniform grid provide cell-based spatial partitioning for network relevancy, AI crowd
 density, and world zone queries.
 
-A dedicated ECS system (`SpatialUpdateSystem`) runs once
-per frame, before any consumer systems. It uses change
-detection on `Transform` components to incrementally refit
-moved entities, batch-insert spawned entities, and remove
-despawned entities. Full rebuilds happen in the background
-only when SAH quality degrades past a threshold.
+A dedicated ECS system (`SpatialUpdateSystem`) runs once per frame, before any consumer systems. It
+uses change detection on `Transform` components to incrementally refit moved entities, batch-insert
+spawned entities, and remove despawned entities. Full rebuilds happen in the background only when
+SAH quality degrades past a threshold.
 
-All queries go through a unified `SpatialQuery` API that
-accepts query shapes (ray, AABB, sphere, frustum, k-NN)
-and spatial layer masks. Batch queries are parallelized
-across worker threads via the `ThreadPool::scope` API.
+All queries go through a unified `SpatialQuery` API that accepts query shapes (ray, AABB, sphere,
+frustum, k-NN) and spatial layer masks. Batch queries are parallelized across worker threads via the
+`ThreadPool::scope` API.
 
-In addition to the BVH, the engine provides a generic
-`UniformGrid<T>` (defined in
-[shared-primitives.md](shared-primitives.md)) for
-density-based and cell-based spatial queries. Domains
-such as AI perception (scent), crowd simulation
-(density), fog of war, and tactical grids instantiate
-`UniformGrid<T>` with domain-specific cell data. The
-BVH remains the primary spatial index for point, ray,
-shape, and frustum queries; the uniform grid serves
-fixed-resolution cell queries that do not benefit from
-hierarchical acceleration.
+In addition to the BVH, the engine provides a generic `UniformGrid<T>` (defined in
+[shared-primitives.md](shared-primitives.md)) for density-based and cell-based spatial queries.
+Domains such as AI perception (scent), crowd simulation (density), fog of war, and tactical grids
+instantiate `UniformGrid<T>` with domain-specific cell data. The BVH remains the primary spatial
+index for point, ray, shape, and frustum queries; the uniform grid serves fixed-resolution cell
+queries that do not benefit from hierarchical acceleration.
 
 ---
 
@@ -139,7 +128,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_core/
 └── spatial/
     ├── mod.rs          # Public re-exports
@@ -838,8 +827,7 @@ impl UniformGrid {
 
 ### Unified Query API — SpatialQuery Trait
 
-This is the interoperability contract consumed by
-Physics, Rendering, Networking, AI, Audio, and
+This is the interoperability contract consumed by Physics, Rendering, Networking, AI, Audio, and
 Gameplay.
 
 ```rust
@@ -1451,13 +1439,10 @@ flowchart TD
 
 ### Fattened AABB Optimization
 
-Leaf nodes store a "fattened" AABB that is slightly
-larger than the entity's actual AABB. When an entity
-moves, the system checks whether the new AABB still
-fits within the fat AABB. If it does, no tree
-modification is needed — only the leaf's actual AABB
-is updated. This eliminates the vast majority of
-refits for entities with small, continuous movements.
+Leaf nodes store a "fattened" AABB that is slightly larger than the entity's actual AABB. When an
+entity moves, the system checks whether the new AABB still fits within the fat AABB. If it does, no
+tree modification is needed — only the leaf's actual AABB is updated. This eliminates the vast
+majority of refits for entities with small, continuous movements.
 
 ```rust
 // Fast path: new AABB fits in fat AABB
@@ -1643,10 +1628,8 @@ fn network_relevancy_system(
 | Mobile (ARM) | 64 B | 2 | Same layout, NEON SIMD for AABB tests |
 | Apple Silicon | 128 B | 4 | Wider prefetch; 4 nodes per line |
 
-`BvhNode` is 32 bytes (`#[repr(C)]`). On x86_64 and
-ARM, two nodes fit in one 64-byte cache line. On
-Apple Silicon (128-byte cache lines), four nodes fit.
-Depth-first traversal order maximizes spatial
+`BvhNode` is 32 bytes (`#[repr(C)]`). On x86_64 and ARM, two nodes fit in one 64-byte cache line. On
+Apple Silicon (128-byte cache lines), four nodes fit. Depth-first traversal order maximizes spatial
 locality during BVH walks.
 
 ### SIMD Acceleration
@@ -1659,10 +1642,9 @@ Ray-AABB intersection uses SIMD on all platforms:
 | ARM | NEON | `vmaxq_f32`, `vminq_f32` |
 | Apple Silicon | NEON | Same as ARM, unified with GCD dispatch |
 
-The ray-AABB slab test computes entry/exit t-values
-for all 3 axes simultaneously using 4-wide SIMD. For
-batch queries, 4 rays can be tested against one AABB
-node using SOA (structure-of-arrays) ray layout.
+The ray-AABB slab test computes entry/exit t-values for all 3 axes simultaneously using 4-wide SIMD.
+For batch queries, 4 rays can be tested against one AABB node using SOA (structure-of-arrays) ray
+layout.
 
 ### Scaling Tiers
 
@@ -1673,31 +1655,21 @@ node using SOA (structure-of-arrays) ray layout.
 | Desktop | 1M | ~40 MB | 256 x 256 | 8 | 1024 queries |
 | High-end | 5M+ | ~200 MB | 512 x 512 | 10 | 4096+ queries |
 
-Memory budget per entity: 32 bytes (BvhNode) + 28
-bytes (LeafEntry) = 60 bytes, within the 64 byte
+Memory budget per entity: 32 bytes (BvhNode) + 28 bytes (LeafEntry) = 60 bytes, within the 64 byte
 R-1.9.1a requirement.
 
 ### Thread Safety Model
 
-The spatial index follows a read-many/write-once
-model per frame:
+The spatial index follows a read-many/write-once model per frame:
 
-1. **Write phase:** `SpatialUpdateSystem` has
-   exclusive `ResMut<BvhIndex>` access. No other
-   system can read or write the index. The ECS
-   scheduler enforces this via resource access
-   declarations.
-2. **Read phase:** All consumer systems access the
-   index via `Res<BvhIndex>` (shared immutable
-   reference). Multiple consumers run in parallel.
-   Batch queries use `ThreadPool::scope` for
-   parallelism — all workers read the same immutable
-   BVH simultaneously.
+1. **Write phase:** `SpatialUpdateSystem` has exclusive `ResMut<BvhIndex>` access. No other system
+   can read or write the index. The ECS scheduler enforces this via resource access declarations.
+2. **Read phase:** All consumer systems access the index via `Res<BvhIndex>` (shared immutable
+   reference). Multiple consumers run in parallel. Batch queries use `ThreadPool::scope` for
+   parallelism — all workers read the same immutable BVH simultaneously.
 
-No `AsyncMutex` or `AsyncRwLock` is needed. The ECS
-scheduler's resource access tracking provides the
-synchronization boundary. This is the same pattern
-used by all ECS resources.
+No `AsyncMutex` or `AsyncRwLock` is needed. The ECS scheduler's resource access tracking provides
+the synchronization boundary. This is the same pattern used by all ECS resources.
 
 ### Proposed Dependencies
 
@@ -1707,6 +1679,44 @@ used by all ECS resources.
 | `glam` | Math types (Vec3, Mat4, Aabb) | SIMD-accelerated spatial math on all platforms |
 
 ---
+
+## Safety and Performance Notes
+
+### BvhNode Sentinel Values (Medium)
+
+`BvhNode::left`, `right`, `parent` use `u32::MAX` as invalid sentinel. Use `Option<NonMaxU32>` or a
+`NodeIndex` newtype to prevent accidental indexing with the sentinel value.
+
+### UniformGrid Bounds Checking (Medium)
+
+`insert`, `remove`, `update` accept `GridCoord` directly. Validate coordinates against `dimensions`
+in all mutating methods, not only in `world_to_cell`. Return `Result<(), SpatialError>`.
+
+### SpatialQuery Return Type (Performance -- Critical)
+
+`SpatialQuery` trait methods return `Vec<T>`, allocating on every call. At 1000+ queries/frame
+(physics broadphase + AI perception + rendering frustum), this creates 1-3 ms/frame of allocation
+pressure. Provide arena-allocated variants: `query_into(arena: &FrameArena, ...) -> &[T]` or
+callback-based `query_each(|hit| { ... })`.
+
+### BvhNode Size (Performance -- High)
+
+`BvhNode` is 40 bytes (AABB 24 + left 4 + right 4
+
++ parent 4 + is_leaf 1 + padding 3). Exceeds half
+a cache line. Remove `parent` to a separate array and pack `is_leaf` into the sign bit of `left`.
+Target 32 bytes (exactly half a 64-byte cache line).
+
+### BVH Rebuild (Performance -- High)
+
+Full BVH rebuild is unbounded and synchronous. For large scenes (100K+ entities), this can spike to
+10-50 ms. Provide double-buffered async rebuild: build new BVH on a background task while the
+current BVH continues serving queries. Swap atomically when the rebuild completes.
+
+### Octree Remove (Performance -- Medium)
+
+`remove(entity)` with no cell hint forces O(n) scan. `SpatialMembership` already tracks the cell.
+Provide `remove_with_hint(entity, cell)` for O(1) removal.
 
 ## Test Plan
 
@@ -1767,52 +1777,31 @@ used by all ECS resources.
 
 ## Open Questions
 
-1. **BVH node width (binary vs 4-wide).** A binary
-   BVH is simpler and has lower per-node cost. A
-   4-wide BVH (QBVH) enables testing 4 child AABBs
-   simultaneously with one SIMD instruction, which
-   can be faster for ray traversal. The 4-wide
-   layout complicates incremental updates. Decision
-   depends on benchmarking both layouts at 1M+
-   entities.
+1. **BVH node width (binary vs 4-wide).** A binary BVH is simpler and has lower per-node cost. A
+   4-wide BVH (QBVH) enables testing 4 child AABBs simultaneously with one SIMD instruction, which
+   can be faster for ray traversal. The 4-wide layout complicates incremental updates. Decision
+   depends on benchmarking both layouts at 1M+ entities.
 
-2. **Octree vs uniform grid redundancy.** The design
-   includes both an octree (3D, hierarchical) and a
-   uniform grid (2D, flat). For games with a flat
-   ground plane (most action games, MMOs), the 2D
-   grid is faster for network relevancy. For games
-   with vertical gameplay (flying, space), the
-   octree is needed. Whether to support both or
-   auto-select based on world configuration needs
+2. **Octree vs uniform grid redundancy.** The design includes both an octree (3D, hierarchical) and
+   a uniform grid (2D, flat). For games with a flat ground plane (most action games, MMOs), the 2D
+   grid is faster for network relevancy. For games with vertical gameplay (flying, space), the
+   octree is needed. Whether to support both or auto-select based on world configuration needs
    discussion.
 
-3. **Background rebuild atomicity.** When a full BVH
-   rebuild runs on a background thread, the rebuilt
-   tree must be swapped in atomically at a frame
-   boundary. The current design assumes a double-
-   buffer approach (build into a second `BvhIndex`,
-   swap references). The exact swap mechanism and
-   how it interacts with `SpatialMembership` handles
-   needs detailed design.
+3. **Background rebuild atomicity.** When a full BVH rebuild runs on a background thread, the
+   rebuilt tree must be swapped in atomically at a frame boundary. The current design assumes a
+   double- buffer approach (build into a second `BvhIndex`, swap references). The exact swap
+   mechanism and how it interacts with `SpatialMembership` handles needs detailed design.
 
-4. **SIMD ray batch layout.** For maximum throughput,
-   batch ray casts should use SOA layout (4 ray
-   origins packed into SIMD registers). This
-   requires transforming the query input into SOA
-   format and back. The overhead of this
-   transformation may or may not be worthwhile
-   depending on batch size. Needs benchmarking.
+4. **SIMD ray batch layout.** For maximum throughput, batch ray casts should use SOA layout (4 ray
+   origins packed into SIMD registers). This requires transforming the query input into SOA format
+   and back. The overhead of this transformation may or may not be worthwhile depending on batch
+   size. Needs benchmarking.
 
-5. **Spatial layer count.** The current design uses
-   a `u32` bitmask (32 layers). If consumers need
-   more than 32 categories, this could be expanded
-   to `u64` (64 layers) at the cost of wider
-   `LeafEntry` and slightly slower mask tests. 32
-   layers match common physics engine conventions.
+5. **Spatial layer count.** The current design uses a `u32` bitmask (32 layers). If consumers need
+   more than 32 categories, this could be expanded to `u64` (64 layers) at the cost of wider
+   `LeafEntry` and slightly slower mask tests. 32 layers match common physics engine conventions.
 
-6. **Grid cell entity cap.** `SmallVec<[Entity; 32]>`
-   is used for grid cells. If entity density varies
-   wildly (dense cities vs empty wilderness), a
-   different storage strategy (e.g., chunked linked
-   list) may reduce memory waste in sparse cells
-   and overflow allocation in dense cells.
+6. **Grid cell entity cap.** `SmallVec<[Entity; 32]>` is used for grid cells. If entity density
+   varies wildly (dense cities vs empty wilderness), a different storage strategy (e.g., chunked
+   linked list) may reduce memory waste in sparse cells and overflow allocation in dense cells.

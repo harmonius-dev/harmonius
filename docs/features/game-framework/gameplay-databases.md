@@ -50,10 +50,10 @@ Used for damage calculations, XP requirements, shop prices, and crafting yields.
 ### F-13.7.5 Row Inheritance and Prototype Chains
 
 Table rows can declare a parent row. Child rows inherit all column values from the parent,
-overriding only specified columns. Inheritance chains support multi-level depth — e.g., `Item >
-Weapon > Sword > FireSword`. Used for item type hierarchies, NPC templates, ability variants, and
-equipment slot filtering (a "Head" slot accepts any row whose chain includes the "Headgear"
-prototype). Circular inheritance is detected and rejected at validation time.
+overriding only specified columns. Inheritance chains support multi-level depth — e.g.,
+`Item > Weapon > Sword > FireSword`. Used for item type hierarchies, NPC templates, ability
+variants, and equipment slot filtering (a "Head" slot accepts any row whose chain includes the
+"Headgear" prototype). Circular inheritance is detected and rejected at validation time.
 
 - **Requirements:** R-13.7.5
 - **Dependencies:** F-13.7.2, F-13.7.10

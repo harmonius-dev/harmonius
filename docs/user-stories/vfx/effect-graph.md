@@ -32,9 +32,9 @@ mobile platforms.
 ## US-11.6.3.1 Expose Effect Parameters for Per-Instance Overrides
 
 **As a** effects artist (P-12), **I want** typed parameter slots (float, vector, color, curve,
-gradient, texture) on effect graphs that designers override per-instance in the level editor, **so
-that** a single fire effect template produces small campfires and large bonfires through parameter
-variation.
+gradient, texture) on effect graphs that designers override per-instance in the level editor,
+**so that** a single fire effect template produces small campfires and large bonfires through
+parameter variation.
 
 ## US-11.6.3.2 Bind Effect Parameters to Game State for Reactive VFX
 
@@ -75,8 +75,8 @@ overdraw, **so that** VFX quality degrades gracefully without frame drops.
 ## US-11.6.5.2 Prioritize Hero Ability Effects Over Ambient Particles
 
 **As a** game designer (P-5), **I want** per-effect priority assignment (hero abilities > ambient
-> distant environment) used by the global budget manager, **so that** player ability effects
-remain visible even when the VFX budget is exhausted.
+> distant environment) used by the global budget manager, **so that** player ability effects remain
+visible even when the VFX budget is exhausted.
 
 ## US-11.6.5.3 Validate VFX Budget Integration With Dynamic Resolution
 

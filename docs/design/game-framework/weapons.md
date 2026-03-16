@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -31,31 +31,22 @@
 
 ## Overview
 
-The weapon system models firearms, melee weapons, thrown
-weapons, and their supporting subsystems (ammunition,
-ballistics, recoil, attachments, surface response). It
-builds on top of the ability and combat system -- fire
-modes are ability activation modes, projectiles are ECS
-entities managed by the projectile system, and damage
-flows through the gameplay effect pipeline.
+The weapon system models firearms, melee weapons, thrown weapons, and their supporting subsystems
+(ammunition, ballistics, recoil, attachments, surface response). It builds on top of the ability and
+combat system -- fire modes are ability activation modes, projectiles are ECS entities managed by
+the projectile system, and damage flows through the gameplay effect pipeline.
 
-All weapon state lives as ECS components. All weapon logic
-runs as ECS systems. Designers author weapon configurations,
-recoil patterns, ammo types, attachment stats, and impact
-response tables entirely in the visual editor. No code.
+All weapon state lives as ECS components. All weapon logic runs as ECS systems. Designers author
+weapon configurations, recoil patterns, ammo types, attachment stats, and impact response tables
+entirely in the visual editor. No code.
 
 The weapon system has four major subsystems:
 
-1. **Fire Modes and Ammunition** -- fire rate, magazine,
-   reload, ammo types.
-2. **Recoil and Spread** -- per-weapon recoil curves,
-   context-sensitive spread.
-3. **Ballistics** -- projectile physics, penetration,
-   ricochet, wind, zeroing.
-4. **Weapon Customization** -- attachment slots,
-   stat modifiers, visual integration.
-5. **Surface Response** -- impact VFX, audio, decals
-   dispatched by surface material type.
+1. **Fire Modes and Ammunition** -- fire rate, magazine, reload, ammo types.
+2. **Recoil and Spread** -- per-weapon recoil curves, context-sensitive spread.
+3. **Ballistics** -- projectile physics, penetration, ricochet, wind, zeroing.
+4. **Weapon Customization** -- attachment slots, stat modifiers, visual integration.
+5. **Surface Response** -- impact VFX, audio, decals dispatched by surface material type.
 
 ## Architecture
 
@@ -115,7 +106,7 @@ graph TD
 
 ### Directory Layout
 
-```
+```text
 harmonius_weapons/
 ├── weapon.rs           # Weapon component,
 │                       # WeaponDefinition asset
@@ -337,10 +328,8 @@ pub enum WeaponCategory {
 
 ### Fire Modes
 
-Fire modes determine how trigger input maps to
-rounds fired. The fire mode system integrates with
-the ability activation system -- each fire mode
-is an activation mode variant.
+Fire modes determine how trigger input maps to rounds fired. The fire mode system integrates with
+the ability activation system -- each fire mode is an activation mode variant.
 
 ```rust
 /// Fire mode type.
@@ -880,36 +869,22 @@ pub struct ImpactResponseSystem;
 
 ### Per-Frame System Execution Order
 
-These systems run after the ability activation
-system from the abilities design:
+These systems run after the ability activation system from the abilities design:
 
-1. **FireModeSystem** -- processes fire input,
-   checks fire rate and magazine, consumes ammo,
-   emits projectile spawn requests.
-2. **ReloadSystem** -- drives reload state machine,
-   transitions on input and timer completion.
-3. **AmmoSystem** -- replenishes magazine from
-   reserves on reload complete, handles ammo
-   type switching.
-4. **RecoilSystem** -- applies recoil pattern
-   offsets on fire, recovers between shots.
-5. **SpreadSystem** -- updates spread based on
-   movement, posture, ADS, fire rate.
-6. **BallisticSystem** -- integrates projectile
-   trajectories, runs CCD via shared spatial
-   index.
-7. **PenetrationSystem** -- evaluates penetration
-   and ricochet on impact.
-8. **ZeroingSystem** -- adjusts aim offset for
-   bullet drop at zeroed distance.
-9. **AttachmentStatSystem** -- recalculates weapon
-   stats from equipped attachments.
-10. **AttachmentVisualSystem** -- updates
-    attachment meshes on equip/unequip.
-11. **SurfaceTypeSystem** -- resolves surface
-    material at impact points.
-12. **ImpactResponseSystem** -- spawns VFX, audio,
-    and decals based on surface type.
+1. **FireModeSystem** -- processes fire input, checks fire rate and magazine, consumes ammo, emits
+   projectile spawn requests.
+2. **ReloadSystem** -- drives reload state machine, transitions on input and timer completion.
+3. **AmmoSystem** -- replenishes magazine from reserves on reload complete, handles ammo type
+   switching.
+4. **RecoilSystem** -- applies recoil pattern offsets on fire, recovers between shots.
+5. **SpreadSystem** -- updates spread based on movement, posture, ADS, fire rate.
+6. **BallisticSystem** -- integrates projectile trajectories, runs CCD via shared spatial index.
+7. **PenetrationSystem** -- evaluates penetration and ricochet on impact.
+8. **ZeroingSystem** -- adjusts aim offset for bullet drop at zeroed distance.
+9. **AttachmentStatSystem** -- recalculates weapon stats from equipped attachments.
+10. **AttachmentVisualSystem** -- updates attachment meshes on equip/unequip.
+11. **SurfaceTypeSystem** -- resolves surface material at impact points.
+12. **ImpactResponseSystem** -- spawns VFX, audio, and decals based on surface type.
 
 ### Ballistic Pipeline
 
@@ -919,51 +894,40 @@ For each in-flight projectile per physics tick:
 2. Read wind vector from the weather system.
 3. Integrate velocity: gravity + drag + wind.
 4. Compute displacement for this tick.
-5. CCD sweep from old position to new position
-   via shared spatial index.
+5. CCD sweep from old position to new position via shared spatial index.
 6. If no hit: update position, continue.
 7. If hit:
    - Query surface material from physics material.
    - Evaluate penetration/ricochet:
-     - **Penetrate**: reduce energy, continue with
-       exit velocity.
+     - **Penetrate**: reduce energy, continue with exit velocity.
      - **Ricochet**: reflect, reduce energy, continue.
-     - **Absorb**: apply damage effect, dispatch
-       surface response, destroy projectile entity.
+     - **Absorb**: apply damage effect, dispatch surface response, destroy projectile entity.
 
 ### Attachment Stat Aggregation
 
 When an attachment is equipped or removed:
 
-1. Collect all `StatModifier` entries from all
-   equipped `AttachmentSlot` components.
+1. Collect all `StatModifier` entries from all equipped `AttachmentSlot` components.
 2. Group modifiers by `WeaponStat`.
 3. Apply flat modifiers first (sum).
 4. Apply percent modifiers second (product).
-5. Write final stat values to the weapon's
-   derived stat cache.
-6. Notify dependent systems (spread uses
-   spread modifier, recoil uses recoil
-   modifier, etc.).
+5. Write final stat values to the weapon's derived stat cache.
+6. Notify dependent systems (spread uses spread modifier, recoil uses recoil modifier, etc.).
 
 ### Recoil Pattern Playback
 
 Per round fired:
 
-1. Read the next `Vec2` from `RecoilPattern`
-   at `pattern_index`.
+1. Read the next `Vec2` from `RecoilPattern` at `pattern_index`.
 2. Multiply by the fire mode's `recoil_modifier`.
 3. Multiply by attachment recoil modifiers.
 4. Add to `accumulated_offset`.
-5. Feed `accumulated_offset` to the camera system
-   as an additive aim rotation.
-6. Advance `pattern_index`. If past the end,
-   loop from `loop_start_index`.
+5. Feed `accumulated_offset` to the camera system as an additive aim rotation.
+6. Advance `pattern_index`. If past the end, loop from `loop_start_index`.
 
 Between rounds (recovery):
 
-1. Lerp `accumulated_offset` toward zero at
-   `recovery_rate` per second.
+1. Lerp `accumulated_offset` toward zero at `recovery_rate` per second.
 2. Stop recovery while `firing` is true.
 
 ## Platform Considerations
@@ -1059,40 +1023,26 @@ Between rounds (recovery):
 
 ## Open Questions
 
-1. **Hitscan vs projectile threshold** -- At what muzzle
-   velocity should the system switch from simulated
-   projectiles to instant raycasts? Very fast rounds
-   (e.g., 1000+ m/s) travel so far per tick that CCD
-   becomes a long sweep. A hybrid approach (raycast for
-   supersonic, simulated for subsonic) may be optimal.
-2. **Penetration energy model** -- The current linear
-   energy-loss-per-cm model is simple but unrealistic.
-   Real penetration follows a non-linear curve based on
-   material density and projectile deformation. Determine
-   whether a lookup table per material pair is needed for
-   acceptable results.
-3. **Recoil pattern randomization** -- Should recoil
-   patterns be fully deterministic (learnable, competitive)
-   or include a random component (more realistic, less
-   exploitable)? This is a game-design-level decision that
-   affects API shape -- deterministic needs only pattern
-   index, random needs a per-shot RNG seed.
-4. **Attachment compatibility matrix** -- The current design
-   uses category filters per slot. Some games have
-   per-weapon attachment whitelists (only certain scopes
-   fit certain rifles). Determine whether per-weapon
-   compatibility data is needed beyond category filtering.
-5. **Surface response budget** -- Impact VFX, audio, and
-   decals can accumulate rapidly during heavy firefights.
-   Define per-frame budgets for each (max VFX spawns per
-   frame, max audio voices, max decal placements) and
-   prioritization strategy (nearest to camera first).
-6. **Projectile pooling** -- With up to 256 simultaneous
-   projectiles, entity creation/destruction overhead may
-   matter. Consider an ECS entity pool for projectiles
-   to avoid archetype table insertions on every shot.
-7. **Scope rendering** -- Optic scope rendering can use
-   either a render-to-texture approach (realistic but
-   expensive -- second camera) or a shader overlay
-   (cheaper, less realistic). Determine which approach
-   aligns with performance targets.
+1. **Hitscan vs projectile threshold** -- At what muzzle velocity should the system switch from
+   simulated projectiles to instant raycasts? Very fast rounds (e.g., 1000+ m/s) travel so far per
+   tick that CCD becomes a long sweep. A hybrid approach (raycast for supersonic, simulated for
+   subsonic) may be optimal.
+2. **Penetration energy model** -- The current linear energy-loss-per-cm model is simple but
+   unrealistic. Real penetration follows a non-linear curve based on material density and projectile
+   deformation. Determine whether a lookup table per material pair is needed for acceptable results.
+3. **Recoil pattern randomization** -- Should recoil patterns be fully deterministic (learnable,
+   competitive) or include a random component (more realistic, less exploitable)? This is a
+   game-design-level decision that affects API shape -- deterministic needs only pattern index,
+   random needs a per-shot RNG seed.
+4. **Attachment compatibility matrix** -- The current design uses category filters per slot. Some
+   games have per-weapon attachment whitelists (only certain scopes fit certain rifles). Determine
+   whether per-weapon compatibility data is needed beyond category filtering.
+5. **Surface response budget** -- Impact VFX, audio, and decals can accumulate rapidly during heavy
+   firefights. Define per-frame budgets for each (max VFX spawns per frame, max audio voices, max
+   decal placements) and prioritization strategy (nearest to camera first).
+6. **Projectile pooling** -- With up to 256 simultaneous projectiles, entity creation/destruction
+   overhead may matter. Consider an ECS entity pool for projectiles to avoid archetype table
+   insertions on every shot.
+7. **Scope rendering** -- Optic scope rendering can use either a render-to-texture approach
+   (realistic but expensive -- second camera) or a shader overlay (cheaper, less realistic).
+   Determine which approach aligns with performance targets.

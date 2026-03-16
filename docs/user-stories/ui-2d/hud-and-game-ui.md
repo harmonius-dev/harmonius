@@ -151,8 +151,8 @@ navigate and track objectives without getting lost.
 ## US-10.3.13 Track Quests With On-Screen Objectives and Waypoints
 
 **As a** player (P-23), **I want** a persistent quest tracker showing active objectives with
-progress indicators, world-space waypoint markers, compass indicators, and distance displays, **so
-that** I always know what to do next and where to go.
+progress indicators, world-space waypoint markers, compass indicators, and distance displays,
+**so that** I always know what to do next and where to go.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -365,8 +365,8 @@ game's visual identity.
 ## US-10.3.30 Substitute Hand-Painted Maps for Key Zones
 
 **As an** artist (P-8), **I want** to substitute static hand-painted map images for specific zones
-while dynamic data layers (player position, quest markers, fog of war) overlay correctly, **so
-that** important areas get maximum artistic quality.
+while dynamic data layers (player position, quest markers, fog of war) overlay correctly,
+**so that** important areas get maximum artistic quality.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

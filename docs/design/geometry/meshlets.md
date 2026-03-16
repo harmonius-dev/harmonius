@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/geometry-world/](../../features/geometry-world/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/geometry-world/](../../features/geometry-world/),
 > [requirements/geometry-world/](../../requirements/geometry-world/), and
-> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table
-> below traces design elements to those definitions.
+> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -33,32 +33,25 @@
 
 ## Overview
 
-The meshlet pipeline is the geometry backbone of the
-Harmonius renderer. It replaces traditional draw-call
-submission with a GPU-driven architecture where every
-triangle on screen flows through meshlet clusters.
+The meshlet pipeline is the geometry backbone of the Harmonius renderer. It replaces traditional
+draw-call submission with a GPU-driven architecture where every triangle on screen flows through
+meshlet clusters.
 
 Key principles:
 
-1. **Offline baking** decomposes source meshes into
-   ~64-vertex / ~124-triangle meshlets organized in a
-   DAG hierarchy with precomputed bounding metadata.
-2. **GPU-driven culling** performs two-phase occlusion,
-   frustum, backface-cone, and small-triangle rejection
-   entirely on the GPU.
-3. **Hierarchical LOD** selects the coarsest DAG cut
-   whose screen-space error is below a pixel threshold,
-   with dithered crossfade transitions.
-4. **Visibility buffer rendering** writes a 64-bit
-   triangle+instance ID per pixel, deferring all
+1. **Offline baking** decomposes source meshes into ~64-vertex / ~124-triangle meshlets organized in
+   a DAG hierarchy with precomputed bounding metadata.
+2. **GPU-driven culling** performs two-phase occlusion, frustum, backface-cone, and small-triangle
+   rejection entirely on the GPU.
+3. **Hierarchical LOD** selects the coarsest DAG cut whose screen-space error is below a pixel
+   threshold, with dithered crossfade transitions.
+4. **Visibility buffer rendering** writes a 64-bit triangle+instance ID per pixel, deferring all
    material evaluation to a fullscreen compute pass.
-5. **Virtual geometry streaming** organizes meshlet data
-   into fixed-size pages streamed on demand via
-   platform-native async I/O.
+5. **Virtual geometry streaming** organizes meshlet data into fixed-size pages streamed on demand
+   via platform-native async I/O.
 
-The pipeline supports mesh shaders on modern GPUs and
-falls back to compute + multi-draw-indirect on hardware
-lacking mesh shader support.
+The pipeline supports mesh shaders on modern GPUs and falls back to compute + multi-draw-indirect on
+hardware lacking mesh shader support.
 
 ## Architecture
 
@@ -115,7 +108,7 @@ graph TD
     MC --> SQ
 ```
 
-```
+```text
 harmonius_geometry/
 ├── meshlet/
 │   ├── generator.rs    # MeshletGenerator: partition
@@ -142,8 +135,7 @@ harmonius_geometry/
 
 ### Offline Baking Pipeline
 
-The asset processor invokes the baking pipeline at
-import time. Each source mesh flows through these
+The asset processor invokes the baking pipeline at import time. Each source mesh flows through these
 stages sequentially.
 
 ```mermaid
@@ -250,10 +242,8 @@ classDiagram
 
 ### Render Graph Integration
 
-The meshlet pipeline registers the following passes
-with the render graph. The graph compiler resolves
-dependencies, inserts barriers, and assigns queues
-automatically.
+The meshlet pipeline registers the following passes with the render graph. The graph compiler
+resolves dependencies, inserts barriers, and assigns queues automatically.
 
 ```mermaid
 graph TD
@@ -291,10 +281,8 @@ graph TD
 | Visibility Buffer Write | Graphics | 64-bit atomics |
 | Material Eval Compute | Compute | None |
 
-When mesh shaders are unavailable, the Cluster Cull
-pass writes surviving meshlet indices to an indirect
-draw buffer consumed by a traditional vertex pipeline
-rasterization pass.
+When mesh shaders are unavailable, the Cluster Cull pass writes surviving meshlet indices to an
+indirect draw buffer consumed by a traditional vertex pipeline rasterization pass.
 
 ### Streaming Feedback Loop
 
@@ -892,8 +880,7 @@ impl MeshletBaker {
 
 ### HLSL Shader Signatures
 
-The following HLSL entry points are compiled via
-DXC and consumed by the GPU abstraction layer.
+The following HLSL entry points are compiled via DXC and consumed by the GPU abstraction layer.
 
 ```rust
 // These are the HLSL shader entry points.
@@ -1036,93 +1023,65 @@ pub enum MeshletError {
 
 ### Per-Frame Rendering Flow
 
-The meshlet pipeline executes these steps each frame.
-Steps 1-2 run on the CPU. Steps 3-10 run entirely on
-the GPU via render graph passes.
+The meshlet pipeline executes these steps each frame. Steps 1-2 run on the CPU. Steps 3-10 run
+entirely on the GPU via render graph passes.
 
-1. **Extract** -- The scene pipeline extracts visible
-   entities with `MeshletMeshComponent` into
+1. **Extract** -- The scene pipeline extracts visible entities with `MeshletMeshComponent` into
    `GpuMeshletInstance` arrays via ECS queries.
 
-2. **Upload** -- Instance data is written to a
-   GPU buffer via the copy queue.
+2. **Upload** -- Instance data is written to a GPU buffer via the copy queue.
 
-3. **Phase 1 Occlusion Cull** -- A compute shader
-   tests each instance's bounding sphere against
-   the previous frame's HZB. Instances that pass
-   are marked visible.
+3. **Phase 1 Occlusion Cull** -- A compute shader tests each instance's bounding sphere against the
+   previous frame's HZB. Instances that pass are marked visible.
 
-4. **HZB Build** -- Visible instances from phase 1
-   are rasterized (depth only). A mip chain is
-   built from the resulting depth buffer via
-   iterative min-reduction.
+4. **HZB Build** -- Visible instances from phase 1 are rasterized (depth only). A mip chain is built
+   from the resulting depth buffer via iterative min-reduction.
 
-5. **Phase 2 Retest** -- Instances that were
-   occluded in phase 1 but might be visible
-   (newly unoccluded by phase-1 geometry) are
-   retested against the updated HZB.
+5. **Phase 2 Retest** -- Instances that were occluded in phase 1 but might be visible (newly
+   unoccluded by phase-1 geometry) are retested against the updated HZB.
 
-6. **LOD Selection** -- The task shader traverses
-   each surviving instance's DAG, selecting the
-   coarsest cut whose projected error is below
-   the pixel threshold.
+6. **LOD Selection** -- The task shader traverses each surviving instance's DAG, selecting the
+   coarsest cut whose projected error is below the pixel threshold.
 
-7. **Cluster Cull** -- The task shader performs
-   per-meshlet frustum, backface-cone, and
-   occlusion culling on the selected cut.
+7. **Cluster Cull** -- The task shader performs per-meshlet frustum, backface-cone, and occlusion
+   culling on the selected cut.
 
-8. **Triangle Cull + Rasterize** -- The mesh
-   shader (or indirect draw fallback) emits
-   surviving triangles. Per-triangle backface and
-   small-triangle culling discard sub-pixel
-   geometry.
+8. **Triangle Cull + Rasterize** -- The mesh shader (or indirect draw fallback) emits surviving
+   triangles. Per-triangle backface and small-triangle culling discard sub-pixel geometry.
 
-9. **Visibility Buffer Write** -- Fragment shaders
-   atomically write a 64-bit entry
-   (instance_id | triangle_id) per pixel.
+9. **Visibility Buffer Write** -- Fragment shaders atomically write a 64-bit entry (instance_id |
+   triangle_id) per pixel.
 
-10. **Material Evaluation** -- A fullscreen compute
-    pass reads the visibility buffer, fetches
-    vertex attributes for each visible pixel, and
-    evaluates materials via bindless descriptor
-    indices into the G-buffer.
+10. **Material Evaluation** -- A fullscreen compute pass reads the visibility buffer, fetches vertex
+    attributes for each visible pixel, and evaluates materials via bindless descriptor indices into
+    the G-buffer.
 
 ### Streaming Data Flow
 
-The streaming subsystem operates as a feedback loop
-across frames.
+The streaming subsystem operates as a feedback loop across frames.
 
-1. **Feedback** -- A compute pass records page IDs
-   of all meshlets referenced by visible instances
+1. **Feedback** -- A compute pass records page IDs of all meshlets referenced by visible instances
    into a feedback buffer.
 
-2. **Readback** -- The feedback buffer is read back
-   to the CPU one frame later (no stall).
+2. **Readback** -- The feedback buffer is read back to the CPU one frame later (no stall).
 
-3. **Prioritize** -- The `MeshletStreamer` scores
-   each requested page by screen-space
-   contribution and camera distance.
+3. **Prioritize** -- The `MeshletStreamer` scores each requested page by screen-space contribution
+   and camera distance.
 
-4. **I/O Request** -- Highest-priority pages are
-   submitted as async reads via the IoReactor.
+4. **I/O Request** -- Highest-priority pages are submitted as async reads via the IoReactor.
 
-5. **Poll** -- At the frame poll point,
-   `reactor.poll()` drains completed I/O.
+5. **Poll** -- At the frame poll point, `reactor.poll()` drains completed I/O.
 
-6. **Decompress** -- Loaded page data is
-   decompressed (Zstd) on a worker thread.
+6. **Decompress** -- Loaded page data is decompressed (Zstd) on a worker thread.
 
-7. **Upload** -- Decompressed page data is
-   uploaded to the GPU via the transfer queue.
+7. **Upload** -- Decompressed page data is uploaded to the GPU via the transfer queue.
 
-8. **Update** -- The page table is updated to mark
-   new pages as resident. The next frame's culling
+8. **Update** -- The page table is updated to mark new pages as resident. The next frame's culling
    shaders see the updated residency.
 
 ### Scoped Parallel Baking
 
-The offline baker uses the thread pool's scoped
-execution to parallelize LOD generation.
+The offline baker uses the thread pool's scoped execution to parallelize LOD generation.
 
 ```rust
 // Pseudocode: parallel LOD bake
@@ -1163,8 +1122,7 @@ let dag_nodes = dag.build()?;
 
 ### Mesh Shader Fallback Path
 
-When mesh shaders are unavailable (older Vulkan
-drivers, pre-Metal 3 GPUs), the pipeline falls back:
+When mesh shaders are unavailable (older Vulkan drivers, pre-Metal 3 GPUs), the pipeline falls back:
 
 | Stage | Mesh Shader Path | Fallback Path |
 |-------|-----------------|---------------|
@@ -1173,8 +1131,7 @@ drivers, pre-Metal 3 GPUs), the pipeline falls back:
 | Compaction | Task shader payload | Compute prefix-sum + scatter to indirect draw buffer |
 | Rasterize | Mesh shader | `DrawIndexedIndirect` with vertex shader |
 
-The fallback path preserves all GPU-driven culling
-benefits. The render graph's capability gating
+The fallback path preserves all GPU-driven culling benefits. The render graph's capability gating
 (F-2.2.2) selects the correct pass set at startup.
 
 ### Streaming I/O Backends
@@ -1185,8 +1142,7 @@ benefits. The render graph's capability gating
 | macOS | GCD Dispatch IO via IoReactor | `blitCommandEncoder` copy |
 | Linux | io_uring via IoReactor | `vkCmdCopyBuffer` via transfer queue |
 
-All I/O uses the engine's controlled reactor poll
-point. No callbacks fire asynchronously.
+All I/O uses the engine's controlled reactor poll point. No callbacks fire asynchronously.
 
 ### Scaling Tiers
 
@@ -1254,64 +1210,44 @@ point. No callbacks fire asynchronously.
 
 ### Virtual Geometry Streaming Framework
 
-Meshlet page streaming uses the shared
-`VirtualResourceStreamer` framework (see
-[shared-primitives.md](../core-runtime/shared-primitives.md))
-for GPU-feedback-driven page residency, priority queue,
-async I/O, and LRU eviction.
+Meshlet page streaming uses the shared `VirtualResourceStreamer` framework (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)) for GPU-feedback-driven page
+residency, priority queue, async I/O, and LRU eviction.
 
 ### Terrain Integration
 
-Terrain geometry (see [terrain.md](terrain.md)) generates
-meshlets at the clipmap tile level. Terrain meshlet LOD
-integrates with the hierarchical LOD selection system.
+Terrain geometry (see [terrain.md](terrain.md)) generates meshlets at the clipmap tile level.
+Terrain meshlet LOD integrates with the hierarchical LOD selection system.
 
 ## Open Questions
 
-1. **Meshlet size tuning** -- 64 vertices / 124
-   triangles matches meshoptimizer defaults and
-   aligns with GPU workgroup sizes. Should this be
-   configurable per-platform, or is a single fixed
-   size sufficient for all backends?
+1. **Meshlet size tuning** -- 64 vertices / 124 triangles matches meshoptimizer defaults and aligns
+   with GPU workgroup sizes. Should this be configurable per-platform, or is a single fixed size
+   sufficient for all backends?
 
-2. **DAG coarsening strategy** -- Spatial clustering
-   (group nearby meshlets) vs connectivity-based
-   (group meshlets sharing edges). Spatial produces
-   better bounding spheres; connectivity produces
+2. **DAG coarsening strategy** -- Spatial clustering (group nearby meshlets) vs connectivity-based
+   (group meshlets sharing edges). Spatial produces better bounding spheres; connectivity produces
    better watertightness. Need profiling data.
 
-3. **Crossfade dither pattern** -- Blue noise vs
-   Bayer matrix for LOD crossfade. Blue noise
-   produces less visible patterns but is more
-   expensive to evaluate. Mobile may need Bayer.
+3. **Crossfade dither pattern** -- Blue noise vs Bayer matrix for LOD crossfade. Blue noise produces
+   less visible patterns but is more expensive to evaluate. Mobile may need Bayer.
 
-4. **Page size** -- 64 KiB is chosen for alignment
-   with SSD sectors and GPU transfer granularity.
-   Larger pages (256 KiB) reduce I/O overhead but
-   increase granularity waste. Needs measurement
+4. **Page size** -- 64 KiB is chosen for alignment with SSD sectors and GPU transfer granularity.
+   Larger pages (256 KiB) reduce I/O overhead but increase granularity waste. Needs measurement
    across NVMe and SATA drives.
 
-5. **Visibility buffer depth** -- 64-bit atomics
-   provide 32 bits each for instance and triangle
-   ID. This limits the scene to 4 billion instances
-   and 4 billion triangles per frame. If a more
-   compact encoding is needed (e.g., 32-bit with
-   split fields), the tradeoff is reduced ID range.
+5. **Visibility buffer depth** -- 64-bit atomics provide 32 bits each for instance and triangle ID.
+   This limits the scene to 4 billion instances and 4 billion triangles per frame. If a more compact
+   encoding is needed (e.g., 32-bit with split fields), the tradeoff is reduced ID range.
 
-6. **GPU decompression** -- Pages are currently
-   decompressed on the CPU. GPU decompression
-   (F-12.5.3, DirectStorage / Metal I/O) could
-   bypass CPU staging entirely. Integration depends
-   on GPU Direct Storage design completion.
+6. **GPU decompression** -- Pages are currently decompressed on the CPU. GPU decompression
+   (F-12.5.3, DirectStorage / Metal I/O) could bypass CPU staging entirely. Integration depends on
+   GPU Direct Storage design completion.
 
-7. **Multi-view efficiency** -- Shadow cascade views
-   and VR stereo views share the same meshlet data.
-   Should culling run per-view independently, or
-   should a single cull pass produce a superset
+7. **Multi-view efficiency** -- Shadow cascade views and VR stereo views share the same meshlet
+   data. Should culling run per-view independently, or should a single cull pass produce a superset
    visible set that is then per-view filtered?
 
-8. **Meshlet merging for small objects** -- Objects
-   with fewer than 64 vertices produce a single
-   meshlet with poor GPU occupancy. Should the
-   baker merge multiple small objects into shared
+8. **Meshlet merging for small objects** -- Objects with fewer than 64 vertices produce a single
+   meshlet with poor GPU occupancy. Should the baker merge multiple small objects into shared
    meshlet pages for better workgroup utilization?

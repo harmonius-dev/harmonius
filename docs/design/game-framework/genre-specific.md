@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/game-framework/](../../features/game-framework/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/game-framework/](../../features/game-framework/),
 > [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table
-> below traces design elements to those definitions.
+> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -66,23 +66,15 @@
 
 ## Overview
 
-This document covers six genre-specific systems that
-extend the core game framework with specialized
-gameplay mechanics. Each system is 100% ECS-based,
-data-driven, and authored through visual editors.
+This document covers six genre-specific systems that extend the core game framework with specialized
+gameplay mechanics. Each system is 100% ECS-based, data-driven, and authored through visual editors.
 
-1. **Fog of War** -- GPU-computed visibility for
-   RTS/strategy games
-2. **Turn-Based Combat** -- tactical grid, initiative,
-   action points, cover
-3. **Minigame Framework** -- isolated sessions with
-   typed result contracts
-4. **Racing** -- checkpoints, lap timing, drift,
-   ghost replay
-5. **Block/Voxel** -- Minecraft-style chunk world with
-   meshing, lighting, circuits
-6. **Pets and Mounts** -- companion AI, taming,
-   breeding, mounted locomotion
+1. **Fog of War** -- GPU-computed visibility for RTS/strategy games
+2. **Turn-Based Combat** -- tactical grid, initiative, action points, cover
+3. **Minigame Framework** -- isolated sessions with typed result contracts
+4. **Racing** -- checkpoints, lap timing, drift, ghost replay
+5. **Block/Voxel** -- Minecraft-style chunk world with meshing, lighting, circuits
+6. **Pets and Mounts** -- companion AI, taming, breeding, mounted locomotion
 
 ## Architecture
 
@@ -133,7 +125,7 @@ graph TD
 
 ### File Structure
 
-```
+```text
 harmonius_game/
 ├── genre/
 │   ├── fog_of_war/
@@ -188,9 +180,8 @@ harmonius_game/
 
 ## API Design
 
-Each genre subsystem is self-contained with its own
-ECS components, systems, and data structures. The
-subsections below define the API for each genre.
+Each genre subsystem is self-contained with its own ECS components, systems, and data structures.
+The subsections below define the API for each genre.
 
 ### 1. Fog of War
 
@@ -1404,30 +1395,20 @@ pub struct OffspringTraits {
 
 ### Per-Frame System Execution
 
-Each genre system runs as ECS systems within the
-frame graph. Systems declare their component
-queries and resource access, enabling the ECS
-scheduler to parallelize independent systems.
+Each genre system runs as ECS systems within the frame graph. Systems declare their component
+queries and resource access, enabling the ECS scheduler to parallelize independent systems.
 
-1. **Fog of War** -- `FogUpdateSystem` queries
-   all `VisionSource` + `Transform` entities,
-   raycasts through the spatial index, updates
-   the `FogGrid` resource, uploads to GPU.
-2. **Turn-Based** -- `TurnSystem` advances the
-   `TurnManager` resource, `CoverSystem` updates
-   cover values, `CombatSystem` resolves attacks.
-3. **Minigame** -- `MinigameLifecycleSystem`
-   manages session phases. The minigame's own
-   systems run in the isolated world partition.
-4. **Racing** -- `CheckpointSystem` detects volume
-   overlaps, `DriftSystem` reads vehicle physics,
+1. **Fog of War** -- `FogUpdateSystem` queries all `VisionSource` + `Transform` entities, raycasts
+   through the spatial index, updates the `FogGrid` resource, uploads to GPU.
+2. **Turn-Based** -- `TurnSystem` advances the `TurnManager` resource, `CoverSystem` updates cover
+   values, `CombatSystem` resolves attacks.
+3. **Minigame** -- `MinigameLifecycleSystem` manages session phases. The minigame's own systems run
+   in the isolated world partition.
+4. **Racing** -- `CheckpointSystem` detects volume overlaps, `DriftSystem` reads vehicle physics,
    `GhostSystem` records/replays at 120 Hz.
-5. **Block/Voxel** -- `ChunkSystem` streams chunks,
-   `MeshingSystem` runs greedy mesh on workers,
-   `LightSystem` propagates BFS, `CircuitSystem`
-   evaluates at 20 Hz.
-6. **Pet/Mount** -- `CompanionSystem` ticks
-   behavior trees, `NeedsSystem` decays meters,
+5. **Block/Voxel** -- `ChunkSystem` streams chunks, `MeshingSystem` runs greedy mesh on workers,
+   `LightSystem` propagates BFS, `CircuitSystem` evaluates at 20 Hz.
+6. **Pet/Mount** -- `CompanionSystem` ticks behavior trees, `NeedsSystem` decays meters,
    `MountSystem` swaps character controllers.
 
 ### Multiplayer Integration
@@ -1584,34 +1565,19 @@ scheduler to parallelize independent systems.
 
 ## Open Questions
 
-1. **Fog grid resolution** -- Should the fog grid
-   resolution be independent of chunk size, or
-   should it align to chunk boundaries for
-   efficient streaming?
-2. **Turn-based network model** -- Should
-   turn-based combat use lockstep or
-   server-authoritative resolution? Lockstep
-   simplifies replay but increases cheat surface.
-3. **Minigame asset hot-reload** -- Can minigame
-   assets be hot-reloaded while a session is
-   active, or only between sessions?
-4. **Racing physics substep** -- Should racing
-   vehicle physics use a separate 120 Hz substep
-   or run within the global physics tick?
-5. **Chunk meshing thread budget** -- How many
-   worker threads should be reserved for chunk
-   meshing during gameplay to avoid starving
-   other systems?
-6. **Block world persistence format** -- Should
-   chunk data use the engine's standard
-   serialization (RON + binary companion) or a
-   custom compact format optimized for block data?
-7. **Companion teleport animation** -- Should
-   companion teleport be instant or play a
-   fade-out/fade-in effect? Instant is simpler;
-   animated is more polished.
-8. **Breeding trait randomness** -- Should
-   trait inheritance use a seeded PRNG for
-   deterministic breeding outcomes in
-   multiplayer, or accept non-determinism with
-   server-authoritative resolution?
+1. **Fog grid resolution** -- Should the fog grid resolution be independent of chunk size, or should
+   it align to chunk boundaries for efficient streaming?
+2. **Turn-based network model** -- Should turn-based combat use lockstep or server-authoritative
+   resolution? Lockstep simplifies replay but increases cheat surface.
+3. **Minigame asset hot-reload** -- Can minigame assets be hot-reloaded while a session is active,
+   or only between sessions?
+4. **Racing physics substep** -- Should racing vehicle physics use a separate 120 Hz substep or run
+   within the global physics tick?
+5. **Chunk meshing thread budget** -- How many worker threads should be reserved for chunk meshing
+   during gameplay to avoid starving other systems?
+6. **Block world persistence format** -- Should chunk data use the engine's standard serialization
+   (RON + binary companion) or a custom compact format optimized for block data?
+7. **Companion teleport animation** -- Should companion teleport be instant or play a
+   fade-out/fade-in effect? Instant is simpler; animated is more polished.
+8. **Breeding trait randomness** -- Should trait inheritance use a seeded PRNG for deterministic
+   breeding outcomes in multiplayer, or accept non-determinism with server-authoritative resolution?

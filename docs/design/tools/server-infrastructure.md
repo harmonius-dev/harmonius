@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -23,35 +23,24 @@
 
 ## Overview
 
-The server infrastructure provides a fully self-hosted AWS
-backend for the Harmonius engine. All components are deployed
-via modular AWS CDK stacks in TypeScript. A single CLI
-command provisions the entire stack. Two deployment profiles
-exist: **Free Tier** (solo developers, prototyping) and
+The server infrastructure provides a fully self-hosted AWS backend for the Harmonius engine. All
+components are deployed via modular AWS CDK stacks in TypeScript. A single CLI command provisions
+the entire stack. Two deployment profiles exist: **Free Tier** (solo developers, prototyping) and
 **Enterprise** (production studios, multi-AZ, auto-scaling).
 
 Key subsystems:
 
-1. **Collaboration** -- CRDT server for real-time
-   multi-user editing
+1. **Collaboration** -- CRDT server for real-time multi-user editing
 2. **Git hosting** -- Forgejo with S3-backed LFS
-3. **Build farm** -- Auto-scaling EC2 for asset cooking
-   and shader compilation
-4. **CI/CD pipeline** -- CodePipeline for build, test,
-   sign, package, deploy
-5. **Data services** -- RDS PostgreSQL, DynamoDB, Redis,
-   S3 shared cache
-6. **Security** -- VPC isolation, WAF, KMS encryption,
-   IAM least-privilege
-7. **Monitoring** -- CloudWatch dashboards, SNS alerts,
-   CloudTrail audit
-8. **Backup/DR** -- Automated backups, cross-region
-   replication
+3. **Build farm** -- Auto-scaling EC2 for asset cooking and shader compilation
+4. **CI/CD pipeline** -- CodePipeline for build, test, sign, package, deploy
+5. **Data services** -- RDS PostgreSQL, DynamoDB, Redis, S3 shared cache
+6. **Security** -- VPC isolation, WAF, KMS encryption, IAM least-privilege
+7. **Monitoring** -- CloudWatch dashboards, SNS alerts, CloudTrail audit
+8. **Backup/DR** -- Automated backups, cross-region replication
 
-All Rust client code (editor plugins, CLI tools) uses
-`async`/`await` with platform-native async I/O per
-project constraints. The CDK stacks themselves are
-TypeScript (AWS CDK requirement).
+All Rust client code (editor plugins, CLI tools) uses `async`/`await` with platform-native async I/O
+per project constraints. The CDK stacks themselves are TypeScript (AWS CDK requirement).
 
 ## Architecture
 
@@ -306,7 +295,7 @@ graph TD
 
 ### Module Layout
 
-```
+```text
 harmonius_infra/
 ├── bin/
 │   └── app.ts              # CDK app entry point
@@ -849,54 +838,39 @@ pub enum RestoreError {
 2. Lambda handler checks S3 cache by content hash.
 3. On cache hit, return presigned URL immediately.
 4. On cache miss, enqueue job to SQS.
-5. CloudWatch alarm triggers ASG scale-out if queue
-   depth exceeds threshold.
+5. CloudWatch alarm triggers ASG scale-out if queue depth exceeds threshold.
 6. EC2 worker polls SQS, dequeues job.
 7. Worker downloads source from S3 presigned URL.
-8. Worker executes compilation (asset cook, shader
-   compile, or logic graph compile).
-9. Worker uploads result to S3 shared cache keyed
-   by content hash.
+8. Worker executes compilation (asset cook, shader compile, or logic graph compile).
+9. Worker uploads result to S3 shared cache keyed by content hash.
 10. Worker publishes completion to SNS topic.
 11. Editor receives SNS notification (or polls).
-12. CloudWatch alarm triggers ASG scale-in after
-    idle timeout (5 minutes).
+12. CloudWatch alarm triggers ASG scale-in after idle timeout (5 minutes).
 
 ### Collaboration Session Lifecycle
 
-1. Editor opens `CollabClient::connect()` via
-   WebSocket to the ALB endpoint.
+1. Editor opens `CollabClient::connect()` via WebSocket to the ALB endpoint.
 2. ALB routes to an ECS Fargate task.
 3. Server authenticates via JWT token.
 4. Server loads document state from RDS PostgreSQL.
 5. Client sends CRDT operations via WebSocket.
-6. Server broadcasts operations to all session
-   participants.
-7. Server persists CRDT state to RDS periodically
-   (every 5 seconds or on significant changes).
-8. Large binary assets are stored in S3, referenced
-   by content hash in the CRDT document.
-9. On disconnect, server updates presence state
-   and notifies remaining participants.
+6. Server broadcasts operations to all session participants.
+7. Server persists CRDT state to RDS periodically (every 5 seconds or on significant changes).
+8. Large binary assets are stored in S3, referenced by content hash in the CRDT document.
+9. On disconnect, server updates presence state and notifies remaining participants.
 
 ### CI/CD Pipeline Execution
 
 1. Git push triggers webhook to CodePipeline.
 2. **Source stage:** CodeBuild clones repository.
-3. **Build stage:** CodeBuild compiles Rust
-   (debug + release) for all target platforms.
-4. **Cook stage:** Build artifacts submitted to SQS
-   for asset cooking on the build farm. Results
+3. **Build stage:** CodeBuild compiles Rust (debug + release) for all target platforms.
+4. **Cook stage:** Build artifacts submitted to SQS for asset cooking on the build farm. Results
    stored in S3 shared cache.
-5. **Test stage:** CodeBuild projects run unit,
-   integration, screenshot, and performance tests
-   in parallel. Failed tests halt the pipeline.
-   Results stored in DynamoDB.
-6. **Package stage:** Signing server signs binaries
-   using credentials from Secrets Manager. Installer
-   packages (.msi, .dmg, .deb) are built.
-7. **Deploy stage:** Packages uploaded to staging S3.
-   CloudFront invalidation triggered.
+5. **Test stage:** CodeBuild projects run unit, integration, screenshot, and performance tests in
+   parallel. Failed tests halt the pipeline. Results stored in DynamoDB.
+6. **Package stage:** Signing server signs binaries using credentials from Secrets Manager.
+   Installer packages (.msi, .dmg, .deb) are built.
+7. **Deploy stage:** Packages uploaded to staging S3. CloudFront invalidation triggered.
 8. SNS notifications sent on success or failure.
 
 ### Backup and Restore Flow
@@ -959,12 +933,9 @@ pub enum RestoreError {
 
 ### Rust Client Async I/O
 
-All Rust client code (editor plugins, restore CLI)
-uses `async`/`await` with the engine's `IoReactor`
-for HTTP and WebSocket communication. No blocking
-I/O calls. HTTP requests use the platform-native
-async backends (IOCP, GCD, io_uring) through the
-reactor abstraction.
+All Rust client code (editor plugins, restore CLI) uses `async`/`await` with the engine's
+`IoReactor` for HTTP and WebSocket communication. No blocking I/O calls. HTTP requests use the
+platform-native async backends (IOCP, GCD, io_uring) through the reactor abstraction.
 
 ```rust
 // Example: submit build job from editor
@@ -1074,33 +1045,20 @@ async fn submit_build(
 
 ## Open Questions
 
-1. **Forgejo vs Gitea** -- Forgejo is the community fork
-   of Gitea. Both expose a GitHub-compatible API. Forgejo
-   has stronger community governance. Need to evaluate
-   feature parity for LFS locking.
-2. **Spot instance interruption handling** -- Build farm
-   uses spot instances for cost savings. Need a strategy
-   for job retry when spot instances are reclaimed
-   (SQS visibility timeout + dead-letter queue).
-3. **Collaboration server horizontal scaling** --
-   WebSocket sessions are stateful. Need sticky sessions
-   on the ALB or a shared session store (Redis) for
-   Fargate task migration.
-4. **macOS signing in CI** -- iOS and macOS signing
-   requires a macOS build agent. AWS offers Mac EC2
-   instances (mac1.metal) but they are expensive and
-   have 24-hour minimum allocation. Evaluate external
-   macOS CI (Mac Stadium) as an alternative.
-5. **CDK language** -- CDK stacks are TypeScript per AWS
-   CDK convention. A Rust CDK (aws-cdk-rs) exists but is
-   immature. Evaluate switching to Rust CDK when it
-   reaches 1.0.
-6. **Multi-region active-active** -- Current design is
-   active-passive DR. Active-active would reduce latency
-   for geographically distributed teams but adds
-   significant complexity (conflict resolution, global
-   DynamoDB tables, RDS Aurora Global).
-7. **Cost alerting** -- Free Tier users need alerts if
-   usage approaches Free Tier limits. AWS Budgets can
-   provide this, but the CDK stack should configure
-   budget alarms automatically.
+1. **Forgejo vs Gitea** -- Forgejo is the community fork of Gitea. Both expose a GitHub-compatible
+   API. Forgejo has stronger community governance. Need to evaluate feature parity for LFS locking.
+2. **Spot instance interruption handling** -- Build farm uses spot instances for cost savings. Need
+   a strategy for job retry when spot instances are reclaimed (SQS visibility timeout + dead-letter
+   queue).
+3. **Collaboration server horizontal scaling** -- WebSocket sessions are stateful. Need sticky
+   sessions on the ALB or a shared session store (Redis) for Fargate task migration.
+4. **macOS signing in CI** -- iOS and macOS signing requires a macOS build agent. AWS offers Mac EC2
+   instances (mac1.metal) but they are expensive and have 24-hour minimum allocation. Evaluate
+   external macOS CI (Mac Stadium) as an alternative.
+5. **CDK language** -- CDK stacks are TypeScript per AWS CDK convention. A Rust CDK (aws-cdk-rs)
+   exists but is immature. Evaluate switching to Rust CDK when it reaches 1.0.
+6. **Multi-region active-active** -- Current design is active-passive DR. Active-active would reduce
+   latency for geographically distributed teams but adds significant complexity (conflict
+   resolution, global DynamoDB tables, RDS Aurora Global).
+7. **Cost alerting** -- Free Tier users need alerts if usage approaches Free Tier limits. AWS
+   Budgets can provide this, but the CDK stack should configure budget alarms automatically.

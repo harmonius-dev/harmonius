@@ -23,15 +23,15 @@ authored as self-contained project assets in the visual editor.
 
 ### F-13.26.2 Minigame World Presentation
 
-Render the minigame within the outer game world using configurable presentation modes. **World-
-space mode**: the minigame renders on an in-world surface (arcade screen, card table, puzzle panel)
-using render-to-texture (F-2.3.8) — the player character remains visible interacting with the
-physical object. **Fullscreen overlay mode**: the minigame takes over the full screen with a themed
-UI frame, while the outer world is blurred or dimmed behind it. **Split-view mode**: the minigame
-occupies a portion of the screen (e.g., a fishing rod view in the lower half) while the outer world
-remains visible above. **Diegetic mode**: the minigame's elements are rendered as 3D objects in the
-world (chess pieces on a table, cards dealt on a surface) using the outer world's lighting and
-camera. Presentation mode is configured per minigame asset.
+Render the minigame within the outer game world using configurable presentation modes.
+**World- space mode**: the minigame renders on an in-world surface (arcade screen, card table,
+puzzle panel) using render-to-texture (F-2.3.8) — the player character remains visible interacting
+with the physical object. **Fullscreen overlay mode**: the minigame takes over the full screen with
+a themed UI frame, while the outer world is blurred or dimmed behind it. **Split-view mode**: the
+minigame occupies a portion of the screen (e.g., a fishing rod view in the lower half) while the
+outer world remains visible above. **Diegetic mode**: the minigame's elements are rendered as 3D
+objects in the world (chess pieces on a table, cards dealt on a surface) using the outer world's
+lighting and camera. Presentation mode is configured per minigame asset.
 
 - **Requirements:** R-13.26.2
 - **Dependencies:** F-13.26.1, F-2.3.8 (Render-to-Texture), F-10.4.6 (World-Space UI)

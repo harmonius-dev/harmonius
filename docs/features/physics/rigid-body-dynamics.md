@@ -5,10 +5,11 @@
 ### F-4.1.1 Deterministic Fixed-Timestep Integration
 
 Integrate rigid body motion using symplectic Euler and Verlet methods with a fixed-timestep
-accumulator. The `IntegrationSystem` queries `(RigidBody, &mut Velocity, &mut AngularVelocity,
-&ExternalForce, &ExternalTorque, &Mass, &Inertia)` each tick, reading force and torque components to
-update velocity, then advancing position and orientation on the `Transform` component. Determinism
-is essential for server-authoritative MMO reconciliation and rollback.
+accumulator. The `IntegrationSystem` queries
+`(RigidBody, &mut Velocity, &mut AngularVelocity, &ExternalForce, &ExternalTorque, &Mass, &Inertia)`
+each tick, reading force and torque components to update velocity, then advancing position and
+orientation on the `Transform` component. Determinism is essential for server-authoritative MMO
+reconciliation and rollback.
 
 - **Requirements:** R-4.1.1
 - **Dependencies:** F-1.1.1, F-1.1.2

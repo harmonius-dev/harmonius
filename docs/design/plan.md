@@ -2,20 +2,17 @@
 
 ## Context
 
-The Harmonius game engine has 1,381 features, 1,171
-requirements, and 5,859 user stories across 15 domains.
-A domain decomposition DAG defines 87 feature-groups in
-7 concurrency waves. The project uses Rust (stable) with
-cxx.rs FFI to C++ libraries and Swift (Apple APIs).
+The Harmonius game engine has 1,381 features, 1,171 requirements, and 5,859 user stories across 15
+domains. A domain decomposition DAG defines 87 feature-groups in 7 concurrency waves. The project
+uses Rust (stable) with cxx.rs FFI to C++ libraries and Swift (Apple APIs).
 
-All project-wide constraints are in
-[constraints.md](constraints.md).
+All project-wide constraints are in [constraints.md](constraints.md).
 
 ## Design Document Template
 
 Each design lives at `docs/design/{domain}/{group}.md`:
 
-```
+```text
 ## Requirements Trace
 ## Overview
 ## Architecture        (Mermaid diagrams)
@@ -87,12 +84,9 @@ Key decisions locked in Wave 0:
 
 ### Wave 1 Ordering
 
-1. **ECS first** — start immediately; lock API before
-   other Wave 1 designs reference it.
-2. **Reflection + Memory/IO** — can proceed in parallel
-   with ECS (independent of ECS primitives).
-3. **Scene, Events, Spatial** — depend on ECS primitives;
-   begin once ECS API is locked.
+1. **ECS first** — start immediately; lock API before other Wave 1 designs reference it.
+2. **Reflection + Memory/IO** — can proceed in parallel with ECS (independent of ECS primitives).
+3. **Scene, Events, Spatial** — depend on ECS primitives; begin once ECS API is locked.
 
 ---
 
@@ -133,10 +127,8 @@ Key decisions locked in Wave 0:
 
 ## Wave 4 — Integration Layer (18 design docs) — COMPLETE
 
-> **Note:** `scene-pipeline.md` was merged into
-> `core-rendering.md` during the design audit (both
-> described the same extract-prepare-render pipeline
-> with duplicated types).
+> **Note:** `scene-pipeline.md` was merged into `core-rendering.md` during the design audit (both
+> described the same extract-prepare-render pipeline with duplicated types).
 
 | # | Document | Features |
 |---|----------|----------|
@@ -240,6 +232,10 @@ Before Wave 2, these Wave 1 contracts must lock:
 
 13 designs on the critical path to first playable:
 
+The full engine has 1,381 features across 15 domains. The MVP targets 200-300 features for a single
+genre and platform, focusing on the critical path above. Features outside the MVP are deferred, not
+cut.
+
 | Wave | Designs Required |
 |------|-----------------|
 | 0 | 0.1 windowing, 0.2 threading (done) |
@@ -247,6 +243,18 @@ Before Wave 2, these Wave 1 contracts must lock:
 | 2 | 2.1 GPU, 2.2 assets, 2.3 physics, 2.4 input, 2.6 animation |
 | 3 | 3.1 render graph, 3.3 processing, 3.6 state machine, 3.10 UI |
 | 4 | 4.1 core rendering (merged), 4.2 lighting |
+
+### Feasibility Risk Register
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|-----------|------------|
+| Custom IoReactor on 3 platforms | Critical | High | Prototype GCD drain on macOS first. Consider `mio` fallback. |
+| GCD blocks cannot yield (fibers) | Critical | High | Replace GCD fibers with async/await coroutines on macOS. |
+| 1,381 features scope | Critical | High | MVP targets 200-300 features for a single genre/platform. |
+| Shared BVH contention with physics substeps | High | Medium | Physics maintains lightweight broadphase alongside shared BVH. |
+| Custom runtime = limited Rust ecosystem | High | High | All I/O via IoReactor; platform-native HTTP; `tungstenite` for WS; `quinn` custom socket. |
+| Metal FFI chain depth (3 languages) | High | Medium | Evaluate `objc2-metal` as simpler alternative during prototype. |
+| Scoped async violates borrow checker | High | High | Limit scoped async to CPU-only. Require `'static` for I/O tasks. |
 
 ### Verification (per wave)
 

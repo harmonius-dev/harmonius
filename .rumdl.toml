@@ -1,0 +1,23 @@
+# rumdl configuration file
+
+[global]
+exclude = [
+    ".git",
+    ".github",
+    "build",
+    "node_modules",
+    "vcpkg_installed",
+    "vendor",
+]
+flavor = "gfm"
+respect-gitignore = true
+
+[MD013]
+code-blocks = false
+headings = true
+line-length = 100
+paragraphs = true
+reflow = true
+reflow-mode = "normalize"
+strict = false
+tables = false

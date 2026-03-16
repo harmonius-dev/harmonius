@@ -57,8 +57,8 @@ shader complexity limits.
 ## US-2.11.4.1 Fade Roofs When Camera Enters an Interior in an Isometric RPG
 
 **As a** game designer (P-5), **I want** automatic roof fading with configurable modes (volume-
-based, ray-based, layer-based) when the camera or player moves beneath occluding geometry, **so
-that** interiors are visible in isometric and top-down views without manual trigger setup.
+based, ray-based, layer-based) when the camera or player moves beneath occluding geometry,
+**so that** interiors are visible in isometric and top-down views without manual trigger setup.
 
 ## US-2.11.4.2 Dissolve Occluding Geometry With Dithered Transparency
 
@@ -69,8 +69,8 @@ matches the game's art style.
 ## US-2.11.4.3 Validate Cut-Through Modes Per Platform
 
 **As an** engine tester (P-27), **I want** to verify that mobile supports only layer-based and
-volume-based modes with dither-only dissolve, and desktop supports all modes with smooth alpha, **so
-that** cut-through visibility scales per platform.
+volume-based modes with dither-only dissolve, and desktop supports all modes with smooth alpha,
+**so that** cut-through visibility scales per platform.
 
 ## US-2.11.5.1 See Allies Through Walls as Colored Silhouettes
 

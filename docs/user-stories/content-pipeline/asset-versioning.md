@@ -33,8 +33,8 @@ elements), **so that** routine merges complete without manual intervention.
 ## US-12.7.6 Edit Gameplay Data Tables in a Spreadsheet
 
 **As a** designer (P-5), **I want** a spreadsheet-style data table editor with sorting, filtering,
-search, inline formula editing, row inheritance, bulk operations, and per-cell validation, **so
-that** I can author and iterate on gameplay data efficiently without any code.
+search, inline formula editing, row inheritance, bulk operations, and per-cell validation,
+**so that** I can author and iterate on gameplay data efficiently without any code.
 
 ## US-12.7.7 Inspect Any Asset Type Visually
 

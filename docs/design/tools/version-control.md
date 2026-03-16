@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/tools-editor/](../../features/tools-editor/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/tools-editor/](../../features/tools-editor/),
 > [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table
-> below traces design elements to those definitions.
+> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
+> elements to those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -21,41 +21,30 @@
 
 ## Overview
 
-The version control subsystem embeds a full Git client inside
-the Harmonius editor. All repository operations — stage, commit,
-push, pull, branch, merge, rebase, stash — execute through
-libgit2 via the `git2` Rust crate, eliminating shell-out overhead
-and ensuring identical behavior across platforms.
+The version control subsystem embeds a full Git client inside the Harmonius editor. All repository
+operations — stage, commit, push, pull, branch, merge, rebase, stash — execute through libgit2 via
+the `git2` Rust crate, eliminating shell-out overhead and ensuring identical behavior across
+platforms.
 
 Key capabilities:
 
-1. **Git LFS** — automatic tracking by extension and size
-   threshold, lock/unlock from the asset browser, bulk
-   operations, and storage quota monitoring.
-2. **Structural merge driver** — three-way semantic merge for
-   binary assets (logic graphs, prefabs, materials, data tables)
-   registered via `.gitattributes` with visual conflict
-   resolution fallback.
-3. **Branch workflow** — create, switch, and delete branches from
-   the editor; asset cache preservation on switch; PR/MR
-   creation against GitHub, GitLab, Bitbucket, and Azure DevOps.
-4. **Presence** — real-time indicators of who edits what,
-   pessimistic locking for non-mergeable assets, lock queuing
-   with holder notification.
-5. **Partial clone / sparse checkout** — blobless and treeless
-   clone modes, role-based sparse patterns, on-demand fetch with
-   placeholder thumbnails.
-6. **Shelves** — named work-in-progress snapshots with structural
-   diffs, shareable via the shared cache, merged structurally on
-   application.
-7. **Multi-provider** — auto-detect hosting provider from remote
-   URL, in-editor PR creation/review/merge, API tokens in
-   platform credential store.
+1. **Git LFS** — automatic tracking by extension and size threshold, lock/unlock from the asset
+   browser, bulk operations, and storage quota monitoring.
+2. **Structural merge driver** — three-way semantic merge for binary assets (logic graphs, prefabs,
+   materials, data tables) registered via `.gitattributes` with visual conflict resolution fallback.
+3. **Branch workflow** — create, switch, and delete branches from the editor; asset cache
+   preservation on switch; PR/MR creation against GitHub, GitLab, Bitbucket, and Azure DevOps.
+4. **Presence** — real-time indicators of who edits what, pessimistic locking for non-mergeable
+   assets, lock queuing with holder notification.
+5. **Partial clone / sparse checkout** — blobless and treeless clone modes, role-based sparse
+   patterns, on-demand fetch with placeholder thumbnails.
+6. **Shelves** — named work-in-progress snapshots with structural diffs, shareable via the shared
+   cache, merged structurally on application.
+7. **Multi-provider** — auto-detect hosting provider from remote URL, in-editor PR
+   creation/review/merge, API tokens in platform credential store.
 
-All Git and network I/O is async. The subsystem never blocks the
-editor UI thread. Credential access uses platform-native stores
-(Keychain on macOS, Credential Manager on Windows, libsecret on
-Linux).
+All Git and network I/O is async. The subsystem never blocks the editor UI thread. Credential access
+uses platform-native stores (Keychain on macOS, Credential Manager on Windows, libsecret on Linux).
 
 ## Architecture
 
@@ -112,7 +101,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_tools/
 ├── version_control/
 │   ├── core.rs          # GitCore — repo open, status, stage,
@@ -864,54 +853,40 @@ pub enum VcError {
 ### Stage-Commit-Push Lifecycle
 
 1. User selects files in the VC panel and clicks "Stage."
-2. `GitCore::stage` checks each path against `LfsManager`
-   tracking rules. Paths matching LFS rules are staged via
-   LFS pointer files; others are staged directly via libgit2.
+2. `GitCore::stage` checks each path against `LfsManager` tracking rules. Paths matching LFS rules
+   are staged via LFS pointer files; others are staged directly via libgit2.
 3. User writes a commit message and clicks "Commit."
-4. `GitCore::commit` creates a commit object via libgit2
-   referencing the current index tree.
-5. User clicks "Push." `GitCore::push` retrieves credentials
-   from the platform credential store, then pushes via
-   libgit2's transport layer.
-6. All operations run as async tasks on the thread pool.
-   The UI shows progress and can be cancelled.
+4. `GitCore::commit` creates a commit object via libgit2 referencing the current index tree.
+5. User clicks "Push." `GitCore::push` retrieves credentials from the platform credential store,
+   then pushes via libgit2's transport layer.
+6. All operations run as async tasks on the thread pool. The UI shows progress and can be cancelled.
 
 ### Branch Switch with Cache Preservation
 
-1. `BranchManager::switch` calls `GitCore::status` to detect
-   unsaved changes. If present, the user is prompted to shelve
-   or discard.
-2. The branch manager snapshots the content hashes of all
-   compiled assets in the local cache.
+1. `BranchManager::switch` calls `GitCore::status` to detect unsaved changes. If present, the user
+   is prompted to shelve or discard.
+2. The branch manager snapshots the content hashes of all compiled assets in the local cache.
 3. libgit2 performs the branch checkout.
-4. After checkout, the manager compares source content hashes.
-   Compiled cache entries whose source hash is unchanged survive.
-   Changed entries are evicted and will be rebuilt or fetched
-   from the shared cache.
+4. After checkout, the manager compares source content hashes. Compiled cache entries whose source
+   hash is unchanged survive. Changed entries are evicted and will be rebuilt or fetched from the
+   shared cache.
 
 ### Presence Fallback
 
-1. On startup, `PresenceService` attempts a WebSocket
-   connection to the presence server.
-2. If the connection succeeds, presence updates flow in real
-   time via WebSocket messages.
-3. If the connection fails or drops, the service falls back to
-   polling `LfsManager::locks()` on a 5-second interval.
-   Active locks approximate editing presence.
-4. When WebSocket reconnects, the polling fallback is
-   disabled.
+1. On startup, `PresenceService` attempts a WebSocket connection to the presence server.
+2. If the connection succeeds, presence updates flow in real time via WebSocket messages.
+3. If the connection fails or drops, the service falls back to polling `LfsManager::locks()` on a
+   5-second interval. Active locks approximate editing presence.
+4. When WebSocket reconnects, the polling fallback is disabled.
 
 ### Shelf Lifecycle
 
-1. User creates a shelf via the VC panel. `ShelfManager`
-   serializes all modified files and their structural diffs
-   into `.harmonius/shelves/<id>/`.
+1. User creates a shelf via the VC panel. `ShelfManager` serializes all modified files and their
+   structural diffs into `.harmonius/shelves/<id>/`.
 2. The working tree is reverted to HEAD.
-3. To apply a shelf, `ShelfManager` deserializes the shelved
-   assets and uses `MergeDriver` to merge them with the
-   current working tree state.
-4. Shelves can be shared via the shared cache (F-15.11.1) for
-   handoff scenarios.
+3. To apply a shelf, `ShelfManager` deserializes the shelved assets and uses `MergeDriver` to merge
+   them with the current working tree state.
+4. Shelves can be shared via the shared cache (F-15.11.1) for handoff scenarios.
 
 ## Platform Considerations
 
@@ -947,18 +922,14 @@ pub enum VcError {
 |-------|---------|---------------|
 | `git2` | libgit2 Rust bindings | Direct repo access, no shell-out |
 | `native-tls` | Platform TLS | Secure LFS transfers per-platform |
-| `tokio-tungstenite` | WebSocket client | Presence service transport |
-
-**Dependency conflict:** `tokio-tungstenite` depends on
-the `tokio` runtime, which conflicts with the engine's
-custom `IoReactor`. Implementation must use a custom
-WebSocket client built on the `IoReactor` and `AsyncIo`
-trait, or use a minimal WebSocket library without tokio
-dependency (e.g., `tungstenite` with manual I/O
-integration).
+| `tungstenite` | WebSocket client | Non-async; manual I/O via IoReactor |
 | `serde` | Serialization | Shelf and config serialization |
 | `serde_json` | JSON | Hosting provider API payloads |
 | `blake3` | Content hashing | Cache key computation for branch switch |
+
+> **Runtime policy:** Uses `tungstenite` (non-async, no runtime dependency) with manual I/O
+> integration via the `IoReactor`. The IoReactor drives the underlying TCP socket and feeds bytes to
+> `tungstenite` for WebSocket frame encoding/decoding.
 
 ## Test Plan
 
@@ -1010,27 +981,18 @@ integration).
 
 ## Open Questions
 
-1. **libgit2 async wrapping** — libgit2 is synchronous. Options
-   are `spawn_blocking` on the thread pool or a dedicated I/O
-   thread. `spawn_blocking` is simpler but may contend with
-   compute tasks.
-2. **LFS transfer concurrency** — How many concurrent LFS
-   uploads/downloads per push/pull? Needs tuning per network
-   environment. Consider making configurable with sensible
-   defaults (4-8 concurrent transfers).
-3. **Merge driver invocation model** — Git invokes the merge
-   driver as an external process. Need to determine whether to
-   use an in-process hook (patching libgit2) or a small CLI
-   shim that communicates with the editor.
-4. **Presence server deployment** — Lightweight WebSocket server
-   could be part of the collaboration cloud service (F-15.12.7)
-   or a standalone microservice. Shared deployment reduces
-   operational burden.
-5. **Sparse checkout UX** — How to present role-based checkout
-   patterns to non-technical users? Consider a wizard with
-   role presets (Artist, Designer, Programmer) plus custom
-   patterns.
-6. **Branch graph rendering** — Rendering a DAG with merge
-   lines in the editor UI. Evaluate existing graph layout
-   algorithms (Sugiyama, force-directed) or a custom
-   topological renderer.
+1. **libgit2 async wrapping** — libgit2 is synchronous. Options are `spawn_blocking` on the thread
+   pool or a dedicated I/O thread. `spawn_blocking` is simpler but may contend with compute tasks.
+2. **LFS transfer concurrency** — How many concurrent LFS uploads/downloads per push/pull? Needs
+   tuning per network environment. Consider making configurable with sensible defaults (4-8
+   concurrent transfers).
+3. **Merge driver invocation model** — Git invokes the merge driver as an external process. Need to
+   determine whether to use an in-process hook (patching libgit2) or a small CLI shim that
+   communicates with the editor.
+4. **Presence server deployment** — Lightweight WebSocket server could be part of the collaboration
+   cloud service (F-15.12.7) or a standalone microservice. Shared deployment reduces operational
+   burden.
+5. **Sparse checkout UX** — How to present role-based checkout patterns to non-technical users?
+   Consider a wizard with role presets (Artist, Designer, Programmer) plus custom patterns.
+6. **Branch graph rendering** — Rendering a DAG with merge lines in the editor UI. Evaluate existing
+   graph layout algorithms (Sugiyama, force-directed) or a custom topological renderer.

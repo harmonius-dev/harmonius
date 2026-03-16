@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/ui-2d/](../../features/ui-2d/),
-> [requirements/ui-2d/](../../requirements/ui-2d/), and
-> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/ui-2d/](../../features/ui-2d/), [requirements/ui-2d/](../../requirements/ui-2d/), and
+> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table below traces design elements to those
+> definitions.
 
 ### Common Widgets (F-10.2 / R-10.2)
 
@@ -55,33 +54,28 @@
 
 ## Overview
 
-This document defines the design for the Harmonius engine's
-common widget library, HUD/game UI systems, and GPU-accelerated
-UI rendering pipeline. All three subsystems are 100% ECS-based:
-widgets are entities with component bundles, widget logic runs
-as systems, and rendering is a batched GPU pipeline driven by
-component queries.
+This document defines the design for the Harmonius engine's common widget library, HUD/game UI
+systems, and GPU-accelerated UI rendering pipeline. All three subsystems are 100% ECS-based: widgets
+are entities with component bundles, widget logic runs as systems, and rendering is a batched GPU
+pipeline driven by component queries.
 
 The design has three layers:
 
-1. **Rendering** -- batched quad submission, MSDF text, vector
-   paths, nine-slice, atlas management, anti-aliased clipping.
-2. **Widgets** -- reusable interactive controls (buttons,
-   sliders, dropdowns, scroll views, tooltips, drag-and-drop,
-   progress bars, text input, rich text).
-3. **HUD** -- game-specific composite widgets built from the
-   widget layer (health bars, action bars, nameplates, floating
-   combat text, minimap, compass, chat, inventory grids).
+1. **Rendering** -- batched quad submission, MSDF text, vector paths, nine-slice, atlas management,
+   anti-aliased clipping.
+2. **Widgets** -- reusable interactive controls (buttons, sliders, dropdowns, scroll views,
+   tooltips, drag-and-drop, progress bars, text input, rich text).
+3. **HUD** -- game-specific composite widgets built from the widget layer (health bars, action bars,
+   nameplates, floating combat text, minimap, compass, chat, inventory grids).
 
-All widgets are authored in the visual editor (no-code). The
-rendering pipeline batches same-atlas, same-blend-state quads
-into indirect draw calls, targeting fewer than 50 draws for a
-full HUD. World-space UI (nameplates, diegetic screens) shares
-the same quad pipeline but injects into the 3D render pass.
+All widgets are authored in the visual editor (no-code). The rendering pipeline batches same-atlas,
+same-blend-state quads into indirect draw calls, targeting fewer than 50 draws for a full HUD.
+World-space UI (nameplates, diegetic screens) shares the same quad pipeline but injects into the 3D
+render pass.
 
 ### Crate Structure
 
-```
+```text
 harmonius_ui/
 ├── rendering/
 │   ├── batcher.rs       # QuadBatcher, instance buffer
@@ -237,10 +231,8 @@ sequenceDiagram
 
 ### ECS Component Hierarchy
 
-Every UI element is an entity with a `UiNode` marker plus
-optional component bundles. The widget type is determined
-entirely by which components are attached -- no inheritance,
-no trait objects.
+Every UI element is an entity with a `UiNode` marker plus optional component bundles. The widget
+type is determined entirely by which components are attached -- no inheritance, no trait objects.
 
 ```mermaid
 classDiagram
@@ -358,8 +350,7 @@ stateDiagram-v2
 
 ### Nameplate Culling Pipeline
 
-Nameplates scale to 200+ entities by running a multi-stage
-culling pipeline each frame.
+Nameplates scale to 200+ entities by running a multi-stage culling pipeline each frame.
 
 ```mermaid
 flowchart LR
@@ -372,17 +363,12 @@ flowchart LR
     G --> H[QuadBatcher]
 ```
 
-1. **Distance cull** -- discard entities beyond
-   `max_distance` (configurable per priority tier).
-2. **Occlusion cull** -- query shared spatial index;
-   discard entities behind terrain/walls.
-3. **Priority sort** -- rank by `NameplatePriority` (party
-   > enemy > NPC > ambient).
+1. **Distance cull** -- discard entities beyond `max_distance` (configurable per priority tier).
+2. **Occlusion cull** -- query shared spatial index; discard entities behind terrain/walls.
+3. **Priority sort** -- rank by `NameplatePriority` (party > enemy > NPC > ambient).
 4. **Budget cap** -- keep top N (200 desktop, 50 mobile).
-5. **Overlap avoidance** -- nudge overlapping screen rects
-   using a greedy sweep-line algorithm.
-6. **Projection** -- world-to-screen each surviving
-   nameplate, write `ComputedRect`.
+5. **Overlap avoidance** -- nudge overlapping screen rects using a greedy sweep-line algorithm.
+6. **Projection** -- world-to-screen each surviving nameplate, write `ComputedRect`.
 
 ### UI Animation Architecture
 
@@ -2029,18 +2015,14 @@ pub fn compass_system(
 
 The batcher is the heart of UI rendering. Each frame:
 
-1. **Begin** -- `batcher.begin_frame()` clears the
-   previous frame's submissions.
-2. **Submit** -- `batch_quads_system` iterates all
-   entities with `ComputedRect` and emits one
-   `QuadInstance` per visible element. Text emits one
-   quad per glyph. Nine-slice emits up to 9 quads.
-3. **Sort** -- submissions are sorted by
-   `(render_pass, atlas_page, blend_state, z_order)`.
-4. **Merge** -- consecutive quads sharing the same sort
-   key are merged into a single `BatchDescriptor`.
-5. **Upload** -- the instance buffer is uploaded to the
-   GPU as a single contiguous allocation.
+1. **Begin** -- `batcher.begin_frame()` clears the previous frame's submissions.
+2. **Submit** -- `batch_quads_system` iterates all entities with `ComputedRect` and emits one
+   `QuadInstance` per visible element. Text emits one quad per glyph. Nine-slice emits up to 9
+   quads.
+3. **Sort** -- submissions are sorted by `(render_pass, atlas_page, blend_state, z_order)`.
+4. **Merge** -- consecutive quads sharing the same sort key are merged into a single
+   `BatchDescriptor`.
+5. **Upload** -- the instance buffer is uploaded to the GPU as a single contiguous allocation.
 6. **Dispatch** -- one indirect draw call per batch.
 
 ### Sort Key Layout
@@ -2126,31 +2108,22 @@ sequenceDiagram
 
 ### Combat Text Lifecycle
 
-1. **Spawn** -- game logic creates an entity with
-   `FloatingCombatText` + `WorldSpaceAnchor` +
+1. **Spawn** -- game logic creates an entity with `FloatingCombatText` + `WorldSpaceAnchor` +
    `UiText` + `UiStyle`.
-2. **Merge** -- if an existing entity with the same
-   `merge_key` exists within a time window, the values
-   are summed and the text is updated.
-3. **Animate** -- `floating_combat_text_system` applies
-   the trajectory (rise-and-fade, arcing, sticky) and
-   fades opacity over `lifetime`.
-4. **Despawn** -- when `elapsed >= lifetime`, the
-   entity is despawned and returns to the pool.
+2. **Merge** -- if an existing entity with the same `merge_key` exists within a time window, the
+   values are summed and the text is updated.
+3. **Animate** -- `floating_combat_text_system` applies the trajectory (rise-and-fade, arcing,
+   sticky) and fades opacity over `lifetime`.
+4. **Despawn** -- when `elapsed >= lifetime`, the entity is despawned and returns to the pool.
 
 ### Minimap Render Pipeline
 
-1. **Generate** -- `MinimapGenSystem` renders a
-   top-down orthographic view of terrain, biomes,
-   roads, and buildings to a texture via
-   `RenderToTexture`. Updated when chunks stream in.
-2. **Overlay** -- `minimap_marker_system` projects
-   marker world positions onto the minimap texture
+1. **Generate** -- `MinimapGenSystem` renders a top-down orthographic view of terrain, biomes,
+   roads, and buildings to a texture via `RenderToTexture`. Updated when chunks stream in.
+2. **Overlay** -- `minimap_marker_system` projects marker world positions onto the minimap texture
    coordinates.
-3. **Display** -- the `MinimapWidget` entity has a
-   `UiImage` referencing the generated texture. The
-   `QuadBatcher` renders it as a normal UI quad with
-   marker icons layered on top.
+3. **Display** -- the `MinimapWidget` entity has a `UiImage` referencing the generated texture. The
+   `QuadBatcher` renders it as a normal UI quad with marker icons layered on top.
 
 ## Platform Considerations
 
@@ -2180,10 +2153,8 @@ sequenceDiagram
 
 ### Text Shaping
 
-HarfBuzz-compatible shaping is bundled (not
-OS-provided) to guarantee identical rendering across
-platforms. The `rustybuzz` crate provides pure-Rust
-HarfBuzz-compatible shaping.
+HarfBuzz-compatible shaping is bundled (not OS-provided) to guarantee identical rendering across
+platforms. The `rustybuzz` crate provides pure-Rust HarfBuzz-compatible shaping.
 
 ### Proposed Dependencies
 
@@ -2260,49 +2231,29 @@ HarfBuzz-compatible shaping.
 
 ### Shared Progress Widget Pattern
 
-**Note:** Many HUD widgets (health bars, cast bars,
-cooldown indicators, XP bars) share a common
-`ProgressWidget` pattern: a fill bar with direction, color
-ramp, and optional label. Consider implementing a generic
-`ProgressWidget` component that these specialized widgets
-compose.
+**Note:** Many HUD widgets (health bars, cast bars, cooldown indicators, XP bars) share a common
+`ProgressWidget` pattern: a fill bar with direction, color ramp, and optional label. Consider
+implementing a generic `ProgressWidget` component that these specialized widgets compose.
 
 ## Open Questions
 
-1. **Text shaping crate** -- `rustybuzz` vs bundling a
-   C HarfBuzz build via cxx.rs. `rustybuzz` is pure
-   Rust but lags upstream HarfBuzz by a few releases.
-   Need to verify complex script coverage (Khmer,
-   Myanmar, Tibetan) against HarfBuzz reference.
-2. **Atlas packing algorithm** -- Shelf packing vs
-   Skyline vs MaxRects. Shelf is simplest and fastest
-   for incremental inserts; MaxRects achieves higher
-   density but is more expensive to repack. Need
-   benchmarks with real UI texture distributions.
-3. **Vector path GPU pipeline** -- Coverage mask vs SDF.
-   Coverage masks are cheaper for simple shapes but
-   require re-tessellation on resize. SDF is
-   resolution-independent but costs more for complex
-   paths. May need both paths with a complexity
-   threshold to switch.
-4. **Nameplate overlap avoidance** -- Greedy sweep-line
-   vs force-directed relaxation. Sweep-line is O(n
-   log n) and deterministic; force-directed produces
-   better layouts but is iterative and may jitter
-   across frames. Need to evaluate visual quality vs
-   CPU cost.
-5. **Widget pooling granularity** -- Pool per
-   `WidgetType` vs a single heterogeneous pool. Per-
-   type pools avoid component mismatch overhead but
-   increase memory for rarely-used widget types.
-6. **Chat message batching** -- Render chat messages
-   into a persistent texture (scroll bitmap) vs
-   re-submitting visible message quads each frame.
-   Persistent texture reduces per-frame quad count but
-   complicates rich text updates and selection
-   highlighting.
-7. **3D-in-UI resolution scaling** -- Fixed half/quarter
-   res vs adaptive resolution based on GPU headroom.
-   Adaptive prevents preview panels from consuming
-   budget needed by the main scene, but adds
-   complexity and potential visual flickering.
+1. **Text shaping crate** -- `rustybuzz` vs bundling a C HarfBuzz build via cxx.rs. `rustybuzz` is
+   pure Rust but lags upstream HarfBuzz by a few releases. Need to verify complex script coverage
+   (Khmer, Myanmar, Tibetan) against HarfBuzz reference.
+2. **Atlas packing algorithm** -- Shelf packing vs Skyline vs MaxRects. Shelf is simplest and
+   fastest for incremental inserts; MaxRects achieves higher density but is more expensive to
+   repack. Need benchmarks with real UI texture distributions.
+3. **Vector path GPU pipeline** -- Coverage mask vs SDF. Coverage masks are cheaper for simple
+   shapes but require re-tessellation on resize. SDF is resolution-independent but costs more for
+   complex paths. May need both paths with a complexity threshold to switch.
+4. **Nameplate overlap avoidance** -- Greedy sweep-line vs force-directed relaxation. Sweep-line is
+   O(n log n) and deterministic; force-directed produces better layouts but is iterative and may
+   jitter across frames. Need to evaluate visual quality vs CPU cost.
+5. **Widget pooling granularity** -- Pool per `WidgetType` vs a single heterogeneous pool. Per- type
+   pools avoid component mismatch overhead but increase memory for rarely-used widget types.
+6. **Chat message batching** -- Render chat messages into a persistent texture (scroll bitmap) vs
+   re-submitting visible message quads each frame. Persistent texture reduces per-frame quad count
+   but complicates rich text updates and selection highlighting.
+7. **3D-in-UI resolution scaling** -- Fixed half/quarter res vs adaptive resolution based on GPU
+   headroom. Adaptive prevents preview panels from consuming budget needed by the main scene, but
+   adds complexity and potential visual flickering.

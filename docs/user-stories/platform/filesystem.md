@@ -33,14 +33,14 @@ hot-reload system detects file changes within milliseconds without polling.
 ## US-14.6.6 Filter Out False File Change Notifications
 
 **As an** engine developer (P-26), **I want** BLAKE3 content hash comparison to filter out
-metadata-only changes and duplicate events from editors that write via rename-into-place, **so
-that** only genuine content changes trigger re-import or hot-reload.
+metadata-only changes and duplicate events from editors that write via rename-into-place,
+**so that** only genuine content changes trigger re-import or hot-reload.
 
 ## US-14.6.7 Resolve Paths Consistently Across Platforms
 
 **As an** engine developer (P-26), **I want** canonical path resolution that handles Windows drive
-letters, UNC paths, long-path prefixes, macOS case insensitivity, and Linux case sensitivity, **so
-that** all engine subsystems use consistent keys and avoid duplicate asset entries from path
+letters, UNC paths, long-path prefixes, macOS case insensitivity, and Linux case sensitivity,
+**so that** all engine subsystems use consistent keys and avoid duplicate asset entries from path
 aliasing.
 
 ## US-14.6.8 Use Platform-Native Async I/O Exclusively
@@ -58,8 +58,8 @@ no blocking on the calling thread, **so that** platform I/O regressions are caug
 ## US-14.6.10 Verify File Watcher Detects All Change Types
 
 **As an** engine tester (P-27), **I want** tests that create, modify, delete, and rename files in
-watched directories and verify the correct event types are delivered with proper debouncing, **so
-that** the file watcher reliably drives hot-reload on all platforms.
+watched directories and verify the correct event types are delivered with proper debouncing,
+**so that** the file watcher reliably drives hot-reload on all platforms.
 
 ## US-14.6.11 Benchmark Async I/O Throughput Against Raw Disk Bandwidth
 

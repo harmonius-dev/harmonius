@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/networking/](../../features/networking/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/networking/](../../features/networking/),
 > [requirements/networking/](../../requirements/networking/), and
-> [user-stories/networking/](../../user-stories/networking/). The table
-> below traces design elements to those definitions.
+> [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
+> to those definitions.
 
 | Feature | Requirement | User Story | Description |
 |---------|-------------|------------|-------------|
@@ -31,33 +31,23 @@ Cross-cutting constraints:
 
 ## Overview
 
-The transport layer provides UDP-based network
-communication for the Harmonius engine. It sits between
-the platform I/O layer (`IoReactor`) and the higher-level
-networking systems (state replication, RPC, session
-management).
+The transport layer provides UDP-based network communication for the Harmonius engine. It sits
+between the platform I/O layer (`IoReactor`) and the higher-level networking systems (state
+replication, RPC, session management).
 
 Key design decisions:
 
-1. **UDP-only for game traffic.** No TCP. All
-   reliability, ordering, and congestion control are
+1. **UDP-only for game traffic.** No TCP. All reliability, ordering, and congestion control are
    implemented in userspace over raw UDP datagrams.
-2. **Channel-based multiplexing.** Each connection
-   supports multiple logical channels with independent
-   delivery semantics (reliable ordered, reliable
-   unordered, unreliable sequenced, unreliable
-   unordered).
-3. **DTLS 1.3 encryption.** All traffic is encrypted.
-   The DTLS handshake is integrated into the connection
-   handshake. Key rotation occurs without session
-   interruption.
-4. **Async I/O throughout.** All socket operations use
-   `async`/`await` via the `IoReactor`. No blocking
-   calls. Completions are harvested at the frame poll
-   point.
-5. **ECS-native.** Connection state, channel buffers,
-   congestion state, and diagnostics are ECS resources.
-   All transport logic runs as ECS systems.
+2. **Channel-based multiplexing.** Each connection supports multiple logical channels with
+   independent delivery semantics (reliable ordered, reliable unordered, unreliable sequenced,
+   unreliable unordered).
+3. **DTLS 1.3 encryption.** All traffic is encrypted. The DTLS handshake is integrated into the
+   connection handshake. Key rotation occurs without session interruption.
+4. **Async I/O throughout.** All socket operations use `async`/`await` via the `IoReactor`. No
+   blocking calls. Completions are harvested at the frame poll point.
+5. **ECS-native.** Connection state, channel buffers, congestion state, and diagnostics are ECS
+   resources. All transport logic runs as ECS systems.
 
 ## Architecture
 
@@ -112,7 +102,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_net/
 ├── transport/
 │   ├── socket.rs        # TransportSocket, async
@@ -146,10 +136,8 @@ harmonius_net/
 
 ### Connection Handshake
 
-The handshake uses a four-phase protocol that
-integrates DTLS negotiation with application-layer
-authentication. Phase 1 is stateless on the server
-to resist connection flooding (R-8.1.1).
+The handshake uses a four-phase protocol that integrates DTLS negotiation with application-layer
+authentication. Phase 1 is stateless on the server to resist connection flooding (R-8.1.1).
 
 ```mermaid
 sequenceDiagram
@@ -184,25 +172,20 @@ sequenceDiagram
 
 Anti-flood measures in Phase 1:
 
-- The server computes a cookie using
-  `HMAC-SHA256(server_secret, client_addr, timestamp)`.
-- No per-connection state is allocated until the
-  client returns a valid cookie.
-- The cookie expires after a configurable window
-  (default 5 seconds).
+- The server computes a cookie using `HMAC-SHA256(server_secret, client_addr, timestamp)`.
+- No per-connection state is allocated until the client returns a valid cookie.
+- The cookie expires after a configurable window (default 5 seconds).
 
 Replay attack resistance in Phase 3:
 
 - Each `AuthRequest` includes a monotonic timestamp.
-- The server maintains a sliding replay window of
-  recently seen timestamps per session token.
+- The server maintains a sliding replay window of recently seen timestamps per session token.
 - Duplicate timestamps within the window are rejected.
 
 ### Connection State Machine
 
-Each connection transitions through a well-defined
-set of states. Timeout detection uses a timing wheel
-for O(1) per-connection overhead (R-8.1.2, R-8.NFR.7).
+Each connection transitions through a well-defined set of states. Timeout detection uses a timing
+wheel for O(1) per-connection overhead (R-8.1.2, R-8.NFR.7).
 
 ```mermaid
 stateDiagram-v2
@@ -276,10 +259,8 @@ Channel modes and their semantics:
 
 ### Reliable Channel: SACK and Send Window
 
-The reliable channel implements selective
-acknowledgment over UDP (R-8.1.3). Each packet carries
-an ack number (highest contiguous sequence received)
-and a 32-bit SACK bitfield covering the next 32
+The reliable channel implements selective acknowledgment over UDP (R-8.1.3). Each packet carries an
+ack number (highest contiguous sequence received) and a 32-bit SACK bitfield covering the next 32
 sequence numbers beyond the ack.
 
 ```mermaid
@@ -312,21 +293,17 @@ sequenceDiagram
 
 Retransmission strategy:
 
-- **RTO calculation:** Jacobson/Karels algorithm with
-  `SRTT`, `RTTVAR`, `RTO = SRTT + 4 * RTTVAR`.
+- **RTO calculation:** Jacobson/Karels algorithm with `SRTT`, `RTTVAR`, `RTO = SRTT + 4 * RTTVAR`.
   Minimum RTO is 10 ms; maximum is 2000 ms.
-- **Fast retransmit:** If a packet is SACKed past
-  (3 subsequent acks received without covering it),
+- **Fast retransmit:** If a packet is SACKed past (3 subsequent acks received without covering it),
   retransmit immediately without waiting for RTO.
-- **Exponential backoff:** RTO doubles on each
-  consecutive timeout for the same packet, capped at
+- **Exponential backoff:** RTO doubles on each consecutive timeout for the same packet, capped at
   the maximum RTO.
 
 ### Fragmentation and Reassembly
 
-Packets exceeding the path MTU are fragmented at the
-transport layer. IP-layer fragmentation is avoided
-entirely (R-8.1.6).
+Packets exceeding the path MTU are fragmented at the transport layer. IP-layer fragmentation is
+avoided entirely (R-8.1.6).
 
 ```mermaid
 flowchart TD
@@ -349,21 +326,15 @@ flowchart TD
 
 MTU discovery:
 
-1. At connection startup, send a probe packet at
-   1,452 bytes (Ethernet MTU minus IP/UDP headers).
-2. If the probe is acked, try larger sizes in a
-   binary search up to 8,972 bytes (jumbo frames).
-3. If the probe is lost after 3 attempts, fall back to
-   1,200 bytes (R-8.1.6 conservative default).
-4. Re-probe periodically (every 60 seconds) to detect
-   path changes.
+1. At connection startup, send a probe packet at 1,452 bytes (Ethernet MTU minus IP/UDP headers).
+2. If the probe is acked, try larger sizes in a binary search up to 8,972 bytes (jumbo frames).
+3. If the probe is lost after 3 attempts, fall back to 1,200 bytes (R-8.1.6 conservative default).
+4. Re-probe periodically (every 60 seconds) to detect path changes.
 
 ### Congestion Control
 
-The congestion controller uses a game-oriented
-algorithm inspired by BBR that prioritizes smooth,
-predictable throughput over maximum utilization
-(R-8.1.7). It avoids the sawtooth oscillations of
+The congestion controller uses a game-oriented algorithm inspired by BBR that prioritizes smooth,
+predictable throughput over maximum utilization (R-8.1.7). It avoids the sawtooth oscillations of
 loss-based algorithms like CUBIC.
 
 ```mermaid
@@ -388,22 +359,17 @@ Algorithm phases:
 
 Smoothing additions beyond standard congestion control:
 
-- **Send pacing.** Packets are spread evenly across
-  the RTT window instead of bursting. The pacer
-  releases one packet every `RTT / cwnd_packets`
-  interval.
-- **Jitter compensation.** The bandwidth estimate uses
-  an exponentially weighted moving average (EWMA) with
-  alpha=0.125 to dampen oscillations from jitter.
-- **Per-channel priority.** Reliable channels get
-  priority over unreliable channels when the congestion
-  window is constrained. Within reliable channels, the
-  application can assign priority levels.
+- **Send pacing.** Packets are spread evenly across the RTT window instead of bursting. The pacer
+  releases one packet every `RTT / cwnd_packets` interval.
+- **Jitter compensation.** The bandwidth estimate uses an exponentially weighted moving average
+  (EWMA) with alpha=0.125 to dampen oscillations from jitter.
+- **Per-channel priority.** Reliable channels get priority over unreliable channels when the
+  congestion window is constrained. Within reliable channels, the application can assign priority
+  levels.
 
 ### ECS Integration
 
-All transport state lives as ECS resources. Transport
-logic runs as a system pipeline within the ECS
+All transport state lives as ECS resources. Transport logic runs as a system pipeline within the ECS
 scheduler.
 
 ```mermaid
@@ -621,7 +587,8 @@ pub struct PacketHeader {
 ```
 
 Packet layout on the wire (16-byte header + payload
-+ 16-byte DTLS auth tag):
+
+- 16-byte DTLS auth tag):
 
 | Offset | Size | Field |
 |--------|------|-------|
@@ -974,8 +941,7 @@ impl ConnectionManager {
 
 ### Timing Wheel
 
-O(1) timeout detection for thousands of
-connections (R-8.1.2, R-8.NFR.7, US-8.1.12).
+O(1) timeout detection for thousands of connections (R-8.1.2, R-8.NFR.7, US-8.1.12).
 
 ```rust
 /// Hierarchical timing wheel for O(1) timeout
@@ -1808,48 +1774,29 @@ pub enum TransportError {
 ### Outbound Packet Pipeline
 
 1. Application calls `connection.send(channel, data)`.
-2. Channel assigns a sequence number and buffers the
-   packet in the send window (reliable) or discards
-   after encoding (unreliable).
-3. Fragmenter checks payload size against MTU. If
-   oversized, splits into fragments with group ID.
-4. Congestion controller checks send budget. If
-   insufficient tokens, the packet waits until the
-   next frame.
-5. PacketCodec encodes the header (16 bytes) and
-   payload.
-6. DtlsLayer encrypts the payload and appends the
-   AES-GCM auth tag (16 bytes).
-7. TransportSocket submits an async `sendto()` via
-   the IoReactor.
-8. The IoReactor completion is harvested at the next
-   `reactor.poll()`.
+2. Channel assigns a sequence number and buffers the packet in the send window (reliable) or
+   discards after encoding (unreliable).
+3. Fragmenter checks payload size against MTU. If oversized, splits into fragments with group ID.
+4. Congestion controller checks send budget. If insufficient tokens, the packet waits until the next
+   frame.
+5. PacketCodec encodes the header (16 bytes) and payload.
+6. DtlsLayer encrypts the payload and appends the AES-GCM auth tag (16 bytes).
+7. TransportSocket submits an async `sendto()` via the IoReactor.
+8. The IoReactor completion is harvested at the next `reactor.poll()`.
 
 ### Inbound Packet Pipeline
 
-1. IoReactor harvests a UDP recv completion at the
-   frame poll point.
-2. `net_poll_system` pushes the datagram into
-   `RecvBufferResource`.
-3. `net_recv_system` decodes the 16-byte header via
-   PacketCodec.
-4. Packets with invalid `protocol_id` are silently
-   dropped.
-5. Handshake packets (types 0x01-0x07) are routed to
-   the handshake state machine.
-6. Data packets are looked up by `connection_id`.
-   Unknown IDs are dropped.
-7. DtlsLayer decrypts and verifies the auth tag.
-   Failed verification drops the packet.
-8. FragmentInfo is checked. Fragments are buffered
-   in the Fragmenter until all pieces arrive.
-9. Complete payloads are routed to the appropriate
-   channel by `channel_id`.
-10. Reliable channels process the ack/SACK fields
-    to release send window entries and update RTT.
-11. The channel delivers the payload to the
-    application (ordered or immediate depending on
-    mode).
+1. IoReactor harvests a UDP recv completion at the frame poll point.
+2. `net_poll_system` pushes the datagram into `RecvBufferResource`.
+3. `net_recv_system` decodes the 16-byte header via PacketCodec.
+4. Packets with invalid `protocol_id` are silently dropped.
+5. Handshake packets (types 0x01-0x07) are routed to the handshake state machine.
+6. Data packets are looked up by `connection_id`. Unknown IDs are dropped.
+7. DtlsLayer decrypts and verifies the auth tag. Failed verification drops the packet.
+8. FragmentInfo is checked. Fragments are buffered in the Fragmenter until all pieces arrive.
+9. Complete payloads are routed to the appropriate channel by `channel_id`.
+10. Reliable channels process the ack/SACK fields to release send window entries and update RTT.
+11. The channel delivers the payload to the application (ordered or immediate depending on mode).
 
 ### Heartbeat and Timeout Flow
 
@@ -1933,6 +1880,15 @@ for id in expired {
 | `cxx` | macOS Security.framework interop | Safe bridge to C++ wrappers |
 | `smallvec` | Inline-allocated small vectors | Fragment lists, timeout batches |
 
+## Safety Invariants
+
+### System Access Sets (Medium)
+
+Transport ECS systems (`net_poll_system`, `net_recv_system`, `net_send_system`) must declare
+explicit `AccessSet` for `ConnectionStates` and `TransportStats`. If the scheduler parallelizes
+systems that both read and write `ConnectionStates`, a data race occurs. Enforce sequential ordering
+via explicit system dependencies for all mutating transport systems.
+
 ## Test Plan
 
 ### Unit Tests
@@ -2001,48 +1957,30 @@ for id in expired {
 
 ## Open Questions
 
-1. **DTLS library on Linux.** rustls is proposed for
-   its pure-Rust, no-C-dependency nature. However,
-   DTLS 1.3 support in rustls is still maturing.
-   Alternative: `openssl` crate with system OpenSSL.
+1. **DTLS library on Linux.** rustls is proposed for its pure-Rust, no-C-dependency nature. However,
+   DTLS 1.3 support in rustls is still maturing. Alternative: `openssl` crate with system OpenSSL.
    Tradeoff: C dependency vs. DTLS 1.3 maturity.
 
-2. **Congestion control algorithm.** The current design
-   uses a modified loss-based algorithm with pacing.
-   A BBR-style bandwidth probing algorithm may be more
-   appropriate for highly variable mobile networks.
-   Needs profiling on real cellular links.
+2. **Congestion control algorithm.** The current design uses a modified loss-based algorithm with
+   pacing. A BBR-style bandwidth probing algorithm may be more appropriate for highly variable
+   mobile networks. Needs profiling on real cellular links.
 
-3. **Maximum payload size.** The current design allows
-   payloads up to 64 KiB (limited by fragment group
-   capacity: 255 fragments x ~1200 bytes). Larger
-   payloads would require a streaming protocol on top.
-   Is 64 KiB sufficient for all use cases (zone
-   snapshots, initial world load)?
+3. **Maximum payload size.** The current design allows payloads up to 64 KiB (limited by fragment
+   group capacity: 255 fragments x ~1200 bytes). Larger payloads would require a streaming protocol
+   on top. Is 64 KiB sufficient for all use cases (zone snapshots, initial world load)?
 
-4. **Connection ID size.** 16-bit connection IDs limit
-   to 65,535 simultaneous connections. The requirement
-   is 10,000 (R-8.NFR.7) which fits, but future
-   scaling to multi-server mesh with connection
-   migration may need globally unique 32-bit or 64-bit
-   IDs.
+4. **Connection ID size.** 16-bit connection IDs limit to 65,535 simultaneous connections. The
+   requirement is 10,000 (R-8.NFR.7) which fits, but future scaling to multi-server mesh with
+   connection migration may need globally unique 32-bit or 64-bit IDs.
 
-5. **Sequence number size.** 16-bit sequence numbers
-   wrap every 65,536 packets. At 60 packets/sec this
-   wraps in ~18 minutes. The SACK window must be sized
-   to avoid ambiguity near the wrap point. An
-   alternative is 32-bit sequence numbers (4 extra
-   header bytes per packet).
+5. **Sequence number size.** 16-bit sequence numbers wrap every 65,536 packets. At 60 packets/sec
+   this wraps in ~18 minutes. The SACK window must be sized to avoid ambiguity near the wrap point.
+   An alternative is 32-bit sequence numbers (4 extra header bytes per packet).
 
-6. **Key rotation strategy.** The design calls for
-   periodic rotation but does not specify the
-   interval. Tradeoffs: shorter intervals limit
-   exposure from a compromised key but increase CPU
+6. **Key rotation strategy.** The design calls for periodic rotation but does not specify the
+   interval. Tradeoffs: shorter intervals limit exposure from a compromised key but increase CPU
    cost. Proposed default: 1 hour.
 
-7. **io_uring minimum kernel version.** `IORING_OP_SENDTO`
-   and `IORING_OP_RECVFROM` require kernel 5.6+.
-   Older kernels (5.1-5.5) would need fallback to
-   `IORING_OP_POLL_ADD` + non-blocking `sendto`/
-   `recvfrom`. Should we require 5.6+ or support the
-   fallback path?
+7. **io_uring minimum kernel version.** `IORING_OP_SENDTO` and `IORING_OP_RECVFROM` require kernel
+   5.6+. Older kernels (5.1-5.5) would need fallback to `IORING_OP_POLL_ADD` + non-blocking
+   `sendto`/ `recvfrom`. Should we require 5.6+ or support the fallback path?

@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/rendering/](../../features/rendering/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/rendering/](../../features/rendering/),
 > [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table
-> below traces design elements to those definitions.
+> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
+> to those definitions.
 
 ### Stylized Effects (F-2.11 / R-2.11)
 
@@ -54,36 +54,24 @@
 
 ## Overview
 
-This subsystem provides two complementary rendering
-capabilities:
+This subsystem provides two complementary rendering capabilities:
 
-1. **Stylized Rendering** -- non-photorealistic
-   rendering techniques (toon/cel shading, painterly
-   effects, pixel art rendering, outlines, highlights)
-   that replace or augment the PBR lighting pipeline with
-   artist-driven stylization.
-2. **Advanced Materials** -- specialized physically-based
-   shading models (glass refraction, fabric sheen,
-   anisotropic metal, skin SSS, clearcoat, parallax
-   occlusion, material layering) extending the base
-   Cook-Torrance BRDF (F-2.4.3).
+1. **Stylized Rendering** -- non-photorealistic rendering techniques (toon/cel shading, painterly
+   effects, pixel art rendering, outlines, highlights) that replace or augment the PBR lighting
+   pipeline with artist-driven stylization.
+2. **Advanced Materials** -- specialized physically-based shading models (glass refraction, fabric
+   sheen, anisotropic metal, skin SSS, clearcoat, parallax occlusion, material layering) extending
+   the base Cook-Torrance BRDF (F-2.4.3).
 
-Both are unified under a single material graph system
-where artists author all materials visually through a
-no-code node graph editor (F-2.12.9, F-15.8.5). The
-graph compiles to HLSL, which DXC compiles to
-DXIL/SPIR-V, and Metal Shader Converter translates to
-MSL. A shader permutation cache manages the combinatorial
-explosion of shading model variants, feature flags, and
-platform tiers.
+Both are unified under a single material graph system where artists author all materials visually
+through a no-code node graph editor (F-2.12.9, F-15.8.5). The graph compiles to HLSL, which DXC
+compiles to DXIL/SPIR-V, and Metal Shader Converter translates to MSL. A shader permutation cache
+manages the combinatorial explosion of shading model variants, feature flags, and platform tiers.
 
-All runtime data lives as ECS components. Render proxy
-extraction (F-2.10.1) snapshots material state each frame
-for GPU upload. The render graph (F-2.2.1) schedules
-stylized passes (outline, toon lighting, painterly
-post-process) alongside the standard pipeline, with
-capability gating (F-2.2.2) pruning unsupported passes
-per platform.
+All runtime data lives as ECS components. Render proxy extraction (F-2.10.1) snapshots material
+state each frame for GPU upload. The render graph (F-2.2.1) schedules stylized passes (outline, toon
+lighting, painterly post-process) alongside the standard pipeline, with capability gating (F-2.2.2)
+pruning unsupported passes per platform.
 
 ## Architecture
 
@@ -170,7 +158,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_rendering/
 ├── stylized_materials/
 │   ├── graph.rs          # MaterialGraph,
@@ -1491,8 +1479,7 @@ pub enum CompileError {
 
 ### Frame Lifecycle for Stylized Materials
 
-The stylized rendering pipeline integrates with
-the standard frame loop through the render graph.
+The stylized rendering pipeline integrates with the standard frame loop through the render graph.
 
 ```rust
 // Simplified frame flow for stylized rendering
@@ -1534,39 +1521,28 @@ loop {
 
 ### Outline Rendering Pipeline
 
-Three outline techniques run as separate render
-graph passes. The results are composited additively
+Three outline techniques run as separate render graph passes. The results are composited additively
 into a shared outline buffer.
 
-1. **Sobel edge detection** -- fullscreen compute
-   pass sampling the depth and normal G-buffer
-   targets. Edges are detected where depth or
-   normal gradients exceed a threshold. Output is
-   a per-pixel edge mask with entity-colored
-   overlay.
+1. **Sobel edge detection** -- fullscreen compute pass sampling the depth and normal G-buffer
+   targets. Edges are detected where depth or normal gradients exceed a threshold. Output is a
+   per-pixel edge mask with entity-colored overlay.
 
-2. **Jump-flood algorithm (JFA)** -- requires
-   compute shaders. Renders outlined entity
-   silhouettes to a seed buffer, then iterates
-   log2(max_width) jump-flood passes to compute
-   per-pixel distance to the nearest silhouette.
-   Variable-width outlines use the distance field
-   with configurable falloff.
+2. **Jump-flood algorithm (JFA)** -- requires compute shaders. Renders outlined entity silhouettes
+   to a seed buffer, then iterates log2(max_width) jump-flood passes to compute per-pixel distance
+   to the nearest silhouette. Variable-width outlines use the distance field with configurable
+   falloff.
 
-3. **Shell extrusion** -- object-space pass that
-   renders each outlined mesh a second time with
-   vertices extruded along normals and
-   front-face culling inverted. Produces clean
-   view-consistent outlines on individual meshes.
+3. **Shell extrusion** -- object-space pass that renders each outlined mesh a second time with
+   vertices extruded along normals and front-face culling inverted. Produces clean view-consistent
+   outlines on individual meshes.
 
-Fallback: JFA falls back to Sobel on devices
-without compute shader support (F-2.2.2 capability
+Fallback: JFA falls back to Sobel on devices without compute shader support (F-2.2.2 capability
 gating).
 
 ### Advanced Material Lighting Integration
 
-Advanced material shading models are evaluated
-during the lighting pass, branching on the
+Advanced material shading models are evaluated during the lighting pass, branching on the
 `ShadingModelId` encoded in the G-buffer:
 
 | ShadingModelId | Lighting Evaluation |
@@ -1586,22 +1562,17 @@ during the lighting pass, branching on the
 
 ### Material Layer Evaluation Order
 
-Multi-layer materials are evaluated bottom-to-top.
-Each layer produces a full surface output (albedo,
-normal, roughness, metallic, emissive). Layers are
-blended per-pixel:
+Multi-layer materials are evaluated bottom-to-top. Each layer produces a full surface output
+(albedo, normal, roughness, metallic, emissive). Layers are blended per-pixel:
 
 1. **Base layer** -- always evaluated.
-2. **Overlay layers** -- blended onto the base via
-   the selected blend mode:
+2. **Overlay layers** -- blended onto the base via the selected blend mode:
    - **Alpha**: `lerp(base, layer, opacity * mask)`
    - **HeightBased**: blend factor computed from
-     `smoothstep(h - contrast, h + contrast,
-     layer_height - base_height + offset)`
+     `smoothstep(h - contrast, h + contrast, layer_height - base_height + offset)`
    - **Additive**: `base + layer * opacity * mask`
    - **Multiply**: `base * lerp(1, layer, mask)`
-3. **Clearcoat** -- if present, adds a separate
-   specular lobe on top of the composited result.
+3. **Clearcoat** -- if present, adds a separate specular lobe on top of the composited result.
 
 ## Platform Considerations
 
@@ -1664,10 +1635,8 @@ blended per-pixel:
 | Vulkan | HLSL -> DXC -> SPIR-V | DXC `-spirv` flag |
 | Metal | HLSL -> DXC -> DXIL -> MSC -> MSL | Two-step via Metal Shader Converter |
 
-All compilation uses DXC accessed through cxx.rs.
-Metal Shader Converter is also accessed through
-cxx.rs. No runtime shader compilation in shipping
-builds -- all permutations are pre-compiled during
+All compilation uses DXC accessed through cxx.rs. Metal Shader Converter is also accessed through
+cxx.rs. No runtime shader compilation in shipping builds -- all permutations are pre-compiled during
 asset processing (F-12.3.1).
 
 ### Proposed Dependencies
@@ -1680,15 +1649,11 @@ asset processing (F-12.3.1).
 
 ### VFX Material Integration
 
-Particle and effect shaders can reference material
-graph outputs via the shared `MaterialId` system.
-The VFX effect graph (see
-[effect-graph.md](../vfx/effect-graph.md)) compiles
-particle shaders using the same `GraphCompiler`
-framework (see
-[shared-primitives.md](../core-runtime/shared-primitives.md))
-as the material graph, ensuring consistent HLSL
-emission and compilation.
+Particle and effect shaders can reference material graph outputs via the shared `MaterialId` system.
+The VFX effect graph (see [effect-graph.md](../vfx/effect-graph.md)) compiles particle shaders using
+the same `GraphCompiler` framework (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)) as the material graph, ensuring
+consistent HLSL emission and compilation.
 
 ## Test Plan
 
@@ -1777,61 +1742,38 @@ emission and compilation.
 
 ## Open Questions
 
-1. **Permutation explosion bound** -- With 12
-   shading models, 32 feature flags, 4 tiers, and
-   4 blend modes, the theoretical permutation
-   space is enormous. What is the practical upper
-   bound for the cache, and should we implement a
-   permutation eviction policy (LRU) or restrict
-   to a curated whitelist per project?
+1. **Permutation explosion bound** -- With 12 shading models, 32 feature flags, 4 tiers, and 4 blend
+   modes, the theoretical permutation space is enormous. What is the practical upper bound for the
+   cache, and should we implement a permutation eviction policy (LRU) or restrict to a curated
+   whitelist per project?
 
-2. **Toon + PBR blending** -- Should a single
-   entity be allowed to blend between toon and PBR
-   shading (e.g., a toon character in a
-   photorealistic environment), and if so, what
-   interpolation scheme avoids lighting
-   discontinuities?
+2. **Toon + PBR blending** -- Should a single entity be allowed to blend between toon and PBR
+   shading (e.g., a toon character in a photorealistic environment), and if so, what interpolation
+   scheme avoids lighting discontinuities?
 
-3. **Painterly filter performance** -- The
-   anisotropic Kuwahara filter is bandwidth-heavy
-   due to multi-tap sampling. Should it be
-   implemented as a separable approximation on
-   Switch, and is half-resolution acceptable
-   for the desktop tier?
+3. **Painterly filter performance** -- The anisotropic Kuwahara filter is bandwidth-heavy due to
+   multi-tap sampling. Should it be implemented as a separable approximation on Switch, and is
+   half-resolution acceptable for the desktop tier?
 
-4. **Pixel art sub-pixel camera** -- The sub-pixel
-   stabilization technique (snapping the camera
-   to pixel grid boundaries) interacts with
-   physics-driven camera shake. What priority
-   order should be used when both are active?
+4. **Pixel art sub-pixel camera** -- The sub-pixel stabilization technique (snapping the camera to
+   pixel grid boundaries) interacts with physics-driven camera shake. What priority order should be
+   used when both are active?
 
-5. **Glass refraction sorting** -- Screen-space
-   refraction reads the color buffer written by
-   opaque geometry, but cannot correctly handle
-   overlapping refractive objects. Should we
-   implement per-pixel linked lists for multi-
-   layer refraction, or is single-layer sufficient
-   for the initial release?
+5. **Glass refraction sorting** -- Screen-space refraction reads the color buffer written by opaque
+   geometry, but cannot correctly handle overlapping refractive objects. Should we implement
+   per-pixel linked lists for multi- layer refraction, or is single-layer sufficient for the initial
+   release?
 
-6. **Material layer compile time** -- Compiling
-   a 4-layer material effectively compiles 4
-   sub-graphs plus blending. Does the incremental
-   compile target of < 1 s still hold, or should
-   layer composition be cached separately from
-   individual layer graphs?
+6. **Material layer compile time** -- Compiling a 4-layer material effectively compiles 4 sub-graphs
+   plus blending. Does the incremental compile target of < 1 s still hold, or should layer
+   composition be cached separately from individual layer graphs?
 
-7. **Tessellation on Metal** -- Metal supports
-   tessellation but with a different pipeline stage
-   model than D3D12/Vulkan. Should the heightmap
-   tessellation path use Metal's post-tessellation
-   vertex function, or should all platforms use
-   POM as the primary path with tessellation as an
+7. **Tessellation on Metal** -- Metal supports tessellation but with a different pipeline stage
+   model than D3D12/Vulkan. Should the heightmap tessellation path use Metal's post-tessellation
+   vertex function, or should all platforms use POM as the primary path with tessellation as an
    optional enhancement?
 
-8. **Weathering system scope** -- The procedural
-   weathering system (rust, moss, cracks, stains)
-   needs noise functions and mask generators. Should
-   these be implemented as dedicated HLSL library
-   functions, or should weathering be expressed
-   entirely as material graph nodes the artist
-   connects manually?
+8. **Weathering system scope** -- The procedural weathering system (rust, moss, cracks, stains)
+   needs noise functions and mask generators. Should these be implemented as dedicated HLSL library
+   functions, or should weathering be expressed entirely as material graph nodes the artist connects
+   manually?

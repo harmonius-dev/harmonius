@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/platform/](../../features/platform/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/platform/](../../features/platform/),
 > [requirements/platform/](../../requirements/platform/), and
-> [user-stories/platform/](../../user-stories/platform/). The table
-> below traces design elements to those definitions.
+> [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
+> those definitions.
 
 ### OS Integration (F-14.2 / R-14.2)
 
@@ -316,7 +316,7 @@ classDiagram
 
 ### Module Structure
 
-```
+```text
 harmonius_platform/
 ├── os/
 │   ├── clipboard.rs
@@ -1760,8 +1760,8 @@ pub enum FsError {
 | File watching | `ReadDirectoryChangesExW` with IOCP | FSEvents (recursive), `dispatch_source` VNODE (single) | `inotify_add_watch` with io_uring async reads |
 | Path resolution | `GetFinalPathNameByHandleW` | `fcntl(F_GETPATH)` or `realpath` | `realpath` or `/proc/self/fd` readlink |
 | Path quirks | UNC paths, `\\?\` long-path prefix, NTFS junctions | Case-insensitive HFS+/APFS | Case-sensitive ext4/btrfs |
-| iOS | App sandbox directories. `NSFileManager` via Swift/cxx.rs. No symlinks in app bundle. |
-| Android | Internal/external storage via JNI. Scoped storage (API 30+). `ContentResolver` for shared files. |
+| iOS | App sandbox directories. `NSFileManager` via Swift/cxx.rs. No symlinks in app bundle. |  |  |
+| Android | Internal/external storage via JNI. Scoped storage (API 30+). `ContentResolver` for shared files. |  |  |
 
 ## Test Plan
 
@@ -1867,8 +1867,8 @@ pub enum FsError {
 4. **File watcher implementation** -- Should we use the `notify` crate (cross-platform file watcher
    with debounce support) or implement custom per-platform watchers? The `notify` crate provides a
    mature, tested implementation but adds an external dependency. Custom watchers integrate more
-   tightly with the `IoReactor` and avoid the crate's internal threading model, which
-   conflicts with our thread pool design.
+   tightly with the `IoReactor` and avoid the crate's internal threading model, which conflicts with
+   our thread pool design.
 
 5. **Wayland clipboard latency** -- On Wayland, clipboard data transfer requires a compositor
    round-trip. If the compositor is unresponsive, clipboard operations could stall. Should we add a

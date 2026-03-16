@@ -81,9 +81,9 @@ leak entities over time.
 ## US-1.2.7 Propagate Transforms in Parallel Across Independent Subtrees
 
 **As an** engine developer (P-26), **I want** world-space transforms computed by composing local
-transforms in a top-down parallel system that processes independent subtrees concurrently, **so
-that** deep hierarchies (vehicles carrying players carrying equipment) propagate correctly without
-stack overflow.
+transforms in a top-down parallel system that processes independent subtrees concurrently,
+**so that** deep hierarchies (vehicles carrying players carrying equipment) propagate correctly
+without stack overflow.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

@@ -91,7 +91,7 @@ rebuilding a separate culling hierarchy for the renderer.
 - **Requirements:** R-1.9.7
 - **Dependencies:** F-1.9.1, F-2.10.4 (View Setup)
 - **Platform notes:** Mobile: 1 view + 1 shadow cascade culled per frame. Switch: 1 view
-  + 2 shadow cascades. Desktop: main view + 4 shadow cascades + reflection probes. High-end PC:
+  - 2 shadow cascades. Desktop: main view + 4 shadow cascades + reflection probes. High-end PC:
     unlimited views with parallel culling passes.
 
 ### F-1.9.8 Network Interest Management Integration

@@ -80,8 +80,9 @@ visual editor, **so that** I can animate any numeric field without writing code.
 ## US-1.3.7 Reflect Dynamic Collections Through Uniform Interface
 
 **As an** engine developer (P-26), **I want** dynamic-length collections (vectors, maps, sets)
-exposed through a uniform reflection interface with insertion, removal, and indexed access, **so
-that** generic serialization and editor UI handle collections without per-container specialization.
+exposed through a uniform reflection interface with insertion, removal, and indexed access,
+**so that** generic serialization and editor UI handle collections without per-container
+specialization.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -167,11 +168,9 @@ keeping the type system compatible with static dispatch.
 
 ## US-1.3.14 Verify Trait Resolution Matches Static Dispatch Behavior
 
-**As an** engine tester (P-27), **I want** to verify
-that runtime trait resolution produces the same results
-as compile-time static dispatch for all registered
-types, **so that** the dynamic path is functionally
-equivalent to the static path.
+**As an** engine tester (P-27), **I want** to verify that runtime trait resolution produces the same
+results as compile-time static dispatch for all registered types, **so that** the dynamic path is
+functionally equivalent to the static path.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -183,12 +182,9 @@ equivalent to the static path.
 
 ## US-1.3.15 Derive Reflect on a Component Struct
 
-**As a** game developer (P-15), **I want** to derive
-`Reflect` on my component structs and have all property
-accessors, type registration, and collection trait
-implementations generated automatically, **so that**
-my types work with the editor, serializer, and network
-replication without boilerplate.
+**As a** game developer (P-15), **I want** to derive `Reflect` on my component structs and have all
+property accessors, type registration, and collection trait implementations generated automatically,
+**so that** my types work with the editor, serializer, and network replication without boilerplate.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -198,11 +194,9 @@ replication without boilerplate.
 
 ## US-1.3.16 Derive Reflect on an Enum Type
 
-**As a** game developer (P-15), **I want** to derive
-`Reflect` on enum types so that each variant and its
-fields are accessible through the reflection API,
-**so that** state machines, event types, and config
-enums work with the editor and serializer.
+**As a** game developer (P-15), **I want** to derive `Reflect` on enum types so that each variant
+and its fields are accessible through the reflection API, **so that** state machines, event types,
+and config enums work with the editor and serializer.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -212,11 +206,9 @@ enums work with the editor and serializer.
 
 ## US-1.3.17 Customize Reflection with Field Attributes
 
-**As a** game developer (P-15), **I want** to annotate
-fields with `#[reflect(skip)]`, `#[reflect(rename)]`,
-and `#[reflect(default)]` to control reflection
-behavior per field, **so that** internal fields stay
-hidden and serialization uses clean names.
+**As a** game developer (P-15), **I want** to annotate fields with `#[reflect(skip)]`,
+`#[reflect(rename)]`, and `#[reflect(default)]` to control reflection behavior per field,
+**so that** internal fields stay hidden and serialization uses clean names.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -226,12 +218,9 @@ hidden and serialization uses clean names.
 
 ## US-1.3.18 Handle Type Categories via Sub-Traits
 
-**As an** engine developer (P-26), **I want** to
-downcast a `Reflect` reference to the appropriate
-sub-trait (`ReflectStruct`, `ReflectEnum`,
-`ReflectList`, `ReflectMap`, `ReflectValue`), **so
-that** generic editor inspectors and serializers
-handle each category with the right access methods.
+**As an** engine developer (P-26), **I want** to downcast a `Reflect` reference to the appropriate
+sub-trait (`ReflectStruct`, `ReflectEnum`, `ReflectList`, `ReflectMap`, `ReflectValue`), **so that**
+generic editor inspectors and serializers handle each category with the right access methods.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -241,11 +230,9 @@ handle each category with the right access methods.
 
 ## US-1.3.19 Build Editor Inspector from Reflect Sub-Traits
 
-**As a** designer (P-5), **I want** the visual editor
-to display an appropriate inspector widget for each
-reflected type category (struct fields, enum dropdown,
-list add/remove, map key-value pairs), **so that** I
-can edit any component without specialized UI code.
+**As a** designer (P-5), **I want** the visual editor to display an appropriate inspector widget for
+each reflected type category (struct fields, enum dropdown, list add/remove, map key-value pairs),
+**so that** I can edit any component without specialized UI code.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -255,11 +242,9 @@ can edit any component without specialized UI code.
 
 ## US-1.3.20 Reconstruct Typed Values from Dynamic Data
 
-**As an** engine developer (P-26), **I want** to call
-`FromReflect` to reconstruct a concrete typed value
-from a `DynamicValue` or `Reflect` reference, **so
-that** deserialization and undo/redo produce real typed
-instances from dynamic intermediaries.
+**As an** engine developer (P-26), **I want** to call `FromReflect` to reconstruct a concrete typed
+value from a `DynamicValue` or `Reflect` reference, **so that** deserialization and undo/redo
+produce real typed instances from dynamic intermediaries.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -269,11 +254,9 @@ instances from dynamic intermediaries.
 
 ## US-1.3.21 Round-Trip Through Dynamic and Back
 
-**As an** engine tester (P-27), **I want** to verify
-that converting a typed value to a `DynamicValue` via
-`Reflect::clone` and back via `FromReflect` produces
-an identical value, **so that** the dynamic
-representation is lossless.
+**As an** engine tester (P-27), **I want** to verify that converting a typed value to a
+`DynamicValue` via `Reflect::clone` and back via `FromReflect` produces an identical value,
+**so that** the dynamic representation is lossless.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|
@@ -283,11 +266,9 @@ representation is lossless.
 
 ## US-1.3.22 Verify Reflect Derive Compile Errors for Bad Attributes
 
-**As an** engine tester (P-27), **I want** to verify
-that using an unsupported attribute on the `Reflect`
-derive macro produces a clear compile-time error,
-**so that** developers get immediate feedback on
-attribute mistakes.
+**As an** engine tester (P-27), **I want** to verify that using an unsupported attribute on the
+`Reflect` derive macro produces a clear compile-time error, **so that** developers get immediate
+feedback on attribute mistakes.
 
 | Acceptance criteria | Features | Requirements |
 |---|---|---|

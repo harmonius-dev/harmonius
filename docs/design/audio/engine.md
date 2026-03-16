@@ -2,11 +2,10 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/audio/](../../features/audio/),
-> [requirements/audio/](../../requirements/audio/), and
-> [user-stories/audio/](../../user-stories/audio/). The table
-> below traces design elements to those definitions.
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/audio/](../../features/audio/), [requirements/audio/](../../requirements/audio/), and
+> [user-stories/audio/](../../user-stories/audio/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -38,36 +37,23 @@
 
 ## Overview
 
-The audio engine provides real-time sound mixing,
-spatialization, and playback for the Harmonius engine.
-All audio data lives as ECS components; all audio logic
-runs as ECS systems. The engine is split into four
-layers:
+The audio engine provides real-time sound mixing, spatialization, and playback for the Harmonius
+engine. All audio data lives as ECS components; all audio logic runs as ECS systems. The engine is
+split into four layers:
 
-1. **ECS layer** -- components (`AudioSource`,
-   `AudioListener`, `SpatialAudio`, `ReverbZone`) and
-   systems that synchronize ECS state with the audio
-   runtime each frame.
-2. **Runtime layer** -- the `AudioEngine` core
-   containing the mixer graph, voice manager, command
+1. **ECS layer** -- components (`AudioSource`, `AudioListener`, `SpatialAudio`, `ReverbZone`) and
+   systems that synchronize ECS state with the audio runtime each frame.
+2. **Runtime layer** -- the `AudioEngine` core containing the mixer graph, voice manager, command
    queue, codec registry, and stream manager.
-3. **Spatial layer** -- spatializer, occlusion system,
-   HRTF renderer, Ambisonics codec, and the async
-   propagation solver. Occlusion and propagation query
-   the shared BVH spatial index.
-4. **Backend layer** -- platform audio output via
-   WASAPI (Windows), CoreAudio (macOS), and
-   ALSA/PipeWire (Linux), selected at compile time
-   through `cfg` attributes.
+3. **Spatial layer** -- spatializer, occlusion system, HRTF renderer, Ambisonics codec, and the
+   async propagation solver. Occlusion and propagation query the shared BVH spatial index.
+4. **Backend layer** -- platform audio output via WASAPI (Windows), CoreAudio (macOS), and
+   ALSA/PipeWire (Linux), selected at compile time through `cfg` attributes.
 
-The game thread communicates with the audio thread
-through a lock-free SPSC command queue. The audio
-thread runs a high-priority callback driven by the
-platform backend, processing all mixing, DSP, and
-spatialization within the 0.5 ms budget. Streaming
-playback uses the engine's `IoReactor` for
-platform-native async I/O (IOCP, GCD Dispatch IO,
-io_uring).
+The game thread communicates with the audio thread through a lock-free SPSC command queue. The audio
+thread runs a high-priority callback driven by the platform backend, processing all mixing, DSP, and
+spatialization within the 0.5 ms budget. Streaming playback uses the engine's `IoReactor` for
+platform-native async I/O (IOCP, GCD Dispatch IO, io_uring).
 
 ## Architecture
 
@@ -142,7 +128,7 @@ graph TD
 
 ### File Layout
 
-```
+```text
 harmonius_audio/
 ├── engine.rs         # AudioEngine, AudioConfig
 ├── command.rs        # CommandQueue, AudioCommand
@@ -210,11 +196,9 @@ graph TD
     MA --> OUT[Audio Output]
 ```
 
-Each bus carries gain, mute, solo, and an ordered
-insert-effect chain. Child buses inherit the parent's
-effective gain. The DAG is topologically sorted so
-buses are processed leaves-first, accumulating into
-parents until the master bus produces the final output.
+Each bus carries gain, mute, solo, and an ordered insert-effect chain. Child buses inherit the
+parent's effective gain. The DAG is topologically sorted so buses are processed leaves-first,
+accumulating into parents until the master bus produces the final output.
 
 ### Voice Lifecycle
 
@@ -450,12 +434,9 @@ impl AudioEngine {
 
 ### Command Queue
 
-The command queue is a lock-free single-producer
-single-consumer (SPSC) ring buffer. The game thread
-pushes commands with optional sample-accurate
-timestamps. The audio thread drains commands at the
-start of each buffer callback, executing them at the
-specified sample offset within the buffer.
+The command queue is a lock-free single-producer single-consumer (SPSC) ring buffer. The game thread
+pushes commands with optional sample-accurate timestamps. The audio thread drains commands at the
+start of each buffer callback, executing them at the specified sample offset within the buffer.
 
 ```rust
 /// Sample-accurate timestamp for a command.
@@ -1474,42 +1455,29 @@ pub enum HrtfError {
 
 ### Frame Lifecycle
 
-Each game frame, the ECS systems synchronize
-component state with the audio thread:
+Each game frame, the ECS systems synchronize component state with the audio thread:
 
-1. `audio_sync_system` detects new/changed
-   `AudioSource` components and issues `Play`,
-   `Stop`, or `SetParam` commands.
-2. `spatial_update_system` reads `Transform` for
-   all active sources and listeners, pushes
-   `UpdateSpatial` and `UpdateListener` commands
-   with interpolated positions.
-3. `occlusion_system` ray-casts through the shared
-   BVH for each active voice and pushes occlusion
+1. `audio_sync_system` detects new/changed `AudioSource` components and issues `Play`, `Stop`, or
+   `SetParam` commands.
+2. `spatial_update_system` reads `Transform` for all active sources and listeners, pushes
+   `UpdateSpatial` and `UpdateListener` commands with interpolated positions.
+3. `occlusion_system` ray-casts through the shared BVH for each active voice and pushes occlusion
    parameters.
-4. `propagation_system` (async, reduced rate)
-   runs the portal/ray solver on the thread pool
-   and writes results to a lock-free snapshot
-   buffer.
-5. `reverb_zone_system` determines active zones
-   and blend weights for the listener.
+4. `propagation_system` (async, reduced rate) runs the portal/ray solver on the thread pool and
+   writes results to a lock-free snapshot buffer.
+5. `reverb_zone_system` determines active zones and blend weights for the listener.
 
-The audio thread runs independently at the hardware
-callback rate. Each callback:
+The audio thread runs independently at the hardware callback rate. Each callback:
 
-1. Drains the command queue, applying commands at
-   their sample offsets.
-2. For each active voice: decodes samples (from
-   memory or stream), applies spatial parameters,
+1. Drains the command queue, applying commands at their sample offsets.
+2. For each active voice: decodes samples (from memory or stream), applies spatial parameters,
    writes into the voice's target bus buffer.
-3. Processes the mixer graph leaves-first: applies
-   insert effects, accumulates into parent buses.
-4. Writes the master bus output to the platform
-   backend.
+3. Processes the mixer graph leaves-first: applies insert effects, accumulates into parent buses.
+4. Writes the master bus output to the platform backend.
 
 ### Lock-Free Communication
 
-```
+```text
 Game Thread            Audio Thread
     |                      |
     |-- SPSC ring buf ---->|
@@ -1523,31 +1491,22 @@ Game Thread            Audio Thread
     |    playback pos)     |
 ```
 
-All game-to-audio communication uses lock-free
-structures:
+All game-to-audio communication uses lock-free structures:
 
-- **Command queue**: SPSC ring buffer. Game thread
-  writes, audio thread reads. No mutex.
-- **Propagation results**: Double-buffered atomic
-  swap. Solver writes buffer A while audio thread
+- **Command queue**: SPSC ring buffer. Game thread writes, audio thread reads. No mutex.
+- **Propagation results**: Double-buffered atomic swap. Solver writes buffer A while audio thread
   reads buffer B; swap on completion.
-- **Voice state feedback**: Atomic reads of voice
-  state and playback position for the game thread
-  to query progress.
+- **Voice state feedback**: Atomic reads of voice state and playback position for the game thread to
+  query progress.
 
 ### Streaming Pipeline
 
-1. `audio_sync_system` detects a streaming clip and
-   calls `stream_manager.open()`.
-2. Prefetch hint triggers async I/O reads via the
-   `IoReactor`.
+1. `audio_sync_system` detects a streaming clip and calls `stream_manager.open()`.
+2. Prefetch hint triggers async I/O reads via the `IoReactor`.
 3. Decoded samples fill the ring buffer.
-4. The audio thread reads from the ring buffer
-   during voice mixing.
-5. When the ring buffer drops below a threshold,
-   the stream manager submits the next async read.
-6. The `IoReactor` drains completions at the frame
-   poll point, feeding data back to step 3.
+4. The audio thread reads from the ring buffer during voice mixing.
+5. When the ring buffer drops below a threshold, the stream manager submits the next async read.
+6. The `IoReactor` drains completions at the frame poll point, feeding data back to step 3.
 
 ## Platform Considerations
 
@@ -1612,6 +1571,28 @@ structures:
 | `smallvec` | Inline bus child lists | Avoids heap for small arrays |
 | `windows-sys` | WASAPI bindings | Zero-cost Win32 FFI |
 | `cxx` | CoreAudio C++ bridge | Safe bridge to macOS audio APIs |
+
+## Safety Invariants
+
+### AudioEffect Match Arms (Medium)
+
+`AudioEffect::process` and `AudioEffect::reset` must exhaustively match all variants — no wildcard
+`_ =>` arms. Adding a new effect variant with a wildcard silently produces silence instead of
+processed audio. The compiler enforces this when wildcards are removed.
+
+### SPSC Ring Buffer Ordering (High)
+
+`StreamRingBuffer` producer (game thread) and consumer (audio thread) require correct memory
+ordering. The write cursor must use `Release` store after writing sample data. The read cursor must
+use `Acquire` load before reading. `Relaxed` ordering causes torn reads (partial sample data)
+producing audio glitches.
+
+### Command Queue Backpressure (Medium)
+
+`CommandSender::send` returns `Err` when the ring buffer is full. Dropped commands cause play/stop
+desync. **Policy:** Stop and Pause commands have higher priority than Play commands when the buffer
+is near full. Log a warning when commands are dropped. Consider a secondary overflow buffer for
+critical commands.
 
 ## Test Plan
 
@@ -1691,38 +1672,23 @@ structures:
 
 ## Open Questions
 
-1. **WASAPI exclusive vs shared mode** -- Exclusive
-   mode provides the lowest latency but locks the
-   audio device. Should the engine default to shared
-   mode with an opt-in for exclusive, or attempt
+1. **WASAPI exclusive vs shared mode** -- Exclusive mode provides the lowest latency but locks the
+   audio device. Should the engine default to shared mode with an opt-in for exclusive, or attempt
    exclusive first with shared fallback?
-2. **HRTF convolution block size** -- The HRTF
-   filter length (typically 128-512 taps) determines
-   FFT block size. Larger blocks are more efficient
-   but add latency. The optimal block size depends
-   on the target latency budget.
-3. **Ambisonics vs direct panning** -- On stereo
-   output, Ambisonics encoding/decoding adds CPU
-   cost over direct stereo panning. Should the
-   engine bypass Ambisonics for stereo-only output
-   and use it only for surround and binaural?
-4. **Propagation solver update rate** -- Fixed rate
-   (e.g., 10 Hz) vs adaptive rate based on listener
-   movement speed. Adaptive would save CPU when the
-   listener is stationary but adds complexity.
-5. **Ring buffer size vs latency tradeoff** -- Larger
-   streaming ring buffers tolerate I/O spikes but
-   consume more memory. The default 32 KiB chunk /
-   32768-sample ring may need per-platform tuning.
-6. **Platform hardware decoders** -- Apple Audio
-   Toolbox can decode AAC in hardware. Should the
-   codec registry support platform-delegated decoding,
-   and if so, how does this interact with the
+2. **HRTF convolution block size** -- The HRTF filter length (typically 128-512 taps) determines FFT
+   block size. Larger blocks are more efficient but add latency. The optimal block size depends on
+   the target latency budget.
+3. **Ambisonics vs direct panning** -- On stereo output, Ambisonics encoding/decoding adds CPU cost
+   over direct stereo panning. Should the engine bypass Ambisonics for stereo-only output and use it
+   only for surround and binaural?
+4. **Propagation solver update rate** -- Fixed rate (e.g., 10 Hz) vs adaptive rate based on listener
+   movement speed. Adaptive would save CPU when the listener is stationary but adds complexity.
+5. **Ring buffer size vs latency tradeoff** -- Larger streaming ring buffers tolerate I/O spikes but
+   consume more memory. The default 32 KiB chunk / 32768-sample ring may need per-platform tuning.
+6. **Platform hardware decoders** -- Apple Audio Toolbox can decode AAC in hardware. Should the
+   codec registry support platform-delegated decoding, and if so, how does this interact with the
    streaming pipeline?
-7. **Insert effect allocation** -- Insert effects use
-   `Box<dyn AudioEffect>` (dynamic dispatch). This is
-   one of the few places requiring vtable dispatch.
-   An alternative is an enum-based approach with
-   static dispatch for built-in effects and dynamic
-   dispatch only for plugins. The tradeoff is
+7. **Insert effect allocation** -- Insert effects use `Box<dyn AudioEffect>` (dynamic dispatch).
+   This is one of the few places requiring vtable dispatch. An alternative is an enum-based approach
+   with static dispatch for built-in effects and dynamic dispatch only for plugins. The tradeoff is
    extensibility vs performance.

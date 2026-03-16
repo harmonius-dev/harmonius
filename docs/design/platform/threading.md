@@ -2,11 +2,11 @@
 
 ## Requirements Trace
 
-> **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/platform/](../../features/platform/),
+> **Canonical sources:** Features, requirements, and user stories are defined in
+> [features/platform/](../../features/platform/),
 > [requirements/platform/](../../requirements/platform/), and
-> [user-stories/platform/](../../user-stories/platform/). The table
-> below traces design elements to those definitions.
+> [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
+> those definitions.
 
 | Feature | Requirement | Description |
 |---------|-------------|-------------|
@@ -37,9 +37,9 @@ machines. On macOS, fibers are implemented using GCD dispatch queues and blocks.
 support both synchronous and asynchronous variants. All platform-specific code is selected via `cfg`
 attributes — no trait objects, no dynamic dispatch.
 
-Metal uses Dispatch for command buffer completion handlers, making GCD integration a hard requirement
-on macOS. The threading subsystem leverages this shared dependency for both fiber scheduling and
-async I/O.
+Metal uses Dispatch for command buffer completion handlers, making GCD integration a hard
+requirement on macOS. The threading subsystem leverages this shared dependency for both fiber
+scheduling and async I/O.
 
 ## Architecture
 
@@ -92,7 +92,7 @@ graph TD
     RE -.->|"cfg(linux)"| LU
 ```
 
-```
+```text
 harmonius_platform/
 ├── threading/
 │   ├── topology.rs      # CoreTopology detection
@@ -881,11 +881,9 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 | Android | std thread pool | io_uring (API 26+) / epoll fallback | Thread affinity respects big.LITTLE core topology. |
 | Consoles | Platform thread API | Platform async I/O | Vendor-specific thread affinity and priority. NDA APIs. |
 
-Thread pool sizing adapts to core count: mobile devices
-typically have 4-8 cores with heterogeneous performance.
-The `ThreadPool` constructor queries
-`std::thread::available_parallelism()` and applies a
-platform-specific scaling factor.
+Thread pool sizing adapts to core count: mobile devices typically have 4-8 cores with heterogeneous
+performance. The `ThreadPool` constructor queries `std::thread::available_parallelism()` and applies
+a platform-specific scaling factor.
 
 ### Scaling Tiers
 
@@ -899,12 +897,59 @@ platform-specific scaling factor.
 
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
-| `crossbeam-deque` | Chase-Lev work-stealing deque | Industry-standard; used by rayon, tokio |
+| `crossbeam-deque` | Chase-Lev work-stealing deque | Industry-standard; used by rayon and others |
 | `crossbeam-utils` | `CachePadded`, `Backoff` | Prevents false sharing on atomics |
 | `windows-sys` | Win32 API bindings | Zero-cost FFI to IOCP, threads, fibers |
 | `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
 | `cxx` | C++ interop for macOS GCD/Dispatch IO | Safe bridge to Dispatch C++ wrappers |
 | `smallvec` | Inline-allocated small vectors | Task node dependent lists |
+
+## Safety Invariants
+
+### Scoped Async Task Cancellation (High)
+
+`Scope::spawn_async` spawns futures bounded by `'scope`. If a future is pending (awaiting I/O) when
+the scope joins, it must be cancelled. Cancellation of a future with in-flight I/O leaves a
+completion event targeting a dead waker. Implementation must register a tombstone in the `IoReactor`
+so completions for cancelled futures are silently discarded. Document that scoped async tasks should
+avoid holding I/O in flight at scope exit.
+
+### GCD Controlled Drain Latency (Medium)
+
+`dispatch_sync` on the serial drain queue blocks the calling thread. If a Metal command buffer
+completion handler takes > 1 ms, this blocks the main thread. Use a manual drain loop with
+`dispatch_semaphore_wait` (zero timeout) for non-blocking drain. Document that completion handlers
+must be lightweight (< 100 us).
+
+### IoReactor Single-Threaded Access (Medium)
+
+`IoReactor::poll(&self)` mutates internal waker maps via interior mutability. Enforce single-caller
+via `debug_assert!` that the calling thread is the main thread. Consider `poll(&mut self)` to make
+this statically enforced.
+
+## Feasibility Notes
+
+### Custom IoReactor Complexity (Critical Risk)
+
+Building async I/O from scratch on 3 platforms (IOCP, GCD Dispatch IO, io_uring) is a
+multi-person-year effort. **Mitigation:** Prototype the GCD controlled drain pattern on macOS first,
+as it is the least standard. Validate that `dispatch_sync` drain timing meets the < 1 ms budget.
+Consider using `mio` as a thin platform abstraction if the custom approach proves too complex.
+
+### GCD Fibers (Critical Risk)
+
+GCD dispatch blocks are fire-and-forget — they cannot be suspended and resumed mid-execution like
+true fibers. `FiberYielder::yield_now()` is not directly implementable with GCD blocks.
+**Mitigation:** Replace GCD fibers with async/await coroutines on macOS. Yield points become
+`.await` points. This aligns with the project's async-first constraint and eliminates the need for
+fiber suspension.
+
+### Scoped Async Borrow Safety (High Risk)
+
+`Scope::spawn_async` borrowing from the calling scope without `'static` conflicts with Rust's future
+model (futures are `'static` by default for executor flexibility). Implementation requires `unsafe`
+lifetime erasure. **Mitigation:** Limit scoped async to CPU-only tasks (no I/O). Require `'static`
+for async tasks that involve I/O. This matches Rayon's scope model.
 
 ## Test Plan
 

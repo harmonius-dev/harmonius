@@ -3,8 +3,8 @@
 ## US-9.5.1.1 Simulate Cloaks and Banners With GPU Cloth Physics
 
 **As a** character artist (P-9), **I want** GPU cloth simulation with distance, bending, and
-self-collision constraints driven by wind, skeletal animation, and bone collision capsules, **so
-that** cloaks, banners, and tabards move dynamically on characters.
+self-collision constraints driven by wind, skeletal animation, and bone collision capsules,
+**so that** cloaks, banners, and tabards move dynamically on characters.
 
 ## US-9.5.1.2 Author Cloth Constraint Regions Non-Destructively
 

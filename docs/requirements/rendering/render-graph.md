@@ -2,9 +2,9 @@
 
 > **Migration note:** This file was authored against an earlier requirement structure. Requirements
 > RG-1.1 through RG-3.6 have full Derived-from, Rationale, and Verification sections. Requirements
-> from RG-4 onward need these sections added and their Derived-from links updated to reference
-> the current feature IDs (F-2.2.x) instead of the deleted R-2.x.y IDs. This migration is
-> tracked as a future work item.
+> from RG-4 onward need these sections added and their Derived-from links updated to reference the
+> current feature IDs (F-2.2.x) instead of the deleted R-2.x.y IDs. This migration is tracked as a
+> future work item.
 
 Low-level requirements for the declarative render graph library. The render graph is a
 frame-invariant DAG of passes and resources, compiled once and re-executed each frame. It knows
@@ -12,8 +12,7 @@ nothing about rendering features (bloom, shadows, hair, etc.) -- only passes, re
 barriers, scheduling, and gating.
 
 These requirements were derived from the high-level renderer functional requirements (R-2.x.y) via
-systematic translation and deduplication. See
-[traceability-matrix.md](../6-render-graph/traceability-matrix.md) for the complete bidirectional
+systematic translation and deduplication. See the traceability matrix for the complete bidirectional
 mapping.
 
 **Total: 119 render graph requirements** across 14 categories.
@@ -212,7 +211,7 @@ The render graph SHALL support declaring resources with a sparse residency flag.
 
 ### RG-2.10 through RG-2.25
 
-See [original files](../6-render-graph/) for the complete resource management requirements (RG-2.10
+See the original render graph files for the complete resource management requirements (RG-2.10
 staging buffers, RG-2.11 shared/exclusive annotation, RG-2.12 shading rate image, RG-2.13 indirect
 argument buffer, RG-2.14 ring buffer, RG-2.15 bindless heap, RG-2.16 64-bit render target, RG-2.17
 atlas sub-region, RG-2.18 acceleration structure, RG-2.19 conditional history invalidation, RG-2.20
