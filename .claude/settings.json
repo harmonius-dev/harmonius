@@ -38,6 +38,11 @@
             "command": ".claude/hooks/run-xcodegen.sh",
             "timeout": 30,
             "type": "command"
+          },
+          {
+            "command": ".claude/hooks/check-claude-md.sh",
+            "timeout": 10,
+            "type": "command"
           }
         ],
         "matcher": "Write|Edit"
