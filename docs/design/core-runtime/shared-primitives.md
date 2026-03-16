@@ -177,6 +177,427 @@ graph LR
     U1 --> HM
 ```
 
+### Class Diagram — All Types
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Handle~T~ {
+        -u32 index
+        -u32 generation
+        +index() u32
+        +generation() u32
+        +is_null() bool
+    }
+
+    class HandleMap~T~ {
+        -Vec~Slot~T~~ entries
+        -Vec~u32~ free_list
+        +insert(T) Handle~T~
+        +remove(Handle~T~) Option~T~
+        +get(Handle~T~) Option~T~
+        +get_mut(Handle~T~) Option~T~
+        +contains(Handle~T~) bool
+        +len() usize
+        +iter() Iterator
+    }
+
+    class EntityMarker {
+        <<unit struct>>
+    }
+
+    class UniformGrid~T~ {
+        -Vec~T~ cells
+        -GridDimensions dimensions
+        -f32 cell_size
+        -Vec3 origin
+        +world_to_cell(Vec3) Option~CellCoord~
+        +cell_to_world(CellCoord) Vec3
+        +get(CellCoord) Option~T~
+        +neighbors(CellCoord, NeighborMode) Iterator
+        +cells_in_bounds(Vec3, Vec3) Iterator
+        +clear()
+    }
+
+    class GridDimensions {
+        +u32 width
+        +u32 height
+        +u32 depth
+    }
+
+    class CellCoord {
+        +u32 x
+        +u32 y
+        +u32 z
+    }
+
+    class NeighborMode {
+        <<enumeration>>
+        VonNeumann
+        Moore
+    }
+
+    class Curve~T~ {
+        <<enumeration>>
+        Linear
+        CatmullRom
+        Bezier
+        Step
+        Piecewise
+        +evaluate(f32) T
+        +derivative(f32) T
+        +resample(usize) Vec
+    }
+
+    class CurveKey~T~ {
+        +f32 t
+        +T value
+    }
+
+    class BezierKey~T~ {
+        +f32 t
+        +T value
+        +T tangent_in
+        +T tangent_out
+    }
+
+    class PiecewiseSegment~T~ {
+        +CurveKey~T~ start
+        +CurveKey~T~ end
+        +InterpolationMode mode
+    }
+
+    class InterpolationMode {
+        <<enumeration>>
+        Linear
+        CatmullRom
+        Bezier
+        Step
+    }
+
+    class Interpolate {
+        <<trait>>
+        +lerp(Self, Self, f32) Self
+    }
+
+    class SpringParams {
+        +f32 frequency
+        +f32 damping
+    }
+
+    class SpringDamper~T~ {
+        -SpringParams params
+        +new(SpringParams) Self
+        +tick(f32, T, T, T) SpringState~T~
+        +set_params(SpringParams)
+    }
+
+    class SpringState~T~ {
+        +T position
+        +T velocity
+    }
+
+    class SpringLerpable {
+        <<trait>>
+        +add(Self, Self) Self
+        +sub(Self, Self) Self
+        +scale(Self, f32) Self
+    }
+
+    class ModOp {
+        <<enumeration>>
+        Flat
+        Percent
+        Override
+    }
+
+    class StatModifier {
+        +ModOp op
+        +f32 value
+        +Entity source
+        +i32 priority
+    }
+
+    class StatAggregator {
+        -Vec~StatModifier~ modifiers
+        +add(StatModifier)
+        +remove_by_source(Entity)
+        +evaluate(f32, f32, f32) f32
+        +clear()
+    }
+
+    class ConditionExpr {
+        <<enumeration>>
+        And
+        Or
+        Not
+        Leaf
+        +evaluate(ConditionContext, ConditionRegistry) bool
+        +leaf_count() usize
+        +collect_ids() Vec
+    }
+
+    class ConditionId {
+        +u32 0
+    }
+
+    class ConditionRegistry {
+        -HandleMap checks
+    }
+
+    class ConditionContext {
+        +World world
+        +Entity entity
+    }
+
+    class FrameBudget {
+        -u64 budget_us
+        -u64 elapsed_us
+        -Vec~WorkItem~ queue
+        +new(u64) Self
+        +enqueue(WorkItem)
+        +execute() u32
+        +reset()
+        +remaining_us() u64
+        +deferred_count() usize
+    }
+
+    class WorkItem {
+        +i32 priority
+        +u64 estimated_cost_us
+        +fn work
+    }
+
+    class WorkContext {
+        +u64 remaining_us
+    }
+
+    class FalloffCurve {
+        <<enumeration>>
+        Linear
+        Quadratic
+        Exponential
+        Custom
+        +evaluate(f32) f32
+        +max_range() f32
+    }
+
+    class PlatformTier {
+        <<enumeration>>
+        Mobile
+        Switch
+        Desktop
+        HighEnd
+        +meets(PlatformTier) bool
+        +max_draw_distance() f32
+        +max_particle_count() u32
+    }
+
+    class CompressionCodec {
+        <<enumeration>>
+        None
+        Lz4
+        Zstd
+        +compress(bytes, Vec) usize
+        +decompress(bytes, Vec) usize
+    }
+
+    class NodeId {
+        +u32 0
+    }
+
+    class CondEdge~E~ {
+        +NodeId from
+        +NodeId to
+        +ConditionExpr condition
+        +E data
+    }
+
+    class ConditionalGraph~N_E~ {
+        -HandleMap~N~ nodes
+        -Vec~CondEdge~E~~ edges
+        +add_node(N) NodeId
+        +add_edge(CondEdge~E~)
+        +reachable_from(NodeId, ctx, reg) Vec~NodeId~
+        +topological_iter() Iterator
+        +get_node(NodeId) Option~N~
+    }
+
+    class DecayingEntry~T~ {
+        +T value
+        +f32 strength
+        +f32 decay_rate
+    }
+
+    class DecayingStore~T~ {
+        -Vec~DecayingEntry~T~~ entries
+        -f32 threshold
+        +new(f32) Self
+        +insert(T, f32)
+        +tick(f32) usize
+        +refresh(Fn)
+        +strongest() Option
+        +iter() Iterator
+    }
+
+    class ConnectivityResult {
+        +Vec connected
+        +Vec disconnected
+    }
+
+    class ConnectivityAnalyzer {
+        +analyze(anchors, entities, fn, World)$ ConnectivityResult
+    }
+
+    class WeightedEntry~V~ {
+        +V value
+        +f32 weight
+    }
+
+    class TaggedLookupTable~K_V~ {
+        -HashMap table
+        +insert(K, V, f32)
+        +get(K) Option
+        +select_weighted(K, Rng) Option~V~
+        +len() usize
+    }
+
+    class Versioned~T~ {
+        +u64 version
+        +T data
+    }
+
+    class PollResult~T~ {
+        <<enumeration>>
+        UpToDate
+        Updated
+        Error
+    }
+
+    class LiveOpsResource~T~ {
+        -Option~Versioned~T~~ current
+        -String endpoint
+        -u32 poll_interval_secs
+        +poll() PollResult~T~
+        +current() Option
+        +force_refresh() PollResult~T~
+    }
+
+    class CompiledShader {
+        +String hlsl_source
+        +Vec dxil_bytecode
+        +Vec spirv_bytecode
+        +Option msl_source
+    }
+
+    class CompileError {
+        +NodeId node_id
+        +String message
+    }
+
+    class NodeDef {
+        +NodeId id
+        +Vec inputs
+        +Vec outputs
+        +String hlsl_template
+    }
+
+    class PinDef {
+        +String name
+        +ShaderDataType data_type
+    }
+
+    class ShaderDataType {
+        <<enumeration>>
+        Float
+        Vec2
+        Vec3
+        Vec4
+        Mat4
+        Texture2D
+        Sampler
+    }
+
+    class CompileTarget {
+        <<enumeration>>
+        Dxil
+        SpirV
+        Metal
+        All
+    }
+
+    class GraphCompiler {
+        +compile(nodes, edges, target)$ Result
+    }
+
+    class PageId {
+        +Handle resource
+        +u8 mip
+        +u16 tile_x
+        +u16 tile_y
+    }
+
+    class PageState {
+        <<enumeration>>
+        NonResident
+        Loading
+        Resident
+        Evicting
+    }
+
+    class VirtualResourceStreamer {
+        -HandleMap page_table
+        -Vec priority_queue
+        -u64 budget_bytes
+        +new(u64) Self
+        +process_feedback(PageIds)
+        +dispatch_loads()
+        +commit_uploads(GpuDevice)
+        +page_state(PageId) PageState
+        +memory_usage() u64
+        +resident_count() usize
+    }
+
+    HandleMap~T~ o-- Handle~T~
+    UniformGrid~T~ *-- GridDimensions
+    UniformGrid~T~ ..> CellCoord
+    UniformGrid~T~ ..> NeighborMode
+    Curve~T~ *-- CurveKey~T~
+    Curve~T~ *-- BezierKey~T~
+    Curve~T~ *-- PiecewiseSegment~T~
+    PiecewiseSegment~T~ *-- InterpolationMode
+    Curve~T~ ..> Interpolate
+    SpringDamper~T~ *-- SpringParams
+    SpringDamper~T~ ..> SpringState~T~
+    SpringDamper~T~ ..> SpringLerpable
+    StatModifier *-- ModOp
+    StatAggregator o-- StatModifier
+    ConditionExpr *-- ConditionId
+    ConditionExpr ..> ConditionRegistry
+    ConditionExpr ..> ConditionContext
+    FrameBudget o-- WorkItem
+    WorkItem ..> WorkContext
+    FalloffCurve ..> Curve~T~
+    ConditionalGraph~N_E~ o-- CondEdge~E~
+    CondEdge~E~ *-- ConditionExpr
+    CondEdge~E~ *-- NodeId
+    DecayingStore~T~ o-- DecayingEntry~T~
+    ConnectivityAnalyzer ..> ConnectivityResult
+    TaggedLookupTable~K_V~ o-- WeightedEntry~V~
+    LiveOpsResource~T~ o-- Versioned~T~
+    LiveOpsResource~T~ ..> PollResult~T~
+    GraphCompiler ..> CompiledShader
+    GraphCompiler ..> CompileError
+    GraphCompiler ..> NodeDef
+    GraphCompiler ..> CompileTarget
+    NodeDef *-- PinDef
+    PinDef *-- ShaderDataType
+    CompileError *-- NodeId
+    VirtualResourceStreamer ..> PageId
+    VirtualResourceStreamer ..> PageState
+```
+
 ---
 
 ## API Design

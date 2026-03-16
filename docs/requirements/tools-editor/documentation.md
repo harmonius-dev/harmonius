@@ -93,5 +93,4 @@ upgrade system.
 
 User stories for this domain are maintained in
 [user-stories/tools-editor/documentation.md](../../user-stories/tools-editor/documentation.md).
-Requirements in this document are derived from those
-user stories.
+Requirements in this document are derived from those user stories.

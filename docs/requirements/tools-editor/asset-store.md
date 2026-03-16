@@ -108,5 +108,4 @@ displayed at import time, and no runtime DRM on imported assets.
 
 User stories for this domain are maintained in
 [user-stories/tools-editor/asset-store.md](../../user-stories/tools-editor/asset-store.md).
-Requirements in this document are derived from those
-user stories.
+Requirements in this document are derived from those user stories.

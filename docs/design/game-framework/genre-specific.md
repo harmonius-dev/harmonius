@@ -176,6 +176,153 @@ harmonius_game/
 │       └── systems.rs       # CompanionSystem, MountSystem
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class FogState {
+        <<enumeration>>
+        Unexplored
+        Shrouded
+        Visible
+    }
+    class VisionShape {
+        <<enumeration>>
+        Circle
+        Cone
+    }
+    class VisionModifierKind {
+        <<enumeration>>
+        StealthZone
+        VisionBlocker
+        HighGround
+        Darkness
+    }
+    class GridShape {
+        <<enumeration>>
+        Square
+        Hexagonal
+    }
+    class CoverValue {
+        <<enumeration>>
+        None
+        Half
+        Full
+    }
+    class TurnMode {
+        <<enumeration>>
+        RoundRobin
+        Initiative
+        TeamBased
+        PhaseBased
+    }
+    class TurnPhase {
+        <<enumeration>>
+        WaitingForInput
+        Executing
+        Animating
+        EndOfTurn
+    }
+    class CombatOutcome {
+        <<enumeration>>
+        Miss
+        Graze
+        Hit
+        Critical
+    }
+    class PresentationMode {
+        <<enumeration>>
+        WorldSpace
+        FullscreenOverlay
+        SplitView
+        Diegetic
+    }
+    class MinigamePhase {
+        <<enumeration>>
+        Setup
+        Play
+        Result
+        Teardown
+    }
+    class QuitPolicy {
+        <<enumeration>>
+        Loss
+        Refund
+        NoEffect
+    }
+    class MatchPattern {
+        <<enumeration>>
+        ThreeInARow
+        FourInARow
+        FiveInARow
+        PokerHand
+        Custom
+    }
+    class RaceModeKind {
+        <<enumeration>>
+        Circuit
+        TimeTrial
+        Elimination
+        Knockout
+        DriftChallenge
+        DragRace
+        CheckpointRace
+    }
+    class RacingPersonality {
+        <<enumeration>>
+        Cautious
+        Balanced
+        Aggressive
+    }
+    class BlockCollision {
+        <<enumeration>>
+        Solid
+        Passable
+        Liquid
+        Climbable
+    }
+    class FogGrid {
+        +width u32
+        +height u32
+        +faction_data Vec~FogFactionLayer~
+    }
+    class TacticalGrid {
+        +shape GridShape
+        +width u32
+        +height u32
+        +cells Vec~GridCell~
+    }
+    class TurnManager {
+        +mode TurnMode
+        +turn_count u32
+        +current_actor Option~EntityId~
+    }
+    class MinigameSession {
+        +world_partition WorldPartitionId
+        +presentation PresentationMode
+        +phase MinigamePhase
+        +contract ResultContract
+    }
+    class RaceProgress {
+        +checkpoints_hit BitSet
+        +current_lap u32
+        +best_lap_us Option~u64~
+    }
+    class BlockTypeRegistry {
+        +types Vec~Option~BlockTypeDef~~
+        +get(id) Option~BlockTypeDef~
+    }
+    FogGrid --> FogState
+    TacticalGrid --> GridShape
+    TacticalGrid --> CoverValue
+    TurnManager --> TurnMode
+    TurnManager --> TurnPhase
+    MinigameSession --> PresentationMode
+    MinigameSession --> MinigamePhase
+    RaceProgress --> RaceModeKind
+    BlockTypeRegistry --> BlockCollision
+```
+
 ---
 
 ## API Design

@@ -20,6 +20,37 @@ This handbook provides guidelines and best practices for agents working on the H
 - Wrap git commit messages to a 50 character line length limit for the first line, and a 72
   character line length limit for the rest of the commit message.
 
+## Coding standards
+
+Language-specific coding standards are in [docs/standards/](docs/standards/). Read the relevant
+standard before writing or reviewing code in any language.
+
+| Standard | Scope |
+|----------|-------|
+| [Rust](docs/standards/rust.md) | Primary engine language |
+| [C++](docs/standards/cpp.md) | FFI bridges (cxx.rs) |
+| [Swift](docs/standards/swift.md) | macOS platform (cxx.rs) |
+| [TypeScript](docs/standards/typescript.md) | Tooling, editor, build |
+| [HLSL](docs/standards/hlsl.md) | Shader IL (DXC pipeline) |
+| [Markdown](docs/standards/markdown.md) | Documentation (rumdl) |
+| [JSON](docs/standards/json.md) | Configuration files |
+| [TOML](docs/standards/toml.md) | Cargo.toml, .rumdl.toml |
+| [YAML](docs/standards/yaml.md) | GitHub Actions workflows |
+
+## Testing policy
+
+- **Test-driven development** — write tests first, driven by requirements (R-X.Y.Z), features
+  (F-X.Y.Z), and user stories (US-X.Y.Z)
+- **NO MOCKING** — mocking is explicitly forbidden in all languages; no mock libraries, no mock
+  objects
+- **Real dependencies** — always prefer real objects over fakes; only use fakes when no other option
+  exists
+- **Fakes only when necessary** — write a full fake that emulates real behavior; implement the same
+  interface, trait, or protocol
+- **Pure functions** — maximize pure functions that take input and return output with no side
+  effects
+- **Immutable test data** — use constants for test fixtures; never mutate shared test state
+
 ## Design constraints
 
 All project-wide design constraints (language, platform I/O, architecture, async model, etc.) are
@@ -51,8 +82,8 @@ starting any design or implementation work.
 
 ## Markdown linting
 
-This project uses [rumdl](https://github.com/rvben/rumdl) to lint and
-format all Markdown files. Configuration is in `.rumdl.toml`.
+This project uses [rumdl](https://github.com/rvben/rumdl) to lint and format all Markdown files.
+Configuration is in `.rumdl.toml`.
 
 ### Check for violations
 
@@ -66,16 +97,14 @@ rumdl check .
 rumdl fmt .
 ```
 
-Use `rumdl fmt` exclusively for fixing line length limit violations in
-Markdown files. Do not manually rewrap prose — let rumdl handle it via
-the MD013 reflow rule configured in `.rumdl.toml`.
+Use `rumdl fmt` exclusively for fixing line length limit violations in Markdown files. Do not
+manually rewrap prose — let rumdl handle it via the MD013 reflow rule configured in `.rumdl.toml`.
 
 ### CI integration
 
-The GitHub Actions workflow `.github/workflows/markdown.yml` runs
-`rumdl check` on every push and pull request that touches `.md` files.
-If violations are found, it runs `rumdl fmt` to auto-fix them, commits
-the fix, and pushes it to the branch.
+The GitHub Actions workflow `.github/workflows/markdown.yml` runs `rumdl check` on every push and
+pull request that touches `.md` files. If violations are found, it runs `rumdl fmt` to auto-fix
+them, commits the fix, and pushes it to the branch.
 
 ## Development guidelines
 

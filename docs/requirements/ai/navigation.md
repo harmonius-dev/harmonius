@@ -230,6 +230,5 @@ runtime cost in production.
 ## User Story Traceability
 
 User stories for this domain are maintained in
-[user-stories/ai/navigation.md](../../user-stories/ai/navigation.md).
-Requirements in this document are derived from those
-user stories.
+[user-stories/ai/navigation.md](../../user-stories/ai/navigation.md). Requirements in this document
+are derived from those user stories.

@@ -45,5 +45,4 @@ string locks on approved translations, and change detection for modified source 
 
 User stories for this domain are maintained in
 [user-stories/tools-editor/localization-editor.md](../../user-stories/tools-editor/localization-editor.md).
-Requirements in this document are derived from those
-user stories.
+Requirements in this document are derived from those user stories.

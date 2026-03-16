@@ -329,6 +329,227 @@ graph TD
     DL --> MLD
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class BuildConfig {
+        +TargetPlatform platform
+        +BuildProfile profile
+        +Vec~AssetId~ content
+        +ShippingMode shipping_mode
+    }
+
+    class TargetPlatform {
+        <<enum>>
+        Windows
+        MacOs
+        Linux
+        Ios
+        Android
+        Xbox
+        PlayStation
+        NintendoSwitch
+        SteamOs
+    }
+
+    class BuildProfile {
+        <<enum>>
+        Development
+        Staging
+        Shipping
+    }
+
+    class ShippingMode {
+        <<enum>>
+        Standalone
+        Storefront(StoreConfig)
+    }
+
+    class AssetCooker {
+        -reactor IoReactor
+        -pool ThreadPool
+        +cook(assets, platform) Future~CookResult~
+    }
+
+    class BundleBuilder {
+        -chunker ContentChunker
+        +build(cooked, config) Future~BundleSet~
+    }
+
+    class BundleSet {
+        +Vec~AssetBundle~ bundles
+        +BundleManifest manifest
+    }
+
+    class AssetBundle {
+        +BundleId id
+        +Vec~AssetId~ assets
+        +u64 size_bytes
+        +[u8; 32] blake3_hash
+        +Option~EntitlementId~ entitlement
+    }
+
+    class CodeSigner {
+        +sign(artifact, platform) Future~SignedArtifact~
+    }
+
+    class SignedArtifact {
+        +ArtifactPath path
+        +[u8; 32] hash
+        +bool notarized
+    }
+
+    class CertChecker {
+        +check(artifact, platform) Future~CertReport~
+    }
+
+    class CertReport {
+        +bool passed
+        +Vec~CertResult~ results
+    }
+
+    class CertResult {
+        +String rule_id
+        +bool passed
+        +String description
+        +Option~String~ remediation
+    }
+
+    class InstallerFormat {
+        <<enum>>
+        Dmg
+        Msi
+        AppImage
+        Deb
+        Flatpak
+        Ipa
+        Aab
+        SteamOs
+    }
+
+    class InstallerGenerator {
+        +generate(signed, format, meta) Future~InstallerArtifact~
+    }
+
+    class StoreConfig {
+        <<enum>>
+        Steam
+        AppStore
+        WindowsStore
+        Xbox
+    }
+
+    class StoreSubmitter {
+        +submit(artifact, config) Future~SubmissionReceipt~
+        +poll_status(receipt) Future~SubmissionStatus~
+    }
+
+    class SubmissionStatus {
+        <<enum>>
+        Pending
+        InReview
+        Approved
+        Rejected
+    }
+
+    class ContentChunker {
+        +chunk(data) Vec~Chunk~
+    }
+
+    class DeltaGenerator {
+        +generate(old, new) Future~PatchBundle~
+    }
+
+    class PatchApplier {
+        +apply(patch, dir) Future~PatchResult~
+    }
+
+    class DeviceManager {
+        +list_devices() Future~Vec~DeviceInfo~~
+        +deploy(device, build, args) Future~DeployResult~
+    }
+
+    class ModPolicy {
+        +Vec~AssetType~ allowed_asset_types
+        +Vec~NodeCategory~ allowed_node_categories
+        +Vec~NodeCategory~ blocked_node_categories
+        +u64 memory_budget_bytes
+        +u32 entity_budget
+    }
+
+    class ModManifest {
+        +ModId mod_id
+        +String name
+        +SemVer version
+        +SemVerRange engine_compat
+        +Vec~ModDependency~ dependencies
+        +[u8; 32] content_hash
+        +Option~[u8; 64]~ signature
+    }
+
+    class ModLoader {
+        +load(mods, world) Future~ModLoadReport~
+        +unload(mod_id, world) Future~Result~
+    }
+
+    class ModSandbox {
+        +bind_logic_graphs(graphs) Result
+        +check_budgets(world) Option~ConstraintViolation~
+        +deactivate(world)
+    }
+
+    class ConstraintViolation {
+        <<enum>>
+        ExceedsMemoryBudget
+        ExceedsEntityBudget
+        RestrictedAssetType
+        RestrictedNodeCategory
+        OutsideModdableRegion
+    }
+
+    class ModRegistry {
+        +list_installed() Vec~ModDescriptor~
+        +check_updates() Future~Vec~
+        +install(source) Future~ModId~
+        +uninstall(mod_id) Future~Result~
+    }
+
+    class ModDistribution {
+        <<enum>>
+        SteamWorkshop
+        SelfHosted
+        Local
+    }
+
+    class ModerationService {
+        +scan(bundle, policy) Future~ScanReport~
+        +approve(mod_id, moderator) Future~Result~
+        +reject(mod_id, reason, moderator) Future~Result~
+        +revoke(mod_id, reason, moderator) Future~Result~
+    }
+
+    BuildConfig --> TargetPlatform
+    BuildConfig --> BuildProfile
+    BuildConfig --> ShippingMode
+    ShippingMode --> StoreConfig
+    AssetCooker --> BuildConfig : input
+    BundleBuilder --> BundleSet
+    BundleSet --> AssetBundle
+    CodeSigner --> SignedArtifact
+    CertChecker --> CertReport
+    CertReport --> CertResult
+    InstallerGenerator --> InstallerFormat
+    StoreSubmitter --> SubmissionStatus
+    DeltaGenerator --> ContentChunker
+    ModLoader --> ModSandbox
+    ModSandbox --> ConstraintViolation
+    ModManifest --> ModPolicy : constrained by
+    ModRegistry --> ModDistribution
+    ModRegistry --> ModDescriptor
+    ModerationService --> ModPolicy
+```
+
 ## API Design
 
 ### Build Configuration

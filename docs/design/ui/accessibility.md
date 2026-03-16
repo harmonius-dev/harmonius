@@ -190,6 +190,234 @@ flowchart LR
     H --> I[Announce via bridge]
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class AccessibleRole {
+        <<enumeration>>
+        Button
+        Checkbox
+        Slider
+        TextInput
+        Dialog
+        ProgressBar
+        None
+    }
+
+    class AccessibleState {
+        <<enumeration>>
+        Checked
+        Unchecked
+        Expanded
+        Collapsed
+        Selected
+        Disabled
+    }
+
+    class LiveRegionMode {
+        <<enumeration>>
+        Polite
+        Assertive
+        Off
+    }
+
+    class AccessibleProperties {
+        +label String
+        +description Option~String~
+        +value Option~String~
+        +value_min Option~f32~
+        +value_max Option~f32~
+        +live Option~LiveRegionMode~
+    }
+
+    class AccessibleNode {
+        +entity Entity
+        +role AccessibleRole
+        +states Vec~AccessibleState~
+        +properties AccessibleProperties
+        +children Vec~Entity~
+        +parent Option~Entity~
+    }
+
+    class AccessibilityTree {
+        -nodes HashMap
+        -root Entity
+        -dirty Vec~Entity~
+        +sync(widget_tree)
+        +get(entity) Option~AccessibleNode~
+        +set_states(entity, states)
+        +announce(entity, message, mode)
+        +drain_dirty() Vec~AccessibleNode~
+        +set_focus(entity)
+    }
+
+    class ScreenReaderBridge {
+        +push_changes(nodes)
+        +notify_focus_change(entity)
+        +announce(message, mode)
+        +is_screen_reader_active() bool
+    }
+
+    class ColorVisionDeficiency {
+        <<enumeration>>
+        None
+        Protanopia
+        Deuteranopia
+        Tritanopia
+    }
+
+    class ColorblindFilter {
+        +mode ColorVisionDeficiency
+        +severity f32
+        +correction bool
+        +color_matrix() mat3
+    }
+
+    class ContrastChecker {
+        +relative_luminance(color) f32
+        +contrast_ratio(fg, bg) f32
+        +check(fg, bg) ContrastResult
+    }
+
+    class ContrastResult {
+        +ratio f32
+        +passes_aa_normal bool
+        +passes_aa_large bool
+        +passes_aaa_normal bool
+    }
+
+    class HighContrastSettings {
+        +enabled bool
+        +foreground Color
+        +background Color
+        +border Color
+        +focus Color
+        +border_width f32
+        +remove_decorative bool
+    }
+
+    class UiScaleSettings {
+        +user_scale f32
+        +system_dpi_scale f32
+        +effective_scale f32
+    }
+
+    class FocusDirection {
+        <<enumeration>>
+        Next
+        Previous
+        Up
+        Down
+        Left
+        Right
+    }
+
+    class FocusManager {
+        -current_focus Option~Entity~
+        -scanning_mode bool
+        +navigate(direction, tree) Option~Entity~
+        +set_focus(entity)
+        +enable_scanning(interval_ms)
+    }
+
+    class InputSource {
+        <<enumeration>>
+        Key
+        MouseButton
+        GamepadButton
+        GamepadAxis
+    }
+
+    class InputRemapper {
+        -profiles Vec~InputProfile~
+        +load_profile(id) Result
+        +rebind(action, source)
+        +set_hold_toggle(action, enabled)
+    }
+
+    class TextToSpeech {
+        +speak(text, config)
+        +stop()
+        +is_speaking() bool
+        +available_voices() Vec~String~
+    }
+
+    class ChatChannel {
+        <<enumeration>>
+        Party
+        Guild
+        Whisper
+        Global
+        System
+        Combat
+    }
+
+    class SubtitlePosition {
+        <<enumeration>>
+        BottomCenter
+        TopCenter
+        BottomLeft
+        Custom
+    }
+
+    class SubtitleRenderer {
+        -settings SubtitleSettings
+        +show_subtitle(entry)
+        +show_caption(entry)
+        +update(dt)
+    }
+
+    class CaptionDirection {
+        <<enumeration>>
+        Left
+        Right
+        Above
+        Below
+        Behind
+        Front
+    }
+
+    class CaptionPriority {
+        <<enumeration>>
+        Critical
+        Normal
+        Low
+    }
+
+    class ReducedMotionSettings {
+        +enabled bool
+        +animation_scale f32
+        +disable_parallax bool
+        +disable_camera_shake bool
+    }
+
+    class AccessibilitySettings {
+        +colorblind ColorblindFilter
+        +high_contrast HighContrastSettings
+        +ui_scale UiScaleSettings
+        +subtitles SubtitleSettings
+        +reduced_motion ReducedMotionSettings
+    }
+
+    AccessibleNode --> AccessibleRole
+    AccessibleNode --> AccessibleState
+    AccessibleNode --> AccessibleProperties
+    AccessibleProperties --> LiveRegionMode
+    AccessibilityTree *-- AccessibleNode
+    ScreenReaderBridge --> AccessibilityTree
+    ColorblindFilter --> ColorVisionDeficiency
+    ContrastChecker ..> ContrastResult
+    FocusManager --> FocusDirection
+    InputRemapper --> InputSource
+    TextToSpeech --> ChatChannel
+    SubtitleRenderer --> SubtitlePosition
+    AccessibilitySettings --> ColorblindFilter
+    AccessibilitySettings --> HighContrastSettings
+    AccessibilitySettings --> UiScaleSettings
+    AccessibilitySettings --> ReducedMotionSettings
+```
+
 ## API Design
 
 ### Accessibility Node

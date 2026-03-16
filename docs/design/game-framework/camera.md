@@ -311,6 +311,118 @@ flowchart TD
     ROT --> RW[RotateWithTarget]
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class VirtualCamera {
+        +priority i32
+        +channel_mask u32
+        +tracking_target Option~Entity~
+        +look_at_target Option~Entity~
+    }
+    class CameraOutput {
+        +position Vec3
+        +rotation Quat
+        +fov f32
+        +near_clip f32
+        +far_clip f32
+        +focus_distance f32
+    }
+    class CameraBrain {
+        +channel_mask u32
+        +update_mode CameraUpdateMode
+        +default_blend BlendDefinition
+    }
+    class CameraUpdateMode {
+        <<enumeration>>
+        LateUpdate
+        FixedUpdate
+        Manual
+    }
+    class FollowBindingMode {
+        <<enumeration>>
+        WorldSpace
+        LockToTarget
+        LockToTargetNoRoll
+        LockWithWorldUp
+        LockOnAssign
+        LazyFollow
+    }
+    class OrbitMode {
+        <<enumeration>>
+        Sphere
+        ThreeRing
+    }
+    class BlendCurve {
+        <<enumeration>>
+        Cut
+        EaseInOut
+        EaseIn
+        EaseOut
+        HardIn
+        HardOut
+        Linear
+        Custom
+    }
+    class DeocclusionStrategy {
+        <<enumeration>>
+        PullForward
+        PreserveHeight
+        PreserveDistance
+    }
+    class AutoFocusMode {
+        <<enumeration>>
+        LookAtTarget
+        FollowTarget
+        CustomTarget
+        CameraRelative
+        ScreenCenter
+    }
+    class GroupPositionMode {
+        <<enumeration>>
+        BoundingBoxCenter
+        WeightedAverage
+    }
+    class FramingMode {
+        <<enumeration>>
+        Horizontal
+        Vertical
+        BestFit
+    }
+    class SizeAdjustment {
+        <<enumeration>>
+        ZoomOnly
+        DollyOnly
+        DollyThenZoom
+    }
+    class CameraModifierType {
+        <<enumeration>>
+        FovOverride
+        PostProcessBlend
+        LensEffect
+    }
+    class SpringArm {
+        +target_length f32
+        +probe_size f32
+        +socket_offset Vec3
+    }
+    class CameraDeoccluder {
+        +strategy DeocclusionStrategy
+        +camera_radius f32
+        +damping f32
+    }
+    class BlendDefinition {
+        +curve BlendCurve
+        +duration f32
+    }
+    VirtualCamera --> CameraOutput
+    CameraBrain --> CameraUpdateMode
+    CameraBrain --> BlendDefinition
+    BlendDefinition --> BlendCurve
+    CameraDeoccluder --> DeocclusionStrategy
+```
+
 ## API Design
 
 ### Core Virtual Camera

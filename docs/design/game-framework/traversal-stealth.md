@@ -210,6 +210,248 @@ sequenceDiagram
     AI->>AI: Move to highest-scoring cover
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class TraversalType {
+        <<enumeration>>
+        Vault
+        Mantle
+        WallRun
+        CrouchSlide
+        BalanceBeam
+        Climb
+        Ladder
+        LedgeGrab
+        Swim
+        GrapplePoint
+        Zipline
+    }
+
+    class TraversalOpportunity {
+        +traversal_type TraversalType
+        +contact_point Vec3
+        +surface_normal Vec3
+        +obstacle_height f32
+    }
+
+    class TraversalDetectionConfig {
+        +forward_distance f32
+        +downward_distance f32
+        +vault_height_max f32
+        +mantle_height_max f32
+        +balance_width_threshold f32
+    }
+
+    class TraversalState {
+        +active Option~ActiveTraversal~
+    }
+
+    class ActiveTraversal {
+        +traversal_type TraversalType
+        +progress f32
+        +target_position Vec3
+        +stamina_cost f32
+    }
+
+    class VaultMantleConfig {
+        +vault_range tuple_f32_f32
+        +mantle_range tuple_f32_f32
+        +min_approach_speed f32
+    }
+
+    class WallRunConfig {
+        +run_speed f32
+        +max_duration f32
+        +min_entry_speed f32
+        +jump_off_angle f32
+    }
+
+    class WallRunState {
+        +wall_normal Vec3
+        +elapsed f32
+        +sustained_input bool
+    }
+
+    class CrouchSlideConfig {
+        +deceleration f32
+        +slope_multiplier f32
+        +stamina_cost f32
+        +cooldown f32
+    }
+
+    class Climbable {
+        +grip_mode GripMode
+        +grip_spacing f32
+        +climb_speed f32
+        +stamina_drain f32
+    }
+
+    class GripMode {
+        <<enumeration>>
+        AutoGrid
+        Manual
+    }
+
+    class SwimConfig {
+        +surface_speed f32
+        +dive_speed f32
+        +buoyancy f32
+        +oxygen_drain f32
+        +drowning_damage f32
+    }
+
+    class SwimState {
+        +oxygen f32
+        +submerged bool
+    }
+
+    class GrappleConfig {
+        +range f32
+        +pull_speed f32
+        +swing_gravity f32
+    }
+
+    class Zipline {
+        +start Vec3
+        +end Vec3
+        +max_speed f32
+    }
+
+    class InteractionType {
+        <<enumeration>>
+        Instant
+        Channeled
+        Automatic
+    }
+
+    class Interactable {
+        +interaction_type InteractionType
+        +prompt_key StringId
+        +channel_duration f32
+    }
+
+    class DoorState {
+        <<enumeration>>
+        Open
+        Closed
+        Locked
+        Broken
+    }
+
+    class Door {
+        +state DoorState
+        +key_item Option~ItemId~
+        +lockpick_difficulty f32
+    }
+
+    class Grabbable {
+        +hold_distance f32
+        +throw_strength f32
+    }
+
+    class VisibilityScore {
+        +score f32
+        +light_factor f32
+        +shadow_factor f32
+        +speed_factor f32
+        +equipment_factor f32
+    }
+
+    class AlertLevel {
+        <<enumeration>>
+        Unaware
+        Suspicious
+        Searching
+        Alerted
+        LostTarget
+    }
+
+    class AlertState {
+        +state AlertLevel
+        +detection_accumulator f32
+        +last_known_position Option~Vec3~
+    }
+
+    class AlertConfig {
+        +alert_threshold f32
+        +search_timeout f32
+        +return_timeout f32
+    }
+
+    class NoiseType {
+        <<enumeration>>
+        Footstep
+        Gunfire
+        GunfireSuppressed
+        DoorOpen
+        Distraction
+        Explosion
+        MeleeImpact
+    }
+
+    class NoiseEvent {
+        +origin Vec3
+        +intensity f32
+        +noise_type NoiseType
+    }
+
+    class TakedownKind {
+        <<enumeration>>
+        Silent
+        Loud
+        NonLethal
+    }
+
+    class TakedownVariant {
+        +kind TakedownKind
+        +noise_intensity f32
+    }
+
+    class CoverType {
+        <<enumeration>>
+        Half
+        Full
+        Directional
+    }
+
+    class CoverPoint {
+        +cover_type CoverType
+        +position Vec3
+        +facing Vec3
+        +width f32
+    }
+
+    class CoverAction {
+        <<enumeration>>
+        Idle
+        Peek
+        BlindFire
+        CoverTransition
+    }
+
+    class CoverState {
+        +active_cover Option~Entity~
+        +action CoverAction
+    }
+
+    TraversalOpportunity --> TraversalType
+    ActiveTraversal --> TraversalType
+    TraversalState --> ActiveTraversal
+    Climbable --> GripMode
+    SwimConfig --> SwimState
+    Interactable --> InteractionType
+    Door --> DoorState
+    AlertState --> AlertLevel
+    NoiseEvent --> NoiseType
+    TakedownVariant --> TakedownKind
+    CoverPoint --> CoverType
+    CoverState --> CoverAction
+    CoverState --> CoverPoint
+    WallRunConfig --> WallRunState
+```
+
 ## API Design
 
 ### Traversal Components

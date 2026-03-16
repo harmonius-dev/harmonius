@@ -84,6 +84,5 @@ transitions to prevent rapid switching.
 ## User Story Traceability
 
 User stories for this domain are maintained in
-[user-stories/ai/utility-ai.md](../../user-stories/ai/utility-ai.md).
-Requirements in this document are derived from those
-user stories.
+[user-stories/ai/utility-ai.md](../../user-stories/ai/utility-ai.md). Requirements in this document
+are derived from those user stories.

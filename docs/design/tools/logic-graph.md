@@ -351,6 +351,213 @@ enum BossEncounterState {
 }
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class GraphId {
+        +Uuid value
+    }
+    class NodeId {
+        +u32 value
+    }
+    class PinId {
+        +u32 value
+    }
+    class VariableId {
+        +u32 value
+    }
+    class GenericParamId {
+        +u32 value
+    }
+    class NodeFunctionId {
+        +u64 value
+    }
+    class GraphDomain {
+        <<enumeration>>
+        Gameplay
+        Shader
+        Material
+        Animation
+        Audio
+        RenderPipeline
+        Tool
+    }
+    class TickPhase {
+        <<enumeration>>
+        PreUpdate
+        Update
+        PostUpdate
+        FixedUpdate
+    }
+    class PinDirection {
+        <<enumeration>>
+        Input
+        Output
+    }
+    class VariableScope {
+        <<enumeration>>
+        Local
+        Graph
+        Entity
+    }
+    class YieldKind {
+        <<enumeration>>
+        NextFrame
+        Delay
+        UntilCondition
+    }
+    class ComponentAccessKind {
+        <<enumeration>>
+        Get
+        Set
+        Add
+        Remove
+        Has
+    }
+    class ShaderStage {
+        <<enumeration>>
+        Vertex
+        Fragment
+        Compute
+    }
+    class Severity {
+        <<enumeration>>
+        Error
+        Warning
+    }
+    class DebugState {
+        <<enumeration>>
+        Running
+        Paused
+        Stepping
+        Detached
+    }
+    class LogicGraph {
+        +GraphId graph_id
+        +GraphDomain domain
+        +String name
+        +Vec~Node~ nodes
+        +Vec~Edge~ edges
+        +Vec~Variable~ variables
+    }
+    class Node {
+        +NodeId node_id
+        +NodeKind kind
+        +Vec~Pin~ pins
+        +Vec2 position
+    }
+    class NodeKind {
+        <<enumeration>>
+        Event
+        Tick
+        FlowControl
+        Pure
+        EcsQuery
+        ComponentAccess
+        ResourceAccess
+        EventSend
+        SubgraphCall
+        Yield
+        VariableAccess
+        DomainSpecific
+    }
+    class Pin {
+        +PinId pin_id
+        +PinDirection direction
+        +PinType pin_type
+        +String name
+    }
+    class PinType {
+        <<enumeration>>
+        Execution
+        Data
+        Generic
+        Wildcard
+    }
+    class Edge {
+        +NodeId source_node
+        +PinId source_pin
+        +NodeId target_node
+        +PinId target_pin
+    }
+    class Variable {
+        +VariableId var_id
+        +String name
+        +TypeId type_id
+        +VariableScope scope
+    }
+    class SubgraphDef {
+        +GraphId graph_id
+        +String name
+        +Vec~SubgraphPort~ inputs
+        +Vec~SubgraphPort~ outputs
+        +LogicGraph body
+    }
+    class TypeInferenceEngine {
+        -HashMap bindings
+        +infer(graph, registry) Result
+        +update_edge(graph, edge, added) Result
+    }
+    class GraphValidator {
+        +validate(graph, registry) ValidationResult
+    }
+    class NodeRegistry {
+        -Vec~NodeCategory~ categories
+        +search(query) Vec~NodeDefinition~
+        +generate_from_type_registry(registry)
+    }
+    class EcsCompiler {
+        +compile(graph, registry) Result~CompiledGraph~
+    }
+    class CompiledGraph {
+        +GraphId graph_id
+        +Vec~CompiledSystem~ systems
+        +DebugInfo debug_info
+    }
+    class SystemTrigger {
+        <<enumeration>>
+        Tick
+        Event
+        OnAdd
+        OnRemove
+        OnChange
+    }
+    class GraphDebugger {
+        -HashMap breakpoints
+        -DebugState state
+        +set_breakpoint(node_id, condition)
+        +step()
+        +read_pin_value(node, pin) Option
+    }
+    class LiveEditor {
+        +apply_hot_patch(graph, old, world) Result
+    }
+    class GraphDiffer {
+        +diff(base, head) GraphDiff
+        +merge_three_way(base, ours, theirs) MergeResult
+    }
+    class HlslEmitter {
+        +emit(graph, stage, registry) Result~HlslOutput~
+    }
+
+    LogicGraph *-- Node
+    LogicGraph *-- Edge
+    LogicGraph *-- Variable
+    LogicGraph --> GraphDomain
+    Node *-- Pin
+    Node --> NodeKind
+    Pin --> PinDirection
+    Pin --> PinType
+    Variable --> VariableScope
+    EcsCompiler --> CompiledGraph
+    CompiledGraph --> SystemTrigger
+    GraphDebugger --> DebugState
+    HlslEmitter --> ShaderStage
+    SubgraphDef --> LogicGraph
+    GraphValidator --> Severity
+```
+
 ## API Design
 
 ### Graph IR

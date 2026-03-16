@@ -142,6 +142,5 @@ aborts) within 2 ticks, with conditional aborts firing within 1 tick of the trig
 ## User Story Traceability
 
 User stories for this domain are maintained in
-[user-stories/ai/non-functional.md](../../user-stories/ai/non-functional.md).
-Requirements in this document are derived from those
-user stories.
+[user-stories/ai/non-functional.md](../../user-stories/ai/non-functional.md). Requirements in this
+document are derived from those user stories.

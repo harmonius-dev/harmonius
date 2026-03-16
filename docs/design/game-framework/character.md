@@ -345,6 +345,147 @@ graph LR
     medium -->|LOD 1 to 2| far
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class FaceRegion {
+        <<enumeration>>
+        Eyes
+        Nose
+        Mouth
+        Jaw
+        Cheeks
+        Ears
+        Forehead
+    }
+    class FacialMorphRegion {
+        +region FaceRegion
+        +offset Vec3
+        +rotation Vec3
+        +symmetric bool
+    }
+    class BodyShape {
+        +height f32
+        +chest f32
+        +waist f32
+        +hips f32
+        +shoulder_width f32
+        +musculature f32
+        +body_fat f32
+    }
+    class BodyParam {
+        <<enumeration>>
+        Height
+        Chest
+        Waist
+        Hips
+        ShoulderWidth
+        ArmLength
+        LegLength
+        Musculature
+        BodyFat
+    }
+    class AppearanceLayerType {
+        <<enumeration>>
+        Foundation
+        Blush
+        Lipstick
+        Eyeliner
+        Eyeshadow
+        FacePaint
+        Tattoo
+        Scar
+    }
+    class BlendMode {
+        <<enumeration>>
+        Normal
+        Multiply
+        Screen
+        Overlay
+        SoftLight
+    }
+    class MeshPartSlot {
+        <<enumeration>>
+        Head
+        Torso
+        Arms
+        Legs
+        Feet
+        Hands
+        SubPart
+    }
+    class SocketName {
+        <<enumeration>>
+        Head
+        Back
+        ShoulderLeft
+        ShoulderRight
+        HandLeft
+        HandRight
+        HipLeft
+        HipRight
+    }
+    class AttachmentType {
+        <<enumeration>>
+        Rigid
+        Skinned
+    }
+    class BodyRegionMask {
+        <<enumeration>>
+        HeadFull
+        TorsoUpper
+        TorsoLower
+        ArmsUpper
+        ArmsLower
+        Hands
+        LegsUpper
+        LegsLower
+        Feet
+    }
+    class CharacterLodLevel {
+        <<enumeration>>
+        Close
+        Medium
+        Far
+    }
+    class LayoutMode {
+        <<enumeration>>
+        List
+        Grid
+    }
+    class SlotPosition {
+        <<enumeration>>
+        Index
+        Grid
+    }
+    class AppearanceData {
+        +version u32
+        +race CharacterRace
+        +facial_morphs FacialMorphWeights
+        +body_shape BodyShape
+        +skin SkinParams
+        +eyes EyeCustomization
+        +hair HairCustomization
+    }
+    class Inventory {
+        +layout LayoutMode
+        +slot_count u16
+        +weight_capacity f32
+        +current_weight f32
+    }
+    class ItemStack {
+        +item_id ItemId
+        +quantity u32
+        +max_stack u32
+    }
+    FacialMorphRegion --> FaceRegion
+    AppearanceData --> BodyShape
+    AppearanceData --> FacialMorphRegion
+    Inventory --> LayoutMode
+    ItemStack --> SlotPosition
+```
+
 ## API Design
 
 ### Character Customization Components

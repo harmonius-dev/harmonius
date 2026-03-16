@@ -216,5 +216,4 @@ results to nodes.
 
 User stories for this domain are maintained in
 [user-stories/tools-editor/logic-graph.md](../../user-stories/tools-editor/logic-graph.md).
-Requirements in this document are derived from those
-user stories.
+Requirements in this document are derived from those user stories.

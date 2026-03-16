@@ -115,6 +115,5 @@ success, failure) and live blackboard contents.
 ## User Story Traceability
 
 User stories for this domain are maintained in
-[user-stories/ai/behavior-trees.md](../../user-stories/ai/behavior-trees.md).
-Requirements in this document are derived from those
-user stories.
+[user-stories/ai/behavior-trees.md](../../user-stories/ai/behavior-trees.md). Requirements in this
+document are derived from those user stories.

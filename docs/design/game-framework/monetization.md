@@ -219,6 +219,132 @@ sequenceDiagram
     end
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class ProductType {
+        <<enumeration>>
+        Consumable
+        NonConsumable
+        Subscription
+    }
+    class PurchasePlatform {
+        <<enumeration>>
+        Apple
+        Google
+        Steam
+        Console
+    }
+    class PurchaseResult {
+        <<enumeration>>
+        Success
+        Cancelled
+        Failed
+        Deferred
+        Pending
+    }
+    class BattlePassState {
+        +season_id SeasonId
+        +current_tier u32
+        +current_xp u64
+        +premium_purchased bool
+        +claimed_tiers BitSet
+    }
+    class SeasonConfig {
+        +season_id SeasonId
+        +tier_count u32
+        +tiers Vec~PassTier~
+        +catchup_multiplier f32
+    }
+    class PassTier {
+        +tier_index u32
+        +xp_required u64
+        +free_reward Option~RewardId~
+        +premium_reward Option~RewardId~
+    }
+    class ChallengeDifficulty {
+        <<enumeration>>
+        Easy
+        Medium
+        Hard
+    }
+    class ChallengeTracking {
+        <<enumeration>>
+        Counter
+        Boolean
+    }
+    class SubscriptionState {
+        +active bool
+        +tier Option~SubscriptionTierId~
+        +renewal_date Option~u64~
+        +is_gift bool
+    }
+    class BenefitKind {
+        <<enumeration>>
+        XpMultiplier
+        CurrencyMultiplier
+        ExclusiveCosmeticAccess
+        AdFree
+        PriorityMatchmaking
+        ExpandedStorage
+        ExclusiveGameMode
+    }
+    class CosmeticCategory {
+        <<enumeration>>
+        CharacterSkin
+        WeaponSkin
+        MountSkin
+        Emote
+        UiTheme
+        ProfileFrame
+        Title
+    }
+    class AdFormat {
+        <<enumeration>>
+        RewardedVideo
+        Interstitial
+        Banner
+    }
+    class SafeguardReason {
+        <<enumeration>>
+        FrequencyCapExceeded
+        MinorUser
+        DeceptiveCreative
+        DarkPattern
+        UserDisabledAds
+    }
+    class StreakMode {
+        <<enumeration>>
+        Strict
+        Lenient
+    }
+    class RefundStatus {
+        <<enumeration>>
+        None
+        Requested
+        Approved
+        Denied
+    }
+    class StoreItem {
+        +item_id StoreItemId
+        +category CosmeticCategory
+        +price StorePrice
+        +limited_time bool
+        +ai_generated bool
+    }
+    class StoreCatalog {
+        +items Vec~StoreItem~
+        +featured Vec~StoreItemId~
+        +rotation_refresh_at u64
+    }
+    SeasonConfig *-- PassTier
+    BattlePassState --> SeasonConfig
+    StoreItem --> CosmeticCategory
+    StoreCatalog *-- StoreItem
+    SubscriptionState --> BenefitKind
+```
+
 ## API Design
 
 ### Platform Purchase Abstraction

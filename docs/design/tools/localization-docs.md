@@ -252,6 +252,199 @@ sequenceDiagram
     W-->>U: display tooltip / help panel
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class LocaleId {
+        +SmallString~8~ value
+    }
+    class StringKey {
+        +SmallString~64~ value
+    }
+    class TextDirection {
+        <<enumeration>>
+        LeftToRight
+        RightToLeft
+    }
+    class ReviewStatus {
+        <<enumeration>>
+        Draft
+        NeedsRevision
+        Approved
+        Rejected
+    }
+    class PluralCategory {
+        <<enumeration>>
+        Zero
+        One
+        Two
+        Few
+        Many
+        Other
+    }
+    class FormatArg {
+        <<enumeration>>
+        Number
+        String
+        Date
+    }
+    class TransUnitState {
+        <<enumeration>>
+        Initial
+        Translated
+        Reviewed
+        Final
+    }
+    class Severity {
+        <<enumeration>>
+        Error
+        Warning
+        Info
+    }
+    class ValidationCategory {
+        <<enumeration>>
+        MissingTranslation
+        TextOverflow
+        BrokenInterpolation
+        IncorrectPluralForm
+        RtlLayoutIssue
+        HardcodedText
+    }
+    class TutorialState {
+        <<enumeration>>
+        Idle
+        Running
+        Paused
+        Complete
+    }
+    class CompletionCondition {
+        <<enumeration>>
+        ClickWidget
+        EventFired
+        KeyPressed
+        Manual
+    }
+    class LocaleDescriptor {
+        +LocaleId id
+        +String display_name
+        +TextDirection direction
+        +FontFallbackChain font_fallback
+        +PluralRules plural_rules
+    }
+    class LocaleRegistry {
+        -Vec~LocaleDescriptor~ locales
+        -LocaleId active
+        +active() LocaleId
+        +set_active(locale) Result
+        +source_locale() LocaleId
+    }
+    class StringEntry {
+        +StringKey key
+        +String source
+        +HashMap translations
+        +HashMap review
+        +bool source_dirty
+        +bool locked
+    }
+    class StringTableModel {
+        -Vec~StringEntry~ entries
+        -HashMap index
+        +get(key) Option~StringEntry~
+        +set_translation(key, locale, text) Result
+        +lock(key) Result
+        +missing_count(locale) u32
+    }
+    class PluralRules {
+        -LocaleId locale
+        +select(count) PluralCategory
+    }
+    class IcuFormatter {
+        -PluralRules plural_rules
+        +validate_pattern(pattern) Result
+        +format(pattern, args) Result
+    }
+    class TranslationMemory {
+        +index(source, translation, locale)
+        +suggest(source, locale, max) Vec
+    }
+    class XliffCodec {
+        +encode(model, source, target) Vec~u8~
+        +decode(data) Result
+    }
+    class CsvCodec {
+        +encode(model) Vec~u8~
+        +decode(data, locale) Result
+    }
+    class PseudoLocalizer {
+        +transform(text, config) String
+    }
+    class LocaleValidator {
+        +validate(model, locale, layout) ValidationReport
+    }
+    class FontFallbackChain {
+        +resolve(codepoint) Option~AssetId~
+        +shape_runs(text) Vec~FontRun~
+    }
+    class RtlLayoutEngine {
+        +resolve_bidi(text) Vec~BidiRun~
+        +is_rtl(locale) bool
+    }
+    class ApiEntry {
+        +String type_name
+        +Vec~FieldDoc~ fields
+        +Vec~MethodDoc~ methods
+    }
+    class ReflectMetadataExtractor {
+        +extract_all(registry) Vec~ApiEntry~
+    }
+    class EngineVersion {
+        +u32 major
+        +u32 minor
+        +u32 patch
+    }
+    class ApiRefGenerator {
+        -EngineVersion version
+        +generate(entries, output, reactor) Future
+    }
+    class SearchIndex {
+        +build(entries, locale) Self
+        +query(text, max) Vec~DocRef~
+    }
+    class VersionedDocStore {
+        +store(version, pages, index) Future
+        +fetch_page(version, page_id) Option~HelpPage~
+    }
+    class ContextualHelpProvider {
+        -SearchIndex index
+        -VersionedDocStore store
+        +lookup(widget_type_id, locale) Option~HelpEntry~
+    }
+    class TutorialRunner {
+        -TutorialState state
+        +start(tutorial)
+        +try_advance() bool
+    }
+
+    LocaleRegistry *-- LocaleDescriptor
+    LocaleDescriptor --> TextDirection
+    LocaleDescriptor --> FontFallbackChain
+    LocaleDescriptor --> PluralRules
+    StringTableModel *-- StringEntry
+    StringEntry --> ReviewStatus
+    IcuFormatter --> PluralRules
+    PluralRules --> PluralCategory
+    LocaleValidator --> ValidationCategory
+    LocaleValidator --> Severity
+    XliffCodec --> TransUnitState
+    ContextualHelpProvider --> SearchIndex
+    ContextualHelpProvider --> VersionedDocStore
+    ApiRefGenerator --> EngineVersion
+    ReflectMetadataExtractor --> ApiEntry
+    TutorialRunner --> TutorialState
+    TutorialRunner --> CompletionCondition
+```
+
 ## API Design
 
 ### Locale and String Key Types

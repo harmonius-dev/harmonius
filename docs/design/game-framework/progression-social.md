@@ -328,6 +328,203 @@ graph LR
     MS --> SS
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class Experience {
+        +current_xp u64
+        +level u32
+        +xp_curve AssetId~XpCurve~
+    }
+
+    class CharacterStats {
+        +base_stats HashMap~StatId f32~
+        +computed_stats HashMap~StatId f32~
+    }
+
+    class RaceDefinition {
+        +name String
+        +stat_modifiers Vec~StatModifier~
+    }
+
+    class ClassDefinition {
+        +name String
+        +abilities Vec~AbilityUnlock~
+        +stat_growth AssetId~StatGrowthTable~
+    }
+
+    class PrestigeState {
+        +prestige_level u32
+        +bonuses Vec~PrestigeBonus~
+    }
+
+    class TalentTree {
+        +nodes Vec~TalentNode~
+        +edges Vec~TalentEdge~
+        +tier_gates Vec~TierGate~
+    }
+
+    class TalentNode {
+        +id TalentNodeId
+        +node_type TalentNodeType
+        +max_ranks u32
+        +effects Vec~AssetId~
+    }
+
+    class TalentNodeType {
+        <<enumeration>>
+        Active
+        Passive
+        Keystone
+    }
+
+    class TalentState {
+        +allocated HashMap~TalentNodeId u32~
+        +available_points u32
+    }
+
+    class ProfessionDefinition {
+        +name String
+        +xp_curve Vec~u64~
+        +max_level u32
+        +recipe_unlocks Vec~RecipeUnlock~
+    }
+
+    class ProfessionProgress {
+        +definition AssetId
+        +current_xp u64
+        +level u32
+    }
+
+    class ReputationTable {
+        +factions Vec~FactionReputation~
+    }
+
+    class FactionReputation {
+        +faction_id AssetId
+        +current_value i32
+        +standing FactionStanding
+    }
+
+    class FactionStanding {
+        <<enumeration>>
+        Hostile
+        Unfriendly
+        Neutral
+        Friendly
+        Honored
+        Revered
+        Exalted
+    }
+
+    class AchievementDefinition {
+        +name String
+        +trigger AchievementTrigger
+        +tracking AchievementTracking
+        +point_value u32
+    }
+
+    class AchievementTrigger {
+        <<enumeration>>
+        KillCount
+        CraftCount
+        QuestComplete
+        ExploreZones
+        GearScore
+        Custom
+    }
+
+    class AchievementTracking {
+        <<enumeration>>
+        Incremental
+        Boolean
+    }
+
+    class EnhancementLevel {
+        +level u32
+    }
+
+    class ItemRarity {
+        +tier RarityTier
+    }
+
+    class RarityTier {
+        <<enumeration>>
+        Common
+        Uncommon
+        Rare
+        Epic
+        Legendary
+        Mythic
+    }
+
+    class Guild {
+        +name String
+        +emblem AssetId
+        +founder Entity
+    }
+
+    class GuildMember {
+        +guild Entity
+        +rank GuildRankId
+        +joined_at u64
+    }
+
+    class GuildRank {
+        +id GuildRankId
+        +name String
+        +permissions GuildPermissions
+    }
+
+    class GuildBank {
+        +tabs Vec~GuildBankTab~
+        +gold u64
+    }
+
+    class FriendsList {
+        +friends Vec~FriendEntry~
+        +blocked Vec~Entity~
+    }
+
+    class PvpRating {
+        +arena_2v2 RatingEntry
+        +arena_3v3 RatingEntry
+        +battleground RatingEntry
+    }
+
+    class ChatChannelType {
+        <<enumeration>>
+        Global
+        Zone
+        Trade
+        Party
+        Guild
+        Whisper
+        LookingForGroup
+        Custom
+    }
+
+    Experience --> CharacterStats
+    ClassDefinition --> CharacterStats
+    RaceDefinition --> CharacterStats
+    PrestigeState --> Experience
+    TalentTree *-- TalentNode
+    TalentNode --> TalentNodeType
+    TalentState --> TalentTree
+    ProfessionProgress --> ProfessionDefinition
+    ReputationTable *-- FactionReputation
+    FactionReputation --> FactionStanding
+    AchievementDefinition --> AchievementTrigger
+    AchievementDefinition --> AchievementTracking
+    ItemRarity --> RarityTier
+    EnhancementLevel --> ItemRarity
+    GuildMember --> Guild
+    GuildMember --> GuildRank
+    Guild --> GuildBank
+    PvpRating --> GuildMember
+```
+
 ## API Design
 
 ### Experience and Leveling

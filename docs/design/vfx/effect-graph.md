@@ -224,6 +224,205 @@ erDiagram
     BudgetManager ||--o{ EmitterEntity : "throttles"
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class EffectGraph {
+        +nodes Vec~EffectNode~
+        +edges Vec~TypedEdge~
+        +exposed_params Vec~ExposedParam~
+    }
+
+    class EffectNode {
+        +id NodeId
+        +kind NodeKind
+        +inputs Vec~Pin~
+        +outputs Vec~Pin~
+    }
+
+    class NodeKind {
+        <<enumeration>>
+        Context
+        Attribute
+        Operator
+        Output
+        Custom
+    }
+
+    class ContextNodeType {
+        <<enumeration>>
+        Spawn
+        Initialize
+        Update
+        Output
+    }
+
+    class Pin {
+        +id PinId
+        +name StringId
+        +data_type PinDataType
+        +direction PinDirection
+    }
+
+    class PinDataType {
+        <<enumeration>>
+        Float
+        Vec2
+        Vec3
+        Vec4
+        Int
+        Bool
+        Color
+        Curve
+        Gradient
+        Texture
+    }
+
+    class TypedEdge {
+        +from_node NodeId
+        +from_pin PinId
+        +to_node NodeId
+        +to_pin PinId
+        +data_type PinDataType
+    }
+
+    class ExposedParam {
+        +name StringId
+        +data_type PinDataType
+        +default_value ParamValue
+    }
+
+    class ParamValue {
+        <<enumeration>>
+        Float
+        Vec2
+        Vec3
+        Vec4
+        Int
+        Bool
+        Color
+        CurveAsset
+        GradientAsset
+        TextureAsset
+    }
+
+    class GraphValidator {
+        +validate(graph, platform) Result
+    }
+
+    class GraphValidationError {
+        <<enumeration>>
+        MissingContext
+        TypeMismatch
+        CycleDetected
+        DisconnectedPin
+        NodeCountExceeded
+    }
+
+    class CompiledEffect {
+        +spawn_kernel CompiledKernel
+        +init_kernel CompiledKernel
+        +update_kernel CompiledKernel
+        +output_kernel CompiledKernel
+        +attribute_layout AttributeLayout
+        +content_hash u64
+    }
+
+    class CompiledKernel {
+        +stage ContextNodeType
+        +bytecode Vec~u8~
+        +thread_group_size u32
+    }
+
+    class OutputMode {
+        <<enumeration>>
+        Sprite
+        Mesh
+        Ribbon
+        Light
+    }
+
+    class HlslCodeGen {
+        +generate(stage, nodes, edges) Result~String~
+    }
+
+    class CodeGenError {
+        <<enumeration>>
+        UnsupportedNode
+        InstructionLimitExceeded
+    }
+
+    class EffectGraphCompiler {
+        +compile(validated, cache, platform) Result
+    }
+
+    class EffectPriority {
+        <<enumeration>>
+        Low
+        Medium
+        High
+        Critical
+    }
+
+    class EffectInstanceComponent {
+        +compiled AssetId
+        +param_overrides Vec~ParamOverride~
+        +priority EffectPriority
+    }
+
+    class EmitterComponent {
+        +spawn_kernel CompiledKernel
+        +update_kernel CompiledKernel
+        +alive_count u32
+    }
+
+    class EmitterLodComponent {
+        +current_tier LodTier
+        +distance_to_camera f32
+    }
+
+    class LodTier {
+        <<enumeration>>
+        Full
+        Reduced
+        Impostor
+        Culled
+    }
+
+    class VfxBudgetResource {
+        +max_total_particles u32
+        +max_gpu_compute_ms f32
+        +current_total_particles u32
+    }
+
+    class VfxSpawnEvent {
+        +effect AssetId
+        +position Vec3
+        +normal Vec3
+        +velocity Vec3
+    }
+
+    EffectGraph *-- EffectNode
+    EffectGraph *-- TypedEdge
+    EffectGraph *-- ExposedParam
+    EffectNode --> NodeKind
+    EffectNode *-- Pin
+    Pin --> PinDataType
+    TypedEdge --> PinDataType
+    ExposedParam --> ParamValue
+    GraphValidator ..> GraphValidationError
+    EffectGraphCompiler ..> CompiledEffect
+    CompiledEffect *-- CompiledKernel
+    CompiledEffect --> OutputMode
+    CompiledKernel --> ContextNodeType
+    HlslCodeGen ..> CodeGenError
+    EffectInstanceComponent --> EffectPriority
+    EmitterComponent --> CompiledKernel
+    EmitterLodComponent --> LodTier
+    VfxSpawnEvent --> EffectPriority
+```
+
 ## API Design
 
 ### Node Type System

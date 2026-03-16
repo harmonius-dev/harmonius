@@ -88,6 +88,5 @@ shared build cache endpoint configuration, and connectivity validation before co
 ## User Story Traceability
 
 User stories for this domain are maintained in
-[user-stories/tools-editor/launcher.md](../../user-stories/tools-editor/launcher.md).
-Requirements in this document are derived from those
-user stories.
+[user-stories/tools-editor/launcher.md](../../user-stories/tools-editor/launcher.md). Requirements
+in this document are derived from those user stories.

@@ -82,5 +82,4 @@ audit logging of all moderation actions.
 
 User stories for this domain are maintained in
 [user-stories/tools-editor/mod-support.md](../../user-stories/tools-editor/mod-support.md).
-Requirements in this document are derived from those
-user stories.
+Requirements in this document are derived from those user stories.

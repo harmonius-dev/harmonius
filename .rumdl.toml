@@ -4,6 +4,7 @@
 exclude = [
     ".git",
     ".github",
+    "**/CLAUDE.md",
     "build",
     "node_modules",
     "vcpkg_installed",

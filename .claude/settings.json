@@ -1,0 +1,63 @@
+{
+  "enabledPlugins": {
+    "clangd-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": ".claude/hooks/fmt-markdown.sh",
+            "timeout": 30,
+            "type": "command"
+          },
+          {
+            "command": ".claude/hooks/check-rust.sh",
+            "timeout": 120,
+            "type": "command"
+          },
+          {
+            "command": ".claude/hooks/check-swift.sh",
+            "timeout": 60,
+            "type": "command"
+          },
+          {
+            "command": ".claude/hooks/check-cpp.sh",
+            "timeout": 60,
+            "type": "command"
+          },
+          {
+            "command": ".claude/hooks/check-typescript.sh",
+            "timeout": 60,
+            "type": "command"
+          },
+          {
+            "command": ".claude/hooks/run-xcodegen.sh",
+            "timeout": 30,
+            "type": "command"
+          }
+        ],
+        "matcher": "Write|Edit"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": ".claude/hooks/stop-check.sh",
+            "timeout": 15,
+            "type": "command"
+          },
+          {
+            "prompt": "Is the agent stopping solely to wait for approval that was NOT explicitly requested? If yes: {\"ok\": false, \"reason\": \"Continue — approval not requested.\"}. If task is complete or user asked for confirmation: {\"ok\": true}.",
+            "timeout": 15,
+            "type": "prompt"
+          }
+        ]
+      }
+    ]
+  }
+}

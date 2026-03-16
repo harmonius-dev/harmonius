@@ -232,6 +232,314 @@ sequenceDiagram
     Note over RG: Render graph compiles and executes
 ```
 
+### Class Diagram
+
+```mermaid
+classDiagram
+    class PostProcessPass {
+        <<trait>>
+        +Params: Component + Default + Reflect
+        +NAME: &str
+        +ORDER: u32
+        +HDR: bool
+        +register_passes(ctx, params, quality)
+        +is_active(params) bool
+    }
+
+    class PostProcessStack {
+        -passes Vec~PassRegistration~
+        -temporal_state HashMap~Entity TemporalState~
+        +run(cameras, volumes, graph, quality)
+    }
+
+    class TemporalState {
+        +exposure_ev f32
+        +prev_histogram [u32; 128]
+        +prev_tile_exposure Vec~f32~
+    }
+
+    class VolumeSystem {
+        +resolve(camera_pos, volumes, fallback) P
+        -compute_weight(camera_pos, volume, shape, transform) f32
+    }
+
+    class PassContext {
+        +graph &mut RenderGraphBuilder
+        +color TransientHandle
+        +depth TransientHandle
+        +velocity TransientHandle
+        +normals TransientHandle
+        +exposure TransientHandle
+        +histogram TransientHandle
+        +viewport Viewport
+        +frame_index u32
+        +delta_time f32
+    }
+
+    class Viewport {
+        +width u32
+        +height u32
+        +render_scale f32
+    }
+
+    class QualityTier {
+        <<enum>>
+        Mobile
+        Switch
+        Desktop
+        HighEnd
+    }
+
+    class PostProcessVolume {
+        +priority i32
+        +weight f32
+        +is_global bool
+        +blend_distance f32
+    }
+
+    class VolumeShape {
+        <<enum>>
+        Global
+        Box
+        Sphere
+    }
+
+    class Bloom {
+        +enabled bool
+        +threshold f32
+        +soft_knee f32
+        +intensity f32
+        +iteration_count u8
+        +tint Vec3
+        +iteration_weights SmallVec~f32~
+        +blur_method BloomBlurMethod
+    }
+
+    class BloomBlurMethod {
+        <<enum>>
+        DualKawase
+        Gaussian
+    }
+
+    class DepthOfField {
+        +enabled bool
+        +focus_distance f32
+        +aperture f32
+        +focal_length f32
+        +max_blur_radius f32
+        +sample_count u8
+        +bokeh_shape BokehShape
+        +near_field bool
+        +fallback DofFallback
+    }
+
+    class BokehShape {
+        <<enum>>
+        Circle
+        Hexagon
+        Octagon
+    }
+
+    class DofFallback {
+        <<enum>>
+        Full
+        SeparableGaussian
+        LightweightGaussian
+        Disabled
+    }
+
+    class MotionBlur {
+        +enabled bool
+        +shutter_angle f32
+        +sample_count u8
+        +max_blur_pixels f32
+        +per_object bool
+        +tile_max bool
+        +tile_size u8
+    }
+
+    class AutoExposure {
+        +enabled bool
+        +min_ev f32
+        +max_ev f32
+        +compensation f32
+        +speed_up f32
+        +speed_down f32
+        +histogram_bins u8
+        +low_percentile f32
+        +high_percentile f32
+        +metering MeteringMode
+    }
+
+    class MeteringMode {
+        <<enum>>
+        Average
+        CenterWeighted
+        Spot
+    }
+
+    class TonemapColorGrade {
+        +enabled bool
+        +tonemapper Tonemapper
+        +white_balance f32
+        +white_balance_tint f32
+        +shadows ColorWheelAdjust
+        +midtones ColorWheelAdjust
+        +highlights ColorWheelAdjust
+        +saturation f32
+        +contrast f32
+        +color_lut Option~AssetHandle~
+        +lut_contribution f32
+        +hdr_output HdrOutputMode
+    }
+
+    class Tonemapper {
+        <<enum>>
+        AcesFilmic
+        NeutralFilmic
+        Reinhard
+        AgX
+        Custom
+    }
+
+    class ColorWheelAdjust {
+        +color Vec3
+        +intensity f32
+    }
+
+    class HdrOutputMode {
+        <<enum>>
+        Sdr
+        Hdr10
+        DolbyVision
+    }
+
+    class FilmGrain {
+        +enabled bool
+        +intensity f32
+        +size f32
+        +luminance_response f32
+        +method GrainMethod
+    }
+
+    class GrainMethod {
+        <<enum>>
+        Procedural
+        Texture
+    }
+
+    class ChromaticAberration {
+        +enabled bool
+        +intensity f32
+        +start f32
+        +sample_count u8
+    }
+
+    class LensFlare {
+        +enabled bool
+        +threshold f32
+        +ghost_count u8
+        +ghost_spacing f32
+        +ghost_falloff f32
+        +halo_radius f32
+        +halo_intensity f32
+        +intensity f32
+        +chromatic_distortion f32
+    }
+
+    class Vignette {
+        +enabled bool
+        +intensity f32
+        +power f32
+        +center Vec2
+        +color Vec3
+    }
+
+    class LocalExposure {
+        +enabled bool
+        +tile_count u8
+        +max_compensation f32
+        +smooth_blend bool
+        +temporal_smoothing f32
+    }
+
+    class PaniniProjection {
+        +enabled bool
+        +distance f32
+        +crop f32
+    }
+
+    class CavityCurvature {
+        +enabled bool
+        +curvature_enabled bool
+        +curvature_radius f32
+        +curvature_samples u8
+        +cavity_enabled bool
+        +cavity_radius f32
+        +cavity_samples u8
+        +cavity_blur_passes u8
+        +ridge_intensity f32
+        +valley_intensity f32
+        +fade_start f32
+        +fade_end f32
+    }
+
+    class PostProcessMaterial {
+        +enabled bool
+        +shader AssetHandle
+        +insertion InsertionPoint
+        +priority i32
+        +inputs PostProcessInputs
+    }
+
+    class InsertionPoint {
+        <<enum>>
+        BeforeTonemap
+        AfterTonemap
+        Custom
+    }
+
+    class PostProcessInputs {
+        +scene_color bool
+        +scene_depth bool
+        +scene_normals bool
+        +velocity bool
+        +stencil bool
+    }
+
+    PostProcessStack --> TemporalState
+    PostProcessStack --> PostProcessPass
+    PostProcessStack --> VolumeSystem
+    PostProcessStack --> QualityTier
+    PostProcessPass --> PassContext
+    PassContext --> Viewport
+    VolumeSystem --> PostProcessVolume
+    PostProcessVolume --> VolumeShape
+    Bloom --> BloomBlurMethod
+    DepthOfField --> BokehShape
+    DepthOfField --> DofFallback
+    AutoExposure --> MeteringMode
+    TonemapColorGrade --> Tonemapper
+    TonemapColorGrade --> ColorWheelAdjust
+    TonemapColorGrade --> HdrOutputMode
+    FilmGrain --> GrainMethod
+    PostProcessMaterial --> InsertionPoint
+    PostProcessMaterial --> PostProcessInputs
+    Bloom ..|> PostProcessPass : implements
+    DepthOfField ..|> PostProcessPass : implements
+    MotionBlur ..|> PostProcessPass : implements
+    AutoExposure ..|> PostProcessPass : implements
+    TonemapColorGrade ..|> PostProcessPass : implements
+    FilmGrain ..|> PostProcessPass : implements
+    ChromaticAberration ..|> PostProcessPass : implements
+    LensFlare ..|> PostProcessPass : implements
+    Vignette ..|> PostProcessPass : implements
+    LocalExposure ..|> PostProcessPass : implements
+    PaniniProjection ..|> PostProcessPass : implements
+    CavityCurvature ..|> PostProcessPass : implements
+    PostProcessMaterial ..|> PostProcessPass : implements
+```
+
 ## API Design
 
 ### Quality Tiers

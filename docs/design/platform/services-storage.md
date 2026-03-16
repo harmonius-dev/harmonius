@@ -261,6 +261,185 @@ graph TD
     TMP -->|platform temp dir| LP
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class PlatformServices {
+        -auth AuthenticationService
+        -achievements AchievementService
+        -leaderboards LeaderboardService
+        -presence RichPresenceService
+        -cloud CloudStorageService
+        -entitlements EntitlementService
+        +init(config) PlatformServices
+    }
+
+    class AchievementService {
+        -achievements Vec~Achievement~
+        -deferred DeferredQueue~AchievementId~
+        +unlock(id) Result
+        +sync(reactor) Result
+        +is_unlocked(id) bool
+    }
+
+    class AchievementState {
+        <<enumeration>>
+        Locked
+        Unlocked
+        Hidden
+    }
+
+    class LeaderboardService {
+        -cache HashMap
+        -batch Vec~PendingScore~
+        +submit_score(id, score, reactor) Result
+        +query(id, range, reactor) Result
+    }
+
+    class RichPresenceService {
+        -last_update_time u64
+        -pending Option~PresenceState~
+        +update(state) Result
+        +clear() Result
+    }
+
+    class CloudStorageService {
+        +upload(key, data, reactor) Result
+        +download(key, reactor) Result
+        +check_conflict(key, ts, reactor) Result
+    }
+
+    class ConflictResolution {
+        <<enumeration>>
+        NoConflict
+        Conflict
+        LocalNewer
+        RemoteNewer
+    }
+
+    class EntitlementService {
+        -entitlements Vec~Entitlement~
+        +refresh(reactor) Result
+        +is_owned(id) bool
+    }
+
+    class OnlineStatus {
+        <<enumeration>>
+        Online
+        Away
+        DoNotDisturb
+        Offline
+    }
+
+    class PlatformKind {
+        <<enumeration>>
+        Steam
+        Xbox
+        PlayStation
+        GameCenter
+        Custom
+    }
+
+    class DeferredQueue~T~ {
+        -pending Vec~DeferredEntry~
+        -max_retries u32
+        -base_backoff_ms u64
+        +enqueue(item)
+        +drain_ready(now) Vec
+        +requeue(entry) bool
+    }
+
+    class PreferencesStore {
+        -values HashMap
+        -dirty bool
+        +load(path, cloud, reactor) Result
+        +get(key) PrefValue
+        +set(key, value)
+        +save(cloud, reactor) Result
+    }
+
+    class PrefValue {
+        <<enumeration>>
+        Bool
+        Int
+        Float
+        String
+    }
+
+    class PlayerCache {
+        -entries Vec~CacheEntry~
+        -max_bytes u64
+        +put(key, category, data, reactor) Result
+        +get(key, reactor) Result
+        +evict_to_budget(reactor) Result
+        +stats() CacheStats
+    }
+
+    class CacheCategory {
+        <<enumeration>>
+        AssetBundle
+        DlcContent
+        ModPackage
+        StreamingData
+        GenerationOutput
+    }
+
+    class DeveloperCache {
+        -root PathBuf
+        -shared_url Option~String~
+        +lookup(hash, cat, reactor) Result
+        +store(hash, cat, data, reactor) Result
+        +hash(data) ContentHash
+    }
+
+    class CacheHitTier {
+        <<enumeration>>
+        Local
+        SharedNetwork
+        Miss
+    }
+
+    class PsoCacheStore {
+        -gpu_driver GpuDriverKey
+        -entries HashMap
+        +load_all(reactor) Result
+        +store(key, data, reactor) Result
+        +get(key, reactor) Result
+        +invalidate_all(reactor) Result
+    }
+
+    class TempFileManager {
+        -root PathBuf
+        -max_bytes u64
+        +init(root, max, reactor) Result
+        +allocate(name) Result~TempFileHandle~
+        +cleanup_orphans(reactor) Result
+    }
+
+    class PlatformPaths {
+        +preferences(game) PathBuf
+        +player_cache(game) PathBuf
+        +developer_cache(root) PathBuf
+        +temp(game) PathBuf
+    }
+
+    PlatformServices --> AchievementService
+    PlatformServices --> LeaderboardService
+    PlatformServices --> RichPresenceService
+    PlatformServices --> CloudStorageService
+    PlatformServices --> EntitlementService
+    AchievementService --> DeferredQueue
+    AchievementService --> AchievementState
+    CloudStorageService ..> ConflictResolution
+    PreferencesStore --> PrefValue
+    PreferencesStore --> CloudStorageService
+    PlayerCache --> CacheCategory
+    DeveloperCache ..> CacheHitTier
+    PsoCacheStore --> GpuDriverKey
+    TempFileManager --> TempFileHandle
+```
+
 ## API Design
 
 ### Platform Service Facade

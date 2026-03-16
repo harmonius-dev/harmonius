@@ -100,6 +100,5 @@ being crossed.
 ## User Story Traceability
 
 User stories for this domain are maintained in
-[user-stories/ai/tactical-combat.md](../../user-stories/ai/tactical-combat.md).
-Requirements in this document are derived from those
-user stories.
+[user-stories/ai/tactical-combat.md](../../user-stories/ai/tactical-combat.md). Requirements in this
+document are derived from those user stories.

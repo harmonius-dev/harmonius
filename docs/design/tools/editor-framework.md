@@ -379,6 +379,289 @@ sequenceDiagram
     GZ->>GZ: attach_gizmos()
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class DockNode {
+        <<enum>>
+        Split(direction, ratio, children)
+        TabGroup(panels, active_tab)
+    }
+
+    class SplitDirection {
+        <<enum>>
+        Horizontal
+        Vertical
+    }
+
+    class DockZone {
+        <<enum>>
+        Left
+        Right
+        Bottom
+        Center
+        Floating
+    }
+
+    class DockTree {
+        -root DockNode
+        -floating Vec~FloatingPanel~
+        +split(target, dir, panel, ratio) Result
+        +add_tab(target, panel) Result
+        +float(panel, pos, size) Result~WindowHandle~
+        +dock(panel, target, zone) Result
+        +close(panel) Result
+    }
+
+    class PanelId {
+        +u64 inner
+    }
+
+    class PanelDescriptor {
+        +PanelId id
+        +str name
+        +Option~AssetHandle~ icon
+        +bool allow_multiple
+        +DockZone default_zone
+        +fn create_fn
+    }
+
+    class PanelWidget {
+        <<trait>>
+        +build(ctx) WidgetNode
+        +update(ctx) bool
+        +on_close()
+    }
+
+    class FloatingPanel {
+        +PanelId panel_id
+        +WindowHandle window_handle
+        +[i32; 2] position
+        +[u32; 2] size
+    }
+
+    class LayoutProfile {
+        +String name
+        +DockNode tree
+        +Vec~FloatingPanelLayout~ floating
+        +Vec~ViewportConfig~ viewport_configs
+        +save(path) Future~Result~
+        +load(path) Future~Result~Self~~
+    }
+
+    class ViewportId {
+        +u32 inner
+    }
+
+    class ViewportConfig {
+        +String name
+        +CameraMode camera_mode
+        +RenderOverrides render_overrides
+        +Vec~DebugOverlay~ overlays
+        +GridConfig grid
+    }
+
+    class CameraMode {
+        <<enum>>
+        FreeFly
+        PlayerPreview
+        OrthoTop
+        OrthoFront
+        OrthoRight
+        Orbit
+    }
+
+    class DebugOverlay {
+        <<enum>>
+        Wireframe
+        Normals
+        UVs
+        LightComplexity
+        Overdraw
+        CollisionBounds
+        NavMesh
+    }
+
+    class ViewportManager {
+        +create(config, window) Result~ViewportId~
+        +destroy(id) Result
+        +screen_to_ray(id, pos) Option~Ray~
+        +build_render_graphs(builder, world)
+    }
+
+    class EditorCommand {
+        <<trait>>
+        +description() str
+        +execute(world) Result
+        +undo(world) Result
+        +size_bytes() usize
+    }
+
+    class Transaction {
+        -String description
+        -Vec~Box~dyn EditorCommand~~ commands
+        +new(description) Self
+        +push(command)
+    }
+
+    class UndoStack {
+        +execute(cmd, world) Result
+        +execute_transaction(txn, world) Result
+        +undo(world) Result~bool~
+        +redo(world) Result~bool~
+        +save_history(path) Future~Result~
+        +load_and_replay(path, world) Future~Result~
+    }
+
+    class Selectable {
+        <<enum>>
+        Entity(Entity)
+        Asset(AssetId)
+        SubObject(entity, element)
+    }
+
+    class SubObjectElement {
+        <<enum>>
+        Vertex(u32)
+        Edge(u32)
+        Face(u32)
+        Bone(u32)
+    }
+
+    class SelectionModifier {
+        <<enum>>
+        Replace
+        Add
+        Subtract
+        Toggle
+    }
+
+    class SelectionState {
+        -Vec~Selectable~ items
+        -Vec~SelectionSet~ saved_sets
+        +select(items, modifier)
+        +clear()
+        +entities() Vec~Entity~
+        +save_set(name)
+        +restore_set(name) Result
+    }
+
+    class GizmoTool {
+        <<enum>>
+        Translate
+        Rotate
+        Scale
+        Universal
+        Custom(GizmoTypeId)
+    }
+
+    class GizmoFrame {
+        <<enum>>
+        World
+        Local
+        Custom(Entity)
+    }
+
+    class GizmoConstraint {
+        <<enum>>
+        Free
+        AxisX
+        AxisY
+        AxisZ
+        PlaneXY
+        PlaneXZ
+        PlaneYZ
+    }
+
+    class GizmoManager {
+        +set_tool(tool)
+        +set_frame(frame)
+        +begin_manipulation(constraint, ray, sel, world)
+        +update_manipulation(ray) Option~GizmoDelta~
+        +end_manipulation(world) Option~TransformCommand~
+        +hit_test(ray, sel, world) Option~GizmoConstraint~
+    }
+
+    class MeasurementType {
+        <<enum>>
+        Distance
+        Angle
+        Area
+        BoundsAABB
+        BoundsOBB
+    }
+
+    class HotKeyMap {
+        +bind(hotkey, action) Option~HotKeyAction~
+        +unbind(hotkey) Option~HotKeyAction~
+        +lookup(hotkey) Option~HotKeyAction~
+        +conflicts() Vec
+    }
+
+    class PreferenceStore {
+        +load(team, user) Future~Result~Self~~
+        +get~T~(key) Option~T~
+        +set~T~(key, value)
+        +remove_override(key) bool
+        +migrate(target) Result
+    }
+
+    class PreferenceVersion {
+        +u32 inner
+    }
+
+    class EditorPlugin {
+        <<trait>>
+        +register_editor(api)
+        +on_unload(api)
+    }
+
+    class EditorPluginHost {
+        +load(path, api) Result~PluginHandle~
+        +unload(handle, api) Result
+        +hot_reload(handle, api) Result~PluginHandle~
+    }
+
+    class LogLevel {
+        <<enum>>
+        Trace
+        Debug
+        Info
+        Warn
+        Error
+    }
+
+    class ConsoleState {
+        +push(entry)
+        +filtered(level, source, text) Vec~LogEntry~
+        +clear()
+    }
+
+    DockTree --> DockNode
+    DockNode --> SplitDirection
+    DockTree --> FloatingPanel
+    FloatingPanel --> PanelId
+    PanelDescriptor --> PanelId
+    PanelDescriptor --> DockZone
+    PanelDescriptor ..> PanelWidget : creates
+    LayoutProfile --> DockNode
+    ViewportManager --> ViewportConfig
+    ViewportConfig --> CameraMode
+    ViewportConfig --> DebugOverlay
+    UndoStack --> EditorCommand
+    UndoStack --> Transaction
+    Transaction --> EditorCommand
+    SelectionState --> Selectable
+    Selectable --> SubObjectElement
+    GizmoManager --> GizmoTool
+    GizmoManager --> GizmoFrame
+    GizmoManager --> GizmoConstraint
+    EditorPluginHost --> EditorPlugin
+    PreferenceStore --> PreferenceVersion
+    ConsoleState --> LogLevel
+```
+
 ## API Design
 
 ### Dock Tree and Panel System

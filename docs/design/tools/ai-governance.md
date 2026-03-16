@@ -300,6 +300,198 @@ Each entry is hashed with the previous entry's hash, forming a tamper-evident ch
 preserves the chain across segment boundaries by carrying the final hash of the previous segment
 into the first entry of the new segment.
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class ProvenanceTag {
+        +AssetId asset_id
+        +AiSystem ai_system
+        +String model_version
+        +u64 timestamp
+        +String prompt_hash
+        +f32 confidence
+    }
+
+    class AiSystem {
+        <<enum>>
+        TextureGenerator
+        MeshGenerator
+        AnimationGenerator
+        AudioGenerator
+        LogicGraphGenerator
+        Custom(String)
+    }
+
+    class ModificationTracker {
+        -HashMap~AssetId, ModificationBitmask~ bitmasks
+        +start_tracking(asset, granularity) Result
+        +mark_modified(asset, region) Result
+        +modification_percentage(asset) f32
+        +is_fully_replaced(asset) bool
+    }
+
+    class ModificationBitmask {
+        +AssetId asset_id
+        +TrackingGranularity granularity
+        +BitVec regions
+        +total_regions u32
+        +modified_regions u32
+    }
+
+    class TrackingGranularity {
+        <<enum>>
+        VertexGroup
+        TextureTile(u32)
+        DataTableRow
+        LogicGraphNode
+    }
+
+    class AuditLog {
+        -segments Vec~LogSegment~
+        -current_hash [u8; 32]
+        +append(entry) Result
+        +validate_chain() Result~bool~
+        +rotate() Result
+        +replicate_to(target) Future~Result~
+    }
+
+    class AuditEntry {
+        +u64 timestamp
+        +UserId user_id
+        +AuditAction action
+        +AssetId asset_id
+        +String details
+        +[u8; 32] prev_hash
+    }
+
+    class AuditAction {
+        <<enum>>
+        AiGeneration
+        HumanModification
+        ProvenanceRemoval
+        ReviewApproval
+        ReviewRejection
+        PolicyChange
+        ToolInvocation
+    }
+
+    class FeatureToggles {
+        +bool generative_ai_enabled
+        +bool assistance_enabled
+        +bool voice_input_enabled
+        +bool screenshot_context_enabled
+        +check(feature) bool
+        +apply_policy(policy) Result
+    }
+
+    class PolicyDocument {
+        +u64 version
+        +FeatureToggles toggles
+        +Vec~QuotaConfig~ quotas
+        +Vec~ToolAccessControl~ tool_controls
+        +[u8; 64] signature
+    }
+
+    class ReviewWorkflow {
+        -ReviewConfig config
+        +route_to_review(asset) Result
+        +approve(asset, reviewer) Result
+        +reject(asset, reviewer, reason) Result
+    }
+
+    class ReviewConfig {
+        +bool require_review
+        +f32 auto_approve_threshold
+        +Vec~UserId~ reviewers
+    }
+
+    class ToolDefinition {
+        +ToolId id
+        +String name
+        +String description
+        +Vec~ToolParameter~ parameters
+        +Vec~ToolValidationRule~ validation_rules
+        +bool supports_undo
+    }
+
+    class ToolInterface {
+        -HashMap~ToolId, ToolDefinition~ definitions
+        +register_tool(definition)
+        +execute(call, access) Future~ToolResult~
+        +validate(call) Result
+    }
+
+    class ToolAccessControl {
+        +Option~HashSet~ToolId~~ allowlist
+        +HashSet~ToolId~ blocklist
+        +is_allowed(tool_id) bool
+    }
+
+    class CommandInterpreter {
+        -LlmClientHandle llm
+        -ToolInterfaceHandle tools
+        -FeatureTogglesHandle toggles
+        -RateLimiterHandle rate_limiter
+        +process_command(ctx, user, acl) Future~Result~
+    }
+
+    class MultiModalContext {
+        +Option~Transcript~ voice
+        +Option~String~ text
+        +Option~Vec~u8~~ screenshot
+        +AccessibilitySnapshot accessibility
+        +Vec~LlmMessage~ history
+        +build_prompt(tools) LlmRequest
+    }
+
+    class AgentOrchestrator {
+        -HashMap~AgentId, AgentContext~ agents
+        +create_agent() AgentId
+        +run_command(id, ctx, user, acl) Future~Result~
+        +terminate_agent(id) Result
+    }
+
+    class AgentContext {
+        +AgentId id
+        +UndoStack undo_stack
+        +SelectionState selection
+        +Vec~LlmMessage~ history
+    }
+
+    class RateLimiter {
+        -HashMap~UserId, TokenBucket~ buckets
+        +acquire_permit(user) Result
+        +record_usage(user, usage) Result
+    }
+
+    class UsageQuota {
+        +UserId user_id
+        +u32 requests_per_hour
+        +u32 tokens_per_day
+        +u32 requests_used
+        +u64 tokens_used
+        +is_exceeded() bool
+    }
+
+    ProvenanceTag --> AiSystem
+    ModificationTracker --> ModificationBitmask
+    ModificationBitmask --> TrackingGranularity
+    AuditLog --> AuditEntry
+    AuditEntry --> AuditAction
+    PolicyDocument --> FeatureToggles
+    ReviewWorkflow --> ReviewConfig
+    ToolInterface --> ToolDefinition
+    CommandInterpreter --> ToolInterface
+    CommandInterpreter --> FeatureToggles
+    CommandInterpreter --> RateLimiter
+    AgentOrchestrator --> AgentContext
+    AgentOrchestrator --> CommandInterpreter
+    RateLimiter --> UsageQuota
+    MultiModalContext --> CommandInterpreter : input
+    ToolInterface --> ToolAccessControl
+```
+
 ## API Design
 
 ### Governance: Provenance Tracking

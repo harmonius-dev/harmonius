@@ -363,6 +363,192 @@ harmonius_infra/
 | Backups | 7-day RDS, S3 versioning | 35-day, cross-region replication |
 | Estimated cost | $0-5/month | $300-1500/month |
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class DeploymentProfile {
+        <<enumeration>>
+        FreeTier
+        Enterprise
+    }
+    class BuildJobType {
+        <<enumeration>>
+        AssetCook
+        ShaderCompile
+        LogicGraphCompile
+    }
+    class TargetPlatform {
+        <<enumeration>>
+        Windows
+        MacOs
+        Linux
+        Ios
+        Android
+    }
+    class PipelineStage {
+        <<enumeration>>
+        Source
+        Build
+        Cook
+        Test
+        Package
+        Deploy
+    }
+    class PipelineStatus {
+        <<enumeration>>
+        Succeeded
+        Failed
+        InProgress
+        Cancelled
+    }
+    class Permission {
+        <<enumeration>>
+        ReadOnly
+        ReadWrite
+        Admin
+    }
+    class TestSuiteKind {
+        <<enumeration>>
+        Unit
+        Integration
+        Screenshot
+        PerformanceBenchmark
+        Stress
+    }
+    class AlarmSeverity {
+        <<enumeration>>
+        Info
+        Warning
+        Critical
+    }
+    class MetricNamespace {
+        <<enumeration>>
+        BuildFarm
+        Collaboration
+        Pipeline
+        TestRunner
+        GitServer
+    }
+    class IssueSeverity {
+        <<enumeration>>
+        Warning
+        Critical
+    }
+    class InfraConfig {
+        +String account_id
+        +String region
+        +DeploymentProfile profile
+        +String engine_version
+        +Option~String~ domain
+        +bool cross_region_dr
+    }
+    class BuildJob {
+        +ContentHash content_hash
+        +BuildJobType job_type
+        +String source_url
+    }
+    class BuildJobResult {
+        <<enumeration>>
+        CacheHit
+        Compiled
+        Failed
+    }
+    class BuildFarmClient {
+        -String api_endpoint
+        -String auth_token
+        +submit(job) Future~JobId~
+        +poll_status(job_id) Future~BuildJobResult~
+        +check_cache(hash) Future~Option~String~~
+    }
+    class CollabMessage {
+        <<enumeration>>
+        CrdtOp
+        Presence
+        AccessControl
+        Chat
+        SessionEvent
+    }
+    class CollabClient {
+        -String ws_endpoint
+        +connect(session_id) Future~CollabSession~
+    }
+    class CollabSession {
+        -SessionId session_id
+        +send(msg) Future~Result~
+        +recv() Future~CollabMessage~
+        +disconnect() Future~Result~
+    }
+    class PipelineConfig {
+        +String git_webhook_url
+        +bool enable_cook
+        +bool enable_signing
+        +Vec~TargetPlatform~ target_platforms
+    }
+    class PipelineResult {
+        +String execution_id
+        +Vec~StageResult~ stage_results
+        +PipelineStatus overall_status
+    }
+    class StageResult {
+        +PipelineStage stage
+        +PipelineStatus status
+        +u64 duration_ms
+    }
+    class RestoreTarget {
+        <<enumeration>>
+        Full
+        Database
+        Storage
+        DynamoTable
+    }
+    class BackupStatus {
+        +Option~u64~ rds_last_backup
+        +bool s3_versioning_enabled
+        +bool cross_region_healthy
+    }
+    class RestoreClient {
+        -InfraConfig config
+        +check_status() Future~BackupStatus~
+        +restore(target) Future~Result~
+    }
+    class TestRunResult {
+        +TestSuiteKind suite
+        +u32 passed
+        +u32 failed
+        +u32 skipped
+    }
+    class ScreenshotConfig {
+        +u8 pixel_threshold
+        +f32 diff_percent_threshold
+        +String golden_bucket
+    }
+    class AlarmConfig {
+        +String name
+        +MetricNamespace namespace
+        +f64 threshold
+        +AlarmSeverity severity
+    }
+
+    InfraConfig --> DeploymentProfile
+    BuildJob --> BuildJobType
+    BuildFarmClient --> BuildJob
+    BuildFarmClient --> BuildJobResult
+    CollabClient --> CollabSession
+    CollabSession --> CollabMessage
+    CollabMessage --> Permission
+    PipelineConfig --> TargetPlatform
+    PipelineResult *-- StageResult
+    StageResult --> PipelineStage
+    StageResult --> PipelineStatus
+    RestoreClient --> RestoreTarget
+    RestoreClient --> BackupStatus
+    BackupStatus --> IssueSeverity
+    TestRunResult --> TestSuiteKind
+    AlarmConfig --> AlarmSeverity
+    AlarmConfig --> MetricNamespace
+```
+
 ## API Design
 
 ### CDK Stack Configuration

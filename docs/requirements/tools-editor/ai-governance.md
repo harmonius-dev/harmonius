@@ -116,5 +116,4 @@ API, with minimal metadata footprint (flags and IDs only).
 
 User stories for this domain are maintained in
 [user-stories/tools-editor/ai-governance.md](../../user-stories/tools-editor/ai-governance.md).
-Requirements in this document are derived from those
-user stories.
+Requirements in this document are derived from those user stories.

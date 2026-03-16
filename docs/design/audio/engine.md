@@ -282,6 +282,424 @@ sequenceDiagram
     Note over AT: Reads latest params lock-free
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class AudioSource {
+        +AssetHandle~AudioClip~ clip
+        +f32 gain
+        +f32 pitch
+        +bool looping
+        +EmitterShape shape
+        +BusId bus
+        +VoicePriority priority
+        +f32 doppler_factor
+    }
+
+    class EmitterShape {
+        &lt;&lt;enumeration&gt;&gt;
+        Point
+        Line
+        Area
+    }
+
+    class VoicePriority {
+        &lt;&lt;enumeration&gt;&gt;
+        Low
+        Medium
+        High
+        Critical
+    }
+
+    class AudioListener {
+        +u8 player_index
+    }
+
+    class SpatialAudio {
+        +Option~AttenuationModel~ attenuation_model
+        +f32 min_distance
+        +f32 max_distance
+        +u8 occlusion_rays
+        +bool hrtf_enabled
+    }
+
+    class ReverbZone {
+        +Vec3 half_extents
+        +f32 decay_time
+        +f32 diffusion
+        +u16 priority
+        +f32 blend_distance
+    }
+
+    class AudioConfig {
+        +u32 sample_rate
+        +u32 buffer_size
+        +u32 max_real_voices
+        +u32 max_virtual_voices
+        +u32 output_channels
+    }
+
+    class AudioEngine {
+        +new(config, backend, reactor) Self
+        +command_sender() CommandSender
+        +mixer_graph() MixerGraph
+        +codec_registry() CodecRegistry
+        +shutdown()
+    }
+
+    class AudioTimestamp {
+        &lt;&lt;enumeration&gt;&gt;
+        Immediate
+        SampleOffset
+    }
+
+    class AudioCommand {
+        &lt;&lt;enumeration&gt;&gt;
+        Play
+        Stop
+        Pause
+        Resume
+        SetParam
+        SetBusParam
+        UpdateSpatial
+        UpdateListener
+        Prefetch
+    }
+
+    class VoiceParam {
+        &lt;&lt;enumeration&gt;&gt;
+        Gain
+        Pitch
+        DopplerFactor
+        OcclusionGain
+        OcclusionLpf
+    }
+
+    class BusParam {
+        &lt;&lt;enumeration&gt;&gt;
+        Gain
+        Mute
+        Solo
+    }
+
+    class CommandSender {
+        +send(cmd) Result
+    }
+
+    class CommandReceiver {
+        +drain() Iterator
+    }
+
+    class VoiceId {
+        +u32 id
+    }
+
+    class VoiceState {
+        &lt;&lt;enumeration&gt;&gt;
+        Idle
+        Playing
+        Paused
+        Virtual
+        Stopping
+    }
+
+    class AudibilityScore {
+        +f32 score
+        +compute(distance, occlusion, bus_gain, source_gain) Self
+    }
+
+    class VoiceSlot {
+        +VoiceId id
+        +VoiceState state
+        +VoicePriority priority
+        +AudibilityScore score
+        +BusId bus
+        +u64 playback_offset
+        +SpatialParams spatial
+    }
+
+    class VoiceManager {
+        +new(max_real, max_virtual) Self
+        +allocate(priority) Option~VoiceId~
+        +release(id)
+        +virtualize(id)
+        +restore(id) bool
+        +update_priorities()
+    }
+
+    class BusId {
+        +u16 id
+    }
+
+    class InsertSlot {
+        +AudioEffect effect
+        +bool bypassed
+    }
+
+    class BusNode {
+        +BusId id
+        +f32 gain
+        +f32 effective_gain
+        +bool muted
+        +bool solo
+        +Vec~InsertSlot~ inserts
+        +Option~BusId~ parent
+        +SmallVec~BusId~ children
+    }
+
+    class MixerGraph {
+        +new() Self
+        +add_bus(id, parent)
+        +remove_bus(id)
+        +reparent(id, new_parent)
+        +add_insert(bus, index, effect)
+        +set_gain(bus, gain)
+        +mix(voices, output)
+    }
+
+    class AudioEffect {
+        &lt;&lt;enumeration&gt;&gt;
+        BiquadFilter
+        ParametricEq
+        Compressor
+        Limiter
+        Reverb
+        Delay
+        Chorus
+        PitchShifter
+    }
+
+    class CodecId {
+        +u16 id
+    }
+
+    class AudioClipMeta {
+        +u32 sample_rate
+        +u16 channel_count
+        +u64 sample_count
+        +CodecId codec
+        +f32 duration_secs
+    }
+
+    class AudioDecoder {
+        &lt;&lt;enumeration&gt;&gt;
+        Pcm
+        Vorbis
+        Opus
+        Adpcm
+    }
+
+    class CodecRegistry {
+        +new() Self
+        +register(id, factory)
+        +create_decoder(id, data, meta) Option
+        +has_codec(id) bool
+    }
+
+    class StreamHandle {
+        +u32 handle
+    }
+
+    class StreamConfig {
+        +u32 ring_buffer_samples
+        +u32 prefetch_chunks
+        +u32 chunk_bytes
+    }
+
+    class StreamRingBuffer {
+        +new(capacity) Self
+        +write(samples) u32
+        +read(output) u32
+        +available() u32
+        +free_space() u32
+    }
+
+    class StreamManager {
+        +new(config, reactor) Self
+        +open(clip) Result
+        +prefetch(handle)
+        +read(handle, output) u32
+        +close(handle)
+    }
+
+    class StreamError {
+        &lt;&lt;enumeration&gt;&gt;
+        AssetNotFound
+        StreamLimitReached
+        IoError
+    }
+
+    class SpatialParams {
+        +Vec3 position
+        +Vec3 velocity
+        +f32 pan
+        +f32 distance_gain
+        +f32 doppler_pitch
+        +f32 occlusion_gain
+        +f32 occlusion_lpf
+        +Option~HrtfIndex~ hrtf_index
+    }
+
+    class AttenuationModel {
+        &lt;&lt;enumeration&gt;&gt;
+        Inverse
+        InverseSquared
+        Linear
+        Logarithmic
+        Custom
+    }
+
+    class Spatializer {
+        +new() Self
+        +compute() SpatialParams
+    }
+
+    class OcclusionResult {
+        +f32 attenuation_db
+        +f32 lpf_cutoff
+        +bool fully_occluded
+    }
+
+    class OcclusionSystem {
+        +new() Self
+        +query(spatial_index, source, listener, ray_count) OcclusionResult
+    }
+
+    class PropagationPath {
+        +u32 delay_samples
+        +f32 gain
+        +f32 lpf_cutoff
+        +u8 bounce_count
+    }
+
+    class PropagationSolver {
+        +new() Self
+        +update(spatial_index, portal_graph, sources, listener)
+        +paths(voice_id) PropagationPath
+    }
+
+    class HrtfIndex {
+        +u16 azimuth_idx
+        +u16 elevation_idx
+    }
+
+    class HrtfDataset {
+        +load(data) Result
+        +lookup(azimuth, elevation) HrtfIndex
+        +impulse_response(index) HrtfIR
+    }
+
+    class HrtfRenderer {
+        +new(fft_size) Self
+        +set_dataset(dataset)
+        +render(mono, azimuth, elevation, left, right)
+    }
+
+    class AmbisonicsOrder {
+        &lt;&lt;enumeration&gt;&gt;
+        First
+        Second
+        Third
+    }
+
+    class OutputFormat {
+        &lt;&lt;enumeration&gt;&gt;
+        Stereo
+        Surround5_1
+        Surround7_1
+        Binaural
+    }
+
+    class AmbisonicsCodec {
+        +new(order, output) Self
+        +encode(mono, azimuth, elevation)
+        +rotate(orientation)
+        +decode(output)
+        +clear()
+    }
+
+    class ActiveReverbState {
+        +Entity zone_entity
+        +f32 decay_time
+        +f32 diffusion
+        +f32 blend_weight
+    }
+
+    class ReverbZoneManager {
+        +new(max_zones) Self
+        +update(listener_pos, zones)
+        +blended_params() ActiveReverbState
+    }
+
+    class AudioBackendError {
+        &lt;&lt;enumeration&gt;&gt;
+        DeviceNotFound
+        FormatNotSupported
+        DeviceLost
+        Platform
+    }
+
+    class AudioError {
+        &lt;&lt;enumeration&gt;&gt;
+        Backend
+        CodecNotFound
+        VoicePoolExhausted
+        Stream
+        Hrtf
+    }
+
+    class HrtfError {
+        &lt;&lt;enumeration&gt;&gt;
+        InvalidFormat
+        UnsupportedSampleRate
+    }
+
+    AudioSource --> EmitterShape
+    AudioSource --> VoicePriority
+    AudioSource --> BusId
+    SpatialAudio --> AttenuationModel
+    AudioEngine --> MixerGraph
+    AudioEngine --> VoiceManager
+    AudioEngine --> CommandSender
+    AudioEngine --> CodecRegistry
+    AudioEngine --> StreamManager
+    AudioCommand --> VoiceId
+    AudioCommand --> AudioTimestamp
+    AudioCommand --> VoiceParam
+    AudioCommand --> BusParam
+    CommandSender --> AudioCommand
+    CommandReceiver --> AudioCommand
+    VoiceSlot --> VoiceId
+    VoiceSlot --> VoiceState
+    VoiceSlot --> VoicePriority
+    VoiceSlot --> AudibilityScore
+    VoiceSlot --> SpatialParams
+    VoiceManager *-- VoiceSlot
+    BusNode --> BusId
+    BusNode *-- InsertSlot
+    InsertSlot --> AudioEffect
+    MixerGraph *-- BusNode
+    AudioClipMeta --> CodecId
+    CodecRegistry --> AudioDecoder
+    StreamManager --> StreamRingBuffer
+    StreamManager --> StreamConfig
+    Spatializer --> SpatialParams
+    Spatializer --> AttenuationModel
+    OcclusionSystem --> OcclusionResult
+    PropagationSolver --> PropagationPath
+    HrtfRenderer --> HrtfDataset
+    HrtfDataset --> HrtfIndex
+    SpatialParams --> HrtfIndex
+    AmbisonicsCodec --> AmbisonicsOrder
+    AmbisonicsCodec --> OutputFormat
+    ReverbZoneManager --> ActiveReverbState
+    ActiveReverbState --> ReverbZone
+    AudioError --> AudioBackendError
+    AudioError --> StreamError
+    AudioError --> HrtfError
+```
+
 ## API Design
 
 ### ECS Components

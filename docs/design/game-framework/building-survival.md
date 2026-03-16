@@ -284,6 +284,154 @@ stateDiagram-v2
     Withered --> [*] : remove()
 ```
 
+### Core Data Structures
+
+```mermaid
+classDiagram
+    class BuildingPieceDefinition {
+        +name String
+        +piece_type BuildingPieceType
+        +sockets Vec~SocketDefinition~
+        +material_tier MaterialTier
+        +base_hp f32
+        +stability_value f32
+        +construction_cost Vec~MaterialCost~
+        +construction_duration f32
+    }
+    class BuildingPieceType {
+        <<enumeration>>
+        Foundation
+        Wall
+        Floor
+        Roof
+        Door
+        Stairs
+        Ramp
+        Pillar
+        Window
+        Fence
+    }
+    class MaterialTier {
+        <<enumeration>>
+        Wood
+        Stone
+        Metal
+        Reinforced
+    }
+    class SocketDefinition {
+        +id SocketId
+        +offset Vec3
+        +normal Vec3
+        +compatible_types Vec~SocketType~
+        +rotation_increment f32
+    }
+    class SocketType {
+        <<enumeration>>
+        FoundationTop
+        WallBottom
+        WallTop
+        WallSide
+        FloorEdge
+        RoofBase
+        StairsTop
+        StairsBottom
+        DoorFrame
+        PillarBase
+        PillarTop
+    }
+    class BuildingPiece {
+        +definition AssetId
+        +owner Entity
+        +placed_at u64
+    }
+    class BuildingHealth {
+        +current f32
+        +max f32
+    }
+    class Stability {
+        +value f32
+        +foundation_distance u32
+    }
+    class ConstructionProgress {
+        +progress f32
+        +paused bool
+        +workers u32
+        +base_duration f32
+    }
+    class PlacementMode {
+        <<enumeration>>
+        Snap
+        FreeForm
+    }
+    class HousingPermission {
+        <<enumeration>>
+        Public
+        Friends
+        Guild
+        Private
+    }
+    class FurnitureEffect {
+        <<enumeration>>
+        SetRespawn
+        StorageChest
+        CraftingStation
+    }
+    class VitalType {
+        <<enumeration>>
+        Hunger
+        Thirst
+        Warmth
+        Stamina
+    }
+    class VitalMeter {
+        +vital_type VitalType
+        +current f32
+        +max f32
+        +base_drain_rate f32
+        +debuff_threshold f32
+    }
+    class BiomeType {
+        <<enumeration>>
+        Temperate
+        Desert
+        Arctic
+        Tropical
+        Swamp
+        Mountain
+    }
+    class ToolType {
+        <<enumeration>>
+        Pickaxe
+        Axe
+        Sickle
+        FishingRod
+        Shovel
+    }
+    class CropState {
+        <<enumeration>>
+        Growing
+        Harvestable
+        Withered
+    }
+    class Season {
+        <<enumeration>>
+        Spring
+        Summer
+        Autumn
+        Winter
+    }
+    BuildingPieceDefinition --> BuildingPieceType
+    BuildingPieceDefinition --> MaterialTier
+    BuildingPieceDefinition *-- SocketDefinition
+    SocketDefinition --> SocketType
+    BuildingPiece --> BuildingPieceDefinition
+    BuildingPiece --> BuildingHealth
+    BuildingPiece --> Stability
+    BuildingPiece --> ConstructionProgress
+    VitalMeter --> VitalType
+    FurnitureEffect --> HousingPermission
+```
+
 ## API Design
 
 ### Building Piece Definition
