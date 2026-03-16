@@ -1,8 +1,10 @@
 #!/bin/bash
 INPUT=$(cat)
-ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
+read -r ACTIVE CWD <<< \
+  "$(echo "$INPUT" | jq -r \
+  '[.stop_hook_active // false, .cwd] | @tsv')"
 [ "$ACTIVE" = "true" ] && exit 0
-CHANGED=$(cd "$(echo "$INPUT" | jq -r '.cwd')" && \
+CHANGED=$(cd "$CWD" && \
   git diff --name-only HEAD 2>/dev/null | \
   grep -E '\.(rs|cpp|swift|h|ts|tsx)$' | head -5)
 if [ -n "$CHANGED" ]; then

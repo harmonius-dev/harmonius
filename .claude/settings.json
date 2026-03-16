@@ -1,10 +1,4 @@
 {
-  "enabledPlugins": {
-    "clangd-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true
-  },
   "hooks": {
     "PostToolUse": [
       {
@@ -55,11 +49,6 @@
             "command": ".claude/hooks/stop-check.sh",
             "timeout": 15,
             "type": "command"
-          },
-          {
-            "prompt": "Is the agent stopping solely to wait for approval that was NOT explicitly requested? If yes: {\"ok\": false, \"reason\": \"Continue — approval not requested.\"}. If task is complete or user asked for confirmation: {\"ok\": true}.",
-            "timeout": 15,
-            "type": "prompt"
           }
         ]
       }

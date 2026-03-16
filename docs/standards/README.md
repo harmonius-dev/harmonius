@@ -9,7 +9,7 @@ Language-specific coding standards for the Harmonius engine.
 | [Rust](rust.md) | Rust | Primary engine language |
 | [C++](cpp.md) | C++ | FFI bridges (cxx.rs) |
 | [Swift](swift.md) | Swift | macOS platform (cxx.rs) |
-| [TypeScript](typescript.md) | TypeScript | Tooling, editor, build scripts |
+| [TypeScript](typescript.md) | TypeScript | Tooling, editor, build |
 | [HLSL](hlsl.md) | HLSL | Shader IL (DXC pipeline) |
 | [Markdown](markdown.md) | Markdown | Documentation (rumdl) |
 | [JSON](json.md) | JSON | Configuration files |

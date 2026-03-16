@@ -1,11 +1,11 @@
 #!/bin/bash
 FILE=$(cat | jq -r '.tool_input.file_path // empty')
-[[ "$FILE" == *.rs ]] || exit 0
+[[ -n "$FILE" && "$FILE" == *.rs ]] || exit 0
+command -v cargo >/dev/null 2>&1 || exit 0
 cargo fmt 2>/dev/null
-cargo clippy --fix --allow-dirty --allow-staged \
-  2>/dev/null || true
-REMAINING=$(cargo clippy --message-format=short \
-  2>&1 | grep "^error" | head -10)
+CLIPPY_OUT=$(cargo clippy --fix --allow-dirty \
+  --allow-staged --message-format=short 2>&1) || true
+REMAINING=$(echo "$CLIPPY_OUT" | grep "^error" | head -10)
 if [ -n "$REMAINING" ]; then
   echo "Clippy errors remain after auto-fix:"
   echo "$REMAINING"
