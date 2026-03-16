@@ -3,6 +3,35 @@
 A modern cross-platform game engine for real-time 2D, 3D, and XR games. Written in Rust with
 platform-native async I/O and mesh-shader/ray-tracing-first rendering.
 
+## Goals
+
+1. **Universal game engine** — support every genre (puzzle, 2D, 3D, RPG, RTS, FPS, co-op, local
+   multiplayer, VR) in a single engine
+2. **No-code-first** — all user-facing authoring is visual; users never write code
+3. **Production-grade Rust** — stable Rust only, zero nightly, modern GPU graphics
+4. **Open source** — Apache 2.0 license with open asset store and community marketplace
+5. **Self-hosted infrastructure** — all services open source with 1-click AWS deployment; customers
+   pay AWS directly, no vendor lock-in
+6. **Privacy-respecting AI** — cloud AI backends (Claude, Cursor, Copilot) use customer's own API
+   keys; engine is a thin client, never a proxy
+
+## Objectives
+
+1. **Replace legacy engines** — deliver a credible alternative to Unity and Unreal for creators who
+   value open-source infrastructure and no-code authoring
+2. **Ship every genre** — provide built-in game framework modules (weapons, NPCs, quests, racing,
+   tower defense, building, pets, monetization, etc.) so teams start from gameplay, not boilerplate
+3. **Minimize integration friction** — native DCC plugins for Houdini, Maya, and Blender export
+   assets directly into the engine pipeline; no intermediate format conversion
+4. **Maximize parallelism** — 100% ECS with shared spatial index, async/await game loop, scoped task
+   graph, and data-parallel `parallel_for` to saturate all cores every frame
+5. **Modern GPU baseline** — require mesh shaders + ray tracing (Metal 4, D3D12, Vulkan 1.4); no
+   legacy fallback to maintain
+6. **Platform-native I/O** — IOCP, GCD, io_uring with custom IoReactor; no third-party async runtime
+   anywhere
+7. **Full design coverage** — 87 design documents, 1,381 features, 1,171 requirements, 5,859 user
+   stories across 27 personas before implementation begins
+
 ## Key Technical Highlights
 
 - **100% ECS architecture** — all simulation data as components, all logic as systems, no parallel
