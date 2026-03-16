@@ -23,6 +23,12 @@
 |----|-------------|--------------|-----------|--------------|
 | R-15.14.8 | The editor **SHALL** support CLI-invocable submission to Steam (SteamCMD), App Store (Transporter), and Windows Store (MSIX + Partner Center), with pre-submission certification validation and status polling with team notification. | [F-15.14.8](../../features/tools-editor/deployment.md) | Automated store submission reduces manual steps and catch failures early. | Integration test: verify submission to each store's staging/sandbox environment. |
 
+## Build Matrix
+
+| ID | Requirement | Derived From | Rationale | Verification |
+|----|-------------|--------------|-----------|--------------|
+| R-15.14.9 | The engine **SHALL** document supported host-target build combinations and required toolchains for each target platform. The cloud build service **SHALL** support building ALL target platforms from ANY host OS. The documentation **SHALL** include: local build matrix (host OS to target platform), cloud build service matrix (worker type to target platform), shader compilation matrix (host to bytecode format with Metal Shader Converter restrictions), engine developer toolchain requirements per subsystem, and game developer minimal requirements with cloud alternatives. | [F-15.14.9](../../features/tools-editor/deployment.md) | Developers need clear guidance on what they can build locally vs. what requires the cloud service. Shader compilation restrictions (MSC macOS-only) and console SDK licensing make this non-obvious. | Review: verify all host-target combinations are documented with toolchain names. Integration test: verify the editor correctly identifies which targets build locally vs. via cloud on each host OS. |
+
 ---
 
 ## User Story Traceability

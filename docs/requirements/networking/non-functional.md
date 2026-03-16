@@ -1,4 +1,5 @@
 # R-8.NFR -- Networking Non-Functional Requirements
+
 Non-functional requirements for the networking domain covering latency budgets, throughput targets,
 scalability limits, bandwidth constraints, and reliability thresholds. These complement the
 functional requirements in R-8.1 through R-8.8 and trace to the cross-cutting performance budget in

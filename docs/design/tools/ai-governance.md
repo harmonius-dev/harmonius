@@ -90,9 +90,19 @@ graph TD
     subgraph harmonius_ai_admin
         RL[RateLimiter]
         QM[QuotaManager]
-        PC[ProviderConfig]
+        PCfg[ProviderConfig]
         TL[ToolAccessControl]
         AAL[AssistantAuditLog]
+    end
+
+    subgraph harmonius_ai_cloud
+        PReg[ProviderRegistry]
+        APT[AiProviderTrait]
+        KR[KeychainReader]
+        CC[ConsentController]
+        CT[CostTracker]
+        CH[ChatHistory]
+        LMR[LocalModelRunner]
     end
 
     subgraph ECS_Resources
@@ -119,6 +129,14 @@ graph TD
     TI --> EP
     TI --> UR
     AO --> CI
+
+    LLM --> PReg
+    PReg --> APT
+    PReg --> KR
+    PReg -.->|fallback| LMR
+    CC --> PReg
+    CT --> PReg
+    CH --> PReg
 
     LLM --> IO
     LLM --> RL
@@ -1937,12 +1955,551 @@ the engine (F-1.3). Deriving tool definitions from `Reflect` metadata instead of
 schemas would make the assistant more cohesive with the inspector, serialization, and documentation
 systems.
 
+## Cloud AI Backend Integration
+
+This section extends the AI assistant infrastructure to support cloud AI services using the
+customer's own API keys. The engine acts as a thin client: it formats requests, sends them directly
+to the provider's endpoint, and parses responses. No intermediary server, no proxy, no reselling.
+
+### Design Principles
+
+1. **Customer owns credentials** -- API keys live in platform keychains, never in project files
+2. **No engine intermediary** -- requests go directly to the provider; no data to engine servers
+3. **Engine works without AI** -- all features degrade gracefully when no provider is configured
+4. **Consent before context** -- project data is sent to AI only with explicit per-session consent
+
+### Cloud AI Backend Architecture
+
+```mermaid
+graph TD
+    subgraph Editor
+        CP[Chat Panel]
+        CA[Code Assistant]
+        CTA[Content Assistant]
+        CIJ[Context Injector]
+        PS[Provider Settings]
+    end
+
+    subgraph Provider_Abstraction
+        PR[ProviderRegistry]
+        APT[AiProviderTrait]
+        AD_C[ClaudeAdapter]
+        AD_CO[CopilotAdapter]
+        AD_CU[CursorAdapter]
+        AD_P[PluginAdapter]
+    end
+
+    subgraph Credential_Storage
+        KR[KeychainReader]
+        KC_M[macOS Keychain]
+        KC_W[Windows CredMgr]
+        KC_L[Linux libsecret]
+    end
+
+    subgraph Privacy_Layer
+        CC[ConsentController]
+        CX[ContextPreview]
+        AF[AuditFilter]
+    end
+
+    subgraph Fallback
+        LM[LocalModelRunner]
+        MR[ModelRegistry]
+    end
+
+    CP --> CIJ
+    CA --> CIJ
+    CTA --> CIJ
+    CIJ --> CC
+    CC --> CX
+    CIJ --> PR
+
+    PR --> APT
+    APT --> AD_C
+    APT --> AD_CO
+    APT --> AD_CU
+    APT --> AD_P
+
+    PR --> KR
+    KR --> KC_M
+    KR --> KC_W
+    KR --> KC_L
+
+    AD_C --> IO[IoReactor]
+    AD_CO --> IO
+    AD_CU --> IO
+    AD_P --> IO
+
+    PR -.->|fallback| LM
+    LM --> MR
+
+    PS --> PR
+    AF --> AuditLog
+```
+
+### Cloud AI Request Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant CP as ChatPanel
+    participant CIJ as ContextInjector
+    participant CC as ConsentController
+    participant PR as ProviderRegistry
+    participant AD as ActiveAdapter
+    participant KR as KeychainReader
+    participant API as Provider API
+    participant AL as AuditLog
+
+    U->>CP: ask question
+    CP->>CIJ: gather_context(categories)
+    CIJ->>CC: check_consent(categories)
+    CC-->>CIJ: approved categories
+    CIJ->>CIJ: build context
+    CIJ-->>CP: enriched prompt
+
+    CP->>PR: send_request(prompt)
+    PR->>KR: load_credential(provider_id)
+    KR-->>PR: api_key (in memory only)
+    PR->>AD: format_request(prompt, api_key)
+    AD->>API: HTTPS POST (TLS 1.3)
+    API-->>AD: streamed response
+    AD->>AD: parse_response
+    AD-->>PR: AiResponse
+    PR->>AL: log_interaction (no prompt content)
+    PR-->>CP: display response
+    CP-->>U: rendered answer
+```
+
+### Provider Trait API
+
+```rust
+/// Trait implemented by each AI provider adapter.
+/// Built-in: Claude, Copilot, Cursor. Extensible
+/// via plugin API (F-13.1.10).
+pub trait AiProvider: Send + Sync {
+    /// Unique provider identifier.
+    fn provider_id(&self) -> &str;
+
+    /// Human-readable display name.
+    fn display_name(&self) -> &str;
+
+    /// Available models for this provider.
+    fn available_models(&self) -> Vec<AiModelInfo>;
+
+    /// Authenticate using the given credential.
+    fn authenticate(
+        &self,
+        credential: &ProviderCredential,
+    ) -> impl Future<Output = Result<
+        AuthSession,
+        ProviderError,
+    >> + Send;
+
+    /// Send a prompt and return the full response.
+    fn send_request(
+        &self,
+        session: &AuthSession,
+        request: &AiRequest,
+        reactor: &IoReactor,
+    ) -> impl Future<Output = Result<
+        AiResponse,
+        ProviderError,
+    >> + Send;
+
+    /// Send a prompt and return a response stream.
+    fn send_streaming(
+        &self,
+        session: &AuthSession,
+        request: &AiRequest,
+        reactor: &IoReactor,
+    ) -> impl Future<Output = Result<
+        AiResponseStream,
+        ProviderError,
+    >> + Send;
+
+    /// Convert history from another provider's
+    /// format into this provider's format.
+    fn convert_history(
+        &self,
+        messages: &[AiMessage],
+    ) -> Vec<AiMessage>;
+
+    /// Estimate cost for a given token count.
+    fn estimate_cost(
+        &self,
+        model: &str,
+        input_tokens: u32,
+        output_tokens: u32,
+    ) -> CostEstimate;
+}
+
+/// Model information for a provider.
+#[derive(Clone, Debug, Reflect)]
+pub struct AiModelInfo {
+    pub model_id: String,
+    pub display_name: String,
+    pub max_context_tokens: u32,
+    pub max_output_tokens: u32,
+    pub supports_vision: bool,
+    pub supports_tool_use: bool,
+    pub input_price_per_1k: f64,
+    pub output_price_per_1k: f64,
+}
+
+/// Opaque authenticated session. Held in memory
+/// only; never serialized.
+pub struct AuthSession {
+    provider_id: String,
+    token: SecretString,
+    expires_at: Option<u64>,
+}
+
+/// Cost estimate for a single request.
+#[derive(Clone, Debug)]
+pub struct CostEstimate {
+    pub input_cost: f64,
+    pub output_cost: f64,
+    pub total_cost: f64,
+    pub currency: &'static str,
+}
+
+/// Registry of available AI providers. Stored as
+/// an ECS resource.
+pub struct ProviderRegistry {
+    providers: HashMap<
+        String, Box<dyn AiProvider>,
+    >,
+    active_provider: Option<String>,
+    active_model: Option<String>,
+    keychain: KeychainReaderHandle,
+    fallback: Option<LocalModelRunnerHandle>,
+}
+
+impl ProviderRegistry {
+    pub fn new(
+        keychain: KeychainReaderHandle,
+    ) -> Self;
+
+    /// Register a provider adapter.
+    pub fn register(
+        &mut self,
+        provider: Box<dyn AiProvider>,
+    );
+
+    /// Set the active provider and model.
+    pub fn set_active(
+        &mut self,
+        provider_id: &str,
+        model_id: &str,
+    ) -> Result<(), ProviderError>;
+
+    /// Send a request through the active provider.
+    /// Falls back to local model if cloud is
+    /// unreachable and fallback is configured.
+    pub async fn send(
+        &self,
+        request: &AiRequest,
+        reactor: &IoReactor,
+    ) -> Result<AiResponse, ProviderError>;
+
+    /// List all registered providers.
+    pub fn list_providers(
+        &self,
+    ) -> Vec<&dyn AiProvider>;
+}
+```
+
+### Credential Storage
+
+```rust
+/// Platform-native credential reader. Accesses
+/// the OS keychain to load API keys at editor
+/// startup.
+pub struct KeychainReader {
+    #[cfg(target_os = "macos")]
+    backend: MacOsKeychainBackend,
+    #[cfg(target_os = "windows")]
+    backend: WindowsCredMgrBackend,
+    #[cfg(target_os = "linux")]
+    backend: LinuxLibsecretBackend,
+}
+
+/// Credential stored in the platform keychain.
+pub struct ProviderCredential {
+    pub provider_id: String,
+    /// API key or OAuth token. Held as SecretString
+    /// to prevent logging and core dump exposure.
+    pub secret: SecretString,
+    /// Optional expiry for OAuth tokens.
+    pub expires_at: Option<u64>,
+}
+
+impl KeychainReader {
+    /// Load a credential for a provider.
+    pub fn load(
+        &self,
+        provider_id: &str,
+    ) -> Result<
+        Option<ProviderCredential>,
+        KeychainError,
+    >;
+
+    /// Store a credential in the platform keychain.
+    pub fn store(
+        &self,
+        credential: &ProviderCredential,
+    ) -> Result<(), KeychainError>;
+
+    /// Delete a credential from the keychain.
+    pub fn delete(
+        &self,
+        provider_id: &str,
+    ) -> Result<(), KeychainError>;
+}
+```
+
+### Credential Storage -- Platform Details
+
+| Platform | API | Access | Notes |
+|----------|-----|--------|-------|
+| macOS | Security.framework | cxx.rs bridge to `SecItemCopyMatching`, `SecItemAdd`, `SecItemDelete` | Keychain items tagged with `kSecAttrService = "com.harmonius.ai"` |
+| Windows | wincred | `CredReadW`, `CredWriteW`, `CredDeleteW` via FFI | Credentials stored under `harmonius/ai/{provider_id}` target |
+| Linux | libsecret | D-Bus `org.freedesktop.secrets` via FFI | Secret stored in the default collection with `provider` attribute |
+
+### Privacy Model
+
+The privacy model enforces three invariants:
+
+1. **No engine servers** -- requests go directly from the editor to the customer's chosen provider
+   endpoint. The engine vendor has no proxy, relay, or analytics endpoint in the path.
+
+2. **Consent-gated context** -- Before each request, the `ConsentController` checks which context
+   categories the user approved for the current session. Unapproved categories are excluded.
+
+3. **Audit without content** -- The `AuditLog` records that an AI interaction occurred (timestamp,
+   user, provider, token count) but never records prompt text, response text, or context data.
+
+```rust
+/// Per-session consent for context injection.
+#[derive(Clone, Debug, Reflect)]
+pub struct ContextConsent {
+    /// Selected entities and their components.
+    pub entities: bool,
+    /// Current graph and visible nodes.
+    pub graphs: bool,
+    /// Recent changes from the undo stack.
+    pub undo_history: bool,
+    /// Error logs from the console.
+    pub error_logs: bool,
+    /// Active asset metadata.
+    pub asset_metadata: bool,
+}
+
+impl ContextConsent {
+    /// Default: all categories disabled until the
+    /// user explicitly grants consent.
+    pub fn new() -> Self {
+        Self {
+            entities: false,
+            graphs: false,
+            undo_history: false,
+            error_logs: false,
+            asset_metadata: false,
+        }
+    }
+}
+
+/// Controls what project context is included in
+/// AI prompts. Enforces per-session consent.
+pub struct ConsentController {
+    consent: ContextConsent,
+}
+
+impl ConsentController {
+    /// Grant consent for a context category.
+    pub fn grant(
+        &mut self,
+        category: ContextCategory,
+    );
+
+    /// Revoke consent for a context category.
+    pub fn revoke(
+        &mut self,
+        category: ContextCategory,
+    );
+
+    /// Filter a context bundle to include only
+    /// consented categories.
+    pub fn filter(
+        &self,
+        context: &ProjectContext,
+    ) -> ProjectContext;
+}
+
+/// Assembled project context before filtering.
+pub struct ProjectContext {
+    pub entities: Option<Vec<EntitySnapshot>>,
+    pub graphs: Option<GraphSnapshot>,
+    pub undo_history: Option<Vec<UndoEntry>>,
+    pub error_logs: Option<Vec<ConsoleEntry>>,
+    pub asset_metadata: Option<Vec<AssetMeta>>,
+}
+```
+
+### Cloud AI Backend Data Structures
+
+```mermaid
+classDiagram
+    class AiProvider {
+        <<trait>>
+        +provider_id() str
+        +display_name() str
+        +available_models() Vec~AiModelInfo~
+        +authenticate(cred) Future~AuthSession~
+        +send_request(session, req) Future~AiResponse~
+        +send_streaming(session, req) Future~Stream~
+        +convert_history(msgs) Vec~AiMessage~
+        +estimate_cost(model, in, out) CostEstimate
+    }
+
+    class ProviderRegistry {
+        -HashMap providers
+        -Option active_provider
+        -Option active_model
+        +register(provider)
+        +set_active(provider_id, model_id) Result
+        +send(request) Future~AiResponse~
+        +list_providers() Vec
+    }
+
+    class KeychainReader {
+        +load(provider_id) Result~Option~Cred~~
+        +store(credential) Result
+        +delete(provider_id) Result
+    }
+
+    class ProviderCredential {
+        +String provider_id
+        +SecretString secret
+        +Option~u64~ expires_at
+    }
+
+    class AuthSession {
+        -String provider_id
+        -SecretString token
+        -Option~u64~ expires_at
+    }
+
+    class AiModelInfo {
+        +String model_id
+        +String display_name
+        +u32 max_context_tokens
+        +u32 max_output_tokens
+        +bool supports_vision
+        +bool supports_tool_use
+        +f64 input_price_per_1k
+        +f64 output_price_per_1k
+    }
+
+    class CostEstimate {
+        +f64 input_cost
+        +f64 output_cost
+        +f64 total_cost
+        +str currency
+    }
+
+    class CostTracker {
+        +u32 session_input_tokens
+        +u32 session_output_tokens
+        +f64 session_cost
+        +f64 daily_cost
+        +f64 project_cumulative_cost
+        +record_usage(usage, estimate)
+        +reset_session()
+    }
+
+    class ContextConsent {
+        +bool entities
+        +bool graphs
+        +bool undo_history
+        +bool error_logs
+        +bool asset_metadata
+    }
+
+    class ConsentController {
+        -ContextConsent consent
+        +grant(category)
+        +revoke(category)
+        +filter(context) ProjectContext
+    }
+
+    class ProjectContext {
+        +Option entities
+        +Option graphs
+        +Option undo_history
+        +Option error_logs
+        +Option asset_metadata
+    }
+
+    class ChatHistory {
+        +ProjectId project_id
+        +Vec~AiMessage~ messages
+        +u32 total_tokens
+        +save(path) Future~Result~
+        +load(path) Future~Result~
+    }
+
+    class LocalModelRunner {
+        -ModelRegistry registry
+        +list_models() Vec~LocalModelInfo~
+        +run_inference(prompt) Future~AiResponse~
+        +is_available() bool
+    }
+
+    ProviderRegistry --> AiProvider
+    ProviderRegistry --> KeychainReader
+    ProviderRegistry --> LocalModelRunner
+    KeychainReader --> ProviderCredential
+    AiProvider --> AuthSession
+    AiProvider --> AiModelInfo
+    AiProvider --> CostEstimate
+    ConsentController --> ContextConsent
+    ConsentController --> ProjectContext
+    CostTracker --> CostEstimate
+    ChatHistory --> AiProvider : per provider
+```
+
+### File Layout Extension
+
+```text
+harmonius_ai/
++-- cloud/
+    +-- provider.rs         # AiProvider trait,
+    |                       # ProviderRegistry
+    +-- claude.rs           # ClaudeAdapter
+    +-- copilot.rs          # CopilotAdapter
+    +-- cursor.rs           # CursorAdapter
+    +-- keychain.rs         # KeychainReader,
+    |                       # ProviderCredential
+    +-- consent.rs          # ConsentController,
+    |                       # ContextConsent
+    +-- context.rs          # ProjectContext,
+    |                       # context assembly
+    +-- chat.rs             # ChatHistory,
+    |                       # ChatPanel state
+    +-- cost.rs             # CostTracker,
+    |                       # CostEstimate
+    +-- local.rs            # LocalModelRunner,
+                            # ModelRegistry
+```
+
 ## Open Questions
 
-1. **LLM provider abstraction depth.** The current design uses a single `ProviderConfig` struct.
-   Different providers (OpenAI, Anthropic, self-hosted vLLM) have different API shapes. Should we
-   define a provider trait with per-provider implementations, or normalize at the HTTP request
-   layer?
+1. **LLM provider abstraction depth.** *Resolved.* The Cloud AI Backend section defines an
+   `AiProvider` trait with per-provider adapter implementations (Claude, Copilot, Cursor) and
+   plugin-based custom adapters. Each adapter handles its provider's authentication, request format,
+   and response parsing independently.
 
 2. **Streaming response handling.** Streamed LLM responses arrive as incremental chunks. Should the
    assistant display partial text to the user during streaming, or wait for the complete response
@@ -1964,9 +2521,10 @@ systems.
    selection, history). What is the maximum number of concurrent agents? Should there be memory
    limits per agent context?
 
-7. **Offline LLM fallback.** The assistant requires API connectivity. Should there be a reduced-
-   capability offline mode (e.g. cached shortcut recommendations, pre-computed help overlays) when
-   the LLM API is unreachable?
+7. **Offline LLM fallback.** *Resolved.* F-15.23.7 defines local inference fallback using optional
+   downloadable models via the launcher (F-15.15.1). Local models provide shortcut suggestions,
+   simple graph completions, and basic Q&A via platform GPU compute (Metal, Vulkan) with CPU
+   fallback. The engine functions fully without any AI provider configured.
 
 8. **Review workflow notification.** When an asset is routed to review, how are reviewers notified?
    Should this integrate with the editor's notification system, or with external tools (Slack,
@@ -1977,3 +2535,20 @@ systems.
 
 10. **Token cost attribution.** Token usage is tracked per user. Should cost attribution also track
     per-project, per-team, or per-agent granularity for enterprise billing?
+
+11. **Provider credential rotation.** OAuth tokens expire. Should the `KeychainReader` support
+    automatic refresh flows, or should the user be prompted to re-authenticate when a token expires
+    mid-session?
+
+12. **Local model quality threshold.** When the cloud provider is unreachable and the local fallback
+    activates, some operations (content generation) may produce unacceptable quality. Should the
+    fallback restrict which features are available locally versus showing a "cloud required"
+    message?
+
+13. **Context injection size limits.** Large projects may have thousands of entities and deep undo
+    histories. What is the maximum context size (in tokens) sent per request? Should the context
+    injector truncate or summarize when the limit is exceeded?
+
+14. **Multi-provider concurrent sessions.** Should the editor support simultaneous sessions with
+    multiple providers (e.g. Claude for chat, Copilot for graph completions), or enforce a single
+    active provider at a time?

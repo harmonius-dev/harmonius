@@ -24,8 +24,8 @@ See [personas.md](personas.md) for the complete persona catalog (27 personas).
 | 12 | [Content Pipeline](content-pipeline/) | 7 | 144 |
 | 13 | [Game Framework](game-framework/) | 28 | 1524 |
 | 14 | [Platform](platform/) | 6 | 91 |
-| 15 | [Tools & Editor](tools-editor/) | 19 | 644 |
-| | **Total** | **139** | **5,859** |
+| 15 | [Tools & Editor](tools-editor/) | 20 | 666 |
+| | **Total** | **140** | **5,881** |
 
 ## 1. Core Runtime
 
@@ -240,3 +240,4 @@ See [personas.md](personas.md) for the complete persona catalog (27 personas).
 | [material-editor.md](tools-editor/material-editor.md) | Material Editor | 24 |
 | [mod-support.md](tools-editor/mod-support.md) | Mod Support | 24 |
 | [localization-editor.md](tools-editor/localization-editor.md) | Localization Editor | 12 |
+| [cloud-build.md](tools-editor/cloud-build.md) | Cloud Build Service | 22 |

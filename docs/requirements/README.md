@@ -1747,6 +1747,15 @@ features in [docs/features/](../features/).
 | tools-editor | server-infrastructure | R-15.18.10 | Enterprise Security Configuration |
 | tools-editor | server-infrastructure | R-15.18.NF1 | Deployment Time |
 | tools-editor | server-infrastructure | R-15.18.NF2 | Free Tier Monthly Cost |
+| tools-editor | cloud-build | R-15.24.1 | Cloud Build Service |
+| tools-editor | cloud-build | R-15.24.2 | Platform Toolchain Containers |
+| tools-editor | cloud-build | R-15.24.3 | Cross-Platform Shader Compilation |
+| tools-editor | cloud-build | R-15.24.4 | Remote Code Signing |
+| tools-editor | cloud-build | R-15.24.5 | Signing Credential Vault |
+| tools-editor | cloud-build | R-15.24.6 | Local Development Mode |
+| tools-editor | cloud-build | R-15.24.7 | Deterministic Shader Output |
+| tools-editor | cloud-build | R-15.24.8 | Build Artifact Storage and Distribution |
+| tools-editor | cloud-build | R-15.24.9 | Build Pipeline Visualization |
 | cross-cutting | cross-cutting | R-X.1.1 | Frame Time Budget Allocation |
 | cross-cutting | cross-cutting | R-X.1.2 | VRAM Budget Allocation |
 | cross-cutting | cross-cutting | R-X.1.3 | System RAM Budget Allocation |

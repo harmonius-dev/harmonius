@@ -35,6 +35,7 @@ support contracts, and optional managed hosting.
 | External store purchases | We take no commission on FAB, Synty, TurboSquid, or any third-party store purchases |
 | AI content generation | Runs locally on user hardware; no cloud dependency, no per-generation fee |
 | Self-hosting (AWS CDK) | Full CDK stacks provided; user pays only AWS infrastructure costs |
+| All server services | Build cache, collaboration, matchmaking, asset store -- all open source and free to self-host |
 | Marketplace commission | No built-in paid marketplace; the open source store is free and external stores handle their own payments |
 
 ## 1. Component Classification
@@ -70,24 +71,44 @@ requirements) and the optional managed hosting service.
 | Platform (windowing, OS) | Open Source (Apache 2.0) | Platform abstraction must be portable across all supported operating systems. |
 | Editor (scene, material editors) | Open Source (Apache 2.0) | Full editor source enables deep customization and community-driven extensions. |
 | Logic Graph system | Open Source (Apache 2.0) | Core no-code promise; open source enables custom node authoring by the community. |
-| Collaboration service (CRDT, cloud) | Open Source (Apache 2.0) | Self-hosted via AWS CDK. Managed hosting available for convenience. |
-| Shared build cache | Open Source (Apache 2.0) | Self-hosted via AWS CDK. Managed hosting available for convenience. |
-| Asset marketplace | Open Source (Apache 2.0) | Self-hosted via AWS CDK. Managed hosting available for convenience. |
+| Collaboration service (CRDT, cloud) | Open Source (Apache 2.0) | Self-hosted via AWS CDK with open-source deps (PostgreSQL, Redis, NATS). Managed hosting available for convenience. |
+| Shared build cache | Open Source (Apache 2.0) | Self-hosted via AWS CDK with S3-compatible storage and Redis index. Managed hosting available for convenience. |
+| Matchmaking service | Open Source (Apache 2.0) | Self-hosted via AWS CDK with PostgreSQL, Redis, and NATS. Managed hosting available for convenience. |
+| Asset marketplace | Open Source (Apache 2.0) | Self-hosted via AWS CDK with PostgreSQL, OpenSearch, and S3. Managed hosting available for convenience. |
 | Universe generation server | Open Source (Apache 2.0) | Self-hosted via AWS CDK. Managed hosting available for convenience. |
 | Mod hosting and moderation | Open Source (Apache 2.0) | Self-hosted via AWS CDK. Managed hosting available for convenience. |
 | AI assistant (LLM-based) | Open Source (Apache 2.0) | Self-hosted with user-provided LLM API keys. Managed hosting available. |
+| CDK deployment stacks | Open Source (Apache 2.0) | TypeScript CDK stacks using exclusively open-source dependencies. Free on AWS Marketplace. |
+| Monitoring stack | Open Source (Apache 2.0) | Prometheus + Grafana + Loki. Self-hosted via AWS CDK. No CloudWatch dependency. |
 | Console backends (PS5, Xbox, Switch) | Proprietary (NDA-required) | Platform holder NDAs prohibit open-sourcing console SDKs. |
 | Managed hosting service | Proprietary SaaS (optional) | Convenience service for teams who prefer not to self-host on AWS. |
+
+### Open-Source Service Dependencies
+
+All self-hosted services use exclusively open-source software. No proprietary AWS services beyond
+S3, EC2, ECS, and RDS for PostgreSQL.
+
+| Service Need | Open-Source Choice | Proprietary Avoided |
+|--------------|--------------------|--------------------|
+| Database | PostgreSQL (RDS) | Aurora, DynamoDB |
+| Cache | Redis / Valkey (ElastiCache) | Proprietary ElastiCache protocol |
+| Auth | Keycloak (ECS) | Cognito |
+| Message queue | NATS (ECS) | SQS, SNS |
+| Object storage | S3-compatible API | (S3 retained -- standard API, MinIO-compatible) |
+| Search | OpenSearch | CloudSearch |
+| Monitoring | Grafana + Prometheus + Loki (ECS) | CloudWatch |
+| Git hosting | Forgejo (ECS/EC2) | CodeCommit |
+| CI/CD | Forgejo Actions | CodePipeline, CodeBuild |
 
 ### Classification Summary
 
 | Tier | Count | Components |
 |------|-------|------------|
-| Open Source (Apache 2.0) | 21 | All engine, editor, server, and tooling components |
+| Open Source (Apache 2.0) | 24 | All engine, editor, server, monitoring, and tooling components |
 | Proprietary (NDA-required) | 1 | Console backends (PS5, Xbox, Switch SDKs) |
 | Proprietary SaaS (optional) | 1 | Managed hosting service |
 
-Open-sourcing 21 of 23 components (91%) under Apache 2.0 maximizes adoption and community trust. The
+Open-sourcing 24 of 26 components (92%) under Apache 2.0 maximizes adoption and community trust. The
 only proprietary components exist due to legal constraints (console NDAs) or as an optional
 convenience service (managed hosting).
 
@@ -119,20 +140,36 @@ convenience service (managed hosting).
    take no cut.
 6. **AI content generation is free** -- Local inference runs on user hardware with no cloud fees.
 
+### Self-Hosted Scaling Profiles (AWS Infrastructure Cost)
+
+All services are free and open source. Users pay only AWS infrastructure costs. Four profiles match
+team size and budget.
+
+| Profile | Target | Est. Monthly Cost | Instance Sizes | AZs |
+|---------|--------|-------------------|---------------|-----|
+| Solo | 1 user | ~$20 | t4g.micro | 1 |
+| Team | 2-10 users | ~$100 | t4g.small | 1 |
+| Studio | 10-50 users | ~$500 | t4g.medium / m6g.large | 2 |
+| Production | 50+ users | ~$2,000+ | m6g.xlarge+, auto-scaling | 3 |
+
 ### Comparison: Self-Hosted vs. Managed Hosting
 
 | Aspect | Self-hosted (AWS CDK) | Managed hosting ($29/user/mo) |
 |--------|----------------------|-------------------------------|
-| Setup effort | Deploy CDK stacks (1-2 hours) | Zero; instant provisioning |
-| Monthly cost (10-person team) | ~$500-$2,000 (AWS direct) | $290 |
-| Monthly cost (50-person team) | ~$2,000-$5,000 (AWS direct) | $1,450 |
+| Setup effort | 1-click Marketplace or CDK CLI | Zero; instant provisioning |
+| Monthly cost (solo) | ~$20 (Solo profile) | $29 |
+| Monthly cost (10-person team) | ~$100 (Team profile) | $290 |
+| Monthly cost (50-person team) | ~$500 (Studio profile) | $1,450 |
+| Dependencies | All open source (PostgreSQL, Redis, NATS, Keycloak) | Fully managed by Harmonius |
 | Maintenance | Team manages updates, scaling | Fully managed by Harmonius |
 | Data sovereignty | Full control over data location | US/EU region selection |
-| Customization | Full (modify any service) | Standard configuration only |
+| Customization | Full (modify any service, swap deps) | Standard configuration only |
+| Portability | Migrate to any cloud or on-prem (MinIO, bare metal) | Locked to Harmonius managed service |
 | SLA | Per AWS SLA | 99.9% uptime guarantee |
 
-For small teams (under 20), managed hosting is often cheaper than self-hosting due to shared
-infrastructure amortization. Larger studios typically self-host for cost savings and control.
+For solo developers, self-hosting on the Solo profile
+(~$20/mo) is cheaper than managed hosting ($29/mo). For larger teams, self-hosting scales more
+cost-effectively. Managed hosting remains attractive for teams that want zero operational overhead.
 
 ## 3. Per-User Server Costs (Managed Hosting)
 
@@ -332,7 +369,7 @@ more heavily on console SDK adoption and enterprise support contracts.
 | Source access | Fully open source (Apache 2.0) | Source-available (custom EULA) | Closed runtime | Fully open source (MIT) | Fully open source (Apache 2.0) |
 | Royalties | None | 5% above $1M (3.5% with EGS) | None (subscription model) | None | None |
 | Engine cost | Free forever | Free under $1M revenue | $2,200/seat/yr (Pro) | Free forever | Free forever |
-| Cloud services | All open source; self-host or managed | None built-in | Unity Cloud (proprietary) | None | None |
+| Cloud services | All open source (PostgreSQL, Redis, NATS, Keycloak); self-host or managed | None built-in | Unity Cloud (proprietary) | None | None |
 | Multiplayer | Built-in transport + replication | Basic; use third-party | Netcode package | High-level only | Basic |
 | Collaboration | Built-in CRDT sync (open source) | None | Unity DevOps (proprietary) | None | None |
 | Build cache | Built-in shared cache (open source) | None | Unity Accelerator (proprietary) | None | None |
@@ -341,7 +378,8 @@ more heavily on console SDK adoption and enterprise support contracts.
 | No-code tools | Logic Graph (open source) | Blueprints (source-available) | Visual Scripting (deprecated) | VisualScript | Script Canvas |
 | AI assistant | Open source (self-hosted) | None built-in | Muse AI (limited) | None | None |
 | Mod support | Built-in hosting (open source) | Limited (game-specific) | Limited (game-specific) | None built-in | None built-in |
-| Deployment infra | AWS CDK stacks (open source) | None | Unity Cloud (proprietary) | None | None |
+| Deployment infra | AWS CDK stacks (open-source deps: PostgreSQL, Redis, NATS, Keycloak) | None | Unity Cloud (proprietary) | None | None |
+| Matchmaking | Built-in open-source matchmaker (PostgreSQL, Redis, NATS) | None built-in | None built-in | None | None |
 
 ### Key Differentiators
 
@@ -349,16 +387,20 @@ more heavily on console SDK adoption and enterprise support contracts.
    Unity (closed source, per-seat fees), Harmonius is Apache 2.0 with zero royalties. Developers
    keep 100% of game revenue.
 2. **Built-in multiplayer and collaboration infrastructure** -- No other open-source engine ships
-   with production-ready networking, CRDT collaboration, shared build cache, and deployment
-   infrastructure. Godot lacks these entirely; Unreal requires third-party solutions.
-3. **Self-hostable everything** -- Every server component ships with AWS CDK stacks. Teams are never
-   locked into Harmonius-managed services, unlike Unity Cloud.
-4. **AAA-grade features in an open-source engine** -- Harmonius bridges the gap between Godot (open
+   with production-ready networking, CRDT collaboration, shared build cache, matchmaking, and
+   deployment infrastructure. Godot lacks these entirely; Unreal requires third-party solutions.
+3. **Self-hostable everything with open-source deps** -- Every server component uses open-source
+   dependencies (PostgreSQL, Redis, NATS, Keycloak, Forgejo, Grafana). Teams can migrate to any
+   cloud or on-premises deployment. Unlike Unity Cloud, there is zero vendor lock-in.
+4. **1-click deployment** -- Free AWS Marketplace listing with guided wizard deploys all services.
+   Solo developers pay ~$20/mo. No DevOps expertise required.
+5. **AAA-grade features in an open-source engine** -- Harmonius bridges the gap between Godot (open
    source but limited feature set) and Unreal (AAA features but proprietary with royalties).
    Features like GPU-driven rendering, ray tracing, advanced physics, and universe generation exceed
    what Godot offers.
-5. **No vendor lock-in** -- Apache 2.0 license guarantees perpetual access. No pricing changes, no
-   retroactive terms, no trust erosion. The Unity pricing crisis of 2023 cannot happen.
+6. **No vendor lock-in** -- Apache 2.0 license guarantees perpetual access. No pricing changes, no
+   retroactive terms, no trust erosion. The Unity pricing crisis of 2023 cannot happen. All server
+   dependencies are portable open-source software.
 
 ### Competitive Positioning Matrix
 

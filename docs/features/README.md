@@ -1406,3 +1406,10 @@ from [docs/requirements/](../requirements/).
 | tools-editor | documentation | F-15.19.5 | Contextual Help and Tooltip System |
 | tools-editor | documentation | F-15.19.6 | Sample Projects and Template Library |
 | tools-editor | documentation | F-15.19.7 | Inline Code Examples in Documentation |
+| tools-editor | cloud-build | F-15.24.1 | Cloud Build Service |
+| tools-editor | cloud-build | F-15.24.2 | Platform Toolchain Containers |
+| tools-editor | cloud-build | F-15.24.3 | Cross-Platform Shader Compilation |
+| tools-editor | cloud-build | F-15.24.4 | Remote Code Signing |
+| tools-editor | cloud-build | F-15.24.5 | Build Artifact Distribution |
+| tools-editor | cloud-build | F-15.24.6 | Local Development Mode |
+| tools-editor | cloud-build | F-15.24.7 | Build Pipeline Visualization |

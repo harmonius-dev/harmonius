@@ -2,96 +2,32 @@
 
 ## Sound Sources
 
-### F-5.1.1 Sound Source Component
-
-Attach point, line, and area sound emitters to entities via an ECS component, each carrying gain,
-pitch, looping, and attenuation references. In an MMO world with hundreds of ambient emitters
-(campfires, waterfalls, NPC chatter), a lightweight component is essential to keep per-entity
-overhead minimal while feeding the spatial audio and mixer systems.
-
-- **Requirements:** R-5.1.1
-- **Dependencies:** None
-- **Platform notes:** Sound source component is lightweight on all platforms. Active emitter count
-  governed by voice management budget (see F-5.1.4).
-
-### F-5.1.2 Listener Component
-
-Designate one or more listener entities that define the player's auditory perspective, including
-position, orientation, and velocity for Doppler calculations. Multiple listeners support
-split-screen and spectator modes; the default case assigns a single listener to the active camera.
-
-- **Requirements:** R-5.1.2
-- **Dependencies:** F-5.1.1
-- **Platform notes:** Listener component is lightweight on all platforms. Multiple listeners
-  supported on all tiers (split-screen may be limited on mobile by voice budget).
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-5.1.1 | Sound Source Component | Attach point, line, and area sound emitters to entities via an ECS component, each carrying gain, pitch, looping, and attenuation references. Lightweight component essential for hundreds of ambient emitters (campfires, waterfalls, NPC chatter). | R-5.1.1 | None | Lightweight on all platforms. Active emitter count governed by voice management budget (see F-5.1.4). |
+| F-5.1.2 | Listener Component | Designate one or more listener entities defining the player's auditory perspective, including position, orientation, and velocity for Doppler. Multiple listeners support split-screen and spectator modes; default assigns to the active camera. | R-5.1.2 | F-5.1.1 | Lightweight on all platforms. Multiple listeners supported on all tiers (split-screen may be limited on mobile by voice budget). |
 
 ## Mixer Bus Hierarchy
 
-### F-5.1.3 Hierarchical Mixer Bus Graph
-
-Provide a directed acyclic graph of mixer buses (master, music, SFX, ambient, voice, UI) where each
-bus carries gain, mute, solo, and a chain of insert effects. Child buses inherit parent gain for
-global volume control, and buses can be added or rewired at runtime to support dynamic mix states
-such as underwater or pause-menu ducking.
-
-- **Requirements:** R-5.1.3
-- **Dependencies:** None
-- **Platform notes:** Mixer bus hierarchy depth uniform across platforms. Insert effect chain length
-  per bus scales per tier (see F-5.3.8). Mobile limits total insert count.
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-5.1.3 | Hierarchical Mixer Bus Graph | DAG of mixer buses (master, music, SFX, ambient, voice, UI) with gain, mute, solo, and insert effect chains. Child buses inherit parent gain. Buses can be added or rewired at runtime for dynamic mix states (underwater, pause-menu ducking). | R-5.1.3 | None | Hierarchy depth uniform across platforms. Insert effect chain length scales per tier (see F-5.3.8). Mobile limits total insert count. |
 
 ## Voice Management
 
-### F-5.1.4 Voice Management and Priority System
-
-Manage a fixed pool of hardware and software voices with priority-based allocation, virtualization,
-and stealing. Each sound source declares a priority class (critical, high, medium, low) and an
-audibility score derived from distance and occlusion. When the voice budget is exceeded, the
-lowest-scoring voices are virtualized (tracked but silent) and restored seamlessly when headroom
-returns. MMO raids with dozens of spell effects, ambient loops, and voice chat demand strict
-budgeting.
-
-- **Requirements:** R-5.1.4
-- **Dependencies:** F-5.1.1, F-5.1.3
-- **Platform notes:** Voice pool size scales per tier: mobile 16-32 voices, Switch 32-64, desktop
-  128-256. Virtualization threshold adjusted per tier.
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-5.1.4 | Voice Management and Priority System | Fixed pool of voices with priority-based allocation, virtualization, and stealing. Each source declares a priority class and audibility score from distance and occlusion. Lowest-scoring voices are virtualized and restored seamlessly when headroom returns. | R-5.1.4 | F-5.1.1, F-5.1.3 | Voice pool size scales per tier: mobile 16-32, Switch 32-64, desktop 128-256. Virtualization threshold adjusted per tier. |
 
 ## Playback
 
-### F-5.1.5 Streaming Playback
-
-Stream long-duration audio assets (music, ambience, dialogue) from disk in small ring-buffer chunks
-using platform-native async I/O, avoiding the need to decode and hold entire files in memory.
-Prefetch hinting allows the engine to begin streaming before playback is triggered, eliminating
-audible startup latency for cinematic cues and zone transitions.
-
-- **Requirements:** R-5.1.5
-- **Dependencies:** F-5.1.1
-- **Platform notes:** Uses I/O completion ports on Windows, Grand Central Dispatch async I/O on
-  macOS, and io_uring on Linux.
-
-### F-5.1.6 Sample-Accurate Scheduling
-
-Schedule sound start, stop, and parameter changes with sample-accurate timing relative to the audio
-clock, enabling tight synchronization between layered loops, musical cues, and gameplay events.
-Commands are queued on the game thread and executed on the audio thread at the precise sample offset
-within the next buffer.
-
-- **Requirements:** R-5.1.6
-- **Dependencies:** F-5.1.1, F-5.1.3
-- **Platform notes:** Sample-accurate scheduling is supported on all platforms. Audio buffer size
-  may be larger on mobile (higher latency) to reduce CPU wake-ups.
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-5.1.5 | Streaming Playback | Stream long-duration audio (music, ambience, dialogue) from disk in ring-buffer chunks using platform-native async I/O. Prefetch hinting begins streaming before playback, eliminating startup latency for cinematic cues and zone transitions. | R-5.1.5 | F-5.1.1 | Uses IOCP on Windows, GCD async I/O on macOS, io_uring on Linux. |
+| F-5.1.6 | Sample-Accurate Scheduling | Schedule sound start, stop, and parameter changes at precise sample offsets within the audio buffer, enabling tight synchronization between layered loops, musical cues, and gameplay events. Lock-free SPSC command queue between game thread and audio thread. | R-5.1.6 | F-5.1.1, F-5.1.3 | Supported on all platforms. Audio buffer size may be larger on mobile (higher latency) to reduce CPU wake-ups. |
 
 ## Formats and Codecs
 
-### F-5.1.7 Audio Format and Codec Support
-
-Decode PCM (WAV), Vorbis, Opus, and FLAC at load or stream time, with a codec registry that is
-extensible via plugins. Opus serves as the primary codec for voice chat and bandwidth-constrained
-streaming; Vorbis covers legacy assets; FLAC provides lossless reference audio. Format metadata
-(sample rate, channel count, loop points) is extracted during asset import and cached in the asset
-registry.
-
-- **Requirements:** R-5.1.7
-- **Dependencies:** F-5.1.5
-- **Platform notes:** Platform-supplied hardware decoders (e.g., Apple Audio Toolbox for AAC on
-  macOS/iOS) may be used opportunistically but are never required.
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-5.1.7 | Audio Format and Codec Support | Decode PCM (WAV), Vorbis, Opus, and FLAC at load or stream time, with an extensible codec registry. Opus for voice chat, Vorbis for legacy assets, FLAC for lossless reference audio. Format metadata extracted during asset import and cached. | R-5.1.7 | F-5.1.5 | Platform hardware decoders (e.g., Apple Audio Toolbox) used opportunistically but never required. |

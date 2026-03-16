@@ -610,6 +610,9 @@ pub enum BuildJobType {
     ShaderCompile,
     /// Logic graph bytecode generation.
     LogicGraphCompile,
+    /// Console SDK compilation (PS5, Xbox, Switch).
+    /// Runs only on build workers with licensed SDKs.
+    ConsoleBuild,
 }
 
 /// Result of a build job.
@@ -1273,13 +1276,222 @@ The `CollabClient` protocol matches the collaboration design (F-15.12). The moni
 metrics compatible with the profiler's remote streaming format (F-15.5.7). The CDK TypeScript is an
 acceptable cohesion exception given that AWS CDK has no mature Rust alternative.
 
+## AWS CDK Open-Source Architecture
+
+### Requirements Trace
+
+| Feature | Requirement | Description |
+|---------|-------------|-------------|
+| F-15.18.11 | R-15.18.11 | CDK stacks with open-source-only dependencies |
+| F-15.18.12 | R-15.18.12 | 1-click AWS Marketplace deployment |
+| F-15.18.13 | R-15.18.13 | Grafana-based service admin dashboard |
+| F-15.18.14 | R-15.18.14 | Scaling profiles (Solo/Team/Studio/Production) |
+| F-15.18.15 | R-15.18.15 | Self-hosted build cache (S3 + Redis) |
+| F-15.18.16 | R-15.18.16 | Self-hosted collaboration (PostgreSQL + Redis + NATS) |
+| F-15.18.17 | R-15.18.17 | Self-hosted matchmaking (PostgreSQL + Redis + NATS) |
+| F-15.18.18 | R-15.18.18 | Self-hosted asset store (PostgreSQL + OpenSearch + S3) |
+| F-15.18.19 | R-15.18.19 | Health monitoring (Prometheus + Grafana + Loki) |
+| F-15.18.20 | R-15.18.20 | Multi-region deployment with failover |
+
+### Open-Source Dependency Map
+
+| Service Need | Open-Source Choice | AWS Managed Option | Notes |
+|--------------|--------------------|--------------------|-------|
+| Database | PostgreSQL | RDS for PostgreSQL | No Aurora, no DynamoDB |
+| Cache | Redis / Valkey | ElastiCache for Redis | No proprietary protocol |
+| Auth | Keycloak | Keycloak on ECS | No Cognito |
+| Message queue | NATS | Amazon MQ for NATS | No SQS, no SNS |
+| Object storage | S3-compatible API | S3 | MinIO for local dev |
+| Search | OpenSearch | Amazon OpenSearch | No CloudSearch |
+| Monitoring | Grafana + Prometheus | Self-hosted on ECS | No CloudWatch dashboards |
+| Logging | Loki | Self-hosted on ECS | No CloudWatch Logs |
+| Git hosting | Forgejo | Self-hosted on ECS/EC2 | No CodeCommit |
+| CI/CD | Forgejo Actions | Self-hosted runners | No CodePipeline |
+
+### CDK Stack Dependency Graph (Open-Source)
+
+```mermaid
+graph TD
+    subgraph "CDK App"
+        APP[HarmoniusCdkApp]
+    end
+
+    subgraph "Foundation Stacks"
+        NET[NetworkStack<br/>VPC, Subnets, NAT]
+        SEC[SecurityStack<br/>IAM, KMS, WAF]
+        DNS[DnsStack<br/>Route 53, ACM]
+    end
+
+    subgraph "Open-Source Data Stacks"
+        PG[PostgresStack<br/>RDS PostgreSQL]
+        RED[RedisStack<br/>ElastiCache Redis/Valkey]
+        S3S[StorageStack<br/>S3 Buckets]
+        OS[OpenSearchStack<br/>Amazon OpenSearch]
+    end
+
+    subgraph "Open-Source Auth & Messaging"
+        KC[KeycloakStack<br/>ECS Fargate]
+        NATS[NatsStack<br/>ECS Fargate Cluster]
+    end
+
+    subgraph "Service Stacks"
+        COL[CollaborationStack<br/>CRDT Server on ECS]
+        GIT[ForgejoStack<br/>Git + LFS on ECS]
+        BLD[BuildFarmStack<br/>EC2 ASG + NATS]
+        BCH[BuildCacheStack<br/>REST API on ECS]
+        MM[MatchmakingStack<br/>ECS Fargate]
+        AST[AssetStoreStack<br/>ECS Fargate]
+    end
+
+    subgraph "Monitoring Stacks"
+        PROM[PrometheusStack<br/>ECS Fargate]
+        GRAF[GrafanaStack<br/>ECS Fargate]
+        LOKI[LokiStack<br/>ECS Fargate + S3]
+    end
+
+    APP --> NET
+    APP --> SEC
+    APP --> DNS
+    NET --> PG
+    NET --> RED
+    NET --> S3S
+    NET --> OS
+    SEC --> PG
+    SEC --> S3S
+    NET --> KC
+    NET --> NATS
+    PG --> KC
+    KC --> COL
+    KC --> GIT
+    KC --> BCH
+    KC --> MM
+    KC --> AST
+    PG --> COL
+    PG --> GIT
+    PG --> MM
+    PG --> AST
+    RED --> COL
+    RED --> BCH
+    RED --> MM
+    NATS --> COL
+    NATS --> BLD
+    NATS --> MM
+    S3S --> GIT
+    S3S --> BLD
+    S3S --> BCH
+    S3S --> AST
+    OS --> AST
+    PROM --> GRAF
+    LOKI --> GRAF
+```
+
+### Scaling Profile Comparison
+
+| Resource | Solo (~$20/mo) | Team (~$100/mo) | Studio (~$500/mo) | Production (~$2000+/mo) |
+|----------|----------------|-----------------|--------------------|-----------------------|
+| PostgreSQL | db.t4g.micro, 20 GB, single-AZ | db.t4g.small, 50 GB, single-AZ | db.t4g.medium, 200 GB, multi-AZ | db.r6g.large, 500 GB, multi-AZ, read replicas |
+| Redis/Valkey | cache.t4g.micro, 1 node | cache.t4g.small, 1 node | cache.t4g.medium, 2 nodes | cache.r6g.large, 3-node cluster |
+| Keycloak | 0.25 vCPU Fargate | 0.5 vCPU Fargate | 1 vCPU, 2 tasks | 2 vCPU, 4 tasks, multi-AZ |
+| NATS | 0.25 vCPU Fargate, 1 node | 0.5 vCPU, 1 node | 1 vCPU, 3-node cluster | 2 vCPU, 5-node cluster, multi-region |
+| Forgejo | t4g.micro EC2, 10 GB | t4g.small, 50 GB | t4g.medium, 200 GB | m6g.large, unlimited, CDN |
+| Build farm | t4g.micro, 1 instance | t4g.small, 1-3 ASG | c6g.large, 2-8 ASG | c6g.2xlarge + g5.xlarge, 4-20 ASG |
+| Collaboration | 0.25 vCPU, 1 task | 0.5 vCPU, 1-2 tasks | 1 vCPU, 2-6 tasks | 2 vCPU, 4-20 tasks, multi-AZ |
+| OpenSearch | None (SQLite) | t3.small.search, 1 node | t3.medium.search, 2 nodes | r6g.large.search, 3-node cluster |
+| Monitoring | Grafana only, 0.25 vCPU | Grafana + Prometheus | Full stack (Prom + Grafana + Loki) | Full stack, multi-AZ, 30-day retention |
+| S3 storage | 10 GB | 100 GB | 500 GB | Unlimited, CloudFront CDN |
+| Users | 1 | 2-10 | 10-50 | 50+ |
+| AZs | 1 | 1 | 2 | 3 |
+
+### Open-Source Service Deployment Sequence
+
+```mermaid
+sequenceDiagram
+    participant DEV as Developer
+    participant MKT as AWS Marketplace
+    participant CF as CloudFormation
+    participant AWS as AWS Services
+
+    DEV->>MKT: Launch Harmonius (free product)
+    MKT->>DEV: Guided wizard
+    DEV->>MKT: Select profile (Solo/Team/Studio/Prod)
+    DEV->>MKT: Select region, domain, services
+    MKT->>CF: Deploy CDK stacks
+
+    par Foundation
+        CF->>AWS: NetworkStack (VPC, subnets)
+        CF->>AWS: SecurityStack (IAM, KMS)
+    end
+
+    par Data Layer
+        CF->>AWS: PostgresStack (RDS PostgreSQL)
+        CF->>AWS: RedisStack (ElastiCache Redis)
+        CF->>AWS: StorageStack (S3 buckets)
+    end
+
+    par Auth & Messaging
+        CF->>AWS: KeycloakStack (ECS Fargate)
+        CF->>AWS: NatsStack (ECS Fargate)
+    end
+
+    par Services
+        CF->>AWS: ForgejoStack (Git + LFS)
+        CF->>AWS: CollaborationStack (CRDT)
+        CF->>AWS: BuildCacheStack (REST API)
+        CF->>AWS: BuildFarmStack (EC2 ASG)
+        CF->>AWS: MatchmakingStack (ECS)
+        CF->>AWS: AssetStoreStack (ECS)
+    end
+
+    CF->>AWS: PrometheusStack + GrafanaStack + LokiStack
+    CF-->>DEV: Endpoints, Keycloak admin URL, Grafana URL
+```
+
+### Module Layout (Open-Source Stacks)
+
+```text
+harmonius_infra/
+├── lib/
+│   ├── config.ts               # ScalingProfile enum
+│   ├── foundation/
+│   │   ├── network.ts          # VPC, subnets, NAT
+│   │   ├── security.ts         # IAM, KMS, WAF
+│   │   └── dns.ts              # Route 53, ACM
+│   ├── data/
+│   │   ├── postgres.ts         # RDS PostgreSQL
+│   │   ├── redis.ts            # ElastiCache Redis/Valkey
+│   │   ├── storage.ts          # S3 buckets
+│   │   └── opensearch.ts       # Amazon OpenSearch
+│   ├── auth/
+│   │   └── keycloak.ts         # Keycloak on ECS Fargate
+│   ├── messaging/
+│   │   └── nats.ts             # NATS on ECS Fargate
+│   ├── services/
+│   │   ├── collaboration.ts    # CRDT server on ECS
+│   │   ├── forgejo.ts          # Git + LFS on ECS/EC2
+│   │   ├── build-farm.ts       # EC2 ASG + NATS queue
+│   │   ├── build-cache.ts      # REST API on ECS
+│   │   ├── matchmaking.ts      # Matchmaker on ECS
+│   │   └── asset-store.ts      # Asset store on ECS
+│   ├── monitoring/
+│   │   ├── prometheus.ts       # Prometheus on ECS
+│   │   ├── grafana.ts          # Grafana on ECS
+│   │   └── loki.ts             # Loki on ECS + S3
+│   └── profiles/
+│       ├── solo.ts             # ~$20/mo defaults
+│       ├── team.ts             # ~$100/mo defaults
+│       ├── studio.ts           # ~$500/mo defaults
+│       └── production.ts       # ~$2000+/mo defaults
+└── marketplace/
+    └── cloudformation.yaml     # Marketplace wrapper template
+```
+
 ## Open Questions
 
 1. **Forgejo vs Gitea** -- Forgejo is the community fork of Gitea. Both expose a GitHub-compatible
    API. Forgejo has stronger community governance. Need to evaluate feature parity for LFS locking.
 2. **Spot instance interruption handling** -- Build farm uses spot instances for cost savings. Need
-   a strategy for job retry when spot instances are reclaimed (SQS visibility timeout + dead-letter
-   queue).
+   a strategy for job retry when spot instances are reclaimed (NATS redelivery + dead-letter
+   subject).
 3. **Collaboration server horizontal scaling** -- WebSocket sessions are stateful. Need sticky
    sessions on the ALB or a shared session store (Redis) for Fargate task migration.
 4. **macOS signing in CI** -- iOS and macOS signing requires a macOS build agent. AWS offers Mac EC2
@@ -1289,6 +1501,14 @@ acceptable cohesion exception given that AWS CDK has no mature Rust alternative.
    exists but is immature. Evaluate switching to Rust CDK when it reaches 1.0.
 6. **Multi-region active-active** -- Current design is active-passive DR. Active-active would reduce
    latency for geographically distributed teams but adds significant complexity (conflict
-   resolution, global DynamoDB tables, RDS Aurora Global).
-7. **Cost alerting** -- Free Tier users need alerts if usage approaches Free Tier limits. AWS
-   Budgets can provide this, but the CDK stack should configure budget alarms automatically.
+   resolution, NATS super-cluster routing, PostgreSQL logical replication).
+7. **Cost alerting** -- Solo/Team profile users need alerts if usage approaches budget thresholds.
+   AWS Budgets can provide this, but the CDK stack should configure budget alarms automatically.
+8. **Valkey vs Redis** -- Valkey is the Linux Foundation fork of Redis after the license change.
+   ElastiCache supports both. Need to track Valkey compatibility with Redis client libraries.
+9. **NATS JetStream persistence** -- NATS JetStream provides durable message streams. Evaluate
+   whether JetStream can replace PostgreSQL for some event-sourced data (build job history, match
+   events) to simplify the data layer.
+10. **Keycloak federation** -- For studios using existing LDAP/SAML/OIDC identity providers,
+    Keycloak supports federation. Document the federation setup for common providers (Okta, Azure
+    AD, Google Workspace).

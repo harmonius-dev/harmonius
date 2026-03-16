@@ -20,6 +20,17 @@
 | F-15.14.6 | R-15.14.6 | Asset bundle and DLC packaging with entitlement gating |
 | F-15.14.7 | R-15.14.7 | Delta patching via content-defined chunking |
 | F-15.14.8 | R-15.14.8 | Store distribution pipeline (Steam, App Store, Windows Store, Xbox) |
+| F-15.14.9 | R-15.14.9 | Host-target build matrix documentation and toolchain requirements |
+
+### Server-Side Console Build Integration
+
+| Feature | Requirement | Description |
+|---------|-------------|-------------|
+| F-14.8.1 | R-14.8.1, R-14.8.2 | Server-side console build service (REST API trigger) |
+| F-14.8.2 | R-14.8.3, R-14.8.4 | Proprietary SDK isolation (zero console code on client) |
+| F-14.8.3 | R-14.8.5, R-14.8.6 | Shared build server (multi-project, priority queue) |
+| F-14.8.4 | R-14.8.7, R-14.8.8 | Remote console deployment (dev kit deploy + output relay) |
+| F-14.8.5 | R-14.8.9, R-14.8.10 | Console build artifacts (S3 storage, retention, manifests) |
 
 ### Mod Support (F-15.16)
 
@@ -1666,6 +1677,102 @@ The packaging pipeline integrates into a CI/CD workflow. Each stage is a discret
 | iOS | No | No | App Store prohibits runtime code loading |
 | Android | No | Limited | Asset-only mods, no logic graphs |
 | Console | No | Requires cert | Platform holder approval per title |
+
+## Host-Target Build Matrix
+
+This section documents which host operating systems can build for which target platforms, both
+locally and via the cloud build service (F-15.24.1). The host performing linking must be compatible
+with the target. Engine developers install platform toolchains locally for their own platform; the
+cloud build service handles cross-platform builds.
+
+> **Cross-references:** Cloud build service features are defined in
+> [F-15.24](../../features/tools-editor/cloud-build.md). Shader compilation pipeline is defined in
+> [F-12.2.9](../../features/content-pipeline/processing.md). Platform SDK integration is defined in
+> [F-14.8](../../features/platform/sdk-integration.md).
+
+### Local Build Matrix
+
+What a developer can build locally on their own machine. Requires installing the platform toolchain.
+The editor indicates which targets build locally vs. via cloud (F-15.24.6).
+
+| Host OS | Target: Windows | Target: macOS | Target: Linux | Target: iOS | Target: Android | Target: PS5 | Target: Xbox | Target: Switch | Target: Web |
+|---------|-----------------|---------------|---------------|-------------|-----------------|-------------|--------------|----------------|-------------|
+| Windows | Yes (MSVC/Clang) | No | No (WSL possible) | No | Yes (NDK) | No | No | No | Yes (Emscripten) |
+| macOS | No | Yes (Xcode/Clang) | No | Yes (Xcode) | Yes (NDK) | No | No | No | Yes (Emscripten) |
+| Linux | No (Wine/cross possible) | No | Yes (Clang/GCC) | No | Yes (NDK) | No | No | No | Yes (Emscripten) |
+
+**Key constraints:**
+
+- **macOS targets** require the Xcode toolchain, which runs only on macOS
+- **Windows targets** require MSVC or Clang-cl, which run only on Windows (cross-compilation from
+  Linux is possible but unsupported)
+- **iOS targets** require Xcode provisioning and codesign, which run only on macOS
+- **Console targets** require licensed platform SDKs that run only on dedicated build hardware
+- **Android and Web targets** are buildable from any host OS via NDK and Emscripten respectively
+
+### Cloud Build Service Matrix
+
+What the cloud build service (F-15.24.1) can build. Cloud workers provision the correct toolchain
+automatically (F-15.24.2). Developers submit build requests via the editor UI or CLI from any host
+OS.
+
+| Cloud Worker | Target: Windows | Target: macOS | Target: Linux | Target: iOS | Target: Android | Target: PS5 | Target: Xbox | Target: Switch | Target: Web |
+|--------------|-----------------|---------------|---------------|-------------|-----------------|-------------|--------------|----------------|-------------|
+| macOS worker | Yes (cross) | Yes | Yes (cross) | Yes | Yes | No* | No* | No* | Yes |
+| Linux worker | Yes (cross-clang) | No | Yes | No | Yes | No* | No* | No* | Yes |
+| Windows worker | Yes | No | Yes (cross) | No | Yes | No* | No* | No* | Yes |
+| Console worker | -- | -- | -- | -- | -- | Yes (licensed) | Yes (licensed) | Yes (licensed) | -- |
+
+*Console targets require a dedicated licensed worker with the platform SDK (F-14.8.1, F-14.8.2).
+Console SDKs are under NDA and cannot run on general-purpose cloud workers.
+
+### Shader Compilation Matrix
+
+Which host can compile HLSL shaders to which target bytecode format. Metal Shader Converter (MSC) is
+macOS-only, making the cloud build service essential for Metal shader compilation from Windows/Linux
+(F-15.24.3, R-15.24.3).
+
+| Host | HLSL to DXIL (DXC) | HLSL to SPIR-V (DXC) | HLSL to Metal IR (MSC) | HLSL to WGSL |
+|------|---------------------|-----------------------|------------------------|--------------|
+| Windows | Yes | Yes | No (MSC macOS only) | Yes |
+| macOS | Yes | Yes | Yes | Yes |
+| Linux | Yes | Yes | No (MSC macOS only) | Yes |
+| Cloud (macOS) | Yes | Yes | Yes | Yes |
+
+> **Note:** Metal Shader Converter is macOS-only. Developers on Windows/Linux MUST use the cloud
+> build service for Metal shader compilation. This is a key reason the cloud build service exists
+> (F-15.24.3).
+
+### Engine Developer Local Requirements
+
+What an engine developer (P-26) needs installed to work on the engine itself. Game developers use
+the cloud build service for cross-platform targets and do not need these toolchains.
+
+| Platform Work | Required Tools | Host OS |
+|---------------|----------------|---------|
+| Rust engine code | Rust toolchain, LLVM | Any |
+| Metal GPU backend | Xcode, Metal SDK, metal-cpp | macOS |
+| Vulkan GPU backend | Vulkan SDK, LLVM | Any |
+| D3D12 GPU backend | Windows SDK, MSVC or Clang | Windows |
+| Swift platform layer | Swift toolchain, Xcode | macOS |
+| C++ FFI bridges | LLVM/Clang, cxx.rs | Any |
+| HLSL shaders | DXC | Any |
+| Metal shaders | DXC + Metal Shader Converter | macOS |
+| TypeScript editor | Node.js, Biome | Any |
+
+### Game Developer Local Requirements
+
+Minimal requirements for game developers (P-15). Most build tasks are handled by the cloud build
+service (F-15.24.1).
+
+| Task | Required Locally | Cloud Alternative |
+|------|------------------|-------------------|
+| Edit game content | Engine editor | -- |
+| Build for own platform | Platform toolchain | Cloud build |
+| Build for other platforms | Nothing | Cloud build (required) |
+| Compile shaders (own platform) | DXC (+ MSC on macOS) | Cloud shader compilation |
+| Compile shaders (other platforms) | Nothing | Cloud shader compilation |
+| Console builds | Nothing | Cloud build (required, licensed worker) |
 
 ## Test Plan
 

@@ -24,6 +24,11 @@
 | F-14.6.5 | R-14.6.5 | US-14.6.5 | Platform matchmaking bridge |
 | F-14.6.6 | R-14.6.6 | US-14.6.6 | Cross-platform progression sync |
 | F-14.6.7 | R-14.6.7 | US-14.6.7 | Mod support abstraction |
+| F-14.8.1 | R-14.8.1, R-14.8.2 | US-14.8.1, 2, 3 | Server-side console build service |
+| F-14.8.2 | R-14.8.3, R-14.8.4 | US-14.8.8, 9, 12 | Proprietary SDK isolation |
+| F-14.8.3 | R-14.8.5, R-14.8.6 | US-14.8.4, 5, 6, 7 | Shared build server |
+| F-14.8.4 | R-14.8.7, R-14.8.8 | US-14.8.10, 11 | Remote console deployment |
+| F-14.8.5 | R-14.8.9, R-14.8.10 | US-14.8.10 | Console build artifacts |
 
 ## Overview
 
@@ -975,6 +980,129 @@ specified in constraints.md.
 | Friends | Cache last-known list |
 | Mods | Use locally cached mods |
 
+## Server-Side Proprietary Architecture
+
+The engine is **100% open source**. Every developer builds and contributes to the engine without
+proprietary console SDK code. All console-specific compilation, signing, and packaging runs
+exclusively on a shared build server that holds the console SDK licenses.
+
+### Client vs Server Responsibility
+
+| Component | Client (Open Source) | Server (Proprietary) |
+|-----------|----------------------|----------------------|
+| Platform trait definitions | Abstract `PlatformServices` trait and sub-traits | Console SDK implementations (PSN, Xbox, Nintendo) |
+| Build pipeline | Trigger build via REST API + monitor status | Compile against console SDKs, link, package, sign |
+| SDK headers/libraries | None -- zero proprietary code | PlayStation SDK, Xbox GDK, Nintendo SDK |
+| Console package formats | Not present in source tree | .pkg (PS5), .xvc (Xbox), .nsp (Switch) |
+| License required | No | Yes (1 per console platform per server) |
+| Dev kit deployment | Request deploy via REST API | Transfer package to dev kit, relay console output |
+| Artifact storage | Download from S3 | Upload signed packages to S3 |
+
+### Build Flow
+
+```mermaid
+sequenceDiagram
+    participant ED as Editor (Open Source)
+    participant API as Build Server REST API
+    participant BS as Build Server (Proprietary SDKs)
+    participant S3 as S3 Artifact Storage
+    participant DK as Console Dev Kit
+
+    ED->>API: POST /builds (project, platform, revision)
+    API->>API: Authenticate (JWT)
+    API->>BS: Enqueue build job (priority queue)
+
+    BS->>BS: Checkout source at revision
+    BS->>BS: Compile with console SDK
+    BS->>BS: Link console platform trait impl
+    BS->>BS: Code-sign console package
+
+    BS->>S3: Upload signed package (content-hash key)
+    BS-->>API: Build complete (artifact URL)
+    API-->>ED: Job status: complete + download URL
+
+    ED->>S3: Download signed package
+    ED->>API: POST /deploy (artifact, dev_kit_id)
+    API->>BS: Deploy to dev kit
+    BS->>DK: Transfer package + launch
+    DK-->>BS: Console output stream
+    BS-->>ED: Relay console output (WebSocket)
+```
+
+### Shared Build Server Architecture
+
+```mermaid
+graph TD
+    subgraph "Developer Machines (Open Source)"
+        ED1[Editor -- Team A]
+        ED2[Editor -- Team B]
+        ED3[Editor -- Team C]
+    end
+
+    subgraph "Build Server (Licensed)"
+        API[REST API Gateway]
+        Q[Priority Job Queue]
+        W1[Build Worker -- PS5 SDK]
+        W2[Build Worker -- Xbox GDK]
+        W3[Build Worker -- Nintendo SDK]
+        CACHE[Artifact Cache]
+    end
+
+    subgraph "Storage"
+        S3[S3 Artifact Buckets]
+    end
+
+    subgraph "Dev Kits"
+        PS5[PS5 Dev Kit]
+        XB[Xbox Dev Kit]
+        SW[Switch Dev Kit]
+    end
+
+    ED1 -->|REST API| API
+    ED2 -->|REST API| API
+    ED3 -->|REST API| API
+
+    API --> Q
+    Q --> W1
+    Q --> W2
+    Q --> W3
+
+    W1 --> CACHE
+    W2 --> CACHE
+    W3 --> CACHE
+    CACHE --> S3
+
+    W1 -->|Deploy| PS5
+    W2 -->|Deploy| XB
+    W3 -->|Deploy| SW
+```
+
+### Key Design Decisions
+
+1. **Zero proprietary code on client.** The engine binary that ships to every developer contains no
+   console SDK references. Console feature flags exist only in the server-side build environment.
+2. **One license per server, not per developer.** A single set of console SDK licenses covers all
+   teams using the shared build server. Licensing cost drops from O(developers) to O(1).
+3. **Abstract trait boundary.** The open-source repository defines `PlatformServices` and sub-traits
+   with no console-specific types. Console implementations live in a separate closed-source
+   repository cloned only on the build server.
+4. **Content-hash artifact caching.** Identical builds produce the same content hash. Multiple teams
+   sharing the same engine version hit the cache for shared engine code, paying only for
+   game-specific assets.
+5. **Per-project isolation.** Each team's build runs in an isolated directory with separate
+   credentials. The job queue enforces access control so team A cannot read team B's source or
+   artifacts.
+
+### Requirements Trace
+
+| Feature | Requirement | User Story | Description |
+|---------|-------------|------------|-------------|
+| F-14.8.1 | R-14.8.1, R-14.8.2 | US-14.8.1, 2, 3 | Server-side console build service |
+| F-14.8.2 | R-14.8.3, R-14.8.4 | US-14.8.8, 9, 12 | Proprietary SDK isolation |
+| F-14.8.3 | R-14.8.5, R-14.8.6 | US-14.8.4, 5, 6, 7 | Shared build server |
+| F-14.8.4 | R-14.8.7, R-14.8.8 | US-14.8.10, 11 | Remote console deployment |
+| F-14.8.5 | R-14.8.9, R-14.8.10 | US-14.8.10 | Console build artifacts |
+
 ## Test Plan
 
 Test cases are in the companion file [sdk-integration-test-cases.md](sdk-integration-test-cases.md).
@@ -993,7 +1121,8 @@ Test cases are in the companion file [sdk-integration-test-cases.md](sdk-integra
 | Offline degradation tests | 6 | R-14.6.1 |
 | Certification tests | 8 | R-14.5.7 |
 | Cross-platform tests | 6 | R-14.6.6 |
-| **Total** | **78** | |
+| SDK isolation tests | 10 | R-14.8.1--R-14.8.10 |
+| **Total** | **88** | |
 
 ## Design Q & A
 
