@@ -1513,6 +1513,9 @@ pub struct AiLodConfig {
 }
 
 /// Global AI budget resource.
+///
+/// Crowd LOD scheduling uses the shared
+/// `FrameBudget` primitive.
 #[derive(Reflect)]
 pub struct AiBudget {
     /// Total AI microseconds per frame.
@@ -1573,6 +1576,10 @@ pub fn assign_lod_tiers(
 
 ```rust
 /// Per-cell density tracking. ECS resource.
+///
+/// **Note:** `DensityGrid` is an instance of
+/// `UniformGrid<f32>` (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
 #[derive(Reflect)]
 pub struct DensityGrid {
     pub cells: Vec<DensityCell>,

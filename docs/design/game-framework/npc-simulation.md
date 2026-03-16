@@ -752,6 +752,12 @@ pub enum DeedType {
 
 /// A single memory entry. Size budget: <= 256
 /// bytes (NFR-13.19.2).
+///
+/// Deed memory entries with emotional decay use
+/// the shared `DecayingEntry<T>` type (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
+/// Gossip entries and threat table entries use
+/// the same decaying pattern.
 #[derive(Clone, Debug, Reflect)]
 pub struct MemoryEntry {
     pub event_type: DeedType,

@@ -1221,6 +1221,10 @@ pub enum SideEffectPayload {
 
 /// A timeline containing ordered tracks and
 /// sub-sequence references.
+///
+/// Timeline keyframe interpolation uses the shared
+/// `Curve<T>` type (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
 pub struct Timeline {
     tracks: Vec<Track>,
     duration: f64,

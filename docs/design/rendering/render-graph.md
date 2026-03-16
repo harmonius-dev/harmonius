@@ -466,6 +466,12 @@ pub enum CapabilityGate {
 
 ### Resource Descriptors
 
+**Note:** This enum will be replaced by the canonical
+`Format` enum from
+[gpu-abstraction.md](gpu-abstraction.md) during
+implementation. Defined here as a design-time subset
+for clarity.
+
 ```rust
 /// Texture format. Subset shown; full enum in
 /// harmonius_gpu.
@@ -533,6 +539,10 @@ pub struct ImportedTextureDesc {
 }
 
 /// Bitflags for resource usage.
+///
+/// **Note:** Usage flags align with and reference
+/// the canonical definitions in
+/// [gpu-abstraction.md](gpu-abstraction.md).
 #[derive(Clone, Copy, Debug)]
 pub struct UsageFlags(u32);
 

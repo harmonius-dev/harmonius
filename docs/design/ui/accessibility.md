@@ -776,6 +776,12 @@ pub struct HoldToggle {
 
 /// Manages multiple input profiles with
 /// per-character storage.
+/// **Note:** `InputRemapper` should compose with the
+/// engine's core input binding system (see
+/// [devices-actions.md](../input/devices-actions.md))
+/// rather than implementing a parallel remapping
+/// layer. Accessibility remapping inserts overrides
+/// into the existing action mapping pipeline.
 pub struct InputRemapper {
     profiles: Vec<InputProfile>,
     active_profile: usize,
@@ -820,6 +826,12 @@ impl InputRemapper {
     ) -> &[InputProfile];
 }
 ```
+
+**Note:** Text-to-speech uses a shared platform TTS
+service (see also
+[ai-governance.md](../tools/ai-governance.md)). A single
+`TextToSpeech` abstraction should serve both accessibility
+and AI assistant use cases.
 
 ### Text-to-Speech
 

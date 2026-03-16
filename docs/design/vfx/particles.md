@@ -1970,6 +1970,19 @@ void SimulateParticles(uint3 id : SV_DispatchThreadID) {
 | Budget rebalance (100 emitters) | < 100 us CPU | R-11.1.4 |
 | LOD evaluation (100 emitters) | < 50 us CPU | R-11.1.4 |
 
+### GPU Compute Availability
+
+| Backend | Compute Shaders | Mesh Shaders | Notes |
+|---------|----------------|-------------|-------|
+| D3D12 | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full compute particle support. |
+| Vulkan | Yes (1.0+) | Yes (task/mesh, optional) | Subgroup operations for reduction. |
+| Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
+| Mobile | Limited dispatch size | No mesh shaders | Reduced particle budgets (PlatformTier::Mobile). |
+
+The VFX effect graph editor (see
+[effect-graph.md](effect-graph.md)) is the visual
+authoring surface for particle system configurations.
+
 ## Open Questions
 
 1. **Thread group size for simulation dispatch.**

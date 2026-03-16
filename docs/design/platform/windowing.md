@@ -1150,6 +1150,22 @@ The windowing subsystem is responsible for:
 | macOS (Metal) | `CAMetalLayer.displaySyncEnabled = false` | `displaySyncEnabled = true` | Manual frame pacing with `CAMetalLayer.maximumDrawableCount = 3` |
 | Linux (Vulkan) | `VK_PRESENT_MODE_IMMEDIATE_KHR` | `VK_PRESENT_MODE_FIFO_KHR` | `VK_PRESENT_MODE_MAILBOX_KHR` |
 
+### Mobile and Console Platforms
+
+| Platform | Window API | Notes |
+|----------|-----------|-------|
+| iOS | `UIWindow` via Swift/cxx.rs | Single fullscreen window. `UIScreen` for display info. No resize. |
+| Android | `ANativeWindow` via NDK/bindgen | `NativeActivity` lifecycle. Surface created/destroyed events. |
+| Consoles | Platform SDK | Single fullscreen output. Vendor NDA APIs. |
+
+Mobile windowing is single-fullscreen-only. The `Window`
+abstraction degrades gracefully: `set_size`, `set_position`,
+and `set_mode` return `Err(Unsupported)` on platforms that
+do not support them. iOS lifecycle events
+(`willResignActive`, `didBecomeActive`) and Android lifecycle
+events (`onPause`, `onResume`) are mapped to
+`WindowEvent::FocusChanged`.
+
 ## Test Plan
 
 ### Unit Tests

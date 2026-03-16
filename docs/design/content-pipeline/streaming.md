@@ -127,6 +127,7 @@ graph TD
         AUD[Audio]
         PHY[Physics]
         UI[UI]
+        ANI[Animation]
     end
 
     VFS --> PA
@@ -148,6 +149,7 @@ graph TD
     AUD --> SM
     PHY --> SM
     UI --> SM
+    ANI --> SM
 
     SM --> TP
     SM --> BP
@@ -282,6 +284,7 @@ flowchart TD
     SIG --> SUB1[Renderer: drop cached shaders]
     SIG --> SUB2[Audio: flush unused banks]
     SIG --> SUB3[Physics: release debug meshes]
+    SIG --> SUB4[Animation: evict idle clip data]
 ```
 
 ### Streaming Priority Queue Class Diagram

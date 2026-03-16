@@ -606,12 +606,19 @@ pub trait Reflect: Send + Sync + 'static {
 
     /// Access a nested value by dot-separated path.
     /// Example: "transform.position.x"
+    ///
+    /// `Reflect::path` and `path_mut` delegate to
+    /// `PropertyPath` internally. `PropertyPath` is
+    /// the public API for path-based access; the
+    /// trait methods are convenience wrappers.
     fn path(
         &self,
         path: &str,
     ) -> Result<&dyn Reflect, ReflectPathError>;
 
     /// Mutable access by dot-separated path.
+    /// Delegates to `PropertyPath::get_mut`
+    /// internally.
     fn path_mut(
         &mut self,
         path: &str,
@@ -1982,6 +1989,13 @@ let new_player = entity_map
 
 ## Platform Considerations
 
+Binary serialization uses little-endian byte order,
+matching all target platforms (x86, ARM in LE mode).
+Atomic file writes use platform-specific primitives:
+POSIX `rename(2)` on macOS/Linux, `ReplaceFile` on
+Windows. These guarantee atomicity of the commit step
+in the write-to-temp-then-rename pattern.
+
 ### Byte Order
 
 All binary formats use **little-endian** on every
@@ -2037,10 +2051,10 @@ incrementally to avoid memory spikes.
 
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
-| `ron` | RON text format parser/emitter | Standard Rust object notation, well-maintained |
+| `inventory` | Auto-registration of reflected types | Linker-based collection, no runtime cost |
+| `ron` | Text format (RON) serialization | Standard Rust object notation, well-maintained |
+| `blake3` | Companion file hashing | Content-addressed deduplication; already used in Wave 0 |
 | `lz4_flex` | LZ4 compression for binary blobs | Pure Rust, no C dependency, fast |
-| `blake3` | Content hashing for deduplication | Already used in Wave 0 (crash reporting) |
-| `inventory` | Distributed type registration | Linker-based collection, no runtime cost |
 | `syn` | Proc-macro parsing | Standard for derive macros |
 | `quote` | Proc-macro code generation | Standard for derive macros |
 | `proc-macro2` | Proc-macro token streams | Standard for derive macros |

@@ -549,6 +549,12 @@ pub struct JointLimits {
 }
 ```
 
+Joint angular limits share the canonical `JointLimit`
+type defined in
+[shared-primitives.md](../core-runtime/shared-primitives.md).
+Both physics constraints and animation IK reference
+this shared type.
+
 ### Breakable Joints
 
 ```rust
@@ -1691,6 +1697,24 @@ fn physics_substep_schedule() -> TaskGraph {
 | Warm start apply (500 joints) | < 0.2 ms | -- |
 | Break detection (500 joints) | < 0.1 ms | -- |
 | Chain spawn (32 segments) | < 0.3 ms | -- |
+
+### Debug Visualization
+
+Joint debug draw renders joint axes, angular limits
+(cone wireframes for cone-twist, arc indicators for
+hinge), linear limit ranges, and ragdoll bone
+connections. Rendered via the shared debug overlay
+pass.
+
+### Networking Integration
+
+Ragdoll synchronization across network is a known
+challenge. The server runs the authoritative ragdoll
+simulation; clients receive bone transforms via
+standard component replication. Ragdoll
+activation/deactivation events are replicated as
+reliable messages. Joint break events are replicated
+to ensure consistent destruction state.
 
 ## Open Questions
 

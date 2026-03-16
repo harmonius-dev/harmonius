@@ -1907,6 +1907,23 @@ separated from cold data (height arrays, splatmaps).
 
 ---
 
+### GPU Compute Availability
+
+| Backend | Compute Shaders | Mesh Shaders | Notes |
+|---------|----------------|-------------|-------|
+| D3D12 | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full terrain compute support. |
+| Vulkan | Yes (1.0+) | Yes (task/mesh, optional) | Subgroup operations for reduction. |
+| Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
+| Mobile | Limited dispatch size | No mesh shaders | Reduced terrain detail (PlatformTier::Mobile). |
+
+Virtual texture streaming uses the shared
+`VirtualResourceStreamer` framework (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)).
+
+Terrain sculpting brushes use the shared `BrushConfig`
+type (see also
+[level-world.md](../tools/level-world.md)).
+
 ## Open Questions
 
 1. **Heightfield-to-voxel transition heuristic** --

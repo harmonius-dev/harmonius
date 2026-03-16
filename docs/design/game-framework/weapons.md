@@ -486,6 +486,9 @@ pub struct ReloadSystem;
 /// offsets applied to aim direction during
 /// sustained fire. Authored as a curve in the
 /// visual editor.
+///
+/// Recoil pattern curves use the shared
+/// `Curve<Vec2>` type.
 pub struct RecoilPattern {
     /// Sequence of (yaw, pitch) offsets. One entry
     /// per round fired. After all entries, pattern
@@ -780,6 +783,14 @@ pub enum WeaponStat {
 }
 
 /// How the modifier is applied.
+///
+/// **Note:** `ModOp` is defined in the shared
+/// primitives (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
+/// This file references the canonical definition;
+/// the local enum shown here is for design clarity
+/// and will import from the shared module in
+/// implementation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ModOp {
     /// Add flat value to base stat.

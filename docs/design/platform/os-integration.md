@@ -57,7 +57,7 @@ All file I/O flows through the platform-native async primitives introduced in th
 library file I/O (`std::fs`, `std::io::Read`, `std::io::Write`) is used anywhere in this subsystem
 or any caller. Every file operation returns a `Future` that resolves on the I/O thread pool without
 blocking game threads. The filesystem module builds high-level file semantics (open, read, write,
-stat, enumerate, watch) on top of the `IoCompletionBridge` from the threading design.
+stat, enumerate, watch) on top of the `IoReactor` from the threading design.
 
 Crash reporting operates through an out-of-process handler for reliability: when the game process
 faults, a separate monitoring process captures the crash dump, avoiding corruption from the faulting
@@ -100,7 +100,7 @@ graph TD
     end
 
     subgraph "harmonius_platform::threading"
-        IO[IoCompletionBridge]
+        IO[IoReactor]
         TP[ThreadPool]
     end
 
@@ -148,7 +148,7 @@ graph TD
 sequenceDiagram
     participant C as Caller
     participant AF as AsyncFile
-    participant IO as IoCompletionBridge
+    participant IO as IoReactor
     participant PB as Platform I/O Backend
     participant PT as I/O Poller Thread
     participant W as Worker Thread
@@ -226,7 +226,7 @@ sequenceDiagram
 classDiagram
     class AsyncFile {
         -handle RawHandle
-        -bridge IoCompletionBridge
+        -bridge IoReactor
         -flags OpenFlags
         +open(path, flags) AsyncFile
         +read(buf, offset) usize
@@ -302,7 +302,7 @@ classDiagram
         +pick_folder() PathBuf
     }
 
-    class IoCompletionBridge {
+    class IoReactor {
         +read(handle, offset, len) IoResult
         +write(handle, data, offset) u32
     }
@@ -311,7 +311,7 @@ classDiagram
     CrashHandler --> GpuBreadcrumbs
     CrashHandler --> Logger
     Logger --> LogRecord
-    AsyncFile --> IoCompletionBridge
+    AsyncFile --> IoReactor
 ```
 
 ### Module Structure
@@ -1015,6 +1015,14 @@ impl Logger {
     pub fn new(
         filter: LogFilter,
         sinks: Vec<Box<dyn LogSink>>,
+        // **Note:** `LogSink` uses `dyn` dispatch
+        // because log sinks are injected at
+        // initialization and the ring buffer defers
+        // actual sink writes to a background flush.
+        // This is a cold path. Consider migrating to
+        // enum dispatch (`LogSinkKind { File,
+        // Console, Network, Custom }`) in
+        // implementation if the sink set is closed.
         ring_buffer_capacity: usize,
     ) -> Self;
 
@@ -1212,7 +1220,7 @@ impl OpenFlags {
 /// An asynchronous file handle.
 ///
 /// All operations route through the
-/// IoCompletionBridge from the threading design.
+/// IoReactor from the threading design.
 /// No Rust stdlib file I/O is used (R-14.6.1).
 ///
 /// Platform backends:
@@ -1560,6 +1568,11 @@ impl CanonicalPath {
     /// - Windows: GetFinalPathNameByHandleW
     /// - macOS: fcntl(F_GETPATH) or realpath
     /// - Linux: realpath or /proc/self/fd readlink
+    /// **Note:** `CanonicalPath::resolve` performs
+    /// symlink resolution which may involve I/O.
+    /// This is acceptable for startup and asset
+    /// pipeline paths. Runtime code should cache
+    /// resolved paths.
     pub fn resolve(
         path: &str,
     ) -> Result<Self, FsError>;
@@ -1660,7 +1673,7 @@ pub enum FsError {
 ### Async File Read
 
 1. Caller invokes `AsyncFile::read(buf, offset).await`.
-2. `AsyncFile` forwards the request to `IoCompletionBridge::read()`.
+2. `AsyncFile` forwards the request to `IoReactor::read()`.
 3. The bridge acquires a `BufferSlot` from its pool and submits the operation to the platform
    backend (IOCP overlapped read / `dispatch_io_read` / io_uring SQE).
 4. The `Future` yields. The worker thread returns to the work-stealing loop.
@@ -1747,6 +1760,8 @@ pub enum FsError {
 | File watching | `ReadDirectoryChangesExW` with IOCP | FSEvents (recursive), `dispatch_source` VNODE (single) | `inotify_add_watch` with io_uring async reads |
 | Path resolution | `GetFinalPathNameByHandleW` | `fcntl(F_GETPATH)` or `realpath` | `realpath` or `/proc/self/fd` readlink |
 | Path quirks | UNC paths, `\\?\` long-path prefix, NTFS junctions | Case-insensitive HFS+/APFS | Case-sensitive ext4/btrfs |
+| iOS | App sandbox directories. `NSFileManager` via Swift/cxx.rs. No symlinks in app bundle. |
+| Android | Internal/external storage via JNI. Scoped storage (API 30+). `ContentResolver` for shared files. |
 
 ## Test Plan
 
@@ -1852,7 +1867,7 @@ pub enum FsError {
 4. **File watcher implementation** -- Should we use the `notify` crate (cross-platform file watcher
    with debounce support) or implement custom per-platform watchers? The `notify` crate provides a
    mature, tested implementation but adds an external dependency. Custom watchers integrate more
-   tightly with the `IoCompletionBridge` and avoid the crate's internal threading model, which
+   tightly with the `IoReactor` and avoid the crate's internal threading model, which
    conflicts with our thread pool design.
 
 5. **Wayland clipboard latency** -- On Wayland, clipboard data transfer requires a compositor

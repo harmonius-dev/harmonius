@@ -2258,6 +2258,15 @@ HarfBuzz-compatible shaping.
 | Combat text 60 events | < 0.3 ms | R-10.3.5 |
 | Chat 250 msg/s throughput | frame < 16.67 ms | R-10.3.8 |
 
+### Shared Progress Widget Pattern
+
+**Note:** Many HUD widgets (health bars, cast bars,
+cooldown indicators, XP bars) share a common
+`ProgressWidget` pattern: a fill bar with direction, color
+ramp, and optional label. Consider implementing a generic
+`ProgressWidget` component that these specialized widgets
+compose.
+
 ## Open Questions
 
 1. **Text shaping crate** -- `rustybuzz` vs bundling a

@@ -1924,6 +1924,20 @@ Each trigger type follows a state machine:
 | macOS | `IOHIDManager` matching/removal callbacks | C++ wrapper via `cxx` | Callbacks routed to controlled GCD queue, drained at poll point |
 | Linux | `udev` monitor or `inotify` on `/dev/input/` | C FFI via `bindgen` | Background task polls udev fd via io_uring |
 
+### Mobile Platforms
+
+| Device | iOS | Android |
+|--------|-----|---------|
+| Touch | `UITouch` via Swift/cxx.rs | `MotionEvent` via NDK/bindgen |
+| Gamepad | `GCController` via Swift/cxx.rs | `InputDevice` via NDK |
+| Keyboard | `UIKey` (iPad) | `KeyEvent` via NDK |
+| Mouse | `UIHoverGestureRecognizer` (iPadOS) | `MotionEvent` with `SOURCE_MOUSE` |
+| Hot-plug | `GCController.didConnectNotification` | `InputManager` callback |
+
+Touch is the primary input on mobile. Gamepad support is
+optional. All mobile input flows through the same
+`RawInputEvent` pipeline as desktop.
+
 ### Scancode Normalization
 
 All platforms normalize to USB HID usage codes:

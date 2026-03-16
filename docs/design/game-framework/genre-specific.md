@@ -235,6 +235,13 @@ pub enum FogState {
 
 /// Per-faction fog grid stored as an ECS resource.
 /// 2 bits per cell, packed into u32 words.
+///
+/// **Note:** Both the fog-of-war grid and tactical
+/// grid are instances of `UniformGrid<T>` (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
+/// The fog grid uses `UniformGrid<VisibilityState>`,
+/// the tactical grid uses
+/// `UniformGrid<CellProperties>`.
 pub struct FogGrid {
     width: u32,
     height: u32,

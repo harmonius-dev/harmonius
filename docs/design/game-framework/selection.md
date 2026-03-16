@@ -601,6 +601,15 @@ pub enum FormationShape {
 
 /// Data-driven formation template. Authored
 /// in the visual editor.
+///
+/// **Note:** Selection owns formation commands
+/// (assigning units to formation slots, issuing
+/// move-in-formation orders). The actual formation
+/// slot computation and steering is owned by the
+/// crowd simulation system (see
+/// [steering-crowds.md](../ai/steering-crowds.md)).
+/// Selection dispatches `FormationMoveCommand`
+/// events; steering consumes them.
 pub struct FormationTemplate {
     pub shape: FormationShape,
     pub spacing: f32,

@@ -71,6 +71,35 @@ compliance, no fast-math, and deterministic iteration order
 guarantee bit-identical results across platforms for
 server-authoritative simulation and replay.
 
+### Key Abstractions
+
+- **Rigid body** -- mass, inertia tensor, and motion
+  type (Dynamic, Kinematic, Static). The fundamental
+  unit of simulation.
+- **Velocity** -- linear and angular velocity,
+  updated by forces and the constraint solver each
+  substep.
+- **Collider** -- geometric shape attached to an
+  entity for contact detection. Primitives, convex
+  hulls, triangle meshes, and heightfields.
+- **Contact manifold** -- set of contact points
+  between two colliders, each with a normal vector
+  and penetration depth.
+- **Island** -- connected group of interacting bodies
+  solved together. Enables sleeping and parallel
+  solving per island.
+- **Sleeping** -- bodies at rest are excluded from
+  simulation until disturbed by a force, contact,
+  or user wake event.
+- **CCD** -- continuous collision detection prevents
+  fast-moving objects from tunneling through thin
+  geometry via swept-volume tests.
+- **Broadphase** -- the shared BVH culls distant
+  pairs before expensive narrowphase evaluation.
+- **Narrowphase** -- GJK/EPA/SAT algorithms compute
+  exact contact geometry between overlapping
+  collider pairs.
+
 ## Architecture
 
 ### Module Boundaries
@@ -607,6 +636,16 @@ pub trait CollisionFilter: Send + Sync {
     ) -> bool;
 }
 ```
+
+**Justification:** `CollisionFilter` uses a trait for
+user-extensible filter logic. In practice, the engine
+provides a default bitfield filter (`LayerFilter`)
+that covers >95% of use cases via static dispatch.
+Custom filters are rare, editor-authored, and
+evaluated on broadphase culling paths (not
+per-contact). Consider converting to
+`fn(&EntityRef, &EntityRef) -> bool` function pointer
+for the custom case.
 
 ### Physics Materials
 
@@ -2143,6 +2182,16 @@ pool.scope(|scope| {
 
 ## Platform Considerations
 
+### SIMD Acceleration
+
+Narrowphase algorithms (GJK, EPA, SAT) and solver
+Jacobian computations are amenable to SIMD
+acceleration. The math library (glam) provides
+transparent SSE4.1/AVX2 (x86_64) and NEON
+(ARM/Apple Silicon) acceleration for Vec3/Vec4/Mat4
+operations. Explicit SIMD intrinsics are not used at
+the design level.
+
 ### Substep Limits Per Platform
 
 | Platform | Max Substeps | Per-Entity Override | Notes |
@@ -2296,6 +2345,31 @@ sized to performance core count.
 | Character controller (per entity) | < 0.1 ms | R-4.1.NF4 |
 | Full physics tick (2000 bodies, 4 substeps) | < 4 ms | R-4.1.NF1 |
 | Memory per rigid body entity | <= 256 bytes | R-4.1.NF2 |
+
+### Debug Visualization
+
+The physics debug draw system renders collision
+shapes, contact points, contact normals, body AABBs,
+velocity vectors, and sleep state indicators. Debug
+draw is implemented as an ECS system that queries
+physics components and emits draw commands to the
+render graph's debug overlay pass. Debug draw is
+compile-time stripped from shipping builds via
+`cfg(debug_assertions)`.
+
+### Networking Integration
+
+Physics state replication is handled by the
+networking domain (see
+[replication.md](../networking/replication.md)).
+Physics components (`RigidBody`, `Velocity`,
+`Transform`) carry `#[reflect(Replicate)]`
+attributes. The fixed-timestep deterministic
+simulation enables server-authoritative physics
+with client-side prediction and rollback. The
+networking layer snapshots physics state per tick
+and applies corrections when server state diverges
+from client prediction.
 
 ## Open Questions
 

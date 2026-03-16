@@ -948,6 +948,14 @@ pub enum VcError {
 | `git2` | libgit2 Rust bindings | Direct repo access, no shell-out |
 | `native-tls` | Platform TLS | Secure LFS transfers per-platform |
 | `tokio-tungstenite` | WebSocket client | Presence service transport |
+
+**Dependency conflict:** `tokio-tungstenite` depends on
+the `tokio` runtime, which conflicts with the engine's
+custom `IoReactor`. Implementation must use a custom
+WebSocket client built on the `IoReactor` and `AsyncIo`
+trait, or use a minimal WebSocket library without tokio
+dependency (e.g., `tungstenite` with manual I/O
+integration).
 | `serde` | Serialization | Shelf and config serialization |
 | `serde_json` | JSON | Hosting provider API payloads |
 | `blake3` | Content hashing | Cache key computation for branch switch |

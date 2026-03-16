@@ -575,6 +575,15 @@ pub struct StealthEquipmentModifier {
 }
 
 /// AI awareness state component.
+///
+/// **Note:** Stealth `AlertState` delegates to the
+/// AI perception system's awareness model (see
+/// [perception.md](../ai/perception.md)). The
+/// perception system manages awareness level
+/// transitions; the stealth system provides the
+/// stimuli (visibility score, noise level) that
+/// drive those transitions. This avoids duplicating
+/// the alert state machine.
 #[derive(Component, Reflect)]
 pub struct AlertState {
     /// Current awareness level.

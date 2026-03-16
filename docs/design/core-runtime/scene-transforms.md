@@ -58,6 +58,29 @@ The design follows three principles:
    components and hierarchy, serialized through the
    reflection system.
 
+### Key Abstractions
+
+- **Transform** -- local position, rotation, and
+  scale relative to the entity's parent. Stored as
+  a Vec3 translation, Quat rotation, and Vec3 scale.
+- **GlobalTransform** -- world-space 4x4 matrix
+  derived by composing the entire ancestor chain.
+  Read by rendering, physics, audio, and AI.
+- **Hierarchy** -- parent-child relationships use
+  the ECS `ChildOf` relationship (F-1.1.16), not a
+  separate tree data structure. `Parent` and
+  `Children` are derived components maintained
+  automatically.
+- **Dirty tracking** -- ECS tick-based change
+  detection marks modified `Transform` components.
+  Propagation skips entire subtrees whose root and
+  descendants are all clean.
+- **Propagation** -- parallel top-down traversal
+  multiplies each parent's `GlobalTransform` by the
+  child's `Transform` to produce the child's
+  `GlobalTransform`. Independent root subtrees run
+  as separate scoped tasks.
+
 ### Performance Targets (R-1.2.4a)
 
 | Metric | Target |
@@ -828,6 +851,10 @@ pub fn propagate_transforms(
 /// single subtree. Uses an explicit stack to
 /// avoid recursion and support arbitrary depth
 /// without stack overflow (R-1.2.4).
+///
+/// Implementation uses iterative top-down
+/// traversal with SmallVec stack to avoid
+/// recursion.
 fn propagate_subtree_iterative(
     root: Entity,
     root_global: Mat4,
@@ -837,70 +864,15 @@ fn propagate_subtree_iterative(
     >,
     change_tick: &ChangeTick,
 ) {
-    // Stack entries: (entity, parent's global
-    // matrix, is_ancestor_dirty).
-    let mut stack: SmallVec<
-        [(Entity, Mat4, bool); 256]
-    > = SmallVec::new();
-
-    // Seed with root's immediate children.
-    if let Ok(children) =
-        children_query.get(root)
-    {
-        for &child in children.iter() {
-            stack.push((
-                child,
-                root_global,
-                true, // root was dirty
-            ));
-        }
-    }
-
-    while let Some((
-        entity,
-        parent_matrix,
-        ancestor_dirty,
-    )) = stack.pop()
-    {
-        if let Ok((
-            transform,
-            mut global,
-            _parent,
-        )) = child_query.get_mut(entity)
-        {
-            // Determine if this entity's
-            // Transform changed.
-            let self_dirty = transform
-                .is_changed(change_tick);
-            let needs_update =
-                ancestor_dirty || self_dirty;
-
-            if needs_update {
-                global.matrix =
-                    parent_matrix
-                        * transform.local_matrix();
-            }
-
-            // Push children onto stack for
-            // continued traversal.
-            if let Ok(children) =
-                children_query.get(entity)
-            {
-                for &child in children.iter() {
-                    stack.push((
-                        child,
-                        global.matrix,
-                        needs_update,
-                    ));
-                }
-            }
-        }
-    }
+    /* ... */
 }
 
 /// Check if any entity in a subtree has a dirty
 /// Transform. Used to skip entire root subtrees
 /// that are fully static.
+///
+/// Implementation uses iterative BFS with
+/// SmallVec queue to avoid recursion.
 fn subtree_has_dirty_transform(
     root: Entity,
     children_query: &Query<&Children>,
@@ -909,42 +881,7 @@ fn subtree_has_dirty_transform(
     >,
     change_tick: &ChangeTick,
 ) -> bool {
-    // Check root itself.
-    if let Ok((transform, _, _)) =
-        child_query.get(root)
-    {
-        if transform.is_changed(change_tick) {
-            return true;
-        }
-    }
-
-    // BFS through descendants.
-    let mut queue: SmallVec<[Entity; 64]> =
-        SmallVec::new();
-    if let Ok(children) =
-        children_query.get(root)
-    {
-        queue.extend(children.iter().copied());
-    }
-
-    while let Some(entity) = queue.pop() {
-        if let Ok((transform, _, _)) =
-            child_query.get(entity)
-        {
-            if transform.is_changed(change_tick) {
-                return true;
-            }
-        }
-        if let Ok(children) =
-            children_query.get(entity)
-        {
-            queue.extend(
-                children.iter().copied(),
-            );
-        }
-    }
-
-    false
+    /* ... */
 }
 ```
 
@@ -1285,9 +1222,12 @@ reduces propagation cost by 99%+.
 
 ## Platform Considerations
 
-The scene and transform system is pure Rust with
-no platform-specific code. Platform dependencies
-are indirect, through the thread pool.
+Transform propagation is platform-agnostic. SIMD
+acceleration of matrix multiplication is delegated
+to the math library (`glam`). Non-send resources
+(e.g., Metal main-thread constraints) are handled
+by the ECS scheduler, not transforms. Platform
+dependencies are indirect, through the thread pool.
 
 ### Parallel Propagation Scaling
 
@@ -1339,6 +1279,13 @@ operations on all platforms:
 
 No custom SIMD code is needed; `glam` handles
 this transparently.
+
+### Proposed Dependencies
+
+| Crate | Purpose | Justification |
+|-------|---------|---------------|
+| `smallvec` | Inline-allocated small vectors | Traversal stacks and child lists without heap allocation |
+| `glam` | Math types (Vec3, Quat, Mat4) | SIMD-accelerated transform composition on all platforms |
 
 ## Test Plan
 

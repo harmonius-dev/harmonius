@@ -474,6 +474,12 @@ pub enum SwipeDirection {
 /// Trait for all gesture recognizers. Each
 /// recognizer is a state machine that processes
 /// raw touch events and emits gesture phases.
+/// **Note:** The `GestureRecognizer` trait has a
+/// fixed set of implementations (Tap, LongPress,
+/// Swipe, Pinch, Rotate, Pan, Custom). Consider
+/// migrating to `GestureRecognizerKind` enum
+/// dispatch in implementation to align with the
+/// static dispatch preference in constraints.md.
 pub trait GestureRecognizer: Send + Sync {
     /// Feed a raw touch event into the recognizer.
     fn feed(

@@ -1133,6 +1133,19 @@ impl Importer for AudioImporter {
 }
 ```
 
+### Physics Assets
+
+| Asset Type | Source Format | Import Output |
+|-----------|--------------|---------------|
+| Collision mesh | DCC plugin export | Convex hull or triangle mesh collider |
+| Physics material | DCC plugin metadata | Friction, restitution, density properties |
+| Ragdoll definition | DCC plugin (bone mapping) | Joint hierarchy with angular limits |
+
+Physics collision meshes are exported directly from DCC
+plugins alongside visual meshes. The importer generates
+convex hull decompositions for complex shapes and stores
+them in the CAS database.
+
 ### Import Coordinator
 
 ```rust

@@ -52,7 +52,7 @@ Key decisions locked in Wave 0:
 
 ---
 
-## Wave 1 — Core Runtime (6 design docs) — COMPLETE
+## Wave 1 — Core Runtime (7 design docs) — COMPLETE
 
 | # | Document | Features | Key Deliverables |
 |---|----------|----------|-----------------|
@@ -61,7 +61,8 @@ Key decisions locked in Wave 0:
 | 1.3 | `core-runtime/reflection-serialization.md` | F-1.3.1–10, F-1.4.1–10 | bevy_reflect-style Reflect trait, TypeRegistry, property access, binary/text serialization, mixed textual+binary companion files, schema versioning. |
 | 1.4 | `core-runtime/events-plugins.md` | F-1.5.1–7, F-1.6.1–7 | Typed event channels, observer dispatch, plugin registration, dependency resolution, hot reload. |
 | 1.5 | `core-runtime/memory-async-io.md` | F-1.7.1–9, F-1.8.1–9 | Arena/pool allocators, generational handles, platform I/O backend trait (wraps IoReactor), buffer pools. |
-| 1.6 | `core-runtime/spatial-index.md` | F-1.9.1–9 | Shared BVH, incremental update, grid/octree hybrid, unified query API (ray, shape, overlap, frustum, k-nearest), batch parallelism. |
+| 1.6 | `core-runtime/spatial-index.md` | F-1.9.1–9 | Shared BVH, incremental update, grid/octree hybrid, `UniformGrid<T>`, unified query API (ray, shape, overlap, frustum, k-nearest), batch parallelism. |
+| 1.7 | `core-runtime/shared-primitives.md` | Cross-cutting | Engine-wide shared abstractions: `Handle<T>`, `UniformGrid<T>`, `Curve<T>`, `SpringDamper<T>`, `StatModifier`, `ConditionExpr`, `FrameBudget`, `PlatformTier`, `CompressionCodec`, `ConditionalGraph`, `DecayingEntry`, `ConnectivityAnalyzer`, `GraphCompiler`, `VirtualResourceStreamer`. |
 
 ### Interoperability Contracts (lock before Wave 2)
 
@@ -75,6 +76,14 @@ Key decisions locked in Wave 0:
 | `Reflect` / `Serialize` traits | 1.3 | Networking, Content Pipeline, Game Framework |
 | `AsyncIo` trait (wraps IoReactor) | 1.5 | Content Pipeline, Platform |
 | `Transform` component schema | 1.2 | Rendering, Physics, Animation, Audio |
+| `Handle<T>` generational index | 1.7 | All domains (Entity, BvhHandle wrap this) |
+| `Curve<T>` / `SpringDamper<T>` | 1.7 | Animation, Physics, Camera, Databases, Weapons |
+| `StatModifier` / `ConditionExpr` | 1.7 | Game Framework (abilities, quests, progression) |
+| `FrameBudget` | 1.7 | AI, Physics, Navigation |
+| `PlatformTier` | 1.7 | Rendering, VFX, Animation, Geometry |
+| `UniformGrid<T>` | 1.7 | AI (perception, steering), Game Framework (fog, tactical) |
+| `GraphCompiler` | 1.7 | Tools (material, effect, shader graphs) |
+| `VirtualResourceStreamer` | 1.7 | Geometry (meshlets, terrain), Rendering |
 
 ### Wave 1 Ordering
 
@@ -122,13 +131,17 @@ Key decisions locked in Wave 0:
 
 ---
 
-## Wave 4 — Integration Layer (19 design docs) — COMPLETE
+## Wave 4 — Integration Layer (18 design docs) — COMPLETE
+
+> **Note:** `scene-pipeline.md` was merged into
+> `core-rendering.md` during the design audit (both
+> described the same extract-prepare-render pipeline
+> with duplicated types).
 
 | # | Document | Features |
 |---|----------|----------|
-| 4.1 | `rendering/core-rendering.md` | F-2.3 (forward+/deferred, PBR, culling) |
+| 4.1 | `rendering/core-rendering.md` | F-2.3, F-2.10 (forward+/deferred, PBR, culling, ECS extraction, render proxy, batching) |
 | 4.2 | `rendering/lighting.md` | F-2.4 (direct, area, shadows, AO) |
-| 4.3 | `rendering/scene-pipeline.md` | F-2.10 (ECS bridge, render proxy, batching) |
 | 4.4 | `content-pipeline/hot-reload.md` | F-12.4 (file watcher, hot reload) |
 | 4.5 | `ai/behavior.md` | F-7.3–7.5 (behavior trees, utility AI, GOAP) |
 | 4.6 | `ai/perception.md` | F-7.6 (sight, hearing, smell, tracking) |
@@ -233,7 +246,7 @@ Before Wave 2, these Wave 1 contracts must lock:
 | 1 | 1.1 ECS, 1.2 scene, 1.5 memory/IO |
 | 2 | 2.1 GPU, 2.2 assets, 2.3 physics, 2.4 input, 2.6 animation |
 | 3 | 3.1 render graph, 3.3 processing, 3.6 state machine, 3.10 UI |
-| 4 | 4.1 core rendering, 4.2 lighting, 4.3 scene pipeline |
+| 4 | 4.1 core rendering (merged), 4.2 lighting |
 
 ### Verification (per wave)
 
@@ -250,10 +263,10 @@ Before Wave 2, these Wave 1 contracts must lock:
 | Wave | Docs | Status |
 |------|------|--------|
 | 0 | 3 | **Complete** |
-| 1 | 6 | **Complete** |
+| 1 | 7 | **Complete** (+shared-primitives) |
 | 2 | 9 | **Complete** |
 | 3 | 12 | **Complete** |
-| 4 | 19 | **Complete** |
+| 4 | 18 | **Complete** (merged scene-pipeline) |
 | 5 | 20 | **Complete** |
 | 6 | 18 | **Complete** |
 | **Total** | **87** | **All Complete** |

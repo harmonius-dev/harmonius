@@ -1024,6 +1024,14 @@ pub enum CollabError {
 |-------|---------|---------------|
 | `tokio` | Async runtime (server) | Industry standard for Rust servers |
 | `axum` | HTTP/WebSocket framework | Minimal, tokio-native |
+
+**Dependency conflict:** `tokio` and `axum` conflict with
+the engine's custom `IoReactor`. The collaboration server
+runs as a separate process (not in-engine), so tokio usage
+is acceptable for the server binary. The editor client
+must use the engine's `IoReactor` for all networking. The
+QUIC client (`quinn`) can integrate with `IoReactor` via
+its `AsyncUdpSocket` trait.
 | `quinn` | QUIC transport | Pure-Rust QUIC implementation |
 | `sqlx` | PostgreSQL driver | Async, compile-time query checking |
 | `aws-sdk-s3` | S3 client | Official AWS SDK for Rust |

@@ -484,6 +484,10 @@ pub struct PositionComposer {
 }
 
 /// Camera constrained to a spline path.
+///
+/// Spline evaluation for dolly cameras and blend
+/// curves use the shared `Curve<T>` type (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
 #[derive(Component, Reflect)]
 pub struct SplineDolly {
     /// Handle to the spline asset.

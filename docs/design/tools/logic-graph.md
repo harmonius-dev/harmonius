@@ -117,6 +117,14 @@ graph TD
         SUB[Subgraph Assets]
     end
 
+    %% Note: Node-type catalogs (gameplay, shader,
+    %% animation, audio) are data definitions, not
+    %% architectural design. These catalogs should be
+    %% factored into a separate node catalog reference
+    %% document during implementation, keeping this
+    %% design focused on the type system, compilation
+    %% model, and execution model.
+
     subgraph harmonius_logic_graph_compiler
         CMP[ECS Compiler]
         COR[Coroutine Lowering]

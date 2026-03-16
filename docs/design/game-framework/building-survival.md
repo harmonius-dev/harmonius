@@ -564,6 +564,14 @@ pub fn stability_for_tier(tier: MaterialTier) -> f32 {
 
 /// The stability propagation algorithm:
 ///
+/// Structural integrity analysis uses the shared
+/// `ConnectivityAnalyzer` (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)),
+/// which performs BFS from anchor entities over
+/// connection components. The destruction system
+/// (see [destruction.md](destruction.md)) shares
+/// this analyzer.
+///
 /// 1. All foundations are seeds with stability = max.
 /// 2. BFS from each foundation outward through the
 ///    adjacency graph.

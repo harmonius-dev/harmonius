@@ -651,6 +651,12 @@ pub enum EffectType {
     /// Instant or periodic healing.
     Heal,
     /// Modify a stat by an operation.
+    // Stat modification uses the shared
+    // `StatModifier` + `ModOp` + `StatAggregator`
+    // pipeline (see
+    // [shared-primitives.md](../core-runtime/shared-primitives.md)).
+    // All domains (abilities, weapons, equipment,
+    // talents) use the same modifier types.
     StatModifier {
         stat: StatId,
         op: ModOp,

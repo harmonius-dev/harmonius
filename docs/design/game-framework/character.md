@@ -1553,6 +1553,10 @@ pub struct EquipmentSlotMap {
 }
 
 /// Equipment operations.
+///
+/// Equipment stat modifiers use the shared
+/// `StatModifier` pipeline (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
 pub struct EquipOps;
 
 impl EquipOps {

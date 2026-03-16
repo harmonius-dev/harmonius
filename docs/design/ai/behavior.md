@@ -60,6 +60,13 @@ and a common **AiDebugReporter** for trace logging and editor
 visualization. Designers author all AI via visual editors.
 Users never write code.
 
+Time-sliced execution uses the shared `FrameBudget`
+primitive (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)).
+The `Blackboard` typed key-value store is a general
+engine pattern shared with perception, NPC simulation,
+and quest systems.
+
 Key design principles:
 
 1. **100% ECS** -- all AI state as components, all logic as
@@ -1227,6 +1234,13 @@ pub enum InputAxis {
     LineOfSight,
     Custom(ConsiderationId),
 }
+
+**Justification:** `Custom(ConsiderationId)` uses a
+trait-like contract for user-extensible scoring
+functions authored in visual logic graphs. At runtime,
+compiled graph bytecode evaluates the score -- no
+`dyn` dispatch occurs. The trait exists as a
+design-time contract for the logic graph compiler.
 
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,

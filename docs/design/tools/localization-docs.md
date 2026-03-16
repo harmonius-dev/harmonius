@@ -139,6 +139,14 @@ harmonius_editor/
 │   ├── search_index.rs    # SearchIndex, trigram
 │   ├── versioned_store.rs # VersionedDocStore
 │   └── video_player.rs    # VideoPlayer, chapter links
+│                          # Video playback shares decode
+│                          # infrastructure with the
+│                          # collaboration system's remote
+│                          # rendering codec. A shared
+│                          # platform video decode service
+│                          # wraps AVFoundation (macOS/iOS),
+│                          # Media Foundation (Windows),
+│                          # and GStreamer (Linux).
 ```
 
 ### Localization Data Flow

@@ -2018,6 +2018,13 @@ impl PlatformTier {
 | `test_debug_stripped` | R-9.3.11 | Compile shipping build, verify `locomotion_diagnostics_system` absent from binary. |
 | `test_debug_types_stripped` | R-9.3.11 | Verify `LocomotionDebugVis` and `LocomotionMetrics` absent from shipping binary. |
 
+### Shared Type References
+
+Joint angular limits use the shared `JointLimit` type
+and spring-damper evaluation uses `SpringDamper<T>`
+(see
+[shared-primitives.md](../core-runtime/shared-primitives.md)).
+
 ## Open Questions
 
 1. **GPU vs CPU IK threshold.** The current design

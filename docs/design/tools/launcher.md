@@ -1098,6 +1098,12 @@ fully isolated -- no shared state between versions.
 | `windows-sys` | Win32 registry, Credential Manager | Zero-cost FFI to Windows APIs |
 | `cxx` | C++ interop for macOS Keychain, Launch Services | Safe bridge to Swift/C++ wrappers |
 | `reqwest` or custom HTTP | HTTP client for API calls | Async HTTP over the IoReactor |
+
+**Dependency conflict:** `reqwest` depends on `tokio`. Use
+platform-native HTTP clients (NSURLSession on macOS,
+WinHTTP on Windows, libcurl on Linux) via the `IoReactor`,
+consistent with [shared-cache.md](shared-cache.md) which
+already defines platform-native HTTP.
 | `serde` | Serialization for configs and API responses | Standard Rust serialization |
 
 **Note:** `reqwest` depends on tokio. If we use a

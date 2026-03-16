@@ -942,6 +942,12 @@ pub struct ContentTrial {
 
 ### Live-Ops Content Refresh
 
+Server-synced live-ops data (battle pass, store
+catalog, challenges, login calendar) uses the shared
+`LiveOpsResource<T>` wrapper (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)).
+Challenge conditions use the shared `ConditionExpr`.
+
 Server-deployed content (battle pass definitions,
 challenge rotations, store catalog, login calendar)
 follows a consistent refresh pattern:

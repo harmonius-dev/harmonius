@@ -726,7 +726,9 @@ pub enum SculptBrushType {
 }
 
 /// Brush configuration shared by sculpt, paint,
-/// and foliage brushes.
+/// and foliage brushes. Also referenced by the
+/// terrain system (see
+/// [terrain.md](../geometry/terrain.md)).
 #[derive(Clone, Debug)]
 pub struct BrushConfig {
     pub radius: f32,
@@ -882,6 +884,8 @@ pub struct FoliagePlacementRule {
 
 /// Paints foliage instances onto surfaces with
 /// density brushes and placement rules.
+/// Foliage painting interacts with the VFX wind
+/// system via shared wind field ECS resources.
 pub struct FoliagePainter { /* ... */ }
 
 impl FoliagePainter {

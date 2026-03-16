@@ -218,6 +218,15 @@ Effects 1-9 operate in HDR linear space. Effect 10
 (tonemap) converts to display space. Effects 11-13
 operate in display space (LDR or HDR output).
 
+### UI Rendering Order
+
+UI renders after tonemapping but before film grain,
+vignette, and chromatic aberration. This ensures UI
+elements appear in display-space colors (not HDR)
+while film effects overlay the entire frame including
+UI. The render graph enforces this ordering via pass
+dependencies.
+
 ### Volume Blending
 
 ```mermaid
@@ -262,6 +271,12 @@ pub enum QualityTier {
     HighEnd,
 }
 ```
+
+**Note:** `QualityTier` will be replaced by the
+engine-wide `PlatformTier` enum (Mobile, Switch,
+Desktop, HighEnd) defined in
+[shared-primitives.md](../core-runtime/shared-primitives.md)
+during implementation.
 
 ### Post-Process Pass Trait
 

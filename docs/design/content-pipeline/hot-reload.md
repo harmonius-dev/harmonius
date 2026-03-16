@@ -1065,6 +1065,17 @@ pub struct UiReloadResult {
 }
 ```
 
+### Audio Asset Hot Reload
+
+Audio clips and sound banks support hot reload. When the
+file watcher detects a changed audio source file, the
+pipeline re-imports and re-encodes the audio asset. The
+audio runtime receives a reload event via the SPSC command
+queue (see [engine.md](../audio/engine.md)). Playing voices
+that reference the reloaded asset crossfade to the new
+version over a configurable duration (default 100ms) to
+avoid audible pops.
+
 ### Editor-Runtime Sync (F-12.4.7 / R-12.4.7)
 
 ```rust

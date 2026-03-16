@@ -1784,6 +1784,23 @@ world_seed
 | Climate sim (full planet) | < 60 s | R-3.6.43 |
 | Galaxy (100B statistical stars) | < 100 GB storage | R-3.6.63 |
 
+### GPU Compute Availability
+
+| Backend | Compute Shaders | Mesh Shaders | Notes |
+|---------|----------------|-------------|-------|
+| D3D12 | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full procgen compute support. |
+| Vulkan | Yes (1.0+) | Yes (task/mesh, optional) | Subgroup operations for reduction. |
+| Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
+| Mobile | Limited dispatch size | No mesh shaders | Reduced procgen budgets. |
+
+**Note:** The procedural generation graph is a
+specialization of the universal logic graph runtime (see
+[logic-graph.md](../tools/logic-graph.md)). It reuses
+the logic graph's type system, validation, node
+evaluation, and visual editor infrastructure,
+parameterized with procedural-generation-specific node
+types.
+
 ## Open Questions
 
 1. **Node evaluation granularity** -- Should each PCG node be

@@ -1006,6 +1006,13 @@ impl DamageSense {
 /// ray/overlap tests.
 ///
 /// Stored as ECS resource: `Res<ScentGrid>`.
+///
+/// **Note:** `ScentGrid` is an instance of the
+/// shared `UniformGrid<T>` primitive (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
+/// The uniform grid is formalized as a supported
+/// spatial structure alongside the BVH for
+/// cell-based density queries.
 pub struct ScentGrid {
     cells: Vec<ScentCell>,
     cell_size: f32,
@@ -1304,6 +1311,9 @@ impl PerceptionMemorySystem {
 /// Per-frame perception budget. Controls how many
 /// agents and senses are evaluated per tick.
 /// Stored as ECS resource: `Res<PerceptionBudget>`.
+///
+/// Sense evaluation budget uses the shared
+/// `FrameBudget` primitive.
 pub struct PerceptionBudget {
     /// Maximum microseconds of perception work per
     /// frame. Mobile: 250, Desktop: 1000.
@@ -1817,6 +1827,10 @@ pub trait CustomSense: SenseEvaluator + Send + Sync {
     /// Human-readable name for debug display.
     fn name(&self) -> &'static str;
 }
+
+// **Justification:** `CustomSense` is a design-time
+// contract for logic-graph-authored sense evaluators.
+// Runtime dispatch uses compiled bytecode, not `dyn`.
 
 /// Registry of project-specific senses. Stored as
 /// ECS resource: `Res<CustomSenseRegistry>`.

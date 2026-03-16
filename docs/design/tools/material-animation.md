@@ -1486,6 +1486,15 @@ only the final bytecode format varies by target.
 | Blend space evaluation | < 0.5 ms | US-15.4.5.4 |
 | State machine step | < 0.1 ms per evaluation | US-15.4.6.7 |
 
+## Cross-References
+
+The material graph compiler shares the `GraphCompiler`
+framework (see
+[shared-primitives.md](../core-runtime/shared-primitives.md))
+with the effect graph and shader graph. Topological sort,
+type checking, HLSL emission, and DXC/MSC compilation are
+reused from this shared framework.
+
 ## Open Questions
 
 1. **HLSL optimization level** -- DXC supports multiple

@@ -1619,6 +1619,25 @@ macOS. No platform-specific shader code.
 
 ---
 
+### GPU Compute Availability
+
+| Backend | Compute Shaders | Mesh Shaders | Notes |
+|---------|----------------|-------------|-------|
+| D3D12 | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full environment compute support. |
+| Vulkan | Yes (1.0+) | Yes (task/mesh, optional) | Subgroup operations for reduction. |
+| Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
+| Mobile | Limited dispatch size | No mesh shaders | Reduced foliage/water detail. |
+
+### Shared Wind Field
+
+The wind field texture is a shared ECS resource consumed
+by foliage sway, VFX particle forces (see
+[particles.md](../vfx/particles.md)), cloth simulation
+(see [cloth-hair.md](../animation/cloth-hair.md)), and AI
+scent propagation (see
+[perception.md](../ai/perception.md)). A single
+`WindField` system updates the GPU texture each frame.
+
 ## Open Questions
 
 1. **Foliage streaming granularity.** Should

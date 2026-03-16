@@ -21,6 +21,12 @@
 | F-13.1.9 | R-13.1.9 | US-13.1.9.1 -- US-13.1.9.6 | Modular system registration with dependency graph |
 | F-13.1.10 | R-13.1.10 | US-13.1.10.1 -- US-13.1.10.7 | Rust plugin API for third-party developers |
 
+**Note:** The Rust plugin API (F-13.1.10) is for
+editor-time extensions only, not runtime game logic.
+All runtime gameplay logic is authored via visual
+logic graphs (no-code), consistent with
+constraints.md.
+
 ### Non-Functional Requirements
 
 | Requirement | Target | Description |

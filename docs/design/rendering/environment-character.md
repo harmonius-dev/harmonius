@@ -32,6 +32,13 @@
 | F-2.7.5 | R-2.7.5 | Analytical distance/height fog with height falloff |
 | F-2.7.6 | R-2.7.6 | FFT ocean rendering with reflections, foam, underwater |
 | F-2.7.7 | R-2.7.7 | Heterogeneous volumes (OpenVDB) with volumetric BSDF |
+
+> **Dependency note:** OpenVDB is a large C++ library
+> requiring separate approval per project dependency
+> policy. Consider lighter alternatives (sparse voxel
+> octree) if volumetric cloud density does not require
+> OpenVDB's full feature set.
+
 | F-2.7.8 | R-2.7.8 | Voxel-based volumetric clouds with SDF acceleration |
 | F-2.7.9 | R-2.7.9 | Art-directable breaking waves with Coons surface eval |
 | F-2.7.10 | R-2.7.10 | Weather state machine driving all environment systems |
@@ -1445,6 +1452,24 @@ All shaders are authored in HLSL per the project constraints.
 | `skin_burley.hlsl` | Compute | Burley normalized diffusion kernel |
 | `peach_fuzz.hlsl` | Fragment | Screen-space vellus hair |
 | `biometric_skin.hlsl` | Fragment | Melanin + blood pigment eval |
+
+### Weather and VFX Integration
+
+Weather state machine parameters (rain intensity,
+wind direction, snow density) are shared with the VFX
+particle system via ECS resources. Particle emitters
+query weather state to modulate spawn rates and
+forces. See [effects.md](../vfx/effects.md) for
+weather VFX design.
+
+### Water and Physics Integration
+
+Ocean surface height is queried by the physics
+buoyancy system (see
+[advanced.md](../physics/advanced.md)) via the
+`WaterSurface` ECS resource. Wave displacement is
+sampled at physics tick rate, not render rate, to
+maintain simulation stability.
 
 ## Test Plan
 

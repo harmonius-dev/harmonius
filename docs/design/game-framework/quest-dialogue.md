@@ -383,6 +383,10 @@ pub enum QuestCategory {
 
 /// Immutable quest graph asset. Loaded from
 /// serialized data, stored as an ECS resource.
+///
+/// Quest graphs use the shared
+/// `ConditionalGraph<N, E>` type for DAG structure,
+/// validation, and visual editor integration.
 pub struct QuestGraph {
     id: QuestId,
     name: LocalizedString,
@@ -429,6 +433,13 @@ impl QuestGraph {
 ```rust
 /// Composable boolean prerequisite expression.
 /// Evaluated lazily on player interaction.
+///
+/// **Note:** `PrerequisiteExpr` is an instance of
+/// the shared `ConditionExpr` type (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
+/// The And/Or/Not combinator tree with typed leaf
+/// predicates is shared across quests, achievements,
+/// faction gating, and progression prerequisites.
 #[derive(Clone, Debug, Reflect)]
 pub enum PrerequisiteExpr {
     /// Quest must be completed.

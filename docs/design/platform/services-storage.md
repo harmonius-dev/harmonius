@@ -833,6 +833,13 @@ pub struct PrefKey {
 pub struct PreferencesStore {
     values: HashMap<String, PrefValue>,
     dirty: bool,
+    /// **Note:** Storage paths should use
+    /// `CanonicalPath` (from
+    /// [os-integration.md](os-integration.md)) for
+    /// consistency with the engine's path
+    /// abstraction. `PathBuf` is used here as a
+    /// placeholder; implementation will use
+    /// `CanonicalPath`.
     local_path: PathBuf,
     cloud_key: CloudKey,
 }
@@ -1401,6 +1408,7 @@ pub enum TempError {
 | Cloud Storage | `ISteamRemoteStorage` | `sceNpSaveData` | `XGameSaveInitializeProviderAsync` | iCloud Key-Value |
 | Entitlements | `ISteamApps::BIsSubscribedApp`, `BIsDlcInstalled` | `sceNpEntitlementAccess` | `XStoreQueryEntitledProductsAsync` | `SKPaymentQueue` |
 | Auth | Steam App Ticket | PSN SSO | Xbox Live token | `GKLocalPlayer.authenticate` |
+| Android | Google Play Games Services | `play-services` via JNI/bindgen | Achievements, leaderboards, cloud save via Google Play. |
 
 ### Platform Storage Paths
 

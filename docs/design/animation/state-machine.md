@@ -2106,6 +2106,18 @@ The visual state machine editor provides:
 5. **Morph target slider panel** for weight
    previewing.
 
+### Networking Integration
+
+State machine replication includes: current state ID,
+transition progress, and parameter values (floats,
+bools, triggers). Parameters are replicated as a
+compact struct. State transitions are derived
+client-side from replicated parameters, reducing
+bandwidth.
+
+Blend curves use the shared `Curve<T>` type (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)).
+
 ## Test Plan
 
 ### Unit Tests

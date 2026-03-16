@@ -676,6 +676,11 @@ pub enum AoMode {
     /// Ray-traced AO.
     RtAo,
 }
+// **Note:** RT ambient occlusion is designed here
+// and rendered via the render graph. The lighting
+// system (see [lighting.md](lighting.md)) provides
+// the screen-space AO fallback (`SsaoMode`). Both
+// feed into the same AO compositing pass.
 
 /// Active denoiser algorithm.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -690,6 +695,13 @@ pub enum DenoiserMode {
     /// reconstruction). Requires tensor cores.
     Neural,
 }
+// **Dependency note:** NRD is a proprietary NVIDIA
+// SDK requiring separate approval per project
+// dependency policy. The `Neural` denoiser mode
+// requires ML inference infrastructure (also
+// requiring approval). Both are optional —
+// `NrdSvgf` and `NrdReblur` serve as default
+// fallbacks.
 
 /// Selects the best rendering technique for each
 /// RT effect based on hardware capabilities and
@@ -1785,6 +1797,15 @@ All RT shaders are authored in HLSL:
 | **Total RT VRAM** | **~544 MB** | **~1,384 MB** |
 
 ---
+
+### VFX and Ray Tracing
+
+Particle systems do not contribute to RT acceleration
+structures by default (too dynamic, too numerous).
+Mesh-based VFX (debris, large projectiles) can opt in
+to BLAS registration via a `RtVisible` component. VFX
+materials are evaluated in RT hit shaders when
+`RtVisible` is present.
 
 ## Test Plan
 

@@ -1452,6 +1452,19 @@ Thread group sizes:
 | Scale | Range-reduced fixed-point | 10 per component | ~4:1 |
 | Overall | Mixed | Variable | 10:1+ |
 
+### Networking Integration
+
+Animation state replication includes: active clip
+index, playback time, blend weights, and animation
+events. These are replicated as components via
+standard replication. Skeleton LOD level is
+determined per-client based on distance, not
+replicated.
+
+Curve evaluation for animation clips uses the shared
+`Curve<T>` type (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)).
+
 ## Test Plan
 
 ### Unit Tests

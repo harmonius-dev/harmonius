@@ -58,6 +58,25 @@ The design follows four principles:
    entities, ensuring visual coherence with foliage
    and particles.
 
+### Key Abstractions
+
+- **PBD (Position-Based Dynamics)** -- iterative
+  solver that directly moves particle positions to
+  satisfy constraints, then derives velocities.
+  Stable and controllable.
+- **XPBD** -- extended PBD with compliance-based
+  constraint formulation for physically accurate
+  stiffness.
+- **Strand guides** -- small set of simulated hair
+  curves that define overall motion.
+- **Interpolation** -- dense visible strands are
+  interpolated between guide curves.
+- **Card-based hair** -- simplified representation
+  using textured mesh strips with spring-based
+  secondary motion.
+- **Collision proxy** -- simplified collision shapes
+  (capsules, spheres) derived from skeleton bones.
+
 ### Performance Targets
 
 | Metric | Target |
@@ -1045,6 +1064,23 @@ alpha-blended transparency.
 | Card hair vs strand hair | At least 5x faster | R-9.5.3 |
 | LOD transition blend | Zero frame spike | R-9.5.4 |
 | Wind field texture sample | Under 0.01 ms/entity | R-9.5.6 |
+
+### Cloth Ownership Boundary
+
+Animation owns cloth authoring (`ClothGarment`,
+`ClothPanel`), GPU dispatch, and LOD management.
+Physics owns the XPBD constraint solver (see
+[advanced.md](../physics/advanced.md)). The animation
+system schedules cloth simulation by invoking the
+physics solver, then writes results back to vertex
+buffers for rendering.
+
+### Shared Type References
+
+Distance and bending constraints reference shared
+physics constraint types. Spring-damper evaluation
+for card-based hair uses `SpringDamper<T>` (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)).
 
 ## Open Questions
 

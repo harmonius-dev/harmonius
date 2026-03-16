@@ -3,10 +3,15 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user
-> stories are defined in [features/rendering/](../../features/rendering/),
-> [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table
-> below traces design elements to those definitions.
+> stories are defined in
+> [features/rendering/](../../features/rendering/),
+> [requirements/rendering/](../../requirements/rendering/),
+> and
+> [user-stories/rendering/](../../user-stories/rendering/).
+> The table below traces design elements to those
+> definitions.
+
+### Functional Requirements
 
 | Feature | Requirement | User Stories | Description |
 |---------|-------------|--------------|-------------|
@@ -23,6 +28,16 @@
 | F-2.3.11 | R-2.3.11 | US-2.3.11.1, US-2.3.11.2, US-2.3.11.3 | Dynamic resolution scaling with GPU feedback |
 | F-2.3.12 | R-2.3.12 | US-2.3.12.1, US-2.3.12.2 | Subsurface scattering (screen-space and RT) |
 | F-2.3.13 | R-2.3.13 | US-2.3.13.1, US-2.3.13.2 | Alpha mask cutout geometry |
+| F-2.10.1 | R-2.10.1 | US-2.10.1.1, US-2.10.1.2 | Render proxy extraction on dedicated thread via immutable ECS queries |
+| F-2.10.2 | R-2.10.2 | US-2.10.2.1, US-2.10.2.2 | SoA proxy components (mesh, material, transform, bounds) for GPU upload |
+| F-2.10.3 | R-2.10.3 | US-2.10.3.1, US-2.10.3.2, US-2.10.3.3 | Dirty-flag incremental proxy updates, O(changed) per frame |
+| F-2.10.4 | R-2.10.4 | US-2.10.4.1, US-2.10.4.2 | View and camera registration with projection, viewport, platform tier |
+| F-2.10.5 | R-2.10.5 | US-2.10.5.1, US-2.10.5.2 | Multi-view rendering from single snapshot (shadows, probes, VR) |
+| F-2.10.6 | R-2.10.6 | US-2.10.6.1, US-2.10.6.2 | Per-view draw lists with sort keys minimizing state changes |
+| F-2.10.7 | R-2.10.7 | US-2.10.7.1, US-2.10.7.2 | GPU compute batch compaction into indirect draw buffers |
+| F-2.10.8 | R-2.10.8 | US-2.10.8.1, US-2.10.8.2 | Bindless material parameter binding via per-instance descriptor indices |
+| F-2.10.9 | R-2.10.9 | US-2.10.9.1, US-2.10.9.2 | Immediate-mode debug draw API, compile-time gated for shipping |
+| F-2.10.10 | R-2.10.10 | US-2.10.10.1, US-2.10.10.2 | Buffer visualization modes (depth, normals, overdraw, etc.) |
 
 ### Non-Functional Requirements
 
@@ -31,11 +46,20 @@
 | NFR-2.3.1 | Culling pipeline latency (1M meshlets, 1080p) | < 1.0 ms GPU |
 | NFR-2.3.2 | Dynamic resolution convergence | 5 frames, < 5% oscillation |
 | NFR-2.3.3 | Instancing draw call reduction (10k instances, 10 mats) | 10 draw calls |
+| NFR-2.10.1 | Extraction latency (100K entities, full / 1% dirty) | < 2.0 ms / < 0.5 ms |
+| NFR-2.10.2 | Draw list throughput | 500K proxies/ms/core |
+| NFR-2.10.3 | Debug viz shipping overhead | Zero (CPU, GPU, binary) |
 
 ### Cross-Cutting Dependencies
 
 | Dependency | Source | Consumed API |
 |------------|--------|--------------|
+| ECS world and queries | F-1.1.1, F-1.1.17, F-1.1.20 | Archetype storage, composable queries, parallel iteration |
+| Change detection | F-1.1.22 | Tick-based `Changed<T>` queries for incremental extraction |
+| System scheduling | F-1.1.25, F-1.1.26 | `PreRender` and `Render` phase ordering |
+| Shared spatial index | F-1.9.1, F-1.9.4, F-1.9.7 | BVH frustum query for visibility determination |
+| Scene transforms | F-1.2.4 | `GlobalTransform` world-space matrices |
+| Render graph | F-2.2.1, F-2.2.9, F-2.2.10 | Pass registration, multi-view execution, parallel encoding |
 | GPU backend trait | F-2.1.1 | `GpuBackend` associated types |
 | Command buffer | F-2.1.2 | `CommandBuffer::dispatch`, `draw_indexed_indirect` |
 | Pipeline state | F-2.1.3 | `PipelineState` creation and binding |
@@ -43,50 +67,53 @@
 | GPU state tracking | F-2.1.8 | Redundant state filtering |
 | Barrier optimization | F-2.1.9 | Automatic barrier batching |
 | GPU timing queries | F-2.1.12 | `TimestampQuery` for DRS feedback |
-| Render graph | F-2.2.1 | `RenderPass` trait, resource declaration |
 | Transient resources | F-2.2.3 | Virtual resource handles |
-| Multi-view execution | F-2.2.9 | Per-view parameter overrides |
 | Render proxy extraction | F-2.10.1 | Frame snapshot from ECS |
 | Render components | F-2.10.2 | SoA proxy layout |
-| Change detection | F-2.10.3 | Dirty-flag incremental upload |
+| Change detection (render) | F-2.10.3 | Dirty-flag incremental upload |
 | Draw list construction | F-2.10.6 | Sort key generation |
 | Meshlet decomposition | F-3.1.1 | Meshlet AABB, normal cone, LOD DAG |
 | Two-phase HZB (shared) | F-3.1.2 | HZB build and test shaders |
-| Scene transforms | F-1.2.4 | `GlobalTransform` world matrix |
-| Shared spatial index | F-1.9.1 | BVH frustum query for coarse cull |
-| Thread pool | F-14.3.1 | Scoped parallel extraction |
+| Thread pool | F-14.3.1, F-14.3.3 | Scoped parallel tasks, task graph execution |
 | PBR materials | F-2.4.3 | Cook-Torrance BRDF evaluation |
 | Forward+ tiled | F-2.4.1 | Tiled/clustered light assignment |
 | Deferred G-buffer | F-2.4.2 | G-buffer layout and lighting pass |
+| Viewport | gpu-abstraction | `Viewport` defined in `harmonius_gpu` (not redefined here) |
+| Platform tier | shared-primitives | `PlatformTier` enum (not redefined here) |
 
 ## Overview
 
-The core rendering subsystem bridges the ECS world
-and the GPU. Each frame it extracts visible
-entities into a renderer-owned snapshot, executes a
-multi-stage GPU culling pipeline, batches survivors
-by material, and submits draw commands through the
-render graph.
+The core rendering subsystem bridges the ECS
+simulation world and the GPU. It follows an
+**extract-prepare-render** pattern that decouples
+simulation from rendering, enabling pipelined
+parallelism.
 
-Four design principles govern the system:
+Four principles drive the design:
 
 1. **ECS is the single source of truth.** All
    render state lives as components. The renderer
    reads via immutable queries and never owns
    persistent scene data outside the extracted
    frame snapshot.
-2. **GPU-driven pipeline.** Frustum culling,
+2. **Decoupled snapshot.** Extraction copies only
+   changed ECS data into a renderer-owned proxy
+   store. The simulation is free to advance once
+   extraction completes.
+3. **GPU-driven pipeline.** Frustum culling,
    backface culling, occlusion culling, LOD
    selection, and instance compaction all run as
    GPU compute passes. The CPU issues a small,
    fixed number of indirect dispatches per frame.
-3. **Dual rendering paths.** Forward+ (tiled
+4. **Dual rendering paths.** Forward+ (tiled
    clustered) and deferred (G-buffer) paths share
    the same culling pipeline, light buffer, and
    material system. Path selection is per-view.
-4. **Static dispatch.** The entire pipeline is
-   generic over `GpuBackend`. No trait objects, no
-   vtables, no dynamic dispatch in the hot path.
+
+Static dispatch is used throughout. The entire
+pipeline is generic over `GpuBackend`. No trait
+objects, no vtables, no dynamic dispatch in the
+hot path.
 
 ## Architecture
 
@@ -94,9 +121,9 @@ Four design principles govern the system:
 
 ```mermaid
 graph TD
-    subgraph "harmonius_rendering::core"
+    subgraph core["harmonius_rendering::core"]
         EXT[RenderExtractor]
-        PROXY[RenderProxy Store]
+        PROXY[ProxyStore]
         CULL[GpuCullingPipeline]
         BATCH[BatchCompactor]
         QUEUE[RenderQueueSorter]
@@ -107,31 +134,41 @@ graph TD
         CAP[SceneCapture]
     end
 
-    subgraph "harmonius_rendering::lighting"
+    subgraph lighting["harmonius_rendering::lighting"]
         LB[LightBuffer]
         FWD["Forward+ Tiled"]
         DEF[Deferred G-Buffer]
         PBR[PBR Evaluator]
     end
 
-    subgraph "ECS World"
+    subgraph ecs["ECS World"]
         MC[MeshComponent]
         MATC[MaterialComponent]
-        TC[TransformComponent]
+        TC[GlobalTransform]
         LC[LightComponent]
         CC[CameraComponent]
         VC[VisibilityComponent]
     end
 
-    subgraph "harmonius_gpu"
+    subgraph spatial["harmonius_core::spatial"]
+        SI[Shared BVH]
+    end
+
+    subgraph gpu["harmonius_gpu"]
         GPU[GpuBackend Trait]
         CMD[CommandBuffer]
         PSO[PipelineState]
         MEM[GpuAllocator]
     end
 
-    subgraph "harmonius_rendering::graph"
+    subgraph graph["harmonius_rendering::graph"]
         RG[RenderGraph]
+        PE[Parallel Encoding]
+    end
+
+    subgraph threading["harmonius_platform::threading"]
+        TP[Thread Pool]
+        SC[Scoped Tasks]
     end
 
     MC --> EXT
@@ -143,6 +180,7 @@ graph TD
 
     EXT --> PROXY
     PROXY --> CULL
+    SI --> CULL
     CULL --> BATCH
     BATCH --> QUEUE
     QUEUE --> DRAW
@@ -160,9 +198,12 @@ graph TD
     MEM --> GPU
 
     RG --> DRAW
+    PE --> CMD
     DRS --> RG
     PROJ --> CULL
     CAP --> RG
+    TP --> EXT
+    SC --> QUEUE
 ```
 
 ### Directory Layout
@@ -171,7 +212,7 @@ graph TD
 harmonius_rendering/
 ├── core/
 │   ├── extract.rs        # RenderExtractor system
-│   ├── proxy.rs          # RenderProxy, proxy SoA
+│   ├── proxy.rs          # ProxyStore, SoA layout
 │   ├── culling.rs        # GpuCullingPipeline
 │   ├── batch.rs          # BatchCompactor
 │   ├── queue.rs          # RenderQueueSorter,
@@ -184,7 +225,13 @@ harmonius_rendering/
 │   ├── depth_prepass.rs  # DepthPrepass render pass
 │   ├── hzb.rs            # HzbBuilder,
 │   │                     # HzbMipChain
-│   └── alpha_cutout.rs   # AlphaCutout pass
+│   ├── alpha_cutout.rs   # AlphaCutout pass
+│   ├── phases.rs         # RenderPhase enum
+│   │                     # and phase config
+│   ├── debug.rs          # Debug draw API,
+│   │                     # gizmos, buffer viz
+│   └── plugin.rs         # CoreRenderingPlugin
+│                         # system registration
 ├── lighting/
 │   ├── light_buffer.rs   # LightBuffer, LightGpu
 │   ├── forward_plus.rs   # TiledLightCull,
@@ -199,7 +246,7 @@ harmonius_rendering/
 │   ├── instance.rs       # MaterialInstance
 │   ├── permutation.rs    # ShaderPermutation,
 │   │                     # PermutationKey
-│   └── bindless.rs       # BindlessTable,
+│   ├── bindless.rs       # BindlessTable,
 │   │                     # descriptor management
 │   └── shading_model.rs  # ShadingModel enum
 └── shaders/
@@ -224,100 +271,85 @@ harmonius_rendering/
         └── bindless.hlsl
 ```
 
-### GPU Culling Pipeline
+## Extract-Prepare-Render Pipeline
 
-The culling pipeline is a chain of GPU compute
-passes that progressively eliminates invisible
-meshlets before any rasterization occurs. Each
-stage reads from a global instance buffer and
-writes a visibility bitmask or compacted index
-list.
-
-```mermaid
-flowchart TD
-    A[Instance Buffer] --> B[Frustum Cull]
-    B -->|pass| C[Backface Cull]
-    B -->|fail| R1[Rejected]
-    C -->|pass| D[HZB Phase 1]
-    C -->|fail| R2[Rejected]
-    D -->|pass| E[Depth Prepass]
-    D -->|reject| F[Reject Buffer]
-    E --> G[Build HZB]
-    G --> H[HZB Phase 2]
-    F --> H
-    H -->|pass| I[Phase 2 Survivors]
-    H -->|fail| R3[Rejected]
-    E --> J[Batch Compaction]
-    I --> J
-    J --> K[Indirect Draw Buffer]
-    K --> L[Opaque Pass]
-    K --> M[Transparent Pass]
-```
-
-### Frame Rendering Sequence
+### Pipeline Flow
 
 ```mermaid
 sequenceDiagram
-    participant ECS as ECS World
-    participant EXT as Extractor
-    participant UP as GPU Upload
-    participant CULL as GPU Culling
-    participant BAT as Batch Compactor
-    participant RG as Render Graph
-    participant GPU as GPU Backend
+    participant SIM as Simulation
+    participant EX as Extract
+    participant PREP as Prepare
+    participant REN as Render
+    participant GPU as GPU
 
-    ECS->>EXT: extract visible entities
-    EXT->>UP: upload instance buffer
-    UP->>CULL: dispatch frustum cull
-    CULL->>CULL: backface cull
-    CULL->>CULL: HZB phase 1
-    CULL->>RG: depth prepass
-    RG->>CULL: build current HZB
-    CULL->>CULL: HZB phase 2
-    CULL->>BAT: compact survivors
-    BAT->>RG: indirect draw buffer
-    RG->>GPU: opaque pass
-    RG->>GPU: transparent pass
-    RG->>GPU: post-processing
-    RG->>GPU: present
+    SIM->>EX: Immutable ECS queries
+    EX->>EX: Copy changed to proxy store
+    EX->>PREP: ProxyStore handoff
+    PREP->>PREP: View setup
+    PREP->>PREP: Frustum cull via shared BVH
+    PREP->>PREP: Build and sort draw lists
+    PREP->>PREP: GPU batch compaction
+    PREP->>PREP: Material binding
+    PREP->>REN: Compiled draw lists
+    REN->>REN: Parallel command encoding
+    REN->>GPU: Submit command buffers
 ```
 
-### Forward+ vs Deferred Data Flow
+The pipeline stages are:
 
-Both rendering paths share the culling pipeline,
-light buffer, material system, and PBR evaluator.
-The path divergence happens at the shading stage.
+1. **Extract** (`PreRender` phase) -- Read-only
+   ECS access. Copies changed transforms, meshes,
+   materials, and bounds into the renderer-owned
+   `ProxyStore`. Extracts cameras and lights.
+2. **Prepare** (`Render` phase, before encoding)
+   -- Operates exclusively on the proxy store.
+   Sets up views, runs visibility against the
+   shared BVH, builds per-view draw lists, sorts
+   by sort key, runs GPU batch compaction, and
+   uploads material parameters.
+3. **Render** (`Render` phase, encoding and
+   submit) -- Encodes GPU command buffers in
+   parallel across worker threads, then submits
+   to the GPU.
+
+### System Execution Order
 
 ```mermaid
-flowchart LR
-    subgraph Shared
-        CULL[GPU Culling]
-        LB[Light Buffer]
-        MAT[Material System]
-        PBR[PBR BRDF]
+graph TD
+    subgraph prerender["PreRender Phase"]
+        S1[extract_cameras_system]
+        S2[extract_render_proxies_system]
+        S3[extract_lights_system]
     end
 
-    subgraph "Forward+ Path"
-        TILE[Tile Light Cull]
-        FS[Forward Shade]
+    subgraph render["Render Phase"]
+        S4[update_views_system]
+        S5[visibility_system]
+        S6[build_draw_lists_system]
+        S7[sort_draw_lists_system]
+        S8[batch_compaction_system]
+        S9[material_binding_system]
+        S10[debug_draw_system]
+        S11[encode_commands_system]
+        S12[submit_frame_system]
     end
 
-    subgraph "Deferred Path"
-        GB[G-Buffer Write]
-        DL[Deferred Light Pass]
-    end
-
-    CULL --> TILE
-    CULL --> GB
-    LB --> TILE
-    LB --> DL
-    MAT --> FS
-    MAT --> GB
-    PBR --> FS
-    PBR --> DL
-    TILE --> FS
-    GB --> DL
+    S1 --> S4
+    S2 --> S4
+    S3 --> S4
+    S4 --> S5
+    S5 --> S6
+    S6 --> S7
+    S7 --> S8
+    S7 --> S9
+    S8 --> S11
+    S9 --> S11
+    S10 --> S11
+    S11 --> S12
 ```
+
+## ECS Extraction
 
 ### Render Component Class Diagram
 
@@ -339,14 +371,16 @@ classDiagram
 
     class CameraComponent {
         +projection: Projection
-        +viewport: Viewport
         +render_path: RenderPath
+        +clear_color: LinearColor
+        +render_order: i32
     }
 
     class VisibilityComponent {
         +visible: bool
         +render_layers: RenderLayerMask
         +cast_shadows: bool
+        +two_sided: bool
     }
 
     class LightComponent {
@@ -354,6 +388,7 @@ classDiagram
         +color: LinearColor
         +intensity: f32
         +range: f32
+        +ies_profile: Option~IesProfileHandle~
     }
 
     class GlobalTransform {
@@ -371,6 +406,7 @@ classDiagram
         +capture_mode: CaptureMode
         +resolution: UVec2
         +target_texture: TextureHandle
+        +update_interval: u32
     }
 
     MeshComponent --> MaterialComponent
@@ -382,38 +418,10 @@ classDiagram
     SceneCaptureComponent --> CameraComponent
 ```
 
-### Material System Architecture
-
-```mermaid
-graph TD
-    subgraph "Material Definition"
-        SM[ShadingModel]
-        SP[ShaderPermutation]
-        PK[PermutationKey]
-    end
-
-    subgraph "Material Instance"
-        MI[MaterialInstance]
-        PP[Parameter Buffer]
-        BT[BindlessTable]
-    end
-
-    subgraph "GPU Pipeline"
-        PSO[PipelineState]
-        DS[Descriptor Set]
-    end
-
-    SM --> SP
-    PK --> SP
-    SP --> PSO
-    MI --> PP
-    MI --> BT
-    PP --> DS
-    BT --> DS
-    PSO --> DS
-```
-
-## API Design
+> **Note:** `Viewport` is defined in
+> `harmonius_gpu` (see gpu-abstraction.md) and
+> consumed here by reference. It is not redefined
+> in this module.
 
 ### ECS Components
 
@@ -444,7 +452,6 @@ pub struct MaterialComponent {
 #[derive(Clone, Debug, Reflect)]
 pub struct CameraComponent {
     pub projection: Projection,
-    pub viewport: Viewport,
     pub render_path: RenderPath,
     pub clear_color: LinearColor,
     pub render_order: i32,
@@ -502,6 +509,22 @@ pub struct SceneCaptureComponent {
     pub target_texture: TextureHandle,
     /// Update frequency: every N frames.
     pub update_interval: u32,
+}
+
+/// ECS component marking an entity as renderable.
+/// Added alongside mesh and material components.
+#[derive(Clone, Copy, Debug)]
+pub struct Renderable {
+    pub cast_shadow: bool,
+    pub receive_shadow: bool,
+}
+
+/// ECS component linking an entity to its render
+/// proxy index. Added by the extraction system on
+/// first extraction.
+#[derive(Clone, Copy, Debug)]
+pub struct RenderProxy {
+    pub index: ProxyIndex,
 }
 ```
 
@@ -584,20 +607,463 @@ impl RenderLayerMask {
     pub const ALL: Self = Self(u32::MAX);
     pub const DEFAULT: Self = Self(1);
 
-    pub fn intersects(self, other: Self) -> bool {
-        (self.0 & other.0) != 0
+    pub fn intersects(self, other: Self) -> bool;
+}
+```
+
+### Extraction Systems
+
+```rust
+/// Extract cameras from the ECS world into
+/// RenderViews. Runs in PreRender phase.
+///
+/// Query: (Entity, &Camera, &GlobalTransform)
+pub fn extract_cameras_system(
+    cameras: Query<(
+        Entity,
+        &Camera,
+        &GlobalTransform,
+    )>,
+    render_world: ResMut<RenderWorld>,
+);
+
+/// Extract renderable entities into the proxy
+/// store. Uses change detection to perform
+/// incremental updates.
+///
+/// Query: (
+///     Entity,
+///     &GlobalTransform,
+///     &MeshHandle,
+///     &MaterialHandle,
+///     &Aabb,
+///     &Renderable,
+///     Option<&RenderProxy>,
+///     Changed<GlobalTransform>,
+///     Changed<MeshHandle>,
+///     Changed<MaterialHandle>,
+/// )
+pub fn extract_render_proxies_system(
+    query: Query<(
+        Entity,
+        &GlobalTransform,
+        &MeshHandle,
+        &MaterialHandle,
+        &Aabb,
+        &Renderable,
+        Option<&RenderProxy>,
+    )>,
+    changed_transforms: Query<
+        Entity,
+        Changed<GlobalTransform>,
+    >,
+    changed_meshes: Query<
+        Entity,
+        Changed<MeshHandle>,
+    >,
+    changed_materials: Query<
+        Entity,
+        Changed<MaterialHandle>,
+    >,
+    render_world: ResMut<RenderWorld>,
+    commands: Commands,
+);
+
+/// Extract light sources for shadow view
+/// generation.
+///
+/// Query: (Entity, &Light, &GlobalTransform)
+pub fn extract_lights_system(
+    lights: Query<(
+        Entity,
+        &Light,
+        &GlobalTransform,
+    )>,
+    render_world: ResMut<RenderWorld>,
+);
+```
+
+### Incremental Extraction Detail
+
+The extraction system uses ECS change detection
+(F-1.1.22) to minimize per-frame work:
+
+1. **New entities** -- Entities with `Renderable`
+   but no `RenderProxy` component. Insert into
+   proxy store, attach `RenderProxy` component
+   via command buffer.
+2. **Changed entities** -- Entities with
+   `Changed<GlobalTransform>`,
+   `Changed<MeshHandle>`, or
+   `Changed<MaterialHandle>`. Update only the
+   changed fields in the proxy store.
+3. **Removed entities** -- Entities with
+   `RenderProxy` that no longer match the
+   `Renderable` query (despawned or component
+   removed). Remove from proxy store, recycle
+   index.
+
+This bounds extraction cost to
+`O(new + changed + removed)` rather than
+`O(total)`.
+
+## CPU-Side Preparation
+
+### Proxy Store (SoA Layout)
+
+```mermaid
+classDiagram
+    class ProxyStore {
+        -transforms Vec~Mat4~
+        -prev_transforms Vec~Mat4~
+        -mesh_ids Vec~MeshId~
+        -material_ids Vec~MaterialId~
+        -bounds Vec~Aabb~
+        -flags Vec~ProxyFlags~
+        -entity_map HashMap~Entity ProxyIndex~
+        -free_list Vec~ProxyIndex~
+        +insert(entity, transform, mesh_id, material_id, bounds, flags) ProxyIndex
+        +update_transform(index, transform)
+        +update_mesh(index, mesh_id)
+        +update_material(index, material_id)
+        +remove(entity) Option~ProxyIndex~
+        +get(entity) Option~ProxyIndex~
+        +len() u32
+        +rotate_transforms()
+        +clear_dirty_flags()
     }
+
+    class ProxyIndex {
+        +0: u32
+    }
+
+    class ProxyFlags {
+        +0: u32
+        +ACTIVE
+        +DIRTY_TRANSFORM
+        +DIRTY_MESH
+        +DIRTY_MATERIAL
+        +CAST_SHADOW
+        +RECEIVE_SHADOW
+        +STATIC_GEOMETRY
+        +is_dirty() bool
+        +clear_dirty()
+    }
+
+    ProxyStore *-- ProxyIndex
+    ProxyStore *-- ProxyFlags
+```
+
+```rust
+/// Index into the ProxyStore SoA arrays.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Hash,
+)]
+pub struct ProxyIndex(pub u32);
+
+/// Flags describing proxy state.
+#[derive(Clone, Copy, Debug)]
+pub struct ProxyFlags(pub u32);
+
+impl ProxyFlags {
+    pub const ACTIVE: u32 = 1 << 0;
+    pub const DIRTY_TRANSFORM: u32 = 1 << 1;
+    pub const DIRTY_MESH: u32 = 1 << 2;
+    pub const DIRTY_MATERIAL: u32 = 1 << 3;
+    pub const CAST_SHADOW: u32 = 1 << 4;
+    pub const RECEIVE_SHADOW: u32 = 1 << 5;
+    pub const STATIC_GEOMETRY: u32 = 1 << 6;
+
+    pub fn is_dirty(self) -> bool;
+    pub fn clear_dirty(&mut self);
 }
 
-/// Viewport rectangle in pixels.
-#[derive(Clone, Debug, Reflect)]
-pub struct Viewport {
-    pub x: f32,
-    pub y: f32,
-    pub width: f32,
-    pub height: f32,
-    pub min_depth: f32,
-    pub max_depth: f32,
+/// Structure-of-arrays storage for render proxy
+/// components. Each field is a parallel array
+/// indexed by ProxyIndex. Only data needed by
+/// the GPU pipeline is stored; simulation-only
+/// fields are discarded during extraction.
+pub struct ProxyStore {
+    /// World-space transform matrices.
+    transforms: Vec<Mat4>,
+    /// Previous frame transforms (motion vectors).
+    prev_transforms: Vec<Mat4>,
+    /// Mesh asset handle.
+    mesh_ids: Vec<MeshId>,
+    /// Material asset handle.
+    material_ids: Vec<MaterialId>,
+    /// World-space axis-aligned bounding box.
+    bounds: Vec<Aabb>,
+    /// Per-proxy state flags.
+    flags: Vec<ProxyFlags>,
+    /// Entity-to-proxy index mapping.
+    entity_map: HashMap<Entity, ProxyIndex>,
+    /// Free list for recycled indices.
+    free_list: Vec<ProxyIndex>,
+}
+
+impl ProxyStore {
+    pub fn new() -> Self;
+
+    /// Insert a new proxy for the given entity.
+    /// Reuses a free index if available.
+    pub fn insert(
+        &mut self,
+        entity: Entity,
+        transform: Mat4,
+        mesh_id: MeshId,
+        material_id: MaterialId,
+        bounds: Aabb,
+        flags: ProxyFlags,
+    ) -> ProxyIndex;
+
+    /// Update only the dirty fields of an
+    /// existing proxy.
+    pub fn update_transform(
+        &mut self,
+        index: ProxyIndex,
+        transform: Mat4,
+    );
+
+    pub fn update_mesh(
+        &mut self,
+        index: ProxyIndex,
+        mesh_id: MeshId,
+    );
+
+    pub fn update_material(
+        &mut self,
+        index: ProxyIndex,
+        material_id: MaterialId,
+    );
+
+    pub fn update_bounds(
+        &mut self,
+        index: ProxyIndex,
+        bounds: Aabb,
+    );
+
+    /// Remove a proxy and return its index to
+    /// the free list.
+    pub fn remove(
+        &mut self,
+        entity: Entity,
+    ) -> Option<ProxyIndex>;
+
+    /// Look up the proxy index for an entity.
+    pub fn get(
+        &self,
+        entity: Entity,
+    ) -> Option<ProxyIndex>;
+
+    /// Total number of active proxies.
+    pub fn len(&self) -> u32;
+
+    /// Read-only slice access for GPU upload.
+    pub fn transforms(&self) -> &[Mat4];
+    pub fn mesh_ids(&self) -> &[MeshId];
+    pub fn material_ids(&self) -> &[MaterialId];
+    pub fn bounds(&self) -> &[Aabb];
+    pub fn flags(&self) -> &[ProxyFlags];
+
+    /// Swap current and previous transforms for
+    /// motion vector computation. Called once per
+    /// frame before extraction.
+    pub fn rotate_transforms(&mut self);
+
+    /// Clear all dirty flags after GPU upload.
+    pub fn clear_dirty_flags(&mut self);
+}
+```
+
+### GPU Instance Data
+
+```rust
+/// Minimal per-instance data for GPU upload.
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod)]
+pub struct InstanceGpu {
+    pub world_matrix: Mat4,
+    pub prev_world_matrix: Mat4,
+    pub mesh_handle: u32,
+    pub material_id: u32,
+    pub instance_id: u32,
+    pub meshlet_offset: u32,
+    pub meshlet_count: u32,
+    pub lod_bias: f32,
+    pub flags: u32,
+    pub _padding: u32,
+}
+
+/// Flags packed into InstanceGpu::flags.
+bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug)]
+    pub struct InstanceFlags: u32 {
+        const CAST_SHADOWS = 1 << 0;
+        const TWO_SIDED    = 1 << 1;
+        const ALPHA_CUTOUT = 1 << 2;
+        const TRANSPARENT  = 1 << 3;
+    }
+}
+```
+
+### Instance Buffer Layout
+
+```
+Offset  Field                Size
+------  -------------------  ----
+0       world_matrix         64 B
+64      prev_world_matrix    64 B
+128     mesh_handle          4 B
+132     material_id          4 B
+136     instance_id          4 B
+140     meshlet_offset       4 B
+144     meshlet_count        4 B
+148     lod_bias             4 B
+152     flags                4 B
+156     _padding             4 B
+------                       ------
+Total per instance:          160 B
+```
+
+### Render Extraction
+
+```rust
+/// Extracts renderable entities from the ECS
+/// into the proxy store. Runs as a system in
+/// the Extract phase.
+pub struct RenderExtractor;
+
+impl RenderExtractor {
+    /// Parallel extraction using scoped thread
+    /// pool tasks. Reads MeshComponent,
+    /// MaterialComponent, GlobalTransform,
+    /// VisibilityComponent via immutable queries.
+    /// Only extracts entities whose
+    /// VisibilityComponent::visible is true.
+    /// Uses change detection to incrementally
+    /// update only dirty entities.
+    pub fn extract<B: GpuBackend>(
+        world: &World,
+        pool: &ThreadPool,
+        store: &mut ProxyStore,
+    );
+
+    /// Upload the proxy store into a GPU instance
+    /// buffer. Returns the buffer handle for the
+    /// culling pipeline.
+    pub fn upload<B: GpuBackend>(
+        store: &ProxyStore,
+        allocator: &GpuAllocator<B>,
+        cmd: &mut B::CommandBuffer,
+    ) -> B::BufferHandle;
+}
+```
+
+### View and Camera
+
+```rust
+/// Unique identifier for a render view.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Hash,
+)]
+pub struct ViewId(pub u32);
+
+/// Classification of view purpose.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ViewType {
+    /// Main game camera.
+    MainCamera,
+    /// Shadow cascade (index 0..N).
+    ShadowCascade { cascade_index: u8 },
+    /// Reflection probe capture face.
+    ReflectionProbe { face: CubeFace },
+    /// Split-screen player viewport.
+    SplitScreen { player_index: u8 },
+    /// VR eye (left or right).
+    VrEye { eye: VrEye },
+}
+
+/// A single render view with all data needed
+/// for per-view culling and draw list assembly.
+///
+/// Quality scaling uses `PlatformTier` from
+/// shared-primitives rather than a local enum.
+pub struct RenderView {
+    pub view_id: ViewId,
+    pub view_matrix: Mat4,
+    pub projection: Mat4,
+    pub viewport: Viewport,
+    pub platform_tier: PlatformTier,
+    pub view_type: ViewType,
+    /// Per-proxy visibility bitset. Bit N is
+    /// set if ProxyIndex(N) is visible in this
+    /// view.
+    pub visibility_bits: BitVec,
+    /// Frustum planes extracted from the
+    /// view-projection matrix.
+    frustum: Frustum,
+}
+
+impl RenderView {
+    pub fn new(
+        view_id: ViewId,
+        view_matrix: Mat4,
+        projection: Mat4,
+        viewport: Viewport,
+        platform_tier: PlatformTier,
+        view_type: ViewType,
+    ) -> Self;
+
+    /// Recompute frustum planes from the current
+    /// view-projection matrix.
+    pub fn update_frustum(&mut self);
+
+    /// Test whether a world-space AABB intersects
+    /// this view's frustum.
+    pub fn frustum_test(&self, aabb: &Aabb) -> bool;
+
+    /// Reset visibility bits for a new frame.
+    pub fn clear_visibility(&mut self);
+
+    /// Mark a proxy as visible in this view.
+    pub fn set_visible(
+        &mut self,
+        index: ProxyIndex,
+    );
+
+    /// Check visibility of a proxy.
+    pub fn is_visible(
+        &self,
+        index: ProxyIndex,
+    ) -> bool;
+
+    /// Iterator over all visible proxy indices.
+    pub fn visible_proxies(
+        &self,
+    ) -> impl Iterator<Item = ProxyIndex> + '_;
+}
+
+/// Six frustum planes for culling.
+pub struct Frustum {
+    pub planes: [Vec4; 6],
+}
+
+impl Frustum {
+    /// Extract frustum planes from a
+    /// view-projection matrix using the
+    /// Gribb-Hartmann method.
+    pub fn from_view_projection(
+        vp: &Mat4,
+    ) -> Self;
+
+    /// Test intersection with an AABB. Returns
+    /// true if any part of the AABB is inside or
+    /// intersecting the frustum.
+    pub fn intersects_aabb(
+        &self,
+        aabb: &Aabb,
+    ) -> bool;
 }
 ```
 
@@ -634,13 +1100,7 @@ impl ProjectionSystem {
         aspect: f32,
         near: f32,
         far: Option<f32>,
-    ) -> Mat4 {
-        // Infinite far plane when far is None.
-        // Reverse-Z: swap near/far in the
-        // projection to maximize depth precision
-        // at distance.
-        todo!()
-    }
+    ) -> Mat4;
 
     /// Compute an orthographic projection matrix
     /// with reverse-Z depth mapping.
@@ -651,17 +1111,13 @@ impl ProjectionSystem {
         top: f32,
         near: f32,
         far: f32,
-    ) -> Mat4 {
-        todo!()
-    }
+    ) -> Mat4;
 
     /// Extract six frustum planes from a
     /// view-projection matrix.
     pub fn extract_frustum_planes(
         view_projection: &Mat4,
-    ) -> [Vec4; 6] {
-        todo!()
-    }
+    ) -> [Vec4; 6];
 
     /// Build a ViewUniform from camera and
     /// transform components.
@@ -669,101 +1125,147 @@ impl ProjectionSystem {
         camera: &CameraComponent,
         transform: &GlobalTransform,
         drs: Option<&DynamicResolutionState>,
-    ) -> ViewUniform {
-        todo!()
-    }
+    ) -> ViewUniform;
 }
 ```
 
-### Render Extraction
+### Visibility Determination
+
+```mermaid
+flowchart TD
+    A[Per View] --> B[Query shared BVH]
+    B --> C{Frustum test}
+    C -->|Pass| D[Set visibility bit]
+    C -->|Fail| E[Skip entity]
+    D --> F{Occlusion test}
+    F -->|Visible| G[Add to draw list]
+    F -->|Occluded| H[Skip entity]
+    G --> I{LOD select}
+    I --> J[Assign mesh LOD]
+    J --> K[Emit DrawCommand]
+```
 
 ```rust
-/// Opaque handle indexing into the proxy store.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash,
-)]
-pub struct RenderProxyId(pub u32);
+/// Per-view frustum culling against the shared
+/// BVH. Writes visibility bits into each
+/// RenderView. Runs in parallel across views
+/// using scoped tasks.
+pub fn visibility_system(
+    render_world: ResMut<RenderWorld>,
+    spatial_index: Res<SharedSpatialIndex>,
+    pool: Res<ThreadPool>,
+);
 
-/// Minimal per-instance data for GPU upload.
-#[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod)]
-pub struct InstanceGpu {
-    pub world_matrix: Mat4,
-    pub prev_world_matrix: Mat4,
-    pub mesh_handle: u32,
-    pub material_id: u32,
-    pub instance_id: u32,
-    pub meshlet_offset: u32,
-    pub meshlet_count: u32,
-    pub lod_bias: f32,
-    pub flags: u32,
-    pub _padding: u32,
-}
+/// Implementation: for each view, queries the
+/// shared BVH with the view frustum and writes
+/// the resulting entity set into the view's
+/// visibility bitset.
+fn cull_view(
+    view: &mut RenderView,
+    proxies: &ProxyStore,
+    spatial_index: &SharedSpatialIndex,
+);
 
-/// Extracted frame snapshot. Owned by the renderer
-/// and decoupled from the ECS world.
-pub struct RenderProxyStore {
-    /// SoA: world matrices.
-    pub transforms: Vec<Mat4>,
-    /// SoA: previous frame matrices (motion).
-    pub prev_transforms: Vec<Mat4>,
-    /// SoA: mesh handles.
-    pub meshes: Vec<MeshHandle>,
-    /// SoA: material + instance IDs.
-    pub materials: Vec<(MaterialId, MaterialInstanceId)>,
-    /// SoA: visibility flags.
-    pub flags: Vec<InstanceFlags>,
-    /// Total instance count this frame.
-    pub count: u32,
-}
+/// Select LOD level based on screen-space size
+/// of the proxy bounding sphere.
+pub fn select_lod(
+    bounds: &Aabb,
+    view: &RenderView,
+    lod_distances: &[f32],
+) -> u8;
+```
 
-/// Flags packed into InstanceGpu::flags.
-bitflags::bitflags! {
-    #[derive(Clone, Copy, Debug)]
-    pub struct InstanceFlags: u32 {
-        const CAST_SHADOWS = 1 << 0;
-        const TWO_SIDED    = 1 << 1;
-        const ALPHA_CUTOUT = 1 << 2;
-        const TRANSPARENT  = 1 << 3;
-    }
-}
+### Multi-View Parallelism
 
-/// Extracts renderable entities from the ECS into
-/// the proxy store. Runs as a system in the
-/// Extract phase.
-pub struct RenderExtractor;
+Visibility and draw list construction are
+parallelized across views using scoped tasks:
 
-impl RenderExtractor {
-    /// Parallel extraction using scoped thread
-    /// pool tasks. Reads MeshComponent,
-    /// MaterialComponent, GlobalTransform,
-    /// VisibilityComponent via immutable queries.
-    /// Only extracts entities whose
-    /// VisibilityComponent::visible is true.
-    /// Uses change detection to incrementally
-    /// update only dirty entities.
-    pub fn extract<B: GpuBackend>(
-        world: &World,
-        pool: &ThreadPool,
-        store: &mut RenderProxyStore,
-    ) {
-        todo!()
-    }
+```rust
+fn visibility_system(
+    render_world: ResMut<RenderWorld>,
+    spatial_index: Res<SharedSpatialIndex>,
+    pool: Res<ThreadPool>,
+) {
+    let rw = &mut *render_world;
+    let proxies = &rw.proxies;
+    let views = &mut rw.views;
 
-    /// Upload the proxy store into a GPU instance
-    /// buffer. Returns the buffer handle for the
-    /// culling pipeline.
-    pub fn upload<B: GpuBackend>(
-        store: &RenderProxyStore,
-        allocator: &GpuAllocator<B>,
-        cmd: &mut B::CommandBuffer,
-    ) -> B::BufferHandle {
-        todo!()
-    }
+    pool.scope(|scope| {
+        for view in views.iter_mut() {
+            scope.spawn(|| {
+                cull_view(
+                    view,
+                    proxies,
+                    &spatial_index,
+                );
+            });
+        }
+    });
+    // All views culled when scope exits.
 }
 ```
 
-### GPU Culling Pipeline
+Each view's frustum query reads the shared BVH
+(immutable) and writes only to its own
+`visibility_bits` (no contention). Views are fully
+independent and scale linearly with worker count.
+
+### Multi-View Rendering Flow
+
+Shadow cascades, VR eyes, scene captures, and
+split-screen views all share the extracted proxy
+store. Each view gets its own ViewUniform, culling
+pass, and draw submission but reads from the same
+instance buffer.
+
+```mermaid
+flowchart TD
+    EXT[Extract Proxies] --> IB[Instance Buffer]
+    IB --> V1[Main Camera View]
+    IB --> V2[Shadow Cascade 0]
+    IB --> V3[Shadow Cascade 1]
+    IB --> V4[Scene Capture]
+    IB --> V5[VR Left Eye]
+    IB --> V6[VR Right Eye]
+    V1 --> CULL1[Cull + Draw]
+    V2 --> CULL2[Cull + Draw]
+    V3 --> CULL3[Cull + Draw]
+    V4 --> CULL4[Cull + Draw]
+    V5 --> CULL5[Cull + Draw]
+    V6 --> CULL6[Cull + Draw]
+```
+
+## GPU Culling Pipeline
+
+The culling pipeline is a chain of GPU compute
+passes that progressively eliminates invisible
+meshlets before any rasterization occurs. Each
+stage reads from a global instance buffer and
+writes a visibility bitmask or compacted index
+list.
+
+```mermaid
+flowchart TD
+    A[Instance Buffer] --> B[Frustum Cull]
+    B -->|pass| C[Backface Cull]
+    B -->|fail| R1[Rejected]
+    C -->|pass| D[HZB Phase 1]
+    C -->|fail| R2[Rejected]
+    D -->|pass| E[Depth Prepass]
+    D -->|reject| F[Reject Buffer]
+    E --> G[Build HZB]
+    G --> H[HZB Phase 2]
+    F --> H
+    H -->|pass| I[Phase 2 Survivors]
+    H -->|fail| R3[Rejected]
+    E --> J[Batch Compaction]
+    I --> J
+    J --> K[Indirect Draw Buffer]
+    K --> L[Opaque Pass]
+    K --> M[Transparent Pass]
+```
+
+### Culling Pipeline Types
 
 ```rust
 /// Configuration for the GPU culling pipeline.
@@ -810,9 +1312,7 @@ impl<B: GpuBackend> GpuCullingPipeline<B> {
     pub fn new(
         device: &B::Device,
         config: CullingConfig,
-    ) -> Self {
-        todo!()
-    }
+    ) -> Self;
 
     /// Run frustum culling. Tests each meshlet
     /// AABB against the six frustum planes from
@@ -822,9 +1322,7 @@ impl<B: GpuBackend> GpuCullingPipeline<B> {
         cmd: &mut B::CommandBuffer,
         instances: &B::BufferHandle,
         view: &ViewUniform,
-    ) -> VisibilityBuffer<B> {
-        todo!()
-    }
+    ) -> VisibilityBuffer<B>;
 
     /// Run backface culling via normal cone test.
     /// Reads the meshlet normal cone data and
@@ -838,9 +1336,7 @@ impl<B: GpuBackend> GpuCullingPipeline<B> {
         instances: &B::BufferHandle,
         visibility: &mut VisibilityBuffer<B>,
         camera_pos: Vec3,
-    ) {
-        todo!()
-    }
+    );
 
     /// HZB phase 1: test visible meshlets against
     /// the previous frame's HZB (conservative).
@@ -852,9 +1348,7 @@ impl<B: GpuBackend> GpuCullingPipeline<B> {
         cmd: &mut B::CommandBuffer,
         instances: &B::BufferHandle,
         visibility: &mut VisibilityBuffer<B>,
-    ) {
-        todo!()
-    }
+    );
 
     /// Build the current frame's HZB from the
     /// depth prepass output. Generates a mip
@@ -863,9 +1357,7 @@ impl<B: GpuBackend> GpuCullingPipeline<B> {
         &self,
         cmd: &mut B::CommandBuffer,
         depth_buffer: &B::TextureHandle,
-    ) {
-        todo!()
-    }
+    );
 
     /// HZB phase 2: retest phase-1 rejects
     /// against the newly built HZB. Recovers
@@ -874,62 +1366,300 @@ impl<B: GpuBackend> GpuCullingPipeline<B> {
         &self,
         cmd: &mut B::CommandBuffer,
         visibility: &mut VisibilityBuffer<B>,
-    ) {
-        todo!()
-    }
+    );
 
     /// Swap HZB buffers at end of frame. The
     /// current HZB becomes the previous for the
     /// next frame.
-    pub fn end_frame(&mut self) {
-        core::mem::swap(
-            &mut self.prev_hzb,
-            &mut self.current_hzb,
-        );
-    }
+    pub fn end_frame(&mut self);
 }
+```
+
+### Depth Prepass
+
+```rust
+/// Depth-only prepass render pass. Populates the
+/// depth buffer for HZB construction and early-Z
+/// optimization in subsequent passes.
+pub struct DepthPrepass;
+
+impl DepthPrepass {
+    /// Register the depth prepass with the render
+    /// graph. Declares a depth-only render target
+    /// write.
+    pub fn register<B: GpuBackend>(
+        graph: &mut RenderGraphBuilder<B>,
+        view: &ViewUniform,
+        opaque_batch: &DrawBatch<B>,
+        alpha_cutout_batch: &DrawBatch<B>,
+    ) -> RenderPassId;
+}
+```
+
+### HZB Builder
+
+```rust
+/// Hierarchical Z-buffer builder. Generates a
+/// mip chain from the depth buffer via iterative
+/// max-downsample compute passes.
+pub struct HzbBuilder<B: GpuBackend> {
+    downsample_pso: B::PipelineState,
+    /// Full mip chain texture.
+    pub hzb_texture: B::TextureHandle,
+    pub mip_count: u32,
+}
+
+impl<B: GpuBackend> HzbBuilder<B> {
+    pub fn new(
+        device: &B::Device,
+        resolution: UVec2,
+    ) -> Self;
+
+    /// Build the HZB mip chain from the given
+    /// depth buffer. Each mip level takes the
+    /// max of a 2x2 region from the previous
+    /// level (conservative for reverse-Z where
+    /// closer = larger depth values).
+    pub fn build(
+        &self,
+        cmd: &mut B::CommandBuffer,
+        depth_buffer: &B::TextureHandle,
+    );
+}
+```
+
+## Batching
+
+### Sort Key Bit Layout
+
+```mermaid
+graph LR
+    subgraph sort_key["64-bit Sort Key"]
+        B63["Bit 63: Translucency"]
+        B62["Bits 56-62: Phase"]
+        B55["Bits 40-55: Pipeline"]
+        B39["Bits 24-39: Material"]
+        B23["Bits 0-23: Depth"]
+    end
+    B63 --> B62 --> B55 --> B39 --> B23
+```
+
+| Field | Bits | Width | Purpose |
+|-------|------|-------|---------|
+| Translucency | 63 | 1 | 0 = opaque (front-to-back), 1 = transparent (back-to-front) |
+| Phase | 56-62 | 7 | Render phase ordinal (Opaque, AlphaTest, Transparent, UI, Debug) |
+| Pipeline | 40-55 | 16 | Pipeline state object hash (groups identical GPU state) |
+| Material | 24-39 | 16 | Material ID (groups identical descriptor bindings) |
+| Depth | 0-23 | 24 | Quantized depth (front-to-back for opaque, inverted for transparent) |
+
+Opaque draws sort ascending (front-to-back for
+early-Z rejection). Transparent draws sort
+descending (back-to-front for correct blending).
+The translucency bit in the MSB ensures all opaque
+draws precede all transparent draws in a single
+radix sort pass.
+
+### Draw List and Sort Key
+
+```rust
+/// A 64-bit sort key encoding draw order.
+///
+/// Bit layout (MSB to LSB):
+/// - [63]    Translucency (0=opaque, 1=transp)
+/// - [62:56] Phase ordinal (7 bits)
+/// - [55:40] Pipeline state hash (16 bits)
+/// - [39:24] Material ID (16 bits)
+/// - [23:0]  Quantized depth (24 bits)
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+    PartialOrd, Ord,
+)]
+pub struct SortKey {
+    pub bits: u64,
+}
+
+impl SortKey {
+    /// Construct a sort key for an opaque draw.
+    /// Depth is front-to-back (lower = closer).
+    pub fn opaque(
+        phase: RenderPhase,
+        pipeline: u16,
+        material: u16,
+        depth: f32,
+        near: f32,
+        far: f32,
+    ) -> Self;
+
+    /// Construct a sort key for a transparent
+    /// draw. Depth is back-to-front (inverted).
+    pub fn transparent(
+        phase: RenderPhase,
+        pipeline: u16,
+        material: u16,
+        depth: f32,
+        near: f32,
+        far: f32,
+    ) -> Self;
+
+    /// Quantize a linear depth value to 24 bits.
+    fn quantize_depth(
+        depth: f32,
+        near: f32,
+        far: f32,
+    ) -> u32;
+}
+
+/// A single draw command in a draw list.
+#[derive(Clone, Copy, Debug)]
+pub struct DrawCommand {
+    /// Index into the ProxyStore.
+    pub proxy_index: ProxyIndex,
+    /// Mesh to draw.
+    pub mesh_id: MeshId,
+    /// Material for parameter binding.
+    pub material_id: MaterialId,
+    /// Byte offset into the per-instance GPU
+    /// buffer for this draw's constants.
+    pub instance_data_offset: u32,
+    /// LOD level selected by distance.
+    pub lod_level: u8,
+}
+
+/// Render phase classification.
+///
+/// > **UI rendering order:** The UI phase renders
+/// > after tonemapping but before film grain and
+/// > vignette post-processing effects.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+    PartialOrd, Ord, Hash,
+)]
+pub enum RenderPhase {
+    /// Fully opaque geometry. Front-to-back.
+    Opaque = 0,
+    /// Alpha-tested geometry (foliage, fences).
+    AlphaTest = 1,
+    /// Alpha-blended geometry. Back-to-front.
+    Transparent = 2,
+    /// Screen-space UI overlay. Renders after
+    /// tonemapping but before film grain and
+    /// vignette.
+    UI = 3,
+    /// Debug visualization (gizmos, lines).
+    /// Stripped in shipping builds.
+    #[cfg(debug_assertions)]
+    Debug = 4,
+}
+
+/// Per-view draw list holding sorted draw
+/// commands for a single render phase.
+pub struct DrawList {
+    phase: RenderPhase,
+    commands: Vec<DrawCommand>,
+    sort_keys: Vec<SortKey>,
+}
+
+impl DrawList {
+    pub fn new(phase: RenderPhase) -> Self;
+
+    /// Append a draw command with its sort key.
+    pub fn push(
+        &mut self,
+        cmd: DrawCommand,
+        key: SortKey,
+    );
+
+    /// Sort commands by sort key. Uses radix sort
+    /// for O(n) performance on the 64-bit key.
+    pub fn sort(&mut self);
+
+    /// Number of draw commands.
+    pub fn len(&self) -> usize;
+
+    /// Read-only access to sorted commands.
+    pub fn commands(&self) -> &[DrawCommand];
+
+    /// Clear for reuse next frame.
+    pub fn clear(&mut self);
+}
+
+/// Collection of draw lists organized by
+/// (ViewId, RenderPhase).
+pub struct DrawListSet {
+    lists: HashMap<(ViewId, RenderPhase), DrawList>,
+}
+
+impl DrawListSet {
+    pub fn new() -> Self;
+
+    /// Get or create the draw list for a view
+    /// and phase.
+    pub fn get_or_create(
+        &mut self,
+        view_id: ViewId,
+        phase: RenderPhase,
+    ) -> &mut DrawList;
+
+    /// Iterate all draw lists.
+    pub fn iter(
+        &self,
+    ) -> impl Iterator<
+        Item = (
+            &(ViewId, RenderPhase),
+            &DrawList,
+        ),
+    >;
+
+    /// Clear all draw lists for the next frame.
+    pub fn clear_all(&mut self);
+}
+```
+
+### Draw List Construction
+
+```rust
+/// Build per-view, per-phase draw lists from
+/// visible proxies. Runs after visibility.
+/// Parallelized across views via scoped tasks.
+pub fn build_draw_lists_system(
+    render_world: ResMut<RenderWorld>,
+    pool: Res<ThreadPool>,
+);
+
+/// Sort all draw lists by sort key. Uses radix
+/// sort for O(n) performance on 64-bit keys.
+pub fn sort_draw_lists_system(
+    render_world: ResMut<RenderWorld>,
+);
+
+/// Classify which render phase a material
+/// belongs to based on its blend mode.
+fn classify_phase(
+    material_id: MaterialId,
+) -> RenderPhase;
+
+/// Compute linear depth of a bounding box center
+/// in view space.
+fn compute_depth(
+    bounds: &Aabb,
+    view_matrix: &Mat4,
+) -> f32;
+
+/// Hash the pipeline state associated with a
+/// material to produce a 16-bit key for grouping.
+fn pipeline_hash(
+    material_id: MaterialId,
+) -> u16;
+
+/// Radix sort a draw list in-place. Sorts
+/// (sort_keys, commands) in parallel using an
+/// 8-bit radix (8 passes over 64 bits).
+fn radix_sort_draw_list(list: &mut DrawList);
 ```
 
 ### Batch Compaction and Instancing
 
 ```rust
-/// Sort key encoding for render queue ordering.
-/// Opaque: pipeline hash | material | depth
-///         (front-to-back).
-/// Transparent: depth (back-to-front) only.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq,
-    PartialOrd, Ord,
-)]
-pub struct SortKey(pub u64);
-
-impl SortKey {
-    /// Build an opaque sort key. Encodes pipeline
-    /// in the high bits for minimal state changes,
-    /// then material ID, then quantized depth
-    /// (front-to-back) for early-Z efficiency.
-    pub fn opaque(
-        pipeline_hash: u16,
-        material_id: u16,
-        depth: f32,
-    ) -> Self {
-        let depth_bits =
-            quantize_depth_front_to_back(depth);
-        let key = (pipeline_hash as u64) << 48
-            | (material_id as u64) << 32
-            | depth_bits as u64;
-        Self(key)
-    }
-
-    /// Build a transparent sort key. Depth is
-    /// the only criterion (back-to-front).
-    pub fn transparent(depth: f32) -> Self {
-        let depth_bits =
-            quantize_depth_back_to_front(depth);
-        Self(depth_bits as u64)
-    }
-}
-
 /// Indirect draw command matching
 /// D3D12/Vulkan/Metal indirect draw layout.
 #[repr(C)]
@@ -961,9 +1691,7 @@ impl<B: GpuBackend> BatchCompactor<B> {
     pub fn new(
         device: &B::Device,
         max_batches: u32,
-    ) -> Self {
-        todo!()
-    }
+    ) -> Self;
 
     /// Run the compaction compute pass. Reads
     /// the visibility buffer and instance data,
@@ -974,13 +1702,11 @@ impl<B: GpuBackend> BatchCompactor<B> {
         cmd: &mut B::CommandBuffer,
         instances: &B::BufferHandle,
         visibility: &VisibilityBuffer<B>,
-    ) -> DrawBatch<B> {
-        todo!()
-    }
+    ) -> DrawBatch<B>;
 }
 
-/// Result of batch compaction: everything
-/// needed to issue indirect draws.
+/// Result of batch compaction: everything needed
+/// to issue indirect draws.
 pub struct DrawBatch<B: GpuBackend> {
     /// Indirect draw buffer (one entry per
     /// material batch).
@@ -992,15 +1718,57 @@ pub struct DrawBatch<B: GpuBackend> {
     /// the indirect count).
     pub max_draw_count: u32,
 }
+
+/// Indirect draw buffer holding compacted draw
+/// commands for a single material group.
+pub struct IndirectDrawBuffer<B: GpuBackend> {
+    /// GPU buffer containing indirect draw
+    /// arguments.
+    pub buffer: B::Buffer,
+    /// Number of draws written by the compaction
+    /// shader.
+    pub draw_count_offset: u64,
+    /// Material ID for this group.
+    pub material_id: MaterialId,
+}
+
+/// GPU batch compaction system. A compute shader
+/// reads the sorted draw list, applies GPU-driven
+/// occlusion culling, and writes surviving draws
+/// into contiguous indirect draw buffers grouped
+/// by material.
+pub fn batch_compaction_system<B: GpuBackend>(
+    render_world: Res<RenderWorld>,
+    device: Res<B::Device>,
+    allocator: Res<GpuAllocator<B>>,
+);
 ```
+
+### GPU Batch Compaction Pipeline
+
+1. CPU sorts draw commands by sort key
+   (radix sort).
+2. CPU uploads sorted draw commands to a GPU
+   staging buffer.
+3. GPU compute shader reads the staging buffer,
+   performs GPU-driven occlusion culling (HiZ
+   test), and writes surviving draws into
+   contiguous indirect draw buffers grouped by
+   material.
+4. A draw count buffer is atomically incremented
+   per material group.
+5. The render pass issues one
+   `draw_indirect_count` call per material group.
+
+This reduces CPU draw submission from O(draws) to
+O(material_groups), enabling hundreds of thousands
+of meshlet instances with minimal CPU overhead.
+
+## Draw Submission
 
 ### Render Queue Sorter
 
 ```rust
-/// Partitions draw commands into sorted render
-/// queues by pass type.
-pub struct RenderQueueSorter;
-
 /// Classified render queues for a single view.
 pub struct RenderQueues<B: GpuBackend> {
     /// GPU-driven indirect batch for opaque
@@ -1018,28 +1786,228 @@ pub struct RenderQueues<B: GpuBackend> {
 /// Transparent objects are not batched.
 pub struct TransparentDraw {
     pub sort_key: SortKey,
-    pub instance_id: RenderProxyId,
+    pub instance_id: ProxyIndex,
     pub material_id: MaterialId,
     pub instance_params: MaterialInstanceId,
     pub mesh_handle: MeshHandle,
 }
 
+/// Partitions draw commands into sorted render
+/// queues by pass type.
+pub struct RenderQueueSorter;
+
 impl RenderQueueSorter {
     /// Classify extracted proxies into render
     /// queues. Opaque and alpha-cutout go through
-    /// GPU batch compaction. Transparent draws are
-    /// sorted CPU-side (back-to-front).
+    /// GPU batch compaction. Transparent draws
+    /// are sorted CPU-side (back-to-front).
     pub fn sort<B: GpuBackend>(
-        store: &RenderProxyStore,
+        store: &ProxyStore,
         batch: DrawBatch<B>,
         camera_pos: Vec3,
-    ) -> RenderQueues<B> {
-        todo!()
-    }
+    ) -> RenderQueues<B>;
 }
 ```
 
-### Material System
+### Draw Command Encoder
+
+```rust
+/// Encodes final draw commands from the sorted
+/// render queues into GPU command buffers.
+pub struct DrawCommandEncoder;
+
+impl DrawCommandEncoder {
+    /// Encode opaque draws via
+    /// multi-draw-indirect from the batch
+    /// compactor output.
+    pub fn encode_opaque<B: GpuBackend>(
+        cmd: &mut B::CommandBuffer,
+        batch: &DrawBatch<B>,
+        material_system: &MaterialSystem<B>,
+        view_uniform_buffer: &B::BufferHandle,
+        light_buffer: &LightBuffer<B>,
+    );
+
+    /// Encode transparent draws as individual
+    /// draw calls in back-to-front order.
+    pub fn encode_transparent<B: GpuBackend>(
+        cmd: &mut B::CommandBuffer,
+        draws: &[TransparentDraw],
+        material_system: &MaterialSystem<B>,
+        view_uniform_buffer: &B::BufferHandle,
+        light_buffer: &LightBuffer<B>,
+    );
+
+    /// Encode alpha-cutout draws via indirect
+    /// batch. Alpha-cutout geometry participates
+    /// in the depth prepass and shadow maps.
+    pub fn encode_alpha_cutout<B: GpuBackend>(
+        cmd: &mut B::CommandBuffer,
+        batch: &DrawBatch<B>,
+        material_system: &MaterialSystem<B>,
+        view_uniform_buffer: &B::BufferHandle,
+    );
+}
+```
+
+### Command Buffer Encoding
+
+```rust
+/// Encode GPU command buffers in parallel across
+/// worker threads. Each view's draw lists are
+/// encoded into a secondary command buffer.
+/// Secondary buffers are collected and submitted
+/// as a single primary buffer.
+pub fn encode_commands_system<B: GpuBackend>(
+    render_world: Res<RenderWorld>,
+    device: Res<B::Device>,
+    graph: Res<RenderGraph<B>>,
+    pool: Res<ThreadPool>,
+);
+
+/// Encode draw commands for a single view and
+/// phase into a secondary command buffer.
+fn encode_view_phase<B: GpuBackend>(
+    device: &B::Device,
+    view: &RenderView,
+    draw_list: &DrawList,
+    indirect_buffers: &[IndirectDrawBuffer<B>],
+    instance_buffer: &B::Buffer,
+) -> B::CommandBuffer;
+
+/// Submit the final primary command buffer to
+/// the GPU queue.
+pub fn submit_frame_system<B: GpuBackend>(
+    device: Res<B::Device>,
+    render_world: Res<RenderWorld>,
+);
+```
+
+### Material Parameter Binding
+
+```rust
+/// Bindless material parameter upload. Writes
+/// per-instance descriptor indices into a GPU
+/// buffer so shaders can read material params by
+/// index rather than switching descriptor sets.
+pub fn material_binding_system<B: GpuBackend>(
+    render_world: ResMut<RenderWorld>,
+    material_cache: Res<MaterialCache<B>>,
+    allocator: Res<GpuAllocator<B>>,
+);
+
+/// Per-instance data written to the GPU buffer.
+/// Shaders read this to look up material params.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct InstanceData {
+    /// World transform (4x4 column-major).
+    pub transform: [f32; 16],
+    /// Previous frame transform (motion vectors).
+    pub prev_transform: [f32; 16],
+    /// Bindless index into the texture descriptor
+    /// heap.
+    pub albedo_index: u32,
+    /// Bindless index for normal map.
+    pub normal_index: u32,
+    /// Bindless index for PBR parameter map.
+    pub pbr_index: u32,
+    /// Material constant buffer offset.
+    pub material_cb_offset: u32,
+}
+
+/// GPU buffer holding per-instance data for all
+/// draws in a frame.
+pub struct InstanceBuffer {
+    /// CPU-side staging data.
+    data: Vec<InstanceData>,
+    /// Current write offset.
+    offset: u32,
+}
+
+impl InstanceBuffer {
+    pub fn new(capacity: u32) -> Self;
+
+    /// Allocate space for one instance and return
+    /// the byte offset.
+    pub fn push(
+        &mut self,
+        instance: InstanceData,
+    ) -> u32;
+
+    /// Upload to the GPU buffer.
+    pub fn upload<B: GpuBackend>(
+        &self,
+        allocator: &GpuAllocator<B>,
+    ) -> B::Buffer;
+
+    /// Reset for the next frame.
+    pub fn clear(&mut self);
+}
+```
+
+### Render World (Top-Level Resource)
+
+```rust
+/// The renderer-owned world containing all data
+/// needed to produce a frame. Stored as an ECS
+/// resource (Res<RenderWorld>). This is not a
+/// separate ECS world -- it is a resource within
+/// the main world that holds the GPU-side
+/// snapshot.
+pub struct RenderWorld {
+    /// SoA proxy store for all renderable
+    /// entities.
+    pub proxies: ProxyStore,
+    /// Active render views this frame.
+    pub views: Vec<RenderView>,
+    /// Per-view, per-phase draw lists.
+    pub draw_lists: DrawListSet,
+    /// Per-instance GPU data buffer for material
+    /// parameters and transforms.
+    pub instance_buffer: InstanceBuffer,
+    /// Debug draw batch (empty in shipping).
+    #[cfg(debug_assertions)]
+    pub debug_batch: DebugBatch,
+    /// Frame index for double-buffering.
+    pub frame_index: u64,
+}
+```
+
+## Material System
+
+### Material System Architecture
+
+```mermaid
+graph TD
+    subgraph material_def["Material Definition"]
+        SM[ShadingModel]
+        SP[ShaderPermutation]
+        PK[PermutationKey]
+    end
+
+    subgraph material_inst["Material Instance"]
+        MI[MaterialInstance]
+        PP[Parameter Buffer]
+        BT[BindlessTable]
+    end
+
+    subgraph gpu_pipeline["GPU Pipeline"]
+        PSO[PipelineState]
+        DS[Descriptor Set]
+    end
+
+    SM --> SP
+    PK --> SP
+    SP --> PSO
+    MI --> PP
+    MI --> BT
+    PP --> DS
+    BT --> DS
+    PSO --> DS
+```
+
+### Material Types
 
 ```rust
 /// Opaque handle to a compiled material.
@@ -1172,7 +2140,11 @@ pub struct MaterialParams {
     pub sheen_color: Vec3,
     pub sheen_roughness: f32,
 }
+```
 
+### Material System API
+
+```rust
 /// Manages material definitions, instances, and
 /// shader permutation compilation.
 pub struct MaterialSystem<B: GpuBackend> {
@@ -1181,15 +2153,13 @@ pub struct MaterialSystem<B: GpuBackend> {
     /// Cache: PermutationKey -> PipelineStateId.
     pipeline_cache:
         HashMap<PermutationKey, B::PipelineState>,
-    /// Bindless descriptor table for all
-    /// material textures.
+    /// Bindless descriptor table for all material
+    /// textures.
     bindless_table: BindlessTable<B>,
 }
 
 impl<B: GpuBackend> MaterialSystem<B> {
-    pub fn new(device: &B::Device) -> Self {
-        todo!()
-    }
+    pub fn new(device: &B::Device) -> Self;
 
     /// Register a new material. Compiles all
     /// required shader permutations and caches
@@ -1200,9 +2170,7 @@ impl<B: GpuBackend> MaterialSystem<B> {
         shading_model: ShadingModel,
         features: ShaderFeatures,
         params: MaterialParams,
-    ) -> MaterialId {
-        todo!()
-    }
+    ) -> MaterialId;
 
     /// Create a material instance with parameter
     /// overrides. Shares the parent's compiled
@@ -1211,9 +2179,7 @@ impl<B: GpuBackend> MaterialSystem<B> {
         &mut self,
         parent: MaterialId,
         params: MaterialParams,
-    ) -> MaterialInstanceId {
-        todo!()
-    }
+    ) -> MaterialInstanceId;
 
     /// Update an existing instance's parameters.
     /// Marks the instance dirty for GPU re-upload.
@@ -1221,9 +2187,7 @@ impl<B: GpuBackend> MaterialSystem<B> {
         &mut self,
         id: MaterialInstanceId,
         params: MaterialParams,
-    ) {
-        todo!()
-    }
+    );
 
     /// Upload all dirty material instance
     /// parameter buffers to the GPU.
@@ -1231,9 +2195,7 @@ impl<B: GpuBackend> MaterialSystem<B> {
         &self,
         cmd: &mut B::CommandBuffer,
         allocator: &GpuAllocator<B>,
-    ) {
-        todo!()
-    }
+    );
 
     /// Look up the pipeline state for a given
     /// permutation. Returns a cached PSO or
@@ -1242,9 +2204,7 @@ impl<B: GpuBackend> MaterialSystem<B> {
         &mut self,
         device: &B::Device,
         key: &PermutationKey,
-    ) -> &B::PipelineState {
-        todo!()
-    }
+    ) -> &B::PipelineState;
 }
 ```
 
@@ -1265,8 +2225,8 @@ pub struct BindlessTable<B: GpuBackend> {
     descriptor_heap: B::DescriptorHeap,
     /// Free list for recycling indices.
     free_list: Vec<BindlessIndex>,
-    /// Next index to allocate when free list
-    /// is empty.
+    /// Next index to allocate when free list is
+    /// empty.
     next_index: u32,
     /// Maximum descriptor count.
     capacity: u32,
@@ -1276,9 +2236,7 @@ impl<B: GpuBackend> BindlessTable<B> {
     pub fn new(
         device: &B::Device,
         capacity: u32,
-    ) -> Self {
-        todo!()
-    }
+    ) -> Self;
 
     /// Allocate a bindless index and write a
     /// texture descriptor.
@@ -1287,19 +2245,17 @@ impl<B: GpuBackend> BindlessTable<B> {
         device: &B::Device,
         texture: &B::TextureHandle,
         sampler: &B::SamplerHandle,
-    ) -> BindlessIndex {
-        todo!()
-    }
+    ) -> BindlessIndex;
 
     /// Release a bindless index for reuse.
     pub fn remove(
         &mut self,
         index: BindlessIndex,
-    ) {
-        self.free_list.push(index);
-    }
+    );
 }
 ```
+
+## Lighting
 
 ### Light Buffer
 
@@ -1336,9 +2292,7 @@ impl<B: GpuBackend> LightBuffer<B> {
     pub fn new(
         device: &B::Device,
         capacity: u32,
-    ) -> Self {
-        todo!()
-    }
+    ) -> Self;
 
     /// Extract lights from ECS and upload to the
     /// GPU buffer. Returns the light count.
@@ -1347,247 +2301,59 @@ impl<B: GpuBackend> LightBuffer<B> {
         world: &World,
         cmd: &mut B::CommandBuffer,
         allocator: &GpuAllocator<B>,
-    ) -> u32 {
-        todo!()
-    }
+    ) -> u32;
 }
 ```
 
-### Depth Prepass
+### Forward+ vs Deferred Data Flow
 
-```rust
-/// Depth-only prepass render pass. Populates the
-/// depth buffer for HZB construction and early-Z
-/// optimization in subsequent passes.
-pub struct DepthPrepass;
+Both rendering paths share the culling pipeline,
+light buffer, material system, and PBR evaluator.
+The path divergence happens at the shading stage.
 
-impl DepthPrepass {
-    /// Register the depth prepass with the render
-    /// graph. Declares a depth-only render target
-    /// write.
-    pub fn register<B: GpuBackend>(
-        graph: &mut RenderGraphBuilder<B>,
-        view: &ViewUniform,
-        opaque_batch: &DrawBatch<B>,
-        alpha_cutout_batch: &DrawBatch<B>,
-    ) -> RenderPassId {
-        todo!()
-    }
-}
+```mermaid
+flowchart LR
+    subgraph Shared
+        CULL[GPU Culling]
+        LB[Light Buffer]
+        MAT[Material System]
+        PBR[PBR BRDF]
+    end
+
+    subgraph fwd["Forward+ Path"]
+        TILE[Tile Light Cull]
+        FS[Forward Shade]
+    end
+
+    subgraph def["Deferred Path"]
+        GB[G-Buffer Write]
+        DL[Deferred Light Pass]
+    end
+
+    CULL --> TILE
+    CULL --> GB
+    LB --> TILE
+    LB --> DL
+    MAT --> FS
+    MAT --> GB
+    PBR --> FS
+    PBR --> DL
+    TILE --> FS
+    GB --> DL
 ```
 
-### HZB Builder
+### G-Buffer Layout (Deferred Path)
 
-```rust
-/// Hierarchical Z-buffer builder. Generates a
-/// mip chain from the depth buffer via iterative
-/// max-downsample compute passes.
-pub struct HzbBuilder<B: GpuBackend> {
-    downsample_pso: B::PipelineState,
-    /// Full mip chain texture.
-    pub hzb_texture: B::TextureHandle,
-    pub mip_count: u32,
-}
+| Target | Format | Contents |
+|--------|--------|----------|
+| GBuffer0 | RGBA8_UNORM | Albedo (RGB) + Metallic (A) |
+| GBuffer1 | RGB10A2_UNORM | World Normal (RGB) + Roughness remapped (A) |
+| GBuffer2 | RG16_FLOAT | Motion Vectors (RG) |
+| Depth | D32_FLOAT | Reverse-Z depth |
 
-impl<B: GpuBackend> HzbBuilder<B> {
-    pub fn new(
-        device: &B::Device,
-        resolution: UVec2,
-    ) -> Self {
-        todo!()
-    }
-
-    /// Build the HZB mip chain from the given
-    /// depth buffer. Each mip level takes the
-    /// max of a 2x2 region from the previous
-    /// level (conservative for reverse-Z where
-    /// closer = larger depth values).
-    pub fn build(
-        &self,
-        cmd: &mut B::CommandBuffer,
-        depth_buffer: &B::TextureHandle,
-    ) {
-        todo!()
-    }
-}
-```
-
-### Dynamic Resolution
-
-```rust
-/// GPU timing feedback loop that adjusts render
-/// resolution to maintain a target frame budget.
-pub struct DynamicResolution {
-    /// Ring buffer of GPU frame times (ms) for
-    /// smoothing.
-    history: [f32; 8],
-    history_index: usize,
-    /// Current scale factor [min, max].
-    current_scale: f32,
-    /// Exponential moving average of GPU time.
-    smoothed_gpu_ms: f32,
-}
-
-impl DynamicResolution {
-    pub fn new() -> Self {
-        todo!()
-    }
-
-    /// Feed a new GPU frame time measurement.
-    /// Returns the updated render scale for the
-    /// next frame. Converges within 5 frames
-    /// (NFR-2.3.2). Scale adjusts proportionally
-    /// to the ratio of measured vs target time.
-    pub fn update(
-        &mut self,
-        gpu_ms: f32,
-        state: &DynamicResolutionState,
-    ) -> f32 {
-        let target = state.target_ms;
-        let ratio = target / gpu_ms.max(0.001);
-
-        // EMA smoothing factor (higher = faster
-        // convergence, more noise).
-        let alpha = 0.4;
-        self.smoothed_gpu_ms = self.smoothed_gpu_ms
-            * (1.0 - alpha)
-            + gpu_ms * alpha;
-
-        let smoothed_ratio =
-            target / self.smoothed_gpu_ms.max(0.001);
-
-        // Scale resolution proportionally.
-        // Square root because resolution is 2D
-        // but GPU cost scales with pixel count.
-        let new_scale = self.current_scale
-            * smoothed_ratio.sqrt();
-
-        self.current_scale = new_scale
-            .clamp(state.min_scale, state.max_scale);
-
-        self.history[self.history_index] =
-            self.current_scale;
-        self.history_index =
-            (self.history_index + 1) % 8;
-
-        self.current_scale
-    }
-
-    pub fn current_scale(&self) -> f32 {
-        self.current_scale
-    }
-}
-```
-
-### Scene Capture
-
-```rust
-/// Renders the scene from a secondary camera
-/// into a texture for use as a material input.
-pub struct SceneCapture;
-
-impl SceneCapture {
-    /// Register a planar scene capture as a
-    /// sub-graph in the render graph. The capture
-    /// re-uses the same culling and draw
-    /// infrastructure as the main view but with
-    /// an independent ViewUniform and render
-    /// target.
-    pub fn register_planar<B: GpuBackend>(
-        graph: &mut RenderGraphBuilder<B>,
-        capture: &SceneCaptureComponent,
-        camera: &CameraComponent,
-        transform: &GlobalTransform,
-    ) -> RenderPassId {
-        todo!()
-    }
-
-    /// Register a cubemap capture. Generates
-    /// six views (one per face) sharing the
-    /// same capture position. Each face is a
-    /// 90-degree FOV perspective view.
-    pub fn register_cubemap<B: GpuBackend>(
-        graph: &mut RenderGraphBuilder<B>,
-        capture: &SceneCaptureComponent,
-        transform: &GlobalTransform,
-    ) -> [RenderPassId; 6] {
-        todo!()
-    }
-}
-
-/// Dynamic cubemap that re-renders a subset of
-/// faces each frame to amortize cost.
-pub struct DynamicCubemap<B: GpuBackend> {
-    pub cubemap_texture: B::TextureHandle,
-    pub face_resolution: u32,
-    /// Which face to update this frame (0-5).
-    pub current_face: u32,
-    /// Number of faces to update per frame.
-    pub faces_per_frame: u32,
-}
-
-impl<B: GpuBackend> DynamicCubemap<B> {
-    pub fn new(
-        device: &B::Device,
-        resolution: u32,
-        faces_per_frame: u32,
-    ) -> Self {
-        todo!()
-    }
-
-    /// Advance the face rotation and return
-    /// the face indices to render this frame.
-    pub fn next_faces(&mut self) -> &[u32] {
-        todo!()
-    }
-}
-```
-
-### Draw Command Encoder
-
-```rust
-/// Encodes final draw commands from the sorted
-/// render queues into GPU command buffers.
-pub struct DrawCommandEncoder;
-
-impl DrawCommandEncoder {
-    /// Encode opaque draws via multi-draw-indirect
-    /// from the batch compactor output.
-    pub fn encode_opaque<B: GpuBackend>(
-        cmd: &mut B::CommandBuffer,
-        batch: &DrawBatch<B>,
-        material_system: &MaterialSystem<B>,
-        view_uniform_buffer: &B::BufferHandle,
-        light_buffer: &LightBuffer<B>,
-    ) {
-        todo!()
-    }
-
-    /// Encode transparent draws as individual
-    /// draw calls in back-to-front order.
-    pub fn encode_transparent<B: GpuBackend>(
-        cmd: &mut B::CommandBuffer,
-        draws: &[TransparentDraw],
-        material_system: &MaterialSystem<B>,
-        view_uniform_buffer: &B::BufferHandle,
-        light_buffer: &LightBuffer<B>,
-    ) {
-        todo!()
-    }
-
-    /// Encode alpha-cutout draws via indirect
-    /// batch. Alpha-cutout geometry participates
-    /// in the depth prepass and shadow maps.
-    pub fn encode_alpha_cutout<B: GpuBackend>(
-        cmd: &mut B::CommandBuffer,
-        batch: &DrawBatch<B>,
-        material_system: &MaterialSystem<B>,
-        view_uniform_buffer: &B::BufferHandle,
-    ) {
-        todo!()
-    }
-}
-```
+The deferred lighting pass reads all G-buffer
+targets plus the light buffer and outputs the lit
+result to an HDR render target.
 
 ### PBR BRDF (HLSL Reference)
 
@@ -1595,16 +2361,17 @@ The Cook-Torrance microfacet BRDF is implemented
 in HLSL and shared across all lighting paths.
 
 ```hlsl
-// pbr_brdf.hlsl — Cook-Torrance BRDF
-// GGX/Trowbridge-Reitz NDF + Smith-GGX geometry
-// + Schlick Fresnel
+// pbr_brdf.hlsl -- Cook-Torrance BRDF
+// GGX/Trowbridge-Reitz NDF + Smith-GGX
+// geometry + Schlick Fresnel
 
 float DistributionGGX(
     float NdotH, float roughness
 ) {
     float a  = roughness * roughness;
     float a2 = a * a;
-    float d  = NdotH * NdotH * (a2 - 1.0) + 1.0;
+    float d  = NdotH * NdotH * (a2 - 1.0)
+             + 1.0;
     return a2 / (PI * d * d);
 }
 
@@ -1646,7 +2413,9 @@ float3 EvaluateCookTorrance(
         metallic
     );
 
-    float  D = DistributionGGX(NdotH, roughness);
+    float  D = DistributionGGX(
+        NdotH, roughness
+    );
     float  G = GeometrySmithGGX(
         NdotV, NdotL, roughness
     );
@@ -1670,7 +2439,7 @@ float3 EvaluateCookTorrance(
 ### Tiled Light Culling (HLSL Reference)
 
 ```hlsl
-// tile_cull.hlsl — Forward+ tiled light culling
+// tile_cull.hlsl -- Forward+ tiled light culling
 // Assigns lights to screen-space tiles.
 
 #define TILE_SIZE 16
@@ -1705,8 +2474,12 @@ void CSTileLightCull(
     ).r;
     uint depth_uint = asuint(depth);
 
-    InterlockedMin(tile_depth_min, depth_uint);
-    InterlockedMax(tile_depth_max, depth_uint);
+    InterlockedMin(
+        tile_depth_min, depth_uint
+    );
+    InterlockedMax(
+        tile_depth_max, depth_uint
+    );
     GroupMemoryBarrierWithGroupSync();
 
     float min_depth = asfloat(tile_depth_min);
@@ -1714,7 +2487,8 @@ void CSTileLightCull(
 
     // Step 2: Each thread tests a subset of
     // lights against the tile frustum.
-    uint light_count = LightCountBuffer.Load(0);
+    uint light_count =
+        LightCountBuffer.Load(0);
     for (
         uint i = flat_id;
         i < light_count;
@@ -1759,191 +2533,368 @@ void CSTileLightCull(
 }
 ```
 
-## Data Flow
+## Dynamic Resolution and Scene Capture
 
-### Full Frame Pipeline
+### Dynamic Resolution
 
 ```rust
-// Simplified frame rendering pseudocode.
-// Generic over GpuBackend for static dispatch.
-fn render_frame<B: GpuBackend>(
-    world: &World,
-    pool: &ThreadPool,
-    renderer: &mut Renderer<B>,
-) {
-    // 1. Extract ECS -> proxy store.
-    RenderExtractor::extract::<B>(
-        world, pool, &mut renderer.proxy_store,
+/// GPU timing feedback loop that adjusts render
+/// resolution to maintain a target frame budget.
+pub struct DynamicResolution {
+    /// Ring buffer of GPU frame times (ms).
+    history: [f32; 8],
+    history_index: usize,
+    /// Current scale factor [min, max].
+    current_scale: f32,
+    /// Exponential moving average of GPU time.
+    smoothed_gpu_ms: f32,
+}
+
+impl DynamicResolution {
+    pub fn new() -> Self;
+
+    /// Feed a new GPU frame time measurement.
+    /// Returns the updated render scale for the
+    /// next frame. Converges within 5 frames
+    /// (NFR-2.3.2). Scale adjusts proportionally
+    /// to the ratio of measured vs target time.
+    pub fn update(
+        &mut self,
+        gpu_ms: f32,
+        state: &DynamicResolutionState,
+    ) -> f32;
+
+    pub fn current_scale(&self) -> f32;
+}
+```
+
+### Scene Capture
+
+```rust
+/// Renders the scene from a secondary camera
+/// into a texture for use as a material input.
+pub struct SceneCapture;
+
+impl SceneCapture {
+    /// Register a planar scene capture as a
+    /// sub-graph in the render graph. The capture
+    /// re-uses the same culling and draw
+    /// infrastructure as the main view but with
+    /// an independent ViewUniform and render
+    /// target.
+    pub fn register_planar<B: GpuBackend>(
+        graph: &mut RenderGraphBuilder<B>,
+        capture: &SceneCaptureComponent,
+        camera: &CameraComponent,
+        transform: &GlobalTransform,
+    ) -> RenderPassId;
+
+    /// Register a cubemap capture. Generates six
+    /// views (one per face) sharing the same
+    /// capture position. Each face is a 90-degree
+    /// FOV perspective view.
+    pub fn register_cubemap<B: GpuBackend>(
+        graph: &mut RenderGraphBuilder<B>,
+        capture: &SceneCaptureComponent,
+        transform: &GlobalTransform,
+    ) -> [RenderPassId; 6];
+}
+
+/// Dynamic cubemap that re-renders a subset of
+/// faces each frame to amortize cost.
+pub struct DynamicCubemap<B: GpuBackend> {
+    pub cubemap_texture: B::TextureHandle,
+    pub face_resolution: u32,
+    /// Which face to update this frame (0-5).
+    pub current_face: u32,
+    /// Number of faces to update per frame.
+    pub faces_per_frame: u32,
+}
+
+impl<B: GpuBackend> DynamicCubemap<B> {
+    pub fn new(
+        device: &B::Device,
+        resolution: u32,
+        faces_per_frame: u32,
+    ) -> Self;
+
+    /// Advance the face rotation and return the
+    /// face indices to render this frame.
+    pub fn next_faces(&mut self) -> &[u32];
+}
+```
+
+## Debug Visualization
+
+```rust
+/// Immediate-mode debug draw API. All methods
+/// are no-ops in shipping builds via compile-time
+/// gating.
+#[cfg(debug_assertions)]
+pub struct DebugDraw {
+    vertices: Vec<DebugVertex>,
+    indices: Vec<u32>,
+}
+
+#[cfg(not(debug_assertions))]
+pub struct DebugDraw;
+
+#[cfg(debug_assertions)]
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct DebugVertex {
+    pub position: [f32; 3],
+    pub color: [f32; 4],
+}
+
+#[cfg(debug_assertions)]
+impl DebugDraw {
+    pub fn new() -> Self;
+    pub fn line(
+        &mut self, start: Vec3,
+        end: Vec3, color: Color,
     );
-
-    // 2. Upload instance buffer to GPU.
-    let instances = RenderExtractor::upload::<B>(
-        &renderer.proxy_store,
-        &renderer.allocator,
-        &mut renderer.cmd,
+    pub fn wire_box(
+        &mut self, center: Vec3,
+        half_extents: Vec3, color: Color,
     );
-
-    // 3. Update light buffer.
-    renderer.light_buffer.update(
-        world, &mut renderer.cmd,
-        &renderer.allocator,
+    pub fn wire_sphere(
+        &mut self, center: Vec3,
+        radius: f32, color: Color,
     );
+    pub fn wire_frustum(
+        &mut self, frustum: &Frustum,
+        color: Color,
+    );
+    pub fn text(
+        &mut self, position: Vec3,
+        text: &str, color: Color,
+    );
+    /// Flush all debug primitives into a single
+    /// vertex/index buffer for the debug render
+    /// pass.
+    pub fn flush(&mut self) -> DebugBatch;
+}
 
-    // 4. For each active view (main camera,
-    //    shadow cascades, scene captures):
-    for view in &renderer.views {
-        let view_uniform =
-            ProjectionSystem::build_view_uniform(
-                &view.camera,
-                &view.transform,
-                view.drs.as_ref(),
-            );
+#[cfg(not(debug_assertions))]
+impl DebugDraw {
+    pub fn new() -> Self { Self }
+    pub fn line(&mut self, _: Vec3, _: Vec3, _: Color) {}
+    pub fn wire_box(&mut self, _: Vec3, _: Vec3, _: Color) {}
+    pub fn wire_sphere(&mut self, _: Vec3, _: f32, _: Color) {}
+    pub fn wire_frustum(&mut self, _: &Frustum, _: Color) {}
+    pub fn text(&mut self, _: Vec3, _: &str, _: Color) {}
+    pub fn flush(&mut self) -> DebugBatch { DebugBatch }
+}
 
-        // 5. GPU culling pipeline.
-        let mut vis = renderer.culling
-            .frustum_cull(
-                &mut renderer.cmd,
-                &instances,
-                &view_uniform,
-            );
-        renderer.culling.backface_cull(
-            &mut renderer.cmd,
-            &instances,
-            &mut vis,
-            view_uniform.camera_position.xyz(),
+/// Batched debug geometry ready for GPU upload.
+#[cfg(debug_assertions)]
+pub struct DebugBatch {
+    pub vertices: Vec<DebugVertex>,
+    pub indices: Vec<u32>,
+}
+
+#[cfg(not(debug_assertions))]
+pub struct DebugBatch;
+
+/// Buffer visualization diagnostic modes.
+#[cfg(debug_assertions)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BufferVizMode {
+    None,
+    Depth,
+    Normals,
+    MotionVectors,
+    Roughness,
+    Metallic,
+    BaseColor,
+    AmbientOcclusion,
+    LightComplexity,
+    OverdrawHeatMap,
+}
+
+/// System that renders the debug overlay pass.
+/// Compile-time gated: absent from shipping.
+#[cfg(debug_assertions)]
+pub fn debug_draw_system(
+    render_world: Res<RenderWorld>,
+    debug_draw: ResMut<DebugDraw>,
+);
+```
+
+## Plugin Registration
+
+```rust
+/// Plugin that registers all core rendering
+/// systems with the ECS scheduler.
+pub struct CoreRenderingPlugin;
+
+impl Plugin for CoreRenderingPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<RenderWorld>();
+
+        #[cfg(debug_assertions)]
+        app.init_resource::<DebugDraw>();
+
+        // PreRender phase: extraction
+        app.add_system_to_phase(
+            PreRender,
+            extract_cameras_system,
         );
-        renderer.culling.hzb_phase_1(
-            &mut renderer.cmd,
-            &instances,
-            &mut vis,
+        app.add_system_to_phase(
+            PreRender,
+            extract_render_proxies_system,
+        );
+        app.add_system_to_phase(
+            PreRender,
+            extract_lights_system,
         );
 
-        // 6. Depth prepass.
-        // (registered as a render graph pass)
-
-        // 7. Build current-frame HZB.
-        renderer.culling.build_hzb(
-            &mut renderer.cmd,
-            &renderer.depth_buffer,
+        // Render phase: prepare and submit
+        app.add_system_to_phase(
+            Render,
+            update_views_system
+                .after(extract_cameras_system),
         );
-
-        // 8. HZB phase 2 retest.
-        renderer.culling.hzb_phase_2(
-            &mut renderer.cmd,
-            &mut vis,
+        app.add_system_to_phase(
+            Render,
+            visibility_system
+                .after(update_views_system),
         );
-
-        // 9. Batch compaction.
-        let batch = renderer.compactor.compact(
-            &mut renderer.cmd,
-            &instances,
-            &vis,
+        app.add_system_to_phase(
+            Render,
+            build_draw_lists_system
+                .after(visibility_system),
         );
-
-        // 10. Sort and classify queues.
-        let queues = RenderQueueSorter::sort(
-            &renderer.proxy_store,
-            batch,
-            view_uniform.camera_position.xyz(),
+        app.add_system_to_phase(
+            Render,
+            sort_draw_lists_system
+                .after(build_draw_lists_system),
         );
-
-        // 11. Encode draw commands.
-        DrawCommandEncoder::encode_opaque::<B>(
-            &mut renderer.cmd,
-            &queues.opaque,
-            &renderer.material_system,
-            &view.view_buffer,
-            &renderer.light_buffer,
+        app.add_system_to_phase(
+            Render,
+            batch_compaction_system
+                .after(sort_draw_lists_system),
         );
-        DrawCommandEncoder
-            ::encode_transparent::<B>(
-            &mut renderer.cmd,
-            &queues.transparent,
-            &renderer.material_system,
-            &view.view_buffer,
-            &renderer.light_buffer,
+        app.add_system_to_phase(
+            Render,
+            material_binding_system
+                .after(sort_draw_lists_system),
+        );
+        #[cfg(debug_assertions)]
+        app.add_system_to_phase(
+            Render,
+            debug_draw_system
+                .after(sort_draw_lists_system),
+        );
+        app.add_system_to_phase(
+            Render,
+            encode_commands_system
+                .after(batch_compaction_system)
+                .after(material_binding_system),
+        );
+        app.add_system_to_phase(
+            Render,
+            submit_frame_system
+                .after(encode_commands_system),
         );
     }
+}
+```
 
-    // 12. Swap HZB for next frame.
-    renderer.culling.end_frame();
+## Error Types
 
-    // 13. Dynamic resolution feedback.
-    if let Some(gpu_ms) = renderer.query_gpu_time()
-    {
-        renderer.drs.update(
-            gpu_ms,
-            &renderer.drs_state,
-        );
-    }
+```rust
+/// Errors that can occur in the core rendering
+/// pipeline.
+pub enum CoreRenderingError {
+    /// Entity does not have a render proxy.
+    ProxyNotFound { entity: Entity },
+    /// Proxy store is at capacity.
+    ProxyStoreExhausted { capacity: u32 },
+    /// Instance buffer exceeded GPU allocation.
+    InstanceBufferOverflow {
+        requested: u32,
+        available: u32,
+    },
+    /// Indirect draw buffer allocation failed.
+    IndirectBufferAllocationFailed,
+    /// View limit exceeded.
+    MaxViewsExceeded { count: u32, max: u32 },
+}
+```
 
-    // 14. Submit and present.
-    renderer.submit().await;
+## Data Flow
+
+### Per-Frame Lifecycle
+
+```rust
+// Simplified frame flow (pseudocode)
+loop {
+    // --- I/O poll point ---
+    reactor.poll();
+
+    // --- Simulation (Update phase) ---
+    ecs.run_phase(Update);
+
+    // --- Transform propagation (PostUpdate) ---
+    // GlobalTransform computed, BVH updated.
+    ecs.run_phase(PostUpdate);
+
+    // --- Extraction (PreRender) ---
+    // extract_cameras_system
+    // extract_render_proxies_system
+    //   - Query Changed<GlobalTransform>,
+    //     Changed<MeshHandle>,
+    //     Changed<MaterialHandle>
+    //   - Insert new, update changed, remove
+    //     despawned
+    // extract_lights_system
+    ecs.run_phase(PreRender);
+
+    // --- Prepare + Render (Render phase) ---
+    // update_views_system
+    // visibility_system
+    // build_draw_lists_system
+    // sort_draw_lists_system
+    // batch_compaction_system
+    // material_binding_system
+    // debug_draw_system (debug only)
+    // encode_commands_system
+    // submit_frame_system
+    ecs.run_phase(Render);
+
+    // --- GPU sync (async, no CPU spin) ---
     renderer.present().await;
 }
 ```
 
-### Instance Buffer Layout
-
-The instance buffer is a contiguous GPU buffer of
-`InstanceGpu` structs, indexed by a flat instance
-ID. The culling pipeline reads from this buffer;
-the batch compactor writes compacted index lists
-referencing back into it.
-
-```
-Offset  Field                Size
-------  -------------------  ----
-0       world_matrix         64 B
-64      prev_world_matrix    64 B
-128     mesh_handle          4 B
-132     material_id          4 B
-136     instance_id          4 B
-140     meshlet_offset       4 B
-144     meshlet_count        4 B
-148     lod_bias             4 B
-152     flags                4 B
-156     _padding             4 B
-------                       ------
-Total per instance:          160 B
-```
-
-### G-Buffer Layout (Deferred Path)
-
-| Target | Format | Contents |
-|--------|--------|----------|
-| GBuffer0 | RGBA8_UNORM | Albedo (RGB) + Metallic (A) |
-| GBuffer1 | RGB10A2_UNORM | World Normal (RGB) + Roughness remapped (A) |
-| GBuffer2 | RG16_FLOAT | Motion Vectors (RG) |
-| Depth | D32_FLOAT | Reverse-Z depth |
-
-The deferred lighting pass reads all G-buffer
-targets plus the light buffer and outputs the lit
-result to an HDR render target.
-
-### Multi-View Rendering Flow
-
-Shadow cascades, VR eyes, scene captures, and
-split-screen views all share the extracted proxy
-store. Each view gets its own ViewUniform, culling
-pass, and draw submission but reads from the same
-instance buffer.
+### Frame Rendering Sequence
 
 ```mermaid
-flowchart TD
-    EXT[Extract Proxies] --> IB[Instance Buffer]
-    IB --> V1[Main Camera View]
-    IB --> V2[Shadow Cascade 0]
-    IB --> V3[Shadow Cascade 1]
-    IB --> V4[Scene Capture]
-    IB --> V5[VR Left Eye]
-    IB --> V6[VR Right Eye]
-    V1 --> CULL1[Cull + Draw]
-    V2 --> CULL2[Cull + Draw]
-    V3 --> CULL3[Cull + Draw]
-    V4 --> CULL4[Cull + Draw]
-    V5 --> CULL5[Cull + Draw]
-    V6 --> CULL6[Cull + Draw]
+sequenceDiagram
+    participant ECS as ECS World
+    participant EXT as Extractor
+    participant UP as GPU Upload
+    participant CULL as GPU Culling
+    participant BAT as Batch Compactor
+    participant RG as Render Graph
+    participant GPU as GPU Backend
+
+    ECS->>EXT: extract visible entities
+    EXT->>UP: upload instance buffer
+    UP->>CULL: dispatch frustum cull
+    CULL->>CULL: backface cull
+    CULL->>CULL: HZB phase 1
+    CULL->>RG: depth prepass
+    RG->>CULL: build current HZB
+    CULL->>CULL: HZB phase 2
+    CULL->>BAT: compact survivors
+    BAT->>RG: indirect draw buffer
+    RG->>GPU: opaque pass
+    RG->>GPU: transparent pass
+    RG->>GPU: post-processing
+    RG->>GPU: present
 ```
 
 ## Platform Considerations
@@ -1955,7 +2906,7 @@ flowchart TD
 | Mobile | Forward+ | G-buffer bandwidth prohibitive on tile-based GPUs |
 | Switch (handheld) | Forward+ | Bandwidth constrained; 720p native |
 | Switch (docked) | Forward+ | Thin G-buffer possible but forward preferred |
-| Desktop | Deferred | High light counts; G-buffer bandwidth is acceptable |
+| Desktop | Deferred | High light counts; G-buffer bandwidth acceptable |
 | High-end | Deferred | Full G-buffer with 4+ targets |
 | VR | Forward+ | Latency-sensitive; single-pass instanced stereo |
 
@@ -1978,13 +2929,29 @@ flowchart TD
 | Desktop | 256 | 2048 |
 | High-end | Unlimited | Unlimited (stochastic) |
 
-### Indirect Draw Requirements
+### Platform Scaling
 
-| Backend | API | Minimum Version |
-|---------|-----|----------------|
-| Metal | `drawIndexedPrimitives(indirectBuffer:)` | Metal GPU Family 3+ |
-| D3D12 | `ExecuteIndirect` | Feature Level 12.0 |
-| Vulkan | `vkCmdDrawIndexedIndirect` | Vulkan 1.1 |
+| Tier | Max Proxies | Max Views | Indirect Draw | Draw Lists |
+|------|-------------|-----------|---------------|------------|
+| Mobile | 50K | 4 (main + 2-3 shadows) | Vulkan 1.1+ / Metal GPU family 3+ | Smaller compaction buffers |
+| Switch | 200K | 8 | Full indirect compaction | Medium buffers |
+| Desktop | 1M+ | Configurable, dozens | Full indirect compaction | Large buffers |
+
+### Backend-Specific Bindless Binding
+
+| Backend | Mechanism | Notes |
+|---------|-----------|-------|
+| Metal | Argument buffers | `MTLArgumentEncoder` writes bindless indices into an argument buffer bound once per frame. |
+| D3D12 | Bindless SRV heap | Root descriptor table points to a shader-visible CBV/SRV/UAV heap. Indices stored in per-instance data. |
+| Vulkan | `VK_EXT_descriptor_indexing` | `UPDATE_AFTER_BIND` descriptors in a single large descriptor set. Non-uniform indexing in shader. |
+
+### Indirect Draw API Mapping
+
+| Backend | Indirect Draw API | Count Buffer |
+|---------|-------------------|--------------|
+| Metal | `drawIndexedPrimitives(indirectBuffer:)` | `MTLIndirectCommandBuffer` with `executeCommandsInBuffer` |
+| D3D12 | `ExecuteIndirect` | `ID3D12CommandSignature` with draw count in a separate buffer |
+| Vulkan | `vkCmdDrawIndexedIndirectCount` | Requires `VK_KHR_draw_indirect_count` (core in Vulkan 1.2) |
 
 ### Dynamic Resolution Bounds
 
@@ -2037,7 +3004,7 @@ Depth comparison uses `GREATER` instead of `LESS`.
 | `test_orthographic_reverse_z` | R-2.3.5 | Orthographic projection produces linear depth in [0, 1] with reverse mapping. |
 | `test_frustum_plane_extraction` | R-2.3.2 | Extracted planes correctly classify known inside/outside points. |
 | `test_render_layer_mask_filtering` | R-2.3.7 | Entities with non-intersecting layer masks are excluded from extraction. |
-| `test_instance_flags_packing` | R-2.3.13 | `InstanceFlags` round-trips through u32 correctly. Two-sided flag skips backface cull. |
+| `test_instance_flags_packing` | R-2.3.13 | `InstanceFlags` round-trips through u32. Two-sided flag skips backface cull. |
 | `test_drs_convergence` | NFR-2.3.2 | DRS converges within 5 frames of a step-change in GPU load. No oscillation > 5%. |
 | `test_drs_clamp_bounds` | R-2.3.11 | DRS scale never exceeds max or falls below min. |
 | `test_material_permutation_cache` | R-2.4.3 | Same PermutationKey returns the same cached PipelineState. |
@@ -2047,6 +3014,9 @@ Depth comparison uses `GREATER` instead of `LESS`.
 | `test_light_gpu_struct_alignment` | R-2.3.1 | `LightGpu` is 16-byte aligned and matches HLSL `cbuffer` layout. |
 | `test_two_sided_skips_backface_cull` | R-2.3.3 | Meshlets flagged two-sided bypass normal cone test. |
 | `test_alpha_cutout_in_shadow_pass` | R-2.3.13 | Alpha-cutout geometry generates shadow draw commands. |
+| `test_proxy_insert_remove_reuse` | R-2.10.2 | ProxyStore recycles freed indices correctly. |
+| `test_proxy_dirty_flags_cleared` | R-2.10.3 | Dirty flags clear after `clear_dirty_flags` call. |
+| `test_proxy_incremental_update` | R-2.10.3 | Only dirty-flagged fields are touched during update. |
 
 ### Integration Tests
 
@@ -2062,6 +3032,9 @@ Depth comparison uses `GREATER` instead of `LESS`.
 | `test_reverse_z_cross_backend` | R-2.3.6 | Depth buffer clears to 0.0 and comparison uses GREATER on Metal, D3D12, and Vulkan. |
 | `test_sss_profile_scatter` | R-2.3.12 | Skin SSS profile produces visible light transmission at shadow terminator. |
 | `test_alpha_cutout_shadow_shape` | R-2.3.13 | Shadow cast by alpha-cutout quad matches the alpha mask shape. |
+| `test_extraction_100k_entities` | NFR-2.10.1 | Full extraction of 100K entities completes in < 2.0 ms. |
+| `test_extraction_1pct_dirty` | NFR-2.10.1 | Incremental extraction with 1% dirty completes in < 0.5 ms. |
+| `test_draw_list_throughput` | NFR-2.10.2 | Draw list construction processes >= 500K proxies/ms/core. |
 
 ### GPU Benchmarks
 
@@ -2105,14 +3078,14 @@ Depth comparison uses `GREATER` instead of `LESS`.
 
 4. **Shader permutation explosion.** With 10
    shading models x 10 feature flags x 2 render
-   paths x N vertex formats, the permutation space
-   is large. Strategies: uber-shader with runtime
-   branching (simple but slower), compile-time
-   specialization constants (smaller binaries,
-   driver-specific perf), or lazy compilation
-   (first-use hitching). Recommended: specialization
-   constants on Vulkan/Metal, static permutations
-   on D3D12.
+   paths x N vertex formats, the permutation
+   space is large. Strategies: uber-shader with
+   runtime branching (simple but slower),
+   compile-time specialization constants (smaller
+   binaries, driver-specific perf), or lazy
+   compilation (first-use hitching). Recommended:
+   specialization constants on Vulkan/Metal,
+   static permutations on D3D12.
 
 5. **HZB temporal stability.** Using the previous
    frame's HZB for phase 1 introduces a one-frame

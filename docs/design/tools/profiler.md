@@ -1320,6 +1320,14 @@ overhead is ~20 us per frame out of 3.3 ms budget
 | Remote encode (1 frame) | < 500 us | US-15.5.7.5 |
 | Remote bandwidth (Full) | < 10 Mbps | US-15.5.7.5 |
 
+### VFX Budget Integration
+
+The profiler integrates with the VFX particle budget
+system. Particle count, emitter count, and GPU simulation
+time are tracked as profiler counters. Budget overruns
+trigger profiler markers for identification in the
+timeline view.
+
 ## Open Questions
 
 1. **TSC vs. platform timer** -- `rdtsc` is the fastest

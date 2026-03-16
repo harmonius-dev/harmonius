@@ -2645,6 +2645,19 @@ platform-specific subpixel layout (RGB vs BGR).
 | Focus directional search | < 50 us | R-10.1.8 |
 | Asset load (complex UI) | < 5 ms | R-10.1.2 |
 
+### Mobile, VR, and Console Platforms
+
+| Platform | Input Mode | Layout Adaptation | Notes |
+|----------|-----------|------------------|-------|
+| iOS/Android | Touch (primary), gamepad (optional) | Responsive scaling, larger touch targets (44pt min) | System font fallback. Safe area insets. |
+| VR | Gaze + controller ray | World-space widget panels | Focus follows gaze ray. Haptic feedback on selection. |
+| Consoles | Gamepad (primary) | Focus-based navigation, D-pad traversal | No mouse cursor. Large text for TV viewing distance. |
+
+Widget property animations use the shared `Curve<T>` type
+(see
+[shared-primitives.md](../../core-runtime/shared-primitives.md))
+for easing and interpolation.
+
 ## Open Questions
 
 1. **Constraint solver algorithm** -- Cassowary

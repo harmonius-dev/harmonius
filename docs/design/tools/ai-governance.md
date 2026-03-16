@@ -1600,6 +1600,13 @@ server:
 | macOS | GCD | Dispatch IO for async HTTPS. TLS 1.3 via `rustls`. C++ wrappers via `cxx.rs`. |
 | Linux | io_uring | Async HTTPS through `IoReactor`. TLS 1.3 via `rustls`. Kernel 5.1+. |
 
+**Note:** Text-to-speech uses the shared platform TTS
+service also used by the accessibility system (see
+[accessibility.md](../ui/accessibility.md)). A single
+`TextToSpeech` abstraction wraps platform-native APIs
+(AVSpeechSynthesizer on macOS/iOS, SAPI on Windows,
+Speech Dispatcher on Linux).
+
 ### Voice Input (Speech-to-Text)
 
 | Platform | Audio Capture | Permission |

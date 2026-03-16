@@ -873,6 +873,20 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 | Fibers | Custom assembly context switch | `setjmp`/`longjmp` with explicit stack |
 | I/O reactor | io_uring | `io_uring_peek_cqe` / batch CQE drain at poll point. Requires kernel 5.1+. fd readiness polling via `IORING_OP_POLL_ADD`. |
 
+### Mobile and Console Platforms
+
+| Platform | Thread Pool | I/O Backend | Notes |
+|----------|------------|-------------|-------|
+| iOS | GCD (shared with macOS) | Dispatch IO | Same C++ wrappers via cxx.rs. QoS classes for thermal throttling. |
+| Android | std thread pool | io_uring (API 26+) / epoll fallback | Thread affinity respects big.LITTLE core topology. |
+| Consoles | Platform thread API | Platform async I/O | Vendor-specific thread affinity and priority. NDA APIs. |
+
+Thread pool sizing adapts to core count: mobile devices
+typically have 4-8 cores with heterogeneous performance.
+The `ThreadPool` constructor queries
+`std::thread::available_parallelism()` and applies a
+platform-specific scaling factor.
+
 ### Scaling Tiers
 
 | Tier | Core Count | Workers | Fiber Pool | Buffer Pool |

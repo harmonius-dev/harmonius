@@ -430,6 +430,11 @@ sequenceDiagram
 
 ### Core Enums and Types
 
+**Note:** `Format` is the canonical GPU format enum for
+the engine. Other rendering files (render-graph,
+core-rendering) should reference this enum rather than
+defining their own `TextureFormat` subsets.
+
 ```rust
 /// Pixel/vertex format.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -1191,6 +1196,9 @@ pub struct TextureRegion {
     pub size: [u32; 3],
 }
 
+/// **Note:** `Viewport` is canonically defined here.
+/// Other rendering files should reference this
+/// definition.
 pub struct Viewport {
     pub x: f32,
     pub y: f32,

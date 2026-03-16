@@ -88,6 +88,14 @@ Key architectural choices:
 9. **Observers** for reactive callbacks on component
    add/remove/change, evaluated during command buffer flush.
 
+**Audio runtime exception.** Per constraints.md, the
+audio mixer runs on a dedicated real-time thread with
+a < 0.5 ms latency budget. ECS components
+(`AudioSource`, `AudioListener`) bridge game state to
+the audio runtime via a lock-free SPSC command queue.
+The audio thread owns its own mix buffers and effect
+chains outside the ECS.
+
 ## Architecture
 
 ### Module Boundaries
@@ -1537,6 +1545,9 @@ impl ResourceMap {
 }
 
 /// Marker trait for world resources.
+/// **Canonical definition.** `Resource`,
+/// `Res<T>`, and `ResMut<T>` are defined here.
+/// Other documents cross-reference this section.
 pub trait Resource: Send + Sync + 'static {}
 
 /// Shared resource access in a system parameter.
@@ -1803,31 +1814,10 @@ pub struct Observer {
     >,
 }
 
-/// Registry of all observers in a world.
-pub struct ObserverRegistry {
-    observers:
-        HashMap<ObserverTrigger, Vec<Observer>>,
-}
-
-impl ObserverRegistry {
-    pub fn new() -> Self;
-
-    /// Register an observer for a built-in or
-    /// custom event.
-    pub fn register(
-        &mut self,
-        observer: Observer,
-    );
-
-    /// Dispatch pending events. Called during
-    /// command buffer flush. Complexity: O(e * m)
-    /// where e = events, m = matching observers.
-    pub fn dispatch(
-        &mut self,
-        events: &[PendingEvent],
-        world: &mut World,
-    );
-}
+// Observer dispatch is defined in
+// [events-plugins.md](events-plugins.md). The
+// `ObserverRegistry`, trigger types, and callback
+// dispatch are canonical there.
 
 /// Custom entity event. Emitted at a specific
 /// entity and optionally propagated along
@@ -2055,6 +2045,8 @@ pub struct World {
     id: WorldId,
 }
 
+/// **Canonical definition.** `WorldId` is defined
+/// here. Other documents cross-reference this.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
 )]
@@ -2613,6 +2605,7 @@ adjustments.
 | `fixedbitset` | Compact bitsets for AccessSet, enable bits | Efficient set operations for component access tracking |
 | `smallvec` | Inline-allocated small vectors | Matched archetype lists, hook arrays, command component lists |
 | `crossbeam-utils` | `CachePadded` for atomics | Prevents false sharing on change tick counters |
+| `glam` | Math types (Vec3, Quat, Mat4) | SIMD-accelerated math implied by Transform components and spatial operations |
 
 ## Test Plan
 

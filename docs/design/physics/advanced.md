@@ -484,7 +484,17 @@ pub struct CollisionLayerMask(pub u64);
 /// for full component read access.
 pub type PredicateFn =
     Box<dyn Fn(&EntityRef) -> bool + Send + Sync>;
+```
 
+**Justification:** `PredicateFn` uses `Box<dyn Fn>`
+for user-defined spatial query filters. This is a
+query/tool path, not per-frame simulation. The
+predicate is evaluated during spatial queries
+initiated by gameplay code (raycasts, overlap tests),
+which are infrequent relative to the simulation tick.
+Acceptable per constraints.md.
+
+```rust
 /// Unified filter for all spatial queries.
 /// Combines layer masks, ECS structural filters,
 /// and optional custom predicates.
@@ -1094,6 +1104,19 @@ pub fn debris_lod_system(
 ```
 
 ### Soft Body and Cloth
+
+#### Cloth Ownership Boundary
+
+Physics owns the XPBD constraint solver
+(`XpbdSolverSystem`). Animation owns cloth authoring
+components (`ClothGarment`, `ClothPanel`), GPU
+dispatch, and LOD management (see
+[cloth-hair.md](../animation/cloth-hair.md)). Physics
+provides the solver as a service; animation drives
+when and how cloth is simulated. `ClothSimulation`
+in this file defines the solver-side state;
+`ClothGarment` in cloth-hair.md defines the
+authoring-side state.
 
 #### Components
 
@@ -1806,6 +1829,33 @@ Each physics tick, vehicle systems execute in order:
 | Wind field (16 sources) | < 0.2 ms | R-4.7.NF3 |
 | SPH 50K particles | < 4 ms GPU | R-4.8.NF1 |
 | Water surface 1 km x 1 km | < 0.5 ms GPU | R-4.8.NF3 |
+
+### Debug Visualization
+
+Advanced physics debug draw covers:
+
+- **Spatial queries** -- ray visualizations (origin,
+  direction, hit point), overlap test volumes
+  (wireframe sphere/box/capsule).
+- **Vehicles** -- wheel suspension lines, tire
+  force vectors, drivetrain torque indicators.
+- **Cloth** -- particle positions (dots), constraint
+  edges (lines), collision proxy wireframes.
+- **Destruction** -- fragment outlines, stress
+  heatmap overlay, fracture pattern wireframes.
+
+All debug draw emits commands to the render graph's
+debug overlay pass and is compile-time stripped from
+shipping builds via `cfg(debug_assertions)`.
+
+### Networking Integration
+
+Vehicle replication (F-4.5.7) and destruction state
+replication use standard component replication via
+the networking layer. Vehicle input is replicated;
+physics simulation is server-authoritative.
+Destruction events (fracture activation, fragment
+spawning) are replicated as reliable messages.
 
 ## Open Questions
 

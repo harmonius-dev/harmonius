@@ -610,6 +610,14 @@ struct ObserverEntry {
     descriptor: ObserverDescriptor,
     /// The callback. Runs at sync points with
     /// exclusive World access.
+    ///
+    /// **Justification:** Observer callbacks use
+    /// `Box<dyn ObserverCallback>` because the set
+    /// of observer handlers is open-ended
+    /// (user-registered). This is a deferred flush
+    /// path (command buffer application), not
+    /// per-entity iteration. Acceptable per
+    /// constraints.md closure exception.
     callback: Box<dyn ObserverCallback>,
 }
 
@@ -715,42 +723,10 @@ in the scheduler's dependency analysis. Defined in
 the ECS (F-1.1.23) and extended here for inter-system
 communication patterns.
 
-```rust
-/// Shared (read-only) access to a world resource.
-/// Multiple systems may hold Res<T> concurrently.
-pub struct Res<'w, T: Resource> {
-    value: &'w T,
-}
-
-impl<'w, T: Resource> Res<'w, T> {
-    pub fn get(&self) -> &T {
-        self.value
-    }
-}
-
-/// Exclusive (read-write) access to a world
-/// resource. Only one system may hold ResMut<T>
-/// at a time. The scheduler enforces ordering.
-pub struct ResMut<'w, T: Resource> {
-    value: &'w mut T,
-    /// Tick tracking for change detection.
-    ticks: &'w mut ResourceTicks,
-}
-
-impl<'w, T: Resource> ResMut<'w, T> {
-    pub fn get(&self) -> &T {
-        self.value
-    }
-
-    pub fn get_mut(&mut self) -> &mut T {
-        self.ticks.mark_changed();
-        self.value
-    }
-}
-
-/// Marker trait for resource types.
-pub trait Resource: Send + Sync + 'static {}
-```
+`Resource`, `Res<T>`, `ResMut<T>` are defined
+canonically in [ecs.md](ecs.md). The event system
+consumes these types for resource-driven event
+dispatch and reactive queries.
 
 ### Cross-World Event Bridges (F-1.5.7, R-1.5.7)
 
@@ -758,11 +734,7 @@ Route events between independent ECS worlds with
 optional filtering and transformation.
 
 ```rust
-/// Unique identifier for a World instance.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash,
-)]
-pub struct WorldId(u32);
+// WorldId is defined in [ecs.md](ecs.md).
 
 /// Configuration for a cross-world event bridge.
 pub struct EventBridgeConfig<T: Event> {
@@ -770,11 +742,19 @@ pub struct EventBridgeConfig<T: Event> {
     pub target_world: WorldId,
     /// Optional predicate. Events for which this
     /// returns false are dropped.
+    ///
+    /// **Justification:** Configuration lambdas
+    /// set once at bridge creation, not hot-path
+    /// dispatch.
     pub filter: Option<Box<dyn Fn(&T) -> bool
         + Send + Sync>>,
     /// Optional transformation applied to events
     /// that pass the filter before re-publishing
     /// into the target world.
+    ///
+    /// **Justification:** Configuration lambdas
+    /// set once at bridge creation, not hot-path
+    /// dispatch.
     pub transform: Option<Box<dyn Fn(T) -> T
         + Send + Sync>>,
 }

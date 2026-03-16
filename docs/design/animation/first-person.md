@@ -1159,6 +1159,14 @@ scaling or gating required.
 | Scope RTT (full-res) | Under 1.0 ms GPU | R-9.6.3 |
 | Scope RTT (half-res) | Under 0.5 ms GPU | R-9.6.3 |
 
+### Shared Type References
+
+Spring-damper primitives (`SpringDamper<T>` for f32,
+Vec3, and Quat) are defined in
+[shared-primitives.md](../core-runtime/shared-primitives.md)
+and shared with physics constraints, procedural
+animation, and cloth simulation.
+
 ## Open Questions
 
 1. **Spring integrator** -- Semi-implicit Euler is

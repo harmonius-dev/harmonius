@@ -557,6 +557,12 @@ impl<T> PoolSlot<T> {
 ```rust
 /// Generational index handle. Packed index + generation
 /// counter. Stale handles fail validation in O(1).
+///
+/// `Handle<T>` is the canonical engine-wide
+/// generational index. ECS `Entity` and spatial
+/// `BvhHandle` are aliases or wrappers of this type.
+/// See [shared-primitives.md](shared-primitives.md)
+/// for the full contract.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Handle<T> {
     pub index: u32,
@@ -1098,6 +1104,12 @@ impl VirtualFileSystem {
 ```
 
 ### Arbitrary Precision Types
+
+**Note:** Arbitrary-precision numerics (`BigInt`,
+`BigFloat`) address R-1.7.9 but are not related to
+memory management or I/O. These will be relocated to
+a dedicated math/core-types design in a future
+revision.
 
 ```rust
 /// Arbitrary precision integer. Supports 128-bit,

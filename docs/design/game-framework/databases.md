@@ -586,6 +586,10 @@ pub fn detect_cycle(
 
 ### Curves and Formulas
 
+Numeric curve interpolation uses the shared
+`Curve<T>` type (see
+[shared-primitives.md](../core-runtime/shared-primitives.md)).
+
 ```rust
 /// Interpolation mode for a curve segment.
 #[derive(Clone, Copy, Debug, Reflect)]

@@ -511,6 +511,13 @@ pub fn prestige_system(
 ```rust
 /// A talent tree DAG asset. Authored in the visual
 /// editor as a graph asset.
+///
+/// Talent tree prerequisites use the shared
+/// `ConditionExpr` (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
+/// Talent trees use `ConditionalGraph<N, E>` for
+/// DAG structure. Stat bonuses use the shared
+/// `StatModifier` pipeline.
 #[derive(Asset, Reflect)]
 pub struct TalentTree {
     pub name: String,

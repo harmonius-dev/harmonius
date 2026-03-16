@@ -1387,6 +1387,19 @@ impl AssetProcessor for LightmapUvProcessor {
 }
 ```
 
+### Physics Asset Processing
+
+| Stage | Input | Output |
+|-------|-------|--------|
+| Convex decomposition | Triangle mesh | Set of convex hulls (V-HACD) |
+| Collision mesh baking | Convex hulls | Optimized broadphase-ready collider data |
+| Physics material compilation | Material properties | Binary physics material asset |
+
+Convex hull decomposition uses V-HACD (Volumetric
+Hierarchical Approximate Convex Decomposition) to split
+concave meshes into convex parts suitable for the physics
+solver.
+
 ### Error Types
 
 ```rust

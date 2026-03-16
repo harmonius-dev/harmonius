@@ -469,6 +469,13 @@ impl System for FractureActivationSystem {
 /// fragments without a path to a StructuralAnchor.
 /// Despawns joints on unsupported fragments so
 /// they fall under gravity.
+///
+/// Structural analysis uses the shared
+/// `ConnectivityAnalyzer` (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
+/// The building system (see
+/// [building-survival.md](building-survival.md))
+/// shares this analyzer for structural integrity.
 pub struct StructuralAnalysisSystem;
 
 impl System for StructuralAnalysisSystem {

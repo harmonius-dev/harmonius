@@ -1064,6 +1064,12 @@ pub fn decal_pool_reclaim_system(
 ### Screen Effect Components
 
 ```rust
+/// Camera shake uses a shared `CameraShake`
+/// component. The accessibility system (see
+/// [accessibility.md](../ui/accessibility.md))
+/// can disable or reduce shake intensity via the
+/// `ReducedMotion` preference.
+///
 /// Camera shake event source. Attach to any
 /// entity that triggers shake (explosion,
 /// impact, spell).
@@ -2463,6 +2469,19 @@ pub fn scorch_mark_system(
 | Debris spawn 256 frags | < 200 us CPU | US-11.5.1.1 |
 | Fire propagation 256x256 | < 0.5 ms GPU | US-11.5.7.1 |
 | Crack growth compute | < 0.2 ms GPU | US-11.5.4.1 |
+
+### GPU Compute Availability
+
+| Backend | Compute Shaders | Mesh Shaders | Notes |
+|---------|----------------|-------------|-------|
+| D3D12 | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full compute effects support. |
+| Vulkan | Yes (1.0+) | Yes (task/mesh, optional) | Subgroup operations for reduction. |
+| Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
+| Mobile | Limited dispatch size | No mesh shaders | Reduced effect budgets (PlatformTier::Mobile). |
+
+Falloff attenuation uses the shared `FalloffCurve` type
+(see
+[shared-primitives.md](../core-runtime/shared-primitives.md)).
 
 ## Open Questions
 

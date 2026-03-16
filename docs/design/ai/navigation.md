@@ -848,6 +848,10 @@ impl FunnelSmoother {
 }
 
 /// Path smoothing mode.
+///
+/// Path smoothing curves use the shared `Curve<T>`
+/// type (see
+/// [shared-primitives.md](../core-runtime/shared-primitives.md)).
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Reflect,
 )]

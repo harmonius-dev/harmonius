@@ -541,6 +541,15 @@ pub struct AreaLight {
     pub cast_shadows: bool,
 }
 
+/// **Note:** Lights are modeled as separate per-type
+/// components (`DirectionalLight`, `PointLight`,
+/// etc.) rather than a single `LightComponent` with
+/// a `LightKind` discriminant. This design is
+/// canonical. Per-type components enable more
+/// efficient archetype queries (e.g., query only
+/// spot lights for shadow atlas allocation) and
+/// avoid match-arm overhead in hot culling paths.
+
 /// Shadow filter quality tiers.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Reflect)]
 pub enum ShadowFilter {
@@ -1767,6 +1776,14 @@ on the GPU. GPU synchronization uses async/await
 through the platform's command buffer completion
 mechanism (Metal dispatch handler, D3D12 fence,
 Vulkan timeline semaphore).
+
+### VFX Integration
+
+Particle systems that emit light register `PointLight`
+components on particle entities. The clustered light
+culling system treats these identically to scene
+lights. Particle light count is budget-capped by the
+VFX LOD system to avoid overwhelming the light grid.
 
 ## Test Plan
 

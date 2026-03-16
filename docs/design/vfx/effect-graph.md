@@ -1323,6 +1323,20 @@ compiled kernels are resident.
 | GPU update kernel (100K particles) | < 0.5 ms | R-11.1.1 |
 | GPU update kernel (500K particles) | < 2.0 ms | R-11.1.1 |
 
+### Shader Compilation Targets
+
+| Target | Compiler | Output | Notes |
+|--------|----------|--------|-------|
+| D3D12 | DXC | DXIL | Direct compilation from HLSL. |
+| Vulkan | DXC | SPIR-V | HLSL -> SPIR-V via DXC. |
+| Metal | DXC + MSC | metallib | HLSL -> DXIL -> MSL via Metal Shader Converter. |
+
+The effect graph compiler shares the `GraphCompiler`
+framework (see
+[shared-primitives.md](../core-runtime/shared-primitives.md))
+with the material graph and shader graph for consistent
+compilation infrastructure.
+
 ## Open Questions
 
 1. **Shader variant explosion.** Each unique graph

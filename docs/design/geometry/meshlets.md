@@ -1252,6 +1252,20 @@ point. No callbacks fire asynchronously.
 | Page load + decompress (64 KiB) | < 1 ms | US-3.1.6 |
 | Streaming feedback + readback | < 0.2 ms | US-3.1.6 |
 
+### Virtual Geometry Streaming Framework
+
+Meshlet page streaming uses the shared
+`VirtualResourceStreamer` framework (see
+[shared-primitives.md](../core-runtime/shared-primitives.md))
+for GPU-feedback-driven page residency, priority queue,
+async I/O, and LRU eviction.
+
+### Terrain Integration
+
+Terrain geometry (see [terrain.md](terrain.md)) generates
+meshlets at the clipmap tile level. Terrain meshlet LOD
+integrates with the hierarchical LOD selection system.
+
 ## Open Questions
 
 1. **Meshlet size tuning** -- 64 vertices / 124

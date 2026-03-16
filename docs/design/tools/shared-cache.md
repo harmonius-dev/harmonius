@@ -799,6 +799,11 @@ pub struct GcResult {
 pub struct GcWorker { /* ... */ }
 
 impl GcWorker {
+    /// **Note:** `StorageBackend` has a small, fixed
+    /// set of implementations (S3, local filesystem).
+    /// Consider migrating to `StorageBackendKind`
+    /// enum dispatch in implementation to align with
+    /// the static dispatch preference.
     pub fn new(
         config: GcConfig,
         index: IndexStore,

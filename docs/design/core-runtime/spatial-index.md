@@ -64,6 +64,18 @@ accepts query shapes (ray, AABB, sphere, frustum, k-NN)
 and spatial layer masks. Batch queries are parallelized
 across worker threads via the `ThreadPool::scope` API.
 
+In addition to the BVH, the engine provides a generic
+`UniformGrid<T>` (defined in
+[shared-primitives.md](shared-primitives.md)) for
+density-based and cell-based spatial queries. Domains
+such as AI perception (scent), crowd simulation
+(density), fog of war, and tactical grids instantiate
+`UniformGrid<T>` with domain-specific cell data. The
+BVH remains the primary spatial index for point, ray,
+shape, and frustum queries; the uniform grid serves
+fixed-resolution cell queries that do not benefit from
+hierarchical acceleration.
+
 ---
 
 ## Architecture
@@ -476,6 +488,10 @@ pub struct SpatialMembership {
 /// Generational handle into the BVH. Enables
 /// O(1) lookup for incremental updates. Invalid
 /// handles (stale generation) are safely rejected.
+///
+/// BvhHandle wraps the engine-wide `Handle<T>`
+/// generational index (see
+/// [shared-primitives.md](shared-primitives.md)).
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
 )]
@@ -1682,6 +1698,13 @@ No `AsyncMutex` or `AsyncRwLock` is needed. The ECS
 scheduler's resource access tracking provides the
 synchronization boundary. This is the same pattern
 used by all ECS resources.
+
+### Proposed Dependencies
+
+| Crate | Purpose | Justification |
+|-------|---------|---------------|
+| `smallvec` | Inline-allocated small vectors | Traversal stacks, query result buffers without heap allocation |
+| `glam` | Math types (Vec3, Mat4, Aabb) | SIMD-accelerated spatial math on all platforms |
 
 ---
 

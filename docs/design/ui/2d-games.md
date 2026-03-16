@@ -1070,6 +1070,9 @@ pub enum LightType2D {
 
 /// Light falloff curve.
 #[derive(Clone, Copy, Debug, Reflect)]
+/// Falloff curves use the shared `FalloffCurve` type
+/// (see
+/// [shared-primitives.md](../../core-runtime/shared-primitives.md)).
 pub enum FalloffCurve {
     Linear,
     Quadratic,
@@ -1313,6 +1316,12 @@ For server-authoritative and rollback netcode:
 | Physics step (200 bodies) | < 2 ms mobile | US-10.5.15 |
 | Ray cast (1000 rays) | < 0.5 ms | US-10.5.19 |
 | Light map composite (8 lights) | < 1 ms mobile | US-10.5.21 |
+
+### 2D Particle Effects
+
+2D particle effects should cross-reference the GPU
+particle system (see [particles.md](../vfx/particles.md))
+for consistent emission, simulation, and rendering.
 
 ## Open Questions
 

@@ -664,6 +664,9 @@ pub enum PlatformTier {
     Desktop,
     HighEnd,
 }
+// **Note:** `PlatformTier` will be unified with the
+// engine-wide `PlatformTier` enum defined in
+// [shared-primitives.md](../core-runtime/shared-primitives.md).
 
 /// Node and texture limits per platform tier.
 pub struct TierLimits {
@@ -1674,6 +1677,18 @@ asset processing (F-12.3.1).
 | `smallvec` | Inline small vectors for layers, bands | Avoids heap allocation for small layer stacks |
 | `cxx` | C++ interop for DXC and Metal Shader Converter | Required by design constraints for shader compilation |
 | `hashbrown` | Fast hash map for permutation cache | Industry-standard; used widely in Rust ecosystem |
+
+### VFX Material Integration
+
+Particle and effect shaders can reference material
+graph outputs via the shared `MaterialId` system.
+The VFX effect graph (see
+[effect-graph.md](../vfx/effect-graph.md)) compiles
+particle shaders using the same `GraphCompiler`
+framework (see
+[shared-primitives.md](../core-runtime/shared-primitives.md))
+as the material graph, ensuring consistent HLSL
+emission and compilation.
 
 ## Test Plan
 
