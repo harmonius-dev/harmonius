@@ -15,6 +15,8 @@
 
 ## AI Alert State Machine (F-13.18.2)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.18.2.1 | player (P-23) | **As a** player (P-23), **I want** AI enemies to transition through unaware, suspicious, searching, alerted, and lost-target states, **so that** detection is gradual and readable. |  | F-13.18.2 | R-13.18.2 |
 | US-13.18.2.2 | player (P-23) | **As a** player (P-23), **I want** question mark and exclamation mark icons above enemy heads indicating their awareness state, **so that** I can gauge detection at a glance. |  | F-13.18.2 | R-13.18.2 |
 | US-13.18.2.3 | player (P-23) | **As a** player (P-23), **I want** AI to require sustained detection before transitioning from suspicious to alerted, **so that** brief glimpses do not trigger instant combat. |  | F-13.18.2 | R-13.18.2 |
@@ -24,6 +26,8 @@
 
 ## Noise Generation and Distraction (F-13.18.3)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.18.3.1 | player (P-23) | **As a** player (P-23), **I want** my actions to generate noise at varying intensity (low for doors, medium for sprinting, high for gunfire), **so that** careless play risks detection. |  | F-13.18.3 | R-13.18.3 |
 | US-13.18.3.2 | player (P-23) | **As a** player (P-23), **I want** to throw distraction objects like rocks or bottles to create noise at the impact location, **so that** I can lure AI away from patrol routes. |  | F-13.18.3 | R-13.18.3 |
 | US-13.18.3.3 | player (P-23) | **As a** player (P-23), **I want** closed doors and thick walls to attenuate noise, **so that** I can use architecture to mask my sounds. |  | F-13.18.3 | R-13.18.3 |
@@ -34,6 +38,8 @@
 
 ## Stealth Takedown (F-13.18.4)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.18.4.1 | player (P-23) | **As a** player (P-23), **I want** to perform a silent takedown on an unaware enemy from behind, **so that** I can eliminate threats without alerting others. |  | F-13.18.4 | R-13.18.4 |
 | US-13.18.4.2 | player (P-23) | **As a** player (P-23), **I want** takedown type to vary between silent, loud, and non-lethal, **so that** I have stealth options matching different situations. |  | F-13.18.4 | R-13.18.4 |
 | US-13.18.4.3 | player (P-23) | **As a** player (P-23), **I want** to pick up and hide unconscious or dead bodies, **so that** I can prevent other AI from discovering my handiwork. |  | F-13.18.4 | R-13.18.4 |
@@ -43,6 +49,8 @@
 
 ## Cover Point Detection and Usage (F-13.18.5)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.18.5.1 | player (P-23) | **As a** player (P-23), **I want** to snap to cover via an input action with a smooth transition, **so that** I can quickly take cover during firefights. |  | F-13.18.5 | R-13.18.5 |
 | US-13.18.5.2 | player (P-23) | **As a** player (P-23), **I want** to peek left or right from cover to aim and shoot with partial exposure, **so that** cover lets me fight with reduced risk. |  | F-13.18.5 | R-13.18.5 |
 | US-13.18.5.3 | player (P-23) | **As a** player (P-23), **I want** to blind fire over or around cover with reduced accuracy, **so that** I can suppress enemies without exposing myself. |  | F-13.18.5 | R-13.18.5 |

@@ -14,6 +14,8 @@
 
 ## Interstitial Ads (F-13.28.2)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.28.2.1 | player (P-23) | **As a** player (P-23), **I want** interstitial ads shown only at natural transition points like level completion or menu transitions, **so that** gameplay is never interrupted. |  | F-13.28.2 | R-13.28.2 |
 | US-13.28.2.2 | player (P-23) | **As a** player (P-23), **I want** purchasing any IAP or subscribing to automatically exempt me from interstitial ads, **so that** paying players are not shown ads. |  | F-13.28.2 | R-13.28.2 |
 | US-13.28.2.3 | executive (P-1) | **As a** executive (P-1), **I want** a configurable cooldown timer preventing interstitials more frequently than the minimum interval, **so that** ad frequency is bounded. |  | F-13.28.2 | R-13.28.2 |
@@ -23,6 +25,8 @@
 
 ## Banner Ads (F-13.28.3)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.28.3.1 | player (P-23) | **As a** player (P-23), **I want** banner ads shown only during menu and loading screens, never during gameplay, **so that** banners do not obstruct game content. |  | F-13.28.3 | R-13.28.3 |
 | US-13.28.3.2 | player (P-23) | **As a** player (P-23), **I want** banners sized to IAB standards and positioned at screen edges, **so that** ads are non-intrusive. |  | F-13.28.3 | R-13.28.3 |
 | US-13.28.3.3 | executive (P-1) | **As a** executive (P-1), **I want** banner refresh rate configurable (default 30 seconds), **so that** impression frequency is controlled. |  | F-13.28.3 | R-13.28.3 |
@@ -31,6 +35,8 @@
 
 ## Ad Mediation and Network Abstraction (F-13.28.4)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.28.4.1 | executive (P-1) | **As a** executive (P-1), **I want** the mediator to select the highest-eCPM ad from available networks using waterfall or bidding selection, **so that** ad revenue is maximized. |  | F-13.28.4 | R-13.28.4 |
 | US-13.28.4.2 | executive (P-1) | **As a** executive (P-1), **I want** GDPR/CCPA consent collected before initializing ad networks, **so that** the game complies with privacy regulations. |  | F-13.28.4 | R-13.28.4 |
 | US-13.28.4.3 | executive (P-1) | **As a** executive (P-1), **I want** ad revenue analytics (impressions, eCPM, fill rate) reported through the telemetry system, **so that** I can monitor monetization performance. |  | F-13.28.4 | R-13.28.4 |

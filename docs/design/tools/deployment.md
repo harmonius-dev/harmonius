@@ -1687,8 +1687,8 @@ cloud build service handles cross-platform builds.
 
 > **Cross-references:** Cloud build service features are defined in
 > [F-15.24](../../features/tools-editor/cloud-build.md). Shader compilation pipeline is defined in
-> [F-12.2.9](../../features/content-pipeline/processing.md). Platform SDK integration is defined in
-> [F-14.8](../../features/platform/sdk-integration.md).
+> [F-12.2.9](../../features/content-pipeline/asset-processing.md). Platform SDK integration is
+> defined in [F-14.8](../../features/platform/sdk-integration.md).
 
 ### Local Build Matrix
 

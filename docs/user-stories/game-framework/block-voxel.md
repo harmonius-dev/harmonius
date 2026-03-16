@@ -13,6 +13,8 @@
 
 ## Block Placement and Destruction (F-13.27.2)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.2.1 | player (P-23) | **As a** player (P-23), **I want** to raycast from my view to identify the target block face and place a new block there, **so that** placement is precise. |  | F-13.27.2 | R-13.27.2 |
 | US-13.27.2.2 | player (P-23) | **As a** player (P-23), **I want** to hold the interact action to mine a block with a cracking overlay showing progress, **so that** mining feedback is clear. |  | F-13.27.2 | R-13.27.2 |
 | US-13.27.2.3 | player (P-23) | **As a** player (P-23), **I want** destroyed blocks to drop items at the block position, **so that** mining yields resources. |  | F-13.27.2 | R-13.27.2 |
@@ -24,6 +26,8 @@
 
 ## Chunk-Based Block Storage (F-13.27.3)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.3.1 | player (P-23) | **As a** player (P-23), **I want** the block world to stream chunks smoothly as I move, **so that** I explore freely without stuttering. |  | F-13.27.3 | R-13.27.3 |
 | US-13.27.3.2 | player (P-23) | **As a** player (P-23), **I want** palette compression for diverse chunks and single-value storage for uniform chunks, **so that** memory usage is efficient. |  | F-13.27.3 | R-13.27.3 |
 | US-13.27.3.3 | designer (P-5) | **As a** designer (P-5), **I want** to configure render distance per platform (8 chunks on mobile, 16-32 on desktop), **so that** performance scales per device. |  | F-13.27.3 | R-13.27.3 |
@@ -32,6 +36,8 @@
 
 ## Block Chunk Meshing (F-13.27.4)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.4.1 | player (P-23) | **As a** player (P-23), **I want** chunk meshes to update within one frame when I place or break a block, **so that** modifications are immediately visible. |  | F-13.27.4 | R-13.27.4 |
 | US-13.27.4.2 | player (P-23) | **As a** player (P-23), **I want** smooth ambient occlusion on block edges based on neighboring occupancy, **so that** the voxel world looks polished. |  | F-13.27.4 | R-13.27.4 |
 | US-13.27.4.3 | player (P-23) | **As a** player (P-23), **I want** transparent blocks like glass and water to render with correct draw ordering, **so that** no flickering or sorting artifacts occur. |  | F-13.27.4 | R-13.27.4 |
@@ -42,6 +48,8 @@
 
 ## Block Light Propagation (F-13.27.5)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.5.1 | player (P-23) | **As a** player (P-23), **I want** torches to cast warm light with smooth gradients fading over distance, **so that** caves feel atmospheric. |  | F-13.27.5 | R-13.27.5 |
 | US-13.27.5.2 | player (P-23) | **As a** player (P-23), **I want** sunlight to propagate downward when I open a ceiling, **so that** natural light enters underground spaces realistically. |  | F-13.27.5 | R-13.27.5 |
 | US-13.27.5.3 | designer (P-5) | **As a** designer (P-5), **I want** per-block light emission levels (0-15) for two channels (sun and block), **so that** lighting is data-driven. |  | F-13.27.5 | R-13.27.5 |
@@ -52,6 +60,8 @@
 
 ## Gravity Block Physics (F-13.27.6a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.6 | player (P-23) | **As a** player (P-23), **I want** sand and gravel to fall smoothly when I break the block beneath them, **so that** gravity creates dynamic cave-ins. |  | F-13.27.6 | R-13.27.6 |
 | US-13.27.6 | designer (P-5) | **As a** designer (P-5), **I want** gravity block fall speed and tick rate configurable, **so that** physics pace matches the game style. |  | F-13.27.6 | R-13.27.6 |
 | US-13.27.6 | level designer (P-6) | **As a** level designer (P-6), **I want** gravity-affected blocks to create traps and puzzles, **so that** falling blocks are design elements. |  | F-13.27.6 | R-13.27.6 |
@@ -59,6 +69,8 @@
 
 ## Fluid Flow Simulation (F-13.27.6b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.6 | player (P-23) | **As a** player (P-23), **I want** water to flow outward and downward from source blocks with decreasing levels, **so that** I can build fountains and canals. |  | F-13.27.6 | R-13.27.6 |
 | US-13.27.6 | player (P-23) | **As a** player (P-23), **I want** fluids to apply current force to me when I stand in them, **so that** flowing water pushes me. |  | F-13.27.6 | R-13.27.6 |
 | US-13.27.6 | designer (P-5) | **As a** designer (P-5), **I want** to configure fluid flow speed, level count, and propagation tick rate, **so that** fluid behavior is tunable. |  | F-13.27.6 | R-13.27.6 |
@@ -66,6 +78,8 @@
 
 ## Fluid-Block Interactions (F-13.27.6c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.6 | player (P-23) | **As a** player (P-23), **I want** lava to ignite nearby flammable blocks, **so that** lava creates fire hazards. |  | F-13.27.6 | R-13.27.6 |
 | US-13.27.6 | player (P-23) | **As a** player (P-23), **I want** water flowing over lava to produce cobblestone and covering a lava source to produce obsidian, **so that** fluid interactions create new materials. |  | F-13.27.6 | R-13.27.6 |
 | US-13.27.6 | designer (P-5) | **As a** designer (P-5), **I want** fluid-block interaction rules authored per pair in gameplay databases, **so that** I can customize reactions without code. |  | F-13.27.6 | R-13.27.6 |
@@ -74,6 +88,8 @@
 
 ## Signal Source and Wire Blocks (F-13.27.7a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.7 | player (P-23) | **As a** player (P-23), **I want** to connect levers, buttons, and pressure plates to doors and mechanisms using wire blocks, **so that** I can build contraptions. |  | F-13.27.7 | R-13.27.7 |
 | US-13.27.7 | player (P-23) | **As a** player (P-23), **I want** pressure plates that activate when I step on them and daylight sensors that respond to time, **so that** automated triggers are available. |  | F-13.27.7 | R-13.27.7 |
 | US-13.27.7 | designer (P-5) | **As a** designer (P-5), **I want** signal propagation to update incrementally when a source changes, **so that** circuit updates are efficient. |  | F-13.27.7 | R-13.27.7 |
@@ -83,6 +99,8 @@
 
 ## Logic Gate Blocks (F-13.27.7b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.7 | player (P-23) | **As a** player (P-23), **I want** repeaters to delay and boost signal strength, **so that** I can build timed circuits. |  | F-13.27.7 | R-13.27.7 |
 | US-13.27.7 | player (P-23) | **As a** player (P-23), **I want** comparators to measure container contents and output proportional signal, **so that** I can build item-counting circuits. |  | F-13.27.7 | R-13.27.7 |
 | US-13.27.7 | designer (P-5) | **As a** designer (P-5), **I want** NOT, AND, and OR logic achievable via gate combinations, **so that** full boolean logic is possible. |  | F-13.27.7 | R-13.27.7 |
@@ -90,6 +108,8 @@
 
 ## Mechanism Blocks (F-13.27.7c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.7 | player (P-23) | **As a** player (P-23), **I want** pistons to push and pull adjacent blocks when powered, **so that** I can build moving structures. |  | F-13.27.7 | R-13.27.7 |
 | US-13.27.7 | player (P-23) | **As a** player (P-23), **I want** hoppers to transfer items between containers, **so that** I can build automated resource farms. |  | F-13.27.7 | R-13.27.7 |
 | US-13.27.7 | player (P-23) | **As a** player (P-23), **I want** dispensers to fire projectiles when powered, **so that** I can build automated defenses. |  | F-13.27.7 | R-13.27.7 |
@@ -99,6 +119,8 @@
 
 ## Circuit Evaluation and Budget (F-13.27.7d)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.7 | player (P-23) | **As a** player (P-23), **I want** circuits to evaluate deterministically with defined update order, **so that** complex contraptions produce the same result every time. |  | F-13.27.7 | R-13.27.7 |
 | US-13.27.7 | player (P-23) | **As a** player (P-23), **I want** per-chunk circuit budgets to prevent massive circuits from causing lag, **so that** the server stays responsive. |  | F-13.27.7 | R-13.27.7 |
 | US-13.27.7 | designer (P-5) | **As a** designer (P-5), **I want** to configure circuit complexity budgets per chunk, **so that** I can balance between creative freedom and performance. |  | F-13.27.7 | R-13.27.7 |
@@ -106,6 +128,8 @@
 
 ## Block Terrain Generation (F-13.27.8a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.8 | player (P-23) | **As a** player (P-23), **I want** to enter a world seed and generate a deterministic world identical across all platforms, **so that** I can share seeds with friends. |  | F-13.27.8 | R-13.27.8 |
 | US-13.27.8 | player (P-23) | **As a** player (P-23), **I want** 3D noise to carve caves and overhangs into the terrain, **so that** exploration is three-dimensional. |  | F-13.27.8 | R-13.27.8 |
 | US-13.27.8 | designer (P-5) | **As a** designer (P-5), **I want** generation to run on worker threads prioritized by player distance, **so that** nearby terrain generates first. |  | F-13.27.8 | R-13.27.8 |
@@ -114,6 +138,8 @@
 
 ## Block Biome System (F-13.27.8b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.8 | player (P-23) | **As a** player (P-23), **I want** diverse biomes (plains, desert, forest, ocean, mountains, tundra) with distinct block compositions, **so that** exploration reveals varied landscapes. |  | F-13.27.8 | R-13.27.8 |
 | US-13.27.8 | designer (P-5) | **As a** designer (P-5), **I want** to define biome types with per-biome block composition rules and smooth boundary blending, **so that** biome authoring is visual. |  | F-13.27.8 | R-13.27.8 |
 | US-13.27.8 | modder (P-24) | **As a** modder (P-24), **I want** to create custom biome types with unique block compositions, **so that** mods can add entirely new world themes. |  | F-13.27.8 | R-13.27.8 |
@@ -121,6 +147,8 @@
 
 ## Block Ore Placement (F-13.27.8c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.8 | player (P-23) | **As a** player (P-23), **I want** ore veins placed at varying depths with configurable frequency, **so that** mining deeper reveals rarer ores. |  | F-13.27.8 | R-13.27.8 |
 | US-13.27.8 | designer (P-5) | **As a** designer (P-5), **I want** to configure per-ore cluster size, spawn depth range, and density in gameplay databases, **so that** ore progression is data-driven. |  | F-13.27.8 | R-13.27.8 |
 | US-13.27.8 | level designer (P-6) | **As a** level designer (P-6), **I want** ore placement as a post-processing pass after terrain generation, **so that** ores embed naturally in generated terrain. |  | F-13.27.8 | R-13.27.8 |
@@ -128,6 +156,8 @@
 
 ## Block Structure Generation (F-13.27.8d)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.27.8 | player (P-23) | **As a** player (P-23), **I want** generated worlds to contain trees, villages, temples, and dungeons, **so that** exploration reveals interesting landmarks. |  | F-13.27.8 | R-13.27.8 |
 | US-13.27.8 | designer (P-5) | **As a** designer (P-5), **I want** structure templates with block layouts, loot tables, and spawner placements, **so that** generated structures are content-rich. |  | F-13.27.8 | R-13.27.8 |
 | US-13.27.8 | level designer (P-6) | **As a** level designer (P-6), **I want** structure placement configurable by frequency and biome constraints, **so that** I control where structures appear. |  | F-13.27.8 | R-13.27.8 |

@@ -13,6 +13,9 @@ exclude = [
 flavor = "gfm"
 respect-gitignore = true
 
+[MD033]
+allowed-elements = ["br"]
+
 [MD013]
 code-blocks = false
 headings = true

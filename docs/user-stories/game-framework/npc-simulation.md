@@ -13,6 +13,8 @@
 
 ## NPC Personality and Emotion (F-13.19.2)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.2.1 | player (P-23) | **As a** player (P-23), **I want** NPCs to have personality traits that influence their dialogue and behavior, **so that** each NPC feels unique. |  | F-13.19.2 | R-13.19.2 |
 | US-13.19.2.2 | player (P-23) | **As a** player (P-23), **I want** NPC emotional states (happy, angry, afraid) to affect their animations and available interactions, **so that** emotions are visible and impactful. |  | F-13.19.2 | R-13.19.2 |
 | US-13.19.2.3 | designer (P-5) | **As a** designer (P-5), **I want** to assign personality traits per NPC type and configure emotional decay rates toward personality baselines, **so that** I can differentiate NPC temperaments. |  | F-13.19.2 | R-13.19.2 |
@@ -21,6 +23,8 @@
 
 ## NPC Deed Memory (F-13.19.3a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.3 | player (P-23) | **As a** player (P-23), **I want** NPCs to witness my actions within their perception range and judge them by personality, **so that** my behavior has social consequences. |  | F-13.19.3 | R-13.19.3 |
 | US-13.19.3 | player (P-23) | **As a** player (P-23), **I want** positive deeds to increase affinity and negative deeds to decrease it, **so that** my actions shape relationships. |  | F-13.19.3 | R-13.19.3 |
 | US-13.19.3 | designer (P-5) | **As a** designer (P-5), **I want** to configure deed types, emotional weights, and time-based decay per deed category, **so that** memory significance is tunable. |  | F-13.19.3 | R-13.19.3 |
@@ -28,6 +32,8 @@
 
 ## Gossip Propagation (F-13.19.3b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.3 | player (P-23) | **As a** player (P-23), **I want** NPCs to share my deed memories as gossip during social interactions, **so that** my reputation spreads organically. |  | F-13.19.3 | R-13.19.3 |
 | US-13.19.3 | player (P-23) | **As a** player (P-23), **I want** gossip to degrade in accuracy and weight with each retelling, **so that** rumors are imperfect reflections of truth. |  | F-13.19.3 | R-13.19.3 |
 | US-13.19.3 | designer (P-5) | **As a** designer (P-5), **I want** to configure propagation rate per NPC archetype, **so that** tavern gossips spread faster than hermits. |  | F-13.19.3 | R-13.19.3 |
@@ -35,6 +41,8 @@
 
 ## Emergent Reputation (F-13.19.3c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.3 | player (P-23) | **As a** player (P-23), **I want** helping one NPC in a village to gradually improve my standing with the whole village as gossip spreads, **so that** consistent behavior is rewarded community-wide. |  | F-13.19.3 | R-13.19.3 |
 | US-13.19.3 | designer (P-5) | **As a** designer (P-5), **I want** to configure reputation thresholds that gate group-wide behaviors like shop discounts or hostile reactions, **so that** I can design faction-level consequences. |  | F-13.19.3 | R-13.19.3 |
 | US-13.19.3 | story director (P-4) | **As a** story director (P-4), **I want** emergent reputation to gate quest availability across factions, **so that** player standing drives story access. |  | F-13.19.3 | R-13.19.3 |
@@ -42,6 +50,8 @@
 
 ## Schedule Data Model (F-13.19.4a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.4 | designer (P-5) | **As a** designer (P-5), **I want** to define NPC daily schedules as data tables with time-of-day ranges, locations, activities, and variation rules, **so that** NPC routines are data-driven. |  | F-13.19.4 | R-13.19.4 |
 | US-13.19.4 | designer (P-5) | **As a** designer (P-5), **I want** schedules to vary by day of the week and season, **so that** NPC behavior changes over time. |  | F-13.19.4 | R-13.19.4 |
 | US-13.19.4 | story director (P-4) | **As a** story director (P-4), **I want** schedule entries to specify interaction availability flags, **so that** quest NPCs are only available at appropriate times. |  | F-13.19.4 | R-13.19.4 |
@@ -49,6 +59,8 @@
 
 ## Schedule Execution (F-13.19.4b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.4 | player (P-23) | **As a** player (P-23), **I want** to see NPCs walk between schedule locations at the correct times, **so that** the world feels alive with routines. |  | F-13.19.4 | R-13.19.4 |
 | US-13.19.4 | player (P-23) | **As a** player (P-23), **I want** NPCs to play configured arrival animations and idle behaviors at each location, **so that** schedules feel natural. |  | F-13.19.4 | R-13.19.4 |
 | US-13.19.4 | designer (P-5) | **As a** designer (P-5), **I want** NPCs that miss a schedule window to skip to the current slot, **so that** late NPCs recover gracefully. |  | F-13.19.4 | R-13.19.4 |
@@ -56,6 +68,8 @@
 
 ## Schedule-Gated Interactions (F-13.19.4c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.4 | player (P-23) | **As a** player (P-23), **I want** shopkeepers to only sell during work hours, **so that** NPC availability feels realistic. |  | F-13.19.4 | R-13.19.4 |
 | US-13.19.4 | player (P-23) | **As a** player (P-23), **I want** the UI to tell me why an NPC is unavailable, **so that** I can plan when to return. |  | F-13.19.4 | R-13.19.4 |
 | US-13.19.4 | designer (P-5) | **As a** designer (P-5), **I want** schedule slots to gate specific interactions, **so that** I can control NPC availability by time of day. |  | F-13.19.4 | R-13.19.4 |
@@ -63,6 +77,8 @@
 
 ## Ambient Bark System (F-13.19.5)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.5.1 | player (P-23) | **As a** player (P-23), **I want** NPCs to emit contextual one-liners based on proximity, events, and time of day, **so that** the world feels lively. |  | F-13.19.5 | R-13.19.5 |
 | US-13.19.5.2 | player (P-23) | **As a** player (P-23), **I want** barks displayed as floating text bubbles with optional audio, **so that** I can read or hear NPC comments. |  | F-13.19.5 | R-13.19.5 |
 | US-13.19.5.3 | designer (P-5) | **As a** designer (P-5), **I want** to configure bark pools per NPC type with priority, cooldown, and context filters, **so that** barks feel varied and contextual. |  | F-13.19.5 | R-13.19.5 |
@@ -70,6 +86,8 @@
 
 ## Threat and Aggro Table (F-13.19.6)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.6.1 | player (P-23) | **As a** player (P-23), **I want** enemies to attack the highest-threat target based on damage, healing, and taunts, **so that** threat management is a viable combat strategy. |  | F-13.19.6 | R-13.19.6 |
 | US-13.19.6.2 | designer (P-5) | **As a** designer (P-5), **I want** to configure threat values per ability and threat modifiers like "low threat" heals, **so that** I can balance tank/healer/DPS roles. |  | F-13.19.6 | R-13.19.6 |
 | US-13.19.6.3 | designer (P-5) | **As a** designer (P-5), **I want** threat to decay over time when out of combat range, **so that** disengaged players drop off the threat table. |  | F-13.19.6 | R-13.19.6 |
@@ -78,6 +96,8 @@
 
 ## NPC-to-NPC Conversations (F-13.19.7)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.7.1 | player (P-23) | **As a** player (P-23), **I want** NPCs to autonomously converse with each other during daily routines, **so that** the social world feels self-sustaining. |  | F-13.19.7 | R-13.19.7 |
 | US-13.19.7.2 | player (P-23) | **As a** player (P-23), **I want** NPC conversations to follow greeting, topic exchange, and farewell phases, **so that** conversations feel structured. |  | F-13.19.7 | R-13.19.7 |
 | US-13.19.7.3 | player (P-23) | **As a** player (P-23), **I want** to see NPC conversations as overhead speech bubbles, **so that** I can observe social interactions in the world. |  | F-13.19.7 | R-13.19.7 |
@@ -87,6 +107,8 @@
 
 ## NPC Independent Memory (F-13.19.8)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.8.1 | player (P-23) | **As a** player (P-23), **I want** NPCs to remember specific events they witnessed with emotional weight, **so that** past interactions have lasting consequences. |  | F-13.19.8 | R-13.19.8 |
 | US-13.19.8.2 | player (P-23) | **As a** player (P-23), **I want** NPCs to reference specific past events in dialogue, **so that** conversations feel personal and context-aware. |  | F-13.19.8 | R-13.19.8 |
 | US-13.19.8.3 | designer (P-5) | **As a** designer (P-5), **I want** to configure memory capacity, emotional decay curves, and reliability scores per NPC archetype, **so that** I can balance memory realism. |  | F-13.19.8 | R-13.19.8 |
@@ -95,6 +117,8 @@
 
 ## NPC Environmental Interaction (F-13.19.9)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.9.1 | player (P-23) | **As a** player (P-23), **I want** NPCs to open doors, use ladders, sit in chairs, and eat at tables, **so that** NPCs feel like they inhabit the world. |  | F-13.19.9 | R-13.19.9 |
 | US-13.19.9.2 | player (P-23) | **As a** player (P-23), **I want** a guard opening a locked door during patrol to create a new path I can use, **so that** NPC behavior dynamically changes the gameplay space. |  | F-13.19.9 | R-13.19.9 |
 | US-13.19.9.3 | designer (P-5) | **As a** designer (P-5), **I want** to define NPC interaction profiles per interactable object specifying which archetypes can use it and what items are required, **so that** NPC environmental interactions are data-driven. |  | F-13.19.9 | R-13.19.9 |
@@ -102,6 +126,8 @@
 
 ## Social-Cue Player Search (F-13.19.10)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.10.1 | player (P-23) | **As a** player (P-23), **I want** searching NPCs to ask nearby NPCs about my location rather than knowing it omnisciently, **so that** pursuit feels fair and believable. |  | F-13.19.10 | R-13.19.10 |
 | US-13.19.10.2 | player (P-23) | **As a** player (P-23), **I want** to evade pursuit by staying in areas where no NPC witnessed me, **so that** social awareness is a stealth mechanic. |  | F-13.19.10 | R-13.19.10 |
 | US-13.19.10.3 | designer (P-5) | **As a** designer (P-5), **I want** to configure faction communication range and response delay per faction type, **so that** search behavior fits each faction's fiction. |  | F-13.19.10 | R-13.19.10 |
@@ -110,6 +136,8 @@
 
 ## Quest and Story State Awareness (F-13.19.11)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.11.1 | player (P-23) | **As a** player (P-23), **I want** NPCs to greet me differently after I complete a quest, **so that** the world acknowledges my accomplishments. |  | F-13.19.11 | R-13.19.11 |
 | US-13.19.11.2 | player (P-23) | **As a** player (P-23), **I want** merchants to adjust prices and stock after nearby story events, **so that** the economy reacts to the narrative. |  | F-13.19.11 | R-13.19.11 |
 | US-13.19.11.3 | designer (P-5) | **As a** designer (P-5), **I want** to attach NPC Reaction nodes to quest state transitions in the visual quest editor, **so that** I can orchestrate world reactions without code. |  | F-13.19.11 | R-13.19.11 |
@@ -118,6 +146,8 @@
 
 ## Player-Witnessed NPC Social Behaviors (F-13.19.12)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.19.12.1 | player (P-23) | **As a** player (P-23), **I want** to overhear NPC conversations that reveal quest hints or hidden item locations, **so that** paying attention to the world rewards exploration. |  | F-13.19.12 | R-13.19.12 |
 | US-13.19.12.2 | player (P-23) | **As a** player (P-23), **I want** to interrupt conversing NPCs and have them acknowledge me, **so that** NPC conversations do not block interaction. |  | F-13.19.12 | R-13.19.12 |
 | US-13.19.12.3 | player (P-23) | **As a** player (P-23), **I want** nearby NPCs to visibly react to quest events with cheering, panic, or arguing, **so that** my actions have visible social impact. |  | F-13.19.12 | R-13.19.12 |

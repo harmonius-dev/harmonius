@@ -15,6 +15,8 @@
 
 ## Construction Phase (F-13.14.2)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.2.1 | player (P-23) | **As a** player (P-23), **I want** placed buildings to start as scaffolds that require resources and time to complete, **so that** construction feels like a meaningful investment. |  | F-13.14.2 | R-13.14.2 |
 | US-13.14.2.2 | player (P-23) | **As a** player (P-23), **I want** to see a progress bar and visual stages during construction, **so that** I know how close a building is to completion. |  | F-13.14.2 | R-13.14.2 |
 | US-13.14.2.3 | player (P-23) | **As a** player (P-23), **I want** to pause, cancel, or accelerate construction with partial resource refunds on cancellation, **so that** I have control over my building projects. |  | F-13.14.2 | R-13.14.2 |
@@ -24,6 +26,8 @@
 
 ## Structural Integrity (F-13.14.3)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.3.1 | player (P-23) | **As a** player (P-23), **I want** unsupported structures to display cracks and wobble before collapsing, **so that** I receive visual warnings about instability. |  | F-13.14.3 | R-13.14.3 |
 | US-13.14.3.2 | player (P-23) | **As a** player (P-23), **I want** destroying a foundation to cause cascade collapse of all pieces that depended on it, **so that** structural strategy matters during raids. |  | F-13.14.3 | R-13.14.3 |
 | US-13.14.3.3 | player (P-23) | **As a** player (P-23), **I want** stone and metal pieces to have higher stability than wood, **so that** material choice affects structural reach. |  | F-13.14.3 | R-13.14.3 |
@@ -34,6 +38,8 @@
 
 ## Building Upgrade and Repair (F-13.14.4)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.4.1 | player (P-23) | **As a** player (P-23), **I want** to upgrade building pieces from wood to stone to metal by paying material costs, **so that** I can strengthen my base over time. |  | F-13.14.4 | R-13.14.4 |
 | US-13.14.4.2 | player (P-23) | **As a** player (P-23), **I want** upgrading a piece to change its visual mesh, HP, and stability bonus, **so that** upgrades have visible and mechanical impact. |  | F-13.14.4 | R-13.14.4 |
 | US-13.14.4.3 | player (P-23) | **As a** player (P-23), **I want** to repair damaged pieces by consuming materials proportional to the damage, **so that** I can restore my base after an attack. |  | F-13.14.4 | R-13.14.4 |
@@ -43,6 +49,8 @@
 
 ## Housing Plot and Instance (F-13.14.5a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.5 | player (P-23) | **As a** player (P-23), **I want** to claim a designated housing plot as my personal building space, **so that** I have a persistent home location. |  | F-13.14.5 | R-13.14.5 |
 | US-13.14.5 | player (P-23) | **As a** player (P-23), **I want** to set visitor permissions to public, friends, guild, or private, **so that** I control who can enter my housing instance. |  | F-13.14.5 | R-13.14.5 |
 | US-13.14.5 | player (P-23) | **As a** player (P-23), **I want** my housing state to persist through saves and be visible to visitors, **so that** my home is a permanent part of the game world. |  | F-13.14.5 | R-13.14.5 |
@@ -52,6 +60,8 @@
 
 ## Furniture Placement (F-13.14.5b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.5 | player (P-23) | **As a** player (P-23), **I want** to place furniture using a separate grid or free placement system inside my home, **so that** I can arrange beds, tables, and decorations. |  | F-13.14.5 | R-13.14.5 |
 | US-13.14.5 | player (P-23) | **As a** player (P-23), **I want** to place crafting stations inside my home, **so that** I can perform crafting from my personal space. |  | F-13.14.5 | R-13.14.5 |
 | US-13.14.5 | designer (P-5) | **As a** designer (P-5), **I want** to define furniture placement rules, grid sizes, and valid surface types per interior space, **so that** I can control how players furnish different rooms. |  | F-13.14.5 | R-13.14.5 |
@@ -59,6 +69,8 @@
 
 ## Functional Furniture (F-13.14.5c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.5 | player (P-23) | **As a** player (P-23), **I want** beds to set my respawn point, **so that** I revive at home after death. |  | F-13.14.5 | R-13.14.5 |
 | US-13.14.5 | player (P-23) | **As a** player (P-23), **I want** storage chests to extend my inventory capacity, **so that** I can store surplus items at home. |  | F-13.14.5 | R-13.14.5 |
 | US-13.14.5 | player (P-23) | **As a** player (P-23), **I want** crafting stations to enable profession crafting, **so that** I can craft advanced items from my home. |  | F-13.14.5 | R-13.14.5 |
@@ -67,6 +79,8 @@
 
 ## Hunger and Thirst (F-13.14.6a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** hunger to drain at a base rate accelerated by physical activity, **so that** I must find food regularly. |  | F-13.14.6 | R-13.14.6 |
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** eating food to restore hunger and optionally provide temporary stat buffs, **so that** food quality matters. |  | F-13.14.6 | R-13.14.6 |
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** thirst to drain faster in hot biomes, **so that** I must plan water supplies for desert exploration. |  | F-13.14.6 | R-13.14.6 |
@@ -75,6 +89,8 @@
 
 ## Temperature and Warmth (F-13.14.6b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** clothing insulation, fire proximity, and shelter to protect against cold, **so that** I can prepare for harsh environments. |  | F-13.14.6 | R-13.14.6 |
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** exposure to cold without mitigation to drain warmth over time, **so that** I face consequences for venturing unprepared. |  | F-13.14.6 | R-13.14.6 |
 | US-13.14.6 | designer (P-5) | **As a** designer (P-5), **I want** to configure insulation values per clothing item and warmth bonuses per fire source, **so that** I can balance the temperature system. |  | F-13.14.6 | R-13.14.6 |
@@ -82,6 +98,8 @@
 
 ## Stamina and Fatigue (F-13.14.6c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** stamina to deplete from sprinting, jumping, and combat actions, **so that** I must pace my physical exertion. |  | F-13.14.6 | R-13.14.6 |
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** stamina to recover during rest at a configurable rate, **so that** resting between activities is rewarded. |  | F-13.14.6 | R-13.14.6 |
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** fatigue to accumulate from prolonged exertion and slow recovery, **so that** extended activity without rest has consequences. |  | F-13.14.6 | R-13.14.6 |
@@ -90,6 +108,8 @@
 
 ## Vital Debuffs (F-13.14.6d)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** starvation to reduce max HP, **so that** neglecting hunger has a dangerous combat penalty. |  | F-13.14.6 | R-13.14.6 |
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** dehydration to slow my movement speed, **so that** I cannot outrun threats while dehydrated. |  | F-13.14.6 | R-13.14.6 |
 | US-13.14.6 | player (P-23) | **As a** player (P-23), **I want** hypothermia to apply periodic damage, **so that** prolonged cold exposure is lethal. |  | F-13.14.6 | R-13.14.6 |
@@ -98,6 +118,8 @@
 
 ## Resource Node Definition (F-13.14.7a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.7 | player (P-23) | **As a** player (P-23), **I want** to identify harvestable resource nodes with clear visual types, **so that** I know what each node yields before gathering. |  | F-13.14.7 | R-13.14.7 |
 | US-13.14.7 | player (P-23) | **As a** player (P-23), **I want** nodes to require specific tools, **so that** I must equip the right tool before gathering. |  | F-13.14.7 | R-13.14.7 |
 | US-13.14.7 | designer (P-5) | **As a** designer (P-5), **I want** to define resource type, gather time, tool requirement, node HP, respawn timer, and rare yield chance per node in data tables, **so that** I can create new resource nodes without code. |  | F-13.14.7 | R-13.14.7 |
@@ -106,6 +128,8 @@
 
 ## Gathering Interaction (F-13.14.7b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.7 | player (P-23) | **As a** player (P-23), **I want** gathering to trigger an interaction with a looped animation until the node depletes or I cancel, **so that** gathering feels physical and interruptible. |  | F-13.14.7 | R-13.14.7 |
 | US-13.14.7 | player (P-23) | **As a** player (P-23), **I want** gathered resources to be added to my inventory automatically, **so that** I receive loot without manual pickup. |  | F-13.14.7 | R-13.14.7 |
 | US-13.14.7 | player (P-23) | **As a** player (P-23), **I want** my gathering skill level to increase yield quantity and rare proc rate, **so that** skill progression is rewarded. |  | F-13.14.7 | R-13.14.7 |
@@ -114,6 +138,8 @@
 
 ## Resource Node Distribution (F-13.14.7c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.7 | player (P-23) | **As a** player (P-23), **I want** resource nodes distributed across the world by biome type, **so that** exploration rewards me with new gathering opportunities. |  | F-13.14.7 | R-13.14.7 |
 | US-13.14.7 | designer (P-5) | **As a** designer (P-5), **I want** to configure biome-specific node density, type distribution, and clustering rules per world region, **so that** I can control resource placement in procedural worlds. |  | F-13.14.7 | R-13.14.7 |
 | US-13.14.7 | level designer (P-6) | **As a** level designer (P-6), **I want** procedural node placement to integrate with the world generation system, **so that** nodes appear naturally in generated terrain. |  | F-13.14.7 | R-13.14.7 |
@@ -121,6 +147,8 @@
 
 ## Farming and Crops (F-13.14.8)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.8.1 | player (P-23) | **As a** player (P-23), **I want** to till soil, plant seeds, water crops, and harvest produce through a multi-stage growth loop, **so that** farming feels like a rewarding long-term activity. |  | F-13.14.8 | R-13.14.8 |
 | US-13.14.8.2 | player (P-23) | **As a** player (P-23), **I want** crops to wither from neglect after a configurable grace period, **so that** I must tend my farm regularly. |  | F-13.14.8 | R-13.14.8 |
 | US-13.14.8.3 | player (P-23) | **As a** player (P-23), **I want** fertilizer to speed up growth and increase yield, **so that** investing in soil quality pays off. |  | F-13.14.8 | R-13.14.8 |
@@ -131,6 +159,8 @@
 
 ## Animal Needs and Happiness (F-13.14.9a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.9 | player (P-23) | **As a** player (P-23), **I want** domesticated animals to have hunger and happiness meters, **so that** I understand their current needs at a glance. |  | F-13.14.9 | R-13.14.9 |
 | US-13.14.9 | player (P-23) | **As a** player (P-23), **I want** fed and happy animals to produce more resources, **so that** caring for animals is rewarded with higher yields. |  | F-13.14.9 | R-13.14.9 |
 | US-13.14.9 | player (P-23) | **As a** player (P-23), **I want** to feed, pet, and clean animals through interaction actions, **so that** I can directly influence their happiness. |  | F-13.14.9 | R-13.14.9 |
@@ -139,6 +169,8 @@
 
 ## Animal Housing (F-13.14.9b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.9 | player (P-23) | **As a** player (P-23), **I want** to build coops, barns, and stables for my animals, **so that** each species has appropriate housing with capacity limits. |  | F-13.14.9 | R-13.14.9 |
 | US-13.14.9 | player (P-23) | **As a** player (P-23), **I want** to acquire animals from NPC vendors, wild taming, or breeding, **so that** I have multiple paths to expand my livestock. |  | F-13.14.9 | R-13.14.9 |
 | US-13.14.9 | designer (P-5) | **As a** designer (P-5), **I want** to configure housing capacity, species compatibility, and purchase costs per structure type, **so that** I can balance animal housing. |  | F-13.14.9 | R-13.14.9 |
@@ -147,6 +179,8 @@
 
 ## Animal Breeding (F-13.14.9c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.14.9 | player (P-23) | **As a** player (P-23), **I want** to breed compatible animal pairs and see offspring with inherited trait variations, **so that** selective breeding is rewarding. |  | F-13.14.9 | R-13.14.9 |
 | US-13.14.9 | player (P-23) | **As a** player (P-23), **I want** breeding to require a suitable housing structure and a gestation timer, **so that** breeding is a deliberate investment. |  | F-13.14.9 | R-13.14.9 |
 | US-13.14.9 | designer (P-5) | **As a** designer (P-5), **I want** to configure genetic rules, trait inheritance, and random variation per species, **so that** I can control breeding outcomes. |  | F-13.14.9 | R-13.14.9 |

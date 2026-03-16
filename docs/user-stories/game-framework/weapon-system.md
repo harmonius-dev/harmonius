@@ -12,6 +12,8 @@
 
 ## Magazine and Ammo Management (F-13.16.2a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.2 | player (P-23) | **As a** player (P-23), **I want** each weapon to track magazine rounds and reserve ammo, **so that** I must manage my ammunition supply. |  | F-13.16.2 | R-13.16.2 |
 | US-13.16.2 | player (P-23) | **As a** player (P-23), **I want** magazine and reserve counts displayed in the HUD, **so that** I know my ammo status at a glance. |  | F-13.16.2 | R-13.16.2 |
 | US-13.16.2 | player (P-23) | **As a** player (P-23), **I want** fire input suppressed when the magazine is empty, **so that** I must reload before firing again. |  | F-13.16.2 | R-13.16.2 |
@@ -20,6 +22,8 @@
 
 ## Reload Mechanics (F-13.16.2b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.2 | player (P-23) | **As a** player (P-23), **I want** tactical reload to be faster than empty reload, **so that** I am rewarded for reloading before the magazine empties. |  | F-13.16.2 | R-13.16.2 |
 | US-13.16.2 | player (P-23) | **As a** player (P-23), **I want** sequential reload to be interruptible by fire input, **so that** I can shoot a partially loaded shotgun in emergencies. |  | F-13.16.2 | R-13.16.2 |
 | US-13.16.2 | player (P-23) | **As a** player (P-23), **I want** reloading to cancel sprint, **so that** reload has a movement cost. |  | F-13.16.2 | R-13.16.2 |
@@ -28,6 +32,8 @@
 
 ## Ammo Types (F-13.16.2c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.2 | player (P-23) | **As a** player (P-23), **I want** to switch ammo types at runtime via an input action, **so that** I can adapt to different enemy resistances mid-combat. |  | F-13.16.2 | R-13.16.2 |
 | US-13.16.2 | player (P-23) | **As a** player (P-23), **I want** armor-piercing rounds to ignore a percentage of target armor, **so that** I can counter heavily armored enemies. |  | F-13.16.2 | R-13.16.2 |
 | US-13.16.2 | player (P-23) | **As a** player (P-23), **I want** incendiary rounds to apply burn damage over time, **so that** I can use fire against vulnerable targets. |  | F-13.16.2 | R-13.16.2 |
@@ -37,6 +43,8 @@
 
 ## Recoil and Spread (F-13.16.3)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.3.1 | player (P-23) | **As a** player (P-23), **I want** sustained fire to kick my aim upward and sideways following a pattern, with recovery when I stop, **so that** recoil control is a learnable skill. |  | F-13.16.3 | R-13.16.3 |
 | US-13.16.3.2 | player (P-23) | **As a** player (P-23), **I want** the crosshair to dynamically reflect current spread radius, **so that** I can visually judge my accuracy. |  | F-13.16.3 | R-13.16.3 |
 | US-13.16.3.3 | player (P-23) | **As a** player (P-23), **I want** spread to widen with movement, hip-fire, and sustained fire, and tighten with ADS and crouching, **so that** positioning and posture improve accuracy. |  | F-13.16.3 | R-13.16.3 |
@@ -46,6 +54,8 @@
 
 ## Projectile Ballistics (F-13.16.4a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.4 | player (P-23) | **As a** player (P-23), **I want** projectiles to follow a parabolic trajectory with gravity drop and travel time, **so that** distant targets require leading and elevation. |  | F-13.16.4 | R-13.16.4 |
 | US-13.16.4 | player (P-23) | **As a** player (P-23), **I want** drag to decelerate projectiles over distance, **so that** effective range has mechanical meaning. |  | F-13.16.4 | R-13.16.4 |
 | US-13.16.4 | designer (P-5) | **As a** designer (P-5), **I want** to configure mass, muzzle velocity, and drag per ammo type, **so that** snipers and shotguns feel physically distinct at range. |  | F-13.16.4 | R-13.16.4 |
@@ -54,6 +64,8 @@
 
 ## Wind Deflection (F-13.16.4b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.4 | player (P-23) | **As a** player (P-23), **I want** wind to deflect my shots laterally, **so that** long-range marksmanship requires reading environmental conditions. |  | F-13.16.4 | R-13.16.4 |
 | US-13.16.4 | player (P-23) | **As a** player (P-23), **I want** wind indicators in the sniper scope UI, **so that** I can compensate for wind at long range. |  | F-13.16.4 | R-13.16.4 |
 | US-13.16.4 | designer (P-5) | **As a** designer (P-5), **I want** to configure per-ammo wind sensitivity and enable wind per zone, **so that** I can create varying wind conditions across the map. |  | F-13.16.4 | R-13.16.4 |
@@ -62,6 +74,8 @@
 
 ## Surface Penetration and Ricochet (F-13.16.4c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.4 | player (P-23) | **As a** player (P-23), **I want** bullets to penetrate thin materials like drywall with energy loss, **so that** cover material matters tactically. |  | F-13.16.4 | R-13.16.4 |
 | US-13.16.4 | player (P-23) | **As a** player (P-23), **I want** bullets to ricochet off hard surfaces at shallow angles, **so that** metal walls deflect shots unpredictably. |  | F-13.16.4 | R-13.16.4 |
 | US-13.16.4 | designer (P-5) | **As a** designer (P-5), **I want** to configure penetration and ricochet thresholds per physics material, **so that** each surface type responds differently. |  | F-13.16.4 | R-13.16.4 |
@@ -70,6 +84,8 @@
 
 ## Weapon Zeroing (F-13.16.4d)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.4 | player (P-23) | **As a** player (P-23), **I want** to adjust my scope zeroing in discrete distance steps, **so that** point of aim matches point of impact at the zeroed range. |  | F-13.16.4 | R-13.16.4 |
 | US-13.16.4 | player (P-23) | **As a** player (P-23), **I want** the current zero distance displayed in my scope UI overlay, **so that** I know my current zeroing at a glance. |  | F-13.16.4 | R-13.16.4 |
 | US-13.16.4 | player (P-23) | **As a** player (P-23), **I want** switching ammo types to shift the effective zero, **so that** I must re-zero when changing ammunition. |  | F-13.16.4 | R-13.16.4 |
@@ -78,6 +94,8 @@
 
 ## Attachment Slot Model (F-13.16.5a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.5 | player (P-23) | **As a** player (P-23), **I want** weapons to have named attachment slots (optic, barrel, muzzle, grip, stock, magazine, rail), **so that** I can customize my weapon. |  | F-13.16.5 | R-13.16.5 |
 | US-13.16.5 | player (P-23) | **As a** player (P-23), **I want** each slot to filter compatible attachments by category, **so that** only valid attachments can be equipped. |  | F-13.16.5 | R-13.16.5 |
 | US-13.16.5 | designer (P-5) | **As a** designer (P-5), **I want** to define slot categories, attachment stats, and modifier modes (additive or multiplicative) in gameplay databases, **so that** weapon customization is extensible without code. |  | F-13.16.5 | R-13.16.5 |
@@ -86,6 +104,8 @@
 
 ## Attachment Visuals (F-13.16.5b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.5 | player (P-23) | **As a** player (P-23), **I want** equipped attachments to appear on my weapon model at the correct socket positions, **so that** customization has visible impact. |  | F-13.16.5 | R-13.16.5 |
 | US-13.16.5 | player (P-23) | **As a** player (P-23), **I want** optic attachments to render scope reticles with configurable zoom, **so that** optics feel functional in ADS. |  | F-13.16.5 | R-13.16.5 |
 | US-13.16.5 | designer (P-5) | **As a** designer (P-5), **I want** to author attachment meshes that snap to named socket transforms on the weapon, **so that** visual integration is consistent. |  | F-13.16.5 | R-13.16.5 |
@@ -93,6 +113,8 @@
 
 ## Attachment Customization UI (F-13.16.5c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.5 | player (P-23) | **As a** player (P-23), **I want** a dedicated weapon customization screen with a 3D weapon preview and interactive slot indicators, **so that** I can browse and compare attachments. |  | F-13.16.5 | R-13.16.5 |
 | US-13.16.5 | player (P-23) | **As a** player (P-23), **I want** stat comparison shown when hovering an attachment, **so that** I can evaluate before equipping. |  | F-13.16.5 | R-13.16.5 |
 | US-13.16.5 | player (P-23) | **As a** player (P-23), **I want** the 3D preview to update in real time when I equip or remove an attachment, **so that** I see the visual result immediately. |  | F-13.16.5 | R-13.16.5 |
@@ -101,6 +123,8 @@
 
 ## Surface Type Tags (F-13.16.6a)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.6 | player (P-23) | **As a** player (P-23), **I want** surfaces to carry material type tags, **so that** impacts produce appropriate responses for metal, wood, concrete, etc. |  | F-13.16.6 | R-13.16.6 |
 | US-13.16.6 | designer (P-5) | **As a** designer (P-5), **I want** surface type tags on physics materials and terrain splatmap layers, **so that** every surface in the game has a classifiable material. |  | F-13.16.6 | R-13.16.6 |
 | US-13.16.6 | designer (P-5) | **As a** designer (P-5), **I want** extensible custom surface types beyond the built-in set, **so that** I can define new materials for unique environments. |  | F-13.16.6 | R-13.16.6 |
@@ -108,18 +132,24 @@
 
 ## Impact VFX (F-13.16.6b)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.6 | player (P-23) | **As a** player (P-23), **I want** sparks on metal, dust on concrete, and splinters on wood when bullets impact, **so that** each surface reacts distinctly. |  | F-13.16.6 | R-13.16.6 |
 | US-13.16.6 | designer (P-5) | **As a** designer (P-5), **I want** to configure VFX response tables mapping surface types to particle assets with spawn count, scale, and lifetime, **so that** I can author impact effects without code. |  | F-13.16.6 | R-13.16.6 |
 | US-13.16.6 | tester (P-27) | **As a** tester (P-27), **I want** to verify that shooting a metal surface spawns the metal particle asset from the VFX table, **so that** the lookup is correct. |  | F-13.16.6 | R-13.16.6 |
 
 ## Impact Audio (F-13.16.6c)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.6 | player (P-23) | **As a** player (P-23), **I want** to hear clang on metal, thud on wood, and crack on concrete when bullets impact, **so that** audio reinforces the surface material. |  | F-13.16.6 | R-13.16.6 |
 | US-13.16.6 | designer (P-5) | **As a** designer (P-5), **I want** to configure impact audio tables mapping surface types to sound pools with random variation, volume scaling, and pitch scaling, **so that** I can author impact audio without code. |  | F-13.16.6 | R-13.16.6 |
 | US-13.16.6 | tester (P-27) | **As a** tester (P-27), **I want** to verify that impact sounds play at the correct 3D position using spatial audio, **so that** impact direction is audible. |  | F-13.16.6 | R-13.16.6 |
 
 ## Impact Decals (F-13.16.6d)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.16.6 | player (P-23) | **As a** player (P-23), **I want** to see bullet holes on metal, splintered holes on wood, and blood splatters on flesh after impacts, **so that** combat leaves visible environmental traces. |  | F-13.16.6 | R-13.16.6 |
 | US-13.16.6 | designer (P-5) | **As a** designer (P-5), **I want** to configure impact decal tables mapping surface types to decal assets with lifetime and max count, **so that** I can manage decal quality and budget. |  | F-13.16.6 | R-13.16.6 |
 | US-13.16.6 | tester (P-27) | **As a** tester (P-27), **I want** to verify that decals orient along the surface normal at the impact point, **so that** decal placement is physically correct. |  | F-13.16.6 | R-13.16.6 |

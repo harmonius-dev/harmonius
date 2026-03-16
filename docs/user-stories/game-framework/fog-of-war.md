@@ -13,6 +13,8 @@
 
 ## Vision Source and Sight Radius (F-13.20.2)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.20.2.1 | player (P-23) | **As a** player (P-23), **I want** each of my units to reveal fog within its sight radius, **so that** I can scout the map by moving units. |  | F-13.20.2 | R-13.20.2 |
 | US-13.20.2.2 | player (P-23) | **As a** player (P-23), **I want** units on high ground to have increased vision radius, **so that** elevation provides a strategic scouting advantage. |  | F-13.20.2 | R-13.20.2 |
 | US-13.20.2.3 | designer (P-5) | **As a** designer (P-5), **I want** to configure per-entity sight radius, shape (circle or cone), and height advantage bonus, **so that** I can differentiate unit types. |  | F-13.20.2 | R-13.20.2 |
@@ -22,6 +24,8 @@
 
 ## Vision Modifier Volumes (F-13.20.3)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.20.3.1 | player (P-23) | **As a** player (P-23), **I want** tall grass patches to hide me from enemies outside the grass, **so that** bush positioning is a tactical option. |  | F-13.20.3 | R-13.20.3 |
 | US-13.20.3.2 | player (P-23) | **As a** player (P-23), **I want** smoke clouds to block all vision through them, **so that** smoke creates temporary cover. |  | F-13.20.3 | R-13.20.3 |
 | US-13.20.3.3 | designer (P-5) | **As a** designer (P-5), **I want** to place vision modifier volumes with configurable types (grass, smoke, high ground, darkness), **so that** maps have tactically interesting terrain. |  | F-13.20.3 | R-13.20.3 |
@@ -31,6 +35,8 @@
 
 ## Fog of War Memory (F-13.20.4)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.20.4.1 | player (P-23) | **As a** player (P-23), **I want** shrouded areas to display the last-seen state of buildings and resources as ghost images, **so that** I have useful context about previously explored areas. |  | F-13.20.4 | R-13.20.4 |
 | US-13.20.4.2 | player (P-23) | **As a** player (P-23), **I want** ghost images to update when I re-reveal the area, **so that** destroyed buildings disappear from memory on re-scouting. |  | F-13.20.4 | R-13.20.4 |
 | US-13.20.4.3 | designer (P-5) | **As a** designer (P-5), **I want** fog memory to be per-faction and persisted through saves, **so that** exploration progress carries across sessions. |  | F-13.20.4 | R-13.20.4 |

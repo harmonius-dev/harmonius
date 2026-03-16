@@ -2165,6 +2165,11 @@ stateDiagram-v2
 | Concurrent structural changes vs state updates[^3] | Same-frame op collision (destroy + delta, remove + delta) | Fixed priority ordering: destroy > remove > add > delta; conflicting ops deduplicated | N/A (immediate) | `ReplicationOpPriority`, `ReplicationOp`, `ReplicationOpPayload` |
 | Split-brain during network partition[^4] | Epoch mismatch between two claiming authorities | Higher epoch wins; lower-epoch holder freezes entity and requests full re-sync from server | Until re-sync ACK | `AuthorityEpoch`, `AuthorityShard` |
 
+[^1]: See Tombstone handling below.
+[^2]: See Authority transfer with physics snapshot below.
+[^3]: See Structural operation ordering below.
+[^4]: See Split-brain resolution below.
+
 **Tombstone handling.[^1]** Server inserts a `Tombstone` component before despawning, broadcasts via
 reliable channel. Client drops all pending ops on receipt. TTL = 2x max RTT ensures the
 highest-latency client receives the tombstone before handle reuse. Any delta or prediction

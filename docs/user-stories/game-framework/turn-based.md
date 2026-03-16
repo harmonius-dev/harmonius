@@ -13,6 +13,8 @@
 
 ## Turn Manager and Initiative (F-13.21.2)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.21.2.1 | player (P-23) | **As a** player (P-23), **I want** a turn order bar showing upcoming actors with portraits, **so that** I know who acts next. |  | F-13.21.2 | R-13.21.2 |
 | US-13.21.2.2 | player (P-23) | **As a** player (P-23), **I want** turn transitions to focus the camera on the active unit, **so that** I always know which unit is acting. |  | F-13.21.2 | R-13.21.2 |
 | US-13.21.2.3 | designer (P-5) | **As a** designer (P-5), **I want** to choose between round-robin, initiative-based, team-based, and phase-based turn modes, **so that** the turn system fits my game design. |  | F-13.21.2 | R-13.21.2 |
@@ -22,6 +24,8 @@
 
 ## Action Point Movement and Abilities (F-13.21.3)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.21.3.1 | player (P-23) | **As a** player (P-23), **I want** each unit to have an action point budget spent on movement and abilities, **so that** I must prioritize actions each turn. |  | F-13.21.3 | R-13.21.3 |
 | US-13.21.3.2 | player (P-23) | **As a** player (P-23), **I want** to split AP between movement and actions in any order, **so that** I can move, attack, then move again if AP remains. |  | F-13.21.3 | R-13.21.3 |
 | US-13.21.3.3 | player (P-23) | **As a** player (P-23), **I want** movement range displayed as highlighted reachable cells with path preview and AP cost on hover, **so that** I can plan moves before committing. |  | F-13.21.3 | R-13.21.3 |
@@ -32,6 +36,8 @@
 
 ## Grid Cover and Overwatch (F-13.21.4)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.21.4.1 | player (P-23) | **As a** player (P-23), **I want** cover objects to provide half or full defense bonuses against attacks from the covered direction, **so that** positioning behind cover reduces damage. |  | F-13.21.4 | R-13.21.4 |
 | US-13.21.4.2 | player (P-23) | **As a** player (P-23), **I want** flanking to negate cover bonuses and grant accuracy or damage bonuses, **so that** outmaneuvering enemies is rewarded. |  | F-13.21.4 | R-13.21.4 |
 | US-13.21.4.3 | player (P-23) | **As a** player (P-23), **I want** to spend AP to enter overwatch stance and automatically fire at the first enemy that moves within line of sight, **so that** I can control space on the enemy turn. |  | F-13.21.4 | R-13.21.4 |
@@ -42,6 +48,8 @@
 
 ## Hit Probability and Combat Resolution (F-13.21.5)
 
+| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
+|----|---------|-------|---------------------|----------|--------------|
 | US-13.21.5.1 | player (P-23) | **As a** player (P-23), **I want** hit probability displayed as a percentage before confirming attacks, **so that** I can make informed attack decisions. |  | F-13.21.5 | R-13.21.5 |
 | US-13.21.5.2 | player (P-23) | **As a** player (P-23), **I want** damage preview showing min-max range alongside hit chance, **so that** I can assess expected damage output. |  | F-13.21.5 | R-13.21.5 |
 | US-13.21.5.3 | player (P-23) | **As a** player (P-23), **I want** miss, graze, hit, and critical results distinguished with feedback animations and floating text, **so that** each outcome feels distinct. |  | F-13.21.5 | R-13.21.5 |
