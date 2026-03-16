@@ -60,10 +60,11 @@ Combine, no Objective-C, no Objective-C++.
 2. **No SwiftUI** — use AppKit/UIKit directly
 3. **No Combine** — use GCD and completion handlers at the Swift layer
 4. **C++ interop via cxx.rs** — Swift uses C++ interop to implement cxx.rs bridge interfaces
-5. **CMake build** — all Swift code is built with CMake, not SwiftPM or Xcode
-6. **GCD for concurrency** — dispatch queues, not Swift concurrency (`async`/`await` in Swift)
-7. **No Objective-C** — no `@objc`, no Objective-C bridging headers, no Objective-C++
-8. **Metal via metal-cpp** — Metal accessed through metal-cpp (C++), not directly from Swift
+5. **CMake for libraries** — Swift libraries built with CMake, not SwiftPM
+6. **XcodeGen for apps** — macOS/iOS app packaging uses XcodeGen + xcodebuild
+7. **GCD for concurrency** — dispatch queues, not Swift concurrency (`async`/`await` in Swift)
+8. **No Objective-C** — no `@objc`, no Objective-C bridging headers, no Objective-C++
+9. **Metal via metal-cpp** — Metal accessed through metal-cpp (C++), not directly from Swift
 
 ## Cache-Friendly Patterns
 

@@ -10,7 +10,7 @@ engine.
 | Primary language | Rust (stable only — no nightly features) |
 | C++ FFI | cxx.rs for C++ library interop (DXC, Metal Shader Converter) |
 | Swift FFI | Swift with C++ interop exposes Apple APIs via cxx.rs to Rust |
-| Swift build | CMake is the Swift build system |
+| Swift build | CMake builds Swift libraries; XcodeGen + xcodebuild packages macOS/iOS apps |
 | C FFI | bindgen for C header interop (xcb, Wayland, Linux syscalls) |
 | No Obj-C/Obj-C++ | No Objective-C or Objective-C++ source. Use Swift with C++ interop instead. |
 | No objc2-metal | Use metal-cpp (Apple's C++ Metal wrapper) for Metal FFI, not objc2-metal. |
