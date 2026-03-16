@@ -1114,6 +1114,139 @@ Key phases:
 12. **GPU Submit** — submit command buffers to graphics API
 13. **Present** — swap chain present
 
+## Cross-Subsystem Interaction Sequences
+
+The diagrams below show how data flows across subsystem boundaries during key engine operations. Use
+these as a reference when modifying any subsystem that participates in a cross-cutting pipeline.
+
+### Physics to Rendering Pipeline
+
+This sequence traces a physics body from integration through GPU present. It is relevant when
+debugging visual lag or transform desync after physics steps.
+
+```mermaid
+sequenceDiagram
+    participant PS as PhysicsSystem
+    participant TP as TransformPropagation
+    participant RE as RenderExtraction
+    participant RG as RenderGraph
+    participant GPU as GPU
+
+    PS->>PS: Integrate velocities + solve
+    PS->>TP: Write RigidBody transforms
+    Note over PS,TP: LocalTransform components
+
+    TP->>TP: Dirty-flag hierarchy walk
+    TP->>RE: GlobalTransform + Visibility
+    Note over TP,RE: Double-buffered snapshot
+
+    RE->>RE: Copy mesh handles + materials
+    RE->>RG: ExtractedView, ExtractedMesh
+    Note over RE,RG: Per-view draw lists
+
+    RG->>RG: Topological sort passes
+    RG->>GPU: Encode command buffers
+    Note over RG,GPU: Depth, GBuffer, Lighting
+
+    GPU->>GPU: Execute + present
+```
+
+### ECS Change Detection to Spatial Update
+
+This sequence shows how a single `Transform` write fans out to every dependent cache. It is relevant
+when adding new consumers of spatial data.
+
+```mermaid
+sequenceDiagram
+    participant W as ECSWorld
+    participant CD as ChangeDetection
+    participant SI as SpatialIndex
+    participant PB as PhysicsBroadphase
+    participant RC as RenderCulling
+
+    W->>W: System writes Transform
+    W->>CD: Tick stamp on archetype column
+    Note over W,CD: Changed(Transform) filter
+
+    CD->>SI: Entity ID + new AABB
+    Note over CD,SI: Incremental BVH update
+
+    SI->>PB: Updated leaf nodes
+    Note over SI,PB: Broadphase pair cache
+
+    PB->>PB: Revalidate overlap pairs
+
+    SI->>RC: Invalidate frustum cache
+    Note over SI,RC: Per-view visibility sets
+
+    RC->>RC: Mark views dirty
+```
+
+### Audio Streaming Pipeline
+
+This sequence shows the async handoff between game thread, IoReactor, and real-time audio callback.
+It is relevant when tuning streaming latency or buffer sizes.
+
+```mermaid
+sequenceDiagram
+    participant GT as GameThread
+    participant IO as IoReactor
+    participant DC as Decoder
+    participant RB as RingBuffer
+    participant AT as AudioThread
+    participant OD as OutputDevice
+
+    GT->>IO: Submit async read (asset handle)
+    Note over GT,IO: Platform I/O dispatch
+
+    IO-->>DC: I/O completion + raw bytes
+    Note over IO,DC: Opus / Vorbis / PCM
+
+    DC->>DC: Decode compressed frames
+    DC->>RB: Write PCM samples
+    Note over DC,RB: Lock-free SPSC ring
+
+    AT->>RB: Read PCM samples
+    Note over AT,RB: Callback-driven pull
+
+    AT->>AT: Spatial mix (HRTF + attenuation)
+    AT->>OD: Submit mixed buffer
+    Note over AT,OD: Platform audio API
+```
+
+### Entity Lifecycle Across Network Authority
+
+This sequence shows a networked entity from server spawn through client proxy cleanup. It is
+relevant when working on replication, authority transfer, or tombstone expiry.
+
+```mermaid
+sequenceDiagram
+    participant SA as ServerAuthority
+    participant NT as NetworkTransport
+    participant CP as ClientProxy
+
+    SA->>SA: Spawn entity + attach components
+    SA->>NT: Replicate (entity, components)
+    Note over SA,NT: Serialized via Reflection
+
+    NT->>CP: Reliable channel deliver
+    CP->>CP: Spawn local proxy entity
+    CP->>CP: Apply replicated state
+    Note over CP: Predicted components diverge
+
+    SA->>SA: Authority transfer request
+    SA->>NT: AuthTransfer(entity, new_owner)
+    NT->>CP: Authority granted
+    CP->>CP: Promote proxy to authority
+
+    SA->>SA: Destroy authoritative entity
+    SA->>NT: Tombstone(entity, timestamp)
+    NT->>CP: Receive tombstone
+    CP->>CP: Destroy proxy entity
+    CP->>CP: Hold tombstone until TTL expiry
+    Note over CP: Prevents stale reorder spawn
+```
+
 ## Platform Abstraction
 
 ```mermaid

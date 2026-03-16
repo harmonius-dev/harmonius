@@ -2616,6 +2616,55 @@ positioning avoids reliance on platform-specific subpixel layout (RGB vs BGR).
 Widget property animations use the shared `Curve<T>` type (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)) for easing and interpolation.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The static dispatch constraint (no `dyn` outside approved uses) makes the widget tree harder to
+compose polymorphically. Every widget type must be known at compile time through enum dispatch,
+which means adding a new custom widget requires extending the WidgetKind enum rather than
+implementing a trait object. Lifting this would allow `dyn Widget` for open extension. We accept the
+cost because enum dispatch eliminates vtable indirection in the hot layout and render paths, which
+is critical for the 500-widget mobile budget (F-10.1.3) and 60fps target with hundreds of
+simultaneous data binding updates (F-10.1.7).
+
+**Q2. How can this design be improved?**
+
+The tree diff algorithm (F-10.1.12) is O(n) for keyed lists but falls back to O(n^2) for unkeyed
+children, which can spike during rapid inventory updates or chat scroll. Forcing all list children
+to carry keys would guarantee O(n) but adds authoring friction. A hybrid approach -- auto-generating
+keys from item data identity for data-bound lists -- would solve this without burdening designers.
+The style cascade system (F-10.1.6) also lacks media queries for responsive breakpoints, relying
+instead on manual anchor layout adjustment per resolution.
+
+**Q3. Is there a better approach?**
+
+An immediate-mode UI (imgui-style) would eliminate the retained tree, diff algorithm, and dirty
+tracking entirely. We chose retained-mode because the engine targets complex MMO UIs with hundreds
+of persistent widgets, data bindings, and animations running simultaneously. Immediate-mode would
+require re-evaluating all widget state every frame, which does not scale to 500+ interactive
+elements at 60fps. The retained tree with minimal diffing amortizes state evaluation across frames,
+only updating what changed.
+
+**Q4. Does this design solve all customer problems?**
+
+The VR input modes (F-10.1.11) cover laser, touch, gaze, and hand tracking, but the design lacks a
+seated VR comfort mode where UI panels auto-position to the player's forward-facing arc to avoid
+neck strain. US-10.1.18 mentions comfort settings but does not specify adaptive re-centering. The
+design also lacks a widget recording/playback system for automated UI testing -- QA testers
+(US-10.1.2, US-10.1.3) must manually verify diff correctness instead of replaying recorded
+interaction sequences.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The widget framework is the foundation for all UI subsystems and integrates cleanly with
+core-runtime through ECS-backed data binding, the render graph for batched UI drawing, and the event
+bus for input dispatch. The reactive binding system (F-10.1.7) mirrors how the ECS change detection
+system (F-1.1.22) works for game state, creating a consistent reactivity model. One tension is that
+widget animations (F-10.1.13) run their own timer system rather than using the engine animation
+subsystem (domain 9), creating two parallel animation runtimes. Sharing the curve evaluation and
+easing infrastructure would improve cohesion.
+
 ## Open Questions
 
 1. **Constraint solver algorithm** -- Cassowary (Kiwi-solver) vs custom incremental solver.

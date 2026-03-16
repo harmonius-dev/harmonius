@@ -1078,6 +1078,51 @@ Domain tags prevent collisions across entry types:
 | First launch (warm cache) | < 10 min | US-15.11.4.4 |
 | Cache hit rate (steady state) | >= 95% | US-15.11.8.1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The platform-native HTTP client requirement (NSURLSession, WinHTTP, libcurl) means the cache client
+has three separate HTTP implementations. Lifting this would allow a single cross-platform HTTP
+library like `reqwest` (without tokio, using blocking mode on I/O threads). The best solution
+without this constraint would be `ureq` (blocking, no async runtime) on dedicated I/O threads. The
+impact is a single HTTP codepath instead of three platform-specific wrappers, but it would violate
+the platform-native I/O constraint in `constraints.md`.
+
+**Q2. How can this design be improved?**
+
+The `GcWorker` (F-15.11.5) uses `Box<dyn StorageBackend>`, which violates the static dispatch
+preference. Since there are only two backends (S3 and local filesystem), an enum dispatch would
+eliminate the trait object. The prefetcher (F-15.11.4) downloads all missing entries but does not
+prioritize by asset type -- shaders needed for viewport rendering should download before textures.
+The local cache LRU eviction does not consider entry type priority. Adding type-aware prefetch
+ordering and priority-based eviction would improve developer onboarding.
+
+**Q3. Is there a better approach?**
+
+Instead of a two-tier cache (L1 local + L2 S3), a three-tier model with an L2 LAN cache server could
+reduce WAN traffic for co-located teams. We chose the two-tier model for simplicity and because
+CloudFront already provides edge caching. Adding a LAN tier would optimize for the common case of
+multiple developers in the same office, reducing S3 egress costs and improving fetch latency from
+~500 ms to ~10 ms for L2 hits.
+
+**Q4. Does this design solve all customer problems?**
+
+The cache does not support partial cache entries -- if a shader has 100 permutations, all must be
+cached individually. A cache entry for a "shader family" containing all permutations in one blob
+would reduce metadata overhead and enable atomic cache population. The cache also lacks a "share my
+local cache" mode for ad-hoc team collaboration where no cloud infrastructure is available, which
+would benefit small teams and game jams.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The cache is highly cohesive: BLAKE3 hashing is shared with the version control system (F-15.10) and
+deployment pipeline (F-15.14.7), Zstd compression is shared with the asset pipeline, and the REST
+API server uses `IoReactor`. The `CacheKey` domain separation tags ensure no collisions between
+asset types. The CI/CD population flow integrates with the build farm (F-15.18.4). The
+`StorageBackend` trait's use of `dyn` is the only deviation from the static dispatch preference, and
+the design doc already flags this for migration to enum dispatch.
+
 ## Open Questions
 
 1. **Index database choice** — PostgreSQL for the server index provides full-text search and ACID

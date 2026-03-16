@@ -1833,6 +1833,64 @@ pub fn vr_tracking_system(
 | Eye gaze query | < 0.1 ms | R-6.5.4 |
 | Audio band extraction | < 1 ms per 5ms audio block | R-6.4.4 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The platform-native API constraint (GCD on macOS, HID on all platforms for DualSense) means gesture
+recognizers and haptic backends must be reimplemented per platform rather than using UIKit/AppKit
+gesture recognizers or platform haptic SDKs directly. This is most limiting for gestures on macOS,
+where NSEvent's built-in magnification and rotation recognizers are well-tuned but cannot be used
+without accepting Apple's gesture heuristics. Lifting this for macOS would reduce implementation
+effort and leverage Apple's multi-touch algorithms, but would create platform-specific behavior
+divergence -- gestures would feel different on macOS versus Windows/Linux. Consistent cross-platform
+gesture behavior is more important than per-platform polish for a multi-platform engine.
+
+**Q2. How can this design be improved?**
+
+The gesture conflict resolution system (R-6.3.4a) supports three strategies (require-failure,
+simultaneous, priority) but lacks a "delay" strategy where a gesture waits a configurable duration
+before committing, useful for distinguishing pan-start from tap-hold on touch. The HD haptic
+waveform format (R-6.4.3) uses a common format with platform conversion, but the design does not
+define the exact format -- this needs to be resolved before implementation. Audio-driven haptic
+generation (R-6.4.4) processes the 20-250 Hz band but does not account for musical content where
+bass-heavy audio would produce constant haptic buzz -- a transient-detection gate would improve
+quality. The VR haptic system (R-6.5.5) reuses `RumblePattern` assets but lacks VR-specific features
+like spatially-driven intensity falloff curves.
+
+**Q3. Is there a better approach?**
+
+For gestures, an alternative is to use a neural network-based recognizer trained on touch input data
+rather than hand-authored state machines. This would handle ambiguous gestures (e.g., rune shapes
+per F-6.3.5) more robustly than threshold-based matching. We are not taking this approach because
+the no-code constraint requires all gesture parameters to be visually authorable, and ML models are
+opaque to designers. The state machine approach with visual editing (F-6.3.5) gives designers direct
+control over recognition behavior. For haptics, a single unified profile format (R-6.4.5) with
+fallback chains is superior to per-platform authoring -- the current design is correct.
+
+**Q4. Does this design solve all customer problems?**
+
+The gesture system covers standard touch gestures (F-6.3.1--5) and the haptic system covers rumble,
+adaptive triggers, and HD haptics (F-6.4.1--5), but there are gaps. There is no support for pen
+gesture recognition -- pen strokes for map annotation (US-6.1.4.8) would benefit from stroke shape
+recognition similar to custom touch gestures (F-6.3.5). The VR hand tracking system (F-6.5.3)
+supports predefined gestures but the custom gesture pipeline via logic graphs does not specify how
+hand skeletal data flows into the gesture state machine. Adding pen stroke recognition and a unified
+gesture pipeline for touch, pen, and hand tracking would enable creative tools and VR spell-casting
+games more comprehensively.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The gesture and haptic systems follow the ECS-based pattern: gesture events flow through the
+observer system, haptic profiles are dispatched via ECS events (R-6.4.5b), and VR tracking data is
+exposed as ECS components (R-6.5.1, R-6.5.2). The force feedback profile fallback chain (R-6.4.5a)
+with build-time validation is a well-designed pattern that matches the engine's data-driven
+philosophy. Custom gesture definition via logic graphs (F-6.3.5, F-15.8.4) reuses the same visual
+scripting infrastructure as gameplay logic, which is a strong cohesion point. One inconsistency is
+that VR controller haptics (F-6.5.5) and gamepad haptics (F-6.4.1) use separate asset formats
+despite serving similar purposes -- unifying these into a single haptic pattern format with
+per-platform output would improve authoring consistency.
+
 ## Open Questions
 
 1. **macOS trackpad gesture passthrough** -- macOS provides built-in gesture recognizers via NSEvent

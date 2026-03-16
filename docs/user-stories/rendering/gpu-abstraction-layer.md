@@ -148,3 +148,45 @@ MTLCounterSampleBuffer on Metal, ID3D12QueryHeap on D3D12, and vkCmdWriteTimesta
 **As an** engine developer (P-26), **I want** GPU timestamp query results read back one frame after
 submission rather than the same frame, **so that** profiling does not introduce GPU stalls or
 pipeline bubbles.
+
+## US-2.1.13.1 Run Effects Identically on All Platforms
+
+**As a** technical artist (P-13), **I want** CPU work graph emulation via indirect dispatch so that
+GPU-driven effects (particle culling, mesh LOD selection, indirect draws) produce identical results
+on Metal and Vulkan as on D3D12, **so that** I author effects once and they work everywhere.
+
+## US-2.1.13.2 Integrate Work Graph Emulation With Game Loop
+
+**As an** engine developer (P-26), **I want** emulated work graph nodes to appear as `TaskNode`
+entries in the unified game loop graph, **so that** work-graph-style GPU scheduling is scheduled
+alongside CPU work without a separate dispatch path.
+
+## US-2.1.13.3 Verify Emulated Work Graph Output Matches Native
+
+**As an** engine tester (P-27), **I want** tests that execute a work graph on D3D12 natively and on
+Metal/Vulkan via emulation, comparing output within floating-point tolerance, **so that**
+cross-backend correctness is verified in CI.
+
+## US-2.1.14.1 Access GPU Resources Safely Through Typed Handles
+
+**As an** engine developer (P-26), **I want** all GPU resources referenced through generational
+`Handle<T>` indices that detect use-after-free at runtime, **so that** memory bugs from stale
+resource references are impossible in the public API.
+
+## US-2.1.14.2 Prevent Raw GPU Pointer Exposure in Public API
+
+**As an** engine developer (P-26), **I want** no raw GPU pointers (device addresses, mapped memory
+pointers) to appear in any public API type, **so that** the entire rendering interface is
+memory-safe by construction.
+
+## US-2.1.14.3 Verify Handle Type Safety Across Resource Kinds
+
+**As an** engine tester (P-27), **I want** compile tests that attempt to pass a `Handle<Buffer>`
+where `Handle<Texture>` is expected and assert the code fails to compile, **so that** handle type
+safety is verified in CI.
+
+## US-2.1.14.4 Detect Stale Handle Use at Runtime
+
+**As a** QA tester (P-19), **I want** runtime detection of stale GPU handles (generation mismatch
+after resource free) with a structured error rather than undefined behavior, **so that**
+use-after-free bugs are caught immediately during testing.

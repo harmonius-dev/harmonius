@@ -158,3 +158,31 @@ exported for offline analysis.
 - **Dependencies:** F-2.2.12
 - **Platform notes:** All platforms: full quality. Debug overlay disabled in shipping builds. Mobile
   profiling uses Metal GPU Capture or Vulkan validation layers.
+
+## Unified Game Loop Integration
+
+### F-2.2.14 Render Graph as Task Graph Phase
+
+Render passes compile into `TaskNode` entries within the unified game loop graph (F-14.3.14). The
+render graph compiler emits nodes that the parent `TaskGraph` schedules alongside ECS systems,
+physics, audio, and input phases. Render node dependencies on CPU-side work (culling, scene
+traversal) are expressed as typed edges in the game loop graph, enabling the scheduler to overlap
+CPU rendering prep with GPU submission from the previous phase.
+
+- **Requirements:** R-2.2.14
+- **Dependencies:** F-2.2.12, F-14.3.14, F-14.3.3
+- **Platform notes:** None. Task graph integration is a CPU-side scheduling concern with no
+  GPU-specific behavior.
+
+### F-2.2.15 Safe GPU Command Encoding
+
+GPU command buffers are borrowed via scoped APIs that enforce encoding lifetime at compile time. A
+command buffer reference cannot outlive the encoding scope that created it, preventing
+use-after-submit and dangling command buffer references. Scoped encoding uses the same lifetime
+mechanism as scoped task execution (F-14.3.8), tying command buffer validity to the render pass
+node's execution scope within the task graph.
+
+- **Requirements:** R-2.2.15
+- **Dependencies:** F-2.2.14, F-2.1.2, F-14.3.8
+- **Platform notes:** None. Encoding scope safety is enforced by Rust lifetimes at compile time with
+  no runtime cost.

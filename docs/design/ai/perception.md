@@ -2003,6 +2003,107 @@ where:
 
 ---
 
+## Frame Budget Integration
+
+The perception subsystem uses [`FrameBudget`](../core-runtime/shared-primitives.md#7-framebudget)
+from shared primitives to enforce per-frame time caps on perception queries. The budget is consumed
+by the perception query scheduler (`PerceptionScheduleSystem`) to decide which agents evaluate
+senses each frame.
+
+**Check location.** The budget is checked in `PerceptionScheduleSystem` (step 4 in the per-frame
+pipeline). After sorting pending perception queries by priority, each query checks the budget before
+execution. The scheduler runs before `SenseEvaluationSystem` so only admitted queries are
+dispatched.
+
+| Priority | Action | Trigger | Effect |
+|----------|--------|---------|--------|
+| 1 | Skip low-priority queries | Budget exhausted | Perception queries for agents with low-priority senses (e.g., smell for distant entities) are not evaluated this frame |
+| 2 | Defer distant-entity checks | Budget exhausted | Agents beyond a configurable distance threshold from any player have their perception deferred entirely |
+| 3 | Mark remaining as stale | Budget exhausted | Deferred agents retain previous `PerceivedEntities` state with confidence continuing to decay via `decay_rate` |
+| 4 | Promote deferred queries | Defer count exceeds `max_defer_frames` | Queries deferred for more than `max_defer_frames` receive a priority boost on the next frame to prevent starvation |
+
+The following flowchart shows the perception budget check loop.
+
+```mermaid
+flowchart TD
+    START[Frame Begin] --> ALLOC["Allocate FrameBudget
+        for perception domain"]
+    ALLOC --> COLLECT["Collect pending
+        perception queries"]
+    COLLECT --> SORT["Sort queries by priority
+        (threat proximity, sense type,
+        defer count)"]
+    SORT --> NEXT["Dequeue next query"]
+    NEXT --> CHECK{"FrameBudget
+        remaining_us > 0?"}
+    CHECK -->|Yes| EVAL["Evaluate sense query
+        (sight / hearing /
+        smell / damage / custom)"]
+    EVAL --> UPDATE["Subtract elapsed time
+        from budget"]
+    UPDATE --> MORE{"More queries
+        in queue?"}
+    MORE -->|Yes| NEXT
+    MORE -->|No| DONE[All queries processed]
+    CHECK -->|No| STALE["Mark remaining queries
+        as stale / deferred"]
+    STALE --> BOOST["Increment defer_count
+        for deferred queries"]
+    BOOST --> DONE
+    DONE --> SENSE["SenseEvaluationSystem
+        runs admitted queries"]
+    SENSE --> END[Frame End]
+```
+
+**Pseudocode.**
+
+```rust
+pub fn perception_schedule_system(
+    configs: Query<(Entity, &PerceptionConfig)>,
+    transforms: Query<&Transform>,
+    player_positions: Res<PlayerPositions>,
+    mut budget: ResMut<FrameBudget>,
+    mut schedule: ResMut<PerceptionSchedule>,
+) {
+    // Build and sort query list by priority.
+    let mut queries: Vec<PerceptionQuery> =
+        schedule.collect_pending(&configs, &transforms);
+    queries.sort_by(|a, b| b.priority.cmp(&a.priority));
+
+    for query in &queries {
+        if budget.remaining_us() == 0 {
+            // Mark remainder as stale.
+            schedule.defer_query(
+                query.entity,
+                query.defer_count + 1,
+            );
+            continue;
+        }
+
+        // Defer distant entities when budget is tight.
+        let dist = nearest_player_distance(
+            query.entity,
+            &transforms,
+            &player_positions,
+        );
+        if dist > schedule.distance_threshold
+            && budget.remaining_us()
+                < schedule.tight_budget_us
+        {
+            schedule.defer_query(
+                query.entity,
+                query.defer_count + 1,
+            );
+            continue;
+        }
+
+        schedule.admit_query(query.entity);
+    }
+}
+```
+
+---
+
 ## Platform Considerations
 
 ### Perception Budget Tiers
@@ -2154,6 +2255,64 @@ double-buffered output grid. No contention.
 | Full pipeline, 500 agents | < 1000 us (desktop) | R-7.6.7 |
 
 ---
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The static dispatch constraint (from constraints.md) most limits the perception system. Custom
+senses (F-7.6.7) require runtime registration of project-specific sense types (tremor, magic
+detection, thermal vision), but the engine forbids `dyn` dispatch except for explicitly justified
+cases. The design works around this with `CustomSenseKind` and acknowledges the tension in Open
+Question 5. If we lifted the static dispatch constraint, we could use `dyn SenseEvaluator` trait
+objects for a cleaner extension model. The workaround of enum dispatch with a fixed set of custom
+sense slots caps the number of custom senses a game can register, which may be too restrictive for
+games with many magical perception types.
+
+**Q2. How can this design be improved?**
+
+The perception pipeline runs 10 sequential ECS systems per frame, which creates a long dependency
+chain in the task graph. Merging the `ThreatAssessmentSystem` and `AlertStateSystem` into a single
+pass would reduce system overhead. The scent grid uses a separate spatial structure from the shared
+BVH (Open Question 1), adding memory and query complexity. The budget scheduler uses flat
+round-robin for deferred agents rather than distance-weighted scheduling (Open Question 2), which
+may cause nearby high-priority agents to be skipped while distant ones evaluate. The damage sense
+bypasses the stimulus registry (Open Question 6), creating an inconsistency in the perception data
+flow that complicates debugging.
+
+**Q3. Is there a better approach?**
+
+A unified "sense channel" architecture where all senses -- including damage -- route through the
+stimulus registry would simplify the pipeline to a single evaluate-all-stimuli pass rather than
+separate per-sense systems. We are not taking this approach because damage has fundamentally
+different semantics (instant, infinite range, no LOS) that would require special-casing within the
+registry anyway. Another alternative is a data-driven perception graph where designers wire sense
+evaluators visually, replacing the hardcoded pipeline. This aligns with the no-code constraint but
+adds significant editor tooling work that is better deferred until the core perception pipeline is
+validated.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers all 11 perception features (F-7.6.1 through F-7.6.11) with extensive user stories
+for stealth gameplay (US-7.6.1.4, US-7.6.2.4), tracking (US-7.6.8.4, US-7.6.9.4, US-7.6.11.4), and
+investigation (US-7.6.10.4). However, the design does not address perception of non-entity stimuli
+like environmental hazards (fire spreading, poison gas clouds) that are relevant for survival games.
+Adding a hazard perception channel integrated with the VFX particle system would enable this. The
+multi-sense tracking system (F-7.6.11) lacks predictive tracking based on map knowledge
+(anticipating exits, known hiding spots), which is listed as a tracking method but not designed in
+detail.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The perception system is one of the most ECS-native subsystems, with all state stored as components
+(`PerceptionConfig`, `PerceivedEntities`, `AlertState`, `TrackingState`) and all logic as ordered
+systems. It uses the shared spatial index via `SpatialQuery` for sight raycasts and neighbor
+queries, and the `ThreadPool` for parallel sense evaluation via `pool.scope()`. The scent grid is a
+notable divergence -- it introduces a second spatial structure rather than using the shared BVH,
+which conflicts with the "shared spatial index" constraint in constraints.md. The faction affinity
+table integrates with the crowd simulation (F-7.7.9) and combat systems, providing good cross-module
+cohesion. Platform differences use compile-time `cfg` constants rather than runtime branches,
+matching the engine's platform abstraction pattern.
 
 ## Open Questions
 

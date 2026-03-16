@@ -1916,6 +1916,52 @@ components, benefiting from the same cache-friendly iteration.
 | Search across 1000 graphs | < 500 ms | US-15.8.14.1 |
 | Three-way merge (200 nodes each) | < 100 ms | US-15.8.13.2 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code constraint means the logic graph is the sole authoring mechanism for all engine logic
+(F-15.8.1). This puts extreme pressure on the graph system to handle every domain: gameplay,
+shaders, animation, audio, render pipeline, and tool automation. Lifting this would allow
+domain-specific scripting where graphs are awkward (e.g., complex math formulas, string processing).
+The best solution would be an expression node that accepts typed mathematical expressions compiled
+to the same bytecode. The impact is reduced graph complexity for formula- heavy logic without
+breaking the no-code visual paradigm.
+
+**Q2. How can this design be improved?**
+
+The type inference system (F-15.8.2) is bidirectional but does not support generic/polymorphic nodes
+-- every node variant must be monomorphized at graph construction time. This leads to node type
+explosion (AddFloat, AddVec2, AddVec3, etc.). The coroutine state machine (F-15.8.4) stores all
+local variables across yield points, which can produce large state components for complex graphs.
+The debugging system (F-15.8.11) lacks conditional breakpoints. Adding parametric node types, state
+compression, and conditional breakpoints would significantly improve usability.
+
+**Q3. Is there a better approach?**
+
+A bytecode VM interpreter (like Lua's) could replace the current compiled ECS system approach,
+offering faster iteration and simpler debugging at the cost of runtime performance. We chose direct
+compilation to ECS systems because the performance requirement demands compiled graphs run within 5%
+of hand- written Rust systems (US-15.8.1.6). The hybrid approach in Open Question 1 (function
+pointers for iteration, `rustc` for shipping) is the best compromise.
+
+**Q4. Does this design solve all customer problems?**
+
+The graph system lacks first-class support for dialog trees and narrative branching, which are
+critical for RPG and narrative game genres. There is no dedicated node set for inventory management,
+quest tracking, or save/load serialization of graph state. Adding domain-specific node libraries for
+common game patterns would make the no-code paradigm practical for more game genres. A dialog tree
+specialized graph type would serve the RPG user stories directly.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The logic graph is exceptionally cohesive -- it compiles to ECS systems, uses the engine's type
+system via `Reflect` (F-1.3), shares the `GraphCompiler` framework with material and shader graphs,
+and integrates with version control through a custom merge driver (F-15.8.13). The graph debugger
+(F-15.8.11) integrates with the profiler (F-15.5.1) for per-node timing. The one divergence is that
+graph serialization uses `.logicgraph` RON format with its own schema versioning, separate from the
+engine's general asset migration system (F-15.15.2).
+
 ## Open Questions
 
 1. **Compilation strategy.** The compiler currently targets ECS system function pointers. An

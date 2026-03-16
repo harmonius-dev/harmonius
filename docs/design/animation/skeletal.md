@@ -1487,6 +1487,64 @@ Curve evaluation for animation clips uses the shared `Curve<T>` type (see
 | Retarget (256-bone skeleton) | < 0.05 ms | US-9.1.8.1 |
 | LOD system (200 entities) | < 0.1 ms | US-9.1.10.1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The GPU-first constraint (all per-bone math in HLSL compute, CPU only computes blend descriptors) is
+the biggest limiter. It means every new animation feature (retargeting, compression, events) must
+have a GPU compute path, even when a CPU implementation would be simpler to develop and debug. If
+lifted, a CPU fallback pipeline could handle small skeleton counts (mobile) while GPU handles
+instanced crowds (desktop). The ideal solution would be a transparent CPU/GPU execution policy
+selected per entity based on LOD tier. Removing the GPU-only constraint would complicate the
+pipeline with two code paths but would simplify development on platforms where GPU compute dispatch
+overhead exceeds the skinning cost for small batches.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The instanced arena buffer (F-9.1.5) groups instances by clip for optimal GPU occupancy, but
+characters playing unique clips cannot be grouped, reducing throughput for diverse animation
+scenarios. The compression format (F-9.1.7) with smallest-three quaternion encoding requires
+per-frame decompression on the GPU, adding ALU cost to every keyframe evaluation. The animation LOD
+system (F-9.1.10) has four tiers but the VAT tier format is unspecified (Open Question 4), creating
+a design gap at the lowest LOD. The retargeting system (F-9.1.8) runs per-frame without caching,
+meaning identical retarget operations repeat every frame for NPCs sharing the same archetype.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+A CPU-side animation pipeline (as most engines use) would be simpler to implement, debug, and
+extend. We are not taking it because the instanced evaluation requirement (R-9.1.5: 1000+ instances
+in a single dispatch) cannot be met CPU-side without unacceptable per-instance overhead. The GPU
+approach processes all instances in one dispatch regardless of count. The trade-off is that GPU
+development is harder (HLSL compute shaders, debugging with GPU captures) but the scalability to
+MMO-density character counts is a hard requirement that CPU pipelines cannot satisfy.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design covers F-9.1.1 through F-9.1.10 and all user stories. A gap is animation streaming --
+loading clips asynchronously as characters enter the scene. The compression feature (F-9.1.7)
+reduces memory but does not address streaming from disk during gameplay. Adding async clip streaming
+via the IoReactor would enable open-world games with thousands of unique animations loaded on
+demand. Another gap is animation mirroring (reflecting a clip across the skeleton's symmetry plane),
+which would halve locomotion clip storage for symmetric characters and benefit fighting games and
+RPGs with symmetrical movesets.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+The design is the animation foundation: all other animation modules (procedural, state machine,
+cloth, first-person) depend on it. It uses ECS components for all state, GPU compute for all
+per-bone work, the shared spatial index for LOD (F-1.9.1), and ECS observers for events (F-1.1.30).
+It is cohesive with the engine architecture. The weakest cohesion point is the state machine
+boundary (Open Question 5): blend descriptor ownership is split between this module and the state
+machine design. Defining a clear `AnimationBlendDescriptor` handoff contract would eliminate the
+ambiguity and align both modules.
+
 ## Open Questions
 
 1. **Blend descriptor upload strategy** -- A single large `StructuredBuffer` with all entities'

@@ -1474,6 +1474,52 @@ When `HighContrastSettings.enabled` is true:
 | Colorblind post-process pass | < 0.3 ms at 1080p | US-10.6.7 |
 | TTS latency (message to speech) | < 200 ms | US-10.6.16 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The platform-native API requirement (NSAccessibility, UI Automation, AT-SPI) forces three separate
+bridge implementations with divergent data models and event semantics. Lifting this constraint would
+allow a single cross-platform accessibility protocol, drastically reducing implementation and
+testing effort. However, screen readers only work through native APIs, so abstracting away the
+platform would break real assistive technology. The cost is high -- each bridge must map the widget
+tree to a platform- specific accessibility tree -- but there is no alternative that preserves actual
+screen reader compatibility.
+
+**Q2. How can this design be improved?**
+
+The colorblind filter (F-10.6.3) applies only as a post-process pass, meaning the preview in
+settings shows the effect but game-specific UI elements (item rarity borders, team color indicators)
+must have manually authored alternative cues. There is no automated system to flag widgets that rely
+on color alone. Adding a WCAG colorblind linting pass to the theme system would catch violations at
+edit time instead of requiring manual QA (US-10.6.9). The TTS system (R-10.6.6) also lacks message
+queuing priorities, so rapid chat in MMO cities could overflow the speech buffer.
+
+**Q3. Is there a better approach?**
+
+An alternative is to embed an accessibility runtime like IAccessible2 or ARIA and let a
+web-view-based overlay handle all accessibility. This is how Electron apps work. We rejected this
+because it would require embedding a browser runtime, violating the no-frameworks constraint, and
+would add significant memory and latency overhead. The native bridge approach is more work but
+produces lower latency and tighter integration with the widget tree's ECS-backed data model.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers vision, hearing, and motor disabilities but does not address cognitive
+accessibility. Features like simplified UI modes, reading level indicators, or step-by-step tutorial
+overlays are absent. Adding a CognitiveAccessibility component with configurable complexity levels
+would benefit players with learning disabilities. The design also lacks haptic-only feedback paths
+for deafblind players, which could be addressed by mapping UI events to haptic patterns via F-6.4.1.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The accessibility system integrates tightly with the widget framework (F-10.1.1) through the
+AccessibilityNode component that mirrors the widget tree. It uses the same cascading style system
+for high-contrast themes and the same data binding system for TTS channel configuration. One gap is
+that the 3D world-space UI panels (F-10.1.10) do not yet have a clear accessibility path -- screen
+readers cannot navigate diegetic UI. Extending the accessibility bridge to flatten world-space
+panels into the screen-space accessibility tree would improve cohesion.
+
 ## Open Questions
 
 1. **AT-SPI D-Bus transport** -- Should the AT-SPI bridge use `zbus` (pure Rust, async) or the C

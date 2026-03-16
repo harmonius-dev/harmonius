@@ -1737,6 +1737,56 @@ BLAKE3 is chosen for content hashing because it is:
 | Dependency invalidation (10K assets) | < 50 ms | R-12.3.4 |
 | Cache lookup | < 0.1 ms | R-12.3.3 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code engine constraint (constraints.md) means all import settings must be configurable
+through visual editors rather than scripts or config files. This limits the expressiveness of import
+presets -- complex conditional logic (e.g., "if texture width > 4096, use BC7 ultra quality") must
+be represented as visual rules rather than code. If lifted, power users could write import scripts
+for edge cases. The constraint is worth keeping because it ensures a consistent authoring experience
+and prevents import pipeline fragmentation across team members who each write custom scripts.
+
+**Q2. How can this design be improved?**
+
+The CAS deduplication (F-12.3.1) uses BLAKE3 hashes but the design does not address hash collision
+handling at scale. For an MMO with millions of assets, even a 256-bit hash has a non-zero collision
+probability that should be documented. The batch import system (F-12.1.5) supports cancellation with
+rollback, but the rollback strategy for partially processed dependency chains is underspecified --
+if asset A depends on asset B and B finishes but A is cancelled, the design should clarify whether B
+is also rolled back. The AI-driven auto-categorization (F-12.3.7) lacks offline mode for air-gapped
+studios.
+
+**Q3. Is there a better approach?**
+
+An alternative is a purely streaming import pipeline where assets are processed chunk-by-chunk
+without ever materializing the full source in memory. This would reduce peak memory for large assets
+(multi-GB photogrammetry scans). The current design materializes source data during validation
+(R-12.1.4) before feeding it to processing. The materialization approach is simpler and enables the
+byte-offset error reporting that R-12.1.4 requires. For very large assets, the streaming model could
+be added as an opt-in path without changing the core design.
+
+**Q4. Does this design solve all customer problems?**
+
+Most import workflows are covered (US-12.1.1 through US-12.1.10 for batch import, US-12.3.1 through
+US-12.3.16 for database queries). However, there is no feature for import templates that let teams
+define standard import configurations per asset category (e.g., "character mesh" vs "environment
+prop" vs "UI texture"). This would reduce setup time for new assets. The semantic search (F-12.3.8)
+enables finding assets by description, but there is no duplicate detection that warns when a newly
+imported asset is visually similar to an existing one -- important for MMO teams where multiple
+artists may model the same prop.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The asset import system integrates tightly with the content pipeline through dependency graphs
+(F-12.2.8), the CAS store (F-12.3.1), and the hot reload system (F-12.4.2). The BLAKE3 hashing is
+consistent with the content hashing used across the VFS (F-12.5.1) and download-on-demand
+(F-12.5.10). The async I/O usage for batch import aligns with the engine-wide IoReactor pattern. One
+area of divergence is that the metadata store is the only subsystem that may require a durable
+persistence layer (potentially SQLite) -- every other engine component uses the binary asset format
+(F-12.7.1). This is an acceptable trade-off for query performance at million-asset scale.
+
 ## Open Questions
 
 1. **Metadata persistence format.** The metadata store needs durable persistence. Options:

@@ -1074,6 +1074,57 @@ fn distribute_rewards_impl(
 | Reward distribution (5-player group) | < 1 ms | R-13.6.6 |
 | Quest graph validation (100 nodes) | < 10 ms | R-13.6.1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The server-authoritative requirement for quest completion and reward distribution (R-13.6.1,
+R-13.6.6) is the most constraining. Every objective completion and reward grant requires server
+validation, which adds latency to quest progression and prevents offline quest play entirely.
+Lifting this constraint would allow client-predicted quest advancement with server reconciliation,
+making quest objectives feel instant. The best unconstrained solution would be client-side quest
+evaluation with server audit logging, but this would allow client-side exploits (forging quest
+completions) that undermine competitive MMO integrity.
+
+**Q2. How can this design be improved?**
+
+The prerequisite system (F-13.6.2) evaluates lazily on interaction, which is correct for
+performance, but means quest givers show no visual indication of availability until the player
+interacts. Adding a lightweight proximity-triggered availability hint (icon change when
+prerequisites are met) would improve discoverability without per-frame cost. The reward distribution
+(F-13.6.6) uses a two-phase validate-then- apply approach, but lacks a rollback mechanism if the
+second phase partially fails. Adding compensation logic (mail undelivered rewards) would handle edge
+cases where inventory is full after validation passes.
+
+**Q3. Is there a better approach?**
+
+A rule-based quest system (where objectives are declarative predicates over world state rather than
+explicit DAG nodes) would enable emergent quest completion from any gameplay action matching the
+predicate. We use the explicit DAG approach (F-13.6.1) because it maps directly to visual editor
+authoring and gives designers precise control over quest flow. The trade-off is that emergent quest
+designs (complete objective X by any means) require authoring all possible paths as explicit DAG
+branches rather than expressing a single predicate.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks procedurally generated quest support. All quests are hand-authored DAGs, which
+limits replayability in sandbox and roguelike games where procedural objectives (fetch random item
+from random location, clear random dungeon) are core gameplay. Adding a `ProceduralQuestTemplate`
+that generates `QuestGraph` instances from parameterized templates would address this. The dialogue
+system (F-13.6.4) also lacks a bartering/negotiation mechanic where dialogue choices modify reward
+values, which would benefit trading and diplomacy-focused games.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The quest and dialogue systems are well-integrated. Quest graphs use the shared
+`ConditionalGraph<N, E>` type from core-runtime, and prerequisite expressions use the shared
+`ConditionExpr` type -- both are reused across quests, achievements, faction gating, and progression
+prerequisites. The dialogue tree integrates with the camera system (F-13.5.2), save system
+(F-13.3.1), and localization system consistently. One area where cohesion could improve is the quest
+phasing system (F-13.6.7b), which directly manages sub-level streaming rather than going through the
+world management subsystem. Routing phase swaps through the standard level streaming pipeline would
+reduce coupling and ensure consistent streaming behavior across all sub-level operations.
+
 ## Open Questions
 
 1. **Quest graph vs quest tree** — The current design uses DAGs. Some quest designs need convergent

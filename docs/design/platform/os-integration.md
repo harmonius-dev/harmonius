@@ -1846,6 +1846,57 @@ pub enum FsError {
 | File watcher event latency | < 100 ms from OS event to consumer | R-14.6.5 |
 | Content hash throughput | >= 2 GB/s (BLAKE3) | R-14.6.6 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-Rust-stdlib-file-I/O constraint (R-14.6.1) forces every filesystem operation through
+platform-native async backends (IOCP, GCD Dispatch IO, io_uring). This means simple operations like
+`stat`, `mkdir`, and `readdir` must be wrapped in async futures even though they are microsecond
+operations on local SSDs. Lifting this constraint would allow synchronous filesystem calls for
+metadata operations that complete in under 10 us, reserving async only for large reads and writes.
+The best unconstrained solution would be sync metadata + async data I/O, cutting API complexity in
+half for non-blocking-safe operations. The trade-off is consistency: the uniform async API
+eliminates platform-conditional calling (R-14.2.7).
+
+**Q2. How can this design be improved?**
+
+The file watcher (F-14.6.5) uses platform-native APIs (ReadDirectoryChangesExW, FSEvents, inotify)
+but the design defers the build-vs-buy decision for the `notify` crate (open question 4).
+Implementing three custom watchers is a significant effort that could be avoided. The crash
+handler's out-of-process architecture requires shipping a separate binary (open question 1), which
+complicates distribution. The IME integration (F-14.2.6) uses three different platform APIs (TSF,
+NSTextInputClient, IBus) with no shared abstraction for candidate window management.
+
+**Q3. Is there a better approach?**
+
+For clipboard and file dialogs, wrapping synchronous OS calls in async via thread pool dispatch (as
+the design does) is the pragmatic approach. An alternative would be to expose both sync and async
+API surfaces, letting callers choose. We are not doing this because it doubles the API surface and
+creates a maintenance burden. The uniform async approach (F-14.2.7) is simpler for callers even
+though it adds a thread hop on Windows and macOS where the underlying call is synchronous. The
+overhead of the thread dispatch is negligible compared to the OS call itself.
+
+**Q4. Does this design solve all customer problems?**
+
+US-14.2.4 covers drag-and-drop for files but does not address drag-and-drop between engine windows
+(intra-app DnD) for editor workflows. Missing: system clipboard image format negotiation (PNG vs BMP
+vs TIFF) with quality preferences. Missing: accessibility integration beyond IME (screen reader
+support, high-contrast mode detection). Adding screen reader support would enable visually impaired
+players to navigate menus in the MMO, expanding the addressable audience. Adding intra-app DnD would
+enable visual editor workflows for the no-code engine (US-14.2.2).
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The async API surface for clipboard and dialogs (F-14.2.7) aligns perfectly with the engine's
+async/await-everywhere constraint. Filesystem operations route through the IoReactor, consistent
+with the threading design's controlled poll model. The crash handler integrates GPU breadcrumbs from
+the rendering subsystem, creating a clean cross-cutting diagnostic path. The `CanonicalPath` type
+centralizes path resolution, which is used by the asset pipeline, file watcher, and cache systems.
+One weakness: the logging system uses `Vec<Box<dyn LogSink>>` with dynamic dispatch (open question
+6), which deviates from the static-dispatch-preferred constraint, though the justification is sound
+for a startup-configured sink list.
+
 ## Open Questions
 
 1. **Out-of-process crash handler architecture** -- Should the out-of-process handler be a separate

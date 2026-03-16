@@ -1726,6 +1726,51 @@ The packaging pipeline integrates into a CI/CD workflow. Each stage is a discret
 | Mod integrity check | < 50 ms per mod | US-15.16.3.5 |
 | Budget monitoring overhead | < 0.1 ms per frame | US-15.16.4.3 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code engine constraint means mod authoring must use the visual logic graph (F-15.8.1)
+exclusively, preventing modders from writing Rust or scripting code. Lifting this would enable a Lua
+or WASM scripting layer for mods, dramatically expanding mod capabilities. The best solution would
+be a sandboxed WASM runtime for mod logic with access to a safe subset of engine APIs. The impact of
+removing this constraint is significant: mods could implement custom game mechanics rather than only
+rearranging existing content, enabling genres like total conversion mods.
+
+**Q2. How can this design be improved?**
+
+The `ContentChunker` (F-15.14.7) uses a fixed 64 KiB target chunk size, but optimal size varies by
+asset type -- textures benefit from larger chunks while config files need smaller ones. The
+certification checker (F-15.14.3) is rule-based but lacks platform holder SDK integration for
+authoritative validation. The mod sandbox (F-15.16.4) enforces budgets but has no mechanism for
+graceful degradation -- it simply unloads mods that exceed limits. Adaptive chunking, SDK-backed
+certification, and progressive mod LOD would strengthen the design.
+
+**Q3. Is there a better approach?**
+
+For delta patching, bsdiff/bsort-based binary diff could produce smaller patches than
+content-defined chunking for certain asset types. We chose CDC because it is streaming-friendly,
+works with the async I/O pipeline, and produces deterministic chunks regardless of file position
+changes. CDC also integrates naturally with the BLAKE3 content-addressable cache (F-15.11.1),
+enabling chunk-level deduplication across versions.
+
+**Q4. Does this design solve all customer problems?**
+
+There is no support for A/B testing or staged rollouts of game updates. The store submission
+pipeline (F-15.14.8) is all-or-nothing per platform. Adding a rollout percentage configuration and
+telemetry integration would enable studios to deploy updates to a subset of players first. The mod
+system also lacks a dependency declaration mechanism -- mods cannot declare dependencies on other
+mods, leading to potential load-order issues.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The deployment pipeline reuses `BundleBuilder` and `ContentChunker` for both game packaging and mod
+packaging, which is excellent cohesion. The mod sandbox's budget enforcement integrates with the
+profiler's `MemAllocTracker` (F-15.5.3) and `EcsSystemTracker` (F-15.5.1). However, the signing
+pipeline (F-15.14.4) uses platform-specific tools (codesign, signtool) invoked as external
+processes, which is inconsistent with the engine's preference for library-level integration.
+Wrapping signing in platform-native APIs via cxx.rs would be more cohesive.
+
 ## Open Questions
 
 1. **Content-defined chunk target size** -- 64 KiB is the initial target. Smaller chunks improve

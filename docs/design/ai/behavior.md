@@ -2565,6 +2565,58 @@ pool.scope(|scope| {
 | Plan cache lookup | < 200 ns | US-7.5.4.12 |
 | 1000 agents full AI tick | < 2 ms | - |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 100% ECS constraint (from constraints.md) forces all behavior tree state, blackboard data, and
+plan caches to live as ECS components and resources. This prevents object-oriented patterns like
+inheritance hierarchies for BT nodes. If we lifted the ECS constraint, we could use heap-allocated
+tree structures with pointer-based traversal, which would simplify subtree nesting (F-7.3.6) and
+reduce the per-agent memory overhead of flattening trees into component arrays. The static dispatch
+constraint also means custom leaf nodes (F-7.3.1) use function pointers rather than trait objects,
+limiting runtime extensibility in a no-code engine where all behaviors must be engine-provided.
+
+**Q2. How can this design be improved?**
+
+The three AI decision systems (BT, Utility AI, GOAP) are designed as independent ECS systems with no
+formal composition pattern. Open Question 5 acknowledges this gap. An agent using BT for structure,
+Utility AI for action selection within a leaf, and GOAP for planning within another leaf has no
+defined data flow between them. The `AiBudget` time-slicing uses a simple round-robin carry-over
+that may starve GOAP agents when BT agents dominate the budget. The plan cache uses a naive HashMap
+eviction that is not true LRU, as acknowledged in Open Question 6.
+
+**Q3. Is there a better approach?**
+
+A unified decision-making framework like Hierarchical Task Networks (HTN) could replace the three
+separate systems (BT, Utility, GOAP) with a single planner that handles both reactive and
+deliberative behavior. We are not taking this approach because each system serves a distinct
+authoring paradigm: BTs for hand-authored reactive behavior (F-7.3), Utility AI for fuzzy
+multi-factor scoring (F-7.4), and GOAP for emergent multi-step planning (F-7.5). The no-code
+constraint (constraints.md) favors visual authoring tools specific to each paradigm over a unified
+but more complex system that would be harder to expose in visual editors.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers designer authoring (US-7.3.1.1, US-7.4.1.1, US-7.5.1.1), player-visible
+intelligent behavior (US-7.3.1.4, US-7.4.1.4, US-7.5.2.4), and debugging (US-7.3.7.1--US-7.3.7.12).
+However, there is no mechanism for designers to preview or simulate AI behavior in the editor
+without running the full game server. Adding a standalone BT/Utility/GOAP simulator in the editor
+would enable faster iteration. The design also lacks a formal "personality" system that maps
+archetype traits to curve parameters and goal weights, which would help designers create varied NPC
+archetypes for RPGs and open-world games.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The design aligns well with the ECS architecture by storing all AI state as components
+(`BtInstance`, `Blackboard`, `GoapAgent`, `UtilityAgent`) and running logic as systems. It uses the
+shared `ThreadPool` for parallel evaluation and respects the custom `IoReactor` by avoiding async
+I/O in the AI tick path. The `AiBudget` integrates with the LOD system (F-7.7.5) from the
+steering-crowds design. One area of divergence is the hot-reload mechanism for BT assets (F-7.3.5),
+which must coordinate with the content pipeline and asset system -- this integration is not yet
+defined and could conflict with the platform-native async I/O model if file watching uses
+OS-specific APIs.
+
 ## Open Questions
 
 1. **Blackboard value storage** -- `HashMap` per agent is flexible but adds overhead. A fixed-slot

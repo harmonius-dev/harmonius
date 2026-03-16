@@ -2265,6 +2265,50 @@ pub struct FloatingPanelLayout {
 | `stress_8_viewports` | Open 8 viewports simultaneously, verify frame rate remains above 30 FPS. |
 | `stress_plugin_load_unload_cycle` | Load and unload a plugin 100 times, verify no resource leaks. |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The two-world ECS isolation (editor world vs game world) is the biggest architectural constraint.
+Every mutation must cross the `EventBridge`, adding latency and complexity to every editor
+operation. Lifting this would allow direct in-place editing of game world components. The best
+solution without this constraint is a single unified world with editor-only component tags. The
+impact of removing it is reduced command dispatch overhead, but editor state would leak into the
+game world during play mode, breaking the clean separation that enables play-in-editor.
+
+**Q2. How can this design be improved?**
+
+The `EditorCommand` trait (F-15.1.3) uses `dyn EditorCommand` for the undo stack, which means every
+undo/redo operation pays vtable dispatch cost. The crash recovery journal serializes commands to
+disk but has no compaction -- replaying 10k commands on recovery could be slow for large scenes. The
+selection model (F-15.1.4) stores selections as `Vec<Entity>`, which scales poorly for 50k-entity
+marquee selections. Using a bitset or archetype-level selection mask would improve both memory and
+query performance.
+
+**Q3. Is there a better approach?**
+
+An alternative to the command pattern is snapshot-based undo: capture a full ECS world snapshot
+before each operation and restore on undo. This eliminates the need for inverse commands and crash
+recovery journals. We chose the command pattern because full world snapshots would be prohibitively
+expensive for large scenes (gigabytes of component data), and the command pattern enables
+transaction grouping (F-15.1.3) and multi-user undo (F-15.12.3) more naturally.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks a non-destructive editing workflow -- all operations immediately modify the game
+world. Adding a preview layer (like Photoshop's adjustment layers) would let artists experiment
+without committing changes. There is no user story for custom gizmo creation by users -- only
+built-in gizmos are available. Exposing gizmo authoring through the plugin API (F-15.1.8) would
+enable genre-specific tools like RTS unit formation handles or 2D tile-painting gizmos.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The editor framework dogfoods the engine's own widget system (F-13.1), reflection (F-1.3), plugin
+system (F-1.6), and spatial index (F-1.9), making it highly cohesive. The VR editor mode (F-15.1.9)
+reuses the same `GizmoManager` with a different input adapter. The main cohesion gap is that the
+editor's `LayoutProfile` uses JSON for persistence while the rest of the engine uses RON + binary.
+Switching layout persistence to RON would align with the serialization constraints.
+
 ## Open Questions
 
 1. **Undo memory budget.** Unlimited history could consume unbounded memory for large scenes. Should

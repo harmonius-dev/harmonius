@@ -1360,6 +1360,51 @@ All platform I/O uses the `IoReactor` controlled drain at the frame poll point. 
 | Foliage paint 10k instances | < 32 ms per stroke | US-15.2.7.1 |
 | Navmesh regeneration (64m region) | < 500 ms | US-15.6.7.3 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 100% ECS-based constraint means every foliage instance, terrain tile, and probe must be a full
+ECS entity with components. For a dense forest with 500k foliage instances, this creates enormous
+entity pressure on the archetype storage and spatial index. Lifting this would allow a dedicated
+instanced foliage buffer separate from ECS. The best solution would be a hybrid where foliage
+patches are single ECS entities containing instance buffers internally. The impact of removing the
+constraint is reduced entity count by orders of magnitude, but foliage would no longer participate
+in generic ECS queries.
+
+**Q2. How can this design be improved?**
+
+The `MultiUserSession` (F-15.6.8) uses cell-level locking, which is too coarse for large cells and
+too fine for small ones. The `TerrainSculptor` streams tiles via `IoReactor` but does not prefetch
+adjacent tiles, causing latency spikes when the brush crosses tile boundaries. The `CsgProcessor`
+(F-15.2.4) lacks UV mapping on boolean results, making CSG geometry unusable without manual UV
+assignment. Adaptive lock granularity, tile prefetching, and automatic UV projection would address
+these weaknesses.
+
+**Q3. Is there a better approach?**
+
+For terrain sculpting, a virtual texturing approach with a streaming heightmap atlas could replace
+the per-tile loading model, eliminating tile boundary artifacts and simplifying the I/O pattern. We
+chose per-tile streaming because it integrates directly with the ECS world partition system
+(F-15.6.8) and the shared spatial index, keeping terrain data consistent with every other system
+that queries spatial data.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks procedural placement tools beyond biome rules (F-15.6.5). There is no support for
+road networks, power grids, or settlement layout tools that many game genres require (RTS base
+building, city builders). Adding a network-based placement system built on the spline editor
+(F-15.2.5) would enable road creation with automatic terrain deformation and foliage clearing. This
+would directly benefit RTS, RPG, and open-world genres.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The level editor is deeply cohesive with the engine -- placement uses the shared spatial index,
+terrain I/O uses `IoReactor`, prefabs use the reflection system, and all tools operate on the live
+ECS world. The `OverrideMap` for prefab instances (F-15.2.3) mirrors the material instance override
+pattern (F-15.3.5), creating a consistent authoring mental model. The multi-user session integrates
+with the collaboration subsystem (F-15.12) for CRDT sync. No significant cohesion gaps exist.
+
 ## Open Questions
 
 1. **CSG precision** -- Floating-point CSG boolean operations may produce degenerate triangles at

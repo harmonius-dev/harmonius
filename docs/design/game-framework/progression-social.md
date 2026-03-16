@@ -1571,6 +1571,57 @@ uses the cross-shard services layer (F-8.7.7).
 | Enhancement roll (1,000 items) | < 1 ms total | R-13.12.7 |
 | Rarity stat generation (10,000 items) | < 10 ms total | R-13.12.8a |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 100% ECS-based architecture constraint is the biggest limitation. Guild data (rosters, banks,
+permissions, leaderboards) spans multiple entities across shards and does not map naturally to
+single-entity ECS components. The design stores guild state as ECS resources and per-player
+components, but guild-wide operations like bank transactions and leaderboard updates require
+cross-entity coordination that ECS archetypes were not designed for. Lifting this constraint would
+allow a dedicated guild service with its own data model, but that would create a parallel data store
+that conflicts with the engine's architectural principle.
+
+**Q2. How can this design be improved?**
+
+The talent tree respec system (F-13.12.2b) is all-or- nothing -- players must reset every point to
+change a single allocation. Adding partial respec (reset one branch while keeping others) would
+reduce friction for build experimentation. The guild war system (F-13.13.3b) lacks escalation
+mechanics -- wars are binary (declared/not declared). Adding war intensity levels (skirmish, full
+war, siege) with escalating PvP rules would create more strategic depth. The reputation system
+(F-13.12.5) tracks per-faction values independently; a reputation decay mechanic for inactive
+factions would prevent players from maxing all factions simultaneously without ongoing engagement.
+
+**Q3. Is there a better approach?**
+
+For the item enhancement system (F-13.12.7), a pity system that guarantees success after N
+consecutive failures would reduce player frustration at high enhancement levels. We use pure
+probability because it is simpler and matches the requirements (R-13.12.7). The trade-off is that
+unlucky players can fail indefinitely at high levels, which damages retention. Protection items
+partially mitigate this, but a hidden pity counter would be more player-friendly without changing
+the surface design.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks a player housing decoration scoring system that ties into guild perks
+(US-13.13.1c.2 covers guild XP from activities but not housing). A housing score contributing to
+guild XP would connect the building-survival domain with social progression. The achievement system
+(F-13.12.6a) lacks cross- character achievements (account-wide tracking), which players expect in
+MMOs where they play multiple characters. Adding account-scoped achievement progress would benefit
+alt-heavy players and enable games like completionist-focused RPGs and collection-driven games.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The progression systems (races, classes, talents, professions) integrate cleanly with the gameplay
+databases (F-13.7.1) and ability system (F-13.1.5) from the primitives module. All progression data
+derives `Reflect` for save/load and editor inspection. The social systems (guilds, chat, mail)
+depend heavily on the networking layer (F-8.2.1 property replication, F-8.7.7 cross-shard services),
+which is consistent with how other multiplayer features are built. One inconsistency is that the PvP
+rating system uses Elo/Glicko algorithms that are complex math expressions -- these would be
+difficult to author as visual logic graphs, suggesting they should be engine-level systems rather
+than designer-configurable graphs.
+
 ## Open Questions
 
 1. **Talent tree maximum size** -- What is the maximum supported node count per tree? 100 nodes

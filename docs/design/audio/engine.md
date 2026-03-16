@@ -1926,6 +1926,80 @@ All game-to-audio communication uses lock-free structures:
 5. When the ring buffer drops below a threshold, the stream manager submits the next async read.
 6. The `IoReactor` drains completions at the frame poll point, feeding data back to step 3.
 
+## Streaming I/O Synchronization
+
+The audio thread runs a real-time callback at the hardware buffer rate (512 samples at 48 kHz =
+~10.67 ms). The ECS scheduler polls `IoReactor` once per game frame (~16.67 ms at 60 fps). Streaming
+I/O completions may not arrive in time for the audio callback that needs them. Two timing mismatches
+create risk: (1) the game frame rate and audio callback rate are independent clocks, and (2) disk
+seeks, OS scheduling, and contention with asset loading can delay individual reads.
+
+**Prefetch and priority.** The ring buffer must stay ahead of audio consumption to absorb timing
+jitter and I/O latency spikes. Audio streaming requests receive the highest `IoReactor` priority
+class.
+
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| Minimum prefetch depth | 3 buffers | ~32 ms lookahead at 48 kHz / 512 samples; covers 2 frame boundaries plus I/O jitter |
+| Maximum prefetch depth | 8 buffers | Bounds memory at 8 x 512 x 4 bytes x `max_voices`; ~16 KiB per mono voice |
+| Refill trigger | Available < 4 buffers | Submit next async read when below midpoint |
+| Sample rate | 48,000 Hz | Engine default (R-5.1.NF1) |
+| Block size | 512 samples | ~10.67 ms per callback |
+| Priority 0 (highest) | Audio streaming | Real-time deadline |
+| Priority 1 | Texture/mesh streaming | Frame-budget deadline |
+| Priority 2 | Asset loading | Background |
+| Priority 3 | Save/load | User-initiated |
+
+Memory budget per stream at maximum depth:
+
+- **Mono:** 8 x 512 x 4 = 16,384 bytes (16 KiB)
+- **Stereo:** 8 x 512 x 4 x 2 = 32,768 bytes (32 KiB)
+- **32 concurrent streams:** 32 x 32 KiB = 1 MiB (within R-5.1.NF3 budget)
+
+**Fallback cascade.**
+
+| Condition | Action | Duration | Logging |
+|-----------|--------|----------|---------|
+| Single miss | Play last-known buffer (repeat) | 1 callback | None |
+| 2 consecutive misses | Continue repeating | 2 callbacks | Debug-level message |
+| 3 consecutive misses | Fade to silence | 480 samples (~10 ms) | Warning with stream handle and miss count |
+| Recovery (prefetch >= 3) | Resume from correct position | 240-sample fade-in (~5 ms) | Info-level restore |
+
+The `StreamManager` tracks per-stream miss counters and exposes them via `stream_diagnostics()` for
+profiling.
+
+**Sequence.**
+
+```mermaid
+sequenceDiagram
+    participant GT as Game Thread
+    participant IR as IoReactor
+    participant SM as StreamManager
+    participant RB as Ring Buffer
+    participant AT as Audio Thread
+
+    Note over GT: Frame N begins
+    GT->>IR: poll() — drain I/O completions
+    IR-->>SM: completion callback (chunk ready)
+    SM->>SM: decode compressed chunk
+    SM->>RB: write decoded samples at write cursor
+
+    Note over AT: Audio callback fires
+    AT->>RB: read 512 samples at read cursor
+    alt buffer available
+        RB-->>AT: 512 samples
+        AT->>AT: mix into voice bus
+    else buffer not ready (miss)
+        RB-->>AT: 0 samples available
+        AT->>AT: repeat last buffer or fade
+    end
+
+    Note over SM: Check prefetch depth
+    SM->>SM: available < 4 buffers?
+    SM->>IR: submit next async read (priority 0)
+    Note over GT: Frame N ends
+```
+
 ## Platform Considerations
 
 ### Audio Backends
@@ -2087,6 +2161,56 @@ critical commands.
 | HRTF convolution (512-sample block) | < 50 us | R-5.2.3 |
 | Ambisonics encode + decode (first order) | < 10 us per voice | R-5.2.4 |
 | Audio system memory (max config) | < 64 MiB | R-5.1.NF3 |
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The ban on C++ stdlib file I/O forces all audio streaming through platform-native async I/O backends
+(IOCP, GCD, io_uring per R-5.1.5). This triples the implementation surface compared to a single
+portable `std::fs` path. If lifted, streaming playback would be far simpler to implement and test.
+However, removing it would sacrifice the predictable latency and throughput that platform-native I/O
+provides -- stdlib I/O blocks threads and pollutes the page cache, which is unacceptable for a
+real-time audio thread with a 0.5 ms budget (R-5.1.NF1). The constraint is justified for audio
+quality.
+
+**Q2. How can this design be improved?**
+
+The voice management system (F-5.1.4) uses a fixed pool with static per-tier sizes (16-32 mobile,
+128-256 desktop per R-5.1.4a). A dynamic pool that grows within a memory budget would better adapt
+to varying scene complexity. The mixer bus DAG (F-5.1.3) requires runtime rewiring without
+discontinuity, but the design does not specify a crossfade strategy for bus topology changes -- this
+could cause subtle clicks if buses are reparented mid-mix. The codec registry (F-5.1.7) supports
+runtime plugin registration but does not address hot-unloading of codecs, which matters for editor
+workflows.
+
+**Q3. Is there a better approach?**
+
+An alternative architecture would use a graph-based audio engine (like FMOD's event system) where
+every voice, bus, and effect is a node in a single processing graph. This would unify the mixer
+hierarchy, DSP chains, and voice management into one traversal. We chose the separate mixer-bus-DAG
+and voice-pool model because it maps cleanly to the ECS architecture (components for sources and
+listeners, systems for mixing) and avoids the complexity of a general graph scheduler on the
+real-time thread. The current design is more predictable for budgeting.
+
+**Q4. Does this design solve all customer problems?**
+
+Core playback scenarios are well covered (US-5.1.1.6 world sounds, US-5.1.3.8 volume categories,
+US-5.1.5.7 seamless music). However, there is no feature for audio snapshots -- saving and restoring
+the complete audio state (all playing voices, bus settings, effect parameters) for save/load game
+functionality. RPGs and strategy games need this. Additionally, the design lacks cross-fade groups
+that prevent multiple ambient loops from the same category playing simultaneously (e.g., two rain
+sounds overlapping). Adding snapshot support and mutual-exclusion groups would close these gaps.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The audio engine aligns with the ECS-based architecture through the explicit audio exception in
+constraints.md: ECS components bridge to a dedicated real-time thread via a lock-free SPSC command
+queue (R-5.1.6). This is the only subsystem with its own thread and data ownership, which is a
+justified divergence given the < 0.5 ms latency budget. The streaming playback system (F-5.1.5)
+reuses the same IoReactor and platform-native I/O backends as the asset streaming system (F-12.5.2),
+which is good cohesion. The spatial audio integration via the shared BVH (F-5.2.5) follows the
+engine-wide shared spatial index pattern.
 
 ## Open Questions
 

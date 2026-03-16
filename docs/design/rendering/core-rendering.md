@@ -3003,6 +3003,60 @@ triangle ID, second pass resolves material). Gate via `PlatformTier::Mobile` cap
 | Instance buffer upload (50k) | < 0.5 ms CPU | R-2.10.3 |
 | Material instance upload (1k dirty) | < 0.1 ms CPU | R-2.4.6 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 100% ECS constraint (constraints.md) means all render state must live as components, and the
+renderer can only read via immutable queries during extraction. This forces the
+extract-prepare-render triple-buffering pattern (F-2.10.1 through F-2.10.3) with a full proxy store
+copy. If we lifted this constraint and allowed the renderer to own persistent scene data, we could
+eliminate the ProxyStore and its O(changed) extraction cost entirely by sharing data directly.
+However, the ECS constraint ensures the simulation and renderer are fully decoupled, enabling
+pipelined parallelism where frame N+1 simulates while frame N renders. This decoupling is critical
+for VR (US-2.10.5.2) where latency budgets are tight.
+
+**Q2. How can this design be improved?**
+
+The sort key design for draw list construction (F-2.10.6) packs material ID and depth into a single
+64-bit key, but the document does not specify how transparent vs opaque sorting interacts with the
+dual rendering paths (ForwardPlus vs Deferred). The GPU batch compaction pass (F-2.10.7) assumes a
+single compaction buffer per material, but scenes with thousands of material instances may exceed
+indirect draw buffer limits on mobile (Vulkan 1.1 has a maxDrawIndirectCount limit). The design
+should specify overflow behavior. Additionally, the incremental extraction (NFR-2.10.1) targets 0.5
+ms for 1% dirty entities, but worst-case 100% dirty (level load, teleport) has no specified budget.
+
+**Q3. Is there a better approach?**
+
+An alternative is GPU-driven extraction where the ECS component arrays are mapped directly to
+GPU-visible memory and the GPU reads them without a CPU-side proxy copy. Nanite in Unreal Engine 5
+uses this approach for transforms. We chose CPU-side extraction because the ECS uses archetype
+storage (F-1.1.1) where components are scattered across archetypes, making direct GPU mapping
+impractical without a contiguous SoA mirror. The proxy store provides that contiguous layout. The
+CPU extraction cost is bounded by change detection, making it acceptable for all but the most
+extreme entity counts.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers the core rendering pipeline well but lacks explicit support for streaming level
+transitions (US-2.2.11.1 addresses streaming at the render graph level, but the proxy store has no
+concept of partial world loading). When a player crosses a streaming boundary, all new entities
+arrive as "new" in the extraction system, potentially causing a frame spike. A dedicated streaming
+extraction budget or priority queue for newly streamed entities would help open-world games (RPGs,
+MMOs) maintain smooth frame rates during world traversal. The missing feature would enable seamless
+open-world streaming without extraction hitches.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The design is strongly cohesive with the ECS (F-1.1.1), shared spatial index (F-1.9.1), and render
+graph (F-2.2.1). The extract-prepare-render pattern mirrors the engine's async model
+(constraints.md) by using scoped tasks for parallel extraction and visibility. The ProxyStore's SoA
+layout aligns with the engine's preference for data-oriented design. One divergence is that the
+debug draw API (F-2.10.9) uses an immediate-mode pattern that differs from the declarative ECS style
+used everywhere else. This is acceptable because debug drawing is development-only and compiled out
+in shipping builds (NFR-2.10.3), but it could be made more cohesive by using a transient ECS
+component for debug primitives that the renderer extracts like any other component.
+
 ## Open Questions
 
 1. **Clustered vs tiled forward+.** Tiled forward uses 2D screen tiles; clustered forward adds depth

@@ -717,6 +717,125 @@ No new external dependencies required. The destruction system uses existing engi
 | Debris pool acquire/release | < 1 us per op | US-4.6.7.12 |
 | Debris LOD query (512 entities) | < 0.5 ms | US-4.6.7.2 |
 
+## Destruction Timeline Sequence
+
+Destruction generates physics fragments and triggers VFX (particles, audio) simultaneously, but the
+timing between debris simulation, particle effects, and audio cues is unspecified. Without a defined
+frame-by-frame contract, systems may fire out of order or miss events.
+
+**Frame-by-frame timeline.** All systems operate on shared ECS components with no private
+cross-system channels.
+
+| Frame | System | Action | Components Read | Components Written |
+|-------|--------|--------|-----------------|-------------------|
+| N | Destruction | Impact detected; spawn fragment entities | `ContactEvent` | `RigidBody`, `Collider`, `Mesh`, `Transform`, `DebrisLifetime`, `DestructionFragment` |
+| N | VFX | Spawn particle emitters (dust, sparks) at impact point | `Transform`, `DestructionFragment` | Emitter components |
+| N | Audio | Play impact sound at impact point position | `Transform` | Audio events |
+| N+1 | Physics | Simulate fragment trajectories (gravity, impulse) | `RigidBody`, `Collider` | `RigidBody`, `Collider` |
+| N+1 | VFX | Update particle simulation (dust cloud expands, sparks arc) | `Transform` | Emitter components |
+| N+2..N+K | Physics | Fragments settle; velocities decay | `RigidBody`, `Collider` | `RigidBody`, `Collider` |
+| N+2..N+K | VFX | Particles fade over lifetime | `Transform` | Emitter components |
+| N+2..N+K | Audio | Secondary sounds (debris landing) | `Transform`, `ContactEvent` | Audio events |
+| N+M | Cleanup | Cull fragments below size/TTL threshold; despawn expired emitters | `DebrisLifetime` | Despawn commands |
+
+**Sequence.**
+
+```mermaid
+sequenceDiagram
+    participant IMP as Impact Event
+    participant DES as Destruction System
+    participant VFX as VFX System
+    participant AUD as Audio System
+    participant PHY as Physics System
+    participant CLN as Cleanup System
+
+    Note over IMP,CLN: Frame N
+    IMP->>DES: Contact event exceeds threshold
+    DES->>DES: Despawn intact entity
+    DES->>DES: Spawn fragment entities
+    Note right of DES: RigidBody + Mesh +<br/>DebrisLifetime components
+    DES->>VFX: Fragment entities visible in ECS
+    VFX->>VFX: Spawn dust + spark emitters
+    Note right of VFX: Reads Transform from<br/>fragment entities
+    DES->>AUD: Fragment entities visible in ECS
+    AUD->>AUD: Play impact sound
+    Note right of AUD: Reads Transform for<br/>3D positioning
+
+    Note over IMP,CLN: Frame N+1
+    PHY->>PHY: Simulate fragment trajectories
+    Note right of PHY: Gravity + initial impulse
+    VFX->>VFX: Update particle simulation
+    Note right of VFX: Dust cloud expands
+
+    Note over IMP,CLN: Frame N+2 .. N+K
+    PHY->>PHY: Fragments settle
+    VFX->>VFX: Particles fade
+    PHY->>AUD: ContactEvent on debris landing
+    AUD->>AUD: Play secondary debris sounds
+
+    Note over IMP,CLN: Frame N+M
+    CLN->>CLN: Check DebrisLifetime timers
+    CLN->>CLN: Cull fragments below threshold
+    CLN->>CLN: Despawn expired emitters
+    CLN->>CLN: Return entities to DebrisPool
+```
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The build-time-only fracture constraint (no runtime mesh generation) is the most limiting. All
+fracture patterns must be pre-computed as `.frac` assets, meaning destruction is deterministic and
+predictable. Lifting this would enable impact-point-driven runtime fracture where objects break
+differently depending on where and how hard they are hit. The impact would be dramatically more
+realistic destruction at the cost of runtime mesh generation (convex decomposition, UV mapping, and
+collider creation), which violates the "no runtime mesh generation" principle and would require GPU
+compute for acceptable performance. The pre-computed approach is correct for predictable budgets
+across all platforms.
+
+**Q2. How can this design be improved?**
+
+The destruction-to-VFX timeline (frame N sequence diagram) is well-defined but the audio integration
+is underspecified -- "play impact sound" does not define how the audio system selects sounds based
+on material type, fragment count, or impact force. The `DebrisPool` recycles entities but does not
+specify how mesh and collider assets are managed -- recycling an entity with a different fragment's
+mesh requires swapping asset handles, which may trigger GPU uploads. The structural analysis BFS
+(R-4.6.5) uses `HashMap` and `HashSet` which allocate; switching to arena-allocated graph traversal
+with pre-sized buffers would eliminate allocation during collapse events. Mobile's pre-baked
+collapse sequences have no authoring workflow defined.
+
+**Q3. Is there a better approach?**
+
+An alternative to pre-computed Voronoi fracture is a real-time Boolean mesh cutting approach (used
+by Teardown and some tech demos). This produces impact-location-dependent fracture with no
+pre-authored assets. However, real-time mesh cutting requires runtime convex decomposition, texture
+UV recalculation, and collider regeneration -- each of which is expensive and non-deterministic. The
+pre-computed approach is standard in AAA games (Unreal's Chaos Destruction, Havok Destruction)
+because it guarantees consistent performance budgets. The trade-off is that repeated destruction of
+the same object always produces identical fragments, which can look repetitive.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers fracture, progressive damage, structural collapse, and debris management but lacks
+several features. There is no soft-body deformation (crumpling metal, bending wood) -- all
+destruction is rigid fracture. There is no repair mechanic for destructible objects (only the
+building system has repair via F-13.14.4). Partial fracture (breaking only the impacted region) is
+listed as an open question but is needed for large objects like castle walls where full fracture
+would be unrealistic. Adding localized fracture using impact-radius fragment selection from the
+pre-computed asset would enable partial destruction without runtime mesh generation.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The destruction system integrates well with physics (RigidBody, Collider, Joint entities), the
+shared spatial index (distance-based LOD queries), and the ECS architecture (all state as
+components). The `StructuralAnalysisSystem` shares its `ConnectivityAnalyzer` with the building
+system's structural integrity (F-13.14.3), which is excellent reuse. The `DamageHealth` component is
+server-authoritative via ECS state replication, consistent with the networking design. One gap is
+that destruction does not integrate with the cover system (stealth-cover design) -- destroying a
+cover object should remove its cover points from the AI navigation and spatial index, but this
+cross-system interaction is only mentioned in a single integration test rather than being designed
+as a first-class data flow.
+
 ## Open Questions
 
 1. **Voronoi library.** Use an existing Voronoi crate (e.g., `voronoi-rs`) or implement custom 3D

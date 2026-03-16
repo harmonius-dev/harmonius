@@ -947,6 +947,58 @@ release
 | Selection visual update | < 0.5 ms | R-13.11.8 |
 | Group set operations (500 entities) | < 0.1 ms | R-13.11.5 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 100% ECS-based constraint (all data as components, all logic as systems) prevents optimizations
+like dedicated selection acceleration structures separate from the shared spatial index. Lifting
+this would allow a specialized selection-only spatial index tuned for screen-space rectangle tests
+during marquee drag, potentially improving the 500-entity marquee budget from R-13.11.NF2. However,
+removing this constraint would fragment spatial data across multiple stores, violating the shared
+spatial index principle and increasing memory overhead. The constraint is worth keeping because it
+ensures selection queries compose with other ECS queries (e.g., "all selected entities with Health >
+50").
+
+**Q2. How can this design be improved?**
+
+The single-level undo (R-13.11.6d) is weak compared to full undo stacks in modern RTS games. Storing
+only one `CommandRecord` limits error recovery, especially in long RTS matches. The `SelectionSet`
+uses `Vec<EntityId>` which may degrade for set operations on very large selections -- a bitset
+per-archetype could be faster for `contains()` checks. The formation system delegates slot
+computation to the crowd simulation module, which creates a cross-module dependency that could stall
+if steering is not implemented first. Consider self-contained slot computation with an optional
+steering integration path.
+
+**Q3. Is there a better approach?**
+
+An alternative is to unify selection entirely with the ECS query system -- instead of a
+`SelectionSet` resource, use archetype-level bitflags so "iterate selected entities" is a zero-cost
+query filter rather than a join. We are not taking this approach because the `Selected` component
+already enables efficient ECS queries (F-13.11.3), and a resource-based set provides ordered
+iteration and O(1) count -- properties that archetype flags cannot offer. The current design is a
+reasonable middle ground between query performance and set semantics.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers four genre presets (RTS, RPG, action, builder) per F-13.11.4a--4d but lacks a
+dedicated MOBA/hero-brawler preset with quick-cast targeting and skill-shot indicators. User story
+US-13.11.4d.3 requests lasso selection, but the design only describes marquee rectangles -- freeform
+lasso is not detailed in the API. Adding a MOBA preset and lasso picking would enable hero-based PvP
+games and improve the builder preset for irregular terrain editing. A "puzzle" selection preset for
+tile-based or pattern-matching games is also absent.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The selection system integrates well with the shared spatial index (F-1.9.4), observer system
+(F-1.1.30), and ability system (F-13.10.2), matching the engine's dependency injection and
+ECS-everywhere philosophy. The genre preset pattern (data-driven configuration activated
+per-project) is consistent with how other game framework modules configure behavior. One
+inconsistency is that `CommandHistory` stores pre-command state inline, whereas other engine systems
+use the reflection system for state snapshots -- aligning with bevy_reflect-style serialization
+would improve cohesion. The no-code authoring requirement is fully met: all configurations are
+visual editor assets.
+
 ## Open Questions
 
 1. **Marquee projection method** -- Should the marquee test against the full 3D bounding volume

@@ -1629,6 +1629,54 @@ NPC's schedule state is fast-forwarded to the current time.
 | Reputation aggregation | < 100 us per group | R-13.19.3c |
 | Memory entry allocation | < 1 us | NFR-13.19.2 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 4 ms per-frame budget for 200 NPCs (NFR-13.19.1) is the tightest constraint. It forces
+amortization of gossip propagation to 10 events per frame and limits memory entry evaluation.
+Lifting this budget would allow real-time gossip propagation across all NPCs simultaneously, richer
+emotional contagion (Q4 in Open Questions), and deeper memory analysis per frame. The best
+unconstrained solution would evaluate all social interactions in parallel every frame, but the 4 ms
+ceiling is necessary to share the frame with physics, rendering, and other systems at 60 fps.
+
+**Q2. How can this design be improved?**
+
+The gossip system (F-13.19.3b) degrades accuracy linearly per hop, which is simple but unrealistic.
+A model where accuracy degrades based on the personality traits of the retelling NPC (e.g., honest
+NPCs preserve more accuracy) would add depth. The schedule system (F-13.19.4a) lacks
+weather-reactive schedule overrides -- NPCs should seek shelter during storms. The memory eviction
+policy uses lowest-weight only; a hybrid policy considering both weight and recency would better
+model human memory where recent low-weight events are recalled more easily than old ones.
+
+**Q3. Is there a better approach?**
+
+A graph-database-backed social network (instead of per-NPC component storage) would enable faster
+multi-hop queries for reputation aggregation (F-13.19.3c) and social-cue search (F-13.19.10). We
+avoid this because it violates the 100% ECS-based constraint from constraints.md. The ECS component
+approach ensures all NPC data participates in standard queries, serialization, and save/load without
+a parallel data store. The trade-off is that multi-hop social queries require iterating across
+entities rather than traversing graph edges directly.
+
+**Q4. Does this design solve all customer problems?**
+
+The design is missing NPC faction-level mood tracking -- when a major threat looms, an entire
+village should collectively shift behavior (merchants board up shops, guards increase patrols). This
+is partially addressed by quest-state awareness (F-13.19.11) but lacks a generalized faction-mood
+system. There is also no coverage for NPC gift-giving to the player, which would deepen relationship
+reciprocity (US-13.19.1.3). Adding these features would enable life-simulation and farming-RPG
+genres where NPC social depth is the core gameplay loop.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The design is highly cohesive with the engine architecture. All NPC data is ECS components, all
+logic is ECS systems, and the shared spatial index (F-1.9.4) is used for aggro radius and perception
+checks per constraints.md. The schedule system integrates with the pathfinding system (F-7.1.1) and
+behavior trees (F-7.3.1) rather than duplicating navigation logic. One area of divergence is the
+memory system's per-NPC `Vec<MemoryEntry>` storage, which may not batch well in archetype storage
+compared to fixed-size arrays. Using a fixed-capacity array (50 entries) instead of a Vec would
+improve cache locality and align with the engine's preference for predictable memory layouts.
+
 ## Open Questions
 
 1. **Gossip graph visualization.** Should the editor provide a real-time visualization of the gossip

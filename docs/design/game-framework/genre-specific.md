@@ -1710,6 +1710,63 @@ queries and resource access, enabling the ECS scheduler to parallelize independe
 | Companion AI per frame (8 companions) | < 4 ms | NFR-13.15.1 |
 | Mount locomotion swap | < 100 ms | NFR-13.15.2 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The isolated ECS world partition constraint for minigames (F-13.26.1) is the most significant. Each
+minigame creates a separate ECS world, which means minigame entities cannot directly interact with
+outer-world entities. Lifting this would allow diegetic minigames to share the physics and rendering
+world (chess pieces as actual rigid bodies on a table). The current design forces diegetic mode
+(F-13.26.2) to duplicate entity representation -- once in the minigame world for logic and once in
+the outer world for rendering. However, the isolation is essential for preventing minigame bugs from
+corrupting game state and for enabling the typed result contract that enforces clean integration
+boundaries.
+
+**Q2. How can this design be improved?**
+
+The fog of war system (F-13.20.1-4) uses a fixed grid with 2 bits per cell per faction, but the grid
+resolution is independent of terrain -- this means fog accuracy depends on a global setting rather
+than adapting to local detail needs. Adaptive resolution (quadtree-based fog) would provide better
+precision near unit positions without wasting memory on distant areas. The tactical combat system
+(F-13.21.1-5) lacks reaction/interrupt mechanics (counterattacks, interrupt moves) that are standard
+in XCOM-like games. The minigame framework lacks a built-in tutorial system for teaching players
+minigame rules -- US-13.26.1.1 through US-13.26.8.6 describe gameplay but not onboarding.
+
+**Q3. Is there a better approach?**
+
+For fog of war, an alternative to the grid approach is GPU-driven per-pixel fog using stencil
+rendering of vision cones. This eliminates grid resolution as a limiting factor and produces smooth
+fog edges. However, GPU fog requires per-frame rendering passes per faction and does not support the
+compact 2-bit-per-cell networking format (R-13.20.1). The grid approach is chosen because fog state
+must be replicated efficiently in multiplayer and persisted in saves (F-13.20.4). For turn-based
+combat, the action point model (F-13.21.3) could alternatively use a two-action system (move +
+action) like D&D 5e, but the AP model is more flexible and covers more tactical game styles from
+XCOM to Fire Emblem.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers fog of war (F-13.20), tactical combat (F-13.21), and minigames (F-13.26) but is
+missing several genre-specific systems. There is no card game deck-building system (F-13.26.5a
+provides a grid engine but not deck construction, card drawing, or hand management). The racing
+features are referenced in the requirements trace but not designed in this document. There is no
+puzzle game template beyond match-3 (no Sokoban, no physics puzzles beyond F-13.26.6). Adding a card
+game framework with deck builder, draw pile, discard pile, and hand management would enable an
+entire genre (Slay the Spire, Hearthstone) that the current grid engine alone cannot support.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The genre-specific systems integrate with engine infrastructure: fog of war uses the shared spatial
+index for LOS blocking, tactical combat uses the ability system (F-13.10.1) for per-turn actions,
+and minigames reuse the ECS world partition (F-1.1.34) and input mapping contexts (F-6.2.2). The
+turn manager (F-13.21.2) shares the same ability activation API as real-time combat, maintaining a
+unified combat pipeline. One concern is that the minigame framework creates an isolated ECS world
+per session, but the outer game's save system (F-13.3.1) must persist minigame results -- this
+cross-world communication relies on the typed result contract but has no defined serialization path
+for in-progress minigame state (what happens if the game saves mid- minigame?). The vision modifier
+volumes (F-13.20.3) reuse trigger volumes from physics (F-4.2.8), showing good cross-module
+cohesion.
+
 ## Open Questions
 
 1. **Fog grid resolution** -- Should the fog grid resolution be independent of chunk size, or should

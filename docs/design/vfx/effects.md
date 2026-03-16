@@ -2449,6 +2449,55 @@ pub fn scorch_mark_system(
 Falloff attenuation uses the shared `FalloffCurve` type (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The deferred rendering dependency for projected decals (F-11.2.1) means forward-rendered platforms
+(mobile, low-end GPUs) must fall back to mesh decals, which lack runtime flexibility and require
+CPU-side clipping. Lifting the deferred-only constraint would allow a forward-compatible decal path
+using screen-space depth reconstruction from the depth pre-pass. The current split creates two decal
+code paths with different capabilities, increasing maintenance cost and limiting mobile decal
+expressiveness (no per-channel G-buffer modification on forward platforms).
+
+**Q2. How can this design be improved?**
+
+The weather system (F-11.4.1 through F-11.4.7) treats each weather type (rain, snow, dust) as an
+independent subsystem with its own particle configuration and surface response. A unified
+WeatherState component that drives all weather subsystems from a single parametric blend would
+enable smooth transitions between weather types (rain transitioning to sleet to snow). The
+destruction VFX (F-11.5.1 through F-11.5.7) also lack LOD tiers -- debris, dust, and sparks spawn at
+full fidelity regardless of distance, which the global budget must handle reactively rather than
+proactively.
+
+**Q3. Is there a better approach?**
+
+For screen-space effects (F-11.3.1 through F-11.3.6), an alternative is a post-process graph where
+designers compose effects as connected nodes (like the effect graph for particles). This would unify
+authoring across all screen effects. We chose hardcoded effect passes because screen effects are few
+in number, performance-critical, and rarely combined in novel ways. The flexibility of a graph
+system would add compilation overhead for little creative benefit, unlike particle systems where
+combinatorial variety justifies the graph approach.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers decals, screen effects, weather, and destruction but lacks a volumetric light
+shaft system for indoor environments (god rays through windows, light cones from spotlights).
+F-11.4.7 provides underwater god rays, but no equivalent exists for above-water interiors. This
+would benefit dungeon crawlers, horror games, and cathedral environments common in RPGs. The weather
+system also lacks thunder audio spatialization relative to the lightning bolt origin (R-11.4.5
+mentions distance delay but not 3D positioning).
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The VFX effects module integrates well with the particle system (F-11.1.1) for debris, weather, and
+destruction particles, and with the render graph for screen-space passes. Decals share the same
+atlas and batching infrastructure as sprite rendering. One divergence is that weather surface
+effects (wet surfaces, snow accumulation) modify material properties directly rather than going
+through the material graph system. This means weather-driven material changes bypass the normal
+material pipeline, potentially conflicting with artist-authored material overrides. Routing weather
+effects through material parameter injection would be more cohesive.
+
 ## Open Questions
 
 1. **Decal atlas format.** BC7 compressed or uncompressed RGBA8? BC7 saves VRAM but requires runtime

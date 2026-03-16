@@ -1496,6 +1496,55 @@ The effect graph compiler shares the `GraphCompiler` framework (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)) with the material graph and shader
 graph for consistent compilation infrastructure.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The HLSL-only shader IL constraint means the effect graph compiler must produce HLSL compute
+shaders, then rely on DXC for DXIL/SPIR-V and Metal Shader Converter for MSL. This two-stage
+compilation adds warm-up latency (up to 500 ms per graph) and limits the compiler to HLSL's compute
+model. Lifting this constraint would allow direct SPIR-V or AIR emission, cutting compile time in
+half and enabling platform-specific optimizations. We keep the constraint because a single shader IL
+reduces the compiler's complexity from N backends to one, and DXC/MSC are already required for the
+material and shader graph pipelines (F-15.8.5b).
+
+**Q2. How can this design be improved?**
+
+The graph compiler fuses all modules into a single compute dispatch per emitter (F-11.6.1), but this
+means changing one node recompiles the entire shader. An incremental compilation strategy that
+caches compiled subgraph fragments and re-links only changed portions would dramatically reduce
+iteration time in the editor. The event-driven spawning system (R-11.6.4) also lacks a cooldown or
+debounce mechanism -- rapid collision events in physics-heavy scenes could spawn hundreds of VFX per
+frame, overwhelming the budget manager before it can react.
+
+**Q3. Is there a better approach?**
+
+An alternative is a CPU-interpreted virtual machine that evaluates graph nodes per-particle, similar
+to UE4's Cascade. This avoids shader compilation entirely and supports hot reload instantly. We
+chose GPU compilation because CPU evaluation cannot scale to the million-particle counts required by
+F-11.1.1, and the engine's GPU-first particle architecture demands compute shaders. The trade-off is
+longer iteration cycles in the editor, mitigated by pre-compilation on save and a placeholder effect
+during first-time compilation.
+
+**Q4. Does this design solve all customer problems?**
+
+The effect graph covers spawn, update, and output but lacks a dedicated audio integration node. VFX
+artists (US-11.6.1.1) frequently need to synchronize particle bursts with sound effects, but the
+current design requires separate audio event wiring through the logic graph. Adding an AudioEmit
+node to the effect graph that triggers sounds at spawn/death events with spatialized positioning
+would streamline the audio-visual authoring workflow and reduce cross-system wiring for common use
+cases like explosions and impacts.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The effect graph shares the GraphCompiler framework with the material and shader graphs (F-15.8.5b),
+ensuring consistent compilation infrastructure across all visual authoring surfaces. The parameter
+system (F-11.6.3) reuses the widget framework's reactive data binding (F-10.1.7), which is a strong
+cohesion point. One inconsistency is that the LOD system (R-11.6.5) uses its own distance-based tier
+logic rather than the shared spatial index's LOD infrastructure. Unifying VFX LOD with the
+engine-wide LOD system would reduce duplication and ensure consistent quality scaling across
+rendering, physics, and VFX.
+
 ## Open Questions
 
 1. **Shader variant explosion.** Each unique graph topology produces a unique shader. How

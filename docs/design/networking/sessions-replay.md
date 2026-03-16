@@ -1421,6 +1421,55 @@ pub enum QueueError {
 | Replay file size (30 min) | 70% smaller than full-snapshot | R-8.6.1 |
 | Headless server RSS | < 512 MB (64 players) | R-8.5.8.NF1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-third-party-async-runtime constraint forces the matchmaking microservice, auth service, and
+session directory to all use the custom IoReactor for HTTP serving and database access. This means
+building a REST API server from raw TCP on the IoReactor rather than using an existing HTTP
+framework. Lifting this would allow standard HTTP servers (hyper, axum) for microservices while
+keeping the game server on IoReactor. The impact of removing it is significant: microservice
+development speed would increase dramatically, but the codebase would split into two async worlds,
+complicating shared code between game server and services.
+
+**Q2. How can this design be improved?**
+
+The reconnection system (F-8.5.5) preserves the player entity during the grace window but does not
+preserve the player's position in matchmaking queues if they were queued when disconnected. The
+Glicko-2 matchmaker (F-8.5.9) lacks party-vs-party rating where the group's composite rating
+accounts for synergy. The replay recorder writes sequentially, which could bottleneck on disk I/O
+for high-entity-count matches. Double-buffered recording with async flush would decouple tick
+recording from disk writes more cleanly.
+
+**Q3. Is there a better approach?**
+
+For matchmaking, an Elo-based system would be simpler than Glicko-2 but lacks the confidence
+intervals that Glicko-2 provides (deviation and volatility). Glicko-2 is the right choice because
+new players with high uncertainty are matched more flexibly, converging to accurate ratings faster.
+For replay storage, recording inputs rather than state snapshots would produce much smaller files
+but requires perfect determinism across all platforms, which is not guaranteed with floating-point
+physics. State-based recording is the safer choice for a cross-platform engine.
+
+**Q4. Does this design solve all customer problems?**
+
+US-8.6.9 requires cross-platform replay determinism verification, but the design does not specify
+how to handle floating-point divergence across CPU architectures (x86 vs ARM). Missing: tournament
+bracket management for esports (seeding, elimination, bracket progression). Missing: replay file
+sharing and download from a central repository. Adding tournament support would enable competitive
+esports games. Replay sharing would enable community content creation and coaching workflows.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+Session state is tracked as ECS components (`SessionComponent`, `PartyComponent`,
+`MatchmakingComponent`) on player entities, consistent with the engine's ECS-first design. The
+replay recorder observes the replication stream, reusing the same delta/snapshot format from the
+replication design rather than inventing a separate encoding. The headless server (F-8.5.8)
+correctly excludes rendering, audio, and editor systems, matching the modular system architecture.
+The kill cam buffer uses a ring buffer pattern consistent with the snapshot buffer in the
+replication design. Replay I/O uses async file writes through the IoReactor, matching the platform
+I/O constraint.
+
 ## Open Questions
 
 1. **Session token rotation.** Should the server issue a new token on each reconnect to prevent

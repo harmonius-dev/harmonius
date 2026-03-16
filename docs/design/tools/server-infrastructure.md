@@ -1229,6 +1229,50 @@ async fn submit_build(
 | Pipeline total duration | < 30 min (small project) | US-15.18.6.1 |
 | Stack deployment time | < 15 min (full stack) | US-15.18.1.7 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The self-hosted AWS requirement means every studio must operate its own infrastructure. Small indie
+studios on the Free Tier profile get a minimal stack (db.t3.micro, single-AZ), which cannot support
+real-time collaboration for more than 2-3 concurrent users. Lifting this would enable a managed
+cloud service where studios pay per-use without managing infrastructure. The best solution is a
+hosted SaaS option alongside self-hosted. The impact is wider adoption by small teams, but
+introduces a managed service operational burden.
+
+**Q2. How can this design be improved?**
+
+The build farm (F-15.18.4) uses SQS polling with CloudWatch- based auto-scaling, introducing 1-2
+minutes of cold-start latency for the first job after idle. The CI/CD pipeline (F-15.18.6) runs all
+test suites sequentially within the Test stage. The Free Tier profile lacks Redis, forcing session
+state into DynamoDB with higher latency. Adding warm pool instances, parallel test execution across
+CodeBuild projects, and a small Redis instance for Free Tier would improve responsiveness.
+
+**Q3. Is there a better approach?**
+
+An alternative to Forgejo for Git hosting is to use managed GitHub/GitLab SaaS with only the build
+farm and collaboration server self-hosted. We chose full self-hosting because it ensures complete
+data sovereignty and avoids per-seat licensing costs. The trade-off is significant operational
+burden -- Forgejo requires maintenance, security patching, and backup management that managed Git
+providers handle automatically.
+
+**Q4. Does this design solve all customer problems?**
+
+The infrastructure lacks multi-tenant support -- each studio needs its own CDK deployment. Large
+publishers with multiple game teams would benefit from a single shared infrastructure with
+project-level isolation. There is no cost estimation tool in the CDK stacks -- studios cannot
+preview their AWS bill before deploying. Adding multi-tenancy with IAM-based project isolation and a
+`cdk diff --cost` estimator would serve enterprise publishers.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The CDK stacks are TypeScript (per AWS CDK requirement), which is the one place in the project where
+a non-Rust language is used for infrastructure. All Rust client code uses `IoReactor` for async I/O.
+The `BuildFarmClient` integrates with the shared cache (F-15.11) for content-addressable artifacts.
+The `CollabClient` protocol matches the collaboration design (F-15.12). The monitoring stack exports
+metrics compatible with the profiler's remote streaming format (F-15.5.7). The CDK TypeScript is an
+acceptable cohesion exception given that AWS CDK has no mature Rust alternative.
+
 ## Open Questions
 
 1. **Forgejo vs Gitea** -- Forgejo is the community fork of Gitea. Both expose a GitHub-compatible

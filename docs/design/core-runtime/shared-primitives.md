@@ -1718,6 +1718,71 @@ file I/O.
 
 ---
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The "no frameworks, only libraries" constraint forces every shared primitive to be a standalone,
+minimal type rather than part of a cohesive framework with automatic integration. This means
+`Handle<T>`, `Curve<T>`, `SpringDamper<T>`, `StatModifier`, and others must be wired together
+manually by each consumer. Lifting this would allow a unified math/simulation framework where curves
+auto-feed into spring dampers, stats automatically aggregate from modifiers, and handles
+self-register with the spatial index. The best possible design would be a small runtime library that
+auto-discovers primitives via the reflection system (F-1.3.1) and wires them into the ECS scheduler.
+The impact of removing the constraint is implicit coupling: framework-level integration makes it
+harder to use primitives in isolation and increases the dependency surface.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The shared primitives module consolidates types that were previously duplicated across 15+ domain
+designs, which is a major improvement. However, the UniformGrid<T> primitive serves both 2D (network
+relevancy) and 3D (density queries) use cases with the same structure, which may force awkward
+dimensionality conversions. The Curve<T> trait requires all interpolation to go through a single
+`Interpolate` trait, but quaternion slerp and Hermite splines have fundamentally different
+evaluation costs. The StatModifier pipeline's flat/percent/override ordering is fixed and may not
+cover all game designs (e.g., multiplicative stacking in some RPG systems). Adding dimension-generic
+grid types, specialized curve evaluators per interpolation mode, and configurable modifier pipeline
+orderings would address these gaps.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+An alternative is to not consolidate primitives at all and let each domain define its own
+specialized types. Physics would have its own SpringDamper tuned for constraint solving, AI would
+have its own Curve for response curves, and networking would have its own grid. We are not taking
+this approach because the deduplication benefits are significant: the design doc traces Handle<T> to
+4 features across 3 modules (F-1.1.11, F-1.7.4, F-1.7.5, F-1.9.1), and Curve<T> to 6 features across
+6 modules. Duplicating these would mean maintaining parallel implementations with diverging bug
+fixes and inconsistent APIs. The shared approach also enables cross-domain interoperability (e.g.,
+animation curves driving physics spring parameters).
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design covers the most commonly duplicated primitives but misses a shared random number
+generator primitive. AI behavior trees (F-7.3), particle effects (F-11), loot tables (F-13.7), and
+procedural generation all need deterministic pseudo-random sequences, and each domain currently
+defines its own RNG seed management. A shared `DeterministicRng` primitive with per-system seed
+forking would ensure reproducible simulation across all subsystems. The VirtualStreamer primitive
+addresses texture and mesh streaming but lacks integration with the arbitrary precision types
+(F-1.7.9) for cosmic-scale streaming. Adding these would enable deterministic multiplayer in
+roguelikes/RPGs and seamless space-game world streaming.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+The shared primitives module is the engine's most cross-cutting module by design, serving as the
+foundation layer beneath all 15 domains. It integrates well with the ECS (Handle<T> as entity
+identifiers), memory management (pool allocators for HandleMap), and the reflection system (all
+primitives derive Reflect). The tier system (Tier 1 engine-wide, Tier 2 multi-domain, Tier 3
+domain-pair) provides a clear dependency hierarchy. One cohesion improvement would be ensuring every
+shared primitive has a corresponding Reflect derive and serialization support so the editor can
+inspect and modify all primitive values uniformly. Currently the design states this intent but does
+not trace specific F-1.3 and F-1.4 features for each primitive type.
+
 ## Open Questions
 
 1. **Handle bit layout:** Should we use 32+32 (4B entities) or 24+8 (16M entities, 256 generations)?

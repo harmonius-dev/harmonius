@@ -1407,6 +1407,56 @@ changes. On Linux, inotify emits `IN_Q_OVERFLOW`. Recovery strategy:
 | Handle table swap | < 50 ns | -- |
 | Memory growth after 1000 reloads | 0 bytes net | US-12.4.10 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The requirement that hot reload must preserve running game state (R-12.4.2, R-12.4.4, R-12.4.5) is
+the hardest constraint. Atomic pointer swaps behind frame fences for meshes/materials and descriptor
+heap updates for textures are complex GPU synchronization operations that differ per graphics API
+(Vulkan, D3D12, Metal). If lifted, a simpler "reload by restart" approach would work. However,
+losing live game state would destroy the sub-second iteration workflow that makes hot reload
+valuable (US-12.4.1, US-12.4.9). The constraint is essential for the no-code engine vision where
+designers iterate visually.
+
+**Q2. How can this design be improved?**
+
+The logic graph hot reload (F-12.4.4) preserves state only when the variable layout is unchanged --
+any layout change triggers a full restart of the graph instance. A migration system that maps old
+variables to new ones by name and type would preserve state across more layout changes. The
+editor-runtime sync channel (F-12.4.7) is bidirectional but does not support multiple editors
+connected to one runtime, which matters for collaborative workflows. The design also does not
+specify behavior when a hot reload fails midway (e.g., shader compilation error during asset reload)
+-- a transactional rollback to the pre-reload state would improve robustness.
+
+**Q3. Is there a better approach?**
+
+An alternative is a shadow-copy reload model where the entire asset is loaded into a parallel slot
+and swapped atomically at a safe point, rather than patching in-place. This avoids the complexity of
+per-asset-type swap strategies (descriptor heaps for textures, pointer swaps for meshes) but doubles
+memory during reload. The in-place patching approach was chosen because it stays within the memory
+budget (R-5.1.NF3 limits audio to 64 MiB, similar constraints exist for other subsystems). For
+texture-heavy scenes, shadow copies could exceed GPU memory budgets on mobile platforms.
+
+**Q4. Does this design solve all customer problems?**
+
+Core hot reload scenarios are covered: assets (US-12.4.1), shaders (US-12.4.2), logic graphs
+(US-12.4.3), and UI (US-12.4.4). However, there is no hot reload for audio assets -- changing a
+sound effect requires a full reimport cycle. Adding audio hot reload would benefit sound designers
+iterating on SFX and music stems. The design also lacks a reload history/timeline that lets
+designers undo a recent reload and restore the previous asset version without manually reverting the
+source file. This would improve iteration confidence for US-12.4.15 (rapid material tweaking).
+
+**Q5. Is this design cohesive with the overall engine?**
+
+Hot reload integrates deeply with the content pipeline (F-12.2.8 dependency graphs, F-12.3.3 import
+caching) and the platform layer (F-14.6.5 file watcher). The use of platform-native file watching
+APIs (ReadDirectoryChangesW, FSEvents, inotify per R-12.4.1) is consistent with the engine-wide ban
+on stdlib I/O. The partial re-import system (F-12.4.6) leverages the same BLAKE3 content hashing
+used throughout the pipeline. One cohesion gap is that hot reload handles each asset type with a
+distinct swap strategy -- a unified handle-based indirection table (similar to generational indices
+in the ECS) could provide a single reload mechanism across all asset types.
+
 ## Open Questions
 
 1. **Descriptor heap update atomicity** -- On Vulkan, descriptor set updates require

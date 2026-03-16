@@ -70,6 +70,42 @@ harmonius_serialize/       # Binary, text, mixed codecs,
                            # binary companion format
 ```
 
+## Component Reflect Requirements
+
+This matrix defines which engine component types must, should, or may implement `Reflect`. The
+categories are:
+
+- **Required** -- must derive `Reflect`. Compile error if missing.
+- **Handle only** -- only the `Handle<T>` wrapper implements `Reflect`, not the inner asset data.
+- **Derived** -- computed at runtime. Excluded from serialization but available for editor
+  inspection.
+- **Optional** -- may implement `Reflect` for debugging but not required.
+
+| Domain | Component | Reflect | Reason |
+|--------|-----------|---------|--------|
+| Core | Transform | Required | Serialization, networking, editor |
+| Core | GlobalTransform | Derived | Computed from Transform, not serialized |
+| Core | Name | Required | Editor display, debugging |
+| Core | Parent / Children | Required | Scene hierarchy serialization |
+| Physics | RigidBody | Required | Save/load, networking |
+| Physics | Collider | Required | Save/load, editor |
+| Physics | Velocity | Required | Networking (replication) |
+| Physics | PhysicsMaterial | Required | Save/load, editor |
+| Rendering | Mesh | Handle only | Asset handle serialized, not mesh data |
+| Rendering | Material | Handle only | Asset handle serialized, not material data |
+| Rendering | Camera | Required | Save/load, editor |
+| Rendering | Light | Required | Save/load, editor |
+| Animation | AnimationPlayer | Required | Save/load, editor state |
+| Animation | Skeleton | Handle only | Asset reference |
+| Audio | AudioSource | Required | Save/load, editor |
+| Audio | AudioListener | Required | Scene serialization |
+| AI | NavAgent | Required | Save/load, networking |
+| AI | BehaviorTree | Handle only | Asset reference |
+| Networking | NetworkId | Required | Replication identity |
+| Networking | AuthorityEpoch | Required | Authority tracking |
+| UI | Widget | Required | Editor, save/load |
+| Gameplay | All gameplay components | Required | Save/load, editor, visual graphs |
+
 ## Architecture
 
 ### Module Boundaries
@@ -2106,6 +2142,70 @@ The deserializer reads in chunks, constructing entities incrementally to avoid m
 | Zero-copy field access | < 1 us | R-1.4.2 |
 | RON serialize (100 components) | < 10 ms | R-1.4.3 |
 | Migration chain (10 steps) | < 100 us | R-1.4.5 |
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The requirement to model after bevy_reflect (constraints doc) is the biggest limiting factor. This
+locks the API to a specific trait hierarchy (Reflect, ReflectStruct, ReflectEnum, etc.) and the
+FromReflect conversion pattern. Lifting this constraint would allow exploring more efficient
+reflection models such as compile-time code generation that produces direct accessor tables instead
+of runtime trait dispatch, or a registry-free approach using Rust's built-in TypeId with zero-cost
+downcasting. The best possible solution would be a fully static reflection system that generates all
+property accessors at compile time with no runtime cost. However, the bevy_reflect model is
+well-understood, supports the dynamic registration needed for hot reload (F-1.6.5), and the
+`dyn Reflect` exception in the constraints doc makes it acceptable.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The 500 ns path-based property access target (R-1.3.3a) is tight for deeply nested paths (8
+segments) because each segment requires a hash lookup through the type descriptor. The DynamicValue
+diff/patch model (F-1.3.5) allocates when constructing patches, which conflicts with the per-frame
+arena goal for transient data. The mixed- format serialization (F-1.4.8) adds complexity to the
+serializer with two output paths (text + binary companion) that must be written atomically
+(R-1.4.8a). Schema migration chains (F-1.4.5) operating on dynamic values lose type safety, making
+migration functions error-prone. Pre-computing path lookup tables per type, arena-allocated patch
+buffers, and typed migration APIs with compile-time checked field names would address these
+weaknesses.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+A serde-based approach would leverage the Rust ecosystem's de facto serialization standard,
+providing compatibility with hundreds of format implementations and widespread developer
+familiarity. We are not taking this approach because serde lacks the runtime introspection needed
+for editor tooling (US-1.3.3), property-path animation binding (US-1.3.6), and DynamicValue
+diff/patch (F-1.3.5). Serde is a serialization framework, not a reflection system. The design does
+use serde-compatible output formats (RON, JSON) but routes through the Reflect trait for type
+discovery, which serde cannot provide. The custom reflection layer adds complexity but is necessary
+for the no-code editor goal.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design covers serialization and reflection thoroughly but lacks explicit support for
+network-optimized delta serialization. US-1.3.10 mentions network delta but there is no dedicated
+feature for bitfield-level component diffing, which is critical for competitive FPS and fighting
+games where bandwidth is limited to kilobytes per tick. There is also no feature for schema
+evolution across different running servers (e.g., rolling updates in a live MMO where servers run
+different schema versions simultaneously). Adding F-1.4 features for bitfield delta encoding and
+live schema negotiation would strengthen support for competitive multiplayer and live-service MMOs.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+Reflection and serialization are deeply integrated with every other core module: the ECS (F-1.1.4
+depends on F-1.3.1), plugin hot reload (F-1.6.5 depends on F-1.3.5 and F-1.4.5), scene serialization
+(F-1.4.7 depends on F-1.2.1), and the editor (US-1.3.3, US-1.3.6, US-1.3.19). This makes it one of
+the most cohesive modules. One area where cohesion could improve is the binary companion format
+(F-1.4.9): it currently lives in the serialization domain but the content pipeline will need tight
+integration for asset baking. Defining a shared binary container interface in the shared primitives
+module would let both serialization and the content pipeline read/write companion files through a
+unified API.
 
 ## Open Questions
 

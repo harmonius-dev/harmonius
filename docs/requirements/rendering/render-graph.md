@@ -570,3 +570,21 @@ Post-compilation transfer pass insertion at designated injection points.
 ### RG-14.8 Per-Frame Residency Map Binding
 
 Per-frame residency map rebinding without recompilation.
+
+## RG-15: Unified Game Loop Integration
+
+### RG-15.1 Render Passes as Task Graph Nodes
+
+Render passes **SHALL** compile into `TaskNode` entries in the parent `TaskGraph` (F-14.3.14).
+Render node dependencies on CPU-side work (culling, scene traversal) **SHALL** be expressed as typed
+edges in the game loop graph.
+
+**Derived from:** F-2.2.14, RG-13.1
+
+### RG-15.2 Safe GPU Command Encoding Scope
+
+GPU command encoding **SHALL** use scoped borrows that prevent command buffers from outliving their
+encoding scope. A command buffer reference **SHALL NOT** be stored or returned beyond the render
+pass node's execution lifetime.
+
+**Derived from:** F-2.2.15, RG-10.1

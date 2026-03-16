@@ -1775,6 +1775,257 @@ Provide `remove_with_hint(entity, cell)` for O(1) removal.
 
 ---
 
+## Allocation-Free Query API
+
+### Problem
+
+The `SpatialQuery` trait returns `Vec<SpatialHit>` from every query method. Each call allocates,
+grows, and drops a heap buffer. Physics broadphase, rendering culling, AI perception, and gameplay
+all invoke spatial queries per frame. At 1000+ queries/frame this causes 1--3 ms/frame of allocation
+overhead.
+
+This contradicts the ECS design goal of zero per-frame allocations in hot paths (R-1.9.4a). The
+existing API remains useful for infrequent or convenience queries, but high-frequency consumers need
+allocation-free alternatives.
+
+### API Variants
+
+Three new methods extend the `SpatialQuery` trait. The original `query()` method is retained for
+convenience but documented as allocation-heavy.
+
+| Variant | Signature | Allocation | Use Case |
+|---------|-----------|------------|----------|
+| `query` | `fn query(&self, shape: &QueryShape, config: &QueryConfig) -> Vec<SpatialHit>` | Heap per call | Low-frequency convenience |
+| `query_into` | `fn query_into(&self, shape: &QueryShape, config: &QueryConfig, results: &mut Vec<SpatialHit>)` | None (caller-owned) | Reused buffer across frames |
+| `query_visitor` | `fn query_visitor(&self, shape: &QueryShape, config: &QueryConfig, visitor: impl FnMut(SpatialHit) -> ControlFlow<()>)` | None | Early-exit traversal |
+| `query_arena` | `fn query_arena<'a>(&self, shape: &QueryShape, config: &QueryConfig, arena: &'a Arena) -> &'a [SpatialHit]` | Arena bump | Per-frame budget queries |
+
+### Updated SpatialQuery Trait
+
+```mermaid
+classDiagram
+    class SpatialQuery {
+        <<trait>>
+        +query(shape, config) Vec~SpatialHit~
+        +query_into(shape, config, &mut Vec~SpatialHit~)
+        +query_visitor(shape, config, visitor)
+        +query_arena(shape, config, &Arena) &[SpatialHit]
+        +ray_cast(origin, dir, max_dist, config) Vec~SpatialHit~
+        +ray_cast_nearest(origin, dir, max_dist, mask) Option~SpatialHit~
+        +ray_test(origin, dir, max_dist, mask) bool
+        +overlap_aabb(aabb, config) Vec~SpatialHit~
+        +overlap_sphere(center, radius, config) Vec~SpatialHit~
+        +frustum_query(planes, mask) Vec~Entity~
+        +k_nearest(origin, k, max_radius, config) Vec~SpatialHit~
+    }
+
+    class QueryEngine {
+        -bvh &BvhIndex
+        -octree Option~&OctreeIndex~
+        -grid Option~&UniformGrid~
+    }
+
+    class SpatialHit {
+        +entity Entity
+        +point Vec3
+        +normal Vec3
+        +distance f32
+    }
+
+    class Arena {
+        -buffer Vec~u8~
+        -offset usize
+        +alloc(layout) *mut u8
+        +reset()
+    }
+
+    QueryEngine ..|> SpatialQuery
+    SpatialQuery --> SpatialHit
+    SpatialQuery --> Arena : query_arena uses
+```
+
+### Consumer Integration
+
+Each consumer subsystem should use the variant that best fits its access pattern and performance
+requirements.
+
+| Consumer | Variant | Rationale |
+|----------|---------|-----------|
+| Physics broadphase | `query_visitor` | Processes each AABB overlap pair inline; early exit when pair count exceeds budget |
+| Rendering culling | `query_into` | Reuses a visibility buffer (`Vec<SpatialHit>`) across frames; buffer size stabilizes after a few frames |
+| AI perception | `query_arena` | Multiple agents share one per-frame arena; results outlive individual queries for downstream filtering |
+| Gameplay / scripting | `query` | Called infrequently from visual scripting nodes; convenience outweighs allocation cost |
+
+```rust
+// --- Physics broadphase (query_visitor) ---
+// Process overlap pairs inline, no allocation.
+fn physics_broadphase_system(
+    bvh: Res<BvhIndex>,
+    colliders: Query<(Entity, &Collider)>,
+) {
+    let engine = QueryEngine::new(
+        &bvh, None, None,
+    );
+
+    for (entity, collider) in colliders.iter() {
+        let shape = QueryShape::AabbOverlap(
+            collider.world_aabb(),
+        );
+        let config = QueryConfig {
+            layer_mask: collider.collision_layers(),
+            ..Default::default()
+        };
+
+        engine.query_visitor(
+            &shape,
+            &config,
+            |hit| {
+                // Process overlap pair inline
+                if hit.entity != entity {
+                    add_contact_pair(entity, hit);
+                }
+                ControlFlow::Continue(())
+            },
+        );
+    }
+}
+
+// --- Rendering culling (query_into) ---
+// Reuse visibility buffer across frames.
+fn frustum_cull_system(
+    bvh: Res<BvhIndex>,
+    cameras: Query<&Camera>,
+    mut visible_buf: Local<Vec<SpatialHit>>,
+) {
+    let engine = QueryEngine::new(
+        &bvh, None, None,
+    );
+
+    for cam in cameras.iter() {
+        let shape = QueryShape::Frustum(
+            cam.frustum_planes(),
+        );
+        let config = QueryConfig {
+            layer_mask: SpatialLayerMask::RENDERING,
+            sort: QuerySort::Unsorted,
+            ..Default::default()
+        };
+
+        engine.query_into(
+            &shape, &config, &mut visible_buf,
+        );
+        // visible_buf reused next frame
+        update_visibility(&visible_buf);
+    }
+}
+
+// --- AI perception (query_arena) ---
+// Per-frame arena shared across all agents.
+fn ai_perception_system(
+    bvh: Res<BvhIndex>,
+    agents: Query<(Entity, &AiAgent, &Transform)>,
+    mut arena: Local<Arena>,
+) {
+    arena.reset();
+    let engine = QueryEngine::new(
+        &bvh, None, None,
+    );
+
+    for (entity, agent, tf) in agents.iter() {
+        let shape = QueryShape::SphereOverlap(
+            Sphere {
+                center: tf.translation,
+                radius: agent.perception_radius,
+            },
+        );
+        let config = QueryConfig {
+            layer_mask:
+                SpatialLayerMask::AI_PERCEPTION,
+            ..Default::default()
+        };
+
+        let hits = engine.query_arena(
+            &shape, &config, &arena,
+        );
+        // hits valid until arena.reset()
+        filter_by_sight_cone(entity, agent, hits);
+    }
+}
+```
+
+**Migration path.** Add the three new methods to `SpatialQuery` with default implementations that
+delegate to `query()`, then update `QueryEngine` with optimized implementations. Migrate consumers
+one at a time, starting with physics broadphase (highest call frequency). Mark `query()` with a doc
+comment noting allocation cost and recommending alternatives for hot paths.
+
+---
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The shared spatial index constraint (one BVH for all subsystems) is both this module's defining
+feature and its biggest limitation. Physics broadphase (F-1.9.6), rendering culling (F-1.9.7),
+network relevancy (F-1.9.8), and AI perception (F-1.9.9) all have different optimal spatial
+structures. Physics prefers sweep-and-prune for temporal coherence, rendering prefers loose octrees
+for frustum culling, and networking prefers flat grids for area-of-interest. Lifting this constraint
+would allow each subsystem to use its ideal structure. The best possible design would give each
+consumer a view adapter over a shared entity position cache, avoiding data duplication while
+allowing specialized query structures. The cost of removing the shared BVH is memory duplication and
+synchronization complexity between parallel spatial stores.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+Incremental BVH updates (F-1.9.2) degrade tree quality over time as entities move, and the SAH
+quality threshold for triggering a full rebuild (R-1.9.1a) is a tuning challenge: too aggressive and
+rebuilds spike frame times, too lenient and query performance degrades. The 64 bytes/entity memory
+bound (R-1.9.1a) may be tight for a BVH with SIMD-friendly 4-wide nodes that require padding. The
+unified query API (F-1.9.4) returns Entity handles with hit metadata, but for physics narrow-phase
+the caller immediately needs the Collider component, requiring a secondary ECS lookup. Adding a
+query variant that returns component references directly (via the archetype pointer) would eliminate
+this extra lookup. Background rebuild scheduling also needs integration with the frame budget system
+to avoid competing with gameplay systems for CPU time.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+A per-subsystem spatial index with a shared entity position cache would let physics use
+sweep-and-prune, rendering use a loose octree, and networking use a flat grid, each optimal for its
+access pattern. We are not taking this approach because the shared BVH eliminates an entire class of
+bugs where subsystems disagree on entity positions within the same frame. R-1.9.1 explicitly
+requires that all subsystems read from the same structure updated once per frame. The alternative
+also multiplies maintenance cost: three spatial structures to implement, optimize, and test across
+three platforms. The shared BVH with an optional grid/octree (F-1.9.3) provides a pragmatic middle
+ground covering the most common query patterns.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design covers broadphase, culling, relevancy, and AI perception but lacks explicit support for
+continuous collision detection (CCD) queries. Physics systems need swept-volume queries (motion-AABB
+tests) to detect fast- moving objects that tunnel through thin geometry between frames. US-1.9.10
+covers broadphase AABB overlap but not temporal sweep tests. Additionally, there is no support for
+hierarchical LOD queries where the spatial index returns different detail levels based on distance
+from the camera. Adding swept-volume queries (extending F-1.9.4) and LOD-aware spatial queries would
+enable fast-paced FPS games with thin walls and open-world games with LOD streaming. Raycast support
+exists but temporal queries are a gap.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+The spatial index is highly cohesive with the engine: it reads from the ECS (Transform components
+via F-1.1.22 change detection), writes to an ECS resource (the BVH), and is consumed by 4+
+subsystems through the unified query API (F-1.9.4). The consumer integration features (F-1.9.6
+through F-1.9.9) explicitly trace dependencies to physics, rendering, networking, and AI. One
+cohesion gap is the relationship between the spatial index and the scene hierarchy (F-1.2): the BVH
+indexes individual entities flat, with no awareness of parent-child grouping. For hierarchy-aware
+culling (cull a parent and skip all children), a BVH node-to-subtree mapping would improve cohesion
+with the scene module and reduce redundant traversal during frustum culling of deeply nested prefab
+instances.
+
 ## Open Questions
 
 1. **BVH node width (binary vs 4-wide).** A binary BVH is simpler and has lower per-node cost. A

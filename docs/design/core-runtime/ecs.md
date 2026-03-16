@@ -116,6 +116,8 @@ graph TD
     subgraph "harmonius_platform::threading"
         TP[ThreadPool]
         TG[TaskGraph]
+        GLG[GameLoopGraph]
+        CF[CompiledFrame]
     end
 
     subgraph "harmonius_core::reflect"
@@ -139,8 +141,10 @@ graph TD
     QE --> SS
     QE --> CD
 
-    SC --> TG
-    SC --> TP
+    SC --> GLG
+    GLG --> CF
+    CF --> TG
+    CF --> TP
     SC --> SG
     SC --> QE
     SG --> PH
@@ -411,8 +415,7 @@ classDiagram
         -ambiguities: Vec~Ambiguity~
         +add_system(system, phase)
         +add_group(group)
-        +build() Result~ExecutableSchedule~
-        +run(world, pool)
+        +build_game_loop(world) Result~GameLoopGraph~
     }
 
     class SystemNode {
@@ -430,13 +433,19 @@ classDiagram
         -topo_order: Vec~SystemNodeId~
         +detect_cycles() Result
         +detect_ambiguities() Vec~Ambiguity~
-        +build_task_graph(world) TaskGraph
+        +build_system_phase(phase) SystemPhase
     }
 
-    class ExecutableSchedule {
+    class GameLoopGraph {
+        -phases: Vec~PhaseNode~
+        -edges: Vec~PhaseId PhaseId~
+        +compile(world, pool) Result~CompiledFrame~
+    }
+
+    class CompiledFrame {
         -task_graph: TaskGraph
-        -sync_points: Vec~SyncPoint~
-        +execute(world, pool)
+        -render_submissions: Vec~RenderSubmission~
+        +execute(world, pool, reactor)
     }
 
     class Phase {
@@ -476,8 +485,9 @@ classDiagram
     Schedule --> Phase
     SystemNode --> AccessSet
     SystemNode --> RunCriterion
-    SystemGraph ..> ExecutableSchedule : builds
-    ExecutableSchedule --> TaskGraph
+    Schedule ..> GameLoopGraph : builds
+    GameLoopGraph ..> CompiledFrame : compiles
+    CompiledFrame --> TaskGraph
     CommandBuffer ..> World : flush into
     ObserverRegistry ..> CommandBuffer : may trigger
 ```
@@ -1961,26 +1971,18 @@ impl Schedule {
         group: SystemGroup,
     );
 
-    /// Build the execution graph. Performs:
+    /// Build the game loop graph. Performs:
     /// 1. Dependency resolution from access sets
     /// 2. Topological sort
     /// 3. Cycle detection
     /// 4. Ambiguity detection
-    /// 5. Sync point insertion between phases
-    /// 6. TaskGraph construction
-    pub fn build(
-        &mut self,
-    ) -> Result<(), ScheduleError>;
-
-    /// Execute the schedule for one frame.
-    /// Runs each phase in order. Within a phase,
-    /// dispatches the TaskGraph on the ThreadPool
-    /// for parallel execution.
-    pub fn run(
-        &mut self,
-        world: &mut World,
-        pool: &ThreadPool,
-    );
+    /// 5. Phase node construction
+    /// Returns a GameLoopGraph that can be compiled
+    /// into a CompiledFrame for execution.
+    pub fn build_game_loop(
+        &self,
+        world: &World,
+    ) -> Result<GameLoopGraph, ScheduleError>;
 }
 
 pub struct Ambiguity {
@@ -2281,12 +2283,14 @@ pub trait ComputedState: StateComponent {
 
 ### Frame Execution Sequence
 
+The frame is driven by a `CompiledFrame` produced from the `GameLoopGraph`. The compiled frame is
+reused across frames until the system set changes.
+
 ```mermaid
 sequenceDiagram
     participant ML as Main Loop
     participant RE as IoReactor
-    participant SC as Scheduler
-    participant TG as TaskGraph
+    participant CF as CompiledFrame
     participant TP as ThreadPool
     participant W as Workers
     participant CB as CommandBuffers
@@ -2296,27 +2300,25 @@ sequenceDiagram
         ML->>RE: poll()
         RE->>TP: re-enqueue woken tasks
 
-        ML->>SC: run(world, pool)
+        ML->>CF: execute(world, pool, reactor)
 
-        loop Each Phase
-            SC->>TG: build_task_graph(phase)
-            SC->>TP: execute_graph(graph)
-            TP->>W: dispatch ready systems
+        loop Each Phase in TaskGraph
+            CF->>TP: dispatch phase tasks
+            TP->>W: work-steal ready systems
             W->>W: execute systems in parallel
             Note over W: Systems read/write components
             Note over W: Systems record commands
             W-->>TP: all systems in phase complete
 
-            SC->>CB: flush_all(world)
-            Note over CB: Apply spawn/despawn/insert/remove
+            CF->>CB: flush_all(world)
+            Note over CB: Apply structural changes
             CB->>OB: trigger observers
             OB->>OB: fire matching callbacks
-            Note over OB: Observers may record more commands
+            Note over OB: May record more commands
             OB->>CB: flush observer commands
         end
 
         ML->>RE: poll()
-        ML->>ML: render submission + present
     end
 ```
 
@@ -2392,8 +2394,8 @@ sequenceDiagram
 
 ### Schedule Build and Execution
 
-The schedule build process runs at startup and whenever the active system set changes. It does not
-run every frame.
+The schedule build process runs at startup and whenever the active system set changes. The compiled
+frame is reused across frames.
 
 ```rust
 // --- Schedule Build (startup or system change) ---
@@ -2420,18 +2422,17 @@ schedule.add_system(
 // Explicit ordering within a phase
 schedule.order(movement_id, collision_id);
 
-// Build: resolves deps, topological sort,
-//   cycle detection, ambiguity detection
-schedule.build()?;
+// Build game loop graph, then compile once
+let graph = schedule.build_game_loop(&world)?;
+let frame = graph.compile(&world, &pool)?;
 
-// --- Frame Execution ---
+// --- Frame Execution (reuses CompiledFrame) ---
 
 loop {
     reactor.poll();
-    schedule.run(&mut world, &pool);
-    reactor.poll();
-    renderer.submit_commands();
-    renderer.present().await;
+    frame.execute(
+        &mut world, &pool, &mut reactor,
+    );
 }
 ```
 
@@ -2557,16 +2558,85 @@ for transform in query_changed.iter() {
 
 ### Thread Pool Integration
 
-System scheduling produces a `TaskGraph` (defined in `platform/threading.md`) that the `ThreadPool`
-executes via work-stealing. Each system becomes a task node. Dependencies between systems become DAG
-edges. The scheduler inserts sync-point barrier nodes between phases where command buffers are
-flushed.
+The ECS scheduler no longer directly builds a `TaskGraph`. Instead, it populates a `SystemPhase`
+within the `GameLoopGraph` (defined in [platform/threading.md](../platform/threading.md)). The game
+loop graph is the unified execution model for the entire frame.
 
-Non-send systems are pinned to the main thread by the scheduler. They run at designated points in
-the phase, never dispatched to worker threads.
+**`build_game_loop()` replaces `build_frame_graph()`.** The `Schedule` produces a `GameLoopGraph`
+instead of a raw `TaskGraph`. Each ECS phase becomes a `PhaseNode` in the graph. The `GameLoopGraph`
+is compiled once (or when systems change) and the resulting `CompiledFrame` is reused across frames.
 
-Parallel query iteration uses `ThreadPool::scope` so that query borrows from the calling system are
-valid across worker tasks without `'static` or `Arc` overhead.
+```rust
+impl Schedule {
+    /// Build the game loop graph from the current
+    /// system set. Each phase becomes a PhaseNode
+    /// containing its systems. Dependencies between
+    /// phases become graph edges.
+    pub fn build_game_loop(
+        &self,
+        world: &World,
+    ) -> Result<GameLoopGraph, ScheduleError>;
+}
+```
+
+**Execution flow.** The main loop compiles the graph once, then executes the compiled frame each
+tick:
+
+```rust
+// Build once (or when systems change)
+let graph = schedule.build_game_loop(&world)?;
+let frame = graph.compile(&world, &pool)?;
+
+// Per-frame execution
+loop {
+    reactor.poll();
+    frame.execute(&mut world, &pool, &mut reactor);
+}
+```
+
+```mermaid
+sequenceDiagram
+    participant ML as Main Loop
+    participant SC as Schedule
+    participant GLG as GameLoopGraph
+    participant CF as CompiledFrame
+    participant TP as ThreadPool
+
+    ML->>SC: build_game_loop(world)
+    SC-->>ML: GameLoopGraph
+
+    ML->>GLG: compile(world, pool)
+    GLG-->>ML: CompiledFrame
+
+    loop Every Frame
+        ML->>CF: execute(world, pool, reactor)
+        CF->>TP: dispatch task graph
+        TP->>TP: work-steal systems in parallel
+        Note over TP: Sync barriers flush commands
+        TP-->>CF: frame complete
+    end
+```
+
+**Phase mapping.** Each ECS phase populates a `SystemPhase` node in the game loop graph. The
+schedule's topological ordering and access-set analysis are preserved within each phase node.
+
+| ECS Phase | GameLoopGraph Node | Scheduling |
+|-----------|-------------------|------------|
+| PreUpdate | `PhaseNode::Systems` | Parallel within phase |
+| Update | `PhaseNode::Systems` | Parallel within phase |
+| FixedUpdate | `PhaseNode::Systems` | Fixed timestep gated |
+| PostUpdate | `PhaseNode::Systems` | Parallel within phase |
+| PreRender | `PhaseNode::Systems` | Parallel within phase |
+| Render | `PhaseNode::RenderGraph` | Render pass ordering |
+| Custom(n) | `PhaseNode::Systems` | User-defined |
+
+**Non-send systems** are pinned to the main thread by the scheduler. They run at designated points
+in the phase, never dispatched to worker threads.
+
+**Parallel query iteration** (`par_iter`) still uses `ThreadPool::scope` internally. The outer
+scheduling is driven by the compiled game loop graph, but within a system, `par_iter` splits work
+across workers via scoped fork-join. Query borrows from the calling system are valid across worker
+tasks without `'static` or `Arc` overhead.
 
 ### Alignment and SIMD
 
@@ -2734,6 +2804,67 @@ lookups. This avoids hash overhead in the inner loop.
 | Command buffer flush (100K commands) | < 1 ms | R-1.1.32a |
 | Entity migration | < 10 us per entity | R-1.1.35a |
 | Cascade delete (100K subtree) | < 10 ms | R-1.1.16a |
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The "100% ECS-based" constraint (no separate data stores) is the single largest limiting factor.
+Physics engines like PhysX and Havok maintain independent broadphase and solver structures that can
+be highly optimized in isolation. Lifting this constraint would allow dedicated physics memory
+layouts (SIMD-friendly solver bodies), separate spatial indices tuned per subsystem, and
+vendor-optimized collision pipelines. The impact of removing it, however, would be data duplication
+across subsystems, synchronization bugs between parallel stores, and higher memory footprint at MMO
+scale. The ECS-only approach trades peak per-subsystem performance for global consistency and
+reduced complexity.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+Chunk-granularity change detection (R-1.1.22) introduces false positives: modifying one entity marks
+the entire chunk dirty. For components with mixed hot/cold access patterns this wastes work in
+downstream systems like network delta compression and spatial index updates. The archetype explosion
+problem is another weakness: games with many unique component combinations (e.g., hundreds of status
+effects) can create thousands of archetypes, degrading cache locality and query cache invalidation
+time. The prefab inheritance model (F-1.1.36) with copy-on-write semantics adds complexity to the
+query path since inherited components must be resolved through IsA chains. Adding per-entity change
+bitmasks, archetype coalescing heuristics, and lazy prefab resolution would improve these areas.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+A bitset-based ECS (like the `specs` or `shipyard` model) avoids archetype fragmentation entirely by
+storing each component type in its own array indexed by entity ID. This eliminates migration costs
+and archetype explosion. We chose the archetype model instead because it provides superior cache
+locality during iteration: all components for matching entities are contiguous in memory, which
+matters for throughput targets like 500M components/sec (R-1.1.1a). The archetype graph with O(1)
+edge caching (F-1.1.3) mitigates migration costs, and sparse-set fallback (F-1.1.2) handles
+high-churn components. The hybrid approach captures the best of both models.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design covers the core ECS needs for most game genres but is light on editor-side undo/redo
+integration. User stories US-1.1.49 and US-1.1.50 reference prefab editing, but there is no explicit
+undo stack that snapshots component state before mutations. This gap affects designers (P-5) editing
+entity templates. Additionally, there is no streaming archetype paging feature for worlds exceeding
+available RAM, which would be needed for truly massive persistent MMO worlds beyond the 4M entity
+limit (R-1.1.11a). Adding entity streaming and undo integration would enable open-world MMOs and
+improve the editor workflow for all game genres.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+The ECS design is the backbone and other modules (scene hierarchy F-1.2, spatial index F-1.9, events
+F-1.5) depend heavily on it. It aligns well with the engine constraints: static dispatch via
+generics, no singletons, composition over inheritance. One cohesion gap is between the ECS command
+buffer model (F-1.1.32) and the async I/O reactor (F-1.8): command buffers are synchronous and
+frame-scoped while I/O completions arrive asynchronously. Bridging these requires explicit
+integration where I/O completions are batched into command buffers at poll points. Making the
+command buffer API aware of async completion tokens would improve cohesion between the ECS and async
+I/O subsystems.
 
 ## Open Questions
 

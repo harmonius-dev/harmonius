@@ -2201,6 +2201,206 @@ manages its own I/O thread for the plugin-side socket.
 | Material mapping translation | < 1 ms | R-12.6.25 |
 | Dependency graph 10k assets sort | < 50 ms | R-12.7.1 |
 
+## Plugin SDK ABI Specification
+
+The plugin SDK exposes a stable C ABI (`extern "C"`) for maximum compatibility across DCC hosts.
+Every DCC plugin links against the `harmonius_dcc_sdk` shared library and calls these four entry
+points. All exported symbols use `extern "C"` with `#[no_mangle]` and `#[repr(C)]` structs. The
+shared library links all Rust dependencies statically so that DCC hosts see only the C ABI surface.
+
+**Plugin interface.**
+
+| Function | Signature | Purpose |
+|----------|-----------|---------|
+| `harmonius_plugin_version` | `() -> u32` | Returns the ABI version for host compatibility check |
+| `harmonius_plugin_init` | `(callbacks: *const HostCallbacks) -> PluginHandle` | Initializes plugin state; receives host callback table |
+| `harmonius_plugin_export` | `(handle: PluginHandle, scene: *const SceneDesc, out: *mut ExportBuffer) -> ResultCode` | Exports scene data into the engine binary format |
+| `harmonius_plugin_shutdown` | `(handle: PluginHandle)` | Frees all plugin resources |
+
+**Host callbacks.** The host provides a callback table at init time so the plugin can log, report
+progress, and manage memory without depending on host-specific APIs.
+
+```rust
+/// Callback table provided by the DCC host at
+/// plugin initialization. All function pointers
+/// use the C calling convention.
+#[repr(C)]
+pub struct HostCallbacks {
+    /// Log a message. Severity: 0=info, 1=warn,
+    /// 2=error.
+    pub log: extern "C" fn(
+        severity: u32,
+        msg: *const u8,
+        msg_len: u32,
+    ),
+    /// Report export progress (0.0 to 1.0).
+    pub progress: extern "C" fn(fraction: f32),
+    /// Allocate a buffer of the given size.
+    /// Returns null on failure.
+    pub allocate: extern "C" fn(
+        size: u64,
+    ) -> *mut u8,
+    /// Free a buffer previously returned by
+    /// allocate.
+    pub free: extern "C" fn(ptr: *mut u8),
+}
+```
+
+**Type relationships.**
+
+```mermaid
+classDiagram
+    class HostCallbacks {
+        +log fn(u32, *const u8, u32)
+        +progress fn(f32)
+        +allocate fn(u64) *mut u8
+        +free fn(*mut u8)
+    }
+
+    class SceneDesc {
+        +nodes *const SceneNode
+        +node_count u32
+        +meshes *const MeshRef
+        +mesh_count u32
+        +materials *const MaterialRef
+        +material_count u32
+    }
+
+    class ExportBuffer {
+        +data *mut u8
+        +len u64
+        +capacity u64
+    }
+
+    class PluginHandle {
+        +_opaque [u8; 0]
+    }
+
+    class ResultCode {
+        <<enumeration>>
+        Ok = 0
+        InvalidHandle = 1
+        InvalidScene = 2
+        ExportFailed = 3
+        VersionMismatch = 4
+        OutOfMemory = 5
+    }
+
+    HostCallbacks --> PluginHandle : passed at init
+    PluginHandle --> SceneDesc : reads at export
+    PluginHandle --> ExportBuffer : writes at export
+    ExportBuffer --> ResultCode : returned
+```
+
+**Versioning.** Plugins call `harmonius_plugin_version()` and compare the returned major version
+against the host's expected major version. If the major versions differ, the host refuses to load
+the plugin and logs a diagnostic.
+
+| Change type | Version bump | Rule |
+|-------------|-------------|------|
+| ABI-breaking (struct layout, removed fn) | Major | Plugins must recompile |
+| Additive (new optional fn pointer) | Minor | Old plugins still load |
+| Bug fix (no ABI change) | Patch | Transparent |
+
+```rust
+#[no_mangle]
+pub extern "C" fn harmonius_plugin_version() -> u32 {
+    // Encodes major.minor.patch as a single u32:
+    // bits [31:16] = major, [15:8] = minor,
+    // [7:0] = patch.
+    (ABI_MAJOR << 16) | (ABI_MINOR << 8) | ABI_PATCH
+}
+```
+
+**Sandbox.** Plugins run in a separate child process to isolate crashes, memory corruption, and
+third-party DCC dependencies from the engine. Shared memory carries bulk scene data (vertices,
+textures) with zero-copy semantics. A named pipe carries control messages (init, export commands,
+progress, shutdown). The engine import service monitors the plugin process and re-spawns on crash.
+
+**Export sequence.**
+
+```mermaid
+sequenceDiagram
+    participant DCC as DCC App
+    participant DLL as Plugin DLL
+    participant SHM as Shared Memory
+    participant PIPE as Named Pipe
+    participant IMP as Engine Import Service
+
+    DCC->>DLL: Artist clicks Export
+    DLL->>DLL: harmonius_plugin_version()
+    DLL->>PIPE: Send init command
+    PIPE->>IMP: Verify ABI version
+    IMP-->>PIPE: Ack + HostCallbacks
+
+    DLL->>DLL: harmonius_plugin_init(callbacks)
+    DLL->>DLL: Traverse DCC scene graph
+    DLL->>SHM: Write SceneDesc + mesh data
+    DLL->>PIPE: Send export command
+
+    PIPE->>IMP: Notify export ready
+    IMP->>SHM: Read SceneDesc + mesh data
+    IMP->>IMP: Validate and convert to asset
+    IMP-->>PIPE: ResultCode
+
+    PIPE-->>DLL: Export result
+    DLL->>DLL: harmonius_plugin_shutdown()
+    DLL-->>DCC: Report success/failure
+```
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The DCC plugin architecture must use a C API (F-12.6.1) to maintain a stable ABI across engine
+versions and DCC tool host environments. This prevents using Rust types directly in the plugin
+interface -- every struct must be C-compatible, every callback must be `extern "C"`, and error
+handling must use return codes instead of Result types. If lifted, we could expose a richer Rust API
+with proper type safety and error propagation. The C ABI constraint is necessary because DCC tools
+(Maya, Houdini, Blender) load plugins as shared libraries and expect C linkage. The trade-off is
+justified for ecosystem reach.
+
+**Q2. How can this design be improved?**
+
+The live link connection (F-12.6.2) uses TCP with a binary delta protocol but the design does not
+specify reconnection behavior or session resumption after network interruption. Artists who put
+their machine to sleep mid-session would lose the live link state. The Git LFS lock workflow
+(F-12.6.22) auto-locks on open, but this can cause lock contention when artists browse files without
+intending to edit them -- a "lock on first edit" semantic would reduce false locks. The material
+mapping table (F-12.6.25) is extensible but does not support conditional mappings (e.g., map
+glossiness to roughness only when metallic workflow is detected).
+
+**Q3. Is there a better approach?**
+
+An alternative to per-DCC native plugins is a universal intermediate format (like USD or glTF) that
+all DCC tools export to, with the engine importing only that format. This would eliminate
+maintaining 8+ DCC-specific plugins (Houdini, Maya, Blender, ZBrush, Photoshop, Illustrator,
+MotionBuilder, Marvelous Designer). We chose native plugins because intermediate formats lose
+tool-specific data (Maya animation curves, Houdini packed primitives, Marvelous Designer fabric
+properties per F-12.6.4, F-12.6.7, F-12.6.10). The engineering cost of per-tool plugins is high but
+preserves full artistic fidelity.
+
+**Q4. Does this design solve all customer problems?**
+
+The DCC plugin coverage is broad (US-12.6.1 through US-12.6.48 across all tools). However, there is
+no plugin for audio middleware (Wwise, FMOD) that would let sound designers export sound banks
+directly. Since the engine has its own audio system (F-5.1), this is intentional, but studios
+migrating from other engines may have existing Wwise projects. The asset versioning system
+(F-12.7.3, F-12.7.4) supports structural diffing and merging for binary assets, but there is no
+feature for preview thumbnails in the diff view -- artists reviewing merge conflicts need visual
+context, not just structural deltas.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The DCC plugin system connects well to the content pipeline through the native binary format
+(F-12.7.1) and the import pipeline (F-12.1.1). The live link (F-12.6.2) integrates with hot reload
+(F-12.4.2) for immediate viewport updates. The Git integration (F-12.6.22, F-12.6.24) aligns with
+the engine editor's version control features (F-15.10). However, the plugin SDK uses a C API while
+the engine itself is Rust-first -- this creates a translation layer that other subsystems do not
+need. The structural diffing system (F-12.7.3) is unique to the content pipeline and has no analogue
+in other engine modules, which is appropriate given that no other module deals with binary asset
+versioning.
+
 ## Open Questions
 
 1. **Live link transport** -- TCP localhost is simple and cross-platform but adds kernel overhead.

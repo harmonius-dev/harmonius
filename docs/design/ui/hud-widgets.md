@@ -2235,6 +2235,54 @@ platforms. The `rustybuzz` crate provides pure-Rust HarfBuzz-compatible shaping.
 `ProgressWidget` pattern: a fill bar with direction, color ramp, and optional label. Consider
 implementing a generic `ProgressWidget` component that these specialized widgets compose.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code constraint (all UI authored visually, users never write code) limits the expressiveness
+of widget composition. Complex HUD behaviors like raid frame priority filtering (F-10.3.1 with 40+
+bars) or nameplate overlap avoidance (F-10.3.4 with 200+ nameplates) require algorithmic logic that
+is awkward to express as visual graph nodes. Lifting the no-code constraint would allow scripted
+widget behaviors for edge cases. Without lifting it, we must ensure the logic graph system
+(F-15.8.4) is expressive enough to handle sorting, filtering, and spatial layout algorithms
+visually.
+
+**Q2. How can this design be improved?**
+
+The nameplate system (R-10.3.4) projects world positions to screen space each frame but does not
+share projection results with other world-anchored UI (floating combat text F-10.3.5, quest markers
+F-10.3.7). Each system independently transforms world-to-screen, wasting cycles. A shared
+WorldToScreenCache that all world-anchored widgets query would eliminate redundant projection math.
+The chat system (F-10.3.8) also lacks message deduplication for spam, relying only on throttling
+which does not catch copy-paste spam.
+
+**Q3. Is there a better approach?**
+
+For rich text rendering (F-10.2.1), an alternative is to use a retained text layout cache (like
+DirectWrite or CoreText) instead of re-shaping text every frame. We chose frame-by-frame shaping
+through a bundled HarfBuzz-compatible library to maintain cross-platform consistency. Platform text
+shapers produce subtly different glyph positioning, which would cause layout mismatches in
+replicated UI (chat, nameplates). The trade-off is higher CPU cost for text-heavy panels, mitigated
+by dirty-flag glyph caching.
+
+**Q4. Does this design solve all customer problems?**
+
+The compass bar (F-10.3.10) and off-screen indicators (F-10.3.11) cover navigation, but the design
+lacks a 3D waypoint beam or pillar that renders in world space for distant objectives. Many
+open-world games use vertical light pillars visible across the world to guide players. The inventory
+grid (F-10.3.9) also lacks item comparison tooltips -- showing the stat delta between an equipped
+item and a hovered item side by side -- which is standard in RPG and loot-driven games.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The HUD and widget designs share the same widget tree (F-10.1.1), style system (F-10.1.6), and data
+binding (F-10.1.7) as the framework, ensuring visual and behavioral consistency. The UI rendering
+pipeline (F-10.4.1) uses the engine's render graph for batching, which integrates with GPU resource
+management. One inconsistency is that floating combat text uses its own trajectory and animation
+system instead of the widget animation system (F-10.1.13). Unifying these would reduce code
+duplication and allow designers to use the same easing curves for both HUD animations and combat
+text trajectories.
+
 ## Open Questions
 
 1. **Text shaping crate** -- `rustybuzz` vs bundling a C HarfBuzz build via cxx.rs. `rustybuzz` is

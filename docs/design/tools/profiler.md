@@ -1297,6 +1297,51 @@ The profiler integrates with the VFX particle budget system. Particle count, emi
 simulation time are tracked as profiler counters. Budget overruns trigger profiler markers for
 identification in the timeline view.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The < 1% overhead budget at 300+ FPS (US-15.5.1.8) forces all instrumentation to use lock-free
+per-thread ring buffers with no heap allocation in the hot path. Lifting this would allow richer
+per-event metadata (full call stacks, component data snapshots) at every scope boundary. The best
+solution without this constraint would be full tracing with per-event context, similar to Chrome's
+tracing infrastructure. The impact is significantly more detailed profiling data, but even a 2%
+overhead at 300 FPS steals 66 microseconds per frame, which can mask the real performance profile.
+
+**Q2. How can this design be improved?**
+
+The `FrameCollector` (F-15.5.1) drains all ring buffers at the frame boundary, which creates a
+latency spike proportional to total event count. The memory profiler (F-15.5.3) captures call stacks
+on every allocation, adding ~1 us per alloc even when the profiler UI is closed. The remote
+profiling protocol (F-15.5.7) uses a custom binary format without schema evolution support.
+Amortizing drain across the frame, making stack capture opt-in per subsystem, and adding protocol
+versioning would improve robustness.
+
+**Q3. Is there a better approach?**
+
+An alternative is to use platform-native profiling exclusively (ETW on Windows, Instruments on
+macOS, perf on Linux) rather than a custom instrumentation system. We build custom because platform
+tools cannot display engine-specific concepts like ECS system timings, render graph pass budgets, or
+network channel breakdowns. The custom profiler also enables remote profiling to mobile devices
+(F-15.5.7) where platform tools are limited.
+
+**Q4. Does this design solve all customer problems?**
+
+The profiler lacks automated regression detection -- it captures data but does not alert when frame
+times regress between builds. There is no support for profiling audio thread performance, despite
+the audio runtime having a strict < 0.5 ms latency budget. Adding CI-integrated performance
+regression tests with historical comparison and an audio thread profiler lane would serve teams
+shipping on mobile platforms where performance budgets are tight.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The profiler integrates directly with the ECS scheduler for system timing, the render graph for GPU
+pass timing, the networking layer for bandwidth tracking, and the VFX system for particle budgets.
+All remote I/O uses `IoReactor`. Platform backends are selected via `cfg` attributes, matching the
+engine's platform abstraction pattern. The `profile_scope!` macro is designed to be zero-cost when
+profiling is compiled out, aligning with the static dispatch preference. No significant cohesion
+gaps exist.
+
 ## Open Questions
 
 1. **TSC vs. platform timer** -- `rdtsc` is the fastest timestamp source (~10 ns) but requires

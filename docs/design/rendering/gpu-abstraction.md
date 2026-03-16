@@ -1906,10 +1906,86 @@ impl FeatureEmulation {
 
 ### Work Graph Runtime
 
+CPU-side work graph emulation is the **primary execution path**. It works on all platforms (Metal,
+Vulkan, D3D12). The task graph handles fan-out: a work graph node expands into multiple indirect
+dispatch tasks based on GPU feedback from the previous frame.
+
+Native D3D12 work graphs are an **optional acceleration path**. When available, the task graph emits
+a single work graph dispatch node instead of the expanded indirect chain. The emulation and native
+paths produce identical outputs (GR-3.4).
+
+All work graph APIs are safe Rust. The emulation uses `ExecuteIndirect`-style dispatch wrapped in
+the safe `CommandEncoder` API. No raw GPU pointers are exposed.
+
+| Path | Platforms | Mechanism |
+|------|-----------|-----------|
+| **CPU emulation (primary)** | Metal, Vulkan, D3D12 | Indirect dispatch chain via `WorkGraphEmulator`. Each node reads GPU-written arguments from a triple-buffered feedback ring. |
+| **Native acceleration (optional)** | D3D12 (when `DeviceCapabilities::work_graphs` is true) | Single `DispatchGraph` call via native D3D12 work graph API. |
+
+```mermaid
+flowchart TD
+    subgraph decide["Path Selection"]
+        CAP{"work_graphs\ncapability?"}
+        CAP -->|Yes| NATIVE["Native D3D12\nDispatchGraph"]
+        CAP -->|No| EMU["CPU Emulation\nIndirect Dispatch Chain"]
+    end
+
+    subgraph emu["WorkGraphEmulator"]
+        FB["ReadbackRing\n(triple-buffered)"]
+        ID1["IndirectDispatch 0"]
+        ID2["IndirectDispatch 1"]
+        ID3["IndirectDispatch N"]
+        FB --> ID1 --> ID2 --> ID3
+    end
+
+    EMU --> emu
+```
+
+#### WorkGraphEmulator (CPU-Side Emulation)
+
+```rust
+/// CPU-side work graph emulation. Expands work
+/// graph nodes into indirect dispatch chains
+/// within the task graph. Safe -- all GPU commands
+/// go through the safe CommandEncoder API.
+pub struct WorkGraphEmulator {
+    dispatch_chain: Vec<IndirectDispatch>,
+}
+
+impl WorkGraphEmulator {
+    /// Emit indirect dispatch tasks into the
+    /// task graph. Each dispatch reads GPU-written
+    /// arguments from the previous frame's
+    /// feedback buffer (triple-buffered, safe
+    /// readback via fences).
+    pub fn emit_tasks(
+        &self,
+        builder: &mut TaskGraphBuilder,
+        feedback: &ReadbackRing,
+    );
+}
+
+/// Triple-buffered GPU readback ring for safe
+/// CPU access to GPU-written dispatch arguments.
+/// Fence-guarded -- CPU only reads slots the
+/// GPU has finished writing.
+pub struct ReadbackRing {
+    buffers: [BufferHandle; 3],
+    fence_values: [u64; 3],
+    current_slot: usize,
+}
+```
+
+#### WorkGraphRuntime (Unified API)
+
 ```rust
 /// GPU work graph execution. Transparently selects
 /// between native GPU work graphs (D3D12) and
 /// CPU-side emulation (Metal, Vulkan). (GR-3.1)
+///
+/// All methods are safe Rust. The emulation path
+/// uses indirect dispatch wrapped in safe command
+/// buffer APIs. No raw GPU pointers exposed.
 pub struct WorkGraphRuntime { /* ... */ }
 
 pub struct WorkGraphDesc {
@@ -1937,20 +2013,33 @@ impl WorkGraphRuntime {
 
     /// Compile a work graph. On D3D12 with native
     /// support, creates a GPU program. Otherwise,
-    /// builds an indirect dispatch chain. (GR-3.2,
-    /// GR-3.3)
+    /// builds an emulated indirect dispatch chain.
+    /// (GR-3.2, GR-3.3)
     pub fn compile(
         &mut self,
         desc: &WorkGraphDesc,
     ) -> Result<WorkGraphHandle, GpuError>;
 
     /// Execute a compiled work graph. Single API
-    /// regardless of native/emulated path. (GR-3.4)
+    /// regardless of native/emulated path. On the
+    /// emulated path, expands into indirect dispatch
+    /// tasks via the task graph. (GR-3.4)
     pub fn dispatch<B: GpuBackend>(
         &self,
         cmd: &mut B::CommandBuffer,
         handle: WorkGraphHandle,
         input: &[u8],
+    );
+
+    /// Emit work graph nodes as task graph entries.
+    /// On native path, emits a single dispatch node.
+    /// On emulated path, emits the full indirect
+    /// dispatch chain via WorkGraphEmulator.
+    pub fn emit_tasks(
+        &self,
+        builder: &mut TaskGraphBuilder,
+        handle: WorkGraphHandle,
+        feedback: &ReadbackRing,
     );
 
     /// Returns true if using native GPU work graphs.
@@ -2261,6 +2350,113 @@ on the hot path:
 | Shader compile (DXIL -> metallib) | < 50 ms per shader | -- |
 | Barrier batch (100 barriers) | Single API call | R-2.1.9 |
 | Fence async wakeup latency | < 1 frame (16 ms @ 60fps) | constraints |
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The static dispatch constraint (constraints.md) requires the entire rendering pipeline to be generic
+over `GpuBackend` with associated types rather than `dyn` trait objects. This means every rendering
+system must be monomorphized three times (Metal, D3D12, Vulkan), increasing binary size and compile
+times. Lifting this constraint would allow a single vtable-based backend interface with runtime
+dispatch, reducing binary size at the cost of per-call virtual dispatch overhead. The static
+dispatch approach is correct for the hot path (command buffer encoding runs millions of times per
+frame), but cold paths like device creation and pipeline compilation could safely use `dyn` without
+measurable impact. The constraint preserves sub-microsecond per-draw encoding overhead.
+
+**Q2. How can this design be improved?**
+
+The barrier optimization system (F-2.1.9) is a no-op on Metal because Apple's driver handles hazard
+tracking, but the design still runs barrier analysis logic on macOS. A compile-time specialization
+that eliminates barrier code paths entirely on Metal (via `cfg(target_os = "macos")`) would reduce
+CPU overhead. The work graph emulation (F-2.1.10) on Vulkan and Metal uses indirect dispatch chains,
+but the design does not specify the maximum dispatch depth or how to handle node fan-out exceeding
+the indirect dispatch buffer size. The GPU memory allocator (F-2.1.7) uses per-backend alignment
+(256B D3D12, variable Vulkan, page-aligned Metal), but the design does not address alignment waste
+for small allocations on Metal where page alignment (4KB or 16KB) wastes significant memory.
+
+**Q3. Is there a better approach?**
+
+Using `wgpu` or `gpu-allocator` crate as the abstraction layer would save significant implementation
+effort. We chose a custom abstraction because `wgpu` targets WebGPU semantics and does not expose
+D3D12 work graphs, Metal argument buffers, or Vulkan descriptor indexing -- all of which are
+required features. The `gpu-allocator` crate from Traverse Research is a strong candidate for the
+memory sub-allocator (F-2.1.7) and could be adopted as a low-level dependency rather than
+reimplementing offset-based allocation. This aligns with the constraint to prefer well-maintained
+libraries over custom implementations.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks explicit GPU crash recovery. When a TDR (timeout detection and recovery) occurs on
+Windows or a GPU hang on macOS, the engine has no defined recovery path. User stories focus on
+profiling (US-2.1.12.1) and correctness (US-2.1.1.2) but not resilience. Adding a device-lost
+callback with automatic resource recreation would improve robustness for long-running game sessions.
+The design also lacks GPU memory pressure notifications -- when VRAM is exhausted, the allocator
+fails but does not proactively downgrade quality tiers. Connecting memory budget tracking (GR-1.7)
+to the render graph's budget culling (F-2.2.8) would enable proactive quality reduction.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The GPU abstraction is the foundation layer that all rendering subsystems depend on, and its
+trait-based design with associated types aligns well with the engine's static dispatch preference.
+The shader pipeline (HLSL -> DXC -> DXIL/SPIR-V -> MSL via Metal Shader Converter) follows the
+constraints exactly. One cohesion concern is that the Swift-to-C-to-bindgen FFI path for Metal
+(F-2.1.4) is unique in the engine -- no other subsystem uses Swift. The constraints.md mentions
+`objc2-metal` as a simpler alternative that would eliminate the Swift layer entirely. Evaluating
+this during the prototype phase (as noted in constraints.md) could simplify the FFI boundary and
+make the Metal backend more consistent with the C-based Vulkan and D3D12 backends.
+
+## Safety Guarantees
+
+All GPU abstraction APIs are safe Rust. Internal `unsafe` is confined to platform FFI wrappers
+(Metal, D3D12, Vulkan) and is audited with documented safety invariants.
+
+| Guarantee | Mechanism |
+|-----------|-----------|
+| **No unsafe in public API.** | All user-facing types (`GpuBackend`, `CommandBuffer`, `GpuDevice`, `GpuAllocator`, `WorkGraphRuntime`, `WorkGraphEmulator`) and functions are safe Rust. No `unsafe` in any public signature. |
+| **Compile-time validation.** | Pipeline state objects are validated at creation time -- invalid blend/depth/stencil configurations produce structured errors before any GPU encoding. Type-safe command buffer methods prevent binding wrong resource types at compile time. |
+| **Scoped borrows.** | All GPU command encoding uses scoped borrows. Command buffers are borrowed for the encoding scope and cannot outlive their recording session. The `TrackedCommandBuffer` wrapper enforces begin/end pairing. |
+| **Type-safe resource handles.** | GPU resources use generational handles (`GpuHandle<T>`) with phantom type markers. No raw pointers. Stale handles (use-after-free) are caught by generation checks at every access. |
+| **Internal unsafe encapsulation.** | Platform FFI (Metal via Swift @_cdecl, D3D12 via COM bindgen, Vulkan via ash) is encapsulated in `harmonius_gpu::platform::*` modules. Each `unsafe` block documents its safety invariants. No unsafe propagates to consumers. |
+
+### Handle Safety Model
+
+```mermaid
+flowchart LR
+    subgraph safe["Safe API Surface"]
+        CREATE["create_buffer(desc)"]
+        USE["bind_vertex_buffer(handle)"]
+        FREE["destroy_buffer(handle)"]
+    end
+
+    subgraph internal["Internal (unsafe encapsulated)"]
+        ALLOC["Platform alloc"]
+        BIND["Platform bind"]
+        DEALLOC["Platform dealloc"]
+    end
+
+    CREATE -->|"returns GpuHandle&lt;Buffer&gt;"| USE
+    USE -->|"generation check"| BIND
+    FREE -->|"increments generation"| DEALLOC
+    USE -.->|"stale handle"| ERR["InvalidHandle error"]
+```
+
+### Fence-Guarded Readback Safety
+
+```rust
+/// ReadbackRing ensures the CPU never reads a
+/// buffer slot the GPU is still writing. Fences
+/// guard each slot. Safe -- no data races.
+impl ReadbackRing {
+    /// Returns the oldest completed slot.
+    /// Checks fence_completed_value before
+    /// granting read access.
+    pub fn read_completed(
+        &self,
+        device: &impl GpuDevice,
+    ) -> Option<&[u8]>;
+}
+```
 
 ## Open Questions
 

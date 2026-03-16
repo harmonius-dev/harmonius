@@ -1779,6 +1779,61 @@ world_seed
 validation, node evaluation, and visual editor infrastructure, parameterized with
 procedural-generation-specific node types.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code engine constraint is the biggest limitation. All procedural generation must be authored
+through visual node graphs (F-3.6.1), which caps expressive power compared to scripted generation.
+Complex algorithms like L-system road networks (F-3.6.15), WFC (F-3.6.20--22), and plate tectonics
+(F-3.6.42) require deeply nested subgraphs that become hard to visualize. Lifting this constraint
+would allow power users to write custom generation logic in Rust or a scripting language, enabling
+algorithms that do not map well to node graphs. The best unconstrained solution would offer both
+visual graphs and a text-based DSL. However, the no-code constraint is a core engine principle, so
+the graph system must compensate with control flow nodes (F-3.6.8) and subgraph encapsulation.
+
+**Q2. How can this design be improved?**
+
+The design spans 29+ features (F-3.6.1--29) covering points, roads, buildings, WFC, biomes, and
+planetary generation. This breadth risks shallow implementations. Prioritizing the core graph engine
+(F-3.6.1--8) with deep polish before tackling domain-specific generators would reduce risk. GPU
+readback for collision and navigation mesh updates (after GPU heightmap generation) introduces
+latency that is not well addressed. Deterministic seeding via xxHash (F-3.6.5) is good, but the
+design does not specify how determinism interacts with parallel node evaluation across threads,
+where execution order may vary. The streaming chunk boundary problem (Open Question 4) needs a
+concrete solution before implementation.
+
+**Q3. Is there a better approach?**
+
+Houdini Engine integration (F-3.6.25) provides a proven procedural pipeline but adds a runtime
+licensing dependency and breaks the self-contained engine philosophy. The alternative is building
+all generation natively, which we do for most features. We keep Houdini as an optional editor-time
+tool with baked output so the runtime remains license-free. A pure GPU compute approach for all
+generation (not just vegetation placement) would be faster but harder to debug and author. The
+hybrid CPU graph with GPU-accelerated leaf nodes (F-3.6.32) is the right middle ground for the
+no-code authoring requirement.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers terrain, vegetation, roads, buildings, and WFC comprehensively. However, interior
+procedural generation (F-3.2.8 portals exist but no procedural room layout generator) is missing.
+Roguelike and dungeon-crawler games need procedural room graphs, corridor placement, and encounter
+distribution. Procedural quest and narrative content generation is also absent. Adding a room-graph
+generator node type would enable roguelikes, and a reward/encounter distribution node would help
+RPGs. The planetary pipeline (F-3.6.34--63) is ambitious but untested at scale; games like No Man's
+Sky show that quality control over procedural planets is the hardest unsolved problem.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The PCG graph reuses the universal logic graph runtime from the tools domain (F-15.8), which is
+excellent for cohesion. Terrain stamps (F-3.6.9--10) integrate with the terrain system's heightfield
+and splatmap components. Vegetation placement (F-3.6.12) feeds into the foliage instancing pipeline
+(F-3.3.1). The road generator (F-3.6.14--17) outputs spline entities consumed by the spline mesh
+system. These cross-domain contracts are well-defined. However, the WFC system (F-3.6.20-- 22) does
+not reference the ECS entity spawning pipeline, leaving it unclear how WFC tile results become game
+entities. The biome system (F-3.6.11) should share data with the foliage placement rules (F-3.3.2)
+but the coupling is implicit.
+
 ## Open Questions
 
 1. **Node evaluation granularity** -- Should each PCG node be an individual task on the thread pool,

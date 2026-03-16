@@ -1133,6 +1133,63 @@ Spring-damper primitives (`SpringDamper<T>` for f32, Vec3, and Quat) are defined
 [shared-primitives.md](../core-runtime/shared-primitives.md) and shared with physics constraints,
 procedural animation, and cloth simulation.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The no-code constraint (all tuning via visual editor data assets) is the biggest limiter. Every
+spring parameter, recoil pattern, and ADS configuration must be serializable and editable without
+code. This prevents designers from writing custom per-weapon procedural scripts for unique behavior
+(e.g., a shotgun that racks between shots). If lifted, a scripting layer could express
+weapon-specific logic declaratively. The ideal solution would be visual logic graphs driving weapon
+behavior alongside spring data assets. Removing the constraint would sacrifice the no-code guarantee
+but enable more expressive per-weapon customization for games with dozens of unique weapon
+archetypes.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The additive spring composition model is simple but has ordering sensitivity: sway, bob, and recoil
+offsets compose additively, so extreme values in any one spring can push the weapon outside the
+viewport. There is no global clamp on the composed transform. The dual wield design (F-9.6.4)
+doubles viewmodel draw calls with no batching strategy, which may be costly on mobile (US-9.6.4.4).
+The ADS system uses a single linear interpolation curve, but real weapons benefit from
+ease-in/ease-out curves for ADS transitions, which the current `blend_alpha` linear ramp does not
+provide.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+A layered animation approach (authored ADS, recoil, and inspect animations blended via the state
+machine) would give animators more direct control. We are not taking it because authored animations
+do not compose: you would need separate clips for every sway-during- ADS-during-sprint combination.
+The spring-damper approach (F-9.6.2) composes additively by design, requiring zero per-combination
+clip authoring. The trade-off is that tuning springs requires iterative parameter adjustment rather
+than keyframe editing.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The traced requirements (R-9.6.1 through R-9.6.4) and user stories are fully covered. Missing
+features include melee weapon first-person animation (sword swings, shield blocks), which would
+require a different motion model than spring-damper sway. Also missing is vehicle-mounted weapon
+animation (turret sway, vehicle vibration transfer), which US-9.6.2.1 does not address. Adding melee
+viewmodel support would enable first-person RPGs and survival games. Adding vehicle-mounted weapon
+support would enable FPS games with vehicular combat.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+The design is cohesive: all state lives as ECS components, spring-damper primitives are shared types
+from shared-primitives.md, and weapon parameters are data assets edited in the visual editor. It
+differs from other animation modules by being entirely CPU-side (no GPU compute), which is
+appropriate given the low per-frame cost (under 0.1 ms total). The hand IK integration point
+(viewmodel compose feeds into the IK system from F-9.3.1) could be tighter -- currently the hand IK
+solver type is unspecified (Open Question 5). Aligning the IK interface with the procedural
+animation module would improve cohesion.
+
 ## Open Questions
 
 1. **Spring integrator** -- Semi-implicit Euler is simple and stable for moderate stiffness. Very

@@ -1615,6 +1615,51 @@ pub enum DocError {
 | Help panel open | < 500 ms | US-15.19.1.5 |
 | API ref generation (full engine) | < 60 s | US-15.19.1.1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code constraint means all tutorial authoring must use logic graphs (F-15.8.4) rather than
+scripting. This makes tutorials verbose to author -- a simple "click here, then there" sequence
+requires multiple graph nodes. Lifting this would allow a declarative tutorial DSL (YAML or TOML)
+that maps steps to editor actions. The best solution would be a lightweight tutorial schema compiled
+to logic graph bytecode. The impact is simpler authoring for content teams, but adding a DSL
+introduces a new language surface that must be maintained.
+
+**Q2. How can this design be improved?**
+
+The translation memory (F-15.13.1) uses fuzzy string matching but does not leverage the engine's AI
+assistant (F-15.9) for translation suggestions. The API reference generator (F-15.19.1) extracts
+from `Reflect` metadata but does not cross-reference logic graph node documentation (F-15.19.2),
+creating two disconnected documentation systems. The XLIFF workflow (F-15.13.3) supports
+export/import but lacks incremental diff export -- every export includes all strings, making
+translator workflows inefficient for large projects.
+
+**Q3. Is there a better approach?**
+
+For localization, an alternative is to use GNU gettext instead of ICU MessageFormat. Gettext has
+broader tooling support and simpler syntax. We chose ICU because it handles complex plural rules,
+gender agreement, and number formatting across all locales natively, while gettext requires custom
+plural rule definitions. ICU's pattern syntax (F-15.13.1) also integrates with the visual string
+table editor without requiring a separate compilation step.
+
+**Q4. Does this design solve all customer problems?**
+
+There is no support for localized audio (voiceover) management alongside text strings. Studios
+producing narrative-heavy games need to track voice recording status per locale per string. The
+documentation system lacks community contribution workflows -- users cannot submit corrections or
+examples. Adding a voiceover tracking column to the string table and a documentation feedback
+mechanism would serve RPG and narrative game developers.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The localization system integrates with the UI widget framework (F-13.1) for string binding and
+layout reflow, and with the asset pipeline for locale-specific asset variants. The documentation
+system uses the same `Reflect` metadata as the inspector (F-15.1) and serialization (F-1.4). One
+cohesion gap is that help tooltips (F-15.19.5) use a separate `HelpRegistry` rather than the
+engine's existing `TypeRegistry` -- merging them would reduce duplication and ensure help stays
+synchronized with type definitions.
+
 ## Open Questions
 
 1. **ICU data size** -- Full CLDR data is ~30 MB. Ship all locales or only configured ones? Shipping

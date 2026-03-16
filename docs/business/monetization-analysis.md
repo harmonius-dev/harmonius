@@ -1,8 +1,41 @@
 # Monetization and Open-Source Strategy Analysis
 
 This document analyzes the business model for the Harmonius game engine. The entire engine is open
-source under Apache 2.0, with revenue from optional managed hosting, enterprise support, marketplace
-commission, and console SDK licensing.
+source under Apache 2.0, with revenue from proprietary console SDK addon licenses, enterprise
+support contracts, and optional managed hosting.
+
+## 0. Licensing Model
+
+### Core Principles
+
+| Principle | Detail |
+|-----------|--------|
+| Engine license | 100% free, Apache 2.0, forever |
+| Royalties | None -- developers keep 100% of game revenue |
+| Per-seat fees | None -- team size does not affect cost |
+| Open source asset store | Free, community-run, Git-based repository |
+| External store integration | FAB, Synty, TurboSquid integration in-editor -- engine takes no commission |
+| Proprietary addons | ONLY for console SDKs (PlayStation, Xbox, Nintendo) that cannot be open-sourced due to platform holder NDAs; sold with 24/7 support by the engine creator |
+| AI content generation | Local inference only, no cloud fees, included with the engine |
+
+### Revenue Sources
+
+| Source | Description | Recurring |
+|--------|-------------|-----------|
+| Console SDK addon licenses | Annual per-platform license for proprietary console backend integrations (PS5, Xbox, Switch) | Yes |
+| Enterprise support contracts | Priority bug fixes, dedicated engineer, SLA guarantees for studios with shipping deadlines | Yes |
+| Managed hosting (optional) | Convenience service for teams who prefer not to self-host collaboration, build cache, and mod infrastructure on AWS | Yes |
+
+### What We Do NOT Charge For
+
+| Item | Why it is free |
+|------|----------------|
+| Engine (all components) | Apache 2.0 -- open source builds trust and maximizes adoption |
+| Open source asset store | Community-run repository; free to browse, download, and publish |
+| External store purchases | We take no commission on FAB, Synty, TurboSquid, or any third-party store purchases |
+| AI content generation | Runs locally on user hardware; no cloud dependency, no per-generation fee |
+| Self-hosting (AWS CDK) | Full CDK stacks provided; user pays only AWS infrastructure costs |
+| Marketplace commission | No built-in paid marketplace; the open source store is free and external stores handle their own payments |
 
 ## 1. Component Classification
 
@@ -68,10 +101,11 @@ convenience service (managed hosting).
 | Self-hosting (AWS CDK) | Free (user pays AWS) | Full AWS CDK stacks provided for all services |
 | Managed hosting | $29/user/month | Optional; for teams who prefer not to self-host |
 | Enterprise support | $10,000-$50,000/year | Priority bug fixes, dedicated engineer, SLA |
-| Asset marketplace commission | 12% | On all paid asset sales |
-| Console SDK license (PS5) | $10,000/year | Covers NDA compliance and platform updates |
-| Console SDK license (Xbox) | $10,000/year | Covers NDA compliance and platform updates |
-| Console SDK license (Switch) | $10,000/year | Covers NDA compliance and platform updates |
+| Console SDK license (PS5) | $10,000/year | Covers NDA compliance, 24/7 support, and platform updates |
+| Console SDK license (Xbox) | $10,000/year | Covers NDA compliance, 24/7 support, and platform updates |
+| Console SDK license (Switch) | $10,000/year | Covers NDA compliance, 24/7 support, and platform updates |
+| Open source asset store | Free | Community-run; no fees to browse, download, or publish |
+| External store integration | Free | FAB, Synty, TurboSquid; engine takes no commission |
 | Education and non-commercial | Free | All components, including managed hosting trial |
 
 ### Key Pricing Principles
@@ -79,7 +113,11 @@ convenience service (managed hosting).
 1. **No royalties** -- Developers keep 100% of game revenue regardless of sales volume.
 2. **No per-seat fees** -- Team size does not affect engine cost.
 3. **Self-hosting is always free** -- Managed hosting is a convenience, not a requirement.
-4. **Console SDKs are the only paid engine component** -- Required only for console shipping.
+4. **Console SDKs are the only proprietary addons** -- Required only for console shipping; includes
+   24/7 support.
+5. **No marketplace commission** -- The open source asset store is free; external store integrations
+   take no cut.
+6. **AI content generation is free** -- Local inference runs on user hardware with no cloud fees.
 
 ### Comparison: Self-Hosted vs. Managed Hosting
 
@@ -221,9 +259,8 @@ Most users self-host for free. A minority opt for managed hosting for convenienc
 |----------------|-------------|----------------|
 | Managed hosting | 200 users x $29/mo x 12 | $69,600 |
 | Enterprise support | 2 contracts x $15K avg | $30,000 |
-| Marketplace commission | 12% of $200K GMV | $24,000 |
 | Console SDK licenses | 5 studios x 1.5 platforms avg x $10K | $75,000 |
-| **Total revenue** | | **$198,600** |
+| **Total revenue** | | **$174,600** |
 
 #### Year 2 (Growth)
 
@@ -231,9 +268,8 @@ Most users self-host for free. A minority opt for managed hosting for convenienc
 |----------------|-------------|----------------|
 | Managed hosting | 1,200 users x $29/mo x 12 | $417,600 |
 | Enterprise support | 8 contracts x $20K avg | $160,000 |
-| Marketplace commission | 12% of $1M GMV | $120,000 |
 | Console SDK licenses | 20 studios x 1.8 platforms avg x $10K | $360,000 |
-| **Total revenue** | | **$1,057,600** |
+| **Total revenue** | | **$937,600** |
 
 #### Year 3 (Traction)
 
@@ -241,9 +277,8 @@ Most users self-host for free. A minority opt for managed hosting for convenienc
 |----------------|-------------|----------------|
 | Managed hosting | 3,000 users x $29/mo x 12 | $1,044,000 |
 | Enterprise support | 20 contracts x $25K avg | $500,000 |
-| Marketplace commission | 12% of $5M GMV | $600,000 |
 | Console SDK licenses | 50 studios x 2 platforms avg x $10K | $1,000,000 |
-| **Total revenue** | | **$3,144,000** |
+| **Total revenue** | | **$2,544,000** |
 
 #### Year 5 (Maturity)
 
@@ -251,19 +286,17 @@ Most users self-host for free. A minority opt for managed hosting for convenienc
 |----------------|-------------|----------------|
 | Managed hosting | 12,000 users x $29/mo x 12 | $4,176,000 |
 | Enterprise support | 50 contracts x $30K avg | $1,500,000 |
-| Marketplace commission | 12% of $20M GMV | $2,400,000 |
 | Console SDK licenses | 150 studios x 2.2 platforms avg x $10K | $3,300,000 |
-| **Total revenue** | | **$11,376,000** |
+| **Total revenue** | | **$8,976,000** |
 
 ### Revenue Mix at Maturity (Year 5)
 
 | Revenue stream | Annual revenue | % of total |
 |----------------|---------------|------------|
-| Managed hosting | $4,176,000 | 36.7% |
-| Console SDK licenses | $3,300,000 | 29.0% |
-| Marketplace commission | $2,400,000 | 21.1% |
-| Enterprise support | $1,500,000 | 13.2% |
-| **Total** | **$11,376,000** | **100%** |
+| Managed hosting | $4,176,000 | 46.5% |
+| Console SDK licenses | $3,300,000 | 36.8% |
+| Enterprise support | $1,500,000 | 16.7% |
+| **Total** | **$8,976,000** | **100%** |
 
 ### Cost Model (Annual, at Maturity Year 5)
 
@@ -274,18 +307,23 @@ Most users self-host for free. A minority opt for managed hosting for convenienc
 | Community and DevRel (5 staff) | 5 x $150K fully loaded | $750,000 |
 | Operations and overhead | Estimate | $500,000 |
 | **Total cost** | | **$9,276,880** |
-| **Net income** | | **$2,099,120** |
+| **Net income** | | **-$300,880** |
+
+At maturity with 25 engineers, the model is roughly break-even. Profitability requires either higher
+managed hosting adoption, more console licensees, or a smaller engineering team during the growth
+phase.
 
 ### Break-Even Analysis
 
 | Team size | Annual cost | Required managed hosting users (at $7.98 margin) | Additional revenue needed |
 |-----------|-------------|--------------------------------------------------|--------------------------|
-| 10 engineers | $2,500,000 | 2,000 | $1,308,560 from support + console + marketplace |
-| 25 engineers | $6,250,000 | 5,000 | $4,058,560 from support + console + marketplace |
-| 50 engineers | $12,500,000 | 10,000 | $8,558,560 from support + console + marketplace |
+| 10 engineers | $2,500,000 | 2,000 | $1,308,560 from support + console |
+| 25 engineers | $6,250,000 | 5,000 | $4,058,560 from support + console |
+| 50 engineers | $12,500,000 | 10,000 | $8,558,560 from support + console |
 
 Managed hosting alone cannot sustain a large team. Console SDK licenses and enterprise support are
-critical secondary revenue streams that together with marketplace commission close the gap.
+the critical secondary revenue streams. Without a paid marketplace commission, the model depends
+more heavily on console SDK adoption and enterprise support contracts.
 
 ## 5. Competitive Comparison
 

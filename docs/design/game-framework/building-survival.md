@@ -1619,6 +1619,59 @@ per project constraints.
 | Crop growth tick (1,000 crops) | < 0.5 ms | - |
 | Animal needs tick (500 animals) | < 0.2 ms | - |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 100% ECS constraint forces structural integrity to be computed via BFS over ECS entity
+relationships rather than a dedicated physics solver. This means the design cannot model tension,
+compression, or material stress -- only binary connectivity (supported vs. unsupported). Lifting
+this constraint would allow a finite element method (FEM) solver for realistic structural
+simulation. However, FEM is prohibitively expensive at runtime and violates the "no separate physics
+world" rule. The BFS approach is fast (< 5 ms for 1,000 pieces per NFR-13.14.1) and sufficient for
+survival games like Valheim, but it cannot support engineering simulation games.
+
+**Q2. How can this design be improved?**
+
+The survival vitals (F-13.14.6a-6d) are implemented as independent systems with no cross-vital
+interaction model. In reality, hunger affects stamina recovery, cold affects hunger drain rate, and
+fatigue affects temperature tolerance. The design lacks a dependency graph between vitals, which
+would enable emergent survival interactions. The farming system (F-13.14.8) has no irrigation
+automation -- players must manually water each crop, which becomes tedious at scale. Adding
+sprinkler furniture or water channel building pieces would solve this. The animal breeding system
+(F-13.14.9c) uses "configurable genetic rules" without specifying the trait model, making it
+underspecified for implementation.
+
+**Q3. Is there a better approach?**
+
+An alternative to the socket-based snap placement (R-13.14.1) is a voxel-based building system where
+pieces occupy grid cells (like Minecraft or Dragon Quest Builders). Voxel building is simpler to
+validate and enables terrain modification but sacrifices the organic, non-grid-aligned structures
+that socket snapping allows. The current socket approach is chosen because it supports both
+grid-aligned (90/60-degree snaps) and free-form placement modes, covering more game genres. The
+trade-off is higher complexity in the placement validation system and more edge cases around
+collision and slope detection.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers building (F-13.14.1-5c), survival (F-13.14.6a-6d), gathering (F-13.14.7a-7c),
+farming (F-13.14.8), and animal husbandry (F-13.14.9a-9c), but it lacks electricity and automation
+systems found in games like Satisfactory or Factorio. There are no conveyor belts, power grids, or
+logic circuits. Adding a node-based power and automation layer would enable factory and engineering
+games. The design also has no weather damage integration -- storms and environmental hazards
+(F-11.4.1 weather) do not damage buildings, limiting the survival gameplay loop.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The building system shares the `ConnectivityAnalyzer` with the destruction module (F-4.6.5) for
+structural integrity, which is good reuse. Survival vitals integrate with the gameplay effect system
+(F-13.10.3) for debuffs, and gathering integrates with the interaction system (F-13.17.1) and
+inventory (F-13.9.1). However, the building placement system defines its own collision and snap
+validation rather than reusing the shared spatial index (F-1.9.4) more directly. The furniture
+placement system (F-13.14.5b) uses a "separate grid or free placement system" instead of reusing the
+building placement system with different parameters, creating potential code duplication. Unifying
+these into a single parameterized placement system would improve cohesion.
+
 ## Open Questions
 
 1. **Snap search radius** -- How far from the cursor should the placement system search for valid

@@ -1694,6 +1694,59 @@ processor ever blocks a worker thread on I/O.
 | BLAKE3 hash 1 MB | < 0.5 ms | - |
 | CAS lookup (cached) | < 1 ms | - |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The shader pipeline constraint -- HLSL as the sole shader IL compiled through DXC and Metal Shader
+Converter via cxx.rs (constraints.md) -- forces all shader processing through two C++ FFI bridges.
+This limits shader compilation parallelism to what these external tools support and makes error
+reporting harder since errors must be mapped back through the FFI boundary to the originating graph
+node (R-12.2.9). If lifted, a pure-Rust shader compiler would simplify the build and enable tighter
+integration. However, DXC and Metal Shader Converter are industry-standard and produce
+vendor-optimized bytecode that a custom compiler could not match.
+
+**Q2. How can this design be improved?**
+
+The texture compression pipeline (F-12.2.1) selects format by platform but does not support
+per-asset quality overrides beyond import presets. Hero textures (character faces, key environment
+pieces) deserve higher quality settings than background props. The LOD generation (F-12.2.2) uses
+edge-collapse simplification but does not account for texture seams -- simplifying across UV
+boundaries can create visible artifacts. Adding UV-seam-aware edge weights would improve LOD
+quality. The meshlet building (F-12.2.3) uses fixed 64v/124t limits; adaptive meshlet sizing based
+on GPU architecture could improve performance on newer hardware.
+
+**Q3. Is there a better approach?**
+
+For shader compilation, an alternative is SPIR-V as the intermediate language instead of HLSL, using
+`spirv-cross` for Metal/HLSL output. This would avoid the DXIL detour for Metal targets. We chose
+HLSL because it produces clean, debuggable output that works with standard IDE tools (R-12.2.7
+requires HLSL Tools compatibility), and DXC's optimization passes are more mature than SPIR-V
+toolchain equivalents. For mesh processing, a Nanite-style virtualized geometry approach could
+replace the discrete LOD chain (F-12.2.2) with continuous LOD. This is a future consideration that
+would require significant rendering changes beyond the processing pipeline.
+
+**Q4. Does this design solve all customer problems?**
+
+Core processing needs are met: texture compression (US-12.2.1), LOD generation (US-12.2.2), meshlet
+building (US-12.2.3), and shader compilation (US-12.2.9). However, there is no feature for animation
+compression -- animation clips can be large and benefit from curve fitting and keyframe reduction.
+This would improve streaming and memory usage for animation-heavy games (RPGs, fighting games). The
+design also lacks a processing preview mode where artists can see the result of compression/LOD
+settings on a single asset before committing to a full batch build, which would accelerate iteration
+for US-12.2.12 (quality preset comparison).
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The processing pipeline integrates cleanly with the import system (F-12.1) for input, the asset
+database (F-12.3) for caching and dependency tracking, and the streaming system (F-12.5) for output
+format requirements. The use of the thread pool and task graph (F-14.3.1, F-14.3.3) for parallel
+processing aligns with the engine-wide concurrency model. The shader compilation path (F-12.2.9)
+shares the build cache (F-15.11.2) with the editor, preventing redundant compilations. One area
+where cohesion could improve is the audio encoding step (F-12.2.6) -- it lives in the content
+pipeline but its format decisions are driven by the audio engine (F-5.1.7). Closer integration
+between audio import presets and audio runtime requirements would reduce misconfiguration.
+
 ## Open Questions
 
 1. **ISPC Texture Compressor vs Rust-native BC7.** ISPC provides the fastest BC7 encoding via SIMD

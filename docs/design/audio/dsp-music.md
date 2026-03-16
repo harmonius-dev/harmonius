@@ -2300,6 +2300,54 @@ the engine's Opus transport.
 | Noise suppression per frame | < 500 us | F-5.5.3 |
 | Ring buffer push/pop | < 100 ns | -- |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 0.5 ms audio thread budget (R-5.1.NF1) is the dominant constraint. Every DSP effect, adaptive
+music transition, and voice chat codec must execute within this window alongside mixing and
+spatialization. If lifted, we could run richer convolution reverb on all platforms instead of
+restricting it to desktop (R-5.3.4), use phase-vocoder pitch shifting everywhere instead of OLA on
+mobile (R-5.3.7), and increase simultaneous stem counts beyond 4-6 on mobile (R-5.4.1). Removing
+this constraint would also allow more aggressive noise suppression models on mobile (R-5.5.3).
+
+**Q2. How can this design be improved?**
+
+The DSP chain is capped per tier (8-12 nodes on mobile per R-5.3.8), which limits creative sound
+design on constrained platforms. The design could benefit from a priority-based DSP budget that
+dynamically enables/disables effects based on current CPU headroom rather than static caps. The
+voice chat AEC module (F-5.5.9) and noise suppression (F-5.5.3) run independently -- combining them
+into a unified pre-processing pipeline could reduce redundant FFT passes. The adaptive music system
+also lacks a way to preview transitions in the editor without entering play mode.
+
+**Q3. Is there a better approach?**
+
+An alternative is GPU-accelerated DSP for convolution reverb and pitch shifting, offloading FFT work
+to compute shaders. This would bypass the audio thread budget entirely for heavy effects. We are not
+taking this approach because it introduces GPU-audio synchronization complexity and increases
+latency by at least one frame. The enum-dispatch model (R-5.3.8a) with per-tier caps is simpler and
+deterministic, which matters for a real-time audio thread where predictability outweighs peak
+throughput.
+
+**Q4. Does this design solve all customer problems?**
+
+Most player-facing needs are covered (US-5.3.3.6 room echo, US-5.4.1.7 intensity-matched music,
+US-5.5.1.8 voice chat). However, there is no feature for procedural audio synthesis -- generating
+sound effects from parameters rather than samples. Games like racing sims and sandbox builders need
+engine sounds, wind, and impacts synthesized in real time. Adding a procedural audio node type to
+the DSP registry (F-5.3.8) would enable these genres. The dialogue system (F-5.5.7) also lacks
+localization-aware voice-over fallback, which MMOs with global audiences would need.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The design integrates well with the ECS architecture via the audio exception in constraints.md --
+ECS components (AudioSource, AudioListener) bridge to the real-time audio thread via lock-free SPSC
+queues. The shared BVH usage for occlusion (F-5.2.5) aligns with the engine-wide shared spatial
+index constraint. However, the adaptive music system (F-5.4) uses its own segment directed graph
+that is separate from the engine's logic graph system (F-15.8). Unifying music sequencing with the
+visual logic graph editor would improve cohesion and reduce authoring tools that designers must
+learn.
+
 ## Open Questions
 
 1. **FFT library choice** -- `rustfft` is pure Rust and well-maintained. Should we consider

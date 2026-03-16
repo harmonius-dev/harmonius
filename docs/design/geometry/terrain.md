@@ -1905,6 +1905,63 @@ Virtual texture streaming uses the shared `VirtualResourceStreamer` framework (s
 Terrain sculpting brushes use the shared `BrushConfig` type (see also
 [level-world.md](../tools/level-world.md)).
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The dual-representation hybrid terrain (F-3.2.10) is the biggest constraint. Supporting both
+heightfield and voxel terrain in a unified system doubles the API surface, collision code, streaming
+logic, and LOD management. Every downstream consumer (physics, navigation, foliage placement) must
+handle both representations. Lifting this constraint and choosing voxel-only would simplify the
+design significantly: one meshing pipeline, one collision type, one streaming path. The best
+unconstrained design would use SDF voxels everywhere with heightfield as an optimization for flat
+regions. However, heightfields are dramatically more memory-efficient for open-world surfaces (16
+bits/sample vs SDF + material per cell), which is critical for the memory budgets on mobile
+(R-3.2.1) and for streaming massive worlds.
+
+**Q2. How can this design be improved?**
+
+The boundary stitching between heightfield and voxel regions (Transvoxel at hybrid boundaries, Open
+Question 4) is the weakest part of the design. A dedicated boundary mesh pass is needed but not yet
+specified. The virtual texture feedback pipeline (F-3.2.2) introduces a one-frame latency for page
+requests, which can cause visible blurring during fast camera movement. Pre-fetching based on camera
+velocity would help. The voxel edit delta log targeting 1 KB per edit (R-3.2.13) is aggressive for
+large-radius edits and may require lossy quantization. The planetary mode (F-3.2.11) shares little
+code with flat-world terrain and could be a separate design rather than a `TerrainMode` variant that
+complicates every code path.
+
+**Q3. Is there a better approach?**
+
+A fully voxel-based approach (like Teardown or 7 Days to Die) eliminates the hybrid complexity but
+at enormous memory cost for worlds spanning thousands of kilometers. A fully heightfield approach
+(like most traditional engines) is simpler but cannot represent caves or overhangs. The hybrid
+approach is the right trade-off for the engine's genre scope (R-3.2.10), which must support both
+open-world RPGs (heightfield-dominant) and survival crafting games (voxel-heavy). An alternative
+would be marching-cubes-on-heightfield that converts the heightfield to an implicit SDF at
+boundaries, but this adds conversion cost and complicates the collision system further.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers the major terrain use cases: open worlds (F-3.2.1--8), caves and digging
+(F-3.2.9--13), and planets (F-3.2.11). Missing features include: terrain decals for roads, tire
+tracks, and explosion craters (separate from voxel edits); water table integration where digging
+below sea level floods the tunnel; and terrain material weathering over time (erosion simulation at
+runtime). Adding terrain decals would benefit racing and military games. Water table flooding would
+make survival crafting more realistic. The design also lacks a paint-on-mesh detail system for
+cliffs and vertical surfaces where splatmaps degenerate.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The terrain system is one of the best-integrated subsystems. It uses the shared BVH (F-1.9.1) for
+collision registration, platform-native async I/O for streaming, ECS components for all state, and
+the meshlet pipeline (F-3.1.1) for voxel mesh rendering. The virtual texture system mirrors the
+meshlet streaming architecture (page-based, feedback-driven, async I/O). The `TerrainQuery` trait
+provides a clean API for gameplay. One inconsistency: the heightfield clipmap LOD uses a ring-based
+distance metric while the meshlet pipeline uses screen-space error. Terrain should adopt
+screen-space error for the geometry clipmap to unify LOD decisions. The foliage system (F-3.3.2) and
+procedural generation (F-3.6.9--10) both consume terrain data, and the interop contracts are
+explicit.
+
 ## Open Questions
 
 1. **Heightfield-to-voxel transition heuristic** -- How should the HybridResolver detect that a

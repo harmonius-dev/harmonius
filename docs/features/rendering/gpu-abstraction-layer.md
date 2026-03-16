@@ -142,3 +142,33 @@ profiler (F-15.5.3) and the render graph's diagnostic overlay (F-2.2.13).
 - **Dependencies:** F-2.1.1
 - **Platform notes:** Metal uses MTLCounterSampleBuffer. D3D12 uses ID3D12QueryHeap with
   D3D12_QUERY_TYPE_TIMESTAMP. Vulkan uses vkCmdWriteTimestamp and VK_QUERY_TYPE_PIPELINE_STATISTICS.
+
+## Unified Game Loop Integration
+
+### F-2.1.13 CPU Work Graph Emulation
+
+CPU-side emulation of D3D12 work graphs via indirect dispatch chains in the task graph. Producer
+nodes enqueue work items into intermediate buffers; consumer nodes read from those buffers and
+dispatch additional GPU work via `ExecuteIndirect`. The emulation path integrates with the unified
+game loop graph (F-14.3.14) as task graph nodes, enabling work-graph-style GPU scheduling on all
+platforms without native hardware support.
+
+- **Requirements:** R-2.1.13
+- **Dependencies:** F-2.1.10, F-2.1.11, F-14.3.14
+- **Platform notes:** D3D12 uses native Work Graphs API when available. Metal and Vulkan use the
+  emulation path with `ExecuteIndirect` / `vkCmdDispatchIndirect` / Metal indirect command buffers.
+  Emulated path is selected at device creation time.
+
+### F-2.1.14 Safe GPU Resource Handles
+
+All GPU resources (buffers, textures, samplers, pipeline states, acceleration structures) are
+referenced through generational `Handle<T>` indices. Each handle contains a type-safe index and a
+generation counter that detects use-after-free at runtime. No raw GPU pointers (device addresses,
+CPU pointers to mapped memory) appear in any public API type. Internal raw pointers are confined to
+backend implementations behind safe handle-based wrappers.
+
+- **Requirements:** R-2.1.14
+- **Dependencies:** F-2.1.1, F-2.1.7
+- **Platform notes:** None. Generational handles are a Rust-side abstraction. Backend
+  implementations translate handles to native resource references (MTLBuffer, ID3D12Resource,
+  VkBuffer) internally.

@@ -1178,6 +1178,63 @@ No new external dependencies. Uses existing engine modules:
 | Cover detection at load (10k) | < 500 ms | NFR-13.18.2 |
 | Cover point query (30 m) | < 0.3 ms | NFR-13.18.2 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code authoring constraint forces all traversal parameters, stealth modifiers, and cover
+settings to be exposed through the visual editor. This limits the complexity of traversal geometry
+classification rules -- the auto-detection system (F-13.17.4a) must use simple height/width
+thresholds rather than ML-based surface classifiers that would require custom code. Lifting this
+would allow procedural traversal analysis using trained classifiers that handle irregular geometry
+better than axis-aligned shape casts. However, removing the no-code constraint would break the
+engine's core authoring philosophy and exclude non-programmer designers from tuning traversal feel
+-- a significant cost given the iterative nature of traversal tuning.
+
+**Q2. How can this design be improved?**
+
+The traversal detection system rebuilds `TraversalOpportunity` components every frame, which is
+wasteful when the character is stationary or far from any traversable geometry. A distance-gated or
+velocity-gated detection frequency would reduce CPU cost without impacting responsiveness. The
+stealth visibility formula uses a simple multiplicative model that can produce unintuitive results
+(e.g., full light times zero equipment mod equals zero visibility). A weighted additive model with
+clamping would be more designer-friendly. The noise propagation uses single raycasts for occlusion
+(R-13.18.3), missing cases where sound travels through open doorways around corners -- a
+multi-bounce or flood-fill approach would improve fidelity at modest cost.
+
+**Q3. Is there a better approach?**
+
+For traversal, an alternative is a tag-only system where all traversal surfaces are pre-authored in
+the level editor, eliminating runtime shape casts entirely. We are not taking this approach because
+R-13.17.4a explicitly requires auto-detection from collision shapes, and procedural or
+user-generated levels would have no traversal without runtime detection. The hybrid approach
+(auto-detect with designer override) is the correct trade-off. For stealth, a per-observer
+visibility model (each AI computes a unique visibility score for the player based on its own angle
+and distance) would be more accurate than the current global score, but the 0.2 ms per-entity budget
+from NFR-13.18.1 makes per-observer computation expensive with many AI agents.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers the core traversal vocabulary (F-13.17.4a--7) and stealth mechanics (F-13.18.1--5)
+but lacks several features needed for specific genres. Rope swinging physics (F-13.17.7) has no
+momentum carry-over into post-swing locomotion, limiting fluid traversal chains. There is no user
+story for cooperative traversal (e.g., boosting a partner over a wall), which co-op action games
+require. Destructible cover (mentioned in open question 3) has no event contract defined, leaving a
+gap for games with destructible environments. Adding cooperative traversal actions and a
+destruction-cover event pipeline would enable co-op stealth games and cover-based shooters with
+destructible arenas.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The design follows the engine's ECS-everywhere pattern with all state as components and all logic as
+systems. Traversal detection correctly uses the shared spatial index (F-1.9.4), and stealth
+delegates AI awareness to the perception system (F-7.6.1) rather than duplicating alert logic. The
+cover system shares cover points between players and AI (F-7.8.1), which is a strong cohesion point.
+One area of inconsistency is that `CoverAction` uses an enum with embedded entity data
+(`CoverTransition { target: Entity }`), while most other engine components use separate fields
+rather than enum payloads -- this is a minor style divergence. The stamina integration across vault,
+climb, swim, and ledge grab aligns well with the survival system (F-13.14.6).
+
 ## Open Questions
 
 1. **Traversal priority resolution.** When multiple traversal types are available simultaneously

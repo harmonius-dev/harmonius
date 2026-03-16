@@ -1906,6 +1906,59 @@ Note: `blake3` (for content hashing) is already approved in
 | Skip effect application (20) | < 16.67 ms | R-13.5.NF2 |
 | Keyframe interpolation (1000) | < 0.1 ms | R-13.5.1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The platform-native async I/O constraint (no stdlib file I/O, no tokio) is the most limiting for the
+save system. Every save read/write must go through the IoReactor using IOCP, GCD, or io_uring, which
+means the save pipeline (F-13.3.6) cannot use standard Rust I/O abstractions. This forces
+platform-specific code paths for compression, encryption, and atomic rename. Lifting this constraint
+would allow using Rust's standard `std::fs` with a thread pool, vastly simplifying the
+implementation. The benefit of the current approach is zero main-thread blocking and consistent
+latency under the 100 ms target (R-13.3.NF1), which standard blocking I/O cannot guarantee.
+
+**Q2. How can this design be improved?**
+
+The save migration system (F-13.3.2) applies transforms sequentially (v1 to v2 to v3), which grows
+linearly with version distance. For long-lived games with 50+ schema versions, a migration shortcut
+table (v1 directly to v50) would reduce load time for very old saves. The cinematics sequencer
+(F-13.5.1) evaluates all tracks every frame; a dirty-flag system that skips tracks with no active
+clips at the current timestamp would reduce evaluation cost for sequences with sparse track
+activity. The cutscene skip system (F-13.5.6a) applies side effects but does not handle visual
+transitions -- adding a brief fade-out/fade-in on skip would prevent jarring visual discontinuities.
+
+**Q3. Is there a better approach?**
+
+For cloud save conflict resolution (F-13.3.5), a three-way merge (base, local, cloud) using the
+reflection system to diff individual fields would be superior to the current last-write-wins with
+user prompt. We do not take this approach because field-level merge requires deep understanding of
+semantic dependencies (e.g., inventory changes must be atomic, not per-slot merged). The trade-off
+is that users must manually choose between saves on conflict rather than getting an automatic merge,
+but this prevents silent data corruption from incompatible field-level merges.
+
+**Q4. Does this design solve all customer problems?**
+
+The save system lacks a "save replay" or "save state comparison" feature for designers to diff two
+saves and see what changed. This would accelerate debugging of save corruption, migration errors,
+and quest state issues. The cinematics system lacks runtime cinematic creation -- all sequences are
+pre-authored assets. A runtime API for constructing simple sequences (victory camera sweep, kill
+cam) from gameplay events would enable dynamic cinematics without pre-authoring. These additions
+would benefit action games (kill cams), sports games (replay systems), and open-world RPGs (dynamic
+story moments).
+
+**Q5. Is this design cohesive with the overall engine?**
+
+Both systems integrate tightly with core engine infrastructure. The save system uses
+bevy_reflect-style reflection (F-1.3.1) for automatic serialization, the TypeRegistry for migration,
+and the IoReactor for async I/O -- all shared with the asset pipeline. The cinematics sequencer
+reuses the animation layer system (F-9.4.4) for actor blending and the camera system (F-13.5.2) for
+cinematic framing. One cohesion concern is that the save system and cinematics are combined in a
+single design document despite being independent subsystems. This pairing is pragmatic (both are
+medium-complexity game framework features) but means changes to one system's design require
+reviewing an unrelated system's context. Separating them into distinct documents would improve
+maintainability.
+
 ## Open Questions
 
 1. **Incremental save merge strategy** -- When loading, should incremental save files be merged with

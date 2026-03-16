@@ -1062,6 +1062,50 @@ pub enum CollabError {
 | CRDT convergence (3 users) | < 200 ms | US-15.12.3.7 |
 | Chat message delivery | < 100 ms | US-15.12.10.6 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-third-party-runtime constraint forces the collaboration server to use the custom `IoReactor`
+for all async I/O, including WebSocket handling and database access. Lifting this would allow using
+battle-tested async runtimes with built-in WebSocket servers, connection pooling, and graceful
+shutdown. The best solution without this constraint would be `tokio` with `axum` for the collab
+server, reducing implementation effort by months. The impact of removing it is losing control over
+I/O scheduling and introducing a dependency that conflicts with the engine's game-loop-driven
+reactor model.
+
+**Q2. How can this design be improved?**
+
+The CRDT document types (F-15.12.8) use four separate implementations (TreeCrdt, OpLogCrdt, MapCrdt,
+LwwRegister) with no shared compaction or garbage collection strategy. Over long sessions, CRDT
+state will grow unboundedly. The remote rendering pipeline (F-15.12.1) assumes hardware encoders are
+always available, but some cloud GPU instances lack encoder hardware. Adding CRDT compaction at
+snapshot points and a software encoding fallback would improve robustness.
+
+**Q3. Is there a better approach?**
+
+An operational transform (OT) system instead of CRDTs would provide stronger consistency guarantees
+and simpler conflict resolution for structured assets. We are not taking OT because it requires a
+central server for transformation, making LAN peer-to-peer mode (F-15.12.3) impossible. CRDTs enable
+both cloud and P2P topologies with the same merge semantics, which is critical for the LAN
+collaboration requirement.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks offline editing with later sync -- if a user loses connectivity mid-session, their
+local edits cannot be reconciled after reconnection beyond basic CRDT merge. There is no user story
+for asynchronous review of CRDT change history (like a "timeline scrub" of collaborative edits).
+Adding offline buffering with conflict resolution UI and a session replay feature would support
+distributed teams across time zones.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The collaboration module uses `quinn` for QUIC and `tungstenite` for WebSocket, both integrated via
+`IoReactor`, which is consistent with the engine's async policy. However, the per-user
+`UndoController` in collaboration (F-15.12.3) is separate from the editor framework's `UndoStack`
+(F-15.1.3). Unifying them so the editor's command pattern feeds into the collaboration CRDT would
+eliminate the dual-undo-system and make collaborative editing seamless with single-user editing.
+
 ## Open Questions
 
 1. **CRDT library vs custom** — Build CRDTs from scratch or adopt an existing library (e.g., `yrs`

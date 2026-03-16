@@ -1108,6 +1108,136 @@ for (level, meshlets) in lods.iter().enumerate() {
 let dag_nodes = dag.build()?;
 ```
 
+## GPU-CPU Readback Synchronization
+
+The visibility buffer feedback loop reads GPU results back to the CPU "one frame later" to avoid
+pipeline stalls. However, no synchronization mechanism is specified for when the GPU has not yet
+finished writing feedback data. Without explicit fence handling, the CPU may read incomplete or
+stale visibility data.
+
+**Ring-buffer strategy.** Readback uses a triple-buffered ring of GPU buffers with associated
+fences. This ensures the CPU never reads a buffer the GPU is actively writing.
+
+| Slot | Frame N Role | Frame N+1 Role | Frame N+2 Role |
+|------|-------------|----------------|----------------|
+| A | GPU writes | CPU maps | CPU reads |
+| B | CPU reads | GPU writes | CPU maps |
+| C | CPU maps | CPU reads | GPU writes |
+
+Each ring-buffer slot has:
+
+- A GPU feedback buffer for visibility page IDs
+- A fence signaled when the GPU finishes writing
+- A generation counter tracking the source frame
+
+```rust
+/// A single slot in the readback ring buffer.
+#[derive(Debug)]
+pub struct ReadbackSlot {
+    /// GPU buffer for feedback data.
+    pub buffer: GpuBuffer,
+    /// Fence signaled when GPU write completes.
+    pub fence: GpuFence,
+    /// Frame number that produced this data.
+    pub source_frame: u64,
+    /// Whether the CPU has mapped this buffer.
+    pub mapped: bool,
+}
+
+/// Triple-buffered readback ring.
+pub struct ReadbackRing {
+    pub slots: [ReadbackSlot; 3],
+    /// Index of the slot currently being
+    /// written by the GPU.
+    pub write_index: usize,
+}
+```
+
+**Fallback and fence handling.** When readback data is not ready, the system uses conservative
+fallback to avoid visual artifacts. Each ring-buffer slot has a dedicated GPU fence polled at the
+start of each culling pass using a non-blocking query.
+
+| Condition | Action | Consequence |
+|-----------|--------|-------------|
+| Fence not signaled | Use previous frame's visibility set | Higher draw count |
+| 3 consecutive stale frames | Log perf warning, force GPU-CPU sync | One-frame stall |
+| GPU device loss | Reset all ring buffers, rebuild visibility | Full re-cull |
+| Frame start | Identify read slot (`write_index - 2` mod 3) | Select buffer |
+| Fence signaled | Read buffer, use fresh visibility data | Optimal culling |
+| Stale counter reaches 3 | Issue blocking fence wait | Guarantees data |
+
+The fallback is conservative: rendering more meshlets than necessary (not fewer). This prevents
+popping artifacts at the cost of slightly higher draw counts.
+
+```rust
+/// Status of a readback attempt.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReadbackStatus {
+    /// Fresh data from the expected frame.
+    Current,
+    /// Using stale data from a prior frame.
+    Stale { frames_behind: u32 },
+    /// Forced GPU-CPU sync due to excessive
+    /// staleness.
+    ForcedSync,
+    /// Ring buffers reset after device loss.
+    Reset,
+}
+```
+
+```rust
+impl ReadbackRing {
+    /// Poll the oldest slot for readability.
+    /// Returns the slot index and status.
+    pub fn poll_read_slot(
+        &self,
+    ) -> (usize, ReadbackStatus);
+
+    /// Force a blocking wait on the read slot.
+    /// Used when staleness exceeds 3 frames.
+    pub fn force_sync(&mut self);
+
+    /// Reset all slots after GPU device loss.
+    pub fn reset(&mut self);
+
+    /// Advance the ring after GPU submission.
+    /// Rotates write_index forward.
+    pub fn advance(&mut self);
+}
+```
+
+**Pipeline sequence.**
+
+```mermaid
+sequenceDiagram
+    participant GPU
+    participant A as Buffer A
+    participant B as Buffer B
+    participant C as Buffer C
+    participant CPU
+
+    Note over GPU,CPU: Frame N
+    GPU->>A: write feedback
+    Note over A: fence A submitted
+
+    Note over GPU,CPU: Frame N+1
+    GPU->>B: write feedback
+    Note over B: fence B submitted
+    CPU->>A: map (fence A signaled)
+
+    Note over GPU,CPU: Frame N+2
+    GPU->>C: write feedback
+    Note over C: fence C submitted
+    CPU->>A: read visibility data
+    CPU->>B: map (fence B signaled)
+
+    Note over GPU,CPU: Frame N+3
+    GPU->>A: write feedback (recycled)
+    Note over A: fence A resubmitted
+    CPU->>B: read visibility data
+    CPU->>C: map (fence C signaled)
+```
+
 ## Platform Considerations
 
 ### GPU Backend Feature Matrix
@@ -1218,6 +1348,60 @@ residency, priority queue, async I/O, and LRU eviction.
 
 Terrain geometry (see [terrain.md](terrain.md)) generates meshlets at the clipmap tile level.
 Terrain meshlet LOD integrates with the hierarchical LOD selection system.
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The mesh shader hardware requirement is the biggest constraint. The design depends on
+VK_EXT_mesh_shader, D3D12 mesh shaders, or Metal mesh shaders for the primary path (F-3.1.4).
+Hardware without mesh shaders falls back to compute + indirect draw, which loses the tight
+task-to-mesh shader data flow and adds a GPU buffer compaction step. Lifting this constraint would
+let us eliminate the indirect draw fallback entirely, simplify the pipeline to a single path, and
+remove ~30% of the culling shader code. However, mobile GPUs and older desktop GPUs lack mesh
+shaders, so the fallback is essential for the engine's multiplatform requirement (R-3.1.4).
+
+**Q2. How can this design be improved?**
+
+The DAG hierarchy build is offline-only (F-3.1.1), meaning runtime-generated geometry (voxel
+meshing, procedural meshes) must either skip the DAG or run a simplified online builder. Adding a
+lightweight runtime DAG builder would unify LOD selection for all geometry. The streaming system
+(F-3.1.6) uses fixed 64 KiB pages, but meshlet data varies in density; variable-size pages or page
+packing could reduce I/O waste. The visibility buffer (F-3.1.7) requires 64-bit atomics, which
+excludes some mobile GPUs. A 32-bit fallback with reduced ID range would broaden compatibility. The
+two-phase occlusion culling (F-3.1.2) adds a frame of HZB latency; temporal reprojection could
+reduce false occlusion in fast camera movement scenarios.
+
+**Q3. Is there a better approach?**
+
+Nanite-style virtualized geometry uses a persistent streaming mesh that renders directly from a page
+cache without traditional draw calls. This eliminates the indirect draw fallback and simplifies the
+pipeline. We do not take this approach because Nanite is tightly coupled to Unreal's renderer and
+difficult to replicate without their proprietary rasterizer. Our meshlet DAG approach is more
+modular, works with standard rasterization, and integrates cleanly with the visibility buffer. The
+trade-off is more explicit pipeline stages versus Nanite's monolithic simplicity.
+
+**Q4. Does this design solve all customer problems?**
+
+The design handles static meshes thoroughly (F-3.1.1--7) but does not address skinned mesh meshlets
+for animated characters. Characters currently bypass the meshlet pipeline entirely, using
+traditional vertex pipelines. Adding meshlet support for skinned meshes would unify all geometry
+into a single rendering path, reducing shader permutations and enabling visibility buffer deferred
+shading for characters. Particle and VFX geometry also bypasses meshlets. Games with massive crowds
+(MMO, RTS) would benefit most from skinned meshlet rendering. US-3.1.1 mentions artists importing
+high-poly models, but the user story for runtime-generated meshlets from procedural content is
+missing.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The meshlet pipeline integrates tightly with the render graph (F-2.2.1), shared BVH (F-1.9.1), and
+ECS scene pipeline (F-2.10.1). Meshlet baking in the asset pipeline (F-12.2.3) ensures all geometry
+arrives pre-processed. The design aligns with the engine's GPU-driven philosophy. However, the
+terrain system generates meshlets at the clipmap tile level, which uses a different LOD strategy
+(CDLOD rings vs DAG screen-space error) creating two parallel LOD systems. Unifying terrain and mesh
+LOD under a single screen-space error metric would improve cohesion. The streaming system should
+share the page cache infrastructure with the virtual texture system (F-3.2.2) rather than
+maintaining a separate cache.
 
 ## Open Questions
 

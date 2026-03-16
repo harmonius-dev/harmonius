@@ -1474,6 +1474,66 @@ The flood warning threshold fires a diagnostic at 50,000 events per channel per 
 | Plugin graph validation (50 plugins) | < 1 ms | R-1.6.4 |
 | Hot reload cycle (50 systems) | < 2 s | R-1.6.5a |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The deterministic sync-point execution model (R-1.5.3, R-1.5.4) is the biggest constraint. All
+observer callbacks and command buffer flushes must happen at designated sync points in a fixed
+order, which limits reactivity to at most once per sync point rather than immediate. If we lifted
+this to allow immediate observer dispatch, we could support real-time reactive UI updates, instant
+physics feedback, and lower-latency event propagation. However, immediate dispatch breaks parallel
+system safety since observers may perform structural changes while systems are iterating. The
+sync-point model is essential for deterministic MMO simulation where reproducible state across
+server and client is mandatory.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The double-buffered event channel (F-1.5.1) limits event lifetime to exactly one frame. Events
+emitted late in a frame may be consumed too early in the next frame, before dependent systems run.
+Persistent streams (F-1.5.2) solve this but add cursor tracking overhead per reader. The cross-world
+event bridge (F-1.5.7) currently lacks back-pressure: if the target world is slow to drain events,
+the bridge could grow unbounded. The plugin hot reload (F-1.6.5) depends on serialization for state
+migration, meaning any component that cannot round-trip through reflection will lose data. Adding
+event priority ordering within a frame, bridge backpressure policies, and a hot-reload safety check
+for non-reflectable types would strengthen the design.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+An actor-model approach where each system is an isolated actor with message-passing would eliminate
+the need for sync points and command buffers entirely. Each actor processes its mailbox
+independently, and structural changes are local. We are not taking this approach because it
+conflicts with the ECS archetype model where systems need direct access to shared component storage
+for cache- friendly iteration (R-1.1.1a). Actor isolation would require copying component data into
+messages, destroying the throughput advantages of SoA layout. The event channel plus sync-point
+model preserves ECS data locality while providing decoupled communication.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design lacks explicit support for event replay and debugging. User stories US-1.5.3 and US-1.5.9
+verify correctness but there is no event recording/playback feature for reproducing bugs. For MMO
+servers, the ability to record all events in a tick and replay them deterministically is critical
+for debugging desync issues. Additionally, there is no event batching or coalescing feature (e.g.,
+combining 100 damage events into one aggregate). This would help RTS and crowd-simulation games
+where thousands of units generate events per tick. Adding event recording (tied to F-1.5.2) and
+event coalescing would benefit server-authoritative games significantly.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+The events system integrates tightly with the ECS scheduler (F-1.1.25) and command buffers
+(F-1.1.32), making it highly cohesive with the core runtime. The plugin system (F-1.6) acts as the
+composition layer binding all subsystems together. One cohesion concern is that hot reload (F-1.6.5)
+depends on reflection (F-1.3) and serialization (F-1.4) but does not reference the events system for
+notifying other plugins of reload. A `PluginReloaded` event type bridged across worlds would let
+systems react to plugin changes. The capability negotiation API (F-1.6.7) also operates outside the
+ECS resource model; exposing capabilities as a world resource would unify the query path.
+
 ## Open Questions
 
 1. **Observer cascading depth limit.** Observers can generate commands that trigger further

@@ -1891,6 +1891,52 @@ Linux).
 | Rate limiter acquire_permit | < 500 ns | US-15.9.10.3 |
 | Context prompt build | < 2 ms | US-15.9.9.3 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The requirement that all LLM inference runs on self-hosted AWS infrastructure (no embedded model
+weights) means the assistant is fully dependent on network connectivity. Lifting this constraint
+would enable on-device inference for latency-sensitive operations like voice commands (F-15.9.1b),
+reducing round-trip from hundreds of milliseconds to single-digit milliseconds. Removing it would
+also eliminate the need for the entire rate-limiting and quota management layer (F-15.9.10), but
+would require shipping multi-gigabyte model weights with the engine.
+
+**Q2. How can this design be improved?**
+
+The provenance system (F-15.7.1) tracks AI-generated content at the asset level but not at the
+sub-asset level -- a partially AI-generated texture has the same provenance tag as a fully
+AI-generated one. The audit log's append-only hash-chain design is robust but makes querying
+expensive for large histories. The review workflow (F-15.7.7) lacks integration with version control
+(F-15.10), so approved assets could be overwritten without re-review. Adding sub-asset provenance
+granularity and connecting reviews to VCS commits would strengthen the governance model.
+
+**Q3. Is there a better approach?**
+
+An alternative is to embed provenance metadata directly into the asset binary format rather than
+maintaining a separate provenance registry. This would make provenance travel with the asset across
+projects and exports (F-15.7.8) without requiring a sidecar database. We are not taking this
+approach because the current reflection-based `ProvenanceTag` component integrates cleanly with the
+ECS model, and embedding metadata in binary formats would require format changes across every asset
+type.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks an offline fallback mode for the AI assistant -- studios with air-gapped
+environments cannot use any assistant features. There is no user story for collaborative AI sessions
+where multiple users share an assistant context. Adding a lightweight local inference option (even a
+small model for shortcut suggestions, F-15.9.4) would serve studios with strict network policies. A
+shared agent workspace would enable team scenarios like "AI, set up this level for all of us."
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The design aligns well with engine constraints: all I/O uses `IoReactor`, state lives in ECS
+resources, and there is no third-party async runtime. However, the `ToolInterface` (F-15.9.2)
+defines tools using JSON Schema, which differs from the reflection-based approach used elsewhere in
+the engine (F-1.3). Deriving tool definitions from `Reflect` metadata instead of hand-written JSON
+schemas would make the assistant more cohesive with the inspector, serialization, and documentation
+systems.
+
 ## Open Questions
 
 1. **LLM provider abstraction depth.** The current design uses a single `ProviderConfig` struct.

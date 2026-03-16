@@ -51,8 +51,12 @@ if(HARMONIUS_GPU_BACKEND STREQUAL "metal")
   add_library(metal-cpp INTERFACE)
   target_include_directories(metal-cpp INTERFACE vendor/metal-cpp)
   target_link_libraries(
-    metal-cpp INTERFACE ${METAL_FRAMEWORK} ${QUARTZCORE_FRAMEWORK} ${FOUNDATION_FRAMEWORK} ${IOKIT_FRAMEWORK}
-                        ${IOSURFACE_FRAMEWORK}
+    metal-cpp INTERFACE
+    ${METAL_FRAMEWORK}
+    ${QUARTZCORE_FRAMEWORK}
+    ${FOUNDATION_FRAMEWORK}
+    ${IOKIT_FRAMEWORK}
+    ${IOSURFACE_FRAMEWORK}
   )
 elseif(HARMONIUS_GPU_BACKEND STREQUAL "vulkan")
   find_package(Vulkan REQUIRED)

@@ -1382,6 +1382,70 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 | Priority critical vs. background | Critical < 2x background latency under load | US-1.8.16 |
 | Vectored write vs. individual | >= 30% fewer syscalls | US-1.8.14 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The ban on all third-party async runtimes and Rust stdlib file I/O is the most limiting constraint.
+Every I/O operation must route through the custom IoReactor built on platform-native primitives
+(IOCP, GCD, io_uring). Lifting this would allow using tokio or async-std, which provide mature,
+battle-tested I/O with ecosystem support for HTTP, gRPC, and database drivers. The best possible
+solution without this constraint would leverage tokio's io_uring backend on Linux and IOCP backend
+on Windows with minimal custom code. However, removing the constraint sacrifices the controlled
+poll-point model (R-1.8.2) that ensures I/O completions never fire asynchronously into the game
+loop. Third-party runtimes own their own threads and wake patterns, making frame-pacing
+unpredictable.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The three-platform I/O backend (F-1.8.1) requires maintaining parallel implementations of
+substantial complexity. GCD's dispatch_io semantics differ significantly from io_uring's submission
+queue model, making behavioral parity difficult to achieve and test. The scoped async limitation
+(CPU-only for borrowed tasks) is a usability concern: developers must remember which tasks can
+borrow and which require 'static. Memory budgets (F-1.7.6) with eviction policies add runtime
+overhead to every allocation path. The priority scheduling (F-1.8.7) relies on platform-specific QoS
+mechanisms that behave differently across OSes. Adding a comprehensive platform abstraction test
+suite, clearer lifetime annotations in the API, and a priority simulation layer for testing would
+mitigate these weaknesses.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+Using a readiness-based model (epoll/kqueue) with user-space buffering is simpler to implement and
+has wider platform support, including older Linux kernels that lack io_uring. We are not taking this
+approach because all three target platforms natively support completion-based I/O (R-1.8.2), and the
+readiness model requires extra copies and retry loops that add latency. The completion model
+delivers data directly into registered buffers (F-1.8.9) with zero intermediate copies, which is
+critical for the >= 500 MB/s serialization throughput target (R-1.4.1a). The minimum kernel version
+requirement (Linux 5.1+) is acceptable for a new engine targeting modern hardware.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design covers file, network, and audio I/O but lacks explicit memory-mapped I/O management
+beyond zero-copy deserialization (F-1.4.2). User story US-1.8.7 references asset loading but there
+is no streaming virtual memory feature for texture and mesh data that exceeds physical RAM. For
+open-world games with hundreds of GB of terrain data, a virtual memory streaming layer integrated
+with the IoReactor would enable seamless world traversal. The arbitrary precision numerics (F-1.7.9)
+also lack user stories for integration with the spatial index (F-1.9) for cosmic-scale worlds.
+Adding virtual memory streaming and large-world coordinate integration would expand support for
+space games and planetary-scale simulations.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+Memory management and async I/O are foundational layers that all other modules depend on, giving
+them strong structural cohesion. The generational handle design (F-1.7.4) is shared across ECS
+entities (F-1.1.11), spatial index (F-1.9.1), and buffer pools (F-1.8.9), which is well unified via
+the shared primitives module. One gap is between the per-frame arena (F-1.7.1) and the async I/O
+buffer pool (F-1.8.9): arenas reset at frame boundaries but I/O buffers may outlive frames when
+operations span multiple ticks. The current design handles this by keeping I/O buffers in separate
+pool allocators, but a clearer ownership protocol between frame arenas and I/O completion lifetimes
+would improve safety and documentation.
+
 ## Open Questions
 
 1. **Arena page decommit strategy** — On arena reset, should we `madvise(MADV_DONTNEED)` /

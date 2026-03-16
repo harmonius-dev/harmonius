@@ -2169,6 +2169,65 @@ Blend curves use the shared `Curve<T>` type (see
 | Layer composition (4 layers, 256 bones) | Under 50 us | R-9.4.4 |
 | Montage notify dispatch | Under 10 us | R-9.4.7 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The CPU-side state graph evaluation constraint is the biggest limiter. While blend descriptors are
+uploaded to the GPU, all state transition logic, condition evaluation, and blend weight computation
+run on the CPU. This creates a CPU bottleneck at 1000+ instances (R-9.4.1). If lifted, GPU-side
+state evaluation could process all instances in parallel, eliminating per- instance CPU cost. The
+ideal solution would be a GPU compute pass that evaluates transition conditions and computes blend
+weights for all instances, with only parameter uploads from the CPU. Removing the CPU constraint
+would require encoding boolean transition logic in GPU-compatible form, which is complex but would
+unlock truly infinite scaling.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The design combines state machine and morph targets into a single document, which creates a large
+design surface. The montage priority system (F-9.4.7) has no defined behavior when two montages
+affect overlapping bone groups (Open Question 7). Blend space triangulation (F-9.4.8) uses
+pre-computed Delaunay, but the algorithm choice (standard vs constrained) is unresolved (Open
+Question 1). The AI animation integration (F-9.4.10) relies on logic graphs to bridge behavior trees
+with animation state, adding an indirection layer that increases coupling with the AI subsystem.
+Morph target streaming (F-9.2.5) depends on the IoReactor but latency targets under 100 ms may be
+tight on mobile storage.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+Motion matching (F-9.3.6) could replace the state machine entirely for locomotion, eliminating hand-
+authored state graphs in favor of data-driven pose selection. We are not replacing the state machine
+because motion matching only handles locomotion -- combat abilities, emotes, montages, and AI-driven
+behavior still require explicit state transitions (R-9.4.7, R-9.4.10). The state machine is the
+general- purpose animation control layer; motion matching is a specialized locomotion optimizer that
+feeds into it.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design covers F-9.4.1 through F-9.4.10 and F-9.2.1 through F-9.2.5 with all user stories. A gap
+is animation preview networking: US-9.4.1.1 supports visual authoring but there is no story for
+previewing state graphs on a remote device during live gameplay. Adding remote animation debugging
+would help mobile game development. Another gap is procedural facial animation from audio (lip sync
+from speech) -- F-9.2.3 covers action units but not audio-driven blendshapes, which would enable
+story-driven RPGs and co-op games with dynamic dialogue.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+The design is cohesive: state graph definitions use `Reflect` for serialization (F-1.3.1), events
+dispatch through ECS observers (F-1.1.30), layers consume the skeletal blending pipeline (F-9.1.3,
+F-9.1.4), and AI integration uses logic graphs (F-15.8.4). The morph target subsystem is less
+cohesive because it runs a separate GPU compute pass rather than integrating with the skeletal
+skinning dispatch, requiring an additional synchronization point. Merging morph target accumulation
+into the skinning compute pass would reduce GPU dispatch count and improve pipeline cohesion. The
+blend descriptor handoff to the skeletal module needs a clearer ownership contract (skeletal Open
+Question 5).
+
 ## Open Questions
 
 1. **Blend space triangulation algorithm** -- Delaunay triangulation is standard for 2D blend

@@ -1659,6 +1659,65 @@ ragdoll simulation; clients receive bone transforms via standard component repli
 activation/deactivation events are replicated as reliable messages. Joint break events are
 replicated to ensure consistent destruction state.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The deterministic solver requirement (R-4.1.NF3, F-4.3.7) is the biggest constraint. Both SI and TGS
+solvers must produce bit-identical results across platforms, which prohibits floating-point
+reordering optimizations and limits SIMD usage to deterministic reduction patterns. Lifting this
+constraint would allow aggressive SIMD batching of constraint rows, platform-specific fast-math, and
+non-deterministic parallel reduction within islands. The throughput target (R-4.3.NF1: 5000 rows/ms)
+would be easier to hit without determinism. However, determinism is essential for
+server-authoritative multiplayer with client-side prediction and rollback, which is a core engine
+requirement. The best compromise is deterministic ordering with per-platform SIMD intrinsics that
+maintain IEEE 754 strict compliance.
+
+**Q2. How can this design be improved?**
+
+The warm start strategy for sleeping bodies (Open Question 2) needs resolution before
+implementation, as stale cached impulses after wake-up will cause visible jitter in stacking
+scenarios. The ragdoll bone budget on mobile (8 bones per ragdoll, F-4.3.5) is tight and the bone
+selection heuristic (Open Question 5) needs user testing. The limb severance system (F-4.3.8)
+couples tightly with animation (F-9.3.10) and gameplay effects (F-13.10.3), but the cross-domain
+event flow is not fully specified. Chain simulation (F-4.3.6) falls back to verlet at distance, but
+the visual discontinuity at the transition distance needs a blending strategy. The TGS solver is
+more stable for long chains but its position integration order (Open Question 3) affects
+performance.
+
+**Q3. Is there a better approach?**
+
+A position-based dynamics (PBD/XPBD) approach for constraints would unify the joint solver with the
+cloth/soft body solver (F-4.7.1), reducing code duplication and enabling mixed rigid-soft constraint
+graphs. We do not take this approach because PBD does not naturally produce impulse magnitudes
+needed for breakable joints (F-4.3.4) and collision event forces (F-4.2.7). The impulse-based SI/TGS
+approach provides force feedback that PBD lacks. An alternative is the Featherstone articulated body
+algorithm for ragdolls and chains, which converges in one iteration for tree-topology constraints
+but cannot handle closed loops (e.g., a character grabbing their own ankle). The current approach
+handles arbitrary topology.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers standard joint types (F-4.3.1--2), motors (F-4.3.3), breakable joints (F-4.3.4),
+ragdolls (F-4.3.5), chains (F-4.3.6), and limb severance (F-4.3.8--9). Missing features include:
+gear joints (two revolute joints linked by a ratio), pulley constraints (two distance joints sharing
+a total length), and slider-crank mechanisms. These are common in puzzle games and mechanical
+simulation. Muscle-driven ragdolls (active ragdolls that try to maintain balance) are not covered
+and would enable physics-based animation blending for combat games. Ragdoll-to-animation blending
+(getting up from ragdoll) needs a transition system that is not specified.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The constraints design is highly cohesive with the physics foundation. Joints are ECS entities with
+component-based configuration, matching the foundation's pure ECS pattern. The island solver
+partitions joints alongside contacts for parallel solving. Warm starting shares the same impulse
+caching as contact warm starting. The ragdoll system (F-4.3.5) bridges cleanly to the animation
+domain via skeleton assets. Limb severance (F-4.3.8) uses ECS observers (F-1.1.30) for event
+propagation. One gap: the constraint solver runs inside the contact solver loop, but the design does
+not specify whether joint constraints and contact constraints share the same iteration count or can
+differ. The foundation design's Open Question 7 acknowledges this integration point needs
+resolution.
+
 ## Open Questions
 
 1. **Island merge heuristic.** When two islands are small (< 8 joints each), should they be merged

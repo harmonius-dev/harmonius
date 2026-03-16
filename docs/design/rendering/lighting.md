@@ -1812,6 +1812,61 @@ budget-capped by the VFX LOD system to avoid overwhelming the light grid.
 | LTC area light eval (8 lights) | < 0.2 ms | R-2.4.20 |
 | Sky IBL refilter (256x256) | < 5.0 ms | R-2.4.21 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The dual rendering path requirement (Forward+ via F-2.4.1 and Deferred via F-2.4.2) doubles the
+lighting shader surface area. Every lighting feature must work with both tiled forward clusters and
+G-buffer accumulation. This constraint exists because mobile GPUs favor forward rendering
+(tile-based architectures) while desktop GPUs benefit from deferred rendering for high geometric
+complexity. Lifting this constraint and choosing a single path would halve shader permutations and
+simplify the material system. However, dropping forward would exclude efficient mobile support, and
+dropping deferred would limit desktop scene complexity. The dual-path trade-off is justified by the
+multiplatform requirement but significantly increases testing surface (US-2.3.1.2).
+
+**Q2. How can this design be improved?**
+
+The shadow system has seven separate techniques (CSM, PCF, PCSS, RT shadows, virtual shadow maps,
+contact shadows, distance field shadows, capsule shadows) with complex fallback chains. The
+interactions between these systems are underspecified -- for example, when VSM (F-2.4.14) is active,
+does CSM (F-2.4.11) still render as a fallback for pages that are not yet allocated? The stochastic
+many-light sampling (F-2.4.10) replaces per-light shadow maps with importance sampling, but its
+interaction with ReSTIR DI (F-2.5.8) is unclear since both address many-light scenarios.
+Consolidating the shadow techniques into a unified shadow evaluation pass with quality tiers would
+reduce complexity.
+
+**Q3. Is there a better approach?**
+
+A visibility buffer (V-buffer) rendering approach would replace both Forward+ and Deferred with a
+single pipeline that stores triangle IDs and barycentric coordinates per pixel, then evaluates
+materials and lighting in a single compute pass. This approach (used by id Tech 7 and Nanite)
+handles both mobile and desktop efficiently and eliminates G-buffer bandwidth. We chose the
+dual-path approach because V-buffer requires mesh shader support for efficient triangle ID storage,
+and the emulation path (F-2.1.11) for mesh shaders on older hardware adds latency. Once mesh shaders
+are ubiquitous, migrating to V-buffer would unify the lighting paths.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks photometric light units for all light types. IES profiles (F-2.4.22) use candela
+for point/spot lights, but directional lights use an arbitrary intensity scalar rather than lux.
+Area lights (F-2.4.20) use luminous intensity but do not support luminous flux (lumens) for
+artist-friendly configuration. US-2.4.1.1 describes artists placing hundreds of lights, but without
+consistent photometric units, matching real-world reference photography is difficult. Adding
+lux/lumens/candela unit selection per light type and automatic unit conversion would improve the
+workflow for architectural visualization and cinematic lighting use cases.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The lighting system integrates tightly with the ECS via LightComponent, the shared spatial index for
+light culling, and the render graph for pass scheduling. The material system's bindless parameter
+binding (F-2.10.8) aligns with the engine's data-oriented philosophy. However, the extended BSDF
+materials (F-2.4.4) with SSS, clearcoat, anisotropy, and sheen create a large number of shader
+permutations that conflict with the engine's preference for minimal dynamic dispatch. Each shading
+model variant (F-2.4.9) is essentially a different shader, and the permutation space grows
+combinatorially with features. Using the render graph's capability gating (F-2.2.2) to prune unused
+material permutations at graph compile time would keep the permutation count manageable.
+
 ## Open Questions
 
 1. **Cluster grid tile size** -- 64 px tiles are standard but 32 px may reduce light-per-cluster

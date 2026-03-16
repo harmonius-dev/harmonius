@@ -1573,6 +1573,58 @@ The wind field texture is a shared ECS resource consumed by foliage sway, VFX pa
 [perception.md](../ai/perception.md)). A single `WindField` system updates the GPU texture each
 frame.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The shared BVH spatial index (F-1.9.1) is the biggest constraint. Foliage culling, water caustics
+projection, and atmosphere aerial perspective all depend on a single global BVH for spatial queries.
+If we lifted this constraint and allowed per-domain acceleration structures, each system could use a
+purpose-built structure: a grid for foliage clusters, a screen-space structure for water caustics,
+and a frustum-aligned froxel grid for atmosphere. The best unconstrained design would let each
+environment subsystem own its spatial data. However, removing the shared BVH would duplicate memory
+and complicate cross-system queries (e.g., cloud shadows on water), so the trade-off favors sharing.
+
+**Q2. How can this design be improved?**
+
+The foliage, water, and sky subsystems are three largely independent domains merged into one design
+document. This makes the document long and hard to navigate. Splitting into three focused designs
+would improve clarity. The wind field (F-4.7.5) coupling between foliage and cloth is implicit -- a
+more explicit data contract for the shared wind texture would prevent breakage. The cloud shadow map
+(F-3.5.4) writes a texture that terrain and water read, but the update cadence is not synchronized,
+risking one-frame shadow lag on water. The mobile tier disables many features (volumetric clouds,
+god rays, subsurface leaves), which may make mobile rendering look flat compared to desktop.
+
+**Q3. Is there a better approach?**
+
+An alternative is a unified atmospheric volume that handles fog, clouds, aerial perspective, and
+underwater effects in a single froxel pass, rather than separate passes per subsystem. Unreal Engine
+5 uses this approach. We do not take it because the current per-system design keeps each subsystem
+independently testable and avoids a monolithic shader. The froxel approach also has higher baseline
+GPU cost even when some effects are disabled, which conflicts with the mobile tier targets
+(R-3.5.3). A hybrid approach -- unified froxel on desktop, separate passes on mobile -- is worth
+prototyping.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers forests (F-3.3.1--7), oceans (F-3.4.1--7), and skies (F-3.5.1--7) thoroughly, but
+lacks a few features that specific genres need. Snow accumulation and dynamic weather effects on
+foliage (snow-covered trees, rain-wet leaves) are not addressed. Lava and toxic fluid surfaces reuse
+the water system but have no dedicated shading model. Swamp or marsh biomes need emergent vegetation
+partially submerged in water, which requires tighter foliage-water coupling than the current
+displacement buffer provides. Adding these would improve survival, RPG, and open-world games
+significantly.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The design is well-integrated with the ECS architecture -- all foliage, water, and sky state lives
+as components, and all logic runs as systems. The shared wind field texture is a good example of
+cross-domain cohesion with cloth (F-4.7.5) and VFX. However, the foliage placement system (F-3.3.2)
+duplicates some logic from the procedural generation graph (F-3.6.12), and these should share the
+same node evaluation runtime. The water system references physics water simulation (F-4.8.5) but the
+coupling contract is vague compared to the explicit interop contracts in the terrain design.
+Aligning the water interop contract style with terrain would improve consistency.
+
 ### Open Questions
 
 1. **Foliage streaming granularity.** Should clusters be streamed per terrain tile or in finer

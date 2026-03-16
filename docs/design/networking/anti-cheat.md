@@ -1180,6 +1180,51 @@ to prevent capture/replay between sessions.
 | Score decay (all players) | < 100 us for 1000 players | R-8.8.1 |
 | Hot-reload config application | < 5 s | R-8.8.5 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+Server-authoritative validation of all actions is the dominant constraint. Every client input must
+be independently verified, bounding server CPU per player. Lifting this would allow client-trusted
+actions for non-competitive content, reducing server load by 60-70%. The best unconstrained solution
+would be a hybrid model where competitive modes use full server authority while cooperative PvE
+trusts client physics, only spot-checking via behavioral analysis. Removing this constraint risks
+cheating in PvE but halves the per-player server cost.
+
+**Q2. How can this design be improved?**
+
+The behavioral analysis (F-8.8.3) runs as a separate batch process, adding latency between cheat and
+detection. Inline statistical checks per-tick would catch anomalies faster. The economy validator
+lacks auction house sniping detection (rapid buyout bots). Rate limiting is per-RPC-type but not
+per-game-action, so a cheat could spread abuse across multiple RPC types to stay under each limit
+individually. The Z-score threshold is a single global value when per-metric thresholds would be
+more accurate.
+
+**Q3. Is there a better approach?**
+
+Machine learning models trained on labeled cheat data could replace Z-score thresholds with higher
+accuracy and fewer false positives, as noted in open question 2. We are not taking this approach yet
+because it requires a labeled training dataset that does not exist before launch. The statistical
+baseline is the correct starting point; ML can be layered on top once production data is available.
+A hybrid approach where Z-scores flag candidates for ML verification is the ideal path.
+
+**Q4. Does this design solve all customer problems?**
+
+US-8.8.11 requests replay-based verification of cheat detection accuracy, but there is no automated
+pipeline for this -- only manual review tools. Missing: detection of input automation (macro bots)
+that produce valid actions at inhuman cadence. Missing: cross-account detection (same player evading
+bans via new accounts). Adding both would cover botting in MMOs and ban-evading griefers. These gaps
+affect games with competitive ladders and persistent worlds most.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The anti-cheat runs entirely as ECS systems on the server, matching the engine's 100% ECS
+constraint. Violation scoring and rate limiting are components on player entities, consistent with
+how other subsystems attach state. The config hot-reload pattern (file watch + apply) aligns with
+the IoReactor's async I/O model. One inconsistency: `BehavioralAnalyzer` runs as a separate
+analytics service rather than an ECS system, diverging from the in-process pattern used by all other
+anti-cheat components. Unifying it as an ECS system with batched processing would improve cohesion.
+
 ## Open Questions
 
 1. **Replay-based verification.** The replay system (F-8.6.x) can be used for post-hoc cheat

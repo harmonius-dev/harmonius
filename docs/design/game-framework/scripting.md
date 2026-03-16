@@ -1482,6 +1482,59 @@ bytecode + ~512 bytes of constant pool.
 | GraphProgram memory (50 nodes) | < 4 KiB shared | R-13.4.NF1 |
 | GraphInstance memory (64 slots) | < 1.5 KiB per instance | R-13.4.NF1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code constraint (constraints.md) forces all gameplay logic through visual graphs compiled to
+bytecode, which is the single biggest performance limiter. Bytecode interpretation adds overhead
+compared to native Rust -- the 4 ms budget for 1,000 graphs (R-13.4.NF1) leaves only 4 microseconds
+per graph per frame. Lifting this constraint would allow designers to write Rust scripts for
+hot-path logic, but that would violate the fundamental engine principle that users never write code.
+The best unconstrained solution is AOT compilation to native code (Open Question 1), which
+eliminates interpreter overhead while preserving the no-code authoring surface. This is the most
+impactful future optimization.
+
+**Q2. How can this design be improved?**
+
+The hot reload system (F-13.4.3) patches running instances but does not support adding or removing
+coroutine yield points in a live graph. If a designer adds a new yield between two existing nodes,
+all running instances at that point must be restarted. A more granular state migration that maps old
+coroutine positions to new ones would reduce lost state during iteration. The sandboxing model
+validates all ECS access through accessor opcodes, but does not enforce a per- graph execution time
+limit. A watchdog that terminates graphs exceeding a per-frame microsecond budget would prevent
+infinite loops in user-authored logic from freezing the game.
+
+**Q3. Is there a better approach?**
+
+A text-based scripting language (Lua, Wren, or a custom DSL) would offer higher expressiveness and
+faster iteration than visual graphs for complex logic. We explicitly reject this approach because it
+violates the no-code engine constraint. The visual graph model was chosen to make the engine
+accessible to non-programmers. The trade-off is that complex logic (nested loops, deep conditional
+chains, string manipulation) is verbose in graph form. The mitigation is subgraph encapsulation --
+complex patterns are authored once as library subgraphs and reused via graph references.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks a graph profiler that shows per-node execution time within a graph instance. The
+remote debugger (F-13.4.2) supports breakpoints and watches but not performance profiling, which is
+critical for finding bottleneck nodes in complex gameplay graphs. Adding a flame-graph-style
+per-node timing view would help designers optimize their logic. The design also lacks a graph unit
+testing framework -- designers cannot write automated tests for their logic graphs. A test-runner
+that feeds input events and asserts output state would enable test-driven visual logic development,
+improving quality for all game genres.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The scripting runtime is deeply integrated with the ECS architecture. `GraphInstance` is a standard
+ECS component, `GraphExecutionSystem` runs in the normal system schedule, and all ECS access goes
+through typed accessor opcodes that respect system ordering. The compiler shares the build cache
+(F-15.11.3) with the asset pipeline. The coroutine model yields through the IoReactor, consistent
+with the engine's async/await everywhere policy. One area of divergence is the bytecode format --
+`GraphProgram` uses a custom instruction set rather than a standard format like WebAssembly. Using
+Wasm would enable third-party tooling but adds a runtime dependency and may conflict with the no-
+third-party-runtime constraint.
+
 ## Open Questions
 
 1. **AOT native code compilation** -- The design currently uses bytecode execution. AOT compilation

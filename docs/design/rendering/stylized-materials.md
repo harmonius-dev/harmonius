@@ -1740,6 +1740,66 @@ consistent HLSL emission and compilation.
 | Toon lighting pass (1080p) | < 0.3 ms | - |
 | Painterly Kuwahara pass (1080p) | < 0.5 ms | - |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The HLSL-only shader IL constraint (constraints.md) means all stylized shading models (toon ramps,
+outline shaders, hatching patterns) must be expressed as HLSL permutations compiled through DXC.
+This prevents using GPU-specific features like Metal's tile shading for efficient outline rendering
+on iOS. The constraint ensures a single shader authoring language across all backends, but it limits
+platform-specific optimizations for stylized effects that benefit from tile-local storage (e.g.,
+jump-flood outline on tile-based GPUs). Lifting this constraint would allow per-platform shader
+specialization, but maintaining three shader languages would be unsustainable. The impact is that
+some mobile-optimized outline techniques (stencil-based tile-local outlines) cannot be used.
+
+**Q2. How can this design be improved?**
+
+The shader permutation system for stylized materials risks combinatorial explosion. With 12 shading
+models (F-2.4.9), 5 outline techniques (F-2.11.1), 5 stylized effects (F-2.11.1 through F-2.11.5),
+and 9 advanced material types (F-2.12.1 through F-2.12.9), the permutation space is enormous. The
+design does not specify a permutation budget or eviction policy for the compiled shader cache. A
+toon character with clearcoat armor, fabric cloth, and glass visor could require dozens of unique
+shader variants. The advanced materials (glass refraction, fabric sheen, tessellation) each add
+independent feature flags that multiply the permutation count. Restricting permutations to a curated
+whitelist per project or using uber-shaders with dynamic branching would reduce the explosion.
+
+**Q3. Is there a better approach?**
+
+An uber-shader approach (single large shader with feature toggles as specialization constants) would
+eliminate the permutation explosion entirely. Vulkan and D3D12 support specialization constants that
+compile to efficient code paths without runtime branching. We chose discrete permutations because
+each permutation can be individually profiled and the render graph's capability gating (F-2.2.2) can
+prune unused variants at compile time. The discrete approach also avoids register pressure from
+unused code paths in the uber-shader. The trade-off is compilation time and cache size versus
+runtime efficiency, and discrete permutations win for shipping builds where the variant set is
+known.
+
+**Q4. Does this design solve all customer problems?**
+
+The stylized effects cover common gameplay visualization needs (outlines, highlights, x-ray,
+cut-through) but lack a procedural ink/watercolor rendering mode that would enable artistic games
+like Okami, Sable, or Return of the Obra Dinn. Adding a screen-space painterly filter (Kuwahara or
+similar) as a post-process material (F-2.9.10) combined with edge-aware stylization would enable
+this art direction. The advanced materials (F-2.12.1 through F-2.12.9) cover natural surfaces well
+but lack a dedicated hologram/energy shield material type that is common in sci-fi games.
+US-2.12.9.1 mentions energy shields as achievable through custom material graphs, but a built-in
+hologram shading model with scanline animation and interference patterns would better serve sci-fi
+game developers.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The stylized rendering integrates with the ECS through per-entity components (HighlightState,
+XRayVisible, OutlineConfig) and uses the standard material parameter binding system (F-2.10.8) for
+toon ramp textures and stylized parameters. The outline and highlight systems correctly depend on
+the post-processing pipeline (F-2.9.1) and the ECS-to-renderer bridge (F-2.10.1). However, the
+advanced materials subsystem operates somewhat independently from the base PBR pipeline (F-2.4.3).
+Glass refraction (F-2.12.1) bypasses the standard lighting accumulation to handle transparency
+differently, and tessellation (F-2.12.4) introduces a pipeline stage not used by any other material
+type. Ensuring these specialized materials share the same bindless parameter binding path (F-2.10.8)
+and sort key structure (F-2.10.6) as standard PBR materials would improve cohesion and batching
+efficiency.
+
 ## Open Questions
 
 1. **Permutation explosion bound** -- With 12 shading models, 32 feature flags, 4 tiers, and 4 blend

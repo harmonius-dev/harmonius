@@ -967,6 +967,67 @@ alpha-blended transparency.
 | Switch | 0.3 ms (4 panels) | 0.3 ms (cards) | 0.6 ms |
 | Desktop | 1.0 ms (16 panels) | 1.5 ms (strands + OIT) | 2.5 ms |
 
+## Platform Tier Budget Allocation
+
+### Problem
+
+Hair OIT rendering can overdraw 1-4 ms per frame with no budget cap, starving other render passes.
+Without explicit per-platform limits on solver iterations, strand counts, and OIT layers, a single
+character's hair can consume the entire frame budget on lower-tier hardware.
+
+### Per-Platform Iteration Caps
+
+| Platform Tier | Solver Iterations | Hair Strands | OIT Layers | GPU Budget |
+|--------------|------------------|-------------|-----------|-----------|
+| Mobile | 2 | 1,024 | 2 | 0.5 ms |
+| Console (base) | 4 | 4,096 | 4 | 1.0 ms |
+| Console (pro) | 6 | 8,192 | 6 | 1.5 ms |
+| Desktop | 8 | 16,384 | 8 | 2.0 ms |
+| High-end PC | 12 | 32,768 | 8 | 3.0 ms |
+
+- **Solver iterations** control cloth PBD stiffness and hair strand constraint convergence.
+- **Hair strands** caps the total render strand count across all characters in the frame.
+- **OIT layers** limits per-pixel linked list depth or weighted blend passes.
+- **GPU budget** is the hard ceiling enforced by the render graph budget tracker.
+
+### Render Graph Budget Culling Integration
+
+The render graph tracks cumulative GPU time per pass. When the cloth/hair pass exceeds its platform
+budget, the system triggers a LOD reduction cascade.
+
+Reduction steps execute in order until the frame budget is satisfied:
+
+1. **Reduce OIT layers** -- halve layers (e.g., 4 to 2). Reduces per-pixel composite cost with
+   minimal visual impact on non-hero characters.
+2. **Reduce strand count** -- halve visible render strands per character (cull every other strand).
+   Guide strand simulation continues unchanged.
+3. **Disable hair OIT** -- fall back to opaque approximation using alpha-tested cards. Eliminates
+   all OIT overdraw cost.
+4. **Force card LOD** -- switch remaining strand characters to card-based representation for the
+   current frame.
+
+Each step is reversible. When GPU headroom returns for two consecutive frames, the system restores
+one reduction level.
+
+### LOD Reduction Cascade
+
+```mermaid
+flowchart TD
+    A[Render graph measures\ncloth/hair GPU time] --> B{Over budget?}
+    B -- No --> C[Render at full quality]
+    B -- Yes --> D[Reduce OIT layers\n4 → 2]
+    D --> E{Still over budget?}
+    E -- No --> F[Render with reduced OIT]
+    E -- Yes --> G[Reduce strand count\nby 50%]
+    G --> H{Still over budget?}
+    H -- No --> I[Render with reduced strands]
+    H -- Yes --> J[Disable hair OIT\nopaque approximation]
+    J --> K{Still over budget?}
+    K -- No --> L[Render opaque hair]
+    K -- Yes --> M[Force card LOD\nfor all characters]
+    M --> N[Render cards only]
+```
+
 ## Test Plan
 
 ### Unit Tests
@@ -1028,6 +1089,61 @@ buffers for rendering.
 Distance and bending constraints reference shared physics constraint types. Spring-damper evaluation
 for card-based hair uses `SpringDamper<T>` (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The GPU-first mandate (all simulation in HLSL compute) is the single biggest constraint. It forces
+cloth and hair solving into the GPU pipeline, which limits CPU-side debugging, prevents mid-solve
+inspection, and requires all collision proxy data to be uploaded every frame. If lifted, a hybrid
+CPU/GPU solver could run small panels on CPU for instant iteration and only dispatch large panels to
+GPU. The ideal solution would be a unified solver that auto-selects execution target per panel
+complexity. Removing the GPU constraint would sacrifice the scalability needed for 16+ simultaneous
+cloth panels (R-9.5.1) and 256 guide strands (R-9.5.2) on desktop.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The design is weak at the cloth-hair boundary: cloth and hair are separate systems that share wind
+but do not interact physically. A cloak draping over hair strands will clip through. The four-tier
+hair LOD (F-9.5.4) introduces visual discontinuities at tier boundaries despite hysteresis, because
+Marschner shading on strands versus Kajiya-Kay on cards produces different specular character. The
+delegation to the physics XPBD solver (F-4.7.1) creates a cross-module scheduling dependency that
+adds frame latency if the physics solve runs late.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+A unified particle-based simulation (treating both cloth vertices and hair strand particles as a
+single particle system) would eliminate the separate solver paths and naturally handle cloth-hair
+interaction. We are not taking this approach because it would couple cloth and hair lifetimes,
+making it impossible to disable cloth on mobile (R-9.5.1) while keeping card-based hair active
+(R-9.5.3). The tiered LOD strategy requires independent control over cloth and hair simulation
+budgets per platform.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design covers the traced requirements (R-9.5.1 through R-9.5.6) and all user stories. However,
+US-9.5.1.2 (panel-based authoring) lacks a concrete DCC plugin specification for constraint painting
+in Houdini/Maya/Blender. Adding a dedicated cloth authoring plugin feature would enable character
+artists to iterate without leaving their DCC tool. A missing feature is cloth tearing -- games like
+action RPGs and horror games need garments that rip under force. Adding a tear constraint system
+would enable combat-reactive clothing.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+The design is highly cohesive: all data lives as ECS components, wind is sampled from the shared
+wind field texture (F-4.7.5), collision uses the shared spatial index (F-1.9.1), and constraint
+solving delegates to the physics XPBD solver (F-4.7.1). It differs from skeletal animation (F-9.1)
+by running simulation on GPU compute rather than through the GPU skinning pipeline, which means
+cloth results must be written back to vertex buffers in a separate pass. Unifying the writeback path
+with the skinning dispatch would reduce GPU synchronization points and make the module more
+consistent with the skeletal pipeline.
 
 ## Open Questions
 

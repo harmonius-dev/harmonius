@@ -2,112 +2,15 @@
 
 ## Companions
 
-### F-13.15.1 Companion AI Framework
-
-AI-controlled companion entities that follow the player and respond to commands: follow, guard
-position, assist in combat, stay, patrol route, and passive (non-combat). Companion behavior is
-driven by behavior trees (F-7.3.1) with command-selected subtrees. Companions navigate using the
-pathfinding system (F-7.1.1), maintain configurable follow distance, and teleport to the player if
-they fall too far behind. Combat companions use the ability system (F-13.10.1) with AI-controlled
-activation. Companion stats (HP, damage, abilities) are defined in gameplay databases and level
-independently or mirror the player's level.
-
-- **Requirements:** R-13.15.1
-- **Dependencies:** F-7.3.1 (Behavior Trees), F-7.1.1 (NavMesh), F-13.10.1 (Abilities)
-- **Platform notes:** None
-
-### F-13.15.2 Pet Needs and Mood
-
-Companion pets have needs meters (hunger, happiness, cleanliness) that affect their behavior,
-effectiveness, and animations. Fed and happy pets fight better, follow more responsively, and
-display positive idle animations. Neglected pets become sluggish, refuse commands, and may run away
-after extended neglect. Pet care actions (feed, pet, play, bathe) are interactions (F-13.17.1) that
-restore specific needs. Pet food items have quality tiers affecting hunger restoration and happiness
-bonus. Mood state is displayed in a compact pet UI panel.
-
-- **Requirements:** R-13.15.2
-- **Dependencies:** F-13.15.1, F-13.9.1 (Inventory)
-- **Platform notes:** None
-
-### F-13.15.3a Mount Summoning and Dismissal
-
-Mounts are summoned from a collection UI that displays all owned mounts. Summoning spawns the mount
-entity near the player. Dismissal despawns the mount on command. Mount stats (speed, stamina, armor)
-are defined per mount species in gameplay databases.
-
-- **Requirements:** R-13.15.3a
-- **Dependencies:** F-13.7.1 (Table Schema)
-- **Platform notes:** None
-
-### F-13.15.3b Mounted Locomotion
-
-Mounting plays an enter animation, transitions the player to a seated state, and switches the
-character controller to mount physics (different speed, acceleration, jump height, turn rate per
-mount type). Dismounting plays an exit animation and returns normal locomotion.
-
-- **Requirements:** R-13.15.3b
-- **Dependencies:** F-13.15.3a, F-4.1.8 (Character Controller), F-9.4.1 (Animation State Machine)
-- **Platform notes:** None
-
-### F-13.15.3c Mounted Combat
-
-Mounted combat is optionally enabled per mount type, restricting available abilities to a configured
-allowed set. Mount-specific attack animations replace standard combat animations while mounted.
-
-- **Requirements:** R-13.15.3c
-- **Dependencies:** F-13.15.3b, F-13.10.1 (Abilities)
-- **Platform notes:** None
-
-### F-13.15.3d Mount Type Variants
-
-Mount types include ground (horse, wolf), flying (dragon, griffon), and aquatic (sea turtle, boat).
-Each type defines a distinct movement mode with type-specific physics, altitude limits, and
-transition rules (takeoff, landing, dive, surface).
-
-- **Requirements:** R-13.15.3d
-- **Dependencies:** F-13.15.3b, F-4.1.8 (Character Controller)
-- **Platform notes:** None
-
-### F-13.15.4 Creature Taming
-
-Tame wild creatures encountered in the world through feeding, patience mechanics, or combat
-weakening. Taming uses a progress bar that fills over multiple feeding/interaction attempts, with
-success probability affected by creature level relative to player level, taming skill, and food
-quality. Failed taming attempts may cause the creature to flee or attack. Successfully tamed
-creatures become companions (F-13.15.1) or mounts (F-13.15.3). Tameable species and taming rules are
-defined in gameplay databases. Some creatures require specific items, quests, or reputation levels
-to tame.
-
-- **Requirements:** R-13.15.4
-- **Dependencies:** F-13.15.1, F-13.12.3 (Professions)
-- **Platform notes:** None
-
-### F-13.15.5a Pet Life Stages
-
-Companion creatures grow through life stages (baby, juvenile, adult, elder) with stat changes and
-visual transformations at each stage. Growth is time-based or experience-based, with configurable
-durations per stage.
-
-- **Requirements:** R-13.15.5a
-- **Dependencies:** F-13.15.1
-- **Platform notes:** None
-
-### F-13.15.5b Pet Evolution Branching
-
-Evolution branches allow creatures to specialize based on diet, training focus, or item usage — a
-wolf pup fed meat becomes a combat wolf; one fed herbs becomes a tracking wolf. Branch conditions
-and resulting specializations are data-driven.
-
-- **Requirements:** R-13.15.5b
-- **Dependencies:** F-13.15.5a, F-13.15.1
-- **Platform notes:** None
-
-### F-13.15.5c Pet Breeding System
-
-Breeding pairs produce offspring that inherit traits (color, stat bonuses, special abilities) from
-parents with random variation. Breeding requires compatible species, a suitable environment (stable,
-pen), and a gestation timer.
-
-- **Requirements:** R-13.15.5c
-- **Dependencies:** F-13.15.5a, F-13.14.9a (Animal Needs and Happiness)
-- **Platform notes:** None
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-13.15.1 | Companion AI Framework | AI-controlled companion entities that follow the player and respond to commands: follow, guard position, assist in combat, stay, patrol route, and passive (non-combat). Companion behavior is driven by behavior trees (F-7.3.1) with command-selected subtrees. Companions navigate using the pathfinding system (F-7.1.1), maintain configurable follow distance, and teleport to the player if they fall too far behind. Combat companions use the ability system (F-13.10.1) with AI-controlled activation. Companion stats (HP, damage, abilities) are defined in gameplay databases and level independently or mirror the player's level. | R-13.15.1 | F-7.3.1 (Behavior Trees), F-7.1.1 (NavMesh), F-13.10.1 (Abilities) | None |
+| F-13.15.2 | Pet Needs and Mood | Companion pets have needs meters (hunger, happiness, cleanliness) that affect their behavior, effectiveness, and animations. Fed and happy pets fight better, follow more responsively, and display positive idle animations. Neglected pets become sluggish, refuse commands, and may run away after extended neglect. Pet care actions (feed, pet, play, bathe) are interactions (F-13.17.1) that restore specific needs. Pet food items have quality tiers affecting hunger restoration and happiness bonus. Mood state is displayed in a compact pet UI panel. | R-13.15.2 | F-13.15.1, F-13.9.1 (Inventory) | None |
+| F-13.15.3a | Mount Summoning and Dismissal | Mounts are summoned from a collection UI that displays all owned mounts. Summoning spawns the mount entity near the player. Dismissal despawns the mount on command. Mount stats (speed, stamina, armor) are defined per mount species in gameplay databases. | R-13.15.3a | F-13.7.1 (Table Schema) | None |
+| F-13.15.3b | Mounted Locomotion | Mounting plays an enter animation, transitions the player to a seated state, and switches the character controller to mount physics (different speed, acceleration, jump height, turn rate per mount type). Dismounting plays an exit animation and returns normal locomotion. | R-13.15.3b | F-13.15.3a, F-4.1.8 (Character Controller), F-9.4.1 (Animation State Machine) | None |
+| F-13.15.3c | Mounted Combat | Mounted combat is optionally enabled per mount type, restricting available abilities to a configured allowed set. Mount-specific attack animations replace standard combat animations while mounted. | R-13.15.3c | F-13.15.3b, F-13.10.1 (Abilities) | None |
+| F-13.15.3d | Mount Type Variants | Mount types include ground (horse, wolf), flying (dragon, griffon), and aquatic (sea turtle, boat). Each type defines a distinct movement mode with type-specific physics, altitude limits, and transition rules (takeoff, landing, dive, surface). | R-13.15.3d | F-13.15.3b, F-4.1.8 (Character Controller) | None |
+| F-13.15.4 | Creature Taming | Tame wild creatures encountered in the world through feeding, patience mechanics, or combat weakening. Taming uses a progress bar that fills over multiple feeding/interaction attempts, with success probability affected by creature level relative to player level, taming skill, and food quality. Failed taming attempts may cause the creature to flee or attack. Successfully tamed creatures become companions (F-13.15.1) or mounts (F-13.15.3). Tameable species and taming rules are defined in gameplay databases. Some creatures require specific items, quests, or reputation levels to tame. | R-13.15.4 | F-13.15.1, F-13.12.3 (Professions) | None |
+| F-13.15.5a | Pet Life Stages | Companion creatures grow through life stages (baby, juvenile, adult, elder) with stat changes and visual transformations at each stage. Growth is time-based or experience-based, with configurable durations per stage. | R-13.15.5a | F-13.15.1 | None |
+| F-13.15.5b | Pet Evolution Branching | Evolution branches allow creatures to specialize based on diet, training focus, or item usage — a wolf pup fed meat becomes a combat wolf; one fed herbs becomes a tracking wolf. Branch conditions and resulting specializations are data-driven. | R-13.15.5b | F-13.15.5a, F-13.15.1 | None |
+| F-13.15.5c | Pet Breeding System | Breeding pairs produce offspring that inherit traits (color, stat bonuses, special abilities) from parents with random variation. Breeding requires compatible species, a suitable environment (stable, pen), and a gestation timer. | R-13.15.5c | F-13.15.5a, F-13.14.9a (Animal Needs and Happiness) | None |

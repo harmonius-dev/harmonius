@@ -1131,6 +1131,51 @@ libcurl on Linux) wrapped via the `IoReactor`, consistent with [shared-cache.md]
 | Template instantiation | < 5 s | US-15.15.3.2 |
 | Launcher startup to home screen | < 2 s | -- |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The requirement to use platform-native auto-update mechanisms (Sparkle on macOS, WinSparkle on
+Windows, AppImage delta on Linux) fragments the update path across three codebases. Lifting this
+would enable a single cross-platform update mechanism. The best solution would be a custom
+delta-update system using the engine's own `ContentChunker` (F-15.14.7) and BLAKE3 verification.
+Removing the platform-native constraint simplifies maintenance but loses OS-native UX conventions
+like macOS Sparkle's familiar update dialog.
+
+**Q2. How can this design be improved?**
+
+The `MigrationRunner` (F-15.15.2) executes migrations sequentially (1.2->1.3->1.4->1.5), which
+compounds failure risk -- a bug in the 1.3->1.4 migration blocks all later upgrades. The
+`.harmonius` project file (F-15.15.4) stores team configuration including member lists, which
+creates merge conflicts when team members are added concurrently. The template system (F-15.15.3)
+lacks preview images in the creation wizard. Adding skip-level migrations, splitting team config
+into a separate file, and rendering template previews would improve reliability and usability.
+
+**Q3. Is there a better approach?**
+
+Instead of a standalone launcher application, the engine could use a web-based launcher (Electron or
+browser) for project management. We are not taking this because the launcher must use the engine's
+own UI framework to dogfood it, and a web-based approach would introduce a JavaScript dependency
+that violates the "no frameworks" constraint. The native launcher also enables deep OS integration
+(file associations, keychain, auto-update).
+
+**Q4. Does this design solve all customer problems?**
+
+There is no support for project templates from the asset marketplace (F-15.17). The `GenreTemplate`
+enum is fixed at compile time with six options. Adding the ability to discover and install
+community-created templates from the marketplace would enable a much wider range of starting points.
+The launcher also lacks a project health dashboard showing disk usage, cache status, and unresolved
+migrations across all projects.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The launcher uses the same `IoReactor`, platform-native HTTP clients, and `KeychainStore` as the
+editor, which is excellent cohesion. The `ProjectFile` format uses TOML, matching the engine's
+configuration convention. The `CollabWizard` (F-15.15.6) directly configures the version control
+(F-15.10) and collaboration (F-15.12) subsystems. One inconsistency is that the launcher's `SemVer`
+struct is duplicated from the asset store's `SemVer` -- these should share a single crate-level
+definition.
+
 ## Open Questions
 
 1. **HTTP client strategy** -- Resolved. Use platform-native HTTP clients (NSURLSession on macOS,

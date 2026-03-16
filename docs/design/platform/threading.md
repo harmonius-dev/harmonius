@@ -399,6 +399,316 @@ impl<'scope, R> ScopedJoinHandle<'scope, R> {
 }
 ```
 
+### Data-Level Parallelism
+
+The threading subsystem provides rayon-style data-parallel primitives integrated into the custom
+work-stealing pool. These compose with the async executor and scoped borrowing — no external
+runtime.
+
+**Design.** All data-parallel operations use recursive splitting (fork-join) within a `Scope`. The
+caller picks a chunk size or lets the system auto-tune based on core count and item count. Work is
+split recursively until chunks reach the threshold, then processed sequentially per chunk. This
+minimizes task spawn overhead while saturating all workers.
+
+```rust
+/// Configuration for data-parallel operations.
+pub struct ParallelConfig {
+    /// Minimum items per chunk before sequential
+    /// fallback. Defaults to 1024.
+    pub min_chunk_size: u32,
+    /// Maximum splits (log2 of parallelism).
+    /// Defaults to 2 * worker_count.
+    pub max_splits: u32,
+}
+
+impl Default for ParallelConfig {
+    fn default() -> Self {
+        Self {
+            min_chunk_size: 1024,
+            max_splits: 0, // 0 = auto
+        }
+    }
+}
+
+impl<'scope> Scope<'scope> {
+    /// Parallel for-each over a mutable slice.
+    /// Splits `data` into chunks and processes
+    /// each chunk on a worker thread. Borrows
+    /// `data` for the duration — no 'static or
+    /// Arc needed.
+    pub fn parallel_for<T, F>(
+        &self,
+        data: &'scope mut [T],
+        config: ParallelConfig,
+        f: F,
+    ) where
+        T: Send + 'scope,
+        F: Fn(&mut T) + Send + Sync + 'scope;
+
+    /// Parallel for-each over an immutable slice.
+    pub fn parallel_for_ref<T, F>(
+        &self,
+        data: &'scope [T],
+        config: ParallelConfig,
+        f: F,
+    ) where
+        T: Sync + 'scope,
+        F: Fn(&T) + Send + Sync + 'scope;
+
+    /// Parallel map: transforms each element,
+    /// writing results into `out`. `data` and
+    /// `out` must have equal length.
+    pub fn parallel_map<T, U, F>(
+        &self,
+        data: &'scope [T],
+        out: &'scope mut [U],
+        config: ParallelConfig,
+        f: F,
+    ) where
+        T: Sync + 'scope,
+        U: Send + 'scope,
+        F: Fn(&T) -> U + Send + Sync + 'scope;
+
+    /// Parallel reduce: splits data, reduces
+    /// each chunk with `reduce_fn`, then merges
+    /// partial results with `combine_fn`.
+    pub fn parallel_reduce<T, R, RF, CF>(
+        &self,
+        data: &'scope [T],
+        config: ParallelConfig,
+        identity: R,
+        reduce_fn: RF,
+        combine_fn: CF,
+    ) -> R
+    where
+        T: Sync + 'scope,
+        R: Send + Clone + 'scope,
+        RF: Fn(R, &T) -> R + Send + Sync + 'scope,
+        CF: Fn(R, R) -> R + Send + Sync + 'scope;
+
+    /// Parallel for-each over two aligned slices
+    /// (zip). Both slices must have equal length.
+    pub fn parallel_for_zip<A, B, F>(
+        &self,
+        a: &'scope mut [A],
+        b: &'scope [B],
+        config: ParallelConfig,
+        f: F,
+    ) where
+        A: Send + 'scope,
+        B: Sync + 'scope,
+        F: Fn(&mut A, &B) + Send + Sync + 'scope;
+
+    /// Parallel for-each with index. The closure
+    /// receives (global_index, &mut item).
+    pub fn parallel_for_indexed<T, F>(
+        &self,
+        data: &'scope mut [T],
+        config: ParallelConfig,
+        f: F,
+    ) where
+        T: Send + 'scope,
+        F: Fn(usize, &mut T)
+            + Send + Sync + 'scope;
+}
+```
+
+**Splitting algorithm.** `parallel_for` uses recursive bisection:
+
+```mermaid
+flowchart TD
+    A["parallel_for(slice, f)"] --> B{len > chunk?}
+    B -->|Yes| C[Split at midpoint]
+    C --> D["spawn left half"]
+    C --> E["process right half"]
+    D --> F["join left"]
+    E --> F
+    B -->|No| G["sequential for-each"]
+```
+
+1. If `len <= min_chunk_size`, process sequentially in the current task.
+2. Otherwise, split the slice at the midpoint.
+3. Spawn the left half as a scoped task on the work-stealing deque.
+4. Process the right half in the current task (avoids one spawn overhead).
+5. Join the left half before returning.
+
+This recursive halving produces `O(log N)` tasks with `O(1)` synchronization per split. The
+work-stealing pool balances load across cores automatically.
+
+**Chunk size auto-tuning.** When `max_splits` is 0 (default), the system computes:
+
+```text
+max_splits = 2 * worker_count
+min_chunk_size = max(64, len / max_splits)
+```
+
+This bounds total task count to `4 * cores` while keeping chunks large enough to amortize spawn
+overhead. The factor of 2 over-partitions slightly to handle uneven per-element cost.
+
+**Integration with ECS.** The ECS `par_iter` calls `scope.parallel_for` internally, splitting at
+archetype chunk boundaries. Each chunk is a contiguous SoA slice, so `parallel_for` receives
+pre-aligned, cache-friendly data. The ECS scheduler ensures that `parallel_for` borrows are
+compatible with the system's declared access set — no runtime borrow checking needed.
+
+**Integration with async executor.** Data-parallel operations are synchronous within a `Scope` —
+they block the calling task until all chunks complete. This is intentional: `parallel_for` is for
+CPU-bound bulk work within a single system, not for I/O-bound work. Async tasks that need data
+parallelism call `pool.scope(|s| s.parallel_for(...))` inside their system body.
+
+| Consumer | Primitive | Chunk Size | Notes |
+|----------|-----------|-----------|-------|
+| ECS par_iter | parallel_for | Archetype chunk (16 KiB) | Pre-split by archetype |
+| Physics broadphase | parallel_for | 256 pairs | AABB overlap tests |
+| Physics solver | parallel_for | 128 contacts | Constraint solving |
+| Render culling | parallel_for_ref | 512 objects | Frustum test per object |
+| AI perception | parallel_for_indexed | 64 queries | Budget-limited |
+| Spatial index rebuild | parallel_reduce | 1024 nodes | BVH SAH evaluation |
+| Asset processing | parallel_map | 1 asset | Coarse-grained |
+| Particle update | parallel_for | 4096 particles | GPU fallback on mobile |
+
+## Game Loop Graph
+
+The game loop is not hardcoded. Each game defines its frame structure as a `GameLoopGraph` — a
+high-level declarative DAG of `Phase` nodes. The graph is compiled once into a `TaskGraph` for
+execution. When the active system set changes, the graph is recompiled.
+
+### Concept
+
+**GameLoopGraph** is a directed acyclic graph of phase nodes. Each phase contains ECS systems,
+render passes, custom tasks, or nested sub-graphs. Edges express ordering constraints between
+phases. The graph defines the frame structure for a specific game — physics-heavy simulations add
+more physics sub-phases, render-heavy visualizers expand the render graph, and so on.
+
+**Compilation.** `GameLoopGraph::compile()` transforms the declarative phase graph into an
+executable `TaskGraph`:
+
+1. Flatten phases into individual task nodes
+2. Insert sync barriers for command buffer flushes
+3. Resolve inter-system dependencies via access sets
+4. Validate the DAG (cycle detection, access conflicts)
+5. Produce a `CompiledFrame` with a `TaskGraph` and render submission ordering
+
+**Render graph integration.** The render graph is a phase within the game loop graph. Render passes
+become task graph nodes. GPU command encoding runs as scoped tasks on the thread pool. This means
+GPU dispatch ordering is controlled by the same graph as CPU systems.
+
+**CPU work graph emulation.** D3D12 work graphs allow GPU-driven scheduling of variable-rate work.
+On platforms without native work graphs, the engine emulates them CPU-side by expanding work graph
+nodes into indirect dispatch chains within the task graph. The task graph handles the fan-out.
+
+### Compilation Pipeline
+
+```mermaid
+flowchart LR
+    GLG["GameLoopGraph"] -->|compile| TG["TaskGraph"]
+    TG --> TPE["ThreadPool::execute_graph()"]
+    GLG -->|flatten| RP["RenderGraph phases"]
+    RP -->|become| TN["Task nodes"]
+    TN --> GPU["GPU command encoding"]
+    GPU -->|"scoped tasks"| TPE
+```
+
+### Phase Types
+
+```rust
+/// A phase in the game loop graph.
+pub enum PhaseNode {
+    /// An ECS system phase (contains systems).
+    Systems(SystemPhase),
+    /// A render graph phase (contains render
+    /// passes).
+    RenderGraph(RenderGraphPhase),
+    /// A custom task (user-defined closure).
+    Task(TaskPhase),
+    /// A sub-graph (nested phases).
+    SubGraph(GameLoopGraph),
+    /// A sync barrier (command buffer flush).
+    Barrier,
+}
+
+/// High-level game loop structure. Defines one
+/// frame as a DAG of phases.
+pub struct GameLoopGraph {
+    phases: Vec<PhaseNode>,
+    edges: Vec<(PhaseId, PhaseId)>,
+}
+
+impl GameLoopGraph {
+    pub fn new() -> Self;
+    pub fn add_phase(
+        &mut self,
+        name: &'static str,
+        node: PhaseNode,
+    ) -> PhaseId;
+    pub fn add_dependency(
+        &mut self,
+        before: PhaseId,
+        after: PhaseId,
+    );
+    /// Compile the game loop graph into an
+    /// executable task graph. Safe — validates
+    /// the DAG (cycle detection, access conflicts)
+    /// at compile time.
+    pub fn compile(
+        &self,
+        world: &World,
+        pool: &ThreadPool,
+    ) -> Result<CompiledFrame, GraphError>;
+}
+
+/// A compiled frame ready for execution.
+/// Immutable after compilation — can be reused
+/// across frames with per-frame parameter binding.
+pub struct CompiledFrame {
+    task_graph: TaskGraph,
+    render_submissions: Vec<RenderSubmission>,
+}
+
+impl CompiledFrame {
+    /// Execute the frame. All task scheduling,
+    /// parallel dispatch, and GPU submission
+    /// happen within this call. Safe — borrows
+    /// are scoped to the frame.
+    pub fn execute(
+        &self,
+        world: &mut World,
+        pool: &ThreadPool,
+        reactor: &mut IoReactor,
+    );
+}
+```
+
+### Default Phase Table
+
+Each engine subsystem maps to a phase in the graph. Games customize this by adding, removing, or
+reordering phases.
+
+| Phase | Type | Contains | Dependencies |
+|-------|------|----------|-------------|
+| Input | Systems | input polling, action mapping | None |
+| Networking | Systems | receive, replication | Input |
+| Physics | Systems | broadphase, integration, constraints | Networking |
+| AI | Systems | perception, navigation, behavior | Physics |
+| Animation | Systems | skeletal, procedural, cloth | Physics, AI |
+| Game Logic | Systems | abilities, quests, progression | AI |
+| Transform Propagation | Systems | hierarchy, global transforms | Animation, Logic |
+| Render Extraction | Systems | extract visible, build draw calls | Transform |
+| Render Graph | RenderGraph | culling, encoding, GPU submit | Extraction |
+| Audio | Systems | spatial mix, stream, output | Transform |
+| Cleanup | Barrier | command flush, entity cleanup | All |
+
+### Safety Guarantees
+
+- **Safe public API.** All public types and methods are safe Rust. No `unsafe` in user-facing types.
+- **Compile-time access validation.** Graph compilation validates access patterns at build time —
+  conflicting borrows are compile errors, not runtime panics.
+- **Scoped execution.** All borrows are valid for the frame duration. The `CompiledFrame::execute`
+  call scopes every task borrow to the frame lifetime.
+- **Type-enforced exclusivity.** The type system prevents data races: `&World` for read-only
+  systems, `&mut World` only at sync barriers.
+- **Encapsulated internals.** Internal `unsafe` (work-stealing deque, platform FFI) is encapsulated
+  behind safe abstractions with documented invariants.
+
 ### Task Graph
 
 ```rust
@@ -988,6 +1298,58 @@ for async tasks that involve I/O. This matches Rayon's scope model.
 | Reactor poll (100 completions) | < 50 us | US-14.3.10 |
 | AsyncMutex contended lock | < 1 us (yield, not spin) | - |
 | I/O throughput | >= 80% raw disk bandwidth | US-14.6.11 |
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The GCD-only constraint on macOS for fibers and async I/O (no custom assembly, no ucontext) is the
+most limiting. GCD dispatch blocks are fire-and-forget and cannot be suspended mid-execution, making
+true fiber semantics impossible as noted in the GCD Fibers feasibility note. Lifting this would
+allow assembly-based context switching on macOS (like Linux), giving uniform fiber behavior across
+all platforms. The best unconstrained solution would be a single portable fiber implementation using
+setjmp/longjmp with explicit stacks on all POSIX platforms. The impact of removing GCD fibers:
+simpler code, but loss of macOS scheduler integration and QoS class propagation that GCD provides.
+
+**Q2. How can this design be improved?**
+
+The reactor poll frequency is a critical tuning parameter (open question 3). A single poll per frame
+adds up to 16 ms I/O latency at 60 fps, which is unacceptable for networking. The design supports
+multiple polls per frame but does not specify the optimal count or placement. An adaptive poll
+strategy that inserts extra polls when I/O-heavy systems are active would balance latency against
+overhead. The scoped async task cancellation safety invariant is complex and error-prone;
+restricting scoped async to CPU-only tasks (as proposed) significantly limits its utility for I/O
+workloads.
+
+**Q3. Is there a better approach?**
+
+Using Rayon for the work-stealing thread pool would provide a battle-tested implementation with
+excellent steal heuristics. We are not using it because Rayon's scope model does not integrate with
+async/await (Rayon tasks are synchronous closures, not futures). Building a custom pool lets us
+unify sync tasks, async tasks, and fiber yield points under a single scheduling model. The
+alternative of running Rayon for CPU work alongside the IoReactor for async work would create two
+separate scheduling domains that cannot share workers or priorities, reducing overall utilization.
+
+**Q4. Does this design solve all customer problems?**
+
+US-14.3.12 requests configurable fiber stack sizes per workload category, but the design only
+provides a single `FiberConfig::stack_size` (open question 5). Missing: fiber stack usage profiling
+to help developers choose appropriate sizes. Missing: a mechanism for tasks to report their progress
+(0-100%) for loading screen UIs. Adding progress reporting would enable loading bars for asset
+streaming, procedural generation, and world loading -- critical UX for all game genres, especially
+open-world and MMO titles (US-14.3.20).
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The threading subsystem is the execution backbone referenced by every other design. The IoReactor's
+controlled poll model is used consistently by networking (transport, replication), platform I/O
+(filesystem, clipboard), and database access (MMO persistence). The work-stealing pool with scoped
+execution matches the physics and rendering designs' parallel iteration patterns. The
+`AsyncMutex`/`AsyncRwLock` primitives replace `std::sync` locks engine-wide, enforcing the
+sub-microsecond blocking constraint. Platform selection via `cfg` attributes (IOCP/GCD/io_uring) is
+the same pattern used in windowing and transport. All proposed dependencies (`crossbeam-deque`,
+`io-uring`, `windows-sys`, `cxx`) are low-level libraries consistent with the no-frameworks
+guideline.
 
 ## Open Questions
 

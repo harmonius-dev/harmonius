@@ -2,75 +2,15 @@
 
 ## Visual Logic
 
-### R-13.4.1 Gameplay Logic Graph Integration
-
-The engine **SHALL** author all gameplay scripting through the universal logic graph system with
-gameplay-specific integration points (ECS world state access, gameplay event emission/handling,
-ability activation, state machine transitions, AI blackboard read/write), where gameplay graphs
-attach to entities as components and execute in the ECS system schedule, with no text-based
-scripting language provided.
-
-- **Derived from:** [F-13.4.1](../../features/game-framework/scripting.md)
-- **Rationale:** Visual-only gameplay scripting ensures the no-code engine principle, enabling
-  designers to author all logic through graphs without programming expertise.
-- **Verification:** Integration test: create a gameplay logic graph that reads an ECS component,
-  emits a gameplay event, and triggers a state machine transition. Attach it to an entity and verify
-  it executes correctly within the ECS schedule. Verify no text-based scripting API is exposed to
-  end users.
-
-### R-13.4.2 Logic Graph Debugging for Gameplay
-
-The engine **SHALL** provide visual debugging of gameplay logic graphs with ECS query result
-inspection, component value watch expressions, event flow visualization, per-entity graph instance
-state comparison, simulation-pausing breakpoints with continued editor interaction, and remote
-debugging over the network to a running game instance.
-
-- **Derived from:** [F-13.4.2](../../features/game-framework/scripting.md)
-- **Rationale:** Visual debugging tools are essential for a no-code engine, enabling designers to
-  diagnose and fix gameplay logic without text-based debugging skills.
-- **Verification:** Integration test: set a breakpoint in a gameplay logic graph, trigger it, and
-  verify the game simulation pauses while the editor remains interactive. Inspect ECS query results
-  and component values through the debugger UI. Connect remotely to a running game instance and
-  verify breakpoints and inspection work over the network.
-
-### R-13.4.3 Logic Graph Hot Reload
-
-The engine **SHALL** apply gameplay logic graph changes made in the editor to a running game session
-without restarting, by detecting graph asset changes, recompiling affected graphs through the shared
-build cache, and patching running instances with new bytecode while preserving persistent state
-(local variables, coroutine positions) when the variable layout is compatible.
-
-- **Derived from:** [F-13.4.3](../../features/game-framework/scripting.md)
-- **Rationale:** Hot reload enables rapid iteration on gameplay logic without restarting the game
-  session, dramatically reducing designer iteration time.
-- **Verification:** Integration test: run a game session with a gameplay logic graph, modify the
-  graph in the editor, and verify the change takes effect in the running session within 1 second
-  without restart. Verify local variable values persist across a compatible reload. Modify the
-  variable layout incompatibly and verify the graph instance restarts cleanly with a warning.
+| ID | Requirement | Derived From | Rationale | Verification |
+|----|-------------|-------------|-----------|--------------|
+| R-13.4.1 | The engine **SHALL** author all gameplay scripting through the universal logic graph system with gameplay-specific integration points (ECS world state access, gameplay event emission/handling, ability activation, state machine transitions, AI blackboard read/write), where gameplay graphs attach to entities as components and execute in the ECS system schedule, with no text-based scripting language provided. | [F-13.4.1](../../features/game-framework/scripting.md) | Visual-only gameplay scripting ensures the no-code engine principle, enabling designers to author all logic through graphs without programming expertise. | Integration test: create a gameplay logic graph that reads an ECS component, emits a gameplay event, and triggers a state machine transition. Attach it to an entity and verify it executes correctly within the ECS schedule. Verify no text-based scripting API is exposed to end users. |
+| R-13.4.2 | The engine **SHALL** provide visual debugging of gameplay logic graphs with ECS query result inspection, component value watch expressions, event flow visualization, per-entity graph instance state comparison, simulation-pausing breakpoints with continued editor interaction, and remote debugging over the network to a running game instance. | [F-13.4.2](../../features/game-framework/scripting.md) | Visual debugging tools are essential for a no-code engine, enabling designers to diagnose and fix gameplay logic without text-based debugging skills. | Integration test: set a breakpoint in a gameplay logic graph, trigger it, and verify the game simulation pauses while the editor remains interactive. Inspect ECS query results and component values through the debugger UI. Connect remotely to a running game instance and verify breakpoints and inspection work over the network. |
+| R-13.4.3 | The engine **SHALL** apply gameplay logic graph changes made in the editor to a running game session without restarting, by detecting graph asset changes, recompiling affected graphs through the shared build cache, and patching running instances with new bytecode while preserving persistent state (local variables, coroutine positions) when the variable layout is compatible. | [F-13.4.3](../../features/game-framework/scripting.md) | Hot reload enables rapid iteration on gameplay logic without restarting the game session, dramatically reducing designer iteration time. | Integration test: run a game session with a gameplay logic graph, modify the graph in the editor, and verify the change takes effect in the running session within 1 second without restart. Verify local variable values persist across a compatible reload. Modify the variable layout incompatibly and verify the graph instance restarts cleanly with a warning. |
 
 ## Non-Functional Requirements
 
-### R-13.4.NF1 Logic Graph Execution Budget
-
-The engine **SHALL** execute all active gameplay logic graphs within a combined budget of 4 ms per
-frame at 60 fps, supporting at least 1,000 concurrently active graph instances (one per active
-entity with gameplay logic).
-
-- **Derived from:** F-13.4.1
-- **Rationale:** Gameplay logic competes with physics, rendering, and AI for frame budget; exceeding
-  4 ms causes frame drops or forces other systems to shed work.
-- **Verification:** Spawn 1,000 entities each running a representative gameplay logic graph (10
-  nodes, 2 ECS queries, 1 event emission). Measure total graph execution time per frame and verify
-  it stays under 4 ms at 60 fps.
-
-### R-13.4.NF2 Hot Reload Turnaround Time
-
-The engine **SHALL** detect, recompile, and patch a modified gameplay logic graph within 1 second of
-the file change, measured from editor save to running instance executing the new bytecode.
-
-- **Derived from:** F-13.4.3
-- **Rationale:** Turnaround times exceeding 1 second break the designer's interactive iteration flow
-  and reduce the value of hot reload over full restarts.
-- **Verification:** Modify a gameplay logic graph with 50 nodes in the editor. Measure time from
-  save to the running game instance executing the patched graph. Verify the turnaround is under 1
-  second across 20 consecutive reload cycles.
+| ID | Requirement | Derived From | Rationale | Verification |
+|----|-------------|-------------|-----------|--------------|
+| R-13.4.NF1 | The engine **SHALL** execute all active gameplay logic graphs within a combined budget of 4 ms per frame at 60 fps, supporting at least 1,000 concurrently active graph instances (one per active entity with gameplay logic). | F-13.4.1 | Gameplay logic competes with physics, rendering, and AI for frame budget; exceeding 4 ms causes frame drops or forces other systems to shed work. | Spawn 1,000 entities each running a representative gameplay logic graph (10 nodes, 2 ECS queries, 1 event emission). Measure total graph execution time per frame and verify it stays under 4 ms at 60 fps. |
+| R-13.4.NF2 | The engine **SHALL** detect, recompile, and patch a modified gameplay logic graph within 1 second of the file change, measured from editor save to running instance executing the new bytecode. | F-13.4.3 | Turnaround times exceeding 1 second break the designer's interactive iteration flow and reduce the value of hot reload over full restarts. | Modify a gameplay logic graph with 50 nodes in the editor. Measure time from save to the running game instance executing the patched graph. Verify the turnaround is under 1 second across 20 consecutive reload cycles. |

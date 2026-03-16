@@ -2154,6 +2154,86 @@ pool.scope(|scope| {
 5. **Platform-invariant math** -- no platform-specific intrinsics in physics math. All operations
    use Rust's default f32 semantics with strict compliance.
 
+## Frame Budget Integration
+
+The physics foundation uses [`FrameBudget`](../core-runtime/shared-primitives.md#7-framebudget) from
+shared primitives to enforce per-frame time caps on the substep loop. The game loop allocates a
+physics budget each frame; the substep loop checks the budget at each substep boundary and
+gracefully degrades when time is exhausted.
+
+**Check location.** The budget is checked at the substep loop boundary -- after each complete
+substep finishes (integration through CCD) and before the next substep begins. This preserves
+per-substep determinism while allowing the loop to exit early between substeps.
+
+| Priority | Action | Trigger | Effect |
+|----------|--------|---------|--------|
+| 1 | Collapse remaining substeps | Budget exhausted mid-loop | Apply remaining time as a single larger step using the same pipeline (integration, broadphase, narrowphase, solve, CCD) to avoid skipping physics entirely |
+| 2 | Defer sleeping-body island checks | Budget exhausted mid-loop | Postpone `SleepSystem` evaluation for islands containing only sleeping bodies to the next frame |
+| 3 | Skip per-entity substep overrides | Budget exhausted mid-loop | Fall back to the global substep count, ignoring per-entity overrides that would increase iteration count |
+
+The following flowchart shows the substep budget check loop.
+
+```mermaid
+flowchart TD
+    START[Frame Begin] --> ALLOC["Allocate FrameBudget
+        for physics domain"]
+    ALLOC --> ACC["accumulator += frame_dt"]
+    ACC --> TICK{"accumulator >= fixed_dt?"}
+    TICK -->|No| INTERP[Compute interpolation alpha]
+    TICK -->|Yes| SUB["Execute substep N
+        (integrate → broadphase →
+        narrowphase → solve → CCD)"]
+    SUB --> CHECK{"FrameBudget
+        remaining_us > 0?"}
+    CHECK -->|Yes| NEXT["N += 1"]
+    NEXT --> MORE{"N < substep_count?"}
+    MORE -->|Yes| SUB
+    MORE -->|No| SLEEP[Run SleepSystem]
+    SLEEP --> DEC["accumulator -= fixed_dt"]
+    DEC --> TICK
+    CHECK -->|No| COLLAPSE["Collapse remaining
+        substeps into single step"]
+    COLLAPSE --> DEFER["Defer sleeping-body
+        island checks"]
+    DEFER --> DEC2["accumulator -= fixed_dt"]
+    DEC2 --> INTERP
+    INTERP --> DONE[Frame End]
+```
+
+**Pseudocode.**
+
+```rust
+pub fn advance(
+    schedule: &mut PhysicsSchedule,
+    frame_dt: f32,
+    world: &mut World,
+    budget: &mut FrameBudget,
+) {
+    schedule.accumulator += frame_dt;
+
+    while schedule.accumulator >= schedule.fixed_dt {
+        for substep in 0..schedule.substep_count {
+            run_substep(world);
+
+            if budget.remaining_us() == 0 {
+                // Collapse remaining time into one
+                // final step.
+                if substep + 1 < schedule.substep_count {
+                    run_substep(world);
+                }
+                // Defer sleep checks to next frame.
+                schedule.defer_sleep_checks = true;
+                schedule.accumulator -= schedule.fixed_dt;
+                return;
+            }
+        }
+
+        run_sleep_system(world);
+        schedule.accumulator -= schedule.fixed_dt;
+    }
+}
+```
+
 ## Platform Considerations
 
 ### SIMD Acceleration
@@ -2330,6 +2410,67 @@ Physics state replication is handled by the networking domain (see
 enables server-authoritative physics with client-side prediction and rollback. The networking layer
 snapshots physics state per tick and applies corrections when server state diverges from client
 prediction.
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The shared BVH as the sole broadphase (F-4.2.1) is the biggest constraint. Physics does not maintain
+its own acceleration structure; it queries the engine-wide BVH shared with rendering, networking,
+and AI. This means physics cannot optimize the BVH for collision-specific access patterns (e.g.,
+sweep-and-prune for axis-aligned motion) or update frequency (physics needs per-substep updates
+while rendering needs per-frame). Lifting this constraint would allow a physics-private SAP or grid
+broadphase tuned for dynamic bodies, which could cut broadphase cost by 2--3x for scenes with many
+moving objects. The shared BVH is kept because it eliminates redundant spatial data across systems
+and simplifies the architecture. The best compromise is maintaining a physics-local pair cache on
+top of the shared BVH.
+
+**Q2. How can this design be improved?**
+
+The contact point caching strategy (Open Question 2) is critical for solver convergence but
+unresolved. Without frame- to-frame contact matching, warm starting (Open Question 1) is
+ineffective, causing jitter in stacking scenarios. The position correction method (Open Question 4:
+Baumgarte vs split impulse) needs benchmarking before implementation. The character controller
+(F-4.1.8) is tightly specified but the moving platform interaction (F-4.1.9) does not cover all edge
+cases: rotating platforms with passengers, platforms that change velocity discontinuously, and
+networked platforms with latency. The sleeping system (F-4.1.6) uses simple velocity thresholds but
+could use energy-based criteria for better detection of low-energy oscillation that never fully
+rests.
+
+**Q3. Is there a better approach?**
+
+An extended position-based dynamics (XPBD) solver as the primary solver (instead of sequential
+impulses) would provide more stable stacking and easier parameter tuning. Jolt Physics and the
+latest Bullet versions use XPBD-style solvers. We use SI/PGS because it produces impulse magnitudes
+directly, which are needed for breakable joints (F-4.3.4), collision event force reporting
+(F-4.2.7), and audio impact sounds. An XPBD solver requires deriving forces from position
+corrections, which is less accurate. A speculative contacts approach (Open Question 3) would improve
+robustness for fast-moving objects without the full CCD cost; this should be evaluated as a
+complement to the current CCD system (F-4.1.4).
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers rigid body dynamics (F-4.1.1--10) and collision detection (F-4.2.1--9)
+comprehensively. Missing features include: one-way collision platforms (pass through from below,
+solid from above) as a dedicated shape type rather than relying on collision filtering heuristics;
+conveyor belt surface velocity (mentioned in F-4.1.9 but not in the foundation API); and physics
+material blending at contact points where two terrain materials meet. Wind forces on rigid bodies
+(boxes blown by storms) are not addressed, though the wind field (F-4.7.5) exists for cloth. Adding
+wind-rigid body coupling would benefit sandbox and survival games. Soft body collision with rigid
+bodies is handled in the advanced design but the coupling API is not defined here.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The physics foundation is the most ECS-native subsystem in the engine. Every component, system,
+event, and resource follows the ECS patterns established in the core runtime (F-1.1). The shared BVH
+integration (F-1.9.1) ensures spatial queries are unified across all domains. The fixed-timestep
+accumulator pattern is well-documented and integrates with the game loop. Deterministic simulation
+(R-4.1.NF3) aligns with the networking layer's server-authoritative model. One cohesion gap: the
+`CollisionFilter` trait (line 614) uses `dyn` dispatch for custom filters, which conflicts with the
+engine's static dispatch preference. Converting to a function pointer or enum dispatch would align
+with the architecture constraint. The character controller (F-4.1.8) should share its ground
+detection logic with the animation foot placement system (F-9.3.5) rather than duplicating shape
+casts.
 
 ## Open Questions
 

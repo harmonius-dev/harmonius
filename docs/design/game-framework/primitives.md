@@ -1974,6 +1974,59 @@ constraint is satisfied by:
 | Timer tick (100K timers) | < 0.5 ms | Performance target |
 | Allegiance lookup (10K pairs) | < 0.05 ms | Performance target |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code constraint (constraints.md) is the most limiting factor for gameplay primitives. All
+ability rules, damage formulas, game mode logic, and effect calculations must be expressible through
+visual logic graphs rather than Rust code. This limits the complexity of damage pipeline stages
+(R-13.1.7) and effect stacking formulas (R-13.1.6) to what the graph compiler can optimize. Lifting
+this constraint would allow hand-tuned Rust functions for performance-critical combat math, but
+would break the principle that designers author all gameplay logic without programming. The impact
+is primarily on the damage pipeline, where complex formulas may run slower as bytecode than as
+native Rust.
+
+**Q2. How can this design be improved?**
+
+The game mode state machine (F-13.1.1) currently uses a flat hierarchy with nested sub-modes, but
+lacks a reusable transition library. Common transitions (lobby-to-match, match-to-post-match) are
+re-authored per mode. A transition template system would reduce duplication. The damage pipeline
+(F-13.1.7) evaluates all stages sequentially; a skip-chain optimization that bypasses inactive
+stages (e.g., no absorb shield present) would improve throughput for simple hits. The modular system
+registration (F-13.1.9) validates dependencies at project load but not at edit time -- the editor
+should warn immediately when a designer disables a system that others depend on.
+
+**Q3. Is there a better approach?**
+
+An entity-component ability system (where each ability is an entity with cost, targeting, and effect
+components rather than a monolithic asset) would enable finer composition and runtime modification
+of abilities. We use the asset-based approach (F-13.1.5) because it maps directly to visual editor
+authoring and serialization. The asset model is simpler for designers who think in terms of "this
+ability does X" rather than composing behavior from atomic components. The trade-off is reduced
+runtime flexibility -- modifying an ability at runtime requires replacing the entire asset rather
+than tweaking individual components.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks a combo system for action games -- the ability system (F-13.1.5) supports queuing
+and chaining but not input-sequence-driven combo trees (e.g., light-light-heavy for a unique
+finisher). Adding a combo graph system would enable fighting games, character action games, and
+action RPGs with deep combat. The pawn/character separation (F-13.1.4) does not explicitly support
+multi-pawn control (RTS-style unit selection), which would require a controller-to-many-pawns
+binding. These gaps limit coverage for action and strategy genres referenced in the project scope.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The primitives module is the foundation that other game framework modules build on, and it
+integrates well. The ability system (F-13.1.5) feeds into the effect system (F-13.1.6) which feeds
+into the damage model (F-13.1.7), forming a clean pipeline. All components derive `Reflect` for the
+save system and editor integration. The plugin API (F-13.1.10) uses dynamic libraries with
+C-compatible ABI, which differs from internal systems that use static dispatch per constraints.md.
+This boundary is intentional -- plugins are the one place where dynamic dispatch is acceptable (cold
+initialization path). The modular registration system (F-13.1.9) enforces the engine's
+composition-over- inheritance philosophy by making systems independently toggleable.
+
 ## Open Questions
 
 1. **Damage pipeline extensibility** -- Should custom pipeline stages be pure logic graph nodes, or

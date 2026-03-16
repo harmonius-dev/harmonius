@@ -2125,6 +2125,314 @@ modifying world state.
 | Multicast resolution (100 recipients) | < 50 us | US-8.3.2 |
 | Jitter buffer insert + release | < 10 us | US-8.4.8 |
 
+## State Reconciliation Edge Cases
+
+This section addresses production-critical edge cases where the base replication, prediction, and
+authority transfer mechanisms interact with unreliable networks and concurrent mutations.
+
+**Entity lifecycle.** The following diagram shows every state an entity can occupy across authority
+boundaries, including tombstone handling for safe destruction.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Created: spawn on authority
+    Created --> Replicated: first replication
+    Replicated --> AuthorityTransfer: transfer begins
+    AuthorityTransfer --> Replicated: transfer complete
+    Replicated --> Destroyed: authority destroys
+    AuthorityTransfer --> Destroyed: authority destroys
+    Destroyed --> Tombstoned: tombstone marker set
+    Tombstoned --> Expired: TTL elapsed (2x max RTT)
+    Expired --> [*]: entity handle recycled
+
+    state Replicated {
+        [*] --> Active
+        Active --> Dormant: no changes for threshold
+        Dormant --> Active: change detected or wake()
+    }
+
+    state AuthorityTransfer {
+        [*] --> SnapshotSent: full state snapshot
+        SnapshotSent --> SnapshotAcked: receiver ACK
+        SnapshotAcked --> EpochBumped: epoch incremented
+    }
+```
+
+| Edge Case | Detection | Resolution | Timeout | Key Types |
+|-----------|-----------|------------|---------|-----------|
+| Destroy while client has pending updates[^1] | Tombstone component inserted before despawn | Silently drop all pending deltas and predictions for the entity | 2x max RTT | `Tombstone`, `TombstoneConfig` |
+| Physics re-add after network hiccup[^2] | Authority epoch change during active simulation | Full-state `PhysicsTransferSnapshot` handoff via reliable channel; freeze until ACK | Until reliable ACK | `PhysicsTransferSnapshot` |
+| Concurrent structural changes vs state updates[^3] | Same-frame op collision (destroy + delta, remove + delta) | Fixed priority ordering: destroy > remove > add > delta; conflicting ops deduplicated | N/A (immediate) | `ReplicationOpPriority`, `ReplicationOp`, `ReplicationOpPayload` |
+| Split-brain during network partition[^4] | Epoch mismatch between two claiming authorities | Higher epoch wins; lower-epoch holder freezes entity and requests full re-sync from server | Until re-sync ACK | `AuthorityEpoch`, `AuthorityShard` |
+
+**Tombstone handling.[^1]** Server inserts a `Tombstone` component before despawning, broadcasts via
+reliable channel. Client drops all pending ops on receipt. TTL = 2x max RTT ensures the
+highest-latency client receives the tombstone before handle reuse. Any delta or prediction
+referencing a tombstoned entity is silently discarded (late arrivals are expected under packet
+reordering).
+
+```rust
+/// Tombstone marker for destroyed entities.
+/// Prevents stale updates from being applied
+/// after authority destroys an entity.
+#[derive(Component, Clone, Debug, Reflect)]
+pub struct Tombstone {
+    /// Tick at which the entity was destroyed.
+    pub destroyed_at: SequenceTick,
+    /// Expiry tick = destroyed_at + ttl_ticks.
+    pub expires_at: SequenceTick,
+    /// Authority epoch at destruction time.
+    pub epoch: AuthorityEpoch,
+}
+
+/// Tombstone TTL configuration.
+pub struct TombstoneConfig {
+    /// TTL multiplier applied to max RTT.
+    /// Default: 2.0.
+    pub rtt_multiplier: f32,
+    /// Absolute minimum TTL in ticks.
+    /// Default: 60 (1 second at 60 Hz).
+    pub min_ttl_ticks: u32,
+    /// Absolute maximum TTL in ticks.
+    /// Default: 600 (10 seconds at 60 Hz).
+    pub max_ttl_ticks: u32,
+}
+```
+
+```mermaid
+sequenceDiagram
+    participant SV as Server
+    participant TR as Transport
+    participant CL as Client
+    participant PR as ClientPredictor
+
+    Note over SV: Server tick N: destroy entity E
+    SV->>SV: insert Tombstone(E, tick=N)
+    SV->>TR: send Tombstone(E) reliable
+
+    Note over CL: Client tick N+2: still predicting
+    CL->>PR: predict(input, E)
+    PR->>PR: apply movement to E
+
+    Note over CL: Client tick N+3: delta arrives
+    TR->>CL: delta for E (tick N-1, pre-destroy)
+    CL->>CL: apply delta to E (stale but harmless)
+
+    Note over CL: Client tick N+5: tombstone arrives
+    TR->>CL: Tombstone(E, tick=N)
+    CL->>CL: mark E as tombstoned
+    CL->>PR: drop pending predictions for E
+    CL->>CL: despawn E from local world
+
+    Note over CL: Client tick N+5..N+5+TTL
+    CL->>CL: reject any late deltas for E
+
+    Note over CL: TTL expires
+    CL->>CL: remove tombstone, free handle
+```
+
+**Authority transfer with physics snapshot.[^2]** Outgoing authority captures full physics state
+(position, rotation, velocities, forces) and sends it with the `AuthorityTransfer` message via
+reliable channel. Incoming authority applies the snapshot atomically before resuming simulation.
+Entity is frozen if the snapshot is lost and retransmitted. The incoming authority never simulates
+from stale state.
+
+```rust
+/// Full physics state for authority transfer.
+/// All fields required for deterministic handoff.
+#[derive(Clone, Debug, Reflect, Serialize)]
+pub struct PhysicsTransferSnapshot {
+    pub position: Vec3,
+    pub rotation: Quat,
+    pub linear_velocity: Vec3,
+    pub angular_velocity: Vec3,
+    pub accumulated_force: Vec3,
+    pub accumulated_torque: Vec3,
+    /// Server tick at which this snapshot was
+    /// captured.
+    pub tick: SequenceTick,
+    /// Authority epoch after transfer.
+    pub new_epoch: AuthorityEpoch,
+}
+```
+
+```mermaid
+sequenceDiagram
+    participant SV as Server (outgoing)
+    participant TR as Transport
+    participant CL as Client (incoming)
+    participant PH as Physics Simulation
+
+    Note over SV: Tick N: begin authority transfer
+    SV->>SV: capture PhysicsTransferSnapshot
+    SV->>SV: bump AuthorityEpoch
+    SV->>TR: send TransferMsg + snapshot (reliable)
+
+    Note over CL: Tick N+3: transfer msg arrives
+    TR->>CL: TransferMsg + PhysicsTransferSnapshot
+    CL->>CL: verify epoch > local epoch
+    CL->>PH: apply snapshot atomically
+    CL->>CL: set NetworkAuthority::ClientAuthoritative
+    PH->>PH: resume simulation from snapshot state
+
+    Note over CL: Tick N+4: client is authority
+    CL->>PH: simulate with local input
+    CL->>TR: send state updates as new authority
+
+    Note over SV: Late delta for E at tick N-1
+    TR->>CL: stale delta (old epoch)
+    CL->>CL: reject: epoch < current epoch
+```
+
+**Structural operation ordering.[^3]** When structural changes and state deltas arrive in the same
+frame, operations are sorted by fixed priority before processing:
+
+| Priority | Operation | Rationale |
+|----------|-----------|-----------|
+| 1 | Entity destroy | Prevents updates to dead entities |
+| 2 | Component remove | Prevents deltas to removed components |
+| 3 | Component add | Initializes new components before patching |
+| 4 | State delta | Patches only existing, live components |
+
+Processing rules:
+
+1. **Sort** all received operations by the priority table above before processing any of them
+2. **Deduplicate** conflicting operations: if both "remove component C" and "delta for C" arrive in
+   the same frame, the remove wins and the delta is discarded
+3. **Entity destroys** cascade: if an entity destroy and a component add for that entity arrive in
+   the same frame, the destroy wins
+4. **Component adds** carry initial state: the add message includes the full component value, so no
+   separate delta is needed for the first frame
+
+```rust
+/// Operation ordering for same-frame processing.
+/// Lower value = higher priority = processed first.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+    PartialOrd, Ord,
+)]
+pub enum ReplicationOpPriority {
+    EntityDestroy = 0,
+    ComponentRemove = 1,
+    ComponentAdd = 2,
+    StateDelta = 3,
+}
+
+/// A single replication operation received from
+/// the server, tagged with its processing
+/// priority.
+pub struct ReplicationOp {
+    pub entity: Entity,
+    pub priority: ReplicationOpPriority,
+    pub tick: SequenceTick,
+    pub payload: ReplicationOpPayload,
+}
+
+pub enum ReplicationOpPayload {
+    Destroy,
+    RemoveComponent { component_id: ComponentId },
+    AddComponent {
+        component_id: ComponentId,
+        initial_value: DynamicValue,
+    },
+    Delta(DeltaPayload),
+}
+```
+
+**Split-brain resolution.[^4]** A monotonic `AuthorityEpoch` counter increments on every authority
+transfer. Packets with an epoch lower than the locally known epoch are rejected. The lower-epoch
+holder freezes the entity and requests re-sync. Only the server can increment the epoch.
+
+Split-brain resolution rules:
+
+| Condition | Action |
+|-----------|--------|
+| Received epoch > local epoch | Accept new authority, apply state |
+| Received epoch = local epoch | Normal replication (no conflict) |
+| Received epoch < local epoch | Discard packet silently |
+| Local node has lower epoch | Freeze entity, request re-sync from server |
+| Partition heals | Server broadcasts authoritative epoch to all |
+
+```rust
+/// Monotonic authority epoch. Incremented on every
+/// authority transfer. Higher epoch always wins.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq,
+    PartialOrd, Ord, Hash, Reflect, Serialize,
+)]
+pub struct AuthorityEpoch(pub u64);
+
+impl AuthorityEpoch {
+    pub fn next(self) -> Self {
+        Self(self.0 + 1)
+    }
+
+    /// Returns true if this epoch supersedes the
+    /// other. Used to resolve split-brain conflicts.
+    pub fn supersedes(self, other: Self) -> bool {
+        self.0 > other.0
+    }
+}
+
+/// Extended NetworkAuthority with epoch tracking.
+#[derive(Component, Clone, Debug, Reflect)]
+pub struct AuthorityShard {
+    pub authority: NetworkAuthority,
+    pub epoch: AuthorityEpoch,
+    /// True when this node has detected a
+    /// higher epoch and is awaiting re-sync.
+    pub frozen: bool,
+}
+```
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The shared BVH spatial index for area-of-interest filtering (F-8.2.3) is the tightest constraint.
+Every client's relevant entity set must be evaluated via BVH query each tick, and the BVH is shared
+with physics, rendering, and AI. Lifting this would allow per-subsystem spatial indices optimized
+for their access patterns (e.g., a grid for replication, octree for physics). The best unconstrained
+solution would be a replication-specific spatial hash with O(1) relevancy checks, but the shared BVH
+keeps memory footprint lower and avoids data duplication across subsystems.
+
+**Q2. How can this design be improved?**
+
+Delta compression uses `Reflect` field-by-field comparison, which adds overhead for components with
+many fields that rarely change together. A dirty-flag per component set at mutation time would skip
+the diff entirely for unchanged components. The rollback replay (F-8.4.1) processes entities
+independently, but cross-entity dependencies (standing on a platform) can produce incorrect replay
+results. The RPC validator uses `dyn Reflect` for parameter validation, which is one of the few
+dynamic dispatch points and could be replaced with generated validators for registered RPCs.
+
+**Q3. Is there a better approach?**
+
+An interest management system based on publish-subscribe channels (like Photon's interest groups)
+rather than spatial queries would reduce per-tick BVH evaluation cost. We chose spatial BVH queries
+because they naturally handle the open- world MMO case where relevancy is distance-based and
+entities move continuously. Pub-sub interest groups work well for instanced content (dungeons,
+arenas) but require manual channel management for open-world scenarios. A hybrid approach using BVH
+for open-world and pub-sub for instanced content could combine both strengths.
+
+**Q4. Does this design solve all customer problems?**
+
+US-8.2.12 requires always-relevant entities (party members, raid bosses) regardless of distance,
+which is covered by `AlwaysRelevant` rules. Missing: a visual indicator for entities at the edge of
+the AOI radius that are about to leave relevancy. Missing: configurable per-entity-type dormancy
+thresholds (open question 7) -- interactive objects like doors need shorter thresholds than idle
+NPCs. Adding entity-type dormancy tuning would enable puzzle games where state changes on distant
+objects must propagate quickly.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The replication system integrates deeply with the engine's `Reflect` trait for delta computation,
+mirroring the bevy_reflect-style reflection constraint. Snapshot interpolation and prediction run as
+ECS systems, matching the 100% ECS architecture. The RPC system uses `dyn Reflect` for parameters,
+which is an allowed exception per the constraints document. The lag compensation `HistoryRewinder`
+correctly uses a read-only ring buffer rather than mutating live ECS components, preserving the
+immutable-data-in-mutable-containers pattern from the design constraints. Thread pool integration
+via `pool.scope()` for parallelized interest evaluation is consistent with the threading design.
+
 ## Open Questions
 
 1. **Quantization precision per component type.** Position fields likely use 16-bit deltas at 0.01 m

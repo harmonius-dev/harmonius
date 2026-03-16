@@ -1393,6 +1393,62 @@ No new external dependencies. Uses existing engine modules:
 | Impulse dispatch (10 sources, 4 listeners) | < 0.1 ms | R-13.25.19 |
 | Group framing (8 members) | < 0.2 ms | R-13.25.28 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The static dispatch constraint is the most limiting. Camera behaviors are concrete component types
+(Follow, OrbitalFollow, ThirdPersonFollow, etc.) rather than trait objects. This means each virtual
+camera entity can have exactly one position behavior and one rotation behavior as fixed component
+types. Lifting this constraint to allow `dyn PositionBehavior` would enable runtime-composable
+camera stacks where designers mix and match behaviors without predefined component types. The impact
+of removing it would be more flexible camera authoring but at the cost of vtable overhead on every
+frame's camera evaluation -- roughly 2-4 ns per virtual call, which is negligible relative to the 1
+ms per-brain budget (NFR-13.25.1).
+
+**Q2. How can this design be improved?**
+
+The design has 40 features (F-13.25.1 through F-13.25.40) making it one of the largest subsystems.
+This breadth creates a risk of feature creep in the camera module. The deoccluder (F-13.25.14) and
+decollider (F-13.25.15) have overlapping concerns -- both prevent the camera from being in bad
+positions relative to geometry. Merging them into a single collision resolution extension with
+configurable modes would reduce API surface. The impulse system (F-13.25.19) and noise profiles
+(F-13.25.18) both add shake offsets but have separate evaluation paths that could conflict. The
+design also lacks accessibility features -- no motion sickness reduction options like reduced camera
+shake intensity or restricted FOV oscillation are mentioned.
+
+**Q3. Is there a better approach?**
+
+An alternative is a node-graph camera system where each camera is a pipeline of composable nodes
+(position node -> rotation node -> collision node -> noise node) connected visually. Unity
+CineMachine uses a fixed component pipeline; this design follows the same model. A node graph would
+be more flexible but harder to optimize because the evaluation order depends on runtime graph
+topology. The component-based approach is justified by the no-code constraint -- visual editors for
+component properties are simpler to build than a full node graph editor. Given that F-13.25.36
+already provides a modifier stack, the component + modifier architecture covers most use cases
+without the complexity of a full graph.
+
+**Q4. Does this design solve all customer problems?**
+
+VR camera support is absent from the design and only mentioned as an open question. VR requires
+stereoscopic rendering with IPD offset, head-tracking integration, and strict frame timing (must
+match HMD refresh rate). Without VR camera support, the engine cannot ship VR games -- a requirement
+per the project's all-genre scope. The design also lacks a first-person camera body awareness system
+(seeing your own hands, feet, and shadow) which is standard in modern FPS games. There is no camera
+replay/rewind system for sports games or kill-cam features. Adding VR brain and first-person body
+awareness would expand the engine's genre coverage significantly.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The camera system integrates well with the ECS (virtual cameras as entities), the shared spatial
+index (collision queries for spring arm, deoccluder, and decollider), the input system (F-6.2.1 for
+orbital and pan/tilt control), and the animation system (F-9.4.1 for state-driven camera switching).
+The split-screen model (multiple brains with channel masks) avoids singletons per the constraints.
+One inconsistency is that the camera modifier stack (F-13.25.36) uses `dyn` for custom modifiers,
+which is acceptable per the constraints document for editor/tool paths but is explicitly in the
+runtime path here. This should be justified or changed to enum dispatch. The PiP system (F-13.25.40)
+aligns with the multi-view rendering system (F-2.10.5) for consistent render target management.
+
 ## Open Questions
 
 1. **Camera-per-entity limit.** Should an entity have at most one position behavior and one rotation

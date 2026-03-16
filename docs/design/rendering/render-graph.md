@@ -295,6 +295,105 @@ flowchart TD
     R3 -.- R4
 ```
 
+## Task Graph Integration
+
+The render graph is not a standalone execution system. It is a phase within the unified
+`GameLoopGraph`. Render passes compile into task graph nodes. The threading subsystem's
+work-stealing pool drives parallel encoding.
+
+### Design Principles
+
+1. **Render passes as task nodes.** Each render pass compiles into one or more `TaskNode` entries in
+   the parent `TaskGraph`. Dependencies between passes become task graph edges.
+2. **Parallel encoding.** Independent render passes that do not share resources are scheduled as
+   parallel tasks by the work-stealing pool -- the same mechanism that runs parallel ECS systems.
+3. **GPU submission ordering.** The task graph's topological sort determines GPU submission order.
+   Cross-queue synchronization (graphics, compute, transfer) uses task graph barriers.
+4. **Per-frame parameter binding.** The compiled render graph is a reusable template. Per-frame data
+   (camera, visibility, light lists) is bound without recompilation.
+
+### Render Pass to Task Node Mapping
+
+```mermaid
+graph TD
+    subgraph glg["GameLoopGraph"]
+        subgraph rgp["RenderGraphPhase"]
+            SP["ShadowPass<br/>TaskNode (GPU encode)"]
+            GBP["GBufferPass<br/>TaskNode (GPU encode)"]
+            LP["LightingPass<br/>TaskNode (GPU encode)"]
+            PP["PostProcess<br/>TaskNode (GPU encode)"]
+        end
+    end
+
+    SP --> LP
+    GBP --> LP
+    LP --> PP
+```
+
+Each render pass maps to a `TaskNode` that encodes GPU commands within a scoped borrow. The task
+graph handles scheduling, dependency tracking, and parallelism.
+
+### RenderGraphPhase API
+
+```rust
+/// A render graph phase that integrates into
+/// the game loop graph.
+pub struct RenderGraphPhase {
+    passes: Vec<RenderPass>,
+    resources: ResourceTable,
+    compiled: Option<CompiledRenderGraph>,
+}
+
+impl RenderGraphPhase {
+    /// Compile render passes into task graph nodes.
+    /// Safe -- validates resource lifetimes and
+    /// inserts barriers automatically.
+    pub fn compile(
+        &mut self,
+        device: &GpuDevice,
+    ) -> Result<(), RenderGraphError>;
+
+    /// Emit task nodes into the parent task graph.
+    /// Each pass becomes a scoped task that encodes
+    /// GPU commands. Safe -- command buffers are
+    /// borrowed for the encoding scope only.
+    pub fn emit_tasks(
+        &self,
+        builder: &mut TaskGraphBuilder,
+        frame_data: &FrameData,
+    );
+}
+```
+
+### Integration Sequence
+
+```mermaid
+sequenceDiagram
+    participant GL as GameLoopGraph
+    participant RGP as RenderGraphPhase
+    participant TGB as TaskGraphBuilder
+    participant WP as WorkStealingPool
+    participant GPU as GPU Queues
+
+    GL->>RGP: compile(device)
+    RGP->>RGP: validate resources
+    RGP->>RGP: analyze barriers
+    GL->>RGP: emit_tasks(builder, frame_data)
+    RGP->>TGB: add ShadowPass TaskNode
+    RGP->>TGB: add GBufferPass TaskNode
+    RGP->>TGB: add LightingPass TaskNode
+    RGP->>TGB: add PostProcess TaskNode
+    RGP->>TGB: add dependency edges
+    GL->>WP: execute task graph
+    par Parallel Encoding
+        WP->>GPU: encode ShadowPass
+        WP->>GPU: encode GBufferPass
+    end
+    WP->>GPU: encode LightingPass
+    WP->>GPU: encode PostProcess
+    GPU-->>GL: frame complete
+```
+
 ## API Design
 
 ### Handles and Identifiers
@@ -1684,6 +1783,106 @@ flowchart TD
     H -->|No| I[Execute remaining passes]
 ```
 
+## Frame Budget Integration
+
+The render graph uses [`FrameBudget`](../core-runtime/shared-primitives.md#7-framebudget) from
+shared primitives to enforce per-frame GPU time caps. Budget feedback from GPU timestamp queries
+drives culling decisions during graph execution. The budget check runs after the culling pass and
+before command encoding begins.
+
+**Check location.** The budget is checked at two points in the frame: (1) pre-execution culling --
+after `ExecutionPlan` evaluates conditional enables, the budget culler reads GPU timings from the
+previous frame and drops passes that would push the frame over target; (2) mid-culling re-check --
+after each pass is culled, the estimated total is recalculated and if still over budget, the next
+lowest-priority pass is culled.
+
+| Priority | Action | Trigger | Effect |
+|----------|--------|---------|--------|
+| 1 | Drop lowest-priority render passes | Budget exceeded | Optional passes (SSAO, motion blur, bloom) are culled first based on `PassPriority` assigned at registration |
+| 2 | Increase culling aggressiveness | Budget exceeded | Tighten frustum culling threshold to reduce draw call count by shrinking effective draw distance |
+| 3 | Skip optional compute passes | Budget exceeded | Async compute work (GPU particle updates, screen-space reflections) is deferred to next frame |
+| 4 | Cascade-cull dependents | Pass culled | All passes that exclusively depend on culled pass outputs are also removed from the execution plan |
+
+The following flowchart shows the render graph budget check loop.
+
+```mermaid
+flowchart TD
+    START[Frame Begin] --> TIMING["Read GPU timestamp
+        feedback from
+        previous frame"]
+    TIMING --> ALLOC["Allocate FrameBudget
+        for render domain"]
+    ALLOC --> CULL["Run frustum and
+        occlusion culling"]
+    CULL --> ESTIMATE["Estimate total GPU
+        time from pass timings"]
+    ESTIMATE --> CHECK{"FrameBudget
+        remaining_us > 0?"}
+    CHECK -->|Yes| ENCODE["Encode command
+        buffers (parallel)"]
+    CHECK -->|No| SORT["Sort passes
+        by PassPriority"]
+    SORT --> DROP["Drop lowest-priority
+        pass"]
+    DROP --> CASCADE["Cascade-cull
+        exclusive dependents"]
+    CASCADE --> TIGHTEN["Tighten frustum
+        culling threshold"]
+    TIGHTEN --> REEST["Recalculate
+        estimated total"]
+    REEST --> RECHECK{"Still over
+        budget?"}
+    RECHECK -->|Yes| DROP
+    RECHECK -->|No| ENCODE
+    ENCODE --> SUBMIT["Submit to
+        GPU queues"]
+    SUBMIT --> END[Frame End]
+```
+
+**Pseudocode.**
+
+```rust
+pub fn execute(
+    plan: &ExecutionPlan,
+    frame_data: &FrameData,
+    backend: &mut GpuBackend,
+    pool: &ThreadPool,
+    budget: &mut FrameBudget,
+) {
+    plan.evaluate_conditionals(frame_data);
+
+    // Read previous frame's GPU timings.
+    let timings = backend.read_timestamp_queries();
+    let estimated_total = timings.sum_active_passes(plan);
+
+    // Cull passes until within budget.
+    while estimated_total > budget.remaining_us()
+        && plan.has_cullable_passes()
+    {
+        let pass = plan.lowest_priority_pass();
+        plan.cull_pass(pass);
+        plan.cascade_cull_dependents(pass);
+        estimated_total =
+            timings.sum_active_passes(plan);
+    }
+
+    // Tighten frustum culling if still tight.
+    if budget.remaining_us()
+        < plan.tight_budget_threshold_us
+    {
+        frame_data.culling_params.shrink_draw_distance(
+            plan.distance_reduction_factor,
+        );
+    }
+
+    // Encode and submit.
+    plan.encode_parallel(
+        frame_data, backend, pool,
+    );
+    backend.submit_all_queues();
+}
+```
+
 ## Platform Considerations
 
 ### Backend-Specific Barrier Strategy
@@ -1810,6 +2009,116 @@ backend API calls from the render graph crate.
 | Budget culling decision | < 50 us | US-2.2.8.1 |
 | Barrier analysis (50 passes) | < 200 us | US-2.2.5.1 |
 | Diagnostic export | < 1 ms | US-2.2.13.1 |
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The compile-once-execute-many-frames model (F-2.2.12) constrains the graph to a fixed topology
+between recompilation events. This means dynamic pass insertion (e.g., adding a new shadow cascade
+mid-frame or spawning a new reflection probe) requires a full graph recompilation. The streaming
+integration (F-2.2.11) works around this with placeholder resources, but truly dynamic graph
+topologies are not supported. Lifting this constraint would enable per-frame graph construction (as
+in Frostbite's frame graph), but the recompilation cost (barrier analysis, aliasing, queue
+assignment) would run every frame. The compile-once model saves 200+ microseconds per frame (per the
+barrier analysis benchmark) at the cost of topology flexibility.
+
+**Q2. How can this design be improved?**
+
+The capability gating system (F-2.2.2) uses hard and soft gates (RG-6.2) but the interaction between
+capability gates and budget culling (F-2.2.8) is underspecified. A pass may be capability- gated to
+a fallback implementation that is itself budget-culled, leaving no implementation active. The design
+should specify a minimum-quality floor that cannot be budget-culled. The 119 requirements across 14
+categories (RG-1 through RG-14) make this the most complex subsystem in the engine, and the
+requirement density increases the risk of implementation gaps. The multi-view execution system
+(F-2.2.9) supports dozens of concurrent views but does not specify memory scaling -- each view may
+allocate its own transient resources, potentially exceeding VRAM on mobile.
+
+**Q3. Is there a better approach?**
+
+A task-graph approach (like Halcyon's or bgfx's) that treats each pass as a task with explicit
+resource dependencies would be simpler than the full DAG compilation model. Task graphs skip barrier
+analysis by requiring passes to declare explicit transitions. We chose the DAG compilation model
+because automatic barrier insertion (F-2.2.5) eliminates an entire class of GPU synchronization bugs
+that are notoriously hard to debug. The compilation cost is amortized over hundreds of frames, and
+the correctness guarantee (RG-3.1 through RG-3.6 covering all hazard types) justifies the upfront
+complexity. Manual barrier declaration would be error-prone given the engine's 50+ render passes
+across all subsystems.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks explicit support for render graph visualization in the editor viewport. RG-12.6
+provides conditional debug overlays, and F-2.2.13 provides diagnostic export, but there is no user
+story for artists interactively inspecting the live render graph topology to understand why a pass
+was culled or how resources are aliased. Adding a visual graph editor that displays the compiled DAG
+in real time (similar to RenderDoc's frame browser but integrated into the engine editor) would help
+technical artists diagnose performance issues without external tools. The streaming integration
+(F-2.2.11) also lacks a user story for prioritizing which streamed resources load first based on
+screen-space importance.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The render graph is the orchestration backbone that all rendering subsystems depend on, and its
+typed pass descriptor model (RG-1.1) enforces a consistent interface across all passes. The resource
+aliasing system (F-2.2.4) integrates with the GPU sub-allocator (F-2.1.7) through placed allocations
+(GR-1.4), maintaining a clean layering. The parallel encoding system (F-2.2.10) uses scoped tasks
+from the thread pool (F-14.3.1), aligning with the engine's concurrency model. One divergence is
+that the graph compiler's topological sort produces a deterministic order (RG-5.6) that may differ
+from the execution order that a GPU work graph (F-2.1.10, RG-1.13) would produce, since work graphs
+allow GPU-side scheduling. The design handles this by treating work graph passes as opaque nodes in
+the DAG, but this means work graph internal scheduling is invisible to the render graph diagnostics
+(F-2.2.13).
+
+## Safety Guarantees
+
+All render graph APIs are safe Rust. Internal `unsafe` is confined to platform FFI wrappers and is
+audited with documented invariants.
+
+| Guarantee | Mechanism |
+|-----------|-----------|
+| **No unsafe in public API.** | All user-facing types (`GraphBuilder`, `PassBuilder`, `ExecutionPlan`, `RenderGraphPhase`) and functions are safe Rust. No `unsafe` in any public signature. |
+| **Compile-time validation.** | Graph compilation catches resource conflicts, missing dependencies, cycle detection, single-writer violations, and invalid access patterns before any GPU work is submitted. |
+| **Scoped borrows.** | All GPU command encoding uses scoped borrows. `PassEncoder<'a>` borrows the command buffer for the encoding scope only -- command buffers cannot outlive their encoding scope. |
+| **Type-safe resource handles.** | GPU resources use generational handles (`Handle<T>` / `ResourceHandle` with version field). No raw pointers. Dangling references are impossible -- stale handles fail validation at lookup time. |
+| **Internal unsafe encapsulation.** | Platform FFI (Metal, D3D12, Vulkan) is encapsulated behind safe wrapper types in `harmonius_gpu`. Unsafe blocks document safety invariants inline. No unsafe propagates to render graph consumers. |
+
+### Scoped Borrow Model
+
+```mermaid
+sequenceDiagram
+    participant TG as TaskGraph
+    participant RG as RenderGraphPhase
+    participant PE as PassEncoder<'a>
+    participant CB as CommandBuffer
+
+    TG->>RG: execute task node
+    RG->>CB: borrow command buffer
+    RG->>PE: create PassEncoder<'a>
+    Note over PE,CB: Scoped borrow -- PE<br/>cannot outlive CB
+    PE->>CB: encode draw commands
+    PE->>PE: drop (scope ends)
+    RG->>TG: return command buffer
+```
+
+### Generational Handle Safety
+
+```rust
+/// Stale handles are caught at lookup time.
+/// The version field prevents use-after-free.
+pub struct ResourceHandle {
+    pub(crate) index: u32,
+    pub(crate) version: u32,
+}
+
+/// ResourceTable validates generation on every
+/// access. Returns Err if the handle is stale.
+impl ResourceTable {
+    pub fn get(
+        &self,
+        handle: ResourceHandle,
+    ) -> Result<&Resource, RenderGraphError>;
+}
+```
 
 ## Open Questions
 

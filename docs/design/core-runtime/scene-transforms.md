@@ -1302,6 +1302,69 @@ No custom SIMD code is needed; `glam` handles this transparently.
 | Scene spawn 10K entities | Under 5 ms | R-1.2.1 |
 | Entity remap 10K references | Under 0.5 ms | R-1.2.1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The delegation of all spatial queries to the shared BVH (F-1.9.1 via R-1.2.6) is the biggest
+constraint. The scene module cannot maintain its own specialized spatial structure optimized for
+hierarchy traversal patterns (e.g., a scene-graph-aware octree that groups parent and child nodes
+for traversal locality). Lifting this would allow a dedicated scene-graph spatial index that
+collocates parent and child bounding volumes for faster top-down culling. The impact of removing
+this constraint is duplication: maintaining a separate scene-graph index alongside the shared BVH
+doubles update cost and memory for spatial data. The shared BVH approach trades per-subsystem
+optimization for global consistency across physics, rendering, networking, and gameplay (R-1.9.1).
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The top-down parallel propagation (F-1.2.4) has a fan-out problem: a single root entity with 100K+
+descendants produces only one parallel task at the root level, leaving most cores idle until depth 1
+children are processed. The iterative traversal avoids stack overflow but uses an explicit work
+stack that competes with the per-frame arena for memory. Dirty tracking at chunk granularity
+(F-1.2.5 via F-1.1.22) means modifying one entity's transform marks the entire chunk dirty, causing
+unnecessary propagation for sibling entities. Introducing subtree-level dirty flags set by component
+hooks (F-1.1.9), adaptive work splitting at shallow tree depths, and a dedicated propagation arena
+separate from the general frame arena would improve performance for deep and wide hierarchies.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+A deferred, dependency-graph-based propagation model (like Unity DOTS' TransformSystemGroup)
+processes transforms in batches sorted by hierarchy depth, allowing full parallelism at each depth
+level. This avoids the fan-out problem of recursive top-down traversal. We are using the top-down
+subtree model instead because it integrates more naturally with the ECS relationship traversal
+(F-1.1.16) and avoids the overhead of a per-frame depth-sorted entity list. The depth-sorted
+approach also requires grouping entities by depth every frame when the hierarchy changes, adding
+cost that scales with entity count rather than changed entities. With dirty tracking (R-1.2.5), the
+top-down model skips entire static subtrees.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design handles standard transform propagation but lacks support for constraint-based transforms
+(e.g., look-at, aim-at, billboard). US-1.2.13 covers editor display of transforms but there are no
+user stories for constraint-based attachment (a camera that always faces a target entity, a weapon
+that aligns to a bone socket). These are essential for FPS games (weapon attachment), third-person
+games (camera follow), and VR (head-tracked transforms). Adding constraint components that
+participate in propagation (evaluated after parent composition but before child propagation) would
+cover these use cases. The scene also lacks LOD transition support integrated with hierarchy depth,
+which would benefit open-world games.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+Scene and transforms are tightly coupled with the ECS hierarchy (F-1.1.16), change detection
+(F-1.1.22), command buffers (F-1.1.32), and the shared spatial index (F-1.9.1). This is one of the
+most cohesive modules in the engine. The cross-cutting dependency table in the design doc explicitly
+traces every dependency. One area for improvement is cohesion with the animation system: animation
+drives local transforms but the current design does not specify how animation blending results feed
+into the propagation pipeline. Defining a clear contract where animation writes to LocalTransform
+components before the propagation system reads them would formalize this dependency and prevent
+ordering ambiguities (R-1.1.28).
+
 ## Open Questions
 
 1. **GlobalTransform storage format** — The current design stores a full `Mat4` (64 bytes). An

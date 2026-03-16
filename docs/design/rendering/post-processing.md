@@ -1716,6 +1716,63 @@ For `DolbyVision`, dynamic metadata is generated per frame based on the luminanc
 | Full pipeline combined | < 3.0 ms | NFR-2.9.1 |
 | Mobile composite merge | < 0.1 ms | US-2.9.6.2 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code constraint (constraints.md) requires the post-process graph editor (F-2.9.14) to provide
+Unreal Material Editor-level flexibility without any user-written shader code. This forces a
+comprehensive node library (10 categories, 60+ node types) and a full graph-to-HLSL compiler. If
+users could write HLSL snippets directly (beyond the escape-hatch custom node), the node library
+could be smaller. Lifting the constraint would simplify the editor but break the engine's
+fundamental promise. The impact is a large upfront implementation cost for the graph compiler and
+node library, but the payoff is that all post-process authoring is visual, consistent with material
+graphs (F-15.8.5) and logic graphs (F-15.8.1).
+
+**Q2. How can this design be improved?**
+
+The effect execution order is fixed by the pipeline chain (bloom, DOF, motion blur, exposure,
+tonemapping, grain, CA, vignette), but the design does not support per-camera effect reordering.
+Some games want tonemapping before DOF (for physically correct bokeh in HDR) while others want DOF
+before tonemapping (for artistic control). The NFR-2.9.1 budget of 3.0 ms for the full pipeline at
+1080p is tight when cavity (F-2.9.13), local exposure (F-2.9.11), and custom post-process graphs
+(F-2.9.14) are all active simultaneously. The design should specify how the budget is distributed
+when all optional effects are enabled. The mobile composite merging strategy (combining grain, CA,
+vignette into one pass) is well-designed but should be extended to Switch.
+
+**Q3. Is there a better approach?**
+
+A single compute-shader uber-pass that evaluates all lightweight effects (tonemapping, grain, CA,
+vignette, color grading) in one dispatch would reduce memory bandwidth by reading the source texture
+once instead of per-effect. The current design uses the render graph's resource aliasing (F-2.2.4)
+to ping-pong between two transient textures, which still requires intermediate writes. The mobile
+composite merge already does this partial fusion. We chose separate passes for desktop because each
+pass is independently budget-cullable via F-2.2.8, and the uber-pass approach makes it harder to
+skip individual effects. A hybrid approach (separate heavy passes + fused lightweight pass) is the
+ideal middle ground.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks temporal post-process effects that accumulate over multiple frames. Features like
+progressive image sharpening, temporal super-resolution-aware bloom, and frame-averaging motion
+trails require persistent history buffers that the current per-frame transient model does not
+support. US-2.9.14.5 allows custom HLSL snippets but there is no user story for artists creating
+multi-frame temporal effects through the graph editor. Adding temporal accumulation nodes to the
+post-process graph (F-2.9.14) with automatic history buffer management via the render graph (RG-2.4
+history resources) would enable dream- sequence effects, temporal ghosting, and long-exposure
+simulation.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The post-processing pipeline integrates cleanly with the render graph (F-2.2.1) for pass scheduling,
+transient resource management (F-2.2.3), and automatic barriers (F-2.2.5). The graph editor
+(F-2.9.14) shares the universal logic graph runtime (F-15.8.1) and shader compilation pipeline
+(F-15.8.5) with material and effect graphs, maintaining consistency across authoring tools. One
+divergence is that the auto exposure system (F-2.9.4) uses a GPU histogram with CPU readback, which
+conflicts with the engine's controlled reactor poll point model (constraints.md) where I/O
+completions are processed only at explicit poll points. The GPU readback should be integrated with
+the IoReactor's fence-based completion model rather than using a separate readback path.
+
 ## Open Questions
 
 1. **Ping-pong vs. in-place UAV.** The current design ping-pongs between two transient color

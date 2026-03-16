@@ -1010,6 +1010,59 @@ Each step is a separate ability with its own hitbox timing, damage, and animatio
 | Projectile CCD (256 projectiles) | < 1 ms | NFR-13.16.1 |
 | Combo input processing | < 0.01 ms | -- |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 128-bit tag bitmask (u128 GameplayTagSet) is the most significant constraint. It caps the entire
+game at 128 unique gameplay tags for all abilities, effects, statuses, and interactions. Lifting
+this would allow a HashSet or hierarchical tag tree, enabling thousands of tags with namespace
+support like GAS's `Ability.Fire.Damage.DoT`. The impact of the current limit is that large RPGs
+with hundreds of status effects and elemental interactions will exhaust tag slots. However, removing
+the bitmask sacrifices O(1) set intersection to O(n) hash lookups, so a tiered approach (fast-path
+bitmask + overflow set) would preserve hot-path performance.
+
+**Q2. How can this design be improved?**
+
+The effect evaluation order for stat modifiers (R-13.10.3) is undefined -- flat-before-percent
+versus percent-before-flat produces different results, and neither is canonical. This will cause
+balance bugs in shipped games. The combo system (F-13.10.2) lacks cycle detection in combo graphs,
+risking infinite combo exploits. Hit-stop time dilation (F-13.10.4) has no defined network behavior
+-- local-only hit-stop creates frame-count divergence in multiplayer. The aim assist system
+(F-13.10.5) is gamepad-only with no gyroscope support for Switch or Steam Deck. Adding a
+configurable stat modifier ordering per stat and networked hit-stop policy would resolve the most
+critical gaps.
+
+**Q3. Is there a better approach?**
+
+An alternative would be to unify abilities and effects into a single entity archetype rather than
+separating `harmonius_abilities` and `harmonius_combat` into two modules. Unreal's GAS uses a single
+`GameplayAbility` that owns its effects. However, the split is justified because melee combat
+(hitbox/hurtbox, SwingTracker) and ranged combat (projectile physics, CCD) have fundamentally
+different data and system dependencies. Merging them would create a monolithic module with too many
+concerns. The current split keeps combat physics separate from ability logic, which aligns with the
+ECS principle of composing orthogonal systems.
+
+**Q4. Does this design solve all customer problems?**
+
+Several user stories are not fully addressed. US-13.10.3.3 (buff/debuff HUD indicators) has no
+design coverage -- the effect system stores `ActiveEffects` but defines no UI binding or icon
+system. The design also lacks channeled ability interruption (US-13.10.2.5 tests for stun blocking,
+but interrupt priority from F-13.10.1 AI hints has no API). There is no support for ground-targeted
+abilities (e.g., placing an AoE reticle on terrain), which is critical for RTS and MOBA genres.
+Adding a `GroundTarget` targeting mode and a UI binding system for `ActiveEffects` would enable
+these game types.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The design integrates well with the ECS architecture (all state as components, all logic as systems)
+and the shared spatial index (hitbox queries, projectile CCD). The `GameplayEffect` system shares
+the `StatModifier` and `ModOp` pipeline with the gameplay databases module (F-13.7.9), ensuring
+consistent stat math. The lag compensation system aligns with the networking module's historical
+snapshot design (F-8.4.5). One divergence is that `GameplayTagSet` is a custom bitmask type rather
+than using the reflection system's `TypeId` for tag identity -- unifying these would let the visual
+editor auto-discover tags, improving the no-code authoring experience (US-13.10.1.2).
+
 ## Open Questions
 
 1. **Tag capacity** -- 128 tags (u128 bitmask) may be insufficient for large games. Consider a

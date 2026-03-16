@@ -1811,6 +1811,59 @@ impl DirectStorageBackend {
 | Request coalescing I/O reduction | >= 20% | R-12.5.6 |
 | Texture mip stream-in latency | < 500 ms | R-12.5.4 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The ban on stdlib file I/O (constraints.md) requires three separate platform backends (IOCP,
+GCD/Dispatch IO, io_uring) for every file operation in the streaming system (R-12.5.2). This triples
+implementation and testing effort compared to a single portable path. If lifted, the VFS and
+streaming priority queue could use a simpler cross-platform I/O layer. However, direct I/O with
+platform-native APIs is essential for GPU direct storage (F-12.5.3) -- DirectStorage and Metal I/O
+require bypassing the OS page cache entirely. The throughput benefit (saturating NVMe bandwidth per
+R-12.5.3) justifies the implementation cost for open-world streaming.
+
+**Q2. How can this design be improved?**
+
+The streaming priority queue (F-12.5.6) uses screen-space size, distance, asset type weight, and
+frame deadline, but does not account for player velocity prediction -- if the player is moving fast,
+assets ahead of the movement direction should be prioritized over equidistant assets behind. The
+memory pressure response (F-12.5.7) evicts lowest-priority assets but does not distinguish between
+assets that are cheap to re-stream (small textures) and expensive to re-stream (large mesh LOD
+chains). A re-acquisition cost factor would improve eviction quality. The download-on-demand system
+(F-12.5.10) lacks retry backoff and bandwidth estimation for adaptive chunk sizing.
+
+**Q3. Is there a better approach?**
+
+An alternative is a fully unified streaming approach where the VFS, priority queue, memory manager,
+and pak archive system are collapsed into a single "streaming world" abstraction that owns all asset
+residency decisions. This would simplify the interfaces between F-12.5.1 through F-12.5.10. We chose
+the modular approach because each component (VFS, priority queue, memory budget, pak format) has
+distinct platform considerations and can be tested independently. The modular design also allows the
+VFS to serve non-streaming use cases (editor file browsing, asset import) without dragging in
+streaming complexity.
+
+**Q4. Does this design solve all customer problems?**
+
+Core streaming scenarios are covered: texture mip streaming (US-12.5.1), mesh LOD streaming
+(US-12.5.2), and download-on-demand (US-12.5.10). However, there is no feature for audio streaming
+integration -- the audio engine (F-5.1.5) has its own ring-buffer streaming that operates
+independently of the asset streaming priority queue. Unifying audio and visual asset streaming under
+one priority system would prevent audio streams from starving visual streams or vice versa during
+I/O-heavy scenes. The design also lacks prefetch hints driven by gameplay logic (e.g., pre-stream
+assets for the next quest area), which would benefit open-world RPGs and MMOs.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The streaming system is one of the most cohesive modules. It builds directly on the IoReactor
+(F-14.3.5) for async I/O, shares BLAKE3 content hashing with the import pipeline (F-12.1.1) and
+download verification (F-12.5.10), and feeds the rendering pipeline's GPU memory management. The VFS
+abstraction (F-12.5.1) is consumed by every subsystem that loads assets. The pak archive format
+(F-12.5.8) aligns with the binary asset format (F-12.7.1) for consistent asset addressing. One
+divergence is that GPU direct storage (F-12.5.3) introduces a platform-specific rendering dependency
+(DirectStorage on Windows, Metal I/O on macOS) that other content pipeline modules avoid -- this is
+acceptable because GPU DMA is inherently graphics-API specific.
+
 ## Open Questions
 
 1. **Pak archive alignment granularity.** Entries must be sector-aligned for direct I/O (512 B).

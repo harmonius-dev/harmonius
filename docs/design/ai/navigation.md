@@ -1452,6 +1452,108 @@ pub fn navmesh_debug_system(
    `NavMeshTileMap`.
 5. The `ClusterGraph` is updated for any newly loaded or unloaded tiles.
 
+## Tile Versioning and Stale Fallback
+
+NavMesh tiles rebuild in the background on worker threads (F-7.1.9). During a rebuild, concurrent
+pathfinding queries may read the tile being replaced. Without explicit tile versioning or fallback
+behavior, queries can observe partial data or block waiting for a rebuild to complete.
+
+**Versioning fields.** Each tile carries a monotonic generation counter that tracks its rebuild
+history.
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `generation` | `u64` | Monotonic counter incremented on each rebuild |
+| `ref_count` | Atomic `u32` | Active readers holding a reference |
+| `generation + 1` | `u64` | Produced by every rebuild |
+| `generation` in result | `u64` | Included in query results for the tile that was read |
+| Read reference | ref | Held by active queries; old tile freed when last reader drops |
+| Generation `0` | `u64` | Reserved for the initial build |
+
+```rust
+/// Per-tile version metadata.
+#[derive(Clone, Copy, Debug)]
+pub struct TileVersion {
+    /// Monotonic rebuild counter.
+    pub generation: u64,
+}
+```
+
+**Fallback behavior.** When a query arrives while a tile is rebuilding, the system falls back to the
+previous-generation tile.
+
+| Condition | Behavior | Max Staleness |
+|-----------|----------|---------------|
+| Tile rebuilding, previous tile exists | Use previous-generation tile | N/A |
+| Tile rebuilding, no previous tile (first build) | Return `NavResult::TilePending` | N/A |
+| Tile stale for 3+ frames | Force-complete rebuild synchronously | 3 frames |
+
+The maximum staleness threshold of 3 frames prevents unbounded use of outdated geometry. After 3
+frames, the rebuild system calls a synchronous completion that blocks until the tile is ready
+(R-7.1.9).
+
+```rust
+/// Extended navigation result status.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NavResult {
+    /// Path computed on current-generation tile.
+    Current,
+    /// Path computed on stale tile (rebuild
+    /// in progress).
+    Stale { generation: u64 },
+    /// Tile is building for the first time;
+    /// no data available yet.
+    TilePending,
+}
+```
+
+**Atomic swap procedure.** Completed tiles are published via an atomic pointer swap. In-flight
+queries on the old tile finish normally against their held reference.
+
+1. Rebuild task produces a new `NavMeshTile` with `generation = old.generation + 1`
+2. The `NavMeshTileMap` performs an atomic swap of the tile pointer
+3. New queries immediately see the updated tile
+4. Old tile remains valid until its `ref_count` reaches zero, then it is deallocated
+
+**Sequence.**
+
+```mermaid
+sequenceDiagram
+    participant Q as Query
+    participant TM as TileMap
+    participant OT as Old Tile (gen N)
+    participant RB as Rebuild Task
+    participant NT as New Tile (gen N+1)
+
+    Q->>TM: request path
+    TM->>OT: check generation
+    Note over TM: Tile is rebuilding
+    TM->>OT: acquire read ref
+    OT-->>Q: return stale path
+    RB->>NT: build complete
+    RB->>TM: atomic swap
+    Note over TM: Pointer updated
+    Q->>TM: next query
+    TM->>NT: acquire read ref
+    NT-->>Q: return current path
+    Note over OT: ref_count → 0
+    OT->>OT: deallocate
+```
+
+**Lifecycle.**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Building: first build
+    Building --> Active: build complete
+    Active --> Rebuilding: geometry change
+    Rebuilding --> Active: swap new tile
+    Rebuilding --> Active: force sync (3 frames)
+    Active --> Superseded: new gen swapped in
+    Superseded --> Freed: ref_count = 0
+    Freed --> [*]
+```
+
 ## Platform Considerations
 
 ### Pathfinding Budget Scaling
@@ -1577,6 +1679,62 @@ default path is async-friendly stack-local search state.
 | Tile streaming I/O (single tile) | < 2 ms | US-7.1.2.12 |
 | 128 concurrent queries (desktop) | < 2 ms total | US-7.1.3.12 |
 | 1000 HPA* queries (server) | < 4 ms total | US-7.1.14.12 |
+
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The "no C++ stdlib file I/O" constraint and the custom `IoReactor` requirement (constraints.md)
+impose the biggest limitation on NavMesh tile streaming (F-7.1.2) and background generation
+(F-7.1.9). Tile data must be loaded via platform-native async I/O (GCD Dispatch IO on macOS, IOCP on
+Windows, io_uring on Linux) rather than simple `std::fs::read`. If we lifted this constraint, tile
+streaming would be trivially implemented with blocking reads on worker threads. With it, we must
+integrate the tile loader with the `IoReactor` poll point, which adds complexity to the atomic tile
+swap procedure and forces background generation to use `'static` cloned data since scoped async
+tasks cannot perform I/O (per constraints.md).
+
+**Q2. How can this design be improved?**
+
+The tile versioning and stale fallback mechanism forces a synchronous completion after 3 frames of
+staleness, which contradicts the "never block the main thread" goal of R-7.1.9. A better approach
+would be exponential backoff with progressively coarser fallback meshes rather than a hard sync. The
+HPA* cluster granularity (one cluster per tile) may produce suboptimal paths for very large tiles,
+as noted in Open Question 3. The off-mesh link auto-detection heuristic for player-built stairs and
+ladders (F-7.1.11) is undefined, which is a significant gap for the building gameplay loop. The
+design also lacks a memory pressure callback to proactively evict tiles before hitting the 256 MB
+hard cap (R-7.NFR.7).
+
+**Q3. Is there a better approach?**
+
+An alternative to Recast-style voxelization is a constraint-based NavMesh built from BSP/CSG
+geometry, which avoids the lossy heightfield rasterization step entirely. We are not taking this
+approach because voxelization handles arbitrary triangle soup from any DCC tool (Houdini, Maya,
+Blender per the DCC plugin constraint), whereas BSP-based approaches require structured geometry
+input. Another alternative is sparse voxel octrees instead of uniform heightfields, which would
+reduce memory for large open areas with sparse geometry. This merits evaluation during the
+voxelization library decision (Open Question 1), but adds implementation complexity for the initial
+prototype.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers all 15 navigation features (F-7.1.1 through F-7.1.15) and their 180 user stories.
+However, US-7.1.7.4 (enemies climbing ladders during pursuit) and US-7.1.7.5 (NPCs opening doors)
+require tight integration with the animation system and gameplay ability system that is not detailed
+here. The design does not address vertical navigation in 3D space (flying, swimming in 3D volumes),
+which limits the engine for games with flying mounts or underwater exploration. Adding a 3D
+volumetric NavMesh layer would enable these genres. Multi-floor building navigation (Open Question
+7) remains unsolved and is critical for RPGs and stealth games with interior spaces.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The navigation system integrates tightly with the ECS architecture through `PathRequest`,
+`PathResult`, `NavMeshAgent`, and `NavMeshObstacle` components, and `NavMeshTileMap` as an ECS
+resource. It uses the shared spatial index (BVH/octree per constraints.md) for obstacle queries and
+the thread pool for parallel pathfinding via `pool.scope()` with borrowed access. The tile streaming
+system uses the `IoReactor` for async tile loading, aligning with the platform I/O backend
+constraint. The destruction integration (F-7.1.10) connects cleanly to the physics fracture system
+via ECS events. The design is one of the most cohesive AI subsystems because pathfinding is a
+well-bounded problem with clear data flow boundaries.
 
 ## Open Questions
 

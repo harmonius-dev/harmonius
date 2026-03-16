@@ -1213,6 +1213,59 @@ events (`onPause`, `onResume`) are mapped to `WindowEvent::FocusChanged`.
 | Event polling throughput | > 10,000 events/frame | US-14.1.7 |
 | Display re-enumeration latency | < 1 frame | R-14.1.3 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-winit constraint forces implementing four separate window backends (Win32, NSWindow, xcb,
+Wayland) from scratch. Each backend requires its own event loop, DPI handling, fullscreen transition
+logic, and HDR negotiation. Lifting this would allow winit to handle all four backends with a single
+dependency, saving months of platform-specific debugging. The best unconstrained solution would be
+winit for basic window lifecycle plus custom extensions for HDR metadata and advanced presentation
+modes. The impact of removing the constraint: dramatically faster time-to-first- window, but less
+control over HDR swapchain flags, `wp_fractional_scale_v1`, and platform-specific fullscreen
+behavior.
+
+**Q2. How can this design be improved?**
+
+The Wayland backend lacks exclusive fullscreen support (open question 3), which affects competitive
+gaming latency on Linux. X11 fallback for low-latency scenarios is a workaround, not a solution. The
+HDR negotiation on Linux Wayland depends on `wp_color_management_v1`, which has limited compositor
+support (KDE 6.0+, GNOME WIP); a fallback to SDR with a user-visible warning would be better than
+silent failure. The bounded event channel capacity is not specified -- too small risks dropped
+events during rapid resize, too large wastes memory. Auto-sizing based on event frequency would
+improve robustness (R-14.1.9).
+
+**Q3. Is there a better approach?**
+
+For HDR, delegating tone mapping entirely to the compositor (via scRGB on Windows or EDR on macOS)
+rather than engine- side tone mapping would simplify the handoff. We chose engine-side control
+because game tone mapping is artistic and scene-dependent, requiring per-frame peak luminance
+adjustment that compositor-managed tone mapping cannot provide. For event delivery, using the ECS
+event system rather than bounded channels would integrate window events into the same dispatch path
+as gameplay events. We chose bounded channels because window events must be processed before the ECS
+frame begins (for resize, DPI), requiring ordered pre-frame draining.
+
+**Q4. Does this design solve all customer problems?**
+
+US-14.1.2 covers fullscreen mode transitions, but the design does not address multi-window
+fullscreen (game on monitor 1, debug overlay fullscreen on monitor 2). Missing: window transparency
+and click-through for overlay-style debug windows. Missing: screen capture prevention for
+competitive games (DRM-style protected content). Adding multi-window fullscreen would enable
+professional streaming setups where the debug HUD is on a second monitor. Adding click-through
+transparency would enable always-on-top FPS counters and performance overlays (US-14.1.8).
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The `RawWindowHandle` enum is compatible with the `raw-window-handle` crate, ensuring GPU backends
+(Vulkan, Metal, DX12) create swapchains without platform branching -- consistent with the rendering
+design's backend abstraction. The `DpiPolicy` per-window setting integrates with the UI system's
+layout engine for correct fractional scaling. The bounded channel event delivery decouples the OS
+event loop from the ECS frame, matching the controlled-poll philosophy from the threading design.
+Platform backend selection via `cfg` attributes follows the same pattern as threading, transport,
+and filesystem modules. The `LogicalSize` and `PhysicalSize` types enforce type-safe coordinate
+handling that prevents the DPI bugs common in engines using raw pixel values.
+
 ## Open Questions
 
 1. **~~winit vs custom windowing~~** — **Resolved: custom windowing, no winit.** Direct

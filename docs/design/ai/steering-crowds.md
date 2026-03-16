@@ -1922,6 +1922,63 @@ This path is optional. The CPU path is always available as fallback on all platf
 
 ---
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The "no frameworks, only libraries" constraint and the prohibition on third-party async runtimes
+(constraints.md) most limit the GPU crowd simulation path. The optional compute shader pipeline for
+5,000+ agents requires manual GPU buffer management, dispatch, and readback without any GPU compute
+framework. If we lifted this constraint, we could use a GPU compute library like `wgpu` with its
+built-in buffer management. Additionally, the "100% ECS" constraint means even lightweight crowd
+agents must be full ECS entities with component storage overhead, limiting the absolute crowd count.
+A custom particle-like system outside ECS could handle 100,000+ agents but would violate the
+architectural constraint that all simulation data lives as components.
+
+**Q2. How can this design be improved?**
+
+The flow field `sample_flow_field` uses nearest-cell lookup rather than bilinear interpolation (Open
+Question 2), which causes visible direction snapping at cell boundaries for large cell sizes (2 m on
+mobile). The GPU crowd readback introduces a 1-frame latency (Open Question 3) that is not
+compensated. The density management system resets all cell counts every frame and re-counts from
+scratch, which is O(N) in agent count -- an incremental approach tracking agent cell transitions
+would be cheaper. Mid-LOD agents run ORCA with reduced neighbors, but it may be cheaper to skip ORCA
+entirely and rely on flocking separation (Open Question 7), saving the k-NN spatial query cost.
+
+**Q3. Is there a better approach?**
+
+Continuum crowd simulation (Narain 2009) replaces per-agent ORCA with a density field solved on a
+grid, avoiding the O(N*K) neighbor query cost entirely. We are not using it because it requires a
+global density solve step that is hard to parallelize across ECS system boundaries and does not
+handle individual agent personalities well. For the steering primitives (F-7.2.3), context-based
+steering (evaluating sampled directions rather than computing force vectors) produces more natural
+movement at obstacle boundaries. We chose classical force-based steering because it is simpler to
+implement, debug, and blend via the priority pipeline (F-7.2.4), and matches the established
+literature that designers are familiar with.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers all steering (F-7.2.1--F-7.2.6), crowd (F-7.7.1--F-7.7.6), social behavior
+(F-7.7.7--F-7.7.11), and tactical combat (F-7.8.1--F-7.8.6) features. However, user stories like
+US-7.7.8.4 (bird flocks scattering in a wave) and US-7.7.11.4 (wolf pack coordinated hunting)
+require tight integration between the alarm propagation system (F-7.7.8) and the predator behavior
+state machine (F-7.7.11) that is not fully designed. The design also lacks a crowd scheduling system
+for NPCs with daily routines (sleep, eat, work, socialize), which is critical for RPGs and life
+simulation games. Adding a schedule-driven crowd goal system layered on top of flow fields would
+enable living-world simulation.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The steering and crowd systems are well-integrated with the ECS architecture through
+`SteeringAgent`, `FlockMember`, `CrowdAgent`, `AiLodTier`, and `DensityGrid` components and
+resources. The shared spatial index is used extensively for ORCA neighbor queries, flocking, and
+cover evaluation. The GPU crowd compute shader path is the least cohesive element -- it requires
+manual buffer upload/readback outside the ECS data flow, and the 1-frame latency creates a temporal
+inconsistency with CPU-path agents. The LOD system (F-7.7.5) bridges this module with the behavior
+system (F-7.3) and perception system (F-7.6), providing a unified budget framework. The threat table
+(F-7.7.10) and faction system (F-7.7.9) connect cleanly to the combat and perception modules,
+demonstrating good cross-domain design.
+
 ## Open Questions
 
 1. **ORCA LP solver implementation** -- Use an existing Rust LP crate or hand-roll the 2D/3D

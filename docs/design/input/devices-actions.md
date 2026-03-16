@@ -2012,6 +2012,62 @@ All platforms normalize to USB HID usage codes:
 | Rebind save (20 actions) | < 100 ms | R-6.2.NF2 |
 | Rebind restore (20 actions) | < 50 ms | R-6.2.NF2 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The platform-native I/O constraint (no winit, no third-party input libraries) forces separate
+implementations for keyboard, mouse, gamepad, and touch on each of Windows, macOS, and Linux. This
+triples the device abstraction implementation surface compared to using a cross-platform library
+like SDL or winit. Lifting this would dramatically reduce implementation effort and leverage
+battle-tested HID parsing. However, removing it would introduce a framework dependency that violates
+the "no frameworks, only libraries" policy and would prevent the engine from controlling the exact
+polling point in the game loop -- critical for the sub-1-ms latency target (R-6.1.NF1). The
+constraint is correct for an engine that prioritizes deterministic input timing over development
+speed.
+
+**Q2. How can this design be improved?**
+
+The action evaluation budget (R-6.2.NF1) allows 0.2 ms for 128 active actions across 8 stacked
+contexts, but the design does not specify early-out optimizations when a context consumes an input.
+A bitset-based consumption mask would allow O(1) input consumption checks instead of iterating all
+contexts per input. The combo tree system (F-6.2.8) and input buffer (F-6.2.9) are tightly coupled
+to the ability activation system (F-13.10.2) but their system execution ordering is not explicit in
+the data flow section -- misordering could cause one-frame input drops. The aim assist system
+(F-6.2.10) queries the shared spatial index every frame, but there is no configurable query radius
+cap to bound worst-case cost when many targets are nearby.
+
+**Q3. Is there a better approach?**
+
+An alternative architecture is to merge the action mapping system with the ECS scheduler so actions
+fire as ECS events directly rather than going through an intermediate `ActionState` evaluation. This
+would eliminate the per-frame action evaluation pass and let gameplay systems react to input through
+observers. We are not taking this approach because the modifier chain (dead zone, curve, smoothing)
+requires sequential processing of raw values before they become actions, and observer-based dispatch
+cannot guarantee the per-frame determinism that input recording/playback (R-6.2.7) requires. The
+current pull-based evaluation model is correct for deterministic replay.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers desktop, gamepad, and touch input comprehensively (F-6.1.1--5, F-6.2.1--11) but
+has gaps in accessibility. There are no user stories for alternative input methods like switch
+controls, eye-gaze cursor emulation on flat screens, or voice-command integration.
+Accessibility-focused games and platform certification (especially on consoles) increasingly require
+these. The virtual joystick for mobile (F-6.2.1) is mentioned but has no dedicated component or API
+-- it is treated as an unnamed higher-level construct. Adding explicit switch-access and
+voice-to-action mappings would make the engine viable for accessibility-certified titles.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The input system follows the 100% ECS-based constraint: all device state is stored as ECS components
+and resources (R-6.1.6), action events fire through the observer system, and mapping contexts are
+data assets authored in the visual editor. The typed action system (F-6.2.1) correctly decouples
+device bindings from gameplay logic, matching the engine's no-code philosophy. The glyph resolution
+system (F-6.2.6) integrates with the UI widget system's reactive data binding (F-10.1.7), which is a
+strong cross-module cohesion point. One area of divergence is that the input recording system
+(F-6.2.7) stores recordings as binary streams rather than using the engine's mixed textual+binary
+serialization format from the reflection system -- aligning formats would improve tooling interop.
+
 ## Open Questions
 
 1. **Keyboard text input integration** -- Scancode and keycode capture handles gameplay bindings,

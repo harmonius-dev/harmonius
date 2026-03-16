@@ -1939,6 +1939,56 @@ void SimulateParticles(uint3 id : SV_DispatchThreadID) {
 The VFX effect graph editor (see [effect-graph.md](effect-graph.md)) is the visual authoring surface
 for particle system configurations.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The GPU-only simulation constraint (R-11.1.1 requires zero CPU readback) prevents gameplay systems
+from reading individual particle state. This means game logic cannot query particle positions for
+hit detection, AI visibility checks, or trigger volumes without an explicit GPU readback that the
+design forbids. Lifting this would allow CPU-side particle queries at the cost of a frame of latency
+and PCIe bandwidth. We keep the constraint because the million- particle throughput target requires
+fully GPU-resident data, and gameplay queries can use the event buffer (sub-emitter collision
+events) as a proxy for particle state.
+
+**Q2. How can this design be improved?**
+
+The free-list allocation scheme uses atomic operations on a single counter, which becomes a
+serialization point when many emitters spawn simultaneously in dense combat. A per-emitter local
+free-list with periodic global compaction would reduce atomic contention. The ribbon rendering mode
+(F-11.1.3) also lacks width-over-life curves, forcing all ribbons to have uniform width. Adding
+per-particle width modulation would improve sword trail and spell streak quality without additional
+draw calls.
+
+**Q3. Is there a better approach?**
+
+An alternative is CPU-side particle simulation with SIMD vectorization (SoA layout, AVX-512/NEON),
+uploading instance data to the GPU each frame for rendering only. This simplifies the architecture
+and allows direct gameplay queries. We chose GPU compute because the target particle counts (500K+
+on desktop per R-11.1.4) exceed what any CPU can simulate at 60fps, even with SIMD. CPU simulation
+would cap practical particle counts at 50K-100K, which is insufficient for raid combat with dozens
+of simultaneous spell effects (US-11.1.4.2).
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers sprite, ribbon, and mesh rendering but lacks a volumetric particle rendering mode.
+Effects like dense fog clouds, magic auras, and gas clouds require ray-marched volumetric rendering
+of particle density fields rather than billboard sprites. F-11.1.7 provides GPU fluid simulation for
+this, but that is a full Eulerian grid -- there is no lightweight particle-to-density splatting mode
+for effects that need volumetric appearance without full fluid dynamics. Adding a density splat
+rendering mode would fill this gap.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The particle system aligns with the engine's GPU-first philosophy and integrates cleanly with the
+shared spatial index for LOD distance queries (F-1.9.1), the clustered light buffer for particle
+light emission (F-11.1.6), and the ECS observer system for event-driven sub-emitters (F-1.1.30). The
+platform tier system (PlatformTier enum) matches the engine-wide quality scaling used by rendering
+and physics. One tension is that the particle budget manager operates independently from the render
+graph's resource management. Integrating budget decisions into the render graph's frame planning
+phase would allow the budget system to account for other GPU workloads (shadow maps,
+post-processing) when making culling decisions.
+
 ## Open Questions
 
 1. **Thread group size for simulation dispatch.** 256 threads per group is standard, but optimal

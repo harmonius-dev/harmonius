@@ -979,6 +979,53 @@ pub enum VcError {
 | Structural merge (1 MB asset) | < 100 ms | US-15.10.3.2 |
 | Presence broadcast latency | < 100 ms | US-15.10.5.1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The dependency on libgit2 via the `git2` crate is the biggest constraint. libgit2 is synchronous and
+single-threaded, meaning all Git operations must run on dedicated I/O threads rather than
+integrating with `IoReactor` natively. Lifting this would allow a pure-Rust async Git
+implementation. The best solution would be `gitoxide` (`gix`), which is a pure-Rust Git
+implementation with async support. The impact is native async integration with `IoReactor`,
+eliminating the thread-pool overhead, but `gitoxide` does not yet have full feature parity with
+libgit2 for operations like merge and rebase.
+
+**Q2. How can this design be improved?**
+
+The `HostingProvider` trait (F-15.10.8) uses `dyn` dispatch, which deviates from the static dispatch
+preference. Since there are only four providers (GitHub, GitLab, Bitbucket, Azure DevOps), an enum
+dispatch would be more efficient. The structural merge driver (F-15.10.3) operates on the entire
+asset blob -- for large prefabs with thousands of entities, this means deserializing and diffing the
+entire file even when only one property changed. Adding incremental structural diff and converting
+providers to enum dispatch would improve performance and alignment.
+
+**Q3. Is there a better approach?**
+
+An alternative to Git-based version control is a custom VCS designed specifically for game assets,
+like Plastic SCM or Perforce. We chose Git because it is the industry standard, enables open-source
+tooling, and integrates with all major hosting providers (F-15.10.8). The structural merge driver
+(F-15.10.3) and asset-aware diff compensate for Git's weakness with binary files, while LFS
+(F-15.10.2) handles large asset storage efficiently.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks support for asset dependency visualization -- when a user modifies a texture, they
+cannot see which materials, prefabs, and scenes reference it before committing. There is no user
+story for blame/annotation on binary assets (which entity in a scene was last modified by whom).
+Adding a dependency graph view in the VC panel and per-entity blame via the structural diff system
+would help teams working on large, interconnected game worlds.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The version control system integrates with the shared cache (F-15.11) for branch-switch cache
+preservation, with the collaboration system (F-15.12) for presence and locking, and with the
+launcher (F-15.15) for project Git setup. The structural merge driver reuses the same
+`Reflect`-based deserialization as the inspector. The credential store uses the same platform-native
+keychain as the launcher. The main cohesion gap is that the shelf system stores data in
+`.harmonius/shelves/` using its own format rather than leveraging the engine's standard asset
+serialization.
+
 ## Open Questions
 
 1. **libgit2 async wrapping** — libgit2 is synchronous. Options are `spawn_blocking` on the thread

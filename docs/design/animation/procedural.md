@@ -2004,6 +2004,64 @@ impl PlatformTier {
 Joint angular limits use the shared `JointLimit` type and spring-damper evaluation uses
 `SpringDamper<T>` (see [shared-primitives.md](../core-runtime/shared-primitives.md)).
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?** What would happen if we lifted that
+constraint? What is the best possible solution imaginable without those constraints? What is the
+impact of removing them?
+
+The static dispatch constraint (no trait objects, no vtables) forces all IK solver selection through
+the `IkSolverType` enum. Adding a new solver requires modifying the enum and every match arm. If
+lifted, a `dyn IkSolver` trait would allow plugins to register custom solvers at runtime without
+recompilation. The ideal solution would be a solver registry with dynamic dispatch on the cold init
+path and monomorphized dispatch on the hot path. Removing the constraint would add one vtable lookup
+per IK chain per frame -- minimal cost -- but would violate the engine-wide static dispatch policy.
+The trade-off is extensibility versus compile-time guarantees.
+
+**Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
+trade-offs are we making?
+
+The post-process pipeline has a fixed ordering (look-at, foot placement, IK, ragdoll, secondary
+motion) that cannot be reordered per entity. A character that needs IK before look-at (e.g., hands
+placed before head turns) must work around this with a second IK pass. The foot placement system
+issues batch raycasts through the shared BVH (F-1.9.5), but the BVH may not contain dynamic
+obstacles placed that frame, causing one-frame foot penetration. The ragdoll recovery transition
+(R-9.3.4) uses linear pose blending, which can produce unnatural intermediate poses when the ragdoll
+pose is far from any animation pose.
+
+**Q3. Is there a better approach?** If we are not taking it, why not?
+
+A fully physics-based procedural animation system (all movement driven by forces rather than
+kinematic IK) would eliminate the post-process pipeline entirely and produce emergent responses to
+all interactions. We are not taking this approach because physics-based locomotion (F-9.3.9) is
+expensive per-limb and limited to hero characters on mobile (US-9.3.9.2). Kinematic IK (F-9.3.1
+through F-9.3.3) runs on GPU at 500+ chains simultaneously, which physics torque-based locomotion
+cannot match. The hybrid design keeps IK for scalable character counts and reserves physics
+locomotion for hero characters.
+
+**Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
+user stories? What are they? How would adding them improve the engine? What kinds of games does it
+enable?
+
+The design covers F-9.3.1 through F-9.3.11 and all traced user stories. A gap is procedural tail and
+wing animation for flying creatures: F-9.3.2 (CCD IK) handles tails but does not address aerodynamic
+wing deformation driven by flight velocity. Adding a procedural wing system with
+lift/drag-responsive IK would enable flight games and dragon-riding. Another gap is procedural
+gesture animation (US-9.3.5.1 covers look-at but not hand gestures or pointing), which would benefit
+NPC social behavior in RPGs and open- world games.
+
+**Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
+modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
+
+The design integrates tightly with the engine: foot placement uses the shared BVH (F-1.9.1), ragdoll
+delegates joint simulation to the physics constraint solver (F-4.3.5), attachment uses ECS command
+buffers (F-1.1.32), and all components derive `Reflect` (F-1.3.1). It is the most cross-cutting
+animation module, touching physics, spatial queries, and the ECS command system. The dismemberment
+feature (F-9.3.10) is the least cohesive part because it spawns new entities and modifies skeleton
+topology at runtime, which is an unusual pattern for a post-process system. Moving dismemberment to
+a dedicated gameplay system that fires events consumed by the animation module would improve
+separation of concerns.
+
 ## Open Questions
 
 1. **GPU vs CPU IK threshold.** The current design runs IK on GPU when chain count exceeds a

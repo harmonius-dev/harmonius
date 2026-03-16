@@ -1277,6 +1277,48 @@ All preview rendering reuses existing editor subsystems. No custom rendering cod
 | Compat test per asset | < 5 min | US-15.17.5.1 |
 | Publisher upload (1 GB) | < 60 s on 100 Mbps | US-15.17.4.1 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The self-hosted AWS requirement (F-15.18.1) means every studio must operate its own marketplace
+infrastructure. Lifting this would enable a centralized, cross-studio marketplace with a larger
+asset catalog and community. The best possible solution would be a shared global marketplace with
+federated identity, but removing the self-hosted constraint sacrifices data sovereignty and makes
+the engine dependent on a third-party service for asset distribution.
+
+**Q2. How can this design be improved?**
+
+The dependency resolution in `ImportPipeline` (F-15.17.2) is linear -- it fetches each dependency
+sequentially. Parallel dependency downloads would significantly reduce import time for deep
+dependency trees. The compatibility testing pipeline (F-15.17.5) runs per-asset in CodeBuild but has
+no mechanism for testing interactions between multiple marketplace assets installed together. The
+review/moderation flow (F-15.17.3) is manual-only, which will not scale as the catalog grows.
+
+**Q3. Is there a better approach?**
+
+Instead of a REST API with Lambda, the store could use a GraphQL API that lets the editor fetch
+exactly the fields needed for browse, search, and preview in a single round-trip. We are not taking
+this approach because GraphQL adds schema complexity and a runtime dependency, and the REST API
+keeps the backend consistent with the other server infrastructure stacks (F-15.18.1) that all use
+REST.
+
+**Q4. Does this design solve all customer problems?**
+
+There is no support for asset bundles or starter kits that group multiple assets into a single
+purchasable package at a discounted price. The `Collection` type (F-15.17.3) is view-only curation,
+not a purchasable bundle. Adding a `BundlePricing` entity would enable publishers to sell themed
+packs (e.g., "Medieval Village Kit"), which is a common marketplace pattern that enables more game
+genres and accelerates prototyping.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The asset store client uses `async`/`await` with `IoReactor`, consistent with all engine subsystems.
+However, the store's `AssetId` type is a separate `u64` newtype that does not unify with the
+engine's core asset system IDs. After import, store assets become engine assets with different IDs,
+creating a mapping burden. Unifying the ID space or maintaining a stable bidirectional mapping would
+improve cohesion with the asset pipeline (F-12.7.1).
+
 ## Open Questions
 
 1. **OpenSearch vs PostgreSQL full-text** -- OpenSearch provides semantic search and relevance

@@ -1244,6 +1244,55 @@ modifies currency balances directly.
 | Reward delivery to inventory | < 100 ms | NFR-13.28.2 |
 | GDPR consent withdrawal | < 1 frame | NFR-13.28.3 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The server-authoritative requirement for all currency balances, receipts, and entitlements
+(R-13.23.3b, R-13.23.3c) is the most constraining factor. It means every purchase, refund, and
+subscription check requires a round-trip to the server, adding latency and creating offline failure
+modes. Lifting this constraint would allow client-side currency caches with eventual consistency,
+enabling instant purchase feedback and offline store browsing. However, removing server authority
+would expose the economy to client-side tampering, which is unacceptable for a live-service game
+with real-money transactions.
+
+**Q2. How can this design be improved?**
+
+The ad mediation layer (F-13.28.4) currently treats all ad networks uniformly, but real-world eCPM
+varies by geography, device, and time of day. Adding a machine-learned bid prediction model
+per-network would improve fill rates and revenue. The 60-second polling interval for live-ops
+content refresh (NFR-13.23.2) could be replaced with server-push via WebSocket to reduce latency and
+server load from polling. The subscription verification interval of 15 minutes (R-13.23.5a) is a
+trade-off between API call volume and lapse detection speed that may need per-platform tuning.
+
+**Q3. Is there a better approach?**
+
+An event-sourced ledger model for all transactions (purchases, currency grants, refunds) would
+provide a complete audit trail and enable replay for debugging. We are not taking this approach
+because it adds significant storage and query complexity for the transaction history system
+(F-13.23.3d). The current record-based approach is simpler and sufficient for the requirements. If
+auditing needs grow (regulatory compliance, dispute resolution at scale), migrating to event
+sourcing would be warranted.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks a gifting system for cosmetic store items (F-13.23.8 covers only account-bound
+cosmetics). Players frequently want to gift individual cosmetics to friends, not just subscriptions
+(F-13.23.5d). Adding a cosmetic gifting feature would enable social spending and viral acquisition.
+The design also lacks a "wish list" feature for the cosmetic store, which would help designers
+understand demand and enable targeted sale notifications. These additions would benefit games
+focused on social expression and community building.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The monetization module aligns well with engine constraints: all state is ECS resources, all
+configuration is data-driven and visual-editor authored, and all I/O uses the custom IoReactor (no
+tokio). The server-side components use the custom HTTP server built on IoReactor per constraints.md.
+One cohesion gap is that the ad mediation layer integrates third-party SDKs (AdMob, AppLovin) which
+may carry their own async runtimes on mobile platforms. This needs careful isolation to avoid
+violating the no-third-party-runtime constraint. The `LiveOpsResource<T>` wrapper reuses shared
+primitives from core-runtime, maintaining consistency with other subsystems.
+
 ## Open Questions
 
 1. **A/B testing hooks** -- How should the monetization system expose A/B testing variants for store

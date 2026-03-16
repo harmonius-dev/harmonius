@@ -155,3 +155,39 @@ identify bottleneck passes and inefficient resource usage visually.
 **As an** engine tester (P-27), **I want** to confirm that the render graph diagnostic overlay and
 logging are compile-time disabled in shipping builds, **so that** debug visualization has zero cost
 in production.
+
+## US-2.2.14.1 Schedule Render Passes Alongside Gameplay Systems
+
+**As a** game designer (P-5), **I want** render passes to integrate with the same scheduling graph
+as gameplay systems (ECS, physics, audio), **so that** rendering dependencies on CPU work are
+explicit and the scheduler can overlap preparation with submission.
+
+## US-2.2.14.2 Express Render-to-CPU Dependencies as Graph Edges
+
+**As an** engine developer (P-26), **I want** render node dependencies on culling and scene
+traversal expressed as typed edges in the game loop graph, **so that** the scheduler automatically
+overlaps CPU rendering prep with GPU work from the previous phase.
+
+## US-2.2.14.3 Verify Render Nodes Appear in Task Graph Output
+
+**As an** engine tester (P-27), **I want** to compile a game loop graph containing render passes and
+assert that each render pass appears as a `TaskNode` in the compiled `TaskGraph`, **so that** render
+graph integration with the unified scheduler is verified in CI.
+
+## US-2.2.15.1 Prevent Command Buffer Use After Scope Exit
+
+**As an** engine developer (P-26), **I want** command buffer references scoped to the encoding
+lifetime so the compiler rejects any attempt to store or return them beyond the render pass node's
+execution, **so that** use-after-submit bugs are caught at compile time.
+
+## US-2.2.15.2 Encode GPU Commands Within Scoped Borrows
+
+**As a** game developer (P-15), **I want** scoped GPU command encoding that ties command buffer
+validity to the render pass execution scope, **so that** I can encode commands safely without
+worrying about lifetime management.
+
+## US-2.2.15.3 Verify Encoding Scope Prevents Dangling References
+
+**As an** engine tester (P-27), **I want** a compile test that attempts to return a command buffer
+reference from a render pass callback and asserts the code fails with a lifetime error, **so that**
+encoding scope safety is verified in CI.

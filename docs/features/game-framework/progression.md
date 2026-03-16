@@ -2,248 +2,51 @@
 
 ## Race and Class
 
-### F-13.12.1a Race Definition
-
-Data-driven race assets specifying stat modifiers (e.g., +10 strength, -5 intelligence), racial
-abilities, cosmetic constraints (available body types, skin tones), and lore text. Races are
-authored in the visual editor and stored in gameplay databases (F-13.7.1).
-
-- **Requirements:** R-13.12.1a
-- **Dependencies:** F-13.7.1 (Table Schema), F-13.7.9 (Stat Tables)
-- **Platform notes:** None
-
-### F-13.12.1b Class Definition
-
-Data-driven class assets specifying a starting ability set, level-up ability unlocks, equipment
-restrictions (weapon and armor proficiency), and class-specific resources (mana, rage, energy,
-focus). Classes are authored in the visual editor and stored in gameplay databases (F-13.7.1).
-
-- **Requirements:** R-13.12.1b
-- **Dependencies:** F-13.7.1 (Table Schema), F-13.7.9 (Stat Tables), F-13.10.1 (Ability Definition)
-- **Platform notes:** None
-
-### F-13.12.1c Multi-Class and Job Change
-
-Characters can switch classes at designated NPCs or unlock hybrid classes meeting prerequisite
-conditions. Job-change preserves the previous class's progress and allows re-speccing later. Hybrid
-classes combine abilities from two parent classes with unique restrictions.
-
-- **Requirements:** R-13.12.1c
-- **Dependencies:** F-13.12.1a, F-13.12.1b, F-13.7.1 (Table Schema)
-- **Platform notes:** None
-
-### F-13.12.1d Prestige and Rebirth System
-
-Max-level characters can restart at level 1 with permanent bonuses (stat boosts, cosmetic rewards,
-titles). Prestige tiers accumulate across multiple rebirth cycles. Configured through gameplay
-databases (F-13.7.1).
-
-- **Requirements:** R-13.12.1d
-- **Dependencies:** F-13.12.1b, F-13.7.1 (Table Schema)
-- **Platform notes:** None
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-13.12.1a | Race Definition | Data-driven race assets specifying stat modifiers (e.g., +10 strength, -5 intelligence), racial abilities, cosmetic constraints (available body types, skin tones), and lore text. Races are authored in the visual editor and stored in gameplay databases (F-13.7.1). | R-13.12.1a | F-13.7.1 (Table Schema), F-13.7.9 (Stat Tables) | None |
+| F-13.12.1b | Class Definition | Data-driven class assets specifying a starting ability set, level-up ability unlocks, equipment restrictions (weapon and armor proficiency), and class-specific resources (mana, rage, energy, focus). Classes are authored in the visual editor and stored in gameplay databases (F-13.7.1). | R-13.12.1b | F-13.7.1 (Table Schema), F-13.7.9 (Stat Tables), F-13.10.1 (Ability Definition) | None |
+| F-13.12.1c | Multi-Class and Job Change | Characters can switch classes at designated NPCs or unlock hybrid classes meeting prerequisite conditions. Job-change preserves the previous class's progress and allows re-speccing later. Hybrid classes combine abilities from two parent classes with unique restrictions. | R-13.12.1c | F-13.12.1a, F-13.12.1b, F-13.7.1 (Table Schema) | None |
+| F-13.12.1d | Prestige and Rebirth System | Max-level characters can restart at level 1 with permanent bonuses (stat boosts, cosmetic rewards, titles). Prestige tiers accumulate across multiple rebirth cycles. Configured through gameplay databases (F-13.7.1). | R-13.12.1d | F-13.12.1b, F-13.7.1 (Table Schema) | None |
 
 ## Talent Trees
 
-### F-13.12.2a Talent Tree Data Model
-
-Talent trees are defined as directed acyclic graphs of talent nodes. Node types include passive
-bonuses (stat increases, proc effects), active abilities (F-13.10.1), and ability modifications
-(increased damage, reduced cooldown, added effect). Prerequisite edges enforce unlock order — a node
-requires its parent(s) to be allocated first. Tier gating requires N total points spent before the
-next tier unlocks.
-
-- **Requirements:** R-13.12.2a
-- **Dependencies:** F-13.12.1b, F-13.10.1 (Ability Definition)
-- **Platform notes:** None
-
-### F-13.12.2b Talent Allocation and Respec
-
-Point allocation uses talent points earned per level. Players spend points on unlocked nodes,
-respecting prerequisite and tier-gating constraints. Respec costs currency (F-13.7.6) and resets all
-allocations, refunding spent points.
-
-- **Requirements:** R-13.12.2b
-- **Dependencies:** F-13.12.2a, F-13.7.6 (Currency)
-- **Platform notes:** None
-
-### F-13.12.2c Talent Tree Visual Editor
-
-Talent trees are authored in the visual editor as graph assets. The editor provides node-graph
-editing with drag-and-drop node creation, edge drawing, tier lane assignment, and preview of
-prerequisite chains.
-
-- **Requirements:** R-13.12.2c
-- **Dependencies:** F-13.12.2a
-- **Platform notes:** None
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-13.12.2a | Talent Tree Data Model | Talent trees are defined as directed acyclic graphs of talent nodes. Node types include passive bonuses (stat increases, proc effects), active abilities (F-13.10.1), and ability modifications (increased damage, reduced cooldown, added effect). Prerequisite edges enforce unlock order — a node requires its parent(s) to be allocated first. Tier gating requires N total points spent before the next tier unlocks. | R-13.12.2a | F-13.12.1b, F-13.10.1 (Ability Definition) | None |
+| F-13.12.2b | Talent Allocation and Respec | Point allocation uses talent points earned per level. Players spend points on unlocked nodes, respecting prerequisite and tier-gating constraints. Respec costs currency (F-13.7.6) and resets all allocations, refunding spent points. | R-13.12.2b | F-13.12.2a, F-13.7.6 (Currency) | None |
+| F-13.12.2c | Talent Tree Visual Editor | Talent trees are authored in the visual editor as graph assets. The editor provides node-graph editing with drag-and-drop node creation, edge drawing, tier lane assignment, and preview of prerequisite chains. | R-13.12.2c | F-13.12.2a | None |
 
 ## Professions
 
-### F-13.12.3a Profession Data Model
-
-Each profession defines a skill level, XP curve, and recipe thresholds — recipes unlock as the
-profession levels up. Profession limits constrain how many professions a character can learn
-simultaneously. Profession XP is earned from successful crafts, gathers, or quest turn-ins. All
-profession data is stored in gameplay databases (F-13.7.1).
-
-- **Requirements:** R-13.12.3a
-- **Dependencies:** F-13.7.7 (Crafting Recipes), F-13.7.1 (Table Schema)
-- **Platform notes:** None
-
-### F-13.12.3b Gathering Profession Integration
-
-Gathering professions (mining, herbalism) interact with resource nodes in the world (F-13.14.7).
-Gathering skill level determines yield quantity and rare proc rate. Yield scales with profession
-level according to configurable curves.
-
-- **Requirements:** R-13.12.3b
-- **Dependencies:** F-13.12.3a, F-13.14.7a (Resource Node Definition)
-- **Platform notes:** None
-
-### F-13.12.3c Crafting Profession Integration
-
-Crafting professions consume gathered materials through the recipe system (F-13.7.7) at crafting
-stations (F-13.12.4). Recipe availability is gated by profession level thresholds. Successful crafts
-award profession XP.
-
-- **Requirements:** R-13.12.3c
-- **Dependencies:** F-13.12.3a, F-13.7.7 (Crafting Recipes), F-13.12.4 (Crafting Stations)
-- **Platform notes:** None
-
-### F-13.12.4 Crafting Station Interaction
-
-Physical in-world crafting stations (forge, alchemy table, cooking fire, workbench) that players
-interact with to access profession-specific recipes. Each station type gates which recipes are
-available — blacksmithing recipes require a forge. Station quality tiers (basic, advanced, master)
-unlock higher-tier recipes. Stations can be placed in player housing (F-13.14.5a) or found at fixed
-world locations. The station UI displays available recipes filtered by profession level, required
-materials with inventory counts, success probability (for professions with failure chance), and a
-crafting progress bar.
-
-- **Requirements:** R-13.12.4
-- **Dependencies:** F-13.12.3a, F-13.7.7 (Crafting Recipes), F-13.9.1 (Inventory)
-- **Platform notes:** None
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-13.12.3a | Profession Data Model | Each profession defines a skill level, XP curve, and recipe thresholds — recipes unlock as the profession levels up. Profession limits constrain how many professions a character can learn simultaneously. Profession XP is earned from successful crafts, gathers, or quest turn-ins. All profession data is stored in gameplay databases (F-13.7.1). | R-13.12.3a | F-13.7.7 (Crafting Recipes), F-13.7.1 (Table Schema) | None |
+| F-13.12.3b | Gathering Profession Integration | Gathering professions (mining, herbalism) interact with resource nodes in the world (F-13.14.7). Gathering skill level determines yield quantity and rare proc rate. Yield scales with profession level according to configurable curves. | R-13.12.3b | F-13.12.3a, F-13.14.7a (Resource Node Definition) | None |
+| F-13.12.3c | Crafting Profession Integration | Crafting professions consume gathered materials through the recipe system (F-13.7.7) at crafting stations (F-13.12.4). Recipe availability is gated by profession level thresholds. Successful crafts award profession XP. | R-13.12.3c | F-13.12.3a, F-13.7.7 (Crafting Recipes), F-13.12.4 (Crafting Stations) | None |
+| F-13.12.4 | Crafting Station Interaction | Physical in-world crafting stations (forge, alchemy table, cooking fire, workbench) that players interact with to access profession-specific recipes. Each station type gates which recipes are available — blacksmithing recipes require a forge. Station quality tiers (basic, advanced, master) unlock higher-tier recipes. Stations can be placed in player housing (F-13.14.5a) or found at fixed world locations. The station UI displays available recipes filtered by profession level, required materials with inventory counts, success probability (for professions with failure chance), and a crafting progress bar. | R-13.12.4 | F-13.12.3a, F-13.7.7 (Crafting Recipes), F-13.9.1 (Inventory) | None |
 
 ## Reputation
 
-### F-13.12.5 Reputation and Faction Standing
-
-Per-faction reputation meters with tiered standings: hostile, unfriendly, neutral, friendly,
-honored, revered, exalted (tiers are data-driven and configurable). Reputation changes from kills
-(enemy faction mobs), quest completion, item turn-ins, and world events. Standing tiers gate access
-to: faction vendors (sell exclusive items at honored+), quest lines (available at friendly+), zone
-access (hostile faction territory is dangerous), and cosmetic rewards (faction tabard at revered).
-Reputation is tracked per character as ECS resource data. Faction relationships can be asymmetric —
-gaining rep with one faction may reduce rep with a rival.
-
-- **Requirements:** R-13.12.5
-- **Dependencies:** F-13.7.1 (Table Schema), F-13.7.6 (Currency)
-- **Platform notes:** None
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-13.12.5 | Reputation and Faction Standing | Per-faction reputation meters with tiered standings: hostile, unfriendly, neutral, friendly, honored, revered, exalted (tiers are data-driven and configurable). Reputation changes from kills (enemy faction mobs), quest completion, item turn-ins, and world events. Standing tiers gate access to: faction vendors (sell exclusive items at honored+), quest lines (available at friendly+), zone access (hostile faction territory is dangerous), and cosmetic rewards (faction tabard at revered). Reputation is tracked per character as ECS resource data. Faction relationships can be asymmetric — gaining rep with one faction may reduce rep with a rival. | R-13.12.5 | F-13.7.1 (Table Schema), F-13.7.6 (Currency) | None |
 
 ## Achievements
 
-### F-13.12.6a Achievement Definition and Tracking
-
-Data-driven achievement definitions specify: trigger conditions (kill N enemies, craft Y items,
-reach gear score Z, explore all zones, complete quest chain), progress tracking (incremental or
-boolean), point value, and visibility (tracked, hidden until completed, or secret). Achievements
-fire through the ECS observer system (F-1.1.30) when conditions are met, recording completion
-timestamp.
-
-- **Requirements:** R-13.12.6a
-- **Dependencies:** F-1.1.30 (Observers)
-- **Platform notes:** None
-
-### F-13.12.6b Achievement Rewards and Display
-
-Completed achievements grant configurable rewards (items, titles, currency, cosmetics) and display a
-notification popup. Achievement points accumulate into a player score shown in the achievement UI
-panel.
-
-- **Requirements:** R-13.12.6b
-- **Dependencies:** F-13.12.6a
-- **Platform notes:** None
-
-### F-13.12.6c Platform Achievement Sync
-
-Platform-specific achievements (Steam, PlayStation, Xbox) are synced via the platform services
-integration (F-14.5.1). Each engine achievement maps to a platform achievement ID for unlock
-synchronization.
-
-- **Requirements:** R-13.12.6c
-- **Dependencies:** F-13.12.6a, F-14.5.1 (Platform Achievements)
-- **Platform notes:** Maps to Steam Achievements, PlayStation Trophies, Xbox Achievements via
-  platform APIs.
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-13.12.6a | Achievement Definition and Tracking | Data-driven achievement definitions specify: trigger conditions (kill N enemies, craft Y items, reach gear score Z, explore all zones, complete quest chain), progress tracking (incremental or boolean), point value, and visibility (tracked, hidden until completed, or secret). Achievements fire through the ECS observer system (F-1.1.30) when conditions are met, recording completion timestamp. | R-13.12.6a | F-1.1.30 (Observers) | None |
+| F-13.12.6b | Achievement Rewards and Display | Completed achievements grant configurable rewards (items, titles, currency, cosmetics) and display a notification popup. Achievement points accumulate into a player score shown in the achievement UI panel. | R-13.12.6b | F-13.12.6a | None |
+| F-13.12.6c | Platform Achievement Sync | Platform-specific achievements (Steam, PlayStation, Xbox) are synced via the platform services integration (F-14.5.1). Each engine achievement maps to a platform achievement ID for unlock synchronization. | R-13.12.6c | F-13.12.6a, F-14.5.1 (Platform Achievements) | Maps to Steam Achievements, PlayStation Trophies, Xbox Achievements via platform APIs. |
 
 ## Item Enhancement
 
-### F-13.12.7 Item Enhancement and Enchanting
-
-Level up equipment through an enchanting system with configurable success/failure probability.
-Enhancement profiles define: enhancement levels (0 through +15), stat bonuses per level, material
-costs per level, success probability per level (decreasing at higher levels), failure consequences
-(no change, level decrease, or item destruction), and protection items that prevent destruction on
-failure. The enchanting UI shows current level, next level preview, materials required, and success
-rate. Enhancement level is stored as an item instance property (F-13.9.4) and affects displayed item
-name (e.g., "+7 Sword of Fire").
-
-- **Requirements:** R-13.12.7
-- **Dependencies:** F-13.9.4 (Per-Instance Properties), F-13.7.5 (Formula DSL)
-- **Platform notes:** None
-
-### F-13.12.8a Item Rarity Tier System
-
-Item quality tiers (common, uncommon, rare, epic, legendary, mythic) with color-coded display. Each
-rarity tier defines stat ranges — a rare sword rolls damage between 50-70, an epic between 65-90.
-Rarity is assigned when items drop from loot tables (F-13.7.8). All rarity tier definitions are
-stored in gameplay databases.
-
-- **Requirements:** R-13.12.8a
-- **Dependencies:** F-13.7.8 (Loot Tables), F-13.9.4 (Per-Instance Properties)
-- **Platform notes:** None
-
-### F-13.12.8b Affix System
-
-Random prefixes and suffixes ("Blazing Sword of the Bear") grant additional stat bonuses from an
-affix pool. The number of affixes scales with rarity. Affix pools and per-rarity affix count ranges
-are defined in gameplay databases.
-
-- **Requirements:** R-13.12.8b
-- **Dependencies:** F-13.12.8a, F-13.9.4 (Per-Instance Properties)
-- **Platform notes:** None
-
-### F-13.12.8c Stat Re-Rolling Mechanics
-
-Players spend currency to re-randomize an item's affixes while preserving the base item and its
-rarity tier. Re-roll cost scales with item level and rarity. Re-rolling draws new affixes from the
-same affix pool.
-
-- **Requirements:** R-13.12.8c
-- **Dependencies:** F-13.12.8b, F-13.7.6 (Currency)
-- **Platform notes:** None
-
-### F-13.12.9 Item Set Bonuses
-
-Equipment set definitions where wearing multiple pieces from the same set grants escalating bonuses.
-Set definitions specify: member items (helm, chest, legs, gloves, boots, weapon), and bonus tiers
-(2-piece: +10 stamina, 4-piece: special proc effect, 6-piece: unique ability unlock). Set progress
-is displayed in the character equipment panel showing collected vs. missing pieces. Set bonuses are
-implemented as gameplay effects (F-13.10.3) applied when the equipped set count crosses a threshold.
-Sets are defined as gameplay database entries referencing item IDs.
-
-- **Requirements:** R-13.12.9
-- **Dependencies:** F-13.10.3 (Gameplay Effects), F-13.9.6 (Equipment Binding)
-- **Platform notes:** None
-
-### F-13.12.10 Item Durability and Repair
-
-Equipment degrades with use, tracked as a durability percentage per item instance. Durability
-decreases on: taking damage (armor), dealing damage (weapons), and death (all equipped items). At 0%
-durability, items become non-functional (weapons deal no damage, armor provides no defense) but are
-not destroyed. Repair is performed at NPC repair vendors (cost scales with item level and rarity) or
-with repair kits (consumable items). Durability is displayed in item tooltips and equipment UI, with
-warnings at low thresholds (25%, 10%). Durability drain rates and repair costs are configurable per
-item type in gameplay databases.
-
-- **Requirements:** R-13.12.10
-- **Dependencies:** F-13.9.4 (Per-Instance Properties), F-13.7.6 (Currency)
-- **Platform notes:** None
+| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
+|----|---------|-------------|-------------|--------------|----------------|
+| F-13.12.7 | Item Enhancement and Enchanting | Level up equipment through an enchanting system with configurable success/failure probability. Enhancement profiles define: enhancement levels (0 through +15), stat bonuses per level, material costs per level, success probability per level (decreasing at higher levels), failure consequences (no change, level decrease, or item destruction), and protection items that prevent destruction on failure. The enchanting UI shows current level, next level preview, materials required, and success rate. Enhancement level is stored as an item instance property (F-13.9.4) and affects displayed item name (e.g., "+7 Sword of Fire"). | R-13.12.7 | F-13.9.4 (Per-Instance Properties), F-13.7.5 (Formula DSL) | None |
+| F-13.12.8a | Item Rarity Tier System | Item quality tiers (common, uncommon, rare, epic, legendary, mythic) with color-coded display. Each rarity tier defines stat ranges — a rare sword rolls damage between 50-70, an epic between 65-90. Rarity is assigned when items drop from loot tables (F-13.7.8). All rarity tier definitions are stored in gameplay databases. | R-13.12.8a | F-13.7.8 (Loot Tables), F-13.9.4 (Per-Instance Properties) | None |
+| F-13.12.8b | Affix System | Random prefixes and suffixes ("Blazing Sword of the Bear") grant additional stat bonuses from an affix pool. The number of affixes scales with rarity. Affix pools and per-rarity affix count ranges are defined in gameplay databases. | R-13.12.8b | F-13.12.8a, F-13.9.4 (Per-Instance Properties) | None |
+| F-13.12.8c | Stat Re-Rolling Mechanics | Players spend currency to re-randomize an item's affixes while preserving the base item and its rarity tier. Re-roll cost scales with item level and rarity. Re-rolling draws new affixes from the same affix pool. | R-13.12.8c | F-13.12.8b, F-13.7.6 (Currency) | None |
+| F-13.12.9 | Item Set Bonuses | Equipment set definitions where wearing multiple pieces from the same set grants escalating bonuses. Set definitions specify: member items (helm, chest, legs, gloves, boots, weapon), and bonus tiers (2-piece: +10 stamina, 4-piece: special proc effect, 6-piece: unique ability unlock). Set progress is displayed in the character equipment panel showing collected vs. missing pieces. Set bonuses are implemented as gameplay effects (F-13.10.3) applied when the equipped set count crosses a threshold. Sets are defined as gameplay database entries referencing item IDs. | R-13.12.9 | F-13.10.3 (Gameplay Effects), F-13.9.6 (Equipment Binding) | None |
+| F-13.12.10 | Item Durability and Repair | Equipment degrades with use, tracked as a durability percentage per item instance. Durability decreases on: taking damage (armor), dealing damage (weapons), and death (all equipped items). At 0% durability, items become non-functional (weapons deal no damage, armor provides no defense) but are not destroyed. Repair is performed at NPC repair vendors (cost scales with item level and rarity) or with repair kits (consumable items). Durability is displayed in item tooltips and equipment UI, with warnings at low thresholds (25%, 10%). Durability drain rates and repair costs are configurable per item type in gameplay databases. | R-13.12.10 | F-13.9.4 (Per-Instance Properties), F-13.7.6 (Currency) | None |

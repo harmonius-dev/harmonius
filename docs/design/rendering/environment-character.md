@@ -1520,6 +1520,62 @@ sampled at physics tick rate, not render rate, to maintain simulation stability.
 | Deep opacity map (100K) | < 0.5 ms / char | R-2.8.1 |
 | Compute hair raster | < 1.0 ms / char | R-2.8.7 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code engine constraint (constraints.md) means all environment and character rendering
+parameters must be exposed through visual editors rather than shader code. This limits the
+expressiveness of the anti-aliasing system (F-2.6.1 through F-2.6.8) because advanced TAA tuning
+(history rejection weights, neighborhood clamp modes) typically requires per-project shader
+modification. The constraint forces a comprehensive parameter surface that covers all tuning needs
+through sliders and presets. Lifting this constraint would let technical artists write custom TAA
+resolve shaders, but it would break the no-code promise. The impact is a larger parameter space in
+the visual editor, which is manageable through good defaults and platform-specific presets.
+
+**Q2. How can this design be improved?**
+
+The environment systems (sky, fog, clouds, ocean, weather) are designed as independent features but
+have complex runtime interactions. The weather system (F-2.7.10) drives clouds, fog, precipitation,
+and material wetness, but the design does not specify the update order or how conflicting parameters
+resolve (e.g., artist-placed local fog volumes vs weather-driven global fog density). The hair LOD
+system (F-2.8.3) transitions between strand, card, and mesh tiers but the cross-fade dithering
+pattern is unspecified. The ocean system (F-2.7.6) depends on both the atmosphere (for reflections)
+and the rendering path (SSR vs RT reflections), creating a deep dependency chain that may cause
+frame budget overruns on mid-tier hardware.
+
+**Q3. Is there a better approach?**
+
+For character hair, a unified hair representation that smoothly interpolates between strand density
+levels (rather than discrete strand/card/mesh tiers) would eliminate LOD transition artifacts.
+TressFX and Frostbite use continuous strand reduction. We chose discrete tiers because they align
+with the meshlet LOD DAG (F-3.1.1) and allow each tier to use fundamentally different rendering
+techniques (compute rasterization for strands, hardware rasterization for cards). The discrete
+approach is simpler to budget-cull via the render graph (F-2.2.8) since each tier is a separate pass
+that can be independently disabled.
+
+**Q4. Does this design solve all customer problems?**
+
+The design is missing explicit support for indoor/outdoor environment blending. Games transitioning
+between interior and exterior spaces need smooth atmosphere, fog, and sky transitions at doorways
+and windows. US-2.7.2.1 addresses fog placement but not the blend between volumetric fog (exterior)
+and analytical fog (interior) at transition boundaries. Adding a volumetric blend zone feature would
+enable RPGs with seamless interior- exterior transitions. The biometric skin model (F-2.8.9) covers
+diverse skin tones but lacks user stories for non-human skin (alien, undead, fantasy races), which
+would expand the engine's genre coverage.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The environment systems integrate well with the render graph's capability gating (F-2.2.2) -- each
+environment feature declares its GPU requirements and falls back gracefully. Character rendering
+aligns with the ECS through per-entity components for hair style, skin profile, and eye
+configuration. However, the weather system (F-2.7.10) operates as a state machine with internal
+transition logic, which differs from the engine's event-driven ECS pattern. Making weather states
+and transitions ECS components and systems would improve cohesion. The FFT ocean (F-2.7.6) uses
+compute shaders for spectrum generation, which aligns with the GPU-driven philosophy, but its LOD
+system is camera-distance-based rather than using the shared spatial index (F-1.9.1), creating an
+inconsistency with other subsystems.
+
 ## Open Questions
 
 1. **SMAA area/search LUT generation** -- Should the SMAA lookup textures be precomputed at build

@@ -1796,6 +1796,63 @@ Vehicle replication (F-4.5.7) and destruction state replication use standard com
 via the networking layer. Vehicle input is replicated; physics simulation is server-authoritative.
 Destruction events (fracture activation, fragment spawning) are replicated as reliable messages.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 100% ECS constraint is the biggest limitation for advanced physics. Fluid simulation
+(F-4.8.1--7) naturally uses particle buffers and grid data structures that map poorly to archetypal
+ECS storage. Storing millions of SPH particles as individual entities with components would
+overwhelm the ECS allocator and fragment archetype tables. The design works around this by storing
+particle data in GPU buffers referenced by a single `FluidParticleBuffer` component, but this
+creates a hybrid pattern where the ECS entity is just a handle to external data. Lifting the ECS
+constraint would allow fluid and cloth solvers to own their data directly. The impact of removing
+this constraint would be localized to advanced physics; core rigid body simulation benefits from
+pure ECS storage.
+
+**Q2. How can this design be improved?**
+
+The design covers six major subsystems (spatial queries, vehicles, destruction, soft body, cloth,
+fluid) in a single document. Each deserves focused attention. Vehicle physics (F-4.5.1--7) lacks a
+bicycle or motorcycle model, which has distinct two-wheeled stability dynamics. The destruction
+system (F-4.6.1--7) pre-fractures meshes offline, preventing dynamically shaped fracture patterns
+from impact geometry. Cloth-fluid interaction (Open Question 5) is unresolved and critical for games
+with sailing or underwater cloth. The fluid surface reconstruction (F-4.8.4) uses marching cubes,
+but the design does not specify how fluid meshes integrate with the meshlet pipeline or visibility
+buffer, likely requiring a separate rendering path.
+
+**Q3. Is there a better approach?**
+
+For vehicle physics, a full multi-body dynamics solver (like Project Chrono) would produce more
+realistic results than the current component-per-wheel approach. We do not take this because
+multi-body solvers are computationally expensive and hard to tune in a no-code editor. For
+destruction, runtime Voronoi fracture (rather than pre-fractured assets) would enable arbitrary
+fracture patterns but requires real-time convex decomposition that is too slow for frame budgets
+(R-4.6.3). For fluids, a shallow water equation solver would be cheaper than full 3D SPH for
+surface-only water effects, and should be added as a lightweight option alongside the current
+SPH/FLIP solvers.
+
+**Q4. Does this design solve all customer problems?**
+
+The design is comprehensive for action, vehicle, and destruction games. Missing features include:
+rope-fluid interaction (ropes dragging through water), granular material simulation (sand, gravel,
+snow piles) beyond rigid body debris, and gas/smoke physics that interact with the environment.
+Adding granular simulation would enable sandbox and survival games with soil mechanics. Aerodynamic
+forces on vehicles (F-4.5.1--6) are absent -- flight simulation, paragliders, and wing suits need
+lift and drag models. The soft body system lacks support for deformable terrain (tire ruts,
+footprints in mud), which would complement the voxel editing system (F-3.2.13) at finer resolution.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+Spatial queries (F-4.4.1--6) are the most cohesive part, routing all queries through the shared BVH
+(F-1.9.1) and using ECS-native `QueryFilter` patterns. Vehicle physics follows the ECS pattern
+cleanly with component-per-wheel design. Destruction integrates with breakable joints (F-4.3.4) and
+debris lifecycle. However, fluid simulation (F-4.8.1--7) is the least cohesive: it stores bulk data
+in GPU buffers outside the ECS, uses its own spatial hashing for particle neighbors, and requires a
+separate surface reconstruction pass. Cloth simulation (F-4.7.1--7) has similar GPU buffer
+indirection. These subsystems should document their hybrid ECS pattern explicitly as a sanctioned
+exception, similar to how the audio runtime is documented in the constraints file.
+
 ## Open Questions
 
 1. **Fracture asset format** -- binary blob with per-fragment convex hulls, or reference individual

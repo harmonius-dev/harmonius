@@ -71,6 +71,33 @@ Converter) via cxx.rs. We do not author C++ application logic.
 - **No `std::map`/`std::unordered_map`** in hot paths — use sorted vectors or Rust-side containers
 - **Batch FFI calls** — minimize Rust-C++ boundary crossings by batching operations
 
+## cxx.rs Memory Safety Patterns
+
+| Category | Rule | Example |
+|----------|------|---------|
+| Ownership | Rust owns all heap allocations by default | Rust-side `Box<T>` |
+| Ownership | C++ receives borrowed references | `const &` maps to `&T` |
+| Ownership | Opaque C++ types wrapped in `UniquePtr<T>` on Rust side | `UniquePtr<DxcCompiler>` |
+| Ownership | Never return raw pointers across FFI | Use `Box<T>` or `UniquePtr<T>` |
+| Lifetime | C++ objects passed to Rust must outlive the Rust reference | Caller holds `UniquePtr` |
+| Lifetime | Use `Pin<&mut T>` for mutable C++ references | `Pin<&mut DxcResult>` |
+| Lifetime | COM objects: prevent `Release()` on Rust side | C++ retains ownership |
+| Exceptions | C++ exceptions must not propagate across FFI boundary | Wrap in `try_catch` |
+| Exceptions | All `extern "C++"` functions in cxx.rs bridge must be `noexcept` | Bridge decl |
+| Exceptions | Convert C++ exceptions to `Result<T, E>` via try/catch wrapper | See below [^1] |
+| Buffers | Use `rust::Slice<const uint8_t>` for Rust-to-C++ buffer views | Read-only slice |
+| Buffers | Use `rust::Vec<uint8_t>` for C++-to-Rust owned buffers | Owned transfer |
+| Buffers | Never pass `std::vector` across FFI | Convert to slice or `Vec` |
+
+[^1]: Exception-handling pattern:
+
+```cpp
+auto result = try_catch([&] {
+    // C++ code that may throw
+    return compile_shader(source);
+});
+```
+
 ## Testing
 
 1. **Test-driven development** — write tests first, driven by requirements (R-X.Y.Z) and features

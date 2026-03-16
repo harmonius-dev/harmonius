@@ -1678,6 +1678,57 @@ pub enum TempError {
 | Temp file allocate + drop | < 10 ms | US-14.5.28 |
 | Dev cache 3-tier lookup | < 50 ms | US-14.5.23 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+Console SDK NDA access (open question 1) is the hardest practical constraint. PlayStation and Xbox
+backends cannot be developed, tested, or even designed in detail without devkit access and licensed
+SDKs. This forces the entire console certification compliance layer (F-14.5.7) to remain placeholder
+stubs until NDA agreements are in place. Lifting this constraint would allow parallel development of
+all platform backends. The impact: console launch readiness depends on a non-technical gating factor
+(licensing), not engineering capacity.
+
+**Q2. How can this design be improved?**
+
+The `PreferencesStore` conflict resolution uses last-write- wins with a timestamp comparison, but
+timestamps can drift between machines. A vector clock or CAS (compare-and-swap) approach using
+cloud-side versioning would be more robust. The deferred achievement queue does not persist to disk
+(open question 2), so queued unlocks are lost on crash. The PSO cache invalidation is per-GPU-vendor
+and per-driver- version, but minor driver updates often do not change PSO binary compatibility; a
+hash of the driver's PSO compilation output would avoid unnecessary invalidation.
+
+**Q3. Is there a better approach?**
+
+For cloud storage conflict resolution, a three-way merge (common ancestor + local + cloud) would be
+ideal but requires storing the previous sync state. We chose last-write-wins with a dialog because
+it is simpler to implement and covers the common case (two machines used sequentially). Three-way
+merge would eliminate the dialog entirely but needs a shadow copy of the last-synced state per file,
+doubling local storage for preferences. For the developer cache, a content-addressed store (like Nix
+or Bazel) with hermetic builds would guarantee cache correctness but requires the entire build
+pipeline to be deterministic.
+
+**Q4. Does this design solve all customer problems?**
+
+US-14.5.24 (eliminate shader compilation stutter) is solved by the PSO cache, but the pre-built
+cache shipped with the game only covers the reference playthrough. User-generated content (mods,
+custom materials) will still cause first- encounter stutter. Missing: a background PSO
+pre-compilation queue that processes upcoming materials based on world streaming predictions.
+Missing: migration tooling when the preferences TOML schema changes between game versions (key
+renames, type changes). Adding background PSO compilation would make open-world games stutter-free
+even for content the cook process did not exercise.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+All storage tiers use `IoReactor` for async file I/O, consistent with the threading design. Path
+resolution uses `PlatformPaths` which should adopt `CanonicalPath` from os-integration.md (noted as
+a placeholder). The `DeferredQueue` for achievements uses exponential backoff and retry, matching
+the resilience pattern used by the inter-server bus in the MMO design. The BLAKE3 content hash for
+the developer cache is the same algorithm proposed in os-integration.md for file change detection,
+maintaining hash consistency across subsystems. The PSO cache integrates with the rendering
+pipeline's `BufferPool` pattern for blob storage. The `steamworks` crate dependency is consistent
+with the low-level, well-maintained library guideline.
+
 ## Open Questions
 
 1. **Console SDK access** -- PlayStation and Xbox SDKs are under NDA. The backend implementations

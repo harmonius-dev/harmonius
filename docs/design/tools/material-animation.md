@@ -1466,6 +1466,51 @@ The material graph compiler shares the `GraphCompiler` framework (see
 graph. Topological sort, type checking, HLSL emission, and DXC/MSC compilation are reused from this
 shared framework.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The HLSL-only shader IL constraint means all material graphs must compile through DXC and Metal
+Shader Converter via cxx.rs C++ FFI. This creates a hard dependency on two external C++ tools for
+every shader change. Lifting this would allow direct SPIR-V emission or native Metal shader
+generation. The best solution would be a custom IR that targets SPIR-V, DXIL, and MSL directly
+without DXC. The impact is removing the C++ FFI chain for shader compilation, but building a
+production-quality shader compiler is a massive undertaking.
+
+**Q2. How can this design be improved?**
+
+The material instance system (F-15.3.5) shares compiled shaders but does not support conditional
+compilation -- every instance uses the same shader variant regardless of which features it actually
+uses. The animation state machine (F-15.4.6) lacks hierarchical states (sub-state machines), forcing
+flat state graphs for complex character controllers. The blend space editor (F-15.4.5) only supports
+2D; 3D blend spaces for combined speed/direction/slope would serve open-world games. Adding shader
+feature stripping, hierarchical states, and 3D blend spaces would address these gaps.
+
+**Q3. Is there a better approach?**
+
+For the material system, a shader permutation system with compile-time feature flags (like Unreal's
+material switches) would be more efficient than compiling every possible material as a monolithic
+shader. We use full graph compilation because it integrates cleanly with the logic graph runtime
+(F-15.8.1) and avoids a separate permutation management system. The trade-off is larger shader
+programs with dead code, partially mitigated by the compiler's dead code elimination pass.
+
+**Q4. Does this design solve all customer problems?**
+
+There is no support for procedural animation -- IK solvers, ragdoll blending, and physics-driven
+secondary motion are not covered by this design. The material editor lacks a shader complexity
+visualization (instruction count, register pressure) that helps artists optimize for mobile
+platforms. Adding procedural animation nodes to the state machine and a shader cost overlay in the
+material preview would serve mobile developers and action game animators.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+Both editors are deeply cohesive: materials compile through the shared `GraphCompiler` framework,
+animation state machines use the logic graph runtime (F-15.8.7), and preview viewports render
+through the standard render graph. The `MaterialInstance` override pattern mirrors the prefab
+`OverrideMap` (F-15.2.3). The animation timeline integrates with the profiler for per-bone timing.
+One minor inconsistency is that `MaterialLibrary` has its own search and tagging system separate
+from the asset browser (F-15.1), which could be unified.
+
 ## Open Questions
 
 1. **HLSL optimization level** -- DXC supports multiple optimization levels (-O0 to -O3). Higher

@@ -1955,6 +1955,59 @@ via explicit system dependencies for all mutating transport systems.
 | Net systems total frame time | < 0.5 ms at 10,000 connections | R-X.1.1 |
 | Timing wheel tick (10k entries) | < 1 us | R-8.NFR.7 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The Rust-stable-only constraint prevents using nightly features like `impl Trait` in type aliases
+and generic associated types that would simplify the channel abstraction. More impactfully, the
+no-third-party-runtime constraint means the DTLS handshake, congestion controller, and all socket
+I/O must integrate with the custom IoReactor. Lifting the runtime constraint would allow `quinn`
+(QUIC) to replace the entire custom transport with battle-tested UDP+TLS+ congestion control. The
+impact: several person-months of transport implementation become a crate dependency, but we lose
+fine-grained control over pacing and channel modes.
+
+**Q2. How can this design be improved?**
+
+The 16-bit sequence numbers (open question 5) wrap every 65,536 packets, creating ambiguity near the
+wrap point that complicates SACK processing. Upgrading to 32-bit sequences adds 4 bytes per packet
+but eliminates wrap handling entirely. The congestion controller uses a loss-based algorithm, but
+mobile cellular links exhibit bufferbloat where delay grows without loss; a BBR-style bandwidth
+probing algorithm (open question 2) would be more appropriate for mobile. The DTLS backend selection
+is compile-time via `cfg`, but Schannel and Security.framework have different TLS 1.3 support
+levels, creating platform parity risk.
+
+**Q3. Is there a better approach?**
+
+Using `quinn` (QUIC) directly would provide UDP transport, TLS 1.3 encryption, congestion control,
+and multiplexed streams out of the box. Quinn supports custom async runtimes via its
+`AsyncUdpSocket` trait, which could be implemented on the IoReactor. We are not taking this approach
+because the constraints require per-channel delivery semantics (unreliable sequenced,
+reliable-latest) that QUIC streams do not natively support, and we need sub-packet-level control for
+game- oriented pacing. The custom transport is more work but provides exact control over every byte
+on the wire.
+
+**Q4. Does this design solve all customer problems?**
+
+US-8.1.13 requests mobile-specific tuning defaults, which are defined in the platform defaults
+table. Missing: automatic detection of Wi-Fi vs cellular on mobile to switch between desktop-like
+and mobile-like profiles dynamically. Missing: bandwidth usage reporting for metered data plans
+(cellular data cap awareness). Adding data cap awareness would make the engine suitable for mobile
+games where players pay per megabyte. US-8.1.11 requests simulated network conditions for testing
+but the design does not include a built-in network simulator; one would need to be built for CI.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+Transport systems (`net_poll_system`, `net_recv_system`, `net_send_system`) run as ECS systems in
+the correct dependency order, matching the engine's ECS scheduling model. All socket I/O routes
+through the IoReactor with completions harvested at the frame poll point, perfectly aligned with the
+threading design's controlled-poll architecture. The DTLS backend uses platform-native TLS libraries
+(Schannel, Security.framework, rustls) selected via `cfg`, consistent with the platform abstraction
+pattern used in windowing and threading. The `NetStatsResource` is an ECS resource read by gameplay
+systems, following the same resource pattern as other subsystems. Proposed dependencies (`rustls`,
+`ring`, `windows-sys`, `cxx`, `smallvec`) are all low-level libraries already used or approved in
+other designs.
+
 ## Open Questions
 
 1. **DTLS library on Linux.** rustls is proposed for its pure-Rust, no-C-dependency nature. However,

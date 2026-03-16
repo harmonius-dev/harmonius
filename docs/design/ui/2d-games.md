@@ -1298,6 +1298,52 @@ For server-authoritative and rollback netcode:
 2D particle effects should cross-reference the GPU particle system (see
 [particles.md](../vfx/particles.md)) for consistent emission, simulation, and rendering.
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 100% ECS constraint forces all 2D physics data into components and all logic into systems,
+preventing a tuned standalone physics solver with internal spatial structures. Lifting it would
+allow a dedicated Box2D-style solver with its own broadphase, yielding higher throughput and better
+cache coherence for physics-heavy games. However, the ECS constraint ensures 2D physics data is
+queryable by all other subsystems (rendering, networking, gameplay) without sync barriers, which is
+critical for the engine's unified data model.
+
+**Q2. How can this design be improved?**
+
+The tilemap collider generation (R-10.5.11) is purely reactive -- it regenerates edge chains when
+chunks load but has no incremental update path for runtime tile edits. Games with destructible
+terrain or real-time level editors would trigger full chunk re-generation on each tile change.
+Adding incremental contour patching for single-tile mutations would improve performance for these
+use cases. The 2D lighting system also lacks area lights, which limits soft shadow quality compared
+to modern 2D engines.
+
+**Q3. Is there a better approach?**
+
+An alternative is a unified 2D/3D physics backend where 2D is simply 3D constrained to a plane,
+sharing the same solver and spatial index. This would eliminate code duplication between Physics2D
+and the 3D physics subsystem. We chose separate 2D types (Transform2D, RigidBody2D, Collider2D) for
+cache efficiency -- 2D-only games avoid loading unused Z-axis data into cache lines -- and because
+2D games need features like one-way platforms (R-10.5.10) and tilemap colliders (R-10.5.11) that do
+not apply to 3D.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers sprites, tilemaps, physics, and lighting but is missing a 2D pathfinding API for
+top-down and RTS games. US-10.5.19 covers spatial queries for AI, but navigation mesh or grid-based
+A* pathfinding is not addressed. Adding a 2D NavGrid system would enable tower defense, real-time
+strategy, and top-down RPG genres. The design also lacks a 2D rope/cloth simulation module, which
+would benefit puzzle platformers and Limbo-style games.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The 2D subsystem aligns well with the engine's ECS-first and shared-spatial-index architecture. It
+reuses the render graph for light map compositing and the event bus for animation and collision
+events, which matches the core-runtime patterns. One divergence is the separate Transform2D
+component -- unlike the 3D side that uses a single Transform, the 2D side introduces a parallel
+type. Unifying these behind a trait or enum dispatch could reduce friction for 2.5D games
+(F-10.5.22, F-10.5.23) that mix 2D physics with 3D rendering.
+
 ## Open Questions
 
 1. **Sprite batch size limit** -- Maximum sprites per instanced draw call before splitting.

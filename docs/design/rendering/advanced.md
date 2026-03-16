@@ -1848,6 +1848,59 @@ numerous). Mesh-based VFX (debris, large projectiles) can opt in to BLAS registr
 
 ---
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The requirement for three separate GPU backends (Metal, D3D12, Vulkan) via the `GpuBackend` trait
+forces every RT feature to target the lowest common denominator for acceleration structure APIs.
+Metal's RT API is less mature than DXR, limiting advanced features like opacity micromaps (F-2.5.10)
+and shader execution reordering (F-2.5.11) to NVIDIA-only paths. Lifting the multi-backend
+constraint would allow a single DXR-native design with full feature parity. However, the constraint
+enables macOS and Linux support, which is essential for the engine's multiplatform goal. The impact
+is additional emulation code (GR-4.6 through GR-4.9) and per-backend capability gating that adds
+design complexity but preserves correctness.
+
+**Q2. How can this design be improved?**
+
+The GI fallback chain (DDGI, surfel GI, voxel GI, baked lightmaps) is feature-rich but the
+transitions between tiers are underspecified. When a player moves from an RT-capable area to a
+non-RT area mid-frame, the design does not define blending between surfel GI and voxel GI. The
+denoiser fallback from neural ray reconstruction (F-2.5.12) to NRD bilateral filtering may produce
+visible quality discontinuities. The design trades simplicity for feature breadth -- 16 features
+across RT effects and GI systems is ambitious and risks incomplete implementations. Prioritizing
+fewer GI paths with robust transitions would reduce risk.
+
+**Q3. Is there a better approach?**
+
+A unified path tracing pipeline (F-2.5.9) with tiered bounce counts could replace the separate RT
+reflections (F-2.5.2), RT indirect lighting (F-2.5.3), and RT AO passes with a single configurable
+path tracer. Lumen in Unreal Engine 5 takes this approach with software + hardware ray tracing. We
+chose separate passes because each can be independently budget-culled via the render graph (F-2.2.8)
+and individually disabled per platform tier. The separate-pass approach gives finer control at the
+cost of more shader permutations and a more complex render graph topology.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks explicit support for RT caustics from refractive objects (F-2.12.1 defines
+refraction but caustic patterns are approximated analytically rather than traced). Games with
+underwater scenes, crystal environments, or glass architecture would benefit from photon-mapped or
+screen-space caustics as a dedicated feature. Adding a caustics pass would enable aquatic games,
+jewel-themed puzzles, and cathedral-style architectural visualization. Additionally, there is no
+user story for artists previewing GI quality differences between tiers in the editor, which would
+help content teams target multiple platforms.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The design integrates well with the ECS via render proxy extraction (F-2.10.1) and the shared
+spatial index for TLAS construction. However, the RT subsystem introduces the only vendor-specific
+SDK dependencies in the rendering pipeline (NVIDIA SER, NVIDIA/AMD neural denoising), which
+conflicts with the engine's constraint against frameworks (constraints.md). The neural radiance
+cache (F-2.5.15) and neural denoiser (F-2.5.12) also require Tensor Core hardware, creating a
+hardware-exclusive feature tier not seen in other subsystems. Aligning these features with the
+capability gating system (F-2.2.2) and ensuring graceful fallbacks keeps the design cohesive, but
+the vendor-specific paths should be clearly isolated behind the feature emulation layer (F-2.1.11).
+
 ## Open Questions
 
 1. **TLAS refit quality degradation** -- After many consecutive refits without rebuild, BVH quality

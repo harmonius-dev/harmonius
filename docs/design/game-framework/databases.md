@@ -1465,6 +1465,60 @@ fn roll_loot(
 | Loot roll (100 entries) | < 10 us | R-13.7.8 |
 | Validation (100k rows) | < 500 ms | R-13.7.14 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-external-runtime constraint forces the database system to be entirely in-memory with no query
+engine. There is no SQL, no ORM, and no database server -- all data is loaded from serialized assets
+into `Vec<Row>` ECS resources. Lifting this would allow PostgreSQL integration for live service
+content management and complex queries. The impact is that the system must implement its own
+indexing (F-13.7.11), validation (F-13.7.14), and hot-reload (F-13.7.13) rather than leveraging
+mature database technology. However, removing the constraint would add a network dependency and
+async query latency to every data access, violating the < 10 us loot roll target. The in-memory
+design is correct for a game engine where all data must be available within a frame.
+
+**Q2. How can this design be improved?**
+
+The formula system (F-13.7.4) compiles visual node graphs to bytecode, but the design does not
+specify the bytecode format, interpreter, or JIT strategy. This is a critical performance path --
+damage formulas evaluate on every combat hit. The row inheritance system (F-13.7.5) has no defined
+behavior for diamond inheritance (row C inherits from both A and B which share a grandparent). The
+hot-reload system (F-13.7.13) does not specify atomicity -- if a reload fails mid-table, is the
+system left in a partial state? Adding transactional hot-reload with rollback semantics and
+specifying the formula bytecode format would close the most important gaps.
+
+**Q3. Is there a better approach?**
+
+An alternative is a compiled data approach where all tables are baked into Rust structs at build
+time (similar to `include_bytes!` with code generation). This would eliminate runtime schema
+validation, give compile-time type safety, and enable the optimizer to inline data access. However,
+it would make hot-reload impossible and require a full rebuild for any data change, which is
+unacceptable for live service tuning (US-13.7.13.1). The current runtime schema approach trades
+compile-time safety for runtime flexibility, which is the right choice for a no-code engine where
+designers iterate on data without programmer involvement.
+
+**Q4. Does this design solve all customer problems?**
+
+The design covers typed schemas, row tables, curves, formulas, inheritance, currencies, crafting,
+loot, stats, asset lists, indexing, ECS binding, hot-reload, and validation -- a comprehensive set.
+However, it lacks a localization table type for string translations, which is essential for shipping
+games internationally. There is no diff/merge tooling for collaborative editing -- two designers
+editing the same table in the visual editor will create conflicts. A three-way merge system for data
+tables would enable team workflows. The loot table system (F-13.7.8) lacks server-side analytics
+integration for tracking drop rates in live service, which is critical for balancing live games.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The database system is the data backbone for nearly every game-framework module -- abilities,
+combat, inventory, progression, survival, and crafting all reference data tables. The ECS component
+binding (F-13.7.12) creates a clean bridge between static data and runtime entities. The visual
+formula nodes (F-13.7.4) share the logic graph bytecode with gameplay scripting (F-15.8.4), avoiding
+a second expression language. One concern is that the stat tables (F-13.7.9) define modifier
+stacking rules independently from the gameplay effect system's `StackingRule` enum
+(abilities-combat.md), creating two parallel stacking models. These should be unified into a single
+`ModOp` + `StackingRule` pipeline in the shared primitives module to prevent divergence.
+
 ## Open Questions
 
 1. **Column storage layout** — Row-major (`Vec<Row>`) is simpler but column-major (struct-of-arrays)

@@ -1339,6 +1339,54 @@ operations.
 | Bus message latency (p99) | < 5 ms | R-8.7.8 |
 | Bus reconnection | < 5 s | R-8.7.8 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The 100 ms migration handoff target (R-8.7.4) is the hardest constraint. Serializing entity state,
+transferring it via the inter-server bus, deserializing on the destination, and redirecting the
+client must all complete within a single frame's worth of extrapolation. Lifting this would allow
+richer migration payloads (full physics history, AI state trees) and simplify the overlap
+co-simulation by giving more time for synchronization. Without the constraint, migration could be a
+multi-second background process with prediction smoothing, but players would notice longer visual
+artifacts.
+
+**Q2. How can this design be improved?**
+
+The boundary overlap co-simulation syncs at a fixed interval (2-4 ticks), which creates visible
+popping for fast-moving entities crossing zone edges. Adaptive sync frequency based on entity
+velocity near boundaries would be smoother. The inter-server bus uses TCP, adding head-of-line
+blocking for migration payloads; QUIC or UDP with reliability would reduce tail latency. The
+auto-scaler relies on CPU/player-count metrics but ignores network bandwidth saturation, which is
+often the real bottleneck in dense PvP scenarios (US-8.7.2).
+
+**Q3. Is there a better approach?**
+
+SpatialOS-style seamless worlds use per-entity authority rather than per-region authority. This
+eliminates zone boundaries entirely but requires every entity mutation to route through an authority
+lookup, adding per-access overhead. We chose region-based authority because it keeps the common case
+(entities far from boundaries) zero-cost and only pays overhead at edges. The region approach is
+simpler to reason about and debug, which matters for a custom engine where every subsystem is built
+from scratch.
+
+**Q4. Does this design solve all customer problems?**
+
+US-8.7.7 requests a real-time dashboard for mesh topology monitoring, but the design has no
+telemetry export for mesh state. Missing: cross-shard guild management beyond roster (guild bank,
+guild achievements). Missing: housing system persistence, which requires zone-locked state that
+cannot migrate. Adding persistent housing would enable sandbox and building games on the engine. The
+mobile entity budget of 500 (US-8.7.16) may be too restrictive for populated town hubs.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+Zone servers run the full ECS simulation in headless mode, consistent with F-8.5.8 and the engine's
+ECS-first architecture. Database access uses the IoReactor's platform-native async I/O, matching the
+threading design's controlled poll model. The cross-shard services are microservices rather than ECS
+systems, which breaks the ECS-everywhere pattern but is architecturally correct for independently
+scalable services. The inter-server bus duplicates some transport layer patterns (TCP connections,
+serialization) rather than reusing the QUIC-based transport from F-8.1; unifying them would reduce
+code duplication.
+
 ## Open Questions
 
 1. **Database choice for persistence.** PostgreSQL (RDS) provides transactions and relational

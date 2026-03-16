@@ -2059,6 +2059,64 @@ fn equip_system(
 | Inventory serialize (500 items) | < 5 ms | R-13.9.10 |
 | LOD evaluation (500 characters) | < 1 ms | R-13.8.13 |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The no-code constraint (all authoring via visual editors) is the most limiting. Character
+customization requires complex relationships between morph targets, skeleton bones, equipment
+meshes, and material parameters. Expressing body proportion constraints, morph target blending
+rules, and mesh part compatibility entirely through visual data assets means the system must
+pre-define every possible interaction. Lifting this would allow scripted customization logic (e.g.,
+"if chest > 0.8, clamp shoulder_width to min 0.5") as code. The impact is that constraint authoring
+requires a visual formula graph per constraint rather than a simple conditional expression, adding
+editor complexity. However, maintaining no-code is essential for the target audience.
+
+**Q2. How can this design be improved?**
+
+The body morph propagation system (F-13.8.4) underspecifies the runtime conform approach -- "deforms
+equipment vertices to follow the underlying body surface" without defining the algorithm (ray
+projection vs. cage deformation). This is a critical rendering feature that affects every equipped
+item on every character. The mesh merging system (F-13.8.14) has no invalidation strategy -- when a
+player swaps one equipment piece, the entire merged mesh must be regenerated. A partial merge
+approach that replaces only the changed submesh would reduce re-merge cost. The serialization format
+(F-13.8.15) targets < 16 KB per R-13.8.NF3, but with all the layers (facial morphs, body shape,
+skin, makeup, eyes, hair, mesh parts, equipment), this budget may be too tight for characters with
+extensive customization.
+
+**Q3. Is there a better approach?**
+
+An alternative to modular mesh parts (F-13.8.9) is a single unified mesh with blend shapes for all
+equipment variations. This eliminates draw call overhead entirely but requires an exponential number
+of blend shapes for every equipment combination, which is impractical for games with hundreds of
+armor pieces. The modular approach with runtime mesh merging is the industry standard (used by
+Fortnite, Guild Wars 2, and most MMOs) because it scales linearly with equipment count. The
+trade-off is the merge cost (< 5 ms async per R-13.8.14) and the LOD transition complexity between
+separate and merged meshes.
+
+**Q4. Does this design solve all customer problems?**
+
+The design lacks body modification systems found in some games: tattoo placement via 3D painting
+(UV-space projection in F-13.8.6 only supports decals, not freehand painting), dynamic body changes
+(weight gain/loss over time from gameplay), and aging/scarring from combat. There is no support for
+non-humanoid character creation (F-13.8.12 covers multi-race but all assume bipedal skeletons).
+Games with quadruped or serpentine player characters would need additional race base meshes with
+incompatible skeletons. The inventory system (F-13.9) has no visual bag/container representation in
+the world (dropping a bag of items), which is expected in survival games (US-13.14.7a.1 gathering
+deposits to inventory).
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The character and inventory systems integrate tightly -- the equipment pipeline connects inventory
+slots to attachment sockets to stat modifiers, forming a clean data flow. The serialization uses the
+engine's reflection system (F-1.3.1) and schema versioning (F-1.4.4), maintaining consistency with
+other subsystems. The LOD system uses the shared spatial index (F-1.9.1) for distance queries,
+consistent with how other modules use it. One divergence is that the grid-based inventory (F-13.9.2)
+implements its own spatial occupancy logic (bin-packing) rather than reusing spatial query
+primitives, but this is justified since 2D grid packing is a fundamentally different problem from 3D
+spatial queries. The server-authoritative inventory model aligns with the networking system's
+prediction and rollback design.
+
 ## Open Questions
 
 1. **Morph target storage format** -- Should morph targets use compressed deltas (16-bit fixed

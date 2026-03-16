@@ -1021,6 +1021,62 @@ Between rounds (recovery):
 | Surface type resolve (terrain splatmap) | < 0.01 ms | -- |
 | Impact response dispatch (VFX + audio + decal) | < 0.1 ms | -- |
 
+## Design Q & A
+
+**Q1. What is the biggest constraint limiting this design?**
+
+The custom IoReactor constraint (no third-party async runtimes) means the ballistic system's
+continuous collision detection (CCD) for 256 simultaneous projectiles (NFR-13.16.1) must be
+hand-optimized on platform-native primitives rather than leveraging existing high-performance
+physics libraries with built-in CCD. Lifting this would allow integration with a dedicated physics
+library's sweep-test pipeline, which could batch SIMD-accelerated CCD across all projectiles.
+However, removing this constraint would introduce a third-party runtime dependency into the hot path
+and violate the engine's platform-native I/O policy. The trade-off is justified because the shared
+spatial index BVH already provides efficient sweep tests, and 256 projectiles at sub-1-ms is
+achievable with SIMD on the custom reactor.
+
+**Q2. How can this design be improved?**
+
+The linear energy-loss-per-cm penetration model (R-13.16.4c) is oversimplified -- real penetration
+follows non-linear curves based on projectile deformation and material density. A lookup table
+indexed by material pair and velocity range would improve realism without significant runtime cost.
+The `SmallVec<[Vec2; 32]>` recoil pattern caps at 32 points -- weapons with very high fire rates may
+exhaust this in under a second. An `AnimationCurve` sampling approach (similar to
+`WallRunConfig.gravity_curve`) would generalize better. The surface response system lacks budget
+prioritization -- during heavy firefights, VFX and decal spawns could overwhelm the renderer without
+per-frame caps enforced at the system level.
+
+**Q3. Is there a better approach?**
+
+An alternative is to use hitscan raycasts for all projectiles and simulate ballistic effects (drop,
+wind) as post-hoc corrections to the hit point. This is simpler and eliminates per-tick trajectory
+integration entirely. We are not taking this approach because R-13.16.4a requires finite travel time
+and visible projectile trajectories, which hitscan cannot provide. The hybrid approach mentioned in
+open question 1 (hitscan for supersonic, simulated for subsonic) is worth pursuing as a performance
+optimization, but the current full-simulation design is the correct baseline for correctness.
+
+**Q4. Does this design solve all customer problems?**
+
+The design comprehensively covers firearms (F-13.16.1-- 6d) but is weaker on melee weapons.
+`WeaponCategory` includes `Melee` but the API has no melee-specific components -- no swing arc, hit
+frames, or melee combo integration. US-13.16.1.1--1.5 and the fire mode system assume ranged
+trigger-pull semantics. A melee weapon subsystem with swing trajectories, hit detection via shape
+casts, and combo tree integration (F-6.2.8) would enable action RPGs and fighting games. Thrown
+weapons (grenades) lack trajectory preview for arc visualization -- a common feature in tactical
+shooters. Adding these would significantly broaden genre support.
+
+**Q5. Is this design cohesive with the overall engine?**
+
+The weapon system integrates tightly with the ability system (F-13.10.2), inventory (F-13.9.1), and
+gameplay databases (F-13.7.1), following the engine's data-driven and ECS-based patterns. Fire modes
+as ability activation mode variants is a strong cohesion point. The `ModOp` enum references the
+shared primitives module, correctly avoiding local duplication. The surface response system reuses
+the physics material system (F-4.2.9) and VFX system (F-11.6.4) rather than building parallel
+infrastructure. One inconsistency: `BallisticConfig` is stored inline on each `Projectile` component
+rather than referencing a shared data asset, which means 256 projectiles duplicate the same config
+data -- a shared `AssetId` reference would be more memory-efficient and consistent with how weapon
+definitions reference data assets.
+
 ## Open Questions
 
 1. **Hitscan vs projectile threshold** -- At what muzzle velocity should the system switch from
