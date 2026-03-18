@@ -8,16 +8,25 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.4.1 | R-13.4.1 | Gameplay logic graph integration with ECS world state access |
-| F-13.4.2 | R-13.4.2 | Visual debugging with breakpoints, watch, remote debug |
-| F-13.4.3 | R-13.4.3 | Hot reload of graph changes with state preservation |
-| F-15.8.1 | R-15.8.1 | Universal logic graph runtime (compiled graphs) |
-| F-15.8.4 | R-15.8.4 | Gameplay logic graphs (coroutines, ECS access) |
-| F-15.8.12 | R-15.8.12 | Graph compilation and optimization passes |
-| — | R-13.4.NF1 | 1,000 active graphs in < 4 ms per frame at 60 fps |
-| — | R-13.4.NF2 | Hot reload turnaround < 1 second |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-13.4.1  | R-13.4.1    |
+| F-13.4.2  | R-13.4.2    |
+| F-13.4.3  | R-13.4.3    |
+| F-15.8.1  | R-15.8.1    |
+| F-15.8.4  | R-15.8.4    |
+| F-15.8.12 | R-15.8.12   |
+| —         | R-13.4.NF1  |
+| —         | R-13.4.NF2  |
+
+1. **F-13.4.1** — Gameplay logic graph integration with ECS world state access
+2. **F-13.4.2** — Visual debugging with breakpoints, watch, remote debug
+3. **F-13.4.3** — Hot reload of graph changes with state preservation
+4. **F-15.8.1** — Universal logic graph runtime (compiled graphs)
+5. **F-15.8.4** — Gameplay logic graphs (coroutines, ECS access)
+6. **F-15.8.12** — Graph compilation and optimization passes
+7. **—** — 1,000 active graphs in < 4 ms per frame at 60 fps
+8. **—** — Hot reload turnaround < 1 second
 
 ## Overview
 
@@ -1418,55 +1427,115 @@ bytecode + ~512 bytes of constant pool.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_opcode_add_f32` | R-13.4.1 | Execute AddF32 opcode, verify result in dst slot. |
-| `test_opcode_jump_if` | R-13.4.1 | Conditional jump taken and not-taken paths. |
-| `test_opcode_get_component` | R-13.4.1 | Read a component value from the world via GetComponent. |
-| `test_opcode_set_component` | R-13.4.1 | Write a component via SetComponent, verify deferred in command buffer. |
-| `test_opcode_emit_event` | R-13.4.1 | Emit a typed event, verify it appears in the event channel. |
-| `test_opcode_query_begin_next` | R-13.4.1 | Execute a query, iterate results with QueryNext. |
-| `test_opcode_blackboard_get_set` | R-13.4.1 | Read/write AI blackboard via opcodes. |
-| `test_opcode_state_transition` | R-13.4.1 | Trigger a state machine transition from a graph. |
-| `test_variable_store_get_set` | R-13.4.1 | Set and get variables at all three scopes. |
-| `test_variable_layout_hash` | R-13.4.3 | Identical layouts produce identical hashes. |
-| `test_variable_migration_compatible` | R-13.4.3 | Migrate variables between compatible layouts. |
-| `test_variable_migration_incompatible` | R-13.4.3 | Detect incompatible layout, trigger reset. |
-| `test_coroutine_yield_next_frame` | R-15.8.4 | YieldNextFrame suspends, resumes next frame. |
-| `test_coroutine_yield_frames` | R-15.8.4 | YieldFrames(3) resumes after exactly 3 frames. |
-| `test_coroutine_yield_delay` | R-15.8.4 | YieldDelay(1.0) resumes after 1 second of delta time. |
-| `test_coroutine_yield_event` | R-15.8.4 | YieldUntilEvent suspends, resumes when event fires. |
-| `test_sandbox_budget_exhaustion` | R-13.4.1 | Tight loop exceeds budget, returns BudgetExhausted error. |
-| `test_sandbox_unauthorized_component` | R-13.4.1 | Access to disallowed component is rejected at compile time. |
-| `test_sandbox_unbounded_loop` | R-13.4.1 | Loop without yield detected by SandboxValidator. |
-| `test_compiler_dead_node_elimination` | R-15.8.12 | Unreachable nodes produce no opcodes. |
-| `test_compiler_constant_folding` | R-15.8.12 | Static expressions evaluate at compile time. |
-| `test_compiler_type_mismatch` | R-15.8.12 | Type error on a connection produces CompileError. |
-| `test_compiler_cycle_detection` | R-15.8.12 | Dataflow cycle produces DataflowCycle error. |
-| `test_debug_breakpoint_hit` | R-13.4.2 | Breakpoint opcode triggers Paused state. |
-| `test_debug_step` | R-13.4.2 | Single-step advances exactly one opcode. |
-| `test_debug_watch_read` | R-13.4.2 | Read a watched variable value from a paused instance. |
-| `test_profiler_instruction_count` | R-13.4.NF1 | Profile reports correct instruction count. |
-| `test_profiler_execution_time` | R-13.4.NF1 | Profile reports non-zero execution time. |
+| Test                                   | Req        |
+|----------------------------------------|------------|
+| `test_opcode_add_f32`                  | R-13.4.1   |
+| `test_opcode_jump_if`                  | R-13.4.1   |
+| `test_opcode_get_component`            | R-13.4.1   |
+| `test_opcode_set_component`            | R-13.4.1   |
+| `test_opcode_emit_event`               | R-13.4.1   |
+| `test_opcode_query_begin_next`         | R-13.4.1   |
+| `test_opcode_blackboard_get_set`       | R-13.4.1   |
+| `test_opcode_state_transition`         | R-13.4.1   |
+| `test_variable_store_get_set`          | R-13.4.1   |
+| `test_variable_layout_hash`            | R-13.4.3   |
+| `test_variable_migration_compatible`   | R-13.4.3   |
+| `test_variable_migration_incompatible` | R-13.4.3   |
+| `test_coroutine_yield_next_frame`      | R-15.8.4   |
+| `test_coroutine_yield_frames`          | R-15.8.4   |
+| `test_coroutine_yield_delay`           | R-15.8.4   |
+| `test_coroutine_yield_event`           | R-15.8.4   |
+| `test_sandbox_budget_exhaustion`       | R-13.4.1   |
+| `test_sandbox_unauthorized_component`  | R-13.4.1   |
+| `test_sandbox_unbounded_loop`          | R-13.4.1   |
+| `test_compiler_dead_node_elimination`  | R-15.8.12  |
+| `test_compiler_constant_folding`       | R-15.8.12  |
+| `test_compiler_type_mismatch`          | R-15.8.12  |
+| `test_compiler_cycle_detection`        | R-15.8.12  |
+| `test_debug_breakpoint_hit`            | R-13.4.2   |
+| `test_debug_step`                      | R-13.4.2   |
+| `test_debug_watch_read`                | R-13.4.2   |
+| `test_profiler_instruction_count`      | R-13.4.NF1 |
+| `test_profiler_execution_time`         | R-13.4.NF1 |
+
+1. **`test_opcode_add_f32`** — Execute AddF32 opcode, verify result in dst slot.
+2. **`test_opcode_jump_if`** — Conditional jump taken and not-taken paths.
+3. **`test_opcode_get_component`** — Read a component value from the world via GetComponent.
+4. **`test_opcode_set_component`** — Write a component via SetComponent, verify deferred in command
+   buffer.
+5. **`test_opcode_emit_event`** — Emit a typed event, verify it appears in the event channel.
+6. **`test_opcode_query_begin_next`** — Execute a query, iterate results with QueryNext.
+7. **`test_opcode_blackboard_get_set`** — Read/write AI blackboard via opcodes.
+8. **`test_opcode_state_transition`** — Trigger a state machine transition from a graph.
+9. **`test_variable_store_get_set`** — Set and get variables at all three scopes.
+10. **`test_variable_layout_hash`** — Identical layouts produce identical hashes.
+11. **`test_variable_migration_compatible`** — Migrate variables between compatible layouts.
+12. **`test_variable_migration_incompatible`** — Detect incompatible layout, trigger reset.
+13. **`test_coroutine_yield_next_frame`** — YieldNextFrame suspends, resumes next frame.
+14. **`test_coroutine_yield_frames`** — YieldFrames(3) resumes after exactly 3 frames.
+15. **`test_coroutine_yield_delay`** — YieldDelay(1.0) resumes after 1 second of delta time.
+16. **`test_coroutine_yield_event`** — YieldUntilEvent suspends, resumes when event fires.
+17. **`test_sandbox_budget_exhaustion`** — Tight loop exceeds budget, returns BudgetExhausted error.
+18. **`test_sandbox_unauthorized_component`** — Access to disallowed component is rejected at
+    compile time.
+19. **`test_sandbox_unbounded_loop`** — Loop without yield detected by SandboxValidator.
+20. **`test_compiler_dead_node_elimination`** — Unreachable nodes produce no opcodes.
+21. **`test_compiler_constant_folding`** — Static expressions evaluate at compile time.
+22. **`test_compiler_type_mismatch`** — Type error on a connection produces CompileError.
+23. **`test_compiler_cycle_detection`** — Dataflow cycle produces DataflowCycle error.
+24. **`test_debug_breakpoint_hit`** — Breakpoint opcode triggers Paused state.
+25. **`test_debug_step`** — Single-step advances exactly one opcode.
+26. **`test_debug_watch_read`** — Read a watched variable value from a paused instance.
+27. **`test_profiler_instruction_count`** — Profile reports correct instruction count.
+28. **`test_profiler_execution_time`** — Profile reports non-zero execution time.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_graph_ecs_component_read_write` | R-13.4.1 | Compile a graph that reads Health, subtracts damage, writes Health. Verify the component is updated after command flush. |
-| `test_graph_event_emission` | R-13.4.1 | Graph emits DamageDealt event. Verify a listener system receives it. |
-| `test_graph_ai_blackboard` | R-13.4.1 | Graph reads/writes AI blackboard keys. Verify blackboard state matches. |
-| `test_graph_state_machine_transition` | R-13.4.1 | Graph triggers AI state transition. Verify state machine updates. |
-| `test_graph_ecs_schedule_order` | R-13.4.1 | Two graphs with ordering constraints execute in declared order. |
-| `test_graph_coroutine_boss_encounter` | R-15.8.4 | Three-phase boss encounter: phase 1 (5 frames) -> phase 2 (3 frames) -> phase 3. Verify timing and state. |
-| `test_hot_reload_compatible` | R-13.4.3 | Modify a graph (add a node, keep variables). Verify hot reload preserves variable values. |
-| `test_hot_reload_incompatible` | R-13.4.3 | Remove a variable from a graph. Verify clean restart with warning. |
-| `test_hot_reload_concurrent_100` | R-13.4.3 | Hot-reload while 100 instances execute concurrently. Verify no crashes or corruption. |
-| `test_hot_reload_turnaround` | R-13.4.NF2 | Modify a 50-node graph. Verify reload completes in < 1 second. |
-| `test_debug_remote_connect` | R-13.4.2 | Connect remote debugger over TCP, set breakpoint, verify pause. |
-| `test_debug_no_side_effects` | R-13.4.2 | Run identical sessions with and without debugger. Verify identical world state. |
-| `test_debug_remote_stability` | R-13.4.2 | Connect/disconnect 50 times during gameplay. Verify no crashes. |
-| `test_no_text_scripting_api` | R-13.4.1 | Verify no public API accepts text-based scripts or code strings. |
+| Test                                  | Req        |
+|---------------------------------------|------------|
+| `test_graph_ecs_component_read_write` | R-13.4.1   |
+| `test_graph_event_emission`           | R-13.4.1   |
+| `test_graph_ai_blackboard`            | R-13.4.1   |
+| `test_graph_state_machine_transition` | R-13.4.1   |
+| `test_graph_ecs_schedule_order`       | R-13.4.1   |
+| `test_graph_coroutine_boss_encounter` | R-15.8.4   |
+| `test_hot_reload_compatible`          | R-13.4.3   |
+| `test_hot_reload_incompatible`        | R-13.4.3   |
+| `test_hot_reload_concurrent_100`      | R-13.4.3   |
+| `test_hot_reload_turnaround`          | R-13.4.NF2 |
+| `test_debug_remote_connect`           | R-13.4.2   |
+| `test_debug_no_side_effects`          | R-13.4.2   |
+| `test_debug_remote_stability`         | R-13.4.2   |
+| `test_no_text_scripting_api`          | R-13.4.1   |
+
+1. **`test_graph_ecs_component_read_write`** — Compile a graph that reads Health, subtracts damage,
+   writes Health. Verify the component is updated after command flush.
+2. **`test_graph_event_emission`** — Graph emits DamageDealt event. Verify a listener system
+   receives it.
+3. **`test_graph_ai_blackboard`** — Graph reads/writes AI blackboard keys. Verify blackboard state
+   matches.
+4. **`test_graph_state_machine_transition`** — Graph triggers AI state transition. Verify state
+   machine updates.
+5. **`test_graph_ecs_schedule_order`** — Two graphs with ordering constraints execute in declared
+   order.
+6. **`test_graph_coroutine_boss_encounter`** — Three-phase boss encounter: phase 1 (5 frames) ->
+   phase 2 (3 frames) -> phase 3. Verify timing and state.
+7. **`test_hot_reload_compatible`** — Modify a graph (add a node, keep variables). Verify hot reload
+   preserves variable values.
+8. **`test_hot_reload_incompatible`** — Remove a variable from a graph. Verify clean restart with
+   warning.
+9. **`test_hot_reload_concurrent_100`** — Hot-reload while 100 instances execute concurrently.
+   Verify no crashes or corruption.
+10. **`test_hot_reload_turnaround`** — Modify a 50-node graph. Verify reload completes in < 1
+    second.
+11. **`test_debug_remote_connect`** — Connect remote debugger over TCP, set breakpoint, verify
+    pause.
+12. **`test_debug_no_side_effects`** — Run identical sessions with and without debugger. Verify
+    identical world state.
+13. **`test_debug_remote_stability`** — Connect/disconnect 50 times during gameplay. Verify no
+    crashes.
+14. **`test_no_text_scripting_api`** — Verify no public API accepts text-based scripts or code
+    strings.
 
 ### Benchmarks
 

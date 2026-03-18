@@ -8,22 +8,37 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.12.1 | R-15.12.1 | Remote desktop rendering with H.264/H.265 streaming |
-| F-15.12.2 | R-15.12.2 | Custom remote editor protocol over QUIC |
-| F-15.12.3 | R-15.12.3 | CRDT-based real-time collaborative editing |
-| F-15.12.4 | R-15.12.4 | Remote GPU server with multi-session support |
-| F-15.12.5 | R-15.12.5 | Session handoff and persistence |
-| F-15.12.6 | R-15.12.6 | Bandwidth adaptation and quality tiers |
-| F-15.12.7 | R-15.12.7 | Collaboration cloud service |
-| F-15.12.8 | R-15.12.8 | CRDT document model per asset type |
-| F-15.12.9 | R-15.12.9 | Access control and permissions |
-| F-15.12.10 | R-15.12.10 | Integrated voice and text chat |
-| F-15.12.11 | R-15.12.11 | Work groups and isolated workspaces |
-| F-15.12.12 | R-15.12.12 | AI agent collaboration |
-| F-15.12.13 | R-15.12.13 | Asset and scene comments |
-| F-15.12.14 | R-15.12.14 | Pull request review in editor |
+| Feature    | Requirement |
+|------------|-------------|
+| F-15.12.1  | R-15.12.1   |
+| F-15.12.2  | R-15.12.2   |
+| F-15.12.3  | R-15.12.3   |
+| F-15.12.4  | R-15.12.4   |
+| F-15.12.5  | R-15.12.5   |
+| F-15.12.6  | R-15.12.6   |
+| F-15.12.7  | R-15.12.7   |
+| F-15.12.8  | R-15.12.8   |
+| F-15.12.9  | R-15.12.9   |
+| F-15.12.10 | R-15.12.10  |
+| F-15.12.11 | R-15.12.11  |
+| F-15.12.12 | R-15.12.12  |
+| F-15.12.13 | R-15.12.13  |
+| F-15.12.14 | R-15.12.14  |
+
+1. **F-15.12.1** — Remote desktop rendering with H.264/H.265 streaming
+2. **F-15.12.2** — Custom remote editor protocol over QUIC
+3. **F-15.12.3** — CRDT-based real-time collaborative editing
+4. **F-15.12.4** — Remote GPU server with multi-session support
+5. **F-15.12.5** — Session handoff and persistence
+6. **F-15.12.6** — Bandwidth adaptation and quality tiers
+7. **F-15.12.7** — Collaboration cloud service
+8. **F-15.12.8** — CRDT document model per asset type
+9. **F-15.12.9** — Access control and permissions
+10. **F-15.12.10** — Integrated voice and text chat
+11. **F-15.12.11** — Work groups and isolated workspaces
+12. **F-15.12.12** — AI agent collaboration
+13. **F-15.12.13** — Asset and scene comments
+14. **F-15.12.14** — Pull request review in editor
 
 ## Overview
 
@@ -1020,35 +1035,59 @@ pub enum CollabError {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_tree_crdt_add_remove` | R-15.12.8 | Add and remove nodes, verify tree integrity |
-| `test_tree_crdt_concurrent_reparent` | R-15.12.8 | Two users reparent same node, converge correctly |
-| `test_oplog_concurrent_connect` | R-15.12.8 | Two users connect different pins, both applied |
-| `test_map_crdt_concurrent_set` | R-15.12.8 | Two users set same cell, LWW resolves |
-| `test_lww_register_ordering` | R-15.12.8 | Higher HLC timestamp wins |
-| `test_hlc_monotonic` | R-15.12.3 | Clock is strictly monotonic across calls |
-| `test_per_user_undo` | R-15.12.3 | User A undo does not affect user B ops |
-| `test_presence_cursor_update` | R-15.12.3 | Cursor position broadcasts to all participants |
-| `test_role_viewer_no_edit` | R-15.12.9 | Viewer role cannot push edit operations |
-| `test_role_admin_set_role` | R-15.12.9 | Admin can change other users' roles |
-| `test_bandwidth_tier_selection` | R-15.12.6 | 150 Mbps selects High, 50 selects Medium, 5 selects Low |
-| `test_workgroup_isolation` | R-15.12.11 | Edits in group A invisible to group B |
+| Test                                 | Req        |
+|--------------------------------------|------------|
+| `test_tree_crdt_add_remove`          | R-15.12.8  |
+| `test_tree_crdt_concurrent_reparent` | R-15.12.8  |
+| `test_oplog_concurrent_connect`      | R-15.12.8  |
+| `test_map_crdt_concurrent_set`       | R-15.12.8  |
+| `test_lww_register_ordering`         | R-15.12.8  |
+| `test_hlc_monotonic`                 | R-15.12.3  |
+| `test_per_user_undo`                 | R-15.12.3  |
+| `test_presence_cursor_update`        | R-15.12.3  |
+| `test_role_viewer_no_edit`           | R-15.12.9  |
+| `test_role_admin_set_role`           | R-15.12.9  |
+| `test_bandwidth_tier_selection`      | R-15.12.6  |
+| `test_workgroup_isolation`           | R-15.12.11 |
+
+1. **`test_tree_crdt_add_remove`** — Add and remove nodes, verify tree integrity
+2. **`test_tree_crdt_concurrent_reparent`** — Two users reparent same node, converge correctly
+3. **`test_oplog_concurrent_connect`** — Two users connect different pins, both applied
+4. **`test_map_crdt_concurrent_set`** — Two users set same cell, LWW resolves
+5. **`test_lww_register_ordering`** — Higher HLC timestamp wins
+6. **`test_hlc_monotonic`** — Clock is strictly monotonic across calls
+7. **`test_per_user_undo`** — User A undo does not affect user B ops
+8. **`test_presence_cursor_update`** — Cursor position broadcasts to all participants
+9. **`test_role_viewer_no_edit`** — Viewer role cannot push edit operations
+10. **`test_role_admin_set_role`** — Admin can change other users' roles
+11. **`test_bandwidth_tier_selection`** — 150 Mbps selects High, 50 selects Medium, 5 selects Low
+12. **`test_workgroup_isolation`** — Edits in group A invisible to group B
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_three_user_convergence` | R-15.12.3 | Three concurrent editors converge to same state |
-| `test_session_suspend_resume` | R-15.12.5 | Suspend session, resume on different client, state matches |
-| `test_p2p_lan_discovery` | R-15.12.3 | Two editors discover via mDNS and sync CRDTs |
-| `test_quic_to_tcp_fallback` | R-15.12.2 | Block UDP, verify fallback to TCP+TLS 1.3 |
-| `test_100_concurrent_sessions` | R-15.12.7 | Service handles 100 sessions without data loss |
-| `test_oauth2_authentication` | R-15.12.9 | OAuth2 flow completes and grants correct role |
-| `test_chat_message_delivery` | R-15.12.10 | Message sent by A received by B with correct content |
-| `test_chat_search` | R-15.12.10 | Search finds message by keyword |
-| `test_encoding_overhead` | R-15.12.1 | HW encoding completes in under 2 ms per frame |
-| `test_pr_review_structural_diff` | R-15.12.14 | PR changed assets show structural diffs in editor |
+| Test                             | Req        |
+|----------------------------------|------------|
+| `test_three_user_convergence`    | R-15.12.3  |
+| `test_session_suspend_resume`    | R-15.12.5  |
+| `test_p2p_lan_discovery`         | R-15.12.3  |
+| `test_quic_to_tcp_fallback`      | R-15.12.2  |
+| `test_100_concurrent_sessions`   | R-15.12.7  |
+| `test_oauth2_authentication`     | R-15.12.9  |
+| `test_chat_message_delivery`     | R-15.12.10 |
+| `test_chat_search`               | R-15.12.10 |
+| `test_encoding_overhead`         | R-15.12.1  |
+| `test_pr_review_structural_diff` | R-15.12.14 |
+
+1. **`test_three_user_convergence`** — Three concurrent editors converge to same state
+2. **`test_session_suspend_resume`** — Suspend session, resume on different client, state matches
+3. **`test_p2p_lan_discovery`** — Two editors discover via mDNS and sync CRDTs
+4. **`test_quic_to_tcp_fallback`** — Block UDP, verify fallback to TCP+TLS 1.3
+5. **`test_100_concurrent_sessions`** — Service handles 100 sessions without data loss
+6. **`test_oauth2_authentication`** — OAuth2 flow completes and grants correct role
+7. **`test_chat_message_delivery`** — Message sent by A received by B with correct content
+8. **`test_chat_search`** — Search finds message by keyword
+9. **`test_encoding_overhead`** — HW encoding completes in under 2 ms per frame
+10. **`test_pr_review_structural_diff`** — PR changed assets show structural diffs in editor
 
 ### Benchmarks
 

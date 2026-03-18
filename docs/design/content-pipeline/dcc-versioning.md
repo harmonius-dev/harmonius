@@ -10,47 +10,83 @@
 
 ### DCC Tool Plugins (F-12.6 / R-12.6)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-12.6.1 | R-12.6.1 | C API plugin SDK with Python/C++ bindings, native binary export |
-| F-12.6.2 | R-12.6.2 | Live link: bidirectional TCP, delta protocol, < 2 s latency |
-| F-12.6.3 | R-12.6.3 | Houdini Engine HDA hosting, in-process or out-of-process |
-| F-12.6.4 | R-12.6.4 | Houdini mesh/scene export with all primitive types |
-| F-12.6.5 | R-12.6.5 | Houdini procedural placement to ECS via PCG pipeline |
-| F-12.6.6 | R-12.6.6 | Maya direct export with incremental changed-node tracking |
-| F-12.6.7 | R-12.6.7 | Maya animation curves (Bezier tangents, not baked samples) |
-| F-12.6.8 | R-12.6.8 | Blender addon: meshes, armatures, shape keys, collections |
-| F-12.6.9 | R-12.6.9 | Blender Principled BSDF to engine PBR material mapping |
-| F-12.6.10 | R-12.6.10 | Marvelous Designer garment meshes with fabric properties |
-| F-12.6.11 | R-12.6.11 | Garment-to-character fitting with morph propagation |
-| F-12.6.12 | R-12.6.12 | Substance .sbsar import with exposed parameter retention |
-| F-12.6.13 | R-12.6.13 | Substance Painter .spp import with UDIM and channel packing |
-| F-12.6.14 | R-12.6.14 | Runtime .sbsar evaluation on background thread |
-| F-12.6.15 | R-12.6.15 | Photoshop export with channel packing, PSD round-trip |
-| F-12.6.16 | R-12.6.16 | Photoshop layer-to-UI widget hierarchy conversion |
-| F-12.6.17 | R-12.6.17 | Illustrator vector export: artboards, symbols, swatches |
-| F-12.6.18 | R-12.6.18 | ZBrush sculpt export with normal/displacement baking |
-| F-12.6.19 | R-12.6.19 | ZBrush decimation and multi-LOD generation |
-| F-12.6.20 | R-12.6.20 | MotionBuilder animation export with full curve data |
-| F-12.6.21 | R-12.6.21 | MotionBuilder live mocap streaming at capture frame rate |
-| F-12.6.22 | R-12.6.22 | Git LFS lock-on-open workflow in every DCC plugin |
-| F-12.6.23 | R-12.6.23 | Review comment viewer panel inside DCC tools |
-| F-12.6.24 | R-12.6.24 | Consistent asset status dashboard across all plugins |
-| F-12.6.25 | R-12.6.25 | DCC-agnostic material mapping table |
-| F-12.6.26 | R-12.6.26 | Headless batch export for CI pipelines |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-12.6.1  | R-12.6.1    |
+| F-12.6.2  | R-12.6.2    |
+| F-12.6.3  | R-12.6.3    |
+| F-12.6.4  | R-12.6.4    |
+| F-12.6.5  | R-12.6.5    |
+| F-12.6.6  | R-12.6.6    |
+| F-12.6.7  | R-12.6.7    |
+| F-12.6.8  | R-12.6.8    |
+| F-12.6.9  | R-12.6.9    |
+| F-12.6.10 | R-12.6.10   |
+| F-12.6.11 | R-12.6.11   |
+| F-12.6.12 | R-12.6.12   |
+| F-12.6.13 | R-12.6.13   |
+| F-12.6.14 | R-12.6.14   |
+| F-12.6.15 | R-12.6.15   |
+| F-12.6.16 | R-12.6.16   |
+| F-12.6.17 | R-12.6.17   |
+| F-12.6.18 | R-12.6.18   |
+| F-12.6.19 | R-12.6.19   |
+| F-12.6.20 | R-12.6.20   |
+| F-12.6.21 | R-12.6.21   |
+| F-12.6.22 | R-12.6.22   |
+| F-12.6.23 | R-12.6.23   |
+| F-12.6.24 | R-12.6.24   |
+| F-12.6.25 | R-12.6.25   |
+| F-12.6.26 | R-12.6.26   |
+
+1. **F-12.6.1** — C API plugin SDK with Python/C++ bindings, native binary export
+2. **F-12.6.2** — Live link: bidirectional TCP, delta protocol, < 2 s latency
+3. **F-12.6.3** — Houdini Engine HDA hosting, in-process or out-of-process
+4. **F-12.6.4** — Houdini mesh/scene export with all primitive types
+5. **F-12.6.5** — Houdini procedural placement to ECS via PCG pipeline
+6. **F-12.6.6** — Maya direct export with incremental changed-node tracking
+7. **F-12.6.7** — Maya animation curves (Bezier tangents, not baked samples)
+8. **F-12.6.8** — Blender addon: meshes, armatures, shape keys, collections
+9. **F-12.6.9** — Blender Principled BSDF to engine PBR material mapping
+10. **F-12.6.10** — Marvelous Designer garment meshes with fabric properties
+11. **F-12.6.11** — Garment-to-character fitting with morph propagation
+12. **F-12.6.12** — Substance .sbsar import with exposed parameter retention
+13. **F-12.6.13** — Substance Painter .spp import with UDIM and channel packing
+14. **F-12.6.14** — Runtime .sbsar evaluation on background thread
+15. **F-12.6.15** — Photoshop export with channel packing, PSD round-trip
+16. **F-12.6.16** — Photoshop layer-to-UI widget hierarchy conversion
+17. **F-12.6.17** — Illustrator vector export: artboards, symbols, swatches
+18. **F-12.6.18** — ZBrush sculpt export with normal/displacement baking
+19. **F-12.6.19** — ZBrush decimation and multi-LOD generation
+20. **F-12.6.20** — MotionBuilder animation export with full curve data
+21. **F-12.6.21** — MotionBuilder live mocap streaming at capture frame rate
+22. **F-12.6.22** — Git LFS lock-on-open workflow in every DCC plugin
+23. **F-12.6.23** — Review comment viewer panel inside DCC tools
+24. **F-12.6.24** — Consistent asset status dashboard across all plugins
+25. **F-12.6.25** — DCC-agnostic material mapping table
+26. **F-12.6.26** — Headless batch export for CI pipelines
 
 ### Asset Versioning (F-12.7 / R-12.7)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-12.7.1 | R-12.7.1 | Universal binary asset format: mmap, O(1) section access |
-| F-12.7.2 | R-12.7.2 | Compressed bundles: LZ4 runtime, Zstd distribution |
-| F-12.7.3 | R-12.7.3 | Structural asset diffing by type (graph, mesh, table, texture) |
-| F-12.7.4 | R-12.7.4 | Three-way merge with Git custom merge driver |
-| F-12.7.5 | R-12.7.5 | Automatic conflict resolution: LWW, union, deterministic order |
-| F-12.7.6 | R-12.7.6 | Spreadsheet-style data table editor |
-| F-12.7.7 | R-12.7.7 | Universal visual asset inspector (no text/code fallback) |
-| F-12.7.8 | R-12.7.8 | Git LFS with custom merge driver and lock-before-edit |
+| Feature  | Requirement |
+|----------|-------------|
+| F-12.7.1 | R-12.7.1    |
+| F-12.7.2 | R-12.7.2    |
+| F-12.7.3 | R-12.7.3    |
+| F-12.7.4 | R-12.7.4    |
+| F-12.7.5 | R-12.7.5    |
+| F-12.7.6 | R-12.7.6    |
+| F-12.7.7 | R-12.7.7    |
+| F-12.7.8 | R-12.7.8    |
+
+1. **F-12.7.1** — Universal binary asset format: mmap, O(1) section access
+2. **F-12.7.2** — Compressed bundles: LZ4 runtime, Zstd distribution
+3. **F-12.7.3** — Structural asset diffing by type (graph, mesh, table, texture)
+4. **F-12.7.4** — Three-way merge with Git custom merge driver
+5. **F-12.7.5** — Automatic conflict resolution: LWW, union, deterministic order
+6. **F-12.7.6** — Spreadsheet-style data table editor
+7. **F-12.7.7** — Universal visual asset inspector (no text/code fallback)
+8. **F-12.7.8** — Git LFS with custom merge driver and lock-before-edit
 
 ## Overview
 
@@ -2129,60 +2165,142 @@ manages its own I/O thread for the plugin-side socket.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_asset_header_roundtrip` | R-12.7.1 | Write and read back an AssetHeader; verify all fields match. |
-| `test_section_o1_access` | R-12.7.1 | mmap a multi-section asset; access the last section without reading prior sections; verify O(1). |
-| `test_content_hash_blake3` | R-12.7.1 | Write an asset; verify the content hash is a valid BLAKE3 digest of the payload. |
-| `test_bundle_partial_decompress` | R-12.7.2 | Create a bundle with 10 assets; extract the 5th without decompressing others. |
-| `test_bundle_lz4_runtime` | R-12.7.2 | Verify runtime bundles use LZ4 compression. |
-| `test_bundle_zstd_distribution` | R-12.7.2 | Verify distribution bundles use Zstd compression. |
-| `test_bundle_manifest_sorted` | R-12.7.2 | Verify manifest entries are sorted for O(log n) lookup. |
-| `test_diff_graph_added_node` | R-12.7.3 | Diff two logic graph versions with an added node; verify it appears in changes. |
-| `test_diff_mesh_vertex_count` | R-12.7.3 | Diff two mesh versions; verify vertex count delta is reported. |
-| `test_diff_table_row_change` | R-12.7.3 | Diff two data tables; verify changed row is identified. |
-| `test_merge_non_overlapping` | R-12.7.4 | Two branches change different sections; verify auto-merge succeeds. |
-| `test_merge_conflict_detected` | R-12.7.4 | Two branches change the same section; verify conflict is reported. |
-| `test_merge_auto_lww` | R-12.7.5 | Independent property changes; verify last-writer-wins applies. |
-| `test_merge_auto_union` | R-12.7.5 | Both sides add distinct nodes; verify union resolution. |
-| `test_merge_auto_deterministic` | R-12.7.5 | Reordered elements; verify deterministic ordering. |
-| `test_git_driver_exit_codes` | R-12.7.4 | Invoke the Git merge driver; verify exit code 0 for clean merge, non-zero for conflict. |
-| `test_sdk_c_api_mesh_submit` | R-12.6.1 | Load the SDK .so, call har_export_submit_mesh with a triangle; verify valid asset produced. |
-| `test_sdk_version_query` | R-12.6.1 | Call har_sdk_version; verify major/minor/patch match build config. |
-| `test_sdk_session_lifecycle` | R-12.6.1 | Begin, submit, commit, verify session cleanup. |
-| `test_sdk_session_cancel` | R-12.6.1 | Begin, submit, cancel; verify no file written. |
-| `test_live_link_connect_disconnect` | R-12.6.2 | Connect a mock DCC client; verify session created; disconnect; verify cleanup. |
-| `test_live_link_delta_roundtrip` | R-12.6.2 | Encode a mesh delta, send over live link, decode on engine side; verify data integrity. |
-| `test_live_link_camera_sync` | R-12.6.2 | Broadcast engine camera state; verify DCC client receives it. |
-| `test_material_mapper_blender_pbr` | R-12.6.25 | Map a Blender Principled BSDF material; verify correct engine PBR slots. |
-| `test_material_mapper_maya_phong` | R-12.6.25 | Map a Maya Phong material; verify specular-to-metallic conversion. |
-| `test_material_mapper_fallback` | R-12.6.25 | Map a material missing a normal map; verify fallback default applied. |
-| `test_material_mapper_warning` | R-12.6.25 | Map a material with an unmappable custom node; verify warning emitted. |
-| `test_dep_graph_topological_sort` | R-12.7.1 | Build a graph with known topology; verify sort order. |
-| `test_dep_graph_cycle_detection` | R-12.7.1 | Insert a cycle; verify error returned. |
-| `test_dep_graph_invalidation` | R-12.7.1 | Mark a texture changed; verify material and prefab are invalidated. |
-| `test_binary_diff_copy_insert` | R-12.7.2 | Diff two similar files; verify patch uses Copy for unchanged and Insert for new. |
-| `test_binary_diff_apply_roundtrip` | R-12.7.2 | Encode a diff, apply to source; verify target matches exactly. |
-| `test_binary_diff_hash_verify` | R-12.7.2 | Apply a patch with wrong source hash; verify error. |
+| Test                                | Req       |
+|-------------------------------------|-----------|
+| `test_asset_header_roundtrip`       | R-12.7.1  |
+| `test_section_o1_access`            | R-12.7.1  |
+| `test_content_hash_blake3`          | R-12.7.1  |
+| `test_bundle_partial_decompress`    | R-12.7.2  |
+| `test_bundle_lz4_runtime`           | R-12.7.2  |
+| `test_bundle_zstd_distribution`     | R-12.7.2  |
+| `test_bundle_manifest_sorted`       | R-12.7.2  |
+| `test_diff_graph_added_node`        | R-12.7.3  |
+| `test_diff_mesh_vertex_count`       | R-12.7.3  |
+| `test_diff_table_row_change`        | R-12.7.3  |
+| `test_merge_non_overlapping`        | R-12.7.4  |
+| `test_merge_conflict_detected`      | R-12.7.4  |
+| `test_merge_auto_lww`               | R-12.7.5  |
+| `test_merge_auto_union`             | R-12.7.5  |
+| `test_merge_auto_deterministic`     | R-12.7.5  |
+| `test_git_driver_exit_codes`        | R-12.7.4  |
+| `test_sdk_c_api_mesh_submit`        | R-12.6.1  |
+| `test_sdk_version_query`            | R-12.6.1  |
+| `test_sdk_session_lifecycle`        | R-12.6.1  |
+| `test_sdk_session_cancel`           | R-12.6.1  |
+| `test_live_link_connect_disconnect` | R-12.6.2  |
+| `test_live_link_delta_roundtrip`    | R-12.6.2  |
+| `test_live_link_camera_sync`        | R-12.6.2  |
+| `test_material_mapper_blender_pbr`  | R-12.6.25 |
+| `test_material_mapper_maya_phong`   | R-12.6.25 |
+| `test_material_mapper_fallback`     | R-12.6.25 |
+| `test_material_mapper_warning`      | R-12.6.25 |
+| `test_dep_graph_topological_sort`   | R-12.7.1  |
+| `test_dep_graph_cycle_detection`    | R-12.7.1  |
+| `test_dep_graph_invalidation`       | R-12.7.1  |
+| `test_binary_diff_copy_insert`      | R-12.7.2  |
+| `test_binary_diff_apply_roundtrip`  | R-12.7.2  |
+| `test_binary_diff_hash_verify`      | R-12.7.2  |
+
+1. **`test_asset_header_roundtrip`** — Write and read back an AssetHeader; verify all fields match.
+2. **`test_section_o1_access`** — mmap a multi-section asset; access the last section without
+   reading prior sections; verify O(1).
+3. **`test_content_hash_blake3`** — Write an asset; verify the content hash is a valid BLAKE3 digest
+   of the payload.
+4. **`test_bundle_partial_decompress`** — Create a bundle with 10 assets; extract the 5th without
+   decompressing others.
+5. **`test_bundle_lz4_runtime`** — Verify runtime bundles use LZ4 compression.
+6. **`test_bundle_zstd_distribution`** — Verify distribution bundles use Zstd compression.
+7. **`test_bundle_manifest_sorted`** — Verify manifest entries are sorted for O(log n) lookup.
+8. **`test_diff_graph_added_node`** — Diff two logic graph versions with an added node; verify it
+   appears in changes.
+9. **`test_diff_mesh_vertex_count`** — Diff two mesh versions; verify vertex count delta is
+   reported.
+10. **`test_diff_table_row_change`** — Diff two data tables; verify changed row is identified.
+11. **`test_merge_non_overlapping`** — Two branches change different sections; verify auto-merge
+    succeeds.
+12. **`test_merge_conflict_detected`** — Two branches change the same section; verify conflict is
+    reported.
+13. **`test_merge_auto_lww`** — Independent property changes; verify last-writer-wins applies.
+14. **`test_merge_auto_union`** — Both sides add distinct nodes; verify union resolution.
+15. **`test_merge_auto_deterministic`** — Reordered elements; verify deterministic ordering.
+16. **`test_git_driver_exit_codes`** — Invoke the Git merge driver; verify exit code 0 for clean
+    merge, non-zero for conflict.
+17. **`test_sdk_c_api_mesh_submit`** — Load the SDK .so, call har_export_submit_mesh with a
+    triangle; verify valid asset produced.
+18. **`test_sdk_version_query`** — Call har_sdk_version; verify major/minor/patch match build
+    config.
+19. **`test_sdk_session_lifecycle`** — Begin, submit, commit, verify session cleanup.
+20. **`test_sdk_session_cancel`** — Begin, submit, cancel; verify no file written.
+21. **`test_live_link_connect_disconnect`** — Connect a mock DCC client; verify session created;
+    disconnect; verify cleanup.
+22. **`test_live_link_delta_roundtrip`** — Encode a mesh delta, send over live link, decode on
+    engine side; verify data integrity.
+23. **`test_live_link_camera_sync`** — Broadcast engine camera state; verify DCC client receives it.
+24. **`test_material_mapper_blender_pbr`** — Map a Blender Principled BSDF material; verify correct
+    engine PBR slots.
+25. **`test_material_mapper_maya_phong`** — Map a Maya Phong material; verify specular-to-metallic
+    conversion.
+26. **`test_material_mapper_fallback`** — Map a material missing a normal map; verify fallback
+    default applied.
+27. **`test_material_mapper_warning`** — Map a material with an unmappable custom node; verify
+    warning emitted.
+28. **`test_dep_graph_topological_sort`** — Build a graph with known topology; verify sort order.
+29. **`test_dep_graph_cycle_detection`** — Insert a cycle; verify error returned.
+30. **`test_dep_graph_invalidation`** — Mark a texture changed; verify material and prefab are
+    invalidated.
+31. **`test_binary_diff_copy_insert`** — Diff two similar files; verify patch uses Copy for
+    unchanged and Insert for new.
+32. **`test_binary_diff_apply_roundtrip`** — Encode a diff, apply to source; verify target matches
+    exactly.
+33. **`test_binary_diff_hash_verify`** — Apply a patch with wrong source hash; verify error.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_houdini_hda_cook` | R-12.6.3 | Load a reference HDA, cook with changed params; verify output geometry matches golden reference. |
-| `test_houdini_mesh_export` | R-12.6.4 | Export a Houdini scene with packed prims, curves, volumes; verify all types import correctly. |
-| `test_maya_incremental_export` | R-12.6.6 | Export a Maya scene, modify one node, re-export; verify only the changed asset updates. |
-| `test_maya_animation_curves` | R-12.6.7 | Export Bezier animation curves; verify tangent data matches source within tolerance. |
-| `test_blender_collection_prefab` | R-12.6.8 | Export Blender collections; verify engine prefab hierarchy matches. |
-| `test_blender_bsdf_conversion` | R-12.6.9 | Export Principled BSDF materials; verify engine PBR material has correct texture bindings. |
-| `test_garment_fitting_two_bodies` | R-12.6.11 | Fit a garment to two characters with different morphs; verify constraints computed for both. |
-| `test_substance_param_tweakable` | R-12.6.12 | Import .sbsar, change a parameter in engine; verify textures regenerate. |
-| `test_live_link_latency_under_2s` | R-12.6.2 | Modify a mesh in a mock DCC client, push via live link; verify engine viewport updates < 2 s. |
-| `test_git_lfs_lock_multiuser` | R-12.6.22 | Simulate two users locking the same file; verify conflict notification. |
-| `test_headless_batch_identical` | R-12.6.26 | Compare headless batch export output vs interactive export; verify byte-identical. |
-| `test_bundle_stream_single_asset` | R-12.7.2 | Stream a single asset from a 100-asset bundle; measure decompression time. |
-| `test_full_merge_workflow` | R-12.7.4 | Branch, edit on both branches, merge via Git driver; verify correct result. |
-| `test_dep_graph_migration_plan` | R-12.7.1 | Create assets with outdated versions; verify migration plan covers all in dependency order. |
+| Test                              | Req       |
+|-----------------------------------|-----------|
+| `test_houdini_hda_cook`           | R-12.6.3  |
+| `test_houdini_mesh_export`        | R-12.6.4  |
+| `test_maya_incremental_export`    | R-12.6.6  |
+| `test_maya_animation_curves`      | R-12.6.7  |
+| `test_blender_collection_prefab`  | R-12.6.8  |
+| `test_blender_bsdf_conversion`    | R-12.6.9  |
+| `test_garment_fitting_two_bodies` | R-12.6.11 |
+| `test_substance_param_tweakable`  | R-12.6.12 |
+| `test_live_link_latency_under_2s` | R-12.6.2  |
+| `test_git_lfs_lock_multiuser`     | R-12.6.22 |
+| `test_headless_batch_identical`   | R-12.6.26 |
+| `test_bundle_stream_single_asset` | R-12.7.2  |
+| `test_full_merge_workflow`        | R-12.7.4  |
+| `test_dep_graph_migration_plan`   | R-12.7.1  |
+
+1. **`test_houdini_hda_cook`** — Load a reference HDA, cook with changed params; verify output
+   geometry matches golden reference.
+2. **`test_houdini_mesh_export`** — Export a Houdini scene with packed prims, curves, volumes;
+   verify all types import correctly.
+3. **`test_maya_incremental_export`** — Export a Maya scene, modify one node, re-export; verify only
+   the changed asset updates.
+4. **`test_maya_animation_curves`** — Export Bezier animation curves; verify tangent data matches
+   source within tolerance.
+5. **`test_blender_collection_prefab`** — Export Blender collections; verify engine prefab hierarchy
+   matches.
+6. **`test_blender_bsdf_conversion`** — Export Principled BSDF materials; verify engine PBR material
+   has correct texture bindings.
+7. **`test_garment_fitting_two_bodies`** — Fit a garment to two characters with different morphs;
+   verify constraints computed for both.
+8. **`test_substance_param_tweakable`** — Import .sbsar, change a parameter in engine; verify
+   textures regenerate.
+9. **`test_live_link_latency_under_2s`** — Modify a mesh in a mock DCC client, push via live link;
+   verify engine viewport updates < 2 s.
+10. **`test_git_lfs_lock_multiuser`** — Simulate two users locking the same file; verify conflict
+    notification.
+11. **`test_headless_batch_identical`** — Compare headless batch export output vs interactive
+    export; verify byte-identical.
+12. **`test_bundle_stream_single_asset`** — Stream a single asset from a 100-asset bundle; measure
+    decompression time.
+13. **`test_full_merge_workflow`** — Branch, edit on both branches, merge via Git driver; verify
+    correct result.
+14. **`test_dep_graph_migration_plan`** — Create assets with outdated versions; verify migration
+    plan covers all in dependency order.
 
 ### Benchmarks
 
@@ -2210,12 +2328,22 @@ shared library links all Rust dependencies statically so that DCC hosts see only
 
 **Plugin interface.**
 
-| Function | Signature | Purpose |
-|----------|-----------|---------|
-| `harmonius_plugin_version` | `() -> u32` | Returns the ABI version for host compatibility check |
-| `harmonius_plugin_init` | `(callbacks: *const HostCallbacks) -> PluginHandle` | Initializes plugin state; receives host callback table |
-| `harmonius_plugin_export` | `(handle: PluginHandle, scene: *const SceneDesc, out: *mut ExportBuffer) -> ResultCode` | Exports scene data into the engine binary format |
-| `harmonius_plugin_shutdown` | `(handle: PluginHandle)` | Frees all plugin resources |
+| Function                    |
+|-----------------------------|
+| `harmonius_plugin_version`  |
+| `harmonius_plugin_init`     |
+| `harmonius_plugin_export`   |
+| `harmonius_plugin_shutdown` |
+
+1. **`harmonius_plugin_version`** — `() -> u32`
+   - **Purpose:** Returns the ABI version for host compatibility check
+2. **`harmonius_plugin_init`** — `(callbacks: *const HostCallbacks) -> PluginHandle`
+   - **Purpose:** Initializes plugin state; receives host callback table
+3. **`harmonius_plugin_export`** —
+   `(handle: PluginHandle, scene: *const SceneDesc, out: *mut ExportBuffer) -> ResultCode`
+   - **Purpose:** Exports scene data into the engine binary format
+4. **`harmonius_plugin_shutdown`** — `(handle: PluginHandle)`
+   - **Purpose:** Frees all plugin resources
 
 **Host callbacks.** The host provides a callback table at init time so the plugin can log, report
 progress, and manage memory without depending on host-specific APIs.

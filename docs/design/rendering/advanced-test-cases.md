@@ -6,189 +6,287 @@ Companion test cases for [advanced.md](advanced.md).
 
 ### TC-2.5.1.1 BLAS Build from Meshlets
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 10K meshlets with valid geometry | Valid BLAS handle, non-zero GPU address | R-2.5.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.1     |
+
+1. **#1** — 10K meshlets with valid geometry
+   - **Expected:** Valid BLAS handle, non-zero GPU address
 
 ### TC-2.5.1.2 BLAS Compaction Saves Memory
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Built BLAS, then compact | Compacted size >= 20% smaller than original | R-2.5.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.1     |
+
+1. **#1** — Built BLAS, then compact
+   - **Expected:** Compacted size >= 20% smaller than original
 
 ### TC-2.5.1.3 TLAS Refit Preserves Intersections
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Move 50% of instances, refit TLAS | Ray hits match rebuilt TLAS results | R-2.5.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.1     |
+
+1. **#1** — Move 50% of instances, refit TLAS
+   - **Expected:** Ray hits match rebuilt TLAS results
 
 ### TC-2.5.1.4 TLAS Rebuild vs Refit Threshold
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 31% of instances changed | Rebuild triggered (not refit) | R-2.5.1 |
-| 2 | 29% of instances changed | Refit used (no rebuild) | R-2.5.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.1     |
+| 2 | R-2.5.1     |
+
+1. **#1** — 31% of instances changed
+   - **Expected:** Rebuild triggered (not refit)
+2. **#2** — 29% of instances changed
+   - **Expected:** Refit used (no rebuild)
 
 ### TC-2.5.1.5 Capability Detection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Mock Metal backend feature queries | `RtCapabilities` fields match Metal RT support | R-2.5.1 |
-| 2 | Mock D3D12 backend feature queries | `RtCapabilities` fields match DXR support | R-2.5.1 |
-| 3 | Mock Vulkan backend feature queries | `RtCapabilities` fields match Vulkan RT support | R-2.5.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.1     |
+| 2 | R-2.5.1     |
+| 3 | R-2.5.1     |
+
+1. **#1** — Mock Metal backend feature queries
+   - **Expected:** `RtCapabilities` fields match Metal RT support
+2. **#2** — Mock D3D12 backend feature queries
+   - **Expected:** `RtCapabilities` fields match DXR support
+3. **#3** — Mock Vulkan backend feature queries
+   - **Expected:** `RtCapabilities` fields match Vulkan RT support
 
 ### TC-2.5.14.1 Fallback No RT Selects Voxel GI
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `hardware_rt = false` | `GiMode::VoxelGi` selected | R-2.5.14 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.14    |
+
+1. **#1** — `hardware_rt = false`
+   - **Expected:** `GiMode::VoxelGi` selected
 
 ### TC-2.5.4.1 Fallback Desktop Selects DDGI
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Desktop RT caps, default budget | `GiMode::Ddgi` selected | R-2.5.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.4     |
+
+1. **#1** — Desktop RT caps, default budget
+   - **Expected:** `GiMode::Ddgi` selected
 
 ### TC-2.5.7.1 Fallback High-End Selects Surfel
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | High-end RT caps | Surfel GI mode available | R-2.5.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.7     |
+
+1. **#1** — High-end RT caps
+   - **Expected:** Surfel GI mode available
 
 ### TC-2.5.12.1 Denoiser NRD Fallback
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `tensor_cores = false` | `DenoiserMode::NrdReblur` selected | R-2.5.12 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.12    |
+
+1. **#1** — `tensor_cores = false`
+   - **Expected:** `DenoiserMode::NrdReblur` selected
 
 ### TC-2.5.10.1 OMM Skipped Without Support
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `opacity_micromaps = false` | OMM generation is a no-op | R-2.5.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.10    |
+
+1. **#1** — `opacity_micromaps = false`
+   - **Expected:** OMM generation is a no-op
 
 ### TC-2.5.11.1 SER Skipped Without Support
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `shader_exec_reorder = false` | `ShaderExecReorder::new` returns `None` | R-2.5.11 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.11    |
+
+1. **#1** — `shader_exec_reorder = false`
+   - **Expected:** `ShaderExecReorder::new` returns `None`
 
 ### TC-2.5.4.2 DDGI Probe Grid Dimensions
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | world_size=(100,50,100), spacing=2.0 | Probe count = (50, 25, 50) per axis | R-2.5.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.4     |
+
+1. **#1** — world_size=(100,50,100), spacing=2.0
+   - **Expected:** Probe count = (50, 25, 50) per axis
 
 ### TC-2.5.8.1 ReSTIR Reservoir Memory
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 1080p resolution, 32-byte reservoirs | Total memory < 2 GB budget | R-2.5.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.8     |
+
+1. **#1** — 1080p resolution, 32-byte reservoirs
+   - **Expected:** Total memory < 2 GB budget
 
 ### TC-2.5.5.1 Path Tracer Energy Conservation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | White-furnace test, 16 bounces | No energy gain or loss (output == input within tolerance) | R-2.5.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.5     |
+
+1. **#1** — White-furnace test, 16 bounces
+   - **Expected:** No energy gain or loss (output == input within tolerance)
 
 ### TC-2.5.9.1 Production PT GI Fallback
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Terminated path trace ray | Rasterized GI sampled (not black) | R-2.5.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.9     |
+
+1. **#1** — Terminated path trace ray
+   - **Expected:** Rasterized GI sampled (not black)
 
 ### TC-2.5.14.2 Voxel GI Relight No Revoxelize
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Change light direction, static geometry | Re-lighting occurs without re-voxelization | R-2.5.14 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.14    |
+
+1. **#1** — Change light direction, static geometry
+   - **Expected:** Re-lighting occurs without re-voxelization
 
 ### TC-2.5.16.1 Stochastic SSR Half Res
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Render resolution 1920x1080 | Reflection buffer dimensions = 960x540 | R-2.5.16 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.16    |
+
+1. **#1** — Render resolution 1920x1080
+   - **Expected:** Reflection buffer dimensions = 960x540
 
 ### TC-2.5.6.1 RT Subsurface Thickness
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Material thickness = 0.01 | High transmission intensity | R-2.5.6 |
-| 2 | Material thickness = 1.0 | Near-zero transmission (exponential decay) | R-2.5.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.6     |
+| 2 | R-2.5.6     |
+
+1. **#1** — Material thickness = 0.01
+   - **Expected:** High transmission intensity
+2. **#2** — Material thickness = 1.0
+   - **Expected:** Near-zero transmission (exponential decay)
 
 ## Integration Tests
 
 ### TC-2.5.3.I1 Cornell Box Color Bleed
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Cornell box with red/green walls, white surfaces | Color bleeding visible; PSNR > 30 dB vs reference | R-2.5.3, R-2.5.4 |
+| # | Requirement      |
+|---|------------------|
+| 1 | R-2.5.3, R-2.5.4 |
+
+1. **#1** — Cornell box with red/green walls, white surfaces
+   - **Expected:** Color bleeding visible; PSNR > 30 dB vs reference
 
 ### TC-2.5.2.I1 Hybrid Reflection Offscreen
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Glossy floor reflecting off-screen object | SSR fails, RT produces correct reflection | R-2.5.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.2     |
+
+1. **#1** — Glossy floor reflecting off-screen object
+   - **Expected:** SSR fails, RT produces correct reflection
 
 ### TC-2.5.2.I2 Hybrid Reflection Roughness Handoff
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Roughness increased past threshold | RT rays activate for high-roughness reflections | R-2.5.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.2     |
+
+1. **#1** — Roughness increased past threshold
+   - **Expected:** RT rays activate for high-roughness reflections
 
 ### TC-2.5.4.I1 DDGI Dynamic Light Response
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Move light source at runtime | DDGI probes update within 2 seconds | R-2.5.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.4     |
+
+1. **#1** — Move light source at runtime
+   - **Expected:** DDGI probes update within 2 seconds
 
 ### TC-2.5.7.I1 Surfel GI Open World Scaling
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Double environment size | GPU cost within 10% variance of original | R-2.5.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.7     |
+
+1. **#1** — Double environment size
+   - **Expected:** GPU cost within 10% variance of original
 
 ### TC-2.5.8.I1 ReSTIR 5000 Lights
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Scene with 5K lights | All lights contribute; cost independent of count | R-2.5.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.8     |
+
+1. **#1** — Scene with 5K lights
+   - **Expected:** All lights contribute; cost independent of count
 
 ### TC-2.5.5.I1 Path Tracer Convergence
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 4096 spp Cornell box | < 1% relative error vs analytical reference | R-2.5.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.5     |
+
+1. **#1** — 4096 spp Cornell box
+   - **Expected:** < 1% relative error vs analytical reference
 
 ### TC-2.5.12.I1 Neural Denoise Temporal Stability
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 120 frames of camera motion | No ghosting or flickering artifacts | R-2.5.12 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.12    |
+
+1. **#1** — 120 frames of camera motion
+   - **Expected:** No ghosting or flickering artifacts
 
 ### TC-2.5.10.I1 OMM Vegetation Throughput
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Vegetation scene with OMM enabled | >= 30% RT intersection throughput improvement | R-2.5.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.10    |
+
+1. **#1** — Vegetation scene with OMM enabled
+   - **Expected:** >= 30% RT intersection throughput improvement
 
 ### TC-2.5.13.I1 RT Lens Flare Ghost Positions
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Bright source, 5-element lens | Ghost positions within 5% angular error of analytical prediction | R-2.5.13 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.13    |
+
+1. **#1** — Bright source, 5-element lens
+   - **Expected:** Ghost positions within 5% angular error of analytical prediction
 
 ### TC-2.5.0.I1 Full Tier Cascade
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Walk through each platform tier | Correct passes active, fallbacks engage per tier | R-2.5.1 through R-2.5.16 |
+| # | Requirement              |
+|---|--------------------------|
+| 1 | R-2.5.1 through R-2.5.16 |
+
+1. **#1** — Walk through each platform tier
+   - **Expected:** Correct passes active, fallbacks engage per tier
 
 ### TC-2.5.1.I1 GCD RT Command Buffer
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | macOS Metal RT build commands | Commands submit and complete via GCD dispatch | R-2.5.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-2.5.1     |
+
+1. **#1** — macOS Metal RT build commands
+   - **Expected:** Commands submit and complete via GCD dispatch
 
 ## Benchmarks
 

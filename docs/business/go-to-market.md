@@ -26,15 +26,27 @@ model with a structure that maximizes parallel agent development pipelines.
 The DAG's topological sort produces 7 concurrency waves. Each wave contains all feature-groups whose
 prerequisites are satisfied by completion of prior waves.
 
-| Wave | Focus | Nodes | Max Concurrent Agents | Cumulative Complete |
-|------|-------|-------|-----------------------|--------------------|
-| 0 | Platform root (windowing, threading, OS) | 3 | 3 | 3 |
-| 1 | Core Runtime (ECS, spatial index, reflection, events, memory, scene) | 6 | 6 | 9 |
-| 2 | Infrastructure fan-out (GPU, asset import, physics, input, audio, animation, networking) | 9 | 9 | 18 |
-| 3 | Intermediate systems (render graph, streaming, actions, spatial audio, state machines, NavMesh, replication, meshlets, widgets, particles) | 12 | 12 | 30 |
-| 4 | Integration layer (core rendering, lighting, hot reload, AI, procedural anim, gameplay primitives, terrain, UI) | 19 | 19 | 49 |
-| 5 | Advanced systems (advanced rendering, editor, logic graph, abilities, weapons, destruction, cloth, weather) | 20 | 20 | 69 |
-| 6 | Capstone systems (DCC plugins, procedural generation, MMO, genre-specific, CRDT collaboration) | 18 | 18 | 87 |
+| Wave | Nodes | Max Concurrent Agents | Cumulative Complete |
+|------|-------|-----------------------|---------------------|
+| 0    | 3     | 3                     | 3                   |
+| 1    | 6     | 6                     | 9                   |
+| 2    | 9     | 9                     | 18                  |
+| 3    | 12    | 12                    | 30                  |
+| 4    | 19    | 19                    | 49                  |
+| 5    | 20    | 20                    | 69                  |
+| 6    | 18    | 18                    | 87                  |
+
+1. **0** — Platform root (windowing, threading, OS)
+2. **1** — Core Runtime (ECS, spatial index, reflection, events, memory, scene)
+3. **2** — Infrastructure fan-out (GPU, asset import, physics, input, audio, animation, networking)
+4. **3** — Intermediate systems (render graph, streaming, actions, spatial audio, state machines,
+   NavMesh, replication, meshlets, widgets, particles)
+5. **4** — Integration layer (core rendering, lighting, hot reload, AI, procedural anim, gameplay
+   primitives, terrain, UI)
+6. **5** — Advanced systems (advanced rendering, editor, logic graph, abilities, weapons,
+   destruction, cloth, weather)
+7. **6** — Capstone systems (DCC plugins, procedural generation, MMO, genre-specific, CRDT
+   collaboration)
 
 ### Critical Path
 
@@ -54,31 +66,51 @@ around this chain.
 These contracts must be defined and locked before Wave 2, as they are consumed by multiple
 concurrent pipelines:
 
-| Contract | Defined By | Consumed By |
-|----------|-----------|-------------|
-| Component trait + archetype API | CoreRuntime.ECS | All domains |
-| Entity handle type | CoreRuntime.ECS | All domains |
-| System trait + scheduling API | CoreRuntime.ECS | All domains |
-| Event channel API | CoreRuntime.EventsPlugins | All domains |
-| Spatial index query API | CoreRuntime.SpatialIndex | Physics, Rendering, Networking, AI, Audio, GameFramework |
-| Serialization trait | CoreRuntime.ReflectionSerialization | Networking, ContentPipeline, GameFramework |
-| Async I/O trait | CoreRuntime.MemoryAsyncIO | ContentPipeline, Platform |
-| Transform component schema | CoreRuntime.SceneTransforms | Rendering, Physics, Animation, Audio |
-| GPU backend trait | Rendering.GPUAbstraction | ContentPipeline, VFX, UI2D |
-| Asset handle type | ContentPipeline.AssetDatabase | All domains |
-| Render graph pass API | Rendering.RenderGraph | VFX, UI2D, all Rendering subgroups |
+| Contract                        | Defined By                          |
+|---------------------------------|-------------------------------------|
+| Component trait + archetype API | CoreRuntime.ECS                     |
+| Entity handle type              | CoreRuntime.ECS                     |
+| System trait + scheduling API   | CoreRuntime.ECS                     |
+| Event channel API               | CoreRuntime.EventsPlugins           |
+| Spatial index query API         | CoreRuntime.SpatialIndex            |
+| Serialization trait             | CoreRuntime.ReflectionSerialization |
+| Async I/O trait                 | CoreRuntime.MemoryAsyncIO           |
+| Transform component schema      | CoreRuntime.SceneTransforms         |
+| GPU backend trait               | Rendering.GPUAbstraction            |
+| Asset handle type               | ContentPipeline.AssetDatabase       |
+| Render graph pass API           | Rendering.RenderGraph               |
+
+1. **Component trait + archetype API** — All domains
+2. **Entity handle type** — All domains
+3. **System trait + scheduling API** — All domains
+4. **Event channel API** — All domains
+5. **Spatial index query API** — Physics, Rendering, Networking, AI, Audio, GameFramework
+6. **Serialization trait** — Networking, ContentPipeline, GameFramework
+7. **Async I/O trait** — ContentPipeline, Platform
+8. **Transform component schema** — Rendering, Physics, Animation, Audio
+9. **GPU backend trait** — ContentPipeline, VFX, UI2D
+10. **Asset handle type** — All domains
+11. **Render graph pass API** — VFX, UI2D, all Rendering subgroups
 
 ### Key Differences from Sequential Tiers
 
-| Aspect | Old (Sequential Tiers) | New (DAG Waves) |
-|--------|------------------------|-----------------|
-| Structure | 5 sequential tiers by domain | 7 waves by prerequisite satisfaction |
-| Ordering unit | Entire domain | Feature-group within a domain |
-| Max parallelism | 1–4 agents | 3→6→9→12→19→20→18 agents |
-| Cross-domain edges | Implicit, within-tier only | Explicit, any-to-any across all levels |
-| Physics starts | After all of Tier 0 | As soon as ECS + spatial index are ready |
-| AI starts | After Tier 2 | Navigation starts as soon as spatial index + physics queries are ready |
-| Editor starts | After Tier 1 | After widget framework, rendering, hot reload, and reflection |
+| Aspect             | Old (Sequential Tiers)       |
+|--------------------|------------------------------|
+| Structure          | 5 sequential tiers by domain |
+| Ordering unit      | Entire domain                |
+| Max parallelism    | 1–4 agents                   |
+| Cross-domain edges | Implicit, within-tier only   |
+| Physics starts     | After all of Tier 0          |
+| AI starts          | After Tier 2                 |
+| Editor starts      | After Tier 1                 |
+
+1. **Structure** — 7 waves by prerequisite satisfaction
+2. **Ordering unit** — Feature-group within a domain
+3. **Max parallelism** — 3→6→9→12→19→20→18 agents
+4. **Cross-domain edges** — Explicit, any-to-any across all levels
+5. **Physics starts** — As soon as ECS + spatial index are ready
+6. **AI starts** — Navigation starts as soon as spatial index + physics queries are ready
+7. **Editor starts** — After widget framework, rendering, hot reload, and reflection
 
 ---
 
@@ -88,32 +120,63 @@ concurrent pipelines:
 
 **Why this genre:**
 
-| Factor | Reasoning |
-|--------|-----------|
-| Market breadth | Action/adventure is the most popular genre on Steam |
-| Technical showcase | Exercises rendering, physics, animation, input, audio, and UI simultaneously |
-| Visual appeal | Screenshots and trailers attract developers to engines |
-| Moderate scope | Smaller than RPG (no inventory/quests), larger than puzzle (shows more systems) |
-| Benchmarkable | Easy to compare against Unreal/Unity/Godot demos |
+| Factor             |
+|--------------------|
+| Market breadth     |
+| Technical showcase |
+| Visual appeal      |
+| Moderate scope     |
+| Benchmarkable      |
+
+1. **Market breadth** — Action/adventure is the most popular genre on Steam
+2. **Technical showcase** — Exercises rendering, physics, animation, input, audio, and UI
+   simultaneously
+3. **Visual appeal** — Screenshots and trailers attract developers to engines
+4. **Moderate scope** — Smaller than RPG (no inventory/quests), larger than puzzle (shows more
+   systems)
+5. **Benchmarkable** — Easy to compare against Unreal/Unity/Godot demos
 
 ### "First Playable" Feature List
 
 The demo: A third-person character navigates a small environment with enemies, combat, pickups, and
 a death/respawn loop. Think "Crash Bandicoot level" — 3 minutes of gameplay.
 
-| System | Required Features | Feature IDs |
-|--------|-------------------|-------------|
-| ECS | Archetype storage, entities, queries, systems, events, commands | F-1.1.1, F-1.1.11, F-1.1.17, F-1.1.25, F-1.1.32, F-1.5.1 |
-| Scene | Entity hierarchy, transform propagation | F-1.2.1, F-1.2.4 |
-| Rendering | GPU backend, render graph, forward+, PBR, shadows, bloom | F-2.1.*, F-2.2.*, F-2.4.1-4, F-2.9.1 |
-| Physics | Rigid body, collision, character controller, raycasting | F-4.1.1-4, F-4.1.8, F-4.2.1-7, F-4.4.1 |
-| Input | Keyboard, mouse, gamepad, action mapping | F-6.1.1-3, F-6.2.1-4 |
-| Animation | Skeletal, blending, state machine, root motion | F-9.1.1-3, F-9.1.6, F-9.4.1-2 |
-| Audio | Sound source, listener, spatial, streaming | F-5.1.1-5, F-5.2.1-2 |
-| UI | Widget tree, text, health bar, layout | F-10.1.1, F-10.1.4, F-10.2.1, F-10.2.3 |
-| Camera | Third-person camera, collision avoidance | F-13.25.1-5 |
-| Assets | Mesh import, texture import, shader compilation | F-12.1.1-2, F-12.2.7 |
-| Platform | Windowing, threading, async I/O, logging | F-14.1.1, F-14.3.1, F-14.3.5, F-14.4.4 |
+| System    |
+|-----------|
+| ECS       |
+| Scene     |
+| Rendering |
+| Physics   |
+| Input     |
+| Animation |
+| Audio     |
+| UI        |
+| Camera    |
+| Assets    |
+| Platform  |
+
+1. **ECS** — Archetype storage, entities, queries, systems, events, commands
+   - **Feature IDs:** F-1.1.1, F-1.1.11, F-1.1.17, F-1.1.25, F-1.1.32, F-1.5.1
+2. **Scene** — Entity hierarchy, transform propagation
+   - **Feature IDs:** F-1.2.1, F-1.2.4
+3. **Rendering** — GPU backend, render graph, forward+, PBR, shadows, bloom
+   - **Feature IDs:** F-2.1.*, F-2.2.*, F-2.4.1-4, F-2.9.1
+4. **Physics** — Rigid body, collision, character controller, raycasting
+   - **Feature IDs:** F-4.1.1-4, F-4.1.8, F-4.2.1-7, F-4.4.1
+5. **Input** — Keyboard, mouse, gamepad, action mapping
+   - **Feature IDs:** F-6.1.1-3, F-6.2.1-4
+6. **Animation** — Skeletal, blending, state machine, root motion
+   - **Feature IDs:** F-9.1.1-3, F-9.1.6, F-9.4.1-2
+7. **Audio** — Sound source, listener, spatial, streaming
+   - **Feature IDs:** F-5.1.1-5, F-5.2.1-2
+8. **UI** — Widget tree, text, health bar, layout
+   - **Feature IDs:** F-10.1.1, F-10.1.4, F-10.2.1, F-10.2.3
+9. **Camera** — Third-person camera, collision avoidance
+   - **Feature IDs:** F-13.25.1-5
+10. **Assets** — Mesh import, texture import, shader compilation
+    - **Feature IDs:** F-12.1.1-2, F-12.2.7
+11. **Platform** — Windowing, threading, async I/O, logging
+    - **Feature IDs:** F-14.1.1, F-14.3.1, F-14.3.5, F-14.4.4
 
 **Total: ~55 features for the demo** (4.6% of all specified features). These span Waves 0–4 of the
 DAG.
@@ -124,16 +187,25 @@ DAG.
 
 ### Revenue Sources
 
-| Source | Type | Price Point | Prerequisite Wave |
-|--------|------|------------|-------------------|
-| Core engine + editor | Free + open source | $0 | Always |
-| Cloud collaboration | SaaS subscription | $10/user/month | After ToolsEditor.AdvancedTools (Wave 6) |
-| AI assistant | Premium subscription | $20/user/month | After ToolsEditor.AdvancedTools (Wave 6) |
-| Asset marketplace | Transaction commission | 12% of sale price | After ContentPipeline.DCCPlugins (Wave 6) |
-| Enterprise tier | SaaS subscription | $50/user/month | After Networking.Replication (Wave 3) + collaboration |
-| Game royalty | Revenue share | 5% above $1M gross | After first game ships |
-| Shared build cache | Usage-based cloud | $0.01/build-minute | After ContentPipeline.AssetDatabase (Wave 2) + cloud infra |
-| Dedicated hosting | Managed infrastructure | Custom pricing | After Networking.MMO (Wave 6) |
+| Source               | Type                   | Price Point        |
+|----------------------|------------------------|--------------------|
+| Core engine + editor | Free + open source     | $0                 |
+| Cloud collaboration  | SaaS subscription      | $10/user/month     |
+| AI assistant         | Premium subscription   | $20/user/month     |
+| Asset marketplace    | Transaction commission | 12% of sale price  |
+| Enterprise tier      | SaaS subscription      | $50/user/month     |
+| Game royalty         | Revenue share          | 5% above $1M gross |
+| Shared build cache   | Usage-based cloud      | $0.01/build-minute |
+| Dedicated hosting    | Managed infrastructure | Custom pricing     |
+
+1. **Core engine + editor** — Always
+2. **Cloud collaboration** — After ToolsEditor.AdvancedTools (Wave 6)
+3. **AI assistant** — After ToolsEditor.AdvancedTools (Wave 6)
+4. **Asset marketplace** — After ContentPipeline.DCCPlugins (Wave 6)
+5. **Enterprise tier** — After Networking.Replication (Wave 3) + collaboration
+6. **Game royalty** — After first game ships
+7. **Shared build cache** — After ContentPipeline.AssetDatabase (Wave 2) + cloud infra
+8. **Dedicated hosting** — After Networking.MMO (Wave 6)
 
 ### Path to $10K MRR
 
@@ -161,14 +233,24 @@ DAG.
 
 **Goal:** Establish Harmonius as a credible, exciting project in the Rust gamedev ecosystem.
 
-| Action | Channel | Expected Outcome |
-|--------|---------|------------------|
-| "Building a Game Engine in Rust with AI" blog series | Personal blog, dev.to | 5,000-10,000 readers |
-| Post Rust ECS benchmarks vs Bevy/flecs | r/rust_gamedev, r/rust | Community discussion |
-| Livestream development sessions with Claude | YouTube, Twitch | 100-500 regular viewers |
-| Engage Rust gamedev Discord servers | Bevy Discord, Rust Gamedev WG | Name recognition |
-| Write "Why Rust for Game Engines" technical deep-dive | Blog, Hacker News | Front page post |
-| Publish architecture decision records (ADRs) publicly | GitHub wiki, blog | Developer trust |
+| Channel                       | Expected Outcome        |
+|-------------------------------|-------------------------|
+| Personal blog, dev.to         | 5,000-10,000 readers    |
+| r/rust_gamedev, r/rust        | Community discussion    |
+| YouTube, Twitch               | 100-500 regular viewers |
+| Bevy Discord, Rust Gamedev WG | Name recognition        |
+| Blog, Hacker News             | Front page post         |
+| GitHub wiki, blog             | Developer trust         |
+
+1. **"Building a Game Engine in Rust with AI" blog series** — "Building a Game Engine in Rust with
+   AI" blog series
+2. **Post Rust ECS benchmarks vs Bevy/flecs** — Post Rust ECS benchmarks vs Bevy/flecs
+3. **Livestream development sessions with Claude** — Livestream development sessions with Claude
+4. **Engage Rust gamedev Discord servers** — Engage Rust gamedev Discord servers
+5. **Write "Why Rust for Game Engines" technical deep-dive** — Write "Why Rust for Game Engines"
+   technical deep-dive
+6. **Publish architecture decision records (ADRs) publicly** — Publish architecture decision records
+   (ADRs) publicly
 
 **Unique angle:** "The first game engine built collaboratively by a human and AI." Livestreaming the
 development process with Claude is genuinely novel and attracts attention from both the gamedev and
@@ -227,14 +309,23 @@ feedback.
 
 ### Market Landscape
 
-| Engine | License | Language | Editor | Strengths | Weaknesses |
-|--------|---------|----------|--------|-----------|------------|
-| Unreal | Source-available, 5% royalty >$1M | C++ / Blueprints | Full | AAA quality, Blueprints, market share | C++ complexity, build times, heavy |
-| Unity | Proprietary, runtime fee controversy | C# | Full | Ecosystem, asset store, mobile | Trust erosion, performance ceiling, pricing |
-| Godot | MIT open source | GDScript / C# / C++ | Full | Free, lightweight, growing community | Limited AAA capability, 3D is catching up |
-| Bevy | MIT + Apache 2.0 | Rust | None (code only) | Rust, ECS-first, growing fast | No editor, no visual scripting, early stage |
-| O3DE | Apache 2.0 | C++ | Full | Amazon backing, modular | Complex, slow development, small community |
-| **Harmonius** | **Open source core** | **Rust** | **Full (planned)** | **See below** | **Does not exist yet** |
+| Engine        | License                              | Language            | Editor             |
+|---------------|--------------------------------------|---------------------|--------------------|
+| Unreal        | Source-available, 5% royalty >$1M    | C++ / Blueprints    | Full               |
+| Unity         | Proprietary, runtime fee controversy | C#                  | Full               |
+| Godot         | MIT open source                      | GDScript / C# / C++ | Full               |
+| Bevy          | MIT + Apache 2.0                     | Rust                | None (code only)   |
+| O3DE          | Apache 2.0                           | C++                 | Full               |
+| **Harmonius** | **Open source core**                 | **Rust**            | **Full (planned)** |
+
+| Engine | Strengths | Weaknesses |
+|--------|-----------|------------|
+| Unreal | AAA quality, Blueprints, market share | C++ complexity, build times, heavy |
+| Unity | Ecosystem, asset store, mobile | Trust erosion, performance ceiling, pricing |
+| Godot | Free, lightweight, growing community | Limited AAA capability, 3D is catching up |
+| Bevy | Rust, ECS-first, growing fast | No editor, no visual scripting, early stage |
+| O3DE | Amazon backing, modular | Complex, slow development, small community |
+| **Harmonius** | **See below** | **Does not exist yet** |
 
 ### Head-to-Head Positioning
 
@@ -306,26 +397,60 @@ AI-assisted development, and planet-scale procedural worlds — without writing 
 
 ## 6. Biggest Risks
 
-| # | Risk | Likelihood | Impact | Mitigation |
-|---|------|-----------|--------|------------|
-| 1 | Never reaching feature parity with established engines | High | Fatal | Prioritize ruthlessly. Focus on the ~278 features needed for "shippable," not all 1,204. Use the DAG to cut low-value capstone features without affecting the critical path. |
-| 2 | Solo developer burnout | High | Fatal | Use Claude AI as a force multiplier. Automate everything possible. The DAG model enables parallel agent work, reducing bottleneck on any single person. |
-| 3 | No early adopter traction | Medium | High | Build community before asking them to adopt a full engine. Make foundational modules genuinely useful standalone. |
-| 4 | Rust gamedev ecosystem matures faster (Bevy ships an editor) | Medium | High | Differentiate on no-code, collaboration, and planet-scale. These are features Bevy is not pursuing. |
-| 5 | Unreal/Unity/Godot copy key differentiators | Medium | Medium | Move fast on collaboration (CRDT) and planet-scale generation. These require deep architectural decisions that incumbents cannot retrofit easily. |
-| 6 | Cloud service costs exceed revenue | Medium | High | Conservative free tier with usage limits. Usage-based pricing for compute. No always-on infrastructure until revenue justifies it. |
-| 7 | Rust compile times frustrate users | Low | Medium | Invest in incremental compilation. Use dynamic linking in dev mode. Hot reload for gameplay logic. Logic graphs bypass Rust compilation entirely. |
-| 8 | GPU backend complexity (Metal + Vulkan + D3D12) | Medium | High | Start with Metal only (macOS development). Add Vulkan second. D3D12 third. |
-| 9 | No-code logic graphs are too slow for real games | Low | High | Compile logic graphs to native Rust at build time. Interpret only in the editor for hot reload. |
-| 10 | Asset marketplace never reaches critical mass | Medium | Medium | Seed the marketplace with first-party assets. Partner with asset creators early. Make publishing frictionless. |
+| #  | Likelihood | Impact |
+|----|------------|--------|
+| 1  | High       | Fatal  |
+| 2  | High       | Fatal  |
+| 3  | Medium     | High   |
+| 4  | Medium     | High   |
+| 5  | Medium     | Medium |
+| 6  | Medium     | High   |
+| 7  | Low        | Medium |
+| 8  | Medium     | High   |
+| 9  | Low        | High   |
+| 10 | Medium     | Medium |
+
+1. **1** — Never reaching feature parity with established engines
+   - **Mitigation:** Prioritize ruthlessly. Focus on the ~278 features needed for "shippable," not
+     all 1,204. Use the DAG to cut low-value capstone features without affecting the critical path.
+2. **2** — Solo developer burnout
+   - **Mitigation:** Use Claude AI as a force multiplier. Automate everything possible. The DAG
+     model enables parallel agent work, reducing bottleneck on any single person.
+3. **3** — No early adopter traction
+   - **Mitigation:** Build community before asking them to adopt a full engine. Make foundational
+     modules genuinely useful standalone.
+4. **4** — Rust gamedev ecosystem matures faster (Bevy ships an editor)
+   - **Mitigation:** Differentiate on no-code, collaboration, and planet-scale. These are features
+     Bevy is not pursuing.
+5. **5** — Unreal/Unity/Godot copy key differentiators
+   - **Mitigation:** Move fast on collaboration (CRDT) and planet-scale generation. These require
+     deep architectural decisions that incumbents cannot retrofit easily.
+6. **6** — Cloud service costs exceed revenue
+   - **Mitigation:** Conservative free tier with usage limits. Usage-based pricing for compute. No
+     always-on infrastructure until revenue justifies it.
+7. **7** — Rust compile times frustrate users
+   - **Mitigation:** Invest in incremental compilation. Use dynamic linking in dev mode. Hot reload
+     for gameplay logic. Logic graphs bypass Rust compilation entirely.
+8. **8** — GPU backend complexity (Metal + Vulkan + D3D12)
+   - **Mitigation:** Start with Metal only (macOS development). Add Vulkan second. D3D12 third.
+9. **9** — No-code logic graphs are too slow for real games
+   - **Mitigation:** Compile logic graphs to native Rust at build time. Interpret only in the editor
+     for hot reload.
+10. **10** — Asset marketplace never reaches critical mass
+    - **Mitigation:** Seed the marketplace with first-party assets. Partner with asset creators
+      early. Make publishing frictionless.
 
 ### Risk Heatmap
 
-| | Low Impact | Medium Impact | High Impact | Fatal Impact |
-|---|-----------|---------------|-------------|--------------|
-| **High Likelihood** | | | | Feature parity (#1), Burnout (#2) |
-| **Medium Likelihood** | | Incumbents copy (#5) | No traction (#3), Bevy matures (#4), Cloud costs (#6), GPU complexity (#8), Marketplace (#10) | |
-| **Low Likelihood** | | Compile times (#7) | Logic graph perf (#9) | |
+|                       | Low Impact | Medium Impact        | Fatal Impact                      |
+|-----------------------|------------|----------------------|-----------------------------------|
+| **High Likelihood**   |            |                      | Feature parity (#1), Burnout (#2) |
+| **Medium Likelihood** |            | Incumbents copy (#5) |                                   |
+| **Low Likelihood**    |            | Compile times (#7)   |                                   |
+
+2. ****Medium Likelihood**** — No traction (#3), Bevy matures (#4), Cloud costs (#6), GPU complexity
+   (#8), Marketplace (#10)
+3. ****Low Likelihood**** — Logic graph perf (#9)
 
 ### Top 3 Risk Mitigations
 

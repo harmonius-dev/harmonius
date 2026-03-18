@@ -2,26 +2,184 @@
 
 ## Social Simulation
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|-------------|--------------|----------------|
-| F-13.19.1 | NPC Relationship and Affinity System | Per-NPC relationship tracking with numeric affinity values (friendship, romance, trust, fear) affected by player actions. Giving gifts modifies affinity based on NPC-specific preference tables (loved, liked, neutral, disliked, hated items). Dialogue choices, quest outcomes, and witnessed deeds also shift affinity. Relationship tiers (stranger -> acquaintance -> friend -> close friend -> romantic partner) unlock new dialogue options, quests, perks, and story branches. Affinity values are ECS components on NPC entities, persisted through the save system. | R-13.19.1 | F-13.6.4 (Branching Dialogue), F-13.7.1 (Table Schema), F-13.3.1 (Save System) | None |
-| F-13.19.2 | NPC Personality and Emotion Model | Per-NPC personality traits (courage, compassion, honesty, ambition, humor — configurable axes) that influence dialogue responses, deed judgment, and AI behavior tree decisions. Dynamic emotional states (happy, angry, afraid, grateful, jealous, sad) evolve based on witnessed events, dialogue, and relationship changes. Emotions decay toward a personality-determined baseline over time. Emotional state affects NPC animations (F-9.4.1), dialogue tone, and available interaction options. Personality is assigned per NPC type in data tables; emotion state is runtime ECS data. | R-13.19.2 | F-13.19.1, F-7.3.1 (Behavior Trees), F-9.4.1 (Animation State Machine) | None |
-| F-13.19.3a | NPC Deed Memory | NPCs witness player and NPC actions within their perception range (F-7.6.1) and judge them according to personality values. Positive deeds (gifting, rescuing, completing quests) increase affinity; negative deeds (theft, assault, property destruction) decrease it. Each deed is stored as a memory entry with emotional weight and time-based decay. Memory entries are evicted when they decay below a minimum weight threshold. | R-13.19.3a | F-13.19.2, F-7.6.1 (Perception - Sight) | None |
-| F-13.19.3b | Gossip Propagation Network | During social interactions between NPCs, deed memories are shared as gossip — causing reputation to propagate organically through the NPC social network. Gossip degrades in accuracy and emotional weight with each retelling. The propagation rate is configurable per NPC archetype (e.g., tavern gossips spread faster than hermits). | R-13.19.3b | F-13.19.3a, F-13.19.4b (Schedule Execution) | None |
-| F-13.19.3c | Emergent Reputation Aggregation | Aggregates per-NPC affinity values across a social group (village, guild, faction) to produce an emergent reputation score. Helping one NPC in a village gradually improves standing with the whole village as gossip spreads. Reputation thresholds gate group-wide behaviors such as shop discounts, hostile reactions, and quest availability. | R-13.19.3c | F-13.19.3b, F-13.19.1 | None |
-| F-13.19.4a | Schedule Data Model | Defines the data model for NPC daily schedules. Each NPC has a schedule table mapping time-of-day ranges to locations, activities, and variation rules. Schedule entries specify: destination location, arrival animation, idle behavior, and interaction availability flags. Schedules vary by day of the week and season. The schedule system integrates with the in-game calendar (F-13.25.1) for time tracking. Schedules are authored as data assets in the visual editor. | R-13.19.4a | F-13.7.1 (Table Schema), F-13.25.1 (Calendar) | None |
-| F-13.19.4b | Schedule Execution | Drives NPC movement between schedule locations using the pathfinding system (F-7.1.1). When the in-game clock crosses a schedule boundary, the NPC navigates to the next destination, plays the configured arrival animation, and enters the idle behavior for that time slot. NPCs that fail to reach their destination before the next schedule transition skip to the current slot. | R-13.19.4b | F-13.19.4a, F-7.1.1 (NavMesh Pathfinding), F-7.3.1 (Behavior Trees) | Mobile reduces the number of simultaneously scheduled NPCs (20 vs 50+ on desktop) to limit pathfinding and behavior tree evaluation cost per frame. |
-| F-13.19.4c | Schedule-Gated Interactions | Gates NPC interactions based on the current schedule slot. Shopkeepers only sell during work hours, quest givers are unavailable while sleeping, and trainers only accept students during scheduled training periods. Interaction availability is exposed to the dialogue system (F-13.6.4) and the UI (F-10.1.1) so players see why an NPC is unavailable. | R-13.19.4c | F-13.19.4a, F-13.6.4 (Dialogue), F-10.1.1 (Widget Tree) | None |
-| F-13.19.5 | Ambient Bark System | NPCs emit contextual one-liner dialogue (barks) without entering a full conversation tree. Barks trigger on proximity, world events, combat state, time of day, weather, or random timer. Each NPC type has a bark pool with priority, cooldown, and context filter per entry — guards bark about the weather at low priority but shout warnings at high priority when enemies approach. Barks display as floating text bubbles and optionally play audio clips. The bark system is separate from the dialogue system (F-13.6.4) and does not pause gameplay or require player input. | R-13.19.5 | F-13.6.4 (Dialogue), F-5.1.1 (Audio Engine) | None |
-| F-13.19.6 | Threat and Aggro Table System | Per-enemy threat tables tracking hate generated by player actions. Damage, healing, taunts, debuffs, and proximity contribute threat values configured per ability. Enemies attack the highest-threat target. Tanks generate extra threat via taunt abilities; healers generate threat equal to healing done divided among engaged enemies. Threat decays over time when out of combat range. Threat modifiers on abilities (F-13.10.1) allow "low threat" heals and "high threat" taunts. Aggro radius and line-of-sight checks use the shared spatial index (F-1.9.4). The threat table is exposed to the AI behavior tree (F-7.3.4) for target-switching decisions. | R-13.19.6 | F-13.10.1 (Ability Definition), F-7.3.1 (Behavior Trees), F-1.9.4 (Spatial Query) | None |
+| ID         | Feature                              | Requirements |
+|------------|--------------------------------------|--------------|
+| F-13.19.1  | NPC Relationship and Affinity System | R-13.19.1    |
+| F-13.19.2  | NPC Personality and Emotion Model    | R-13.19.2    |
+| F-13.19.3a | NPC Deed Memory                      | R-13.19.3a   |
+| F-13.19.3b | Gossip Propagation Network           | R-13.19.3b   |
+| F-13.19.3c | Emergent Reputation Aggregation      | R-13.19.3c   |
+| F-13.19.4a | Schedule Data Model                  | R-13.19.4a   |
+| F-13.19.4b | Schedule Execution                   | R-13.19.4b   |
+| F-13.19.4c | Schedule-Gated Interactions          | R-13.19.4c   |
+| F-13.19.5  | Ambient Bark System                  | R-13.19.5    |
+| F-13.19.6  | Threat and Aggro Table System        | R-13.19.6    |
+
+1. **F-13.19.1** — Per-NPC relationship tracking with numeric affinity values (friendship, romance,
+   trust, fear) affected by player actions. Giving gifts modifies affinity based on NPC-specific
+   preference tables (loved, liked, neutral, disliked, hated items). Dialogue choices, quest
+   outcomes, and witnessed deeds also shift affinity. Relationship tiers (stranger -> acquaintance
+   -> friend -> close friend -> romantic partner) unlock new dialogue options, quests, perks, and
+   story branches. Affinity values are ECS components on NPC entities, persisted through the save
+   system.
+   - **Deps:** F-13.6.4 (Branching Dialogue), F-13.7.1 (Table Schema), F-13.3.1 (Save System)
+2. **F-13.19.2** — Per-NPC personality traits (courage, compassion, honesty, ambition, humor —
+   configurable axes) that influence dialogue responses, deed judgment, and AI behavior tree
+   decisions. Dynamic emotional states (happy, angry, afraid, grateful, jealous, sad) evolve based
+   on witnessed events, dialogue, and relationship changes. Emotions decay toward a
+   personality-determined baseline over time. Emotional state affects NPC animations (F-9.4.1),
+   dialogue tone, and available interaction options. Personality is assigned per NPC type in data
+   tables; emotion state is runtime ECS data.
+   - **Deps:** F-13.19.1, F-7.3.1 (Behavior Trees), F-9.4.1 (Animation State Machine)
+3. **F-13.19.3a** — NPCs witness player and NPC actions within their perception range (F-7.6.1) and
+   judge them according to personality values. Positive deeds (gifting, rescuing, completing quests)
+   increase affinity; negative deeds (theft, assault, property destruction) decrease it. Each deed
+   is stored as a memory entry with emotional weight and time-based decay. Memory entries are
+   evicted when they decay below a minimum weight threshold.
+   - **Deps:** F-13.19.2, F-7.6.1 (Perception - Sight)
+4. **F-13.19.3b** — During social interactions between NPCs, deed memories are shared as gossip —
+   causing reputation to propagate organically through the NPC social network. Gossip degrades in
+   accuracy and emotional weight with each retelling. The propagation rate is configurable per NPC
+   archetype (e.g., tavern gossips spread faster than hermits).
+   - **Deps:** F-13.19.3a, F-13.19.4b (Schedule Execution)
+5. **F-13.19.3c** — Aggregates per-NPC affinity values across a social group (village, guild,
+   faction) to produce an emergent reputation score. Helping one NPC in a village gradually improves
+   standing with the whole village as gossip spreads. Reputation thresholds gate group-wide
+   behaviors such as shop discounts, hostile reactions, and quest availability.
+   - **Deps:** F-13.19.3b, F-13.19.1
+6. **F-13.19.4a** — Defines the data model for NPC daily schedules. Each NPC has a schedule table
+   mapping time-of-day ranges to locations, activities, and variation rules. Schedule entries
+   specify: destination location, arrival animation, idle behavior, and interaction availability
+   flags. Schedules vary by day of the week and season. The schedule system integrates with the
+   in-game calendar (F-13.25.1) for time tracking. Schedules are authored as data assets in the
+   visual editor.
+   - **Deps:** F-13.7.1 (Table Schema), F-13.25.1 (Calendar)
+7. **F-13.19.4b** — Drives NPC movement between schedule locations using the pathfinding system
+   (F-7.1.1). When the in-game clock crosses a schedule boundary, the NPC navigates to the next
+   destination, plays the configured arrival animation, and enters the idle behavior for that time
+   slot. NPCs that fail to reach their destination before the next schedule transition skip to the
+   current slot.
+   - **Deps:** F-13.19.4a, F-7.1.1 (NavMesh Pathfinding), F-7.3.1 (Behavior Trees)
+   - **Platform:** Mobile reduces the number of simultaneously scheduled NPCs (20 vs 50+ on desktop)
+     to limit pathfinding and behavior tree evaluation cost per frame.
+8. **F-13.19.4c** — Gates NPC interactions based on the current schedule slot. Shopkeepers only sell
+   during work hours, quest givers are unavailable while sleeping, and trainers only accept students
+   during scheduled training periods. Interaction availability is exposed to the dialogue system
+   (F-13.6.4) and the UI (F-10.1.1) so players see why an NPC is unavailable.
+   - **Deps:** F-13.19.4a, F-13.6.4 (Dialogue), F-10.1.1 (Widget Tree)
+9. **F-13.19.5** — NPCs emit contextual one-liner dialogue (barks) without entering a full
+   conversation tree. Barks trigger on proximity, world events, combat state, time of day, weather,
+   or random timer. Each NPC type has a bark pool with priority, cooldown, and context filter per
+   entry — guards bark about the weather at low priority but shout warnings at high priority when
+   enemies approach. Barks display as floating text bubbles and optionally play audio clips. The
+   bark system is separate from the dialogue system (F-13.6.4) and does not pause gameplay or
+   require player input.
+   - **Deps:** F-13.6.4 (Dialogue), F-5.1.1 (Audio Engine)
+10. **F-13.19.6** — Per-enemy threat tables tracking hate generated by player actions. Damage,
+    healing, taunts, debuffs, and proximity contribute threat values configured per ability. Enemies
+    attack the highest-threat target. Tanks generate extra threat via taunt abilities; healers
+    generate threat equal to healing done divided among engaged enemies. Threat decays over time
+    when out of combat range. Threat modifiers on abilities (F-13.10.1) allow "low threat" heals and
+    "high threat" taunts. Aggro radius and line-of-sight checks use the shared spatial index
+    (F-1.9.4). The threat table is exposed to the AI behavior tree (F-7.3.4) for target-switching
+    decisions.
+    - **Deps:** F-13.10.1 (Ability Definition), F-7.3.1 (Behavior Trees), F-1.9.4 (Spatial Query)
 
 ## NPC Social Interactions
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|-------------|--------------|----------------|
-| F-13.19.7 | NPC-to-NPC Conversation System | NPCs autonomously engage in conversations with other NPCs they encounter during their daily routines (F-13.19.4). Conversations are triggered by proximity, shared faction, relationship level, and topic relevance. Each conversation follows a mini-dialogue template: greeting, topic exchange (1-3 topics), farewell. Topics include: recent events they witnessed (F-13.19.8), player sightings (F-13.19.10), quest state changes, rumors from other NPCs (F-13.19.3b gossip), and ambient world state (weather, time of day, faction events). Conversations are visible to the player as overhead speech bubbles with optional audio barks (F-13.19.5). Conversation outcomes modify both NPCs' memory (F-13.19.8) — information learned during conversation is stored as a memory with source attribution. NPCs prioritize conversation topics by urgency: threat warnings first, quest-relevant info second, social gossip third. Conversations can be interrupted by threats, player interaction, or schedule obligations. | R-13.19.7 | F-13.19.1 (Relationships), F-13.19.2 (Personality), F-13.19.4a (Schedule), F-13.19.5 (Barks), F-13.19.8 (Memory) | Mobile limits simultaneous NPC conversations to 4 (vs 16 on desktop). |
-| F-13.19.8 | NPC Independent Memory System | Each NPC maintains a personal memory store of events they directly witnessed, information received from other NPCs (with source attribution and confidence decay), and interactions with players and other NPCs. Memory entries contain: event type (sighting, conversation, combat, theft, gift, quest event), involved entities, location, timestamp, emotional weight (how strongly the NPC felt about the event), and reliability score (direct witness: 1.0, heard from trusted NPC: 0.7, heard from stranger: 0.3, multi-hop rumor: degrades per hop). Memories decay over time based on emotional weight — traumatic memories (witnessing murder) persist indefinitely, routine events (seeing the player walk by) fade within game-hours. Memory capacity is capped per NPC (configurable, default 50 entries) with lowest-weight memories evicted when full. The memory system integrates with: behavior trees (F-7.3.1) for decision-making ("I saw the player near the market 10 minutes ago"), dialogue (F-13.6.4) for contextual responses ("Last time you were here, you stole from the baker"), and the gossip system (F-13.19.3a) which reads from and writes to memory. | R-13.19.8 | F-13.19.2 (Personality), F-7.3.1 (Behavior Trees), F-13.6.4 (Dialogue) | Mobile: 20 memories per NPC (vs 50 desktop). Low-LOD NPCs (F-7.7.5) freeze memory updates until promoted to high LOD. |
-| F-13.19.9 | NPC Environmental Interaction | NPCs interact with the same environmental objects as players: opening and closing doors (F-13.17.2), pulling levers and pressing buttons, sitting in chairs, eating at tables, using crafting stations (F-13.12.4), sleeping in beds, and taking shortcuts (ladders, gates, bridges). Each interactable object (F-13.17.1) defines an NPC interaction profile: which NPC archetypes can use it, required items (keys for locked doors), interaction animation, and navigation cost (pathfinding weights to route through interactive shortcuts). NPCs evaluate whether to use environmental shortcuts during pathfinding — a locked door that the NPC has a key for is traversable; a lever that opens a shortcut is used if it saves travel time. Door state changes by NPCs are visible to players and affect gameplay: a guard opening a previously locked door creates new stealth routes. NPC environmental interactions trigger animation events (F-9.1.9) and sound events (F-7.6.2) that can alert other NPCs and players. | R-13.19.9 | F-13.17.1 (World Interaction), F-13.17.2 (Doors), F-7.1.1 (NavMesh), F-9.1.9 (Animation Events) | None |
-| F-13.19.10 | Social-Cue Player Search | When searching for a player or target, NPCs use social cues instead of omniscient knowledge. Search methods: **ask nearby NPCs** — the searching NPC approaches allied or neutral NPCs and initiates a "have you seen [target]?" query. The queried NPC checks their memory (F-13.19.8) for recent sightings and responds with the last known position and timestamp (if they have one) or "no" (if they don't). The searcher then investigates the reported position. **Check evidence** — the searcher examines environmental evidence (F-7.6.9): footprints, opened doors that should be closed, disturbed objects, missing items. **Query faction network** — for organized factions (guard patrols, guild members), the searcher sends a broadcast query (F-7.7.7) to all faction members within communication range. Responses trickle in over time (not instant) simulating radio/messenger delay. Social search is slower than omniscient tracking but feels fair to the player — NPCs only know what they or their allies have personally observed. The search radiates outward from the last known position, checking NPCs and evidence along the way. | R-13.19.10 | F-13.19.8 (Memory), F-13.19.7 (NPC Conversations), F-7.7.7 (Knowledge Sharing), F-7.6.9 (Evidence), F-7.6.10 (Investigation) | Mobile: query limited to 4 nearby NPCs (vs 8 on desktop). |
-| F-13.19.11 | Quest and Story State NPC Awareness | NPCs are aware of the game's quest and story progression and modify their behavior, dialogue, and social interactions accordingly. Each NPC has a `StoryAwareness` component listing which quest states they react to. Reactions: **dialogue changes** — an NPC who knows the player completed a quest greets them differently ("I heard you dealt with those bandits"). **Behavior changes** — a merchant who heard about a dragon attack in a neighboring town increases weapon prices and stocks healing potions. **Social topic** — NPCs discuss quest events in their conversations (F-13.19.7), spreading quest-relevant information through the social network. **Faction response** — major quest completions shift faction behaviors (F-7.7.9) across all members. Story awareness integrates with the quest phasing system (F-13.6.7b) — NPCs in phased zones see the appropriate quest state. NPC reactions to quest state are configured in the visual quest editor as "NPC Reaction" nodes attached to quest state transitions. | R-13.19.11 | F-13.6.1 (Quest System), F-13.6.4 (Dialogue), F-13.19.7 (Conversations), F-7.7.9 (Faction Relationships), F-13.6.7b (Quest Phasing) | None |
-| F-13.19.12 | Player-Witnessed NPC Social Behaviors | NPC social interactions are performed visibly in the game world, creating a living, believable environment. Players can: **overhear NPC conversations** — speech bubbles and optional voiced barks play when NPCs talk to each other within player earshot, potentially revealing quest hints, gossip about the player's actions, or faction politics. **Observe NPC routines** — NPCs visibly go about their daily schedules (F-13.19.4a), eating, working, socializing, sleeping, creating a sense of a lived-in world. **Interrupt NPC conversations** — approaching conversing NPCs interrupts their dialogue; they acknowledge the player and can be spoken to. **Witness NPC reactions** — when quest events occur, nearby NPCs visibly react (cheer, panic, argue), reinforcing the impact of the player's actions. **Eavesdrop for information** — some conversations contain actionable intelligence (quest hints, hidden item locations, NPC schedules) that the player can use if they are close enough to overhear, rewarding exploration and attention. Eavesdropping range is affected by the player's stealth state (F-13.18.1). | R-13.19.12 | F-13.19.7 (NPC Conversations), F-13.19.4a (Schedules), F-13.18.1 (Stealth), F-5.2.1 (Spatial Audio) | Mobile: fewer visible NPC social interactions (limited by crowd budget). |
+| ID         | Feature                               | Requirements |
+|------------|---------------------------------------|--------------|
+| F-13.19.7  | NPC-to-NPC Conversation System        | R-13.19.7    |
+| F-13.19.8  | NPC Independent Memory System         | R-13.19.8    |
+| F-13.19.9  | NPC Environmental Interaction         | R-13.19.9    |
+| F-13.19.10 | Social-Cue Player Search              | R-13.19.10   |
+| F-13.19.11 | Quest and Story State NPC Awareness   | R-13.19.11   |
+| F-13.19.12 | Player-Witnessed NPC Social Behaviors | R-13.19.12   |
+
+1. **F-13.19.7** — NPCs autonomously engage in conversations with other NPCs they encounter during
+   their daily routines (F-13.19.4). Conversations are triggered by proximity, shared faction,
+   relationship level, and topic relevance. Each conversation follows a mini-dialogue template:
+   greeting, topic exchange (1-3 topics), farewell. Topics include: recent events they witnessed
+   (F-13.19.8), player sightings (F-13.19.10), quest state changes, rumors from other NPCs
+   (F-13.19.3b gossip), and ambient world state (weather, time of day, faction events).
+   Conversations are visible to the player as overhead speech bubbles with optional audio barks
+   (F-13.19.5). Conversation outcomes modify both NPCs' memory (F-13.19.8) — information learned
+   during conversation is stored as a memory with source attribution. NPCs prioritize conversation
+   topics by urgency: threat warnings first, quest-relevant info second, social gossip third.
+   Conversations can be interrupted by threats, player interaction, or schedule obligations.
+   - **Deps:** F-13.19.1 (Relationships), F-13.19.2 (Personality), F-13.19.4a (Schedule), F-13.19.5
+     (Barks), F-13.19.8 (Memory)
+   - **Platform:** Mobile limits simultaneous NPC conversations to 4 (vs 16 on desktop).
+2. **F-13.19.8** — Each NPC maintains a personal memory store of events they directly witnessed,
+   information received from other NPCs (with source attribution and confidence decay), and
+   interactions with players and other NPCs. Memory entries contain: event type (sighting,
+   conversation, combat, theft, gift, quest event), involved entities, location, timestamp,
+   emotional weight (how strongly the NPC felt about the event), and reliability score (direct
+   witness: 1.0, heard from trusted NPC: 0.7, heard from stranger: 0.3, multi-hop rumor: degrades
+   per hop). Memories decay over time based on emotional weight — traumatic memories (witnessing
+   murder) persist indefinitely, routine events (seeing the player walk by) fade within game-hours.
+   Memory capacity is capped per NPC (configurable, default 50 entries) with lowest-weight memories
+   evicted when full. The memory system integrates with: behavior trees (F-7.3.1) for
+   decision-making ("I saw the player near the market 10 minutes ago"), dialogue (F-13.6.4) for
+   contextual responses ("Last time you were here, you stole from the baker"), and the gossip system
+   (F-13.19.3a) which reads from and writes to memory.
+   - **Deps:** F-13.19.2 (Personality), F-7.3.1 (Behavior Trees), F-13.6.4 (Dialogue)
+   - **Platform:** Mobile: 20 memories per NPC (vs 50 desktop). Low-LOD NPCs (F-7.7.5) freeze memory
+     updates until promoted to high LOD.
+3. **F-13.19.9** — NPCs interact with the same environmental objects as players: opening and closing
+   doors (F-13.17.2), pulling levers and pressing buttons, sitting in chairs, eating at tables,
+   using crafting stations (F-13.12.4), sleeping in beds, and taking shortcuts (ladders, gates,
+   bridges). Each interactable object (F-13.17.1) defines an NPC interaction profile: which NPC
+   archetypes can use it, required items (keys for locked doors), interaction animation, and
+   navigation cost (pathfinding weights to route through interactive shortcuts). NPCs evaluate
+   whether to use environmental shortcuts during pathfinding — a locked door that the NPC has a key
+   for is traversable; a lever that opens a shortcut is used if it saves travel time. Door state
+   changes by NPCs are visible to players and affect gameplay: a guard opening a previously locked
+   door creates new stealth routes. NPC environmental interactions trigger animation events
+   (F-9.1.9) and sound events (F-7.6.2) that can alert other NPCs and players.
+   - **Deps:** F-13.17.1 (World Interaction), F-13.17.2 (Doors), F-7.1.1 (NavMesh), F-9.1.9
+     (Animation Events)
+4. **F-13.19.10** — When searching for a player or target, NPCs use social cues instead of
+   omniscient knowledge. Search methods: **ask nearby NPCs** — the searching NPC approaches allied
+   or neutral NPCs and initiates a "have you seen [target]?" query. The queried NPC checks their
+   memory (F-13.19.8) for recent sightings and responds with the last known position and timestamp
+   (if they have one) or "no" (if they don't). The searcher then investigates the reported position.
+   **Check evidence** — the searcher examines environmental evidence (F-7.6.9): footprints, opened
+   doors that should be closed, disturbed objects, missing items. **Query faction network** — for
+   organized factions (guard patrols, guild members), the searcher sends a broadcast query (F-7.7.7)
+   to all faction members within communication range. Responses trickle in over time (not instant)
+   simulating radio/messenger delay. Social search is slower than omniscient tracking but feels fair
+   to the player — NPCs only know what they or their allies have personally observed. The search
+   radiates outward from the last known position, checking NPCs and evidence along the way.
+   - **Deps:** F-13.19.8 (Memory), F-13.19.7 (NPC Conversations), F-7.7.7 (Knowledge Sharing),
+     F-7.6.9 (Evidence), F-7.6.10 (Investigation)
+   - **Platform:** Mobile: query limited to 4 nearby NPCs (vs 8 on desktop).
+5. **F-13.19.11** — NPCs are aware of the game's quest and story progression and modify their
+   behavior, dialogue, and social interactions accordingly. Each NPC has a `StoryAwareness`
+   component listing which quest states they react to. Reactions: **dialogue changes** — an NPC who
+   knows the player completed a quest greets them differently ("I heard you dealt with those
+   bandits"). **Behavior changes** — a merchant who heard about a dragon attack in a neighboring
+   town increases weapon prices and stocks healing potions. **Social topic** — NPCs discuss quest
+   events in their conversations (F-13.19.7), spreading quest-relevant information through the
+   social network. **Faction response** — major quest completions shift faction behaviors (F-7.7.9)
+   across all members. Story awareness integrates with the quest phasing system (F-13.6.7b) — NPCs
+   in phased zones see the appropriate quest state. NPC reactions to quest state are configured in
+   the visual quest editor as "NPC Reaction" nodes attached to quest state transitions.
+   - **Deps:** F-13.6.1 (Quest System), F-13.6.4 (Dialogue), F-13.19.7 (Conversations), F-7.7.9
+     (Faction Relationships), F-13.6.7b (Quest Phasing)
+6. **F-13.19.12** — NPC social interactions are performed visibly in the game world, creating a
+   living, believable environment. Players can: **overhear NPC conversations** — speech bubbles and
+   optional voiced barks play when NPCs talk to each other within player earshot, potentially
+   revealing quest hints, gossip about the player's actions, or faction politics.
+   **Observe NPC routines** — NPCs visibly go about their daily schedules (F-13.19.4a), eating,
+   working, socializing, sleeping, creating a sense of a lived-in world.
+   **Interrupt NPC conversations** — approaching conversing NPCs interrupts their dialogue; they
+   acknowledge the player and can be spoken to. **Witness NPC reactions** — when quest events occur,
+   nearby NPCs visibly react (cheer, panic, argue), reinforcing the impact of the player's actions.
+   **Eavesdrop for information** — some conversations contain actionable intelligence (quest hints,
+   hidden item locations, NPC schedules) that the player can use if they are close enough to
+   overhear, rewarding exploration and attention. Eavesdropping range is affected by the player's
+   stealth state (F-13.18.1).
+   - **Deps:** F-13.19.7 (NPC Conversations), F-13.19.4a (Schedules), F-13.18.1 (Stealth), F-5.2.1
+     (Spatial Audio)
+   - **Platform:** Mobile: fewer visible NPC social interactions (limited by crowd budget).

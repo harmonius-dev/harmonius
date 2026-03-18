@@ -10,39 +10,59 @@
 
 ### Acceleration Structures (F-2.5.1 / R-2.5.1)
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-2.5.1 | R-2.5.1 | US-2.5.1.1, US-2.5.1.2 | BLAS build from meshlets with compaction; per-frame TLAS rebuild/refit |
-| F-2.5.10 | R-2.5.10 | US-2.5.10.1, US-2.5.10.2 | Opacity micromaps for alpha-tested geometry |
-| F-2.5.11 | R-2.5.11 | US-2.5.11.1, US-2.5.11.2 | Shader execution reordering for coherent wavefronts |
+| Feature  | Requirement | User Stories             |
+|----------|-------------|--------------------------|
+| F-2.5.1  | R-2.5.1     | US-2.5.1.1, US-2.5.1.2   |
+| F-2.5.10 | R-2.5.10    | US-2.5.10.1, US-2.5.10.2 |
+| F-2.5.11 | R-2.5.11    | US-2.5.11.1, US-2.5.11.2 |
+
+1. **F-2.5.1** — BLAS build from meshlets with compaction; per-frame TLAS rebuild/refit
+2. **F-2.5.10** — Opacity micromaps for alpha-tested geometry
+3. **F-2.5.11** — Shader execution reordering for coherent wavefronts
 
 ### Ray Traced Effects (F-2.5.2–3, F-2.5.6, F-2.5.13, F-2.5.16)
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-2.5.2 | R-2.5.2 | US-2.5.2.1, US-2.5.2.2, US-2.5.2.3 | Hybrid SSR + RT reflections with temporal denoising |
-| F-2.5.3 | R-2.5.3 | US-2.5.3.1, US-2.5.3.2 | RT one-bounce indirect diffuse lighting |
-| F-2.5.6 | R-2.5.6 | US-2.5.6.1, US-2.5.6.2 | RT subsurface transmission through translucent media |
-| F-2.5.13 | R-2.5.13 | US-2.5.13.1, US-2.5.13.2 | RT lens flare via lens element ray tracing |
-| F-2.5.16 | R-2.5.16 | US-2.5.16.1, US-2.5.16.2 | Stochastic SSR with BRDF importance sampling |
+| Feature  | Requirement | User Stories                       |
+|----------|-------------|------------------------------------|
+| F-2.5.2  | R-2.5.2     | US-2.5.2.1, US-2.5.2.2, US-2.5.2.3 |
+| F-2.5.3  | R-2.5.3     | US-2.5.3.1, US-2.5.3.2             |
+| F-2.5.6  | R-2.5.6     | US-2.5.6.1, US-2.5.6.2             |
+| F-2.5.13 | R-2.5.13    | US-2.5.13.1, US-2.5.13.2           |
+| F-2.5.16 | R-2.5.16    | US-2.5.16.1, US-2.5.16.2           |
+
+1. **F-2.5.2** — Hybrid SSR + RT reflections with temporal denoising
+2. **F-2.5.3** — RT one-bounce indirect diffuse lighting
+3. **F-2.5.6** — RT subsurface transmission through translucent media
+4. **F-2.5.13** — RT lens flare via lens element ray tracing
+5. **F-2.5.16** — Stochastic SSR with BRDF importance sampling
 
 ### Global Illumination (F-2.5.4, F-2.5.7, F-2.5.8, F-2.5.14)
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-2.5.4 | R-2.5.4 | US-2.5.4.1, US-2.5.4.2 | DDGI probe grid with octahedral irradiance atlas |
-| F-2.5.7 | R-2.5.7 | US-2.5.7.1, US-2.5.7.2 | Surfel-based GI with clipmap probes and ray guiding |
-| F-2.5.8 | R-2.5.8 | US-2.5.8.1, US-2.5.8.2 | ReSTIR DI + GI reservoir-based sampling |
-| F-2.5.14 | R-2.5.14 | US-2.5.14.1, US-2.5.14.2 | Voxel GI for non-RT hardware |
+| Feature  | Requirement | User Stories             |
+|----------|-------------|--------------------------|
+| F-2.5.4  | R-2.5.4     | US-2.5.4.1, US-2.5.4.2   |
+| F-2.5.7  | R-2.5.7     | US-2.5.7.1, US-2.5.7.2   |
+| F-2.5.8  | R-2.5.8     | US-2.5.8.1, US-2.5.8.2   |
+| F-2.5.14 | R-2.5.14    | US-2.5.14.1, US-2.5.14.2 |
+
+1. **F-2.5.4** — DDGI probe grid with octahedral irradiance atlas
+2. **F-2.5.7** — Surfel-based GI with clipmap probes and ray guiding
+3. **F-2.5.8** — ReSTIR DI + GI reservoir-based sampling
+4. **F-2.5.14** — Voxel GI for non-RT hardware
 
 ### Path Tracing and Denoising (F-2.5.5, F-2.5.9, F-2.5.12, F-2.5.15)
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-2.5.5 | R-2.5.5 | US-2.5.5.1, US-2.5.5.2 | Reference path tracer (offline quality) |
-| F-2.5.9 | R-2.5.9 | US-2.5.9.1, US-2.5.9.2 | Production real-time path tracing with tiers |
-| F-2.5.12 | R-2.5.12 | US-2.5.12.1, US-2.5.12.2 | Neural denoising with NRD fallback |
-| F-2.5.15 | R-2.5.15 | US-2.5.15.1, US-2.5.15.2 | Neural radiance cache for path termination |
+| Feature  | Requirement | User Stories             |
+|----------|-------------|--------------------------|
+| F-2.5.5  | R-2.5.5     | US-2.5.5.1, US-2.5.5.2   |
+| F-2.5.9  | R-2.5.9     | US-2.5.9.1, US-2.5.9.2   |
+| F-2.5.12 | R-2.5.12    | US-2.5.12.1, US-2.5.12.2 |
+| F-2.5.15 | R-2.5.15    | US-2.5.15.1, US-2.5.15.2 |
+
+1. **F-2.5.5** — Reference path tracer (offline quality)
+2. **F-2.5.9** — Production real-time path tracing with tiers
+3. **F-2.5.12** — Neural denoising with NRD fallback
+4. **F-2.5.15** — Neural radiance cache for path termination
 
 ### Non-Functional Requirements
 
@@ -1687,45 +1707,94 @@ History is fully reset on:
 
 ### D3D12 (Windows)
 
-| Component | API | Notes |
-|-----------|-----|-------|
-| RT pipeline | DXR 1.1 | `ID3D12Device5::CreateStateObject`, `D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE` |
-| BLAS build | `BuildRaytracingAccelerationStructure` | Scratch buffer from sub-allocator |
-| TLAS build | Same API, `TOP_LEVEL` type | Instance buffer as structured upload |
-| Dispatch rays | `DispatchRays` | Shader binding table (SBT) managed per-frame |
-| Ray query | DXR 1.1 inline | `RayQuery` HLSL object in compute/pixel shaders |
-| Opacity micromaps | D3D12 OMM API | `D3D12_RAYTRACING_GEOMETRY_DESC` with OMM attached |
-| SER | D3D12 SER API | `D3D12_STATE_OBJECT_FLAG_ALLOW_INVOCATION_REORDERING` |
-| Compaction | `POSTBUILD_INFO_COMPACTED_SIZE` | Read-back via readback buffer |
-| Neural denoise | DLSS Ray Reconstruction | Via NVIDIA NGX SDK, C++ wrapper via cxx.rs |
+| Component         | API                                    |
+|-------------------|----------------------------------------|
+| RT pipeline       | DXR 1.1                                |
+| BLAS build        | `BuildRaytracingAccelerationStructure` |
+| TLAS build        | Same API, `TOP_LEVEL` type             |
+| Dispatch rays     | `DispatchRays`                         |
+| Ray query         | DXR 1.1 inline                         |
+| Opacity micromaps | D3D12 OMM API                          |
+| SER               | D3D12 SER API                          |
+| Compaction        | `POSTBUILD_INFO_COMPACTED_SIZE`        |
+| Neural denoise    | DLSS Ray Reconstruction                |
+
+1. **RT pipeline** — `ID3D12Device5::CreateStateObject`,
+   `D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE`
+2. **BLAS build** — Scratch buffer from sub-allocator
+3. **TLAS build** — Instance buffer as structured upload
+4. **Dispatch rays** — Shader binding table (SBT) managed per-frame
+5. **Ray query** — `RayQuery` HLSL object in compute/pixel shaders
+6. **Opacity micromaps** — `D3D12_RAYTRACING_GEOMETRY_DESC` with OMM attached
+7. **SER** — `D3D12_STATE_OBJECT_FLAG_ALLOW_INVOCATION_REORDERING`
+8. **Compaction** — Read-back via readback buffer
+9. **Neural denoise** — Via NVIDIA NGX SDK, C++ wrapper via cxx.rs
 
 ### Metal (macOS)
 
-| Component | API | Notes |
-|-----------|-----|-------|
-| RT pipeline | Metal RT (M3+/A17+) | `MTLAccelerationStructure`, `MTLIntersectionFunctionTable` |
-| BLAS build | `MTLPrimitiveAccelerationStructureDescriptor` | Swift wrapper via `@_cdecl` + bindgen |
-| TLAS build | `MTLInstanceAccelerationStructureDescriptor` | Instance buffer as MTLBuffer |
-| Dispatch rays | `useResource:usage:stages:` + intersection | Metal RT uses intersection functions, not DispatchRays |
-| Ray query | Metal intersection queries | `intersector.intersect()` in compute kernels |
-| Opacity micromaps | Not supported | Skip; rely on any-hit shaders |
-| SER | Not supported | No-op on Metal |
-| Compaction | `MTLAccelerationStructure.size` | Refit-based compaction |
-| Neural denoise | MetalFX temporal | Fallback to NRD SVGF on Metal |
+| Component         |
+|-------------------|
+| RT pipeline       |
+| BLAS build        |
+| TLAS build        |
+| Dispatch rays     |
+| Ray query         |
+| Opacity micromaps |
+| SER               |
+| Compaction        |
+| Neural denoise    |
+
+1. **RT pipeline** — Metal RT (M3+/A17+)
+   - **Notes:** `MTLAccelerationStructure`, `MTLIntersectionFunctionTable`
+2. **BLAS build** — `MTLPrimitiveAccelerationStructureDescriptor`
+   - **Notes:** Swift wrapper via `@_cdecl` + bindgen
+3. **TLAS build** — `MTLInstanceAccelerationStructureDescriptor`
+   - **Notes:** Instance buffer as MTLBuffer
+4. **Dispatch rays** — `useResource:usage:stages:` + intersection
+   - **Notes:** Metal RT uses intersection functions, not DispatchRays
+5. **Ray query** — Metal intersection queries
+   - **Notes:** `intersector.intersect()` in compute kernels
+6. **Opacity micromaps** — Not supported
+   - **Notes:** Skip; rely on any-hit shaders
+7. **SER** — Not supported
+   - **Notes:** No-op on Metal
+8. **Compaction** — `MTLAccelerationStructure.size`
+   - **Notes:** Refit-based compaction
+9. **Neural denoise** — MetalFX temporal
+   - **Notes:** Fallback to NRD SVGF on Metal
 
 ### Vulkan (Linux / Windows)
 
-| Component | API | Notes |
-|-----------|-----|-------|
-| RT pipeline | `VK_KHR_ray_tracing_pipeline` | `vkCreateRayTracingPipelinesKHR` |
-| BLAS build | `vkCmdBuildAccelerationStructuresKHR` | `VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT` |
-| TLAS build | Same API, `TOP_LEVEL` type | Instance buffer via `VkAccelerationStructureInstanceKHR` |
-| Dispatch rays | `vkCmdTraceRaysKHR` | SBT via `VkStridedDeviceAddressRegionKHR` |
-| Ray query | `VK_KHR_ray_query` | `rayQueryEXT` in GLSL/HLSL compiled to SPIR-V |
-| Opacity micromaps | `VK_EXT_opacity_micromap` | Ada+, RDNA3+ |
-| SER | `VK_NV_ray_tracing_invocation_reorder` | Ada+ NVIDIA only |
-| Compaction | `VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR` | Query pool readback |
-| Neural denoise | DLSS via Vulkan NGX | Fallback to NRD on non-NVIDIA |
+| Component         |
+|-------------------|
+| RT pipeline       |
+| BLAS build        |
+| TLAS build        |
+| Dispatch rays     |
+| Ray query         |
+| Opacity micromaps |
+| SER               |
+| Compaction        |
+| Neural denoise    |
+
+1. **RT pipeline** — `VK_KHR_ray_tracing_pipeline`
+   - **Notes:** `vkCreateRayTracingPipelinesKHR`
+2. **BLAS build** — `vkCmdBuildAccelerationStructuresKHR`
+   - **Notes:** `VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT`
+3. **TLAS build** — Same API, `TOP_LEVEL` type
+   - **Notes:** Instance buffer via `VkAccelerationStructureInstanceKHR`
+4. **Dispatch rays** — `vkCmdTraceRaysKHR`
+   - **Notes:** SBT via `VkStridedDeviceAddressRegionKHR`
+5. **Ray query** — `VK_KHR_ray_query`
+   - **Notes:** `rayQueryEXT` in GLSL/HLSL compiled to SPIR-V
+6. **Opacity micromaps** — `VK_EXT_opacity_micromap`
+   - **Notes:** Ada+, RDNA3+
+7. **SER** — `VK_NV_ray_tracing_invocation_reorder`
+   - **Notes:** Ada+ NVIDIA only
+8. **Compaction** — `VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR`
+   - **Notes:** Query pool readback
+9. **Neural denoise** — DLSS via Vulkan NGX
+   - **Notes:** Fallback to NRD on non-NVIDIA
 
 ### Shader Pipeline
 
@@ -1792,43 +1861,103 @@ numerous). Mesh-based VFX (debris, large projectiles) can opt in to BLAS registr
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_blas_build_from_meshlets` | R-2.5.1 | Build BLAS from 10K meshlets; verify valid handle and non-zero GPU address. |
-| `test_blas_compaction_saves_memory` | R-2.5.1 | Build + compact BLAS; verify compacted size is at least 20% smaller. |
-| `test_tlas_refit_preserves_intersections` | R-2.5.1 | Move 50% of instances, refit TLAS, verify ray hits match rebuilt TLAS. |
-| `test_tlas_rebuild_vs_refit_threshold` | R-2.5.1 | Verify rebuild triggered when > 30% instances change. |
-| `test_capability_detection` | R-2.5.1 | Mock each backend's feature queries; verify `RtCapabilities` fields. |
-| `test_fallback_no_rt_selects_voxel_gi` | R-2.5.14 | Set `hardware_rt = false`; verify `GiMode::VoxelGi` selected. |
-| `test_fallback_desktop_selects_ddgi` | R-2.5.4 | Desktop RT caps; verify `GiMode::Ddgi` selected at default budget. |
-| `test_fallback_high_end_selects_surfel` | R-2.5.7 | High-end RT caps; verify surfel GI available. |
-| `test_denoiser_nrd_fallback` | R-2.5.12 | Set `tensor_cores = false`; verify `DenoiserMode::NrdReblur` selected. |
-| `test_omm_skipped_without_support` | R-2.5.10 | Set `opacity_micromaps = false`; verify OMM generation is no-op. |
-| `test_ser_skipped_without_support` | R-2.5.11 | Set `shader_exec_reorder = false`; verify `ShaderExecReorder::new` returns `None`. |
-| `test_ddgi_probe_grid_dimensions` | R-2.5.4 | Verify probe count = ceil(world_size / spacing) per axis. |
-| `test_restir_reservoir_memory` | R-2.5.8 | At 1080p with 32-byte reservoirs, verify total < 2 GB budget. |
-| `test_path_tracer_energy_conservation` | R-2.5.5 | White-furnace test: verify no energy gain/loss over 16 bounces. |
-| `test_production_pt_gi_fallback` | R-2.5.9 | Verify terminated paths sample rasterized GI, not black. |
-| `test_voxel_gi_relight_no_revoxelize` | R-2.5.14 | Change light direction; verify re-lighting without re-voxelization. |
-| `test_stochastic_ssr_half_res` | R-2.5.16 | Verify reflection buffer dimensions are half render resolution. |
-| `test_rt_subsurface_thickness` | R-2.5.6 | Vary material thickness; verify transmission attenuates exponentially. |
+| Test                                      | Req      |
+|-------------------------------------------|----------|
+| `test_blas_build_from_meshlets`           | R-2.5.1  |
+| `test_blas_compaction_saves_memory`       | R-2.5.1  |
+| `test_tlas_refit_preserves_intersections` | R-2.5.1  |
+| `test_tlas_rebuild_vs_refit_threshold`    | R-2.5.1  |
+| `test_capability_detection`               | R-2.5.1  |
+| `test_fallback_no_rt_selects_voxel_gi`    | R-2.5.14 |
+| `test_fallback_desktop_selects_ddgi`      | R-2.5.4  |
+| `test_fallback_high_end_selects_surfel`   | R-2.5.7  |
+| `test_denoiser_nrd_fallback`              | R-2.5.12 |
+| `test_omm_skipped_without_support`        | R-2.5.10 |
+| `test_ser_skipped_without_support`        | R-2.5.11 |
+| `test_ddgi_probe_grid_dimensions`         | R-2.5.4  |
+| `test_restir_reservoir_memory`            | R-2.5.8  |
+| `test_path_tracer_energy_conservation`    | R-2.5.5  |
+| `test_production_pt_gi_fallback`          | R-2.5.9  |
+| `test_voxel_gi_relight_no_revoxelize`     | R-2.5.14 |
+| `test_stochastic_ssr_half_res`            | R-2.5.16 |
+| `test_rt_subsurface_thickness`            | R-2.5.6  |
+
+1. **`test_blas_build_from_meshlets`** — Build BLAS from 10K meshlets; verify valid handle and
+   non-zero GPU address.
+2. **`test_blas_compaction_saves_memory`** — Build + compact BLAS; verify compacted size is at least
+   20% smaller.
+3. **`test_tlas_refit_preserves_intersections`** — Move 50% of instances, refit TLAS, verify ray
+   hits match rebuilt TLAS.
+4. **`test_tlas_rebuild_vs_refit_threshold`** — Verify rebuild triggered when > 30% instances
+   change.
+5. **`test_capability_detection`** — Mock each backend's feature queries; verify `RtCapabilities`
+   fields.
+6. **`test_fallback_no_rt_selects_voxel_gi`** — Set `hardware_rt = false`; verify `GiMode::VoxelGi`
+   selected.
+7. **`test_fallback_desktop_selects_ddgi`** — Desktop RT caps; verify `GiMode::Ddgi` selected at
+   default budget.
+8. **`test_fallback_high_end_selects_surfel`** — High-end RT caps; verify surfel GI available.
+9. **`test_denoiser_nrd_fallback`** — Set `tensor_cores = false`; verify `DenoiserMode::NrdReblur`
+   selected.
+10. **`test_omm_skipped_without_support`** — Set `opacity_micromaps = false`; verify OMM generation
+    is no-op.
+11. **`test_ser_skipped_without_support`** — Set `shader_exec_reorder = false`; verify
+    `ShaderExecReorder::new` returns `None`.
+12. **`test_ddgi_probe_grid_dimensions`** — Verify probe count = ceil(world_size / spacing) per
+    axis.
+13. **`test_restir_reservoir_memory`** — At 1080p with 32-byte reservoirs, verify total < 2 GB
+    budget.
+14. **`test_path_tracer_energy_conservation`** — White-furnace test: verify no energy gain/loss over
+    16 bounces.
+15. **`test_production_pt_gi_fallback`** — Verify terminated paths sample rasterized GI, not black.
+16. **`test_voxel_gi_relight_no_revoxelize`** — Change light direction; verify re-lighting without
+    re-voxelization.
+17. **`test_stochastic_ssr_half_res`** — Verify reflection buffer dimensions are half render
+    resolution.
+18. **`test_rt_subsurface_thickness`** — Vary material thickness; verify transmission attenuates
+    exponentially.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_cornell_box_color_bleed` | R-2.5.3, R-2.5.4 | Cornell box: red/green wall color bleeding visible on white surfaces. PSNR > 30 dB vs reference. |
-| `test_hybrid_reflection_offscreen` | R-2.5.2 | Glossy floor reflecting off-screen object: SSR fails, RT produces correct result. |
-| `test_hybrid_reflection_roughness_handoff` | R-2.5.2 | Increase roughness past threshold; verify RT rays activate. |
-| `test_ddgi_dynamic_light_response` | R-2.5.4 | Move light source; verify DDGI probes update within 2 seconds. |
-| `test_surfel_gi_open_world_scaling` | R-2.5.7 | Double environment size; verify GPU cost within 10% variance. |
-| `test_restir_5000_lights` | R-2.5.8 | 5K lights scene: verify all contribute; cost independent of count. |
-| `test_path_tracer_convergence` | R-2.5.5 | 4096 spp Cornell box: < 1% relative error vs analytical reference. |
-| `test_neural_denoise_temporal_stability` | R-2.5.12 | 120 frames of camera motion: no ghosting or flickering. |
-| `test_omm_vegetation_throughput` | R-2.5.10 | Vegetation scene with OMM: >= 30% RT intersection throughput improvement. |
-| `test_rt_lens_flare_ghost_positions` | R-2.5.13 | Bright source with 5-element lens: ghost positions within 5% angular error of analytical prediction. |
-| `test_full_tier_cascade` | All | Walk through each platform tier; verify correct passes active and fallbacks engage. |
-| `test_gcd_rt_command_buffer` | R-2.5.1 | macOS: verify Metal RT build commands submit and complete via GCD dispatch. |
+| Test                                       | Req              |
+|--------------------------------------------|------------------|
+| `test_cornell_box_color_bleed`             | R-2.5.3, R-2.5.4 |
+| `test_hybrid_reflection_offscreen`         | R-2.5.2          |
+| `test_hybrid_reflection_roughness_handoff` | R-2.5.2          |
+| `test_ddgi_dynamic_light_response`         | R-2.5.4          |
+| `test_surfel_gi_open_world_scaling`        | R-2.5.7          |
+| `test_restir_5000_lights`                  | R-2.5.8          |
+| `test_path_tracer_convergence`             | R-2.5.5          |
+| `test_neural_denoise_temporal_stability`   | R-2.5.12         |
+| `test_omm_vegetation_throughput`           | R-2.5.10         |
+| `test_rt_lens_flare_ghost_positions`       | R-2.5.13         |
+| `test_full_tier_cascade`                   | All              |
+| `test_gcd_rt_command_buffer`               | R-2.5.1          |
+
+1. **`test_cornell_box_color_bleed`** — Cornell box: red/green wall color bleeding visible on white
+   surfaces. PSNR > 30 dB vs reference.
+2. **`test_hybrid_reflection_offscreen`** — Glossy floor reflecting off-screen object: SSR fails, RT
+   produces correct result.
+3. **`test_hybrid_reflection_roughness_handoff`** — Increase roughness past threshold; verify RT
+   rays activate.
+4. **`test_ddgi_dynamic_light_response`** — Move light source; verify DDGI probes update within 2
+   seconds.
+5. **`test_surfel_gi_open_world_scaling`** — Double environment size; verify GPU cost within 10%
+   variance.
+6. **`test_restir_5000_lights`** — 5K lights scene: verify all contribute; cost independent of
+   count.
+7. **`test_path_tracer_convergence`** — 4096 spp Cornell box: < 1% relative error vs analytical
+   reference.
+8. **`test_neural_denoise_temporal_stability`** — 120 frames of camera motion: no ghosting or
+   flickering.
+9. **`test_omm_vegetation_throughput`** — Vegetation scene with OMM: >= 30% RT intersection
+   throughput improvement.
+10. **`test_rt_lens_flare_ghost_positions`** — Bright source with 5-element lens: ghost positions
+    within 5% angular error of analytical prediction.
+11. **`test_full_tier_cascade`** — Walk through each platform tier; verify correct passes active and
+    fallbacks engage.
+12. **`test_gcd_rt_command_buffer`** — macOS: verify Metal RT build commands submit and complete via
+    GCD dispatch.
 
 ### Benchmarks
 

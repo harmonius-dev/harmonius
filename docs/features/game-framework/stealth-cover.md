@@ -2,15 +2,58 @@
 
 ## Stealth
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|-------------|--------------|----------------|
-| F-13.18.1 | Player Visibility and Stealth System | Compute a per-frame visibility score for the player character based on: ambient light level at the player's position, shadow/light state (using the lighting system's shadow maps), movement speed (crouching and stationary reduce visibility), equipment (dark clothing reduces visibility, reflective armor increases it), and active abilities (invisibility skill sets visibility to zero). AI perception (F-7.6.1) uses the visibility score as a multiplier on detection range — in darkness, enemies must be much closer to detect the player. A stealth HUD indicator shows the player's current visibility level (eye icon from closed to open). | R-13.18.1 | F-7.6.1 (Perception - Sight), F-2.4.1 (Lighting) | None |
-| F-13.18.2 | AI Alert State Machine | Multi-state AI awareness system: unaware (default patrol), suspicious (heard noise or glimpsed player), searching (actively investigating last known stimulus), alerted (confirmed player detection, entering combat), and lost-target (returning to patrol after losing contact). Each state defines behavior tree subtree selection, movement speed, perception sensitivity multipliers, and visual indicators (question mark, exclamation mark icons above head). State transitions use hysteresis — AI must maintain detection for a configurable duration before transitioning from suspicious to alerted, preventing instant detection from brief glimpses. | R-13.18.2 | F-7.3.1 (Behavior Trees), F-7.6.1 (Perception) | None |
-| F-13.18.3 | Noise Generation and Distraction | Player actions generate noise events at varying intensity: sprinting (medium), gunfire (high), door opening (low), thrown distraction objects (medium at impact point). Noise events propagate through the shared spatial index (F-1.9.4) with distance attenuation to AI hearing perception (F-7.6.2). AI investigates noise sources by moving to the noise origin and searching. Throwable distraction items (rocks, bottles) create noise at the impact location to lure AI away from patrol routes. Noise propagation respects sound occlusion — closed doors and thick walls attenuate noise. Silenced weapons reduce gunfire noise intensity. | R-13.18.3 | F-7.6.2 (Perception - Hearing), F-1.9.4 (Spatial Query), F-5.2.5 (Occlusion) | None |
-| F-13.18.4 | Stealth Takedown System | Context-sensitive instant-kill or incapacitate action when approaching an unaware enemy from behind or above. Takedowns trigger a synchronized two-character animation (attacker + victim) with the attacker locked to the victim's position. Takedown types: silent (knife, chokehold — no noise), loud (neck snap — nearby AI alerted), and non-lethal (chokehold — victim unconscious, can be revived). Takedowns require: enemy unaware state, player behind or above the target, and a brief channeled input. Killed or unconscious bodies can be picked up (F-13.17.3) and hidden. | R-13.18.4 | F-13.18.2 (AI Alert States), F-9.4.1 (Animation State Machine) | None |
+| ID        | Feature                              | Requirements |
+|-----------|--------------------------------------|--------------|
+| F-13.18.1 | Player Visibility and Stealth System | R-13.18.1    |
+| F-13.18.2 | AI Alert State Machine               | R-13.18.2    |
+| F-13.18.3 | Noise Generation and Distraction     | R-13.18.3    |
+| F-13.18.4 | Stealth Takedown System              | R-13.18.4    |
+
+1. **F-13.18.1** — Compute a per-frame visibility score for the player character based on: ambient
+   light level at the player's position, shadow/light state (using the lighting system's shadow
+   maps), movement speed (crouching and stationary reduce visibility), equipment (dark clothing
+   reduces visibility, reflective armor increases it), and active abilities (invisibility skill sets
+   visibility to zero). AI perception (F-7.6.1) uses the visibility score as a multiplier on
+   detection range — in darkness, enemies must be much closer to detect the player. A stealth HUD
+   indicator shows the player's current visibility level (eye icon from closed to open).
+   - **Deps:** F-7.6.1 (Perception - Sight), F-2.4.1 (Lighting)
+2. **F-13.18.2** — Multi-state AI awareness system: unaware (default patrol), suspicious (heard
+   noise or glimpsed player), searching (actively investigating last known stimulus), alerted
+   (confirmed player detection, entering combat), and lost-target (returning to patrol after losing
+   contact). Each state defines behavior tree subtree selection, movement speed, perception
+   sensitivity multipliers, and visual indicators (question mark, exclamation mark icons above
+   head). State transitions use hysteresis — AI must maintain detection for a configurable duration
+   before transitioning from suspicious to alerted, preventing instant detection from brief
+   glimpses.
+   - **Deps:** F-7.3.1 (Behavior Trees), F-7.6.1 (Perception)
+3. **F-13.18.3** — Player actions generate noise events at varying intensity: sprinting (medium),
+   gunfire (high), door opening (low), thrown distraction objects (medium at impact point). Noise
+   events propagate through the shared spatial index (F-1.9.4) with distance attenuation to AI
+   hearing perception (F-7.6.2). AI investigates noise sources by moving to the noise origin and
+   searching. Throwable distraction items (rocks, bottles) create noise at the impact location to
+   lure AI away from patrol routes. Noise propagation respects sound occlusion — closed doors and
+   thick walls attenuate noise. Silenced weapons reduce gunfire noise intensity.
+   - **Deps:** F-7.6.2 (Perception - Hearing), F-1.9.4 (Spatial Query), F-5.2.5 (Occlusion)
+4. **F-13.18.4** — Context-sensitive instant-kill or incapacitate action when approaching an unaware
+   enemy from behind or above. Takedowns trigger a synchronized two-character animation (attacker +
+   victim) with the attacker locked to the victim's position. Takedown types: silent (knife,
+   chokehold — no noise), loud (neck snap — nearby AI alerted), and non-lethal (chokehold — victim
+   unconscious, can be revived). Takedowns require: enemy unaware state, player behind or above the
+   target, and a brief channeled input. Killed or unconscious bodies can be picked up (F-13.17.3)
+   and hidden.
+   - **Deps:** F-13.18.2 (AI Alert States), F-9.4.1 (Animation State Machine)
 
 ## Cover
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|-------------|--------------|----------------|
-| F-13.18.5 | Cover Point Detection and Usage | Automatic identification of valid cover positions from world geometry using spatial analysis. Cover points are classified by type: half cover (crouch height, provides torso protection), full cover (standing height, full body protection), and directional cover (protects from specific angles). Players snap to cover via input action, with smooth transition animation. While in cover: peek left/right to aim and shoot with partial exposure, blind fire over/around cover with reduced accuracy, and cover-to-cover sprint between adjacent cover points. AI agents (F-7.8.1) use the same cover points with scoring-based selection. | R-13.18.5 | F-4.1.8 (Character Controller), F-1.9.4 (Spatial Query), F-9.4.1 (Animation) | None |
+| ID        | Feature                         | Requirements |
+|-----------|---------------------------------|--------------|
+| F-13.18.5 | Cover Point Detection and Usage | R-13.18.5    |
+
+1. **F-13.18.5** — Automatic identification of valid cover positions from world geometry using
+   spatial analysis. Cover points are classified by type: half cover (crouch height, provides torso
+   protection), full cover (standing height, full body protection), and directional cover (protects
+   from specific angles). Players snap to cover via input action, with smooth transition animation.
+   While in cover: peek left/right to aim and shoot with partial exposure, blind fire over/around
+   cover with reduced accuracy, and cover-to-cover sprint between adjacent cover points. AI agents
+   (F-7.8.1) use the same cover points with scoring-based selection.
+   - **Deps:** F-4.1.8 (Character Controller), F-1.9.4 (Spatial Query), F-9.4.1 (Animation)

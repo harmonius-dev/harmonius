@@ -1,16 +1,86 @@
 # R-13.18 -- Stealth and Cover Requirements
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|-------------|-----------|--------------|
-| R-13.18.1 | The engine **SHALL** compute a per-frame visibility score for the player based on ambient light level, shadow state from lighting shadow maps, movement speed, equipment modifiers, and active abilities, where AI perception uses the visibility score as a detection-range multiplier and a HUD indicator displays the current visibility level. | [F-13.18.1](../../features/game-framework/stealth-cover.md) | Multi-factor visibility scoring creates emergent stealth gameplay where players manipulate lighting, posture, and equipment to control detection risk. | Place the player character in full light, partial shadow, and complete darkness. Verify the visibility score decreases in each successive condition. Crouch and confirm visibility is lower than standing. Equip dark clothing and verify a further reduction. Confirm AI detection range scales proportionally with the computed visibility score. |
-| R-13.18.2 | The engine **SHALL** implement a multi-state AI awareness system (unaware, suspicious, searching, alerted, lost-target) with per-state behavior tree selection, perception sensitivity multipliers, visual indicators, and hysteresis-based transitions requiring sustained detection for a configurable duration before state escalation. | [F-13.18.2](../../features/game-framework/stealth-cover.md) | Hysteresis-based state transitions prevent frustrating instant detection from brief glimpses while creating readable AI behavior through visual indicator feedback. | Briefly expose the player to an unaware AI for less than the hysteresis threshold. Verify the AI transitions to suspicious but not alerted. Maintain exposure beyond the threshold and confirm transition to alerted state. Break line of sight and verify the AI enters searching, then lost-target, and eventually returns to unaware. Confirm visual indicators (question mark, exclamation mark) display at the correct states. |
-| R-13.18.3 | The engine **SHALL** generate noise events from player actions at configurable intensities, propagate them through the spatial index with distance attenuation and sound occlusion through walls and doors, and enable AI hearing perception to investigate noise sources, with throwable distraction items creating noise at their impact location. | [F-13.18.3](../../features/game-framework/stealth-cover.md) | Noise propagation with occlusion creates predictable stealth rules that players can learn and exploit using distraction items for tactical AI manipulation. | Fire an unsuppressed weapon near an AI behind an open door and verify the AI investigates. Close the door and fire again, confirming the attenuated noise does not trigger investigation at the same distance. Throw a distraction item and verify the AI moves to the impact location. Equip a suppressor and confirm reduced noise intensity. |
-| R-13.18.4 | The engine **SHALL** support context-sensitive takedown actions on unaware enemies approached from behind or above, playing synchronized two-character animations with the attacker locked to the victim's position, with silent, loud, and non-lethal takedown variants where unconscious bodies can be picked up and hidden. | [F-13.18.4](../../features/game-framework/stealth-cover.md) | Takedown variants with noise consequences create meaningful stealth choices between speed (loud) and safety (silent), integrated with the alert state system. | Approach an unaware enemy from behind and execute a silent takedown. Verify the synchronized animation plays and nearby AI is not alerted. Execute a loud takedown and confirm nearby AI transitions to alerted. Execute a non-lethal takedown and verify the victim enters unconscious state. Pick up the unconscious body and confirm it can be carried and hidden using the physics pickup system. |
-| R-13.18.5 | The engine **SHALL** automatically detect valid cover positions from world geometry via spatial analysis, classify them by type (half, full, directional), support player snap-to-cover with transition animation, peek and blind-fire actions with partial exposure, cover-to-cover sprint, and AI cover point usage with scoring-based selection. | [F-13.18.5](../../features/game-framework/stealth-cover.md) | Automatic cover detection from geometry eliminates manual cover placement by level designers while ensuring AI and players share the same cover system. | Place a waist-high wall and a full-height wall in a test scene. Verify the system detects half cover and full cover respectively. Snap the player to half cover, peek right, and confirm partial body exposure. Blind fire over cover and verify reduced accuracy. Sprint between two adjacent cover points and confirm smooth cover-to-cover transition. Spawn an AI combatant and verify it selects and uses cover points based on scoring. |
+| ID        | Derived From                                                |
+|-----------|-------------------------------------------------------------|
+| R-13.18.1 | [F-13.18.1](../../features/game-framework/stealth-cover.md) |
+| R-13.18.2 | [F-13.18.2](../../features/game-framework/stealth-cover.md) |
+| R-13.18.3 | [F-13.18.3](../../features/game-framework/stealth-cover.md) |
+| R-13.18.4 | [F-13.18.4](../../features/game-framework/stealth-cover.md) |
+| R-13.18.5 | [F-13.18.5](../../features/game-framework/stealth-cover.md) |
+
+1. **R-13.18.1** — The engine **SHALL** compute a per-frame visibility score for the player based on
+   ambient light level, shadow state from lighting shadow maps, movement speed, equipment modifiers,
+   and active abilities, where AI perception uses the visibility score as a detection-range
+   multiplier and a HUD indicator displays the current visibility level.
+   - **Rationale:** Multi-factor visibility scoring creates emergent stealth gameplay where players
+     manipulate lighting, posture, and equipment to control detection risk.
+   - **Verification:** Place the player character in full light, partial shadow, and complete
+     darkness. Verify the visibility score decreases in each successive condition. Crouch and
+     confirm visibility is lower than standing. Equip dark clothing and verify a further reduction.
+     Confirm AI detection range scales proportionally with the computed visibility score.
+2. **R-13.18.2** — The engine **SHALL** implement a multi-state AI awareness system (unaware,
+   suspicious, searching, alerted, lost-target) with per-state behavior tree selection, perception
+   sensitivity multipliers, visual indicators, and hysteresis-based transitions requiring sustained
+   detection for a configurable duration before state escalation.
+   - **Rationale:** Hysteresis-based state transitions prevent frustrating instant detection from
+     brief glimpses while creating readable AI behavior through visual indicator feedback.
+   - **Verification:** Briefly expose the player to an unaware AI for less than the hysteresis
+     threshold. Verify the AI transitions to suspicious but not alerted. Maintain exposure beyond
+     the threshold and confirm transition to alerted state. Break line of sight and verify the AI
+     enters searching, then lost-target, and eventually returns to unaware. Confirm visual
+     indicators (question mark, exclamation mark) display at the correct states.
+3. **R-13.18.3** — The engine **SHALL** generate noise events from player actions at configurable
+   intensities, propagate them through the spatial index with distance attenuation and sound
+   occlusion through walls and doors, and enable AI hearing perception to investigate noise sources,
+   with throwable distraction items creating noise at their impact location.
+   - **Rationale:** Noise propagation with occlusion creates predictable stealth rules that players
+     can learn and exploit using distraction items for tactical AI manipulation.
+   - **Verification:** Fire an unsuppressed weapon near an AI behind an open door and verify the AI
+     investigates. Close the door and fire again, confirming the attenuated noise does not trigger
+     investigation at the same distance. Throw a distraction item and verify the AI moves to the
+     impact location. Equip a suppressor and confirm reduced noise intensity.
+4. **R-13.18.4** — The engine **SHALL** support context-sensitive takedown actions on unaware
+   enemies approached from behind or above, playing synchronized two-character animations with the
+   attacker locked to the victim's position, with silent, loud, and non-lethal takedown variants
+   where unconscious bodies can be picked up and hidden.
+   - **Rationale:** Takedown variants with noise consequences create meaningful stealth choices
+     between speed (loud) and safety (silent), integrated with the alert state system.
+   - **Verification:** Approach an unaware enemy from behind and execute a silent takedown. Verify
+     the synchronized animation plays and nearby AI is not alerted. Execute a loud takedown and
+     confirm nearby AI transitions to alerted. Execute a non-lethal takedown and verify the victim
+     enters unconscious state. Pick up the unconscious body and confirm it can be carried and hidden
+     using the physics pickup system.
+5. **R-13.18.5** — The engine **SHALL** automatically detect valid cover positions from world
+   geometry via spatial analysis, classify them by type (half, full, directional), support player
+   snap-to-cover with transition animation, peek and blind-fire actions with partial exposure,
+   cover-to-cover sprint, and AI cover point usage with scoring-based selection.
+   - **Rationale:** Automatic cover detection from geometry eliminates manual cover placement by
+     level designers while ensuring AI and players share the same cover system.
+   - **Verification:** Place a waist-high wall and a full-height wall in a test scene. Verify the
+     system detects half cover and full cover respectively. Snap the player to half cover, peek
+     right, and confirm partial body exposure. Blind fire over cover and verify reduced accuracy.
+     Sprint between two adjacent cover points and confirm smooth cover-to-cover transition. Spawn an
+     AI combatant and verify it selects and uses cover points based on scoring.
 
 ## Non-Functional Requirements
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|-------------|-----------|--------------|
-| NFR-13.18.1 | Per-frame visibility score computation **SHALL** complete within 0.2ms per stealth-tracked entity. The system **SHALL** support up to 32 simultaneous stealth-tracked entities (players and NPCs) within a 2ms total budget per frame. |  | Stealth games require continuous visibility evaluation for multiple entities. The computation must remain within budget to support multiplayer stealth scenarios. | Spawn 32 stealth-tracked entities in a scene with dynamic lighting. Measure total visibility computation time. Verify it stays under 2ms. |
-| NFR-13.18.2 | Automatic cover point detection from world geometry **SHALL** process up to 10,000 potential cover surfaces at level load within 500ms. Runtime cover point queries during gameplay **SHALL** return results within 0.3ms for a 30m radius search. |  | Large combat arenas contain many potential cover surfaces. Detection must be fast at load time and queries must be instantaneous during combat. | Load a level with 10,000 potential cover surfaces. Measure cover detection time and verify it completes within 500ms. Query cover points in a 30m radius during combat and verify response time is under 0.3ms. |
+| ID          | Derived From |
+|-------------|--------------|
+| NFR-13.18.1 |              |
+| NFR-13.18.2 |              |
+
+1. **NFR-13.18.1** — Per-frame visibility score computation **SHALL** complete within 0.2ms per
+   stealth-tracked entity. The system **SHALL** support up to 32 simultaneous stealth-tracked
+   entities (players and NPCs) within a 2ms total budget per frame.
+   - **Rationale:** Stealth games require continuous visibility evaluation for multiple entities.
+     The computation must remain within budget to support multiplayer stealth scenarios.
+   - **Verification:** Spawn 32 stealth-tracked entities in a scene with dynamic lighting. Measure
+     total visibility computation time. Verify it stays under 2ms.
+2. **NFR-13.18.2** — Automatic cover point detection from world geometry **SHALL** process up to
+   10,000 potential cover surfaces at level load within 500ms. Runtime cover point queries during
+   gameplay **SHALL** return results within 0.3ms for a 30m radius search.
+   - **Rationale:** Large combat arenas contain many potential cover surfaces. Detection must be
+     fast at load time and queries must be instantaneous during combat.
+   - **Verification:** Load a level with 10,000 potential cover surfaces. Measure cover detection
+     time and verify it completes within 500ms. Query cover points in a 30m radius during combat and
+     verify response time is under 0.3ms.

@@ -10,38 +10,61 @@
 
 ### Build and Deployment (F-15.14)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.14.1 | R-15.14.1 | Platform build packaging (macOS, Windows, Linux, iOS, Android, console) |
-| F-15.14.2 | R-15.14.2 | Deploy-to-device workflow with incremental transfer |
-| F-15.14.3 | R-15.14.3 | Certification compliance checker per platform |
-| F-15.14.4 | R-15.14.4 | Code signing pipeline (codesign, signtool, apksigner, notarization) |
-| F-15.14.5 | R-15.14.5 | Platform-specific installers (.dmg, .msi, AppImage, .deb, Flatpak) |
-| F-15.14.6 | R-15.14.6 | Asset bundle and DLC packaging with entitlement gating |
-| F-15.14.7 | R-15.14.7 | Delta patching via content-defined chunking |
-| F-15.14.8 | R-15.14.8 | Store distribution pipeline (Steam, App Store, Windows Store, Xbox) |
-| F-15.14.9 | R-15.14.9 | Host-target build matrix documentation and toolchain requirements |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.14.1 | R-15.14.1   |
+| F-15.14.2 | R-15.14.2   |
+| F-15.14.3 | R-15.14.3   |
+| F-15.14.4 | R-15.14.4   |
+| F-15.14.5 | R-15.14.5   |
+| F-15.14.6 | R-15.14.6   |
+| F-15.14.7 | R-15.14.7   |
+| F-15.14.8 | R-15.14.8   |
+| F-15.14.9 | R-15.14.9   |
+
+1. **F-15.14.1** — Platform build packaging (macOS, Windows, Linux, iOS, Android, console)
+2. **F-15.14.2** — Deploy-to-device workflow with incremental transfer
+3. **F-15.14.3** — Certification compliance checker per platform
+4. **F-15.14.4** — Code signing pipeline (codesign, signtool, apksigner, notarization)
+5. **F-15.14.5** — Platform-specific installers (.dmg, .msi, AppImage, .deb, Flatpak)
+6. **F-15.14.6** — Asset bundle and DLC packaging with entitlement gating
+7. **F-15.14.7** — Delta patching via content-defined chunking
+8. **F-15.14.8** — Store distribution pipeline (Steam, App Store, Windows Store, Xbox)
+9. **F-15.14.9** — Host-target build matrix documentation and toolchain requirements
 
 ### Server-Side Console Build Integration
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-14.8.1 | R-14.8.1, R-14.8.2 | Server-side console build service (REST API trigger) |
-| F-14.8.2 | R-14.8.3, R-14.8.4 | Proprietary SDK isolation (zero console code on client) |
-| F-14.8.3 | R-14.8.5, R-14.8.6 | Shared build server (multi-project, priority queue) |
-| F-14.8.4 | R-14.8.7, R-14.8.8 | Remote console deployment (dev kit deploy + output relay) |
-| F-14.8.5 | R-14.8.9, R-14.8.10 | Console build artifacts (S3 storage, retention, manifests) |
+| Feature  | Requirement         |
+|----------|---------------------|
+| F-14.8.1 | R-14.8.1, R-14.8.2  |
+| F-14.8.2 | R-14.8.3, R-14.8.4  |
+| F-14.8.3 | R-14.8.5, R-14.8.6  |
+| F-14.8.4 | R-14.8.7, R-14.8.8  |
+| F-14.8.5 | R-14.8.9, R-14.8.10 |
+
+1. **F-14.8.1** — Server-side console build service (REST API trigger)
+2. **F-14.8.2** — Proprietary SDK isolation (zero console code on client)
+3. **F-14.8.3** — Shared build server (multi-project, priority queue)
+4. **F-14.8.4** — Remote console deployment (dev kit deploy + output relay)
+5. **F-14.8.5** — Console build artifacts (S3 storage, retention, manifests)
 
 ### Mod Support (F-15.16)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.16.1 | R-15.16.1 | Mod SDK — standalone authoring toolkit |
-| F-15.16.2 | R-15.16.2 | Developer-defined mod constraints (asset, node, budget, region) |
-| F-15.16.3 | R-15.16.3 | Mod packaging and distribution format |
-| F-15.16.4 | R-15.16.4 | Mod loading, sandboxing, and budget enforcement |
-| F-15.16.5 | R-15.16.5 | Mod workshop integration (Steam Workshop + self-hosted) |
-| F-15.16.6 | R-15.16.6 | Mod moderation and review dashboard |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.16.1 | R-15.16.1   |
+| F-15.16.2 | R-15.16.2   |
+| F-15.16.3 | R-15.16.3   |
+| F-15.16.4 | R-15.16.4   |
+| F-15.16.5 | R-15.16.5   |
+| F-15.16.6 | R-15.16.6   |
+
+1. **F-15.16.1** — Mod SDK — standalone authoring toolkit
+2. **F-15.16.2** — Developer-defined mod constraints (asset, node, budget, region)
+3. **F-15.16.3** — Mod packaging and distribution format
+4. **F-15.16.4** — Mod loading, sandboxing, and budget enforcement
+5. **F-15.16.5** — Mod workshop integration (Steam Workshop + self-hosted)
+6. **F-15.16.6** — Mod moderation and review dashboard
 
 ## Overview
 
@@ -1695,11 +1718,39 @@ cloud build service handles cross-platform builds.
 What a developer can build locally on their own machine. Requires installing the platform toolchain.
 The editor indicates which targets build locally vs. via cloud (F-15.24.6).
 
-| Host OS | Target: Windows | Target: macOS | Target: Linux | Target: iOS | Target: Android | Target: PS5 | Target: Xbox | Target: Switch | Target: Web |
-|---------|-----------------|---------------|---------------|-------------|-----------------|-------------|--------------|----------------|-------------|
-| Windows | Yes (MSVC/Clang) | No | No (WSL possible) | No | Yes (NDK) | No | No | No | Yes (Emscripten) |
-| macOS | No | Yes (Xcode/Clang) | No | Yes (Xcode) | Yes (NDK) | No | No | No | Yes (Emscripten) |
-| Linux | No (Wine/cross possible) | No | Yes (Clang/GCC) | No | Yes (NDK) | No | No | No | Yes (Emscripten) |
+| Host OS |
+|---------|
+| Windows |
+| macOS   |
+| Linux   |
+
+1. **Windows** — Yes (MSVC/Clang)
+   - **Target: macOS:** No
+   - **Target: Linux:** No (WSL possible)
+   - **Target: iOS:** No
+   - **Target: Android:** Yes (NDK)
+   - **Target: PS5:** No
+   - **Target: Xbox:** No
+   - **Target: Switch:** No
+   - **Target: Web:** Yes (Emscripten)
+2. **macOS** — No
+   - **Target: macOS:** Yes (Xcode/Clang)
+   - **Target: Linux:** No
+   - **Target: iOS:** Yes (Xcode)
+   - **Target: Android:** Yes (NDK)
+   - **Target: PS5:** No
+   - **Target: Xbox:** No
+   - **Target: Switch:** No
+   - **Target: Web:** Yes (Emscripten)
+3. **Linux** — No (Wine/cross possible)
+   - **Target: macOS:** No
+   - **Target: Linux:** Yes (Clang/GCC)
+   - **Target: iOS:** No
+   - **Target: Android:** Yes (NDK)
+   - **Target: PS5:** No
+   - **Target: Xbox:** No
+   - **Target: Switch:** No
+   - **Target: Web:** Yes (Emscripten)
 
 **Key constraints:**
 
@@ -1716,12 +1767,49 @@ What the cloud build service (F-15.24.1) can build. Cloud workers provision the 
 automatically (F-15.24.2). Developers submit build requests via the editor UI or CLI from any host
 OS.
 
-| Cloud Worker | Target: Windows | Target: macOS | Target: Linux | Target: iOS | Target: Android | Target: PS5 | Target: Xbox | Target: Switch | Target: Web |
-|--------------|-----------------|---------------|---------------|-------------|-----------------|-------------|--------------|----------------|-------------|
-| macOS worker | Yes (cross) | Yes | Yes (cross) | Yes | Yes | No* | No* | No* | Yes |
-| Linux worker | Yes (cross-clang) | No | Yes | No | Yes | No* | No* | No* | Yes |
-| Windows worker | Yes | No | Yes (cross) | No | Yes | No* | No* | No* | Yes |
-| Console worker | -- | -- | -- | -- | -- | Yes (licensed) | Yes (licensed) | Yes (licensed) | -- |
+| Cloud Worker   |
+|----------------|
+| macOS worker   |
+| Linux worker   |
+| Windows worker |
+| Console worker |
+
+1. **macOS worker** — Yes (cross)
+   - **Target: macOS:** Yes
+   - **Target: Linux:** Yes (cross)
+   - **Target: iOS:** Yes
+   - **Target: Android:** Yes
+   - **Target: PS5:** No*
+   - **Target: Xbox:** No*
+   - **Target: Switch:** No*
+   - **Target: Web:** Yes
+2. **Linux worker** — Yes (cross-clang)
+   - **Target: macOS:** No
+   - **Target: Linux:** Yes
+   - **Target: iOS:** No
+   - **Target: Android:** Yes
+   - **Target: PS5:** No*
+   - **Target: Xbox:** No*
+   - **Target: Switch:** No*
+   - **Target: Web:** Yes
+3. **Windows worker** — Yes
+   - **Target: macOS:** No
+   - **Target: Linux:** Yes (cross)
+   - **Target: iOS:** No
+   - **Target: Android:** Yes
+   - **Target: PS5:** No*
+   - **Target: Xbox:** No*
+   - **Target: Switch:** No*
+   - **Target: Web:** Yes
+4. **Console worker** — --
+   - **Target: macOS:** --
+   - **Target: Linux:** --
+   - **Target: iOS:** --
+   - **Target: Android:** --
+   - **Target: PS5:** Yes (licensed)
+   - **Target: Xbox:** Yes (licensed)
+   - **Target: Switch:** Yes (licensed)
+   - **Target: Web:** --
 
 *Console targets require a dedicated licensed worker with the platform SDK (F-14.8.1, F-14.8.2).
 Console SDKs are under NDA and cannot run on general-purpose cloud workers.
@@ -1778,47 +1866,85 @@ service (F-15.24.1).
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_cook_strips_editor_content` | R-15.14.1 | Shipping build excludes editor-only assets. |
-| `test_cook_platform_texture_format` | R-15.14.1 | Textures compressed to platform format (BC7/ASTC). |
-| `test_bundle_blake3_manifest` | R-15.14.6 | Bundle manifest contains correct BLAKE3 hashes for all assets. |
-| `test_bundle_integrity_verify` | R-15.14.6 | Corrupted bundle detected via hash mismatch. |
-| `test_cdc_shift_resilience` | R-15.14.7 | Inserting 1 byte shifts only 1-2 chunks, not all. |
-| `test_delta_patch_size` | R-15.14.7 | Patch for 5% content change is under 25% of full size. |
-| `test_patch_apply_verify` | R-15.14.7 | Patched result matches expected BLAKE3 hash. |
-| `test_cert_rule_pass` | R-15.14.3 | Compliant build passes all certification rules. |
-| `test_cert_rule_fail_remediation` | R-15.14.3 | Non-compliant build produces failure with remediation text. |
-| `test_mod_policy_constraint` | R-15.16.2 | Mod exceeding entity budget is rejected at load. |
-| `test_mod_sandbox_blocks_fs` | R-15.16.4 | Mod logic graph with filesystem node is blocked at bind. |
-| `test_mod_sandbox_blocks_network` | R-15.16.4 | Mod logic graph with network node is blocked at bind. |
-| `test_mod_integrity_blake3` | R-15.16.3 | Tampered mod bundle fails integrity check. |
-| `test_mod_unsigned_warning` | R-15.16.3 | Unsigned mod returns `UnsignedModRejected`. |
-| `test_mod_dependency_order` | R-15.16.4 | Mods loaded in topological dependency order. |
-| `test_mod_conflict_detection` | R-15.16.4 | Two mods modifying same asset produce `ModConflict`. |
-| `test_mod_source_tagging` | R-15.16.4 | Mod-spawned entities have `ModSource` component. |
-| `test_moderation_scan_restricted` | R-15.16.6 | Scanner detects restricted node categories. |
-| `test_moderation_audit_log` | R-15.16.6 | All approve/reject/revoke actions are logged. |
+| Test                                | Req       |
+|-------------------------------------|-----------|
+| `test_cook_strips_editor_content`   | R-15.14.1 |
+| `test_cook_platform_texture_format` | R-15.14.1 |
+| `test_bundle_blake3_manifest`       | R-15.14.6 |
+| `test_bundle_integrity_verify`      | R-15.14.6 |
+| `test_cdc_shift_resilience`         | R-15.14.7 |
+| `test_delta_patch_size`             | R-15.14.7 |
+| `test_patch_apply_verify`           | R-15.14.7 |
+| `test_cert_rule_pass`               | R-15.14.3 |
+| `test_cert_rule_fail_remediation`   | R-15.14.3 |
+| `test_mod_policy_constraint`        | R-15.16.2 |
+| `test_mod_sandbox_blocks_fs`        | R-15.16.4 |
+| `test_mod_sandbox_blocks_network`   | R-15.16.4 |
+| `test_mod_integrity_blake3`         | R-15.16.3 |
+| `test_mod_unsigned_warning`         | R-15.16.3 |
+| `test_mod_dependency_order`         | R-15.16.4 |
+| `test_mod_conflict_detection`       | R-15.16.4 |
+| `test_mod_source_tagging`           | R-15.16.4 |
+| `test_moderation_scan_restricted`   | R-15.16.6 |
+| `test_moderation_audit_log`         | R-15.16.6 |
+
+1. **`test_cook_strips_editor_content`** — Shipping build excludes editor-only assets.
+2. **`test_cook_platform_texture_format`** — Textures compressed to platform format (BC7/ASTC).
+3. **`test_bundle_blake3_manifest`** — Bundle manifest contains correct BLAKE3 hashes for all
+   assets.
+4. **`test_bundle_integrity_verify`** — Corrupted bundle detected via hash mismatch.
+5. **`test_cdc_shift_resilience`** — Inserting 1 byte shifts only 1-2 chunks, not all.
+6. **`test_delta_patch_size`** — Patch for 5% content change is under 25% of full size.
+7. **`test_patch_apply_verify`** — Patched result matches expected BLAKE3 hash.
+8. **`test_cert_rule_pass`** — Compliant build passes all certification rules.
+9. **`test_cert_rule_fail_remediation`** — Non-compliant build produces failure with remediation
+   text.
+10. **`test_mod_policy_constraint`** — Mod exceeding entity budget is rejected at load.
+11. **`test_mod_sandbox_blocks_fs`** — Mod logic graph with filesystem node is blocked at bind.
+12. **`test_mod_sandbox_blocks_network`** — Mod logic graph with network node is blocked at bind.
+13. **`test_mod_integrity_blake3`** — Tampered mod bundle fails integrity check.
+14. **`test_mod_unsigned_warning`** — Unsigned mod returns `UnsignedModRejected`.
+15. **`test_mod_dependency_order`** — Mods loaded in topological dependency order.
+16. **`test_mod_conflict_detection`** — Two mods modifying same asset produce `ModConflict`.
+17. **`test_mod_source_tagging`** — Mod-spawned entities have `ModSource` component.
+18. **`test_moderation_scan_restricted`** — Scanner detects restricted node categories.
+19. **`test_moderation_audit_log`** — All approve/reject/revoke actions are logged.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_pipeline_macos` | R-15.14.1 | Package, sign, create .dmg on macOS. |
-| `test_full_pipeline_windows` | R-15.14.1 | Package, sign, create .msi on Windows. |
-| `test_full_pipeline_linux` | R-15.14.1 | Package, create AppImage on Linux. |
-| `test_deploy_to_device` | R-15.14.2 | Deploy to connected device, verify incremental transfer. |
-| `test_device_console_stream` | R-15.14.2 | Console output from device streams to editor. |
-| `test_signing_macos_notarize` | R-15.14.4 | macOS notarization + ticket stapling end-to-end. |
-| `test_signing_windows_authenticode` | R-15.14.4 | Windows Authenticode signing + verification. |
-| `test_dlc_entitlement_gate` | R-15.14.6 | DLC bundle loads only with valid entitlement. |
-| `test_store_submit_steam_staging` | R-15.14.8 | Submit to Steam staging depot via SteamCMD. |
-| `test_store_status_poll` | R-15.14.8 | Poll submission status returns correct state. |
-| `test_mod_sdk_to_runtime` | R-15.16.1 | Mod created in SDK loads in game runtime. |
-| `test_mod_workshop_upload` | R-15.16.5 | Upload mod to Steam Workshop, verify listing. |
-| `test_mod_repository_upload` | R-15.16.5 | Upload mod to self-hosted repo, download + verify. |
-| `test_mod_auto_update` | R-15.16.5 | Updated mod detected and applied on game launch. |
-| `test_mod_revoke_force_uninstall` | R-15.16.6 | Revoked mod is force-uninstalled from subscribers. |
+| Test                                | Req       |
+|-------------------------------------|-----------|
+| `test_full_pipeline_macos`          | R-15.14.1 |
+| `test_full_pipeline_windows`        | R-15.14.1 |
+| `test_full_pipeline_linux`          | R-15.14.1 |
+| `test_deploy_to_device`             | R-15.14.2 |
+| `test_device_console_stream`        | R-15.14.2 |
+| `test_signing_macos_notarize`       | R-15.14.4 |
+| `test_signing_windows_authenticode` | R-15.14.4 |
+| `test_dlc_entitlement_gate`         | R-15.14.6 |
+| `test_store_submit_steam_staging`   | R-15.14.8 |
+| `test_store_status_poll`            | R-15.14.8 |
+| `test_mod_sdk_to_runtime`           | R-15.16.1 |
+| `test_mod_workshop_upload`          | R-15.16.5 |
+| `test_mod_repository_upload`        | R-15.16.5 |
+| `test_mod_auto_update`              | R-15.16.5 |
+| `test_mod_revoke_force_uninstall`   | R-15.16.6 |
+
+1. **`test_full_pipeline_macos`** — Package, sign, create .dmg on macOS.
+2. **`test_full_pipeline_windows`** — Package, sign, create .msi on Windows.
+3. **`test_full_pipeline_linux`** — Package, create AppImage on Linux.
+4. **`test_deploy_to_device`** — Deploy to connected device, verify incremental transfer.
+5. **`test_device_console_stream`** — Console output from device streams to editor.
+6. **`test_signing_macos_notarize`** — macOS notarization + ticket stapling end-to-end.
+7. **`test_signing_windows_authenticode`** — Windows Authenticode signing + verification.
+8. **`test_dlc_entitlement_gate`** — DLC bundle loads only with valid entitlement.
+9. **`test_store_submit_steam_staging`** — Submit to Steam staging depot via SteamCMD.
+10. **`test_store_status_poll`** — Poll submission status returns correct state.
+11. **`test_mod_sdk_to_runtime`** — Mod created in SDK loads in game runtime.
+12. **`test_mod_workshop_upload`** — Upload mod to Steam Workshop, verify listing.
+13. **`test_mod_repository_upload`** — Upload mod to self-hosted repo, download + verify.
+14. **`test_mod_auto_update`** — Updated mod detected and applied on game launch.
+15. **`test_mod_revoke_force_uninstall`** — Revoked mod is force-uninstalled from subscribers.
 
 ### Benchmarks
 

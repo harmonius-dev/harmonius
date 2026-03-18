@@ -8,19 +8,31 @@
 > [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-9.3.1 | R-9.3.1 | US-9.3.1.1, US-9.3.1.2, US-9.3.1.3 | Analytical two-bone IK with pole vectors, GPU post-process |
-| F-9.3.2 | R-9.3.2 | US-9.3.2.1, US-9.3.2.2 | CCD IK for medium chains (3-8 bones), GPU compute |
-| F-9.3.3 | R-9.3.3 | US-9.3.3.1, US-9.3.3.2 | FABRIK IK for long chains and multi-end-effector problems |
-| F-9.3.4 | R-9.3.4 | US-9.3.4.1, US-9.3.4.2, US-9.3.4.3 | Ragdoll blend with per-bone weights, partial ragdoll, recovery |
-| F-9.3.5 | R-9.3.5 | US-9.3.5.1, US-9.3.5.2 | Look-at and aim constraints with angle limits |
-| F-9.3.6 | R-9.3.6 | US-9.3.6.1, US-9.3.6.2 | Motion matching pose database search |
-| F-9.3.7 | R-9.3.7 | US-9.3.7.1, US-9.3.7.2 | Foot placement via raycasts + IK, pelvis adjustment |
-| F-9.3.8 | R-9.3.8 | US-9.3.8.1, US-9.3.8.2, US-9.3.8.3 | Multi-skeleton procedural locomotion (biped to hexapod+) |
-| F-9.3.9 | R-9.3.9 | US-9.3.9.1, US-9.3.9.2 | Physics-based locomotion with torques and balance PID |
-| F-9.3.10 | R-9.3.10 | US-9.3.10.1, US-9.3.10.2, US-9.3.10.3 | Procedural attachment and dismemberment via ECS commands |
-| F-9.3.11 | R-9.3.11 | US-9.3.11.1, US-9.3.11.2, US-9.3.11.3 | Locomotion debug visualization, stripped from shipping |
+| Feature  | Requirement | User Stories                          |
+|----------|-------------|---------------------------------------|
+| F-9.3.1  | R-9.3.1     | US-9.3.1.1, US-9.3.1.2, US-9.3.1.3    |
+| F-9.3.2  | R-9.3.2     | US-9.3.2.1, US-9.3.2.2                |
+| F-9.3.3  | R-9.3.3     | US-9.3.3.1, US-9.3.3.2                |
+| F-9.3.4  | R-9.3.4     | US-9.3.4.1, US-9.3.4.2, US-9.3.4.3    |
+| F-9.3.5  | R-9.3.5     | US-9.3.5.1, US-9.3.5.2                |
+| F-9.3.6  | R-9.3.6     | US-9.3.6.1, US-9.3.6.2                |
+| F-9.3.7  | R-9.3.7     | US-9.3.7.1, US-9.3.7.2                |
+| F-9.3.8  | R-9.3.8     | US-9.3.8.1, US-9.3.8.2, US-9.3.8.3    |
+| F-9.3.9  | R-9.3.9     | US-9.3.9.1, US-9.3.9.2                |
+| F-9.3.10 | R-9.3.10    | US-9.3.10.1, US-9.3.10.2, US-9.3.10.3 |
+| F-9.3.11 | R-9.3.11    | US-9.3.11.1, US-9.3.11.2, US-9.3.11.3 |
+
+1. **F-9.3.1** — Analytical two-bone IK with pole vectors, GPU post-process
+2. **F-9.3.2** — CCD IK for medium chains (3-8 bones), GPU compute
+3. **F-9.3.3** — FABRIK IK for long chains and multi-end-effector problems
+4. **F-9.3.4** — Ragdoll blend with per-bone weights, partial ragdoll, recovery
+5. **F-9.3.5** — Look-at and aim constraints with angle limits
+6. **F-9.3.6** — Motion matching pose database search
+7. **F-9.3.7** — Foot placement via raycasts + IK, pelvis adjustment
+8. **F-9.3.8** — Multi-skeleton procedural locomotion (biped to hexapod+)
+9. **F-9.3.9** — Physics-based locomotion with torques and balance PID
+10. **F-9.3.10** — Procedural attachment and dismemberment via ECS commands
+11. **F-9.3.11** — Locomotion debug visualization, stripped from shipping
 
 ### Cross-Cutting Dependencies
 
@@ -1924,59 +1936,131 @@ impl PlatformTier {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_two_bone_reach_target` | R-9.3.1 | Place target within reach, verify end-effector within 0.01 units. |
-| `test_two_bone_pole_vector` | R-9.3.1 | Rotate pole vector 90 degrees, verify elbow orientation changes. |
-| `test_two_bone_unreachable` | R-9.3.1 | Place target beyond reach, verify chain extends toward target without breaking. |
-| `test_two_bone_weight_zero` | R-9.3.1 | Set weight to 0, verify pose unchanged from input. |
-| `test_ccd_converge_6bone` | R-9.3.2 | 6-bone chain, reachable target, verify convergence within 0.05 units in 10 iterations. |
-| `test_ccd_angular_limits` | R-9.3.2 | Set 30-degree per-joint limit, verify no joint exceeds constraint. |
-| `test_ccd_unreachable` | R-9.3.2 | Target outside reach, verify chain extends without violating limits. |
-| `test_fabrik_8bone` | R-9.3.3 | 8-bone chain, verify convergence within 0.05 units. |
-| `test_fabrik_multi_effector` | R-9.3.3 | 8-leg spider, 8 targets, verify all legs reach within tolerance. |
-| `test_fabrik_priority` | R-9.3.3 | Two conflicting targets with different priorities, verify higher priority wins. |
-| `test_ragdoll_blend_in` | R-9.3.4 | Activate ragdoll, verify blend weight reaches 1.0 after blend_in_duration. |
-| `test_ragdoll_recovery` | R-9.3.4 | Trigger recovery, verify blend weight reaches 0.0 after recovery_duration. |
-| `test_ragdoll_partial_mask` | R-9.3.4 | Partial mask on upper body, verify lower body bones unchanged. |
-| `test_ragdoll_no_discontinuity` | R-9.3.4 | Transition 0 to 1 over 0.5s, verify max frame-to-frame delta < threshold. |
-| `test_look_at_45deg` | R-9.3.5 | Target 45 degrees right, verify head faces within 1 degree. |
-| `test_look_at_clamp` | R-9.3.5 | Target 120 degrees (limit 90), verify head clamps at 90. |
-| `test_aim_alignment` | R-9.3.5 | Set aim target, verify weapon direction within 2 degrees. |
-| `test_aim_preserves_lower_body` | R-9.3.5 | Aim constraint active, verify lower body pose unchanged. |
-| `test_foot_placement_stairs` | R-9.3.7 | Walk across 20cm stair steps, verify no penetration > 1cm, no float > 2cm. |
-| `test_foot_placement_slope` | R-9.3.7 | Walk 30-degree slope, verify stride adaptation. |
-| `test_foot_placement_disabled` | R-9.3.7 | Disable foot placement, verify raycasts not issued. |
-| `test_gait_biped_walk` | R-9.3.8 | Biped at walk speed, verify alternating foot phases. |
-| `test_gait_quad_trot_gallop` | R-9.3.8 | Quadruped, increase speed, verify trot-to-gallop transition. |
-| `test_gait_hexapod_tripod` | R-9.3.8 | Hexapod, verify tripod gait pattern. |
-| `test_gait_all_ecs` | R-9.3.8 | Query LocomotionProfile, GaitState, FootGroup directly from ECS world. |
-| `test_spring_bone_rest` | — | Spring bone at rest, verify no displacement. |
-| `test_spring_bone_gravity` | — | Enable gravity, verify downward displacement. |
-| `test_spring_bone_damping` | — | Apply impulse, verify oscillation decays. |
-| `test_physics_balance_upright` | R-9.3.9 | Level ground, verify PID maintains balance within 2 degrees of upright. |
-| `test_physics_stumble_recover` | R-9.3.9 | Apply lateral impulse, verify stumble detected then recovery. |
-| `test_physics_slope_lean` | R-9.3.9 | 20-degree slope, verify forward lean. |
-| `test_attach_socket` | R-9.3.10 | Attach entity to hand socket, verify position within 0.01 units each frame. |
-| `test_dismember_spawns_ragdoll` | R-9.3.10 | Sever quadruped leg, verify detached entity has RagdollBlend. |
-| `test_dismember_gait_adapt` | R-9.3.10 | Sever quadruped leg, verify gait switches to three-legged. |
-| `test_dismember_ecs_commands` | R-9.3.10 | Trace command buffer, verify dismemberment uses ECS commands. |
-| `test_debug_vis_foot_targets` | R-9.3.11 | Enable foot visualization, verify markers emitted to DebugDraw. |
-| `test_debug_vis_ik_chains` | R-9.3.11 | Enable IK visualization, verify bone axes rendered. |
-| `test_debug_vis_per_entity` | R-9.3.11 | Toggle off for one entity, verify its overlays removed. |
+| Test                            | Req      |
+|---------------------------------|----------|
+| `test_two_bone_reach_target`    | R-9.3.1  |
+| `test_two_bone_pole_vector`     | R-9.3.1  |
+| `test_two_bone_unreachable`     | R-9.3.1  |
+| `test_two_bone_weight_zero`     | R-9.3.1  |
+| `test_ccd_converge_6bone`       | R-9.3.2  |
+| `test_ccd_angular_limits`       | R-9.3.2  |
+| `test_ccd_unreachable`          | R-9.3.2  |
+| `test_fabrik_8bone`             | R-9.3.3  |
+| `test_fabrik_multi_effector`    | R-9.3.3  |
+| `test_fabrik_priority`          | R-9.3.3  |
+| `test_ragdoll_blend_in`         | R-9.3.4  |
+| `test_ragdoll_recovery`         | R-9.3.4  |
+| `test_ragdoll_partial_mask`     | R-9.3.4  |
+| `test_ragdoll_no_discontinuity` | R-9.3.4  |
+| `test_look_at_45deg`            | R-9.3.5  |
+| `test_look_at_clamp`            | R-9.3.5  |
+| `test_aim_alignment`            | R-9.3.5  |
+| `test_aim_preserves_lower_body` | R-9.3.5  |
+| `test_foot_placement_stairs`    | R-9.3.7  |
+| `test_foot_placement_slope`     | R-9.3.7  |
+| `test_foot_placement_disabled`  | R-9.3.7  |
+| `test_gait_biped_walk`          | R-9.3.8  |
+| `test_gait_quad_trot_gallop`    | R-9.3.8  |
+| `test_gait_hexapod_tripod`      | R-9.3.8  |
+| `test_gait_all_ecs`             | R-9.3.8  |
+| `test_spring_bone_rest`         | —        |
+| `test_spring_bone_gravity`      | —        |
+| `test_spring_bone_damping`      | —        |
+| `test_physics_balance_upright`  | R-9.3.9  |
+| `test_physics_stumble_recover`  | R-9.3.9  |
+| `test_physics_slope_lean`       | R-9.3.9  |
+| `test_attach_socket`            | R-9.3.10 |
+| `test_dismember_spawns_ragdoll` | R-9.3.10 |
+| `test_dismember_gait_adapt`     | R-9.3.10 |
+| `test_dismember_ecs_commands`   | R-9.3.10 |
+| `test_debug_vis_foot_targets`   | R-9.3.11 |
+| `test_debug_vis_ik_chains`      | R-9.3.11 |
+| `test_debug_vis_per_entity`     | R-9.3.11 |
+
+1. **`test_two_bone_reach_target`** — Place target within reach, verify end-effector within 0.01
+   units.
+2. **`test_two_bone_pole_vector`** — Rotate pole vector 90 degrees, verify elbow orientation
+   changes.
+3. **`test_two_bone_unreachable`** — Place target beyond reach, verify chain extends toward target
+   without breaking.
+4. **`test_two_bone_weight_zero`** — Set weight to 0, verify pose unchanged from input.
+5. **`test_ccd_converge_6bone`** — 6-bone chain, reachable target, verify convergence within 0.05
+   units in 10 iterations.
+6. **`test_ccd_angular_limits`** — Set 30-degree per-joint limit, verify no joint exceeds
+   constraint.
+7. **`test_ccd_unreachable`** — Target outside reach, verify chain extends without violating limits.
+8. **`test_fabrik_8bone`** — 8-bone chain, verify convergence within 0.05 units.
+9. **`test_fabrik_multi_effector`** — 8-leg spider, 8 targets, verify all legs reach within
+   tolerance.
+10. **`test_fabrik_priority`** — Two conflicting targets with different priorities, verify higher
+    priority wins.
+11. **`test_ragdoll_blend_in`** — Activate ragdoll, verify blend weight reaches 1.0 after
+    blend_in_duration.
+12. **`test_ragdoll_recovery`** — Trigger recovery, verify blend weight reaches 0.0 after
+    recovery_duration.
+13. **`test_ragdoll_partial_mask`** — Partial mask on upper body, verify lower body bones unchanged.
+14. **`test_ragdoll_no_discontinuity`** — Transition 0 to 1 over 0.5s, verify max frame-to-frame
+    delta < threshold.
+15. **`test_look_at_45deg`** — Target 45 degrees right, verify head faces within 1 degree.
+16. **`test_look_at_clamp`** — Target 120 degrees (limit 90), verify head clamps at 90.
+17. **`test_aim_alignment`** — Set aim target, verify weapon direction within 2 degrees.
+18. **`test_aim_preserves_lower_body`** — Aim constraint active, verify lower body pose unchanged.
+19. **`test_foot_placement_stairs`** — Walk across 20cm stair steps, verify no penetration > 1cm, no
+    float > 2cm.
+20. **`test_foot_placement_slope`** — Walk 30-degree slope, verify stride adaptation.
+21. **`test_foot_placement_disabled`** — Disable foot placement, verify raycasts not issued.
+22. **`test_gait_biped_walk`** — Biped at walk speed, verify alternating foot phases.
+23. **`test_gait_quad_trot_gallop`** — Quadruped, increase speed, verify trot-to-gallop transition.
+24. **`test_gait_hexapod_tripod`** — Hexapod, verify tripod gait pattern.
+25. **`test_gait_all_ecs`** — Query LocomotionProfile, GaitState, FootGroup directly from ECS world.
+26. **`test_spring_bone_rest`** — Spring bone at rest, verify no displacement.
+27. **`test_spring_bone_gravity`** — Enable gravity, verify downward displacement.
+28. **`test_spring_bone_damping`** — Apply impulse, verify oscillation decays.
+29. **`test_physics_balance_upright`** — Level ground, verify PID maintains balance within 2 degrees
+    of upright.
+30. **`test_physics_stumble_recover`** — Apply lateral impulse, verify stumble detected then
+    recovery.
+31. **`test_physics_slope_lean`** — 20-degree slope, verify forward lean.
+32. **`test_attach_socket`** — Attach entity to hand socket, verify position within 0.01 units each
+    frame.
+33. **`test_dismember_spawns_ragdoll`** — Sever quadruped leg, verify detached entity has
+    RagdollBlend.
+34. **`test_dismember_gait_adapt`** — Sever quadruped leg, verify gait switches to three-legged.
+35. **`test_dismember_ecs_commands`** — Trace command buffer, verify dismemberment uses ECS
+    commands.
+36. **`test_debug_vis_foot_targets`** — Enable foot visualization, verify markers emitted to
+    DebugDraw.
+37. **`test_debug_vis_ik_chains`** — Enable IK visualization, verify bone axes rendered.
+38. **`test_debug_vis_per_entity`** — Toggle off for one entity, verify its overlays removed.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_pipeline_order` | All | Verify systems execute in declared order: look-at, foot, IK, ragdoll, secondary. |
-| `test_500_two_bone_gpu` | R-9.3.1 | Solve 500 two-bone chains in a single GPU dispatch, verify all within tolerance. |
-| `test_ik_after_state_machine` | R-9.3.1 | Play walk animation + IK, verify IK modifies the blended pose, not raw clips. |
-| `test_foot_placement_batch_raycast` | R-9.3.7 | 100 characters with foot placement, verify single batch raycast to shared BVH. |
-| `test_ragdoll_physics_integration` | R-9.3.4 | Full ragdoll with physics step, verify bones respond to gravity. |
-| `test_locomotion_all_topologies` | R-9.3.8 | Biped, quadruped, hexapod across same terrain, verify correct gait patterns. |
-| `test_physics_to_animated_transition` | R-9.3.9 | Transition from physics to animated over 0.3s, verify no visible discontinuity. |
-| `test_dismember_runtime_full` | R-9.3.10 | Sever wing, verify ragdoll spawns and locomotion adapts. |
+| Test                                  | Req      |
+|---------------------------------------|----------|
+| `test_pipeline_order`                 | All      |
+| `test_500_two_bone_gpu`               | R-9.3.1  |
+| `test_ik_after_state_machine`         | R-9.3.1  |
+| `test_foot_placement_batch_raycast`   | R-9.3.7  |
+| `test_ragdoll_physics_integration`    | R-9.3.4  |
+| `test_locomotion_all_topologies`      | R-9.3.8  |
+| `test_physics_to_animated_transition` | R-9.3.9  |
+| `test_dismember_runtime_full`         | R-9.3.10 |
+
+1. **`test_pipeline_order`** — Verify systems execute in declared order: look-at, foot, IK, ragdoll,
+   secondary.
+2. **`test_500_two_bone_gpu`** — Solve 500 two-bone chains in a single GPU dispatch, verify all
+   within tolerance.
+3. **`test_ik_after_state_machine`** — Play walk animation + IK, verify IK modifies the blended
+   pose, not raw clips.
+4. **`test_foot_placement_batch_raycast`** — 100 characters with foot placement, verify single batch
+   raycast to shared BVH.
+5. **`test_ragdoll_physics_integration`** — Full ragdoll with physics step, verify bones respond to
+   gravity.
+6. **`test_locomotion_all_topologies`** — Biped, quadruped, hexapod across same terrain, verify
+   correct gait patterns.
+7. **`test_physics_to_animated_transition`** — Transition from physics to animated over 0.3s, verify
+   no visible discontinuity.
+8. **`test_dismember_runtime_full`** — Sever wing, verify ragdoll spawns and locomotion adapts.
 
 ### Benchmarks
 
@@ -1994,10 +2078,15 @@ impl PlatformTier {
 
 ### Shipping Build Verification
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_debug_stripped` | R-9.3.11 | Compile shipping build, verify `locomotion_diagnostics_system` absent from binary. |
-| `test_debug_types_stripped` | R-9.3.11 | Verify `LocomotionDebugVis` and `LocomotionMetrics` absent from shipping binary. |
+| Test                        | Req      |
+|-----------------------------|----------|
+| `test_debug_stripped`       | R-9.3.11 |
+| `test_debug_types_stripped` | R-9.3.11 |
+
+1. **`test_debug_stripped`** — Compile shipping build, verify `locomotion_diagnostics_system` absent
+   from binary.
+2. **`test_debug_types_stripped`** — Verify `LocomotionDebugVis` and `LocomotionMetrics` absent from
+   shipping binary.
 
 ### Shared Type References
 

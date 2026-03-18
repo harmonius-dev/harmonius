@@ -8,46 +8,85 @@
 > [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.1.1 | R-1.1.1, R-1.1.1a | Archetype-based dense storage, SoA layout, chunked |
-| F-1.1.2 | R-1.1.2, R-1.1.2a | Sparse-set storage for `#[sparse]` components |
-| F-1.1.3 | R-1.1.3, R-1.1.3a | Archetype graph with O(1) cached edge transitions |
-| F-1.1.4 | R-1.1.4 | Static (derive) and dynamic component registration |
-| F-1.1.5 | R-1.1.5 | Zero-size tag components |
-| F-1.1.6 | R-1.1.6 | Shared components (one value per chunk) |
-| F-1.1.7 | R-1.1.7 | Buffer components (dynamic arrays per entity) |
-| F-1.1.8 | R-1.1.8 | Enableable components (toggle without migration) |
-| F-1.1.9 | R-1.1.9, R-1.1.9a | Component hooks (on_add, on_remove, on_set) |
-| F-1.1.10 | R-1.1.10 | Component bundles and required companions |
-| F-1.1.11 | R-1.1.11, R-1.1.11a | Entity lifecycle with generational indices |
-| F-1.1.12 | R-1.1.12 | Cleanup components and deferred destruction |
-| F-1.1.13 | R-1.1.13 | Entity names and hierarchical path lookup |
-| F-1.1.14 | R-1.1.14 | Entity relationships (pairs) |
-| F-1.1.15 | R-1.1.15 | Relationship properties (Exclusive, Symmetric, ...) |
-| F-1.1.16 | R-1.1.16, R-1.1.16a | Built-in ChildOf hierarchy with cascading delete |
-| F-1.1.17 | R-1.1.17, R-1.1.17a | Composable archetype queries with caching |
-| F-1.1.18 | R-1.1.18 | Query sorting and grouping |
-| F-1.1.19 | R-1.1.19 | Query variables and pattern matching |
-| F-1.1.20 | R-1.1.20 | Automatic parallel iteration |
-| F-1.1.21 | R-1.1.21 | Component aspects |
-| F-1.1.22 | R-1.1.22, R-1.1.22a | Tick-based change detection at chunk granularity |
-| F-1.1.23 | R-1.1.23 | World resources (typed singletons) |
-| F-1.1.24 | R-1.1.24 | Non-send resources (main-thread pinned) |
-| F-1.1.25 | R-1.1.25, R-1.1.25a | Dependency resolution and topological ordering |
-| F-1.1.26 | R-1.1.26 | System groups and phases |
-| F-1.1.27 | R-1.1.27 | System run criteria and conditions |
-| F-1.1.28 | R-1.1.28 | Ambiguity detection |
-| F-1.1.29 | R-1.1.29 | Exclusive systems (full barriers) |
-| F-1.1.30 | R-1.1.30, R-1.1.30a | Event-triggered observers |
-| F-1.1.31 | R-1.1.31 | Custom entity events with propagation |
-| F-1.1.32 | R-1.1.32, R-1.1.32a | Deferred structural changes via command buffers |
-| F-1.1.33 | R-1.1.33 | Parallel command recording with sort keys |
-| F-1.1.34 | R-1.1.34 | Multiple independent worlds |
-| F-1.1.35 | R-1.1.35, R-1.1.35a | Entity migration between worlds |
-| F-1.1.36 | R-1.1.36 | Prefab entities with inheritance |
-| F-1.1.37 | R-1.1.37 | Prefab children and nested prefabs |
-| F-1.1.38 | R-1.1.38 | ECS-integrated state machine |
+| Feature  | Requirement         |
+|----------|---------------------|
+| F-1.1.1  | R-1.1.1, R-1.1.1a   |
+| F-1.1.2  | R-1.1.2, R-1.1.2a   |
+| F-1.1.3  | R-1.1.3, R-1.1.3a   |
+| F-1.1.4  | R-1.1.4             |
+| F-1.1.5  | R-1.1.5             |
+| F-1.1.6  | R-1.1.6             |
+| F-1.1.7  | R-1.1.7             |
+| F-1.1.8  | R-1.1.8             |
+| F-1.1.9  | R-1.1.9, R-1.1.9a   |
+| F-1.1.10 | R-1.1.10            |
+| F-1.1.11 | R-1.1.11, R-1.1.11a |
+| F-1.1.12 | R-1.1.12            |
+| F-1.1.13 | R-1.1.13            |
+| F-1.1.14 | R-1.1.14            |
+| F-1.1.15 | R-1.1.15            |
+| F-1.1.16 | R-1.1.16, R-1.1.16a |
+| F-1.1.17 | R-1.1.17, R-1.1.17a |
+| F-1.1.18 | R-1.1.18            |
+| F-1.1.19 | R-1.1.19            |
+| F-1.1.20 | R-1.1.20            |
+| F-1.1.21 | R-1.1.21            |
+| F-1.1.22 | R-1.1.22, R-1.1.22a |
+| F-1.1.23 | R-1.1.23            |
+| F-1.1.24 | R-1.1.24            |
+| F-1.1.25 | R-1.1.25, R-1.1.25a |
+| F-1.1.26 | R-1.1.26            |
+| F-1.1.27 | R-1.1.27            |
+| F-1.1.28 | R-1.1.28            |
+| F-1.1.29 | R-1.1.29            |
+| F-1.1.30 | R-1.1.30, R-1.1.30a |
+| F-1.1.31 | R-1.1.31            |
+| F-1.1.32 | R-1.1.32, R-1.1.32a |
+| F-1.1.33 | R-1.1.33            |
+| F-1.1.34 | R-1.1.34            |
+| F-1.1.35 | R-1.1.35, R-1.1.35a |
+| F-1.1.36 | R-1.1.36            |
+| F-1.1.37 | R-1.1.37            |
+| F-1.1.38 | R-1.1.38            |
+
+1. **F-1.1.1** — Archetype-based dense storage, SoA layout, chunked
+2. **F-1.1.2** — Sparse-set storage for `#[sparse]` components
+3. **F-1.1.3** — Archetype graph with O(1) cached edge transitions
+4. **F-1.1.4** — Static (derive) and dynamic component registration
+5. **F-1.1.5** — Zero-size tag components
+6. **F-1.1.6** — Shared components (one value per chunk)
+7. **F-1.1.7** — Buffer components (dynamic arrays per entity)
+8. **F-1.1.8** — Enableable components (toggle without migration)
+9. **F-1.1.9** — Component hooks (on_add, on_remove, on_set)
+10. **F-1.1.10** — Component bundles and required companions
+11. **F-1.1.11** — Entity lifecycle with generational indices
+12. **F-1.1.12** — Cleanup components and deferred destruction
+13. **F-1.1.13** — Entity names and hierarchical path lookup
+14. **F-1.1.14** — Entity relationships (pairs)
+15. **F-1.1.15** — Relationship properties (Exclusive, Symmetric, ...)
+16. **F-1.1.16** — Built-in ChildOf hierarchy with cascading delete
+17. **F-1.1.17** — Composable archetype queries with caching
+18. **F-1.1.18** — Query sorting and grouping
+19. **F-1.1.19** — Query variables and pattern matching
+20. **F-1.1.20** — Automatic parallel iteration
+21. **F-1.1.21** — Component aspects
+22. **F-1.1.22** — Tick-based change detection at chunk granularity
+23. **F-1.1.23** — World resources (typed singletons)
+24. **F-1.1.24** — Non-send resources (main-thread pinned)
+25. **F-1.1.25** — Dependency resolution and topological ordering
+26. **F-1.1.26** — System groups and phases
+27. **F-1.1.27** — System run criteria and conditions
+28. **F-1.1.28** — Ambiguity detection
+29. **F-1.1.29** — Exclusive systems (full barriers)
+30. **F-1.1.30** — Event-triggered observers
+31. **F-1.1.31** — Custom entity events with propagation
+32. **F-1.1.32** — Deferred structural changes via command buffers
+33. **F-1.1.33** — Parallel command recording with sort keys
+34. **F-1.1.34** — Multiple independent worlds
+35. **F-1.1.35** — Entity migration between worlds
+36. **F-1.1.36** — Prefab entities with inheritance
+37. **F-1.1.37** — Prefab children and nested prefabs
+38. **F-1.1.38** — ECS-integrated state machine
 
 ## Overview
 
@@ -2647,12 +2686,21 @@ adjustments.
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `fixedbitset` | Compact bitsets for AccessSet, enable bits | Efficient set operations for component access tracking |
-| `smallvec` | Inline-allocated small vectors | Matched archetype lists, hook arrays, command component lists |
-| `crossbeam-utils` | `CachePadded` for atomics | Prevents false sharing on change tick counters |
-| `glam` | Math types (Vec3, Quat, Mat4) | SIMD-accelerated math implied by Transform components and spatial operations |
+| Crate             |
+|-------------------|
+| `fixedbitset`     |
+| `smallvec`        |
+| `crossbeam-utils` |
+| `glam`            |
+
+1. **`fixedbitset`** — Compact bitsets for AccessSet, enable bits
+   - **Justification:** Efficient set operations for component access tracking
+2. **`smallvec`** — Inline-allocated small vectors
+   - **Justification:** Matched archetype lists, hook arrays, command component lists
+3. **`crossbeam-utils`** — `CachePadded` for atomics
+   - **Justification:** Prevents false sharing on change tick counters
+4. **`glam`** — Math types (Vec3, Quat, Mat4)
+   - **Justification:** SIMD-accelerated math implied by Transform components and spatial operations
 
 ## Safety Invariants
 
@@ -2721,73 +2769,188 @@ lookups. This avoids hash overhead in the inner loop.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_entity_allocate_deallocate` | R-1.1.11 | Allocate entity, deallocate, verify generation increments. Reallocate at same index, verify old handle is stale. |
-| `test_entity_1m_alloc_dealloc` | R-1.1.11a | Allocate and deallocate 1M entities. Verify O(1) per-operation cost (under 100 ns amortized). |
-| `test_archetype_soa_layout` | R-1.1.1 | Spawn 1000 entities with (Position, Velocity). Verify Position[] and Velocity[] are contiguous in memory via pointer arithmetic. |
-| `test_archetype_chunk_alignment` | R-1.1.1a | Verify chunk base addresses are 64-byte aligned. |
-| `test_sparse_no_migration` | R-1.1.2 | Add and remove a `#[sparse]` component 10,000 times. Assert archetype ID never changes. |
-| `test_sparse_o1_lookup` | R-1.1.2a | Lookup sparse component on 100,000 entities. Verify under 200 ns per operation. |
-| `test_archetype_graph_edge_cache` | R-1.1.3 | Spawn 100,000 entities with same components. Verify per-entity archetype resolution does not degrade with archetype count. |
-| `test_archetype_graph_10k_archetypes` | R-1.1.3a | Create 10,000 distinct archetypes. Verify edge lookup remains O(1). |
-| `test_component_static_registration` | R-1.1.4 | Register component via derive macro. Verify zero-cost access via TypeId lookup. |
-| `test_component_dynamic_registration` | R-1.1.4 | Register component at runtime. Attach to entity, query, verify correct data. |
-| `test_tag_zero_memory` | R-1.1.5 | Add zero-size tag to 100,000 entities. Assert zero bytes per entity for tag column. Verify `With<Tag>` query works. |
-| `test_shared_component_one_per_chunk` | R-1.1.6 | Assign same shared value to 10,000 entities. Assert stored once. Modify one entity, assert migration. |
-| `test_buffer_inline_and_spill` | R-1.1.7 | Create buffer component, append past inline threshold. Verify spill and return to inline. |
-| `test_enableable_toggle` | R-1.1.8 | Toggle enableable component. Verify default query excludes disabled. Verify `WithDisabled<T>` includes it. |
-| `test_enableable_parallel_toggle` | R-1.1.8 | Toggle from 8 threads concurrently. Verify no data races (run under ThreadSanitizer). |
-| `test_hooks_fire_correctly` | R-1.1.9 | Register on_add, on_remove, on_set hooks. Perform operations. Assert each fires with correct args. |
-| `test_hook_limit_16` | R-1.1.9a | Register 17 hooks. Verify error on 17th. |
-| `test_bundle_atomic_insert` | R-1.1.10 | Insert 4-component bundle. Verify all present in single archetype transition. |
-| `test_required_component_auto_add` | R-1.1.10 | Insert Collider (requires CollisionLayers). Verify companion auto-added. |
-| `test_cleanup_component_persist` | R-1.1.12 | Despawn entity with cleanup component. Assert entity alive with only cleanup components. |
-| `test_entity_name_path_lookup` | R-1.1.13 | Build 3-level hierarchy with names. Look up leaf by path. Verify O(log n) scaling at 100,000 entities. |
-| `test_relationship_pair_encoding` | R-1.1.14 | Add (Likes, Apple) and (Likes, Banana). Query (Likes, *). Verify both returned. |
-| `test_exclusive_relationship` | R-1.1.15 | Add second target to exclusive relationship. Verify first removed. |
-| `test_symmetric_relationship` | R-1.1.15 | Add A->B symmetric. Verify B->A auto-added. |
-| `test_childof_cascade_delete` | R-1.1.16 | Build 4-level hierarchy. Delete root. Assert all descendants destroyed. |
-| `test_childof_cycle_rejection` | R-1.1.16a | Attempt to create a cycle. Verify error returned. |
-| `test_childof_256_depth` | R-1.1.16a | Build 256-level hierarchy. Verify traversal completes without stack overflow. |
-| `test_query_all_filters` | R-1.1.17 | Construct query with With, Without, Option, Changed, Added. Verify correct entity inclusion/exclusion. |
-| `test_query_cache_zero_overhead` | R-1.1.17a | Run cached query 1,000 times. Verify zero additional archetype matching after first. |
-| `test_query_cache_incremental` | R-1.1.17a | Add new archetype after cache built. Verify cache incrementally updates. |
-| `test_query_sort_stable` | R-1.1.18 | Sort 1,000 entities by value. Verify ascending. Modify 10, re-sort. Verify stability. |
-| `test_query_variable_pattern` | R-1.1.19 | Create parent-child pairs with Boss parents. Query children of bosses. Verify correct results. |
-| `test_change_detection_chunk` | R-1.1.22 | Mutate one entity in chunk of 100. Verify chunk marked changed. Next tick without mutations: no results. |
-| `test_change_tick_8_bytes` | R-1.1.22a | Verify change detection metadata is 8 bytes per component type per chunk. |
-| `test_resource_res_resmut` | R-1.1.23 | Insert resource. Read via Res, write via ResMut. Verify scheduler orders correctly. |
-| `test_non_send_main_thread` | R-1.1.24 | Register non-send resource. Verify system runs on main thread. |
-| `test_schedule_dependency_resolution` | R-1.1.25 | Register systems with known deps. Build schedule. Verify topological order respects deps. |
-| `test_schedule_cycle_detection` | R-1.1.25 | Register cyclic systems. Verify error at build time. |
-| `test_schedule_phases_order` | R-1.1.26 | Register systems in Update and FixedUpdate. Verify execution order. Disable group, verify no execution. |
-| `test_run_criteria_gate` | R-1.1.27 | Attach boolean criterion. Toggle and verify system runs only when met. AND compose two criteria. |
-| `test_ambiguity_detection` | R-1.1.28 | Register read-A and write-A systems without ordering. Verify warning. |
-| `test_exclusive_system_barrier` | R-1.1.29 | Register exclusive system. Verify no concurrent execution. |
-| `test_observer_on_add` | R-1.1.30 | Register OnAdd observer with query filter. Add component to matching and non-matching entities. Verify fires only for matching. |
-| `test_custom_event_propagation` | R-1.1.31 | Emit DamageEvent at child. Verify observer fires on child, then parent. |
-| `test_command_buffer_deterministic` | R-1.1.32 | Record commands from two systems. Flush. Verify deterministic order across repeated runs. |
-| `test_parallel_command_writer` | R-1.1.33 | Record 100,000 commands from 8 threads. Flush. Verify sort-key order. 100 iterations, identical results. |
-| `test_multiple_worlds_isolation` | R-1.1.34 | Create two worlds. Spawn entities in each. Verify queries in one world do not see the other's entities. |
-| `test_entity_migration` | R-1.1.35 | Create entity with 5 components and relationships. Migrate to new world. Verify all data intact, no collisions. |
-| `test_migration_missing_type_error` | R-1.1.35a | Migrate entity with unregistered component type. Verify diagnostic error with type name. |
-| `test_prefab_inheritance` | R-1.1.36 | Create prefab with 3 components. Instantiate 100 instances. Verify sharing. Override one, verify copy-on-write. |
-| `test_nested_prefab` | R-1.1.37 | Create nested prefab. Instantiate 10 outer instances. Modify inner. Verify propagation. |
-| `test_state_transition_observers` | R-1.1.38 | Transition from Menu to Playing. Verify OnExit(Menu) and OnEnter(Playing) fire. Verify in_state(Playing) criterion works. |
+| Test                                  | Req       |
+|---------------------------------------|-----------|
+| `test_entity_allocate_deallocate`     | R-1.1.11  |
+| `test_entity_1m_alloc_dealloc`        | R-1.1.11a |
+| `test_archetype_soa_layout`           | R-1.1.1   |
+| `test_archetype_chunk_alignment`      | R-1.1.1a  |
+| `test_sparse_no_migration`            | R-1.1.2   |
+| `test_sparse_o1_lookup`               | R-1.1.2a  |
+| `test_archetype_graph_edge_cache`     | R-1.1.3   |
+| `test_archetype_graph_10k_archetypes` | R-1.1.3a  |
+| `test_component_static_registration`  | R-1.1.4   |
+| `test_component_dynamic_registration` | R-1.1.4   |
+| `test_tag_zero_memory`                | R-1.1.5   |
+| `test_shared_component_one_per_chunk` | R-1.1.6   |
+| `test_buffer_inline_and_spill`        | R-1.1.7   |
+| `test_enableable_toggle`              | R-1.1.8   |
+| `test_enableable_parallel_toggle`     | R-1.1.8   |
+| `test_hooks_fire_correctly`           | R-1.1.9   |
+| `test_hook_limit_16`                  | R-1.1.9a  |
+| `test_bundle_atomic_insert`           | R-1.1.10  |
+| `test_required_component_auto_add`    | R-1.1.10  |
+| `test_cleanup_component_persist`      | R-1.1.12  |
+| `test_entity_name_path_lookup`        | R-1.1.13  |
+| `test_relationship_pair_encoding`     | R-1.1.14  |
+| `test_exclusive_relationship`         | R-1.1.15  |
+| `test_symmetric_relationship`         | R-1.1.15  |
+| `test_childof_cascade_delete`         | R-1.1.16  |
+| `test_childof_cycle_rejection`        | R-1.1.16a |
+| `test_childof_256_depth`              | R-1.1.16a |
+| `test_query_all_filters`              | R-1.1.17  |
+| `test_query_cache_zero_overhead`      | R-1.1.17a |
+| `test_query_cache_incremental`        | R-1.1.17a |
+| `test_query_sort_stable`              | R-1.1.18  |
+| `test_query_variable_pattern`         | R-1.1.19  |
+| `test_change_detection_chunk`         | R-1.1.22  |
+| `test_change_tick_8_bytes`            | R-1.1.22a |
+| `test_resource_res_resmut`            | R-1.1.23  |
+| `test_non_send_main_thread`           | R-1.1.24  |
+| `test_schedule_dependency_resolution` | R-1.1.25  |
+| `test_schedule_cycle_detection`       | R-1.1.25  |
+| `test_schedule_phases_order`          | R-1.1.26  |
+| `test_run_criteria_gate`              | R-1.1.27  |
+| `test_ambiguity_detection`            | R-1.1.28  |
+| `test_exclusive_system_barrier`       | R-1.1.29  |
+| `test_observer_on_add`                | R-1.1.30  |
+| `test_custom_event_propagation`       | R-1.1.31  |
+| `test_command_buffer_deterministic`   | R-1.1.32  |
+| `test_parallel_command_writer`        | R-1.1.33  |
+| `test_multiple_worlds_isolation`      | R-1.1.34  |
+| `test_entity_migration`               | R-1.1.35  |
+| `test_migration_missing_type_error`   | R-1.1.35a |
+| `test_prefab_inheritance`             | R-1.1.36  |
+| `test_nested_prefab`                  | R-1.1.37  |
+| `test_state_transition_observers`     | R-1.1.38  |
+
+1. **`test_entity_allocate_deallocate`** — Allocate entity, deallocate, verify generation
+   increments. Reallocate at same index, verify old handle is stale.
+2. **`test_entity_1m_alloc_dealloc`** — Allocate and deallocate 1M entities. Verify O(1)
+   per-operation cost (under 100 ns amortized).
+3. **`test_archetype_soa_layout`** — Spawn 1000 entities with (Position, Velocity). Verify
+   Position[] and Velocity[] are contiguous in memory via pointer arithmetic.
+4. **`test_archetype_chunk_alignment`** — Verify chunk base addresses are 64-byte aligned.
+5. **`test_sparse_no_migration`** — Add and remove a `#[sparse]` component 10,000 times. Assert
+   archetype ID never changes.
+6. **`test_sparse_o1_lookup`** — Lookup sparse component on 100,000 entities. Verify under 200 ns
+   per operation.
+7. **`test_archetype_graph_edge_cache`** — Spawn 100,000 entities with same components. Verify
+   per-entity archetype resolution does not degrade with archetype count.
+8. **`test_archetype_graph_10k_archetypes`** — Create 10,000 distinct archetypes. Verify edge lookup
+   remains O(1).
+9. **`test_component_static_registration`** — Register component via derive macro. Verify zero-cost
+   access via TypeId lookup.
+10. **`test_component_dynamic_registration`** — Register component at runtime. Attach to entity,
+    query, verify correct data.
+11. **`test_tag_zero_memory`** — Add zero-size tag to 100,000 entities. Assert zero bytes per entity
+    for tag column. Verify `With<Tag>` query works.
+12. **`test_shared_component_one_per_chunk`** — Assign same shared value to 10,000 entities. Assert
+    stored once. Modify one entity, assert migration.
+13. **`test_buffer_inline_and_spill`** — Create buffer component, append past inline threshold.
+    Verify spill and return to inline.
+14. **`test_enableable_toggle`** — Toggle enableable component. Verify default query excludes
+    disabled. Verify `WithDisabled<T>` includes it.
+15. **`test_enableable_parallel_toggle`** — Toggle from 8 threads concurrently. Verify no data races
+    (run under ThreadSanitizer).
+16. **`test_hooks_fire_correctly`** — Register on_add, on_remove, on_set hooks. Perform operations.
+    Assert each fires with correct args.
+17. **`test_hook_limit_16`** — Register 17 hooks. Verify error on 17th.
+18. **`test_bundle_atomic_insert`** — Insert 4-component bundle. Verify all present in single
+    archetype transition.
+19. **`test_required_component_auto_add`** — Insert Collider (requires CollisionLayers). Verify
+    companion auto-added.
+20. **`test_cleanup_component_persist`** — Despawn entity with cleanup component. Assert entity
+    alive with only cleanup components.
+21. **`test_entity_name_path_lookup`** — Build 3-level hierarchy with names. Look up leaf by path.
+    Verify O(log n) scaling at 100,000 entities.
+22. **`test_relationship_pair_encoding`** — Add (Likes, Apple) and (Likes, Banana). Query (Likes,
+    *). Verify both returned.
+23. **`test_exclusive_relationship`** — Add second target to exclusive relationship. Verify first
+    removed.
+24. **`test_symmetric_relationship`** — Add A->B symmetric. Verify B->A auto-added.
+25. **`test_childof_cascade_delete`** — Build 4-level hierarchy. Delete root. Assert all descendants
+    destroyed.
+26. **`test_childof_cycle_rejection`** — Attempt to create a cycle. Verify error returned.
+27. **`test_childof_256_depth`** — Build 256-level hierarchy. Verify traversal completes without
+    stack overflow.
+28. **`test_query_all_filters`** — Construct query with With, Without, Option, Changed, Added.
+    Verify correct entity inclusion/exclusion.
+29. **`test_query_cache_zero_overhead`** — Run cached query 1,000 times. Verify zero additional
+    archetype matching after first.
+30. **`test_query_cache_incremental`** — Add new archetype after cache built. Verify cache
+    incrementally updates.
+31. **`test_query_sort_stable`** — Sort 1,000 entities by value. Verify ascending. Modify 10,
+    re-sort. Verify stability.
+32. **`test_query_variable_pattern`** — Create parent-child pairs with Boss parents. Query children
+    of bosses. Verify correct results.
+33. **`test_change_detection_chunk`** — Mutate one entity in chunk of 100. Verify chunk marked
+    changed. Next tick without mutations: no results.
+34. **`test_change_tick_8_bytes`** — Verify change detection metadata is 8 bytes per component type
+    per chunk.
+35. **`test_resource_res_resmut`** — Insert resource. Read via Res, write via ResMut. Verify
+    scheduler orders correctly.
+36. **`test_non_send_main_thread`** — Register non-send resource. Verify system runs on main thread.
+37. **`test_schedule_dependency_resolution`** — Register systems with known deps. Build schedule.
+    Verify topological order respects deps.
+38. **`test_schedule_cycle_detection`** — Register cyclic systems. Verify error at build time.
+39. **`test_schedule_phases_order`** — Register systems in Update and FixedUpdate. Verify execution
+    order. Disable group, verify no execution.
+40. **`test_run_criteria_gate`** — Attach boolean criterion. Toggle and verify system runs only when
+    met. AND compose two criteria.
+41. **`test_ambiguity_detection`** — Register read-A and write-A systems without ordering. Verify
+    warning.
+42. **`test_exclusive_system_barrier`** — Register exclusive system. Verify no concurrent execution.
+43. **`test_observer_on_add`** — Register OnAdd observer with query filter. Add component to
+    matching and non-matching entities. Verify fires only for matching.
+44. **`test_custom_event_propagation`** — Emit DamageEvent at child. Verify observer fires on child,
+    then parent.
+45. **`test_command_buffer_deterministic`** — Record commands from two systems. Flush. Verify
+    deterministic order across repeated runs.
+46. **`test_parallel_command_writer`** — Record 100,000 commands from 8 threads. Flush. Verify
+    sort-key order. 100 iterations, identical results.
+47. **`test_multiple_worlds_isolation`** — Create two worlds. Spawn entities in each. Verify queries
+    in one world do not see the other's entities.
+48. **`test_entity_migration`** — Create entity with 5 components and relationships. Migrate to new
+    world. Verify all data intact, no collisions.
+49. **`test_migration_missing_type_error`** — Migrate entity with unregistered component type.
+    Verify diagnostic error with type name.
+50. **`test_prefab_inheritance`** — Create prefab with 3 components. Instantiate 100 instances.
+    Verify sharing. Override one, verify copy-on-write.
+51. **`test_nested_prefab`** — Create nested prefab. Instantiate 10 outer instances. Modify inner.
+    Verify propagation.
+52. **`test_state_transition_observers`** — Transition from Menu to Playing. Verify OnExit(Menu) and
+    OnEnter(Playing) fire. Verify in_state(Playing) criterion works.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_frame_cycle` | R-1.1.25-29 | Run a complete frame: schedule build, system execution across all phases, command flush, observer dispatch. Verify correct world state. |
-| `test_parallel_iteration_scaling` | R-1.1.20 | Iterate 1M entities on 1, 2, 4, 8 cores. Verify >= 3.5x speedup on 4 cores. Run under ThreadSanitizer. |
-| `test_cascade_delete_100k` | R-1.1.16a | Cascade-delete a 100,000-entity subtree. Verify completion within 10 ms. |
-| `test_bulk_migration_500` | R-1.1.35a | Migrate 500 entities simultaneously. Verify no data loss, no ID collisions. |
-| `test_schedule_500_systems` | R-1.1.25a | Build schedule with 500 systems. Verify construction under 50 ms. Verify no rebuild on frames without system changes. |
-| `test_observer_dispatch_1000` | R-1.1.30a | Register 1,000 observers. Fire 100 events matching 10 each. Verify O(e*m) scaling. |
-| `test_command_buffer_100k_flush` | R-1.1.32a | Record 100,000 commands. Verify flush under 1 ms. Verify per-system buffer under 64 KiB typical. |
-| `test_mixed_storage_query` | R-1.1.1, R-1.1.2 | Query spanning both table and sparse components. Verify correct results across both storage modes. |
+| Test                              | Req              |
+|-----------------------------------|------------------|
+| `test_full_frame_cycle`           | R-1.1.25-29      |
+| `test_parallel_iteration_scaling` | R-1.1.20         |
+| `test_cascade_delete_100k`        | R-1.1.16a        |
+| `test_bulk_migration_500`         | R-1.1.35a        |
+| `test_schedule_500_systems`       | R-1.1.25a        |
+| `test_observer_dispatch_1000`     | R-1.1.30a        |
+| `test_command_buffer_100k_flush`  | R-1.1.32a        |
+| `test_mixed_storage_query`        | R-1.1.1, R-1.1.2 |
+
+1. **`test_full_frame_cycle`** — Run a complete frame: schedule build, system execution across all
+   phases, command flush, observer dispatch. Verify correct world state.
+2. **`test_parallel_iteration_scaling`** — Iterate 1M entities on 1, 2, 4, 8 cores. Verify >= 3.5x
+   speedup on 4 cores. Run under ThreadSanitizer.
+3. **`test_cascade_delete_100k`** — Cascade-delete a 100,000-entity subtree. Verify completion
+   within 10 ms.
+4. **`test_bulk_migration_500`** — Migrate 500 entities simultaneously. Verify no data loss, no ID
+   collisions.
+5. **`test_schedule_500_systems`** — Build schedule with 500 systems. Verify construction under 50
+   ms. Verify no rebuild on frames without system changes.
+6. **`test_observer_dispatch_1000`** — Register 1,000 observers. Fire 100 events matching 10 each.
+   Verify O(e*m) scaling.
+7. **`test_command_buffer_100k_flush`** — Record 100,000 commands. Verify flush under 1 ms. Verify
+   per-system buffer under 64 KiB typical.
+8. **`test_mixed_storage_query`** — Query spanning both table and sparse components. Verify correct
+   results across both storage modes.
 
 ### Benchmarks
 

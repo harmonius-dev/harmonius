@@ -6,170 +6,266 @@ Companion test cases for [windowing.md](windowing.md).
 
 ### TC-14.1.1.1 Window Config Default
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `WindowConfig::default()` | Size=1280x720, mode=Windowed, present=Fifo, HDR disabled, DPI=SystemScaled | R-14.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.1    |
+
+1. **#1** — `WindowConfig::default()`
+   - **Expected:** Size=1280x720, mode=Windowed, present=Fifo, HDR disabled, DPI=SystemScaled
 
 ### TC-14.1.4.1 Logical to Physical 100
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `LogicalSize(1280, 720).to_physical(1.0)` | `PhysicalSize(1280, 720)` | R-14.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.4    |
+
+1. **#1** — `LogicalSize(1280, 720).to_physical(1.0)`
+   - **Expected:** `PhysicalSize(1280, 720)`
 
 ### TC-14.1.4.2 Logical to Physical 125
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `LogicalSize(1280, 720).to_physical(1.25)` | `PhysicalSize(1600, 900)` | R-14.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.4    |
+
+1. **#1** — `LogicalSize(1280, 720).to_physical(1.25)`
+   - **Expected:** `PhysicalSize(1600, 900)`
 
 ### TC-14.1.4.3 Logical to Physical 150
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `LogicalSize(1280, 720).to_physical(1.5)` | `PhysicalSize(1920, 1080)` | R-14.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.4    |
+
+1. **#1** — `LogicalSize(1280, 720).to_physical(1.5)`
+   - **Expected:** `PhysicalSize(1920, 1080)`
 
 ### TC-14.1.4.4 Logical to Physical 200
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `LogicalSize(1280, 720).to_physical(2.0)` | `PhysicalSize(2560, 1440)` | R-14.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.4    |
+
+1. **#1** — `LogicalSize(1280, 720).to_physical(2.0)`
+   - **Expected:** `PhysicalSize(2560, 1440)`
 
 ### TC-14.1.6.1 HDR Config Disabled
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `HdrConfig::disabled()` | enabled=false, color_space=Srgb, peak_luminance_nits=80.0 | R-14.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.6    |
+
+1. **#1** — `HdrConfig::disabled()`
+   - **Expected:** enabled=false, color_space=Srgb, peak_luminance_nits=80.0
 
 ### TC-14.1.6.2 HDR Config Platform Default Windows
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `HdrConfig::platform_default(1000.0)` on Windows | color_space=ScRgb, peak=1000.0 | R-14.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.6    |
+
+1. **#1** — `HdrConfig::platform_default(1000.0)` on Windows
+   - **Expected:** color_space=ScRgb, peak=1000.0
 
 ### TC-14.1.6.3 HDR Config Platform Default macOS
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `HdrConfig::platform_default(1000.0)` on macOS | color_space=ExtendedLinearSrgb, peak=1000.0 | R-14.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.6    |
+
+1. **#1** — `HdrConfig::platform_default(1000.0)` on macOS
+   - **Expected:** color_space=ExtendedLinearSrgb, peak=1000.0
 
 ### TC-14.1.6.4 HDR Config Platform Default Linux
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `HdrConfig::platform_default(1000.0)` on Linux | color_space=Bt2020Pq, peak=1000.0 | R-14.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.6    |
+
+1. **#1** — `HdrConfig::platform_default(1000.0)` on Linux
+   - **Expected:** color_space=Bt2020Pq, peak=1000.0
 
 ### TC-14.1.3.1 Display ID Equality
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `DisplayId(1) == DisplayId(1)` | true | R-14.1.3 |
-| 2 | `DisplayId(1) == DisplayId(2)` | false | R-14.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.3    |
+| 2 | R-14.1.3    |
+
+1. **#1** — `DisplayId(1) == DisplayId(1)`
+   - **Expected:** true
+2. **#2** — `DisplayId(1) == DisplayId(2)`
+   - **Expected:** false
 
 ### TC-14.1.5.1 Present Mode Variants
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enumerate `PresentMode` variants | Exactly 3: Immediate, Fifo, Mailbox | R-14.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.5    |
+
+1. **#1** — Enumerate `PresentMode` variants
+   - **Expected:** Exactly 3: Immediate, Fifo, Mailbox
 
 ### TC-14.1.5.2 Frame Rate Cap Variants
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `FrameRateCap::Capped(30)` vs `FrameRateCap::Uncapped` | Distinct values, not equal | R-14.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.5    |
+
+1. **#1** — `FrameRateCap::Capped(30)` vs `FrameRateCap::Uncapped`
+   - **Expected:** Distinct values, not equal
 
 ## Integration Tests
 
 ### TC-14.1.1.I1 Window Lifecycle
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Create window, resize to 1920x1080 | `Resized` event, dimensions = 1920x1080 | R-14.1.1 |
-| 2 | Minimize window | `Minimized` event | R-14.1.1 |
-| 3 | Maximize window | `Maximized` event | R-14.1.1 |
-| 4 | Restore window | `Restored` event | R-14.1.1 |
-| 5 | Destroy window | Window destroyed, no crash | R-14.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.1    |
+| 2 | R-14.1.1    |
+| 3 | R-14.1.1    |
+| 4 | R-14.1.1    |
+| 5 | R-14.1.1    |
+
+1. **#1** — Create window, resize to 1920x1080
+   - **Expected:** `Resized` event, dimensions = 1920x1080
+2. **#2** — Minimize window
+   - **Expected:** `Minimized` event
+3. **#3** — Maximize window
+   - **Expected:** `Maximized` event
+4. **#4** — Restore window
+   - **Expected:** `Restored` event
+5. **#5** — Destroy window
+   - **Expected:** Window destroyed, no crash
 
 ### TC-14.1.1.I2 Auxiliary Window
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Create primary + auxiliary window, resize auxiliary | Primary unaffected by auxiliary resize | R-14.1.1 |
-| 2 | Destroy auxiliary first | Primary continues operating | R-14.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.1    |
+| 2 | R-14.1.1    |
+
+1. **#1** — Create primary + auxiliary window, resize auxiliary
+   - **Expected:** Primary unaffected by auxiliary resize
+2. **#2** — Destroy auxiliary first
+   - **Expected:** Primary continues operating
 
 ### TC-14.1.2.I1 Fullscreen Cycle No Device Loss
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Windowed -> BorderlessFullscreen -> ExclusiveFullscreen -> Windowed | No GPU device loss at any transition | R-14.1.2 |
-| 2 | Check backbuffer resolution in fullscreen | Matches display resolution | R-14.1.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.2    |
+| 2 | R-14.1.2    |
+
+1. **#1** — Windowed -> BorderlessFullscreen -> ExclusiveFullscreen -> Windowed
+   - **Expected:** No GPU device loss at any transition
+2. **#2** — Check backbuffer resolution in fullscreen
+   - **Expected:** Matches display resolution
 
 ### TC-14.1.2.I2 Borderless Alt Tab
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | In borderless fullscreen, simulate Alt+Tab | Window loses focus without mode change | R-14.1.2 |
-| 2 | Return to app | Window regains focus | R-14.1.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.2    |
+| 2 | R-14.1.2    |
+
+1. **#1** — In borderless fullscreen, simulate Alt+Tab
+   - **Expected:** Window loses focus without mode change
+2. **#2** — Return to app
+   - **Expected:** Window regains focus
 
 ### TC-14.1.3.I1 Display Enumeration
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enumerate displays on multi-monitor system | Each reports valid resolution > 0x0, refresh > 0, at least one primary | R-14.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.3    |
+
+1. **#1** — Enumerate displays on multi-monitor system
+   - **Expected:** Each reports valid resolution > 0x0, refresh > 0, at least one primary
 
 ### TC-14.1.3.I2 Display Hot Plug
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Simulate display connect/disconnect | Re-enumeration fires within one frame, list updates correctly | R-14.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.3    |
+
+1. **#1** — Simulate display connect/disconnect
+   - **Expected:** Re-enumeration fires within one frame, list updates correctly
 
 ### TC-14.1.4.I1 DPI Change Multi Monitor
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Drag window from 96 DPI to 192 DPI monitor | `DpiChanged` event with correct old/new scale factors | R-14.1.4 |
-| 2 | Check `current_dpi()` after move | Updated within one frame | R-14.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.4    |
+| 2 | R-14.1.4    |
+
+1. **#1** — Drag window from 96 DPI to 192 DPI monitor
+   - **Expected:** `DpiChanged` event with correct old/new scale factors
+2. **#2** — Check `current_dpi()` after move
+   - **Expected:** Updated within one frame
 
 ### TC-14.1.4.I2 Fractional DPI Scaling
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Render UI at 125%, 150%, 200% scale | Text at native resolution (no bilinear blur), hit regions within 1 px | R-14.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.4    |
+
+1. **#1** — Render UI at 125%, 150%, 200% scale
+   - **Expected:** Text at native resolution (no bilinear blur), hit regions within 1 px
 
 ### TC-14.1.5.I1 VSync FIFO Frame Pacing
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | PresentMode::Fifo, render 300 frames | Frame intervals match VSync period within 0.5 ms | R-14.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.5    |
+
+1. **#1** — PresentMode::Fifo, render 300 frames
+   - **Expected:** Frame intervals match VSync period within 0.5 ms
 
 ### TC-14.1.5.I2 VSync Mailbox No Tearing
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | PresentMode::Mailbox, render 300 frames | No tearing artifacts (scanline detection) | R-14.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.5    |
+
+1. **#1** — PresentMode::Mailbox, render 300 frames
+   - **Expected:** No tearing artifacts (scanline detection)
 
 ### TC-14.1.5.I3 Frame Rate Cap 30 FPS
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `FrameRateCap::Capped(30)` on 60 Hz display, 300 frames | Frame intervals = 33.3 ms within 1 ms tolerance | R-14.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.5    |
+
+1. **#1** — `FrameRateCap::Capped(30)` on 60 Hz display, 300 frames
+   - **Expected:** Frame intervals = 33.3 ms within 1 ms tolerance
 
 ### TC-14.1.6.I1 HDR Swapchain Format
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enable HDR on HDR-capable display | Swapchain reports HDR format (FP16/scRGB or extended linear) | R-14.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.6    |
+
+1. **#1** — Enable HDR on HDR-capable display
+   - **Expected:** Swapchain reports HDR format (FP16/scRGB or extended linear)
 
 ### TC-14.1.6.I2 HDR Above 1 Not Clipped
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Render test pattern with values > 1.0, HDR enabled | Output values not clipped to 1.0 | R-14.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.6    |
+
+1. **#1** — Render test pattern with values > 1.0, HDR enabled
+   - **Expected:** Output values not clipped to 1.0
 
 ### TC-14.1.6.I3 HDR Unsupported Display
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Call `enable_hdr()` on SDR-only display | Returns `HdrError::DisplayNotHdrCapable` | R-14.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.6    |
+
+1. **#1** — Call `enable_hdr()` on SDR-only display
+   - **Expected:** Returns `HdrError::DisplayNotHdrCapable`
 
 ## Benchmarks
 

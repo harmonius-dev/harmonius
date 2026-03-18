@@ -6,104 +6,158 @@ Companion test cases for [threading.md](threading.md).
 
 ### TC-14.3.1.1 Work Stealing 10K Jobs
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enqueue 10,000 jobs via `ThreadPool::spawn` | All 10,000 complete with correct results | R-14.3.1 |
-| 2 | Run under ThreadSanitizer | Zero data races detected | R-14.3.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.1    |
+| 2 | R-14.3.1    |
+
+1. **#1** — Enqueue 10,000 jobs via `ThreadPool::spawn`
+   - **Expected:** All 10,000 complete with correct results
+2. **#2** — Run under ThreadSanitizer
+   - **Expected:** Zero data races detected
 
 ### TC-14.3.1.2 Worker Count Matches Perf Cores
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `ThreadPool::new(ThreadPoolConfig { worker_count: None })` on hybrid CPU | `worker_count()` == `CoreTopology::detect().performance_core_count()` | R-14.3.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.1    |
+
+1. **#1** — `ThreadPool::new(ThreadPoolConfig { worker_count: None })` on hybrid CPU
+   - **Expected:** `worker_count()` == `CoreTopology::detect().performance_core_count()`
 
 ### TC-14.3.3.1 Graph Fan Out Fan In
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph: 1 root -> 4 parallel tasks -> 1 join, each increments shared atomic | Join task sees atomic value = 4 | R-14.3.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.3    |
+
+1. **#1** — Graph: 1 root -> 4 parallel tasks -> 1 join, each increments shared atomic
+   - **Expected:** Join task sees atomic value = 4
 
 ### TC-14.3.3.2 Graph Nested Subgraph
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Parent graph with subgraph node, continuation after subgraph | Continuation runs only after subgraph completes | R-14.3.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.3    |
+
+1. **#1** — Parent graph with subgraph node, continuation after subgraph
+   - **Expected:** Continuation runs only after subgraph completes
 
 ### TC-14.3.3.3 Graph Cycle Detection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph with A -> B -> C -> A cycle | `build()` returns `Err(TaskGraphError::CycleDetected)` | R-14.3.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.3    |
+
+1. **#1** — Graph with A -> B -> C -> A cycle
+   - **Expected:** `build()` returns `Err(TaskGraphError::CycleDetected)`
 
 ### TC-14.3.3.4 Graph Empty
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `TaskGraphBuilder::new().build()` with no nodes | Returns `Err(TaskGraphError::EmptyGraph)` | R-14.3.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.3    |
+
+1. **#1** — `TaskGraphBuilder::new().build()` with no nodes
+   - **Expected:** Returns `Err(TaskGraphError::EmptyGraph)`
 
 ### TC-14.3.4.1 Fiber Suspend Resume
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Fiber calls `yielder.yield_now()` then completes | Fiber resumes on (potentially different) worker, produces correct result | R-14.3.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.4    |
+
+1. **#1** — Fiber calls `yielder.yield_now()` then completes
+   - **Expected:** Fiber resumes on (potentially different) worker, produces correct result
 
 ### TC-14.3.4.2 Fiber Guard Page
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Fiber with 64 KiB stack recurses beyond limit | Guard page fault detected (no silent corruption) | R-14.3.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.4    |
+
+1. **#1** — Fiber with 64 KiB stack recurses beyond limit
+   - **Expected:** Guard page fault detected (no silent corruption)
 
 ### TC-14.3.5.1 Async Task IO
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Async task `.await`s `IoReactor::read()` on test file | Correct data returned, no worker thread blocks | R-14.3.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.5    |
+
+1. **#1** — Async task `.await`s `IoReactor::read()` on test file
+   - **Expected:** Correct data returned, no worker thread blocks
 
 ### TC-14.3.5.2 Reactor Poll Drains
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Submit async I/O, check before `poll()` | Future not woken before `poll()` is called | R-14.3.5 |
-| 2 | Call `poll()` | Future wakes and returns correct data | R-14.3.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.5    |
+| 2 | R-14.3.5    |
+
+1. **#1** — Submit async I/O, check before `poll()`
+   - **Expected:** Future not woken before `poll()` is called
+2. **#2** — Call `poll()`
+   - **Expected:** Future wakes and returns correct data
 
 ### TC-14.3.5.3 Async Mutex No Block
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 4 tasks contend on `AsyncMutex`, each holds 1 ms | No worker thread blocks; all tasks complete | R-14.3.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.5    |
+
+1. **#1** — 4 tasks contend on `AsyncMutex`, each holds 1 ms
+   - **Expected:** No worker thread blocks; all tasks complete
 
 ## Integration Tests
 
 ### TC-14.3.2.I1 Affinity Per Platform
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Query main thread affinity | Pinned to performance core | R-14.3.2 |
-| 2 | Spawn Low-priority task, query affinity | Pinned to efficiency core (if available) | R-14.3.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.2    |
+| 2 | R-14.3.2    |
+
+1. **#1** — Query main thread affinity
+   - **Expected:** Pinned to performance core
+2. **#2** — Spawn Low-priority task, query affinity
+   - **Expected:** Pinned to efficiency core (if available)
 
 ### TC-14.3.5.I1 Async Read 10 MB
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Async read 10 MB file via IoReactor | No worker blocks, data integrity verified | R-14.3.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.5    |
+
+1. **#1** — Async read 10 MB file via IoReactor
+   - **Expected:** No worker blocks, data integrity verified
 
 ### TC-14.3.1.I1 Utilization Imbalance
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Imbalanced graph (1 heavy + 7 light tasks) | Worker utilization >= 80% | R-14.3.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.1    |
+
+1. **#1** — Imbalanced graph (1 heavy + 7 light tasks)
+   - **Expected:** Worker utilization >= 80%
 
 ### TC-14.3.4.I1 Fiber Cross Thread
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Fiber suspended on worker N | Resumes on worker M (different worker) | R-14.3.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.4    |
+
+1. **#1** — Fiber suspended on worker N
+   - **Expected:** Resumes on worker M (different worker)
 
 ### TC-14.3.5.I2 GCD Controlled Drain
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | macOS: submit GCD I/O, verify no callback before `poll()` | Callbacks fire only during `poll()` | R-14.3.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.3.5    |
+
+1. **#1** — macOS: submit GCD I/O, verify no callback before `poll()`
+   - **Expected:** Callbacks fire only during `poll()`
 
 ## Benchmarks
 

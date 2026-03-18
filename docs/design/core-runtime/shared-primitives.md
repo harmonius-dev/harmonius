@@ -8,30 +8,73 @@
 
 ### Tier 1 — Engine-Wide Primitives
 
-| Primitive | Duplicated In | Features Served |
-|-----------|---------------|-----------------|
-| `Handle<T>` + `HandleMap<T>` | ecs.md (Entity), memory-async-io.md (Handle), spatial-index.md (BvhHandle) | F-1.1.11, F-1.7.4, F-1.7.5, F-1.9.1 |
-| `UniformGrid<T>` | perception.md (ScentGrid), steering-crowds.md (DensityGrid), genre-specific.md (FogGrid, TacticalGrid) | F-7.6, F-7.7, F-13.20, F-13.26 |
-| `Curve<T>` | databases.md (NumericCurve), camera.md (Spline), navigation.md (PathSmooth), weapons.md (RecoilCurve), state-machine.md (BlendCurve), behavior.md (ResponseCurve) | F-13.7, F-13.25, F-7.1, F-13.16, F-9.4, F-7.3 |
-| `SpringDamper<T>` | first-person.md (WeaponSpring, CameraSpring, SwaySpring), procedural.md (SpringBone), cloth-hair.md (CardHairSpring), constraints.md (SpringParams) | F-9.6, F-9.3, F-9.5, F-4.3 |
-| `StatModifier` + `StatAggregator` | abilities-combat.md, weapons.md, character.md, progression-social.md, databases.md | F-13.10, F-13.16, F-13.8, F-13.12, F-13.7 |
-| `ConditionExpr` | quest-dialogue.md (PrerequisiteExpr), progression-social.md (Prerequisites), monetization.md (ChallengeConditions) | F-13.6, F-13.12, F-13.23 |
-| `FrameBudget` | behavior.md (AiBudget), perception.md (PerceptionBudget), steering-crowds.md (LOD scheduler), destruction.md (ActivationBudget) | F-7.3, F-7.6, F-7.7, F-4.6 |
-| `FalloffCurve` | level-world.md, 2d-games.md, effects.md | F-15.2, F-10.5, F-11.2 |
-| `PlatformTier` | post-processing.md (QualityTier), stylized-materials.md (PlatformTier), scene-pipeline.md (merged into core-rendering.md), particles.md, cloth-hair.md | F-2.9, F-2.11, F-2.10, F-11.1, F-9.5 |
-| `CompressionCodec` | streaming.md, dcc-versioning.md | F-12.5, F-12.6 |
+| Primitive                         |
+|-----------------------------------|
+| `Handle<T>` + `HandleMap<T>`      |
+| `UniformGrid<T>`                  |
+| `Curve<T>`                        |
+| `SpringDamper<T>`                 |
+| `StatModifier` + `StatAggregator` |
+| `ConditionExpr`                   |
+| `FrameBudget`                     |
+| `FalloffCurve`                    |
+| `PlatformTier`                    |
+| `CompressionCodec`                |
+
+1. **`Handle<T>` + `HandleMap<T>`** — ecs.md (Entity), memory-async-io.md (Handle), spatial-index.md
+   (BvhHandle)
+   - **Features Served:** F-1.1.11, F-1.7.4, F-1.7.5, F-1.9.1
+2. **`UniformGrid<T>`** — perception.md (ScentGrid), steering-crowds.md (DensityGrid),
+   genre-specific.md (FogGrid, TacticalGrid)
+   - **Features Served:** F-7.6, F-7.7, F-13.20, F-13.26
+3. **`Curve<T>`** — databases.md (NumericCurve), camera.md (Spline), navigation.md (PathSmooth),
+   weapons.md (RecoilCurve), state-machine.md (BlendCurve), behavior.md (ResponseCurve)
+   - **Features Served:** F-13.7, F-13.25, F-7.1, F-13.16, F-9.4, F-7.3
+4. **`SpringDamper<T>`** — first-person.md (WeaponSpring, CameraSpring, SwaySpring), procedural.md
+   (SpringBone), cloth-hair.md (CardHairSpring), constraints.md (SpringParams)
+   - **Features Served:** F-9.6, F-9.3, F-9.5, F-4.3
+5. **`StatModifier` + `StatAggregator`** — abilities-combat.md, weapons.md, character.md,
+   progression-social.md, databases.md
+   - **Features Served:** F-13.10, F-13.16, F-13.8, F-13.12, F-13.7
+6. **`ConditionExpr`** — quest-dialogue.md (PrerequisiteExpr), progression-social.md
+   (Prerequisites), monetization.md (ChallengeConditions)
+   - **Features Served:** F-13.6, F-13.12, F-13.23
+7. **`FrameBudget`** — behavior.md (AiBudget), perception.md (PerceptionBudget), steering-crowds.md
+   (LOD scheduler), destruction.md (ActivationBudget)
+   - **Features Served:** F-7.3, F-7.6, F-7.7, F-4.6
+8. **`FalloffCurve`** — level-world.md, 2d-games.md, effects.md
+   - **Features Served:** F-15.2, F-10.5, F-11.2
+9. **`PlatformTier`** — post-processing.md (QualityTier), stylized-materials.md (PlatformTier),
+   scene-pipeline.md (merged into core-rendering.md), particles.md, cloth-hair.md
+   - **Features Served:** F-2.9, F-2.11, F-2.10, F-11.1, F-9.5
+10. **`CompressionCodec`** — streaming.md, dcc-versioning.md
+    - **Features Served:** F-12.5, F-12.6
 
 ### Tier 2 — Domain-Shared Primitives
 
-| Primitive | Duplicated In | Features Served |
-|-----------|---------------|-----------------|
-| `ConditionalGraph<N, E>` | quest-dialogue.md (QuestGraph), progression-social.md (TalentTree), abilities-combat.md (ComboChain), quest-dialogue.md (DialogueTree) | F-13.6, F-13.12, F-13.10 |
-| `DecayingEntry<T>` | perception.md (PerceptionMemory), npc-simulation.md (DeedMemory, Gossip), abilities-combat.md (ThreatTable) | F-7.6, F-13.19, F-13.10 |
-| `ConnectivityAnalyzer` | destruction.md (StructuralAnalysis), building-survival.md (IntegrityCheck) | F-4.6, F-13.14 |
-| `TaggedLookupTable<K, V>` | weapons.md (ImpactResponse), abilities-combat.md (TagRules), databases.md (LootTable), npc-simulation.md (BarkTable) | F-13.16, F-13.10, F-13.7, F-13.19 |
-| `LiveOpsResource<T>` | monetization.md (BattlePass, Store, Challenges, LoginCalendar) | F-13.23, F-13.24 |
-| `GraphCompiler` | material-animation.md (MaterialGraph), effect-graph.md (EffectGraph), logic-graph.md (ShaderGraph) | F-15.3, F-11.6, F-15.8 |
-| `VirtualResourceStreamer` | meshlets.md (MeshletStreamer), streaming.md (VirtualTexture), terrain.md (TerrainTiles) | F-3.1, F-12.5, F-3.2 |
+| Primitive                 | Features Served                   |
+|---------------------------|-----------------------------------|
+| `ConditionalGraph<N, E>`  | F-13.6, F-13.12, F-13.10          |
+| `DecayingEntry<T>`        | F-7.6, F-13.19, F-13.10           |
+| `ConnectivityAnalyzer`    | F-4.6, F-13.14                    |
+| `TaggedLookupTable<K, V>` | F-13.16, F-13.10, F-13.7, F-13.19 |
+| `LiveOpsResource<T>`      | F-13.23, F-13.24                  |
+| `GraphCompiler`           | F-15.3, F-11.6, F-15.8            |
+| `VirtualResourceStreamer` | F-3.1, F-12.5, F-3.2              |
+
+1. **`ConditionalGraph<N, E>`** — quest-dialogue.md (QuestGraph), progression-social.md
+   (TalentTree), abilities-combat.md (ComboChain), quest-dialogue.md (DialogueTree)
+2. **`DecayingEntry<T>`** — perception.md (PerceptionMemory), npc-simulation.md (DeedMemory,
+   Gossip), abilities-combat.md (ThreatTable)
+3. **`ConnectivityAnalyzer`** — destruction.md (StructuralAnalysis), building-survival.md
+   (IntegrityCheck)
+4. **`TaggedLookupTable<K, V>`** — weapons.md (ImpactResponse), abilities-combat.md (TagRules),
+   databases.md (LootTable), npc-simulation.md (BarkTable)
+5. **`LiveOpsResource<T>`** — monetization.md (BattlePass, Store, Challenges, LoginCalendar)
+6. **`GraphCompiler`** — material-animation.md (MaterialGraph), effect-graph.md (EffectGraph),
+   logic-graph.md (ShaderGraph)
+7. **`VirtualResourceStreamer`** — meshlets.md (MeshletStreamer), streaming.md (VirtualTexture),
+   terrain.md (TerrainTiles)
 
 ---
 
@@ -1646,31 +1689,67 @@ impl VirtualResourceStreamer {
 
 Shared primitives are consumed at different points in the frame lifecycle:
 
-| Phase | Primitives Used |
-|-------|----------------|
-| Frame start | `FrameBudget::reset`, `LiveOpsResource::poll` |
-| Input / events | `ConditionExpr::evaluate` |
-| AI / behavior | `FrameBudget::execute`, `DecayingStore::tick`, `Curve::evaluate`, `UniformGrid` reads |
-| Physics | `SpringDamper::tick`, `ConnectivityAnalyzer::analyze` |
-| Game logic | `StatAggregator::evaluate`, `ConditionalGraph::reachable_from`, `TaggedLookupTable::select_weighted` |
-| Rendering prep | `PlatformTier::meets`, `FalloffCurve::evaluate`, `VirtualResourceStreamer::process_feedback` |
-| GPU dispatch | `VirtualResourceStreamer::dispatch_loads`, `GraphCompiler::compile` (async, cached) |
-| GPU upload | `UniformGrid::upload_to_gpu`, `VirtualResourceStreamer::commit_uploads` |
-| Post-frame | `Handle/HandleMap` cleanup, `CompressionCodec` for replay/save |
+| Phase          |
+|----------------|
+| Frame start    |
+| Input / events |
+| AI / behavior  |
+| Physics        |
+| Game logic     |
+| Rendering prep |
+| GPU dispatch   |
+| GPU upload     |
+| Post-frame     |
+
+1. **Frame start** — `FrameBudget::reset`, `LiveOpsResource::poll`
+2. **Input / events** — `ConditionExpr::evaluate`
+3. **AI / behavior** — `FrameBudget::execute`, `DecayingStore::tick`, `Curve::evaluate`,
+   `UniformGrid` reads
+4. **Physics** — `SpringDamper::tick`, `ConnectivityAnalyzer::analyze`
+5. **Game logic** — `StatAggregator::evaluate`, `ConditionalGraph::reachable_from`,
+   `TaggedLookupTable::select_weighted`
+6. **Rendering prep** — `PlatformTier::meets`, `FalloffCurve::evaluate`,
+   `VirtualResourceStreamer::process_feedback`
+7. **GPU dispatch** — `VirtualResourceStreamer::dispatch_loads`, `GraphCompiler::compile` (async,
+   cached)
+8. **GPU upload** — `UniformGrid::upload_to_gpu`, `VirtualResourceStreamer::commit_uploads`
+9. **Post-frame** — `Handle/HandleMap` cleanup, `CompressionCodec` for replay/save
 
 ---
 
 ## Platform Considerations
 
-| Primitive | Windows | macOS | Linux |
-|-----------|---------|-------|-------|
-| `Handle<T>` / `HandleMap<T>` | No platform specifics | No platform specifics | No platform specifics |
-| `UniformGrid<T>` GPU upload | D3D12 buffer | Metal buffer via GCD | Vulkan buffer |
-| `CompressionCodec` | IOCP-based async compress | GCD Dispatch IO | io_uring SQE |
-| `VirtualResourceStreamer` | D3D12 feedback, IOCP I/O | Metal feedback, GCD I/O | Vulkan feedback, io_uring |
-| `GraphCompiler` | DXC native | DXC + MSC via cxx.rs | DXC via cxx.rs |
-| `LiveOpsResource<T>` | IOCP sockets | GCD sockets | io_uring sockets |
-| `PlatformTier` | Desktop / HighEnd | Mobile / Desktop | Desktop / HighEnd |
+| Primitive                    |
+|------------------------------|
+| `Handle<T>` / `HandleMap<T>` |
+| `UniformGrid<T>` GPU upload  |
+| `CompressionCodec`           |
+| `VirtualResourceStreamer`    |
+| `GraphCompiler`              |
+| `LiveOpsResource<T>`         |
+| `PlatformTier`               |
+
+1. **`Handle<T>` / `HandleMap<T>`** — No platform specifics
+   - **macOS:** No platform specifics
+   - **Linux:** No platform specifics
+2. **`UniformGrid<T>` GPU upload** — D3D12 buffer
+   - **macOS:** Metal buffer via GCD
+   - **Linux:** Vulkan buffer
+3. **`CompressionCodec`** — IOCP-based async compress
+   - **macOS:** GCD Dispatch IO
+   - **Linux:** io_uring SQE
+4. **`VirtualResourceStreamer`** — D3D12 feedback, IOCP I/O
+   - **macOS:** Metal feedback, GCD I/O
+   - **Linux:** Vulkan feedback, io_uring
+5. **`GraphCompiler`** — DXC native
+   - **macOS:** DXC + MSC via cxx.rs
+   - **Linux:** DXC via cxx.rs
+6. **`LiveOpsResource<T>`** — IOCP sockets
+   - **macOS:** GCD sockets
+   - **Linux:** io_uring sockets
+7. **`PlatformTier`** — Desktop / HighEnd
+   - **macOS:** Mobile / Desktop
+   - **Linux:** Desktop / HighEnd
 
 All async operations route through `IoReactor` as defined in `platform/threading.md`. No Rust stdlib
 file I/O.
@@ -1681,30 +1760,68 @@ file I/O.
 
 ### Tier 1 Unit Tests
 
-| Primitive | Test Cases |
-|-----------|------------|
-| `Handle<T>` + `HandleMap<T>` | Insert/get/remove round-trip; stale handle returns `None`; generation overflow wraps correctly; iteration skips free slots; type safety prevents cross-type access |
-| `UniformGrid<T>` | World-to-cell mapping at boundaries; neighbor iteration counts (VN=6, Moore=26 in 3D); out-of-bounds returns `None`; clear resets all cells |
-| `Curve<T>` | Linear: `evaluate(0.5)` midpoint; CatmullRom: passes through control points; Bezier: endpoint interpolation; Step: holds value until next key; derivative correctness |
-| `SpringDamper<T>` | Critically damped converges without overshoot; underdamped oscillates; overdamped sluggish; zero dt produces no change; f32/Vec3/Quat implementations |
-| `StatModifier` | Flat-only aggregation; Percent-only scaling; Override replaces final; combined ordering (Flat -> Percent -> Override); remove_by_source clears correct entries; clamp respects min/max |
-| `ConditionExpr` | And: all true passes, one false fails; Or: one true passes, all false fails; Not: inverts; nested expressions; leaf_count correctness |
-| `FrameBudget` | High-priority executes first; budget exhaustion defers remainder; reset preserves deferred items; zero-budget defers all |
-| `FalloffCurve` | Linear: 0 at max_range, 1 at distance 0; Quadratic: inverse-square law; Exponential: decay rate; Custom: delegates to inner curve; beyond max_range returns 0 |
-| `PlatformTier` | Ordering: Mobile < Switch < Desktop < HighEnd; `meets` returns true for equal/higher; recommended values are monotonically increasing |
-| `CompressionCodec` | None: output equals input; Lz4: round-trip fidelity; Zstd: round-trip fidelity; empty input; large input (1 MiB+) |
+| Primitive                    |
+|------------------------------|
+| `Handle<T>` + `HandleMap<T>` |
+| `UniformGrid<T>`             |
+| `Curve<T>`                   |
+| `SpringDamper<T>`            |
+| `StatModifier`               |
+| `ConditionExpr`              |
+| `FrameBudget`                |
+| `FalloffCurve`               |
+| `PlatformTier`               |
+| `CompressionCodec`           |
+
+1. **`Handle<T>` + `HandleMap<T>`** — Insert/get/remove round-trip; stale handle returns `None`;
+   generation overflow wraps correctly; iteration skips free slots; type safety prevents cross-type
+   access
+2. **`UniformGrid<T>`** — World-to-cell mapping at boundaries; neighbor iteration counts (VN=6,
+   Moore=26 in 3D); out-of-bounds returns `None`; clear resets all cells
+3. **`Curve<T>`** — Linear: `evaluate(0.5)` midpoint; CatmullRom: passes through control points;
+   Bezier: endpoint interpolation; Step: holds value until next key; derivative correctness
+4. **`SpringDamper<T>`** — Critically damped converges without overshoot; underdamped oscillates;
+   overdamped sluggish; zero dt produces no change; f32/Vec3/Quat implementations
+5. **`StatModifier`** — Flat-only aggregation; Percent-only scaling; Override replaces final;
+   combined ordering (Flat -> Percent -> Override); remove_by_source clears correct entries; clamp
+   respects min/max
+6. **`ConditionExpr`** — And: all true passes, one false fails; Or: one true passes, all false
+   fails; Not: inverts; nested expressions; leaf_count correctness
+7. **`FrameBudget`** — High-priority executes first; budget exhaustion defers remainder; reset
+   preserves deferred items; zero-budget defers all
+8. **`FalloffCurve`** — Linear: 0 at max_range, 1 at distance 0; Quadratic: inverse-square law;
+   Exponential: decay rate; Custom: delegates to inner curve; beyond max_range returns 0
+9. **`PlatformTier`** — Ordering: Mobile < Switch < Desktop < HighEnd; `meets` returns true for
+   equal/higher; recommended values are monotonically increasing
+10. **`CompressionCodec`** — None: output equals input; Lz4: round-trip fidelity; Zstd: round-trip
+    fidelity; empty input; large input (1 MiB+)
 
 ### Tier 2 Unit Tests
 
-| Primitive | Test Cases |
-|-----------|------------|
-| `ConditionalGraph<N, E>` | Add nodes/edges; topological order; reachable_from with false conditions filters edges; cycle detection (should reject) |
-| `DecayingStore<T>` | Insert at strength 1.0; tick reduces strength; below-threshold removal; refresh restores strength; strongest returns max |
-| `ConnectivityAnalyzer` | Fully connected: no disconnected clusters; single anchor removed: cluster detaches; island detection; empty input |
-| `TaggedLookupTable<K, V>` | Insert/get round-trip; weighted selection respects weights over many samples; missing key returns None |
-| `LiveOpsResource<T>` | UpToDate when versions match; Updated when remote is newer; Error on network failure; force_refresh bypasses interval |
-| `GraphCompiler` | Topological sort correctness; type mismatch produces CompileError; dead code elimination removes unreachable nodes; HLSL output for simple graph |
-| `VirtualResourceStreamer` | Feedback enqueues pages; dispatch respects budget; LRU eviction frees oldest; commit_uploads transitions state to Resident |
+| Primitive                 |
+|---------------------------|
+| `ConditionalGraph<N, E>`  |
+| `DecayingStore<T>`        |
+| `ConnectivityAnalyzer`    |
+| `TaggedLookupTable<K, V>` |
+| `LiveOpsResource<T>`      |
+| `GraphCompiler`           |
+| `VirtualResourceStreamer` |
+
+1. **`ConditionalGraph<N, E>`** — Add nodes/edges; topological order; reachable_from with false
+   conditions filters edges; cycle detection (should reject)
+2. **`DecayingStore<T>`** — Insert at strength 1.0; tick reduces strength; below-threshold removal;
+   refresh restores strength; strongest returns max
+3. **`ConnectivityAnalyzer`** — Fully connected: no disconnected clusters; single anchor removed:
+   cluster detaches; island detection; empty input
+4. **`TaggedLookupTable<K, V>`** — Insert/get round-trip; weighted selection respects weights over
+   many samples; missing key returns None
+5. **`LiveOpsResource<T>`** — UpToDate when versions match; Updated when remote is newer; Error on
+   network failure; force_refresh bypasses interval
+6. **`GraphCompiler`** — Topological sort correctness; type mismatch produces CompileError; dead
+   code elimination removes unreachable nodes; HLSL output for simple graph
+7. **`VirtualResourceStreamer`** — Feedback enqueues pages; dispatch respects budget; LRU eviction
+   frees oldest; commit_uploads transitions state to Resident
 
 ### Integration Tests
 

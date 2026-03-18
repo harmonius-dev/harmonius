@@ -1,10 +1,71 @@
 # R-9.5 -- Cloth & Hair Simulation Requirements
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|-------------|-----------|--------------|
-| R-9.5.1 | The engine **SHALL** run position-based dynamics cloth simulation entirely on GPU compute with distance, bending, and self-collision constraints, driven by wind forces, skeletal animation, and bone-attached collision capsules. Cloth constraint solving **SHALL** delegate to the physics XPBD solver (R-4.7.1). The animation cloth system **SHALL** provide garment authoring, LOD management, and skinned mesh integration on top of the physics simulation. | [F-9.5.1](../../features/animation/cloth-hair.md) | GPU-side cloth simulation scales to many simultaneous cloth panels (cloaks, banners) without CPU overhead, critical for populated game scenes. Delegating constraint solving to the physics domain avoids duplicate solvers and ensures consistent physical behavior. | Simulate a 1000-vertex cloak attached to a character's shoulders. Apply a wind force and verify the cloth billows in the wind direction. Walk the character through a doorway and verify the cloth collides with the door frame capsules without penetration. Verify self-collision by folding the cloth and confirming no vertices pass through the cloth surface. |
-| R-9.5.2 | The engine **SHALL** simulate hair using physics-based guide strand chains with stretch, bend, and collision constraints, driving interpolated render strands via skinning weights, supporting wind, gravity, and collision with skeletal mesh capsules. | [F-9.5.2](../../features/animation/cloth-hair.md) | Strand-based simulation produces high-fidelity hair motion for player characters and key NPCs where visual quality justifies the simulation cost. | Simulate 100 guide strands on a character head. Apply gravity and verify all strands hang downward. Rotate the head 90 degrees and verify strands respond with physically plausible swinging motion. Verify no strands penetrate the head collision capsule by checking all strand particle positions are outside the capsule radius each frame. |
-| R-9.5.3 | The engine **SHALL** render hair as textured polygon strips with alpha-tested or alpha-blended transparency and anisotropic specular shading, driven by simple spring physics or baked animation, as a performant alternative to strand-based hair. | [F-9.5.3](../../features/animation/cloth-hair.md) | Card-based hair provides acceptable visual quality at a fraction of the simulation cost, enabling hair rendering on medium-distance and crowd characters. | Render a card-based hair asset and verify anisotropic specular highlights shift correctly when the light direction changes. Compare frame time against strand-based hair on the same character and verify card-based rendering is at least 5x faster. Verify spring physics produces visible secondary motion when the character turns quickly. |
-| R-9.5.4 | The engine **SHALL** transition hair representation between strand-based simulation, simplified strand clusters, card-based rendering, and single textured shell based on camera distance and screen coverage, using temporal blending to avoid popping artifacts. | [F-9.5.4](../../features/animation/cloth-hair.md) | Hair LOD prevents full strand simulation on distant characters, essential for maintaining frame rate with hundreds of visible characters. | Place a character with strand-based hair at 5 m, 20 m, 50 m, and 200 m from the camera. Verify the hair representation is full strands, simplified clusters, cards, and shell respectively. Fly the camera from 5 m to 200 m continuously and verify no visible popping during LOD transitions by recording the flythrough and inspecting frame-by-frame. |
-| R-9.5.5 | The engine **SHALL** resolve collisions between simulated cloth panels and the character body using capsule and convex hull proxies attached to skeleton bones, supporting friction and sticking contacts to prevent cloth penetration during fast movement. | [F-9.5.5](../../features/animation/cloth-hair.md) | Cloth-body collision prevents cloaks and garments from passing through character limbs, maintaining visual integrity during dynamic animations. | Simulate a cloak on a character performing a fast arm swing. Verify no cloth vertices penetrate the arm collision capsule during the swing. Verify friction contacts cause the cloth to drag along the arm surface rather than sliding freely. Update collision proxies by changing the skeleton pose and verify the cloth responds within 1 frame. |
-| R-9.5.6 | The engine **SHALL** drive hair wind response by sampling the shared wind field texture generated from `WindSource` ECS entities (R-4.7.5). Hair strands **SHALL** apply per-strand aerodynamic drag proportional to the sampled wind velocity. | [F-9.5.6](../../features/animation/cloth-hair.md) | Sampling the shared wind field texture ensures hair, foliage, cloth, and particles respond to wind coherently from the same source data, and per-strand aerodynamic drag produces physically plausible hair motion. | Apply a directional wind of 10 m/s from the east. Verify strand-based hair deflects eastward and card-based hair on the same character at a lower LOD deflects in the same direction with comparable magnitude. Place foliage and a particle emitter next to the character and verify all three systems respond to the same wind direction and strength. Verify hair reads wind from the shared wind field texture generated by the WindSource system (R-4.7.5). |
+| ID      | Derived From                                      |
+|---------|---------------------------------------------------|
+| R-9.5.1 | [F-9.5.1](../../features/animation/cloth-hair.md) |
+| R-9.5.2 | [F-9.5.2](../../features/animation/cloth-hair.md) |
+| R-9.5.3 | [F-9.5.3](../../features/animation/cloth-hair.md) |
+| R-9.5.4 | [F-9.5.4](../../features/animation/cloth-hair.md) |
+| R-9.5.5 | [F-9.5.5](../../features/animation/cloth-hair.md) |
+| R-9.5.6 | [F-9.5.6](../../features/animation/cloth-hair.md) |
+
+1. **R-9.5.1** — The engine **SHALL** run position-based dynamics cloth simulation entirely on GPU
+   compute with distance, bending, and self-collision constraints, driven by wind forces, skeletal
+   animation, and bone-attached collision capsules. Cloth constraint solving **SHALL** delegate to
+   the physics XPBD solver (R-4.7.1). The animation cloth system **SHALL** provide garment
+   authoring, LOD management, and skinned mesh integration on top of the physics simulation.
+   - **Rationale:** GPU-side cloth simulation scales to many simultaneous cloth panels (cloaks,
+     banners) without CPU overhead, critical for populated game scenes. Delegating constraint
+     solving to the physics domain avoids duplicate solvers and ensures consistent physical
+     behavior.
+   - **Verification:** Simulate a 1000-vertex cloak attached to a character's shoulders. Apply a
+     wind force and verify the cloth billows in the wind direction. Walk the character through a
+     doorway and verify the cloth collides with the door frame capsules without penetration. Verify
+     self-collision by folding the cloth and confirming no vertices pass through the cloth surface.
+2. **R-9.5.2** — The engine **SHALL** simulate hair using physics-based guide strand chains with
+   stretch, bend, and collision constraints, driving interpolated render strands via skinning
+   weights, supporting wind, gravity, and collision with skeletal mesh capsules.
+   - **Rationale:** Strand-based simulation produces high-fidelity hair motion for player characters
+     and key NPCs where visual quality justifies the simulation cost.
+   - **Verification:** Simulate 100 guide strands on a character head. Apply gravity and verify all
+     strands hang downward. Rotate the head 90 degrees and verify strands respond with physically
+     plausible swinging motion. Verify no strands penetrate the head collision capsule by checking
+     all strand particle positions are outside the capsule radius each frame.
+3. **R-9.5.3** — The engine **SHALL** render hair as textured polygon strips with alpha-tested or
+   alpha-blended transparency and anisotropic specular shading, driven by simple spring physics or
+   baked animation, as a performant alternative to strand-based hair.
+   - **Rationale:** Card-based hair provides acceptable visual quality at a fraction of the
+     simulation cost, enabling hair rendering on medium-distance and crowd characters.
+   - **Verification:** Render a card-based hair asset and verify anisotropic specular highlights
+     shift correctly when the light direction changes. Compare frame time against strand-based hair
+     on the same character and verify card-based rendering is at least 5x faster. Verify spring
+     physics produces visible secondary motion when the character turns quickly.
+4. **R-9.5.4** — The engine **SHALL** transition hair representation between strand-based
+   simulation, simplified strand clusters, card-based rendering, and single textured shell based on
+   camera distance and screen coverage, using temporal blending to avoid popping artifacts.
+   - **Rationale:** Hair LOD prevents full strand simulation on distant characters, essential for
+     maintaining frame rate with hundreds of visible characters.
+   - **Verification:** Place a character with strand-based hair at 5 m, 20 m, 50 m, and 200 m from
+     the camera. Verify the hair representation is full strands, simplified clusters, cards, and
+     shell respectively. Fly the camera from 5 m to 200 m continuously and verify no visible popping
+     during LOD transitions by recording the flythrough and inspecting frame-by-frame.
+5. **R-9.5.5** — The engine **SHALL** resolve collisions between simulated cloth panels and the
+   character body using capsule and convex hull proxies attached to skeleton bones, supporting
+   friction and sticking contacts to prevent cloth penetration during fast movement.
+   - **Rationale:** Cloth-body collision prevents cloaks and garments from passing through character
+     limbs, maintaining visual integrity during dynamic animations.
+   - **Verification:** Simulate a cloak on a character performing a fast arm swing. Verify no cloth
+     vertices penetrate the arm collision capsule during the swing. Verify friction contacts cause
+     the cloth to drag along the arm surface rather than sliding freely. Update collision proxies by
+     changing the skeleton pose and verify the cloth responds within 1 frame.
+6. **R-9.5.6** — The engine **SHALL** drive hair wind response by sampling the shared wind field
+   texture generated from `WindSource` ECS entities (R-4.7.5). Hair strands **SHALL** apply
+   per-strand aerodynamic drag proportional to the sampled wind velocity.
+   - **Rationale:** Sampling the shared wind field texture ensures hair, foliage, cloth, and
+     particles respond to wind coherently from the same source data, and per-strand aerodynamic drag
+     produces physically plausible hair motion.
+   - **Verification:** Apply a directional wind of 10 m/s from the east. Verify strand-based hair
+     deflects eastward and card-based hair on the same character at a lower LOD deflects in the same
+     direction with comparable magnitude. Place foliage and a particle emitter next to the character
+     and verify all three systems respond to the same wind direction and strength. Verify hair reads
+     wind from the shared wind field texture generated by the WindSource system (R-4.7.5).

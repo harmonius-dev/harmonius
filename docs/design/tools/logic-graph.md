@@ -10,39 +10,59 @@
 
 ### Graph Runtime (F-15.8.1, R-15.8.1)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.8.1 | R-15.8.1 | Universal logic graph runtime — sole authoring mechanism for all engine logic |
-| F-15.8.2 | R-15.8.2 | Static type system with bidirectional inference, no implicit coercion |
-| F-15.8.3 | R-15.8.3 | Strict validation before save, compile, or reference |
-| F-15.8.4 | R-15.8.4 | Gameplay logic graphs with coroutine-style multi-frame execution |
+| Feature  | Requirement |
+|----------|-------------|
+| F-15.8.1 | R-15.8.1    |
+| F-15.8.2 | R-15.8.2    |
+| F-15.8.3 | R-15.8.3    |
+| F-15.8.4 | R-15.8.4    |
+
+1. **F-15.8.1** — Universal logic graph runtime — sole authoring mechanism for all engine logic
+2. **F-15.8.2** — Static type system with bidirectional inference, no implicit coercion
+3. **F-15.8.3** — Strict validation before save, compile, or reference
+4. **F-15.8.4** — Gameplay logic graphs with coroutine-style multi-frame execution
 
 ### Shader and Material (F-15.8.5, R-15.8.5)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.8.5a | R-15.8.5a | Shader graph core — visual vertex, fragment, compute authoring |
-| F-15.8.5b | R-15.8.5b | Shader graph to HLSL compilation via DXC and Metal Shader Converter |
-| F-15.8.5c | R-15.8.5c | Material graph variant with PBR inputs and live viewport preview |
-| F-15.8.6 | R-15.8.6 | Render graph configuration — visual render pipeline authoring |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.8.5a | R-15.8.5a   |
+| F-15.8.5b | R-15.8.5b   |
+| F-15.8.5c | R-15.8.5c   |
+| F-15.8.6  | R-15.8.6    |
+
+1. **F-15.8.5a** — Shader graph core — visual vertex, fragment, compute authoring
+2. **F-15.8.5b** — Shader graph to HLSL compilation via DXC and Metal Shader Converter
+3. **F-15.8.5c** — Material graph variant with PBR inputs and live viewport preview
+4. **F-15.8.6** — Render graph configuration — visual render pipeline authoring
 
 ### Animation and Audio (F-15.8.7, R-15.8.7)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.8.7 | R-15.8.7 | Animation logic graphs — state machines, blend trees, IK |
-| F-15.8.8 | R-15.8.8 | Audio logic graphs — adaptive audio, RTPC, music layers |
+| Feature  | Requirement |
+|----------|-------------|
+| F-15.8.7 | R-15.8.7    |
+| F-15.8.8 | R-15.8.8    |
+
+1. **F-15.8.7** — Animation logic graphs — state machines, blend trees, IK
+2. **F-15.8.8** — Audio logic graphs — adaptive audio, RTPC, music layers
 
 ### Tooling (F-15.8.9 -- F-15.8.14, R-15.8.9 -- R-15.8.14)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.8.9 | R-15.8.9 | Custom tool graphs — editor extension via visual authoring |
-| F-15.8.10 | R-15.8.10 | Graph node library — standard + auto-generated + user subgraphs |
-| F-15.8.11 | R-15.8.11 | Graph debugging — breakpoints, step, watch, execution trace |
-| F-15.8.12 | R-15.8.12 | Graph compilation — dead node elim, const fold, inline, monomorphize |
-| F-15.8.13 | R-15.8.13 | Graph diffing and three-way merge with Git integration |
-| F-15.8.14 | R-15.8.14 | Graph search and refactoring — find usages, rename, pattern replace |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.8.9  | R-15.8.9    |
+| F-15.8.10 | R-15.8.10   |
+| F-15.8.11 | R-15.8.11   |
+| F-15.8.12 | R-15.8.12   |
+| F-15.8.13 | R-15.8.13   |
+| F-15.8.14 | R-15.8.14   |
+
+1. **F-15.8.9** — Custom tool graphs — editor extension via visual authoring
+2. **F-15.8.10** — Graph node library — standard + auto-generated + user subgraphs
+3. **F-15.8.11** — Graph debugging — breakpoints, step, watch, execution trace
+4. **F-15.8.12** — Graph compilation — dead node elim, const fold, inline, monomorphize
+5. **F-15.8.13** — Graph diffing and three-way merge with Git integration
+6. **F-15.8.14** — Graph search and refactoring — find usages, rename, pattern replace
 
 ## Overview
 
@@ -1842,64 +1862,141 @@ components, benefiting from the same cache-friendly iteration.
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `uuid` | GraphId generation | Standard UUID v4 for asset identity |
-| `petgraph` | Graph algorithms (topo sort, cycle detect) | Well-maintained, zero-cost graph library |
-| `smallvec` | Inline pin/edge storage | Avoids heap for nodes with few pins |
-| `cxx` | DXC and Metal Shader Converter FFI | Required for shader compilation pipeline |
+| Crate      | Justification                            |
+|------------|------------------------------------------|
+| `uuid`     | Standard UUID v4 for asset identity      |
+| `petgraph` | Well-maintained, zero-cost graph library |
+| `smallvec` | Avoids heap for nodes with few pins      |
+| `cxx`      | Required for shader compilation pipeline |
+
+1. **`uuid`** — GraphId generation
+2. **`petgraph`** — Graph algorithms (topo sort, cycle detect)
+3. **`smallvec`** — Inline pin/edge storage
+4. **`cxx`** — DXC and Metal Shader Converter FFI
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_type_inference_simple` | R-15.8.2 | Connect Int output to Int input. Verify resolved types match. |
-| `test_type_inference_generic` | R-15.8.2 | Connect Int output to Generic(G) input. Verify G resolves to Int. |
-| `test_type_inference_bidirectional` | R-15.8.2 | Generic output connected to typed input. Verify backwards propagation resolves the generic. |
-| `test_type_mismatch_rejected` | R-15.8.2 | Connect Float output to Bool input. Verify type error diagnostic with correct node and pin. |
-| `test_no_implicit_coercion` | R-15.8.2 | Connect Int output to Float input without conversion node. Verify rejection. |
-| `test_validate_missing_input` | R-15.8.3 | Leave a required input pin unconnected. Verify MissingRequiredInput diagnostic. |
-| `test_validate_cycle_detection` | R-15.8.3 | Create a cycle in a pure dataflow subgraph. Verify CycleDetected diagnostic with cycle path. |
-| `test_validate_dangling_pin` | R-15.8.3 | Create an output pin connected to nothing. Verify UnusedOutput warning. |
-| `test_validate_blocks_save` | R-15.8.3 | Attempt to save an invalid graph. Verify save is rejected. |
-| `test_dead_node_elimination` | R-15.8.12 | Graph with unreachable nodes. Verify they are removed after optimization. |
-| `test_constant_folding` | R-15.8.12 | Graph with `Add(3, 4)` pure nodes. Verify folded to literal 7. |
-| `test_subgraph_inlining` | R-15.8.12 | Small subgraph call. Verify inlined after optimization (no call overhead). |
-| `test_monomorphization` | R-15.8.12 | Generic `Add<T>` node used with Float. Verify specialized to `Add_f32`. |
-| `test_coroutine_lowering` | R-15.8.4 | Graph with 3 yield points. Verify generated state enum has 4 variants (3 phases + Complete). |
-| `test_event_system_trigger` | R-15.8.4 | Event node graph. Verify compiled system has EventReader parameter. |
-| `test_tick_system_trigger` | R-15.8.4 | Tick(Update) node graph. Verify compiled system registered in Update phase. |
-| `test_variable_scope_local` | R-15.8.1 | Local variable. Verify compiled as local binding in system function. |
-| `test_variable_scope_graph` | R-15.8.1 | Graph variable. Verify compiled as ECS component field. |
-| `test_variable_scope_entity` | R-15.8.1 | Entity variable. Verify compiled as component query access. |
-| `test_diff_added_nodes` | R-15.8.13 | Add 2 nodes to a graph. Verify diff reports 2 added nodes. |
-| `test_diff_removed_edges` | R-15.8.13 | Remove an edge. Verify diff reports 1 removed edge. |
-| `test_merge_no_conflict` | R-15.8.13 | Two non-overlapping edits. Verify clean merge. |
-| `test_merge_conflict` | R-15.8.13 | Both sides modify same node. Verify conflict reported. |
-| `test_search_find_usages` | R-15.8.14 | Node function used in 3 graphs. Verify find_usages returns 3 locations. |
-| `test_rename_propagation` | R-15.8.14 | Rename a function. Verify all 3 graphs updated. |
-| `test_node_auto_generation` | R-15.8.10 | Register a new component type. Verify Get, Set, Add, Remove nodes created. |
+| Test                                | Req       |
+|-------------------------------------|-----------|
+| `test_type_inference_simple`        | R-15.8.2  |
+| `test_type_inference_generic`       | R-15.8.2  |
+| `test_type_inference_bidirectional` | R-15.8.2  |
+| `test_type_mismatch_rejected`       | R-15.8.2  |
+| `test_no_implicit_coercion`         | R-15.8.2  |
+| `test_validate_missing_input`       | R-15.8.3  |
+| `test_validate_cycle_detection`     | R-15.8.3  |
+| `test_validate_dangling_pin`        | R-15.8.3  |
+| `test_validate_blocks_save`         | R-15.8.3  |
+| `test_dead_node_elimination`        | R-15.8.12 |
+| `test_constant_folding`             | R-15.8.12 |
+| `test_subgraph_inlining`            | R-15.8.12 |
+| `test_monomorphization`             | R-15.8.12 |
+| `test_coroutine_lowering`           | R-15.8.4  |
+| `test_event_system_trigger`         | R-15.8.4  |
+| `test_tick_system_trigger`          | R-15.8.4  |
+| `test_variable_scope_local`         | R-15.8.1  |
+| `test_variable_scope_graph`         | R-15.8.1  |
+| `test_variable_scope_entity`        | R-15.8.1  |
+| `test_diff_added_nodes`             | R-15.8.13 |
+| `test_diff_removed_edges`           | R-15.8.13 |
+| `test_merge_no_conflict`            | R-15.8.13 |
+| `test_merge_conflict`               | R-15.8.13 |
+| `test_search_find_usages`           | R-15.8.14 |
+| `test_rename_propagation`           | R-15.8.14 |
+| `test_node_auto_generation`         | R-15.8.10 |
+
+1. **`test_type_inference_simple`** — Connect Int output to Int input. Verify resolved types match.
+2. **`test_type_inference_generic`** — Connect Int output to Generic(G) input. Verify G resolves to
+   Int.
+3. **`test_type_inference_bidirectional`** — Generic output connected to typed input. Verify
+   backwards propagation resolves the generic.
+4. **`test_type_mismatch_rejected`** — Connect Float output to Bool input. Verify type error
+   diagnostic with correct node and pin.
+5. **`test_no_implicit_coercion`** — Connect Int output to Float input without conversion node.
+   Verify rejection.
+6. **`test_validate_missing_input`** — Leave a required input pin unconnected. Verify
+   MissingRequiredInput diagnostic.
+7. **`test_validate_cycle_detection`** — Create a cycle in a pure dataflow subgraph. Verify
+   CycleDetected diagnostic with cycle path.
+8. **`test_validate_dangling_pin`** — Create an output pin connected to nothing. Verify UnusedOutput
+   warning.
+9. **`test_validate_blocks_save`** — Attempt to save an invalid graph. Verify save is rejected.
+10. **`test_dead_node_elimination`** — Graph with unreachable nodes. Verify they are removed after
+    optimization.
+11. **`test_constant_folding`** — Graph with `Add(3, 4)` pure nodes. Verify folded to literal 7.
+12. **`test_subgraph_inlining`** — Small subgraph call. Verify inlined after optimization (no call
+    overhead).
+13. **`test_monomorphization`** — Generic `Add<T>` node used with Float. Verify specialized to
+    `Add_f32`.
+14. **`test_coroutine_lowering`** — Graph with 3 yield points. Verify generated state enum has 4
+    variants (3 phases + Complete).
+15. **`test_event_system_trigger`** — Event node graph. Verify compiled system has EventReader
+    parameter.
+16. **`test_tick_system_trigger`** — Tick(Update) node graph. Verify compiled system registered in
+    Update phase.
+17. **`test_variable_scope_local`** — Local variable. Verify compiled as local binding in system
+    function.
+18. **`test_variable_scope_graph`** — Graph variable. Verify compiled as ECS component field.
+19. **`test_variable_scope_entity`** — Entity variable. Verify compiled as component query access.
+20. **`test_diff_added_nodes`** — Add 2 nodes to a graph. Verify diff reports 2 added nodes.
+21. **`test_diff_removed_edges`** — Remove an edge. Verify diff reports 1 removed edge.
+22. **`test_merge_no_conflict`** — Two non-overlapping edits. Verify clean merge.
+23. **`test_merge_conflict`** — Both sides modify same node. Verify conflict reported.
+24. **`test_search_find_usages`** — Node function used in 3 graphs. Verify find_usages returns 3
+    locations.
+25. **`test_rename_propagation`** — Rename a function. Verify all 3 graphs updated.
+26. **`test_node_auto_generation`** — Register a new component type. Verify Get, Set, Add, Remove
+    nodes created.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_compile_and_run_damage_graph` | R-15.8.4 | Compile a damage graph, run in ECS world, verify HP reduced correctly. |
-| `test_compile_and_run_coroutine` | R-15.8.4 | Compile a 3-phase coroutine graph, run for 3 frames, verify state transitions. |
-| `test_event_driven_chain` | R-15.8.4 | Graph A emits event, Graph B reacts. Verify chain executes in one frame. |
-| `test_shader_graph_to_hlsl` | R-15.8.5b | Compile a simple fragment shader graph to HLSL. Verify valid HLSL output. |
-| `test_shader_graph_stage_validation` | R-15.8.5a | Vertex shader graph missing position output. Verify stage constraint error. |
-| `test_material_graph_pbr` | R-15.8.5c | Material graph with all PBR inputs. Verify HLSL output contains correct PBR structure. |
-| `test_live_edit_hot_swap` | R-15.8.11 | Modify a graph during play mode. Verify system is hot-swapped and entity state preserved. |
-| `test_breakpoint_pause` | R-15.8.11 | Set breakpoint, run graph, verify execution pauses at correct node with inspectable values. |
-| `test_step_through` | R-15.8.11 | Set breakpoint, step 3 times, verify each step advances to correct node. |
-| `test_execution_trace` | R-15.8.11 | Run a graph, verify execution trace records correct node order and timing. |
-| `test_git_merge_driver` | R-15.8.13 | Invoke custom merge driver on two graph files. Verify correct merged output. |
-| `test_pattern_replace` | R-15.8.14 | Replace deprecated node type across 5 graphs. Verify all instances replaced and graphs remain valid. |
-| `test_subgraph_call` | R-15.8.10 | Graph calls a subgraph. Verify compiled output includes inlined subgraph logic. |
-| `test_incremental_recompile` | R-15.8.12 | Change one node in a 100-node graph. Verify only affected subgraph recompiles. |
+| Test                                 | Req       |
+|--------------------------------------|-----------|
+| `test_compile_and_run_damage_graph`  | R-15.8.4  |
+| `test_compile_and_run_coroutine`     | R-15.8.4  |
+| `test_event_driven_chain`            | R-15.8.4  |
+| `test_shader_graph_to_hlsl`          | R-15.8.5b |
+| `test_shader_graph_stage_validation` | R-15.8.5a |
+| `test_material_graph_pbr`            | R-15.8.5c |
+| `test_live_edit_hot_swap`            | R-15.8.11 |
+| `test_breakpoint_pause`              | R-15.8.11 |
+| `test_step_through`                  | R-15.8.11 |
+| `test_execution_trace`               | R-15.8.11 |
+| `test_git_merge_driver`              | R-15.8.13 |
+| `test_pattern_replace`               | R-15.8.14 |
+| `test_subgraph_call`                 | R-15.8.10 |
+| `test_incremental_recompile`         | R-15.8.12 |
+
+1. **`test_compile_and_run_damage_graph`** — Compile a damage graph, run in ECS world, verify HP
+   reduced correctly.
+2. **`test_compile_and_run_coroutine`** — Compile a 3-phase coroutine graph, run for 3 frames,
+   verify state transitions.
+3. **`test_event_driven_chain`** — Graph A emits event, Graph B reacts. Verify chain executes in one
+   frame.
+4. **`test_shader_graph_to_hlsl`** — Compile a simple fragment shader graph to HLSL. Verify valid
+   HLSL output.
+5. **`test_shader_graph_stage_validation`** — Vertex shader graph missing position output. Verify
+   stage constraint error.
+6. **`test_material_graph_pbr`** — Material graph with all PBR inputs. Verify HLSL output contains
+   correct PBR structure.
+7. **`test_live_edit_hot_swap`** — Modify a graph during play mode. Verify system is hot-swapped and
+   entity state preserved.
+8. **`test_breakpoint_pause`** — Set breakpoint, run graph, verify execution pauses at correct node
+   with inspectable values.
+9. **`test_step_through`** — Set breakpoint, step 3 times, verify each step advances to correct
+   node.
+10. **`test_execution_trace`** — Run a graph, verify execution trace records correct node order and
+    timing.
+11. **`test_git_merge_driver`** — Invoke custom merge driver on two graph files. Verify correct
+    merged output.
+12. **`test_pattern_replace`** — Replace deprecated node type across 5 graphs. Verify all instances
+    replaced and graphs remain valid.
+13. **`test_subgraph_call`** — Graph calls a subgraph. Verify compiled output includes inlined
+    subgraph logic.
+14. **`test_incremental_recompile`** — Change one node in a 100-node graph. Verify only affected
+    subgraph recompiles.
 
 ### Benchmarks
 

@@ -10,25 +10,39 @@
 
 ### Platform Services
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-14.5.1 | R-14.5.1 | US-14.5.1, 7, 8, 13 | Cross-platform achievements with deferred unlock |
-| F-14.5.2 | R-14.5.2 | US-14.5.2, 15 | Leaderboards with batching and rate-limit caching |
-| F-14.5.3 | R-14.5.3 | US-14.5.3 | Rich presence throttled to 1 update / 15 s |
-| F-14.5.4 | R-14.5.4 | US-14.5.4, 16 | Platform voice/party bridge with Vivox fallback |
-| F-14.5.5 | R-14.5.5 | US-14.5.5, 12, 17 | Cloud storage with conflict resolution dialog |
-| F-14.5.6 | R-14.5.6 | US-14.5.6, 11 | Entitlement/DLC/subscription verification |
-| F-14.5.7 | R-14.5.7 | US-14.5.10, 14 | Console certification compliance |
+| Feature  | Requirement | User Story          |
+|----------|-------------|---------------------|
+| F-14.5.1 | R-14.5.1    | US-14.5.1, 7, 8, 13 |
+| F-14.5.2 | R-14.5.2    | US-14.5.2, 15       |
+| F-14.5.3 | R-14.5.3    | US-14.5.3           |
+| F-14.5.4 | R-14.5.4    | US-14.5.4, 16       |
+| F-14.5.5 | R-14.5.5    | US-14.5.5, 12, 17   |
+| F-14.5.6 | R-14.5.6    | US-14.5.6, 11       |
+| F-14.5.7 | R-14.5.7    | US-14.5.10, 14      |
+
+1. **F-14.5.1** — Cross-platform achievements with deferred unlock
+2. **F-14.5.2** — Leaderboards with batching and rate-limit caching
+3. **F-14.5.3** — Rich presence throttled to 1 update / 15 s
+4. **F-14.5.4** — Platform voice/party bridge with Vivox fallback
+5. **F-14.5.5** — Cloud storage with conflict resolution dialog
+6. **F-14.5.6** — Entitlement/DLC/subscription verification
+7. **F-14.5.7** — Console certification compliance
 
 ### Storage
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-14.5.8 | R-14.5.8 | US-14.5.17, 18, 19 | User preferences: TOML, atomic write, cloud sync |
-| F-14.5.9 | R-14.5.9 | US-14.5.20, 21 | Player cache: LRU, 10 GB default, per-category |
-| F-14.5.10 | R-14.5.10 | US-14.5.22, 23 | Developer cache: BLAKE3 keys, 3-tier lookup |
-| F-14.5.11 | R-14.5.11 | US-14.5.24, 25, 26 | PSO cache: GPU+driver versioned, < 1 ms load |
-| F-14.5.12 | R-14.5.12 | US-14.5.27, 28 | Temp file manager: RAII, orphan cleanup, 1 GB cap |
+| Feature   | Requirement | User Story         |
+|-----------|-------------|--------------------|
+| F-14.5.8  | R-14.5.8    | US-14.5.17, 18, 19 |
+| F-14.5.9  | R-14.5.9    | US-14.5.20, 21     |
+| F-14.5.10 | R-14.5.10   | US-14.5.22, 23     |
+| F-14.5.11 | R-14.5.11   | US-14.5.24, 25, 26 |
+| F-14.5.12 | R-14.5.12   | US-14.5.27, 28     |
+
+1. **F-14.5.8** — User preferences: TOML, atomic write, cloud sync
+2. **F-14.5.9** — Player cache: LRU, 10 GB default, per-category
+3. **F-14.5.10** — Developer cache: BLAKE3 keys, 3-tier lookup
+4. **F-14.5.11** — PSO cache: GPU+driver versioned, < 1 ms load
+5. **F-14.5.12** — Temp file manager: RAII, orphan cleanup, 1 GB cap
 
 ## Overview
 
@@ -1550,25 +1564,60 @@ pub enum TempError {
 
 ### Platform SDK APIs
 
-| Service | Steam | PlayStation | Xbox | GameCenter |
-|---------|-------|-------------|------|------------|
-| Achievements | `ISteamUserStats::SetAchievement`, `StoreStats` | `sceNpTrophyUnlockTrophy` | `XblAchievementsUpdateAchievementAsync` | `GKAchievement.report` |
-| Leaderboards | `ISteamUserStats::FindOrCreateLeaderboard`, `UploadLeaderboardScore` | `sceNpScoreCreateRequest` | `XblLeaderboardGetLeaderboardAsync` | `GKLeaderboard.submitScore` |
-| Rich Presence | `ISteamFriends::SetRichPresence` | `sceNpReachabilityCreateRequest` | `XblPresenceSetPresenceAsync` | N/A |
-| Cloud Storage | `ISteamRemoteStorage` | `sceNpSaveData` | `XGameSaveInitializeProviderAsync` | iCloud Key-Value |
-| Entitlements | `ISteamApps::BIsSubscribedApp`, `BIsDlcInstalled` | `sceNpEntitlementAccess` | `XStoreQueryEntitledProductsAsync` | `SKPaymentQueue` |
-| Auth | Steam App Ticket | PSN SSO | Xbox Live token | `GKLocalPlayer.authenticate` |
-| Android | Google Play Games Services | `play-services` via JNI/bindgen | Achievements, leaderboards, cloud save via Google Play. |  |
+| Service       | PlayStation                      | GameCenter                   |
+|---------------|----------------------------------|------------------------------|
+| Achievements  | `sceNpTrophyUnlockTrophy`        | `GKAchievement.report`       |
+| Leaderboards  | `sceNpScoreCreateRequest`        | `GKLeaderboard.submitScore`  |
+| Rich Presence | `sceNpReachabilityCreateRequest` | N/A                          |
+| Cloud Storage | `sceNpSaveData`                  | iCloud Key-Value             |
+| Entitlements  | `sceNpEntitlementAccess`         | `SKPaymentQueue`             |
+| Auth          | PSN SSO                          | `GKLocalPlayer.authenticate` |
+| Android       | `play-services` via JNI/bindgen  |                              |
+
+1. **Achievements** — `ISteamUserStats::SetAchievement`, `StoreStats`
+   - **Xbox:** `XblAchievementsUpdateAchievementAsync`
+2. **Leaderboards** — `ISteamUserStats::FindOrCreateLeaderboard`, `UploadLeaderboardScore`
+   - **Xbox:** `XblLeaderboardGetLeaderboardAsync`
+3. **Rich Presence** — `ISteamFriends::SetRichPresence`
+   - **Xbox:** `XblPresenceSetPresenceAsync`
+4. **Cloud Storage** — `ISteamRemoteStorage`
+   - **Xbox:** `XGameSaveInitializeProviderAsync`
+5. **Entitlements** — `ISteamApps::BIsSubscribedApp`, `BIsDlcInstalled`
+   - **Xbox:** `XStoreQueryEntitledProductsAsync`
+6. **Auth** — Steam App Ticket
+   - **Xbox:** Xbox Live token
+7. **Android** — Google Play Games Services
+   - **Xbox:** Achievements, leaderboards, cloud save via Google Play.
 
 ### Platform Storage Paths
 
-| Tier | Windows | macOS | Linux | Console |
-|------|---------|-------|-------|---------|
-| Preferences | `%LOCALAPPDATA%\Harmonius\{game}\` | `~/Library/Application Support/{game}/` | `$XDG_DATA_HOME/{game}/` | Title storage |
-| Player Cache | `%LOCALAPPDATA%\...\Cache\` | `~/Library/Caches/{game}/` | `$XDG_CACHE_HOME/{game}/` | Scratch storage |
-| Dev Cache | `.harmonius/cache/` | `.harmonius/cache/` | `.harmonius/cache/` | N/A |
-| PSO Cache | Player cache `pso/` | Player cache `pso/` | Player cache `pso/` | Platform-managed |
-| Temp Files | `%TEMP%\Harmonius\{game}\` | `/tmp/harmonius-{game}/` | `/tmp/harmonius-{game}/` | Title scratch |
+| Tier         |
+|--------------|
+| Preferences  |
+| Player Cache |
+| Dev Cache    |
+| PSO Cache    |
+| Temp Files   |
+
+1. **Preferences** — `%LOCALAPPDATA%\Harmonius\{game}\`
+   - **macOS:** `~/Library/Application Support/{game}/`
+   - **Linux:** `$XDG_DATA_HOME/{game}/`
+   - **Console:** Title storage
+2. **Player Cache** — `%LOCALAPPDATA%\...\Cache\`
+   - **macOS:** `~/Library/Caches/{game}/`
+   - **Linux:** `$XDG_CACHE_HOME/{game}/`
+   - **Console:** Scratch storage
+3. **Dev Cache** — `.harmonius/cache/`
+   - **macOS:** `.harmonius/cache/`
+   - **Linux:** `.harmonius/cache/`
+4. **PSO Cache** — Player cache `pso/`
+   - **macOS:** Player cache `pso/`
+   - **Linux:** Player cache `pso/`
+   - **Console:** Platform-managed
+5. **Temp Files** — `%TEMP%\Harmonius\{game}\`
+   - **macOS:** `/tmp/harmonius-{game}/`
+   - **Linux:** `/tmp/harmonius-{game}/`
+   - **Console:** Title scratch
 
 ### Rate Limits and Throttling
 
@@ -1606,62 +1655,116 @@ pub enum TempError {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_achievement_unlock_online` | R-14.5.1 | Unlock achievement, verify state = Unlocked. |
-| `test_achievement_unlock_offline` | R-14.5.1 | Simulate offline, verify enqueued in deferred queue. |
-| `test_achievement_deferred_retry` | R-14.5.1 | Enqueue, drain_ready, verify retry submitted. |
-| `test_achievement_max_retries` | R-14.5.1 | Exceed max retries, verify entry dropped. |
-| `test_achievement_sync` | R-14.5.1 | Sync from platform, verify local state updated. |
-| `test_leaderboard_submit` | R-14.5.2 | Submit score, verify recorded. |
-| `test_leaderboard_cache_ttl` | R-14.5.2 | Query twice within TTL, verify cached result returned. |
-| `test_leaderboard_rate_limit` | R-14.5.2 | Exceed rate limit, verify RateLimited error. |
-| `test_presence_throttle` | R-14.5.3 | Update 10x in 5 s, verify only 1 API call. |
-| `test_presence_latest_wins` | R-14.5.3 | Rapid updates, verify last state sent. |
-| `test_presence_clear` | R-14.5.3 | Clear presence, verify API called. |
-| `test_cloud_upload_download` | R-14.5.5 | Upload, download, verify data integrity. |
-| `test_cloud_conflict_detection` | R-14.5.5 | Divergent timestamps, verify Conflict returned. |
-| `test_cloud_no_conflict` | R-14.5.5 | Matching timestamps, verify NoConflict. |
-| `test_cloud_quota_exceeded` | R-14.5.5 | Exceed quota, verify QuotaExceeded error. |
-| `test_entitlement_owned` | R-14.5.6 | Query entitlements, verify is_owned correct. |
-| `test_entitlement_subscription_expired` | R-14.5.6 | Expired subscription, verify is_subscription_active false. |
-| `test_prefs_get_default` | R-14.5.8 | Missing key returns default value. |
-| `test_prefs_set_get` | R-14.5.8 | Set value, get same value back. |
-| `test_prefs_atomic_write` | R-14.5.8 | Save, kill mid-write, verify file not corrupted. |
-| `test_prefs_reset_defaults` | R-14.5.8 | Reset, verify all values match defaults. |
-| `test_prefs_conflict_dialog` | R-14.5.8 | Divergent local/cloud, verify Conflict returned. |
-| `test_cache_put_get` | R-14.5.9 | Store data, retrieve by key, verify match. |
-| `test_cache_lru_eviction` | R-14.5.9 | Fill to budget, put new entry, verify LRU evicted. |
-| `test_cache_clear_category` | R-14.5.9 | Clear one category, verify only that category removed. |
-| `test_cache_priority_eviction` | R-14.5.9 | Fill with mixed categories, verify lowest priority evicted first. |
-| `test_dev_cache_local_hit` | R-14.5.10 | Store and lookup, verify Local tier hit. |
-| `test_dev_cache_network_hit` | R-14.5.10 | Local miss + network hit, verify SharedNetwork tier. |
-| `test_dev_cache_miss` | R-14.5.10 | Both miss, verify Miss tier. |
-| `test_dev_cache_hash_invalidation` | R-14.5.10 | Change source, verify new hash misses old entry. |
-| `test_pso_store_get` | R-14.5.11 | Store PSO, get by key, verify data match. |
-| `test_pso_driver_invalidation` | R-14.5.11 | Change driver version, verify old entries invalidated. |
-| `test_pso_get_latency` | R-14.5.11 | Get cached PSO, verify < 1 ms. |
-| `test_temp_raii_cleanup` | R-14.5.12 | Allocate, drop handle, verify file deleted. |
-| `test_temp_orphan_cleanup` | R-14.5.12 | Create old file, init manager, verify cleaned. |
-| `test_temp_budget_eviction` | R-14.5.12 | Fill to budget, allocate new, verify oldest evicted. |
-| `test_platform_paths_windows` | R-14.5.8 | Verify Windows paths use %LOCALAPPDATA%. |
-| `test_platform_paths_macos` | R-14.5.8 | Verify macOS paths use ~/Library/. |
-| `test_platform_paths_linux` | R-14.5.8 | Verify Linux paths use $XDG_DATA_HOME. |
+| Test                                    | Req       |
+|-----------------------------------------|-----------|
+| `test_achievement_unlock_online`        | R-14.5.1  |
+| `test_achievement_unlock_offline`       | R-14.5.1  |
+| `test_achievement_deferred_retry`       | R-14.5.1  |
+| `test_achievement_max_retries`          | R-14.5.1  |
+| `test_achievement_sync`                 | R-14.5.1  |
+| `test_leaderboard_submit`               | R-14.5.2  |
+| `test_leaderboard_cache_ttl`            | R-14.5.2  |
+| `test_leaderboard_rate_limit`           | R-14.5.2  |
+| `test_presence_throttle`                | R-14.5.3  |
+| `test_presence_latest_wins`             | R-14.5.3  |
+| `test_presence_clear`                   | R-14.5.3  |
+| `test_cloud_upload_download`            | R-14.5.5  |
+| `test_cloud_conflict_detection`         | R-14.5.5  |
+| `test_cloud_no_conflict`                | R-14.5.5  |
+| `test_cloud_quota_exceeded`             | R-14.5.5  |
+| `test_entitlement_owned`                | R-14.5.6  |
+| `test_entitlement_subscription_expired` | R-14.5.6  |
+| `test_prefs_get_default`                | R-14.5.8  |
+| `test_prefs_set_get`                    | R-14.5.8  |
+| `test_prefs_atomic_write`               | R-14.5.8  |
+| `test_prefs_reset_defaults`             | R-14.5.8  |
+| `test_prefs_conflict_dialog`            | R-14.5.8  |
+| `test_cache_put_get`                    | R-14.5.9  |
+| `test_cache_lru_eviction`               | R-14.5.9  |
+| `test_cache_clear_category`             | R-14.5.9  |
+| `test_cache_priority_eviction`          | R-14.5.9  |
+| `test_dev_cache_local_hit`              | R-14.5.10 |
+| `test_dev_cache_network_hit`            | R-14.5.10 |
+| `test_dev_cache_miss`                   | R-14.5.10 |
+| `test_dev_cache_hash_invalidation`      | R-14.5.10 |
+| `test_pso_store_get`                    | R-14.5.11 |
+| `test_pso_driver_invalidation`          | R-14.5.11 |
+| `test_pso_get_latency`                  | R-14.5.11 |
+| `test_temp_raii_cleanup`                | R-14.5.12 |
+| `test_temp_orphan_cleanup`              | R-14.5.12 |
+| `test_temp_budget_eviction`             | R-14.5.12 |
+| `test_platform_paths_windows`           | R-14.5.8  |
+| `test_platform_paths_macos`             | R-14.5.8  |
+| `test_platform_paths_linux`             | R-14.5.8  |
+
+1. **`test_achievement_unlock_online`** — Unlock achievement, verify state = Unlocked.
+2. **`test_achievement_unlock_offline`** — Simulate offline, verify enqueued in deferred queue.
+3. **`test_achievement_deferred_retry`** — Enqueue, drain_ready, verify retry submitted.
+4. **`test_achievement_max_retries`** — Exceed max retries, verify entry dropped.
+5. **`test_achievement_sync`** — Sync from platform, verify local state updated.
+6. **`test_leaderboard_submit`** — Submit score, verify recorded.
+7. **`test_leaderboard_cache_ttl`** — Query twice within TTL, verify cached result returned.
+8. **`test_leaderboard_rate_limit`** — Exceed rate limit, verify RateLimited error.
+9. **`test_presence_throttle`** — Update 10x in 5 s, verify only 1 API call.
+10. **`test_presence_latest_wins`** — Rapid updates, verify last state sent.
+11. **`test_presence_clear`** — Clear presence, verify API called.
+12. **`test_cloud_upload_download`** — Upload, download, verify data integrity.
+13. **`test_cloud_conflict_detection`** — Divergent timestamps, verify Conflict returned.
+14. **`test_cloud_no_conflict`** — Matching timestamps, verify NoConflict.
+15. **`test_cloud_quota_exceeded`** — Exceed quota, verify QuotaExceeded error.
+16. **`test_entitlement_owned`** — Query entitlements, verify is_owned correct.
+17. **`test_entitlement_subscription_expired`** — Expired subscription, verify
+    is_subscription_active false.
+18. **`test_prefs_get_default`** — Missing key returns default value.
+19. **`test_prefs_set_get`** — Set value, get same value back.
+20. **`test_prefs_atomic_write`** — Save, kill mid-write, verify file not corrupted.
+21. **`test_prefs_reset_defaults`** — Reset, verify all values match defaults.
+22. **`test_prefs_conflict_dialog`** — Divergent local/cloud, verify Conflict returned.
+23. **`test_cache_put_get`** — Store data, retrieve by key, verify match.
+24. **`test_cache_lru_eviction`** — Fill to budget, put new entry, verify LRU evicted.
+25. **`test_cache_clear_category`** — Clear one category, verify only that category removed.
+26. **`test_cache_priority_eviction`** — Fill with mixed categories, verify lowest priority evicted
+    first.
+27. **`test_dev_cache_local_hit`** — Store and lookup, verify Local tier hit.
+28. **`test_dev_cache_network_hit`** — Local miss + network hit, verify SharedNetwork tier.
+29. **`test_dev_cache_miss`** — Both miss, verify Miss tier.
+30. **`test_dev_cache_hash_invalidation`** — Change source, verify new hash misses old entry.
+31. **`test_pso_store_get`** — Store PSO, get by key, verify data match.
+32. **`test_pso_driver_invalidation`** — Change driver version, verify old entries invalidated.
+33. **`test_pso_get_latency`** — Get cached PSO, verify < 1 ms.
+34. **`test_temp_raii_cleanup`** — Allocate, drop handle, verify file deleted.
+35. **`test_temp_orphan_cleanup`** — Create old file, init manager, verify cleaned.
+36. **`test_temp_budget_eviction`** — Fill to budget, allocate new, verify oldest evicted.
+37. **`test_platform_paths_windows`** — Verify Windows paths use %LOCALAPPDATA%.
+38. **`test_platform_paths_macos`** — Verify macOS paths use ~/Library/.
+39. **`test_platform_paths_linux`** — Verify Linux paths use $XDG_DATA_HOME.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_steam_achievement_unlock` | R-14.5.1 | Unlock via Steamworks, verify in Steam client. |
-| `test_steam_leaderboard_roundtrip` | R-14.5.2 | Submit and query via Steamworks, verify rank. |
-| `test_steam_cloud_roundtrip` | R-14.5.5 | Upload/download via ISteamRemoteStorage, verify data. |
-| `test_prefs_cloud_sync` | R-14.5.8 | Save prefs, load on second device, verify sync. |
-| `test_pso_warmup_eliminates_stutter` | R-14.5.11 | Play scene, relaunch, verify zero stutter. |
-| `test_cache_10gb_eviction` | R-14.5.9 | Fill 10 GB, download new, verify eviction + success. |
-| `test_dev_cache_shared_network` | R-14.5.10 | Cache miss local, hit network, verify artifact retrieved. |
-| `test_console_suspend_resume` | R-14.5.7 | Trigger suspend, verify state saved within deadline. |
-| `test_console_controller_disconnect` | R-14.5.7 | Disconnect controller, verify prompt displayed. |
-| `test_deferred_queue_across_restart` | R-14.5.1 | Enqueue, shutdown, restart, verify queue persisted and retried. |
+| Test                                 | Req       |
+|--------------------------------------|-----------|
+| `test_steam_achievement_unlock`      | R-14.5.1  |
+| `test_steam_leaderboard_roundtrip`   | R-14.5.2  |
+| `test_steam_cloud_roundtrip`         | R-14.5.5  |
+| `test_prefs_cloud_sync`              | R-14.5.8  |
+| `test_pso_warmup_eliminates_stutter` | R-14.5.11 |
+| `test_cache_10gb_eviction`           | R-14.5.9  |
+| `test_dev_cache_shared_network`      | R-14.5.10 |
+| `test_console_suspend_resume`        | R-14.5.7  |
+| `test_console_controller_disconnect` | R-14.5.7  |
+| `test_deferred_queue_across_restart` | R-14.5.1  |
+
+1. **`test_steam_achievement_unlock`** — Unlock via Steamworks, verify in Steam client.
+2. **`test_steam_leaderboard_roundtrip`** — Submit and query via Steamworks, verify rank.
+3. **`test_steam_cloud_roundtrip`** — Upload/download via ISteamRemoteStorage, verify data.
+4. **`test_prefs_cloud_sync`** — Save prefs, load on second device, verify sync.
+5. **`test_pso_warmup_eliminates_stutter`** — Play scene, relaunch, verify zero stutter.
+6. **`test_cache_10gb_eviction`** — Fill 10 GB, download new, verify eviction + success.
+7. **`test_dev_cache_shared_network`** — Cache miss local, hit network, verify artifact retrieved.
+8. **`test_console_suspend_resume`** — Trigger suspend, verify state saved within deadline.
+9. **`test_console_controller_disconnect`** — Disconnect controller, verify prompt displayed.
+10. **`test_deferred_queue_across_restart`** — Enqueue, shutdown, restart, verify queue persisted
+    and retried.
 
 ### Benchmarks
 

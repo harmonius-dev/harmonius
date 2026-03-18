@@ -10,38 +10,65 @@
 
 ### Character Customization (F-13.8, R-13.8)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.8.1 | R-13.8.1 | Parametric facial morph targets per region with additive blending |
-| F-13.8.2 | R-13.8.2 | Preset blending and templates with save/load/share |
-| F-13.8.3 | R-13.8.3 | Parametric body shape via morph targets and skeleton scaling |
-| F-13.8.4 | R-13.8.4 | Body morph propagation to equipment meshes |
-| F-13.8.5 | R-13.8.5 | Skin material with SSS and layered detail maps |
-| F-13.8.6 | R-13.8.6 | Makeup and face paint decal layer compositing |
-| F-13.8.7 | R-13.8.7 | Per-eye customization with layered eye material |
-| F-13.8.8 | R-13.8.8 | Hair system with strand/card LOD and parametric controls |
-| F-13.8.9 | R-13.8.9 | Modular mesh part system with master-pose sharing |
-| F-13.8.10 | R-13.8.10 | Socket-based equipment attachment on skeleton bones |
-| F-13.8.11 | R-13.8.11 | Transmog and appearance override with wardrobe |
-| F-13.8.12 | R-13.8.12 | Multi-race base mesh support with retargeting |
-| F-13.8.13 | R-13.8.13 | Character LOD and crowd optimization |
-| F-13.8.14 | R-13.8.14 | Async mesh merging for draw call reduction |
-| F-13.8.15 | R-13.8.15 | Version-tagged appearance serialization |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-13.8.1  | R-13.8.1    |
+| F-13.8.2  | R-13.8.2    |
+| F-13.8.3  | R-13.8.3    |
+| F-13.8.4  | R-13.8.4    |
+| F-13.8.5  | R-13.8.5    |
+| F-13.8.6  | R-13.8.6    |
+| F-13.8.7  | R-13.8.7    |
+| F-13.8.8  | R-13.8.8    |
+| F-13.8.9  | R-13.8.9    |
+| F-13.8.10 | R-13.8.10   |
+| F-13.8.11 | R-13.8.11   |
+| F-13.8.12 | R-13.8.12   |
+| F-13.8.13 | R-13.8.13   |
+| F-13.8.14 | R-13.8.14   |
+| F-13.8.15 | R-13.8.15   |
+
+1. **F-13.8.1** — Parametric facial morph targets per region with additive blending
+2. **F-13.8.2** — Preset blending and templates with save/load/share
+3. **F-13.8.3** — Parametric body shape via morph targets and skeleton scaling
+4. **F-13.8.4** — Body morph propagation to equipment meshes
+5. **F-13.8.5** — Skin material with SSS and layered detail maps
+6. **F-13.8.6** — Makeup and face paint decal layer compositing
+7. **F-13.8.7** — Per-eye customization with layered eye material
+8. **F-13.8.8** — Hair system with strand/card LOD and parametric controls
+9. **F-13.8.9** — Modular mesh part system with master-pose sharing
+10. **F-13.8.10** — Socket-based equipment attachment on skeleton bones
+11. **F-13.8.11** — Transmog and appearance override with wardrobe
+12. **F-13.8.12** — Multi-race base mesh support with retargeting
+13. **F-13.8.13** — Character LOD and crowd optimization
+14. **F-13.8.14** — Async mesh merging for draw call reduction
+15. **F-13.8.15** — Version-tagged appearance serialization
 
 ### Inventory (F-13.9, R-13.9)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.9.1 | R-13.9.1 | ECS-based inventory containers with child item entities |
-| F-13.9.2 | R-13.9.2 | Grid-based 2D inventory layout with bin-packing auto-sort |
-| F-13.9.3 | R-13.9.3 | Item stacking and splitting with per-type limits |
-| F-13.9.4 | R-13.9.4 | Per-instance mutable item properties as ECS components |
-| F-13.9.5 | R-13.9.5 | Item socket and augmentation system with type filtering |
-| F-13.9.6 | R-13.9.6 | Inventory transfer and drag-drop with server authority |
-| F-13.9.7 | R-13.9.7 | Loot distribution with multiple allocation modes |
-| F-13.9.8 | R-13.9.8 | Merchant and player-to-player trading |
-| F-13.9.9 | R-13.9.9 | Equipment slot binding with stat/visual/animation triggers |
-| F-13.9.10 | R-13.9.10 | Schema-versioned inventory serialization and persistence |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-13.9.1  | R-13.9.1    |
+| F-13.9.2  | R-13.9.2    |
+| F-13.9.3  | R-13.9.3    |
+| F-13.9.4  | R-13.9.4    |
+| F-13.9.5  | R-13.9.5    |
+| F-13.9.6  | R-13.9.6    |
+| F-13.9.7  | R-13.9.7    |
+| F-13.9.8  | R-13.9.8    |
+| F-13.9.9  | R-13.9.9    |
+| F-13.9.10 | R-13.9.10   |
+
+1. **F-13.9.1** — ECS-based inventory containers with child item entities
+2. **F-13.9.2** — Grid-based 2D inventory layout with bin-packing auto-sort
+3. **F-13.9.3** — Item stacking and splitting with per-type limits
+4. **F-13.9.4** — Per-instance mutable item properties as ECS components
+5. **F-13.9.5** — Item socket and augmentation system with type filtering
+6. **F-13.9.6** — Inventory transfer and drag-drop with server authority
+7. **F-13.9.7** — Loot distribution with multiple allocation modes
+8. **F-13.9.8** — Merchant and player-to-player trading
+9. **F-13.9.9** — Equipment slot binding with stat/visual/animation triggers
+10. **F-13.9.10** — Schema-versioned inventory serialization and persistence
 
 ### Non-Functional Requirements
 
@@ -1967,82 +1994,183 @@ fn equip_system(
 
 ### Unit Tests -- Character Customization
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_facial_morph_additive` | R-13.8.1 | Set morph targets on two overlapping facial regions; verify vertex positions reflect additive composition. |
-| `test_facial_symmetry_break` | R-13.8.1 | Toggle symmetry breaking on a marker; verify left/right sides diverge independently. |
-| `test_preset_blend_50_50` | R-13.8.2 | Blend two presets at 50/50 weight; verify morph vector equals arithmetic mean. |
-| `test_preset_save_load` | R-13.8.2 | Save a custom preset, reload, and assert all weights restored within f32 tolerance. |
-| `test_body_shape_constraints` | R-13.8.3 | Set extreme slider values; verify constraints clamp to valid ranges. |
-| `test_body_morph_smooth` | R-13.8.3 | Interpolate slider values; verify no mesh artifacts at intermediate values. |
-| `test_equipment_morph_propagation` | R-13.8.4 | Apply extreme body shape with equipment; verify no mesh penetration. |
-| `test_rigid_armor_no_deform` | R-13.8.4 | Equip plate armor; verify rigid pieces only follow bone transforms. |
-| `test_skin_params_deterministic` | R-13.8.5 | Two characters with identical skin params produce the same material output. |
-| `test_appearance_layer_order` | R-13.8.6 | Apply 3 overlapping layers; verify compositing order and blend modes. |
-| `test_eye_heterochromia` | R-13.8.7 | Set left and right eye to different iris colors; verify each material instance is correct. |
-| `test_hair_swap` | R-13.8.8 | Swap hairstyle assets; verify new groom renders with correct parameters. |
-| `test_hair_color_propagation` | R-13.8.8 | Set hair color; verify propagation to eyebrows with override. |
-| `test_mesh_parts_sync` | R-13.8.9 | Assemble 6 mesh parts; verify all share skeleton transforms in sync. |
-| `test_mesh_part_swap` | R-13.8.9 | Swap one part; verify no seam artifacts at boundaries. |
-| `test_socket_rigid_attach` | R-13.8.10 | Attach weapon to hand socket; verify transform matches hand bone. |
-| `test_body_region_hiding` | R-13.8.10 | Equip opaque chest armor; verify torso region is culled. |
-| `test_transmog_stats_visual` | R-13.8.11 | Equip stat gear + appearance override; verify stats from equipped, visuals from override. |
-| `test_outfit_dye_persist` | R-13.8.11 | Apply dye, change outfit, revert; verify dye colors preserved. |
-| `test_race_skeleton` | R-13.8.12 | Spawn two characters of different races; verify each uses own skeleton. |
-| `test_race_equipment_filter` | R-13.8.12 | Attempt race-incompatible equipment; verify rejection. |
-| `test_appearance_serialize_size` | R-13.8.15, R-13.8.NF3 | Fully customize a character; verify serialized data < 16 KB. |
-| `test_appearance_version_migrate` | R-13.8.15 | Serialize v1, add param in v2; verify migration fills default. |
+| Test                               | Req                   |
+|------------------------------------|-----------------------|
+| `test_facial_morph_additive`       | R-13.8.1              |
+| `test_facial_symmetry_break`       | R-13.8.1              |
+| `test_preset_blend_50_50`          | R-13.8.2              |
+| `test_preset_save_load`            | R-13.8.2              |
+| `test_body_shape_constraints`      | R-13.8.3              |
+| `test_body_morph_smooth`           | R-13.8.3              |
+| `test_equipment_morph_propagation` | R-13.8.4              |
+| `test_rigid_armor_no_deform`       | R-13.8.4              |
+| `test_skin_params_deterministic`   | R-13.8.5              |
+| `test_appearance_layer_order`      | R-13.8.6              |
+| `test_eye_heterochromia`           | R-13.8.7              |
+| `test_hair_swap`                   | R-13.8.8              |
+| `test_hair_color_propagation`      | R-13.8.8              |
+| `test_mesh_parts_sync`             | R-13.8.9              |
+| `test_mesh_part_swap`              | R-13.8.9              |
+| `test_socket_rigid_attach`         | R-13.8.10             |
+| `test_body_region_hiding`          | R-13.8.10             |
+| `test_transmog_stats_visual`       | R-13.8.11             |
+| `test_outfit_dye_persist`          | R-13.8.11             |
+| `test_race_skeleton`               | R-13.8.12             |
+| `test_race_equipment_filter`       | R-13.8.12             |
+| `test_appearance_serialize_size`   | R-13.8.15, R-13.8.NF3 |
+| `test_appearance_version_migrate`  | R-13.8.15             |
+
+1. **`test_facial_morph_additive`** — Set morph targets on two overlapping facial regions; verify
+   vertex positions reflect additive composition.
+2. **`test_facial_symmetry_break`** — Toggle symmetry breaking on a marker; verify left/right sides
+   diverge independently.
+3. **`test_preset_blend_50_50`** — Blend two presets at 50/50 weight; verify morph vector equals
+   arithmetic mean.
+4. **`test_preset_save_load`** — Save a custom preset, reload, and assert all weights restored
+   within f32 tolerance.
+5. **`test_body_shape_constraints`** — Set extreme slider values; verify constraints clamp to valid
+   ranges.
+6. **`test_body_morph_smooth`** — Interpolate slider values; verify no mesh artifacts at
+   intermediate values.
+7. **`test_equipment_morph_propagation`** — Apply extreme body shape with equipment; verify no mesh
+   penetration.
+8. **`test_rigid_armor_no_deform`** — Equip plate armor; verify rigid pieces only follow bone
+   transforms.
+9. **`test_skin_params_deterministic`** — Two characters with identical skin params produce the same
+   material output.
+10. **`test_appearance_layer_order`** — Apply 3 overlapping layers; verify compositing order and
+    blend modes.
+11. **`test_eye_heterochromia`** — Set left and right eye to different iris colors; verify each
+    material instance is correct.
+12. **`test_hair_swap`** — Swap hairstyle assets; verify new groom renders with correct parameters.
+13. **`test_hair_color_propagation`** — Set hair color; verify propagation to eyebrows with
+    override.
+14. **`test_mesh_parts_sync`** — Assemble 6 mesh parts; verify all share skeleton transforms in
+    sync.
+15. **`test_mesh_part_swap`** — Swap one part; verify no seam artifacts at boundaries.
+16. **`test_socket_rigid_attach`** — Attach weapon to hand socket; verify transform matches hand
+    bone.
+17. **`test_body_region_hiding`** — Equip opaque chest armor; verify torso region is culled.
+18. **`test_transmog_stats_visual`** — Equip stat gear + appearance override; verify stats from
+    equipped, visuals from override.
+19. **`test_outfit_dye_persist`** — Apply dye, change outfit, revert; verify dye colors preserved.
+20. **`test_race_skeleton`** — Spawn two characters of different races; verify each uses own
+    skeleton.
+21. **`test_race_equipment_filter`** — Attempt race-incompatible equipment; verify rejection.
+22. **`test_appearance_serialize_size`** — Fully customize a character; verify serialized data < 16
+    KB.
+23. **`test_appearance_version_migrate`** — Serialize v1, add param in v2; verify migration fills
+    default.
 
 ### Unit Tests -- Inventory
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_inventory_ecs_hierarchy` | R-13.9.1 | Create container entity, spawn item children; verify parent-child via ECS queries. |
-| `test_weight_capacity_reject` | R-13.9.1 | Add items exceeding weight; verify rejection. |
-| `test_grid_placement` | R-13.9.2 | Place 2x3 item in 10x10 grid; verify occupied cells marked. |
-| `test_grid_overlap_reject` | R-13.9.2 | Attempt overlapping placement; verify rejection. |
-| `test_grid_auto_sort` | R-13.9.2 | Auto-sort partially filled grid; verify no overlaps and item count preserved. |
-| `test_stack_merge` | R-13.9.3 | Add 150 of max-100 item; verify two stacks (100 + 50). |
-| `test_stack_split` | R-13.9.3 | Split 100-stack at 60; verify two stacks (60 + 40). |
-| `test_auto_consolidate` | R-13.9.3 | Add item to container with partial stacks; verify consolidation. |
-| `test_durability_query` | R-13.9.4 | Two items, different durability; filter by < 10%; verify correct result. |
-| `test_bind_on_pickup` | R-13.9.4 | Item enters player inventory; verify bind status applied. |
-| `test_socket_insert_merge` | R-13.9.5 | Insert Rune into Rune socket; verify stat modifiers merge. |
-| `test_socket_type_reject` | R-13.9.5 | Insert Gem into Rune socket; verify rejection. |
-| `test_socket_remove_destroy` | R-13.9.5 | Remove insert with destroy rule; verify entity despawned. |
-| `test_transfer_reparent` | R-13.9.6 | Transfer item between containers; verify parent entity changes. |
-| `test_transfer_capacity_reject` | R-13.9.6 | Transfer to full container; verify rejection. |
-| `test_transfer_prediction_rollback` | R-13.9.6 | Simulate client prediction + server reject; verify rollback. |
-| `test_loot_round_robin` | R-13.9.7 | Distribute to 4 players in round-robin; verify rotation. |
-| `test_loot_need_greed_tie` | R-13.9.7 | Tied need/greed votes; verify tiebreaker resolution. |
-| `test_loot_expire` | R-13.9.7 | Leave loot unclaimed; verify despawn after timeout. |
-| `test_merchant_buy` | R-13.9.8 | Buy from merchant; verify currency deducted and item received. |
-| `test_merchant_reputation_discount` | R-13.9.8 | Apply reputation; verify reduced price. |
-| `test_trade_mutual_confirm` | R-13.9.8 | Confirm from both sides; verify items swap correctly. |
-| `test_equip_stat_apply` | R-13.9.9 | Equip weapon; verify stat modifiers applied. |
-| `test_unequip_stat_revert` | R-13.9.9 | Unequip weapon; verify stats revert. |
-| `test_equip_slot_reject` | R-13.9.9 | Equip head item in weapon slot; verify rejection. |
-| `test_inventory_serialize_roundtrip` | R-13.9.10 | Serialize inventory with socketed items; deserialize; verify all data. |
-| `test_inventory_schema_migrate` | R-13.9.10 | Add property in new schema version; verify migration preserves data. |
-| `test_duplication_prevention` | R-13.9.10 | Attempt duplication via save/load; verify prevention. |
+| Test                                 | Req       |
+|--------------------------------------|-----------|
+| `test_inventory_ecs_hierarchy`       | R-13.9.1  |
+| `test_weight_capacity_reject`        | R-13.9.1  |
+| `test_grid_placement`                | R-13.9.2  |
+| `test_grid_overlap_reject`           | R-13.9.2  |
+| `test_grid_auto_sort`                | R-13.9.2  |
+| `test_stack_merge`                   | R-13.9.3  |
+| `test_stack_split`                   | R-13.9.3  |
+| `test_auto_consolidate`              | R-13.9.3  |
+| `test_durability_query`              | R-13.9.4  |
+| `test_bind_on_pickup`                | R-13.9.4  |
+| `test_socket_insert_merge`           | R-13.9.5  |
+| `test_socket_type_reject`            | R-13.9.5  |
+| `test_socket_remove_destroy`         | R-13.9.5  |
+| `test_transfer_reparent`             | R-13.9.6  |
+| `test_transfer_capacity_reject`      | R-13.9.6  |
+| `test_transfer_prediction_rollback`  | R-13.9.6  |
+| `test_loot_round_robin`              | R-13.9.7  |
+| `test_loot_need_greed_tie`           | R-13.9.7  |
+| `test_loot_expire`                   | R-13.9.7  |
+| `test_merchant_buy`                  | R-13.9.8  |
+| `test_merchant_reputation_discount`  | R-13.9.8  |
+| `test_trade_mutual_confirm`          | R-13.9.8  |
+| `test_equip_stat_apply`              | R-13.9.9  |
+| `test_unequip_stat_revert`           | R-13.9.9  |
+| `test_equip_slot_reject`             | R-13.9.9  |
+| `test_inventory_serialize_roundtrip` | R-13.9.10 |
+| `test_inventory_schema_migrate`      | R-13.9.10 |
+| `test_duplication_prevention`        | R-13.9.10 |
+
+1. **`test_inventory_ecs_hierarchy`** — Create container entity, spawn item children; verify
+   parent-child via ECS queries.
+2. **`test_weight_capacity_reject`** — Add items exceeding weight; verify rejection.
+3. **`test_grid_placement`** — Place 2x3 item in 10x10 grid; verify occupied cells marked.
+4. **`test_grid_overlap_reject`** — Attempt overlapping placement; verify rejection.
+5. **`test_grid_auto_sort`** — Auto-sort partially filled grid; verify no overlaps and item count
+   preserved.
+6. **`test_stack_merge`** — Add 150 of max-100 item; verify two stacks (100 + 50).
+7. **`test_stack_split`** — Split 100-stack at 60; verify two stacks (60 + 40).
+8. **`test_auto_consolidate`** — Add item to container with partial stacks; verify consolidation.
+9. **`test_durability_query`** — Two items, different durability; filter by < 10%; verify correct
+   result.
+10. **`test_bind_on_pickup`** — Item enters player inventory; verify bind status applied.
+11. **`test_socket_insert_merge`** — Insert Rune into Rune socket; verify stat modifiers merge.
+12. **`test_socket_type_reject`** — Insert Gem into Rune socket; verify rejection.
+13. **`test_socket_remove_destroy`** — Remove insert with destroy rule; verify entity despawned.
+14. **`test_transfer_reparent`** — Transfer item between containers; verify parent entity changes.
+15. **`test_transfer_capacity_reject`** — Transfer to full container; verify rejection.
+16. **`test_transfer_prediction_rollback`** — Simulate client prediction + server reject; verify
+    rollback.
+17. **`test_loot_round_robin`** — Distribute to 4 players in round-robin; verify rotation.
+18. **`test_loot_need_greed_tie`** — Tied need/greed votes; verify tiebreaker resolution.
+19. **`test_loot_expire`** — Leave loot unclaimed; verify despawn after timeout.
+20. **`test_merchant_buy`** — Buy from merchant; verify currency deducted and item received.
+21. **`test_merchant_reputation_discount`** — Apply reputation; verify reduced price.
+22. **`test_trade_mutual_confirm`** — Confirm from both sides; verify items swap correctly.
+23. **`test_equip_stat_apply`** — Equip weapon; verify stat modifiers applied.
+24. **`test_unequip_stat_revert`** — Unequip weapon; verify stats revert.
+25. **`test_equip_slot_reject`** — Equip head item in weapon slot; verify rejection.
+26. **`test_inventory_serialize_roundtrip`** — Serialize inventory with socketed items; deserialize;
+    verify all data.
+27. **`test_inventory_schema_migrate`** — Add property in new schema version; verify migration
+    preserves data.
+28. **`test_duplication_prevention`** — Attempt duplication via save/load; verify prevention.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_equip_full_pipeline` | R-13.9.9, R-13.8.10 | Equip item: verify stat change, visual attachment to socket bone, animation trigger, and body region occlusion all fire. |
-| `test_character_creator_load_time` | R-13.8.NF1 | Load character creator; verify interactive within 3 s on target hardware. |
-| `test_morph_slider_latency` | R-13.8.NF2 | Move facial slider continuously; verify mesh updates within same frame. |
-| `test_500_characters_frame_budget` | R-13.8.13 | Render 500 unique characters at 1080p; verify frame time < 16 ms. |
-| `test_mesh_merge_async` | R-13.8.14 | Merge 6 parts; verify async, no main thread block, correct vertex data, 1 draw call. |
-| `test_merge_cache_hit` | R-13.8.14 | Repeat same part combination; verify cache hit. |
-| `test_lod_transition_smooth` | R-13.8.13 | Walk toward distant character; verify LOD transitions are not jarring. |
-| `test_inventory_500_items` | R-13.9.NF1 | Fill container with 500 stacks; perform 1000 random operations; verify all under latency budget. |
-| `test_20_containers_memory` | R-13.9.NF2 | 20 containers x 100 items with properties; verify < 2 MB. |
-| `test_inventory_ops_latency` | R-13.9.NF3 | 10,000 random operations; verify p99 < 1 ms. |
-| `test_body_morph_equipment_all_types` | R-13.8.4 | All body shapes x all equipment types; verify no clipping. |
-| `test_race_animation_retarget` | R-13.8.12 | Play shared animation on different race skeletons via retargeting; verify correct playback. |
-| `test_appearance_share_roundtrip` | R-13.8.15 | Export appearance, import on different client; verify visual match. |
+| Test                                  | Req                 |
+|---------------------------------------|---------------------|
+| `test_equip_full_pipeline`            | R-13.9.9, R-13.8.10 |
+| `test_character_creator_load_time`    | R-13.8.NF1          |
+| `test_morph_slider_latency`           | R-13.8.NF2          |
+| `test_500_characters_frame_budget`    | R-13.8.13           |
+| `test_mesh_merge_async`               | R-13.8.14           |
+| `test_merge_cache_hit`                | R-13.8.14           |
+| `test_lod_transition_smooth`          | R-13.8.13           |
+| `test_inventory_500_items`            | R-13.9.NF1          |
+| `test_20_containers_memory`           | R-13.9.NF2          |
+| `test_inventory_ops_latency`          | R-13.9.NF3          |
+| `test_body_morph_equipment_all_types` | R-13.8.4            |
+| `test_race_animation_retarget`        | R-13.8.12           |
+| `test_appearance_share_roundtrip`     | R-13.8.15           |
+
+1. **`test_equip_full_pipeline`** — Equip item: verify stat change, visual attachment to socket
+   bone, animation trigger, and body region occlusion all fire.
+2. **`test_character_creator_load_time`** — Load character creator; verify interactive within 3 s on
+   target hardware.
+3. **`test_morph_slider_latency`** — Move facial slider continuously; verify mesh updates within
+   same frame.
+4. **`test_500_characters_frame_budget`** — Render 500 unique characters at 1080p; verify frame time
+   < 16 ms.
+5. **`test_mesh_merge_async`** — Merge 6 parts; verify async, no main thread block, correct vertex
+   data, 1 draw call.
+6. **`test_merge_cache_hit`** — Repeat same part combination; verify cache hit.
+7. **`test_lod_transition_smooth`** — Walk toward distant character; verify LOD transitions are not
+   jarring.
+8. **`test_inventory_500_items`** — Fill container with 500 stacks; perform 1000 random operations;
+   verify all under latency budget.
+9. **`test_20_containers_memory`** — 20 containers x 100 items with properties; verify < 2 MB.
+10. **`test_inventory_ops_latency`** — 10,000 random operations; verify p99 < 1 ms.
+11. **`test_body_morph_equipment_all_types`** — All body shapes x all equipment types; verify no
+    clipping.
+12. **`test_race_animation_retarget`** — Play shared animation on different race skeletons via
+    retargeting; verify correct playback.
+13. **`test_appearance_share_roundtrip`** — Export appearance, import on different client; verify
+    visual match.
 
 ### Benchmarks
 

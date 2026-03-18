@@ -8,14 +8,21 @@
 > [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-9.5.1 | R-9.5.1 | US-9.5.1.1, US-9.5.1.2, US-9.5.1.3 | GPU cloth simulation via PBD with distance, bending, self-collision constraints |
-| F-9.5.2 | R-9.5.2 | US-9.5.2.1, US-9.5.2.2, US-9.5.2.3 | Strand-based hair simulation with guide curves and interpolated render strands |
-| F-9.5.3 | R-9.5.3 | US-9.5.3.1, US-9.5.3.2 | Card-based hair rendering with anisotropic specular and spring physics |
-| F-9.5.4 | R-9.5.4 | US-9.5.4.1, US-9.5.4.2 | Hair LOD transitioning strands to clusters to cards to shell |
-| F-9.5.5 | R-9.5.5 | US-9.5.5.1, US-9.5.5.2 | Cloth-body collision with capsule/convex hull proxies and friction |
-| F-9.5.6 | R-9.5.6 | US-9.5.6.1, US-9.5.6.2, US-9.5.6.3 | Hair wind response from shared wind field texture |
+| Feature | Requirement | User Stories                       |
+|---------|-------------|------------------------------------|
+| F-9.5.1 | R-9.5.1     | US-9.5.1.1, US-9.5.1.2, US-9.5.1.3 |
+| F-9.5.2 | R-9.5.2     | US-9.5.2.1, US-9.5.2.2, US-9.5.2.3 |
+| F-9.5.3 | R-9.5.3     | US-9.5.3.1, US-9.5.3.2             |
+| F-9.5.4 | R-9.5.4     | US-9.5.4.1, US-9.5.4.2             |
+| F-9.5.5 | R-9.5.5     | US-9.5.5.1, US-9.5.5.2             |
+| F-9.5.6 | R-9.5.6     | US-9.5.6.1, US-9.5.6.2, US-9.5.6.3 |
+
+1. **F-9.5.1** — GPU cloth simulation via PBD with distance, bending, self-collision constraints
+2. **F-9.5.2** — Strand-based hair simulation with guide curves and interpolated render strands
+3. **F-9.5.3** — Card-based hair rendering with anisotropic specular and spring physics
+4. **F-9.5.4** — Hair LOD transitioning strands to clusters to cards to shell
+5. **F-9.5.5** — Cloth-body collision with capsule/convex hull proxies and friction
+6. **F-9.5.6** — Hair wind response from shared wind field texture
 
 ### Cross-Cutting Dependencies
 
@@ -1032,37 +1039,87 @@ flowchart TD
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_cloth_distance_constraint` | R-9.5.1 | Apply distance constraint to two particles. Verify rest length maintained within 1% after 10 solver iterations. |
-| `test_cloth_bending_constraint` | R-9.5.1 | Apply bending constraint to four particles forming a dihedral. Verify rest angle maintained within 2 degrees. |
-| `test_cloth_self_collision` | R-9.5.1 | Fold a 100-vertex cloth plane. Verify no particle penetrates the cloth surface (all pairwise distances > collision radius). |
-| `test_cloth_wind_response` | R-9.5.1 | Apply 10 m/s wind to a hanging cloth panel. Verify all particle positions displace in wind direction. |
-| `test_strand_gravity` | R-9.5.2 | Simulate 100 guide strands with gravity only. Verify all strand tips are below their roots after 60 frames. |
-| `test_strand_stretch` | R-9.5.2 | Apply stretch constraint to a 10-segment strand. Verify total strand length within 1% of rest length. |
-| `test_strand_collision` | R-9.5.2 | Place a collision capsule at a strand midpoint. Verify all particles remain outside capsule radius. |
-| `test_card_spring_physics` | R-9.5.3 | Apply impulse to a card hair group. Verify spring oscillation with decay over 30 frames. |
-| `test_card_anisotropic_spec` | R-9.5.3 | Rotate light around card hair. Verify specular highlight shifts along the anisotropic direction. |
-| `test_hair_lod_tier_selection` | R-9.5.4 | Set camera at 5, 20, 50, 200 m. Verify LOD tier is FullStrands, SimplifiedClusters, CardBased, Shell respectively. |
-| `test_hair_lod_hysteresis` | R-9.5.4 | Move camera from 19 m to 21 m and back to 20 m. Verify no tier oscillation due to hysteresis. |
-| `test_hair_lod_blend` | R-9.5.4 | Trigger LOD transition. Verify blend_alpha interpolates from 0.0 to 1.0 over blend_duration_sec. |
-| `test_collision_proxy_update` | R-9.5.5 | Change skeleton pose. Verify collision capsule world positions update within 1 frame. |
-| `test_collision_friction` | R-9.5.5 | Slide cloth across a capsule with friction=0.8. Verify cloth velocity reduces along surface tangent. |
-| `test_wind_field_sampling` | R-9.5.6 | Place hair and foliage at same position. Verify both sample identical wind vector from wind field texture. |
-| `test_wind_drag_proportional` | R-9.5.6 | Double wind speed. Verify strand particle displacement approximately doubles. |
+| Test                             | Req     |
+|----------------------------------|---------|
+| `test_cloth_distance_constraint` | R-9.5.1 |
+| `test_cloth_bending_constraint`  | R-9.5.1 |
+| `test_cloth_self_collision`      | R-9.5.1 |
+| `test_cloth_wind_response`       | R-9.5.1 |
+| `test_strand_gravity`            | R-9.5.2 |
+| `test_strand_stretch`            | R-9.5.2 |
+| `test_strand_collision`          | R-9.5.2 |
+| `test_card_spring_physics`       | R-9.5.3 |
+| `test_card_anisotropic_spec`     | R-9.5.3 |
+| `test_hair_lod_tier_selection`   | R-9.5.4 |
+| `test_hair_lod_hysteresis`       | R-9.5.4 |
+| `test_hair_lod_blend`            | R-9.5.4 |
+| `test_collision_proxy_update`    | R-9.5.5 |
+| `test_collision_friction`        | R-9.5.5 |
+| `test_wind_field_sampling`       | R-9.5.6 |
+| `test_wind_drag_proportional`    | R-9.5.6 |
+
+1. **`test_cloth_distance_constraint`** — Apply distance constraint to two particles. Verify rest
+   length maintained within 1% after 10 solver iterations.
+2. **`test_cloth_bending_constraint`** — Apply bending constraint to four particles forming a
+   dihedral. Verify rest angle maintained within 2 degrees.
+3. **`test_cloth_self_collision`** — Fold a 100-vertex cloth plane. Verify no particle penetrates
+   the cloth surface (all pairwise distances > collision radius).
+4. **`test_cloth_wind_response`** — Apply 10 m/s wind to a hanging cloth panel. Verify all particle
+   positions displace in wind direction.
+5. **`test_strand_gravity`** — Simulate 100 guide strands with gravity only. Verify all strand tips
+   are below their roots after 60 frames.
+6. **`test_strand_stretch`** — Apply stretch constraint to a 10-segment strand. Verify total strand
+   length within 1% of rest length.
+7. **`test_strand_collision`** — Place a collision capsule at a strand midpoint. Verify all
+   particles remain outside capsule radius.
+8. **`test_card_spring_physics`** — Apply impulse to a card hair group. Verify spring oscillation
+   with decay over 30 frames.
+9. **`test_card_anisotropic_spec`** — Rotate light around card hair. Verify specular highlight
+   shifts along the anisotropic direction.
+10. **`test_hair_lod_tier_selection`** — Set camera at 5, 20, 50, 200 m. Verify LOD tier is
+    FullStrands, SimplifiedClusters, CardBased, Shell respectively.
+11. **`test_hair_lod_hysteresis`** — Move camera from 19 m to 21 m and back to 20 m. Verify no tier
+    oscillation due to hysteresis.
+12. **`test_hair_lod_blend`** — Trigger LOD transition. Verify blend_alpha interpolates from 0.0 to
+    1.0 over blend_duration_sec.
+13. **`test_collision_proxy_update`** — Change skeleton pose. Verify collision capsule world
+    positions update within 1 frame.
+14. **`test_collision_friction`** — Slide cloth across a capsule with friction=0.8. Verify cloth
+    velocity reduces along surface tangent.
+15. **`test_wind_field_sampling`** — Place hair and foliage at same position. Verify both sample
+    identical wind vector from wind field texture.
+16. **`test_wind_drag_proportional`** — Double wind speed. Verify strand particle displacement
+    approximately doubles.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_cloth_on_animated_char` | R-9.5.1, R-9.5.5 | Attach a 1000-vertex cloak to a walking character. Verify cloth follows character without penetration for 300 frames. |
-| `test_strand_hair_head_turn` | R-9.5.2 | Rotate character head 90 degrees. Verify strand hair swings with physically plausible motion and no capsule penetration. |
-| `test_lod_flythrough` | R-9.5.4 | Fly camera from 5 m to 200 m continuously. Capture per-frame screenshots. Verify no visible popping artifacts. |
-| `test_wind_coherence` | R-9.5.6 | Place hair, cloth, foliage, and particles next to each other. Apply 10 m/s east wind. Verify all four systems deflect eastward. |
-| `test_platform_cloth_disabled` | R-9.5.1 | On mobile config, verify ClothGarment.enabled = false and baked animation plays. |
-| `test_platform_strand_gating` | R-9.5.2 | On Switch config, verify HairLodTier = CardBased (never FullStrands). |
-| `test_card_count_budget` | R-9.5.3 | On mobile/Switch/desktop, verify card counts match 8-16, 16-32, 32-64 budgets. |
-| `test_proxy_count_budget` | R-9.5.5 | On mobile/Switch/desktop, verify proxy counts match 0, 4-6, 8-12 budgets. |
+| Test                           | Req              |
+|--------------------------------|------------------|
+| `test_cloth_on_animated_char`  | R-9.5.1, R-9.5.5 |
+| `test_strand_hair_head_turn`   | R-9.5.2          |
+| `test_lod_flythrough`          | R-9.5.4          |
+| `test_wind_coherence`          | R-9.5.6          |
+| `test_platform_cloth_disabled` | R-9.5.1          |
+| `test_platform_strand_gating`  | R-9.5.2          |
+| `test_card_count_budget`       | R-9.5.3          |
+| `test_proxy_count_budget`      | R-9.5.5          |
+
+1. **`test_cloth_on_animated_char`** — Attach a 1000-vertex cloak to a walking character. Verify
+   cloth follows character without penetration for 300 frames.
+2. **`test_strand_hair_head_turn`** — Rotate character head 90 degrees. Verify strand hair swings
+   with physically plausible motion and no capsule penetration.
+3. **`test_lod_flythrough`** — Fly camera from 5 m to 200 m continuously. Capture per-frame
+   screenshots. Verify no visible popping artifacts.
+4. **`test_wind_coherence`** — Place hair, cloth, foliage, and particles next to each other. Apply
+   10 m/s east wind. Verify all four systems deflect eastward.
+5. **`test_platform_cloth_disabled`** — On mobile config, verify ClothGarment.enabled = false and
+   baked animation plays.
+6. **`test_platform_strand_gating`** — On Switch config, verify HairLodTier = CardBased (never
+   FullStrands).
+7. **`test_card_count_budget`** — On mobile/Switch/desktop, verify card counts match 8-16, 16-32,
+   32-64 budgets.
+8. **`test_proxy_count_budget`** — On mobile/Switch/desktop, verify proxy counts match 0, 4-6, 8-12
+   budgets.
 
 ### Benchmarks
 

@@ -43,11 +43,16 @@ engine.
 
 ## Platform I/O Backends
 
-| Platform | I/O Backend | Notes |
-|----------|-------------|-------|
-| Windows | IOCP | `CreateIoCompletionPort`, `GetQueuedCompletionStatusEx` via `windows-sys` |
-| macOS | GCD / Dispatch IO | Accessed through C++ wrappers via cxx.rs. We control when dispatch callbacks fire (controlled drain at poll point). |
-| Linux | io_uring | Minimum kernel 5.1+. `IORING_OP_POLL_ADD` for fd readiness. No epoll. |
+| Platform | I/O Backend       |
+|----------|-------------------|
+| Windows  | IOCP              |
+| macOS    | GCD / Dispatch IO |
+| Linux    | io_uring          |
+
+1. **Windows** — `CreateIoCompletionPort`, `GetQueuedCompletionStatusEx` via `windows-sys`
+2. **macOS** — Accessed through C++ wrappers via cxx.rs. We control when dispatch callbacks fire
+   (controlled drain at poll point).
+3. **Linux** — Minimum kernel 5.1+. `IORING_OP_POLL_ADD` for fd readiness. No epoll.
 
 ## macOS and Apple Platforms
 

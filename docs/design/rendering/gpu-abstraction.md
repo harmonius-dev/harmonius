@@ -10,34 +10,57 @@
 
 ### Backend Trait and Interface
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-2.1.1 | R-2.1.1 | GPU backend trait with associated types, static dispatch via generics |
-| F-2.1.2 | R-2.1.2 | Command buffer abstraction for graphics, compute, copy |
-| F-2.1.3 | R-2.1.3 | Unified pipeline state objects pre-validated at creation |
-| F-2.1.4 | R-2.1.4 | Metal backend via Swift-to-C-to-bindgen |
-| F-2.1.5 | R-2.1.5 | D3D12 backend via COM-to-bindgen |
-| F-2.1.6 | R-2.1.6 | Vulkan backend via C-to-bindgen |
+| Feature | Requirement |
+|---------|-------------|
+| F-2.1.1 | R-2.1.1     |
+| F-2.1.2 | R-2.1.2     |
+| F-2.1.3 | R-2.1.3     |
+| F-2.1.4 | R-2.1.4     |
+| F-2.1.5 | R-2.1.5     |
+| F-2.1.6 | R-2.1.6     |
+
+1. **F-2.1.1** — GPU backend trait with associated types, static dispatch via generics
+2. **F-2.1.2** — Command buffer abstraction for graphics, compute, copy
+3. **F-2.1.3** — Unified pipeline state objects pre-validated at creation
+4. **F-2.1.4** — Metal backend via Swift-to-C-to-bindgen
+5. **F-2.1.5** — D3D12 backend via COM-to-bindgen
+6. **F-2.1.6** — Vulkan backend via C-to-bindgen
 
 ### GPU Runtime
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-2.1.7 | R-2.1.7 | GPU heap sub-allocation from pre-allocated blocks |
-| F-2.1.8 | R-2.1.8 | CPU-side state tracking to filter redundant transitions |
-| F-2.1.9 | R-2.1.9 | Barrier batching, merging, and split barriers |
-| F-2.1.10 | R-2.1.10 | GPU work graph support (native + emulated) |
-| F-2.1.11 | R-2.1.11 | Cross-backend feature emulation |
-| F-2.1.12 | R-2.1.12 | GPU performance queries and profiling |
+| Feature  | Requirement |
+|----------|-------------|
+| F-2.1.7  | R-2.1.7     |
+| F-2.1.8  | R-2.1.8     |
+| F-2.1.9  | R-2.1.9     |
+| F-2.1.10 | R-2.1.10    |
+| F-2.1.11 | R-2.1.11    |
+| F-2.1.12 | R-2.1.12    |
+
+1. **F-2.1.7** — GPU heap sub-allocation from pre-allocated blocks
+2. **F-2.1.8** — CPU-side state tracking to filter redundant transitions
+3. **F-2.1.9** — Barrier batching, merging, and split barriers
+4. **F-2.1.10** — GPU work graph support (native + emulated)
+5. **F-2.1.11** — Cross-backend feature emulation
+6. **F-2.1.12** — GPU performance queries and profiling
 
 ### GPU Runtime Requirements (GR)
 
-| Requirement | Description |
-|-------------|-------------|
-| GR-1.1 through GR-1.11 | Memory management: unified allocator, sub-allocation, ring buffers, defrag, budgets, sparse |
-| GR-2.1 through GR-2.7 | State tracking: tracked command buffer, pipeline/descriptor/dynamic/push caches, reset |
-| GR-3.1 through GR-3.9 | Work graph runtime: transparent execution, native/emulated paths, sync fidelity |
-| GR-4.1 through GR-4.9 | Feature emulation: barriers, ray tracing, mesh shaders, capability-aware recording |
+| Requirement            |
+|------------------------|
+| GR-1.1 through GR-1.11 |
+| GR-2.1 through GR-2.7  |
+| GR-3.1 through GR-3.9  |
+| GR-4.1 through GR-4.9  |
+
+1. **GR-1.1 through GR-1.11** — Memory management: unified allocator, sub-allocation, ring buffers,
+   defrag, budgets, sparse
+2. **GR-2.1 through GR-2.7** — State tracking: tracked command buffer,
+   pipeline/descriptor/dynamic/push caches, reset
+3. **GR-3.1 through GR-3.9** — Work graph runtime: transparent execution, native/emulated paths,
+   sync fidelity
+4. **GR-4.1 through GR-4.9** — Feature emulation: barriers, ray tracing, mesh shaders,
+   capability-aware recording
 
 ### Non-Functional Requirements
 
@@ -1917,10 +1940,16 @@ paths produce identical outputs (GR-3.4).
 All work graph APIs are safe Rust. The emulation uses `ExecuteIndirect`-style dispatch wrapped in
 the safe `CommandEncoder` API. No raw GPU pointers are exposed.
 
-| Path | Platforms | Mechanism |
-|------|-----------|-----------|
-| **CPU emulation (primary)** | Metal, Vulkan, D3D12 | Indirect dispatch chain via `WorkGraphEmulator`. Each node reads GPU-written arguments from a triple-buffered feedback ring. |
-| **Native acceleration (optional)** | D3D12 (when `DeviceCapabilities::work_graphs` is true) | Single `DispatchGraph` call via native D3D12 work graph API. |
+| Path                               |
+|------------------------------------|
+| **CPU emulation (primary)**        |
+| **Native acceleration (optional)** |
+
+1. ****CPU emulation (primary)**** — Metal, Vulkan, D3D12
+   - **Mechanism:** Indirect dispatch chain via `WorkGraphEmulator`. Each node reads GPU-written
+     arguments from a triple-buffered feedback ring.
+2. ****Native acceleration (optional)**** — D3D12 (when `DeviceCapabilities::work_graphs` is true)
+   - **Mechanism:** Single `DispatchGraph` call via native D3D12 work graph API.
 
 ```mermaid
 flowchart TD
@@ -2275,66 +2304,149 @@ on the hot path:
 
 ### Proposed Dependencies
 
-| Crate / Library | Purpose | Justification |
-|-----------------|---------|---------------|
-| `cxx` | C++ interop for DXC and Metal Shader Converter | Safe bridge to C++ compilation libraries |
-| `windows-sys` | Win32/COM/DXGI raw bindings | Zero-cost D3D12 FFI, no C++ |
-| `ash` | Vulkan function loader (thin) | Minimal safe wrapper over vulkan.h; no framework |
-| `bindgen` (build) | Generate FFI from C/COM headers | D3D12 COM headers, Metal C bridge |
-| `smallvec` | Inline-allocated small vectors | Barrier lists, bind group entries |
+| Crate / Library   |
+|-------------------|
+| `cxx`             |
+| `windows-sys`     |
+| `ash`             |
+| `bindgen` (build) |
+| `smallvec`        |
+
+1. **`cxx`** — C++ interop for DXC and Metal Shader Converter
+   - **Justification:** Safe bridge to C++ compilation libraries
+2. **`windows-sys`** — Win32/COM/DXGI raw bindings
+   - **Justification:** Zero-cost D3D12 FFI, no C++
+3. **`ash`** — Vulkan function loader (thin)
+   - **Justification:** Minimal safe wrapper over vulkan.h; no framework
+4. **`bindgen` (build)** — Generate FFI from C/COM headers
+   - **Justification:** D3D12 COM headers, Metal C bridge
+5. **`smallvec`** — Inline-allocated small vectors
+   - **Justification:** Barrier lists, bind group entries
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_static_dispatch_no_vtable` | R-2.1.1, NFR-2.1.1 | Compile each backend, inspect assembly for absence of indirect calls at trait sites. |
-| `test_buffer_create_destroy` | R-2.1.1 | Create buffer, verify handle valid, destroy, verify handle invalid. |
-| `test_texture_create_all_formats` | R-2.1.1 | Create textures in every Format variant. Verify no errors. |
-| `test_cmd_buf_graphics_compute_copy` | R-2.1.2 | Record one graphics, one compute, one copy op per command buffer. Submit. Verify fence signals. |
-| `test_cmd_buf_type_safe_binding` | R-2.1.2 | Attempt binding wrong resource type. Verify compile-time error. |
-| `test_pso_invalid_combination` | R-2.1.3 | Create PSO with invalid blend/depth config. Verify structured error at creation, not at encoding. |
-| `test_pso_zero_cost_encoding` | R-2.1.3 | Measure PSO bind during encoding adds zero conditional branches vs raw backend. |
-| `test_metal_ffi_no_objc` | R-2.1.4 | Verify Metal FFI boundary contains only C-compatible signatures. No Objective-C selectors. |
-| `test_d3d12_no_cpp_no_windows_rs` | R-2.1.5 | Verify D3D12 dep graph contains no C++ TUs or windows-rs. |
-| `test_vulkan_validation_zero_errors` | R-2.1.6 | Run conformance suite with VK validation layers. Zero validation errors. |
-| `test_vulkan_loader_runtime` | R-2.1.6 | Verify Vulkan loader is runtime-discovered, not statically linked. |
-| `test_suballoc_alignment_d3d12` | R-2.1.7, GR-1.2 | Verify all sub-alloc offsets are 256 B aligned on D3D12. |
-| `test_suballoc_alignment_vulkan` | R-2.1.7, GR-1.2 | Verify per-resource alignment queries are respected on Vulkan. |
-| `test_suballoc_alignment_metal` | R-2.1.7, GR-1.2 | Verify page alignment (4096 B) on Metal. |
-| `test_state_tracker_redundant_bind` | R-2.1.8, GR-2.2 | Set same pipeline twice. Capture API trace. Verify single bind call. |
-| `test_state_tracker_reset_on_begin` | GR-2.7 | Call begin(). Verify all caches reset to unknown. |
-| `test_barrier_merge` | R-2.1.9 | Three consecutive barriers on same resource. Verify single merged call. |
-| `test_barrier_noop_metal` | R-2.1.9 | On Metal, verify barrier calls are elided. |
-| `test_split_barrier_overlap` | R-2.1.9, GR-4.2 | Split barrier across independent work. Verify GPU overlap via capture. |
-| `test_work_graph_native_d3d12` | R-2.1.10, GR-3.2 | Execute work graph on D3D12 with native API. Verify output. |
-| `test_work_graph_emulated` | R-2.1.10, GR-3.3 | Execute same work graph on emulated path. Verify output matches native within FP tolerance. |
-| `test_emulation_no_runtime_branch` | R-2.1.11, GR-4.1 | Create device without mesh shaders. Verify emulated path selected at creation. No runtime branches. |
-| `test_timestamp_query_readback` | R-2.1.12 | Bracket 5 passes. Read back next frame. Verify non-zero, monotonic timestamps. |
-| `test_profiling_no_stall` | R-2.1.12 | Verify query readback introduces no GPU idle time. |
-| `test_ring_buffer_zero_alloc` | GR-1.5 | Allocate 1000 ring slices per frame. Verify zero OS-level heap allocations. |
-| `test_committed_alloc` | GR-1.3 | Allocate a large texture committed. Verify dedicated heap. |
-| `test_placed_alloc_aliasing` | GR-1.4 | Two placed resources in same heap with overlapping offsets. Verify valid aliasing. |
-| `test_defragment_reduces_waste` | GR-1.6 | Fragment a heap. Run defragment_step(). Verify fragmentation reduced. |
-| `test_budget_query` | GR-1.7 | Query budget. Verify non-zero values matching expected VRAM size. |
-| `test_push_constant_dedup` | GR-2.5 | Write identical push constants twice. Verify single API call. |
-| `test_fence_async_no_spin` | constraints | Await fence. Verify no CPU spin-wait; worker resumes other tasks. |
+| Test                                 | Req                |
+|--------------------------------------|--------------------|
+| `test_static_dispatch_no_vtable`     | R-2.1.1, NFR-2.1.1 |
+| `test_buffer_create_destroy`         | R-2.1.1            |
+| `test_texture_create_all_formats`    | R-2.1.1            |
+| `test_cmd_buf_graphics_compute_copy` | R-2.1.2            |
+| `test_cmd_buf_type_safe_binding`     | R-2.1.2            |
+| `test_pso_invalid_combination`       | R-2.1.3            |
+| `test_pso_zero_cost_encoding`        | R-2.1.3            |
+| `test_metal_ffi_no_objc`             | R-2.1.4            |
+| `test_d3d12_no_cpp_no_windows_rs`    | R-2.1.5            |
+| `test_vulkan_validation_zero_errors` | R-2.1.6            |
+| `test_vulkan_loader_runtime`         | R-2.1.6            |
+| `test_suballoc_alignment_d3d12`      | R-2.1.7, GR-1.2    |
+| `test_suballoc_alignment_vulkan`     | R-2.1.7, GR-1.2    |
+| `test_suballoc_alignment_metal`      | R-2.1.7, GR-1.2    |
+| `test_state_tracker_redundant_bind`  | R-2.1.8, GR-2.2    |
+| `test_state_tracker_reset_on_begin`  | GR-2.7             |
+| `test_barrier_merge`                 | R-2.1.9            |
+| `test_barrier_noop_metal`            | R-2.1.9            |
+| `test_split_barrier_overlap`         | R-2.1.9, GR-4.2    |
+| `test_work_graph_native_d3d12`       | R-2.1.10, GR-3.2   |
+| `test_work_graph_emulated`           | R-2.1.10, GR-3.3   |
+| `test_emulation_no_runtime_branch`   | R-2.1.11, GR-4.1   |
+| `test_timestamp_query_readback`      | R-2.1.12           |
+| `test_profiling_no_stall`            | R-2.1.12           |
+| `test_ring_buffer_zero_alloc`        | GR-1.5             |
+| `test_committed_alloc`               | GR-1.3             |
+| `test_placed_alloc_aliasing`         | GR-1.4             |
+| `test_defragment_reduces_waste`      | GR-1.6             |
+| `test_budget_query`                  | GR-1.7             |
+| `test_push_constant_dedup`           | GR-2.5             |
+| `test_fence_async_no_spin`           | constraints        |
+
+1. **`test_static_dispatch_no_vtable`** — Compile each backend, inspect assembly for absence of
+   indirect calls at trait sites.
+2. **`test_buffer_create_destroy`** — Create buffer, verify handle valid, destroy, verify handle
+   invalid.
+3. **`test_texture_create_all_formats`** — Create textures in every Format variant. Verify no
+   errors.
+4. **`test_cmd_buf_graphics_compute_copy`** — Record one graphics, one compute, one copy op per
+   command buffer. Submit. Verify fence signals.
+5. **`test_cmd_buf_type_safe_binding`** — Attempt binding wrong resource type. Verify compile-time
+   error.
+6. **`test_pso_invalid_combination`** — Create PSO with invalid blend/depth config. Verify
+   structured error at creation, not at encoding.
+7. **`test_pso_zero_cost_encoding`** — Measure PSO bind during encoding adds zero conditional
+   branches vs raw backend.
+8. **`test_metal_ffi_no_objc`** — Verify Metal FFI boundary contains only C-compatible signatures.
+   No Objective-C selectors.
+9. **`test_d3d12_no_cpp_no_windows_rs`** — Verify D3D12 dep graph contains no C++ TUs or windows-rs.
+10. **`test_vulkan_validation_zero_errors`** — Run conformance suite with VK validation layers. Zero
+    validation errors.
+11. **`test_vulkan_loader_runtime`** — Verify Vulkan loader is runtime-discovered, not statically
+    linked.
+12. **`test_suballoc_alignment_d3d12`** — Verify all sub-alloc offsets are 256 B aligned on D3D12.
+13. **`test_suballoc_alignment_vulkan`** — Verify per-resource alignment queries are respected on
+    Vulkan.
+14. **`test_suballoc_alignment_metal`** — Verify page alignment (4096 B) on Metal.
+15. **`test_state_tracker_redundant_bind`** — Set same pipeline twice. Capture API trace. Verify
+    single bind call.
+16. **`test_state_tracker_reset_on_begin`** — Call begin(). Verify all caches reset to unknown.
+17. **`test_barrier_merge`** — Three consecutive barriers on same resource. Verify single merged
+    call.
+18. **`test_barrier_noop_metal`** — On Metal, verify barrier calls are elided.
+19. **`test_split_barrier_overlap`** — Split barrier across independent work. Verify GPU overlap via
+    capture.
+20. **`test_work_graph_native_d3d12`** — Execute work graph on D3D12 with native API. Verify output.
+21. **`test_work_graph_emulated`** — Execute same work graph on emulated path. Verify output matches
+    native within FP tolerance.
+22. **`test_emulation_no_runtime_branch`** — Create device without mesh shaders. Verify emulated
+    path selected at creation. No runtime branches.
+23. **`test_timestamp_query_readback`** — Bracket 5 passes. Read back next frame. Verify non-zero,
+    monotonic timestamps.
+24. **`test_profiling_no_stall`** — Verify query readback introduces no GPU idle time.
+25. **`test_ring_buffer_zero_alloc`** — Allocate 1000 ring slices per frame. Verify zero OS-level
+    heap allocations.
+26. **`test_committed_alloc`** — Allocate a large texture committed. Verify dedicated heap.
+27. **`test_placed_alloc_aliasing`** — Two placed resources in same heap with overlapping offsets.
+    Verify valid aliasing.
+28. **`test_defragment_reduces_waste`** — Fragment a heap. Run defragment_step(). Verify
+    fragmentation reduced.
+29. **`test_budget_query`** — Query budget. Verify non-zero values matching expected VRAM size.
+30. **`test_push_constant_dedup`** — Write identical push constants twice. Verify single API call.
+31. **`test_fence_async_no_spin`** — Await fence. Verify no CPU spin-wait; worker resumes other
+    tasks.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_cross_backend_image_diff` | R-2.1.1 | Render reference scene on all 3 backends. Diff output images. Verify pixel-identical within threshold. |
-| `test_10k_draws_overhead` | NFR-2.1.1 | Profile 10k-draw benchmark via abstraction and raw API. Verify < 5% CPU overhead. |
-| `test_10k_draws_alloc_count` | NFR-2.1.2 | Render 10k draws. Count OS GPU allocs per frame. Verify < 64. |
-| `test_state_tracker_reduction` | NFR-2.1.3 | Record 1000-draw command buffer with/without tracker. Verify >= 20% API call reduction. |
-| `test_state_tracker_memory` | NFR-2.1.3 | Measure state tracker memory per command buffer. Verify <= 64 KB. |
-| `test_shader_compile_all_targets` | constraints | Compile sample HLSL to DXIL, SPIR-V, metallib. Verify bytecode non-empty. |
-| `test_swapchain_resize` | F-2.1.1 | Resize window. Verify swapchain recreates, presents correctly. |
-| `test_reactor_fence_integration` | constraints | Submit GPU work, await fence via reactor. Verify completion detected at poll(). |
-| `test_pso_cache_warm_mobile` | US-2.1.3.2 | On mobile, warm PSO cache at load. Verify no hitching during draw. |
-| `test_mesh_shader_emulation_visual` | GR-4.1 | Render scene with mesh shaders on capable and incapable HW. Verify visual match >= 40 dB PSNR. |
+| Test                                | Req         |
+|-------------------------------------|-------------|
+| `test_cross_backend_image_diff`     | R-2.1.1     |
+| `test_10k_draws_overhead`           | NFR-2.1.1   |
+| `test_10k_draws_alloc_count`        | NFR-2.1.2   |
+| `test_state_tracker_reduction`      | NFR-2.1.3   |
+| `test_state_tracker_memory`         | NFR-2.1.3   |
+| `test_shader_compile_all_targets`   | constraints |
+| `test_swapchain_resize`             | F-2.1.1     |
+| `test_reactor_fence_integration`    | constraints |
+| `test_pso_cache_warm_mobile`        | US-2.1.3.2  |
+| `test_mesh_shader_emulation_visual` | GR-4.1      |
+
+1. **`test_cross_backend_image_diff`** — Render reference scene on all 3 backends. Diff output
+   images. Verify pixel-identical within threshold.
+2. **`test_10k_draws_overhead`** — Profile 10k-draw benchmark via abstraction and raw API. Verify <
+   5% CPU overhead.
+3. **`test_10k_draws_alloc_count`** — Render 10k draws. Count OS GPU allocs per frame. Verify < 64.
+4. **`test_state_tracker_reduction`** — Record 1000-draw command buffer with/without tracker. Verify
+   >= 20% API call reduction.
+5. **`test_state_tracker_memory`** — Measure state tracker memory per command buffer. Verify <= 64
+   KB.
+6. **`test_shader_compile_all_targets`** — Compile sample HLSL to DXIL, SPIR-V, metallib. Verify
+   bytecode non-empty.
+7. **`test_swapchain_resize`** — Resize window. Verify swapchain recreates, presents correctly.
+8. **`test_reactor_fence_integration`** — Submit GPU work, await fence via reactor. Verify
+   completion detected at poll().
+9. **`test_pso_cache_warm_mobile`** — On mobile, warm PSO cache at load. Verify no hitching during
+   draw.
+10. **`test_mesh_shader_emulation_visual`** — Render scene with mesh shaders on capable and
+    incapable HW. Verify visual match >= 40 dB PSNR.
 
 ### Benchmarks
 
@@ -2411,13 +2523,29 @@ make the Metal backend more consistent with the C-based Vulkan and D3D12 backend
 All GPU abstraction APIs are safe Rust. Internal `unsafe` is confined to platform FFI wrappers
 (Metal, D3D12, Vulkan) and is audited with documented safety invariants.
 
-| Guarantee | Mechanism |
-|-----------|-----------|
-| **No unsafe in public API.** | All user-facing types (`GpuBackend`, `CommandBuffer`, `GpuDevice`, `GpuAllocator`, `WorkGraphRuntime`, `WorkGraphEmulator`) and functions are safe Rust. No `unsafe` in any public signature. |
-| **Compile-time validation.** | Pipeline state objects are validated at creation time -- invalid blend/depth/stencil configurations produce structured errors before any GPU encoding. Type-safe command buffer methods prevent binding wrong resource types at compile time. |
-| **Scoped borrows.** | All GPU command encoding uses scoped borrows. Command buffers are borrowed for the encoding scope and cannot outlive their recording session. The `TrackedCommandBuffer` wrapper enforces begin/end pairing. |
-| **Type-safe resource handles.** | GPU resources use generational handles (`GpuHandle<T>`) with phantom type markers. No raw pointers. Stale handles (use-after-free) are caught by generation checks at every access. |
-| **Internal unsafe encapsulation.** | Platform FFI (Metal via Swift @_cdecl, D3D12 via COM bindgen, Vulkan via ash) is encapsulated in `harmonius_gpu::platform::*` modules. Each `unsafe` block documents its safety invariants. No unsafe propagates to consumers. |
+| Guarantee                          |
+|------------------------------------|
+| **No unsafe in public API.**       |
+| **Compile-time validation.**       |
+| **Scoped borrows.**                |
+| **Type-safe resource handles.**    |
+| **Internal unsafe encapsulation.** |
+
+1. ****No unsafe in public API.**** — All user-facing types (`GpuBackend`, `CommandBuffer`,
+   `GpuDevice`, `GpuAllocator`, `WorkGraphRuntime`, `WorkGraphEmulator`) and functions are safe
+   Rust. No `unsafe` in any public signature.
+2. ****Compile-time validation.**** — Pipeline state objects are validated at creation time --
+   invalid blend/depth/stencil configurations produce structured errors before any GPU encoding.
+   Type-safe command buffer methods prevent binding wrong resource types at compile time.
+3. ****Scoped borrows.**** — All GPU command encoding uses scoped borrows. Command buffers are
+   borrowed for the encoding scope and cannot outlive their recording session. The
+   `TrackedCommandBuffer` wrapper enforces begin/end pairing.
+4. ****Type-safe resource handles.**** — GPU resources use generational handles (`GpuHandle<T>`)
+   with phantom type markers. No raw pointers. Stale handles (use-after-free) are caught by
+   generation checks at every access.
+5. ****Internal unsafe encapsulation.**** — Platform FFI (Metal via Swift @_cdecl, D3D12 via COM
+   bindgen, Vulkan via ash) is encapsulated in `harmonius_gpu::platform::*` modules. Each `unsafe`
+   block documents its safety invariants. No unsafe propagates to consumers.
 
 ### Handle Safety Model
 

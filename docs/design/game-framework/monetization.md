@@ -8,32 +8,57 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.23.1 | R-13.23.1 | Battle pass with free/premium tiers and season XP |
-| F-13.23.2 | R-13.23.2 | Server-defined daily/weekly rotating challenges |
-| F-13.23.3a | R-13.23.3a | Platform purchase abstraction (StoreKit 2, Play Billing, Steam) |
-| F-13.23.3b | R-13.23.3b | Server-side receipt validation |
-| F-13.23.3c | R-13.23.3c | Premium currency (server-side balance, cosmetic-only) |
-| F-13.23.3d | R-13.23.3d | Purchase history and refund tracking |
-| F-13.23.4 | R-13.23.4 | Daily login reward calendar with streak tracking |
-| F-13.23.5a | R-13.23.5a | Subscription state verification (periodic, server-side) |
-| F-13.23.5b | R-13.23.5b | Subscription benefit application and revocation |
-| F-13.23.5c | R-13.23.5c | Subscription management UI |
-| F-13.23.5d | R-13.23.5d | Subscription gifting |
-| F-13.23.6a | R-13.23.6a | Timed game trial with progress carry-over |
-| F-13.23.6b | R-13.23.6b | Server-scheduled free weekend events |
-| F-13.23.6c | R-13.23.6c | Content trial with temporary DLC unlock |
-| F-13.23.7 | R-13.23.7 | DLC and expansion on-demand download |
-| F-13.23.8 | R-13.23.8 | Cosmetic store with virtual currency |
-| F-13.23.9a | R-13.23.9a | Deceptive UI prevention (engine-enforced) |
-| F-13.23.9b | R-13.23.9b | Minor-targeted ad blocking |
-| F-13.23.9c | R-13.23.9c | Dark pattern prevention (engine-enforced) |
-| F-13.23.9d | R-13.23.9d | Frequency cap enforcement (engine-enforced) |
-| F-13.28.1 | R-13.28.1 | Opt-in rewarded video ads |
-| F-13.28.2 | R-13.28.2 | Transition-point interstitial ads |
-| F-13.28.3 | R-13.28.3 | Non-intrusive banner ads |
-| F-13.28.4 | R-13.28.4 | Multi-network ad mediation layer |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.23.1  | R-13.23.1   |
+| F-13.23.2  | R-13.23.2   |
+| F-13.23.3a | R-13.23.3a  |
+| F-13.23.3b | R-13.23.3b  |
+| F-13.23.3c | R-13.23.3c  |
+| F-13.23.3d | R-13.23.3d  |
+| F-13.23.4  | R-13.23.4   |
+| F-13.23.5a | R-13.23.5a  |
+| F-13.23.5b | R-13.23.5b  |
+| F-13.23.5c | R-13.23.5c  |
+| F-13.23.5d | R-13.23.5d  |
+| F-13.23.6a | R-13.23.6a  |
+| F-13.23.6b | R-13.23.6b  |
+| F-13.23.6c | R-13.23.6c  |
+| F-13.23.7  | R-13.23.7   |
+| F-13.23.8  | R-13.23.8   |
+| F-13.23.9a | R-13.23.9a  |
+| F-13.23.9b | R-13.23.9b  |
+| F-13.23.9c | R-13.23.9c  |
+| F-13.23.9d | R-13.23.9d  |
+| F-13.28.1  | R-13.28.1   |
+| F-13.28.2  | R-13.28.2   |
+| F-13.28.3  | R-13.28.3   |
+| F-13.28.4  | R-13.28.4   |
+
+1. **F-13.23.1** — Battle pass with free/premium tiers and season XP
+2. **F-13.23.2** — Server-defined daily/weekly rotating challenges
+3. **F-13.23.3a** — Platform purchase abstraction (StoreKit 2, Play Billing, Steam)
+4. **F-13.23.3b** — Server-side receipt validation
+5. **F-13.23.3c** — Premium currency (server-side balance, cosmetic-only)
+6. **F-13.23.3d** — Purchase history and refund tracking
+7. **F-13.23.4** — Daily login reward calendar with streak tracking
+8. **F-13.23.5a** — Subscription state verification (periodic, server-side)
+9. **F-13.23.5b** — Subscription benefit application and revocation
+10. **F-13.23.5c** — Subscription management UI
+11. **F-13.23.5d** — Subscription gifting
+12. **F-13.23.6a** — Timed game trial with progress carry-over
+13. **F-13.23.6b** — Server-scheduled free weekend events
+14. **F-13.23.6c** — Content trial with temporary DLC unlock
+15. **F-13.23.7** — DLC and expansion on-demand download
+16. **F-13.23.8** — Cosmetic store with virtual currency
+17. **F-13.23.9a** — Deceptive UI prevention (engine-enforced)
+18. **F-13.23.9b** — Minor-targeted ad blocking
+19. **F-13.23.9c** — Dark pattern prevention (engine-enforced)
+20. **F-13.23.9d** — Frequency cap enforcement (engine-enforced)
+21. **F-13.28.1** — Opt-in rewarded video ads
+22. **F-13.28.2** — Transition-point interstitial ads
+23. **F-13.28.3** — Non-intrusive banner ads
+24. **F-13.28.4** — Multi-network ad mediation layer
 
 ## Overview
 
@@ -1112,12 +1137,17 @@ modifies currency balances directly.
 
 ### Purchase API Mapping
 
-| Platform | SDK | Notes |
-|----------|-----|-------|
-| iOS | StoreKit 2 | Handles deferred purchases (Ask to Buy). Requires iOS 15+. |
-| Android | Play Billing 5+ | Handles pending transactions. Google requires acknowledgment within 3 days. |
-| Steam | ISteamMicroTxn | Overlay callback on purchase completion. Uses Steam Wallet. |
-| Console | Native store APIs | Varies per manufacturer. |
+| Platform | SDK               |
+|----------|-------------------|
+| iOS      | StoreKit 2        |
+| Android  | Play Billing 5+   |
+| Steam    | ISteamMicroTxn    |
+| Console  | Native store APIs |
+
+1. **iOS** — Handles deferred purchases (Ask to Buy). Requires iOS 15+.
+2. **Android** — Handles pending transactions. Google requires acknowledgment within 3 days.
+3. **Steam** — Overlay callback on purchase completion. Uses Steam Wallet.
+4. **Console** — Varies per manufacturer.
 
 ### Receipt Validation Endpoints
 
@@ -1156,77 +1186,143 @@ modifies currency balances directly.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_pass_xp_tier_advance` | R-13.23.1 | Award XP, verify tier progression |
-| `test_pass_premium_gating` | R-13.23.1 | Premium rewards withheld for non-purchasers |
-| `test_pass_catchup_multiplier` | R-13.23.1 | Multiplier active in final third of season |
-| `test_pass_season_reset` | R-13.23.1 | Season transition resets progress |
-| `test_challenge_counter` | R-13.23.2 | Incremental counter tracks events |
-| `test_challenge_rotation` | R-13.23.2 | Daily rotation replaces challenges |
-| `test_challenge_reroll` | R-13.23.2 | Reroll deducts currency, no duplicates |
-| `test_purchase_flow` | R-13.23.3a | Initiate, complete, verify receipt |
-| `test_receipt_duplicate` | R-13.23.3b | Replay same receipt -> rejected < 100ms |
-| `test_receipt_retry` | R-13.23.3b | Failed validation retries with backoff |
-| `test_premium_currency_server` | R-13.23.3c | Balance stored server-side only |
-| `test_premium_cosmetic_only` | R-13.23.3c | Cannot purchase gameplay items |
-| `test_purchase_history` | R-13.23.3d | Transaction recorded with all fields |
-| `test_refund_webhook` | R-13.23.3d | Platform refund updates status |
-| `test_login_streak_strict` | R-13.23.4 | Miss day -> streak resets |
-| `test_login_streak_lenient` | R-13.23.4 | Miss day -> catchup stamp consumed |
-| `test_login_clock_tamper` | R-13.23.4 | Client clock manipulation rejected |
-| `test_sub_verify_active` | R-13.23.5a | Active sub verified on login |
-| `test_sub_lapse_detect` | R-13.23.5a | Lapsed sub detected within interval |
-| `test_sub_benefit_grant` | R-13.23.5b | Active tier grants benefits |
-| `test_sub_benefit_revoke` | R-13.23.5b | Lapse revokes benefits, keeps content |
-| `test_sub_tier_change` | R-13.23.5b | Upgrade adjusts benefits immediately |
-| `test_sub_gift_no_autorenew` | R-13.23.5d | Gift sub does not auto-renew |
-| `test_trial_time_persist` | R-13.23.6a | Close/reopen preserves elapsed time |
-| `test_trial_progress_carry` | R-13.23.6a | Trial progress carries to purchase |
-| `test_free_weekend_window` | R-13.23.6b | Access granted during event, revoked after |
-| `test_content_trial_temp` | R-13.23.6c | DLC unlocked during trial, locked after |
-| `test_dlc_entitlement` | R-13.23.7 | Signed bundle verified before activation |
-| `test_dlc_tampered_reject` | R-13.23.7 | Unsigned bundle rejected |
-| `test_store_cosmetic_no_stat` | R-13.23.8 | Purchased cosmetic has zero stat effect |
-| `test_store_refund_24h` | R-13.23.8 | Refund within 24h succeeds, after fails |
-| `test_store_account_bound` | R-13.23.8 | Cosmetic available on all characters |
-| `test_store_ai_label` | R-13.23.8 | AI-generated cosmetic displays label |
-| `test_ad_close_button_size` | R-13.23.9a | < 44x44pt rejected |
-| `test_ad_close_immediate` | R-13.23.9a | Close button functional on display |
-| `test_ad_minor_contextual` | R-13.23.9b | Under-16 gets only contextual ads |
-| `test_ad_no_autoplay_audio` | R-13.23.9c | Audio autoplay ad suppressed |
-| `test_ad_no_vibrate` | R-13.23.9c | Vibration ad suppressed |
-| `test_ad_disable_all` | R-13.23.9c | Accessibility setting disables all ads |
-| `test_ad_freq_interstitial` | R-13.23.9d | 2nd interstitial within 10 min blocked |
-| `test_ad_freq_rewarded` | R-13.23.9d | 4th rewarded within 1 hour blocked |
-| `test_ad_freq_rolling` | R-13.23.9d | Rolling window, not calendar boundary |
-| `test_rewarded_lifecycle` | R-13.28.1 | Request, show, complete, reward granted |
-| `test_rewarded_frequency` | R-13.28.1 | Cap exceeded -> request rejected |
-| `test_interstitial_cooldown` | R-13.28.2 | Second display within cooldown blocked |
-| `test_interstitial_iap_exempt` | R-13.28.2 | IAP purchaser exempt from interstitials |
-| `test_banner_iab_size` | R-13.28.3 | Correct IAB dimensions per platform |
-| `test_banner_gameplay_hide` | R-13.28.3 | Banner hidden during gameplay |
-| `test_mediation_ecpm` | R-13.28.4 | Higher-eCPM network selected |
-| `test_mediation_no_sdk` | R-13.28.4 | No ad SDK linked when ads disabled |
-| `test_gdpr_no_init` | R-13.28.4 | No ad network init before consent |
+| Test                           | Req        |
+|--------------------------------|------------|
+| `test_pass_xp_tier_advance`    | R-13.23.1  |
+| `test_pass_premium_gating`     | R-13.23.1  |
+| `test_pass_catchup_multiplier` | R-13.23.1  |
+| `test_pass_season_reset`       | R-13.23.1  |
+| `test_challenge_counter`       | R-13.23.2  |
+| `test_challenge_rotation`      | R-13.23.2  |
+| `test_challenge_reroll`        | R-13.23.2  |
+| `test_purchase_flow`           | R-13.23.3a |
+| `test_receipt_duplicate`       | R-13.23.3b |
+| `test_receipt_retry`           | R-13.23.3b |
+| `test_premium_currency_server` | R-13.23.3c |
+| `test_premium_cosmetic_only`   | R-13.23.3c |
+| `test_purchase_history`        | R-13.23.3d |
+| `test_refund_webhook`          | R-13.23.3d |
+| `test_login_streak_strict`     | R-13.23.4  |
+| `test_login_streak_lenient`    | R-13.23.4  |
+| `test_login_clock_tamper`      | R-13.23.4  |
+| `test_sub_verify_active`       | R-13.23.5a |
+| `test_sub_lapse_detect`        | R-13.23.5a |
+| `test_sub_benefit_grant`       | R-13.23.5b |
+| `test_sub_benefit_revoke`      | R-13.23.5b |
+| `test_sub_tier_change`         | R-13.23.5b |
+| `test_sub_gift_no_autorenew`   | R-13.23.5d |
+| `test_trial_time_persist`      | R-13.23.6a |
+| `test_trial_progress_carry`    | R-13.23.6a |
+| `test_free_weekend_window`     | R-13.23.6b |
+| `test_content_trial_temp`      | R-13.23.6c |
+| `test_dlc_entitlement`         | R-13.23.7  |
+| `test_dlc_tampered_reject`     | R-13.23.7  |
+| `test_store_cosmetic_no_stat`  | R-13.23.8  |
+| `test_store_refund_24h`        | R-13.23.8  |
+| `test_store_account_bound`     | R-13.23.8  |
+| `test_store_ai_label`          | R-13.23.8  |
+| `test_ad_close_button_size`    | R-13.23.9a |
+| `test_ad_close_immediate`      | R-13.23.9a |
+| `test_ad_minor_contextual`     | R-13.23.9b |
+| `test_ad_no_autoplay_audio`    | R-13.23.9c |
+| `test_ad_no_vibrate`           | R-13.23.9c |
+| `test_ad_disable_all`          | R-13.23.9c |
+| `test_ad_freq_interstitial`    | R-13.23.9d |
+| `test_ad_freq_rewarded`        | R-13.23.9d |
+| `test_ad_freq_rolling`         | R-13.23.9d |
+| `test_rewarded_lifecycle`      | R-13.28.1  |
+| `test_rewarded_frequency`      | R-13.28.1  |
+| `test_interstitial_cooldown`   | R-13.28.2  |
+| `test_interstitial_iap_exempt` | R-13.28.2  |
+| `test_banner_iab_size`         | R-13.28.3  |
+| `test_banner_gameplay_hide`    | R-13.28.3  |
+| `test_mediation_ecpm`          | R-13.28.4  |
+| `test_mediation_no_sdk`        | R-13.28.4  |
+| `test_gdpr_no_init`            | R-13.28.4  |
+
+1. **`test_pass_xp_tier_advance`** — Award XP, verify tier progression
+2. **`test_pass_premium_gating`** — Premium rewards withheld for non-purchasers
+3. **`test_pass_catchup_multiplier`** — Multiplier active in final third of season
+4. **`test_pass_season_reset`** — Season transition resets progress
+5. **`test_challenge_counter`** — Incremental counter tracks events
+6. **`test_challenge_rotation`** — Daily rotation replaces challenges
+7. **`test_challenge_reroll`** — Reroll deducts currency, no duplicates
+8. **`test_purchase_flow`** — Initiate, complete, verify receipt
+9. **`test_receipt_duplicate`** — Replay same receipt -> rejected < 100ms
+10. **`test_receipt_retry`** — Failed validation retries with backoff
+11. **`test_premium_currency_server`** — Balance stored server-side only
+12. **`test_premium_cosmetic_only`** — Cannot purchase gameplay items
+13. **`test_purchase_history`** — Transaction recorded with all fields
+14. **`test_refund_webhook`** — Platform refund updates status
+15. **`test_login_streak_strict`** — Miss day -> streak resets
+16. **`test_login_streak_lenient`** — Miss day -> catchup stamp consumed
+17. **`test_login_clock_tamper`** — Client clock manipulation rejected
+18. **`test_sub_verify_active`** — Active sub verified on login
+19. **`test_sub_lapse_detect`** — Lapsed sub detected within interval
+20. **`test_sub_benefit_grant`** — Active tier grants benefits
+21. **`test_sub_benefit_revoke`** — Lapse revokes benefits, keeps content
+22. **`test_sub_tier_change`** — Upgrade adjusts benefits immediately
+23. **`test_sub_gift_no_autorenew`** — Gift sub does not auto-renew
+24. **`test_trial_time_persist`** — Close/reopen preserves elapsed time
+25. **`test_trial_progress_carry`** — Trial progress carries to purchase
+26. **`test_free_weekend_window`** — Access granted during event, revoked after
+27. **`test_content_trial_temp`** — DLC unlocked during trial, locked after
+28. **`test_dlc_entitlement`** — Signed bundle verified before activation
+29. **`test_dlc_tampered_reject`** — Unsigned bundle rejected
+30. **`test_store_cosmetic_no_stat`** — Purchased cosmetic has zero stat effect
+31. **`test_store_refund_24h`** — Refund within 24h succeeds, after fails
+32. **`test_store_account_bound`** — Cosmetic available on all characters
+33. **`test_store_ai_label`** — AI-generated cosmetic displays label
+34. **`test_ad_close_button_size`** — < 44x44pt rejected
+35. **`test_ad_close_immediate`** — Close button functional on display
+36. **`test_ad_minor_contextual`** — Under-16 gets only contextual ads
+37. **`test_ad_no_autoplay_audio`** — Audio autoplay ad suppressed
+38. **`test_ad_no_vibrate`** — Vibration ad suppressed
+39. **`test_ad_disable_all`** — Accessibility setting disables all ads
+40. **`test_ad_freq_interstitial`** — 2nd interstitial within 10 min blocked
+41. **`test_ad_freq_rewarded`** — 4th rewarded within 1 hour blocked
+42. **`test_ad_freq_rolling`** — Rolling window, not calendar boundary
+43. **`test_rewarded_lifecycle`** — Request, show, complete, reward granted
+44. **`test_rewarded_frequency`** — Cap exceeded -> request rejected
+45. **`test_interstitial_cooldown`** — Second display within cooldown blocked
+46. **`test_interstitial_iap_exempt`** — IAP purchaser exempt from interstitials
+47. **`test_banner_iab_size`** — Correct IAB dimensions per platform
+48. **`test_banner_gameplay_hide`** — Banner hidden during gameplay
+49. **`test_mediation_ecpm`** — Higher-eCPM network selected
+50. **`test_mediation_no_sdk`** — No ad SDK linked when ads disabled
+51. **`test_gdpr_no_init`** — No ad network init before consent
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_purchase_e2e` | NFR-13.23.1 | Full purchase flow < 3 seconds |
-| `test_receipt_idempotent` | NFR-13.23.1 | Retry after failure: no double-credit |
-| `test_pass_hot_reload` | NFR-13.23.2 | New pass definition visible < 60 sec |
-| `test_challenge_hot_reload` | NFR-13.23.2 | New challenges visible < 60 sec |
-| `test_sub_login_latency` | NFR-13.23.3 | Subscription verify < 500ms on login |
-| `test_sub_bg_no_block` | NFR-13.23.3 | Periodic verify does not block gameplay |
-| `test_dlc_bandwidth` | NFR-13.23.4 | >= 80% bandwidth utilization on 100 Mbps |
-| `test_dlc_resume` | NFR-13.23.4 | Interrupted download resumes correctly |
-| `test_store_load_2sec` | NFR-13.23.5 | Store initial page renders < 2 sec |
-| `test_store_scroll_60fps` | NFR-13.23.5 | 500-item catalog scrolls at 60 fps |
-| `test_ad_load_latency` | NFR-13.28.1 | Ad loads < 2 sec (p95) |
-| `test_rewarded_callback` | NFR-13.28.2 | Reward callback < 16.67ms after video |
-| `test_gdpr_consent_withdraw` | NFR-13.28.3 | All ad networks disabled within 1 frame |
+| Test                         | Req         |
+|------------------------------|-------------|
+| `test_purchase_e2e`          | NFR-13.23.1 |
+| `test_receipt_idempotent`    | NFR-13.23.1 |
+| `test_pass_hot_reload`       | NFR-13.23.2 |
+| `test_challenge_hot_reload`  | NFR-13.23.2 |
+| `test_sub_login_latency`     | NFR-13.23.3 |
+| `test_sub_bg_no_block`       | NFR-13.23.3 |
+| `test_dlc_bandwidth`         | NFR-13.23.4 |
+| `test_dlc_resume`            | NFR-13.23.4 |
+| `test_store_load_2sec`       | NFR-13.23.5 |
+| `test_store_scroll_60fps`    | NFR-13.23.5 |
+| `test_ad_load_latency`       | NFR-13.28.1 |
+| `test_rewarded_callback`     | NFR-13.28.2 |
+| `test_gdpr_consent_withdraw` | NFR-13.28.3 |
+
+1. **`test_purchase_e2e`** — Full purchase flow < 3 seconds
+2. **`test_receipt_idempotent`** — Retry after failure: no double-credit
+3. **`test_pass_hot_reload`** — New pass definition visible < 60 sec
+4. **`test_challenge_hot_reload`** — New challenges visible < 60 sec
+5. **`test_sub_login_latency`** — Subscription verify < 500ms on login
+6. **`test_sub_bg_no_block`** — Periodic verify does not block gameplay
+7. **`test_dlc_bandwidth`** — >= 80% bandwidth utilization on 100 Mbps
+8. **`test_dlc_resume`** — Interrupted download resumes correctly
+9. **`test_store_load_2sec`** — Store initial page renders < 2 sec
+10. **`test_store_scroll_60fps`** — 500-item catalog scrolls at 60 fps
+11. **`test_ad_load_latency`** — Ad loads < 2 sec (p95)
+12. **`test_rewarded_callback`** — Reward callback < 16.67ms after video
+13. **`test_gdpr_consent_withdraw`** — All ad networks disabled within 1 frame
 
 ### Benchmarks
 

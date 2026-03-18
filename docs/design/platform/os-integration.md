@@ -10,37 +10,59 @@
 
 ### OS Integration (F-14.2 / R-14.2)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-14.2.1 | R-14.2.1 | Clipboard read/write for plain text and images, async on Wayland |
-| F-14.2.2 | R-14.2.2 | Native file-picker and folder-picker dialogs with file-type filters |
-| F-14.2.3 | R-14.2.3 | Toast notifications and system tray icons for background events |
-| F-14.2.4 | R-14.2.4 | Drag and drop with MIME type and extension validation |
-| F-14.2.5 | R-14.2.5 | Keyboard layout detection, dead-key sequences, layout-change events |
-| F-14.2.6 | R-14.2.6 | Input Method Editor integration for CJK text entry |
+| Feature  | Requirement |
+|----------|-------------|
+| F-14.2.1 | R-14.2.1    |
+| F-14.2.2 | R-14.2.2    |
+| F-14.2.3 | R-14.2.3    |
+| F-14.2.4 | R-14.2.4    |
+| F-14.2.5 | R-14.2.5    |
+| F-14.2.6 | R-14.2.6    |
+
+1. **F-14.2.1** — Clipboard read/write for plain text and images, async on Wayland
+2. **F-14.2.2** — Native file-picker and folder-picker dialogs with file-type filters
+3. **F-14.2.3** — Toast notifications and system tray icons for background events
+4. **F-14.2.4** — Drag and drop with MIME type and extension validation
+5. **F-14.2.5** — Keyboard layout detection, dead-key sequences, layout-change events
+6. **F-14.2.6** — Input Method Editor integration for CJK text entry
 
 ### Crash Reporting & Diagnostics (F-14.4 / R-14.4)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-14.4.1 | R-14.4.1 | Process-wide crash handler with minidump/core dump generation |
-| F-14.4.2 | R-14.4.2 | Debug symbol upload and server-side symbolication via build ID |
-| F-14.4.3 | R-14.4.3 | Crash aggregation by stack signature, alerting on new clusters/spikes |
-| F-14.4.4 | R-14.4.4 | Structured logging with severity, channels, and async ring buffer flush |
-| F-14.4.5 | R-14.4.5 | Lock-free per-thread performance counters with telemetry hooks |
-| F-14.4.6 | R-14.4.6 | GPU crash breadcrumbs written to GPU-visible buffer per render pass |
+| Feature  | Requirement |
+|----------|-------------|
+| F-14.4.1 | R-14.4.1    |
+| F-14.4.2 | R-14.4.2    |
+| F-14.4.3 | R-14.4.3    |
+| F-14.4.4 | R-14.4.4    |
+| F-14.4.5 | R-14.4.5    |
+| F-14.4.6 | R-14.4.6    |
+
+1. **F-14.4.1** — Process-wide crash handler with minidump/core dump generation
+2. **F-14.4.2** — Debug symbol upload and server-side symbolication via build ID
+3. **F-14.4.3** — Crash aggregation by stack signature, alerting on new clusters/spikes
+4. **F-14.4.4** — Structured logging with severity, channels, and async ring buffer flush
+5. **F-14.4.5** — Lock-free per-thread performance counters with telemetry hooks
+6. **F-14.4.6** — GPU crash breadcrumbs written to GPU-visible buffer per render pass
 
 ### Filesystem (F-14.6 / R-14.6)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-14.6.1 | R-14.6.1 | Async file open, read, write via platform-native I/O (IOCP/GCD/io_uring) |
-| F-14.6.2 | R-14.6.2 | Async file create/delete with recursive mkdir and batch unlink |
-| F-14.6.3 | R-14.6.3 | Async file metadata and batch stat queries |
-| F-14.6.4 | R-14.6.4 | Async directory enumeration with depth limits and glob filtering |
-| F-14.6.5 | R-14.6.5 | Directory change notifications with debounce and recursive watching |
-| F-14.6.6 | R-14.6.6 | BLAKE3 content hash comparison to filter false-positive file events |
-| F-14.6.7 | R-14.6.7 | Canonical path resolution across Windows, macOS, and Linux |
+| Feature  | Requirement |
+|----------|-------------|
+| F-14.6.1 | R-14.6.1    |
+| F-14.6.2 | R-14.6.2    |
+| F-14.6.3 | R-14.6.3    |
+| F-14.6.4 | R-14.6.4    |
+| F-14.6.5 | R-14.6.5    |
+| F-14.6.6 | R-14.6.6    |
+| F-14.6.7 | R-14.6.7    |
+
+1. **F-14.6.1** — Async file open, read, write via platform-native I/O (IOCP/GCD/io_uring)
+2. **F-14.6.2** — Async file create/delete with recursive mkdir and batch unlink
+3. **F-14.6.3** — Async file metadata and batch stat queries
+4. **F-14.6.4** — Async directory enumeration with depth limits and glob filtering
+5. **F-14.6.5** — Directory change notifications with debounce and recursive watching
+6. **F-14.6.6** — BLAKE3 content hash comparison to filter false-positive file events
+7. **F-14.6.7** — Canonical path resolution across Windows, macOS, and Linux
 
 ## Overview
 
@@ -1725,114 +1747,299 @@ pub enum FsError {
 
 ### OS Integration
 
-| Feature | Windows | macOS | Linux |
-|---------|---------|-------|-------|
-| Clipboard text | `OpenClipboard` / `SetClipboardData` via COM | `NSPasteboard generalPasteboard` | X11: `XCB_ATOM_CLIPBOARD`; Wayland: `wl_data_device` |
-| Clipboard image | `CF_DIBV5` format via COM | `NSPasteboard` with `NSPasteboardTypePNG` | X11: `image/png` MIME target; Wayland: `wl_data_offer` |
-| File dialog | `IFileOpenDialog` / `IFileSaveDialog` COM | `NSOpenPanel` / `NSSavePanel` | `org.freedesktop.portal.FileChooser` D-Bus, fallback: `zenity`/`kdialog` |
-| Notifications | `Shell_NotifyIcon` + WinRT `ToastNotificationManager` | `UNUserNotificationCenter` | `org.freedesktop.Notifications` D-Bus |
-| Drag-drop | `IDropTarget` / `RegisterDragDrop` COM | `NSDraggingDestination` protocol | X11: XDND protocol; Wayland: `wl_data_device` DnD |
-| Keyboard layout | `GetKeyboardLayout` / `ToUnicodeEx` | `TISCopyCurrentKeyboardInputSource` / `UCKeyTranslate` | `xkbcommon` (X11 + Wayland) |
-| IME | TSF `ITfThreadMgr` / `ImmGetContext` | `NSTextInputClient` protocol | IBus / Fcitx via D-Bus or C API |
+| Feature         |
+|-----------------|
+| Clipboard text  |
+| Clipboard image |
+| File dialog     |
+| Notifications   |
+| Drag-drop       |
+| Keyboard layout |
+| IME             |
+
+1. **Clipboard text** — `OpenClipboard` / `SetClipboardData` via COM
+   - **macOS:** `NSPasteboard generalPasteboard`
+   - **Linux:** X11: `XCB_ATOM_CLIPBOARD`; Wayland: `wl_data_device`
+2. **Clipboard image** — `CF_DIBV5` format via COM
+   - **macOS:** `NSPasteboard` with `NSPasteboardTypePNG`
+   - **Linux:** X11: `image/png` MIME target; Wayland: `wl_data_offer`
+3. **File dialog** — `IFileOpenDialog` / `IFileSaveDialog` COM
+   - **macOS:** `NSOpenPanel` / `NSSavePanel`
+   - **Linux:** `org.freedesktop.portal.FileChooser` D-Bus, fallback: `zenity`/`kdialog`
+4. **Notifications** — `Shell_NotifyIcon` + WinRT `ToastNotificationManager`
+   - **macOS:** `UNUserNotificationCenter`
+   - **Linux:** `org.freedesktop.Notifications` D-Bus
+5. **Drag-drop** — `IDropTarget` / `RegisterDragDrop` COM
+   - **macOS:** `NSDraggingDestination` protocol
+   - **Linux:** X11: XDND protocol; Wayland: `wl_data_device` DnD
+6. **Keyboard layout** — `GetKeyboardLayout` / `ToUnicodeEx`
+   - **macOS:** `TISCopyCurrentKeyboardInputSource` / `UCKeyTranslate`
+   - **Linux:** `xkbcommon` (X11 + Wayland)
+7. **IME** — TSF `ITfThreadMgr` / `ImmGetContext`
+   - **macOS:** `NSTextInputClient` protocol
+   - **Linux:** IBus / Fcitx via D-Bus or C API
 
 ### Crash Reporting
 
-| Feature | Windows | macOS | Linux |
-|---------|---------|-------|-------|
-| Crash handler | `SetUnhandledExceptionFilter` (SEH) | Mach exception handler (`mach_port_allocate`, `mach_msg_server`) | `SIGSEGV` / `SIGABRT` signal handler |
-| Dump format | Minidump via `MiniDumpWriteDump` | Core dump or custom minidump format | Core dump via `ptrace` + `/proc/self/maps` |
-| Out-of-process | Separate .exe communicates via named pipe | Separate binary communicates via Mach ports | Separate binary communicates via Unix socket |
-| Build ID format | PE GUID + age from debug directory | `LC_UUID` load command | `.note.gnu.build-id` ELF section |
-| Symbol format | PDB files | dSYM bundles | DWARF debug info |
-| Debugger logging | `OutputDebugString` | `os_log` (Console.app) | `sd_journal_sendv` (journald) |
-| Trace integration | ETW `EventWrite` | `os_signpost` (Instruments) | `perf_event_open` |
-| GPU breadcrumbs | D3D12 DRED (`ID3D12DeviceRemovedExtendedDataSettings`) | Shared `MTLBuffer` read on command buffer error | Vulkan `VK_AMD_buffer_marker` / `VK_NV_device_diagnostic_checkpoints` |
+| Feature           |
+|-------------------|
+| Crash handler     |
+| Dump format       |
+| Out-of-process    |
+| Build ID format   |
+| Symbol format     |
+| Debugger logging  |
+| Trace integration |
+| GPU breadcrumbs   |
+
+1. **Crash handler** — `SetUnhandledExceptionFilter` (SEH)
+   - **macOS:** Mach exception handler (`mach_port_allocate`, `mach_msg_server`)
+   - **Linux:** `SIGSEGV` / `SIGABRT` signal handler
+2. **Dump format** — Minidump via `MiniDumpWriteDump`
+   - **macOS:** Core dump or custom minidump format
+   - **Linux:** Core dump via `ptrace` + `/proc/self/maps`
+3. **Out-of-process** — Separate .exe communicates via named pipe
+   - **macOS:** Separate binary communicates via Mach ports
+   - **Linux:** Separate binary communicates via Unix socket
+4. **Build ID format** — PE GUID + age from debug directory
+   - **macOS:** `LC_UUID` load command
+   - **Linux:** `.note.gnu.build-id` ELF section
+5. **Symbol format** — PDB files
+   - **macOS:** dSYM bundles
+   - **Linux:** DWARF debug info
+6. **Debugger logging** — `OutputDebugString`
+   - **macOS:** `os_log` (Console.app)
+   - **Linux:** `sd_journal_sendv` (journald)
+7. **Trace integration** — ETW `EventWrite`
+   - **macOS:** `os_signpost` (Instruments)
+   - **Linux:** `perf_event_open`
+8. **GPU breadcrumbs** — D3D12 DRED (`ID3D12DeviceRemovedExtendedDataSettings`)
+   - **macOS:** Shared `MTLBuffer` read on command buffer error
+   - **Linux:** Vulkan `VK_AMD_buffer_marker` / `VK_NV_device_diagnostic_checkpoints`
 
 ### Filesystem
 
-| Feature | Windows | macOS | Linux |
-|---------|---------|-------|-------|
-| File open | `CreateFileW` + `FILE_FLAG_OVERLAPPED` (IOCP) | `dispatch_io_create` (GCD) | `io_uring` `IORING_OP_OPENAT2` |
-| File read/write | IOCP overlapped read/write | `dispatch_io_read` / `dispatch_io_write` | `io_uring` `IORING_OP_READ` / `IORING_OP_WRITE` |
-| File create/delete | `CreateDirectoryW` / `DeleteFileW` | GCD-dispatched POSIX `mkdir` / `unlink` | `io_uring` `IORING_OP_MKDIRAT` / `IORING_OP_UNLINKAT` |
-| File stat | `GetFileInformationByHandleEx` | GCD-dispatched `fstatat` | `io_uring` `IORING_OP_STATX` |
-| Dir enumerate | `FindFirstFileExW` / `FindNextFileW` on I/O threads | GCD-dispatched `fdopendir` / `readdir` | `io_uring` `IORING_OP_GETDENTS` (6.6+), fallback: threaded `getdents64` |
-| File watching | `ReadDirectoryChangesExW` with IOCP | FSEvents (recursive), `dispatch_source` VNODE (single) | `inotify_add_watch` with io_uring async reads |
-| Path resolution | `GetFinalPathNameByHandleW` | `fcntl(F_GETPATH)` or `realpath` | `realpath` or `/proc/self/fd` readlink |
-| Path quirks | UNC paths, `\\?\` long-path prefix, NTFS junctions | Case-insensitive HFS+/APFS | Case-sensitive ext4/btrfs |
-| iOS | App sandbox directories. `NSFileManager` via Swift/cxx.rs. No symlinks in app bundle. |  |  |
-| Android | Internal/external storage via JNI. Scoped storage (API 30+). `ContentResolver` for shared files. |  |  |
+| Feature            |
+|--------------------|
+| File open          |
+| File read/write    |
+| File create/delete |
+| File stat          |
+| Dir enumerate      |
+| File watching      |
+| Path resolution    |
+| Path quirks        |
+| iOS                |
+| Android            |
+
+1. **File open** — `CreateFileW` + `FILE_FLAG_OVERLAPPED` (IOCP)
+   - **macOS:** `dispatch_io_create` (GCD)
+   - **Linux:** `io_uring` `IORING_OP_OPENAT2`
+2. **File read/write** — IOCP overlapped read/write
+   - **macOS:** `dispatch_io_read` / `dispatch_io_write`
+   - **Linux:** `io_uring` `IORING_OP_READ` / `IORING_OP_WRITE`
+3. **File create/delete** — `CreateDirectoryW` / `DeleteFileW`
+   - **macOS:** GCD-dispatched POSIX `mkdir` / `unlink`
+   - **Linux:** `io_uring` `IORING_OP_MKDIRAT` / `IORING_OP_UNLINKAT`
+4. **File stat** — `GetFileInformationByHandleEx`
+   - **macOS:** GCD-dispatched `fstatat`
+   - **Linux:** `io_uring` `IORING_OP_STATX`
+5. **Dir enumerate** — `FindFirstFileExW` / `FindNextFileW` on I/O threads
+   - **macOS:** GCD-dispatched `fdopendir` / `readdir`
+   - **Linux:** `io_uring` `IORING_OP_GETDENTS` (6.6+), fallback: threaded `getdents64`
+6. **File watching** — `ReadDirectoryChangesExW` with IOCP
+   - **macOS:** FSEvents (recursive), `dispatch_source` VNODE (single)
+   - **Linux:** `inotify_add_watch` with io_uring async reads
+7. **Path resolution** — `GetFinalPathNameByHandleW`
+   - **macOS:** `fcntl(F_GETPATH)` or `realpath`
+   - **Linux:** `realpath` or `/proc/self/fd` readlink
+8. **Path quirks** — UNC paths, `\\?\` long-path prefix, NTFS junctions
+   - **macOS:** Case-insensitive HFS+/APFS
+   - **Linux:** Case-sensitive ext4/btrfs
+9. **iOS** — App sandbox directories. `NSFileManager` via Swift/cxx.rs. No symlinks in app bundle.
+10. **Android** — Internal/external storage via JNI. Scoped storage (API 30+). `ContentResolver` for
+    shared files.
 
 ## Test Plan
 
 ### OS Integration Tests (R-14.2.x)
 
-| Test | Requirement | Description |
-|------|-------------|-------------|
-| `test_clipboard_text_roundtrip` | R-14.2.1 | Write a known UTF-8 string (including emoji and CJK) to the clipboard, read it back, assert identical. |
-| `test_clipboard_image_roundtrip` | R-14.2.1 | Write an RGBA image to the clipboard, read it back, assert pixel data matches within tolerance. |
-| `test_clipboard_no_frame_hitch` | R-14.2.1 | Measure game loop frame time during clipboard operations. Assert no frame exceeds target budget. |
-| `test_file_dialog_filter` | R-14.2.2 | Open a file dialog with ".png" filter. Assert returned path (if any) has .png extension. |
-| `test_file_dialog_nonblocking` | R-14.2.2 | While a file dialog is open, assert the game loop renders frames within 10% of target rate. |
-| `test_notification_delivery` | R-14.2.3 | Minimize the window, trigger a notification. Assert the OS notification API was invoked with correct title/body. |
-| `test_tray_icon_menu_event` | R-14.2.3 | Create a tray icon with menu items. Simulate selection. Assert the correct event ID is received. |
-| `test_notification_unsupported_fallback` | R-14.2.3 | On a platform without OS notifications, assert `Err(OsError::Unsupported)` is returned (US-14.2.11). |
-| `test_drag_drop_accepted_extension` | R-14.2.4 | Drag a file with an accepted extension onto the window. Assert the drop event contains the correct path. |
-| `test_drag_drop_rejected_extension` | R-14.2.4 | Drag a file with a rejected extension. Assert the drop is rejected. |
-| `test_drag_drop_no_frame_spike` | R-14.2.4 | Assert no frame time spike exceeds 2 ms during drag hover and drop handling. |
-| `test_keyboard_dead_key_compose` | R-14.2.5 | Set layout to French AZERTY. Type `^` then `e`. Assert engine emits composed character. |
-| `test_keyboard_layout_switch` | R-14.2.5 | Switch layout at runtime. Assert `poll_layout_change()` returns the new layout within one frame. |
-| `test_ime_composition_events` | R-14.2.6 | With a CJK IME active, type a composition sequence. Assert composition update events contain correct text. |
-| `test_ime_commit` | R-14.2.6 | Commit an IME composition. Assert the final text matches the expected character. |
-| `test_ime_candidate_window_tracks_cursor` | R-14.2.6 | Move and resize the game window. Assert the candidate window position updates (US-14.2.12). |
+| Test                                      | Requirement |
+|-------------------------------------------|-------------|
+| `test_clipboard_text_roundtrip`           | R-14.2.1    |
+| `test_clipboard_image_roundtrip`          | R-14.2.1    |
+| `test_clipboard_no_frame_hitch`           | R-14.2.1    |
+| `test_file_dialog_filter`                 | R-14.2.2    |
+| `test_file_dialog_nonblocking`            | R-14.2.2    |
+| `test_notification_delivery`              | R-14.2.3    |
+| `test_tray_icon_menu_event`               | R-14.2.3    |
+| `test_notification_unsupported_fallback`  | R-14.2.3    |
+| `test_drag_drop_accepted_extension`       | R-14.2.4    |
+| `test_drag_drop_rejected_extension`       | R-14.2.4    |
+| `test_drag_drop_no_frame_spike`           | R-14.2.4    |
+| `test_keyboard_dead_key_compose`          | R-14.2.5    |
+| `test_keyboard_layout_switch`             | R-14.2.5    |
+| `test_ime_composition_events`             | R-14.2.6    |
+| `test_ime_commit`                         | R-14.2.6    |
+| `test_ime_candidate_window_tracks_cursor` | R-14.2.6    |
+
+1. **`test_clipboard_text_roundtrip`** — Write a known UTF-8 string (including emoji and CJK) to the
+   clipboard, read it back, assert identical.
+2. **`test_clipboard_image_roundtrip`** — Write an RGBA image to the clipboard, read it back, assert
+   pixel data matches within tolerance.
+3. **`test_clipboard_no_frame_hitch`** — Measure game loop frame time during clipboard operations.
+   Assert no frame exceeds target budget.
+4. **`test_file_dialog_filter`** — Open a file dialog with ".png" filter. Assert returned path (if
+   any) has .png extension.
+5. **`test_file_dialog_nonblocking`** — While a file dialog is open, assert the game loop renders
+   frames within 10% of target rate.
+6. **`test_notification_delivery`** — Minimize the window, trigger a notification. Assert the OS
+   notification API was invoked with correct title/body.
+7. **`test_tray_icon_menu_event`** — Create a tray icon with menu items. Simulate selection. Assert
+   the correct event ID is received.
+8. **`test_notification_unsupported_fallback`** — On a platform without OS notifications, assert
+   `Err(OsError::Unsupported)` is returned (US-14.2.11).
+9. **`test_drag_drop_accepted_extension`** — Drag a file with an accepted extension onto the window.
+   Assert the drop event contains the correct path.
+10. **`test_drag_drop_rejected_extension`** — Drag a file with a rejected extension. Assert the drop
+    is rejected.
+11. **`test_drag_drop_no_frame_spike`** — Assert no frame time spike exceeds 2 ms during drag hover
+    and drop handling.
+12. **`test_keyboard_dead_key_compose`** — Set layout to French AZERTY. Type `^` then `e`. Assert
+    engine emits composed character.
+13. **`test_keyboard_layout_switch`** — Switch layout at runtime. Assert `poll_layout_change()`
+    returns the new layout within one frame.
+14. **`test_ime_composition_events`** — With a CJK IME active, type a composition sequence. Assert
+    composition update events contain correct text.
+15. **`test_ime_commit`** — Commit an IME composition. Assert the final text matches the expected
+    character.
+16. **`test_ime_candidate_window_tracks_cursor`** — Move and resize the game window. Assert the
+    candidate window position updates (US-14.2.12).
 
 ### Crash Reporting Tests (R-14.4.x)
 
-| Test | Requirement | Description |
-|------|-------------|-------------|
-| `test_crash_handler_null_deref` | R-14.4.1 | Trigger a null-pointer dereference in a child process. Verify a valid dump file is written. |
-| `test_crash_handler_stack_in_dump` | R-14.4.1 | Load the dump in a platform debugger API. Verify the faulting thread's stack and registers are present. |
-| `test_crash_handler_corrupt_heap` | R-14.4.1 | Corrupt the heap before crashing. Verify out-of-process capture still produces a valid dump (US-14.4.8). |
-| `test_symbol_upload_and_symbolication` | R-14.4.2 | Build a release binary, upload symbols, trigger a crash. Verify symbolicated report has correct function names and line numbers. |
-| `test_build_id_extraction_per_platform` | R-14.4.2 | Extract build ID on each platform. Verify correct format (PE GUID+age, LC_UUID, GNU build-id). |
-| `test_crash_aggregation_clustering` | R-14.4.3 | Submit 50 crash reports with 3 distinct stack signatures. Verify 3 clusters are created. |
-| `test_crash_aggregation_spike_alert` | R-14.4.3 | Inject 20 reports for one cluster in 5 minutes. Verify an alert fires. |
-| `test_logging_structured_output` | R-14.4.4 | Emit 10,000 records across 4 channels. Verify all appear with correct timestamp, severity, channel, and fields. |
-| `test_logging_channel_filter` | R-14.4.4 | Filter by channel and severity. Assert non-matching records are excluded. |
-| `test_logging_no_blocking` | R-14.4.4 | Benchmark log emission. Assert per-record overhead is under 1 microsecond. |
-| `test_perf_counter_concurrent` | R-14.4.5 | Increment a counter from 8 threads for 1,000,000 iterations. Verify merged total is correct. |
-| `test_perf_counter_latency` | R-14.4.5 | Benchmark counter increment. Assert latency is under 50 nanoseconds. |
-| `test_telemetry_snapshot_delivery` | R-14.4.5 | Verify telemetry snapshots arrive at the backend endpoint at the configured interval. |
-| `test_gpu_breadcrumb_identifies_fault` | R-14.4.6 | Inject a GPU hang after a known marker. Verify `read_last_completed()` returns the marker before the hang (US-14.4.12). |
-| `test_gpu_breadcrumb_in_crash_report` | R-14.4.6 | Verify the crash report includes GPU breadcrumb data alongside the CPU minidump. |
+| Test                                    | Requirement |
+|-----------------------------------------|-------------|
+| `test_crash_handler_null_deref`         | R-14.4.1    |
+| `test_crash_handler_stack_in_dump`      | R-14.4.1    |
+| `test_crash_handler_corrupt_heap`       | R-14.4.1    |
+| `test_symbol_upload_and_symbolication`  | R-14.4.2    |
+| `test_build_id_extraction_per_platform` | R-14.4.2    |
+| `test_crash_aggregation_clustering`     | R-14.4.3    |
+| `test_crash_aggregation_spike_alert`    | R-14.4.3    |
+| `test_logging_structured_output`        | R-14.4.4    |
+| `test_logging_channel_filter`           | R-14.4.4    |
+| `test_logging_no_blocking`              | R-14.4.4    |
+| `test_perf_counter_concurrent`          | R-14.4.5    |
+| `test_perf_counter_latency`             | R-14.4.5    |
+| `test_telemetry_snapshot_delivery`      | R-14.4.5    |
+| `test_gpu_breadcrumb_identifies_fault`  | R-14.4.6    |
+| `test_gpu_breadcrumb_in_crash_report`   | R-14.4.6    |
+
+1. **`test_crash_handler_null_deref`** — Trigger a null-pointer dereference in a child process.
+   Verify a valid dump file is written.
+2. **`test_crash_handler_stack_in_dump`** — Load the dump in a platform debugger API. Verify the
+   faulting thread's stack and registers are present.
+3. **`test_crash_handler_corrupt_heap`** — Corrupt the heap before crashing. Verify out-of-process
+   capture still produces a valid dump (US-14.4.8).
+4. **`test_symbol_upload_and_symbolication`** — Build a release binary, upload symbols, trigger a
+   crash. Verify symbolicated report has correct function names and line numbers.
+5. **`test_build_id_extraction_per_platform`** — Extract build ID on each platform. Verify correct
+   format (PE GUID+age, LC_UUID, GNU build-id).
+6. **`test_crash_aggregation_clustering`** — Submit 50 crash reports with 3 distinct stack
+   signatures. Verify 3 clusters are created.
+7. **`test_crash_aggregation_spike_alert`** — Inject 20 reports for one cluster in 5 minutes. Verify
+   an alert fires.
+8. **`test_logging_structured_output`** — Emit 10,000 records across 4 channels. Verify all appear
+   with correct timestamp, severity, channel, and fields.
+9. **`test_logging_channel_filter`** — Filter by channel and severity. Assert non-matching records
+   are excluded.
+10. **`test_logging_no_blocking`** — Benchmark log emission. Assert per-record overhead is under 1
+    microsecond.
+11. **`test_perf_counter_concurrent`** — Increment a counter from 8 threads for 1,000,000
+    iterations. Verify merged total is correct.
+12. **`test_perf_counter_latency`** — Benchmark counter increment. Assert latency is under 50
+    nanoseconds.
+13. **`test_telemetry_snapshot_delivery`** — Verify telemetry snapshots arrive at the backend
+    endpoint at the configured interval.
+14. **`test_gpu_breadcrumb_identifies_fault`** — Inject a GPU hang after a known marker. Verify
+    `read_last_completed()` returns the marker before the hang (US-14.4.12).
+15. **`test_gpu_breadcrumb_in_crash_report`** — Verify the crash report includes GPU breadcrumb data
+    alongside the CPU minidump.
 
 ### Filesystem Tests (R-14.6.x)
 
-| Test | Requirement | Description |
-|------|-------------|-------------|
-| `test_async_read_write_offsets` | R-14.6.1 | Write 4 MB in 1 MB chunks at explicit offsets from 4 concurrent tasks. Read back and verify data integrity. |
-| `test_async_read_no_blocking` | R-14.6.1 | Submit a 10 MB async read. Verify no worker thread blocks. Verify data integrity. |
-| `test_no_stdlib_file_io` | R-14.6.1 | Static analysis: verify no `std::fs` or `std::io::Read`/`Write` calls exist in the codebase. |
-| `test_create_dir_recursive` | R-14.6.2 | Create a 3-level directory tree recursively. Verify all directories exist. |
-| `test_delete_deferred_close` | R-14.6.2 | Delete a file with an open handle using deferred semantics. Verify deletion completes after handle closes. |
-| `test_delete_batch_concurrent` | R-14.6.2 | Submit 100 file deletions. Verify all complete concurrently without blocking the calling thread. |
-| `test_stat_batch_correctness` | R-14.6.3 | Create 100 files with known sizes/timestamps. Batch stat all 100. Verify each result is correct. |
-| `test_stat_no_frame_spike` | R-14.6.3 | Issue batch stat during game loop. Assert frame time does not spike. |
-| `test_enumerate_depth_limit` | R-14.6.4 | Create a 5-level directory tree with 1,000 files. Enumerate with depth limit 3. Verify only entries within depth are returned. |
-| `test_enumerate_glob_filter` | R-14.6.4 | Apply a glob filter during enumeration. Verify only matching entries appear. |
-| `test_enumerate_inline_metadata` | R-14.6.4 | Verify each DirEntry includes name, type, and size without a separate stat call. |
-| `test_watcher_create_modify_delete_rename` | R-14.6.5 | Watch a directory. Create, modify, rename, delete a file. Verify correctly typed events for each operation. |
-| `test_watcher_debounce` | R-14.6.5 | Perform 100 rapid writes. Verify debounce coalesces them into fewer events. |
-| `test_watcher_recursive` | R-14.6.5 | Enable recursive watching. Verify events from nested subdirectories are captured. |
-| `test_content_hash_false_positive` | R-14.6.6 | Touch a file without changing content. Verify no change event is emitted downstream. |
-| `test_content_hash_genuine_change` | R-14.6.6 | Modify file content. Verify a change event fires. |
-| `test_content_hash_rename_into_place_same` | R-14.6.6 | Write via rename-into-place with identical content. Verify no false positive. |
-| `test_content_hash_rename_into_place_diff` | R-14.6.6 | Write via rename-into-place with different content. Verify genuine change is detected. |
-| `test_canonical_path_relative` | R-14.6.7 | Resolve a relative path. Verify it produces a correct canonical absolute path. |
-| `test_canonical_path_symlink` | R-14.6.7 | Resolve a symlink. Verify it resolves to the target's canonical path. |
-| `test_canonical_path_alias_dedup` | R-14.6.7 | Use two aliased paths as asset keys. Verify they map to the same entry. |
-| `test_canonical_path_windows_unc` | R-14.6.7 | On Windows, verify UNC paths and `\\?\` long-path prefixes resolve correctly. |
-| `test_canonical_path_macos_case` | R-14.6.7 | On macOS, verify case-insensitive path variants resolve to the same canonical path. |
+| Test                                       | Requirement |
+|--------------------------------------------|-------------|
+| `test_async_read_write_offsets`            | R-14.6.1    |
+| `test_async_read_no_blocking`              | R-14.6.1    |
+| `test_no_stdlib_file_io`                   | R-14.6.1    |
+| `test_create_dir_recursive`                | R-14.6.2    |
+| `test_delete_deferred_close`               | R-14.6.2    |
+| `test_delete_batch_concurrent`             | R-14.6.2    |
+| `test_stat_batch_correctness`              | R-14.6.3    |
+| `test_stat_no_frame_spike`                 | R-14.6.3    |
+| `test_enumerate_depth_limit`               | R-14.6.4    |
+| `test_enumerate_glob_filter`               | R-14.6.4    |
+| `test_enumerate_inline_metadata`           | R-14.6.4    |
+| `test_watcher_create_modify_delete_rename` | R-14.6.5    |
+| `test_watcher_debounce`                    | R-14.6.5    |
+| `test_watcher_recursive`                   | R-14.6.5    |
+| `test_content_hash_false_positive`         | R-14.6.6    |
+| `test_content_hash_genuine_change`         | R-14.6.6    |
+| `test_content_hash_rename_into_place_same` | R-14.6.6    |
+| `test_content_hash_rename_into_place_diff` | R-14.6.6    |
+| `test_canonical_path_relative`             | R-14.6.7    |
+| `test_canonical_path_symlink`              | R-14.6.7    |
+| `test_canonical_path_alias_dedup`          | R-14.6.7    |
+| `test_canonical_path_windows_unc`          | R-14.6.7    |
+| `test_canonical_path_macos_case`           | R-14.6.7    |
+
+1. **`test_async_read_write_offsets`** — Write 4 MB in 1 MB chunks at explicit offsets from 4
+   concurrent tasks. Read back and verify data integrity.
+2. **`test_async_read_no_blocking`** — Submit a 10 MB async read. Verify no worker thread blocks.
+   Verify data integrity.
+3. **`test_no_stdlib_file_io`** — Static analysis: verify no `std::fs` or `std::io::Read`/`Write`
+   calls exist in the codebase.
+4. **`test_create_dir_recursive`** — Create a 3-level directory tree recursively. Verify all
+   directories exist.
+5. **`test_delete_deferred_close`** — Delete a file with an open handle using deferred semantics.
+   Verify deletion completes after handle closes.
+6. **`test_delete_batch_concurrent`** — Submit 100 file deletions. Verify all complete concurrently
+   without blocking the calling thread.
+7. **`test_stat_batch_correctness`** — Create 100 files with known sizes/timestamps. Batch stat all
+   100. Verify each result is correct.
+8. **`test_stat_no_frame_spike`** — Issue batch stat during game loop. Assert frame time does not
+   spike.
+9. **`test_enumerate_depth_limit`** — Create a 5-level directory tree with 1,000 files. Enumerate
+   with depth limit 3. Verify only entries within depth are returned.
+10. **`test_enumerate_glob_filter`** — Apply a glob filter during enumeration. Verify only matching
+    entries appear.
+11. **`test_enumerate_inline_metadata`** — Verify each DirEntry includes name, type, and size
+    without a separate stat call.
+12. **`test_watcher_create_modify_delete_rename`** — Watch a directory. Create, modify, rename,
+    delete a file. Verify correctly typed events for each operation.
+13. **`test_watcher_debounce`** — Perform 100 rapid writes. Verify debounce coalesces them into
+    fewer events.
+14. **`test_watcher_recursive`** — Enable recursive watching. Verify events from nested
+    subdirectories are captured.
+15. **`test_content_hash_false_positive`** — Touch a file without changing content. Verify no change
+    event is emitted downstream.
+16. **`test_content_hash_genuine_change`** — Modify file content. Verify a change event fires.
+17. **`test_content_hash_rename_into_place_same`** — Write via rename-into-place with identical
+    content. Verify no false positive.
+18. **`test_content_hash_rename_into_place_diff`** — Write via rename-into-place with different
+    content. Verify genuine change is detected.
+19. **`test_canonical_path_relative`** — Resolve a relative path. Verify it produces a correct
+    canonical absolute path.
+20. **`test_canonical_path_symlink`** — Resolve a symlink. Verify it resolves to the target's
+    canonical path.
+21. **`test_canonical_path_alias_dedup`** — Use two aliased paths as asset keys. Verify they map to
+    the same entry.
+22. **`test_canonical_path_windows_unc`** — On Windows, verify UNC paths and `\\?\` long-path
+    prefixes resolve correctly.
+23. **`test_canonical_path_macos_case`** — On macOS, verify case-insensitive path variants resolve
+    to the same canonical path.
 
 ### Benchmarks
 
@@ -1934,13 +2141,28 @@ for a startup-configured sink list.
 
 ## Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `blake3` | BLAKE3 content hashing for file change detection | Canonical implementation with SIMD (AVX-512, AVX2, NEON). Used for R-14.6.6. |
-| `windows-sys` | Win32 / COM / WinRT API bindings | Zero-cost FFI for clipboard, file dialogs, notifications, crash handling, IOCP filesystem ops. Already used in threading design. |
-| `libc` | POSIX / macOS / Linux syscall bindings | GCD, pthread, signal handlers, inotify, realpath. Already used in threading design. |
-| `io-uring` | Linux io_uring bindings | Safe Rust wrapper for async file ops on Linux. Already used in threading design. |
-| `xkbcommon` | Keyboard layout handling on Linux | X11 and Wayland keyboard layout and dead-key resolution (R-14.2.5). Low-level C library binding. |
+| Crate         |
+|---------------|
+| `blake3`      |
+| `windows-sys` |
+| `libc`        |
+| `io-uring`    |
+| `xkbcommon`   |
+
+1. **`blake3`** — BLAKE3 content hashing for file change detection
+   - **Justification:** Canonical implementation with SIMD (AVX-512, AVX2, NEON). Used for R-14.6.6.
+2. **`windows-sys`** — Win32 / COM / WinRT API bindings
+   - **Justification:** Zero-cost FFI for clipboard, file dialogs, notifications, crash handling,
+     IOCP filesystem ops. Already used in threading design.
+3. **`libc`** — POSIX / macOS / Linux syscall bindings
+   - **Justification:** GCD, pthread, signal handlers, inotify, realpath. Already used in threading
+     design.
+4. **`io-uring`** — Linux io_uring bindings
+   - **Justification:** Safe Rust wrapper for async file ops on Linux. Already used in threading
+     design.
+5. **`xkbcommon`** — Keyboard layout handling on Linux
+   - **Justification:** X11 and Wayland keyboard layout and dead-key resolution (R-14.2.5).
+     Low-level C library binding.
 
 No separate crate is proposed for the file watcher (open question 4). The `notify` crate is a
 candidate but has not been approved. macOS AppKit/Cocoa APIs (`NSPasteboard`, `NSOpenPanel`,

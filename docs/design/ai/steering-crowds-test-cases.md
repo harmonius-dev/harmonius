@@ -6,235 +6,357 @@ Companion test cases for [steering-crowds.md](steering-crowds.md).
 
 ### TC-7.2.3.1 Seek Toward Target
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent at (0,0,0), target at (10,0,0), max_speed=5 | Force vector points toward (10,0,0); magnitude > 0 | R-7.2.3 |
-| 2 | Agent at (10,0,0), target at (10,0,0) | Force vector = (0,0,0) (at target) | R-7.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.3     |
+| 2 | R-7.2.3     |
+
+1. **#1** — Agent at (0,0,0), target at (10,0,0), max_speed=5
+   - **Expected:** Force vector points toward (10,0,0); magnitude > 0
+2. **#2** — Agent at (10,0,0), target at (10,0,0)
+   - **Expected:** Force vector = (0,0,0) (at target)
 
 ### TC-7.2.3.2 Flee Away From Threat
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent at (0,0,0), threat at (5,0,0) | Force vector points away from threat (negative X) | R-7.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.3     |
+
+1. **#1** — Agent at (0,0,0), threat at (5,0,0)
+   - **Expected:** Force vector points away from threat (negative X)
 
 ### TC-7.2.3.3 Arrive Deceleration
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent at (0,0,0), target at (10,0,0), decel_radius=5m; position at (7,0,0) | Force magnitude < max_force (within decel zone) | R-7.2.3 |
-| 2 | Agent at (0,0,0), target at (10,0,0), decel_radius=5m; position at (2,0,0) | Force magnitude = max_force (outside decel zone) | R-7.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.3     |
+| 2 | R-7.2.3     |
+
+1. **#1** — Agent at (0,0,0), target at (10,0,0), decel_radius=5m; position at (7,0,0)
+   - **Expected:** Force magnitude < max_force (within decel zone)
+2. **#2** — Agent at (0,0,0), target at (10,0,0), decel_radius=5m; position at (2,0,0)
+   - **Expected:** Force magnitude = max_force (outside decel zone)
 
 ### TC-7.2.3.4 Arrive Stops at Target
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Arrive behavior, simulate 200 ticks at dt=0.016 | Final position within 0.1m of target | R-7.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.3     |
+
+1. **#1** — Arrive behavior, simulate 200 ticks at dt=0.016
+   - **Expected:** Final position within 0.1m of target
 
 ### TC-7.2.3.5 Wander Stays Bounded
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Wander for 1000 ticks, initial position=(0,0,0), wander_radius=50m | All positions within 50m of origin | R-7.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.3     |
+
+1. **#1** — Wander for 1000 ticks, initial position=(0,0,0), wander_radius=50m
+   - **Expected:** All positions within 50m of origin
 
 ### TC-7.2.3.6 Pursuit Intercepts
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pursuer at (0,0,0), target moving at (1,0,0) from (20,0,0) | Pursuer reaches target faster than naive seek | R-7.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.3     |
+
+1. **#1** — Pursuer at (0,0,0), target moving at (1,0,0) from (20,0,0)
+   - **Expected:** Pursuer reaches target faster than naive seek
 
 ### TC-7.2.3.7 Evade Escapes
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Evader at (0,0,0), threat at (5,0,0) moving toward evader | Distance increases over 100 ticks | R-7.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.3     |
+
+1. **#1** — Evader at (0,0,0), threat at (5,0,0) moving toward evader
+   - **Expected:** Distance increases over 100 ticks
 
 ### TC-7.2.4.1 Weighted Blend Sum
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Force A=(1,0,0) weight=0.6; Force B=(0,1,0) weight=0.4 | Blended = (0.6, 0.4, 0) | R-7.2.4 |
-| 2 | Force A=(2,0,0) weight=0.5; Force B=(-2,0,0) weight=0.5 | Blended = (0, 0, 0) | R-7.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.4     |
+| 2 | R-7.2.4     |
+
+1. **#1** — Force A=(1,0,0) weight=0.6; Force B=(0,1,0) weight=0.4
+   - **Expected:** Blended = (0.6, 0.4, 0)
+2. **#2** — Force A=(2,0,0) weight=0.5; Force B=(-2,0,0) weight=0.5
+   - **Expected:** Blended = (0, 0, 0)
 
 ### TC-7.2.4.2 Priority Blend Order
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Priority 0: avoidance=(1,0,0); Priority 1: seek=(0,1,0); budget=1.0 | Avoidance fully satisfied; seek gets remainder | R-7.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.4     |
+
+1. **#1** — Priority 0: avoidance=(1,0,0); Priority 1: seek=(0,1,0); budget=1.0
+   - **Expected:** Avoidance fully satisfied; seek gets remainder
 
 ### TC-7.2.4.3 Priority No Zero Force
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Two opposing equal-magnitude forces via priority blend | Output magnitude > 0 (higher priority dominates) | R-7.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.4     |
+
+1. **#1** — Two opposing equal-magnitude forces via priority blend
+   - **Expected:** Output magnitude > 0 (higher priority dominates)
 
 ### TC-7.2.1.1 ORCA No Overlap
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 200 agents in 10x10m area, radius=0.3m, 100 ticks | Zero pairwise distance < 2 * radius | R-7.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.1     |
+
+1. **#1** — 200 agents in 10x10m area, radius=0.3m, 100 ticks
+   - **Expected:** Zero pairwise distance < 2 * radius
 
 ### TC-7.2.1.2 ORCA Deadlock Free
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 10 agents going left, 10 going right, 2m wide passage | All 20 agents reach goals within 300 ticks | R-7.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.1     |
+
+1. **#1** — 10 agents going left, 10 going right, 2m wide passage
+   - **Expected:** All 20 agents reach goals within 300 ticks
 
 ### TC-7.2.2.1 Obstacle No Clip
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent with 5 feeler rays, 3 static walls, 500 ticks | Agent center never within wall_thickness of any wall | R-7.2.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.2     |
+
+1. **#1** — Agent with 5 feeler rays, 3 static walls, 500 ticks
+   - **Expected:** Agent center never within wall_thickness of any wall
 
 ### TC-7.2.5.1 Formation Offsets
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | V-formation, 5 members, leader at (0,0,0) moving (1,0,0) | Each member within 0.5m of configured offset from leader | R-7.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.5     |
+
+1. **#1** — V-formation, 5 members, leader at (0,0,0) moving (1,0,0)
+   - **Expected:** Each member within 0.5m of configured offset from leader
 
 ### TC-7.2.5.2 Formation Narrow Adjust
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Line formation, 4m wide, enters 2m corridor | Formation compresses; no member clips walls | R-7.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.5     |
+
+1. **#1** — Line formation, 4m wide, enters 2m corridor
+   - **Expected:** Formation compresses; no member clips walls
 
 ### TC-7.2.5.3 Formation Reassign
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 5-member formation; member 3 removed | Remaining 4 reassign to valid slots; no empty interior slots | R-7.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.5     |
+
+1. **#1** — 5-member formation; member 3 removed
+   - **Expected:** Remaining 4 reassign to valid slots; no empty interior slots
 
 ### TC-7.2.6.1 Group Cohesion
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 8-member group, 3 sharp turns over 200 ticks | Group radius stays within 1.5x initial radius | R-7.2.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.6     |
+
+1. **#1** — 8-member group, 3 sharp turns over 200 ticks
+   - **Expected:** Group radius stays within 1.5x initial radius
 
 ### TC-7.2.6.2 Group Velocity Convergence
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 8-member group, initial random velocities, shared goal direction | All member velocities within 10% of shared velocity after 60 ticks | R-7.2.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.6     |
+
+1. **#1** — 8-member group, initial random velocities, shared goal direction
+   - **Expected:** All member velocities within 10% of shared velocity after 60 ticks
 
 ### TC-7.7.1.1 Flocking Separation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 50-member flock, separation_distance=0.5m, 300 ticks | Minimum pairwise distance > 0.5m | R-7.7.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.1     |
+
+1. **#1** — 50-member flock, separation_distance=0.5m, 300 ticks
+   - **Expected:** Minimum pairwise distance > 0.5m
 
 ### TC-7.7.1.2 Flocking Cohesion
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 50-member flock, cohesion_radius=20m, 300 ticks | All members within 20m of flock center | R-7.7.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.1     |
+
+1. **#1** — 50-member flock, cohesion_radius=20m, 300 ticks
+   - **Expected:** All members within 20m of flock center
 
 ### TC-7.7.2.1 Flow Field Correctness
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 64x64 flow field, goal at (63,63); sample 100 random cells | Following direction from each cell eventually reaches goal | R-7.7.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.2     |
+
+1. **#1** — 64x64 flow field, goal at (63,63); sample 100 random cells
+   - **Expected:** Following direction from each cell eventually reaches goal
 
 ### TC-7.7.2.2 Flow Field Constant Cost
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Flow field sample with 100 agents | Per-agent sample time O(1) regardless of agent count | R-7.7.2 |
-| 2 | Flow field sample with 10000 agents | Per-agent sample time within 2x of 100-agent case | R-7.7.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.2     |
+| 2 | R-7.7.2     |
+
+1. **#1** — Flow field sample with 100 agents
+   - **Expected:** Per-agent sample time O(1) regardless of agent count
+2. **#2** — Flow field sample with 10000 agents
+   - **Expected:** Per-agent sample time within 2x of 100-agent case
 
 ### TC-7.7.3.1 Flow Cache Hit
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Request flow field (goal=G, cost_version=1); request same again | Second request returns cached field (no recompute) | R-7.7.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.3     |
+
+1. **#1** — Request flow field (goal=G, cost_version=1); request same again
+   - **Expected:** Second request returns cached field (no recompute)
 
 ### TC-7.7.3.2 Flow Cache Invalidation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Cached field (goal=G, cost_version=1); cost_version changes to 2 | Stale entry evicted; fresh field computed | R-7.7.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.3     |
+
+1. **#1** — Cached field (goal=G, cost_version=1); cost_version changes to 2
+   - **Expected:** Stale entry evicted; fresh field computed
 
 ### TC-7.7.3.3 Flow Cache LRU Eviction
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Cache capacity=4; insert 5 distinct flow fields | Oldest (least recently used) field evicted | R-7.7.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.3     |
+
+1. **#1** — Cache capacity=4; insert 5 distinct flow fields
+   - **Expected:** Oldest (least recently used) field evicted
 
 ### TC-7.7.6.1 Density Cap Enforced
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Cell cap=20; 30 agents in cell | After enforcement, cell has <= 20 agents | R-7.7.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.6     |
+
+1. **#1** — Cell cap=20; 30 agents in cell
+   - **Expected:** After enforcement, cell has <= 20 agents
 
 ### TC-7.7.6.2 Density Redirect
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Cell cap=20; 25 agents; 5 overflow | 5 agents receive redirect action to adjacent cell | R-7.7.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.6     |
+
+1. **#1** — Cell cap=20; 25 agents; 5 overflow
+   - **Expected:** 5 agents receive redirect action to adjacent cell
 
 ### TC-7.7.5.1 LOD Assignment
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent at 10m from camera, high_radius=20m | Assigned High tier | R-7.7.5 |
-| 2 | Agent at 50m from camera, mid_radius=40m | Assigned Low tier | R-7.7.5 |
-| 3 | Agent at 30m from camera, high_radius=20m, mid_radius=40m | Assigned Mid tier | R-7.7.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.5     |
+| 2 | R-7.7.5     |
+| 3 | R-7.7.5     |
+
+1. **#1** — Agent at 10m from camera, high_radius=20m
+   - **Expected:** Assigned High tier
+2. **#2** — Agent at 50m from camera, mid_radius=40m
+   - **Expected:** Assigned Low tier
+3. **#3** — Agent at 30m from camera, high_radius=20m, mid_radius=40m
+   - **Expected:** Assigned Mid tier
 
 ### TC-7.7.5.2 LOD Force High
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent at 100m from camera, force_high_lod=true | Assigned High tier (override) | R-7.7.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.5     |
+
+1. **#1** — Agent at 100m from camera, force_high_lod=true
+   - **Expected:** Assigned High tier (override)
 
 ### TC-7.7.5.3 LOD Budget Cap
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | max_high_lod=50; 100 agents within high_radius | Only 50 assigned High; remaining 50 assigned Mid | R-7.7.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.5     |
+
+1. **#1** — max_high_lod=50; 100 agents within high_radius
+   - **Expected:** Only 50 assigned High; remaining 50 assigned Mid
 
 ## Integration Tests
 
 ### TC-7.2.3.I1 Steering Pipeline End-to-End
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 100 agents with mixed behaviors (seek, flee, arrive), 300 ticks | No NaN in positions; zero pairwise overlaps | R-7.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.3     |
+
+1. **#1** — 100 agents with mixed behaviors (seek, flee, arrive), 300 ticks
+   - **Expected:** No NaN in positions; zero pairwise overlaps
 
 ### TC-7.7.4.I1 Crowd 10K Stability
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 10000 crowd agents, 600 ticks | CPU time scales linearly with agent count; no exponential blowup | R-7.7.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.4     |
+
+1. **#1** — 10000 crowd agents, 600 ticks
+   - **Expected:** CPU time scales linearly with agent count; no exponential blowup
 
 ### TC-7.7.5.I1 Mixed LOD Transition
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent transitions High -> Mid -> Low -> High via camera movement | No behavior discontinuity at transitions; smooth velocity | R-7.7.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.5     |
+
+1. **#1** — Agent transitions High -> Mid -> Low -> High via camera movement
+   - **Expected:** No behavior discontinuity at transitions; smooth velocity
 
 ### TC-7.2.5.I1 Formation Through Crowd
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 5-member formation moves through 200 crowd agents | Members maintain offsets within 1.0m tolerance | R-7.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.2.5     |
+
+1. **#1** — 5-member formation moves through 200 crowd agents
+   - **Expected:** Members maintain offsets within 1.0m tolerance
 
 ### TC-7.7.6.I1 Density With Flow Field
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Overflow agents redirected from capped cell | Redirected agents reach goal via alternate flow field | R-7.7.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.6     |
+
+1. **#1** — Overflow agents redirected from capped cell
+   - **Expected:** Redirected agents reach goal via alternate flow field
 
 ### TC-7.7.4.I2 GPU Crowd Matches CPU
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 1000 agents, GPU crowd path vs CPU path | Positions match within 0.01m tolerance per tick | R-7.7.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.7.4     |
+
+1. **#1** — 1000 agents, GPU crowd path vs CPU path
+   - **Expected:** Positions match within 0.01m tolerance per tick
 
 ## Benchmarks
 
 ### TC-7.2.3.B1 Steering Behavior Per Agent
 
-| # | Scenario | Metric | Target | Requirement |
-|---|----------|--------|--------|-------------|
-| 1 | 6 active behaviors (seek, flee, arrive, wander, pursuit, evade) | Wall time per agent | < 0.5 us | R-7.2.3 |
+| # | Metric              | Target   | Requirement |
+|---|---------------------|----------|-------------|
+| 1 | Wall time per agent | < 0.5 us | R-7.2.3     |
+
+1. **1** — 6 active behaviors (seek, flee, arrive, wander, pursuit, evade)
 
 ### TC-7.2.1.B1 ORCA Solve Per Agent
 

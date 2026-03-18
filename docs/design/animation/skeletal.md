@@ -8,18 +8,29 @@
 > [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-9.1.1 | R-9.1.1 | GPU compute skinning with linear blend and dual-quaternion modes |
-| F-9.1.2 | R-9.1.2 | GPU keyframe evaluation using Hermite interpolation |
-| F-9.1.3 | R-9.1.3 | Animation blending (linear and cubic) up to 8 simultaneous clips |
-| F-9.1.4 | R-9.1.4 | Animation layers with per-bone masks and additive blending |
-| F-9.1.5 | R-9.1.5 | Instanced skeletal animation for 1000+ instances in a single dispatch |
-| F-9.1.6 | R-9.1.6 | Root motion extraction and application via physics |
-| F-9.1.7 | R-9.1.7 | Animation compression with 10:1+ ratio |
-| F-9.1.8 | R-9.1.8 | Animation retargeting between different skeletons |
-| F-9.1.9 | R-9.1.9 | Animation events and notifies via ECS observers |
-| F-9.1.10 | R-9.1.10 | Animation LOD with 4+ tiers using shared spatial index |
+| Feature  | Requirement |
+|----------|-------------|
+| F-9.1.1  | R-9.1.1     |
+| F-9.1.2  | R-9.1.2     |
+| F-9.1.3  | R-9.1.3     |
+| F-9.1.4  | R-9.1.4     |
+| F-9.1.5  | R-9.1.5     |
+| F-9.1.6  | R-9.1.6     |
+| F-9.1.7  | R-9.1.7     |
+| F-9.1.8  | R-9.1.8     |
+| F-9.1.9  | R-9.1.9     |
+| F-9.1.10 | R-9.1.10    |
+
+1. **F-9.1.1** — GPU compute skinning with linear blend and dual-quaternion modes
+2. **F-9.1.2** — GPU keyframe evaluation using Hermite interpolation
+3. **F-9.1.3** — Animation blending (linear and cubic) up to 8 simultaneous clips
+4. **F-9.1.4** — Animation layers with per-bone masks and additive blending
+5. **F-9.1.5** — Instanced skeletal animation for 1000+ instances in a single dispatch
+6. **F-9.1.6** — Root motion extraction and application via physics
+7. **F-9.1.7** — Animation compression with 10:1+ ratio
+8. **F-9.1.8** — Animation retargeting between different skeletons
+9. **F-9.1.9** — Animation events and notifies via ECS observers
+10. **F-9.1.10** — Animation LOD with 4+ tiers using shared spatial index
 
 ## Overview
 
@@ -1435,43 +1446,102 @@ Curve evaluation for animation clips uses the shared `Curve<T>` type (see
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_hermite_interpolation_accuracy` | R-9.1.2 | Sample a Hermite curve at t=0.5 and verify result matches analytical value within 0.001 units. |
-| `test_playback_mode_loop` | R-9.1.2 | Play a 1.0s clip at t=1.5s in Loop mode. Verify wrapped time is 0.5s. |
-| `test_playback_mode_clamp` | R-9.1.2 | Play at t=1.5s in Clamp mode. Verify time is 1.0s. |
-| `test_playback_mode_pingpong` | R-9.1.2 | Play at t=1.5s in PingPong mode. Verify time is 0.5s (reverse). |
-| `test_blend_8_clips_equal_weight` | R-9.1.3 | Blend 8 clips at equal weight. Verify result matches CPU reference within 0.001 units per joint. |
-| `test_cubic_blend_continuity` | R-9.1.3 | Sample cubic blend at 10 intermediate weights. Verify second-derivative continuity. |
-| `test_bone_mask_subtree` | R-9.1.4 | Create a mask from an upper-body subtree root. Verify masked bones match expected set. |
-| `test_additive_layer` | R-9.1.4 | Apply additive breathing layer on base pose. Verify result = base + delta within 0.001 units. |
-| `test_override_layer` | R-9.1.4 | Apply override layer with upper-body mask. Verify masked bones follow override exclusively. |
-| `test_root_motion_delta` | R-9.1.6 | Extract root motion from a dodge roll clip. Verify displacement matches root bone delta within 0.01 units. |
-| `test_root_motion_zeroing` | R-9.1.6 | After extraction, verify root bone in local pose is identity for extracted channels. |
-| `test_compression_ratio_10x` | R-9.1.7 | Compress a humanoid walk cycle. Verify ratio >= 10:1. |
-| `test_compression_error_threshold` | R-9.1.7 | Compress and decompress. Verify per-joint error < 0.5 mm. |
-| `test_smallest_three_roundtrip` | R-9.1.7 | Encode/decode a quaternion via smallest-three. Verify dot product with original > 0.9999. |
-| `test_retarget_direct_copy` | R-9.1.8 | Retarget finger bones in DirectCopy mode. Verify transforms match source exactly. |
-| `test_retarget_scaled_translation` | R-9.1.8 | Retarget root bone with 1.2x scale ratio. Verify translation scaled correctly. |
-| `test_retarget_no_nan` | R-9.1.8 | Retarget human mocap to quadruped. Verify no NaN values in output pose. |
-| `test_event_fires_at_frame` | R-9.1.9 | Place event at frame 10. Advance past frame 10. Verify event fires exactly once. |
-| `test_window_event_active_range` | R-9.1.9 | Place window event at frames 20-25. Verify active for exactly 6 frames. |
-| `test_lod_tier_selection` | R-9.1.10 | Verify tier selection at 5m (Full), 50m (Reduced), 100m (HalfRate), 200m (VAT). |
-| `test_lod_hero_bias` | R-9.1.10 | Set hero bias to keep Full at 200m. Verify tier remains Full. |
+| Test                                  | Req      |
+|---------------------------------------|----------|
+| `test_hermite_interpolation_accuracy` | R-9.1.2  |
+| `test_playback_mode_loop`             | R-9.1.2  |
+| `test_playback_mode_clamp`            | R-9.1.2  |
+| `test_playback_mode_pingpong`         | R-9.1.2  |
+| `test_blend_8_clips_equal_weight`     | R-9.1.3  |
+| `test_cubic_blend_continuity`         | R-9.1.3  |
+| `test_bone_mask_subtree`              | R-9.1.4  |
+| `test_additive_layer`                 | R-9.1.4  |
+| `test_override_layer`                 | R-9.1.4  |
+| `test_root_motion_delta`              | R-9.1.6  |
+| `test_root_motion_zeroing`            | R-9.1.6  |
+| `test_compression_ratio_10x`          | R-9.1.7  |
+| `test_compression_error_threshold`    | R-9.1.7  |
+| `test_smallest_three_roundtrip`       | R-9.1.7  |
+| `test_retarget_direct_copy`           | R-9.1.8  |
+| `test_retarget_scaled_translation`    | R-9.1.8  |
+| `test_retarget_no_nan`                | R-9.1.8  |
+| `test_event_fires_at_frame`           | R-9.1.9  |
+| `test_window_event_active_range`      | R-9.1.9  |
+| `test_lod_tier_selection`             | R-9.1.10 |
+| `test_lod_hero_bias`                  | R-9.1.10 |
+
+1. **`test_hermite_interpolation_accuracy`** — Sample a Hermite curve at t=0.5 and verify result
+   matches analytical value within 0.001 units.
+2. **`test_playback_mode_loop`** — Play a 1.0s clip at t=1.5s in Loop mode. Verify wrapped time is
+   0.5s.
+3. **`test_playback_mode_clamp`** — Play at t=1.5s in Clamp mode. Verify time is 1.0s.
+4. **`test_playback_mode_pingpong`** — Play at t=1.5s in PingPong mode. Verify time is 0.5s
+   (reverse).
+5. **`test_blend_8_clips_equal_weight`** — Blend 8 clips at equal weight. Verify result matches CPU
+   reference within 0.001 units per joint.
+6. **`test_cubic_blend_continuity`** — Sample cubic blend at 10 intermediate weights. Verify
+   second-derivative continuity.
+7. **`test_bone_mask_subtree`** — Create a mask from an upper-body subtree root. Verify masked bones
+   match expected set.
+8. **`test_additive_layer`** — Apply additive breathing layer on base pose. Verify result = base +
+   delta within 0.001 units.
+9. **`test_override_layer`** — Apply override layer with upper-body mask. Verify masked bones follow
+   override exclusively.
+10. **`test_root_motion_delta`** — Extract root motion from a dodge roll clip. Verify displacement
+    matches root bone delta within 0.01 units.
+11. **`test_root_motion_zeroing`** — After extraction, verify root bone in local pose is identity
+    for extracted channels.
+12. **`test_compression_ratio_10x`** — Compress a humanoid walk cycle. Verify ratio >= 10:1.
+13. **`test_compression_error_threshold`** — Compress and decompress. Verify per-joint error < 0.5
+    mm.
+14. **`test_smallest_three_roundtrip`** — Encode/decode a quaternion via smallest-three. Verify dot
+    product with original > 0.9999.
+15. **`test_retarget_direct_copy`** — Retarget finger bones in DirectCopy mode. Verify transforms
+    match source exactly.
+16. **`test_retarget_scaled_translation`** — Retarget root bone with 1.2x scale ratio. Verify
+    translation scaled correctly.
+17. **`test_retarget_no_nan`** — Retarget human mocap to quadruped. Verify no NaN values in output
+    pose.
+18. **`test_event_fires_at_frame`** — Place event at frame 10. Advance past frame 10. Verify event
+    fires exactly once.
+19. **`test_window_event_active_range`** — Place window event at frames 20-25. Verify active for
+    exactly 6 frames.
+20. **`test_lod_tier_selection`** — Verify tier selection at 5m (Full), 50m (Reduced), 100m
+    (HalfRate), 200m (VAT).
+21. **`test_lod_hero_bias`** — Set hero bias to keep Full at 200m. Verify tier remains Full.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_gpu_skinning_lbs_twist` | R-9.1.1 | Skin a forearm mesh rotated 180 degrees with LBS. Capture GPU output and verify vertex positions against CPU reference. |
-| `test_gpu_skinning_dqs_twist` | R-9.1.1 | Same mesh with DQS. Verify no candy-wrapping: compare waist cross-section area against reference (LBS produces collapse, DQS preserves volume). |
-| `test_gpu_keyframe_vs_cpu` | R-9.1.2 | Evaluate a 60-frame clip at t=15.5 on GPU and CPU. Verify per-joint position error < 0.001 units. |
-| `test_instanced_1000` | R-9.1.5 | Spawn 1000 instances sharing 10 clips. Verify all poses match single-instance evaluation for 50 random samples. Confirm single GPU dispatch. |
-| `test_instanced_frame_time` | R-9.1.5 | Measure GPU time for 1000 instances. Verify < 2 ms on reference hardware. |
-| `test_root_motion_physics` | R-9.1.6 | Play dodge roll with root motion. Verify physics capsule displacement matches root delta and collision remains active. |
-| `test_retarget_cross_species` | R-9.1.8 | Retarget human walk to quadruped. Verify no bone explosions and foot contact timing preserved. |
-| `test_lod_200_characters` | R-9.1.10 | Place 200 characters at 5-500m. Verify correct tier per distance. Verify no visible popping in flythrough recording. |
-| `test_full_pipeline_frame` | R-9.1.1-10 | Run complete animation pipeline for one frame with 50 characters at various distances and LOD tiers. Verify no errors, all buffers written, events dispatched. |
+| Test                          | Req        |
+|-------------------------------|------------|
+| `test_gpu_skinning_lbs_twist` | R-9.1.1    |
+| `test_gpu_skinning_dqs_twist` | R-9.1.1    |
+| `test_gpu_keyframe_vs_cpu`    | R-9.1.2    |
+| `test_instanced_1000`         | R-9.1.5    |
+| `test_instanced_frame_time`   | R-9.1.5    |
+| `test_root_motion_physics`    | R-9.1.6    |
+| `test_retarget_cross_species` | R-9.1.8    |
+| `test_lod_200_characters`     | R-9.1.10   |
+| `test_full_pipeline_frame`    | R-9.1.1-10 |
+
+1. **`test_gpu_skinning_lbs_twist`** — Skin a forearm mesh rotated 180 degrees with LBS. Capture GPU
+   output and verify vertex positions against CPU reference.
+2. **`test_gpu_skinning_dqs_twist`** — Same mesh with DQS. Verify no candy-wrapping: compare waist
+   cross-section area against reference (LBS produces collapse, DQS preserves volume).
+3. **`test_gpu_keyframe_vs_cpu`** — Evaluate a 60-frame clip at t=15.5 on GPU and CPU. Verify
+   per-joint position error < 0.001 units.
+4. **`test_instanced_1000`** — Spawn 1000 instances sharing 10 clips. Verify all poses match
+   single-instance evaluation for 50 random samples. Confirm single GPU dispatch.
+5. **`test_instanced_frame_time`** — Measure GPU time for 1000 instances. Verify < 2 ms on reference
+   hardware.
+6. **`test_root_motion_physics`** — Play dodge roll with root motion. Verify physics capsule
+   displacement matches root delta and collision remains active.
+7. **`test_retarget_cross_species`** — Retarget human walk to quadruped. Verify no bone explosions
+   and foot contact timing preserved.
+8. **`test_lod_200_characters`** — Place 200 characters at 5-500m. Verify correct tier per distance.
+   Verify no visible popping in flythrough recording.
+9. **`test_full_pipeline_frame`** — Run complete animation pipeline for one frame with 50 characters
+   at various distances and LOD tiers. Verify no errors, all buffers written, events dispatched.
 
 ### Benchmarks
 

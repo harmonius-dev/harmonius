@@ -10,44 +10,73 @@
 
 ### Rigid Body Dynamics (R-4.1)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-4.1.1 | R-4.1.1 | Deterministic fixed-timestep integration (symplectic Euler / Verlet) |
-| F-4.1.2 | R-4.1.2 | Configurable simulation substeps with per-entity override |
-| F-4.1.3 | R-4.1.3 | Impulse-based contact resolution with restitution and friction |
-| F-4.1.4 | R-4.1.4 | Continuous collision detection for fast-moving objects |
-| F-4.1.5 | R-4.1.5 | Simulation islands via union-find with parallel solve |
-| F-4.1.6 | R-4.1.6 | Body sleeping and wake-up via ECS change detection |
-| F-4.1.7 | R-4.1.7 | Cross-zone physics continuity during entity migration |
-| F-4.1.8 | R-4.1.8 | Kinematic character controller with ground detection |
-| F-4.1.9 | R-4.1.9 | Moving platform system with passenger velocity transfer |
-| F-4.1.10 | R-4.1.10 | Surface smoothing and ground conformance filter |
+| Feature  | Requirement |
+|----------|-------------|
+| F-4.1.1  | R-4.1.1     |
+| F-4.1.2  | R-4.1.2     |
+| F-4.1.3  | R-4.1.3     |
+| F-4.1.4  | R-4.1.4     |
+| F-4.1.5  | R-4.1.5     |
+| F-4.1.6  | R-4.1.6     |
+| F-4.1.7  | R-4.1.7     |
+| F-4.1.8  | R-4.1.8     |
+| F-4.1.9  | R-4.1.9     |
+| F-4.1.10 | R-4.1.10    |
+
+1. **F-4.1.1** — Deterministic fixed-timestep integration (symplectic Euler / Verlet)
+2. **F-4.1.2** — Configurable simulation substeps with per-entity override
+3. **F-4.1.3** — Impulse-based contact resolution with restitution and friction
+4. **F-4.1.4** — Continuous collision detection for fast-moving objects
+5. **F-4.1.5** — Simulation islands via union-find with parallel solve
+6. **F-4.1.6** — Body sleeping and wake-up via ECS change detection
+7. **F-4.1.7** — Cross-zone physics continuity during entity migration
+8. **F-4.1.8** — Kinematic character controller with ground detection
+9. **F-4.1.9** — Moving platform system with passenger velocity transfer
+10. **F-4.1.10** — Surface smoothing and ground conformance filter
 
 ### Collision Detection (R-4.2)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-4.2.1 | R-4.2.1 | Broadphase via shared BVH spatial index |
-| F-4.2.2 | R-4.2.2 | Narrowphase contact generation (GJK/EPA/SAT) |
-| F-4.2.3 | R-4.2.3 | Primitive and convex collision shapes |
-| F-4.2.4 | R-4.2.4 | Triangle mesh and heightfield shapes |
-| F-4.2.5 | R-4.2.5 | Compound shapes with per-child materials |
-| F-4.2.6 | R-4.2.6 | Collision filtering via layers and masks |
-| F-4.2.7 | R-4.2.7 | Collision events (started, persisted, ended) |
-| F-4.2.8 | R-4.2.8 | Trigger volumes (non-physical overlap detection) |
-| F-4.2.9 | R-4.2.9 | Physics material assets with surface tags |
+| Feature | Requirement |
+|---------|-------------|
+| F-4.2.1 | R-4.2.1     |
+| F-4.2.2 | R-4.2.2     |
+| F-4.2.3 | R-4.2.3     |
+| F-4.2.4 | R-4.2.4     |
+| F-4.2.5 | R-4.2.5     |
+| F-4.2.6 | R-4.2.6     |
+| F-4.2.7 | R-4.2.7     |
+| F-4.2.8 | R-4.2.8     |
+| F-4.2.9 | R-4.2.9     |
+
+1. **F-4.2.1** — Broadphase via shared BVH spatial index
+2. **F-4.2.2** — Narrowphase contact generation (GJK/EPA/SAT)
+3. **F-4.2.3** — Primitive and convex collision shapes
+4. **F-4.2.4** — Triangle mesh and heightfield shapes
+5. **F-4.2.5** — Compound shapes with per-child materials
+6. **F-4.2.6** — Collision filtering via layers and masks
+7. **F-4.2.7** — Collision events (started, persisted, ended)
+8. **F-4.2.8** — Trigger volumes (non-physical overlap detection)
+9. **F-4.2.9** — Physics material assets with surface tags
 
 ### Non-Functional Requirements
 
-| Requirement | Target | Verification |
-|-------------|--------|--------------|
-| R-4.1.NF1 | 2000 active bodies + 4 substeps within 4 ms | Benchmark on min-spec hardware |
-| R-4.1.NF2 | 256 bytes per active rigid body (excl. collider shape) | Profile 10,000 entities |
-| R-4.1.NF3 | Bit-identical results across Windows/macOS/Linux | 1000-step cross-platform comparison |
-| R-4.1.NF4 | 0.1 ms per character controller, 200 simultaneous | Benchmark varied terrain |
-| R-4.2.NF1 | 50,000 AABBs broadphase within 1 ms | Benchmark random extents |
-| R-4.2.NF2 | 10,000 primitive pairs narrowphase within 2 ms | Benchmark overlapping pairs |
-| R-4.2.NF3 | Same-frame collision event delivery (zero latency) | Integration test |
+| Requirement | Verification                        |
+|-------------|-------------------------------------|
+| R-4.1.NF1   | Benchmark on min-spec hardware      |
+| R-4.1.NF2   | Profile 10,000 entities             |
+| R-4.1.NF3   | 1000-step cross-platform comparison |
+| R-4.1.NF4   | Benchmark varied terrain            |
+| R-4.2.NF1   | Benchmark random extents            |
+| R-4.2.NF2   | Benchmark overlapping pairs         |
+| R-4.2.NF3   | Integration test                    |
+
+1. **R-4.1.NF1** — 2000 active bodies + 4 substeps within 4 ms
+2. **R-4.1.NF2** — 256 bytes per active rigid body (excl. collider shape)
+3. **R-4.1.NF3** — Bit-identical results across Windows/macOS/Linux
+4. **R-4.1.NF4** — 0.1 ms per character controller, 200 simultaneous
+5. **R-4.2.NF1** — 50,000 AABBs broadphase within 1 ms
+6. **R-4.2.NF2** — 10,000 primitive pairs narrowphase within 2 ms
+7. **R-4.2.NF3** — Same-frame collision event delivery (zero latency)
 
 ## Overview
 
@@ -2165,11 +2194,18 @@ gracefully degrades when time is exhausted.
 substep finishes (integration through CCD) and before the next substep begins. This preserves
 per-substep determinism while allowing the loop to exit early between substeps.
 
-| Priority | Action | Trigger | Effect |
-|----------|--------|---------|--------|
-| 1 | Collapse remaining substeps | Budget exhausted mid-loop | Apply remaining time as a single larger step using the same pipeline (integration, broadphase, narrowphase, solve, CCD) to avoid skipping physics entirely |
-| 2 | Defer sleeping-body island checks | Budget exhausted mid-loop | Postpone `SleepSystem` evaluation for islands containing only sleeping bodies to the next frame |
-| 3 | Skip per-entity substep overrides | Budget exhausted mid-loop | Fall back to the global substep count, ignoring per-entity overrides that would increase iteration count |
+| Priority | Action                            | Trigger                   |
+|----------|-----------------------------------|---------------------------|
+| 1        | Collapse remaining substeps       | Budget exhausted mid-loop |
+| 2        | Defer sleeping-body island checks | Budget exhausted mid-loop |
+| 3        | Skip per-entity substep overrides | Budget exhausted mid-loop |
+
+1. **1** — Apply remaining time as a single larger step using the same pipeline (integration,
+   broadphase, narrowphase, solve, CCD) to avoid skipping physics entirely
+2. **2** — Postpone `SleepSystem` evaluation for islands containing only sleeping bodies to the next
+   frame
+3. **3** — Fall back to the global substep count, ignoring per-entity overrides that would increase
+   iteration count
 
 The following flowchart shows the substep budget check loop.
 
@@ -2335,50 +2371,118 @@ overhead. The thread pool is sized to performance core count.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_symplectic_euler_energy` | R-4.1.1 | Integrate a spring-mass system for 10,000 steps. Assert energy drift < 1%. |
-| `test_verlet_position_accuracy` | R-4.1.1 | Integrate constant acceleration. Assert position matches analytic solution within epsilon. |
-| `test_determinism_1000_frames` | R-4.1.1 | Run identical 1000-frame simulation twice. Assert bit-equal state. |
-| `test_substep_invocation_count` | R-4.1.2 | Set substeps=4. Assert each system runs exactly 4 times per tick. |
-| `test_restitution_bounce_height` | R-4.1.3 | Drop sphere onto plane at restitution=1.0. Assert rebound within 1% of drop height. |
-| `test_static_friction_on_slope` | R-4.1.3 | Box on 30-degree slope with friction > tan(30). Assert zero displacement over 500 ticks. |
-| `test_material_combine_symmetry` | R-4.1.3 | Combine (A,B) and (B,A). Assert identical results for all combine modes. |
-| `test_ccd_prevents_tunneling` | R-4.1.4 | Fire 0.1m sphere at 500 m/s toward 0.01m wall. Assert ContactManifold generated. |
-| `test_ccd_skips_slow_objects` | R-4.1.4 | CcdEnabled entity at 0.1 m/s. Assert CCD processing skipped. |
-| `test_island_disjoint_groups` | R-4.1.5 | Two groups of 50 bodies, no contacts. Assert exactly 2 distinct Island IDs. |
-| `test_island_merge_on_contact` | R-4.1.5 | Two islands gain contact. Assert merged into one island. |
-| `test_island_split_on_separation` | R-4.1.5 | Single island loses contact link. Assert split into two. |
-| `test_sleep_after_threshold` | R-4.1.6 | Body below threshold for sleep_delay seconds. Assert Sleeping marker added. |
-| `test_wake_on_force` | R-4.1.6 | Apply ExternalForce to sleeping body. Assert Sleeping removed within 1 tick. |
-| `test_wake_on_contact` | R-4.1.6 | Drop active body onto sleeping body. Assert sleeping body wakes. |
-| `test_broadphase_no_false_negatives` | R-4.2.1 | 1000 random colliders. Compare BroadphasePairs against brute-force. Assert zero misses. |
-| `test_layer_rejection` | R-4.2.6 | Overlapping entities on non-interacting layers. Assert no ContactManifold. |
-| `test_layer_acceptance` | R-4.2.6 | Overlapping entities on interacting layers. Assert ContactManifold generated. |
-| `test_gjk_sphere_sphere_distance` | R-4.2.2 | Known sphere positions. Assert distance matches analytic solution within 1mm. |
-| `test_epa_penetration_depth` | R-4.2.2 | Known overlapping boxes. Assert penetration depth matches analytic solution within 1mm. |
-| `test_collision_event_lifecycle` | R-4.2.7 | Contact for 5 frames, separate. Assert 1 Started, 4 Persisted, 1 Ended. |
-| `test_same_frame_event_delivery` | R-4.2.7 | Trigger collision. Assert event readable in same frame. |
-| `test_trigger_oneshot` | R-4.2.8 | Entity enters trigger. Assert TriggerEnter fires once, then trigger disables. |
-| `test_trigger_no_contact_force` | R-4.2.8 | Entity passes through trigger. Assert velocity is unaffected. |
-| `test_slope_rejection` | R-4.1.8 | Character on 50-degree slope with 45-degree limit. Assert slide. |
-| `test_step_climbing` | R-4.1.8 | 0.3m step with 0.35m limit: climbs. 0.4m step: blocked. |
-| `test_ground_detection_via_bvh` | R-4.1.8 | Assert shape casts use shared BVH, not separate structure. |
-| `test_platform_passenger_drift` | R-4.1.9 | Character on 5 m/s platform for 10s. Assert drift < 1 cm/s. |
-| `test_ground_smoothing_ema` | R-4.1.10 | Walk over 5cm triangle seams. Assert vertical oscillation < 1mm peak-to-peak. |
+| Test                                 | Req      |
+|--------------------------------------|----------|
+| `test_symplectic_euler_energy`       | R-4.1.1  |
+| `test_verlet_position_accuracy`      | R-4.1.1  |
+| `test_determinism_1000_frames`       | R-4.1.1  |
+| `test_substep_invocation_count`      | R-4.1.2  |
+| `test_restitution_bounce_height`     | R-4.1.3  |
+| `test_static_friction_on_slope`      | R-4.1.3  |
+| `test_material_combine_symmetry`     | R-4.1.3  |
+| `test_ccd_prevents_tunneling`        | R-4.1.4  |
+| `test_ccd_skips_slow_objects`        | R-4.1.4  |
+| `test_island_disjoint_groups`        | R-4.1.5  |
+| `test_island_merge_on_contact`       | R-4.1.5  |
+| `test_island_split_on_separation`    | R-4.1.5  |
+| `test_sleep_after_threshold`         | R-4.1.6  |
+| `test_wake_on_force`                 | R-4.1.6  |
+| `test_wake_on_contact`               | R-4.1.6  |
+| `test_broadphase_no_false_negatives` | R-4.2.1  |
+| `test_layer_rejection`               | R-4.2.6  |
+| `test_layer_acceptance`              | R-4.2.6  |
+| `test_gjk_sphere_sphere_distance`    | R-4.2.2  |
+| `test_epa_penetration_depth`         | R-4.2.2  |
+| `test_collision_event_lifecycle`     | R-4.2.7  |
+| `test_same_frame_event_delivery`     | R-4.2.7  |
+| `test_trigger_oneshot`               | R-4.2.8  |
+| `test_trigger_no_contact_force`      | R-4.2.8  |
+| `test_slope_rejection`               | R-4.1.8  |
+| `test_step_climbing`                 | R-4.1.8  |
+| `test_ground_detection_via_bvh`      | R-4.1.8  |
+| `test_platform_passenger_drift`      | R-4.1.9  |
+| `test_ground_smoothing_ema`          | R-4.1.10 |
+
+1. **`test_symplectic_euler_energy`** — Integrate a spring-mass system for 10,000 steps. Assert
+   energy drift < 1%.
+2. **`test_verlet_position_accuracy`** — Integrate constant acceleration. Assert position matches
+   analytic solution within epsilon.
+3. **`test_determinism_1000_frames`** — Run identical 1000-frame simulation twice. Assert bit-equal
+   state.
+4. **`test_substep_invocation_count`** — Set substeps=4. Assert each system runs exactly 4 times per
+   tick.
+5. **`test_restitution_bounce_height`** — Drop sphere onto plane at restitution=1.0. Assert rebound
+   within 1% of drop height.
+6. **`test_static_friction_on_slope`** — Box on 30-degree slope with friction > tan(30). Assert zero
+   displacement over 500 ticks.
+7. **`test_material_combine_symmetry`** — Combine (A,B) and (B,A). Assert identical results for all
+   combine modes.
+8. **`test_ccd_prevents_tunneling`** — Fire 0.1m sphere at 500 m/s toward 0.01m wall. Assert
+   ContactManifold generated.
+9. **`test_ccd_skips_slow_objects`** — CcdEnabled entity at 0.1 m/s. Assert CCD processing skipped.
+10. **`test_island_disjoint_groups`** — Two groups of 50 bodies, no contacts. Assert exactly 2
+    distinct Island IDs.
+11. **`test_island_merge_on_contact`** — Two islands gain contact. Assert merged into one island.
+12. **`test_island_split_on_separation`** — Single island loses contact link. Assert split into two.
+13. **`test_sleep_after_threshold`** — Body below threshold for sleep_delay seconds. Assert Sleeping
+    marker added.
+14. **`test_wake_on_force`** — Apply ExternalForce to sleeping body. Assert Sleeping removed within
+    1 tick.
+15. **`test_wake_on_contact`** — Drop active body onto sleeping body. Assert sleeping body wakes.
+16. **`test_broadphase_no_false_negatives`** — 1000 random colliders. Compare BroadphasePairs
+    against brute-force. Assert zero misses.
+17. **`test_layer_rejection`** — Overlapping entities on non-interacting layers. Assert no
+    ContactManifold.
+18. **`test_layer_acceptance`** — Overlapping entities on interacting layers. Assert ContactManifold
+    generated.
+19. **`test_gjk_sphere_sphere_distance`** — Known sphere positions. Assert distance matches analytic
+    solution within 1mm.
+20. **`test_epa_penetration_depth`** — Known overlapping boxes. Assert penetration depth matches
+    analytic solution within 1mm.
+21. **`test_collision_event_lifecycle`** — Contact for 5 frames, separate. Assert 1 Started, 4
+    Persisted, 1 Ended.
+22. **`test_same_frame_event_delivery`** — Trigger collision. Assert event readable in same frame.
+23. **`test_trigger_oneshot`** — Entity enters trigger. Assert TriggerEnter fires once, then trigger
+    disables.
+24. **`test_trigger_no_contact_force`** — Entity passes through trigger. Assert velocity is
+    unaffected.
+25. **`test_slope_rejection`** — Character on 50-degree slope with 45-degree limit. Assert slide.
+26. **`test_step_climbing`** — 0.3m step with 0.35m limit: climbs. 0.4m step: blocked.
+27. **`test_ground_detection_via_bvh`** — Assert shape casts use shared BVH, not separate structure.
+28. **`test_platform_passenger_drift`** — Character on 5 m/s platform for 10s. Assert drift < 1
+    cm/s.
+29. **`test_ground_smoothing_ema`** — Walk over 5cm triangle seams. Assert vertical oscillation <
+    1mm peak-to-peak.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_cross_platform_determinism` | R-4.1.NF3 | 1000-step simulation on Windows, macOS, Linux. Compare serialized state. Assert bit-equal. |
-| `test_parallel_island_correctness` | R-4.1.5 | Compare parallel island solve against serial solve. Assert identical results. |
-| `test_zone_migration_momentum` | R-4.1.7 | Body crosses zone boundary at constant velocity. Assert velocity preserved within 0.1%. |
-| `test_zone_migration_contacts` | R-4.1.7 | Stacked bodies cross zone boundary. Assert contact relationships preserved. |
-| `test_full_pipeline_2000_bodies` | R-4.1.NF1 | 2000 active bodies, 4 substeps. Measure wall time. Assert < 4 ms on min-spec. |
-| `test_200_character_controllers` | R-4.1.NF4 | 200 controllers on varied terrain. Assert total system time < 20 ms (0.1 ms each). |
-| `test_ccd_budget_desktop_256` | R-4.1.4 | 256 CCD entities on desktop. Assert system completes within 0.5 ms. |
-| `test_sleeping_reduces_cost_80pct` | R-4.1.6 | 10000 sleeping vs 10000 active. Assert >= 80% tick cost reduction. |
+| Test                               | Req       |
+|------------------------------------|-----------|
+| `test_cross_platform_determinism`  | R-4.1.NF3 |
+| `test_parallel_island_correctness` | R-4.1.5   |
+| `test_zone_migration_momentum`     | R-4.1.7   |
+| `test_zone_migration_contacts`     | R-4.1.7   |
+| `test_full_pipeline_2000_bodies`   | R-4.1.NF1 |
+| `test_200_character_controllers`   | R-4.1.NF4 |
+| `test_ccd_budget_desktop_256`      | R-4.1.4   |
+| `test_sleeping_reduces_cost_80pct` | R-4.1.6   |
+
+1. **`test_cross_platform_determinism`** — 1000-step simulation on Windows, macOS, Linux. Compare
+   serialized state. Assert bit-equal.
+2. **`test_parallel_island_correctness`** — Compare parallel island solve against serial solve.
+   Assert identical results.
+3. **`test_zone_migration_momentum`** — Body crosses zone boundary at constant velocity. Assert
+   velocity preserved within 0.1%.
+4. **`test_zone_migration_contacts`** — Stacked bodies cross zone boundary. Assert contact
+   relationships preserved.
+5. **`test_full_pipeline_2000_bodies`** — 2000 active bodies, 4 substeps. Measure wall time. Assert
+   < 4 ms on min-spec.
+6. **`test_200_character_controllers`** — 200 controllers on varied terrain. Assert total system
+   time < 20 ms (0.1 ms each).
+7. **`test_ccd_budget_desktop_256`** — 256 CCD entities on desktop. Assert system completes within
+   0.5 ms.
+8. **`test_sleeping_reduces_cost_80pct`** — 10000 sleeping vs 10000 active. Assert >= 80% tick cost
+   reduction.
 
 ### Benchmarks
 

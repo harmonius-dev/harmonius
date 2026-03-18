@@ -10,29 +10,47 @@
 
 ### Social Simulation (F-13.19.1--6 / R-13.19.1--6)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.19.1 | R-13.19.1 | Per-NPC affinity values, gift preferences, relationship tiers |
-| F-13.19.2 | R-13.19.2 | Personality traits, dynamic emotions, decay to baseline |
-| F-13.19.3a | R-13.19.3a | Deed memory with emotional weight and time-based decay |
-| F-13.19.3b | R-13.19.3b | Gossip propagation with accuracy degradation per hop |
-| F-13.19.3c | R-13.19.3c | Emergent reputation aggregation across social groups |
-| F-13.19.4a | R-13.19.4a | Schedule data model: time ranges, locations, activities |
-| F-13.19.4b | R-13.19.4b | Schedule execution via pathfinding with arrival animations |
-| F-13.19.4c | R-13.19.4c | Schedule-gated interactions exposed to dialogue and UI |
-| F-13.19.5 | R-13.19.5 | Ambient barks: priority, cooldown, context filters |
-| F-13.19.6 | R-13.19.6 | Threat tables with per-ability modifiers and decay |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.19.1  | R-13.19.1   |
+| F-13.19.2  | R-13.19.2   |
+| F-13.19.3a | R-13.19.3a  |
+| F-13.19.3b | R-13.19.3b  |
+| F-13.19.3c | R-13.19.3c  |
+| F-13.19.4a | R-13.19.4a  |
+| F-13.19.4b | R-13.19.4b  |
+| F-13.19.4c | R-13.19.4c  |
+| F-13.19.5  | R-13.19.5   |
+| F-13.19.6  | R-13.19.6   |
+
+1. **F-13.19.1** — Per-NPC affinity values, gift preferences, relationship tiers
+2. **F-13.19.2** — Personality traits, dynamic emotions, decay to baseline
+3. **F-13.19.3a** — Deed memory with emotional weight and time-based decay
+4. **F-13.19.3b** — Gossip propagation with accuracy degradation per hop
+5. **F-13.19.3c** — Emergent reputation aggregation across social groups
+6. **F-13.19.4a** — Schedule data model: time ranges, locations, activities
+7. **F-13.19.4b** — Schedule execution via pathfinding with arrival animations
+8. **F-13.19.4c** — Schedule-gated interactions exposed to dialogue and UI
+9. **F-13.19.5** — Ambient barks: priority, cooldown, context filters
+10. **F-13.19.6** — Threat tables with per-ability modifiers and decay
 
 ### NPC Social Interactions (F-13.19.7--12 / R-13.19.7--12)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.19.7 | R-13.19.7 | Autonomous NPC-to-NPC conversations with topic priority |
-| F-13.19.8 | R-13.19.8 | Independent memory: 50 entries (20 mobile), reliability scores |
-| F-13.19.9 | R-13.19.9 | Environmental interaction: doors, levers, chairs, shortcuts |
-| F-13.19.10 | R-13.19.10 | Social-cue player search, no omniscient knowledge |
-| F-13.19.11 | R-13.19.11 | Quest/story state awareness with NPC Reaction nodes |
-| F-13.19.12 | R-13.19.12 | Player-visible NPC social behaviors, eavesdropping |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.19.7  | R-13.19.7   |
+| F-13.19.8  | R-13.19.8   |
+| F-13.19.9  | R-13.19.9   |
+| F-13.19.10 | R-13.19.10  |
+| F-13.19.11 | R-13.19.11  |
+| F-13.19.12 | R-13.19.12  |
+
+1. **F-13.19.7** — Autonomous NPC-to-NPC conversations with topic priority
+2. **F-13.19.8** — Independent memory: 50 entries (20 mobile), reliability scores
+3. **F-13.19.9** — Environmental interaction: doors, levers, chairs, shortcuts
+4. **F-13.19.10** — Social-cue player search, no omniscient knowledge
+5. **F-13.19.11** — Quest/story state awareness with NPC Reaction nodes
+6. **F-13.19.12** — Player-visible NPC social behaviors, eavesdropping
 
 ### Non-Functional (NFR-13.19.1--2)
 
@@ -1385,19 +1403,31 @@ pub struct SpawnRule {
 All NPC data is authored through the visual editor. The editor exposes the following panels,
 accessible without writing code:
 
-| Panel | Data Authored | Component |
-|-------|---------------|-----------|
-| Relationship Editor | Gift preferences, tier thresholds, affinity modifiers | `GiftPreferences`, `TierConfig` |
-| Personality Editor | Trait sliders, emotion baselines, decay rates | `PersonalityTraits`, `EmotionState` |
-| Memory Config | Capacity, decay curve, trauma threshold | `NpcMemory`, `DecayCurve` |
-| Schedule Timeline | Drag-and-drop time slots, location pins, day/season filters | `NpcSchedule` |
-| Bark Pool Editor | Bark entries with priority, cooldown, context filters, audio preview | `BarkPool` |
-| Threat Config | Per-ability threat modifiers, decay rate, aggro radius | `ThreatTable`, `AggroRadius` |
-| Conversation Templates | Greeting/farewell barks, topic slot count, duration | `ConversationTemplate` |
-| Story Reactions | NPC Reaction nodes on quest state transitions | `StoryAwareness` |
-| Interaction Profiles | Allowed archetypes, required items, nav cost | `NpcInteractionProfile` |
-| Population Rules | Spawn rules, LOD thresholds, budget caps | `SpawnRule`, `PopulationBudget` |
-| Gossip Config | Propagation rate, weight/reliability degradation | `GossipProfile` |
+| Panel                  | Component                           |
+|------------------------|-------------------------------------|
+| Relationship Editor    | `GiftPreferences`, `TierConfig`     |
+| Personality Editor     | `PersonalityTraits`, `EmotionState` |
+| Memory Config          | `NpcMemory`, `DecayCurve`           |
+| Schedule Timeline      | `NpcSchedule`                       |
+| Bark Pool Editor       | `BarkPool`                          |
+| Threat Config          | `ThreatTable`, `AggroRadius`        |
+| Conversation Templates | `ConversationTemplate`              |
+| Story Reactions        | `StoryAwareness`                    |
+| Interaction Profiles   | `NpcInteractionProfile`             |
+| Population Rules       | `SpawnRule`, `PopulationBudget`     |
+| Gossip Config          | `GossipProfile`                     |
+
+1. **Relationship Editor** — Gift preferences, tier thresholds, affinity modifiers
+2. **Personality Editor** — Trait sliders, emotion baselines, decay rates
+3. **Memory Config** — Capacity, decay curve, trauma threshold
+4. **Schedule Timeline** — Drag-and-drop time slots, location pins, day/season filters
+5. **Bark Pool Editor** — Bark entries with priority, cooldown, context filters, audio preview
+6. **Threat Config** — Per-ability threat modifiers, decay rate, aggro radius
+7. **Conversation Templates** — Greeting/farewell barks, topic slot count, duration
+8. **Story Reactions** — NPC Reaction nodes on quest state transitions
+9. **Interaction Profiles** — Allowed archetypes, required items, nav cost
+10. **Population Rules** — Spawn rules, LOD thresholds, budget caps
+11. **Gossip Config** — Propagation rate, weight/reliability degradation
 
 ## Data Flow
 
@@ -1554,67 +1584,131 @@ NPC's schedule state is fast-forwarded to the current time.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_affinity_modify_clamp` | R-13.19.1 | Modify affinity past 100/-100; verify clamped. |
-| `test_gift_preference_loved` | R-13.19.1 | Give loved item; verify affinity increase matches table. |
-| `test_gift_preference_hated` | R-13.19.1 | Give hated item; verify affinity decrease matches table. |
-| `test_tier_advance` | R-13.19.1 | Push affinity past threshold; verify tier advances. |
-| `test_tier_persist_save_load` | R-13.19.1 | Save and reload; verify affinity and tier persist. |
-| `test_personality_emotion_baseline` | R-13.19.2 | High courage NPC; fear stays below low-courage NPC. |
-| `test_emotion_decay_to_baseline` | R-13.19.2 | Stimulate emotion; tick decay; verify return to baseline. |
-| `test_emotion_dominant` | R-13.19.2 | Stimulate multiple emotions; verify dominant is highest. |
-| `test_deed_memory_positive` | R-13.19.3a | Witness rescue; verify memory stored, affinity increased. |
-| `test_deed_memory_negative` | R-13.19.3a | Witness theft; verify memory stored, affinity decreased. |
-| `test_deed_memory_decay` | R-13.19.3a | Wait for decay period; verify weight reaches zero. |
-| `test_deed_memory_eviction` | R-13.19.3a | Fill to capacity; add one more; verify lowest-weight evicted. |
-| `test_gossip_weight_degrades` | R-13.19.3b | Gossip from A to B; verify weight *= 0.7. |
-| `test_gossip_multi_hop` | R-13.19.3b | Gossip A->B->C; verify C's reliability is 0.3. |
-| `test_gossip_rate_hermit` | R-13.19.3b | Hermit archetype; verify low propagation rate. |
-| `test_reputation_aggregate` | R-13.19.3c | Improve 3 NPCs; verify group score crosses threshold. |
-| `test_reputation_unlock` | R-13.19.3c | Cross threshold; verify group behavior activates. |
-| `test_schedule_current_slot` | R-13.19.4a | Query at 10:00; verify returns work slot. |
-| `test_schedule_day_filter` | R-13.19.4a | Weekend schedule; verify alternate entry on Saturday. |
-| `test_schedule_navigation` | R-13.19.4b | Cross boundary; verify pathfind request issued. |
-| `test_schedule_skip_late` | R-13.19.4b | NPC arrives late; verify skip to current slot. |
-| `test_interaction_gate_sleeping` | R-13.19.4c | Query sleeping NPC; verify unavailable with reason. |
-| `test_interaction_gate_working` | R-13.19.4c | Query during work hours; verify available. |
-| `test_bark_priority` | R-13.19.5 | Two barks eligible; verify higher priority wins. |
-| `test_bark_cooldown` | R-13.19.5 | Trigger bark; trigger again within cooldown; verify suppressed. |
-| `test_bark_filter_combat` | R-13.19.5 | Combat-only bark; verify no trigger outside combat. |
-| `test_threat_add_decay` | R-13.19.6 | Add threat; decay out-of-range; verify reaches zero. |
-| `test_threat_highest` | R-13.19.6 | Three sources; verify highest_threat returns top. |
-| `test_threat_taunt` | R-13.19.6 | Taunt ability; verify caster tops the table. |
-| `test_memory_capacity_desktop` | R-13.19.8 | Desktop NPC; verify capacity is 50. |
-| `test_memory_capacity_mobile` | R-13.19.8 | Mobile NPC; verify capacity is 20. |
-| `test_memory_reliability_direct` | R-13.19.8 | Direct witness; verify reliability is 1.0. |
-| `test_memory_reliability_heard` | R-13.19.8 | Heard from trusted NPC; verify reliability is 0.7. |
-| `test_memory_trauma_persists` | R-13.19.8 | Traumatic memory; verify no decay after time window. |
-| `test_memory_routine_fades` | R-13.19.8 | Routine memory; verify decays within game-hours. |
-| `test_search_no_omniscience` | R-13.19.10 | Hidden player; verify searcher never moves to current pos. |
-| `test_search_ask_npc` | R-13.19.10 | Queried NPC has sighting; verify searcher investigates. |
-| `test_search_faction_delay` | R-13.19.10 | Faction broadcast; verify responses delayed. |
-| `test_story_dialogue_change` | R-13.19.11 | Complete quest; verify NPC dialogue overridden. |
-| `test_story_price_modifier` | R-13.19.11 | Trigger event; verify merchant price changes. |
-| `test_eavesdrop_stealth_range` | R-13.19.12 | Stealthed player; verify extended eavesdrop range. |
-| `test_eavesdrop_no_stealth` | R-13.19.12 | Non-stealthed; verify shorter range. |
-| `test_conversation_interrupt` | R-13.19.7 | Player approaches; verify conversation interrupted. |
+| Test                                | Req        |
+|-------------------------------------|------------|
+| `test_affinity_modify_clamp`        | R-13.19.1  |
+| `test_gift_preference_loved`        | R-13.19.1  |
+| `test_gift_preference_hated`        | R-13.19.1  |
+| `test_tier_advance`                 | R-13.19.1  |
+| `test_tier_persist_save_load`       | R-13.19.1  |
+| `test_personality_emotion_baseline` | R-13.19.2  |
+| `test_emotion_decay_to_baseline`    | R-13.19.2  |
+| `test_emotion_dominant`             | R-13.19.2  |
+| `test_deed_memory_positive`         | R-13.19.3a |
+| `test_deed_memory_negative`         | R-13.19.3a |
+| `test_deed_memory_decay`            | R-13.19.3a |
+| `test_deed_memory_eviction`         | R-13.19.3a |
+| `test_gossip_weight_degrades`       | R-13.19.3b |
+| `test_gossip_multi_hop`             | R-13.19.3b |
+| `test_gossip_rate_hermit`           | R-13.19.3b |
+| `test_reputation_aggregate`         | R-13.19.3c |
+| `test_reputation_unlock`            | R-13.19.3c |
+| `test_schedule_current_slot`        | R-13.19.4a |
+| `test_schedule_day_filter`          | R-13.19.4a |
+| `test_schedule_navigation`          | R-13.19.4b |
+| `test_schedule_skip_late`           | R-13.19.4b |
+| `test_interaction_gate_sleeping`    | R-13.19.4c |
+| `test_interaction_gate_working`     | R-13.19.4c |
+| `test_bark_priority`                | R-13.19.5  |
+| `test_bark_cooldown`                | R-13.19.5  |
+| `test_bark_filter_combat`           | R-13.19.5  |
+| `test_threat_add_decay`             | R-13.19.6  |
+| `test_threat_highest`               | R-13.19.6  |
+| `test_threat_taunt`                 | R-13.19.6  |
+| `test_memory_capacity_desktop`      | R-13.19.8  |
+| `test_memory_capacity_mobile`       | R-13.19.8  |
+| `test_memory_reliability_direct`    | R-13.19.8  |
+| `test_memory_reliability_heard`     | R-13.19.8  |
+| `test_memory_trauma_persists`       | R-13.19.8  |
+| `test_memory_routine_fades`         | R-13.19.8  |
+| `test_search_no_omniscience`        | R-13.19.10 |
+| `test_search_ask_npc`               | R-13.19.10 |
+| `test_search_faction_delay`         | R-13.19.10 |
+| `test_story_dialogue_change`        | R-13.19.11 |
+| `test_story_price_modifier`         | R-13.19.11 |
+| `test_eavesdrop_stealth_range`      | R-13.19.12 |
+| `test_eavesdrop_no_stealth`         | R-13.19.12 |
+| `test_conversation_interrupt`       | R-13.19.7  |
+
+1. **`test_affinity_modify_clamp`** — Modify affinity past 100/-100; verify clamped.
+2. **`test_gift_preference_loved`** — Give loved item; verify affinity increase matches table.
+3. **`test_gift_preference_hated`** — Give hated item; verify affinity decrease matches table.
+4. **`test_tier_advance`** — Push affinity past threshold; verify tier advances.
+5. **`test_tier_persist_save_load`** — Save and reload; verify affinity and tier persist.
+6. **`test_personality_emotion_baseline`** — High courage NPC; fear stays below low-courage NPC.
+7. **`test_emotion_decay_to_baseline`** — Stimulate emotion; tick decay; verify return to baseline.
+8. **`test_emotion_dominant`** — Stimulate multiple emotions; verify dominant is highest.
+9. **`test_deed_memory_positive`** — Witness rescue; verify memory stored, affinity increased.
+10. **`test_deed_memory_negative`** — Witness theft; verify memory stored, affinity decreased.
+11. **`test_deed_memory_decay`** — Wait for decay period; verify weight reaches zero.
+12. **`test_deed_memory_eviction`** — Fill to capacity; add one more; verify lowest-weight evicted.
+13. **`test_gossip_weight_degrades`** — Gossip from A to B; verify weight *= 0.7.
+14. **`test_gossip_multi_hop`** — Gossip A->B->C; verify C's reliability is 0.3.
+15. **`test_gossip_rate_hermit`** — Hermit archetype; verify low propagation rate.
+16. **`test_reputation_aggregate`** — Improve 3 NPCs; verify group score crosses threshold.
+17. **`test_reputation_unlock`** — Cross threshold; verify group behavior activates.
+18. **`test_schedule_current_slot`** — Query at 10:00; verify returns work slot.
+19. **`test_schedule_day_filter`** — Weekend schedule; verify alternate entry on Saturday.
+20. **`test_schedule_navigation`** — Cross boundary; verify pathfind request issued.
+21. **`test_schedule_skip_late`** — NPC arrives late; verify skip to current slot.
+22. **`test_interaction_gate_sleeping`** — Query sleeping NPC; verify unavailable with reason.
+23. **`test_interaction_gate_working`** — Query during work hours; verify available.
+24. **`test_bark_priority`** — Two barks eligible; verify higher priority wins.
+25. **`test_bark_cooldown`** — Trigger bark; trigger again within cooldown; verify suppressed.
+26. **`test_bark_filter_combat`** — Combat-only bark; verify no trigger outside combat.
+27. **`test_threat_add_decay`** — Add threat; decay out-of-range; verify reaches zero.
+28. **`test_threat_highest`** — Three sources; verify highest_threat returns top.
+29. **`test_threat_taunt`** — Taunt ability; verify caster tops the table.
+30. **`test_memory_capacity_desktop`** — Desktop NPC; verify capacity is 50.
+31. **`test_memory_capacity_mobile`** — Mobile NPC; verify capacity is 20.
+32. **`test_memory_reliability_direct`** — Direct witness; verify reliability is 1.0.
+33. **`test_memory_reliability_heard`** — Heard from trusted NPC; verify reliability is 0.7.
+34. **`test_memory_trauma_persists`** — Traumatic memory; verify no decay after time window.
+35. **`test_memory_routine_fades`** — Routine memory; verify decays within game-hours.
+36. **`test_search_no_omniscience`** — Hidden player; verify searcher never moves to current pos.
+37. **`test_search_ask_npc`** — Queried NPC has sighting; verify searcher investigates.
+38. **`test_search_faction_delay`** — Faction broadcast; verify responses delayed.
+39. **`test_story_dialogue_change`** — Complete quest; verify NPC dialogue overridden.
+40. **`test_story_price_modifier`** — Trigger event; verify merchant price changes.
+41. **`test_eavesdrop_stealth_range`** — Stealthed player; verify extended eavesdrop range.
+42. **`test_eavesdrop_no_stealth`** — Non-stealthed; verify shorter range.
+43. **`test_conversation_interrupt`** — Player approaches; verify conversation interrupted.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_200_npc_frame_budget` | NFR-13.19.1 | Spawn 200 scheduled NPCs; measure total NPC sim time; verify < 4 ms. |
-| `test_gossip_amortization` | NFR-13.19.1 | Trigger 50 gossip events; verify they amortize at 10/frame across 5 frames. |
-| `test_memory_global_budget` | NFR-13.19.2 | Generate 1,000 deeds across 200 NPCs; verify total memory <= 4 MB. |
-| `test_memory_entry_size` | NFR-13.19.2 | Measure MemoryEntry size; verify <= 256 bytes. |
-| `test_lod_promotion_demotion` | R-13.19.8 | Move player away; verify LOD demotes. Move back; verify LOD promotes and memory resumes. |
-| `test_full_social_chain` | R-13.19.3b | Player performs deed witnessed by A; A gossips to B; B gossips to C; verify reputation propagation end-to-end. |
-| `test_schedule_full_day` | R-13.19.4b | Run 24 game-hours; verify NPC visits all schedule locations. |
-| `test_conversation_to_memory` | R-13.19.7 | Two NPCs converse; verify both gain memory entries with source attribution. |
-| `test_env_interaction_door` | R-13.19.9 | NPC with key pathfinds through locked door; NPC without key routes around. |
-| `test_npc_conversation_mobile_limit` | R-13.19.7 | On mobile config, start 5 conversations; verify only 4 active. |
-| `test_search_expand_radius` | R-13.19.10 | All nearby queries fail; verify search radius expands. |
+| Test                                 | Req         |
+|--------------------------------------|-------------|
+| `test_200_npc_frame_budget`          | NFR-13.19.1 |
+| `test_gossip_amortization`           | NFR-13.19.1 |
+| `test_memory_global_budget`          | NFR-13.19.2 |
+| `test_memory_entry_size`             | NFR-13.19.2 |
+| `test_lod_promotion_demotion`        | R-13.19.8   |
+| `test_full_social_chain`             | R-13.19.3b  |
+| `test_schedule_full_day`             | R-13.19.4b  |
+| `test_conversation_to_memory`        | R-13.19.7   |
+| `test_env_interaction_door`          | R-13.19.9   |
+| `test_npc_conversation_mobile_limit` | R-13.19.7   |
+| `test_search_expand_radius`          | R-13.19.10  |
+
+1. **`test_200_npc_frame_budget`** — Spawn 200 scheduled NPCs; measure total NPC sim time; verify <
+   4 ms.
+2. **`test_gossip_amortization`** — Trigger 50 gossip events; verify they amortize at 10/frame
+   across 5 frames.
+3. **`test_memory_global_budget`** — Generate 1,000 deeds across 200 NPCs; verify total memory <= 4
+   MB.
+4. **`test_memory_entry_size`** — Measure MemoryEntry size; verify <= 256 bytes.
+5. **`test_lod_promotion_demotion`** — Move player away; verify LOD demotes. Move back; verify LOD
+   promotes and memory resumes.
+6. **`test_full_social_chain`** — Player performs deed witnessed by A; A gossips to B; B gossips to
+   C; verify reputation propagation end-to-end.
+7. **`test_schedule_full_day`** — Run 24 game-hours; verify NPC visits all schedule locations.
+8. **`test_conversation_to_memory`** — Two NPCs converse; verify both gain memory entries with
+   source attribution.
+9. **`test_env_interaction_door`** — NPC with key pathfinds through locked door; NPC without key
+   routes around.
+10. **`test_npc_conversation_mobile_limit`** — On mobile config, start 5 conversations; verify only
+    4 active.
+11. **`test_search_expand_radius`** — All nearby queries fail; verify search radius expands.
 
 ### Benchmarks
 

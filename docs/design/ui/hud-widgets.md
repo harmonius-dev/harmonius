@@ -9,48 +9,81 @@
 
 ### Common Widgets (F-10.2 / R-10.2)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-10.2.1 | R-10.2.1 | Rich text with inline formatting, icons, hyperlinks, HarfBuzz shaping, BiDi |
-| F-10.2.2 | R-10.2.2 | Text input with IME, clipboard, undo/redo, zero dropped characters |
-| F-10.2.3 | R-10.2.3 | Buttons, sliders, toggles, checkboxes, radio buttons, spin boxes |
-| F-10.2.4 | R-10.2.4 | Dropdown / combo box with search filtering and dynamic options |
-| F-10.2.5 | R-10.2.5 | Virtualized scroll views with inertial scrolling, variable-height items |
-| F-10.2.6 | R-10.2.6 | Tooltips, context menus, modal dialogs with z-ordering and stacking |
-| F-10.2.7 | R-10.2.7 | Drag and drop with ghost preview, drop target highlight, stack splitting |
-| F-10.2.8 | R-10.2.8 | Progress bars (linear, circular, segmented), loading spinners |
+| Feature  | Requirement |
+|----------|-------------|
+| F-10.2.1 | R-10.2.1    |
+| F-10.2.2 | R-10.2.2    |
+| F-10.2.3 | R-10.2.3    |
+| F-10.2.4 | R-10.2.4    |
+| F-10.2.5 | R-10.2.5    |
+| F-10.2.6 | R-10.2.6    |
+| F-10.2.7 | R-10.2.7    |
+| F-10.2.8 | R-10.2.8    |
+
+1. **F-10.2.1** — Rich text with inline formatting, icons, hyperlinks, HarfBuzz shaping, BiDi
+2. **F-10.2.2** — Text input with IME, clipboard, undo/redo, zero dropped characters
+3. **F-10.2.3** — Buttons, sliders, toggles, checkboxes, radio buttons, spin boxes
+4. **F-10.2.4** — Dropdown / combo box with search filtering and dynamic options
+5. **F-10.2.5** — Virtualized scroll views with inertial scrolling, variable-height items
+6. **F-10.2.6** — Tooltips, context menus, modal dialogs with z-ordering and stacking
+7. **F-10.2.7** — Drag and drop with ghost preview, drop target highlight, stack splitting
+8. **F-10.2.8** — Progress bars (linear, circular, segmented), loading spinners
 
 ### HUD & Game UI (F-10.3 / R-10.3)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-10.3.1 | R-10.3.1 | Health / resource / cast bars, 40+ raid bars at 60 fps |
-| F-10.3.2 | R-10.3.2 | Buff / debuff icons with radial sweep and priority filtering |
-| F-10.3.3 | R-10.3.3 | Action bars with frame-accurate cooldown indicators |
-| F-10.3.4 | R-10.3.4 | Nameplates anchored to 3D world positions, 200+ at 60 fps |
-| F-10.3.5 | R-10.3.5 | Floating combat text with trajectories and cumulative merging |
-| F-10.3.6 | R-10.3.6 | Minimap and world map with real-time markers |
-| F-10.3.7 | R-10.3.7 | Quest tracker with waypoints and compass indicators |
-| F-10.3.8 | R-10.3.8 | Chat system, multi-channel, 200+ msg/s throughput |
-| F-10.3.9 | R-10.3.9 | Inventory grid with drag-drop, sort, filter, stack split |
-| F-10.3.10 | R-10.3.10 | Compass bar with tracked objective markers |
-| F-10.3.11 | R-10.3.11 | Off-screen objective indicators |
-| F-10.3.12 | R-10.3.12 | Procedural minimap generation from world data |
-| F-10.3.13 | R-10.3.13 | World map generation with tiled image pyramids |
-| F-10.3.14 | R-10.3.14 | Artist-authored map overlays and post-processing |
-| F-10.3.15 | R-10.3.15 | Data-driven map markers with quest integration |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-10.3.1  | R-10.3.1    |
+| F-10.3.2  | R-10.3.2    |
+| F-10.3.3  | R-10.3.3    |
+| F-10.3.4  | R-10.3.4    |
+| F-10.3.5  | R-10.3.5    |
+| F-10.3.6  | R-10.3.6    |
+| F-10.3.7  | R-10.3.7    |
+| F-10.3.8  | R-10.3.8    |
+| F-10.3.9  | R-10.3.9    |
+| F-10.3.10 | R-10.3.10   |
+| F-10.3.11 | R-10.3.11   |
+| F-10.3.12 | R-10.3.12   |
+| F-10.3.13 | R-10.3.13   |
+| F-10.3.14 | R-10.3.14   |
+| F-10.3.15 | R-10.3.15   |
+
+1. **F-10.3.1** — Health / resource / cast bars, 40+ raid bars at 60 fps
+2. **F-10.3.2** — Buff / debuff icons with radial sweep and priority filtering
+3. **F-10.3.3** — Action bars with frame-accurate cooldown indicators
+4. **F-10.3.4** — Nameplates anchored to 3D world positions, 200+ at 60 fps
+5. **F-10.3.5** — Floating combat text with trajectories and cumulative merging
+6. **F-10.3.6** — Minimap and world map with real-time markers
+7. **F-10.3.7** — Quest tracker with waypoints and compass indicators
+8. **F-10.3.8** — Chat system, multi-channel, 200+ msg/s throughput
+9. **F-10.3.9** — Inventory grid with drag-drop, sort, filter, stack split
+10. **F-10.3.10** — Compass bar with tracked objective markers
+11. **F-10.3.11** — Off-screen objective indicators
+12. **F-10.3.12** — Procedural minimap generation from world data
+13. **F-10.3.13** — World map generation with tiled image pyramids
+14. **F-10.3.14** — Artist-authored map overlays and post-processing
+15. **F-10.3.15** — Data-driven map markers with quest integration
 
 ### UI Rendering (F-10.4 / R-10.4)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-10.4.1 | R-10.4.1 | Batched quad rendering via indirect dispatch |
-| F-10.4.2 | R-10.4.2 | MSDF text rendering, 5000+ glyphs/frame |
-| F-10.4.3 | R-10.4.3 | GPU-accelerated vector path rendering |
-| F-10.4.4 | R-10.4.4 | UI atlas packing with nine-slice rendering |
-| F-10.4.5 | R-10.4.5 | Render-to-texture for 3D-in-UI previews |
-| F-10.4.6 | R-10.4.6 | World-space and diegetic UI in 3D render pass |
-| F-10.4.7 | R-10.4.7 | SDF anti-aliased edges and stencil clipping |
+| Feature  | Requirement |
+|----------|-------------|
+| F-10.4.1 | R-10.4.1    |
+| F-10.4.2 | R-10.4.2    |
+| F-10.4.3 | R-10.4.3    |
+| F-10.4.4 | R-10.4.4    |
+| F-10.4.5 | R-10.4.5    |
+| F-10.4.6 | R-10.4.6    |
+| F-10.4.7 | R-10.4.7    |
+
+1. **F-10.4.1** — Batched quad rendering via indirect dispatch
+2. **F-10.4.2** — MSDF text rendering, 5000+ glyphs/frame
+3. **F-10.4.3** — GPU-accelerated vector path rendering
+4. **F-10.4.4** — UI atlas packing with nine-slice rendering
+5. **F-10.4.5** — Render-to-texture for 3D-in-UI previews
+6. **F-10.4.6** — World-space and diegetic UI in 3D render pass
+7. **F-10.4.7** — SDF anti-aliased edges and stencil clipping
 
 ## Overview
 
@@ -2158,62 +2191,143 @@ platforms. The `rustybuzz` crate provides pure-Rust HarfBuzz-compatible shaping.
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `rustybuzz` | HarfBuzz-compatible text shaping | Pure Rust, no C dependency, cross-platform identical output |
-| `unicode-bidi` | Unicode BiDi algorithm | Handles mixed LTR/RTL text ordering |
-| `msdfgen` | MSDF glyph atlas generation (build time) | Asset pipeline tool for SDF font atlas creation |
-| `rect_packer` | Rectangle bin packing for atlas | Efficient atlas allocation with incremental updates |
-| `bitflags` | Bitflag types for WidgetFlags, FontStyle | Standard Rust bitflags crate |
+| Crate          | Purpose                                  |
+|----------------|------------------------------------------|
+| `rustybuzz`    | HarfBuzz-compatible text shaping         |
+| `unicode-bidi` | Unicode BiDi algorithm                   |
+| `msdfgen`      | MSDF glyph atlas generation (build time) |
+| `rect_packer`  | Rectangle bin packing for atlas          |
+| `bitflags`     | Bitflag types for WidgetFlags, FontStyle |
+
+1. **`rustybuzz`** — Pure Rust, no C dependency, cross-platform identical output
+2. **`unicode-bidi`** — Handles mixed LTR/RTL text ordering
+3. **`msdfgen`** — Asset pipeline tool for SDF font atlas creation
+4. **`rect_packer`** — Efficient atlas allocation with incremental updates
+5. **`bitflags`** — Standard Rust bitflags crate
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_rich_text_inline_formatting` | R-10.2.1 | Render bold, italic, color, icon, hyperlink spans; verify correct glyph runs and styling per span. |
-| `test_bidi_arabic_english_mix` | R-10.2.1 | Render Arabic + English mixed string; verify visual ordering matches Unicode BiDi reference. |
-| `test_text_input_clipboard_ops` | R-10.2.2 | Type, select, copy, cut, paste, undo, redo in single-line and multi-line; verify buffer after each op. |
-| `test_ime_composition_cjk` | R-10.2.2 | Simulate CJK IME composition events; verify committed text is correct. |
-| `test_text_input_1000_keys` | R-10.2.2 | Enqueue 1,000 key events in one frame; verify zero dropped characters. |
-| `test_slider_no_jitter` | R-10.2.3 | Drag slider at 120 Hz input; verify value delta below threshold each frame. |
-| `test_dropdown_filter_500` | R-10.2.4 | Open dropdown with 500 options, type filter; verify visible list matches substring. |
-| `test_dropdown_dynamic_update` | R-10.2.4 | Mutate option list while open; verify display updates without crash or stale entries. |
-| `test_virtual_list_10k` | R-10.2.5 | Populate 10,000 variable-height items; verify instantiated count never exceeds visible + buffer. |
-| `test_overlay_z_stacking` | R-10.2.6 | Open modal, then context menu, then tooltip; verify z-order: tooltip > menu > modal. |
-| `test_overlay_dismiss` | R-10.2.6 | Verify outside click dismisses topmost overlay only. Escape dismisses top-to-bottom. |
-| `test_drag_drop_cross_panel` | R-10.2.7 | Drag from inventory to mail attachment; verify item transfers and ghost preview follows pointer. |
-| `test_drag_split_stack` | R-10.2.7 | Drag with modifier held; verify split dialog appears with correct stack count. |
-| `test_progress_bar_fill` | R-10.2.8 | Set 0%, 50%, 100%; verify fill width matches expected proportion. |
-| `test_health_bar_overlays` | R-10.3.1 | Set predicted damage and absorb shield; verify overlay widths are correct within the bar. |
-| `test_buff_grid_35_effects` | R-10.3.2 | Apply 35 effects; verify all displayed grouped by category with correct durations. |
-| `test_cooldown_frame_accuracy` | R-10.3.3 | Start 5s cooldown at known tick; verify sweep reaches zero within 1 frame of expiry tick. |
-| `test_nameplate_overlap` | R-10.3.4 | Place 10 nameplates at same screen position; verify no two overlap > 10% area after avoidance. |
-| `test_combat_text_merge` | R-10.3.5 | Emit 60 damage events at same position in one frame; verify merge into cumulative totals. |
-| `test_minimap_markers` | R-10.3.6 | Place 20 moving entities; verify minimap icons match projected world positions within 1 px. |
-| `test_compass_bearing` | R-10.3.10 | Track 5 objectives at known bearings; rotate player; verify marker positions on compass strip. |
-| `test_offscreen_indicator` | R-10.3.11 | Track objective behind player; verify edge arrow appears. Turn toward it; verify smooth transition. |
-| `test_chat_200_msg_per_sec` | R-10.3.8 | Enqueue 250 msg/s for 10s; verify all appear in correct channels, no drops, frame < 16.67 ms. |
-| `test_inventory_sort_filter` | R-10.3.9 | Sort by rarity, filter by search term; verify correct ordering and filtered results. |
+| Test                               | Req       |
+|------------------------------------|-----------|
+| `test_rich_text_inline_formatting` | R-10.2.1  |
+| `test_bidi_arabic_english_mix`     | R-10.2.1  |
+| `test_text_input_clipboard_ops`    | R-10.2.2  |
+| `test_ime_composition_cjk`         | R-10.2.2  |
+| `test_text_input_1000_keys`        | R-10.2.2  |
+| `test_slider_no_jitter`            | R-10.2.3  |
+| `test_dropdown_filter_500`         | R-10.2.4  |
+| `test_dropdown_dynamic_update`     | R-10.2.4  |
+| `test_virtual_list_10k`            | R-10.2.5  |
+| `test_overlay_z_stacking`          | R-10.2.6  |
+| `test_overlay_dismiss`             | R-10.2.6  |
+| `test_drag_drop_cross_panel`       | R-10.2.7  |
+| `test_drag_split_stack`            | R-10.2.7  |
+| `test_progress_bar_fill`           | R-10.2.8  |
+| `test_health_bar_overlays`         | R-10.3.1  |
+| `test_buff_grid_35_effects`        | R-10.3.2  |
+| `test_cooldown_frame_accuracy`     | R-10.3.3  |
+| `test_nameplate_overlap`           | R-10.3.4  |
+| `test_combat_text_merge`           | R-10.3.5  |
+| `test_minimap_markers`             | R-10.3.6  |
+| `test_compass_bearing`             | R-10.3.10 |
+| `test_offscreen_indicator`         | R-10.3.11 |
+| `test_chat_200_msg_per_sec`        | R-10.3.8  |
+| `test_inventory_sort_filter`       | R-10.3.9  |
+
+1. **`test_rich_text_inline_formatting`** — Render bold, italic, color, icon, hyperlink spans;
+   verify correct glyph runs and styling per span.
+2. **`test_bidi_arabic_english_mix`** — Render Arabic + English mixed string; verify visual ordering
+   matches Unicode BiDi reference.
+3. **`test_text_input_clipboard_ops`** — Type, select, copy, cut, paste, undo, redo in single-line
+   and multi-line; verify buffer after each op.
+4. **`test_ime_composition_cjk`** — Simulate CJK IME composition events; verify committed text is
+   correct.
+5. **`test_text_input_1000_keys`** — Enqueue 1,000 key events in one frame; verify zero dropped
+   characters.
+6. **`test_slider_no_jitter`** — Drag slider at 120 Hz input; verify value delta below threshold
+   each frame.
+7. **`test_dropdown_filter_500`** — Open dropdown with 500 options, type filter; verify visible list
+   matches substring.
+8. **`test_dropdown_dynamic_update`** — Mutate option list while open; verify display updates
+   without crash or stale entries.
+9. **`test_virtual_list_10k`** — Populate 10,000 variable-height items; verify instantiated count
+   never exceeds visible + buffer.
+10. **`test_overlay_z_stacking`** — Open modal, then context menu, then tooltip; verify z-order:
+    tooltip > menu > modal.
+11. **`test_overlay_dismiss`** — Verify outside click dismisses topmost overlay only. Escape
+    dismisses top-to-bottom.
+12. **`test_drag_drop_cross_panel`** — Drag from inventory to mail attachment; verify item transfers
+    and ghost preview follows pointer.
+13. **`test_drag_split_stack`** — Drag with modifier held; verify split dialog appears with correct
+    stack count.
+14. **`test_progress_bar_fill`** — Set 0%, 50%, 100%; verify fill width matches expected proportion.
+15. **`test_health_bar_overlays`** — Set predicted damage and absorb shield; verify overlay widths
+    are correct within the bar.
+16. **`test_buff_grid_35_effects`** — Apply 35 effects; verify all displayed grouped by category
+    with correct durations.
+17. **`test_cooldown_frame_accuracy`** — Start 5s cooldown at known tick; verify sweep reaches zero
+    within 1 frame of expiry tick.
+18. **`test_nameplate_overlap`** — Place 10 nameplates at same screen position; verify no two
+    overlap > 10% area after avoidance.
+19. **`test_combat_text_merge`** — Emit 60 damage events at same position in one frame; verify merge
+    into cumulative totals.
+20. **`test_minimap_markers`** — Place 20 moving entities; verify minimap icons match projected
+    world positions within 1 px.
+21. **`test_compass_bearing`** — Track 5 objectives at known bearings; rotate player; verify marker
+    positions on compass strip.
+22. **`test_offscreen_indicator`** — Track objective behind player; verify edge arrow appears. Turn
+    toward it; verify smooth transition.
+23. **`test_chat_200_msg_per_sec`** — Enqueue 250 msg/s for 10s; verify all appear in correct
+    channels, no drops, frame < 16.67 ms.
+24. **`test_inventory_sort_filter`** — Sort by rarity, filter by search term; verify correct
+    ordering and filtered results.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_quad_batching_500` | R-10.4.1 | Render 500 widgets across 4 atlas pages, 2 blend states; verify draw calls = distinct (page, blend) combos. |
-| `test_msdf_text_scales` | R-10.4.2 | Render 5,000 glyphs at 100%, 200%, 300% scale; verify sharp edges via image comparison. |
-| `test_vector_radial_sweep` | R-10.4.3 | Render cooldown sweep at 100% and 300%; verify no aliasing vs CPU reference within 1/255 tolerance. |
-| `test_nine_slice_stretch` | R-10.4.4 | Render nine-slice panel at 3 sizes; verify corners undistorted via pixel comparison. |
-| `test_atlas_incremental` | R-10.4.4 | Stream 20 textures during gameplay; verify no frame exceeds 2 ms repack cost. |
-| `test_3d_preview_dual` | R-10.4.5 | Open two side-by-side 3D previews; verify geometry, lighting, animation; GPU cost < 1 ms combined. |
-| `test_world_space_depth` | R-10.4.6 | Place diegetic screen in 3D scene; verify occlusion by opaque geometry via GPU capture. |
-| `test_sdf_aa_all_scales` | R-10.4.7 | Render rounded rect at 100%-300%; verify smooth AA, no staircasing, no adjacent blurring. |
-| `test_stencil_clip_nested` | R-10.4.7 | Nest two scroll views; verify children clipped to correct parent bounds at both levels. |
-| `test_raid_frame_40_bars` | R-10.3.1 | Render 40 health + 40 mana + cast bars animating simultaneously; verify frame < 16.67 ms for 300 frames. |
-| `test_nameplate_200` | R-10.3.4 | Spawn 250 entities with nameplates; verify frame < 16.67 ms, overlap < 10%, occluded not drawn. |
-| `test_combat_text_burst_60` | R-10.3.5 | Emit 60 damage events in one frame; verify all displayed/merged, no illegible overlap, frame < 16.67 ms. |
-| `test_map_marker_consistency` | R-10.3.15 | Track quest; verify markers on minimap, compass, and world map simultaneously. Untrack; verify removal. |
+| Test                          | Req       |
+|-------------------------------|-----------|
+| `test_quad_batching_500`      | R-10.4.1  |
+| `test_msdf_text_scales`       | R-10.4.2  |
+| `test_vector_radial_sweep`    | R-10.4.3  |
+| `test_nine_slice_stretch`     | R-10.4.4  |
+| `test_atlas_incremental`      | R-10.4.4  |
+| `test_3d_preview_dual`        | R-10.4.5  |
+| `test_world_space_depth`      | R-10.4.6  |
+| `test_sdf_aa_all_scales`      | R-10.4.7  |
+| `test_stencil_clip_nested`    | R-10.4.7  |
+| `test_raid_frame_40_bars`     | R-10.3.1  |
+| `test_nameplate_200`          | R-10.3.4  |
+| `test_combat_text_burst_60`   | R-10.3.5  |
+| `test_map_marker_consistency` | R-10.3.15 |
+
+1. **`test_quad_batching_500`** — Render 500 widgets across 4 atlas pages, 2 blend states; verify
+   draw calls = distinct (page, blend) combos.
+2. **`test_msdf_text_scales`** — Render 5,000 glyphs at 100%, 200%, 300% scale; verify sharp edges
+   via image comparison.
+3. **`test_vector_radial_sweep`** — Render cooldown sweep at 100% and 300%; verify no aliasing vs
+   CPU reference within 1/255 tolerance.
+4. **`test_nine_slice_stretch`** — Render nine-slice panel at 3 sizes; verify corners undistorted
+   via pixel comparison.
+5. **`test_atlas_incremental`** — Stream 20 textures during gameplay; verify no frame exceeds 2 ms
+   repack cost.
+6. **`test_3d_preview_dual`** — Open two side-by-side 3D previews; verify geometry, lighting,
+   animation; GPU cost < 1 ms combined.
+7. **`test_world_space_depth`** — Place diegetic screen in 3D scene; verify occlusion by opaque
+   geometry via GPU capture.
+8. **`test_sdf_aa_all_scales`** — Render rounded rect at 100%-300%; verify smooth AA, no
+   staircasing, no adjacent blurring.
+9. **`test_stencil_clip_nested`** — Nest two scroll views; verify children clipped to correct parent
+   bounds at both levels.
+10. **`test_raid_frame_40_bars`** — Render 40 health + 40 mana + cast bars animating simultaneously;
+    verify frame < 16.67 ms for 300 frames.
+11. **`test_nameplate_200`** — Spawn 250 entities with nameplates; verify frame < 16.67 ms, overlap
+    < 10%, occluded not drawn.
+12. **`test_combat_text_burst_60`** — Emit 60 damage events in one frame; verify all
+    displayed/merged, no illegible overlap, frame < 16.67 ms.
+13. **`test_map_marker_consistency`** — Track quest; verify markers on minimap, compass, and world
+    map simultaneously. Untrack; verify removal.
 
 ### Benchmarks
 

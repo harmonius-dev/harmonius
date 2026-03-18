@@ -6,147 +6,224 @@ Companion test cases for [destruction.md](destruction.md).
 
 ### TC-4.6.1.1 Voronoi Volume Preservation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Fracture unit cube into 20 fragments | Sum of fragment volumes within 1% of 1.0 m^3 | R-4.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.1     |
+
+1. **#1** — Fracture unit cube into 20 fragments
+   - **Expected:** Sum of fragment volumes within 1% of 1.0 m^3
 
 ### TC-4.6.1.2 Convex Hull Validity
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Generate 20 fragments from Voronoi | All fragments pass convex hull validation | R-4.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.1     |
+
+1. **#1** — Generate 20 fragments from Voronoi
+   - **Expected:** All fragments pass convex hull validation
 
 ### TC-4.6.1.3 Platform Fragment Cap
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Fracture on Mobile tier | Fragment count <= 8 | R-4.6.1 |
-| 2 | Fracture on Desktop tier | Fragment count <= 64 | R-4.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.1     |
+| 2 | R-4.6.1     |
+
+1. **#1** — Fracture on Mobile tier
+   - **Expected:** Fragment count <= 8
+2. **#2** — Fracture on Desktop tier
+   - **Expected:** Fragment count <= 64
 
 ### TC-4.6.2.1 DCC Asset Load
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Load pre-fractured `.frac` asset | Fragment count, connectivity edges, and joint configs match authored data | R-4.6.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.2     |
+
+1. **#1** — Load pre-fractured `.frac` asset
+   - **Expected:** Fragment count, connectivity edges, and joint configs match authored data
 
 ### TC-4.6.3.1 Fracture Activation Threshold
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Apply damage exceeding threshold (integrity -> 0) | Intact entity despawned; fragment entities spawned | R-4.6.3 |
-| 2 | Apply damage below threshold (integrity > 0) | Intact entity remains; no fragments | R-4.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.3     |
+| 2 | R-4.6.3     |
+
+1. **#1** — Apply damage exceeding threshold (integrity -> 0)
+   - **Expected:** Intact entity despawned; fragment entities spawned
+2. **#2** — Apply damage below threshold (integrity > 0)
+   - **Expected:** Intact entity remains; no fragments
 
 ### TC-4.6.3.2 Fragment Transform Accuracy
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Activate fracture; compare fragment positions to asset | All positions within 0.001 m of asset layout | R-4.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.3     |
+
+1. **#1** — Activate fracture; compare fragment positions to asset
+   - **Expected:** All positions within 0.001 m of asset layout
 
 ### TC-4.6.3.3 Activation Budget Per Frame
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Trigger 3 activations on Mobile (max=1) | Only 1 activation per frame; remaining deferred | R-4.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.3     |
+
+1. **#1** — Trigger 3 activations on Mobile (max=1)
+   - **Expected:** Only 1 activation per frame; remaining deferred
 
 ### TC-4.6.3.4 Staggered Spawning
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 64-fragment object on Mobile (max 8/activation) | Fragments spawn across 8 frames | R-4.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.3     |
+
+1. **#1** — 64-fragment object on Mobile (max 8/activation)
+   - **Expected:** Fragments spawn across 8 frames
 
 ### TC-4.6.4.1 Damage Accumulation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Apply 3 impacts: 20, 30, 10 to max_integrity=100 | integrity = 40 | R-4.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.4     |
+
+1. **#1** — Apply 3 impacts: 20, 30, 10 to max_integrity=100
+   - **Expected:** integrity = 40
 
 ### TC-4.6.4.2 Visual Stage Progression
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 3-stage health (thresholds: 0.75, 0.50, 0.25); damage to 60% | current_stage = 1 | R-4.6.4 |
-| 2 | Damage further to 20% | current_stage = 2 | R-4.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.4     |
+| 2 | R-4.6.4     |
+
+1. **#1** — 3-stage health (thresholds: 0.75, 0.50, 0.25); damage to 60%
+   - **Expected:** current_stage = 1
+2. **#2** — Damage further to 20%
+   - **Expected:** current_stage = 2
 
 ### TC-4.6.4.3 Damage From Multiple Types
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Projectile (20) + explosion (30) + melee (10) | integrity reduced by 60 total | R-4.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.4     |
+
+1. **#1** — Projectile (20) + explosion (30) + melee (10)
+   - **Expected:** integrity reduced by 60 total
 
 ### TC-4.6.5.1 Cascading Collapse
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 3-column arch; break keystone fragment | Unsupported fragments lose joints and fall | R-4.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.5     |
+
+1. **#1** — 3-column arch; break keystone fragment
+   - **Expected:** Unsupported fragments lose joints and fall
 
 ### TC-4.6.5.2 Anchor Connectivity
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Fragments connected to StructuralAnchor via joints | Fragments remain supported (visited by BFS) | R-4.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.5     |
+
+1. **#1** — Fragments connected to StructuralAnchor via joints
+   - **Expected:** Fragments remain supported (visited by BFS)
 
 ### TC-4.6.5.3 Mobile Structural Disabled
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Run structural analysis on Mobile tier | Pre-baked collapse sequence used; no runtime BFS | R-4.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.5     |
+
+1. **#1** — Run structural analysis on Mobile tier
+   - **Expected:** Pre-baked collapse sequence used; no runtime BFS
 
 ### TC-4.6.6.1 Debris TTL Expiration
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Spawn debris with TTL=5.0s; advance 5.0s | Debris entity despawned | R-4.6.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.6     |
+
+1. **#1** — Spawn debris with TTL=5.0s; advance 5.0s
+   - **Expected:** Debris entity despawned
 
 ### TC-4.6.6.2 Debris Cap Enforcement
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Spawn 500 debris with max_debris=200 | Oldest 300 despawned; 200 remain | R-4.6.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.6     |
+
+1. **#1** — Spawn 500 debris with max_debris=200
+   - **Expected:** Oldest 300 despawned; 200 remain
 
 ### TC-4.6.6.3 Debris Sleep Transition
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Debris velocity below threshold for N frames | State transitions to Sleeping; zero sim cost | R-4.6.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.6     |
+
+1. **#1** — Debris velocity below threshold for N frames
+   - **Expected:** State transitions to Sleeping; zero sim cost
 
 ### TC-4.6.7.1 Pooling Reduces Allocation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 10 destructions with pool vs without pool | Pooled allocations >= 80% fewer | R-4.6.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.7     |
+
+1. **#1** — 10 destructions with pool vs without pool
+   - **Expected:** Pooled allocations >= 80% fewer
 
 ### TC-4.6.7.2 LOD Component Removal
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Debris beyond `particle_distance` | No RigidBody or Collider components | R-4.6.7 |
-| 2 | Debris between `lod_distance` and `particle_distance` | Simplified collision shape | R-4.6.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.7     |
+| 2 | R-4.6.7     |
+
+1. **#1** — Debris beyond `particle_distance`
+   - **Expected:** No RigidBody or Collider components
+2. **#2** — Debris between `lod_distance` and `particle_distance`
+   - **Expected:** Simplified collision shape
 
 ## Integration Tests
 
 ### TC-4.6.4.I1 Damage Replication
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Server modifies DamageHealth; client observes | Client receives replicated integrity value; client cannot modify locally | R-4.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.4     |
+
+1. **#1** — Server modifies DamageHealth; client observes
+   - **Expected:** Client receives replicated integrity value; client cannot modify locally
 
 ### TC-4.6.3.I1 Destruction With Cover
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Destroy cover object | Cover points removed from spatial index | R-4.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.3     |
+
+1. **#1** — Destroy cover object
+   - **Expected:** Cover points removed from spatial index
 
 ### TC-4.6.3.I2 Destruction Audio
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Fracture activation triggers | Destruction audio event emitted | R-4.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.3     |
+
+1. **#1** — Fracture activation triggers
+   - **Expected:** Destruction audio event emitted
 
 ### TC-4.6.7.I1 Debris Visual Particles
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Debris beyond particle_distance | Rendered as visual particles; no physics simulation | R-4.6.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-4.6.7     |
+
+1. **#1** — Debris beyond particle_distance
+   - **Expected:** Rendered as visual particles; no physics simulation
 
 ## Benchmarks
 

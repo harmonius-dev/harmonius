@@ -2,43 +2,231 @@
 
 ## Ability System
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|-------------|-----------|--------------|
-| R-13.10.1 | The engine **SHALL** define abilities as data-driven assets composed from modular, reusable building blocks — activation conditions, resource costs, targeting modes (self, single, AoE), gameplay effects, animation references, VFX/audio cues, and AI hints — authored entirely in the visual editor without code. | [F-13.10.1](../../features/game-framework/abilities.md) | Modular composition lets designers build and iterate on abilities by combining shared effect, targeting, and animation components without programmer involvement, aligning with the no-code engine philosophy. | In the visual editor, author a "Fireball" ability using a "Fire Damage" effect component, AoE sphere targeting, and a cast animation reference. Author a "Flame Sword" ability reusing the same "Fire Damage" component with melee single-target targeting. Verify both abilities resolve correctly at runtime and share the same effect component instance. |
-| R-13.10.2 | The engine **SHALL** support configurable ability activation modes — press, hold (channeled), charge, combo (sequential within timing window), and toggle — bound to input actions, validating cooldowns, resource costs, and cast conditions before execution, with AI agents activating through the same API via synthetic input events. | [F-13.10.2](../../features/game-framework/abilities.md) | Unified activation through input actions ensures player and AI agents share identical ability execution paths, preventing behavioral divergence between human and AI-controlled characters. | Bind an ability to a press action and verify instant cast. Bind a hold ability and verify it remains active only while held. Bind a combo ability, press the input three times within the timing window, and verify the combo chain executes. Trigger the same ability from an AI behavior tree synthetic input and verify identical execution. Attempt activation during cooldown and verify rejection. |
-| R-13.10.3 | The engine **SHALL** provide a composable effect system supporting instant, duration, periodic, and permanent effects with configurable stacking rules (additive, multiplicative, highest-wins, non-stacking), source metadata, damage type tags, and conditional tag interactions. | [F-13.10.3](../../features/game-framework/abilities.md) | A tag-aware, composable effect system enables complex gameplay interactions (fire damage removes frozen debuff) without hardcoded logic, keeping all combat rules data-driven and designer-editable. | Apply two additive damage bonus effects (+10, +20) and verify the combined bonus is +30. Apply two highest-wins buffs (+15%, +25%) and verify only +25% applies. Apply a periodic heal (10 HP every 2 seconds for 10 seconds) and verify 5 ticks. Apply a "frozen" debuff, then apply "fire" damage, and verify the frozen debuff is removed via tag interaction rules. |
+| ID        | Derived From                                            |
+|-----------|---------------------------------------------------------|
+| R-13.10.1 | [F-13.10.1](../../features/game-framework/abilities.md) |
+| R-13.10.2 | [F-13.10.2](../../features/game-framework/abilities.md) |
+| R-13.10.3 | [F-13.10.3](../../features/game-framework/abilities.md) |
+
+1. **R-13.10.1** — The engine **SHALL** define abilities as data-driven assets composed from
+   modular, reusable building blocks — activation conditions, resource costs, targeting modes (self,
+   single, AoE), gameplay effects, animation references, VFX/audio cues, and AI hints — authored
+   entirely in the visual editor without code.
+   - **Rationale:** Modular composition lets designers build and iterate on abilities by combining
+     shared effect, targeting, and animation components without programmer involvement, aligning
+     with the no-code engine philosophy.
+   - **Verification:** In the visual editor, author a "Fireball" ability using a "Fire Damage"
+     effect component, AoE sphere targeting, and a cast animation reference. Author a "Flame Sword"
+     ability reusing the same "Fire Damage" component with melee single-target targeting. Verify
+     both abilities resolve correctly at runtime and share the same effect component instance.
+2. **R-13.10.2** — The engine **SHALL** support configurable ability activation modes — press, hold
+   (channeled), charge, combo (sequential within timing window), and toggle — bound to input
+   actions, validating cooldowns, resource costs, and cast conditions before execution, with AI
+   agents activating through the same API via synthetic input events.
+   - **Rationale:** Unified activation through input actions ensures player and AI agents share
+     identical ability execution paths, preventing behavioral divergence between human and
+     AI-controlled characters.
+   - **Verification:** Bind an ability to a press action and verify instant cast. Bind a hold
+     ability and verify it remains active only while held. Bind a combo ability, press the input
+     three times within the timing window, and verify the combo chain executes. Trigger the same
+     ability from an AI behavior tree synthetic input and verify identical execution. Attempt
+     activation during cooldown and verify rejection.
+3. **R-13.10.3** — The engine **SHALL** provide a composable effect system supporting instant,
+   duration, periodic, and permanent effects with configurable stacking rules (additive,
+   multiplicative, highest-wins, non-stacking), source metadata, damage type tags, and conditional
+   tag interactions.
+   - **Rationale:** A tag-aware, composable effect system enables complex gameplay interactions
+     (fire damage removes frozen debuff) without hardcoded logic, keeping all combat rules
+     data-driven and designer-editable.
+   - **Verification:** Apply two additive damage bonus effects (+10, +20) and verify the combined
+     bonus is +30. Apply two highest-wins buffs (+15%, +25%) and verify only +25% applies. Apply a
+     periodic heal (10 HP every 2 seconds for 10 seconds) and verify 5 ticks. Apply a "frozen"
+     debuff, then apply "fire" damage, and verify the frozen debuff is removed via tag interaction
+     rules.
 
 ## Melee and Ranged Combat
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|-------------|-----------|--------------|
-| R-13.10.4 | The engine **SHALL** resolve melee hit detection using animation-event-activated weapon hitboxes against per-bone hurtboxes with damage multipliers, directional damage bonuses, and hit reaction triggers, supporting weapon trails, impact VFX, and hit-stop time dilation. | [F-13.10.4](../../features/game-framework/abilities.md) | Tying hit detection to animation events ensures attacks connect visually where the weapon appears, and per-bone hurtbox multipliers enable skill-rewarding gameplay (headshots) without separate collision logic. | Play a sword swing animation; verify the weapon hitbox activates only during the defined attack window. Strike a target's head hurtbox and verify the x2 multiplier is applied. Strike from behind and verify the flank bonus. Verify hit-stop pauses the game for the configured duration on impact. |
-| R-13.10.5 | The engine **SHALL** simulate projectiles as ECS entities with configurable trajectory behaviors (linear, arced, homing, beam, spread), physics-driven collision using CCD for fast projectiles, effect payloads applied on impact, and aim-assist support for gamepad input. | [F-13.10.5](../../features/game-framework/abilities.md) | ECS-based projectiles integrate naturally with the physics and rendering pipelines, and configurable trajectories cover the full spectrum of ranged weapon archetypes across game genres. | Spawn a linear projectile and verify it travels in a straight line and applies its damage effect on collision. Spawn an arced projectile with gravity and verify the parabolic trajectory. Spawn a homing missile, move the target laterally, and verify the missile adjusts course. Fire a fast bullet and verify CCD prevents tunneling through thin geometry. Enable aim assist on gamepad and verify snap-to-target within the configured magnetism radius. |
-| R-13.10.6 | The engine **SHALL** provide per-bone hitbox and hurtbox collision shapes with per-region damage multipliers, multi-hit prevention per swing, editor visualization, and network lag compensation using historical entity snapshots. | [F-13.10.6](../../features/game-framework/abilities.md) | Per-bone hit regions with multipliers and lag compensation are essential for fair, responsive combat in both single-player and networked games, and visual authoring on the skeleton reduces setup errors. | Define head (x2), torso (x1), and limb (x0.75) hurtboxes on a skeleton. Strike each region and verify the correct multiplier is applied. Perform a wide swing hitting the same target twice and verify only one hit registers per swing. Enable the editor debug overlay and verify all hitbox/hurtbox shapes render correctly on the skeleton. In a networked scenario with 100ms latency, verify lag-compensated hit detection matches the attacker's visual frame. |
+| ID        | Derived From                                            |
+|-----------|---------------------------------------------------------|
+| R-13.10.4 | [F-13.10.4](../../features/game-framework/abilities.md) |
+| R-13.10.5 | [F-13.10.5](../../features/game-framework/abilities.md) |
+| R-13.10.6 | [F-13.10.6](../../features/game-framework/abilities.md) |
+
+1. **R-13.10.4** — The engine **SHALL** resolve melee hit detection using animation-event-activated
+   weapon hitboxes against per-bone hurtboxes with damage multipliers, directional damage bonuses,
+   and hit reaction triggers, supporting weapon trails, impact VFX, and hit-stop time dilation.
+   - **Rationale:** Tying hit detection to animation events ensures attacks connect visually where
+     the weapon appears, and per-bone hurtbox multipliers enable skill-rewarding gameplay
+     (headshots) without separate collision logic.
+   - **Verification:** Play a sword swing animation; verify the weapon hitbox activates only during
+     the defined attack window. Strike a target's head hurtbox and verify the x2 multiplier is
+     applied. Strike from behind and verify the flank bonus. Verify hit-stop pauses the game for the
+     configured duration on impact.
+2. **R-13.10.5** — The engine **SHALL** simulate projectiles as ECS entities with configurable
+   trajectory behaviors (linear, arced, homing, beam, spread), physics-driven collision using CCD
+   for fast projectiles, effect payloads applied on impact, and aim-assist support for gamepad
+   input.
+   - **Rationale:** ECS-based projectiles integrate naturally with the physics and rendering
+     pipelines, and configurable trajectories cover the full spectrum of ranged weapon archetypes
+     across game genres.
+   - **Verification:** Spawn a linear projectile and verify it travels in a straight line and
+     applies its damage effect on collision. Spawn an arced projectile with gravity and verify the
+     parabolic trajectory. Spawn a homing missile, move the target laterally, and verify the missile
+     adjusts course. Fire a fast bullet and verify CCD prevents tunneling through thin geometry.
+     Enable aim assist on gamepad and verify snap-to-target within the configured magnetism radius.
+3. **R-13.10.6** — The engine **SHALL** provide per-bone hitbox and hurtbox collision shapes with
+   per-region damage multipliers, multi-hit prevention per swing, editor visualization, and network
+   lag compensation using historical entity snapshots.
+   - **Rationale:** Per-bone hit regions with multipliers and lag compensation are essential for
+     fair, responsive combat in both single-player and networked games, and visual authoring on the
+     skeleton reduces setup errors.
+   - **Verification:** Define head (x2), torso (x1), and limb (x0.75) hurtboxes on a skeleton.
+     Strike each region and verify the correct multiplier is applied. Perform a wide swing hitting
+     the same target twice and verify only one hit registers per swing. Enable the editor debug
+     overlay and verify all hitbox/hurtbox shapes render correctly on the skeleton. In a networked
+     scenario with 100ms latency, verify lag-compensated hit detection matches the attacker's visual
+     frame.
 
 ## Non-Functional Requirements
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|-------------|-----------|--------------|
-| R-13.10.NF1 | The engine **SHALL** support at least 64 concurrent gameplay effects per entity (buffs, debuffs, DoTs, HoTs) without the effect evaluation exceeding 0.1 ms per entity per frame. | F-13.10.3 | Boss encounters and large-group content commonly apply dozens of simultaneous effects to each participant; the system must scale without becoming a frame budget bottleneck. | Apply 64 concurrent effects (mix of duration, periodic, and permanent) to a single entity. Measure per-frame effect evaluation time and verify it stays under 0.1 ms. Apply 64 effects to each of 40 entities (raid scenario) and verify total effect evaluation stays under 4 ms. |
-| R-13.10.NF2 | The engine **SHALL** begin ability execution (animation start, resource deduction, visual feedback) within 1 frame (16.67 ms at 60 fps) of the activation input, excluding network round-trip for server validation. | F-13.10.1, F-13.10.2 | Perceptible delay between input and ability response breaks the feel of responsive combat and disadvantages players in competitive scenarios. | Bind an ability to a press input. Measure time from input event to animation playback start and resource deduction. Verify the response begins within the same frame across 100 consecutive activations at 60 fps. |
-| R-13.10.NF3 | The engine **SHALL** resolve melee hit detection with at most 1 frame of latency between the animation-event-defined hit window and the actual collision query, ensuring hits register when visually expected. | F-13.10.4, F-13.10.6 | Hit detection that lags behind the animation causes frustrating ghost swings where attacks appear to connect but deal no damage. | Play a melee attack animation. Measure the time delta between the animation event firing and the collision query execution. Verify the delta is under 1 frame (16.67 ms at 60 fps) across 100 attack animations. |
+| ID          | Derived From         |
+|-------------|----------------------|
+| R-13.10.NF1 | F-13.10.3            |
+| R-13.10.NF2 | F-13.10.1, F-13.10.2 |
+| R-13.10.NF3 | F-13.10.4, F-13.10.6 |
+
+1. **R-13.10.NF1** — The engine **SHALL** support at least 64 concurrent gameplay effects per entity
+   (buffs, debuffs, DoTs, HoTs) without the effect evaluation exceeding 0.1 ms per entity per frame.
+   - **Rationale:** Boss encounters and large-group content commonly apply dozens of simultaneous
+     effects to each participant; the system must scale without becoming a frame budget bottleneck.
+   - **Verification:** Apply 64 concurrent effects (mix of duration, periodic, and permanent) to a
+     single entity. Measure per-frame effect evaluation time and verify it stays under 0.1 ms. Apply
+     64 effects to each of 40 entities (raid scenario) and verify total effect evaluation stays
+     under 4 ms.
+2. **R-13.10.NF2** — The engine **SHALL** begin ability execution (animation start, resource
+   deduction, visual feedback) within 1 frame (16.67 ms at 60 fps) of the activation input,
+   excluding network round-trip for server validation.
+   - **Rationale:** Perceptible delay between input and ability response breaks the feel of
+     responsive combat and disadvantages players in competitive scenarios.
+   - **Verification:** Bind an ability to a press input. Measure time from input event to animation
+     playback start and resource deduction. Verify the response begins within the same frame across
+     100 consecutive activations at 60 fps.
+3. **R-13.10.NF3** — The engine **SHALL** resolve melee hit detection with at most 1 frame of
+   latency between the animation-event-defined hit window and the actual collision query, ensuring
+   hits register when visually expected.
+   - **Rationale:** Hit detection that lags behind the animation causes frustrating ghost swings
+     where attacks appear to connect but deal no damage.
+   - **Verification:** Play a melee attack animation. Measure the time delta between the animation
+     event firing and the collision query execution. Verify the delta is under 1 frame (16.67 ms at
+     60 fps) across 100 attack animations.
 
 ## Advanced Ability Systems
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|-------------|-----------|--------------|
-| R-13.10.7 | The engine **SHALL** provide ground-targeted AoE placement with a projected reticle preview showing affected area, configurable shapes (cone, sphere, line, ring), maximum placement range, and a per-ability friendly fire toggle that controls whether allied entities receive the gameplay effect. | [F-13.10.7](../../features/game-framework/abilities.md) | Ground-targeted AoE is fundamental to ability-based games across genres. Visual preview and friendly fire control let designers create both cooperative and competitive AoE abilities without code. | Place a sphere AoE on valid terrain and verify the reticle renders at the correct position. Place a cone AoE and verify only entities within the cone shape receive the effect. Enable friendly fire and verify allies take damage. Disable friendly fire and verify allies are excluded. Attempt placement beyond max range and verify rejection. |
-| R-13.10.8 | The engine **SHALL** support periodic healing effects (HoT) with configurable tick rate, stacking rules (refresh, stack count, pandemic), and snapshotting of caster stats at application time for all subsequent ticks. | [F-13.10.8](../../features/game-framework/abilities.md) | HoT snapshotting ensures heal values remain predictable after buffs expire, and stacking rules (especially pandemic) enable the depth required for healer gameplay in MMO and RPG genres. | Apply a HoT (50 HP every 2 seconds for 12 seconds) and verify 6 ticks at correct intervals. Reapply with refresh stacking and verify duration resets without adding a second HoT. Apply 3 stacks with stack-count stacking and verify each ticks independently. Apply pandemic stacking and verify duration extends by remaining time up to the cap. Buff the caster's healing power, apply a HoT, then remove the buff — verify tick values use the snapshotted stats. |
-| R-13.10.9 | The engine **SHALL** support periodic damage effects (DoT) with configurable tick rate, stacking rules (refresh, stack count, pandemic), snapshotting of caster stats at application time, damage type tags for conditional interactions, and cleanse interaction with optional immunity window. | [F-13.10.9](../../features/game-framework/abilities.md) | DoTs are a core damage archetype in RPG and MMO combat. Snapshotting, stacking rules, and cleanse interaction create the tactical depth needed for competitive PvE and PvP. | Apply a fire DoT (20 damage every 3 seconds for 15 seconds) and verify 5 ticks. Apply an ice cleanse and verify the fire DoT is removed. Verify the immunity window prevents immediate reapplication of the same DoT. Apply pandemic stacking and verify duration extension up to cap. Buff caster spell power, apply DoT, remove buff — verify ticks use snapshotted values. |
-| R-13.10.10 | The engine **SHALL** implement named status ailments (stun, slow, root, silence, blind, fear, charm, sleep, knockback, pull) with configurable duration, post-immunity window, and diminishing returns that reduce successive application durations by a configurable percentage down to a minimum. | [F-13.10.10](../../features/game-framework/abilities.md) | Status ailments without diminishing returns create frustrating chain-stun scenarios. Immunity windows and DR curves ensure crowd control is impactful without being oppressive. | Apply a 3-second stun and verify the target cannot act for 3 seconds. Apply stun again immediately after expiry and verify it is blocked by the immunity window. After immunity expires, apply stun and verify diminishing returns reduce the duration (e.g., 3s -> 1.5s -> 0.75s). Apply root and verify the target cannot move but can still cast abilities. Apply sleep and deal damage — verify sleep breaks immediately. |
-| R-13.10.11 | The engine **SHALL** support consumable item activation from inventory with configurable charge count, per-item and shared cooldown groups, use-while-moving flag, cast time, and item effects implemented as gameplay effects applied on activation. | [F-13.10.11](../../features/game-framework/abilities.md) | Consumable items bridge the inventory and ability systems, enabling potions, scrolls, and food as gameplay tools without a separate activation pipeline. | Use a 3-charge potion and verify charge count decrements. Verify the shared cooldown group prevents using another potion during cooldown. Use an item with use-while-moving disabled and verify movement cancels the cast. Use a scroll and verify the gameplay effect applies correctly. Exhaust all charges and verify the item is consumed from inventory. |
-| R-13.10.12 | The engine **SHALL** evaluate composable ability conditions (requires weapon type, stance, resource threshold, status/buff, talent unlock, combo state) with AND/OR/NOT logic at activation time, reporting the specific failing condition to the UI when activation is denied. | [F-13.10.12](../../features/game-framework/abilities.md) | Prerequisite conditions create meaningful build decisions and class identity. Specific failure feedback prevents player confusion when an ability cannot be activated. | Configure an ability requiring a sword. Equip a staff and attempt activation — verify rejection with "Requires a sword" message. Equip a sword and verify activation succeeds. Configure an ability requiring 30% mana. Set mana to 20% and verify rejection. Set mana to 50% and verify success. Configure an AND condition (sword + enrage buff) and verify both must be met. |
-| R-13.10.13 | The engine **SHALL** support sequential ability combo chains with per-step timing windows, branching paths based on input, combo point generation per step, and finisher abilities that consume combo points with effect scaling based on points spent. | [F-13.10.13](../../features/game-framework/abilities.md) | Combo systems reward skilled play with escalating damage and create engaging moment-to-moment gameplay in action and fighting game genres. | Define a 3-step combo with 1-second timing windows. Execute all 3 steps within windows and verify the combo completes. Let the window expire after step 2 and verify the combo resets. Execute a branching combo (light-light-heavy vs. light-light-light) and verify different finishers. Verify combo points accumulate per step and the finisher scales damage based on points consumed. |
+| ID         | Derived From                                             |
+|------------|----------------------------------------------------------|
+| R-13.10.7  | [F-13.10.7](../../features/game-framework/abilities.md)  |
+| R-13.10.8  | [F-13.10.8](../../features/game-framework/abilities.md)  |
+| R-13.10.9  | [F-13.10.9](../../features/game-framework/abilities.md)  |
+| R-13.10.10 | [F-13.10.10](../../features/game-framework/abilities.md) |
+| R-13.10.11 | [F-13.10.11](../../features/game-framework/abilities.md) |
+| R-13.10.12 | [F-13.10.12](../../features/game-framework/abilities.md) |
+| R-13.10.13 | [F-13.10.13](../../features/game-framework/abilities.md) |
+
+1. **R-13.10.7** — The engine **SHALL** provide ground-targeted AoE placement with a projected
+   reticle preview showing affected area, configurable shapes (cone, sphere, line, ring), maximum
+   placement range, and a per-ability friendly fire toggle that controls whether allied entities
+   receive the gameplay effect.
+   - **Rationale:** Ground-targeted AoE is fundamental to ability-based games across genres. Visual
+     preview and friendly fire control let designers create both cooperative and competitive AoE
+     abilities without code.
+   - **Verification:** Place a sphere AoE on valid terrain and verify the reticle renders at the
+     correct position. Place a cone AoE and verify only entities within the cone shape receive the
+     effect. Enable friendly fire and verify allies take damage. Disable friendly fire and verify
+     allies are excluded. Attempt placement beyond max range and verify rejection.
+2. **R-13.10.8** — The engine **SHALL** support periodic healing effects (HoT) with configurable
+   tick rate, stacking rules (refresh, stack count, pandemic), and snapshotting of caster stats at
+   application time for all subsequent ticks.
+   - **Rationale:** HoT snapshotting ensures heal values remain predictable after buffs expire, and
+     stacking rules (especially pandemic) enable the depth required for healer gameplay in MMO and
+     RPG genres.
+   - **Verification:** Apply a HoT (50 HP every 2 seconds for 12 seconds) and verify 6 ticks at
+     correct intervals. Reapply with refresh stacking and verify duration resets without adding a
+     second HoT. Apply 3 stacks with stack-count stacking and verify each ticks independently. Apply
+     pandemic stacking and verify duration extends by remaining time up to the cap. Buff the
+     caster's healing power, apply a HoT, then remove the buff — verify tick values use the
+     snapshotted stats.
+3. **R-13.10.9** — The engine **SHALL** support periodic damage effects (DoT) with configurable tick
+   rate, stacking rules (refresh, stack count, pandemic), snapshotting of caster stats at
+   application time, damage type tags for conditional interactions, and cleanse interaction with
+   optional immunity window.
+   - **Rationale:** DoTs are a core damage archetype in RPG and MMO combat. Snapshotting, stacking
+     rules, and cleanse interaction create the tactical depth needed for competitive PvE and PvP.
+   - **Verification:** Apply a fire DoT (20 damage every 3 seconds for 15 seconds) and verify 5
+     ticks. Apply an ice cleanse and verify the fire DoT is removed. Verify the immunity window
+     prevents immediate reapplication of the same DoT. Apply pandemic stacking and verify duration
+     extension up to cap. Buff caster spell power, apply DoT, remove buff — verify ticks use
+     snapshotted values.
+4. **R-13.10.10** — The engine **SHALL** implement named status ailments (stun, slow, root, silence,
+   blind, fear, charm, sleep, knockback, pull) with configurable duration, post-immunity window, and
+   diminishing returns that reduce successive application durations by a configurable percentage
+   down to a minimum.
+   - **Rationale:** Status ailments without diminishing returns create frustrating chain-stun
+     scenarios. Immunity windows and DR curves ensure crowd control is impactful without being
+     oppressive.
+   - **Verification:** Apply a 3-second stun and verify the target cannot act for 3 seconds. Apply
+     stun again immediately after expiry and verify it is blocked by the immunity window. After
+     immunity expires, apply stun and verify diminishing returns reduce the duration (e.g., 3s ->
+     1.5s -> 0.75s). Apply root and verify the target cannot move but can still cast abilities.
+     Apply sleep and deal damage — verify sleep breaks immediately.
+5. **R-13.10.11** — The engine **SHALL** support consumable item activation from inventory with
+   configurable charge count, per-item and shared cooldown groups, use-while-moving flag, cast time,
+   and item effects implemented as gameplay effects applied on activation.
+   - **Rationale:** Consumable items bridge the inventory and ability systems, enabling potions,
+     scrolls, and food as gameplay tools without a separate activation pipeline.
+   - **Verification:** Use a 3-charge potion and verify charge count decrements. Verify the shared
+     cooldown group prevents using another potion during cooldown. Use an item with use-while-moving
+     disabled and verify movement cancels the cast. Use a scroll and verify the gameplay effect
+     applies correctly. Exhaust all charges and verify the item is consumed from inventory.
+6. **R-13.10.12** — The engine **SHALL** evaluate composable ability conditions (requires weapon
+   type, stance, resource threshold, status/buff, talent unlock, combo state) with AND/OR/NOT logic
+   at activation time, reporting the specific failing condition to the UI when activation is denied.
+   - **Rationale:** Prerequisite conditions create meaningful build decisions and class identity.
+     Specific failure feedback prevents player confusion when an ability cannot be activated.
+   - **Verification:** Configure an ability requiring a sword. Equip a staff and attempt activation
+     — verify rejection with "Requires a sword" message. Equip a sword and verify activation
+     succeeds. Configure an ability requiring 30% mana. Set mana to 20% and verify rejection. Set
+     mana to 50% and verify success. Configure an AND condition (sword + enrage buff) and verify
+     both must be met.
+7. **R-13.10.13** — The engine **SHALL** support sequential ability combo chains with per-step
+   timing windows, branching paths based on input, combo point generation per step, and finisher
+   abilities that consume combo points with effect scaling based on points spent.
+   - **Rationale:** Combo systems reward skilled play with escalating damage and create engaging
+     moment-to-moment gameplay in action and fighting game genres.
+   - **Verification:** Define a 3-step combo with 1-second timing windows. Execute all 3 steps
+     within windows and verify the combo completes. Let the window expire after step 2 and verify
+     the combo resets. Execute a branching combo (light-light-heavy vs. light-light-light) and
+     verify different finishers. Verify combo points accumulate per step and the finisher scales
+     damage based on points consumed.
 
 ## Advanced Ability Non-Functional Requirements
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|-------------|-----------|--------------|
-| R-13.10.NF4 | The engine **SHALL** begin ability execution (animation start, resource deduction, visual feedback) within 1 frame (16.67 ms at 60 fps) of activation input for all advanced ability types (AoE, combo, usable items), excluding network round-trip. | F-13.10.7, F-13.10.11, F-13.10.13 | All ability types must share the same responsive activation latency as basic abilities to maintain consistent combat feel. | Activate an AoE ability, a combo step, and a usable item. Measure time from input event to animation start for each. Verify all respond within the same frame across 100 activations at 60 fps. |
-| R-13.10.NF5 | The engine **SHALL** maintain DoT and HoT tick timing accuracy within 1 ms of the configured tick interval across all concurrent periodic effects on all entities. | F-13.10.8, F-13.10.9 | Tick drift compounds over long-duration effects and causes inconsistent total healing/damage, breaking balance expectations for designers. | Apply a 2-second tick HoT and measure actual tick intervals over 30 seconds. Verify each tick fires within 1 ms of the 2-second target. Apply 64 concurrent periodic effects across 10 entities and verify tick accuracy remains within 1 ms under load. |
+| ID          | Derived From                      |
+|-------------|-----------------------------------|
+| R-13.10.NF4 | F-13.10.7, F-13.10.11, F-13.10.13 |
+| R-13.10.NF5 | F-13.10.8, F-13.10.9              |
+
+1. **R-13.10.NF4** — The engine **SHALL** begin ability execution (animation start, resource
+   deduction, visual feedback) within 1 frame (16.67 ms at 60 fps) of activation input for all
+   advanced ability types (AoE, combo, usable items), excluding network round-trip.
+   - **Rationale:** All ability types must share the same responsive activation latency as basic
+     abilities to maintain consistent combat feel.
+   - **Verification:** Activate an AoE ability, a combo step, and a usable item. Measure time from
+     input event to animation start for each. Verify all respond within the same frame across 100
+     activations at 60 fps.
+2. **R-13.10.NF5** — The engine **SHALL** maintain DoT and HoT tick timing accuracy within 1 ms of
+   the configured tick interval across all concurrent periodic effects on all entities.
+   - **Rationale:** Tick drift compounds over long-duration effects and causes inconsistent total
+     healing/damage, breaking balance expectations for designers.
+   - **Verification:** Apply a 2-second tick HoT and measure actual tick intervals over 30 seconds.
+     Verify each tick fires within 1 ms of the 2-second target. Apply 64 concurrent periodic effects
+     across 10 entities and verify tick accuracy remains within 1 ms under load.

@@ -103,14 +103,24 @@ graph TB
 
 ## Layered Architecture
 
-| Layer | Subsystems |
-|-------|-----------|
-| 5 — Application | [Game Framework](#game-framework), [Tools / Editor](#tools--editor) |
-| 4 — Domain | [AI](#ai), [Animation](#animation), [Audio](#audio), [Networking](#networking), [VFX](#vfx) |
-| 3 — Mid-Level | [Physics](#physics), [Rendering](#rendering), [Geometry](#geometry), [UI](#ui), [Input](#input) |
-| 2 — Pipeline | [Content Pipeline](#content-pipeline) |
-| 1 — Core Runtime | [Core Runtime](#core-runtime) (ECS, Scene, Reflection, Events, Memory, Spatial Index, Shared Primitives) |
-| 0 — Platform | [Platform](#platform) (Windowing, Threading / IoReactor, Platform Abstraction) |
+| Layer            |
+|------------------|
+| 5 — Application  |
+| 4 — Domain       |
+| 3 — Mid-Level    |
+| 2 — Pipeline     |
+| 1 — Core Runtime |
+| 0 — Platform     |
+
+1. **5 — Application** — [Game Framework](#game-framework), [Tools / Editor](#tools--editor)
+2. **4 — Domain** — [AI](#ai), [Animation](#animation), [Audio](#audio), [Networking](#networking),
+   [VFX](#vfx)
+3. **3 — Mid-Level** — [Physics](#physics), [Rendering](#rendering), [Geometry](#geometry),
+   [UI](#ui), [Input](#input)
+4. **2 — Pipeline** — [Content Pipeline](#content-pipeline)
+5. **1 — Core Runtime** — [Core Runtime](#core-runtime) (ECS, Scene, Reflection, Events, Memory,
+   Spatial Index, Shared Primitives)
+6. **0 — Platform** — [Platform](#platform) (Windowing, Threading / IoReactor, Platform Abstraction)
 
 ---
 
@@ -142,12 +152,21 @@ graph TB
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [windowing.md](design/platform/windowing.md) | [windowing-test-cases.md](design/platform/windowing-test-cases.md) |
-| [threading.md](design/platform/threading.md) | [threading-test-cases.md](design/platform/threading-test-cases.md) |
-| [os-integration.md](design/platform/os-integration.md) | [os-integration-test-cases.md](design/platform/os-integration-test-cases.md) |
-| [services-storage.md](design/platform/services-storage.md) | [services-storage-test-cases.md](design/platform/services-storage-test-cases.md) |
+| Design                                                     |
+|------------------------------------------------------------|
+| [windowing.md](design/platform/windowing.md)               |
+| [threading.md](design/platform/threading.md)               |
+| [os-integration.md](design/platform/os-integration.md)     |
+| [services-storage.md](design/platform/services-storage.md) |
+
+1. **[windowing.md](design/platform/windowing.md)** —
+   [windowing-test-cases.md](design/platform/windowing-test-cases.md)
+2. **[threading.md](design/platform/threading.md)** —
+   [threading-test-cases.md](design/platform/threading-test-cases.md)
+3. **[os-integration.md](design/platform/os-integration.md)** —
+   [os-integration-test-cases.md](design/platform/os-integration-test-cases.md)
+4. **[services-storage.md](design/platform/services-storage.md)** —
+   [services-storage-test-cases.md](design/platform/services-storage-test-cases.md)
 
 #### Features
 
@@ -212,15 +231,30 @@ graph TB
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [ecs.md](design/core-runtime/ecs.md) | [ecs-test-cases.md](design/core-runtime/ecs-test-cases.md) |
-| [scene-transforms.md](design/core-runtime/scene-transforms.md) | [scene-transforms-test-cases.md](design/core-runtime/scene-transforms-test-cases.md) |
-| [reflection-serialization.md](design/core-runtime/reflection-serialization.md) | [reflection-serialization-test-cases.md](design/core-runtime/reflection-serialization-test-cases.md) |
-| [events-plugins.md](design/core-runtime/events-plugins.md) | [events-plugins-test-cases.md](design/core-runtime/events-plugins-test-cases.md) |
-| [memory-async-io.md](design/core-runtime/memory-async-io.md) | [memory-async-io-test-cases.md](design/core-runtime/memory-async-io-test-cases.md) |
-| [spatial-index.md](design/core-runtime/spatial-index.md) | [spatial-index-test-cases.md](design/core-runtime/spatial-index-test-cases.md) |
-| [shared-primitives.md](design/core-runtime/shared-primitives.md) | [shared-primitives-test-cases.md](design/core-runtime/shared-primitives-test-cases.md) |
+| Design                                                                         |
+|--------------------------------------------------------------------------------|
+| [ecs.md](design/core-runtime/ecs.md)                                           |
+| [scene-transforms.md](design/core-runtime/scene-transforms.md)                 |
+| [reflection-serialization.md](design/core-runtime/reflection-serialization.md) |
+| [events-plugins.md](design/core-runtime/events-plugins.md)                     |
+| [memory-async-io.md](design/core-runtime/memory-async-io.md)                   |
+| [spatial-index.md](design/core-runtime/spatial-index.md)                       |
+| [shared-primitives.md](design/core-runtime/shared-primitives.md)               |
+
+1. **[ecs.md](design/core-runtime/ecs.md)** —
+   [ecs-test-cases.md](design/core-runtime/ecs-test-cases.md)
+2. **[scene-transforms.md](design/core-runtime/scene-transforms.md)** —
+   [scene-transforms-test-cases.md](design/core-runtime/scene-transforms-test-cases.md)
+3. **[reflection-serialization.md](design/core-runtime/reflection-serialization.md)** —
+   [reflection-serialization-test-cases.md](design/core-runtime/reflection-serialization-test-cases.md)
+4. **[events-plugins.md](design/core-runtime/events-plugins.md)** —
+   [events-plugins-test-cases.md](design/core-runtime/events-plugins-test-cases.md)
+5. **[memory-async-io.md](design/core-runtime/memory-async-io.md)** —
+   [memory-async-io-test-cases.md](design/core-runtime/memory-async-io-test-cases.md)
+6. **[spatial-index.md](design/core-runtime/spatial-index.md)** —
+   [spatial-index-test-cases.md](design/core-runtime/spatial-index-test-cases.md)
+7. **[shared-primitives.md](design/core-runtime/shared-primitives.md)** —
+   [shared-primitives-test-cases.md](design/core-runtime/shared-primitives-test-cases.md)
 
 #### Features
 
@@ -273,16 +307,33 @@ environment/character rendering, and stylized materials.
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [gpu-abstraction.md](design/rendering/gpu-abstraction.md) | [gpu-abstraction-test-cases.md](design/rendering/gpu-abstraction-test-cases.md) |
-| [render-graph.md](design/rendering/render-graph.md) | [render-graph-test-cases.md](design/rendering/render-graph-test-cases.md) |
-| [core-rendering.md](design/rendering/core-rendering.md) | [core-rendering-test-cases.md](design/rendering/core-rendering-test-cases.md) |
-| [lighting.md](design/rendering/lighting.md) | [lighting-test-cases.md](design/rendering/lighting-test-cases.md) |
-| [post-processing.md](design/rendering/post-processing.md) | [post-processing-test-cases.md](design/rendering/post-processing-test-cases.md) |
-| [advanced.md](design/rendering/advanced.md) | [advanced-test-cases.md](design/rendering/advanced-test-cases.md) |
-| [environment-character.md](design/rendering/environment-character.md) | [environment-character-test-cases.md](design/rendering/environment-character-test-cases.md) |
-| [stylized-materials.md](design/rendering/stylized-materials.md) | [stylized-materials-test-cases.md](design/rendering/stylized-materials-test-cases.md) |
+| Design                                                                |
+|-----------------------------------------------------------------------|
+| [gpu-abstraction.md](design/rendering/gpu-abstraction.md)             |
+| [render-graph.md](design/rendering/render-graph.md)                   |
+| [core-rendering.md](design/rendering/core-rendering.md)               |
+| [lighting.md](design/rendering/lighting.md)                           |
+| [post-processing.md](design/rendering/post-processing.md)             |
+| [advanced.md](design/rendering/advanced.md)                           |
+| [environment-character.md](design/rendering/environment-character.md) |
+| [stylized-materials.md](design/rendering/stylized-materials.md)       |
+
+1. **[gpu-abstraction.md](design/rendering/gpu-abstraction.md)** —
+   [gpu-abstraction-test-cases.md](design/rendering/gpu-abstraction-test-cases.md)
+2. **[render-graph.md](design/rendering/render-graph.md)** —
+   [render-graph-test-cases.md](design/rendering/render-graph-test-cases.md)
+3. **[core-rendering.md](design/rendering/core-rendering.md)** —
+   [core-rendering-test-cases.md](design/rendering/core-rendering-test-cases.md)
+4. **[lighting.md](design/rendering/lighting.md)** —
+   [lighting-test-cases.md](design/rendering/lighting-test-cases.md)
+5. **[post-processing.md](design/rendering/post-processing.md)** —
+   [post-processing-test-cases.md](design/rendering/post-processing-test-cases.md)
+6. **[advanced.md](design/rendering/advanced.md)** —
+   [advanced-test-cases.md](design/rendering/advanced-test-cases.md)
+7. **[environment-character.md](design/rendering/environment-character.md)** —
+   [environment-character-test-cases.md](design/rendering/environment-character-test-cases.md)
+8. **[stylized-materials.md](design/rendering/stylized-materials.md)** —
+   [stylized-materials-test-cases.md](design/rendering/stylized-materials-test-cases.md)
 
 #### Features
 
@@ -343,13 +394,24 @@ Asset import, processing, streaming, hot reload, DCC plugins, and asset versioni
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [asset-import.md](design/content-pipeline/asset-import.md) | [asset-import-test-cases.md](design/content-pipeline/asset-import-test-cases.md) |
-| [processing.md](design/content-pipeline/processing.md) | [processing-test-cases.md](design/content-pipeline/processing-test-cases.md) |
-| [streaming.md](design/content-pipeline/streaming.md) | [streaming-test-cases.md](design/content-pipeline/streaming-test-cases.md) |
-| [hot-reload.md](design/content-pipeline/hot-reload.md) | [hot-reload-test-cases.md](design/content-pipeline/hot-reload-test-cases.md) |
-| [dcc-versioning.md](design/content-pipeline/dcc-versioning.md) | [dcc-versioning-test-cases.md](design/content-pipeline/dcc-versioning-test-cases.md) |
+| Design                                                         |
+|----------------------------------------------------------------|
+| [asset-import.md](design/content-pipeline/asset-import.md)     |
+| [processing.md](design/content-pipeline/processing.md)         |
+| [streaming.md](design/content-pipeline/streaming.md)           |
+| [hot-reload.md](design/content-pipeline/hot-reload.md)         |
+| [dcc-versioning.md](design/content-pipeline/dcc-versioning.md) |
+
+1. **[asset-import.md](design/content-pipeline/asset-import.md)** —
+   [asset-import-test-cases.md](design/content-pipeline/asset-import-test-cases.md)
+2. **[processing.md](design/content-pipeline/processing.md)** —
+   [processing-test-cases.md](design/content-pipeline/processing-test-cases.md)
+3. **[streaming.md](design/content-pipeline/streaming.md)** —
+   [streaming-test-cases.md](design/content-pipeline/streaming-test-cases.md)
+4. **[hot-reload.md](design/content-pipeline/hot-reload.md)** —
+   [hot-reload-test-cases.md](design/content-pipeline/hot-reload-test-cases.md)
+5. **[dcc-versioning.md](design/content-pipeline/dcc-versioning.md)** —
+   [dcc-versioning-test-cases.md](design/content-pipeline/dcc-versioning-test-cases.md)
 
 #### Features
 
@@ -396,11 +458,18 @@ body, and fluids.
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [foundation.md](design/physics/foundation.md) | [foundation-test-cases.md](design/physics/foundation-test-cases.md) |
-| [constraints.md](design/physics/constraints.md) | [constraints-test-cases.md](design/physics/constraints-test-cases.md) |
-| [advanced.md](design/physics/advanced.md) | [advanced-test-cases.md](design/physics/advanced-test-cases.md) |
+| Design                                          |
+|-------------------------------------------------|
+| [foundation.md](design/physics/foundation.md)   |
+| [constraints.md](design/physics/constraints.md) |
+| [advanced.md](design/physics/advanced.md)       |
+
+1. **[foundation.md](design/physics/foundation.md)** —
+   [foundation-test-cases.md](design/physics/foundation-test-cases.md)
+2. **[constraints.md](design/physics/constraints.md)** —
+   [constraints-test-cases.md](design/physics/constraints-test-cases.md)
+3. **[advanced.md](design/physics/advanced.md)** —
+   [advanced-test-cases.md](design/physics/advanced-test-cases.md)
 
 #### Features
 
@@ -449,10 +518,15 @@ Device abstraction, action mapping, gesture recognition, haptics, and VR input.
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [devices-actions.md](design/input/devices-actions.md) | [devices-actions-test-cases.md](design/input/devices-actions-test-cases.md) |
-| [gestures-haptics.md](design/input/gestures-haptics.md) | [gestures-haptics-test-cases.md](design/input/gestures-haptics-test-cases.md) |
+| Design                                                  |
+|---------------------------------------------------------|
+| [devices-actions.md](design/input/devices-actions.md)   |
+| [gestures-haptics.md](design/input/gestures-haptics.md) |
+
+1. **[devices-actions.md](design/input/devices-actions.md)** —
+   [devices-actions-test-cases.md](design/input/devices-actions-test-cases.md)
+2. **[gestures-haptics.md](design/input/gestures-haptics.md)** —
+   [gestures-haptics-test-cases.md](design/input/gestures-haptics-test-cases.md)
 
 #### Features
 
@@ -492,10 +566,15 @@ Audio engine, spatial audio, DSP effects, adaptive music, and voice chat.
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [engine.md](design/audio/engine.md) | [engine-test-cases.md](design/audio/engine-test-cases.md) |
-| [dsp-music.md](design/audio/dsp-music.md) | [dsp-music-test-cases.md](design/audio/dsp-music-test-cases.md) |
+| Design                                    |
+|-------------------------------------------|
+| [engine.md](design/audio/engine.md)       |
+| [dsp-music.md](design/audio/dsp-music.md) |
+
+1. **[engine.md](design/audio/engine.md)** —
+   [engine-test-cases.md](design/audio/engine-test-cases.md)
+2. **[dsp-music.md](design/audio/dsp-music.md)** —
+   [dsp-music-test-cases.md](design/audio/dsp-music-test-cases.md)
 
 #### Features
 
@@ -536,13 +615,24 @@ first-person animation.
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [skeletal.md](design/animation/skeletal.md) | [skeletal-test-cases.md](design/animation/skeletal-test-cases.md) |
-| [state-machine.md](design/animation/state-machine.md) | [state-machine-test-cases.md](design/animation/state-machine-test-cases.md) |
-| [procedural.md](design/animation/procedural.md) | [procedural-test-cases.md](design/animation/procedural-test-cases.md) |
-| [cloth-hair.md](design/animation/cloth-hair.md) | [cloth-hair-test-cases.md](design/animation/cloth-hair-test-cases.md) |
-| [first-person.md](design/animation/first-person.md) | [first-person-test-cases.md](design/animation/first-person-test-cases.md) |
+| Design                                                |
+|-------------------------------------------------------|
+| [skeletal.md](design/animation/skeletal.md)           |
+| [state-machine.md](design/animation/state-machine.md) |
+| [procedural.md](design/animation/procedural.md)       |
+| [cloth-hair.md](design/animation/cloth-hair.md)       |
+| [first-person.md](design/animation/first-person.md)   |
+
+1. **[skeletal.md](design/animation/skeletal.md)** —
+   [skeletal-test-cases.md](design/animation/skeletal-test-cases.md)
+2. **[state-machine.md](design/animation/state-machine.md)** —
+   [state-machine-test-cases.md](design/animation/state-machine-test-cases.md)
+3. **[procedural.md](design/animation/procedural.md)** —
+   [procedural-test-cases.md](design/animation/procedural-test-cases.md)
+4. **[cloth-hair.md](design/animation/cloth-hair.md)** —
+   [cloth-hair-test-cases.md](design/animation/cloth-hair-test-cases.md)
+5. **[first-person.md](design/animation/first-person.md)** —
+   [first-person-test-cases.md](design/animation/first-person-test-cases.md)
 
 #### Features
 
@@ -585,12 +675,21 @@ Navigation, behavior trees, utility AI, GOAP, perception, steering, and crowd si
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [navigation.md](design/ai/navigation.md) | [navigation-test-cases.md](design/ai/navigation-test-cases.md) |
-| [behavior.md](design/ai/behavior.md) | [behavior-test-cases.md](design/ai/behavior-test-cases.md) |
-| [perception.md](design/ai/perception.md) | [perception-test-cases.md](design/ai/perception-test-cases.md) |
-| [steering-crowds.md](design/ai/steering-crowds.md) | [steering-crowds-test-cases.md](design/ai/steering-crowds-test-cases.md) |
+| Design                                             |
+|----------------------------------------------------|
+| [navigation.md](design/ai/navigation.md)           |
+| [behavior.md](design/ai/behavior.md)               |
+| [perception.md](design/ai/perception.md)           |
+| [steering-crowds.md](design/ai/steering-crowds.md) |
+
+1. **[navigation.md](design/ai/navigation.md)** —
+   [navigation-test-cases.md](design/ai/navigation-test-cases.md)
+2. **[behavior.md](design/ai/behavior.md)** —
+   [behavior-test-cases.md](design/ai/behavior-test-cases.md)
+3. **[perception.md](design/ai/perception.md)** —
+   [perception-test-cases.md](design/ai/perception-test-cases.md)
+4. **[steering-crowds.md](design/ai/steering-crowds.md)** —
+   [steering-crowds-test-cases.md](design/ai/steering-crowds-test-cases.md)
 
 #### Features
 
@@ -642,13 +741,23 @@ anti-cheat.
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [transport.md](design/networking/transport.md) | [transport-test-cases.md](design/networking/transport-test-cases.md) |
-| [replication.md](design/networking/replication.md) | [replication-test-cases.md](design/networking/replication-test-cases.md) |
-| [sessions-replay.md](design/networking/sessions-replay.md) | [sessions-replay-test-cases.md](design/networking/sessions-replay-test-cases.md) |
-| [mmo.md](design/networking/mmo.md) | [mmo-test-cases.md](design/networking/mmo-test-cases.md) |
-| [anti-cheat.md](design/networking/anti-cheat.md) | [anti-cheat-test-cases.md](design/networking/anti-cheat-test-cases.md) |
+| Design                                                     |
+|------------------------------------------------------------|
+| [transport.md](design/networking/transport.md)             |
+| [replication.md](design/networking/replication.md)         |
+| [sessions-replay.md](design/networking/sessions-replay.md) |
+| [mmo.md](design/networking/mmo.md)                         |
+| [anti-cheat.md](design/networking/anti-cheat.md)           |
+
+1. **[transport.md](design/networking/transport.md)** —
+   [transport-test-cases.md](design/networking/transport-test-cases.md)
+2. **[replication.md](design/networking/replication.md)** —
+   [replication-test-cases.md](design/networking/replication-test-cases.md)
+3. **[sessions-replay.md](design/networking/sessions-replay.md)** —
+   [sessions-replay-test-cases.md](design/networking/sessions-replay-test-cases.md)
+4. **[mmo.md](design/networking/mmo.md)** — [mmo-test-cases.md](design/networking/mmo-test-cases.md)
+5. **[anti-cheat.md](design/networking/anti-cheat.md)** —
+   [anti-cheat-test-cases.md](design/networking/anti-cheat-test-cases.md)
 
 #### Features
 
@@ -698,12 +807,21 @@ Meshlet pipeline, terrain, foliage, water, sky, and procedural generation.
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [meshlets.md](design/geometry/meshlets.md) | [meshlets-test-cases.md](design/geometry/meshlets-test-cases.md) |
-| [terrain.md](design/geometry/terrain.md) | [terrain-test-cases.md](design/geometry/terrain-test-cases.md) |
-| [environment.md](design/geometry/environment.md) | [environment-test-cases.md](design/geometry/environment-test-cases.md) |
-| [procedural-generation.md](design/geometry/procedural-generation.md) | [procedural-generation-test-cases.md](design/geometry/procedural-generation-test-cases.md) |
+| Design                                                               |
+|----------------------------------------------------------------------|
+| [meshlets.md](design/geometry/meshlets.md)                           |
+| [terrain.md](design/geometry/terrain.md)                             |
+| [environment.md](design/geometry/environment.md)                     |
+| [procedural-generation.md](design/geometry/procedural-generation.md) |
+
+1. **[meshlets.md](design/geometry/meshlets.md)** —
+   [meshlets-test-cases.md](design/geometry/meshlets-test-cases.md)
+2. **[terrain.md](design/geometry/terrain.md)** —
+   [terrain-test-cases.md](design/geometry/terrain-test-cases.md)
+3. **[environment.md](design/geometry/environment.md)** —
+   [environment-test-cases.md](design/geometry/environment-test-cases.md)
+4. **[procedural-generation.md](design/geometry/procedural-generation.md)** —
+   [procedural-generation-test-cases.md](design/geometry/procedural-generation-test-cases.md)
 
 #### Features
 
@@ -746,12 +864,21 @@ Widget framework, common widgets, HUD, game UI, 2D games (sprites, tilemaps), an
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [widget-framework.md](design/ui/widget-framework.md) | [widget-framework-test-cases.md](design/ui/widget-framework-test-cases.md) |
-| [hud-widgets.md](design/ui/hud-widgets.md) | [hud-widgets-test-cases.md](design/ui/hud-widgets-test-cases.md) |
-| [2d-games.md](design/ui/2d-games.md) | [2d-games-test-cases.md](design/ui/2d-games-test-cases.md) |
-| [accessibility.md](design/ui/accessibility.md) | [accessibility-test-cases.md](design/ui/accessibility-test-cases.md) |
+| Design                                               |
+|------------------------------------------------------|
+| [widget-framework.md](design/ui/widget-framework.md) |
+| [hud-widgets.md](design/ui/hud-widgets.md)           |
+| [2d-games.md](design/ui/2d-games.md)                 |
+| [accessibility.md](design/ui/accessibility.md)       |
+
+1. **[widget-framework.md](design/ui/widget-framework.md)** —
+   [widget-framework-test-cases.md](design/ui/widget-framework-test-cases.md)
+2. **[hud-widgets.md](design/ui/hud-widgets.md)** —
+   [hud-widgets-test-cases.md](design/ui/hud-widgets-test-cases.md)
+3. **[2d-games.md](design/ui/2d-games.md)** —
+   [2d-games-test-cases.md](design/ui/2d-games-test-cases.md)
+4. **[accessibility.md](design/ui/accessibility.md)** —
+   [accessibility-test-cases.md](design/ui/accessibility-test-cases.md)
 
 #### Features
 
@@ -794,11 +921,18 @@ GPU particles, decals, screen effects, weather, destruction VFX, and node-based 
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [particles.md](design/vfx/particles.md) | [particles-test-cases.md](design/vfx/particles-test-cases.md) |
-| [effects.md](design/vfx/effects.md) | [effects-test-cases.md](design/vfx/effects-test-cases.md) |
-| [effect-graph.md](design/vfx/effect-graph.md) | [effect-graph-test-cases.md](design/vfx/effect-graph-test-cases.md) |
+| Design                                        |
+|-----------------------------------------------|
+| [particles.md](design/vfx/particles.md)       |
+| [effects.md](design/vfx/effects.md)           |
+| [effect-graph.md](design/vfx/effect-graph.md) |
+
+1. **[particles.md](design/vfx/particles.md)** —
+   [particles-test-cases.md](design/vfx/particles-test-cases.md)
+2. **[effects.md](design/vfx/effects.md)** —
+   [effects-test-cases.md](design/vfx/effects-test-cases.md)
+3. **[effect-graph.md](design/vfx/effect-graph.md)** —
+   [effect-graph-test-cases.md](design/vfx/effect-graph-test-cases.md)
 
 #### Features
 
@@ -843,25 +977,60 @@ genre-specific systems, monetization, destruction, traversal, stealth, and camer
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [primitives.md](design/game-framework/primitives.md) | [primitives-test-cases.md](design/game-framework/primitives-test-cases.md) |
-| [save-cinematics.md](design/game-framework/save-cinematics.md) | [save-cinematics-test-cases.md](design/game-framework/save-cinematics-test-cases.md) |
-| [scripting.md](design/game-framework/scripting.md) | [scripting-test-cases.md](design/game-framework/scripting-test-cases.md) |
-| [quest-dialogue.md](design/game-framework/quest-dialogue.md) | [quest-dialogue-test-cases.md](design/game-framework/quest-dialogue-test-cases.md) |
-| [databases.md](design/game-framework/databases.md) | [databases-test-cases.md](design/game-framework/databases-test-cases.md) |
-| [abilities-combat.md](design/game-framework/abilities-combat.md) | [abilities-combat-test-cases.md](design/game-framework/abilities-combat-test-cases.md) |
-| [character.md](design/game-framework/character.md) | [character-test-cases.md](design/game-framework/character-test-cases.md) |
-| [weapons.md](design/game-framework/weapons.md) | [weapons-test-cases.md](design/game-framework/weapons-test-cases.md) |
-| [selection.md](design/game-framework/selection.md) | [selection-test-cases.md](design/game-framework/selection-test-cases.md) |
-| [npc-simulation.md](design/game-framework/npc-simulation.md) | [npc-simulation-test-cases.md](design/game-framework/npc-simulation-test-cases.md) |
-| [progression-social.md](design/game-framework/progression-social.md) | [progression-social-test-cases.md](design/game-framework/progression-social-test-cases.md) |
-| [building-survival.md](design/game-framework/building-survival.md) | [building-survival-test-cases.md](design/game-framework/building-survival-test-cases.md) |
-| [genre-specific.md](design/game-framework/genre-specific.md) | [genre-specific-test-cases.md](design/game-framework/genre-specific-test-cases.md) |
-| [monetization.md](design/game-framework/monetization.md) | [monetization-test-cases.md](design/game-framework/monetization-test-cases.md) |
-| [destruction.md](design/game-framework/destruction.md) | [destruction-test-cases.md](design/game-framework/destruction-test-cases.md) |
-| [traversal-stealth.md](design/game-framework/traversal-stealth.md) | [traversal-stealth-test-cases.md](design/game-framework/traversal-stealth-test-cases.md) |
-| [camera.md](design/game-framework/camera.md) | [camera-test-cases.md](design/game-framework/camera-test-cases.md) |
+| Design                                                               |
+|----------------------------------------------------------------------|
+| [primitives.md](design/game-framework/primitives.md)                 |
+| [save-cinematics.md](design/game-framework/save-cinematics.md)       |
+| [scripting.md](design/game-framework/scripting.md)                   |
+| [quest-dialogue.md](design/game-framework/quest-dialogue.md)         |
+| [databases.md](design/game-framework/databases.md)                   |
+| [abilities-combat.md](design/game-framework/abilities-combat.md)     |
+| [character.md](design/game-framework/character.md)                   |
+| [weapons.md](design/game-framework/weapons.md)                       |
+| [selection.md](design/game-framework/selection.md)                   |
+| [npc-simulation.md](design/game-framework/npc-simulation.md)         |
+| [progression-social.md](design/game-framework/progression-social.md) |
+| [building-survival.md](design/game-framework/building-survival.md)   |
+| [genre-specific.md](design/game-framework/genre-specific.md)         |
+| [monetization.md](design/game-framework/monetization.md)             |
+| [destruction.md](design/game-framework/destruction.md)               |
+| [traversal-stealth.md](design/game-framework/traversal-stealth.md)   |
+| [camera.md](design/game-framework/camera.md)                         |
+
+1. **[primitives.md](design/game-framework/primitives.md)** —
+   [primitives-test-cases.md](design/game-framework/primitives-test-cases.md)
+2. **[save-cinematics.md](design/game-framework/save-cinematics.md)** —
+   [save-cinematics-test-cases.md](design/game-framework/save-cinematics-test-cases.md)
+3. **[scripting.md](design/game-framework/scripting.md)** —
+   [scripting-test-cases.md](design/game-framework/scripting-test-cases.md)
+4. **[quest-dialogue.md](design/game-framework/quest-dialogue.md)** —
+   [quest-dialogue-test-cases.md](design/game-framework/quest-dialogue-test-cases.md)
+5. **[databases.md](design/game-framework/databases.md)** —
+   [databases-test-cases.md](design/game-framework/databases-test-cases.md)
+6. **[abilities-combat.md](design/game-framework/abilities-combat.md)** —
+   [abilities-combat-test-cases.md](design/game-framework/abilities-combat-test-cases.md)
+7. **[character.md](design/game-framework/character.md)** —
+   [character-test-cases.md](design/game-framework/character-test-cases.md)
+8. **[weapons.md](design/game-framework/weapons.md)** —
+   [weapons-test-cases.md](design/game-framework/weapons-test-cases.md)
+9. **[selection.md](design/game-framework/selection.md)** —
+   [selection-test-cases.md](design/game-framework/selection-test-cases.md)
+10. **[npc-simulation.md](design/game-framework/npc-simulation.md)** —
+    [npc-simulation-test-cases.md](design/game-framework/npc-simulation-test-cases.md)
+11. **[progression-social.md](design/game-framework/progression-social.md)** —
+    [progression-social-test-cases.md](design/game-framework/progression-social-test-cases.md)
+12. **[building-survival.md](design/game-framework/building-survival.md)** —
+    [building-survival-test-cases.md](design/game-framework/building-survival-test-cases.md)
+13. **[genre-specific.md](design/game-framework/genre-specific.md)** —
+    [genre-specific-test-cases.md](design/game-framework/genre-specific-test-cases.md)
+14. **[monetization.md](design/game-framework/monetization.md)** —
+    [monetization-test-cases.md](design/game-framework/monetization-test-cases.md)
+15. **[destruction.md](design/game-framework/destruction.md)** —
+    [destruction-test-cases.md](design/game-framework/destruction-test-cases.md)
+16. **[traversal-stealth.md](design/game-framework/traversal-stealth.md)** —
+    [traversal-stealth-test-cases.md](design/game-framework/traversal-stealth-test-cases.md)
+17. **[camera.md](design/game-framework/camera.md)** —
+    [camera-test-cases.md](design/game-framework/camera-test-cases.md)
 
 #### Features
 
@@ -972,22 +1141,51 @@ store, and localization/docs.
 
 #### Design Documents
 
-| Design | Test Cases |
-|--------|-----------|
-| [editor-framework.md](design/tools/editor-framework.md) | [editor-framework-test-cases.md](design/tools/editor-framework-test-cases.md) |
-| [level-world.md](design/tools/level-world.md) | [level-world-test-cases.md](design/tools/level-world-test-cases.md) |
-| [material-animation.md](design/tools/material-animation.md) | [material-animation-test-cases.md](design/tools/material-animation-test-cases.md) |
-| [logic-graph.md](design/tools/logic-graph.md) | [logic-graph-test-cases.md](design/tools/logic-graph-test-cases.md) |
-| [profiler.md](design/tools/profiler.md) | [profiler-test-cases.md](design/tools/profiler-test-cases.md) |
-| [version-control.md](design/tools/version-control.md) | [version-control-test-cases.md](design/tools/version-control-test-cases.md) |
-| [collaboration.md](design/tools/collaboration.md) | [collaboration-test-cases.md](design/tools/collaboration-test-cases.md) |
-| [shared-cache.md](design/tools/shared-cache.md) | [shared-cache-test-cases.md](design/tools/shared-cache-test-cases.md) |
-| [ai-governance.md](design/tools/ai-governance.md) | [ai-governance-test-cases.md](design/tools/ai-governance-test-cases.md) |
-| [deployment.md](design/tools/deployment.md) | [deployment-test-cases.md](design/tools/deployment-test-cases.md) |
-| [launcher.md](design/tools/launcher.md) | [launcher-test-cases.md](design/tools/launcher-test-cases.md) |
-| [server-infrastructure.md](design/tools/server-infrastructure.md) | [server-infrastructure-test-cases.md](design/tools/server-infrastructure-test-cases.md) |
-| [asset-store.md](design/tools/asset-store.md) | [asset-store-test-cases.md](design/tools/asset-store-test-cases.md) |
-| [localization-docs.md](design/tools/localization-docs.md) | [localization-docs-test-cases.md](design/tools/localization-docs-test-cases.md) |
+| Design                                                            |
+|-------------------------------------------------------------------|
+| [editor-framework.md](design/tools/editor-framework.md)           |
+| [level-world.md](design/tools/level-world.md)                     |
+| [material-animation.md](design/tools/material-animation.md)       |
+| [logic-graph.md](design/tools/logic-graph.md)                     |
+| [profiler.md](design/tools/profiler.md)                           |
+| [version-control.md](design/tools/version-control.md)             |
+| [collaboration.md](design/tools/collaboration.md)                 |
+| [shared-cache.md](design/tools/shared-cache.md)                   |
+| [ai-governance.md](design/tools/ai-governance.md)                 |
+| [deployment.md](design/tools/deployment.md)                       |
+| [launcher.md](design/tools/launcher.md)                           |
+| [server-infrastructure.md](design/tools/server-infrastructure.md) |
+| [asset-store.md](design/tools/asset-store.md)                     |
+| [localization-docs.md](design/tools/localization-docs.md)         |
+
+1. **[editor-framework.md](design/tools/editor-framework.md)** —
+   [editor-framework-test-cases.md](design/tools/editor-framework-test-cases.md)
+2. **[level-world.md](design/tools/level-world.md)** —
+   [level-world-test-cases.md](design/tools/level-world-test-cases.md)
+3. **[material-animation.md](design/tools/material-animation.md)** —
+   [material-animation-test-cases.md](design/tools/material-animation-test-cases.md)
+4. **[logic-graph.md](design/tools/logic-graph.md)** —
+   [logic-graph-test-cases.md](design/tools/logic-graph-test-cases.md)
+5. **[profiler.md](design/tools/profiler.md)** —
+   [profiler-test-cases.md](design/tools/profiler-test-cases.md)
+6. **[version-control.md](design/tools/version-control.md)** —
+   [version-control-test-cases.md](design/tools/version-control-test-cases.md)
+7. **[collaboration.md](design/tools/collaboration.md)** —
+   [collaboration-test-cases.md](design/tools/collaboration-test-cases.md)
+8. **[shared-cache.md](design/tools/shared-cache.md)** —
+   [shared-cache-test-cases.md](design/tools/shared-cache-test-cases.md)
+9. **[ai-governance.md](design/tools/ai-governance.md)** —
+   [ai-governance-test-cases.md](design/tools/ai-governance-test-cases.md)
+10. **[deployment.md](design/tools/deployment.md)** —
+    [deployment-test-cases.md](design/tools/deployment-test-cases.md)
+11. **[launcher.md](design/tools/launcher.md)** —
+    [launcher-test-cases.md](design/tools/launcher-test-cases.md)
+12. **[server-infrastructure.md](design/tools/server-infrastructure.md)** —
+    [server-infrastructure-test-cases.md](design/tools/server-infrastructure-test-cases.md)
+13. **[asset-store.md](design/tools/asset-store.md)** —
+    [asset-store-test-cases.md](design/tools/asset-store-test-cases.md)
+14. **[localization-docs.md](design/tools/localization-docs.md)** —
+    [localization-docs-test-cases.md](design/tools/localization-docs-test-cases.md)
 
 #### Features
 
@@ -1306,14 +1504,7 @@ graph LR
 
     click W0 "#platform"
     click W1 "#core-runtime"
-    click W2 "design/plan.md"
-    click W3 "design/plan.md"
-    click W4 "design/plan.md"
-    click W5 "design/plan.md"
-    click W6 "design/plan.md"
 ```
-
-See [design/plan.md](design/plan.md) for the full wave schedule and dependency details.
 
 ## Supported Platforms
 

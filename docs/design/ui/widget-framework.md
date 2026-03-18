@@ -7,22 +7,37 @@
 > [user-stories/ui-2d/](../../user-stories/ui-2d/). The table below traces design elements to those
 > definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-10.1.1 | R-10.1.1 | US-10.1.1, US-10.1.2, US-10.1.3 | Declarative retained widget tree with minimal diff updates |
-| F-10.1.2 | R-10.1.2 | US-10.1.1 | Binary UI asset format with templates and slots |
-| F-10.1.3 | R-10.1.3 | US-10.1.4, US-10.1.5 | Widget pooling and recycling for virtualized lists |
-| F-10.1.4 | R-10.1.4 | US-10.1.6, US-10.1.8 | Flexbox and CSS grid layout algorithms |
-| F-10.1.5 | R-10.1.5 | US-10.1.7, US-10.1.8 | Anchor and constraint-based layout |
-| F-10.1.6 | R-10.1.6 | US-10.1.9, US-10.1.10 | Cascading styles with runtime theme swapping |
-| F-10.1.7 | R-10.1.7 | US-10.1.11, US-10.1.12 | Reactive one-way, two-way, and computed data binding |
-| F-10.1.8 | R-10.1.8 | US-10.1.13, US-10.1.14 | Focus traversal, tab order, directional nav, focus trapping |
-| F-10.1.9 | R-10.1.9 | US-10.1.15, US-10.1.16 | Localization hooks with RTL mirroring |
-| F-10.1.10 | R-10.1.10 | US-10.1.17 | World-space 3D UI panels with ray-cast input |
-| F-10.1.11 | R-10.1.11 | US-10.1.18, US-10.1.19 | VR input modes: laser, touch, gaze, hand tracking |
-| F-10.1.12 | R-10.1.12 | US-10.1.2, US-10.1.3 | O(n) keyed reconciliation tree diffing |
-| F-10.1.13 | R-10.1.13 | US-10.1.20, US-10.1.21 | Widget property animations with easing and interruption |
-| F-10.1.14 | R-10.1.14 | US-10.1.22, US-10.1.23 | Audio feedback per widget interaction |
+| Feature   | Requirement | User Stories                    |
+|-----------|-------------|---------------------------------|
+| F-10.1.1  | R-10.1.1    | US-10.1.1, US-10.1.2, US-10.1.3 |
+| F-10.1.2  | R-10.1.2    | US-10.1.1                       |
+| F-10.1.3  | R-10.1.3    | US-10.1.4, US-10.1.5            |
+| F-10.1.4  | R-10.1.4    | US-10.1.6, US-10.1.8            |
+| F-10.1.5  | R-10.1.5    | US-10.1.7, US-10.1.8            |
+| F-10.1.6  | R-10.1.6    | US-10.1.9, US-10.1.10           |
+| F-10.1.7  | R-10.1.7    | US-10.1.11, US-10.1.12          |
+| F-10.1.8  | R-10.1.8    | US-10.1.13, US-10.1.14          |
+| F-10.1.9  | R-10.1.9    | US-10.1.15, US-10.1.16          |
+| F-10.1.10 | R-10.1.10   | US-10.1.17                      |
+| F-10.1.11 | R-10.1.11   | US-10.1.18, US-10.1.19          |
+| F-10.1.12 | R-10.1.12   | US-10.1.2, US-10.1.3            |
+| F-10.1.13 | R-10.1.13   | US-10.1.20, US-10.1.21          |
+| F-10.1.14 | R-10.1.14   | US-10.1.22, US-10.1.23          |
+
+1. **F-10.1.1** — Declarative retained widget tree with minimal diff updates
+2. **F-10.1.2** — Binary UI asset format with templates and slots
+3. **F-10.1.3** — Widget pooling and recycling for virtualized lists
+4. **F-10.1.4** — Flexbox and CSS grid layout algorithms
+5. **F-10.1.5** — Anchor and constraint-based layout
+6. **F-10.1.6** — Cascading styles with runtime theme swapping
+7. **F-10.1.7** — Reactive one-way, two-way, and computed data binding
+8. **F-10.1.8** — Focus traversal, tab order, directional nav, focus trapping
+9. **F-10.1.9** — Localization hooks with RTL mirroring
+10. **F-10.1.10** — World-space 3D UI panels with ray-cast input
+11. **F-10.1.11** — VR input modes: laser, touch, gaze, hand tracking
+12. **F-10.1.12** — O(n) keyed reconciliation tree diffing
+13. **F-10.1.13** — Widget property animations with easing and interruption
+14. **F-10.1.14** — Audio feedback per widget interaction
 
 ### Cross-Cutting Dependencies
 
@@ -2531,64 +2546,129 @@ positioning avoids reliance on platform-specific subpixel layout (RGB vs BGR).
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_tree_diff_insert` | R-10.1.1 | Add a widget to declared tree, verify Insert patch emitted |
-| `test_tree_diff_remove` | R-10.1.1 | Remove a widget from declared tree, verify Remove patch emitted |
-| `test_tree_diff_update` | R-10.1.1 | Change a property, verify UpdateProperties patch with only changed fields |
-| `test_tree_diff_reorder_keyed` | R-10.1.12 | Reorder keyed list, verify Reorder patches without Remove/Insert |
-| `test_tree_diff_unchanged_skip` | R-10.1.12 | 500-widget tree with 0 changes, verify zero patches emitted |
-| `test_pool_acquire_release` | R-10.1.3 | Acquire widget, release it, acquire again, verify same entity reused |
-| `test_pool_budget_enforced` | R-10.1.3 | Exhaust budget, verify acquire returns None |
-| `test_pool_zero_alloc_scroll` | R-10.1.3 | Scroll 1000-item list for 10s, assert zero allocations after initial fill |
-| `test_flex_row_gap` | R-10.1.4 | Flex row with 3 children and gap=10, verify positions |
-| `test_flex_wrap` | R-10.1.4 | Flex row with wrap, verify children wrap to next line |
-| `test_flex_justify_space_between` | R-10.1.4 | 3 items in flex row, verify space-between spacing |
-| `test_grid_2x3` | R-10.1.4 | 2-column 3-row grid, verify all cell positions and sizes |
-| `test_grid_minmax_track` | R-10.1.4 | Grid with MinMax track, verify clamping |
-| `test_anchor_bottom_right` | R-10.1.5 | Anchor to bottom-right at 3 resolutions, verify constant offset |
-| `test_anchor_percentage` | R-10.1.5 | Anchor with percentage offset, verify proportional positioning |
-| `test_constraint_equal_widths` | R-10.1.5 | Two widgets with equal-width constraint, verify both match |
-| `test_constraint_circular_detect` | R-10.1.5 | Circular constraint, verify error returned |
-| `test_style_cascade_specificity` | R-10.1.6 | Type, class, ID, state, inline rules all present, verify cascade order |
-| `test_style_theme_swap` | R-10.1.6 | Swap theme, verify all widgets reflect new theme within one frame |
-| `test_style_state_selector` | R-10.1.6 | Hover a button, verify hovered style applied |
-| `test_style_cache_hit` | R-10.1.6 | Two buttons with same classes, verify cache provides same result |
-| `test_binding_one_way` | R-10.1.7 | Change source component, verify widget property updates |
-| `test_binding_two_way` | R-10.1.7 | Change widget value, verify source component updates |
-| `test_binding_computed` | R-10.1.7 | Two source values, computed binding, verify derived value |
-| `test_binding_same_frame` | R-10.1.7 | Change source, verify widget updated in same frame |
-| `test_focus_tab_order` | R-10.1.8 | 5 focusable widgets, tab through, verify order matches tab_index |
-| `test_focus_directional` | R-10.1.8 | 3x3 grid, D-pad navigation, verify spatial movement |
-| `test_focus_trap_modal` | R-10.1.8 | Open modal, tab, verify focus stays within modal |
-| `test_focus_stack_push_pop` | R-10.1.8 | Push modal group, pop it, verify focus restores |
-| `test_locale_switch_text` | R-10.1.9 | Switch locale, verify text updates from string table |
-| `test_locale_rtl_mirror` | R-10.1.9 | Switch to RTL locale, verify layout direction mirrors |
-| `test_animation_linear` | R-10.1.13 | Linear animation 0 to 1 over 1s, verify value at 0.5s |
-| `test_animation_ease_in_out` | R-10.1.13 | Ease-in-out curve, verify correct interpolation |
-| `test_animation_interrupt` | R-10.1.13 | Interrupt mid-flight, verify smooth blend to new target |
-| `test_animation_loop` | R-10.1.13 | Loop animation, verify it repeats after duration |
-| `test_animation_staggered` | R-10.1.13 | 5-item stagger, verify each starts with correct delay |
-| `test_audio_click` | R-10.1.14 | Click button, verify audio dispatched to UI mixer bus |
-| `test_audio_disabled` | R-10.1.14 | Disable UI sounds globally, click button, verify no audio |
-| `test_audio_per_slot_disable` | R-10.1.14 | Disable hover sounds only, hover, verify no audio; click, verify audio |
-| `test_event_hit_test` | R-10.1.1 | Nested widgets, hit test at child position, verify correct target |
-| `test_event_bubble` | R-10.1.1 | Click child, verify parent receives bubble event |
-| `test_event_capture_stop` | R-10.1.1 | Parent stops propagation in capture, verify child does not receive event |
-| `test_event_logic_graph_fire` | R-10.1.1 | Click button with logic graph handler, verify node fires |
+| Test                              | Req       |
+|-----------------------------------|-----------|
+| `test_tree_diff_insert`           | R-10.1.1  |
+| `test_tree_diff_remove`           | R-10.1.1  |
+| `test_tree_diff_update`           | R-10.1.1  |
+| `test_tree_diff_reorder_keyed`    | R-10.1.12 |
+| `test_tree_diff_unchanged_skip`   | R-10.1.12 |
+| `test_pool_acquire_release`       | R-10.1.3  |
+| `test_pool_budget_enforced`       | R-10.1.3  |
+| `test_pool_zero_alloc_scroll`     | R-10.1.3  |
+| `test_flex_row_gap`               | R-10.1.4  |
+| `test_flex_wrap`                  | R-10.1.4  |
+| `test_flex_justify_space_between` | R-10.1.4  |
+| `test_grid_2x3`                   | R-10.1.4  |
+| `test_grid_minmax_track`          | R-10.1.4  |
+| `test_anchor_bottom_right`        | R-10.1.5  |
+| `test_anchor_percentage`          | R-10.1.5  |
+| `test_constraint_equal_widths`    | R-10.1.5  |
+| `test_constraint_circular_detect` | R-10.1.5  |
+| `test_style_cascade_specificity`  | R-10.1.6  |
+| `test_style_theme_swap`           | R-10.1.6  |
+| `test_style_state_selector`       | R-10.1.6  |
+| `test_style_cache_hit`            | R-10.1.6  |
+| `test_binding_one_way`            | R-10.1.7  |
+| `test_binding_two_way`            | R-10.1.7  |
+| `test_binding_computed`           | R-10.1.7  |
+| `test_binding_same_frame`         | R-10.1.7  |
+| `test_focus_tab_order`            | R-10.1.8  |
+| `test_focus_directional`          | R-10.1.8  |
+| `test_focus_trap_modal`           | R-10.1.8  |
+| `test_focus_stack_push_pop`       | R-10.1.8  |
+| `test_locale_switch_text`         | R-10.1.9  |
+| `test_locale_rtl_mirror`          | R-10.1.9  |
+| `test_animation_linear`           | R-10.1.13 |
+| `test_animation_ease_in_out`      | R-10.1.13 |
+| `test_animation_interrupt`        | R-10.1.13 |
+| `test_animation_loop`             | R-10.1.13 |
+| `test_animation_staggered`        | R-10.1.13 |
+| `test_audio_click`                | R-10.1.14 |
+| `test_audio_disabled`             | R-10.1.14 |
+| `test_audio_per_slot_disable`     | R-10.1.14 |
+| `test_event_hit_test`             | R-10.1.1  |
+| `test_event_bubble`               | R-10.1.1  |
+| `test_event_capture_stop`         | R-10.1.1  |
+| `test_event_logic_graph_fire`     | R-10.1.1  |
+
+1. **`test_tree_diff_insert`** — Add a widget to declared tree, verify Insert patch emitted
+2. **`test_tree_diff_remove`** — Remove a widget from declared tree, verify Remove patch emitted
+3. **`test_tree_diff_update`** — Change a property, verify UpdateProperties patch with only changed
+   fields
+4. **`test_tree_diff_reorder_keyed`** — Reorder keyed list, verify Reorder patches without
+   Remove/Insert
+5. **`test_tree_diff_unchanged_skip`** — 500-widget tree with 0 changes, verify zero patches emitted
+6. **`test_pool_acquire_release`** — Acquire widget, release it, acquire again, verify same entity
+   reused
+7. **`test_pool_budget_enforced`** — Exhaust budget, verify acquire returns None
+8. **`test_pool_zero_alloc_scroll`** — Scroll 1000-item list for 10s, assert zero allocations after
+   initial fill
+9. **`test_flex_row_gap`** — Flex row with 3 children and gap=10, verify positions
+10. **`test_flex_wrap`** — Flex row with wrap, verify children wrap to next line
+11. **`test_flex_justify_space_between`** — 3 items in flex row, verify space-between spacing
+12. **`test_grid_2x3`** — 2-column 3-row grid, verify all cell positions and sizes
+13. **`test_grid_minmax_track`** — Grid with MinMax track, verify clamping
+14. **`test_anchor_bottom_right`** — Anchor to bottom-right at 3 resolutions, verify constant offset
+15. **`test_anchor_percentage`** — Anchor with percentage offset, verify proportional positioning
+16. **`test_constraint_equal_widths`** — Two widgets with equal-width constraint, verify both match
+17. **`test_constraint_circular_detect`** — Circular constraint, verify error returned
+18. **`test_style_cascade_specificity`** — Type, class, ID, state, inline rules all present, verify
+    cascade order
+19. **`test_style_theme_swap`** — Swap theme, verify all widgets reflect new theme within one frame
+20. **`test_style_state_selector`** — Hover a button, verify hovered style applied
+21. **`test_style_cache_hit`** — Two buttons with same classes, verify cache provides same result
+22. **`test_binding_one_way`** — Change source component, verify widget property updates
+23. **`test_binding_two_way`** — Change widget value, verify source component updates
+24. **`test_binding_computed`** — Two source values, computed binding, verify derived value
+25. **`test_binding_same_frame`** — Change source, verify widget updated in same frame
+26. **`test_focus_tab_order`** — 5 focusable widgets, tab through, verify order matches tab_index
+27. **`test_focus_directional`** — 3x3 grid, D-pad navigation, verify spatial movement
+28. **`test_focus_trap_modal`** — Open modal, tab, verify focus stays within modal
+29. **`test_focus_stack_push_pop`** — Push modal group, pop it, verify focus restores
+30. **`test_locale_switch_text`** — Switch locale, verify text updates from string table
+31. **`test_locale_rtl_mirror`** — Switch to RTL locale, verify layout direction mirrors
+32. **`test_animation_linear`** — Linear animation 0 to 1 over 1s, verify value at 0.5s
+33. **`test_animation_ease_in_out`** — Ease-in-out curve, verify correct interpolation
+34. **`test_animation_interrupt`** — Interrupt mid-flight, verify smooth blend to new target
+35. **`test_animation_loop`** — Loop animation, verify it repeats after duration
+36. **`test_animation_staggered`** — 5-item stagger, verify each starts with correct delay
+37. **`test_audio_click`** — Click button, verify audio dispatched to UI mixer bus
+38. **`test_audio_disabled`** — Disable UI sounds globally, click button, verify no audio
+39. **`test_audio_per_slot_disable`** — Disable hover sounds only, hover, verify no audio; click,
+    verify audio
+40. **`test_event_hit_test`** — Nested widgets, hit test at child position, verify correct target
+41. **`test_event_bubble`** — Click child, verify parent receives bubble event
+42. **`test_event_capture_stop`** — Parent stops propagation in capture, verify child does not
+    receive event
+43. **`test_event_logic_graph_fire`** — Click button with logic graph handler, verify node fires
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_asset_round_trip` | R-10.1.2 | Save UI asset, load it, verify tree matches original |
-| `test_template_slot_injection` | R-10.1.2 | Instantiate template with slot content, verify children in correct positions |
-| `test_full_hud_layout` | R-10.1.4, R-10.1.5 | Load full HUD asset (health, mana, minimap, action bar), verify layout at 1080p and 4K |
-| `test_world_space_panel_input` | R-10.1.10 | Render world-space panel, ray-cast click on button, verify handler fires |
-| `test_vr_laser_input` | R-10.1.11 | Simulate VR laser pointer, verify button activation |
-| `test_vr_gaze_dwell` | R-10.1.11 | Simulate gaze on button for dwell duration, verify activation |
-| `test_full_pipeline_500_widgets` | R-10.1.1 | Load 500-widget tree, change 10% of bindings, verify full pipeline completes under 2ms |
-| `test_multi_theme_concurrent` | R-10.1.6 | Two canvases with different themes, verify independent style resolution |
+| Test                             | Req                |
+|----------------------------------|--------------------|
+| `test_asset_round_trip`          | R-10.1.2           |
+| `test_template_slot_injection`   | R-10.1.2           |
+| `test_full_hud_layout`           | R-10.1.4, R-10.1.5 |
+| `test_world_space_panel_input`   | R-10.1.10          |
+| `test_vr_laser_input`            | R-10.1.11          |
+| `test_vr_gaze_dwell`             | R-10.1.11          |
+| `test_full_pipeline_500_widgets` | R-10.1.1           |
+| `test_multi_theme_concurrent`    | R-10.1.6           |
+
+1. **`test_asset_round_trip`** — Save UI asset, load it, verify tree matches original
+2. **`test_template_slot_injection`** — Instantiate template with slot content, verify children in
+   correct positions
+3. **`test_full_hud_layout`** — Load full HUD asset (health, mana, minimap, action bar), verify
+   layout at 1080p and 4K
+4. **`test_world_space_panel_input`** — Render world-space panel, ray-cast click on button, verify
+   handler fires
+5. **`test_vr_laser_input`** — Simulate VR laser pointer, verify button activation
+6. **`test_vr_gaze_dwell`** — Simulate gaze on button for dwell duration, verify activation
+7. **`test_full_pipeline_500_widgets`** — Load 500-widget tree, change 10% of bindings, verify full
+   pipeline completes under 2ms
+8. **`test_multi_theme_concurrent`** — Two canvases with different themes, verify independent style
+   resolution
 
 ### Benchmarks
 
@@ -2607,11 +2687,18 @@ positioning avoids reliance on platform-specific subpixel layout (RGB vs BGR).
 
 ### Mobile, VR, and Console Platforms
 
-| Platform | Input Mode | Layout Adaptation | Notes |
-|----------|-----------|------------------|-------|
-| iOS/Android | Touch (primary), gamepad (optional) | Responsive scaling, larger touch targets (44pt min) | System font fallback. Safe area insets. |
-| VR | Gaze + controller ray | World-space widget panels | Focus follows gaze ray. Haptic feedback on selection. |
-| Consoles | Gamepad (primary) | Focus-based navigation, D-pad traversal | No mouse cursor. Large text for TV viewing distance. |
+| Platform    | Input Mode                          |
+|-------------|-------------------------------------|
+| iOS/Android | Touch (primary), gamepad (optional) |
+| VR          | Gaze + controller ray               |
+| Consoles    | Gamepad (primary)                   |
+
+1. **iOS/Android** — Responsive scaling, larger touch targets (44pt min)
+   - **Notes:** System font fallback. Safe area insets.
+2. **VR** — World-space widget panels
+   - **Notes:** Focus follows gaze ray. Haptic feedback on selection.
+3. **Consoles** — Focus-based navigation, D-pad traversal
+   - **Notes:** No mouse cursor. Large text for TV viewing distance.
 
 Widget property animations use the shared `Curve<T>` type (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)) for easing and interpolation.

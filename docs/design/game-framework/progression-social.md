@@ -10,57 +10,103 @@
 
 ### Progression
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.12.1a | R-13.12.1a | Data-driven race definitions with stat modifiers and cosmetic constraints |
-| F-13.12.1b | R-13.12.1b | Data-driven class definitions with abilities, resources, equipment restrictions |
-| F-13.12.1c | R-13.12.1c | Multi-class switching and hybrid classes with prerequisites |
-| F-13.12.1d | R-13.12.1d | Prestige/rebirth system with accumulating permanent bonuses |
-| F-13.12.2a | R-13.12.2a | Talent trees as DAGs with typed nodes, prerequisites, tier gating |
-| F-13.12.2b | R-13.12.2b | Talent point allocation, prerequisite validation, respec for currency |
-| F-13.12.2c | R-13.12.2c | Talent tree visual editor with graph asset authoring |
-| F-13.12.3a | R-13.12.3a | Profession data model with skill levels, XP curves, recipe thresholds |
-| F-13.12.3b | R-13.12.3b | Gathering profession integration with skill-scaled yields |
-| F-13.12.3c | R-13.12.3c | Crafting profession integration with level-gated recipes |
-| F-13.12.4 | R-13.12.4 | Crafting station gating by type, tier, and location |
-| F-13.12.5 | R-13.12.5 | Faction reputation with tiered standing and asymmetric relationships |
-| F-13.12.6a | R-13.12.6a | Achievement definition and observer-driven tracking |
-| F-13.12.6b | R-13.12.6b | Achievement rewards, notifications, and point accumulation |
-| F-13.12.6c | R-13.12.6c | Platform achievement sync (Steam, PlayStation, Xbox) |
-| F-13.12.7 | R-13.12.7 | Item enhancement with success/failure probability |
-| F-13.12.8a | R-13.12.8a | Item rarity tier system with bounded stat ranges |
-| F-13.12.8b | R-13.12.8b | Affix system with rarity-scaled affix count |
-| F-13.12.8c | R-13.12.8c | Stat re-rolling for currency |
-| F-13.12.9 | R-13.12.9 | Equipment set bonuses at piece-count thresholds |
-| F-13.12.10 | R-13.12.10 | Item durability and repair |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.12.1a | R-13.12.1a  |
+| F-13.12.1b | R-13.12.1b  |
+| F-13.12.1c | R-13.12.1c  |
+| F-13.12.1d | R-13.12.1d  |
+| F-13.12.2a | R-13.12.2a  |
+| F-13.12.2b | R-13.12.2b  |
+| F-13.12.2c | R-13.12.2c  |
+| F-13.12.3a | R-13.12.3a  |
+| F-13.12.3b | R-13.12.3b  |
+| F-13.12.3c | R-13.12.3c  |
+| F-13.12.4  | R-13.12.4   |
+| F-13.12.5  | R-13.12.5   |
+| F-13.12.6a | R-13.12.6a  |
+| F-13.12.6b | R-13.12.6b  |
+| F-13.12.6c | R-13.12.6c  |
+| F-13.12.7  | R-13.12.7   |
+| F-13.12.8a | R-13.12.8a  |
+| F-13.12.8b | R-13.12.8b  |
+| F-13.12.8c | R-13.12.8c  |
+| F-13.12.9  | R-13.12.9   |
+| F-13.12.10 | R-13.12.10  |
+
+1. **F-13.12.1a** — Data-driven race definitions with stat modifiers and cosmetic constraints
+2. **F-13.12.1b** — Data-driven class definitions with abilities, resources, equipment restrictions
+3. **F-13.12.1c** — Multi-class switching and hybrid classes with prerequisites
+4. **F-13.12.1d** — Prestige/rebirth system with accumulating permanent bonuses
+5. **F-13.12.2a** — Talent trees as DAGs with typed nodes, prerequisites, tier gating
+6. **F-13.12.2b** — Talent point allocation, prerequisite validation, respec for currency
+7. **F-13.12.2c** — Talent tree visual editor with graph asset authoring
+8. **F-13.12.3a** — Profession data model with skill levels, XP curves, recipe thresholds
+9. **F-13.12.3b** — Gathering profession integration with skill-scaled yields
+10. **F-13.12.3c** — Crafting profession integration with level-gated recipes
+11. **F-13.12.4** — Crafting station gating by type, tier, and location
+12. **F-13.12.5** — Faction reputation with tiered standing and asymmetric relationships
+13. **F-13.12.6a** — Achievement definition and observer-driven tracking
+14. **F-13.12.6b** — Achievement rewards, notifications, and point accumulation
+15. **F-13.12.6c** — Platform achievement sync (Steam, PlayStation, Xbox)
+16. **F-13.12.7** — Item enhancement with success/failure probability
+17. **F-13.12.8a** — Item rarity tier system with bounded stat ranges
+18. **F-13.12.8b** — Affix system with rarity-scaled affix count
+19. **F-13.12.8c** — Stat re-rolling for currency
+20. **F-13.12.9** — Equipment set bonuses at piece-count thresholds
+21. **F-13.12.10** — Item durability and repair
 
 ### Social
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.13.1a | R-13.13.1a | Guild CRUD and membership lifecycle |
-| F-13.13.1b | R-13.13.1b | Guild rank and permission system |
-| F-13.13.1c | R-13.13.1c | Guild leveling and data-driven perks |
-| F-13.13.1d | R-13.13.1d | Guild roster UI with sorting, filtering, context actions |
-| F-13.13.2 | R-13.13.2 | Guild bank with permissioned tabs and audit logs |
-| F-13.13.3a | R-13.13.3a | Territory claim via guild hall or control point |
-| F-13.13.3b | R-13.13.3b | Guild war declaration and scoped PvP |
-| F-13.13.3c | R-13.13.3c | Siege mechanics within scheduled war windows |
-| F-13.13.3d | R-13.13.3d | Guild leaderboards with seasonal resets |
-| F-13.13.4 | R-13.13.4 | Friends list with platform integration |
-| F-13.13.5a | R-13.13.5a | Asynchronous player mail |
-| F-13.13.5b | R-13.13.5b | Mail attachments and COD |
-| F-13.13.5c | R-13.13.5c | Automated system mail |
-| F-13.13.6a | R-13.13.6a | Multi-channel chat infrastructure |
-| F-13.13.6b | R-13.13.6b | Item linking, profanity/spam filtering |
-| F-13.13.6c | R-13.13.6c | Custom player-created channels |
-| F-13.13.7 | R-13.13.7 | Emote and social action system |
-| F-13.13.8 | R-13.13.8 | Player character inspection |
-| F-13.13.9 | R-13.13.9 | Dungeon and group finder with role queuing |
-| F-13.13.10a | R-13.13.10a | Arena PvP (2v2, 3v3, 5v5) |
-| F-13.13.10b | R-13.13.10b | Objective-based battlegrounds |
-| F-13.13.10c | R-13.13.10c | PvP rating (Elo/Glicko) and seasonal rewards |
-| F-13.13.10d | R-13.13.10d | PvP stat normalization |
+| Feature     | Requirement |
+|-------------|-------------|
+| F-13.13.1a  | R-13.13.1a  |
+| F-13.13.1b  | R-13.13.1b  |
+| F-13.13.1c  | R-13.13.1c  |
+| F-13.13.1d  | R-13.13.1d  |
+| F-13.13.2   | R-13.13.2   |
+| F-13.13.3a  | R-13.13.3a  |
+| F-13.13.3b  | R-13.13.3b  |
+| F-13.13.3c  | R-13.13.3c  |
+| F-13.13.3d  | R-13.13.3d  |
+| F-13.13.4   | R-13.13.4   |
+| F-13.13.5a  | R-13.13.5a  |
+| F-13.13.5b  | R-13.13.5b  |
+| F-13.13.5c  | R-13.13.5c  |
+| F-13.13.6a  | R-13.13.6a  |
+| F-13.13.6b  | R-13.13.6b  |
+| F-13.13.6c  | R-13.13.6c  |
+| F-13.13.7   | R-13.13.7   |
+| F-13.13.8   | R-13.13.8   |
+| F-13.13.9   | R-13.13.9   |
+| F-13.13.10a | R-13.13.10a |
+| F-13.13.10b | R-13.13.10b |
+| F-13.13.10c | R-13.13.10c |
+| F-13.13.10d | R-13.13.10d |
+
+1. **F-13.13.1a** — Guild CRUD and membership lifecycle
+2. **F-13.13.1b** — Guild rank and permission system
+3. **F-13.13.1c** — Guild leveling and data-driven perks
+4. **F-13.13.1d** — Guild roster UI with sorting, filtering, context actions
+5. **F-13.13.2** — Guild bank with permissioned tabs and audit logs
+6. **F-13.13.3a** — Territory claim via guild hall or control point
+7. **F-13.13.3b** — Guild war declaration and scoped PvP
+8. **F-13.13.3c** — Siege mechanics within scheduled war windows
+9. **F-13.13.3d** — Guild leaderboards with seasonal resets
+10. **F-13.13.4** — Friends list with platform integration
+11. **F-13.13.5a** — Asynchronous player mail
+12. **F-13.13.5b** — Mail attachments and COD
+13. **F-13.13.5c** — Automated system mail
+14. **F-13.13.6a** — Multi-channel chat infrastructure
+15. **F-13.13.6b** — Item linking, profanity/spam filtering
+16. **F-13.13.6c** — Custom player-created channels
+17. **F-13.13.7** — Emote and social action system
+18. **F-13.13.8** — Player character inspection
+19. **F-13.13.9** — Dungeon and group finder with role queuing
+20. **F-13.13.10a** — Arena PvP (2v2, 3v3, 5v5)
+21. **F-13.13.10b** — Objective-based battlegrounds
+22. **F-13.13.10c** — PvP rating (Elo/Glicko) and seasonal rewards
+23. **F-13.13.10d** — PvP stat normalization
 
 ### Non-Functional
 
@@ -1469,94 +1515,180 @@ uses the cross-shard services layer (F-8.7.7).
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_xp_level_up` | R-13.12.1b | Award XP past threshold; verify level increments and stats grow. |
-| `test_talent_prerequisite_reject` | R-13.12.2a | Attempt allocation without prerequisite; verify rejection. |
-| `test_talent_tier_gate` | R-13.12.2a | Attempt tier-2 allocation without enough points; verify rejection. |
-| `test_talent_allocation_success` | R-13.12.2b | Allocate valid node; verify TalentState updates and effect applies. |
-| `test_talent_respec` | R-13.12.2b | Respec; verify all points refunded, effects removed, currency deducted. |
-| `test_talent_validation_1ms` | R-13.12.NF1 | 100-node tree, sequential allocation; verify p99 under 1 ms. |
-| `test_prestige_reset` | R-13.12.1d | Prestige at max level; verify level resets to 1, bonuses accumulate. |
-| `test_prestige_cosmetics_preserved` | R-13.12.1d | Prestige; verify cosmetic rewards retained. |
-| `test_profession_recipe_unlock` | R-13.12.3a | Level profession; verify recipe unlocks at threshold. |
-| `test_profession_slot_limit` | R-13.12.3a | Exceed max profession slots; verify rejection. |
-| `test_gathering_yield_scales` | R-13.12.3b | Gather at two skill levels; verify higher skill yields more. |
-| `test_crafting_level_gate` | R-13.12.3c | Attempt recipe above level; verify rejection. |
-| `test_station_type_gates` | R-13.12.4 | Access forge recipes at alchemy table; verify absent. |
-| `test_reputation_gain` | R-13.12.5 | Complete quest; verify faction rep increases. |
-| `test_reputation_asymmetric` | R-13.12.5 | Gain rep with faction A; verify rival B rep decreases. |
-| `test_reputation_tier_gating` | R-13.12.5 | Reach honored; verify vendor unlocks. |
-| `test_achievement_incremental` | R-13.12.6a | Kill 50/100 enemies; verify progress is 50. Kill 50 more; verify complete. |
-| `test_achievement_observer_budget` | R-13.12.NF2 | 1,000 achievements, 100 events/frame; verify under 0.1 ms. |
-| `test_achievement_platform_sync` | R-13.12.6c | Complete achievement; verify platform sync called. |
-| `test_enhancement_success` | R-13.12.7 | Enhance +0 to +1 at 100% rate; verify stat bonus. |
-| `test_enhancement_failure` | R-13.12.7 | Enhance at 10% rate; on failure verify consequence. |
-| `test_protection_item` | R-13.12.7 | Use protection item; verify item not destroyed on failure. |
-| `test_rarity_stat_ranges` | R-13.12.8a | Generate 1,000 items per tier; verify stats within ranges. |
-| `test_affix_count_by_rarity` | R-13.12.8b | Generate items; verify affix counts match per-rarity config. |
-| `test_reroll_preserves_base` | R-13.12.8c | Re-roll; verify base item and rarity preserved. |
-| `test_set_bonus_thresholds` | R-13.12.9 | Equip 2/4/6 pieces; verify bonuses activate at thresholds. |
-| `test_set_bonus_deactivate` | R-13.12.9 | Unequip below threshold; verify bonus removed. |
-| `test_durability_drain` | R-13.12.10 | Attack; verify weapon durability decreases. |
-| `test_durability_zero_nonfunctional` | R-13.12.10 | Reduce to 0%; verify weapon deals no damage. |
-| `test_repair_restores` | R-13.12.10 | Repair from 0% to 100%; verify full stat restoration. |
+| Test                                 | Req         |
+|--------------------------------------|-------------|
+| `test_xp_level_up`                   | R-13.12.1b  |
+| `test_talent_prerequisite_reject`    | R-13.12.2a  |
+| `test_talent_tier_gate`              | R-13.12.2a  |
+| `test_talent_allocation_success`     | R-13.12.2b  |
+| `test_talent_respec`                 | R-13.12.2b  |
+| `test_talent_validation_1ms`         | R-13.12.NF1 |
+| `test_prestige_reset`                | R-13.12.1d  |
+| `test_prestige_cosmetics_preserved`  | R-13.12.1d  |
+| `test_profession_recipe_unlock`      | R-13.12.3a  |
+| `test_profession_slot_limit`         | R-13.12.3a  |
+| `test_gathering_yield_scales`        | R-13.12.3b  |
+| `test_crafting_level_gate`           | R-13.12.3c  |
+| `test_station_type_gates`            | R-13.12.4   |
+| `test_reputation_gain`               | R-13.12.5   |
+| `test_reputation_asymmetric`         | R-13.12.5   |
+| `test_reputation_tier_gating`        | R-13.12.5   |
+| `test_achievement_incremental`       | R-13.12.6a  |
+| `test_achievement_observer_budget`   | R-13.12.NF2 |
+| `test_achievement_platform_sync`     | R-13.12.6c  |
+| `test_enhancement_success`           | R-13.12.7   |
+| `test_enhancement_failure`           | R-13.12.7   |
+| `test_protection_item`               | R-13.12.7   |
+| `test_rarity_stat_ranges`            | R-13.12.8a  |
+| `test_affix_count_by_rarity`         | R-13.12.8b  |
+| `test_reroll_preserves_base`         | R-13.12.8c  |
+| `test_set_bonus_thresholds`          | R-13.12.9   |
+| `test_set_bonus_deactivate`          | R-13.12.9   |
+| `test_durability_drain`              | R-13.12.10  |
+| `test_durability_zero_nonfunctional` | R-13.12.10  |
+| `test_repair_restores`               | R-13.12.10  |
+
+1. **`test_xp_level_up`** — Award XP past threshold; verify level increments and stats grow.
+2. **`test_talent_prerequisite_reject`** — Attempt allocation without prerequisite; verify
+   rejection.
+3. **`test_talent_tier_gate`** — Attempt tier-2 allocation without enough points; verify rejection.
+4. **`test_talent_allocation_success`** — Allocate valid node; verify TalentState updates and effect
+   applies.
+5. **`test_talent_respec`** — Respec; verify all points refunded, effects removed, currency
+   deducted.
+6. **`test_talent_validation_1ms`** — 100-node tree, sequential allocation; verify p99 under 1 ms.
+7. **`test_prestige_reset`** — Prestige at max level; verify level resets to 1, bonuses accumulate.
+8. **`test_prestige_cosmetics_preserved`** — Prestige; verify cosmetic rewards retained.
+9. **`test_profession_recipe_unlock`** — Level profession; verify recipe unlocks at threshold.
+10. **`test_profession_slot_limit`** — Exceed max profession slots; verify rejection.
+11. **`test_gathering_yield_scales`** — Gather at two skill levels; verify higher skill yields more.
+12. **`test_crafting_level_gate`** — Attempt recipe above level; verify rejection.
+13. **`test_station_type_gates`** — Access forge recipes at alchemy table; verify absent.
+14. **`test_reputation_gain`** — Complete quest; verify faction rep increases.
+15. **`test_reputation_asymmetric`** — Gain rep with faction A; verify rival B rep decreases.
+16. **`test_reputation_tier_gating`** — Reach honored; verify vendor unlocks.
+17. **`test_achievement_incremental`** — Kill 50/100 enemies; verify progress is 50. Kill 50 more;
+    verify complete.
+18. **`test_achievement_observer_budget`** — 1,000 achievements, 100 events/frame; verify under 0.1
+    ms.
+19. **`test_achievement_platform_sync`** — Complete achievement; verify platform sync called.
+20. **`test_enhancement_success`** — Enhance +0 to +1 at 100% rate; verify stat bonus.
+21. **`test_enhancement_failure`** — Enhance at 10% rate; on failure verify consequence.
+22. **`test_protection_item`** — Use protection item; verify item not destroyed on failure.
+23. **`test_rarity_stat_ranges`** — Generate 1,000 items per tier; verify stats within ranges.
+24. **`test_affix_count_by_rarity`** — Generate items; verify affix counts match per-rarity config.
+25. **`test_reroll_preserves_base`** — Re-roll; verify base item and rarity preserved.
+26. **`test_set_bonus_thresholds`** — Equip 2/4/6 pieces; verify bonuses activate at thresholds.
+27. **`test_set_bonus_deactivate`** — Unequip below threshold; verify bonus removed.
+28. **`test_durability_drain`** — Attack; verify weapon durability decreases.
+29. **`test_durability_zero_nonfunctional`** — Reduce to 0%; verify weapon deals no damage.
+30. **`test_repair_restores`** — Repair from 0% to 100%; verify full stat restoration.
 
 ### Unit Tests -- Social
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_guild_create` | R-13.13.1a | Create guild; verify entity with Guild component. |
-| `test_guild_invite_accept` | R-13.13.1a | Invite player; accept; verify GuildMember added. |
-| `test_guild_kick` | R-13.13.1a | Kick member; verify GuildMember removed. |
-| `test_guild_dissolve_cooldown` | R-13.13.1a | Dissolve; verify cooldown enforced. |
-| `test_guild_permission_check` | R-13.13.1b | Attempt kick without permission; verify rejection. |
-| `test_guild_rank_assignment` | R-13.13.1b | Assign rank; verify permissions update. |
-| `test_guild_xp_accumulation` | R-13.13.1c | Complete quest; verify guild XP increases. |
-| `test_guild_perk_unlock` | R-13.13.1c | Reach level threshold; verify perk activates. |
-| `test_guild_roster_1000` | R-13.13.NF1 | 1,000 members; verify roster renders in 1 frame. |
-| `test_guild_bank_permission` | R-13.13.2 | Withdraw from restricted tab; verify rejection. |
-| `test_guild_bank_daily_limit` | R-13.13.2 | Exhaust daily limit; verify next withdrawal blocked. |
-| `test_guild_bank_audit_log` | R-13.13.2 | Perform 100 transactions; verify all logged. |
-| `test_territory_claim` | R-13.13.3a | Claim territory; verify ownership set. |
-| `test_territory_exclusive` | R-13.13.3a | Two guilds claim same territory; verify only one succeeds. |
-| `test_war_declaration` | R-13.13.3b | Declare war; verify PvP enabled between warring guilds. |
-| `test_war_nonwarring_safe` | R-13.13.3b | Non-warring player; verify PvP blocked. |
-| `test_siege_window` | R-13.13.3c | Attack outside window; verify blocked. |
-| `test_leaderboard_update` | R-13.13.3d | Win war; verify leaderboard points update. |
-| `test_friend_add_remove` | R-13.13.4 | Add friend; verify both lists update. Block; verify hidden. |
-| `test_friend_status_latency` | R-13.13.NF2 | Toggle status; verify update within 2 seconds. |
-| `test_mail_send_receive` | R-13.13.5a | Send text mail; verify recipient receives. |
-| `test_mail_attachment_escrow` | R-13.13.5b | Attach item; verify removed from sender inventory. |
-| `test_mail_cod` | R-13.13.5b | Send COD mail; verify payment required. |
-| `test_system_mail` | R-13.13.5c | Trigger auction completion; verify system mail arrives. |
-| `test_chat_rate_limit` | R-13.13.6a | Exceed rate; verify messages blocked. |
-| `test_chat_zone_transition` | R-13.13.6a | Change zones; verify chat history persists. |
-| `test_item_link_tooltip` | R-13.13.6b | Link item; verify tooltip shows correct stats. |
-| `test_profanity_filter` | R-13.13.6b | Send blacklisted term; verify filtered. |
-| `test_custom_channel_password` | R-13.13.6c | Create password channel; verify unauthorized join blocked. |
-| `test_emote_animation` | R-13.13.7 | Trigger /dance; verify looping animation plays. |
-| `test_paired_emote_sync` | R-13.13.7 | Initiate handshake; verify both characters sync. |
-| `test_inspection_privacy` | R-13.13.8 | Set friends-only; verify non-friend blocked. |
-| `test_group_finder_role` | R-13.13.9 | Queue as tank; verify group composed with required roles. |
-| `test_deserter_penalty` | R-13.13.9 | Leave instance; verify re-queue blocked. |
-| `test_arena_rating_update` | R-13.13.10a | Win arena; verify rating increases. |
-| `test_pvp_normalization` | R-13.13.10d | Enable normalization; verify stats match template. |
-| `test_seasonal_reset` | R-13.13.10c | Trigger reset; verify ratings reset and rewards distributed. |
-| `test_chat_throughput` | R-13.13.NF3 | 100 msg/s for 60 s; verify no drops, under 1 ms/batch. |
+| Test                           | Req         |
+|--------------------------------|-------------|
+| `test_guild_create`            | R-13.13.1a  |
+| `test_guild_invite_accept`     | R-13.13.1a  |
+| `test_guild_kick`              | R-13.13.1a  |
+| `test_guild_dissolve_cooldown` | R-13.13.1a  |
+| `test_guild_permission_check`  | R-13.13.1b  |
+| `test_guild_rank_assignment`   | R-13.13.1b  |
+| `test_guild_xp_accumulation`   | R-13.13.1c  |
+| `test_guild_perk_unlock`       | R-13.13.1c  |
+| `test_guild_roster_1000`       | R-13.13.NF1 |
+| `test_guild_bank_permission`   | R-13.13.2   |
+| `test_guild_bank_daily_limit`  | R-13.13.2   |
+| `test_guild_bank_audit_log`    | R-13.13.2   |
+| `test_territory_claim`         | R-13.13.3a  |
+| `test_territory_exclusive`     | R-13.13.3a  |
+| `test_war_declaration`         | R-13.13.3b  |
+| `test_war_nonwarring_safe`     | R-13.13.3b  |
+| `test_siege_window`            | R-13.13.3c  |
+| `test_leaderboard_update`      | R-13.13.3d  |
+| `test_friend_add_remove`       | R-13.13.4   |
+| `test_friend_status_latency`   | R-13.13.NF2 |
+| `test_mail_send_receive`       | R-13.13.5a  |
+| `test_mail_attachment_escrow`  | R-13.13.5b  |
+| `test_mail_cod`                | R-13.13.5b  |
+| `test_system_mail`             | R-13.13.5c  |
+| `test_chat_rate_limit`         | R-13.13.6a  |
+| `test_chat_zone_transition`    | R-13.13.6a  |
+| `test_item_link_tooltip`       | R-13.13.6b  |
+| `test_profanity_filter`        | R-13.13.6b  |
+| `test_custom_channel_password` | R-13.13.6c  |
+| `test_emote_animation`         | R-13.13.7   |
+| `test_paired_emote_sync`       | R-13.13.7   |
+| `test_inspection_privacy`      | R-13.13.8   |
+| `test_group_finder_role`       | R-13.13.9   |
+| `test_deserter_penalty`        | R-13.13.9   |
+| `test_arena_rating_update`     | R-13.13.10a |
+| `test_pvp_normalization`       | R-13.13.10d |
+| `test_seasonal_reset`          | R-13.13.10c |
+| `test_chat_throughput`         | R-13.13.NF3 |
+
+1. **`test_guild_create`** — Create guild; verify entity with Guild component.
+2. **`test_guild_invite_accept`** — Invite player; accept; verify GuildMember added.
+3. **`test_guild_kick`** — Kick member; verify GuildMember removed.
+4. **`test_guild_dissolve_cooldown`** — Dissolve; verify cooldown enforced.
+5. **`test_guild_permission_check`** — Attempt kick without permission; verify rejection.
+6. **`test_guild_rank_assignment`** — Assign rank; verify permissions update.
+7. **`test_guild_xp_accumulation`** — Complete quest; verify guild XP increases.
+8. **`test_guild_perk_unlock`** — Reach level threshold; verify perk activates.
+9. **`test_guild_roster_1000`** — 1,000 members; verify roster renders in 1 frame.
+10. **`test_guild_bank_permission`** — Withdraw from restricted tab; verify rejection.
+11. **`test_guild_bank_daily_limit`** — Exhaust daily limit; verify next withdrawal blocked.
+12. **`test_guild_bank_audit_log`** — Perform 100 transactions; verify all logged.
+13. **`test_territory_claim`** — Claim territory; verify ownership set.
+14. **`test_territory_exclusive`** — Two guilds claim same territory; verify only one succeeds.
+15. **`test_war_declaration`** — Declare war; verify PvP enabled between warring guilds.
+16. **`test_war_nonwarring_safe`** — Non-warring player; verify PvP blocked.
+17. **`test_siege_window`** — Attack outside window; verify blocked.
+18. **`test_leaderboard_update`** — Win war; verify leaderboard points update.
+19. **`test_friend_add_remove`** — Add friend; verify both lists update. Block; verify hidden.
+20. **`test_friend_status_latency`** — Toggle status; verify update within 2 seconds.
+21. **`test_mail_send_receive`** — Send text mail; verify recipient receives.
+22. **`test_mail_attachment_escrow`** — Attach item; verify removed from sender inventory.
+23. **`test_mail_cod`** — Send COD mail; verify payment required.
+24. **`test_system_mail`** — Trigger auction completion; verify system mail arrives.
+25. **`test_chat_rate_limit`** — Exceed rate; verify messages blocked.
+26. **`test_chat_zone_transition`** — Change zones; verify chat history persists.
+27. **`test_item_link_tooltip`** — Link item; verify tooltip shows correct stats.
+28. **`test_profanity_filter`** — Send blacklisted term; verify filtered.
+29. **`test_custom_channel_password`** — Create password channel; verify unauthorized join blocked.
+30. **`test_emote_animation`** — Trigger /dance; verify looping animation plays.
+31. **`test_paired_emote_sync`** — Initiate handshake; verify both characters sync.
+32. **`test_inspection_privacy`** — Set friends-only; verify non-friend blocked.
+33. **`test_group_finder_role`** — Queue as tank; verify group composed with required roles.
+34. **`test_deserter_penalty`** — Leave instance; verify re-queue blocked.
+35. **`test_arena_rating_update`** — Win arena; verify rating increases.
+36. **`test_pvp_normalization`** — Enable normalization; verify stats match template.
+37. **`test_seasonal_reset`** — Trigger reset; verify ratings reset and rewards distributed.
+38. **`test_chat_throughput`** — 100 msg/s for 60 s; verify no drops, under 1 ms/batch.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_level_journey` | R-13.12.1b | Level 1 to max; verify all ability unlocks and stat growth. |
-| `test_talent_editor_roundtrip` | R-13.12.2c | Author tree in editor; load at runtime; verify behavior matches. |
-| `test_profession_full_loop` | R-13.12.3a-c | Learn profession, gather, craft, level; verify full loop. |
-| `test_guild_full_lifecycle` | R-13.13.1a-d | Create, invite, level, war, siege, dissolve. |
-| `test_cross_shard_friends` | R-13.13.4 | Add friend on different shard; verify status visible. |
-| `test_cross_shard_group_finder` | R-13.13.9 | Queue from different shards; verify matched. |
-| `test_prestige_full_cycle` | R-13.12.1d | Level to max, prestige 3 times; verify bonuses accumulate. |
-| `test_set_bonus_with_enhancement` | R-13.12.9 | Enhanced set items; verify both set bonus and enhancement apply. |
+| Test                              | Req          |
+|-----------------------------------|--------------|
+| `test_full_level_journey`         | R-13.12.1b   |
+| `test_talent_editor_roundtrip`    | R-13.12.2c   |
+| `test_profession_full_loop`       | R-13.12.3a-c |
+| `test_guild_full_lifecycle`       | R-13.13.1a-d |
+| `test_cross_shard_friends`        | R-13.13.4    |
+| `test_cross_shard_group_finder`   | R-13.13.9    |
+| `test_prestige_full_cycle`        | R-13.12.1d   |
+| `test_set_bonus_with_enhancement` | R-13.12.9    |
+
+1. **`test_full_level_journey`** — Level 1 to max; verify all ability unlocks and stat growth.
+2. **`test_talent_editor_roundtrip`** — Author tree in editor; load at runtime; verify behavior
+   matches.
+3. **`test_profession_full_loop`** — Learn profession, gather, craft, level; verify full loop.
+4. **`test_guild_full_lifecycle`** — Create, invite, level, war, siege, dissolve.
+5. **`test_cross_shard_friends`** — Add friend on different shard; verify status visible.
+6. **`test_cross_shard_group_finder`** — Queue from different shards; verify matched.
+7. **`test_prestige_full_cycle`** — Level to max, prestige 3 times; verify bonuses accumulate.
+8. **`test_set_bonus_with_enhancement`** — Enhanced set items; verify both set bonus and enhancement
+   apply.
 
 ### Benchmarks
 

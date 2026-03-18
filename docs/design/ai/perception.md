@@ -9,29 +9,44 @@
 
 ### Core Senses (F-7.6.1--4 / R-7.6.1--4)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-7.6.1 | R-7.6.1 | Sight sense: vision cone (range, half-angle, falloff) + LOS raycast |
-| F-7.6.2 | R-7.6.2 | Hearing sense: spherical radius, distance attenuation, geometry occlusion |
-| F-7.6.3 | R-7.6.3 | Damage sense: instant event, bypasses range/LOS, direction + magnitude |
-| F-7.6.4 | R-7.6.4 | Faction awareness: affinity table, runtime modification, perception filters |
+| Feature | Requirement |
+|---------|-------------|
+| F-7.6.1 | R-7.6.1     |
+| F-7.6.2 | R-7.6.2     |
+| F-7.6.3 | R-7.6.3     |
+| F-7.6.4 | R-7.6.4     |
+
+1. **F-7.6.1** — Sight sense: vision cone (range, half-angle, falloff) + LOS raycast
+2. **F-7.6.2** — Hearing sense: spherical radius, distance attenuation, geometry occlusion
+3. **F-7.6.3** — Damage sense: instant event, bypasses range/LOS, direction + magnitude
+4. **F-7.6.4** — Faction awareness: affinity table, runtime modification, perception filters
 
 ### Stimulus Management (F-7.6.5--7 / R-7.6.5--7)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-7.6.5 | R-7.6.5 | Global stimulus registry with spatial queries, TTL expiration, platform caps |
-| F-7.6.6 | R-7.6.6 | Perception memory: confidence decay, per-archetype retention, last-known position |
-| F-7.6.7 | R-7.6.7 | Custom senses via trait, budget-based scheduler, priority deferral |
+| Feature | Requirement |
+|---------|-------------|
+| F-7.6.5 | R-7.6.5     |
+| F-7.6.6 | R-7.6.6     |
+| F-7.6.7 | R-7.6.7     |
+
+1. **F-7.6.5** — Global stimulus registry with spatial queries, TTL expiration, platform caps
+2. **F-7.6.6** — Perception memory: confidence decay, per-archetype retention, last-known position
+3. **F-7.6.7** — Custom senses via trait, budget-based scheduler, priority deferral
 
 ### Environmental Awareness (F-7.6.8--11 / R-7.6.8--11)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-7.6.8 | R-7.6.8 | Smell sense: scent grid, wind drift, trail following, rain dilution |
-| F-7.6.9 | R-7.6.9 | Environmental evidence: footprints, blood, broken vegetation, tracking inferences |
-| F-7.6.10 | R-7.6.10 | Investigation behavior: stimulus-type routing, alert state machine, multi-agent claiming |
-| F-7.6.11 | R-7.6.11 | Multi-sense tracking: seamless transitions, confidence decay, pack data sharing |
+| Feature  | Requirement |
+|----------|-------------|
+| F-7.6.8  | R-7.6.8     |
+| F-7.6.9  | R-7.6.9     |
+| F-7.6.10 | R-7.6.10    |
+| F-7.6.11 | R-7.6.11    |
+
+1. **F-7.6.8** — Smell sense: scent grid, wind drift, trail following, rain dilution
+2. **F-7.6.9** — Environmental evidence: footprints, blood, broken vegetation, tracking inferences
+3. **F-7.6.10** — Investigation behavior: stimulus-type routing, alert state machine, multi-agent
+   claiming
+4. **F-7.6.11** — Multi-sense tracking: seamless transitions, confidence decay, pack data sharing
 
 ---
 
@@ -2015,12 +2030,21 @@ pipeline). After sorting pending perception queries by priority, each query chec
 execution. The scheduler runs before `SenseEvaluationSystem` so only admitted queries are
 dispatched.
 
-| Priority | Action | Trigger | Effect |
-|----------|--------|---------|--------|
-| 1 | Skip low-priority queries | Budget exhausted | Perception queries for agents with low-priority senses (e.g., smell for distant entities) are not evaluated this frame |
-| 2 | Defer distant-entity checks | Budget exhausted | Agents beyond a configurable distance threshold from any player have their perception deferred entirely |
-| 3 | Mark remaining as stale | Budget exhausted | Deferred agents retain previous `PerceivedEntities` state with confidence continuing to decay via `decay_rate` |
-| 4 | Promote deferred queries | Defer count exceeds `max_defer_frames` | Queries deferred for more than `max_defer_frames` receive a priority boost on the next frame to prevent starvation |
+| Priority | Action                      | Trigger                                |
+|----------|-----------------------------|----------------------------------------|
+| 1        | Skip low-priority queries   | Budget exhausted                       |
+| 2        | Defer distant-entity checks | Budget exhausted                       |
+| 3        | Mark remaining as stale     | Budget exhausted                       |
+| 4        | Promote deferred queries    | Defer count exceeds `max_defer_frames` |
+
+1. **1** — Perception queries for agents with low-priority senses (e.g., smell for distant entities)
+   are not evaluated this frame
+2. **2** — Agents beyond a configurable distance threshold from any player have their perception
+   deferred entirely
+3. **3** — Deferred agents retain previous `PerceivedEntities` state with confidence continuing to
+   decay via `decay_rate`
+4. **4** — Queries deferred for more than `max_defer_frames` receive a priority boost on the next
+   frame to prevent starvation
 
 The following flowchart shows the perception budget check loop.
 
@@ -2182,65 +2206,125 @@ double-buffered output grid. No contention.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_sight_cone_boundary` | R-7.6.1 | Target at cone half-angle detected; 1 degree outside rejected |
-| `test_sight_los_blocked` | R-7.6.1 | Target inside cone but behind wall not detected |
-| `test_sight_range_boundary` | R-7.6.1 | Target at max range detected; 1 meter beyond rejected |
-| `test_sight_trace_channel` | R-7.6.1 | Glass blocks LOS for channel A but not channel B |
-| `test_sight_peripheral_falloff` | R-7.6.1 | Confidence at cone edge < confidence at center |
-| `test_hearing_distance_attenuation` | R-7.6.2 | Confidence at distance 0 = max; at max radius ~= 0 |
-| `test_hearing_occlusion` | R-7.6.2 | Wall between emitter and listener reduces confidence |
-| `test_hearing_intensity_scaling` | R-7.6.2 | Gunshot detected at 3x footstep range |
-| `test_damage_bypasses_los` | R-7.6.3 | Damage from outside cone + range still detected |
-| `test_damage_direction_accuracy` | R-7.6.3 | Reported direction within 5 degrees of actual |
-| `test_damage_threshold` | R-7.6.3 | Below-threshold damage ignored |
-| `test_faction_hostile_detected` | R-7.6.4 | Hostile faction stimulus not filtered |
-| `test_faction_friendly_filtered` | R-7.6.4 | Friendly stimulus filtered when filter enabled |
-| `test_faction_runtime_change` | R-7.6.4 | Affinity change immediately affects filtering |
-| `test_faction_override_precedence` | R-7.6.4 | Per-entity override beats faction default |
-| `test_stimulus_registration` | R-7.6.5 | Register stimulus; spatial query returns it |
-| `test_stimulus_expiration` | R-7.6.5 | Stimulus removed after TTL expires |
-| `test_stimulus_spatial_filter` | R-7.6.5 | Query at 10 m radius returns only nearby stimuli |
-| `test_stimulus_cap_enforced` | R-7.6.5 | Registration returns None at capacity |
-| `test_memory_decay_linear` | R-7.6.6 | Confidence decays by decay_rate * dt per second |
-| `test_memory_refresh_resets` | R-7.6.6 | Re-confirmation resets confidence to max |
-| `test_memory_expiry` | R-7.6.6 | Entry removed when confidence reaches 0 |
-| `test_memory_archetype_duration` | R-7.6.6 | 2x memory duration = 2x retention time |
-| `test_custom_sense_registration` | R-7.6.7 | Custom sense registered and invoked |
-| `test_custom_sense_duplicate_rejected` | R-7.6.7 | Duplicate ID returns error |
-| `test_budget_high_priority_always_runs` | R-7.6.7 | Priority-0 agents evaluated every tick |
-| `test_budget_low_priority_deferred` | R-7.6.7 | Low-priority deferred when budget exhausted |
-| `test_scent_deposit_and_query` | R-7.6.8 | Deposit scent; query returns it within radius |
-| `test_scent_decay` | R-7.6.8 | Scent intensity decays at configured rate |
-| `test_scent_wind_drift` | R-7.6.8 | Scent detectable farther downwind than upwind |
-| `test_scent_blocked_by_door` | R-7.6.8 | Blocked cell prevents scent propagation |
-| `test_scent_rain_dilution` | R-7.6.8 | Rain increases decay rate |
-| `test_evidence_footprint_spawn` | R-7.6.9 | Footprint on deformable surface; none on hard |
-| `test_evidence_decay` | R-7.6.9 | Evidence removed after decay timer |
-| `test_evidence_direction_inference` | R-7.6.9 | TrackingSense correctly infers travel direction |
-| `test_investigation_claim` | R-7.6.10 | First agent claims stimulus; second continues patrol |
-| `test_investigation_timeout` | R-7.6.10 | Investigation ends after timeout; returns to Unaware |
-| `test_alert_state_suspicious` | R-7.6.10 | Below-threshold stimulus transitions to Suspicious |
-| `test_alert_state_alerted` | R-7.6.10 | Confirmed threat transitions to Alerted |
-| `test_tracking_method_transition` | R-7.6.11 | Visual -> Audio when target goes behind wall |
-| `test_tracking_confidence_decay` | R-7.6.11 | Confidence decays without stimulus refresh |
-| `test_tracking_pack_sharing` | R-7.6.11 | Pack member sighting updates all members |
-| `test_threat_score_ranking` | R-7.6.4 | Closer hostile ranked above distant hostile |
-| `test_awareness_levels` | R-7.6.6 | Confidence thresholds map to correct levels |
+| Test                                    | Req      |
+|-----------------------------------------|----------|
+| `test_sight_cone_boundary`              | R-7.6.1  |
+| `test_sight_los_blocked`                | R-7.6.1  |
+| `test_sight_range_boundary`             | R-7.6.1  |
+| `test_sight_trace_channel`              | R-7.6.1  |
+| `test_sight_peripheral_falloff`         | R-7.6.1  |
+| `test_hearing_distance_attenuation`     | R-7.6.2  |
+| `test_hearing_occlusion`                | R-7.6.2  |
+| `test_hearing_intensity_scaling`        | R-7.6.2  |
+| `test_damage_bypasses_los`              | R-7.6.3  |
+| `test_damage_direction_accuracy`        | R-7.6.3  |
+| `test_damage_threshold`                 | R-7.6.3  |
+| `test_faction_hostile_detected`         | R-7.6.4  |
+| `test_faction_friendly_filtered`        | R-7.6.4  |
+| `test_faction_runtime_change`           | R-7.6.4  |
+| `test_faction_override_precedence`      | R-7.6.4  |
+| `test_stimulus_registration`            | R-7.6.5  |
+| `test_stimulus_expiration`              | R-7.6.5  |
+| `test_stimulus_spatial_filter`          | R-7.6.5  |
+| `test_stimulus_cap_enforced`            | R-7.6.5  |
+| `test_memory_decay_linear`              | R-7.6.6  |
+| `test_memory_refresh_resets`            | R-7.6.6  |
+| `test_memory_expiry`                    | R-7.6.6  |
+| `test_memory_archetype_duration`        | R-7.6.6  |
+| `test_custom_sense_registration`        | R-7.6.7  |
+| `test_custom_sense_duplicate_rejected`  | R-7.6.7  |
+| `test_budget_high_priority_always_runs` | R-7.6.7  |
+| `test_budget_low_priority_deferred`     | R-7.6.7  |
+| `test_scent_deposit_and_query`          | R-7.6.8  |
+| `test_scent_decay`                      | R-7.6.8  |
+| `test_scent_wind_drift`                 | R-7.6.8  |
+| `test_scent_blocked_by_door`            | R-7.6.8  |
+| `test_scent_rain_dilution`              | R-7.6.8  |
+| `test_evidence_footprint_spawn`         | R-7.6.9  |
+| `test_evidence_decay`                   | R-7.6.9  |
+| `test_evidence_direction_inference`     | R-7.6.9  |
+| `test_investigation_claim`              | R-7.6.10 |
+| `test_investigation_timeout`            | R-7.6.10 |
+| `test_alert_state_suspicious`           | R-7.6.10 |
+| `test_alert_state_alerted`              | R-7.6.10 |
+| `test_tracking_method_transition`       | R-7.6.11 |
+| `test_tracking_confidence_decay`        | R-7.6.11 |
+| `test_tracking_pack_sharing`            | R-7.6.11 |
+| `test_threat_score_ranking`             | R-7.6.4  |
+| `test_awareness_levels`                 | R-7.6.6  |
+
+1. **`test_sight_cone_boundary`** — Target at cone half-angle detected; 1 degree outside rejected
+2. **`test_sight_los_blocked`** — Target inside cone but behind wall not detected
+3. **`test_sight_range_boundary`** — Target at max range detected; 1 meter beyond rejected
+4. **`test_sight_trace_channel`** — Glass blocks LOS for channel A but not channel B
+5. **`test_sight_peripheral_falloff`** — Confidence at cone edge < confidence at center
+6. **`test_hearing_distance_attenuation`** — Confidence at distance 0 = max; at max radius ~= 0
+7. **`test_hearing_occlusion`** — Wall between emitter and listener reduces confidence
+8. **`test_hearing_intensity_scaling`** — Gunshot detected at 3x footstep range
+9. **`test_damage_bypasses_los`** — Damage from outside cone + range still detected
+10. **`test_damage_direction_accuracy`** — Reported direction within 5 degrees of actual
+11. **`test_damage_threshold`** — Below-threshold damage ignored
+12. **`test_faction_hostile_detected`** — Hostile faction stimulus not filtered
+13. **`test_faction_friendly_filtered`** — Friendly stimulus filtered when filter enabled
+14. **`test_faction_runtime_change`** — Affinity change immediately affects filtering
+15. **`test_faction_override_precedence`** — Per-entity override beats faction default
+16. **`test_stimulus_registration`** — Register stimulus; spatial query returns it
+17. **`test_stimulus_expiration`** — Stimulus removed after TTL expires
+18. **`test_stimulus_spatial_filter`** — Query at 10 m radius returns only nearby stimuli
+19. **`test_stimulus_cap_enforced`** — Registration returns None at capacity
+20. **`test_memory_decay_linear`** — Confidence decays by decay_rate * dt per second
+21. **`test_memory_refresh_resets`** — Re-confirmation resets confidence to max
+22. **`test_memory_expiry`** — Entry removed when confidence reaches 0
+23. **`test_memory_archetype_duration`** — 2x memory duration = 2x retention time
+24. **`test_custom_sense_registration`** — Custom sense registered and invoked
+25. **`test_custom_sense_duplicate_rejected`** — Duplicate ID returns error
+26. **`test_budget_high_priority_always_runs`** — Priority-0 agents evaluated every tick
+27. **`test_budget_low_priority_deferred`** — Low-priority deferred when budget exhausted
+28. **`test_scent_deposit_and_query`** — Deposit scent; query returns it within radius
+29. **`test_scent_decay`** — Scent intensity decays at configured rate
+30. **`test_scent_wind_drift`** — Scent detectable farther downwind than upwind
+31. **`test_scent_blocked_by_door`** — Blocked cell prevents scent propagation
+32. **`test_scent_rain_dilution`** — Rain increases decay rate
+33. **`test_evidence_footprint_spawn`** — Footprint on deformable surface; none on hard
+34. **`test_evidence_decay`** — Evidence removed after decay timer
+35. **`test_evidence_direction_inference`** — TrackingSense correctly infers travel direction
+36. **`test_investigation_claim`** — First agent claims stimulus; second continues patrol
+37. **`test_investigation_timeout`** — Investigation ends after timeout; returns to Unaware
+38. **`test_alert_state_suspicious`** — Below-threshold stimulus transitions to Suspicious
+39. **`test_alert_state_alerted`** — Confirmed threat transitions to Alerted
+40. **`test_tracking_method_transition`** — Visual -> Audio when target goes behind wall
+41. **`test_tracking_confidence_decay`** — Confidence decays without stimulus refresh
+42. **`test_tracking_pack_sharing`** — Pack member sighting updates all members
+43. **`test_threat_score_ranking`** — Closer hostile ranked above distant hostile
+44. **`test_awareness_levels`** — Confidence thresholds map to correct levels
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_perception_pipeline` | All | Run complete pipeline: register stimulus, schedule evaluation, check PerceivedEntities |
-| `test_parallel_500_agents` | R-7.6.1 | 500 agents with sight + hearing, verify correct results under parallel evaluation |
-| `test_investigation_to_alert_cycle` | R-7.6.10 | Sound -> Suspicious -> investigate -> find target -> Alerted -> lose target -> Unaware |
-| `test_multi_sense_tracking` | R-7.6.11 | Visual tracking -> target hides -> audio -> target quiet -> scent trail -> found |
-| `test_mobile_budget_compliance` | R-7.6.7 | 250 us budget, 200 agents: verify high-priority agents run, low-priority deferred |
-| `test_scent_trail_following` | R-7.6.8 | Entity walks path, tracker follows scent trail to target |
-| `test_footprint_tracking` | R-7.6.9 | Entity walks through snow, tracker follows footprints |
-| `test_faction_betrayal_scenario` | R-7.6.4 | Friendly -> hostile affinity change mid-game, verify perception updates |
+| Test                                | Req      |
+|-------------------------------------|----------|
+| `test_full_perception_pipeline`     | All      |
+| `test_parallel_500_agents`          | R-7.6.1  |
+| `test_investigation_to_alert_cycle` | R-7.6.10 |
+| `test_multi_sense_tracking`         | R-7.6.11 |
+| `test_mobile_budget_compliance`     | R-7.6.7  |
+| `test_scent_trail_following`        | R-7.6.8  |
+| `test_footprint_tracking`           | R-7.6.9  |
+| `test_faction_betrayal_scenario`    | R-7.6.4  |
+
+1. **`test_full_perception_pipeline`** — Run complete pipeline: register stimulus, schedule
+   evaluation, check PerceivedEntities
+2. **`test_parallel_500_agents`** — 500 agents with sight + hearing, verify correct results under
+   parallel evaluation
+3. **`test_investigation_to_alert_cycle`** — Sound -> Suspicious -> investigate -> find target ->
+   Alerted -> lose target -> Unaware
+4. **`test_multi_sense_tracking`** — Visual tracking -> target hides -> audio -> target quiet ->
+   scent trail -> found
+5. **`test_mobile_budget_compliance`** — 250 us budget, 200 agents: verify high-priority agents run,
+   low-priority deferred
+6. **`test_scent_trail_following`** — Entity walks path, tracker follows scent trail to target
+7. **`test_footprint_tracking`** — Entity walks through snow, tracker follows footprints
+8. **`test_faction_betrayal_scenario`** — Friendly -> hostile affinity change mid-game, verify
+   perception updates
 
 ### Benchmarks
 

@@ -8,26 +8,45 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-13.16.1 | R-13.16.1 | US-13.16.1.1 -- US-13.16.1.5 | Configurable fire modes (semi, burst, auto) |
-| F-13.16.2a | R-13.16.2a | US-13.16.2a.1 -- US-13.16.2a.5 | Magazine and ammo management |
-| F-13.16.2b | R-13.16.2b | US-13.16.2b.1 -- US-13.16.2b.5 | Reload mechanics (tactical, empty, sequential) |
-| F-13.16.2c | R-13.16.2c | US-13.16.2c.1 -- US-13.16.2c.6 | Swappable ammo types |
-| F-13.16.3 | R-13.16.3 | US-13.16.3.1 -- US-13.16.3.6 | Recoil patterns and weapon spread |
-| F-13.16.4a | R-13.16.4a | US-13.16.4a.1 -- US-13.16.4a.5 | Projectile drop and travel time |
-| F-13.16.4b | R-13.16.4b | US-13.16.4b.1 -- US-13.16.4b.5 | Wind deflection |
-| F-13.16.4c | R-13.16.4c | US-13.16.4c.1 -- US-13.16.4c.5 | Surface penetration and ricochet |
-| F-13.16.4d | R-13.16.4d | US-13.16.4d.1 -- US-13.16.4d.5 | Weapon zeroing |
-| F-13.16.5a | R-13.16.5a | US-13.16.5a.1 -- US-13.16.5a.5 | Attachment slot model |
-| F-13.16.5b | R-13.16.5b | US-13.16.5b.1 -- US-13.16.5b.4 | Attachment visual integration |
-| F-13.16.5c | R-13.16.5c | US-13.16.5c.1 -- US-13.16.5c.5 | Attachment customization UI |
-| F-13.16.6a | R-13.16.6a | US-13.16.6a.1 -- US-13.16.6a.4 | Surface type tag system |
-| F-13.16.6b | R-13.16.6b | US-13.16.6b.1 -- US-13.16.6b.3 | Impact VFX response |
-| F-13.16.6c | R-13.16.6c | US-13.16.6c.1 -- US-13.16.6c.3 | Impact audio response |
-| F-13.16.6d | R-13.16.6d | US-13.16.6d.1 -- US-13.16.6d.3 | Impact decal response |
-| -- | NFR-13.16.1 | -- | 256 projectiles under 1 ms per physics tick |
-| -- | NFR-13.16.2 | -- | Weapon feedback under 16 ms from input |
+| Feature    | Requirement | User Stories                   |
+|------------|-------------|--------------------------------|
+| F-13.16.1  | R-13.16.1   | US-13.16.1.1 -- US-13.16.1.5   |
+| F-13.16.2a | R-13.16.2a  | US-13.16.2a.1 -- US-13.16.2a.5 |
+| F-13.16.2b | R-13.16.2b  | US-13.16.2b.1 -- US-13.16.2b.5 |
+| F-13.16.2c | R-13.16.2c  | US-13.16.2c.1 -- US-13.16.2c.6 |
+| F-13.16.3  | R-13.16.3   | US-13.16.3.1 -- US-13.16.3.6   |
+| F-13.16.4a | R-13.16.4a  | US-13.16.4a.1 -- US-13.16.4a.5 |
+| F-13.16.4b | R-13.16.4b  | US-13.16.4b.1 -- US-13.16.4b.5 |
+| F-13.16.4c | R-13.16.4c  | US-13.16.4c.1 -- US-13.16.4c.5 |
+| F-13.16.4d | R-13.16.4d  | US-13.16.4d.1 -- US-13.16.4d.5 |
+| F-13.16.5a | R-13.16.5a  | US-13.16.5a.1 -- US-13.16.5a.5 |
+| F-13.16.5b | R-13.16.5b  | US-13.16.5b.1 -- US-13.16.5b.4 |
+| F-13.16.5c | R-13.16.5c  | US-13.16.5c.1 -- US-13.16.5c.5 |
+| F-13.16.6a | R-13.16.6a  | US-13.16.6a.1 -- US-13.16.6a.4 |
+| F-13.16.6b | R-13.16.6b  | US-13.16.6b.1 -- US-13.16.6b.3 |
+| F-13.16.6c | R-13.16.6c  | US-13.16.6c.1 -- US-13.16.6c.3 |
+| F-13.16.6d | R-13.16.6d  | US-13.16.6d.1 -- US-13.16.6d.3 |
+| --         | NFR-13.16.1 | --                             |
+| --         | NFR-13.16.2 | --                             |
+
+1. **F-13.16.1** — Configurable fire modes (semi, burst, auto)
+2. **F-13.16.2a** — Magazine and ammo management
+3. **F-13.16.2b** — Reload mechanics (tactical, empty, sequential)
+4. **F-13.16.2c** — Swappable ammo types
+5. **F-13.16.3** — Recoil patterns and weapon spread
+6. **F-13.16.4a** — Projectile drop and travel time
+7. **F-13.16.4b** — Wind deflection
+8. **F-13.16.4c** — Surface penetration and ricochet
+9. **F-13.16.4d** — Weapon zeroing
+10. **F-13.16.5a** — Attachment slot model
+11. **F-13.16.5b** — Attachment visual integration
+12. **F-13.16.5c** — Attachment customization UI
+13. **F-13.16.6a** — Surface type tag system
+14. **F-13.16.6b** — Impact VFX response
+15. **F-13.16.6c** — Impact audio response
+16. **F-13.16.6d** — Impact decal response
+17. **--** — 256 projectiles under 1 ms per physics tick
+18. **--** — Weapon feedback under 16 ms from input
 
 ## Overview
 
@@ -932,80 +951,179 @@ Between rounds (recovery):
 
 ## Platform Considerations
 
-| Component | Platform Impact | Notes |
-|-----------|----------------|-------|
-| Ballistic CCD | All platforms | Uses shared spatial index BVH. 256 projectiles must complete under 1 ms (NFR-13.16.1). SIMD-accelerated sweep. |
-| Recoil patterns | All platforms | 32-entry SmallVec fits in 256 bytes -- single cache line reads per round fired. |
-| Surface type resolve | All platforms | Physics materials carry tag directly. Terrain splatmap resolve requires bilinear sample of weight textures -- CPU-side for hit detection. |
-| Wind vector | All platforms | Read from weather system singleton resource. Single Vec3 read per projectile per tick. |
-| Attachment visuals | All platforms | Mesh swap propagated to render scene via ECS-to-Renderer bridge. One-time cost on equip/unequip, not per-frame. |
-| Weapon customization UI | Editor + runtime | 3D weapon preview renders to an offscreen render target composited into the UI layer. |
-| Impact VFX/audio/decal | All platforms | Budget-managed: decals capped by `max_count`, oldest evicted. VFX spawn count configurable per surface type. |
+| Component               | Platform Impact  |
+|-------------------------|------------------|
+| Ballistic CCD           | All platforms    |
+| Recoil patterns         | All platforms    |
+| Surface type resolve    | All platforms    |
+| Wind vector             | All platforms    |
+| Attachment visuals      | All platforms    |
+| Weapon customization UI | Editor + runtime |
+| Impact VFX/audio/decal  | All platforms    |
+
+1. **Ballistic CCD** — Uses shared spatial index BVH. 256 projectiles must complete under 1 ms
+   (NFR-13.16.1). SIMD-accelerated sweep.
+2. **Recoil patterns** — 32-entry SmallVec fits in 256 bytes -- single cache line reads per round
+   fired.
+3. **Surface type resolve** — Physics materials carry tag directly. Terrain splatmap resolve
+   requires bilinear sample of weight textures -- CPU-side for hit detection.
+4. **Wind vector** — Read from weather system singleton resource. Single Vec3 read per projectile
+   per tick.
+5. **Attachment visuals** — Mesh swap propagated to render scene via ECS-to-Renderer bridge.
+   One-time cost on equip/unequip, not per-frame.
+6. **Weapon customization UI** — 3D weapon preview renders to an offscreen render target composited
+   into the UI layer.
+7. **Impact VFX/audio/decal** — Budget-managed: decals capped by `max_count`, oldest evicted. VFX
+   spawn count configurable per surface type.
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_semi_auto_one_round` | R-13.16.1 | Fire semi-auto weapon. Verify exactly 1 round per press. |
-| `test_burst_n_rounds` | R-13.16.1 | Fire burst-mode weapon (N=3). Verify exactly 3 rounds with inter-round delay. |
-| `test_full_auto_continuous` | R-13.16.1 | Hold fire on full-auto. Verify continuous fire at configured RPM. |
-| `test_fire_mode_toggle` | R-13.16.1 | Toggle between semi, burst, auto. Verify spread and recoil modifiers change per mode. |
-| `test_spin_up_gatling` | R-13.16.1 | Fire gatling weapon. Verify spin-up delay before first round, then full RPM. |
-| `test_magazine_decrement` | R-13.16.2a | Fire one round. Verify magazine count decrements by 1. |
-| `test_empty_magazine_blocks_fire` | R-13.16.2a | Empty magazine. Verify fire input suppressed. |
-| `test_unlimited_ammo` | R-13.16.2a | Enable unlimited mode. Verify reserve never depletes. |
-| `test_tactical_reload_faster` | R-13.16.2b | Reload with rounds remaining. Verify faster duration than empty reload. |
-| `test_empty_reload_slower` | R-13.16.2b | Reload with empty magazine. Verify slower duration. |
-| `test_sequential_reload_interrupt` | R-13.16.2b | Load 3 shells, interrupt with fire. Verify 3 rounds in magazine and weapon fires. |
-| `test_reload_cancels_sprint` | R-13.16.2b | Sprint, then reload. Verify sprint cancelled. |
-| `test_ammo_type_switch` | R-13.16.2c | Switch from standard to AP ammo. Verify damage modifier and penetration change. |
-| `test_incendiary_status_effect` | R-13.16.2c | Fire incendiary round. Verify burn DoT applied on hit. |
-| `test_tracer_color_change` | R-13.16.2c | Switch ammo type. Verify tracer color updates. |
-| `test_recoil_pattern_deterministic` | R-13.16.3 | Fire 10 rounds. Verify aim offset matches pattern curve exactly. |
-| `test_recoil_recovery` | R-13.16.3 | Fire, stop, wait. Verify offset recovers toward zero. |
-| `test_spread_ads_tighter` | R-13.16.3 | Compare spread ADS vs hip-fire. Verify ADS is tighter by ads_modifier. |
-| `test_spread_movement_wider` | R-13.16.3 | Compare spread stationary vs moving. Verify moving is wider. |
-| `test_first_shot_accuracy` | R-13.16.3 | Fire first shot with sniper (accuracy 0.0). Verify zero spread. |
-| `test_crosshair_reflects_spread` | R-13.16.3 | Fire sustained. Verify crosshair radius matches current_spread. |
-| `test_bullet_drop_parabolic` | R-13.16.4a | Fire at 500 m. Verify drop matches expected parabola within 5%. |
-| `test_drag_decelerates` | R-13.16.4a | Fire and measure velocity at 100 m vs 500 m. Verify deceleration from drag. |
-| `test_gravity_disable_straight` | R-13.16.4a | Disable gravity. Verify projectile travels in a straight line. |
-| `test_travel_time_matches_velocity` | R-13.16.4a | Measure arrival time vs expected from muzzle velocity and drag. |
-| `test_wind_lateral_deflection` | R-13.16.4b | Fire perpendicular to wind. Verify lateral offset at distance matches expected. |
-| `test_wind_disable_no_deflection` | R-13.16.4b | Disable wind. Verify no lateral deflection. |
-| `test_penetration_drywall` | R-13.16.4c | Fire through drywall. Verify pass-through with reduced velocity. |
-| `test_penetration_concrete_stops` | R-13.16.4c | Fire at concrete. Verify projectile stops. |
-| `test_ricochet_shallow_angle` | R-13.16.4c | Fire at metal at shallow angle. Verify ricochet. |
-| `test_ricochet_steep_absorbs` | R-13.16.4c | Fire at metal at steep angle. Verify absorption (no ricochet). |
-| `test_zeroing_300m_on_target` | R-13.16.4d | Zero to 300 m, fire at 300 m target. Verify point-of-aim matches point-of-impact. |
-| `test_zeroing_wrong_distance` | R-13.16.4d | Zero to 300 m, fire at 100 m. Verify round impacts high. |
-| `test_zeroing_ammo_shift` | R-13.16.4d | Switch ammo type with different ballistics. Verify effective zero shifts. |
-| `test_attachment_equip_stat` | R-13.16.5a | Equip suppressor. Verify sound and range decrease by configured amounts. |
-| `test_attachment_category_filter` | R-13.16.5a | Attempt to equip optic in grip slot. Verify rejection. |
-| `test_attachment_visual_snap` | R-13.16.5b | Equip attachment. Verify mesh appears at socket transform. |
-| `test_attachment_unequip_visual` | R-13.16.5b | Remove attachment. Verify mesh disappears. |
-| `test_optic_reticle_render` | R-13.16.5b | Equip optic. Verify reticle renders at configured zoom. |
-| `test_surface_tag_metal` | R-13.16.6a | Raycast metal surface. Verify returns Metal tag. |
-| `test_surface_tag_terrain` | R-13.16.6a | Raycast terrain. Verify tag matches dominant splatmap layer. |
-| `test_impact_vfx_metal_sparks` | R-13.16.6b | Shoot metal. Verify sparks VFX spawns from table. |
-| `test_impact_audio_wood_thud` | R-13.16.6c | Shoot wood. Verify thud sound plays. |
-| `test_impact_audio_variation` | R-13.16.6c | Shoot same surface 10 times. Verify random variation from pool. |
-| `test_impact_decal_placement` | R-13.16.6d | Shoot surface. Verify decal placed at impact point along normal. |
-| `test_decal_max_count_eviction` | R-13.16.6d | Exceed max decal count. Verify oldest decal removed. |
+| Test                                | Req        |
+|-------------------------------------|------------|
+| `test_semi_auto_one_round`          | R-13.16.1  |
+| `test_burst_n_rounds`               | R-13.16.1  |
+| `test_full_auto_continuous`         | R-13.16.1  |
+| `test_fire_mode_toggle`             | R-13.16.1  |
+| `test_spin_up_gatling`              | R-13.16.1  |
+| `test_magazine_decrement`           | R-13.16.2a |
+| `test_empty_magazine_blocks_fire`   | R-13.16.2a |
+| `test_unlimited_ammo`               | R-13.16.2a |
+| `test_tactical_reload_faster`       | R-13.16.2b |
+| `test_empty_reload_slower`          | R-13.16.2b |
+| `test_sequential_reload_interrupt`  | R-13.16.2b |
+| `test_reload_cancels_sprint`        | R-13.16.2b |
+| `test_ammo_type_switch`             | R-13.16.2c |
+| `test_incendiary_status_effect`     | R-13.16.2c |
+| `test_tracer_color_change`          | R-13.16.2c |
+| `test_recoil_pattern_deterministic` | R-13.16.3  |
+| `test_recoil_recovery`              | R-13.16.3  |
+| `test_spread_ads_tighter`           | R-13.16.3  |
+| `test_spread_movement_wider`        | R-13.16.3  |
+| `test_first_shot_accuracy`          | R-13.16.3  |
+| `test_crosshair_reflects_spread`    | R-13.16.3  |
+| `test_bullet_drop_parabolic`        | R-13.16.4a |
+| `test_drag_decelerates`             | R-13.16.4a |
+| `test_gravity_disable_straight`     | R-13.16.4a |
+| `test_travel_time_matches_velocity` | R-13.16.4a |
+| `test_wind_lateral_deflection`      | R-13.16.4b |
+| `test_wind_disable_no_deflection`   | R-13.16.4b |
+| `test_penetration_drywall`          | R-13.16.4c |
+| `test_penetration_concrete_stops`   | R-13.16.4c |
+| `test_ricochet_shallow_angle`       | R-13.16.4c |
+| `test_ricochet_steep_absorbs`       | R-13.16.4c |
+| `test_zeroing_300m_on_target`       | R-13.16.4d |
+| `test_zeroing_wrong_distance`       | R-13.16.4d |
+| `test_zeroing_ammo_shift`           | R-13.16.4d |
+| `test_attachment_equip_stat`        | R-13.16.5a |
+| `test_attachment_category_filter`   | R-13.16.5a |
+| `test_attachment_visual_snap`       | R-13.16.5b |
+| `test_attachment_unequip_visual`    | R-13.16.5b |
+| `test_optic_reticle_render`         | R-13.16.5b |
+| `test_surface_tag_metal`            | R-13.16.6a |
+| `test_surface_tag_terrain`          | R-13.16.6a |
+| `test_impact_vfx_metal_sparks`      | R-13.16.6b |
+| `test_impact_audio_wood_thud`       | R-13.16.6c |
+| `test_impact_audio_variation`       | R-13.16.6c |
+| `test_impact_decal_placement`       | R-13.16.6d |
+| `test_decal_max_count_eviction`     | R-13.16.6d |
+
+1. **`test_semi_auto_one_round`** — Fire semi-auto weapon. Verify exactly 1 round per press.
+2. **`test_burst_n_rounds`** — Fire burst-mode weapon (N=3). Verify exactly 3 rounds with
+   inter-round delay.
+3. **`test_full_auto_continuous`** — Hold fire on full-auto. Verify continuous fire at configured
+   RPM.
+4. **`test_fire_mode_toggle`** — Toggle between semi, burst, auto. Verify spread and recoil
+   modifiers change per mode.
+5. **`test_spin_up_gatling`** — Fire gatling weapon. Verify spin-up delay before first round, then
+   full RPM.
+6. **`test_magazine_decrement`** — Fire one round. Verify magazine count decrements by 1.
+7. **`test_empty_magazine_blocks_fire`** — Empty magazine. Verify fire input suppressed.
+8. **`test_unlimited_ammo`** — Enable unlimited mode. Verify reserve never depletes.
+9. **`test_tactical_reload_faster`** — Reload with rounds remaining. Verify faster duration than
+   empty reload.
+10. **`test_empty_reload_slower`** — Reload with empty magazine. Verify slower duration.
+11. **`test_sequential_reload_interrupt`** — Load 3 shells, interrupt with fire. Verify 3 rounds in
+    magazine and weapon fires.
+12. **`test_reload_cancels_sprint`** — Sprint, then reload. Verify sprint cancelled.
+13. **`test_ammo_type_switch`** — Switch from standard to AP ammo. Verify damage modifier and
+    penetration change.
+14. **`test_incendiary_status_effect`** — Fire incendiary round. Verify burn DoT applied on hit.
+15. **`test_tracer_color_change`** — Switch ammo type. Verify tracer color updates.
+16. **`test_recoil_pattern_deterministic`** — Fire 10 rounds. Verify aim offset matches pattern
+    curve exactly.
+17. **`test_recoil_recovery`** — Fire, stop, wait. Verify offset recovers toward zero.
+18. **`test_spread_ads_tighter`** — Compare spread ADS vs hip-fire. Verify ADS is tighter by
+    ads_modifier.
+19. **`test_spread_movement_wider`** — Compare spread stationary vs moving. Verify moving is wider.
+20. **`test_first_shot_accuracy`** — Fire first shot with sniper (accuracy 0.0). Verify zero spread.
+21. **`test_crosshair_reflects_spread`** — Fire sustained. Verify crosshair radius matches
+    current_spread.
+22. **`test_bullet_drop_parabolic`** — Fire at 500 m. Verify drop matches expected parabola within
+    5%.
+23. **`test_drag_decelerates`** — Fire and measure velocity at 100 m vs 500 m. Verify deceleration
+    from drag.
+24. **`test_gravity_disable_straight`** — Disable gravity. Verify projectile travels in a straight
+    line.
+25. **`test_travel_time_matches_velocity`** — Measure arrival time vs expected from muzzle velocity
+    and drag.
+26. **`test_wind_lateral_deflection`** — Fire perpendicular to wind. Verify lateral offset at
+    distance matches expected.
+27. **`test_wind_disable_no_deflection`** — Disable wind. Verify no lateral deflection.
+28. **`test_penetration_drywall`** — Fire through drywall. Verify pass-through with reduced
+    velocity.
+29. **`test_penetration_concrete_stops`** — Fire at concrete. Verify projectile stops.
+30. **`test_ricochet_shallow_angle`** — Fire at metal at shallow angle. Verify ricochet.
+31. **`test_ricochet_steep_absorbs`** — Fire at metal at steep angle. Verify absorption (no
+    ricochet).
+32. **`test_zeroing_300m_on_target`** — Zero to 300 m, fire at 300 m target. Verify point-of-aim
+    matches point-of-impact.
+33. **`test_zeroing_wrong_distance`** — Zero to 300 m, fire at 100 m. Verify round impacts high.
+34. **`test_zeroing_ammo_shift`** — Switch ammo type with different ballistics. Verify effective
+    zero shifts.
+35. **`test_attachment_equip_stat`** — Equip suppressor. Verify sound and range decrease by
+    configured amounts.
+36. **`test_attachment_category_filter`** — Attempt to equip optic in grip slot. Verify rejection.
+37. **`test_attachment_visual_snap`** — Equip attachment. Verify mesh appears at socket transform.
+38. **`test_attachment_unequip_visual`** — Remove attachment. Verify mesh disappears.
+39. **`test_optic_reticle_render`** — Equip optic. Verify reticle renders at configured zoom.
+40. **`test_surface_tag_metal`** — Raycast metal surface. Verify returns Metal tag.
+41. **`test_surface_tag_terrain`** — Raycast terrain. Verify tag matches dominant splatmap layer.
+42. **`test_impact_vfx_metal_sparks`** — Shoot metal. Verify sparks VFX spawns from table.
+43. **`test_impact_audio_wood_thud`** — Shoot wood. Verify thud sound plays.
+44. **`test_impact_audio_variation`** — Shoot same surface 10 times. Verify random variation from
+    pool.
+45. **`test_impact_decal_placement`** — Shoot surface. Verify decal placed at impact point along
+    normal.
+46. **`test_decal_max_count_eviction`** — Exceed max decal count. Verify oldest decal removed.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_fire_full_pipeline` | R-13.16.1, NFR-13.16.2 | Press fire: verify ammo consumed, recoil applied, projectile spawned, muzzle VFX plays -- all within 1 frame. |
-| `test_projectile_impact_full` | R-13.16.4a, R-13.16.6b -- 6d | Projectile hits surface: verify damage effect applied, VFX spawns, audio plays, decal placed. |
-| `test_penetration_chain` | R-13.16.4c | Fire through drywall, hit target behind. Verify damage applied with reduced energy. |
-| `test_ricochet_kills` | R-13.16.4c | Ricochet off metal into target. Verify damage applied with reduced energy. |
-| `test_attachment_full_cycle` | R-13.16.5a -- 5c | Equip attachment in UI, verify stat change, verify mesh appears, verify UI stat comparison. |
-| `test_256_projectiles_perf` | NFR-13.16.1 | Spawn 256 simultaneous projectiles with full ballistics. Verify under 1 ms per physics tick. |
-| `test_weapon_feedback_latency` | NFR-13.16.2 | Measure input-to-muzzle-flash time. Verify under 16 ms across 100 fires. |
+| Test                           | Req                          |
+|--------------------------------|------------------------------|
+| `test_fire_full_pipeline`      | R-13.16.1, NFR-13.16.2       |
+| `test_projectile_impact_full`  | R-13.16.4a, R-13.16.6b -- 6d |
+| `test_penetration_chain`       | R-13.16.4c                   |
+| `test_ricochet_kills`          | R-13.16.4c                   |
+| `test_attachment_full_cycle`   | R-13.16.5a -- 5c             |
+| `test_256_projectiles_perf`    | NFR-13.16.1                  |
+| `test_weapon_feedback_latency` | NFR-13.16.2                  |
+
+1. **`test_fire_full_pipeline`** — Press fire: verify ammo consumed, recoil applied, projectile
+   spawned, muzzle VFX plays -- all within 1 frame.
+2. **`test_projectile_impact_full`** — Projectile hits surface: verify damage effect applied, VFX
+   spawns, audio plays, decal placed.
+3. **`test_penetration_chain`** — Fire through drywall, hit target behind. Verify damage applied
+   with reduced energy.
+4. **`test_ricochet_kills`** — Ricochet off metal into target. Verify damage applied with reduced
+   energy.
+5. **`test_attachment_full_cycle`** — Equip attachment in UI, verify stat change, verify mesh
+   appears, verify UI stat comparison.
+6. **`test_256_projectiles_perf`** — Spawn 256 simultaneous projectiles with full ballistics. Verify
+   under 1 ms per physics tick.
+7. **`test_weapon_feedback_latency`** — Measure input-to-muzzle-flash time. Verify under 16 ms
+   across 100 fires.
 
 ### Benchmarks
 

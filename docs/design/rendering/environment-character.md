@@ -10,31 +10,51 @@
 
 ### Anti-Aliasing and Upscaling (2.6)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-2.6.1 | R-2.6.1 | TAA with jittered sub-pixel accumulation and history rejection |
-| F-2.6.2 | R-2.6.2 | Platform-agnostic temporal super resolution (TSR) compute shaders |
-| F-2.6.3 | R-2.6.3 | FXAA single-pass spatial AA with no temporal history |
-| F-2.6.4 | R-2.6.4 | MSAA 2x/4x in forward rendering path only |
-| F-2.6.5 | R-2.6.5 | Checkerboard rendering with temporal reconstruction |
-| F-2.6.6 | R-2.6.6 | Vendor upscaler abstraction (DLSS, FSR, XeSS) with TSR fallback |
-| F-2.6.7 | R-2.6.7 | AI-driven frame generation from motion vectors and history |
-| F-2.6.8 | R-2.6.8 | Latency reduction via CPU/GPU submission synchronization |
+| Feature | Requirement |
+|---------|-------------|
+| F-2.6.1 | R-2.6.1     |
+| F-2.6.2 | R-2.6.2     |
+| F-2.6.3 | R-2.6.3     |
+| F-2.6.4 | R-2.6.4     |
+| F-2.6.5 | R-2.6.5     |
+| F-2.6.6 | R-2.6.6     |
+| F-2.6.7 | R-2.6.7     |
+| F-2.6.8 | R-2.6.8     |
+
+1. **F-2.6.1** — TAA with jittered sub-pixel accumulation and history rejection
+2. **F-2.6.2** — Platform-agnostic temporal super resolution (TSR) compute shaders
+3. **F-2.6.3** — FXAA single-pass spatial AA with no temporal history
+4. **F-2.6.4** — MSAA 2x/4x in forward rendering path only
+5. **F-2.6.5** — Checkerboard rendering with temporal reconstruction
+6. **F-2.6.6** — Vendor upscaler abstraction (DLSS, FSR, XeSS) with TSR fallback
+7. **F-2.6.7** — AI-driven frame generation from motion vectors and history
+8. **F-2.6.8** — Latency reduction via CPU/GPU submission synchronization
 
 ### Environment and Atmosphere (2.7)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-2.7.1 | R-2.7.1 | Procedural sky with Bruneton/Hillaire atmosphere LUTs |
-| F-2.7.2 | R-2.7.2 | Ray-marched volumetric fog via froxel grid |
-| F-2.7.3 | R-2.7.3 | Procedural volumetric clouds with temporal reprojection |
-| F-2.7.4 | R-2.7.4 | God rays (screen-space and volumetric modes) |
-| F-2.7.5 | R-2.7.5 | Analytical distance/height fog with height falloff |
-| F-2.7.6 | R-2.7.6 | FFT ocean rendering with reflections, foam, underwater |
-| F-2.7.7 | R-2.7.7 | Heterogeneous volumes (OpenVDB) with volumetric BSDF |
-| F-2.7.8 | R-2.7.8 | Voxel-based volumetric clouds with SDF acceleration |
-| F-2.7.9 | R-2.7.9 | Art-directable breaking waves with Coons surface eval |
-| F-2.7.10 | R-2.7.10 | Weather state machine driving all environment systems |
+| Feature  | Requirement |
+|----------|-------------|
+| F-2.7.1  | R-2.7.1     |
+| F-2.7.2  | R-2.7.2     |
+| F-2.7.3  | R-2.7.3     |
+| F-2.7.4  | R-2.7.4     |
+| F-2.7.5  | R-2.7.5     |
+| F-2.7.6  | R-2.7.6     |
+| F-2.7.7  | R-2.7.7     |
+| F-2.7.8  | R-2.7.8     |
+| F-2.7.9  | R-2.7.9     |
+| F-2.7.10 | R-2.7.10    |
+
+1. **F-2.7.1** — Procedural sky with Bruneton/Hillaire atmosphere LUTs
+2. **F-2.7.2** — Ray-marched volumetric fog via froxel grid
+3. **F-2.7.3** — Procedural volumetric clouds with temporal reprojection
+4. **F-2.7.4** — God rays (screen-space and volumetric modes)
+5. **F-2.7.5** — Analytical distance/height fog with height falloff
+6. **F-2.7.6** — FFT ocean rendering with reflections, foam, underwater
+7. **F-2.7.7** — Heterogeneous volumes (OpenVDB) with volumetric BSDF
+8. **F-2.7.8** — Voxel-based volumetric clouds with SDF acceleration
+9. **F-2.7.9** — Art-directable breaking waves with Coons surface eval
+10. **F-2.7.10** — Weather state machine driving all environment systems
 
 > **Dependency note:** OpenVDB is a large C++ library requiring separate approval per project
 > dependency policy. Consider lighter alternatives (sparse voxel octree) if volumetric cloud density
@@ -42,26 +62,41 @@
 
 ### Character Rendering (2.8)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-2.8.1 | R-2.8.1 | Strand-based hair with Marschner BSDF and deep opacity |
-| F-2.8.2 | R-2.8.2 | Card-based hair with layered alpha-blended strips |
-| F-2.8.3 | R-2.8.3 | Multi-tier hair LOD with cross-fade dithering |
-| F-2.8.4 | R-2.8.4 | Layered eye rendering (cornea, iris parallax, sclera SSS) |
-| F-2.8.5 | R-2.8.5 | Cloth shading with fuzz layer and fabric specular lobe |
-| F-2.8.6 | R-2.8.6 | Skin SSS with Burley normalized diffusion profiles |
-| F-2.8.7 | R-2.8.7 | Compute software rasterizer for sub-pixel hair strands |
-| F-2.8.8 | R-2.8.8 | Peach fuzz (vellus hair) as screen-space fuzz layer |
-| F-2.8.9 | R-2.8.9 | Biometric skin model (melanin + blood distribution) |
+| Feature | Requirement |
+|---------|-------------|
+| F-2.8.1 | R-2.8.1     |
+| F-2.8.2 | R-2.8.2     |
+| F-2.8.3 | R-2.8.3     |
+| F-2.8.4 | R-2.8.4     |
+| F-2.8.5 | R-2.8.5     |
+| F-2.8.6 | R-2.8.6     |
+| F-2.8.7 | R-2.8.7     |
+| F-2.8.8 | R-2.8.8     |
+| F-2.8.9 | R-2.8.9     |
+
+1. **F-2.8.1** — Strand-based hair with Marschner BSDF and deep opacity
+2. **F-2.8.2** — Card-based hair with layered alpha-blended strips
+3. **F-2.8.3** — Multi-tier hair LOD with cross-fade dithering
+4. **F-2.8.4** — Layered eye rendering (cornea, iris parallax, sclera SSS)
+5. **F-2.8.5** — Cloth shading with fuzz layer and fabric specular lobe
+6. **F-2.8.6** — Skin SSS with Burley normalized diffusion profiles
+7. **F-2.8.7** — Compute software rasterizer for sub-pixel hair strands
+8. **F-2.8.8** — Peach fuzz (vellus hair) as screen-space fuzz layer
+9. **F-2.8.9** — Biometric skin model (melanin + blood distribution)
 
 ### Decals (11.2)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-11.2.1 | R-11.2.1 | Deferred decals with G-buffer channel modification |
-| F-11.2.2 | R-11.2.2 | Mesh decals with tangent-space normals |
-| F-11.2.3 | R-11.2.3 | Decal atlas batching with LRU eviction |
-| F-11.2.4 | R-11.2.4 | Priority-based layering and lifecycle management |
+| Feature  | Requirement |
+|----------|-------------|
+| F-11.2.1 | R-11.2.1    |
+| F-11.2.2 | R-11.2.2    |
+| F-11.2.3 | R-11.2.3    |
+| F-11.2.4 | R-11.2.4    |
+
+1. **F-11.2.1** — Deferred decals with G-buffer channel modification
+2. **F-11.2.2** — Mesh decals with tangent-space normals
+3. **F-11.2.3** — Decal atlas batching with LRU eviction
+4. **F-11.2.4** — Priority-based layering and lifecycle management
 
 ### Non-Functional Requirements
 
@@ -1373,11 +1408,21 @@ flowchart TD
 
 ### GPU Backend Notes
 
-| Backend | AA Notes | Upscale Notes | Character Notes |
-|---------|----------|--------------|-----------------|
-| D3D12 | MSAA via DXGI sample desc; TAA/FXAA/SMAA as compute/pixel shaders | DLSS via NVIDIA SDK; FSR via AMD SDK; XeSS via Intel SDK | Mesh shaders for strand hair; compute dispatch for software rasterizer |
-| Vulkan | MSAA via `VkSampleCountFlagBits`; TAA/FXAA/SMAA as compute | FSR and XeSS available; no DLSS on Linux | Mesh shaders via `VK_EXT_mesh_shader`; task/mesh pipeline for strands |
-| Metal | MSAA via `MTLTextureDescriptor.sampleCount`; TAA/FXAA/SMAA as compute | MetalFX temporal upscaling via `MTLFXTemporalScaler` | Object/mesh shaders (Metal 3); compute rasterizer via threadgroup memory |
+| Backend |
+|---------|
+| D3D12   |
+| Vulkan  |
+| Metal   |
+
+1. **D3D12** — MSAA via DXGI sample desc; TAA/FXAA/SMAA as compute/pixel shaders
+   - **Upscale Notes:** DLSS via NVIDIA SDK; FSR via AMD SDK; XeSS via Intel SDK
+   - **Character Notes:** Mesh shaders for strand hair; compute dispatch for software rasterizer
+2. **Vulkan** — MSAA via `VkSampleCountFlagBits`; TAA/FXAA/SMAA as compute
+   - **Upscale Notes:** FSR and XeSS available; no DLSS on Linux
+   - **Character Notes:** Mesh shaders via `VK_EXT_mesh_shader`; task/mesh pipeline for strands
+3. **Metal** — MSAA via `MTLTextureDescriptor.sampleCount`; TAA/FXAA/SMAA as compute
+   - **Upscale Notes:** MetalFX temporal upscaling via `MTLFXTemporalScaler`
+   - **Character Notes:** Object/mesh shaders (Metal 3); compute rasterizer via threadgroup memory
 
 ### Shader Compilation
 
@@ -1434,68 +1479,180 @@ sampled at physics tick rate, not render rate, to maintain simulation stability.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_taa_jitter_halton` | R-2.6.1 | Verify Halton(2,3) sequence produces distinct sub-pixel offsets for 16 frames with no repeats. |
-| `test_taa_clamp_minmax` | R-2.6.1 | Feed a synthetic 3x3 neighborhood and verify MinMax clamp rejects an out-of-range history sample. |
-| `test_taa_clamp_variance` | R-2.6.1 | Verify Variance clamp tightens the acceptance box relative to MinMax on a high-variance neighborhood. |
-| `test_fxaa_edge_detect` | R-2.6.3 | Render a high-contrast edge (black/white boundary). Verify FXAA detects and blends the edge. |
-| `test_smaa_three_pass` | R-2.6.3 | Verify SMAA edge, blend weight, and resolve passes execute in sequence and produce anti-aliased output. |
-| `test_msaa_forward_only` | R-2.6.4 | Verify MSAA 2x/4x activates in forward path. Confirm it is rejected when deferred mode is active. |
-| `test_tsr_internal_res` | R-2.6.2 | Verify `TsrPass::internal_resolution` computes correct internal dimensions for each quality mode. |
-| `test_upscaler_fallback` | R-2.6.6 | Remove vendor SDK availability. Verify `VendorUpscaler::detect` returns `Tsr` variant. |
-| `test_checkerboard_pattern` | R-2.6.5 | Verify alternating pixel pattern across two frames covers all pixels. |
-| `test_frame_gen_doubling` | R-2.6.7 | Verify frame generation with `max_generated_frames=1` produces 2x output frames per rendered frame. |
-| `test_sky_lut_dimensions` | R-2.7.1 | Verify transmittance, multi-scatter, sky-view, and aerial perspective LUTs have correct dimensions per platform. |
-| `test_froxel_grid_setup` | R-2.7.2 | Verify froxel grid dimensions match `VolumetricFogComponent::froxel_resolution`. |
-| `test_fog_model_exp` | R-2.7.5 | Verify exponential fog attenuation matches `exp(-density * distance)` for known inputs. |
-| `test_fog_model_exp2` | R-2.7.5 | Verify exp-squared fog matches `exp(-(density * distance)^2)` for known inputs. |
-| `test_decal_channel_mask` | R-11.2.1 | Verify each G-buffer channel can be independently toggled. Write albedo only; confirm normal/roughness/metallic unchanged. |
-| `test_decal_priority_order` | R-11.2.4 | Place two decals at same position with different priorities. Verify higher-priority decal overwrites lower. |
-| `test_decal_angle_fade` | R-11.2.1 | Project decal at 80-degree angle (exceeding threshold). Verify attenuation reduces opacity to near-zero. |
-| `test_decal_lifecycle` | R-11.2.4 | Spawn a decal and advance time. Verify fade-in, sustain, and dissolve-out phases match configured durations. |
-| `test_detail_poisson` | R-2.7.2 | Verify Poisson disk distribution guarantees minimum spacing between instances. |
-| `test_lod_crossfade` | R-2.8.3 | Advance `LodTransitionComponent::blend_factor` over `dither_duration`. Verify it transitions from 0.0 to 1.0 linearly. |
-| `test_weather_transition` | R-2.7.10 | Transition from Clear to Rain. Verify fog density, precipitation intensity, and wetness interpolate over the configured duration. |
-| `test_weather_states` | R-2.7.10 | Verify all six weather states are reachable and produce distinct parameter sets. |
-| `test_strand_count_limit` | R-2.8.1 | Configure 100K strands on desktop. Verify `StrandParams::strand_count` is clamped to the platform maximum. |
-| `test_marschner_energy` | R-2.8.1 | Verify R + TT + TRT lobe intensities sum to <= 1.0 (energy conservation). |
-| `test_deep_opacity_res` | R-2.8.1 | Verify deep opacity map is allocated at the resolution specified in `StrandParams`. |
-| `test_card_layer_clamp` | R-2.8.2 | Set `CardParams::layer_count` to 10 on mobile. Verify it is clamped to 3. |
-| `test_hair_lod_tiers` | R-2.8.3 | Move camera from near to far. Verify method transitions from Strand to Card to MeshProxy at configured thresholds. |
-| `test_eye_cornea_ior` | R-2.8.4 | Set `cornea_ior` to 1.376. Verify Snell's law refraction angle for a 45-degree incident ray. |
-| `test_cloth_fuzz_energy` | R-2.8.5 | Verify fabric specular lobe is energy-conserving (outgoing energy <= incoming). |
-| `test_skin_burley_profile` | R-2.8.6 | Evaluate the Burley normalized diffusion kernel at known radii. Compare against reference values from the Burley 2015 paper. |
-| `test_biometric_melanin` | R-2.8.9 | Set melanin to 0.0 (lightest) and 1.0 (darkest). Verify scatter color output covers the expected range. |
-| `test_peach_fuzz_threshold` | R-2.8.8 | Set `screen_size_threshold` to 200 pixels. Verify fuzz is disabled when face screen-size is 150, enabled at 250. |
-| `test_compute_raster_classify` | R-2.8.7 | Feed strands with known projected pixel areas. Verify sub-pixel strands route to compute path and large strands to hardware path. |
+| Test                           | Req      |
+|--------------------------------|----------|
+| `test_taa_jitter_halton`       | R-2.6.1  |
+| `test_taa_clamp_minmax`        | R-2.6.1  |
+| `test_taa_clamp_variance`      | R-2.6.1  |
+| `test_fxaa_edge_detect`        | R-2.6.3  |
+| `test_smaa_three_pass`         | R-2.6.3  |
+| `test_msaa_forward_only`       | R-2.6.4  |
+| `test_tsr_internal_res`        | R-2.6.2  |
+| `test_upscaler_fallback`       | R-2.6.6  |
+| `test_checkerboard_pattern`    | R-2.6.5  |
+| `test_frame_gen_doubling`      | R-2.6.7  |
+| `test_sky_lut_dimensions`      | R-2.7.1  |
+| `test_froxel_grid_setup`       | R-2.7.2  |
+| `test_fog_model_exp`           | R-2.7.5  |
+| `test_fog_model_exp2`          | R-2.7.5  |
+| `test_decal_channel_mask`      | R-11.2.1 |
+| `test_decal_priority_order`    | R-11.2.4 |
+| `test_decal_angle_fade`        | R-11.2.1 |
+| `test_decal_lifecycle`         | R-11.2.4 |
+| `test_detail_poisson`          | R-2.7.2  |
+| `test_lod_crossfade`           | R-2.8.3  |
+| `test_weather_transition`      | R-2.7.10 |
+| `test_weather_states`          | R-2.7.10 |
+| `test_strand_count_limit`      | R-2.8.1  |
+| `test_marschner_energy`        | R-2.8.1  |
+| `test_deep_opacity_res`        | R-2.8.1  |
+| `test_card_layer_clamp`        | R-2.8.2  |
+| `test_hair_lod_tiers`          | R-2.8.3  |
+| `test_eye_cornea_ior`          | R-2.8.4  |
+| `test_cloth_fuzz_energy`       | R-2.8.5  |
+| `test_skin_burley_profile`     | R-2.8.6  |
+| `test_biometric_melanin`       | R-2.8.9  |
+| `test_peach_fuzz_threshold`    | R-2.8.8  |
+| `test_compute_raster_classify` | R-2.8.7  |
+
+1. **`test_taa_jitter_halton`** — Verify Halton(2,3) sequence produces distinct sub-pixel offsets
+   for 16 frames with no repeats.
+2. **`test_taa_clamp_minmax`** — Feed a synthetic 3x3 neighborhood and verify MinMax clamp rejects
+   an out-of-range history sample.
+3. **`test_taa_clamp_variance`** — Verify Variance clamp tightens the acceptance box relative to
+   MinMax on a high-variance neighborhood.
+4. **`test_fxaa_edge_detect`** — Render a high-contrast edge (black/white boundary). Verify FXAA
+   detects and blends the edge.
+5. **`test_smaa_three_pass`** — Verify SMAA edge, blend weight, and resolve passes execute in
+   sequence and produce anti-aliased output.
+6. **`test_msaa_forward_only`** — Verify MSAA 2x/4x activates in forward path. Confirm it is
+   rejected when deferred mode is active.
+7. **`test_tsr_internal_res`** — Verify `TsrPass::internal_resolution` computes correct internal
+   dimensions for each quality mode.
+8. **`test_upscaler_fallback`** — Remove vendor SDK availability. Verify `VendorUpscaler::detect`
+   returns `Tsr` variant.
+9. **`test_checkerboard_pattern`** — Verify alternating pixel pattern across two frames covers all
+   pixels.
+10. **`test_frame_gen_doubling`** — Verify frame generation with `max_generated_frames=1` produces
+    2x output frames per rendered frame.
+11. **`test_sky_lut_dimensions`** — Verify transmittance, multi-scatter, sky-view, and aerial
+    perspective LUTs have correct dimensions per platform.
+12. **`test_froxel_grid_setup`** — Verify froxel grid dimensions match
+    `VolumetricFogComponent::froxel_resolution`.
+13. **`test_fog_model_exp`** — Verify exponential fog attenuation matches `exp(-density * distance)`
+    for known inputs.
+14. **`test_fog_model_exp2`** — Verify exp-squared fog matches `exp(-(density * distance)^2)` for
+    known inputs.
+15. **`test_decal_channel_mask`** — Verify each G-buffer channel can be independently toggled. Write
+    albedo only; confirm normal/roughness/metallic unchanged.
+16. **`test_decal_priority_order`** — Place two decals at same position with different priorities.
+    Verify higher-priority decal overwrites lower.
+17. **`test_decal_angle_fade`** — Project decal at 80-degree angle (exceeding threshold). Verify
+    attenuation reduces opacity to near-zero.
+18. **`test_decal_lifecycle`** — Spawn a decal and advance time. Verify fade-in, sustain, and
+    dissolve-out phases match configured durations.
+19. **`test_detail_poisson`** — Verify Poisson disk distribution guarantees minimum spacing between
+    instances.
+20. **`test_lod_crossfade`** — Advance `LodTransitionComponent::blend_factor` over
+    `dither_duration`. Verify it transitions from 0.0 to 1.0 linearly.
+21. **`test_weather_transition`** — Transition from Clear to Rain. Verify fog density, precipitation
+    intensity, and wetness interpolate over the configured duration.
+22. **`test_weather_states`** — Verify all six weather states are reachable and produce distinct
+    parameter sets.
+23. **`test_strand_count_limit`** — Configure 100K strands on desktop. Verify
+    `StrandParams::strand_count` is clamped to the platform maximum.
+24. **`test_marschner_energy`** — Verify R + TT + TRT lobe intensities sum to <= 1.0 (energy
+    conservation).
+25. **`test_deep_opacity_res`** — Verify deep opacity map is allocated at the resolution specified
+    in `StrandParams`.
+26. **`test_card_layer_clamp`** — Set `CardParams::layer_count` to 10 on mobile. Verify it is
+    clamped to 3.
+27. **`test_hair_lod_tiers`** — Move camera from near to far. Verify method transitions from Strand
+    to Card to MeshProxy at configured thresholds.
+28. **`test_eye_cornea_ior`** — Set `cornea_ior` to 1.376. Verify Snell's law refraction angle for a
+    45-degree incident ray.
+29. **`test_cloth_fuzz_energy`** — Verify fabric specular lobe is energy-conserving (outgoing energy
+    <= incoming).
+30. **`test_skin_burley_profile`** — Evaluate the Burley normalized diffusion kernel at known radii.
+    Compare against reference values from the Burley 2015 paper.
+31. **`test_biometric_melanin`** — Set melanin to 0.0 (lightest) and 1.0 (darkest). Verify scatter
+    color output covers the expected range.
+32. **`test_peach_fuzz_threshold`** — Set `screen_size_threshold` to 200 pixels. Verify fuzz is
+    disabled when face screen-size is 150, enabled at 250.
+33. **`test_compute_raster_classify`** — Feed strands with known projected pixel areas. Verify
+    sub-pixel strands route to compute path and large strands to hardware path.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_taa_ghosting_rejection` | R-2.6.1 | Rapid camera pan disoccluding surfaces. Verify ghosting resolves within 1 frame. |
-| `test_tsr_psnr_quality` | R-2.6.2 | Render reference scene at native 4K and at 1080p with TSR to 4K. Verify PSNR within 1 dB. |
-| `test_vendor_upscaler_init` | R-2.6.6 | Initialize each vendor upscaler (DLSS, FSR, XeSS). Verify correct output and no crash. |
-| `test_vendor_fallback_chain` | R-2.6.6 | Remove vendor SDKs one by one. Verify fallback chain: vendor -> TSR -> none. |
-| `test_latency_with_frame_gen` | R-2.6.8 | Measure input-to-display latency with frame gen on + latency reduction. Verify it does not exceed no-gen baseline. |
-| `test_sky_tod_sweep` | R-2.7.1 | Sweep sun from sunrise to sunset. Verify smooth transitions with no banding. |
-| `test_volumetric_fog_light` | R-2.7.2 | Place directional light in fog. Verify visible scattering with correct depth attenuation. |
-| `test_cloud_flythrough` | R-2.7.3 | Fly camera through cloud layer. Verify no visual artifacts at close range. |
-| `test_god_rays_both_modes` | R-2.7.4 | Render occluded sun with screen-space and volumetric modes. Verify visible shafts in both. |
-| `test_fog_composite` | R-2.7.5 | Enable analytical fog alongside froxel volumetrics. Verify no double-fogging. |
-| `test_ocean_lod` | R-2.7.6 | Move camera from shore to horizon. Verify LOD transitions produce no popping. |
-| `test_decal_cross_mesh` | R-11.2.1 | Place decal across mesh/terrain boundary. Verify seamless blending. |
-| `test_decal_atlas_eviction` | R-11.2.3 | Spawn 500+ decals exceeding atlas budget. Verify LRU eviction without corruption. |
-| `test_weather_all_states` | R-2.7.10 | Cycle through all 6 weather states. Verify fog, clouds, particles, lighting, wetness, and vegetation respond. |
-| `test_hair_lod_no_pop` | R-2.8.3 | Continuous camera zoom. Verify no abrupt quality change between LOD tiers at 60 FPS. |
-| `test_skin_sss_stencil` | R-2.8.6 | Render skin and non-skin side by side. Verify SSS blur does not bleed from skin onto adjacent non-skin pixels. |
-| `test_eye_refraction_angle` | R-2.8.4 | View eye at oblique angle. Verify corneal refraction distorts iris. |
-| `test_cloth_vs_pbr` | R-2.8.5 | Render cloth and standard PBR under identical lighting. Verify distinct highlight response. |
-| `test_biometric_tones` | R-2.8.9 | Vary melanin from 0 to 1 in 10 steps. Verify each tone produces plausible SSS. |
-| `test_compute_raster_aa` | R-2.8.7 | Render thin strands. Compare compute rasterizer vs hardware-only. Verify improved anti-aliasing. |
-| `test_peach_fuzz_closeup` | R-2.8.8 | Dolly toward face. Verify fuzz activates at threshold and is visible as directional light-catching. |
-| `test_smaa_diagonal_edge` | R-2.6.3 | Render a diagonal high-contrast edge. Verify SMAA produces smoother edge than no-AA. |
+| Test                          | Req      |
+|-------------------------------|----------|
+| `test_taa_ghosting_rejection` | R-2.6.1  |
+| `test_tsr_psnr_quality`       | R-2.6.2  |
+| `test_vendor_upscaler_init`   | R-2.6.6  |
+| `test_vendor_fallback_chain`  | R-2.6.6  |
+| `test_latency_with_frame_gen` | R-2.6.8  |
+| `test_sky_tod_sweep`          | R-2.7.1  |
+| `test_volumetric_fog_light`   | R-2.7.2  |
+| `test_cloud_flythrough`       | R-2.7.3  |
+| `test_god_rays_both_modes`    | R-2.7.4  |
+| `test_fog_composite`          | R-2.7.5  |
+| `test_ocean_lod`              | R-2.7.6  |
+| `test_decal_cross_mesh`       | R-11.2.1 |
+| `test_decal_atlas_eviction`   | R-11.2.3 |
+| `test_weather_all_states`     | R-2.7.10 |
+| `test_hair_lod_no_pop`        | R-2.8.3  |
+| `test_skin_sss_stencil`       | R-2.8.6  |
+| `test_eye_refraction_angle`   | R-2.8.4  |
+| `test_cloth_vs_pbr`           | R-2.8.5  |
+| `test_biometric_tones`        | R-2.8.9  |
+| `test_compute_raster_aa`      | R-2.8.7  |
+| `test_peach_fuzz_closeup`     | R-2.8.8  |
+| `test_smaa_diagonal_edge`     | R-2.6.3  |
+
+1. **`test_taa_ghosting_rejection`** — Rapid camera pan disoccluding surfaces. Verify ghosting
+   resolves within 1 frame.
+2. **`test_tsr_psnr_quality`** — Render reference scene at native 4K and at 1080p with TSR to 4K.
+   Verify PSNR within 1 dB.
+3. **`test_vendor_upscaler_init`** — Initialize each vendor upscaler (DLSS, FSR, XeSS). Verify
+   correct output and no crash.
+4. **`test_vendor_fallback_chain`** — Remove vendor SDKs one by one. Verify fallback chain: vendor
+   -> TSR -> none.
+5. **`test_latency_with_frame_gen`** — Measure input-to-display latency with frame gen on + latency
+   reduction. Verify it does not exceed no-gen baseline.
+6. **`test_sky_tod_sweep`** — Sweep sun from sunrise to sunset. Verify smooth transitions with no
+   banding.
+7. **`test_volumetric_fog_light`** — Place directional light in fog. Verify visible scattering with
+   correct depth attenuation.
+8. **`test_cloud_flythrough`** — Fly camera through cloud layer. Verify no visual artifacts at close
+   range.
+9. **`test_god_rays_both_modes`** — Render occluded sun with screen-space and volumetric modes.
+   Verify visible shafts in both.
+10. **`test_fog_composite`** — Enable analytical fog alongside froxel volumetrics. Verify no
+    double-fogging.
+11. **`test_ocean_lod`** — Move camera from shore to horizon. Verify LOD transitions produce no
+    popping.
+12. **`test_decal_cross_mesh`** — Place decal across mesh/terrain boundary. Verify seamless
+    blending.
+13. **`test_decal_atlas_eviction`** — Spawn 500+ decals exceeding atlas budget. Verify LRU eviction
+    without corruption.
+14. **`test_weather_all_states`** — Cycle through all 6 weather states. Verify fog, clouds,
+    particles, lighting, wetness, and vegetation respond.
+15. **`test_hair_lod_no_pop`** — Continuous camera zoom. Verify no abrupt quality change between LOD
+    tiers at 60 FPS.
+16. **`test_skin_sss_stencil`** — Render skin and non-skin side by side. Verify SSS blur does not
+    bleed from skin onto adjacent non-skin pixels.
+17. **`test_eye_refraction_angle`** — View eye at oblique angle. Verify corneal refraction distorts
+    iris.
+18. **`test_cloth_vs_pbr`** — Render cloth and standard PBR under identical lighting. Verify
+    distinct highlight response.
+19. **`test_biometric_tones`** — Vary melanin from 0 to 1 in 10 steps. Verify each tone produces
+    plausible SSS.
+20. **`test_compute_raster_aa`** — Render thin strands. Compare compute rasterizer vs hardware-only.
+    Verify improved anti-aliasing.
+21. **`test_peach_fuzz_closeup`** — Dolly toward face. Verify fuzz activates at threshold and is
+    visible as directional light-catching.
+22. **`test_smaa_diagonal_edge`** — Render a diagonal high-contrast edge. Verify SMAA produces
+    smoother edge than no-AA.
 
 ### Benchmarks
 

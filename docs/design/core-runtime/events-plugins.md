@@ -10,27 +10,43 @@
 
 ### Events & Messaging (F-1.5, R-1.5)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.5.1 | R-1.5.1, R-1.5.1a | Typed double-buffered event channels with per-type isolation |
-| F-1.5.2 | R-1.5.2 | Persistent event streams with cursor-based reading |
-| F-1.5.3 | R-1.5.3 | Component lifecycle observers at sync points |
-| F-1.5.4 | R-1.5.4 | Deferred command buffers with deterministic flush |
-| F-1.5.5 | R-1.5.5, R-1.5.5a | Reactive query notifications for system skipping |
-| F-1.5.6 | R-1.5.6 | Typed singleton resources with scheduler integration |
-| F-1.5.7 | R-1.5.7 | Cross-world event bridges with filtering and transform |
+| Feature | Requirement       |
+|---------|-------------------|
+| F-1.5.1 | R-1.5.1, R-1.5.1a |
+| F-1.5.2 | R-1.5.2           |
+| F-1.5.3 | R-1.5.3           |
+| F-1.5.4 | R-1.5.4           |
+| F-1.5.5 | R-1.5.5, R-1.5.5a |
+| F-1.5.6 | R-1.5.6           |
+| F-1.5.7 | R-1.5.7           |
+
+1. **F-1.5.1** — Typed double-buffered event channels with per-type isolation
+2. **F-1.5.2** — Persistent event streams with cursor-based reading
+3. **F-1.5.3** — Component lifecycle observers at sync points
+4. **F-1.5.4** — Deferred command buffers with deterministic flush
+5. **F-1.5.5** — Reactive query notifications for system skipping
+6. **F-1.5.6** — Typed singleton resources with scheduler integration
+7. **F-1.5.7** — Cross-world event bridges with filtering and transform
 
 ### Plugin System (F-1.6, R-1.6)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.6.1 | R-1.6.1 | Declarative plugin registration with automatic ordering |
-| F-1.6.2 | R-1.6.2 | Plugin groups and presets |
-| F-1.6.3 | R-1.6.3 | Explicit dependency and conflict declaration |
-| F-1.6.4 | R-1.6.4, R-1.6.4a | Topological sort with cycle detection and error quality |
-| F-1.6.5 | R-1.6.5, R-1.6.5a | Hot reload with state preservation |
-| F-1.6.6 | R-1.6.6 | Semantic versioning and ABI stability metadata |
-| F-1.6.7 | R-1.6.7 | Capability negotiation for optional features |
+| Feature | Requirement       |
+|---------|-------------------|
+| F-1.6.1 | R-1.6.1           |
+| F-1.6.2 | R-1.6.2           |
+| F-1.6.3 | R-1.6.3           |
+| F-1.6.4 | R-1.6.4, R-1.6.4a |
+| F-1.6.5 | R-1.6.5, R-1.6.5a |
+| F-1.6.6 | R-1.6.6           |
+| F-1.6.7 | R-1.6.7           |
+
+1. **F-1.6.1** — Declarative plugin registration with automatic ordering
+2. **F-1.6.2** — Plugin groups and presets
+3. **F-1.6.3** — Explicit dependency and conflict declaration
+4. **F-1.6.4** — Topological sort with cycle detection and error quality
+5. **F-1.6.5** — Hot reload with state preservation
+6. **F-1.6.6** — Semantic versioning and ABI stability metadata
+7. **F-1.6.7** — Capability negotiation for optional features
 
 ## Overview
 
@@ -1407,61 +1423,129 @@ The flood warning threshold fires a diagnostic at 50,000 events per channel per 
 
 ### Unit Tests — Events
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_double_buffer_swap` | R-1.5.1 | Write 3 events frame N. Frame N+1: reader sees 3. Frame N+2: reader sees 0. |
-| `test_parallel_readers_no_contention` | R-1.5.1 | 8 threads read same channel concurrently. Verify via ThreadSanitizer. |
-| `test_flood_warning_threshold` | R-1.5.1a | Write 50,001 events. Verify diagnostic fires. |
-| `test_throughput_100k` | R-1.5.1a | Write 100K events of 64 bytes. Verify < 1 ms total. |
-| `test_persistent_stream_cursor` | R-1.5.2 | 60 events across 6 frames. Reader at 10 Hz sees all 60 in batch. |
-| `test_cursor_independence` | R-1.5.2 | Two cursors at different positions see independent views. |
-| `test_cursor_overflow_detection` | R-1.5.2 | Cursor falls behind ring buffer. Verify `has_overflowed()` returns true. |
-| `test_observer_fires_on_add` | R-1.5.3 | Register observer for OnAdd. Spawn 100 entities via command buffers from 4 systems. Verify 100 callbacks in deterministic order. |
-| `test_observer_fires_on_remove` | R-1.5.3 | Remove component from 50 entities. Verify 50 OnRemove callbacks. |
-| `test_observer_fires_on_mutate` | R-1.5.3 | Mutate component on 25 entities. Verify 25 OnMutate callbacks. |
-| `test_observer_deterministic_order` | R-1.5.3 | Repeat observer test 100 times. Verify identical callback order. |
-| `test_command_buffer_flush_order` | R-1.5.4 | 3 systems record commands. Flush. Verify application order matches system execution order. |
-| `test_command_buffer_deterministic` | R-1.5.4 | Repeat flush 100 times with different thread counts. Verify identical world state. |
-| `test_reactive_query_skip` | R-1.5.5 | Register reactive query on component A. 10 frames, no A changes. Verify system runs 0 times. Modify one A. Verify system runs next frame. |
-| `test_reactive_query_overhead` | R-1.5.5a | 200 reactive queries, no changes. Verify total overhead < 200 us. |
-| `test_resource_scheduler_ordering` | R-1.5.6 | One system writes via ResMut, another reads via Res. Verify scheduler orders them correctly. |
-| `test_resource_parallel_reads` | R-1.5.6 | Two read-only systems with Res access. Verify they run in parallel. |
+| Test                                  | Req      |
+|---------------------------------------|----------|
+| `test_double_buffer_swap`             | R-1.5.1  |
+| `test_parallel_readers_no_contention` | R-1.5.1  |
+| `test_flood_warning_threshold`        | R-1.5.1a |
+| `test_throughput_100k`                | R-1.5.1a |
+| `test_persistent_stream_cursor`       | R-1.5.2  |
+| `test_cursor_independence`            | R-1.5.2  |
+| `test_cursor_overflow_detection`      | R-1.5.2  |
+| `test_observer_fires_on_add`          | R-1.5.3  |
+| `test_observer_fires_on_remove`       | R-1.5.3  |
+| `test_observer_fires_on_mutate`       | R-1.5.3  |
+| `test_observer_deterministic_order`   | R-1.5.3  |
+| `test_command_buffer_flush_order`     | R-1.5.4  |
+| `test_command_buffer_deterministic`   | R-1.5.4  |
+| `test_reactive_query_skip`            | R-1.5.5  |
+| `test_reactive_query_overhead`        | R-1.5.5a |
+| `test_resource_scheduler_ordering`    | R-1.5.6  |
+| `test_resource_parallel_reads`        | R-1.5.6  |
+
+1. **`test_double_buffer_swap`** — Write 3 events frame N. Frame N+1: reader sees 3. Frame N+2:
+   reader sees 0.
+2. **`test_parallel_readers_no_contention`** — 8 threads read same channel concurrently. Verify via
+   ThreadSanitizer.
+3. **`test_flood_warning_threshold`** — Write 50,001 events. Verify diagnostic fires.
+4. **`test_throughput_100k`** — Write 100K events of 64 bytes. Verify < 1 ms total.
+5. **`test_persistent_stream_cursor`** — 60 events across 6 frames. Reader at 10 Hz sees all 60 in
+   batch.
+6. **`test_cursor_independence`** — Two cursors at different positions see independent views.
+7. **`test_cursor_overflow_detection`** — Cursor falls behind ring buffer. Verify `has_overflowed()`
+   returns true.
+8. **`test_observer_fires_on_add`** — Register observer for OnAdd. Spawn 100 entities via command
+   buffers from 4 systems. Verify 100 callbacks in deterministic order.
+9. **`test_observer_fires_on_remove`** — Remove component from 50 entities. Verify 50 OnRemove
+   callbacks.
+10. **`test_observer_fires_on_mutate`** — Mutate component on 25 entities. Verify 25 OnMutate
+    callbacks.
+11. **`test_observer_deterministic_order`** — Repeat observer test 100 times. Verify identical
+    callback order.
+12. **`test_command_buffer_flush_order`** — 3 systems record commands. Flush. Verify application
+    order matches system execution order.
+13. **`test_command_buffer_deterministic`** — Repeat flush 100 times with different thread counts.
+    Verify identical world state.
+14. **`test_reactive_query_skip`** — Register reactive query on component A. 10 frames, no A
+    changes. Verify system runs 0 times. Modify one A. Verify system runs next frame.
+15. **`test_reactive_query_overhead`** — 200 reactive queries, no changes. Verify total overhead <
+    200 us.
+16. **`test_resource_scheduler_ordering`** — One system writes via ResMut, another reads via Res.
+    Verify scheduler orders them correctly.
+17. **`test_resource_parallel_reads`** — Two read-only systems with Res access. Verify they run in
+    parallel.
 
 ### Unit Tests — Plugins
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_plugin_reverse_order` | R-1.6.1 | Register 3 plugins in reverse dependency order. Verify correct initialization order. |
-| `test_plugin_contributions` | R-1.6.1 | After init, verify all declared systems, components, and resources exist. |
-| `test_group_disable` | R-1.6.2 | Group of 5, disable 1. Verify 4 active, disabled plugin's systems absent. |
-| `test_missing_dependency` | R-1.6.3 | Register plugin depending on absent plugin. Verify error naming missing dep. |
-| `test_conflict_detection` | R-1.6.3 | Register two conflicting plugins. Verify conflict error. |
-| `test_topological_sort` | R-1.6.4 | A->B->C chain. Verify init order A, B, C. |
-| `test_cycle_detection` | R-1.6.4 | A->B->A cycle. Verify cycle error with path. |
-| `test_all_errors_single_pass` | R-1.6.4a | 3 simultaneous issues (missing dep, conflict, cycle). Verify all 3 reported. |
-| `test_abi_hash_match` | R-1.6.6 | Load plugin with matching ABI hash. Verify success. |
-| `test_abi_hash_mismatch` | R-1.6.6 | Load plugin with mismatched ABI hash. Verify rejection with version info. |
-| `test_capability_query` | R-1.6.7 | Register capability "physics" v1.2. Query returns v1.2. Query "audio" returns None. |
-| `test_capability_branch` | R-1.6.7 | System branches on "physics" presence. Verify correct branch. |
+| Test                          | Req      |
+|-------------------------------|----------|
+| `test_plugin_reverse_order`   | R-1.6.1  |
+| `test_plugin_contributions`   | R-1.6.1  |
+| `test_group_disable`          | R-1.6.2  |
+| `test_missing_dependency`     | R-1.6.3  |
+| `test_conflict_detection`     | R-1.6.3  |
+| `test_topological_sort`       | R-1.6.4  |
+| `test_cycle_detection`        | R-1.6.4  |
+| `test_all_errors_single_pass` | R-1.6.4a |
+| `test_abi_hash_match`         | R-1.6.6  |
+| `test_abi_hash_mismatch`      | R-1.6.6  |
+| `test_capability_query`       | R-1.6.7  |
+| `test_capability_branch`      | R-1.6.7  |
+
+1. **`test_plugin_reverse_order`** — Register 3 plugins in reverse dependency order. Verify correct
+   initialization order.
+2. **`test_plugin_contributions`** — After init, verify all declared systems, components, and
+   resources exist.
+3. **`test_group_disable`** — Group of 5, disable 1. Verify 4 active, disabled plugin's systems
+   absent.
+4. **`test_missing_dependency`** — Register plugin depending on absent plugin. Verify error naming
+   missing dep.
+5. **`test_conflict_detection`** — Register two conflicting plugins. Verify conflict error.
+6. **`test_topological_sort`** — A->B->C chain. Verify init order A, B, C.
+7. **`test_cycle_detection`** — A->B->A cycle. Verify cycle error with path.
+8. **`test_all_errors_single_pass`** — 3 simultaneous issues (missing dep, conflict, cycle). Verify
+   all 3 reported.
+9. **`test_abi_hash_match`** — Load plugin with matching ABI hash. Verify success.
+10. **`test_abi_hash_mismatch`** — Load plugin with mismatched ABI hash. Verify rejection with
+    version info.
+11. **`test_capability_query`** — Register capability "physics" v1.2. Query returns v1.2. Query
+    "audio" returns None.
+12. **`test_capability_branch`** — System branches on "physics" presence. Verify correct branch.
 
 ### Integration Tests — Events
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_cross_world_bridge` | R-1.5.7 | Two worlds, bridge for ChatMsg. Send in A, verify in B. |
-| `test_bridge_filter` | R-1.5.7 | Filter drops `is_private=true`. Verify filtered events absent in target. |
-| `test_bridge_transform` | R-1.5.7 | Transform modifies event payload. Verify transformed value in target. |
-| `test_bridge_unsubscribed_type` | R-1.5.7 | Send unsubscribed event type in A. Verify absent in B. |
-| `test_full_frame_lifecycle` | R-1.5.1 | End-to-end: write events, swap, read, command buffer flush, observer dispatch. Verify correct state. |
+| Test                            | Req     |
+|---------------------------------|---------|
+| `test_cross_world_bridge`       | R-1.5.7 |
+| `test_bridge_filter`            | R-1.5.7 |
+| `test_bridge_transform`         | R-1.5.7 |
+| `test_bridge_unsubscribed_type` | R-1.5.7 |
+| `test_full_frame_lifecycle`     | R-1.5.1 |
+
+1. **`test_cross_world_bridge`** — Two worlds, bridge for ChatMsg. Send in A, verify in B.
+2. **`test_bridge_filter`** — Filter drops `is_private=true`. Verify filtered events absent in
+   target.
+3. **`test_bridge_transform`** — Transform modifies event payload. Verify transformed value in
+   target.
+4. **`test_bridge_unsubscribed_type`** — Send unsubscribed event type in A. Verify absent in B.
+5. **`test_full_frame_lifecycle`** — End-to-end: write events, swap, read, command buffer flush,
+   observer dispatch. Verify correct state.
 
 ### Integration Tests — Plugins
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_hot_reload_state_preservation` | R-1.6.5 | Load plugin, run one frame, modify, hot-reload. Verify ECS state survives. |
-| `test_hot_reload_new_behavior` | R-1.6.5 | After reload, verify new system behavior is active. |
-| `test_hot_reload_latency` | R-1.6.5a | Reload 50-system plugin. Verify total cycle < 2s. |
-| `test_hot_reload_migration_failure` | R-1.6.5a | Introduce layout change that fails migration. Verify error reported, pre-reload value retained. |
+| Test                                 | Req      |
+|--------------------------------------|----------|
+| `test_hot_reload_state_preservation` | R-1.6.5  |
+| `test_hot_reload_new_behavior`       | R-1.6.5  |
+| `test_hot_reload_latency`            | R-1.6.5a |
+| `test_hot_reload_migration_failure`  | R-1.6.5a |
+
+1. **`test_hot_reload_state_preservation`** — Load plugin, run one frame, modify, hot-reload. Verify
+   ECS state survives.
+2. **`test_hot_reload_new_behavior`** — After reload, verify new system behavior is active.
+3. **`test_hot_reload_latency`** — Reload 50-system plugin. Verify total cycle < 2s.
+4. **`test_hot_reload_migration_failure`** — Introduce layout change that fails migration. Verify
+   error reported, pre-reload value retained.
 
 ### Benchmarks
 

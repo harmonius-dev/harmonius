@@ -8,16 +8,25 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.17.1 | R-15.17.1 | Integrated asset store browser (search, filter, preview) |
-| F-15.17.2 | R-15.17.2 | One-click asset import with dependency resolution |
-| F-15.17.3 | R-15.17.3 | Asset ratings, reviews, and curation |
-| F-15.17.4 | R-15.17.4 | Publisher account and dashboard |
-| F-15.17.5 | R-15.17.5 | Automated compatibility testing |
-| F-15.17.6 | R-15.17.6 | Revenue sharing and payout |
-| F-15.17.7 | R-15.17.7 | Asset type support (all engine types) |
-| F-15.17.8 | R-15.17.8 | License management and DRM-free import |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.17.1 | R-15.17.1   |
+| F-15.17.2 | R-15.17.2   |
+| F-15.17.3 | R-15.17.3   |
+| F-15.17.4 | R-15.17.4   |
+| F-15.17.5 | R-15.17.5   |
+| F-15.17.6 | R-15.17.6   |
+| F-15.17.7 | R-15.17.7   |
+| F-15.17.8 | R-15.17.8   |
+
+1. **F-15.17.1** — Integrated asset store browser (search, filter, preview)
+2. **F-15.17.2** — One-click asset import with dependency resolution
+3. **F-15.17.3** — Asset ratings, reviews, and curation
+4. **F-15.17.4** — Publisher account and dashboard
+5. **F-15.17.5** — Automated compatibility testing
+6. **F-15.17.6** — Revenue sharing and payout
+7. **F-15.17.7** — Asset type support (all engine types)
+8. **F-15.17.8** — License management and DRM-free import
 
 ## Overview
 
@@ -1225,46 +1234,85 @@ All preview rendering reuses existing editor subsystems. No custom rendering cod
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_search_category_filter` | R-15.17.1 | Verify category filter returns only matching assets |
-| `test_search_tag_filter` | R-15.17.1 | Verify tag filter returns only matching assets |
-| `test_search_engine_version_filter` | R-15.17.1 | Verify version filter excludes incompatible assets |
-| `test_search_sort_orders` | R-15.17.1 | Verify all sort orders return correct ordering |
-| `test_import_resolves_deps` | R-15.17.2 | Verify transitive dependencies are resolved in topological order |
-| `test_import_detects_version_conflict` | R-15.17.2 | Verify version conflict returns upgrade steps |
-| `test_import_detects_missing_plugin` | R-15.17.2 | Verify missing plugin dependency is reported |
-| `test_review_rating_range` | R-15.17.3 | Verify ratings outside 1-5 are rejected |
-| `test_review_moderation_pending` | R-15.17.3 | Verify new reviews start in Pending moderation state |
-| `test_publisher_registration` | R-15.17.4 | Verify publisher account creation with identity verification |
-| `test_regional_pricing` | R-15.17.4 | Verify regional price overrides are applied correctly |
-| `test_discount_code_apply` | R-15.17.4 | Verify discount code reduces price at checkout |
-| `test_discount_code_expired` | R-15.17.4 | Verify expired discount code is rejected |
-| `test_compat_badge_awarded` | R-15.17.5 | Verify passing asset receives compat badge |
-| `test_compat_badge_revoked` | R-15.17.5 | Verify failing asset loses compat badge |
-| `test_commission_calculation` | R-15.17.6 | Verify 12% commission deduction from sale price |
-| `test_refund_within_window` | R-15.17.6 | Verify refund within 14 days reverses publisher revenue |
-| `test_refund_outside_window` | R-15.17.6 | Verify refund after 14 days is rejected |
-| `test_all_asset_types_accepted` | R-15.17.7 | Verify every AssetCategory can be uploaded |
-| `test_license_validation_commercial` | R-15.17.8 | Verify personal license is flagged for commercial projects |
-| `test_license_no_runtime_drm` | R-15.17.8 | Verify imported assets have no network dependencies |
+| Test                                   | Req       |
+|----------------------------------------|-----------|
+| `test_search_category_filter`          | R-15.17.1 |
+| `test_search_tag_filter`               | R-15.17.1 |
+| `test_search_engine_version_filter`    | R-15.17.1 |
+| `test_search_sort_orders`              | R-15.17.1 |
+| `test_import_resolves_deps`            | R-15.17.2 |
+| `test_import_detects_version_conflict` | R-15.17.2 |
+| `test_import_detects_missing_plugin`   | R-15.17.2 |
+| `test_review_rating_range`             | R-15.17.3 |
+| `test_review_moderation_pending`       | R-15.17.3 |
+| `test_publisher_registration`          | R-15.17.4 |
+| `test_regional_pricing`                | R-15.17.4 |
+| `test_discount_code_apply`             | R-15.17.4 |
+| `test_discount_code_expired`           | R-15.17.4 |
+| `test_compat_badge_awarded`            | R-15.17.5 |
+| `test_compat_badge_revoked`            | R-15.17.5 |
+| `test_commission_calculation`          | R-15.17.6 |
+| `test_refund_within_window`            | R-15.17.6 |
+| `test_refund_outside_window`           | R-15.17.6 |
+| `test_all_asset_types_accepted`        | R-15.17.7 |
+| `test_license_validation_commercial`   | R-15.17.8 |
+| `test_license_no_runtime_drm`          | R-15.17.8 |
+
+1. **`test_search_category_filter`** — Verify category filter returns only matching assets
+2. **`test_search_tag_filter`** — Verify tag filter returns only matching assets
+3. **`test_search_engine_version_filter`** — Verify version filter excludes incompatible assets
+4. **`test_search_sort_orders`** — Verify all sort orders return correct ordering
+5. **`test_import_resolves_deps`** — Verify transitive dependencies are resolved in topological
+   order
+6. **`test_import_detects_version_conflict`** — Verify version conflict returns upgrade steps
+7. **`test_import_detects_missing_plugin`** — Verify missing plugin dependency is reported
+8. **`test_review_rating_range`** — Verify ratings outside 1-5 are rejected
+9. **`test_review_moderation_pending`** — Verify new reviews start in Pending moderation state
+10. **`test_publisher_registration`** — Verify publisher account creation with identity verification
+11. **`test_regional_pricing`** — Verify regional price overrides are applied correctly
+12. **`test_discount_code_apply`** — Verify discount code reduces price at checkout
+13. **`test_discount_code_expired`** — Verify expired discount code is rejected
+14. **`test_compat_badge_awarded`** — Verify passing asset receives compat badge
+15. **`test_compat_badge_revoked`** — Verify failing asset loses compat badge
+16. **`test_commission_calculation`** — Verify 12% commission deduction from sale price
+17. **`test_refund_within_window`** — Verify refund within 14 days reverses publisher revenue
+18. **`test_refund_outside_window`** — Verify refund after 14 days is rejected
+19. **`test_all_asset_types_accepted`** — Verify every AssetCategory can be uploaded
+20. **`test_license_validation_commercial`** — Verify personal license is flagged for commercial
+    projects
+21. **`test_license_no_runtime_drm`** — Verify imported assets have no network dependencies
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_end_to_end_purchase_import` | R-15.17.2 | Purchase asset, download, import, verify in asset browser |
-| `test_dependency_chain_import` | R-15.17.2 | Import asset with 3-level dependency chain, all resolved |
-| `test_free_asset_no_payment` | R-15.17.2 | Free asset downloads without payment flow |
-| `test_search_semantic_query` | R-15.17.1 | Semantic search returns relevant results for descriptive queries |
-| `test_publisher_upload_to_listing` | R-15.17.4 | Upload package, pass compat test, approve, verify visible |
-| `test_compat_test_pipeline` | R-15.17.5 | Upload asset, trigger compat test, verify badge assignment |
-| `test_payout_calculation` | R-15.17.6 | Multiple purchases + refund, verify payout amount |
-| `test_stripe_payment_flow` | R-15.17.6 | End-to-end Stripe payment with test card |
-| `test_review_moderation_flow` | R-15.17.3 | Submit review, moderate, approve, verify visible |
-| `test_collection_browse` | R-15.17.3 | Create collection, add assets, browse from editor |
-| `test_rust_plugin_per_platform` | R-15.17.7 | Upload Rust plugin, verify per-platform binaries served |
-| `test_offline_after_import` | R-15.17.8 | Import asset, disconnect network, verify asset works |
+| Test                               | Req       |
+|------------------------------------|-----------|
+| `test_end_to_end_purchase_import`  | R-15.17.2 |
+| `test_dependency_chain_import`     | R-15.17.2 |
+| `test_free_asset_no_payment`       | R-15.17.2 |
+| `test_search_semantic_query`       | R-15.17.1 |
+| `test_publisher_upload_to_listing` | R-15.17.4 |
+| `test_compat_test_pipeline`        | R-15.17.5 |
+| `test_payout_calculation`          | R-15.17.6 |
+| `test_stripe_payment_flow`         | R-15.17.6 |
+| `test_review_moderation_flow`      | R-15.17.3 |
+| `test_collection_browse`           | R-15.17.3 |
+| `test_rust_plugin_per_platform`    | R-15.17.7 |
+| `test_offline_after_import`        | R-15.17.8 |
+
+1. **`test_end_to_end_purchase_import`** — Purchase asset, download, import, verify in asset browser
+2. **`test_dependency_chain_import`** — Import asset with 3-level dependency chain, all resolved
+3. **`test_free_asset_no_payment`** — Free asset downloads without payment flow
+4. **`test_search_semantic_query`** — Semantic search returns relevant results for descriptive
+   queries
+5. **`test_publisher_upload_to_listing`** — Upload package, pass compat test, approve, verify
+   visible
+6. **`test_compat_test_pipeline`** — Upload asset, trigger compat test, verify badge assignment
+7. **`test_payout_calculation`** — Multiple purchases + refund, verify payout amount
+8. **`test_stripe_payment_flow`** — End-to-end Stripe payment with test card
+9. **`test_review_moderation_flow`** — Submit review, moderate, approve, verify visible
+10. **`test_collection_browse`** — Create collection, add assets, browse from editor
+11. **`test_rust_plugin_per_platform`** — Upload Rust plugin, verify per-platform binaries served
+12. **`test_offline_after_import`** — Import asset, disconnect network, verify asset works
 
 ### Performance Tests
 

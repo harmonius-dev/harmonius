@@ -10,31 +10,51 @@
 
 ### Building
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.14.1 | R-13.14.1 | Modular snap-based building placement with socket system |
-| F-13.14.2 | R-13.14.2 | Construction phase with scaffold, progress, resource costs |
-| F-13.14.3 | R-13.14.3 | Structural integrity propagation from foundations |
-| F-13.14.4 | R-13.14.4 | Building upgrade across material tiers and repair |
-| F-13.14.5a | R-13.14.5a | Housing plot and instance system with permissions |
-| F-13.14.5b | R-13.14.5b | Furniture placement in interior spaces |
-| F-13.14.5c | R-13.14.5c | Functional furniture effects (beds, chests, stations) |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.14.1  | R-13.14.1   |
+| F-13.14.2  | R-13.14.2   |
+| F-13.14.3  | R-13.14.3   |
+| F-13.14.4  | R-13.14.4   |
+| F-13.14.5a | R-13.14.5a  |
+| F-13.14.5b | R-13.14.5b  |
+| F-13.14.5c | R-13.14.5c  |
+
+1. **F-13.14.1** — Modular snap-based building placement with socket system
+2. **F-13.14.2** — Construction phase with scaffold, progress, resource costs
+3. **F-13.14.3** — Structural integrity propagation from foundations
+4. **F-13.14.4** — Building upgrade across material tiers and repair
+5. **F-13.14.5a** — Housing plot and instance system with permissions
+6. **F-13.14.5b** — Furniture placement in interior spaces
+7. **F-13.14.5c** — Functional furniture effects (beds, chests, stations)
 
 ### Survival
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.14.6a | R-13.14.6a | Hunger and thirst meters with activity/biome modifiers |
-| F-13.14.6b | R-13.14.6b | Temperature and warmth affected by clothing, fire, shelter |
-| F-13.14.6c | R-13.14.6c | Stamina depletion and fatigue accumulation |
-| F-13.14.6d | R-13.14.6d | Vital debuffs at critical thresholds |
-| F-13.14.7a | R-13.14.7a | Harvestable resource node definitions |
-| F-13.14.7b | R-13.14.7b | Gathering interaction loop with skill-based yield |
-| F-13.14.7c | R-13.14.7c | Procedural resource node distribution by biome |
-| F-13.14.8 | R-13.14.8 | Farming and crop growth pipeline |
-| F-13.14.9a | R-13.14.9a | Animal needs, happiness, and production rates |
-| F-13.14.9b | R-13.14.9b | Animal housing structures with capacity limits |
-| F-13.14.9c | R-13.14.9c | Animal breeding with trait inheritance |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.14.6a | R-13.14.6a  |
+| F-13.14.6b | R-13.14.6b  |
+| F-13.14.6c | R-13.14.6c  |
+| F-13.14.6d | R-13.14.6d  |
+| F-13.14.7a | R-13.14.7a  |
+| F-13.14.7b | R-13.14.7b  |
+| F-13.14.7c | R-13.14.7c  |
+| F-13.14.8  | R-13.14.8   |
+| F-13.14.9a | R-13.14.9a  |
+| F-13.14.9b | R-13.14.9b  |
+| F-13.14.9c | R-13.14.9c  |
+
+1. **F-13.14.6a** — Hunger and thirst meters with activity/biome modifiers
+2. **F-13.14.6b** — Temperature and warmth affected by clothing, fire, shelter
+3. **F-13.14.6c** — Stamina depletion and fatigue accumulation
+4. **F-13.14.6d** — Vital debuffs at critical thresholds
+5. **F-13.14.7a** — Harvestable resource node definitions
+6. **F-13.14.7b** — Gathering interaction loop with skill-based yield
+7. **F-13.14.7c** — Procedural resource node distribution by biome
+8. **F-13.14.8** — Farming and crop growth pipeline
+9. **F-13.14.9a** — Animal needs, happiness, and production rates
+10. **F-13.14.9b** — Animal housing structures with capacity limits
+11. **F-13.14.9c** — Animal breeding with trait inheritance
 
 ### Non-Functional
 
@@ -1528,84 +1548,162 @@ per project constraints.
 
 ### Unit Tests -- Building
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_socket_snap_valid` | R-13.14.1 | Place wall next to foundation; verify snap to wall socket at 90-degree increment. |
-| `test_socket_snap_invalid` | R-13.14.1 | Place wall with no nearby sockets; verify ghost shows red, placement rejected. |
-| `test_freeform_ground_align` | R-13.14.1 | Free-form place on slope; verify ground alignment, no float/clip. |
-| `test_placement_collision` | R-13.14.1 | Place overlapping two pieces; verify collision rejects. |
-| `test_placement_zone_restrict` | R-13.14.1 | Place in restricted zone; verify rejection. |
-| `test_construction_progress` | R-13.14.2 | Place scaffold; verify visual stages at 33%, 66%, 100%. |
-| `test_construction_cancel_refund` | R-13.14.2 | Cancel at 50%; verify partial material refund. |
-| `test_incomplete_reduced_hp` | R-13.14.2 | Verify 50% progress gives 50% max HP. |
-| `test_stability_decreases_with_distance` | R-13.14.3 | Build 5-piece tower; verify stability decreases per tier. |
-| `test_cascade_collapse` | R-13.14.3 | Remove foundation; verify all dependent pieces collapse. |
-| `test_stone_higher_stability` | R-13.14.3 | Compare stone vs wood at same distance; verify stone higher. |
-| `test_stability_incremental` | R-13.14.3 | Verify stability recomputes on add/remove, not every frame. |
-| `test_stability_warning_visual` | R-13.14.3 | Low stability piece; verify StabilityWarning component set. |
-| `test_upgrade_tier` | R-13.14.4 | Upgrade wood to stone; verify mesh, HP, stability change. |
-| `test_repair_proportional` | R-13.14.4 | Damage to 50%; repair; verify material cost is proportional. |
-| `test_decay_over_time` | R-13.14.4 | Enable decay; advance time; verify HP decreases at configured rate. |
-| `test_upgrade_resets_decay` | R-13.14.4 | Upgrade mid-decay; verify decay timer resets. |
-| `test_housing_permission_public` | R-13.14.5a | Set public; verify any player can enter. |
-| `test_housing_permission_private` | R-13.14.5a | Set private; verify non-owner blocked. |
-| `test_housing_permission_persist` | R-13.14.5a | Save and reload; verify permissions persist. |
-| `test_furniture_grid_placement` | R-13.14.5b | Place furniture on grid; verify snaps correctly. |
-| `test_furniture_overlap_reject` | R-13.14.5b | Place overlapping furniture; verify rejection. |
-| `test_bed_sets_respawn` | R-13.14.5c | Place bed; verify respawn point updated. |
-| `test_chest_extends_inventory` | R-13.14.5c | Place chest; verify inventory capacity increases. |
-| `test_station_enables_crafting` | R-13.14.5c | Place station; verify recipes accessible. |
+| Test                                     | Req        |
+|------------------------------------------|------------|
+| `test_socket_snap_valid`                 | R-13.14.1  |
+| `test_socket_snap_invalid`               | R-13.14.1  |
+| `test_freeform_ground_align`             | R-13.14.1  |
+| `test_placement_collision`               | R-13.14.1  |
+| `test_placement_zone_restrict`           | R-13.14.1  |
+| `test_construction_progress`             | R-13.14.2  |
+| `test_construction_cancel_refund`        | R-13.14.2  |
+| `test_incomplete_reduced_hp`             | R-13.14.2  |
+| `test_stability_decreases_with_distance` | R-13.14.3  |
+| `test_cascade_collapse`                  | R-13.14.3  |
+| `test_stone_higher_stability`            | R-13.14.3  |
+| `test_stability_incremental`             | R-13.14.3  |
+| `test_stability_warning_visual`          | R-13.14.3  |
+| `test_upgrade_tier`                      | R-13.14.4  |
+| `test_repair_proportional`               | R-13.14.4  |
+| `test_decay_over_time`                   | R-13.14.4  |
+| `test_upgrade_resets_decay`              | R-13.14.4  |
+| `test_housing_permission_public`         | R-13.14.5a |
+| `test_housing_permission_private`        | R-13.14.5a |
+| `test_housing_permission_persist`        | R-13.14.5a |
+| `test_furniture_grid_placement`          | R-13.14.5b |
+| `test_furniture_overlap_reject`          | R-13.14.5b |
+| `test_bed_sets_respawn`                  | R-13.14.5c |
+| `test_chest_extends_inventory`           | R-13.14.5c |
+| `test_station_enables_crafting`          | R-13.14.5c |
+
+1. **`test_socket_snap_valid`** — Place wall next to foundation; verify snap to wall socket at
+   90-degree increment.
+2. **`test_socket_snap_invalid`** — Place wall with no nearby sockets; verify ghost shows red,
+   placement rejected.
+3. **`test_freeform_ground_align`** — Free-form place on slope; verify ground alignment, no
+   float/clip.
+4. **`test_placement_collision`** — Place overlapping two pieces; verify collision rejects.
+5. **`test_placement_zone_restrict`** — Place in restricted zone; verify rejection.
+6. **`test_construction_progress`** — Place scaffold; verify visual stages at 33%, 66%, 100%.
+7. **`test_construction_cancel_refund`** — Cancel at 50%; verify partial material refund.
+8. **`test_incomplete_reduced_hp`** — Verify 50% progress gives 50% max HP.
+9. **`test_stability_decreases_with_distance`** — Build 5-piece tower; verify stability decreases
+   per tier.
+10. **`test_cascade_collapse`** — Remove foundation; verify all dependent pieces collapse.
+11. **`test_stone_higher_stability`** — Compare stone vs wood at same distance; verify stone higher.
+12. **`test_stability_incremental`** — Verify stability recomputes on add/remove, not every frame.
+13. **`test_stability_warning_visual`** — Low stability piece; verify StabilityWarning component
+    set.
+14. **`test_upgrade_tier`** — Upgrade wood to stone; verify mesh, HP, stability change.
+15. **`test_repair_proportional`** — Damage to 50%; repair; verify material cost is proportional.
+16. **`test_decay_over_time`** — Enable decay; advance time; verify HP decreases at configured rate.
+17. **`test_upgrade_resets_decay`** — Upgrade mid-decay; verify decay timer resets.
+18. **`test_housing_permission_public`** — Set public; verify any player can enter.
+19. **`test_housing_permission_private`** — Set private; verify non-owner blocked.
+20. **`test_housing_permission_persist`** — Save and reload; verify permissions persist.
+21. **`test_furniture_grid_placement`** — Place furniture on grid; verify snaps correctly.
+22. **`test_furniture_overlap_reject`** — Place overlapping furniture; verify rejection.
+23. **`test_bed_sets_respawn`** — Place bed; verify respawn point updated.
+24. **`test_chest_extends_inventory`** — Place chest; verify inventory capacity increases.
+25. **`test_station_enables_crafting`** — Place station; verify recipes accessible.
 
 ### Unit Tests -- Survival
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_hunger_base_drain` | R-13.14.6a | Idle for 60 s; verify hunger drains at base rate. |
-| `test_hunger_sprint_multiplier` | R-13.14.6a | Sprint for 60 s; verify hunger drains faster. |
-| `test_thirst_hot_biome` | R-13.14.6a | Desert biome; verify thirst drains faster. |
-| `test_food_restores_hunger` | R-13.14.6a | Eat food; verify hunger restores by configured amount. |
-| `test_food_temp_buff` | R-13.14.6a | Eat buff food; verify temporary stat buff applied. |
-| `test_warmth_clothing` | R-13.14.6b | Equip insulated clothing; verify warmth drain slows. |
-| `test_warmth_fire_proximity` | R-13.14.6b | Stand near fire; verify warmth restores. |
-| `test_warmth_shelter` | R-13.14.6b | Enter shelter; verify warmth drain stops. |
-| `test_stamina_sprint_drain` | R-13.14.6c | Sprint; verify stamina depletes. |
-| `test_stamina_rest_recovery` | R-13.14.6c | Rest; verify stamina recovers at configured rate. |
-| `test_fatigue_slows_recovery` | R-13.14.6c | Prolonged exertion; verify fatigue slows recovery. |
-| `test_starvation_debuff` | R-13.14.6d | Hunger below threshold; verify max HP reduced. |
-| `test_dehydration_debuff` | R-13.14.6d | Thirst below threshold; verify movement slowed. |
-| `test_hypothermia_debuff` | R-13.14.6d | Warmth below threshold; verify periodic damage. |
-| `test_debuff_removal` | R-13.14.6d | Restore above threshold; verify debuff removed. |
-| `test_node_tool_requirement` | R-13.14.7a | Gather ore without pickaxe; verify rejection. |
-| `test_node_depletion` | R-13.14.7a | Gather until HP zero; verify node depleted. |
-| `test_node_respawn` | R-13.14.7a | Deplete node; advance time; verify respawn. |
-| `test_gather_yield_scales` | R-13.14.7b | Gather at two skill levels; verify higher yield. |
-| `test_gather_rare_proc` | R-13.14.7b | Gather 1,000 times; verify rare procs within expected range. |
-| `test_gather_animation_loop` | R-13.14.7b | Start gathering; verify animation loops until done. |
-| `test_pcg_deterministic` | R-13.14.7c | Generate same seed twice; verify identical node placement. |
-| `test_pcg_biome_density` | R-13.14.7c | Generate; verify per-biome node density matches config. |
-| `test_crop_growth_stages` | R-13.14.8 | Plant and advance time; verify stage transitions at thresholds. |
-| `test_crop_wither` | R-13.14.8 | Skip watering; verify crop withers after grace period. |
-| `test_crop_fertilizer` | R-13.14.8 | Apply fertilizer; verify growth speed increases. |
-| `test_crop_seasonal` | R-13.14.8 | Plant wrong season crop; verify growth blocked. |
-| `test_animal_happiness_production` | R-13.14.9a | Feed to max happiness; verify max production rate. |
-| `test_animal_neglect` | R-13.14.9a | Starve animal; verify production drops. |
-| `test_animal_housing_capacity` | R-13.14.9b | Fill coop; verify next animal rejected. |
-| `test_animal_species_compat` | R-13.14.9b | Place cow in coop; verify rejection. |
-| `test_breeding_offspring` | R-13.14.9c | Breed two animals; verify offspring inherits traits. |
-| `test_breeding_gestation` | R-13.14.9c | Breed; verify offspring appears after gestation timer. |
+| Test                               | Req        |
+|------------------------------------|------------|
+| `test_hunger_base_drain`           | R-13.14.6a |
+| `test_hunger_sprint_multiplier`    | R-13.14.6a |
+| `test_thirst_hot_biome`            | R-13.14.6a |
+| `test_food_restores_hunger`        | R-13.14.6a |
+| `test_food_temp_buff`              | R-13.14.6a |
+| `test_warmth_clothing`             | R-13.14.6b |
+| `test_warmth_fire_proximity`       | R-13.14.6b |
+| `test_warmth_shelter`              | R-13.14.6b |
+| `test_stamina_sprint_drain`        | R-13.14.6c |
+| `test_stamina_rest_recovery`       | R-13.14.6c |
+| `test_fatigue_slows_recovery`      | R-13.14.6c |
+| `test_starvation_debuff`           | R-13.14.6d |
+| `test_dehydration_debuff`          | R-13.14.6d |
+| `test_hypothermia_debuff`          | R-13.14.6d |
+| `test_debuff_removal`              | R-13.14.6d |
+| `test_node_tool_requirement`       | R-13.14.7a |
+| `test_node_depletion`              | R-13.14.7a |
+| `test_node_respawn`                | R-13.14.7a |
+| `test_gather_yield_scales`         | R-13.14.7b |
+| `test_gather_rare_proc`            | R-13.14.7b |
+| `test_gather_animation_loop`       | R-13.14.7b |
+| `test_pcg_deterministic`           | R-13.14.7c |
+| `test_pcg_biome_density`           | R-13.14.7c |
+| `test_crop_growth_stages`          | R-13.14.8  |
+| `test_crop_wither`                 | R-13.14.8  |
+| `test_crop_fertilizer`             | R-13.14.8  |
+| `test_crop_seasonal`               | R-13.14.8  |
+| `test_animal_happiness_production` | R-13.14.9a |
+| `test_animal_neglect`              | R-13.14.9a |
+| `test_animal_housing_capacity`     | R-13.14.9b |
+| `test_animal_species_compat`       | R-13.14.9b |
+| `test_breeding_offspring`          | R-13.14.9c |
+| `test_breeding_gestation`          | R-13.14.9c |
+
+1. **`test_hunger_base_drain`** — Idle for 60 s; verify hunger drains at base rate.
+2. **`test_hunger_sprint_multiplier`** — Sprint for 60 s; verify hunger drains faster.
+3. **`test_thirst_hot_biome`** — Desert biome; verify thirst drains faster.
+4. **`test_food_restores_hunger`** — Eat food; verify hunger restores by configured amount.
+5. **`test_food_temp_buff`** — Eat buff food; verify temporary stat buff applied.
+6. **`test_warmth_clothing`** — Equip insulated clothing; verify warmth drain slows.
+7. **`test_warmth_fire_proximity`** — Stand near fire; verify warmth restores.
+8. **`test_warmth_shelter`** — Enter shelter; verify warmth drain stops.
+9. **`test_stamina_sprint_drain`** — Sprint; verify stamina depletes.
+10. **`test_stamina_rest_recovery`** — Rest; verify stamina recovers at configured rate.
+11. **`test_fatigue_slows_recovery`** — Prolonged exertion; verify fatigue slows recovery.
+12. **`test_starvation_debuff`** — Hunger below threshold; verify max HP reduced.
+13. **`test_dehydration_debuff`** — Thirst below threshold; verify movement slowed.
+14. **`test_hypothermia_debuff`** — Warmth below threshold; verify periodic damage.
+15. **`test_debuff_removal`** — Restore above threshold; verify debuff removed.
+16. **`test_node_tool_requirement`** — Gather ore without pickaxe; verify rejection.
+17. **`test_node_depletion`** — Gather until HP zero; verify node depleted.
+18. **`test_node_respawn`** — Deplete node; advance time; verify respawn.
+19. **`test_gather_yield_scales`** — Gather at two skill levels; verify higher yield.
+20. **`test_gather_rare_proc`** — Gather 1,000 times; verify rare procs within expected range.
+21. **`test_gather_animation_loop`** — Start gathering; verify animation loops until done.
+22. **`test_pcg_deterministic`** — Generate same seed twice; verify identical node placement.
+23. **`test_pcg_biome_density`** — Generate; verify per-biome node density matches config.
+24. **`test_crop_growth_stages`** — Plant and advance time; verify stage transitions at thresholds.
+25. **`test_crop_wither`** — Skip watering; verify crop withers after grace period.
+26. **`test_crop_fertilizer`** — Apply fertilizer; verify growth speed increases.
+27. **`test_crop_seasonal`** — Plant wrong season crop; verify growth blocked.
+28. **`test_animal_happiness_production`** — Feed to max happiness; verify max production rate.
+29. **`test_animal_neglect`** — Starve animal; verify production drops.
+30. **`test_animal_housing_capacity`** — Fill coop; verify next animal rejected.
+31. **`test_animal_species_compat`** — Place cow in coop; verify rejection.
+32. **`test_breeding_offspring`** — Breed two animals; verify offspring inherits traits.
+33. **`test_breeding_gestation`** — Breed; verify offspring appears after gestation timer.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_build_full_house` | R-13.14.1-3 | Build foundation, walls, floor, roof. Verify all snap, construction completes, stability valid. |
-| `test_siege_destruction` | R-13.14.3 | Build structure, destroy foundation via combat. Verify cascade collapse with VFX and debris. |
-| `test_upgrade_full_path` | R-13.14.4 | Upgrade wood to stone to metal to reinforced. Verify each tier change. |
-| `test_housing_full_loop` | R-13.14.5a-c | Claim plot, build, furnish, set permissions, visit as friend. |
-| `test_survival_full_day` | R-13.14.6a-d | Simulate full day: drain vitals, eat, drink, shelter, rest. Verify debuffs apply and resolve. |
-| `test_gather_craft_loop` | R-13.14.7-8 | Gather resources, craft items, verify inventory. |
-| `test_farm_full_cycle` | R-13.14.8 | Till, plant, water, grow, harvest. Verify yield matches config. |
-| `test_animal_full_lifecycle` | R-13.14.9a-c | House, feed, breed, collect production over multiple cycles. |
+| Test                         | Req          |
+|------------------------------|--------------|
+| `test_build_full_house`      | R-13.14.1-3  |
+| `test_siege_destruction`     | R-13.14.3    |
+| `test_upgrade_full_path`     | R-13.14.4    |
+| `test_housing_full_loop`     | R-13.14.5a-c |
+| `test_survival_full_day`     | R-13.14.6a-d |
+| `test_gather_craft_loop`     | R-13.14.7-8  |
+| `test_farm_full_cycle`       | R-13.14.8    |
+| `test_animal_full_lifecycle` | R-13.14.9a-c |
+
+1. **`test_build_full_house`** — Build foundation, walls, floor, roof. Verify all snap, construction
+   completes, stability valid.
+2. **`test_siege_destruction`** — Build structure, destroy foundation via combat. Verify cascade
+   collapse with VFX and debris.
+3. **`test_upgrade_full_path`** — Upgrade wood to stone to metal to reinforced. Verify each tier
+   change.
+4. **`test_housing_full_loop`** — Claim plot, build, furnish, set permissions, visit as friend.
+5. **`test_survival_full_day`** — Simulate full day: drain vitals, eat, drink, shelter, rest. Verify
+   debuffs apply and resolve.
+6. **`test_gather_craft_loop`** — Gather resources, craft items, verify inventory.
+7. **`test_farm_full_cycle`** — Till, plant, water, grow, harvest. Verify yield matches config.
+8. **`test_animal_full_lifecycle`** — House, feed, breed, collect production over multiple cycles.
 
 ### Benchmarks
 

@@ -8,16 +8,25 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-15.1.8 | R-15.1.8 | US-15.1.8.1--US-15.1.8.9 | Editor extension/plugin API with hot reload |
-| F-1.6.1 | R-1.6.1 | US-1.6.1.1--US-1.6.1.6 | Plugin discovery and loading |
-| F-1.6.2 | R-1.6.2 | US-1.6.2.1--US-1.6.2.5 | Plugin lifecycle management |
-| F-1.6.3 | R-1.6.3 | US-1.6.3.1--US-1.6.3.4 | Plugin hot-reload with state preservation |
-| F-1.6.4 | R-1.6.4 | US-1.6.4.1--US-1.6.4.3 | Plugin isolation and crash recovery |
-| F-1.6.5 | R-1.6.5 | US-1.6.5.1--US-1.6.5.4 | Plugin dependency resolution |
-| F-1.6.6 | R-1.6.6 | US-1.6.6.1--US-1.6.6.3 | Plugin ABI versioning |
-| F-1.6.7 | R-1.6.7 | US-1.6.7.1--US-1.6.7.3 | Custom component editors via plugin registration |
+| Feature  | Requirement | User Stories             |
+|----------|-------------|--------------------------|
+| F-15.1.8 | R-15.1.8    | US-15.1.8.1--US-15.1.8.9 |
+| F-1.6.1  | R-1.6.1     | US-1.6.1.1--US-1.6.1.6   |
+| F-1.6.2  | R-1.6.2     | US-1.6.2.1--US-1.6.2.5   |
+| F-1.6.3  | R-1.6.3     | US-1.6.3.1--US-1.6.3.4   |
+| F-1.6.4  | R-1.6.4     | US-1.6.4.1--US-1.6.4.3   |
+| F-1.6.5  | R-1.6.5     | US-1.6.5.1--US-1.6.5.4   |
+| F-1.6.6  | R-1.6.6     | US-1.6.6.1--US-1.6.6.3   |
+| F-1.6.7  | R-1.6.7     | US-1.6.7.1--US-1.6.7.3   |
+
+1. **F-15.1.8** — Editor extension/plugin API with hot reload
+2. **F-1.6.1** — Plugin discovery and loading
+3. **F-1.6.2** — Plugin lifecycle management
+4. **F-1.6.3** — Plugin hot-reload with state preservation
+5. **F-1.6.4** — Plugin isolation and crash recovery
+6. **F-1.6.5** — Plugin dependency resolution
+7. **F-1.6.6** — Plugin ABI versioning
+8. **F-1.6.7** — Custom component editors via plugin registration
 
 ### Cross-Cutting Dependencies
 
@@ -901,11 +910,17 @@ Test cases are in the companion file [editor-plugins-test-cases.md](editor-plugi
 
 ### Summary
 
-| Category | Count | Coverage |
-|----------|-------|----------|
-| Unit tests | 22 | Plugin loading, dependency resolution, isolation, hot-reload, widget registry, ABI |
-| Integration tests | 8 | End-to-end plugin lifecycle, component editor dispatch, multi-plugin interaction |
-| Benchmarks | 4 | Load time, hot-reload time, widget dispatch latency, memory overhead |
+| Category          | Count |
+|-------------------|-------|
+| Unit tests        | 22    |
+| Integration tests | 8     |
+| Benchmarks        | 4     |
+
+1. **Unit tests** — Plugin loading, dependency resolution, isolation, hot-reload, widget registry,
+   ABI
+2. **Integration tests** — End-to-end plugin lifecycle, component editor dispatch, multi-plugin
+   interaction
+3. **Benchmarks** — Load time, hot-reload time, widget dispatch latency, memory overhead
 
 ## Open Questions
 

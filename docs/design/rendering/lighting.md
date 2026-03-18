@@ -8,24 +8,41 @@
 > [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-2.4.1 | R-2.4.1, NFR-2.4.1 | US-2.4.1.1, US-2.4.1.2 | Tiled/clustered forward+ light culling via compute pass |
-| F-2.4.2 | R-2.4.2 | US-2.4.2.1, US-2.4.2.2 | Deferred lighting via G-buffer with fullscreen accumulation |
-| F-2.4.10 | R-2.4.10 | US-2.4.10.1, US-2.4.10.2 | Stochastic many-light sampling with temporal denoiser |
-| F-2.4.11 | R-2.4.11 | US-2.4.11.1, US-2.4.11.2 | Cascaded shadow maps for directional lights |
-| F-2.4.12 | R-2.4.12 | US-2.4.12.1, US-2.4.12.2 | Soft shadows: PCF, PCSS, RT |
-| F-2.4.13 | R-2.4.13 | US-2.4.13.1, US-2.4.13.2 | Ambient occlusion: SSAO, GTAO, RT AO |
-| F-2.4.14 | R-2.4.14 | US-2.4.14.1, US-2.4.14.2 | Virtual shadow maps with on-demand page allocation |
-| F-2.4.15 | R-2.4.15 | US-2.4.15.1, US-2.4.15.2 | Contact shadows via screen-space ray march |
-| F-2.4.16 | R-2.4.16 | US-2.4.16.1, US-2.4.16.2 | Distance field shadows via SDF cone trace |
-| F-2.4.17 | R-2.4.17 | US-2.4.17.1, US-2.4.17.2 | Capsule shadows for skeletal meshes |
-| F-2.4.18 | R-2.4.18 | US-2.4.18.1, US-2.4.18.2 | Moment-based order-independent transparency |
-| F-2.4.19 | R-2.4.19 | US-2.4.19.1, US-2.4.19.2 | Volumetric shadow maps with Fourier opacity mapping |
-| F-2.4.20 | R-2.4.20 | US-2.4.20.1, US-2.4.20.2 | Area lights (rect/sphere) via LTC integration |
-| F-2.4.21 | R-2.4.21 | US-2.4.21.1, US-2.4.21.2 | Sky light / IBL with split-sum specular |
-| F-2.4.22 | R-2.4.22 | US-2.4.22.1, US-2.4.22.2 | IES photometric light profiles |
-| F-2.4.23 | R-2.4.23 | US-2.4.23.1, US-2.4.23.2 | Light functions (gobo/cookie material graphs) |
+| Feature  | Requirement        | User Stories             |
+|----------|--------------------|--------------------------|
+| F-2.4.1  | R-2.4.1, NFR-2.4.1 | US-2.4.1.1, US-2.4.1.2   |
+| F-2.4.2  | R-2.4.2            | US-2.4.2.1, US-2.4.2.2   |
+| F-2.4.10 | R-2.4.10           | US-2.4.10.1, US-2.4.10.2 |
+| F-2.4.11 | R-2.4.11           | US-2.4.11.1, US-2.4.11.2 |
+| F-2.4.12 | R-2.4.12           | US-2.4.12.1, US-2.4.12.2 |
+| F-2.4.13 | R-2.4.13           | US-2.4.13.1, US-2.4.13.2 |
+| F-2.4.14 | R-2.4.14           | US-2.4.14.1, US-2.4.14.2 |
+| F-2.4.15 | R-2.4.15           | US-2.4.15.1, US-2.4.15.2 |
+| F-2.4.16 | R-2.4.16           | US-2.4.16.1, US-2.4.16.2 |
+| F-2.4.17 | R-2.4.17           | US-2.4.17.1, US-2.4.17.2 |
+| F-2.4.18 | R-2.4.18           | US-2.4.18.1, US-2.4.18.2 |
+| F-2.4.19 | R-2.4.19           | US-2.4.19.1, US-2.4.19.2 |
+| F-2.4.20 | R-2.4.20           | US-2.4.20.1, US-2.4.20.2 |
+| F-2.4.21 | R-2.4.21           | US-2.4.21.1, US-2.4.21.2 |
+| F-2.4.22 | R-2.4.22           | US-2.4.22.1, US-2.4.22.2 |
+| F-2.4.23 | R-2.4.23           | US-2.4.23.1, US-2.4.23.2 |
+
+1. **F-2.4.1** — Tiled/clustered forward+ light culling via compute pass
+2. **F-2.4.2** — Deferred lighting via G-buffer with fullscreen accumulation
+3. **F-2.4.10** — Stochastic many-light sampling with temporal denoiser
+4. **F-2.4.11** — Cascaded shadow maps for directional lights
+5. **F-2.4.12** — Soft shadows: PCF, PCSS, RT
+6. **F-2.4.13** — Ambient occlusion: SSAO, GTAO, RT AO
+7. **F-2.4.14** — Virtual shadow maps with on-demand page allocation
+8. **F-2.4.15** — Contact shadows via screen-space ray march
+9. **F-2.4.16** — Distance field shadows via SDF cone trace
+10. **F-2.4.17** — Capsule shadows for skeletal meshes
+11. **F-2.4.18** — Moment-based order-independent transparency
+12. **F-2.4.19** — Volumetric shadow maps with Fourier opacity mapping
+13. **F-2.4.20** — Area lights (rect/sphere) via LTC integration
+14. **F-2.4.21** — Sky light / IBL with split-sum specular
+15. **F-2.4.22** — IES photometric light profiles
+16. **F-2.4.23** — Light functions (gobo/cookie material graphs)
 
 ### Cross-Cutting Dependencies
 
@@ -1752,50 +1769,102 @@ budget-capped by the VFX LOD system to avoid overwhelming the light grid.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_cluster_grid_dimensions` | R-2.4.1 | Verify tile/slice counts match viewport size and config. |
-| `test_cluster_assignment_500_lights` | NFR-2.4.1 | 500 point lights, verify every fragment reads correct cluster list. |
-| `test_cluster_depth_slice_distribution` | R-2.4.1 | Verify logarithmic depth slice boundaries match formula. |
-| `test_shadow_atlas_alloc_release` | R-2.4.11 | Allocate and release tiles. Verify no leaks after 10K cycles. |
-| `test_shadow_atlas_lru_eviction` | NFR-2.4.2 | Fill atlas, verify LRU eviction frees oldest tiles. |
-| `test_shadow_atlas_budget` | NFR-2.4.2 | Verify total allocation stays under 256 MB budget. |
-| `test_csm_split_computation` | R-2.4.11 | Verify cascade splits for lambda=0, 0.5, 1.0 against reference. |
-| `test_csm_temporal_stabilization` | R-2.4.11 | Rotate light 360 degrees, verify shadow texel movement < 1 texel. |
-| `test_pcf_filter_4_tap` | R-2.4.12 | Render shadow with 4-tap PCF, verify soft edge width. |
-| `test_pcss_penumbra_scales` | R-2.4.12 | Vary blocker distance, verify penumbra width proportional. |
-| `test_ssao_half_res_output` | R-2.4.13 | Verify SSAO texture is half viewport dimensions. |
-| `test_gtao_bent_normals` | R-2.4.13 | Verify GTAO outputs valid bent normal vectors (unit length). |
-| `test_ies_parse_valid` | R-2.4.22 | Parse reference IES file, verify angles and candela values. |
-| `test_ies_parse_invalid` | R-2.4.22 | Malformed IES data returns `IesParseError`. |
-| `test_area_light_ltc_energy` | R-2.4.20 | Verify LTC integration conserves energy (output <= input). |
-| `test_sky_light_irradiance` | R-2.4.21 | Verify irradiance cubemap dominant color matches sky. |
-| `test_light_function_scroll` | R-2.4.23 | Animate UV offset over 60 frames, verify pattern moves. |
-| `test_gpu_light_pack_alignment` | R-2.4.1 | Verify `GpuLight` is 64 bytes (cache line). |
-| `test_directional_light_component` | R-2.4.1 | Create entity with DirectionalLight, verify ECS query finds it. |
-| `test_point_light_radius_cull` | R-2.4.1 | Point light outside frustum is culled; inside is retained. |
-| `test_vsm_page_alloc_evict` | R-2.4.14 | Allocate beyond pool, verify LRU eviction. |
-| `test_oit_moment_precision` | R-2.4.18 | 10 overlapping planes, verify PSNR >= 30 dB vs sorted ref. |
-| `test_contact_shadow_step_count` | R-2.4.15 | Verify step count matches platform tier config. |
-| `test_capsule_shadow_pose_update` | R-2.4.17 | Animate skeleton, verify capsule shadows track pose. |
-| `test_stochastic_convergence` | R-2.4.10 | 2000 lights, verify noise below threshold after 16 frames. |
+| Test                                    | Req       |
+|-----------------------------------------|-----------|
+| `test_cluster_grid_dimensions`          | R-2.4.1   |
+| `test_cluster_assignment_500_lights`    | NFR-2.4.1 |
+| `test_cluster_depth_slice_distribution` | R-2.4.1   |
+| `test_shadow_atlas_alloc_release`       | R-2.4.11  |
+| `test_shadow_atlas_lru_eviction`        | NFR-2.4.2 |
+| `test_shadow_atlas_budget`              | NFR-2.4.2 |
+| `test_csm_split_computation`            | R-2.4.11  |
+| `test_csm_temporal_stabilization`       | R-2.4.11  |
+| `test_pcf_filter_4_tap`                 | R-2.4.12  |
+| `test_pcss_penumbra_scales`             | R-2.4.12  |
+| `test_ssao_half_res_output`             | R-2.4.13  |
+| `test_gtao_bent_normals`                | R-2.4.13  |
+| `test_ies_parse_valid`                  | R-2.4.22  |
+| `test_ies_parse_invalid`                | R-2.4.22  |
+| `test_area_light_ltc_energy`            | R-2.4.20  |
+| `test_sky_light_irradiance`             | R-2.4.21  |
+| `test_light_function_scroll`            | R-2.4.23  |
+| `test_gpu_light_pack_alignment`         | R-2.4.1   |
+| `test_directional_light_component`      | R-2.4.1   |
+| `test_point_light_radius_cull`          | R-2.4.1   |
+| `test_vsm_page_alloc_evict`             | R-2.4.14  |
+| `test_oit_moment_precision`             | R-2.4.18  |
+| `test_contact_shadow_step_count`        | R-2.4.15  |
+| `test_capsule_shadow_pose_update`       | R-2.4.17  |
+| `test_stochastic_convergence`           | R-2.4.10  |
+
+1. **`test_cluster_grid_dimensions`** — Verify tile/slice counts match viewport size and config.
+2. **`test_cluster_assignment_500_lights`** — 500 point lights, verify every fragment reads correct
+   cluster list.
+3. **`test_cluster_depth_slice_distribution`** — Verify logarithmic depth slice boundaries match
+   formula.
+4. **`test_shadow_atlas_alloc_release`** — Allocate and release tiles. Verify no leaks after 10K
+   cycles.
+5. **`test_shadow_atlas_lru_eviction`** — Fill atlas, verify LRU eviction frees oldest tiles.
+6. **`test_shadow_atlas_budget`** — Verify total allocation stays under 256 MB budget.
+7. **`test_csm_split_computation`** — Verify cascade splits for lambda=0, 0.5, 1.0 against
+   reference.
+8. **`test_csm_temporal_stabilization`** — Rotate light 360 degrees, verify shadow texel movement <
+   1 texel.
+9. **`test_pcf_filter_4_tap`** — Render shadow with 4-tap PCF, verify soft edge width.
+10. **`test_pcss_penumbra_scales`** — Vary blocker distance, verify penumbra width proportional.
+11. **`test_ssao_half_res_output`** — Verify SSAO texture is half viewport dimensions.
+12. **`test_gtao_bent_normals`** — Verify GTAO outputs valid bent normal vectors (unit length).
+13. **`test_ies_parse_valid`** — Parse reference IES file, verify angles and candela values.
+14. **`test_ies_parse_invalid`** — Malformed IES data returns `IesParseError`.
+15. **`test_area_light_ltc_energy`** — Verify LTC integration conserves energy (output <= input).
+16. **`test_sky_light_irradiance`** — Verify irradiance cubemap dominant color matches sky.
+17. **`test_light_function_scroll`** — Animate UV offset over 60 frames, verify pattern moves.
+18. **`test_gpu_light_pack_alignment`** — Verify `GpuLight` is 64 bytes (cache line).
+19. **`test_directional_light_component`** — Create entity with DirectionalLight, verify ECS query
+    finds it.
+20. **`test_point_light_radius_cull`** — Point light outside frustum is culled; inside is retained.
+21. **`test_vsm_page_alloc_evict`** — Allocate beyond pool, verify LRU eviction.
+22. **`test_oit_moment_precision`** — 10 overlapping planes, verify PSNR >= 30 dB vs sorted ref.
+23. **`test_contact_shadow_step_count`** — Verify step count matches platform tier config.
+24. **`test_capsule_shadow_pose_update`** — Animate skeleton, verify capsule shadows track pose.
+25. **`test_stochastic_convergence`** — 2000 lights, verify noise below threshold after 16 frames.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_forward_plus_500_lights` | NFR-2.4.1 | Render scene with 500 lights, verify sub-linear frame time scaling. |
-| `test_deferred_gbuffer_layout` | R-2.4.2 | Verify G-buffer targets match spec (albedo, normal, motion, depth). |
-| `test_deferred_matches_forward` | R-2.4.2 | Same scene, verify deferred output within PSNR 40 dB of forward. |
-| `test_shadow_atlas_20_lights` | NFR-2.4.2 | 4 CSM cascades + 20 shadow lights, verify VRAM < 256 MB. |
-| `test_tier_fallback_mobile` | All | Mobile tier: verify area lights fall back to point, IES is 1D 64, OIT disabled. |
-| `test_tier_fallback_switch` | All | Switch tier: verify PCSS in docked, PCF in handheld. |
-| `test_tier_fallback_desktop` | All | Desktop tier: verify GTAO, PCSS, VSM all enabled. |
-| `test_sky_refilter_on_tod` | R-2.4.21 | Change sun position, verify irradiance map updates. |
-| `test_vsm_consistent_detail` | R-2.4.14 | Compare shadow texel density near vs far, verify approximately constant. |
-| `test_sdf_csm_blend` | R-2.4.16 | Verify seamless transition between CSM and SDF shadow ranges. |
-| `test_light_extraction_parallel` | R-2.4.1 | 1000 lights extracted in parallel, verify no data races (ThreadSanitizer). |
-| `test_cross_backend_shadow` | R-2.4.11 | Same scene on Metal, D3D12, Vulkan; verify shadow output within PSNR 35 dB. |
+| Test                             | Req       |
+|----------------------------------|-----------|
+| `test_forward_plus_500_lights`   | NFR-2.4.1 |
+| `test_deferred_gbuffer_layout`   | R-2.4.2   |
+| `test_deferred_matches_forward`  | R-2.4.2   |
+| `test_shadow_atlas_20_lights`    | NFR-2.4.2 |
+| `test_tier_fallback_mobile`      | All       |
+| `test_tier_fallback_switch`      | All       |
+| `test_tier_fallback_desktop`     | All       |
+| `test_sky_refilter_on_tod`       | R-2.4.21  |
+| `test_vsm_consistent_detail`     | R-2.4.14  |
+| `test_sdf_csm_blend`             | R-2.4.16  |
+| `test_light_extraction_parallel` | R-2.4.1   |
+| `test_cross_backend_shadow`      | R-2.4.11  |
+
+1. **`test_forward_plus_500_lights`** — Render scene with 500 lights, verify sub-linear frame time
+   scaling.
+2. **`test_deferred_gbuffer_layout`** — Verify G-buffer targets match spec (albedo, normal, motion,
+   depth).
+3. **`test_deferred_matches_forward`** — Same scene, verify deferred output within PSNR 40 dB of
+   forward.
+4. **`test_shadow_atlas_20_lights`** — 4 CSM cascades + 20 shadow lights, verify VRAM < 256 MB.
+5. **`test_tier_fallback_mobile`** — Mobile tier: verify area lights fall back to point, IES is 1D
+   64, OIT disabled.
+6. **`test_tier_fallback_switch`** — Switch tier: verify PCSS in docked, PCF in handheld.
+7. **`test_tier_fallback_desktop`** — Desktop tier: verify GTAO, PCSS, VSM all enabled.
+8. **`test_sky_refilter_on_tod`** — Change sun position, verify irradiance map updates.
+9. **`test_vsm_consistent_detail`** — Compare shadow texel density near vs far, verify approximately
+   constant.
+10. **`test_sdf_csm_blend`** — Verify seamless transition between CSM and SDF shadow ranges.
+11. **`test_light_extraction_parallel`** — 1000 lights extracted in parallel, verify no data races
+    (ThreadSanitizer).
+12. **`test_cross_backend_shadow`** — Same scene on Metal, D3D12, Vulkan; verify shadow output
+    within PSNR 35 dB.
 
 ### Benchmarks
 

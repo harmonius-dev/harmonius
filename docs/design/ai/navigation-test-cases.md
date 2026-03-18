@@ -6,291 +6,476 @@ Companion test cases for [navigation.md](navigation.md).
 
 ### TC-7.1.1.1 Voxelize Flat Plane
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 100x100 flat plane at y=0, agent_radius=0.5, agent_height=2.0 | Single walkable polygon covering full surface | R-7.1.1 |
-| 2 | 100x100 flat plane at y=0, cell_size=0.3 | Polygon count > 0; all polygons coplanar at y=0 | R-7.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.1     |
+| 2 | R-7.1.1     |
+
+1. **#1** — 100x100 flat plane at y=0, agent_radius=0.5, agent_height=2.0
+   - **Expected:** Single walkable polygon covering full surface
+2. **#2** — 100x100 flat plane at y=0, cell_size=0.3
+   - **Expected:** Polygon count > 0; all polygons coplanar at y=0
 
 ### TC-7.1.1.2 Slope Exclusion
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Ramp surface at 46 degrees, max_slope=45 | Zero walkable polygons on ramp | R-7.1.1 |
-| 2 | Ramp surface at 44 degrees, max_slope=45 | Ramp included in walkable polygons | R-7.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.1     |
+| 2 | R-7.1.1     |
+
+1. **#1** — Ramp surface at 46 degrees, max_slope=45
+   - **Expected:** Zero walkable polygons on ramp
+2. **#2** — Ramp surface at 44 degrees, max_slope=45
+   - **Expected:** Ramp included in walkable polygons
 
 ### TC-7.1.1.3 Agent Radius Erosion
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 1.0m wide corridor, agent_radius=0.6 | Corridor excluded from NavMesh (too narrow) | R-7.1.1 |
-| 2 | 1.0m wide corridor, agent_radius=0.3 | Corridor included in NavMesh | R-7.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.1     |
+| 2 | R-7.1.1     |
+
+1. **#1** — 1.0m wide corridor, agent_radius=0.6
+   - **Expected:** Corridor excluded from NavMesh (too narrow)
+2. **#2** — 1.0m wide corridor, agent_radius=0.3
+   - **Expected:** Corridor included in NavMesh
 
 ### TC-7.1.2.1 Tile Coordinate Mapping
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | World position (150.0, 0.0, 250.0), tile_size=64 | TileCoord { x: 2, z: 3 } | R-7.1.2 |
-| 2 | World position (-10.0, 0.0, -10.0), tile_size=64 | TileCoord { x: -1, z: -1 } | R-7.1.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.2     |
+| 2 | R-7.1.2     |
+
+1. **#1** — World position (150.0, 0.0, 250.0), tile_size=64
+   - **Expected:** TileCoord { x: 2, z: 3 }
+2. **#2** — World position (-10.0, 0.0, -10.0), tile_size=64
+   - **Expected:** TileCoord { x: -1, z: -1 }
 
 ### TC-7.1.2.2 Cross-Tile Path Continuity
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Start in tile (0,0), goal in tile (1,0) | Path crosses tile boundary with continuous corridor | R-7.1.2 |
-| 2 | Start in tile (0,0), goal in tile (2,2) | Path traverses 3+ tiles without gaps | R-7.1.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.2     |
+| 2 | R-7.1.2     |
+
+1. **#1** — Start in tile (0,0), goal in tile (1,0)
+   - **Expected:** Path crosses tile boundary with continuous corridor
+2. **#2** — Start in tile (0,0), goal in tile (2,2)
+   - **Expected:** Path traverses 3+ tiles without gaps
 
 ### TC-7.1.3.1 A* Optimal Path
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 5x5 grid graph, uniform cost=1.0, start=(0,0), goal=(4,4) | Path cost = 8.0 (Manhattan) or 5.66 (diagonal) | R-7.1.3 |
-| 2 | Graph with shortcut edge (cost=1) vs long path (cost=10) | Path uses shortcut; total cost = 1.0 | R-7.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.3     |
+| 2 | R-7.1.3     |
+
+1. **#1** — 5x5 grid graph, uniform cost=1.0, start=(0,0), goal=(4,4)
+   - **Expected:** Path cost = 8.0 (Manhattan) or 5.66 (diagonal)
+2. **#2** — Graph with shortcut edge (cost=1) vs long path (cost=10)
+   - **Expected:** Path uses shortcut; total cost = 1.0
 
 ### TC-7.1.3.2 Area Cost Routing
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Two paths: road (cost=0.5, 10 polys) vs swamp (cost=3.0, 5 polys) | Path follows road despite more polygons | R-7.1.3 |
-| 2 | Road cost changed from 0.5 to 5.0 at runtime | Path now follows swamp | R-7.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.3     |
+| 2 | R-7.1.3     |
+
+1. **#1** — Two paths: road (cost=0.5, 10 polys) vs swamp (cost=3.0, 5 polys)
+   - **Expected:** Path follows road despite more polygons
+2. **#2** — Road cost changed from 0.5 to 5.0 at runtime
+   - **Expected:** Path now follows swamp
 
 ### TC-7.1.3.3 Lava Impassable
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Direct path crosses lava (cost=f32::INFINITY); alternate exists | Path avoids lava via alternate route | R-7.1.3 |
-| 2 | All paths cross lava; no alternative | PathResult::NotFound | R-7.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.3     |
+| 2 | R-7.1.3     |
+
+1. **#1** — Direct path crosses lava (cost=f32::INFINITY); alternate exists
+   - **Expected:** Path avoids lava via alternate route
+2. **#2** — All paths cross lava; no alternative
+   - **Expected:** PathResult::NotFound
 
 ### TC-7.1.4.1 Funnel Minimal Waypoints
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Corridor of 10 polygons in a straight line | Funnel output = 2 waypoints (start, end) | R-7.1.4 |
-| 2 | Corridor of 8 polygons with 2 turns | Funnel output < 8 waypoints | R-7.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.4     |
+| 2 | R-7.1.4     |
+
+1. **#1** — Corridor of 10 polygons in a straight line
+   - **Expected:** Funnel output = 2 waypoints (start, end)
+2. **#2** — Corridor of 8 polygons with 2 turns
+   - **Expected:** Funnel output < 8 waypoints
 
 ### TC-7.1.4.2 Funnel Waypoints on Mesh
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 20-polygon corridor, funnel applied | All waypoints lie within NavMesh polygon boundaries | R-7.1.4 |
-| 2 | L-shaped corridor, funnel applied | Corner waypoint lies on polygon edge, not outside mesh | R-7.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.4     |
+| 2 | R-7.1.4     |
+
+1. **#1** — 20-polygon corridor, funnel applied
+   - **Expected:** All waypoints lie within NavMesh polygon boundaries
+2. **#2** — L-shaped corridor, funnel applied
+   - **Expected:** Corner waypoint lies on polygon edge, not outside mesh
 
 ### TC-7.1.5.1 Catmull-Rom Points on Mesh
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 5-waypoint path, Catmull-Rom interpolation at 20 samples | All 20 samples lie on valid NavMesh polygons | R-7.1.5 |
-| 2 | Path near NavMesh edge, Catmull-Rom interpolation | No interpolated point falls outside NavMesh | R-7.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.5     |
+| 2 | R-7.1.5     |
+
+1. **#1** — 5-waypoint path, Catmull-Rom interpolation at 20 samples
+   - **Expected:** All 20 samples lie on valid NavMesh polygons
+2. **#2** — Path near NavMesh edge, Catmull-Rom interpolation
+   - **Expected:** No interpolated point falls outside NavMesh
 
 ### TC-7.1.5.2 Linear Fallback Mobile
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Mobile config; request CatmullRom smoothing | Smoothing mode forced to Linear | R-7.1.5 |
-| 2 | Desktop config; request CatmullRom smoothing | CatmullRom applied | R-7.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.5     |
+| 2 | R-7.1.5     |
+
+1. **#1** — Mobile config; request CatmullRom smoothing
+   - **Expected:** Smoothing mode forced to Linear
+2. **#2** — Desktop config; request CatmullRom smoothing
+   - **Expected:** CatmullRom applied
 
 ### TC-7.1.6.1 Carve Blocks Path
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 3x3m obstacle carved into NavMesh at chokepoint | Path through chokepoint returns NotFound | R-7.1.6 |
-| 2 | 3x3m obstacle carved away from path | Original path remains valid | R-7.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.6     |
+| 2 | R-7.1.6     |
+
+1. **#1** — 3x3m obstacle carved into NavMesh at chokepoint
+   - **Expected:** Path through chokepoint returns NotFound
+2. **#2** — 3x3m obstacle carved away from path
+   - **Expected:** Original path remains valid
 
 ### TC-7.1.6.2 Uncarve Restores
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Carve obstacle; verify blocked; remove obstacle | Path through chokepoint restored | R-7.1.6 |
-| 2 | Carve 3 overlapping obstacles; remove middle one | Remaining 2 obstacles still block | R-7.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.6     |
+| 2 | R-7.1.6     |
+
+1. **#1** — Carve obstacle; verify blocked; remove obstacle
+   - **Expected:** Path through chokepoint restored
+2. **#2** — Carve 3 overlapping obstacles; remove middle one
+   - **Expected:** Remaining 2 obstacles still block
 
 ### TC-7.1.7.1 Link Cost Included
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Path uses off-mesh link with traversal_cost=5.0 | Path total_cost includes the 5.0 link cost | R-7.1.7 |
-| 2 | Two routes: one with link (cost=5), one without (cost=8) | Path uses link (total cost lower) | R-7.1.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.7     |
+| 2 | R-7.1.7     |
+
+1. **#1** — Path uses off-mesh link with traversal_cost=5.0
+   - **Expected:** Path total_cost includes the 5.0 link cost
+2. **#2** — Two routes: one with link (cost=5), one without (cost=8)
+   - **Expected:** Path uses link (total cost lower)
 
 ### TC-7.1.7.2 Link Precondition
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Ladder link requires can_climb=true; agent can_climb=false | Path does not use ladder link | R-7.1.7 |
-| 2 | Ladder link requires can_climb=true; agent can_climb=true | Path may use ladder link | R-7.1.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.7     |
+| 2 | R-7.1.7     |
+
+1. **#1** — Ladder link requires can_climb=true; agent can_climb=false
+   - **Expected:** Path does not use ladder link
+2. **#2** — Ladder link requires can_climb=true; agent can_climb=true
+   - **Expected:** Path may use ladder link
 
 ### TC-7.1.7.3 Link One-Way
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | One-way jump-down link A->B; pathfind A to B | Path uses link | R-7.1.7 |
-| 2 | One-way jump-down link A->B; pathfind B to A | Path avoids link; uses alternate route or NotFound | R-7.1.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.7     |
+| 2 | R-7.1.7     |
+
+1. **#1** — One-way jump-down link A->B; pathfind A to B
+   - **Expected:** Path uses link
+2. **#2** — One-way jump-down link A->B; pathfind B to A
+   - **Expected:** Path avoids link; uses alternate route or NotFound
 
 ### TC-7.1.8.1 Incremental Rebuild Scope
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Modify geometry in tile (2,3) | Only tiles (2,3) and direct neighbors rebuilt; tile (0,0) unchanged | R-7.1.8 |
-| 2 | Modify geometry at tile corner (1,1)/(1,2)/(2,1)/(2,2) | All 4 tiles rebuilt; distant tiles unchanged | R-7.1.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.8     |
+| 2 | R-7.1.8     |
+
+1. **#1** — Modify geometry in tile (2,3)
+   - **Expected:** Only tiles (2,3) and direct neighbors rebuilt; tile (0,0) unchanged
+2. **#2** — Modify geometry at tile corner (1,1)/(1,2)/(2,1)/(2,2)
+   - **Expected:** All 4 tiles rebuilt; distant tiles unchanged
 
 ### TC-7.1.8.2 Incremental Equals Full
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Modify geometry; incremental rebuild | Result identical to full rebake of affected tiles | R-7.1.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.8     |
+
+1. **#1** — Modify geometry; incremental rebuild
+   - **Expected:** Result identical to full rebake of affected tiles
 
 ### TC-7.1.9.1 Pending Tile Fallback
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent navigates during tile rebuild (state=Pending) | Agent uses stale tile data as fallback | R-7.1.9 |
-| 2 | Tile rebuild completes | Agent uses fresh tile data on next query | R-7.1.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.9     |
+| 2 | R-7.1.9     |
+
+1. **#1** — Agent navigates during tile rebuild (state=Pending)
+   - **Expected:** Agent uses stale tile data as fallback
+2. **#2** — Tile rebuild completes
+   - **Expected:** Agent uses fresh tile data on next query
 
 ### TC-7.1.9.2 Atomic Tile Swap
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Query tile during swap operation | Returns either old or new tile; never partial data | R-7.1.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.9     |
+
+1. **#1** — Query tile during swap operation
+   - **Expected:** Returns either old or new tile; never partial data
 
 ### TC-7.1.10.1 Destruction Opens Path
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Wall blocks path; destroy wall | Rebuild produces passable corridor through breach | R-7.1.10 |
-| 2 | Floor destroyed; creates pit | Path avoids destroyed floor area | R-7.1.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.10    |
+| 2 | R-7.1.10    |
+
+1. **#1** — Wall blocks path; destroy wall
+   - **Expected:** Rebuild produces passable corridor through breach
+2. **#2** — Floor destroyed; creates pit
+   - **Expected:** Path avoids destroyed floor area
 
 ### TC-7.1.10.2 Rubble Creates Obstacle
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Wall destroyed; rubble spawned at base | Path routes around rubble pile | R-7.1.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.10    |
+
+1. **#1** — Wall destroyed; rubble spawned at base
+   - **Expected:** Path routes around rubble pile
 
 ### TC-7.1.11.1 Structure Blocks Path
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Place impassable 4x4m structure on path | Path reroutes around structure | R-7.1.11 |
-| 2 | Place passable fence structure on path | Path passes through fence | R-7.1.11 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.11    |
+| 2 | R-7.1.11    |
+
+1. **#1** — Place impassable 4x4m structure on path
+   - **Expected:** Path reroutes around structure
+2. **#2** — Place passable fence structure on path
+   - **Expected:** Path passes through fence
 
 ### TC-7.1.11.2 Auto-Link Ramp
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Place ramp from ground (y=0) to platform (y=3) | Off-mesh link auto-generated connecting ground to platform | R-7.1.11 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.11    |
+
+1. **#1** — Place ramp from ground (y=0) to platform (y=3)
+   - **Expected:** Off-mesh link auto-generated connecting ground to platform
 
 ### TC-7.1.12.1 Multi-Layer Isolation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 1.5m doorway; large agent (radius=1.0) queries path | Path does not traverse doorway | R-7.1.12 |
-| 2 | 1.5m doorway; small agent (radius=0.3) queries path | Path traverses doorway | R-7.1.12 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.12    |
+| 2 | R-7.1.12    |
+
+1. **#1** — 1.5m doorway; large agent (radius=1.0) queries path
+   - **Expected:** Path does not traverse doorway
+2. **#2** — 1.5m doorway; small agent (radius=0.3) queries path
+   - **Expected:** Path traverses doorway
 
 ### TC-7.1.12.2 Layer Assignment
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent assigned to layer 0; query on layer 0 | Query succeeds; returns path | R-7.1.12 |
-| 2 | Agent assigned to layer 0; query on layer 1 | Query returns NotFound (wrong layer) | R-7.1.12 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.12    |
+| 2 | R-7.1.12    |
+
+1. **#1** — Agent assigned to layer 0; query on layer 0
+   - **Expected:** Query succeeds; returns path
+2. **#2** — Agent assigned to layer 0; query on layer 1
+   - **Expected:** Query returns NotFound (wrong layer)
 
 ### TC-7.1.13.1 Dynamic Cost Reroute
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Swamp area cost raised from 3.0 to 100.0 at runtime | Agent reroutes to avoid swamp | R-7.1.13 |
-| 2 | Road area cost lowered from 1.0 to 0.1 at runtime | Agent preferentially uses road | R-7.1.13 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.13    |
+| 2 | R-7.1.13    |
+
+1. **#1** — Swamp area cost raised from 3.0 to 100.0 at runtime
+   - **Expected:** Agent reroutes to avoid swamp
+2. **#2** — Road area cost lowered from 1.0 to 0.1 at runtime
+   - **Expected:** Agent preferentially uses road
 
 ### TC-7.1.13.2 Faction Cost Override
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Faction A: bridge cost=1.0; Faction B: bridge cost=100.0 | Faction A crosses bridge; Faction B avoids it | R-7.1.13 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.13    |
+
+1. **#1** — Faction A: bridge cost=1.0; Faction B: bridge cost=100.0
+   - **Expected:** Faction A crosses bridge; Faction B avoids it
 
 ### TC-7.1.13.3 Cost Change No Rebuild
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Modify area cost; check tile rebuild counter | Rebuild counter unchanged (zero rebuilds) | R-7.1.13 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.13    |
+
+1. **#1** — Modify area cost; check tile rebuild counter
+   - **Expected:** Rebuild counter unchanged (zero rebuilds)
 
 ### TC-7.1.14.1 HPA* Valid Path
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Start at tile (0,0), goal at tile (49,49) | HPA* returns valid end-to-end path | R-7.1.14 |
-| 2 | Start and goal in same tile | HPA* falls back to local A* | R-7.1.14 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.14    |
+| 2 | R-7.1.14    |
+
+1. **#1** — Start at tile (0,0), goal at tile (49,49)
+   - **Expected:** HPA* returns valid end-to-end path
+2. **#2** — Start and goal in same tile
+   - **Expected:** HPA* falls back to local A*
 
 ### TC-7.1.14.2 HPA* Bounded Cost
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 50-tile HPA* query vs 5-tile A* query | 50-tile query time < 2x the 5-tile time | R-7.1.14 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.14    |
+
+1. **#1** — 50-tile HPA* query vs 5-tile A* query
+   - **Expected:** 50-tile query time < 2x the 5-tile time
 
 ### TC-7.1.14.3 Cluster Update
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Rebuild tile (5,5); check HPA* cluster graph | Only cluster for tile (5,5) updated; others unchanged | R-7.1.14 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.14    |
+
+1. **#1** — Rebuild tile (5,5); check HPA* cluster graph
+   - **Expected:** Only cluster for tile (5,5) updated; others unchanged
 
 ## Integration Tests
 
 ### TC-7.1.3.I1 Path Request Lifecycle
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Add PathRequest component to entity | PathResult component produced; PathRequest auto-removed | R-7.1.3 |
-| 2 | Add PathRequest for unreachable goal | PathResult with status=NotFound produced | R-7.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.3     |
+| 2 | R-7.1.3     |
+
+1. **#1** — Add PathRequest component to entity
+   - **Expected:** PathResult component produced; PathRequest auto-removed
+2. **#2** — Add PathRequest for unreachable goal
+   - **Expected:** PathResult with status=NotFound produced
 
 ### TC-7.1.6.I1 Obstacle Carve and Repath
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent following path; obstacle placed on path | Agent automatically repaths around obstacle | R-7.1.6 |
-| 2 | Agent following path; obstacle placed off-path | Agent continues original path | R-7.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.6     |
+| 2 | R-7.1.6     |
+
+1. **#1** — Agent following path; obstacle placed on path
+   - **Expected:** Agent automatically repaths around obstacle
+2. **#2** — Agent following path; obstacle placed off-path
+   - **Expected:** Agent continues original path
 
 ### TC-7.1.10.I1 Destruction Rebuild Repath
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Wall destroyed; agents waiting on other side | Tile rebuilt; agents path through breach | R-7.1.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.10    |
+
+1. **#1** — Wall destroyed; agents waiting on other side
+   - **Expected:** Tile rebuilt; agents path through breach
 
 ### TC-7.1.2.I1 Tile Streaming Load/Unload
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent moves 5 tiles forward | New tiles streamed in ahead; old tiles unloaded behind | R-7.1.2 |
-| 2 | Agent teleports 20 tiles | All nearby tiles loaded; distant old tiles unloaded | R-7.1.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.2     |
+| 2 | R-7.1.2     |
+
+1. **#1** — Agent moves 5 tiles forward
+   - **Expected:** New tiles streamed in ahead; old tiles unloaded behind
+2. **#2** — Agent teleports 20 tiles
+   - **Expected:** All nearby tiles loaded; distant old tiles unloaded
 
 ### TC-7.1.9.I1 Background Gen No Block
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Trigger background NavMesh generation for 10 tiles | Main-thread frame time increase < 5% | R-7.1.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.9     |
+
+1. **#1** — Trigger background NavMesh generation for 10 tiles
+   - **Expected:** Main-thread frame time increase < 5%
 
 ### TC-7.1.3.I2 Multi-Agent Parallel Queries
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 128 concurrent path queries on thread pool | All produce correct paths; ThreadSanitizer clean | R-7.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.3     |
+
+1. **#1** — 128 concurrent path queries on thread pool
+   - **Expected:** All produce correct paths; ThreadSanitizer clean
 
 ### TC-7.1.11.I1 Structure Place/Remove Cycle
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Place structure; verify blocked; remove structure | Path restored after removal | R-7.1.11 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.11    |
+
+1. **#1** — Place structure; verify blocked; remove structure
+   - **Expected:** Path restored after removal
 
 ### TC-7.1.14.I1 HPA* Cross-Continent
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 1000 agents with cross-continent goals | All receive valid paths within server budget | R-7.1.14 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.14    |
+
+1. **#1** — 1000 agents with cross-continent goals
+   - **Expected:** All receive valid paths within server budget
 
 ### TC-7.1.6.I2 Carve Throttle Mobile
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Mobile config; 10 carve requests in single tick | Only 4 processed; 6 deferred to next tick | R-7.1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.6     |
+
+1. **#1** — Mobile config; 10 carve requests in single tick
+   - **Expected:** Only 4 processed; 6 deferred to next tick
 
 ### TC-7.1.10.I2 Rebuild Priority Ordering
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Tile A has 10 affected agents; Tile B has 2 | Tile A rebuilt before Tile B | R-7.1.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-7.1.10    |
+
+1. **#1** — Tile A has 10 affected agents; Tile B has 2
+   - **Expected:** Tile A rebuilt before Tile B
 
 ## Benchmarks
 

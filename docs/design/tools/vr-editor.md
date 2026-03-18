@@ -8,14 +8,21 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-15.1.9 | R-15.1.9 | US-15.1.9.1--US-15.1.9.8 | VR editor mode with motion controller gizmos |
-| F-15.16.1 | R-15.16.1 | US-15.16.1.1--US-15.16.1.4 | Hand tracking input for VR editor |
-| F-15.16.2 | R-15.16.2 | US-15.16.2.1--US-15.16.2.5 | Floating panel UI in VR |
-| F-15.16.3 | R-15.16.3 | US-15.16.3.1--US-15.16.3.3 | VR collaboration with avatars |
-| F-15.16.4 | R-15.16.4 | US-15.16.4.1--US-15.16.4.4 | Follow mode for user/AI tracking |
-| F-15.16.5 | R-15.16.5 | US-15.16.5.1--US-15.16.5.3 | VR performance budget at 90 fps |
+| Feature   | Requirement | User Stories               |
+|-----------|-------------|----------------------------|
+| F-15.1.9  | R-15.1.9    | US-15.1.9.1--US-15.1.9.8   |
+| F-15.16.1 | R-15.16.1   | US-15.16.1.1--US-15.16.1.4 |
+| F-15.16.2 | R-15.16.2   | US-15.16.2.1--US-15.16.2.5 |
+| F-15.16.3 | R-15.16.3   | US-15.16.3.1--US-15.16.3.3 |
+| F-15.16.4 | R-15.16.4   | US-15.16.4.1--US-15.16.4.4 |
+| F-15.16.5 | R-15.16.5   | US-15.16.5.1--US-15.16.5.3 |
+
+1. **F-15.1.9** — VR editor mode with motion controller gizmos
+2. **F-15.16.1** — Hand tracking input for VR editor
+3. **F-15.16.2** — Floating panel UI in VR
+4. **F-15.16.3** — VR collaboration with avatars
+5. **F-15.16.4** — Follow mode for user/AI tracking
+6. **F-15.16.5** — VR performance budget at 90 fps
 
 ### Cross-Cutting Dependencies
 

@@ -8,22 +8,37 @@
 > [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-2.9.1 | R-2.9.1 | Bloom with threshold, multi-pass downsample/upsample blur chain |
-| F-2.9.2 | R-2.9.2 | Cinematic DOF with gather-based circular bokeh, CoC |
-| F-2.9.3 | R-2.9.3 | Per-pixel velocity motion blur (camera + per-object) |
-| F-2.9.4 | R-2.9.4 | Histogram-based auto exposure with temporal smoothing |
-| F-2.9.5 | R-2.9.5 | Tonemapping (ACES, filmic, custom) and LUT color grading |
-| F-2.9.6 | R-2.9.6 | Procedural/texture film grain with luminance response |
-| F-2.9.7 | R-2.9.7 | Radial chromatic aberration with per-channel UV offsets |
-| F-2.9.8 | R-2.9.8 | Image-based lens flare with ghost/halo generation |
-| F-2.9.9 | R-2.9.9 | Radial vignette with power curve falloff |
-| F-2.9.10 | R-2.9.10 | User-defined post-process material passes |
-| F-2.9.11 | R-2.9.11 | Per-tile local exposure from luminance grid |
-| F-2.9.12 | R-2.9.12 | Panini projection for wide-FOV correction |
-| F-2.9.13 | R-2.9.13 | Screen-space cavity and curvature from normals |
-| F-2.9.14 | R-2.9.14 | Visual node-based post-process graph editor |
+| Feature  | Requirement |
+|----------|-------------|
+| F-2.9.1  | R-2.9.1     |
+| F-2.9.2  | R-2.9.2     |
+| F-2.9.3  | R-2.9.3     |
+| F-2.9.4  | R-2.9.4     |
+| F-2.9.5  | R-2.9.5     |
+| F-2.9.6  | R-2.9.6     |
+| F-2.9.7  | R-2.9.7     |
+| F-2.9.8  | R-2.9.8     |
+| F-2.9.9  | R-2.9.9     |
+| F-2.9.10 | R-2.9.10    |
+| F-2.9.11 | R-2.9.11    |
+| F-2.9.12 | R-2.9.12    |
+| F-2.9.13 | R-2.9.13    |
+| F-2.9.14 | R-2.9.14    |
+
+1. **F-2.9.1** — Bloom with threshold, multi-pass downsample/upsample blur chain
+2. **F-2.9.2** — Cinematic DOF with gather-based circular bokeh, CoC
+3. **F-2.9.3** — Per-pixel velocity motion blur (camera + per-object)
+4. **F-2.9.4** — Histogram-based auto exposure with temporal smoothing
+5. **F-2.9.5** — Tonemapping (ACES, filmic, custom) and LUT color grading
+6. **F-2.9.6** — Procedural/texture film grain with luminance response
+7. **F-2.9.7** — Radial chromatic aberration with per-channel UV offsets
+8. **F-2.9.8** — Image-based lens flare with ghost/halo generation
+9. **F-2.9.9** — Radial vignette with power curve falloff
+10. **F-2.9.10** — User-defined post-process material passes
+11. **F-2.9.11** — Per-tile local exposure from luminance grid
+12. **F-2.9.12** — Panini projection for wide-FOV correction
+13. **F-2.9.13** — Screen-space cavity and curvature from normals
+14. **F-2.9.14** — Visual node-based post-process graph editor
 
 ### Non-Functional Requirements
 
@@ -1589,30 +1604,55 @@ This avoids three separate texture read/write round-trips on bandwidth-constrain
 
 ### Effect Quality Matrix
 
-| Effect | Mobile | Switch | Desktop | High-End |
-|--------|--------|--------|---------|----------|
-| Bloom | 3-pass dual-kawase, quarter-res | 4-pass Gaussian, half-res | 6+ pass Gaussian, native | 8+ pass wide kernel |
-| DOF | Disabled (optional lightweight Gaussian quarter-res) | Separable half-res | Full gather bokeh | Full + shaped bokeh |
-| Motion blur | Disabled | Camera-only, 4 samples, half-res | Full per-pixel, 8 samples | 16 samples + tile-max |
-| Auto exposure | Average luminance, eighth-res | 32-bin histogram, quarter-res | 64-bin histogram | 128-bin histogram |
-| Tonemap/grade | Combined pass, 16^3 LUT | Same as mobile, no HDR out | 32^3 LUT, HDR10 | 64^3 LUT, HDR10+DV |
-| Film grain | Combined composite | Full | Full | Full |
-| Chromatic aberr. | Combined composite | Full | Full | Full |
-| Lens flare | Sprite-based, 2 sources | 2 ghost layers, 4 sources | Full ghost/halo | Full + RT flare |
-| Vignette | Combined composite | Full | Full | Full |
-| Local exposure | Disabled | 4x4 tile grid | 16x16 tile grid | 32x32 + smooth blend |
-| Panini | Full | Full | Full | Full |
-| Cavity | Curvature-only, half-res, 4 samples | Curvature native + cavity half-res, 8 | Both native, 16 samples | Full + multi-pass blur |
-| Custom materials | Max 2 passes, depth-only | Max 4 passes, depth+normals | Unlimited, all inputs | Unlimited |
-| Graph editor | Max 4 nodes, half-res | Max 8 nodes, half-res | Unlimited | Unlimited |
+| Effect | Mobile | Switch |
+|--------|--------|--------|
+| Bloom | 3-pass dual-kawase, quarter-res | 4-pass Gaussian, half-res |
+| DOF | Disabled (optional lightweight Gaussian quarter-res) | Separable half-res |
+| Motion blur | Disabled | Camera-only, 4 samples, half-res |
+| Auto exposure | Average luminance, eighth-res | 32-bin histogram, quarter-res |
+| Tonemap/grade | Combined pass, 16^3 LUT | Same as mobile, no HDR out |
+| Film grain | Combined composite | Full |
+| Chromatic aberr. | Combined composite | Full |
+| Lens flare | Sprite-based, 2 sources | 2 ghost layers, 4 sources |
+| Vignette | Combined composite | Full |
+| Local exposure | Disabled | 4x4 tile grid |
+| Panini | Full | Full |
+| Cavity | Curvature-only, half-res, 4 samples | Curvature native + cavity half-res, 8 |
+| Custom materials | Max 2 passes, depth-only | Max 4 passes, depth+normals |
+| Graph editor | Max 4 nodes, half-res | Max 8 nodes, half-res |
+
+| Effect           | Desktop                   | High-End               |
+|------------------|---------------------------|------------------------|
+| Bloom            | 6+ pass Gaussian, native  | 8+ pass wide kernel    |
+| DOF              | Full gather bokeh         | Full + shaped bokeh    |
+| Motion blur      | Full per-pixel, 8 samples | 16 samples + tile-max  |
+| Auto exposure    | 64-bin histogram          | 128-bin histogram      |
+| Tonemap/grade    | 32^3 LUT, HDR10           | 64^3 LUT, HDR10+DV     |
+| Film grain       | Full                      | Full                   |
+| Chromatic aberr. | Full                      | Full                   |
+| Lens flare       | Full ghost/halo           | Full + RT flare        |
+| Vignette         | Full                      | Full                   |
+| Local exposure   | 16x16 tile grid           | 32x32 + smooth blend   |
+| Panini           | Full                      | Full                   |
+| Cavity           | Both native, 16 samples   | Full + multi-pass blur |
+| Custom materials | Unlimited, all inputs     | Unlimited              |
+| Graph editor     | Unlimited                 | Unlimited              |
 
 ### GPU Backend Notes
 
-| Backend | Notes |
-|---------|-------|
-| Metal | Tile shaders for on-chip composite merging. Memoryless transient textures for intermediate mips. `MTLCommandBuffer` completion via GCD dispatch. |
-| D3D12 | `ID3D12GraphicsCommandList::Dispatch` for compute. UAV barriers between passes. Placed resources in heaps for mip chain aliasing. |
-| Vulkan | `vkCmdDispatch` for compute. Pipeline barriers with `VK_ACCESS_SHADER_WRITE_BIT` / `VK_ACCESS_SHADER_READ_BIT`. Transient attachments with `VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT`. |
+| Backend |
+|---------|
+| Metal   |
+| D3D12   |
+| Vulkan  |
+
+1. **Metal** — Tile shaders for on-chip composite merging. Memoryless transient textures for
+   intermediate mips. `MTLCommandBuffer` completion via GCD dispatch.
+2. **D3D12** — `ID3D12GraphicsCommandList::Dispatch` for compute. UAV barriers between passes.
+   Placed resources in heaps for mip chain aliasing.
+3. **Vulkan** — `vkCmdDispatch` for compute. Pipeline barriers with `VK_ACCESS_SHADER_WRITE_BIT` /
+   `VK_ACCESS_SHADER_READ_BIT`. Transient attachments with
+   `VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT`.
 
 ### Shader Compilation
 
@@ -1641,61 +1681,114 @@ For `DolbyVision`, dynamic metadata is generated per frame based on the luminanc
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_bloom_threshold_extraction` | R-2.9.1 | Verify pixels above threshold contribute, below do not |
-| `test_bloom_soft_knee` | R-2.9.1 | Verify soft transition at threshold boundary |
-| `test_bloom_mip_chain_dimensions` | R-2.9.1 | Verify each mip is exactly half the previous |
-| `test_dof_coc_calculation` | R-2.9.2 | Verify CoC formula against known aperture/focal values |
-| `test_dof_near_far_sign` | R-2.9.2 | Verify CoC sign convention (positive=far, negative=near) |
-| `test_dof_bokeh_shape_samples` | R-2.9.2 | Verify circle/hexagon/octagon kernel sample positions |
-| `test_motion_blur_tile_max` | R-2.9.3 | Verify per-tile max velocity computation |
-| `test_motion_blur_skip_static` | R-2.9.3 | Verify zero-velocity tiles receive no blur |
-| `test_histogram_bin_count` | R-2.9.4 | Verify histogram has correct number of bins per tier |
-| `test_histogram_percentile_avg` | R-2.9.4 | Verify percentile average matches manual calculation |
-| `test_exposure_temporal_adapt` | R-2.9.4 | Verify exposure converges to target over time |
-| `test_exposure_min_max_clamp` | R-2.9.4 | Verify EV stays within configured bounds |
-| `test_aces_tonemap_known_values` | R-2.9.5 | Verify ACES curve output against reference values |
-| `test_lut_identity` | R-2.9.5 | Verify identity LUT produces no color change |
-| `test_lut_size_per_tier` | R-2.9.5 | Verify LUT dimensions match quality tier |
-| `test_lift_gamma_gain_neutral` | R-2.9.5 | Verify default L/G/G produces identity transform |
-| `test_film_grain_luminance_resp` | R-2.9.6 | Verify grain density varies with luminance response |
-| `test_chromatic_aberr_center_zero` | R-2.9.7 | Verify zero offset at screen center |
-| `test_chromatic_aberr_radial` | R-2.9.7 | Verify offset increases with distance from center |
-| `test_lens_flare_threshold` | R-2.9.8 | Verify only pixels above threshold generate flare |
-| `test_lens_flare_ghost_count` | R-2.9.8 | Verify correct number of ghost elements |
-| `test_vignette_center_unaffected` | R-2.9.9 | Verify no darkening at screen center |
-| `test_vignette_power_curve` | R-2.9.9 | Verify falloff matches configured power exponent |
-| `test_local_exposure_tile_count` | R-2.9.11 | Verify tile grid matches configured resolution |
-| `test_local_exposure_max_comp` | R-2.9.11 | Verify per-tile compensation clamped to max |
-| `test_panini_center_identity` | R-2.9.12 | Verify center pixel is unmoved by projection |
-| `test_panini_edge_correction` | R-2.9.12 | Verify edge pixels are displaced inward |
-| `test_cavity_ridge_positive` | R-2.9.13 | Verify convex normals produce ridge (>0.5) output |
-| `test_cavity_valley_negative` | R-2.9.13 | Verify concave normals produce valley (<0.5) output |
-| `test_cavity_distance_fade` | R-2.9.13 | Verify effect attenuates beyond fade_start |
-| `test_cavity_depth_fallback` | R-2.9.13 | Verify depth-reconstructed normals produce comparable output |
+| Test                               | Req      |
+|------------------------------------|----------|
+| `test_bloom_threshold_extraction`  | R-2.9.1  |
+| `test_bloom_soft_knee`             | R-2.9.1  |
+| `test_bloom_mip_chain_dimensions`  | R-2.9.1  |
+| `test_dof_coc_calculation`         | R-2.9.2  |
+| `test_dof_near_far_sign`           | R-2.9.2  |
+| `test_dof_bokeh_shape_samples`     | R-2.9.2  |
+| `test_motion_blur_tile_max`        | R-2.9.3  |
+| `test_motion_blur_skip_static`     | R-2.9.3  |
+| `test_histogram_bin_count`         | R-2.9.4  |
+| `test_histogram_percentile_avg`    | R-2.9.4  |
+| `test_exposure_temporal_adapt`     | R-2.9.4  |
+| `test_exposure_min_max_clamp`      | R-2.9.4  |
+| `test_aces_tonemap_known_values`   | R-2.9.5  |
+| `test_lut_identity`                | R-2.9.5  |
+| `test_lut_size_per_tier`           | R-2.9.5  |
+| `test_lift_gamma_gain_neutral`     | R-2.9.5  |
+| `test_film_grain_luminance_resp`   | R-2.9.6  |
+| `test_chromatic_aberr_center_zero` | R-2.9.7  |
+| `test_chromatic_aberr_radial`      | R-2.9.7  |
+| `test_lens_flare_threshold`        | R-2.9.8  |
+| `test_lens_flare_ghost_count`      | R-2.9.8  |
+| `test_vignette_center_unaffected`  | R-2.9.9  |
+| `test_vignette_power_curve`        | R-2.9.9  |
+| `test_local_exposure_tile_count`   | R-2.9.11 |
+| `test_local_exposure_max_comp`     | R-2.9.11 |
+| `test_panini_center_identity`      | R-2.9.12 |
+| `test_panini_edge_correction`      | R-2.9.12 |
+| `test_cavity_ridge_positive`       | R-2.9.13 |
+| `test_cavity_valley_negative`      | R-2.9.13 |
+| `test_cavity_distance_fade`        | R-2.9.13 |
+| `test_cavity_depth_fallback`       | R-2.9.13 |
+
+1. **`test_bloom_threshold_extraction`** — Verify pixels above threshold contribute, below do not
+2. **`test_bloom_soft_knee`** — Verify soft transition at threshold boundary
+3. **`test_bloom_mip_chain_dimensions`** — Verify each mip is exactly half the previous
+4. **`test_dof_coc_calculation`** — Verify CoC formula against known aperture/focal values
+5. **`test_dof_near_far_sign`** — Verify CoC sign convention (positive=far, negative=near)
+6. **`test_dof_bokeh_shape_samples`** — Verify circle/hexagon/octagon kernel sample positions
+7. **`test_motion_blur_tile_max`** — Verify per-tile max velocity computation
+8. **`test_motion_blur_skip_static`** — Verify zero-velocity tiles receive no blur
+9. **`test_histogram_bin_count`** — Verify histogram has correct number of bins per tier
+10. **`test_histogram_percentile_avg`** — Verify percentile average matches manual calculation
+11. **`test_exposure_temporal_adapt`** — Verify exposure converges to target over time
+12. **`test_exposure_min_max_clamp`** — Verify EV stays within configured bounds
+13. **`test_aces_tonemap_known_values`** — Verify ACES curve output against reference values
+14. **`test_lut_identity`** — Verify identity LUT produces no color change
+15. **`test_lut_size_per_tier`** — Verify LUT dimensions match quality tier
+16. **`test_lift_gamma_gain_neutral`** — Verify default L/G/G produces identity transform
+17. **`test_film_grain_luminance_resp`** — Verify grain density varies with luminance response
+18. **`test_chromatic_aberr_center_zero`** — Verify zero offset at screen center
+19. **`test_chromatic_aberr_radial`** — Verify offset increases with distance from center
+20. **`test_lens_flare_threshold`** — Verify only pixels above threshold generate flare
+21. **`test_lens_flare_ghost_count`** — Verify correct number of ghost elements
+22. **`test_vignette_center_unaffected`** — Verify no darkening at screen center
+23. **`test_vignette_power_curve`** — Verify falloff matches configured power exponent
+24. **`test_local_exposure_tile_count`** — Verify tile grid matches configured resolution
+25. **`test_local_exposure_max_comp`** — Verify per-tile compensation clamped to max
+26. **`test_panini_center_identity`** — Verify center pixel is unmoved by projection
+27. **`test_panini_edge_correction`** — Verify edge pixels are displaced inward
+28. **`test_cavity_ridge_positive`** — Verify convex normals produce ridge (>0.5) output
+29. **`test_cavity_valley_negative`** — Verify concave normals produce valley (<0.5) output
+30. **`test_cavity_distance_fade`** — Verify effect attenuates beyond fade_start
+31. **`test_cavity_depth_fallback`** — Verify depth-reconstructed normals produce comparable output
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_pipeline_1080p` | NFR-2.9.1 | Enable all effects, verify combined GPU time < 3.0 ms at 1080p |
-| `test_per_effect_budget` | NFR-2.9.2 | Profile each effect individually, verify < 1.0 ms (lightweight < 0.1 ms) |
-| `test_volume_blend_two_overlapping` | R-2.9.1-9 | Two overlapping volumes with different bloom params produce correct blend |
-| `test_volume_priority_override` | R-2.9.1-9 | Higher priority volume fully overrides lower at weight=1.0 |
-| `test_volume_blend_distance` | R-2.9.1-9 | Camera at blend boundary produces 50% interpolated params |
-| `test_mobile_composite_merge` | NFR-2.9.2 | On mobile tier, grain+CA+vignette execute as single dispatch |
-| `test_hdr10_output_pq_curve` | NFR-2.9.3 | HDR10 output encodes correct PQ EOTF curve |
-| `test_hdr10_output_bt2020` | NFR-2.9.3 | HDR10 output uses BT.2020 primaries |
-| `test_custom_material_depth_read` | R-2.9.10 | Custom material reads depth buffer correctly |
-| `test_custom_material_limit_mobile` | R-2.9.10 | Mobile caps at 2 custom passes, logs warning on 3rd |
-| `test_pass_order_stability` | R-2.9.1-14 | Effects execute in consistent order across frames |
-| `test_disabled_effect_skip` | R-2.9.1-14 | Disabled effects are not dispatched; pipeline chains around them |
-| `test_quality_tier_adaptation` | R-2.9.1-14 | Each effect selects correct quality settings per tier |
-| `test_temporal_state_persistence` | R-2.9.4 | Exposure and histogram state persists across frames |
-| `test_graph_editor_compile` | R-2.9.14 | Node graph compiles to valid compute dispatch sequence |
-| `test_graph_editor_hot_reload` | R-2.9.14 | Modified graph asset updates within one frame |
-| `test_graph_editor_mobile_limit` | R-2.9.14 | Mobile caps at 4 graph nodes, logs warning on 5th |
+| Test                                | Req        |
+|-------------------------------------|------------|
+| `test_full_pipeline_1080p`          | NFR-2.9.1  |
+| `test_per_effect_budget`            | NFR-2.9.2  |
+| `test_volume_blend_two_overlapping` | R-2.9.1-9  |
+| `test_volume_priority_override`     | R-2.9.1-9  |
+| `test_volume_blend_distance`        | R-2.9.1-9  |
+| `test_mobile_composite_merge`       | NFR-2.9.2  |
+| `test_hdr10_output_pq_curve`        | NFR-2.9.3  |
+| `test_hdr10_output_bt2020`          | NFR-2.9.3  |
+| `test_custom_material_depth_read`   | R-2.9.10   |
+| `test_custom_material_limit_mobile` | R-2.9.10   |
+| `test_pass_order_stability`         | R-2.9.1-14 |
+| `test_disabled_effect_skip`         | R-2.9.1-14 |
+| `test_quality_tier_adaptation`      | R-2.9.1-14 |
+| `test_temporal_state_persistence`   | R-2.9.4    |
+| `test_graph_editor_compile`         | R-2.9.14   |
+| `test_graph_editor_hot_reload`      | R-2.9.14   |
+| `test_graph_editor_mobile_limit`    | R-2.9.14   |
+
+1. **`test_full_pipeline_1080p`** — Enable all effects, verify combined GPU time < 3.0 ms at 1080p
+2. **`test_per_effect_budget`** — Profile each effect individually, verify < 1.0 ms (lightweight <
+   0.1 ms)
+3. **`test_volume_blend_two_overlapping`** — Two overlapping volumes with different bloom params
+   produce correct blend
+4. **`test_volume_priority_override`** — Higher priority volume fully overrides lower at weight=1.0
+5. **`test_volume_blend_distance`** — Camera at blend boundary produces 50% interpolated params
+6. **`test_mobile_composite_merge`** — On mobile tier, grain+CA+vignette execute as single dispatch
+7. **`test_hdr10_output_pq_curve`** — HDR10 output encodes correct PQ EOTF curve
+8. **`test_hdr10_output_bt2020`** — HDR10 output uses BT.2020 primaries
+9. **`test_custom_material_depth_read`** — Custom material reads depth buffer correctly
+10. **`test_custom_material_limit_mobile`** — Mobile caps at 2 custom passes, logs warning on 3rd
+11. **`test_pass_order_stability`** — Effects execute in consistent order across frames
+12. **`test_disabled_effect_skip`** — Disabled effects are not dispatched; pipeline chains around
+    them
+13. **`test_quality_tier_adaptation`** — Each effect selects correct quality settings per tier
+14. **`test_temporal_state_persistence`** — Exposure and histogram state persists across frames
+15. **`test_graph_editor_compile`** — Node graph compiles to valid compute dispatch sequence
+16. **`test_graph_editor_hot_reload`** — Modified graph asset updates within one frame
+17. **`test_graph_editor_mobile_limit`** — Mobile caps at 4 graph nodes, logs warning on 5th
 
 ### Benchmarks
 

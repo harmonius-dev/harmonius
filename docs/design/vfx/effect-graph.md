@@ -7,16 +7,25 @@
 > [user-stories/vfx/](../../user-stories/vfx/). The table below traces design elements to those
 > definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-11.6.1 | R-11.6.1 | Node-based effect graph editor with GPU compile and real-time preview |
-| F-11.6.2 | R-11.6.2 | Custom effect graph nodes via logic graph system |
-| F-11.6.3 | R-11.6.3 | Typed parameter slots with per-instance override and data binding |
-| F-11.6.4 | R-11.6.4 | Event-driven VFX spawning from ECS observers |
-| F-11.6.5 | R-11.6.5 | Distance-based LOD and global VFX performance budget |
-| F-11.1.1 | R-11.1.1 | GPU compute shader particle simulation (integration target) |
-| F-15.8.1 | R-15.8.1 | Universal logic graph runtime (node execution model) |
-| F-15.8.5b | R-15.8.5b | Shader graph to HLSL compilation pipeline |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-11.6.1  | R-11.6.1    |
+| F-11.6.2  | R-11.6.2    |
+| F-11.6.3  | R-11.6.3    |
+| F-11.6.4  | R-11.6.4    |
+| F-11.6.5  | R-11.6.5    |
+| F-11.1.1  | R-11.1.1    |
+| F-15.8.1  | R-15.8.1    |
+| F-15.8.5b | R-15.8.5b   |
+
+1. **F-11.6.1** — Node-based effect graph editor with GPU compile and real-time preview
+2. **F-11.6.2** — Custom effect graph nodes via logic graph system
+3. **F-11.6.3** — Typed parameter slots with per-instance override and data binding
+4. **F-11.6.4** — Event-driven VFX spawning from ECS observers
+5. **F-11.6.5** — Distance-based LOD and global VFX performance budget
+6. **F-11.1.1** — GPU compute shader particle simulation (integration target)
+7. **F-15.8.1** — Universal logic graph runtime (node execution model)
+8. **F-15.8.5b** — Shader graph to HLSL compilation pipeline
 
 ## Overview
 
@@ -1426,48 +1435,107 @@ the read. Effect instances are not spawned until their compiled kernels are resi
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_validate_complete_graph` | R-11.6.1 | Graph with all four context nodes passes validation. |
-| `test_validate_missing_context` | R-11.6.1 | Graph missing a Spawn node returns MissingContext error. |
-| `test_validate_type_mismatch` | R-11.6.1 | Edge connecting Float output to Vec3 input returns TypeMismatch. |
-| `test_validate_cycle_detection` | R-11.6.1 | Cyclic dataflow edges return CycleDetected with the cycle path. |
-| `test_validate_mobile_node_limit` | R-11.6.1 | Mobile graph with 33 nodes returns NodeCountExceeded. |
-| `test_validate_mobile_custom_node` | R-11.6.2 | Per-particle custom node on Mobile returns MobilePerParticleCustomNode. |
-| `test_codegen_gravity_update` | R-11.6.1 | Gravity + position integration graph produces valid HLSL with correct buffer bindings. |
-| `test_codegen_noise_operator` | R-11.6.1 | Noise node generates correct HLSL noise function call. |
-| `test_codegen_sample_curve` | R-11.6.1 | SampleCurve node emits texture sample with correct UV mapping. |
-| `test_codegen_branch` | R-11.6.1 | Branch node emits HLSL conditional with both paths. |
-| `test_topological_sort` | R-11.6.1 | Nodes are sorted so every node evaluates after its dependencies. |
-| `test_dead_node_elimination` | R-11.6.1 | Disconnected nodes are removed during flatten pass. |
-| `test_param_default_value` | R-11.6.3 | Unconnected parameter pins use their default value in codegen. |
-| `test_param_override` | R-11.6.3 | Per-instance ParamOverride writes to the correct cbuffer offset. |
-| `test_lod_tier_selection` | R-11.6.5 | Emitter at each distance selects the correct LOD tier. |
-| `test_lod_hysteresis` | R-11.6.5 | Emitter oscillating near threshold does not flicker between tiers. |
-| `test_budget_priority_ordering` | R-11.6.5 | Budget system scales Low-priority before Medium before High. |
-| `test_budget_critical_immune` | R-11.6.5 | Critical-priority effects are never scaled or culled. |
-| `test_spawn_shape_coverage` | R-11.1.1 | Each SpawnShape variant produces particles within the expected volume. |
+| Test                               | Req      |
+|------------------------------------|----------|
+| `test_validate_complete_graph`     | R-11.6.1 |
+| `test_validate_missing_context`    | R-11.6.1 |
+| `test_validate_type_mismatch`      | R-11.6.1 |
+| `test_validate_cycle_detection`    | R-11.6.1 |
+| `test_validate_mobile_node_limit`  | R-11.6.1 |
+| `test_validate_mobile_custom_node` | R-11.6.2 |
+| `test_codegen_gravity_update`      | R-11.6.1 |
+| `test_codegen_noise_operator`      | R-11.6.1 |
+| `test_codegen_sample_curve`        | R-11.6.1 |
+| `test_codegen_branch`              | R-11.6.1 |
+| `test_topological_sort`            | R-11.6.1 |
+| `test_dead_node_elimination`       | R-11.6.1 |
+| `test_param_default_value`         | R-11.6.3 |
+| `test_param_override`              | R-11.6.3 |
+| `test_lod_tier_selection`          | R-11.6.5 |
+| `test_lod_hysteresis`              | R-11.6.5 |
+| `test_budget_priority_ordering`    | R-11.6.5 |
+| `test_budget_critical_immune`      | R-11.6.5 |
+| `test_spawn_shape_coverage`        | R-11.1.1 |
+
+1. **`test_validate_complete_graph`** — Graph with all four context nodes passes validation.
+2. **`test_validate_missing_context`** — Graph missing a Spawn node returns MissingContext error.
+3. **`test_validate_type_mismatch`** — Edge connecting Float output to Vec3 input returns
+   TypeMismatch.
+4. **`test_validate_cycle_detection`** — Cyclic dataflow edges return CycleDetected with the cycle
+   path.
+5. **`test_validate_mobile_node_limit`** — Mobile graph with 33 nodes returns NodeCountExceeded.
+6. **`test_validate_mobile_custom_node`** — Per-particle custom node on Mobile returns
+   MobilePerParticleCustomNode.
+7. **`test_codegen_gravity_update`** — Gravity + position integration graph produces valid HLSL with
+   correct buffer bindings.
+8. **`test_codegen_noise_operator`** — Noise node generates correct HLSL noise function call.
+9. **`test_codegen_sample_curve`** — SampleCurve node emits texture sample with correct UV mapping.
+10. **`test_codegen_branch`** — Branch node emits HLSL conditional with both paths.
+11. **`test_topological_sort`** — Nodes are sorted so every node evaluates after its dependencies.
+12. **`test_dead_node_elimination`** — Disconnected nodes are removed during flatten pass.
+13. **`test_param_default_value`** — Unconnected parameter pins use their default value in codegen.
+14. **`test_param_override`** — Per-instance ParamOverride writes to the correct cbuffer offset.
+15. **`test_lod_tier_selection`** — Emitter at each distance selects the correct LOD tier.
+16. **`test_lod_hysteresis`** — Emitter oscillating near threshold does not flicker between tiers.
+17. **`test_budget_priority_ordering`** — Budget system scales Low-priority before Medium before
+    High.
+18. **`test_budget_critical_immune`** — Critical-priority effects are never scaled or culled.
+19. **`test_spawn_shape_coverage`** — Each SpawnShape variant produces particles within the expected
+    volume.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_compile_and_dispatch` | R-11.6.1 | Compile a graph end-to-end, dispatch compute kernels, verify particle buffer contains expected state. |
-| `test_event_spawn_collision` | R-11.6.4 | Trigger physics collision observer, assert VfxSpawnEvent creates effect instance at contact point with correct normal. |
-| `test_event_spawn_anim_notify` | R-11.6.4 | Trigger animation notify observer, assert VFX spawns at bone position with correct velocity. |
-| `test_event_spawn_attach` | R-11.6.4 | Spawn effect with attach_to, verify effect follows parent entity transform. |
-| `test_param_data_binding` | R-11.6.3 | Bind parameter to ECS component value, change value, assert effect updates within one frame. |
-| `test_param_sequencer_animate` | R-11.6.3 | Animate parameter via sequencer keyframes, assert interpolation across time. |
-| `test_custom_node_per_emitter` | R-11.6.2 | Author custom node via logic graph, compile and run in effect graph, verify output matches expected values. |
-| `test_custom_node_in_palette` | R-11.6.2 | Package custom node as library asset, verify it appears in the editor node palette. |
-| `test_preview_scrub` | R-11.6.1 | Open preview, scrub to t=2.0, verify particle state matches t=2.0 simulation. |
-| `test_preview_stats` | R-11.6.1 | Open preview, verify per-emitter stats (alive count, GPU time) are non-zero and plausible. |
-| `test_budget_dynamic_resolution` | R-11.6.5 | Exceed VFX budget, verify dynamic resolution system is notified. |
-| `test_mobile_event_throttle` | R-11.6.4 | On mobile, spawn low-priority events under budget pressure, verify they are skipped. |
-| `test_shader_cache_hit` | R-11.6.1 | Compile same graph twice, verify second compile reads from cache without invoking DXC. |
-| `test_output_sprite_render` | R-11.1.3 | Compile sprite output graph, verify draw-indirect args produce correct billboard draws. |
-| `test_output_mesh_render` | R-11.1.3 | Compile mesh output graph, verify GPU instancing with per-particle transforms. |
-| `test_output_ribbon_render` | R-11.1.3 | Compile ribbon output graph, verify spline geometry connects sequential particles. |
+| Test                             | Req      |
+|----------------------------------|----------|
+| `test_compile_and_dispatch`      | R-11.6.1 |
+| `test_event_spawn_collision`     | R-11.6.4 |
+| `test_event_spawn_anim_notify`   | R-11.6.4 |
+| `test_event_spawn_attach`        | R-11.6.4 |
+| `test_param_data_binding`        | R-11.6.3 |
+| `test_param_sequencer_animate`   | R-11.6.3 |
+| `test_custom_node_per_emitter`   | R-11.6.2 |
+| `test_custom_node_in_palette`    | R-11.6.2 |
+| `test_preview_scrub`             | R-11.6.1 |
+| `test_preview_stats`             | R-11.6.1 |
+| `test_budget_dynamic_resolution` | R-11.6.5 |
+| `test_mobile_event_throttle`     | R-11.6.4 |
+| `test_shader_cache_hit`          | R-11.6.1 |
+| `test_output_sprite_render`      | R-11.1.3 |
+| `test_output_mesh_render`        | R-11.1.3 |
+| `test_output_ribbon_render`      | R-11.1.3 |
+
+1. **`test_compile_and_dispatch`** — Compile a graph end-to-end, dispatch compute kernels, verify
+   particle buffer contains expected state.
+2. **`test_event_spawn_collision`** — Trigger physics collision observer, assert VfxSpawnEvent
+   creates effect instance at contact point with correct normal.
+3. **`test_event_spawn_anim_notify`** — Trigger animation notify observer, assert VFX spawns at bone
+   position with correct velocity.
+4. **`test_event_spawn_attach`** — Spawn effect with attach_to, verify effect follows parent entity
+   transform.
+5. **`test_param_data_binding`** — Bind parameter to ECS component value, change value, assert
+   effect updates within one frame.
+6. **`test_param_sequencer_animate`** — Animate parameter via sequencer keyframes, assert
+   interpolation across time.
+7. **`test_custom_node_per_emitter`** — Author custom node via logic graph, compile and run in
+   effect graph, verify output matches expected values.
+8. **`test_custom_node_in_palette`** — Package custom node as library asset, verify it appears in
+   the editor node palette.
+9. **`test_preview_scrub`** — Open preview, scrub to t=2.0, verify particle state matches t=2.0
+   simulation.
+10. **`test_preview_stats`** — Open preview, verify per-emitter stats (alive count, GPU time) are
+    non-zero and plausible.
+11. **`test_budget_dynamic_resolution`** — Exceed VFX budget, verify dynamic resolution system is
+    notified.
+12. **`test_mobile_event_throttle`** — On mobile, spawn low-priority events under budget pressure,
+    verify they are skipped.
+13. **`test_shader_cache_hit`** — Compile same graph twice, verify second compile reads from cache
+    without invoking DXC.
+14. **`test_output_sprite_render`** — Compile sprite output graph, verify draw-indirect args produce
+    correct billboard draws.
+15. **`test_output_mesh_render`** — Compile mesh output graph, verify GPU instancing with
+    per-particle transforms.
+16. **`test_output_ribbon_render`** — Compile ribbon output graph, verify spline geometry connects
+    sequential particles.
 
 ### Benchmarks
 

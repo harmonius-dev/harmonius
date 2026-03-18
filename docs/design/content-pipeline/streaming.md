@@ -8,18 +8,37 @@
 > [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
 > design elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-12.5.1 | R-12.5.1 | US-12.5.5, US-12.5.11, US-12.5.18 | Virtual file system with unified path namespace over loose files, pak archives, and remote HTTP stores |
-| F-12.5.2 | R-12.5.2 | US-12.5.1, US-12.5.17 | Platform-native async I/O (IOCP/GCD/io_uring) with direct I/O bypass, no stdlib file I/O |
-| F-12.5.3 | R-12.5.3 | US-12.5.6 | GPU direct storage via DirectStorage (Windows) and Metal IO (macOS) for file-to-GPU DMA |
-| F-12.5.4 | R-12.5.4 | US-12.5.2, US-12.5.12, US-12.5.15 | Texture mip streaming with residency manager, sparse binding, and eviction under memory pressure |
-| F-12.5.5 | R-12.5.5 | US-12.5.3, US-12.5.12, US-12.5.15 | Mesh LOD streaming with dithered cross-fade transitions and screen-space projected size scheduling |
-| F-12.5.6 | R-12.5.6 | US-12.5.7 | Priority queue ordered by screen-space size, camera distance, asset type weight, and frame deadline |
-| F-12.5.7 | R-12.5.7 | US-12.5.8, US-12.5.13, US-12.5.16 | Memory budget monitor with progressive eviction and subsystem release signals |
-| F-12.5.8 | R-12.5.8 | US-12.5.9, US-12.5.11, US-12.5.18 | Seekable pak archives with O(1) lookup, spatial organization, and multi-archive mounting |
-| F-12.5.9 | R-12.5.9 | US-12.5.10 | Per-chunk LZ4/Zstd compression with chunk boundaries aligned to streaming granularity |
-| F-12.5.10 | R-12.5.10 | US-12.5.4, US-12.5.14, US-12.5.19 | Download-on-demand patching from CDN with BLAKE3 hash verification |
+| Feature   | Requirement | User Stories                      |
+|-----------|-------------|-----------------------------------|
+| F-12.5.1  | R-12.5.1    | US-12.5.5, US-12.5.11, US-12.5.18 |
+| F-12.5.2  | R-12.5.2    | US-12.5.1, US-12.5.17             |
+| F-12.5.3  | R-12.5.3    | US-12.5.6                         |
+| F-12.5.4  | R-12.5.4    | US-12.5.2, US-12.5.12, US-12.5.15 |
+| F-12.5.5  | R-12.5.5    | US-12.5.3, US-12.5.12, US-12.5.15 |
+| F-12.5.6  | R-12.5.6    | US-12.5.7                         |
+| F-12.5.7  | R-12.5.7    | US-12.5.8, US-12.5.13, US-12.5.16 |
+| F-12.5.8  | R-12.5.8    | US-12.5.9, US-12.5.11, US-12.5.18 |
+| F-12.5.9  | R-12.5.9    | US-12.5.10                        |
+| F-12.5.10 | R-12.5.10   | US-12.5.4, US-12.5.14, US-12.5.19 |
+
+1. **F-12.5.1** — Virtual file system with unified path namespace over loose files, pak archives,
+   and remote HTTP stores
+2. **F-12.5.2** — Platform-native async I/O (IOCP/GCD/io_uring) with direct I/O bypass, no stdlib
+   file I/O
+3. **F-12.5.3** — GPU direct storage via DirectStorage (Windows) and Metal IO (macOS) for
+   file-to-GPU DMA
+4. **F-12.5.4** — Texture mip streaming with residency manager, sparse binding, and eviction under
+   memory pressure
+5. **F-12.5.5** — Mesh LOD streaming with dithered cross-fade transitions and screen-space projected
+   size scheduling
+6. **F-12.5.6** — Priority queue ordered by screen-space size, camera distance, asset type weight,
+   and frame deadline
+7. **F-12.5.7** — Memory budget monitor with progressive eviction and subsystem release signals
+8. **F-12.5.8** — Seekable pak archives with O(1) lookup, spatial organization, and multi-archive
+   mounting
+9. **F-12.5.9** — Per-chunk LZ4/Zstd compression with chunk boundaries aligned to streaming
+   granularity
+10. **F-12.5.10** — Download-on-demand patching from CDN with BLAKE3 hash verification
 
 ### Cross-Cutting Dependencies
 
@@ -1604,13 +1623,19 @@ fn compute_priority_score(
 
 ### I/O Backend Selection
 
-| Platform | Async I/O | GPU Direct Storage | Notes |
-|----------|-----------|-------------------|-------|
-| Windows | IOCP via `windows-sys` | DirectStorage 1.2+ | `IDStorageFactory`, `IDStorageQueue` |
-| macOS | GCD Dispatch IO via cxx.rs | Metal IO Command Queue | `MTLIOCommandQueue`, `MTLIOCommandBuffer` |
-| Linux | io_uring via `io-uring` crate | CPU staging fallback | `io_uring_prep_read` + GPU upload |
-| iOS | GCD Dispatch IO via cxx.rs | Metal IO Command Queue | Same as macOS, tighter budgets |
-| Android | io_uring (kernel 5.1+) | CPU staging fallback | Smaller chunk sizes, metered-aware |
+| Platform | Async I/O                     | GPU Direct Storage     |
+|----------|-------------------------------|------------------------|
+| Windows  | IOCP via `windows-sys`        | DirectStorage 1.2+     |
+| macOS    | GCD Dispatch IO via cxx.rs    | Metal IO Command Queue |
+| Linux    | io_uring via `io-uring` crate | CPU staging fallback   |
+| iOS      | GCD Dispatch IO via cxx.rs    | Metal IO Command Queue |
+| Android  | io_uring (kernel 5.1+)        | CPU staging fallback   |
+
+1. **Windows** — `IDStorageFactory`, `IDStorageQueue`
+2. **macOS** — `MTLIOCommandQueue`, `MTLIOCommandBuffer`
+3. **Linux** — `io_uring_prep_read` + GPU upload
+4. **iOS** — Same as macOS, tighter budgets
+5. **Android** — Smaller chunk sizes, metered-aware
 
 ### Direct I/O Alignment
 
@@ -1747,54 +1772,129 @@ impl DirectStorageBackend {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_vfs_mount_priority_order` | R-12.5.1 | Mount three stores at different priorities. Verify the highest-priority store is searched first. |
-| `test_vfs_unmount_removes_paths` | R-12.5.1 | Mount a store, verify paths resolve, unmount, verify paths return `NotFound`. |
-| `test_vfs_list_deduplicates` | R-12.5.1 | Mount two stores with overlapping entries. Verify `list()` returns each path once (highest priority wins). |
-| `test_priority_queue_ordering` | R-12.5.6 | Enqueue 100 requests with varied priorities. Verify `dequeue_batch` returns them in descending composite score order. |
-| `test_priority_queue_aging` | R-12.5.6 | Enqueue a `Prefetch` request, advance 100 frames, verify it promotes above newer `Prefetch` requests. |
-| `test_priority_queue_coalesce` | R-12.5.6 | Enqueue 10 requests to adjacent archive offsets. Verify `coalesce_adjacent` merges them into fewer I/O operations. |
-| `test_priority_queue_cancel` | R-12.5.6 | Enqueue a request, cancel it by ID, verify it is removed and `dequeue_batch` skips it. |
-| `test_pak_header_roundtrip` | R-12.5.8 | Serialize and deserialize a `PakHeader`. Verify all fields match. |
-| `test_pak_lookup_o1` | R-12.5.8 | Create a pak with 10,000 entries. Verify lookup by ID is constant-time (does not scale with entry count). |
-| `test_pak_directory_integrity` | R-12.5.8 | Corrupt one byte of the directory. Verify `open()` returns `DirectoryCorrupted`. |
-| `test_lz4_roundtrip` | R-12.5.9 | Compress and decompress 64 KB of random data via LZ4. Verify byte-for-byte match. |
-| `test_zstd_roundtrip` | R-12.5.9 | Compress and decompress 1 MB of texture data via Zstd. Verify byte-for-byte match. |
-| `test_codec_selection` | R-12.5.9 | Verify `select_codec` returns LZ4 for audio/script and Zstd for texture/mesh/animation. |
-| `test_budget_pressure_levels` | R-12.5.7 | Allocate to 80%, verify `Warning`. Allocate to 90%, verify `Critical`. Allocate to 95%, verify `Emergency`. |
-| `test_budget_allocation_denied` | R-12.5.7 | Fill to `Emergency`. Verify `allocate()` returns `false` for new requests. |
-| `test_texture_residency_mask` | R-12.5.4 | Request mips 2-5. Mark mip 3 resident. Verify `is_resident(3)` returns true, `is_resident(2)` returns false. |
-| `test_mesh_residency_evict` | R-12.5.5 | Mark LODs 0-3 resident. Evict above LOD 2. Verify LODs 0-1 are evicted, 2-3 remain. |
-| `test_content_hash_mismatch` | R-12.5.10 | Load an asset with a tampered content hash. Verify `IntegrityError` is returned. |
-| `test_download_manager_pause` | R-12.5.10 | Pause downloads. Verify `download()` returns `Paused`. Resume, verify download succeeds. |
-| `test_stream_handle_cancel` | R-12.5.2 | Submit a load, cancel it. Verify the handle returns `Cancelled`. |
+| Test                             | Req       |
+|----------------------------------|-----------|
+| `test_vfs_mount_priority_order`  | R-12.5.1  |
+| `test_vfs_unmount_removes_paths` | R-12.5.1  |
+| `test_vfs_list_deduplicates`     | R-12.5.1  |
+| `test_priority_queue_ordering`   | R-12.5.6  |
+| `test_priority_queue_aging`      | R-12.5.6  |
+| `test_priority_queue_coalesce`   | R-12.5.6  |
+| `test_priority_queue_cancel`     | R-12.5.6  |
+| `test_pak_header_roundtrip`      | R-12.5.8  |
+| `test_pak_lookup_o1`             | R-12.5.8  |
+| `test_pak_directory_integrity`   | R-12.5.8  |
+| `test_lz4_roundtrip`             | R-12.5.9  |
+| `test_zstd_roundtrip`            | R-12.5.9  |
+| `test_codec_selection`           | R-12.5.9  |
+| `test_budget_pressure_levels`    | R-12.5.7  |
+| `test_budget_allocation_denied`  | R-12.5.7  |
+| `test_texture_residency_mask`    | R-12.5.4  |
+| `test_mesh_residency_evict`      | R-12.5.5  |
+| `test_content_hash_mismatch`     | R-12.5.10 |
+| `test_download_manager_pause`    | R-12.5.10 |
+| `test_stream_handle_cancel`      | R-12.5.2  |
+
+1. **`test_vfs_mount_priority_order`** — Mount three stores at different priorities. Verify the
+   highest-priority store is searched first.
+2. **`test_vfs_unmount_removes_paths`** — Mount a store, verify paths resolve, unmount, verify paths
+   return `NotFound`.
+3. **`test_vfs_list_deduplicates`** — Mount two stores with overlapping entries. Verify `list()`
+   returns each path once (highest priority wins).
+4. **`test_priority_queue_ordering`** — Enqueue 100 requests with varied priorities. Verify
+   `dequeue_batch` returns them in descending composite score order.
+5. **`test_priority_queue_aging`** — Enqueue a `Prefetch` request, advance 100 frames, verify it
+   promotes above newer `Prefetch` requests.
+6. **`test_priority_queue_coalesce`** — Enqueue 10 requests to adjacent archive offsets. Verify
+   `coalesce_adjacent` merges them into fewer I/O operations.
+7. **`test_priority_queue_cancel`** — Enqueue a request, cancel it by ID, verify it is removed and
+   `dequeue_batch` skips it.
+8. **`test_pak_header_roundtrip`** — Serialize and deserialize a `PakHeader`. Verify all fields
+   match.
+9. **`test_pak_lookup_o1`** — Create a pak with 10,000 entries. Verify lookup by ID is constant-time
+   (does not scale with entry count).
+10. **`test_pak_directory_integrity`** — Corrupt one byte of the directory. Verify `open()` returns
+    `DirectoryCorrupted`.
+11. **`test_lz4_roundtrip`** — Compress and decompress 64 KB of random data via LZ4. Verify
+    byte-for-byte match.
+12. **`test_zstd_roundtrip`** — Compress and decompress 1 MB of texture data via Zstd. Verify
+    byte-for-byte match.
+13. **`test_codec_selection`** — Verify `select_codec` returns LZ4 for audio/script and Zstd for
+    texture/mesh/animation.
+14. **`test_budget_pressure_levels`** — Allocate to 80%, verify `Warning`. Allocate to 90%, verify
+    `Critical`. Allocate to 95%, verify `Emergency`.
+15. **`test_budget_allocation_denied`** — Fill to `Emergency`. Verify `allocate()` returns `false`
+    for new requests.
+16. **`test_texture_residency_mask`** — Request mips 2-5. Mark mip 3 resident. Verify
+    `is_resident(3)` returns true, `is_resident(2)` returns false.
+17. **`test_mesh_residency_evict`** — Mark LODs 0-3 resident. Evict above LOD 2. Verify LODs 0-1 are
+    evicted, 2-3 remain.
+18. **`test_content_hash_mismatch`** — Load an asset with a tampered content hash. Verify
+    `IntegrityError` is returned.
+19. **`test_download_manager_pause`** — Pause downloads. Verify `download()` returns `Paused`.
+    Resume, verify download succeeds.
+20. **`test_stream_handle_cancel`** — Submit a load, cancel it. Verify the handle returns
+    `Cancelled`.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_vfs_loose_pak_cdn_mount` | R-12.5.1 | Mount a loose-file dir, a pak archive, and a mock HTTP CDN. Read the same asset path from each. Verify identical content. |
-| `test_async_read_100mb` | R-12.5.2 | Load a 100 MB asset via async I/O on each platform. Verify completion through IOCP/GCD/io_uring. Verify no `std::fs` calls via static analysis. |
-| `test_gpu_direct_storage_256mb` | R-12.5.3 | Load a 256 MB compressed texture pack via GPU direct storage. Sample pixel values to verify correctness. Verify CPU < 5%. |
-| `test_texture_stream_1000` | R-12.5.4 | Render 1,000 textures. Verify only mips matching screen-space density are resident. Move camera closer, verify higher mips arrive within 500 ms. |
-| `test_mesh_stream_10000` | R-12.5.5 | Place 10,000 meshes. Verify distant meshes use coarse LODs. Approach camera, verify fine LODs stream in with dithered cross-fade. |
-| `test_priority_high_before_low` | R-12.5.6 | Submit 100 low-priority and 10 high-priority requests. Verify all high-priority complete before 90% of low-priority. |
-| `test_memory_pressure_512mb` | R-12.5.7 | Set budget to 512 MB. Stream until full. Verify eviction occurs, no crash, usage stays within 10%. |
-| `test_pak_sequential_throughput` | R-12.5.8 | Read spatially adjacent assets. Verify throughput exceeds 90% of raw disk bandwidth. |
-| `test_multi_archive_dlc` | R-12.5.8 | Mount base + DLC archives. Verify DLC overrides base for overlapping assets. Unmount DLC, verify base assets return. |
-| `test_cdn_download_verify` | R-12.5.10 | Remove an asset from local archive. Access via VFS. Verify CDN download, hash verification, and local caching. |
-| `test_cdn_corrupt_retry` | R-12.5.10 | Serve a corrupted download from mock CDN. Verify hash mismatch is detected and download retries. |
-| `test_mobile_memory_warning` | R-12.5.7 | Simulate iOS `didReceiveMemoryWarning`. Verify immediate `Emergency` eviction of non-visible assets. |
-| `test_mobile_metered_pause` | R-12.5.10 | Simulate cellular connection. Verify downloads auto-pause. Switch to WiFi, verify downloads resume. |
+| Test                             | Req       |
+|----------------------------------|-----------|
+| `test_vfs_loose_pak_cdn_mount`   | R-12.5.1  |
+| `test_async_read_100mb`          | R-12.5.2  |
+| `test_gpu_direct_storage_256mb`  | R-12.5.3  |
+| `test_texture_stream_1000`       | R-12.5.4  |
+| `test_mesh_stream_10000`         | R-12.5.5  |
+| `test_priority_high_before_low`  | R-12.5.6  |
+| `test_memory_pressure_512mb`     | R-12.5.7  |
+| `test_pak_sequential_throughput` | R-12.5.8  |
+| `test_multi_archive_dlc`         | R-12.5.8  |
+| `test_cdn_download_verify`       | R-12.5.10 |
+| `test_cdn_corrupt_retry`         | R-12.5.10 |
+| `test_mobile_memory_warning`     | R-12.5.7  |
+| `test_mobile_metered_pause`      | R-12.5.10 |
+
+1. **`test_vfs_loose_pak_cdn_mount`** — Mount a loose-file dir, a pak archive, and a mock HTTP CDN.
+   Read the same asset path from each. Verify identical content.
+2. **`test_async_read_100mb`** — Load a 100 MB asset via async I/O on each platform. Verify
+   completion through IOCP/GCD/io_uring. Verify no `std::fs` calls via static analysis.
+3. **`test_gpu_direct_storage_256mb`** — Load a 256 MB compressed texture pack via GPU direct
+   storage. Sample pixel values to verify correctness. Verify CPU < 5%.
+4. **`test_texture_stream_1000`** — Render 1,000 textures. Verify only mips matching screen-space
+   density are resident. Move camera closer, verify higher mips arrive within 500 ms.
+5. **`test_mesh_stream_10000`** — Place 10,000 meshes. Verify distant meshes use coarse LODs.
+   Approach camera, verify fine LODs stream in with dithered cross-fade.
+6. **`test_priority_high_before_low`** — Submit 100 low-priority and 10 high-priority requests.
+   Verify all high-priority complete before 90% of low-priority.
+7. **`test_memory_pressure_512mb`** — Set budget to 512 MB. Stream until full. Verify eviction
+   occurs, no crash, usage stays within 10%.
+8. **`test_pak_sequential_throughput`** — Read spatially adjacent assets. Verify throughput exceeds
+   90% of raw disk bandwidth.
+9. **`test_multi_archive_dlc`** — Mount base + DLC archives. Verify DLC overrides base for
+   overlapping assets. Unmount DLC, verify base assets return.
+10. **`test_cdn_download_verify`** — Remove an asset from local archive. Access via VFS. Verify CDN
+    download, hash verification, and local caching.
+11. **`test_cdn_corrupt_retry`** — Serve a corrupted download from mock CDN. Verify hash mismatch is
+    detected and download retries.
+12. **`test_mobile_memory_warning`** — Simulate iOS `didReceiveMemoryWarning`. Verify immediate
+    `Emergency` eviction of non-visible assets.
+13. **`test_mobile_metered_pause`** — Simulate cellular connection. Verify downloads auto-pause.
+    Switch to WiFi, verify downloads resume.
 
 ### Stress Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_flythrough_no_popins` | US-12.5.15 | Fly camera through dense open world at max speed for 120 seconds. Verify zero missing textures, zero missing meshes, zero hard LOD pops. |
-| `test_pressure_retains_visible` | US-12.5.16 | Force memory pressure while rendering. Verify eviction drops only off-screen assets; on-screen assets remain resident. |
-| `test_budget_120s_stability` | R-12.5.7 | Stream assets continuously for 120 seconds. Verify memory usage stays within 10% of budget at all times. |
+| Test                            | Req        |
+|---------------------------------|------------|
+| `test_flythrough_no_popins`     | US-12.5.15 |
+| `test_pressure_retains_visible` | US-12.5.16 |
+| `test_budget_120s_stability`    | R-12.5.7   |
+
+1. **`test_flythrough_no_popins`** — Fly camera through dense open world at max speed for 120
+   seconds. Verify zero missing textures, zero missing meshes, zero hard LOD pops.
+2. **`test_pressure_retains_visible`** — Force memory pressure while rendering. Verify eviction
+   drops only off-screen assets; on-screen assets remain resident.
+3. **`test_budget_120s_stability`** — Stream assets continuously for 120 seconds. Verify memory
+   usage stays within 10% of budget at all times.
 
 ### Benchmarks
 

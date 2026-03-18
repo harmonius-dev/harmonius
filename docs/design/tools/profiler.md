@@ -8,15 +8,23 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.5.1 | R-15.5.1 | CPU frame profiler with swimlane timeline and flame graph |
-| F-15.5.2 | R-15.5.2 | GPU profiler with per-pass timing and vendor counters |
-| F-15.5.3 | R-15.5.3 | Memory profiler with allocation tracking and treemap |
-| F-15.5.4 | R-15.5.4 | Leak detection by snapshot comparison |
-| F-15.5.5 | R-15.5.5 | Network profiler with bandwidth monitoring and packet inspector |
-| F-15.5.6 | R-15.5.6 | Stat overlays on game viewport |
-| F-15.5.7 | R-15.5.7 | Remote profiling over TCP |
+| Feature  | Requirement |
+|----------|-------------|
+| F-15.5.1 | R-15.5.1    |
+| F-15.5.2 | R-15.5.2    |
+| F-15.5.3 | R-15.5.3    |
+| F-15.5.4 | R-15.5.4    |
+| F-15.5.5 | R-15.5.5    |
+| F-15.5.6 | R-15.5.6    |
+| F-15.5.7 | R-15.5.7    |
+
+1. **F-15.5.1** — CPU frame profiler with swimlane timeline and flame graph
+2. **F-15.5.2** — GPU profiler with per-pass timing and vendor counters
+3. **F-15.5.3** — Memory profiler with allocation tracking and treemap
+4. **F-15.5.4** — Leak detection by snapshot comparison
+5. **F-15.5.5** — Network profiler with bandwidth monitoring and packet inspector
+6. **F-15.5.6** — Stat overlays on game viewport
+7. **F-15.5.7** — Remote profiling over TCP
 
 ## Overview
 
@@ -1203,15 +1211,22 @@ pub enum DecodeError {
 
 ## Platform Considerations
 
-| Feature | Windows | macOS | Linux |
-|---------|---------|-------|-------|
-| CPU timestamps | `rdtsc` via inline asm or `QueryPerformanceCounter` | `mach_absolute_time` | `clock_gettime(MONOTONIC)` or `rdtsc` |
-| Thread scheduling | ETW `CSwitch` events | os_signpost | perf `sched:sched_switch` |
-| Stack capture | `CaptureStackBackTrace` | `backtrace` (libunwind) | `backtrace` (libunwind) |
-| GPU timestamps | D3D12 timestamp queries | Metal timestamp queries | Vulkan timestamp queries |
-| Vendor counters | AMD AGS, NVIDIA NVAPI | Metal GPU counters API | Vulkan pipeline statistics |
-| Remote transport | TCP via IOCP | TCP via GCD | TCP via io_uring |
-| Signpost compat | N/A | `os_signpost_emit_with_type` | N/A |
+| Feature           | macOS                        | Linux                                 |
+|-------------------|------------------------------|---------------------------------------|
+| CPU timestamps    | `mach_absolute_time`         | `clock_gettime(MONOTONIC)` or `rdtsc` |
+| Thread scheduling | os_signpost                  | perf `sched:sched_switch`             |
+| Stack capture     | `backtrace` (libunwind)      | `backtrace` (libunwind)               |
+| GPU timestamps    | Metal timestamp queries      | Vulkan timestamp queries              |
+| Vendor counters   | Metal GPU counters API       | Vulkan pipeline statistics            |
+| Remote transport  | TCP via GCD                  | TCP via io_uring                      |
+| Signpost compat   | `os_signpost_emit_with_type` | N/A                                   |
+
+1. **CPU timestamps** — `rdtsc` via inline asm or `QueryPerformanceCounter`
+2. **Thread scheduling** — ETW `CSwitch` events
+3. **Stack capture** — `CaptureStackBackTrace`
+4. **GPU timestamps** — D3D12 timestamp queries
+5. **Vendor counters** — AMD AGS, NVIDIA NVAPI
+6. **Remote transport** — TCP via IOCP
 
 All timestamps are normalized to nanoseconds using per-platform frequency calibration. TSC frequency
 is read once at startup via `cpuid` (x86) or `mach_timebase_info` (Apple Silicon).
@@ -1234,48 +1249,85 @@ At 300 FPS with 1000 CPU events per frame, total overhead is ~20 us per frame ou
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_ring_buffer_push_drain` | R-15.5.1 | Push 10k events, drain all, verify none lost. |
-| `test_ring_buffer_overflow` | R-15.5.1 | Overflow buffer, verify events_dropped() returns true. |
-| `test_frame_collector_sort` | R-15.5.1 | Collect from 4 threads, verify events sorted by timestamp. |
-| `test_flame_graph_depth` | R-15.5.1 | Nested scopes A>B>C, verify depth 0,1,2 in flame graph. |
-| `test_timeline_filter_thread` | R-15.5.1 | Filter by thread_id, verify only matching events shown. |
-| `test_frame_comparison` | R-15.5.1 | Compare two frames, verify delta highlighting correct. |
-| `test_gpu_pass_timing` | R-15.5.2 | Insert begin/end queries, verify duration > 0. |
-| `test_gpu_cpu_alignment` | R-15.5.2 | Verify GPU timeline aligns with CPU frame boundary. |
-| `test_vendor_counter_amd` | R-15.5.2 | Read AMD occupancy counter on AMD GPU, verify non-null. |
-| `test_alloc_tracking` | R-15.5.3 | Allocate 100 blocks, verify all tracked with correct sizes. |
-| `test_dealloc_tracking` | R-15.5.3 | Allocate and free, verify removed from live set. |
-| `test_treemap_by_subsystem` | R-15.5.3 | Group by subsystem, verify bytes sum matches total. |
-| `test_callstack_capture` | R-15.5.3 | Capture stack, verify at least 3 frames with known function. |
-| `test_per_frame_alloc_rate` | R-15.5.3 | Allocate N per frame, verify rate matches N. |
-| `test_leak_detection` | R-15.5.4 | Allocate without free between snapshots, verify leak found. |
-| `test_no_false_leak` | R-15.5.4 | Allocate and free between snapshots, verify no leak reported. |
-| `test_leak_grouping` | R-15.5.4 | Multiple leaks from same site, verify grouped correctly. |
-| `test_net_bandwidth_channel` | R-15.5.5 | Record on 3 channels, verify per-channel sums correct. |
-| `test_net_bandwidth_sum` | R-15.5.5 | Per-channel sums match total within 1%. |
-| `test_packet_decode` | R-15.5.5 | Encode known packet, decode, verify fields match. |
-| `test_overlay_fps_nonzero` | R-15.5.6 | Active scene, verify FPS overlay shows > 0. |
-| `test_overlay_toggle` | R-15.5.6 | Toggle overlay off, verify not rendered. |
-| `test_csv_export` | R-15.5.6 | Record 10 frames, export CSV, verify row count. |
-| `test_remote_encode_decode` | R-15.5.7 | Encode FrameCapture, decode, verify identical. |
-| `test_remote_connect` | R-15.5.7 | Client connects to server, verify handshake. |
-| `test_ecs_system_timing` | R-15.5.1 | Record system execution, verify timing non-zero. |
+| Test                          | Req      |
+|-------------------------------|----------|
+| `test_ring_buffer_push_drain` | R-15.5.1 |
+| `test_ring_buffer_overflow`   | R-15.5.1 |
+| `test_frame_collector_sort`   | R-15.5.1 |
+| `test_flame_graph_depth`      | R-15.5.1 |
+| `test_timeline_filter_thread` | R-15.5.1 |
+| `test_frame_comparison`       | R-15.5.1 |
+| `test_gpu_pass_timing`        | R-15.5.2 |
+| `test_gpu_cpu_alignment`      | R-15.5.2 |
+| `test_vendor_counter_amd`     | R-15.5.2 |
+| `test_alloc_tracking`         | R-15.5.3 |
+| `test_dealloc_tracking`       | R-15.5.3 |
+| `test_treemap_by_subsystem`   | R-15.5.3 |
+| `test_callstack_capture`      | R-15.5.3 |
+| `test_per_frame_alloc_rate`   | R-15.5.3 |
+| `test_leak_detection`         | R-15.5.4 |
+| `test_no_false_leak`          | R-15.5.4 |
+| `test_leak_grouping`          | R-15.5.4 |
+| `test_net_bandwidth_channel`  | R-15.5.5 |
+| `test_net_bandwidth_sum`      | R-15.5.5 |
+| `test_packet_decode`          | R-15.5.5 |
+| `test_overlay_fps_nonzero`    | R-15.5.6 |
+| `test_overlay_toggle`         | R-15.5.6 |
+| `test_csv_export`             | R-15.5.6 |
+| `test_remote_encode_decode`   | R-15.5.7 |
+| `test_remote_connect`         | R-15.5.7 |
+| `test_ecs_system_timing`      | R-15.5.1 |
+
+1. **`test_ring_buffer_push_drain`** — Push 10k events, drain all, verify none lost.
+2. **`test_ring_buffer_overflow`** — Overflow buffer, verify events_dropped() returns true.
+3. **`test_frame_collector_sort`** — Collect from 4 threads, verify events sorted by timestamp.
+4. **`test_flame_graph_depth`** — Nested scopes A>B>C, verify depth 0,1,2 in flame graph.
+5. **`test_timeline_filter_thread`** — Filter by thread_id, verify only matching events shown.
+6. **`test_frame_comparison`** — Compare two frames, verify delta highlighting correct.
+7. **`test_gpu_pass_timing`** — Insert begin/end queries, verify duration > 0.
+8. **`test_gpu_cpu_alignment`** — Verify GPU timeline aligns with CPU frame boundary.
+9. **`test_vendor_counter_amd`** — Read AMD occupancy counter on AMD GPU, verify non-null.
+10. **`test_alloc_tracking`** — Allocate 100 blocks, verify all tracked with correct sizes.
+11. **`test_dealloc_tracking`** — Allocate and free, verify removed from live set.
+12. **`test_treemap_by_subsystem`** — Group by subsystem, verify bytes sum matches total.
+13. **`test_callstack_capture`** — Capture stack, verify at least 3 frames with known function.
+14. **`test_per_frame_alloc_rate`** — Allocate N per frame, verify rate matches N.
+15. **`test_leak_detection`** — Allocate without free between snapshots, verify leak found.
+16. **`test_no_false_leak`** — Allocate and free between snapshots, verify no leak reported.
+17. **`test_leak_grouping`** — Multiple leaks from same site, verify grouped correctly.
+18. **`test_net_bandwidth_channel`** — Record on 3 channels, verify per-channel sums correct.
+19. **`test_net_bandwidth_sum`** — Per-channel sums match total within 1%.
+20. **`test_packet_decode`** — Encode known packet, decode, verify fields match.
+21. **`test_overlay_fps_nonzero`** — Active scene, verify FPS overlay shows > 0.
+22. **`test_overlay_toggle`** — Toggle overlay off, verify not rendered.
+23. **`test_csv_export`** — Record 10 frames, export CSV, verify row count.
+24. **`test_remote_encode_decode`** — Encode FrameCapture, decode, verify identical.
+25. **`test_remote_connect`** — Client connects to server, verify handshake.
+26. **`test_ecs_system_timing`** — Record system execution, verify timing non-zero.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_overhead_under_1_pct` | R-15.5.1 | Run 300 FPS workload with profiler, verify overhead < 1%. |
-| `test_etw_integration` | R-15.5.1 | Windows: verify ETW context switch events captured. |
-| `test_signpost_integration` | R-15.5.1 | macOS: verify os_signpost events emitted. |
-| `test_perf_integration` | R-15.5.1 | Linux: verify perf hardware counters read. |
-| `test_gpu_pass_sum` | R-15.5.2 | Sum all pass durations, verify within 10% of total GPU time. |
-| `test_remote_data_fidelity` | R-15.5.7 | Profile same workload local and remote, verify data matches. |
-| `test_remote_bandwidth` | R-15.5.7 | Stream at Full granularity, verify < 10 Mbps. |
-| `test_leak_ci_automation` | R-15.5.4 | Run test scenario, call assert_no_leaks(), verify CI pass/fail. |
-| `test_overlay_all_platforms` | R-15.5.6 | Stat overlays render on Windows, macOS, Linux, mobile. |
+| Test                         | Req      |
+|------------------------------|----------|
+| `test_overhead_under_1_pct`  | R-15.5.1 |
+| `test_etw_integration`       | R-15.5.1 |
+| `test_signpost_integration`  | R-15.5.1 |
+| `test_perf_integration`      | R-15.5.1 |
+| `test_gpu_pass_sum`          | R-15.5.2 |
+| `test_remote_data_fidelity`  | R-15.5.7 |
+| `test_remote_bandwidth`      | R-15.5.7 |
+| `test_leak_ci_automation`    | R-15.5.4 |
+| `test_overlay_all_platforms` | R-15.5.6 |
+
+1. **`test_overhead_under_1_pct`** — Run 300 FPS workload with profiler, verify overhead < 1%.
+2. **`test_etw_integration`** — Windows: verify ETW context switch events captured.
+3. **`test_signpost_integration`** — macOS: verify os_signpost events emitted.
+4. **`test_perf_integration`** — Linux: verify perf hardware counters read.
+5. **`test_gpu_pass_sum`** — Sum all pass durations, verify within 10% of total GPU time.
+6. **`test_remote_data_fidelity`** — Profile same workload local and remote, verify data matches.
+7. **`test_remote_bandwidth`** — Stream at Full granularity, verify < 10 Mbps.
+8. **`test_leak_ci_automation`** — Run test scenario, call assert_no_leaks(), verify CI pass/fail.
+9. **`test_overlay_all_platforms`** — Stat overlays render on Windows, macOS, Linux, mobile.
 
 ### Benchmarks
 

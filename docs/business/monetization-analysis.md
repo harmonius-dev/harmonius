@@ -8,35 +8,64 @@ support contracts, and optional managed hosting.
 
 ### Core Principles
 
-| Principle | Detail |
-|-----------|--------|
-| Engine license | 100% free, Apache 2.0, forever |
-| Royalties | None -- developers keep 100% of game revenue |
-| Per-seat fees | None -- team size does not affect cost |
-| Open source asset store | Free, community-run, Git-based repository |
-| External store integration | FAB, Synty, TurboSquid integration in-editor -- engine takes no commission |
-| Proprietary addons | ONLY for console SDKs (PlayStation, Xbox, Nintendo) that cannot be open-sourced due to platform holder NDAs; sold with 24/7 support by the engine creator |
-| AI content generation | Local inference only, no cloud fees, included with the engine |
+| Principle                  |
+|----------------------------|
+| Engine license             |
+| Royalties                  |
+| Per-seat fees              |
+| Open source asset store    |
+| External store integration |
+| Proprietary addons         |
+| AI content generation      |
+
+1. **Engine license** — 100% free, Apache 2.0, forever
+2. **Royalties** — None -- developers keep 100% of game revenue
+3. **Per-seat fees** — None -- team size does not affect cost
+4. **Open source asset store** — Free, community-run, Git-based repository
+5. **External store integration** — FAB, Synty, TurboSquid integration in-editor -- engine takes no
+   commission
+6. **Proprietary addons** — ONLY for console SDKs (PlayStation, Xbox, Nintendo) that cannot be
+   open-sourced due to platform holder NDAs; sold with 24/7 support by the engine creator
+7. **AI content generation** — Local inference only, no cloud fees, included with the engine
 
 ### Revenue Sources
 
-| Source | Description | Recurring |
-|--------|-------------|-----------|
-| Console SDK addon licenses | Annual per-platform license for proprietary console backend integrations (PS5, Xbox, Switch) | Yes |
-| Enterprise support contracts | Priority bug fixes, dedicated engineer, SLA guarantees for studios with shipping deadlines | Yes |
-| Managed hosting (optional) | Convenience service for teams who prefer not to self-host collaboration, build cache, and mod infrastructure on AWS | Yes |
+| Source                       | Recurring |
+|------------------------------|-----------|
+| Console SDK addon licenses   | Yes       |
+| Enterprise support contracts | Yes       |
+| Managed hosting (optional)   | Yes       |
+
+1. **Console SDK addon licenses** — Annual per-platform license for proprietary console backend
+   integrations (PS5, Xbox, Switch)
+2. **Enterprise support contracts** — Priority bug fixes, dedicated engineer, SLA guarantees for
+   studios with shipping deadlines
+3. **Managed hosting (optional)** — Convenience service for teams who prefer not to self-host
+   collaboration, build cache, and mod infrastructure on AWS
 
 ### What We Do NOT Charge For
 
-| Item | Why it is free |
-|------|----------------|
-| Engine (all components) | Apache 2.0 -- open source builds trust and maximizes adoption |
-| Open source asset store | Community-run repository; free to browse, download, and publish |
-| External store purchases | We take no commission on FAB, Synty, TurboSquid, or any third-party store purchases |
-| AI content generation | Runs locally on user hardware; no cloud dependency, no per-generation fee |
-| Self-hosting (AWS CDK) | Full CDK stacks provided; user pays only AWS infrastructure costs |
-| All server services | Build cache, collaboration, matchmaking, asset store -- all open source and free to self-host |
-| Marketplace commission | No built-in paid marketplace; the open source store is free and external stores handle their own payments |
+| Item                     |
+|--------------------------|
+| Engine (all components)  |
+| Open source asset store  |
+| External store purchases |
+| AI content generation    |
+| Self-hosting (AWS CDK)   |
+| All server services      |
+| Marketplace commission   |
+
+1. **Engine (all components)** — Apache 2.0 -- open source builds trust and maximizes adoption
+2. **Open source asset store** — Community-run repository; free to browse, download, and publish
+3. **External store purchases** — We take no commission on FAB, Synty, TurboSquid, or any
+   third-party store purchases
+4. **AI content generation** — Runs locally on user hardware; no cloud dependency, no per-generation
+   fee
+5. **Self-hosting (AWS CDK)** — Full CDK stacks provided; user pays only AWS infrastructure costs
+6. **All server services** — Build cache, collaboration, matchmaking, asset store -- all open source
+   and free to self-host
+7. **Marketplace commission** — No built-in paid marketplace; the open source store is free and
+   external stores handle their own payments
 
 ## 1. Component Classification
 
@@ -46,42 +75,114 @@ requirements) and the optional managed hosting service.
 
 ### Classification Definitions
 
-| Tier | License | Who Sees Source | Revenue Model |
-|------|---------|-----------------|---------------|
-| **Open source** | Apache 2.0 | Everyone | Adoption driver; no direct revenue |
-| **Proprietary (NDA-required)** | Proprietary binary | Console licensees | Annual platform license |
-| **Proprietary SaaS (optional)** | Closed; hosted service | N/A (managed service) | Subscription for convenience |
+| Tier                            |
+|---------------------------------|
+| **Open source**                 |
+| **Proprietary (NDA-required)**  |
+| **Proprietary SaaS (optional)** |
+
+1. ****Open source**** — Apache 2.0
+   - **Who Sees Source:** Everyone
+   - **Revenue Model:** Adoption driver; no direct revenue
+2. ****Proprietary (NDA-required)**** — Proprietary binary
+   - **Who Sees Source:** Console licensees
+   - **Revenue Model:** Annual platform license
+3. ****Proprietary SaaS (optional)**** — Closed; hosted service
+   - **Who Sees Source:** N/A (managed service)
+   - **Revenue Model:** Subscription for convenience
 
 ### Component Classification Matrix
 
-| Component | Classification | Rationale |
-|-----------|---------------|-----------|
-| Core Runtime (ECS, serialization, events) | Open Source (Apache 2.0) | Foundation of every game; open source builds trust and enables modding. |
-| Rendering (GPU abstraction, render graph) | Open Source (Apache 2.0) | Developers need to inspect, debug, and extend rendering for custom shaders. |
-| Physics | Open Source (Apache 2.0) | Gameplay-critical; studios need to tune and extend for deterministic replay. |
-| Audio | Open Source (Apache 2.0) | Basic audio is table-stakes; open source allows custom DSP pipelines. |
-| Input | Open Source (Apache 2.0) | Device support must be extensible for VR, accessibility, and custom hardware. |
-| AI (navigation, behavior trees) | Open Source (Apache 2.0) | Gameplay AI must be inspectable. Community contributes steering, GOAP, utility AI. |
-| Networking (transport, replication) | Open Source (Apache 2.0) | Multiplayer is a core differentiator; open source enables community trust and auditing. |
-| Animation | Open Source (Apache 2.0) | Animation blending, IK, and state machines need studio customization. |
-| UI framework | Open Source (Apache 2.0) | Every game has custom UI; open source enables deep theming and accessibility. |
-| VFX (particles, effects) | Open Source (Apache 2.0) | Artists and tech artists need to extend particle systems for community effect libraries. |
-| Content Pipeline (import, processing) | Open Source (Apache 2.0) | DCC plugin ecosystem depends on open formats. Community contributes importers. |
-| Game Framework (gameplay systems) | Open Source (Apache 2.0) | Combat, progression, and camera systems must be customizable per genre. |
-| Platform (windowing, OS) | Open Source (Apache 2.0) | Platform abstraction must be portable across all supported operating systems. |
-| Editor (scene, material editors) | Open Source (Apache 2.0) | Full editor source enables deep customization and community-driven extensions. |
-| Logic Graph system | Open Source (Apache 2.0) | Core no-code promise; open source enables custom node authoring by the community. |
-| Collaboration service (CRDT, cloud) | Open Source (Apache 2.0) | Self-hosted via AWS CDK with open-source deps (PostgreSQL, Redis, NATS). Managed hosting available for convenience. |
-| Shared build cache | Open Source (Apache 2.0) | Self-hosted via AWS CDK with S3-compatible storage and Redis index. Managed hosting available for convenience. |
-| Matchmaking service | Open Source (Apache 2.0) | Self-hosted via AWS CDK with PostgreSQL, Redis, and NATS. Managed hosting available for convenience. |
-| Asset marketplace | Open Source (Apache 2.0) | Self-hosted via AWS CDK with PostgreSQL, OpenSearch, and S3. Managed hosting available for convenience. |
-| Universe generation server | Open Source (Apache 2.0) | Self-hosted via AWS CDK. Managed hosting available for convenience. |
-| Mod hosting and moderation | Open Source (Apache 2.0) | Self-hosted via AWS CDK. Managed hosting available for convenience. |
-| AI assistant (LLM-based) | Open Source (Apache 2.0) | Self-hosted with user-provided LLM API keys. Managed hosting available. |
-| CDK deployment stacks | Open Source (Apache 2.0) | TypeScript CDK stacks using exclusively open-source dependencies. Free on AWS Marketplace. |
-| Monitoring stack | Open Source (Apache 2.0) | Prometheus + Grafana + Loki. Self-hosted via AWS CDK. No CloudWatch dependency. |
-| Console backends (PS5, Xbox, Switch) | Proprietary (NDA-required) | Platform holder NDAs prohibit open-sourcing console SDKs. |
-| Managed hosting service | Proprietary SaaS (optional) | Convenience service for teams who prefer not to self-host on AWS. |
+| Classification              |
+|-----------------------------|
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Open Source (Apache 2.0)    |
+| Proprietary (NDA-required)  |
+| Proprietary SaaS (optional) |
+
+1. **Core Runtime (ECS, serialization, events)** — Core Runtime (ECS, serialization, events)
+   - **Rationale:** Foundation of every game; open source builds trust and enables modding.
+2. **Rendering (GPU abstraction, render graph)** — Rendering (GPU abstraction, render graph)
+   - **Rationale:** Developers need to inspect, debug, and extend rendering for custom shaders.
+3. **Physics** — Physics
+   - **Rationale:** Gameplay-critical; studios need to tune and extend for deterministic replay.
+4. **Audio** — Audio
+   - **Rationale:** Basic audio is table-stakes; open source allows custom DSP pipelines.
+5. **Input** — Input
+   - **Rationale:** Device support must be extensible for VR, accessibility, and custom hardware.
+6. **AI (navigation, behavior trees)** — AI (navigation, behavior trees)
+   - **Rationale:** Gameplay AI must be inspectable. Community contributes steering, GOAP, utility
+     AI.
+7. **Networking (transport, replication)** — Networking (transport, replication)
+   - **Rationale:** Multiplayer is a core differentiator; open source enables community trust and
+     auditing.
+8. **Animation** — Animation
+   - **Rationale:** Animation blending, IK, and state machines need studio customization.
+9. **UI framework** — UI framework
+   - **Rationale:** Every game has custom UI; open source enables deep theming and accessibility.
+10. **VFX (particles, effects)** — VFX (particles, effects)
+    - **Rationale:** Artists and tech artists need to extend particle systems for community effect
+      libraries.
+11. **Content Pipeline (import, processing)** — Content Pipeline (import, processing)
+    - **Rationale:** DCC plugin ecosystem depends on open formats. Community contributes importers.
+12. **Game Framework (gameplay systems)** — Game Framework (gameplay systems)
+    - **Rationale:** Combat, progression, and camera systems must be customizable per genre.
+13. **Platform (windowing, OS)** — Platform (windowing, OS)
+    - **Rationale:** Platform abstraction must be portable across all supported operating systems.
+14. **Editor (scene, material editors)** — Editor (scene, material editors)
+    - **Rationale:** Full editor source enables deep customization and community-driven extensions.
+15. **Logic Graph system** — Logic Graph system
+    - **Rationale:** Core no-code promise; open source enables custom node authoring by the
+      community.
+16. **Collaboration service (CRDT, cloud)** — Collaboration service (CRDT, cloud)
+    - **Rationale:** Self-hosted via AWS CDK with open-source deps (PostgreSQL, Redis, NATS).
+      Managed hosting available for convenience.
+17. **Shared build cache** — Shared build cache
+    - **Rationale:** Self-hosted via AWS CDK with S3-compatible storage and Redis index. Managed
+      hosting available for convenience.
+18. **Matchmaking service** — Matchmaking service
+    - **Rationale:** Self-hosted via AWS CDK with PostgreSQL, Redis, and NATS. Managed hosting
+      available for convenience.
+19. **Asset marketplace** — Asset marketplace
+    - **Rationale:** Self-hosted via AWS CDK with PostgreSQL, OpenSearch, and S3. Managed hosting
+      available for convenience.
+20. **Universe generation server** — Universe generation server
+    - **Rationale:** Self-hosted via AWS CDK. Managed hosting available for convenience.
+21. **Mod hosting and moderation** — Mod hosting and moderation
+    - **Rationale:** Self-hosted via AWS CDK. Managed hosting available for convenience.
+22. **AI assistant (LLM-based)** — AI assistant (LLM-based)
+    - **Rationale:** Self-hosted with user-provided LLM API keys. Managed hosting available.
+23. **CDK deployment stacks** — CDK deployment stacks
+    - **Rationale:** TypeScript CDK stacks using exclusively open-source dependencies. Free on AWS
+      Marketplace.
+24. **Monitoring stack** — Monitoring stack
+    - **Rationale:** Prometheus + Grafana + Loki. Self-hosted via AWS CDK. No CloudWatch dependency.
+25. **Console backends (PS5, Xbox, Switch)** — Console backends (PS5, Xbox, Switch)
+    - **Rationale:** Platform holder NDAs prohibit open-sourcing console SDKs.
+26. **Managed hosting service** — Managed hosting service
+    - **Rationale:** Convenience service for teams who prefer not to self-host on AWS.
 
 ### Open-Source Service Dependencies
 
@@ -116,18 +217,29 @@ convenience service (managed hosting).
 
 ### Pricing Structure
 
-| Aspect | Price | Notes |
-|--------|-------|-------|
-| Engine (all components) | Free | Apache 2.0, no royalties, no per-seat fees |
-| Self-hosting (AWS CDK) | Free (user pays AWS) | Full AWS CDK stacks provided for all services |
-| Managed hosting | $29/user/month | Optional; for teams who prefer not to self-host |
-| Enterprise support | $10,000-$50,000/year | Priority bug fixes, dedicated engineer, SLA |
-| Console SDK license (PS5) | $10,000/year | Covers NDA compliance, 24/7 support, and platform updates |
-| Console SDK license (Xbox) | $10,000/year | Covers NDA compliance, 24/7 support, and platform updates |
-| Console SDK license (Switch) | $10,000/year | Covers NDA compliance, 24/7 support, and platform updates |
-| Open source asset store | Free | Community-run; no fees to browse, download, or publish |
-| External store integration | Free | FAB, Synty, TurboSquid; engine takes no commission |
-| Education and non-commercial | Free | All components, including managed hosting trial |
+| Aspect                       | Price                |
+|------------------------------|----------------------|
+| Engine (all components)      | Free                 |
+| Self-hosting (AWS CDK)       | Free (user pays AWS) |
+| Managed hosting              | $29/user/month       |
+| Enterprise support           | $10,000-$50,000/year |
+| Console SDK license (PS5)    | $10,000/year         |
+| Console SDK license (Xbox)   | $10,000/year         |
+| Console SDK license (Switch) | $10,000/year         |
+| Open source asset store      | Free                 |
+| External store integration   | Free                 |
+| Education and non-commercial | Free                 |
+
+1. **Engine (all components)** — Apache 2.0, no royalties, no per-seat fees
+2. **Self-hosting (AWS CDK)** — Full AWS CDK stacks provided for all services
+3. **Managed hosting** — Optional; for teams who prefer not to self-host
+4. **Enterprise support** — Priority bug fixes, dedicated engineer, SLA
+5. **Console SDK license (PS5)** — Covers NDA compliance, 24/7 support, and platform updates
+6. **Console SDK license (Xbox)** — Covers NDA compliance, 24/7 support, and platform updates
+7. **Console SDK license (Switch)** — Covers NDA compliance, 24/7 support, and platform updates
+8. **Open source asset store** — Community-run; no fees to browse, download, or publish
+9. **External store integration** — FAB, Synty, TurboSquid; engine takes no commission
+10. **Education and non-commercial** — All components, including managed hosting trial
 
 ### Key Pricing Principles
 
@@ -154,18 +266,29 @@ team size and budget.
 
 ### Comparison: Self-Hosted vs. Managed Hosting
 
-| Aspect | Self-hosted (AWS CDK) | Managed hosting ($29/user/mo) |
-|--------|----------------------|-------------------------------|
-| Setup effort | 1-click Marketplace or CDK CLI | Zero; instant provisioning |
-| Monthly cost (solo) | ~$20 (Solo profile) | $29 |
-| Monthly cost (10-person team) | ~$100 (Team profile) | $290 |
-| Monthly cost (50-person team) | ~$500 (Studio profile) | $1,450 |
-| Dependencies | All open source (PostgreSQL, Redis, NATS, Keycloak) | Fully managed by Harmonius |
-| Maintenance | Team manages updates, scaling | Fully managed by Harmonius |
-| Data sovereignty | Full control over data location | US/EU region selection |
-| Customization | Full (modify any service, swap deps) | Standard configuration only |
-| Portability | Migrate to any cloud or on-prem (MinIO, bare metal) | Locked to Harmonius managed service |
-| SLA | Per AWS SLA | 99.9% uptime guarantee |
+| Aspect                        | Managed hosting ($29/user/mo)       |
+|-------------------------------|-------------------------------------|
+| Setup effort                  | Zero; instant provisioning          |
+| Monthly cost (solo)           | $29                                 |
+| Monthly cost (10-person team) | $290                                |
+| Monthly cost (50-person team) | $1,450                              |
+| Dependencies                  | Fully managed by Harmonius          |
+| Maintenance                   | Fully managed by Harmonius          |
+| Data sovereignty              | US/EU region selection              |
+| Customization                 | Standard configuration only         |
+| Portability                   | Locked to Harmonius managed service |
+| SLA                           | 99.9% uptime guarantee              |
+
+1. **Setup effort** — 1-click Marketplace or CDK CLI
+2. **Monthly cost (solo)** — ~$20 (Solo profile)
+3. **Monthly cost (10-person team)** — ~$100 (Team profile)
+4. **Monthly cost (50-person team)** — ~$500 (Studio profile)
+5. **Dependencies** — All open source (PostgreSQL, Redis, NATS, Keycloak)
+6. **Maintenance** — Team manages updates, scaling
+7. **Data sovereignty** — Full control over data location
+8. **Customization** — Full (modify any service, swap deps)
+9. **Portability** — Migrate to any cloud or on-prem (MinIO, bare metal)
+10. **SLA** — Per AWS SLA
 
 For solo developers, self-hosting on the Solo profile
 (~$20/mo) is cheaper than managed hosting ($29/mo). For larger teams, self-hosting scales more
@@ -281,12 +404,29 @@ encouraged to self-host, where costs are significantly lower.
 
 Most users self-host for free. A minority opt for managed hosting for convenience.
 
-| Year | Total registered devs | Active monthly devs | Managed hosting users (% of active) | Console licensees |
-|------|----------------------|--------------------|------------------------------------|-------------------|
-| Year 1 | 5,000 | 2,000 | 200 (10%) | 5 |
-| Year 2 | 20,000 | 8,000 | 1,200 (15%) | 20 |
-| Year 3 | 50,000 | 20,000 | 3,000 (15%) | 50 |
-| Year 5 | 150,000 | 60,000 | 12,000 (20%) | 150 |
+| Year   |
+|--------|
+| Year 1 |
+| Year 2 |
+| Year 3 |
+| Year 5 |
+
+1. **Year 1** — 5,000
+   - **Active monthly devs:** 2,000
+   - **Managed hosting users (% of active):** 200 (10%)
+   - **Console licensees:** 5
+2. **Year 2** — 20,000
+   - **Active monthly devs:** 8,000
+   - **Managed hosting users (% of active):** 1,200 (15%)
+   - **Console licensees:** 20
+3. **Year 3** — 50,000
+   - **Active monthly devs:** 20,000
+   - **Managed hosting users (% of active):** 3,000 (15%)
+   - **Console licensees:** 50
+4. **Year 5** — 150,000
+   - **Active monthly devs:** 60,000
+   - **Managed hosting users (% of active):** 12,000 (20%)
+   - **Console licensees:** 150
 
 ### Revenue by Stream (Annual)
 
@@ -352,11 +492,15 @@ phase.
 
 ### Break-Even Analysis
 
-| Team size | Annual cost | Required managed hosting users (at $7.98 margin) | Additional revenue needed |
-|-----------|-------------|--------------------------------------------------|--------------------------|
-| 10 engineers | $2,500,000 | 2,000 | $1,308,560 from support + console |
-| 25 engineers | $6,250,000 | 5,000 | $4,058,560 from support + console |
-| 50 engineers | $12,500,000 | 10,000 | $8,558,560 from support + console |
+| Team size    | Annual cost | Additional revenue needed         |
+|--------------|-------------|-----------------------------------|
+| 10 engineers | $2,500,000  | $1,308,560 from support + console |
+| 25 engineers | $6,250,000  | $4,058,560 from support + console |
+| 50 engineers | $12,500,000 | $8,558,560 from support + console |
+
+1. **10 engineers** — 2,000
+2. **25 engineers** — 5,000
+3. **50 engineers** — 10,000
 
 Managed hosting alone cannot sustain a large team. Console SDK licenses and enterprise support are
 the critical secondary revenue streams. Without a paid marketplace commission, the model depends
@@ -364,22 +508,81 @@ more heavily on console SDK adoption and enterprise support contracts.
 
 ## 5. Competitive Comparison
 
-| Aspect | Harmonius | Unreal Engine | Unity | Godot | O3DE |
-|--------|-----------|---------------|-------|-------|------|
-| Source access | Fully open source (Apache 2.0) | Source-available (custom EULA) | Closed runtime | Fully open source (MIT) | Fully open source (Apache 2.0) |
-| Royalties | None | 5% above $1M (3.5% with EGS) | None (subscription model) | None | None |
-| Engine cost | Free forever | Free under $1M revenue | $2,200/seat/yr (Pro) | Free forever | Free forever |
-| Cloud services | All open source (PostgreSQL, Redis, NATS, Keycloak); self-host or managed | None built-in | Unity Cloud (proprietary) | None | None |
-| Multiplayer | Built-in transport + replication | Basic; use third-party | Netcode package | High-level only | Basic |
-| Collaboration | Built-in CRDT sync (open source) | None | Unity DevOps (proprietary) | None | None |
-| Build cache | Built-in shared cache (open source) | None | Unity Accelerator (proprietary) | None | None |
-| Marketplace | 12% commission | Fab: 12% commission | Asset Store: 30% commission | Community library (free) | None |
-| Console support | $10K/yr per platform | Free with license | Enterprise tier | Community ports (limited) | Experimental |
-| No-code tools | Logic Graph (open source) | Blueprints (source-available) | Visual Scripting (deprecated) | VisualScript | Script Canvas |
-| AI assistant | Open source (self-hosted) | None built-in | Muse AI (limited) | None | None |
-| Mod support | Built-in hosting (open source) | Limited (game-specific) | Limited (game-specific) | None built-in | None built-in |
-| Deployment infra | AWS CDK stacks (open-source deps: PostgreSQL, Redis, NATS, Keycloak) | None | Unity Cloud (proprietary) | None | None |
-| Matchmaking | Built-in open-source matchmaker (PostgreSQL, Redis, NATS) | None built-in | None built-in | None | None |
+| Aspect           | Harmonius                                                                 |
+|------------------|---------------------------------------------------------------------------|
+| Source access    | Fully open source (Apache 2.0)                                            |
+| Royalties        | None                                                                      |
+| Engine cost      | Free forever                                                              |
+| Cloud services   | All open source (PostgreSQL, Redis, NATS, Keycloak); self-host or managed |
+| Multiplayer      | Built-in transport + replication                                          |
+| Collaboration    | Built-in CRDT sync (open source)                                          |
+| Build cache      | Built-in shared cache (open source)                                       |
+| Marketplace      | 12% commission                                                            |
+| Console support  | $10K/yr per platform                                                      |
+| No-code tools    | Logic Graph (open source)                                                 |
+| AI assistant     | Open source (self-hosted)                                                 |
+| Mod support      | Built-in hosting (open source)                                            |
+| Deployment infra | AWS CDK stacks (open-source deps: PostgreSQL, Redis, NATS, Keycloak)      |
+| Matchmaking      | Built-in open-source matchmaker (PostgreSQL, Redis, NATS)                 |
+
+| Aspect           |
+|------------------|
+| Source access    |
+| Royalties        |
+| Engine cost      |
+| Cloud services   |
+| Multiplayer      |
+| Collaboration    |
+| Build cache      |
+| Marketplace      |
+| Console support  |
+| No-code tools    |
+| AI assistant     |
+| Mod support      |
+| Deployment infra |
+| Matchmaking      |
+
+1. **Source access** — Source-available (custom EULA)
+   - **Unity:** Closed runtime
+   - **Godot:** Fully open source (MIT)
+   - **O3DE:** Fully open source (Apache 2.0)
+2. **Royalties** — 5% above $1M (3.5% with EGS)
+   - **Unity:** None (subscription model)
+3. **Engine cost** — Free under $1M revenue
+   - **Unity:** $2,200/seat/yr (Pro)
+   - **Godot:** Free forever
+   - **O3DE:** Free forever
+4. **Cloud services** — None built-in
+   - **Unity:** Unity Cloud (proprietary)
+5. **Multiplayer** — Basic; use third-party
+   - **Unity:** Netcode package
+   - **Godot:** High-level only
+   - **O3DE:** Basic
+6. **Collaboration**
+   - **Unity:** Unity DevOps (proprietary)
+7. **Build cache**
+   - **Unity:** Unity Accelerator (proprietary)
+8. **Marketplace** — Fab: 12% commission
+   - **Unity:** Asset Store: 30% commission
+   - **Godot:** Community library (free)
+9. **Console support** — Free with license
+   - **Unity:** Enterprise tier
+   - **Godot:** Community ports (limited)
+   - **O3DE:** Experimental
+10. **No-code tools** — Blueprints (source-available)
+    - **Unity:** Visual Scripting (deprecated)
+    - **Godot:** VisualScript
+    - **O3DE:** Script Canvas
+11. **AI assistant** — None built-in
+    - **Unity:** Muse AI (limited)
+12. **Mod support** — Limited (game-specific)
+    - **Unity:** Limited (game-specific)
+    - **Godot:** None built-in
+    - **O3DE:** None built-in
+13. **Deployment infra**
+    - **Unity:** Unity Cloud (proprietary)
+14. **Matchmaking** — None built-in
+    - **Unity:** None built-in
 
 ### Key Differentiators
 
@@ -404,75 +607,148 @@ more heavily on console SDK adoption and enterprise support contracts.
 
 ### Competitive Positioning Matrix
 
-| Need | Best choice | Why |
-|------|-------------|-----|
-| AAA graphics, zero royalties | **Harmonius** | Unreal charges 5%; Godot lacks AAA features |
-| Full source access + modify | **Harmonius** or Godot | Unreal is source-available only (cannot redistribute) |
-| Built-in multiplayer infra | **Harmonius** | Only engine with open-source transport, replication, and deployment |
-| No-code development | **Harmonius** or Unreal | Harmonius Logic Graph is open source; Blueprints is source-available |
-| Indie with no budget | Godot or **Harmonius** | Both free; Harmonius adds cloud infra if self-hosted |
-| Enterprise with SLA needs | **Harmonius** or Unreal | Harmonius offers dedicated engineer support contracts |
+| Need                         | Best choice             |
+|------------------------------|-------------------------|
+| AAA graphics, zero royalties | **Harmonius**           |
+| Full source access + modify  | **Harmonius** or Godot  |
+| Built-in multiplayer infra   | **Harmonius**           |
+| No-code development          | **Harmonius** or Unreal |
+| Indie with no budget         | Godot or **Harmonius**  |
+| Enterprise with SLA needs    | **Harmonius** or Unreal |
+
+1. **AAA graphics, zero royalties** — Unreal charges 5%; Godot lacks AAA features
+2. **Full source access + modify** — Unreal is source-available only (cannot redistribute)
+3. **Built-in multiplayer infra** — Only engine with open-source transport, replication, and
+   deployment
+4. **No-code development** — Harmonius Logic Graph is open source; Blueprints is source-available
+5. **Indie with no budget** — Both free; Harmonius adds cloud infra if self-hosted
+6. **Enterprise with SLA needs** — Harmonius offers dedicated engineer support contracts
 
 ## 6. Risks and Mitigations
 
 ### Risk 1: Insufficient Revenue from Optional Services
 
-| Aspect | Detail |
-|--------|--------|
-| **Risk** | With no royalties and a fully open-source engine, revenue depends entirely on optional services that most users may skip. |
-| **Severity** | High -- primary business risk of the open-source model. |
-| **Trigger** | Managed hosting adoption below 10%; enterprise support demand lower than projected. |
-| **Mitigation 1** | Console SDK licenses provide baseline revenue independent of hosting adoption. |
-| **Mitigation 2** | Managed hosting is priced competitively vs. self-hosting for small teams, driving organic adoption. |
-| **Mitigation 3** | Enterprise support includes priority bug fixes and SLA, creating clear value for studios with shipping deadlines. |
-| **Mitigation 4** | Marketplace commission scales with ecosystem growth; seed marketplace early to build GMV. |
+| Aspect           |
+|------------------|
+| **Risk**         |
+| **Severity**     |
+| **Trigger**      |
+| **Mitigation 1** |
+| **Mitigation 2** |
+| **Mitigation 3** |
+| **Mitigation 4** |
+
+1. ****Risk**** — With no royalties and a fully open-source engine, revenue depends entirely on
+   optional services that most users may skip.
+2. ****Severity**** — High -- primary business risk of the open-source model.
+3. ****Trigger**** — Managed hosting adoption below 10%; enterprise support demand lower than
+   projected.
+4. ****Mitigation 1**** — Console SDK licenses provide baseline revenue independent of hosting
+   adoption.
+5. ****Mitigation 2**** — Managed hosting is priced competitively vs. self-hosting for small teams,
+   driving organic adoption.
+6. ****Mitigation 3**** — Enterprise support includes priority bug fixes and SLA, creating clear
+   value for studios with shipping deadlines.
+7. ****Mitigation 4**** — Marketplace commission scales with ecosystem growth; seed marketplace
+   early to build GMV.
 
 ### Risk 2: Open-Source Fork Competing
 
-| Aspect | Detail |
-|--------|--------|
-| **Risk** | A well-funded competitor forks the entire engine (including server components) and offers competing managed hosting. |
-| **Severity** | High -- all components are open source, so forking is legally permitted. |
-| **Trigger** | Engine reaches critical mass; a major company (Amazon, Google) forks and builds competing SaaS. |
-| **Mitigation 1** | Maintain development velocity: ship features faster than any fork. Harmonius team has full context advantage. |
-| **Mitigation 2** | Build marketplace network effects: asset sellers, buyers, and mod communities create ecosystem lock-in that a fork cannot replicate overnight. |
-| **Mitigation 3** | Cultivate strong community relationships. Forks succeed when upstream maintainers alienate contributors. Invest heavily in community governance and contributor recognition. |
-| **Mitigation 4** | Console SDK licenses are non-forkable (NDA-bound), providing a revenue floor that forks cannot undercut. |
+| Aspect           |
+|------------------|
+| **Risk**         |
+| **Severity**     |
+| **Trigger**      |
+| **Mitigation 1** |
+| **Mitigation 2** |
+| **Mitigation 3** |
+| **Mitigation 4** |
+
+1. ****Risk**** — A well-funded competitor forks the entire engine (including server components) and
+   offers competing managed hosting.
+2. ****Severity**** — High -- all components are open source, so forking is legally permitted.
+3. ****Trigger**** — Engine reaches critical mass; a major company (Amazon, Google) forks and builds
+   competing SaaS.
+4. ****Mitigation 1**** — Maintain development velocity: ship features faster than any fork.
+   Harmonius team has full context advantage.
+5. ****Mitigation 2**** — Build marketplace network effects: asset sellers, buyers, and mod
+   communities create ecosystem lock-in that a fork cannot replicate overnight.
+6. ****Mitigation 3**** — Cultivate strong community relationships. Forks succeed when upstream
+   maintainers alienate contributors. Invest heavily in community governance and contributor
+   recognition.
+7. ****Mitigation 4**** — Console SDK licenses are non-forkable (NDA-bound), providing a revenue
+   floor that forks cannot undercut.
 
 ### Risk 3: Cloud Service Costs Exceeding Revenue
 
-| Aspect | Detail |
-|--------|--------|
-| **Risk** | Managed hosting margins are thin ($7.98/user/month). Unexpected usage spikes or AWS price increases could eliminate margin. |
-| **Severity** | Medium -- manageable with monitoring and reserved instances. |
-| **Trigger** | Viral adoption spike; underestimated bandwidth costs; GPU compute price increases. |
-| **Mitigation 1** | Use reserved instances and savings plans to reduce AWS costs 40-60%. |
-| **Mitigation 2** | Usage-based overages for bandwidth-heavy users rather than flat-rate pricing. |
-| **Mitigation 3** | Monitor cost-per-user weekly; adjust pricing quarterly with 90 days notice. |
-| **Mitigation 4** | Build cache and CDN costs (largest line items) scale sub-linearly with deduplication. |
+| Aspect           |
+|------------------|
+| **Risk**         |
+| **Severity**     |
+| **Trigger**      |
+| **Mitigation 1** |
+| **Mitigation 2** |
+| **Mitigation 3** |
+| **Mitigation 4** |
+
+1. ****Risk**** — Managed hosting margins are thin ($7.98/user/month). Unexpected usage spikes or
+   AWS price increases could eliminate margin.
+2. ****Severity**** — Medium -- manageable with monitoring and reserved instances.
+3. ****Trigger**** — Viral adoption spike; underestimated bandwidth costs; GPU compute price
+   increases.
+4. ****Mitigation 1**** — Use reserved instances and savings plans to reduce AWS costs 40-60%.
+5. ****Mitigation 2**** — Usage-based overages for bandwidth-heavy users rather than flat-rate
+   pricing.
+6. ****Mitigation 3**** — Monitor cost-per-user weekly; adjust pricing quarterly with 90 days
+   notice.
+7. ****Mitigation 4**** — Build cache and CDN costs (largest line items) scale sub-linearly with
+   deduplication.
 
 ### Risk 4: Marketplace Not Achieving Critical Mass
 
-| Aspect | Detail |
-|--------|--------|
-| **Risk** | Without enough sellers, buyers don't visit. Without buyers, sellers don't publish. |
-| **Severity** | Medium -- marketplace is a growing but not primary revenue source. |
-| **Trigger** | Launch with fewer than 500 assets; competing marketplaces (Fab, Sketchfab) dominate. |
-| **Mitigation 1** | Seed the marketplace with 200+ first-party assets (materials, models, templates) at launch. |
-| **Mitigation 2** | Offer 95/5 revenue split for first 12 months to attract early sellers (vs. standard 88/12). |
-| **Mitigation 3** | Integrate marketplace deeply into editor: one-click import, live preview, dependency resolution. |
-| **Mitigation 4** | Support cross-engine formats so sellers from Unity/Unreal can publish with minimal friction. |
+| Aspect           |
+|------------------|
+| **Risk**         |
+| **Severity**     |
+| **Trigger**      |
+| **Mitigation 1** |
+| **Mitigation 2** |
+| **Mitigation 3** |
+| **Mitigation 4** |
+
+1. ****Risk**** — Without enough sellers, buyers don't visit. Without buyers, sellers don't publish.
+2. ****Severity**** — Medium -- marketplace is a growing but not primary revenue source.
+3. ****Trigger**** — Launch with fewer than 500 assets; competing marketplaces (Fab, Sketchfab)
+   dominate.
+4. ****Mitigation 1**** — Seed the marketplace with 200+ first-party assets (materials, models,
+   templates) at launch.
+5. ****Mitigation 2**** — Offer 95/5 revenue split for first 12 months to attract early sellers (vs.
+   standard 88/12).
+6. ****Mitigation 3**** — Integrate marketplace deeply into editor: one-click import, live preview,
+   dependency resolution.
+7. ****Mitigation 4**** — Support cross-engine formats so sellers from Unity/Unreal can publish with
+   minimal friction.
 
 ### Risk 5: Console SDK Revenue Concentration
 
-| Aspect | Detail |
-|--------|--------|
-| **Risk** | Console SDK licenses represent 29% of mature revenue but depend on platform holder relationships. |
-| **Severity** | Medium -- console holders could change NDA terms or build competing integrations. |
-| **Trigger** | Platform holder builds first-party Harmonius support; NDA terms become more restrictive. |
-| **Mitigation 1** | Diversify revenue so no single stream exceeds 35% of total. |
-| **Mitigation 2** | Build strong relationships with platform holder developer relations teams. |
-| **Mitigation 3** | Ensure console SDK quality is best-in-class to justify the license fee. |
+| Aspect           |
+|------------------|
+| **Risk**         |
+| **Severity**     |
+| **Trigger**      |
+| **Mitigation 1** |
+| **Mitigation 2** |
+| **Mitigation 3** |
+
+1. ****Risk**** — Console SDK licenses represent 29% of mature revenue but depend on platform holder
+   relationships.
+2. ****Severity**** — Medium -- console holders could change NDA terms or build competing
+   integrations.
+3. ****Trigger**** — Platform holder builds first-party Harmonius support; NDA terms become more
+   restrictive.
+4. ****Mitigation 1**** — Diversify revenue so no single stream exceeds 35% of total.
+5. ****Mitigation 2**** — Build strong relationships with platform holder developer relations teams.
+6. ****Mitigation 3**** — Ensure console SDK quality is best-in-class to justify the license fee.
 
 ### Risk Summary Matrix
 

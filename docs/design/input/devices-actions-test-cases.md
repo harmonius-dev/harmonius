@@ -6,348 +6,548 @@ Companion test cases for [devices-actions.md](devices-actions.md).
 
 ### TC-6.1.1.1 Scancode Normalization Windows
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | All 104 Win32 scancodes | Each maps to correct USB HID code | R-6.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.1     |
+
+1. **#1** — All 104 Win32 scancodes
+   - **Expected:** Each maps to correct USB HID code
 
 ### TC-6.1.1.2 Scancode Normalization Linux
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | All 104 Linux evdev codes | Each maps to correct USB HID code | R-6.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.1     |
+
+1. **#1** — All 104 Linux evdev codes
+   - **Expected:** Each maps to correct USB HID code
 
 ### TC-6.1.1.3 Scancode Layout Independence
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Same physical key on QWERTY layout | Scancode S1, keycode K1 | R-6.1.1 |
-| 2 | Same physical key on AZERTY layout | Scancode S1 (same), keycode K2 (different) | R-6.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.1     |
+| 2 | R-6.1.1     |
+
+1. **#1** — Same physical key on QWERTY layout
+   - **Expected:** Scancode S1, keycode K1
+2. **#2** — Same physical key on AZERTY layout
+   - **Expected:** Scancode S1 (same), keycode K2 (different)
 
 ### TC-6.1.2.1 Mouse DPI Normalization
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Raw delta (100, 50) at 100% DPI scale | Normalized delta (100, 50) | R-6.1.2 |
-| 2 | Raw delta (200, 100) at 200% DPI scale | Normalized delta (100, 50) | R-6.1.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.2     |
+| 2 | R-6.1.2     |
+
+1. **#1** — Raw delta (100, 50) at 100% DPI scale
+   - **Expected:** Normalized delta (100, 50)
+2. **#2** — Raw delta (200, 100) at 200% DPI scale
+   - **Expected:** Normalized delta (100, 50)
 
 ### TC-6.1.2.2 Scroll Normalization
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Trackpad continuous scroll value 0.5 | Axis value 0.5 | R-6.1.2 |
-| 2 | Discrete mouse scroll 1 notch | Equivalent axis value 0.5 | R-6.1.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.2     |
+| 2 | R-6.1.2     |
+
+1. **#1** — Trackpad continuous scroll value 0.5
+   - **Expected:** Axis value 0.5
+2. **#2** — Discrete mouse scroll 1 notch
+   - **Expected:** Equivalent axis value 0.5
 
 ### TC-6.1.3.1 Gamepad Button Mapping
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Xbox South button (A) | GamepadButton::South | R-6.1.3 |
-| 2 | PlayStation South button (Cross) | GamepadButton::South | R-6.1.3 |
-| 3 | Switch South button (B) | GamepadButton::South | R-6.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.3     |
+| 2 | R-6.1.3     |
+| 3 | R-6.1.3     |
+
+1. **#1** — Xbox South button (A)
+   - **Expected:** GamepadButton::South
+2. **#2** — PlayStation South button (Cross)
+   - **Expected:** GamepadButton::South
+3. **#3** — Switch South button (B)
+   - **Expected:** GamepadButton::South
 
 ### TC-6.1.3.2 Gamepad Capability Query
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Query DualSense capabilities | gyro=true | R-6.1.3 |
-| 2 | Query Xbox controller capabilities | gyro=false | R-6.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.3     |
+| 2 | R-6.1.3     |
+
+1. **#1** — Query DualSense capabilities
+   - **Expected:** gyro=true
+2. **#2** — Query Xbox controller capabilities
+   - **Expected:** gyro=false
 
 ### TC-6.1.3.3 Madgwick Orientation Filter
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Known gyro/accel input sequence | Correct quaternion orientation | R-6.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.3     |
+
+1. **#1** — Known gyro/accel input sequence
+   - **Expected:** Correct quaternion orientation
 
 ### TC-6.1.4.1 Touch Pressure Normalization
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Touch event from any backend | Pressure in [0.0, 1.0] range | R-6.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.4     |
+
+1. **#1** — Touch event from any backend
+   - **Expected:** Pressure in [0.0, 1.0] range
 
 ### TC-6.1.4.2 Touch 10 Simultaneous Contacts
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 10 simultaneous touch-down events | All 10 tracked with unique IDs | R-6.1.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.4     |
+
+1. **#1** — 10 simultaneous touch-down events
+   - **Expected:** All 10 tracked with unique IDs
 
 ### TC-6.2.1.1 Action Type Bool
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Key-down event bound to bool action | Action fires true | R-6.2.1 |
-| 2 | Key-up event | Action fires false | R-6.2.1 |
-| 3 | Gamepad button bound to same action | Action fires true/false | R-6.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.1     |
+| 2 | R-6.2.1     |
+| 3 | R-6.2.1     |
+
+1. **#1** — Key-down event bound to bool action
+   - **Expected:** Action fires true
+2. **#2** — Key-up event
+   - **Expected:** Action fires false
+3. **#3** — Gamepad button bound to same action
+   - **Expected:** Action fires true/false
 
 ### TC-6.2.1.2 Action Type Axis2D
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Stick at (0.5, -0.3) bound to Axis2D action | Vec2(0.5, -0.3) | R-6.2.1 |
-| 2 | WASD composite (W+D held) | Vec2(1.0, 1.0) normalized | R-6.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.1     |
+| 2 | R-6.2.1     |
+
+1. **#1** — Stick at (0.5, -0.3) bound to Axis2D action
+   - **Expected:** Vec2(0.5, -0.3)
+2. **#2** — WASD composite (W+D held)
+   - **Expected:** Vec2(1.0, 1.0) normalized
 
 ### TC-6.2.1.3 Action Type Mismatch
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Bind Axis2D source to bool action | TypeMismatch error | R-6.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.1     |
+
+1. **#1** — Bind Axis2D source to bool action
+   - **Expected:** TypeMismatch error
 
 ### TC-6.2.2.1 Context Priority Consume
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | High-priority context binds Escape; low-priority also binds Escape | High fires; low does not fire | R-6.2.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.2     |
+
+1. **#1** — High-priority context binds Escape; low-priority also binds Escape
+   - **Expected:** High fires; low does not fire
 
 ### TC-6.2.2.2 Context Passthrough
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Unbound input F1 in top context; lower context binds F1 | Lower context fires | R-6.2.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.2     |
+
+1. **#1** — Unbound input F1 in top context; lower context binds F1
+   - **Expected:** Lower context fires
 
 ### TC-6.2.3.1 Deadzone Radial
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Stick magnitude 0.10 with 0.15 deadzone threshold | Output (0, 0) | R-6.2.3 |
-| 2 | Stick magnitude 0.50 with 0.15 deadzone threshold | Remapped value > 0 | R-6.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.3     |
+| 2 | R-6.2.3     |
+
+1. **#1** — Stick magnitude 0.10 with 0.15 deadzone threshold
+   - **Expected:** Output (0, 0)
+2. **#2** — Stick magnitude 0.50 with 0.15 deadzone threshold
+   - **Expected:** Remapped value > 0
 
 ### TC-6.2.3.2 Deadzone Axial
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Stick (0.05, 0.80) with per-axis 0.10 threshold | Output (0.0, remapped_y) | R-6.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.3     |
+
+1. **#1** — Stick (0.05, 0.80) with per-axis 0.10 threshold
+   - **Expected:** Output (0.0, remapped_y)
 
 ### TC-6.2.3.3 Response Curve Exponential
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Input v=0.5 with exponential curve (exponent=2.0) | Output 0.25 (0.5^2) | R-6.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.3     |
+
+1. **#1** — Input v=0.5 with exponential curve (exponent=2.0)
+   - **Expected:** Output 0.25 (0.5^2)
 
 ### TC-6.2.3.4 Modifier Chain Order
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Input 0.5; chain: deadzone(0.1) -> curve(exp=2) -> scalar(2.0) | Correct composed output | R-6.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.3     |
+
+1. **#1** — Input 0.5; chain: deadzone(0.1) -> curve(exp=2) -> scalar(2.0)
+   - **Expected:** Correct composed output
 
 ### TC-6.2.4.1 Trigger Pressed
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Key-down frame | Trigger fires | R-6.2.4 |
-| 2 | Key held (subsequent frame) | Trigger does not fire | R-6.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.4     |
+| 2 | R-6.2.4     |
+
+1. **#1** — Key-down frame
+   - **Expected:** Trigger fires
+2. **#2** — Key held (subsequent frame)
+   - **Expected:** Trigger does not fire
 
 ### TC-6.2.4.2 Trigger Released
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Key-up frame | Trigger fires | R-6.2.4 |
-| 2 | Key already up (subsequent frame) | Trigger does not fire | R-6.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.4     |
+| 2 | R-6.2.4     |
+
+1. **#1** — Key-up frame
+   - **Expected:** Trigger fires
+2. **#2** — Key already up (subsequent frame)
+   - **Expected:** Trigger does not fire
 
 ### TC-6.2.4.3 Trigger Hold
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Hold key for exactly configured duration (500 ms) | Trigger fires at 500 ms | R-6.2.4 |
-| 2 | Hold key for 400 ms (below threshold) | Trigger does not fire | R-6.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.4     |
+| 2 | R-6.2.4     |
+
+1. **#1** — Hold key for exactly configured duration (500 ms)
+   - **Expected:** Trigger fires at 500 ms
+2. **#2** — Hold key for 400 ms (below threshold)
+   - **Expected:** Trigger does not fire
 
 ### TC-6.2.4.4 Trigger Tap
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Press and release within tap threshold (100 ms) | Trigger fires | R-6.2.4 |
-| 2 | Press and release after tap threshold | Trigger does not fire | R-6.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.4     |
+| 2 | R-6.2.4     |
+
+1. **#1** — Press and release within tap threshold (100 ms)
+   - **Expected:** Trigger fires
+2. **#2** — Press and release after tap threshold
+   - **Expected:** Trigger does not fire
 
 ### TC-6.2.4.5 Trigger Pulse
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Hold key; pulse interval = 200 ms; held for 600 ms | Fires 3 times at 200, 400, 600 ms | R-6.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.4     |
+
+1. **#1** — Hold key; pulse interval = 200 ms; held for 600 ms
+   - **Expected:** Fires 3 times at 200, 400, 600 ms
 
 ### TC-6.2.4.6 Trigger Chord
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | All chord inputs active within 50 ms window | Trigger fires | R-6.2.4 |
-| 2 | One chord input released before all active | Trigger does not fire | R-6.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.4     |
+| 2 | R-6.2.4     |
+
+1. **#1** — All chord inputs active within 50 ms window
+   - **Expected:** Trigger fires
+2. **#2** — One chord input released before all active
+   - **Expected:** Trigger does not fire
 
 ### TC-6.2.4.7 Trigger Combo
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Inputs arrive in order within 500 ms window | Trigger fires | R-6.2.4 |
-| 2 | Inputs arrive out of order | Trigger does not fire | R-6.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.4     |
+| 2 | R-6.2.4     |
+
+1. **#1** — Inputs arrive in order within 500 ms window
+   - **Expected:** Trigger fires
+2. **#2** — Inputs arrive out of order
+   - **Expected:** Trigger does not fire
 
 ### TC-6.2.5.1 Rebind Success
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Rebind "Jump" from Space to Enter (unoccupied) | Rebind succeeds | R-6.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.5     |
+
+1. **#1** — Rebind "Jump" from Space to Enter (unoccupied)
+   - **Expected:** Rebind succeeds
 
 ### TC-6.2.5.2 Rebind Conflict
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Rebind "Jump" to key already bound to "Shoot" | Returns Conflict error | R-6.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.5     |
+
+1. **#1** — Rebind "Jump" to key already bound to "Shoot"
+   - **Expected:** Returns Conflict error
 
 ### TC-6.2.5.3 Rebind Reserved
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Rebind action to PlayStation PS button | Returns ReservedInput error | R-6.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.5     |
+
+1. **#1** — Rebind action to PlayStation PS button
+   - **Expected:** Returns ReservedInput error
 
 ### TC-6.2.5.4 Rebind Swap Resolution
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Swap "Jump"=Space with "Shoot"=Enter | Jump=Enter, Shoot=Space | R-6.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.5     |
+
+1. **#1** — Swap "Jump"=Space with "Shoot"=Enter
+   - **Expected:** Jump=Enter, Shoot=Space
 
 ### TC-6.2.6.1 Glyph Resolution Xbox
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Action bound to GamepadButton::South on Xbox | Resolves to Xbox A glyph | R-6.2.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.6     |
+
+1. **#1** — Action bound to GamepadButton::South on Xbox
+   - **Expected:** Resolves to Xbox A glyph
 
 ### TC-6.2.6.2 Glyph Resolution PlayStation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Same action on PlayStation | Resolves to Cross glyph | R-6.2.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.6     |
+
+1. **#1** — Same action on PlayStation
+   - **Expected:** Resolves to Cross glyph
 
 ### TC-6.2.6.3 Glyph Device Switch
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Switch active device from Xbox to PlayStation | Cache invalidated; new glyphs resolved | R-6.2.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.6     |
+
+1. **#1** — Switch active device from Xbox to PlayStation
+   - **Expected:** Cache invalidated; new glyphs resolved
 
 ### TC-6.2.8.1 Combo QCF
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Down -> Down-Forward -> Forward -> Punch within window | Combo fires | R-6.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.8     |
+
+1. **#1** — Down -> Down-Forward -> Forward -> Punch within window
+   - **Expected:** Combo fires
 
 ### TC-6.2.8.2 Combo Timeout
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Correct directions but exceeded time window | Combo tree resets to root; no fire | R-6.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.8     |
+
+1. **#1** — Correct directions but exceeded time window
+   - **Expected:** Combo tree resets to root; no fire
 
 ### TC-6.2.8.3 Combo Cross-Device
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | QCF via stick, D-pad, and WASD | All three produce identical combo result | R-6.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.8     |
+
+1. **#1** — QCF via stick, D-pad, and WASD
+   - **Expected:** All three produce identical combo result
 
 ### TC-6.2.9.1 Buffer Consume
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Buffer dodge input; cancel window opens | Dodge executes at cancel window start frame | R-6.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.9     |
+
+1. **#1** — Buffer dodge input; cancel window opens
+   - **Expected:** Dodge executes at cancel window start frame
 
 ### TC-6.2.9.2 Buffer Priority
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Buffer both dodge and attack | Dodge executes (higher priority) | R-6.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.9     |
+
+1. **#1** — Buffer both dodge and attack
+   - **Expected:** Dodge executes (higher priority)
 
 ### TC-6.2.9.3 Buffer Expiry
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Buffer input; wait past expiry window | Input does not execute | R-6.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.9     |
+
+1. **#1** — Buffer input; wait past expiry window
+   - **Expected:** Input does not execute
 
 ### TC-6.2.10.1 Smoothing Reduces Jitter
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Noisy input signal; 50 ms smoothing window | Variance reduced by >= 80% | R-6.2.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.10    |
+
+1. **#1** — Noisy input signal; 50 ms smoothing window
+   - **Expected:** Variance reduced by >= 80%
 
 ### TC-6.2.10.2 Acceleration Scaling
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Max velocity input with 2x multiplier | Output == 2x input | R-6.2.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.10    |
+
+1. **#1** — Max velocity input with 2x multiplier
+   - **Expected:** Output == 2x input
 
 ### TC-6.2.10.3 Aim Magnetism
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Crosshair near target | Deflects toward target | R-6.2.10 |
-| 2 | Crosshair with no nearby target | No deflection | R-6.2.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.10    |
+| 2 | R-6.2.10    |
+
+1. **#1** — Crosshair near target
+   - **Expected:** Deflects toward target
+2. **#2** — Crosshair with no nearby target
+   - **Expected:** No deflection
 
 ## Integration Tests
 
 ### TC-6.1.5.I1 Hot-Plug Connect
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Connect gamepad | DeviceConnected event within one frame | R-6.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.5     |
+
+1. **#1** — Connect gamepad
+   - **Expected:** DeviceConnected event within one frame
 
 ### TC-6.1.5.I2 Hot-Plug Disconnect
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Disconnect gamepad mid-gameplay | DeviceDisconnected event; no frame hitch | R-6.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.5     |
+
+1. **#1** — Disconnect gamepad mid-gameplay
+   - **Expected:** DeviceDisconnected event; no frame hitch
 
 ### TC-6.1.5.I3 Hot-Plug Rapid Cycles
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Connect/disconnect 10 times rapidly | No crashes; no leaked device slots | R-6.1.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.5     |
+
+1. **#1** — Connect/disconnect 10 times rapidly
+   - **Expected:** No crashes; no leaked device slots
 
 ### TC-6.1.1.I1 Cross-Platform Keyboard
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Keyboard capture on Windows, macOS, Linux | Identical scancodes across all platforms | R-6.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.1     |
+
+1. **#1** — Keyboard capture on Windows, macOS, Linux
+   - **Expected:** Identical scancodes across all platforms
 
 ### TC-6.1.3.I1 Cross-Platform Gamepad
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Gamepad capture on Windows, macOS, Linux | Identical button/axis values across all platforms | R-6.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.3     |
+
+1. **#1** — Gamepad capture on Windows, macOS, Linux
+   - **Expected:** Identical button/axis values across all platforms
 
 ### TC-6.1.NF1.I1 Full Pipeline Latency
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Inject timestamped OS event; measure delta to ActionState write over 10K events | p99 < 1 ms | R-6.1.NF1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.NF1   |
+
+1. **#1** — Inject timestamped OS event; measure delta to ActionState write over 10K events
+   - **Expected:** p99 < 1 ms
 
 ### TC-6.1.NF2.I1 Enumeration Speed
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Connect 4 devices; measure enumeration time | Under 5 ms | R-6.1.NF2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.1.NF2   |
+
+1. **#1** — Connect 4 devices; measure enumeration time
+   - **Expected:** Under 5 ms
 
 ### TC-6.2.NF1.I1 128 Actions Throughput
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 128 actions across 8 contexts with 4-stage modifiers | Evaluation < 0.2 ms | R-6.2.NF1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.NF1   |
+
+1. **#1** — 128 actions across 8 contexts with 4-stage modifiers
+   - **Expected:** Evaluation < 0.2 ms
 
 ### TC-6.2.NF2.I1 Rebind Persistence
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Rebind 20 actions; save | Save < 100 ms | R-6.2.NF2 |
-| 2 | Restart; restore bindings | Restore < 50 ms; all bindings correct | R-6.2.NF2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.NF2   |
+| 2 | R-6.2.NF2   |
+
+1. **#1** — Rebind 20 actions; save
+   - **Expected:** Save < 100 ms
+2. **#2** — Restart; restore bindings
+   - **Expected:** Restore < 50 ms; all bindings correct
 
 ### TC-6.2.7.I1 Recording Determinism
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Record 30 s input; playback; compare game state hash | Hash matches | R-6.2.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.7     |
+
+1. **#1** — Record 30 s input; playback; compare game state hash
+   - **Expected:** Hash matches
 
 ### TC-6.2.7.I2 Recording Speed Control
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Playback at 0.5x speed | Same final game state hash | R-6.2.7 |
-| 2 | Playback at 2.0x speed | Same final game state hash | R-6.2.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.7     |
+| 2 | R-6.2.7     |
+
+1. **#1** — Playback at 0.5x speed
+   - **Expected:** Same final game state hash
+2. **#2** — Playback at 2.0x speed
+   - **Expected:** Same final game state hash
 
 ### TC-6.2.11.I1 Full UI Navigability
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Navigate every UI screen using only gamepad | Every widget reachable | R-6.2.11 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-6.2.11    |
+
+1. **#1** — Navigate every UI screen using only gamepad
+   - **Expected:** Every widget reachable
 
 ## Benchmarks
 

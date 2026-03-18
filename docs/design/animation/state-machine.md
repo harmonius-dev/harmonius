@@ -10,28 +10,46 @@
 
 ### State Machine
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-9.4.1 | R-9.4.1 | US-9.4.1.1, US-9.4.1.2, US-9.4.1.3 | CPU-side declarative state graph with shared definitions and per-instance memory under 1 KB |
-| F-9.4.2 | R-9.4.2 | US-9.4.2.1, US-9.4.2.2 | Transitions with blend profiles, sync markers, configurable curves |
-| F-9.4.3 | R-9.4.3 | US-9.4.3.1, US-9.4.3.2 | Sub-state machines with entry/exit points, hierarchical nesting |
-| F-9.4.4 | R-9.4.4 | US-9.4.4.1, US-9.4.4.2, US-9.4.4.3 | Parallel animation layers with per-bone masks and blend modes |
-| F-9.4.5 | R-9.4.5 | US-9.4.5.1, US-9.4.5.2 | Named parameters (bool, float, int, trigger) driving transitions |
-| F-9.4.6 | R-9.4.6 | US-9.4.6.1, US-9.4.6.2 | Sync groups for phase-aligned locomotion blending |
-| F-9.4.7 | R-9.4.7 | US-9.4.7.1, US-9.4.7.2, US-9.4.7.3 | Animation montages with branching sections and notify events |
-| F-9.4.8 | R-9.4.8 | US-9.4.8.1, US-9.4.8.2, US-9.4.8.3 | 1D and 2D blend spaces with barycentric interpolation |
-| F-9.4.9 | R-9.4.9 | US-9.4.9.1, US-9.4.9.2 | Additive aim offset layers parameterized by pitch/yaw |
-| F-9.4.10 | R-9.4.10 | US-9.4.10.1, US-9.4.10.2, US-9.4.10.3 | AI animation integration via logic graphs |
+| Feature  | Requirement | User Stories                          |
+|----------|-------------|---------------------------------------|
+| F-9.4.1  | R-9.4.1     | US-9.4.1.1, US-9.4.1.2, US-9.4.1.3    |
+| F-9.4.2  | R-9.4.2     | US-9.4.2.1, US-9.4.2.2                |
+| F-9.4.3  | R-9.4.3     | US-9.4.3.1, US-9.4.3.2                |
+| F-9.4.4  | R-9.4.4     | US-9.4.4.1, US-9.4.4.2, US-9.4.4.3    |
+| F-9.4.5  | R-9.4.5     | US-9.4.5.1, US-9.4.5.2                |
+| F-9.4.6  | R-9.4.6     | US-9.4.6.1, US-9.4.6.2                |
+| F-9.4.7  | R-9.4.7     | US-9.4.7.1, US-9.4.7.2, US-9.4.7.3    |
+| F-9.4.8  | R-9.4.8     | US-9.4.8.1, US-9.4.8.2, US-9.4.8.3    |
+| F-9.4.9  | R-9.4.9     | US-9.4.9.1, US-9.4.9.2                |
+| F-9.4.10 | R-9.4.10    | US-9.4.10.1, US-9.4.10.2, US-9.4.10.3 |
+
+1. **F-9.4.1** — CPU-side declarative state graph with shared definitions and per-instance memory
+   under 1 KB
+2. **F-9.4.2** — Transitions with blend profiles, sync markers, configurable curves
+3. **F-9.4.3** — Sub-state machines with entry/exit points, hierarchical nesting
+4. **F-9.4.4** — Parallel animation layers with per-bone masks and blend modes
+5. **F-9.4.5** — Named parameters (bool, float, int, trigger) driving transitions
+6. **F-9.4.6** — Sync groups for phase-aligned locomotion blending
+7. **F-9.4.7** — Animation montages with branching sections and notify events
+8. **F-9.4.8** — 1D and 2D blend spaces with barycentric interpolation
+9. **F-9.4.9** — Additive aim offset layers parameterized by pitch/yaw
+10. **F-9.4.10** — AI animation integration via logic graphs
 
 ### Morph Targets
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-9.2.1 | R-9.2.1 | US-9.2.1.1, US-9.2.1.2, US-9.2.1.3 | GPU blend shape accumulation with sparse delta storage |
-| F-9.2.2 | R-9.2.2 | US-9.2.2.1, US-9.2.2.2 | Corrective blend shapes driven by joint angle rules |
-| F-9.2.3 | R-9.2.3 | US-9.2.3.1, US-9.2.3.2, US-9.2.3.3 | Facial animation via standardized action units |
-| F-9.2.4 | R-9.2.4 | US-9.2.4.1, US-9.2.4.2, US-9.2.4.3 | Per-vertex animation textures with zero CPU cost |
-| F-9.2.5 | R-9.2.5 | US-9.2.5.1, US-9.2.5.2, US-9.2.5.3 | Morph target streaming via platform-native async I/O |
+| Feature | Requirement | User Stories                       |
+|---------|-------------|------------------------------------|
+| F-9.2.1 | R-9.2.1     | US-9.2.1.1, US-9.2.1.2, US-9.2.1.3 |
+| F-9.2.2 | R-9.2.2     | US-9.2.2.1, US-9.2.2.2             |
+| F-9.2.3 | R-9.2.3     | US-9.2.3.1, US-9.2.3.2, US-9.2.3.3 |
+| F-9.2.4 | R-9.2.4     | US-9.2.4.1, US-9.2.4.2, US-9.2.4.3 |
+| F-9.2.5 | R-9.2.5     | US-9.2.5.1, US-9.2.5.2, US-9.2.5.3 |
+
+1. **F-9.2.1** — GPU blend shape accumulation with sparse delta storage
+2. **F-9.2.2** — Corrective blend shapes driven by joint angle rules
+3. **F-9.2.3** — Facial animation via standardized action units
+4. **F-9.2.4** — Per-vertex animation textures with zero CPU cost
+5. **F-9.2.5** — Morph target streaming via platform-native async I/O
 
 ### Cross-Cutting Dependencies
 
@@ -2097,63 +2115,162 @@ Blend curves use the shared `Curve<T>` type (see
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_state_graph_basic_transition` | R-9.4.1 | Create a 3-state graph, set trigger, verify state changes to target within 1 frame. |
-| `test_transition_blend_weight_curve` | R-9.4.2 | Verify linear, ease-in, ease-out, cubic curves produce correct blend weights at 25%, 50%, 75% progress. |
-| `test_per_bone_blend_profile` | R-9.4.2 | Apply per-bone blend profile with upper-body at 0.2s and lower-body at 0.5s, verify each completes at configured time. |
-| `test_sync_marker_alignment` | R-9.4.2 | Transition walk-to-run with sync markers, verify foot-contact frames align within 1 frame. |
-| `test_sub_state_entry_exit` | R-9.4.3 | Enter combat sub-state via named entry point, trigger exit condition, verify return to parent state. |
-| `test_sub_state_shared_definition` | R-9.4.3 | Nest same sub-state in two graphs, modify definition, verify both reflect change. |
-| `test_layer_override_bone_mask` | R-9.4.4 | Run upper-body combat + lower-body locomotion, verify bone isolation per mask. |
-| `test_layer_additive_blending` | R-9.4.4 | Apply additive breathing layer, verify result = base + weight * delta within 0.001 per joint. |
-| `test_layer_weight_zero` | R-9.4.4 | Set layer weight to 0.0, verify entity reverts to base pose within 1 frame. |
-| `test_parameter_bool_transition` | R-9.4.5 | Set bool parameter, verify condition evaluates true, transition fires. |
-| `test_parameter_float_compare` | R-9.4.5 | Set float speed=2.0, verify `speed > 1.0` evaluates true. |
-| `test_trigger_auto_reset` | R-9.4.5 | Set trigger, verify it fires once and auto-resets next frame. No double-fire. |
-| `test_trigger_same_frame` | R-9.4.5 | Set trigger twice on same frame, verify only one transition fires. |
-| `test_sync_group_phase_alignment` | R-9.4.6 | Walk (1.0s) and run (0.6s) in sync group at 50% blend, verify markers align within 1 frame through full cycle. |
-| `test_montage_override_bones` | R-9.4.7 | Play upper-body montage, verify upper bones follow montage, lower bones follow state machine. |
-| `test_montage_section_branch` | R-9.4.7 | Branch at section 2 of a 3-section montage, verify playback jumps correctly. |
-| `test_montage_blend_out` | R-9.4.7 | Stop montage, verify blend-out completes in configured duration, state machine resumes. |
-| `test_montage_notify_fires` | R-9.4.7 | Embed notify at time 0.5s, play montage, verify notify fires exactly once at that time. |
-| `test_montage_scoped_notify` | R-9.4.7 | Verify montage-scoped notifies do not fire during non-montage state machine evaluation. |
-| `test_blend_space_1d_interpolation` | R-9.4.8 | 1D blend space with 3 samples at 0.0, 0.5, 1.0. Evaluate at 0.25, verify correct linear weights. |
-| `test_blend_space_2d_barycentric` | R-9.4.8 | 2D blend space with 9 samples. Evaluate at triangle center, verify barycentric weights within 0.001. |
-| `test_blend_space_2d_continuity` | R-9.4.8 | Sweep parameter 0.0 to 1.0 in 100 steps, verify no discontinuities in output weights. |
-| `test_aim_offset_additive` | R-9.4.9 | Set pitch=45, yaw=30, verify weapon direction within 2 degrees of target. |
-| `test_aim_offset_lower_body_unaffected` | R-9.4.9 | Verify lower-body bones differ from base pose by under 0.001 units with aim offset active. |
-| `test_morph_gpu_accumulation` | R-9.2.1 | Apply 16 morph targets, compare deformed positions against CPU reference, verify error under 0.001. |
-| `test_morph_sparse_storage` | R-9.2.1 | Verify memory scales with active delta count, not total vertex count. |
-| `test_corrective_shape_activation` | R-9.2.2 | Elbow at 0-120 degrees: weight=0. At 180 degrees: weight=1. Verify smooth ramp. |
-| `test_corrective_volume_restoration` | R-9.2.2 | At 150 degrees verify corrective restores 90%+ of expected mesh volume. |
-| `test_facial_action_unit_mapping` | R-9.2.3 | Load performance capture, verify all action units map to correct blend shapes. |
-| `test_facial_100_npcs` | R-9.2.3 | 100 NPCs with unique expressions, verify all display distinct facial poses. |
-| `test_vat_playback_accuracy` | R-9.2.4 | 120-frame VAT, verify deformed mesh matches source within 0.5mm per vertex. |
-| `test_vat_zero_cpu_cost` | R-9.2.4 | Profile 100 VAT meshes, verify no CPU time increase over static baseline. |
-| `test_morph_stream_lru_eviction` | R-9.2.5 | Fill cache, verify LRU evicts least recently used targets, reload on demand. |
-| `test_morph_stream_visible_only` | R-9.2.5 | Verify only visible characters' morph sets are GPU-resident. |
+| Test                                    | Req     |
+|-----------------------------------------|---------|
+| `test_state_graph_basic_transition`     | R-9.4.1 |
+| `test_transition_blend_weight_curve`    | R-9.4.2 |
+| `test_per_bone_blend_profile`           | R-9.4.2 |
+| `test_sync_marker_alignment`            | R-9.4.2 |
+| `test_sub_state_entry_exit`             | R-9.4.3 |
+| `test_sub_state_shared_definition`      | R-9.4.3 |
+| `test_layer_override_bone_mask`         | R-9.4.4 |
+| `test_layer_additive_blending`          | R-9.4.4 |
+| `test_layer_weight_zero`                | R-9.4.4 |
+| `test_parameter_bool_transition`        | R-9.4.5 |
+| `test_parameter_float_compare`          | R-9.4.5 |
+| `test_trigger_auto_reset`               | R-9.4.5 |
+| `test_trigger_same_frame`               | R-9.4.5 |
+| `test_sync_group_phase_alignment`       | R-9.4.6 |
+| `test_montage_override_bones`           | R-9.4.7 |
+| `test_montage_section_branch`           | R-9.4.7 |
+| `test_montage_blend_out`                | R-9.4.7 |
+| `test_montage_notify_fires`             | R-9.4.7 |
+| `test_montage_scoped_notify`            | R-9.4.7 |
+| `test_blend_space_1d_interpolation`     | R-9.4.8 |
+| `test_blend_space_2d_barycentric`       | R-9.4.8 |
+| `test_blend_space_2d_continuity`        | R-9.4.8 |
+| `test_aim_offset_additive`              | R-9.4.9 |
+| `test_aim_offset_lower_body_unaffected` | R-9.4.9 |
+| `test_morph_gpu_accumulation`           | R-9.2.1 |
+| `test_morph_sparse_storage`             | R-9.2.1 |
+| `test_corrective_shape_activation`      | R-9.2.2 |
+| `test_corrective_volume_restoration`    | R-9.2.2 |
+| `test_facial_action_unit_mapping`       | R-9.2.3 |
+| `test_facial_100_npcs`                  | R-9.2.3 |
+| `test_vat_playback_accuracy`            | R-9.2.4 |
+| `test_vat_zero_cpu_cost`                | R-9.2.4 |
+| `test_morph_stream_lru_eviction`        | R-9.2.5 |
+| `test_morph_stream_visible_only`        | R-9.2.5 |
+
+1. **`test_state_graph_basic_transition`** — Create a 3-state graph, set trigger, verify state
+   changes to target within 1 frame.
+2. **`test_transition_blend_weight_curve`** — Verify linear, ease-in, ease-out, cubic curves produce
+   correct blend weights at 25%, 50%, 75% progress.
+3. **`test_per_bone_blend_profile`** — Apply per-bone blend profile with upper-body at 0.2s and
+   lower-body at 0.5s, verify each completes at configured time.
+4. **`test_sync_marker_alignment`** — Transition walk-to-run with sync markers, verify foot-contact
+   frames align within 1 frame.
+5. **`test_sub_state_entry_exit`** — Enter combat sub-state via named entry point, trigger exit
+   condition, verify return to parent state.
+6. **`test_sub_state_shared_definition`** — Nest same sub-state in two graphs, modify definition,
+   verify both reflect change.
+7. **`test_layer_override_bone_mask`** — Run upper-body combat + lower-body locomotion, verify bone
+   isolation per mask.
+8. **`test_layer_additive_blending`** — Apply additive breathing layer, verify result = base +
+   weight * delta within 0.001 per joint.
+9. **`test_layer_weight_zero`** — Set layer weight to 0.0, verify entity reverts to base pose within
+   1 frame.
+10. **`test_parameter_bool_transition`** — Set bool parameter, verify condition evaluates true,
+    transition fires.
+11. **`test_parameter_float_compare`** — Set float speed=2.0, verify `speed > 1.0` evaluates true.
+12. **`test_trigger_auto_reset`** — Set trigger, verify it fires once and auto-resets next frame. No
+    double-fire.
+13. **`test_trigger_same_frame`** — Set trigger twice on same frame, verify only one transition
+    fires.
+14. **`test_sync_group_phase_alignment`** — Walk (1.0s) and run (0.6s) in sync group at 50% blend,
+    verify markers align within 1 frame through full cycle.
+15. **`test_montage_override_bones`** — Play upper-body montage, verify upper bones follow montage,
+    lower bones follow state machine.
+16. **`test_montage_section_branch`** — Branch at section 2 of a 3-section montage, verify playback
+    jumps correctly.
+17. **`test_montage_blend_out`** — Stop montage, verify blend-out completes in configured duration,
+    state machine resumes.
+18. **`test_montage_notify_fires`** — Embed notify at time 0.5s, play montage, verify notify fires
+    exactly once at that time.
+19. **`test_montage_scoped_notify`** — Verify montage-scoped notifies do not fire during non-montage
+    state machine evaluation.
+20. **`test_blend_space_1d_interpolation`** — 1D blend space with 3 samples at 0.0, 0.5, 1.0.
+    Evaluate at 0.25, verify correct linear weights.
+21. **`test_blend_space_2d_barycentric`** — 2D blend space with 9 samples. Evaluate at triangle
+    center, verify barycentric weights within 0.001.
+22. **`test_blend_space_2d_continuity`** — Sweep parameter 0.0 to 1.0 in 100 steps, verify no
+    discontinuities in output weights.
+23. **`test_aim_offset_additive`** — Set pitch=45, yaw=30, verify weapon direction within 2 degrees
+    of target.
+24. **`test_aim_offset_lower_body_unaffected`** — Verify lower-body bones differ from base pose by
+    under 0.001 units with aim offset active.
+25. **`test_morph_gpu_accumulation`** — Apply 16 morph targets, compare deformed positions against
+    CPU reference, verify error under 0.001.
+26. **`test_morph_sparse_storage`** — Verify memory scales with active delta count, not total vertex
+    count.
+27. **`test_corrective_shape_activation`** — Elbow at 0-120 degrees: weight=0. At 180 degrees:
+    weight=1. Verify smooth ramp.
+28. **`test_corrective_volume_restoration`** — At 150 degrees verify corrective restores 90%+ of
+    expected mesh volume.
+29. **`test_facial_action_unit_mapping`** — Load performance capture, verify all action units map to
+    correct blend shapes.
+30. **`test_facial_100_npcs`** — 100 NPCs with unique expressions, verify all display distinct
+    facial poses.
+31. **`test_vat_playback_accuracy`** — 120-frame VAT, verify deformed mesh matches source within
+    0.5mm per vertex.
+32. **`test_vat_zero_cpu_cost`** — Profile 100 VAT meshes, verify no CPU time increase over static
+    baseline.
+33. **`test_morph_stream_lru_eviction`** — Fill cache, verify LRU evicts least recently used
+    targets, reload on demand.
+34. **`test_morph_stream_visible_only`** — Verify only visible characters' morph sets are
+    GPU-resident.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_1000_instances_under_1ms` | US-9.4.1.3 | 1000 entities with active state graphs, verify CPU eval under 1ms. |
-| `test_500_ai_agents_under_2ms` | US-9.4.10.3 | 500 AI agents driving animation via behavior trees, verify combined cost under 2ms. |
-| `test_per_instance_memory_under_1kb` | R-9.4.1 | Measure StateInstance size, verify under 1 KB excluding clip data. |
-| `test_foot_sliding_under_1cm` | US-9.4.2.2 | Walk-to-run transition with sync markers, measure foot sliding distance under 1cm. |
-| `test_layer_count_per_platform` | US-9.4.4.3 | Verify mobile=2, Switch=3, desktop=4+ layer limits are enforced. |
-| `test_blend_space_samples_per_platform` | US-9.4.8.3 | Verify mobile=6-8, Switch=12, desktop=16+ sample limits. |
-| `test_morph_targets_per_platform` | US-9.2.1.3 | Verify mobile=8-16, Switch=16-32, desktop=64+ target limits. |
-| `test_facial_units_per_platform` | US-9.2.3.3 | Verify mobile=16-24, desktop=52+ action unit counts. |
-| `test_hundreds_concurrent_montages` | US-9.4.7.2 | 200 simultaneous montages, verify no animation system bottleneck. |
-| `test_morph_stream_500_characters` | R-9.2.5 | 500 unique morph sets exceeding budget, verify only visible are resident and eviction works. |
-| `test_morph_stream_no_visible_popin` | R-9.2.5 | Move camera away and back, verify morph targets stream in before characters fully visible. |
-| `test_ai_query_remaining_time` | R-9.4.10 | AI queries remaining clip time, verify accuracy within 0.01s. |
-| `test_ai_query_root_motion` | R-9.4.10 | AI queries root motion displacement, verify accuracy within 0.01 units. |
-| `test_vat_half_res_mobile` | US-9.2.4.3 | Verify mobile uses half-resolution VAT textures. |
-| `test_corrective_disabled_mobile_nonhero` | US-9.2.2.2 | Verify corrective shapes disabled on mobile for non-hero characters. |
-| `test_platform_async_io_backend` | US-9.2.5.3 | Verify IOCP on Windows, GCD on macOS, io_uring on Linux for morph streaming. |
+| Test                                      | Req         |
+|-------------------------------------------|-------------|
+| `test_1000_instances_under_1ms`           | US-9.4.1.3  |
+| `test_500_ai_agents_under_2ms`            | US-9.4.10.3 |
+| `test_per_instance_memory_under_1kb`      | R-9.4.1     |
+| `test_foot_sliding_under_1cm`             | US-9.4.2.2  |
+| `test_layer_count_per_platform`           | US-9.4.4.3  |
+| `test_blend_space_samples_per_platform`   | US-9.4.8.3  |
+| `test_morph_targets_per_platform`         | US-9.2.1.3  |
+| `test_facial_units_per_platform`          | US-9.2.3.3  |
+| `test_hundreds_concurrent_montages`       | US-9.4.7.2  |
+| `test_morph_stream_500_characters`        | R-9.2.5     |
+| `test_morph_stream_no_visible_popin`      | R-9.2.5     |
+| `test_ai_query_remaining_time`            | R-9.4.10    |
+| `test_ai_query_root_motion`               | R-9.4.10    |
+| `test_vat_half_res_mobile`                | US-9.2.4.3  |
+| `test_corrective_disabled_mobile_nonhero` | US-9.2.2.2  |
+| `test_platform_async_io_backend`          | US-9.2.5.3  |
+
+1. **`test_1000_instances_under_1ms`** — 1000 entities with active state graphs, verify CPU eval
+   under 1ms.
+2. **`test_500_ai_agents_under_2ms`** — 500 AI agents driving animation via behavior trees, verify
+   combined cost under 2ms.
+3. **`test_per_instance_memory_under_1kb`** — Measure StateInstance size, verify under 1 KB
+   excluding clip data.
+4. **`test_foot_sliding_under_1cm`** — Walk-to-run transition with sync markers, measure foot
+   sliding distance under 1cm.
+5. **`test_layer_count_per_platform`** — Verify mobile=2, Switch=3, desktop=4+ layer limits are
+   enforced.
+6. **`test_blend_space_samples_per_platform`** — Verify mobile=6-8, Switch=12, desktop=16+ sample
+   limits.
+7. **`test_morph_targets_per_platform`** — Verify mobile=8-16, Switch=16-32, desktop=64+ target
+   limits.
+8. **`test_facial_units_per_platform`** — Verify mobile=16-24, desktop=52+ action unit counts.
+9. **`test_hundreds_concurrent_montages`** — 200 simultaneous montages, verify no animation system
+   bottleneck.
+10. **`test_morph_stream_500_characters`** — 500 unique morph sets exceeding budget, verify only
+    visible are resident and eviction works.
+11. **`test_morph_stream_no_visible_popin`** — Move camera away and back, verify morph targets
+    stream in before characters fully visible.
+12. **`test_ai_query_remaining_time`** — AI queries remaining clip time, verify accuracy within
+    0.01s.
+13. **`test_ai_query_root_motion`** — AI queries root motion displacement, verify accuracy within
+    0.01 units.
+14. **`test_vat_half_res_mobile`** — Verify mobile uses half-resolution VAT textures.
+15. **`test_corrective_disabled_mobile_nonhero`** — Verify corrective shapes disabled on mobile for
+    non-hero characters.
+16. **`test_platform_async_io_backend`** — Verify IOCP on Windows, GCD on macOS, io_uring on Linux
+    for morph streaming.
 
 ### Benchmarks
 

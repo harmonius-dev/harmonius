@@ -10,28 +10,45 @@
 
 ### Level Editor (15.2)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.2.1 | R-15.2.1 | Entity placement with grid, surface, and vertex snapping |
-| F-15.2.2 | R-15.2.2 | Prefab system with nested prefab hierarchies |
-| F-15.2.3 | R-15.2.3 | Per-instance prefab property overrides |
-| F-15.2.4 | R-15.2.4 | CSG brush tools for blockout and boolean operations |
-| F-15.2.5 | R-15.2.5 | Spline editing with Bezier/Catmull-Rom curves |
-| F-15.2.6 | R-15.2.6 | Landscape material painting with auto-paint rules |
-| F-15.2.7 | R-15.2.7 | Foliage painting with density and placement rules |
+| Feature  | Requirement |
+|----------|-------------|
+| F-15.2.1 | R-15.2.1    |
+| F-15.2.2 | R-15.2.2    |
+| F-15.2.3 | R-15.2.3    |
+| F-15.2.4 | R-15.2.4    |
+| F-15.2.5 | R-15.2.5    |
+| F-15.2.6 | R-15.2.6    |
+| F-15.2.7 | R-15.2.7    |
+
+1. **F-15.2.1** — Entity placement with grid, surface, and vertex snapping
+2. **F-15.2.2** — Prefab system with nested prefab hierarchies
+3. **F-15.2.3** — Per-instance prefab property overrides
+4. **F-15.2.4** — CSG brush tools for blockout and boolean operations
+5. **F-15.2.5** — Spline editing with Bezier/Catmull-Rom curves
+6. **F-15.2.6** — Landscape material painting with auto-paint rules
+7. **F-15.2.7** — Foliage painting with density and placement rules
 
 ### World Building (15.6)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.6.1 | R-15.6.1 | Terrain sculpting brushes with streaming disk I/O |
-| F-15.6.2 | R-15.6.2 | Hydraulic and thermal erosion simulation on GPU |
-| F-15.6.3 | R-15.6.3 | Terrain material painting with weight maps |
-| F-15.6.4 | R-15.6.4 | Water body placement via boundary splines |
-| F-15.6.5 | R-15.6.5 | Vegetation painting with biome rule system |
-| F-15.6.6 | R-15.6.6 | Light probe and reflection probe placement |
-| F-15.6.7 | R-15.6.7 | Navmesh preview with real-time regeneration |
-| F-15.6.8 | R-15.6.8 | World partition visualization and budget tracking |
+| Feature  | Requirement |
+|----------|-------------|
+| F-15.6.1 | R-15.6.1    |
+| F-15.6.2 | R-15.6.2    |
+| F-15.6.3 | R-15.6.3    |
+| F-15.6.4 | R-15.6.4    |
+| F-15.6.5 | R-15.6.5    |
+| F-15.6.6 | R-15.6.6    |
+| F-15.6.7 | R-15.6.7    |
+| F-15.6.8 | R-15.6.8    |
+
+1. **F-15.6.1** — Terrain sculpting brushes with streaming disk I/O
+2. **F-15.6.2** — Hydraulic and thermal erosion simulation on GPU
+3. **F-15.6.3** — Terrain material painting with weight maps
+4. **F-15.6.4** — Water body placement via boundary splines
+5. **F-15.6.5** — Vegetation painting with biome rule system
+6. **F-15.6.6** — Light probe and reflection probe placement
+7. **F-15.6.7** — Navmesh preview with real-time regeneration
+8. **F-15.6.8** — World partition visualization and budget tracking
 
 ## Overview
 
@@ -1306,47 +1323,91 @@ All platform I/O uses the `IoReactor` controlled drain at the frame poll point. 
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_grid_snap_alignment` | R-15.2.1 | Place at (1.3, 0, 2.7) with grid 1.0, verify snaps to (1, 0, 3). |
-| `test_surface_snap_terrain` | R-15.2.1 | Raycast onto sloped terrain, verify entity aligns to surface normal. |
-| `test_vertex_snap_precision` | R-15.2.1 | Snap to a known vertex, verify position matches within epsilon. |
-| `test_prefab_instantiate` | R-15.2.2 | Instantiate a 3-level nested prefab, verify all entities spawned. |
-| `test_prefab_propagation` | R-15.2.2 | Modify source prefab, verify all non-overridden instances update. |
-| `test_override_set_revert` | R-15.2.3 | Set override, verify value differs. Revert, verify matches source. |
-| `test_override_apply_to_source` | R-15.2.3 | Apply override to source, verify all instances receive new value. |
-| `test_csg_boolean_additive` | R-15.2.4 | Combine two boxes, verify result is watertight mesh. |
-| `test_csg_boolean_subtractive` | R-15.2.4 | Subtract cylinder from box, verify hole geometry. |
-| `test_csg_to_static_mesh` | R-15.2.4 | Convert brush to static mesh, verify asset created. |
-| `test_spline_bezier_c1` | R-15.2.5 | Create Bezier spline, verify C1 continuity at control points. |
-| `test_spline_distribute` | R-15.2.5 | Distribute 10 entities along spline, verify spacing. |
-| `test_landscape_auto_paint` | R-15.2.6 | Apply slope rule to test terrain, verify correct layer assignment. |
-| `test_landscape_weight_sum` | R-15.2.6 | Paint multiple layers, verify weights sum to 1.0 per texel. |
-| `test_foliage_slope_limit` | R-15.2.7 | Paint foliage with 30-degree limit, verify none on steeper slopes. |
-| `test_foliage_exclusion_zone` | R-15.2.7 | Add exclusion zone, verify no foliage placed inside. |
-| `test_sculpt_raise_lower` | R-15.6.1 | Apply raise brush, verify heightmap increased. Apply lower, verify decreased. |
-| `test_sculpt_streaming` | R-15.6.1 | Sculpt 16k heightmap, verify peak memory under 512 MB. |
-| `test_erosion_deterministic` | R-15.6.2 | Run erosion twice with same params, verify identical output. |
-| `test_water_river_spline` | R-15.6.4 | Create river from spline, verify entity with water components. |
-| `test_water_lake_altitude` | R-15.6.4 | Create lake at altitude 100, verify surface at 100. |
-| `test_biome_deterministic` | R-15.6.5 | Auto-populate with seed, verify same result on repeated runs. |
-| `test_biome_rule_validation` | R-15.6.5 | Auto-populate, verify zero placement violations. |
-| `test_probe_grid_placement` | R-15.6.6 | Place tetrahedral grid, verify probe count and spacing. |
-| `test_navmesh_slope_limit` | R-15.6.7 | Generate navmesh, verify steep slopes marked non-walkable. |
-| `test_partition_budget` | R-15.6.8 | Add entities exceeding budget, verify over_budget flag set. |
-| `test_multiuser_lock` | R-15.6.8 | Two users request same cell, verify second denied. |
+| Test                            | Req      |
+|---------------------------------|----------|
+| `test_grid_snap_alignment`      | R-15.2.1 |
+| `test_surface_snap_terrain`     | R-15.2.1 |
+| `test_vertex_snap_precision`    | R-15.2.1 |
+| `test_prefab_instantiate`       | R-15.2.2 |
+| `test_prefab_propagation`       | R-15.2.2 |
+| `test_override_set_revert`      | R-15.2.3 |
+| `test_override_apply_to_source` | R-15.2.3 |
+| `test_csg_boolean_additive`     | R-15.2.4 |
+| `test_csg_boolean_subtractive`  | R-15.2.4 |
+| `test_csg_to_static_mesh`       | R-15.2.4 |
+| `test_spline_bezier_c1`         | R-15.2.5 |
+| `test_spline_distribute`        | R-15.2.5 |
+| `test_landscape_auto_paint`     | R-15.2.6 |
+| `test_landscape_weight_sum`     | R-15.2.6 |
+| `test_foliage_slope_limit`      | R-15.2.7 |
+| `test_foliage_exclusion_zone`   | R-15.2.7 |
+| `test_sculpt_raise_lower`       | R-15.6.1 |
+| `test_sculpt_streaming`         | R-15.6.1 |
+| `test_erosion_deterministic`    | R-15.6.2 |
+| `test_water_river_spline`       | R-15.6.4 |
+| `test_water_lake_altitude`      | R-15.6.4 |
+| `test_biome_deterministic`      | R-15.6.5 |
+| `test_biome_rule_validation`    | R-15.6.5 |
+| `test_probe_grid_placement`     | R-15.6.6 |
+| `test_navmesh_slope_limit`      | R-15.6.7 |
+| `test_partition_budget`         | R-15.6.8 |
+| `test_multiuser_lock`           | R-15.6.8 |
+
+1. **`test_grid_snap_alignment`** — Place at (1.3, 0, 2.7) with grid 1.0, verify snaps to (1, 0, 3).
+2. **`test_surface_snap_terrain`** — Raycast onto sloped terrain, verify entity aligns to surface
+   normal.
+3. **`test_vertex_snap_precision`** — Snap to a known vertex, verify position matches within
+   epsilon.
+4. **`test_prefab_instantiate`** — Instantiate a 3-level nested prefab, verify all entities spawned.
+5. **`test_prefab_propagation`** — Modify source prefab, verify all non-overridden instances update.
+6. **`test_override_set_revert`** — Set override, verify value differs. Revert, verify matches
+   source.
+7. **`test_override_apply_to_source`** — Apply override to source, verify all instances receive new
+   value.
+8. **`test_csg_boolean_additive`** — Combine two boxes, verify result is watertight mesh.
+9. **`test_csg_boolean_subtractive`** — Subtract cylinder from box, verify hole geometry.
+10. **`test_csg_to_static_mesh`** — Convert brush to static mesh, verify asset created.
+11. **`test_spline_bezier_c1`** — Create Bezier spline, verify C1 continuity at control points.
+12. **`test_spline_distribute`** — Distribute 10 entities along spline, verify spacing.
+13. **`test_landscape_auto_paint`** — Apply slope rule to test terrain, verify correct layer
+    assignment.
+14. **`test_landscape_weight_sum`** — Paint multiple layers, verify weights sum to 1.0 per texel.
+15. **`test_foliage_slope_limit`** — Paint foliage with 30-degree limit, verify none on steeper
+    slopes.
+16. **`test_foliage_exclusion_zone`** — Add exclusion zone, verify no foliage placed inside.
+17. **`test_sculpt_raise_lower`** — Apply raise brush, verify heightmap increased. Apply lower,
+    verify decreased.
+18. **`test_sculpt_streaming`** — Sculpt 16k heightmap, verify peak memory under 512 MB.
+19. **`test_erosion_deterministic`** — Run erosion twice with same params, verify identical output.
+20. **`test_water_river_spline`** — Create river from spline, verify entity with water components.
+21. **`test_water_lake_altitude`** — Create lake at altitude 100, verify surface at 100.
+22. **`test_biome_deterministic`** — Auto-populate with seed, verify same result on repeated runs.
+23. **`test_biome_rule_validation`** — Auto-populate, verify zero placement violations.
+24. **`test_probe_grid_placement`** — Place tetrahedral grid, verify probe count and spacing.
+25. **`test_navmesh_slope_limit`** — Generate navmesh, verify steep slopes marked non-walkable.
+26. **`test_partition_budget`** — Add entities exceeding budget, verify over_budget flag set.
+27. **`test_multiuser_lock`** — Two users request same cell, verify second denied.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_place_undo_redo` | R-15.2.1 | Place entity, undo, verify removed. Redo, verify restored. |
-| `test_prefab_save_load_round_trip` | R-15.2.2 | Create nested prefab, save, load, verify identical structure. |
-| `test_csg_render_collision` | R-15.2.4 | CSG output renders correctly and collision mesh matches. |
-| `test_terrain_sculpt_async_io` | R-15.6.1 | Sculpt with async I/O, verify no worker threads block. |
-| `test_erosion_gpu_15fps` | R-15.6.2 | Run erosion on 2048x2048, verify preview stays above 15 FPS. |
-| `test_multiuser_concurrent` | R-15.6.8 | Two users edit disjoint cells, verify both changes persist. |
-| `test_partition_streaming` | R-15.6.8 | Load/unload cells, verify streaming states correct in overlay. |
+| Test                               | Req      |
+|------------------------------------|----------|
+| `test_place_undo_redo`             | R-15.2.1 |
+| `test_prefab_save_load_round_trip` | R-15.2.2 |
+| `test_csg_render_collision`        | R-15.2.4 |
+| `test_terrain_sculpt_async_io`     | R-15.6.1 |
+| `test_erosion_gpu_15fps`           | R-15.6.2 |
+| `test_multiuser_concurrent`        | R-15.6.8 |
+| `test_partition_streaming`         | R-15.6.8 |
+
+1. **`test_place_undo_redo`** — Place entity, undo, verify removed. Redo, verify restored.
+2. **`test_prefab_save_load_round_trip`** — Create nested prefab, save, load, verify identical
+   structure.
+3. **`test_csg_render_collision`** — CSG output renders correctly and collision mesh matches.
+4. **`test_terrain_sculpt_async_io`** — Sculpt with async I/O, verify no worker threads block.
+5. **`test_erosion_gpu_15fps`** — Run erosion on 2048x2048, verify preview stays above 15 FPS.
+6. **`test_multiuser_concurrent`** — Two users edit disjoint cells, verify both changes persist.
+7. **`test_partition_streaming`** — Load/unload cells, verify streaming states correct in overlay.
 
 ### Benchmarks
 

@@ -8,25 +8,43 @@
 > [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-8.2.1 | R-8.2.1 | US-8.2.3, US-8.2.10 | Delta-compressed property replication with per-client baselines |
-| F-8.2.2 | R-8.2.2 | US-8.2.2, US-8.2.9 | Component replication with schema versioning |
-| F-8.2.3 | R-8.2.3 | US-8.2.1, US-8.2.12 | Area-of-interest filtering via shared BVH |
-| F-8.2.4 | R-8.2.4 | US-8.2.4, US-8.2.7 | Conditional and tiered replication |
-| F-8.2.5 | R-8.2.5 | US-8.2.5, US-8.2.8 | Priority scheduling and bandwidth budgeting |
-| F-8.2.6 | R-8.2.6 | US-8.2.6 | Entity dormancy for zero-bandwidth idle entities |
-| F-8.4.1 | R-8.4.1 | US-8.4.1, US-8.4.5 | Input prediction and server reconciliation |
-| F-8.4.2 | R-8.4.2 | US-8.4.6 | Input buffering with redundant transmission |
-| F-8.4.3 | R-8.4.3 | US-8.4.3 | Snapshot interpolation for remote entities |
-| F-8.4.4 | R-8.4.4 | US-8.4.4 | Entity extrapolation with error correction |
-| F-8.4.5 | R-8.4.5 | US-8.4.2, US-8.4.7 | Server-side lag compensation (hitbox rewinding) |
-| F-8.4.6 | R-8.4.6 | US-8.4.8, US-8.4.9 | Jitter buffer and adaptive tick alignment |
-| F-8.3.1 | R-8.3.1 | US-8.3.1, US-8.3.6 | Server RPC (client-to-server) with validation |
-| F-8.3.2 | R-8.3.2 | US-8.3.3, US-8.3.7 | Client RPC (server-to-client) for ephemeral events |
-| F-8.3.3 | R-8.3.3 | US-8.3.2, US-8.3.4 | Multicast RPC (server-to-group) |
-| F-8.3.4 | R-8.3.4 | US-8.3.5 | RPC reliability modes (reliable, unreliable, reliable-latest) |
-| F-8.3.5 | R-8.3.5 | US-8.3.6, US-8.3.9 | RPC parameter serialization and validation |
+| Feature | Requirement | User Stories        |
+|---------|-------------|---------------------|
+| F-8.2.1 | R-8.2.1     | US-8.2.3, US-8.2.10 |
+| F-8.2.2 | R-8.2.2     | US-8.2.2, US-8.2.9  |
+| F-8.2.3 | R-8.2.3     | US-8.2.1, US-8.2.12 |
+| F-8.2.4 | R-8.2.4     | US-8.2.4, US-8.2.7  |
+| F-8.2.5 | R-8.2.5     | US-8.2.5, US-8.2.8  |
+| F-8.2.6 | R-8.2.6     | US-8.2.6            |
+| F-8.4.1 | R-8.4.1     | US-8.4.1, US-8.4.5  |
+| F-8.4.2 | R-8.4.2     | US-8.4.6            |
+| F-8.4.3 | R-8.4.3     | US-8.4.3            |
+| F-8.4.4 | R-8.4.4     | US-8.4.4            |
+| F-8.4.5 | R-8.4.5     | US-8.4.2, US-8.4.7  |
+| F-8.4.6 | R-8.4.6     | US-8.4.8, US-8.4.9  |
+| F-8.3.1 | R-8.3.1     | US-8.3.1, US-8.3.6  |
+| F-8.3.2 | R-8.3.2     | US-8.3.3, US-8.3.7  |
+| F-8.3.3 | R-8.3.3     | US-8.3.2, US-8.3.4  |
+| F-8.3.4 | R-8.3.4     | US-8.3.5            |
+| F-8.3.5 | R-8.3.5     | US-8.3.6, US-8.3.9  |
+
+1. **F-8.2.1** — Delta-compressed property replication with per-client baselines
+2. **F-8.2.2** — Component replication with schema versioning
+3. **F-8.2.3** — Area-of-interest filtering via shared BVH
+4. **F-8.2.4** — Conditional and tiered replication
+5. **F-8.2.5** — Priority scheduling and bandwidth budgeting
+6. **F-8.2.6** — Entity dormancy for zero-bandwidth idle entities
+7. **F-8.4.1** — Input prediction and server reconciliation
+8. **F-8.4.2** — Input buffering with redundant transmission
+9. **F-8.4.3** — Snapshot interpolation for remote entities
+10. **F-8.4.4** — Entity extrapolation with error correction
+11. **F-8.4.5** — Server-side lag compensation (hitbox rewinding)
+12. **F-8.4.6** — Jitter buffer and adaptive tick alignment
+13. **F-8.3.1** — Server RPC (client-to-server) with validation
+14. **F-8.3.2** — Client RPC (server-to-client) for ephemeral events
+15. **F-8.3.3** — Multicast RPC (server-to-group)
+16. **F-8.3.4** — RPC reliability modes (reliable, unreliable, reliable-latest)
+17. **F-8.3.5** — RPC parameter serialization and validation
 
 ### Cross-Cutting Dependencies
 
@@ -2052,63 +2070,162 @@ modifying world state.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_delta_single_field_change` | R-8.2.1 | Modify 1 field of a 20-field component. Verify delta contains only that field. Verify client reconstructs correct full state. |
-| `test_delta_no_change_no_payload` | R-8.2.1 | Component unchanged since baseline. Verify `compute_delta` returns `None`. |
-| `test_delta_quantization_precision` | R-8.2.1 | Quantize a position delta at 0.01 m precision. Verify decoded value within 0.01 m of original. |
-| `test_schema_negotiation_compat` | R-8.2.2 | Server schema N+1 (one added field). Client schema N. Verify negotiation succeeds and client applies default for the new field. |
-| `test_schema_negotiation_reject` | R-8.2.2 | Incompatible schema versions. Verify handshake produces `SchemaIncompatible` error. |
-| `test_aoi_spatial_filtering` | R-8.2.3 | 1,000 entities in a zone. Verify client receives only entities within AOI radius. |
-| `test_aoi_always_relevant_party` | R-8.2.3 | Party member outside spatial AOI. Verify still replicated via `AlwaysRelevant` rule. |
-| `test_owner_only_visibility` | R-8.2.4 | Mark property as `OwnerOnly`. Verify non-owner clients do not receive it. |
-| `test_tiered_update_rate` | R-8.2.4 | Entity at 400 m. Verify update rate drops to far-tier Hz. Move to 10 m. Verify full-rate. |
-| `test_priority_high_first` | R-8.2.5 | 500 entities, 50 KB budget. Verify high-priority entities (target, hostiles) are in every tick's send list. |
-| `test_priority_staleness_boost` | R-8.2.5 | Entity deferred for 10 ticks. Verify its priority is boosted by staleness multiplier. |
-| `test_dormancy_enter` | R-8.2.6 | Entity unchanged for threshold ticks. Verify it enters dormancy and consumes zero bandwidth. |
-| `test_dormancy_wake_on_change` | R-8.2.6 | Dormant entity's property changes. Verify it wakes and is replicated next tick. |
-| `test_dormancy_wake_explicit` | R-8.2.6 | Call `wake()` on a dormant entity. Verify it is replicated next tick. |
-| `test_prediction_immediate_response` | R-8.4.1 | Issue movement input. Verify client applies movement within 1 frame, before server response. |
-| `test_reconcile_on_mismatch` | R-8.4.1 | Inject a server correction differing from prediction. Verify client replays unacked inputs and converges within 1 frame. |
-| `test_reconcile_no_correction_on_match` | R-8.4.1 | Server state matches prediction. Verify no rollback or replay occurs. |
-| `test_input_buffer_redundancy` | R-8.4.2 | Build packet with redundancy=3. Verify it contains current input plus 3 copies. |
-| `test_input_buffer_loss_recovery` | R-8.4.2 | Drop 10% of input packets. Verify server processes all inputs in order via redundancy. |
-| `test_interpolation_smooth` | R-8.4.3 | Two snapshots 50 ms apart. Sample at alpha=0.5. Verify result is midpoint. |
-| `test_interpolation_adapts_jitter` | R-8.4.3 | Introduce 30 ms jitter. Verify interpolation delay expands. Remove jitter. Verify delay contracts. |
-| `test_extrapolation_no_freeze` | R-8.4.4 | Delay snapshot by 200 ms. Verify entity continues moving via extrapolation. |
-| `test_error_correction_decay` | R-8.4.4 | Apply 1 m error. Verify correction decays to below `snap_threshold` within expected time. |
-| `test_error_correction_teleport` | R-8.4.4 | Apply error exceeding `teleport_threshold`. Verify instant snap, no smooth correction. |
-| `test_lag_comp_rewind_hit` | R-8.4.5 | Attacker at 100 ms RTT fires at moving target. Verify server rewinds hitbox and registers hit. |
-| `test_lag_comp_max_window` | R-8.4.5 | Attacker at 300 ms RTT (exceeds 250 ms max). Verify rewind clamped to 250 ms. |
-| `test_lag_comp_favor_defender` | R-8.4.5 | Ambiguous hit at boundary. Verify server rules miss (defender favored). |
-| `test_jitter_buffer_steady_release` | R-8.4.6 | Insert snapshots with 0-50 ms jitter. Verify release cadence is steady with no stutter. |
-| `test_jitter_buffer_adapts` | R-8.4.6 | Increase jitter. Verify buffer depth expands. Stabilize. Verify contraction within 5 seconds. |
-| `test_rpc_server_valid` | R-8.3.1 | Invoke server RPC with valid params. Verify handler executes. |
-| `test_rpc_server_invalid_params` | R-8.3.1 | Invoke with out-of-range params. Verify rejection with `OutOfRange` error. |
-| `test_rpc_server_rate_limit` | R-8.3.1 | Exceed rate limit. Verify `RateLimited` error returned. |
-| `test_rpc_server_malformed` | R-8.3.1 | Send truncated payload. Verify `MalformedPayload` error, no crash. |
-| `test_rpc_client_delivery` | R-8.3.2 | Server invokes client RPC. Verify target receives it. Verify non-targets do not. |
-| `test_rpc_multicast_spatial` | R-8.3.3 | Multicast to 100 clients in area. Verify all 100 receive. Verify out-of-area clients excluded. |
-| `test_rpc_reliable_delivery` | R-8.3.4 | Send reliable RPC over 10% loss link. Verify delivery within retransmission timeout. |
-| `test_rpc_unreliable_no_retransmit` | R-8.3.4 | Send 1,000 unreliable RPCs. Verify zero retransmissions. |
-| `test_rpc_reliable_latest` | R-8.3.4 | Send 10 rapid reliable-latest RPCs. Verify only the last one is delivered. |
-| `test_rpc_param_serialization` | R-8.3.5 | Round-trip serialize 5 param types (int, float, string, entity ref, enum). Verify fidelity. |
+| Test                                    | Req     |
+|-----------------------------------------|---------|
+| `test_delta_single_field_change`        | R-8.2.1 |
+| `test_delta_no_change_no_payload`       | R-8.2.1 |
+| `test_delta_quantization_precision`     | R-8.2.1 |
+| `test_schema_negotiation_compat`        | R-8.2.2 |
+| `test_schema_negotiation_reject`        | R-8.2.2 |
+| `test_aoi_spatial_filtering`            | R-8.2.3 |
+| `test_aoi_always_relevant_party`        | R-8.2.3 |
+| `test_owner_only_visibility`            | R-8.2.4 |
+| `test_tiered_update_rate`               | R-8.2.4 |
+| `test_priority_high_first`              | R-8.2.5 |
+| `test_priority_staleness_boost`         | R-8.2.5 |
+| `test_dormancy_enter`                   | R-8.2.6 |
+| `test_dormancy_wake_on_change`          | R-8.2.6 |
+| `test_dormancy_wake_explicit`           | R-8.2.6 |
+| `test_prediction_immediate_response`    | R-8.4.1 |
+| `test_reconcile_on_mismatch`            | R-8.4.1 |
+| `test_reconcile_no_correction_on_match` | R-8.4.1 |
+| `test_input_buffer_redundancy`          | R-8.4.2 |
+| `test_input_buffer_loss_recovery`       | R-8.4.2 |
+| `test_interpolation_smooth`             | R-8.4.3 |
+| `test_interpolation_adapts_jitter`      | R-8.4.3 |
+| `test_extrapolation_no_freeze`          | R-8.4.4 |
+| `test_error_correction_decay`           | R-8.4.4 |
+| `test_error_correction_teleport`        | R-8.4.4 |
+| `test_lag_comp_rewind_hit`              | R-8.4.5 |
+| `test_lag_comp_max_window`              | R-8.4.5 |
+| `test_lag_comp_favor_defender`          | R-8.4.5 |
+| `test_jitter_buffer_steady_release`     | R-8.4.6 |
+| `test_jitter_buffer_adapts`             | R-8.4.6 |
+| `test_rpc_server_valid`                 | R-8.3.1 |
+| `test_rpc_server_invalid_params`        | R-8.3.1 |
+| `test_rpc_server_rate_limit`            | R-8.3.1 |
+| `test_rpc_server_malformed`             | R-8.3.1 |
+| `test_rpc_client_delivery`              | R-8.3.2 |
+| `test_rpc_multicast_spatial`            | R-8.3.3 |
+| `test_rpc_reliable_delivery`            | R-8.3.4 |
+| `test_rpc_unreliable_no_retransmit`     | R-8.3.4 |
+| `test_rpc_reliable_latest`              | R-8.3.4 |
+| `test_rpc_param_serialization`          | R-8.3.5 |
+
+1. **`test_delta_single_field_change`** — Modify 1 field of a 20-field component. Verify delta
+   contains only that field. Verify client reconstructs correct full state.
+2. **`test_delta_no_change_no_payload`** — Component unchanged since baseline. Verify
+   `compute_delta` returns `None`.
+3. **`test_delta_quantization_precision`** — Quantize a position delta at 0.01 m precision. Verify
+   decoded value within 0.01 m of original.
+4. **`test_schema_negotiation_compat`** — Server schema N+1 (one added field). Client schema N.
+   Verify negotiation succeeds and client applies default for the new field.
+5. **`test_schema_negotiation_reject`** — Incompatible schema versions. Verify handshake produces
+   `SchemaIncompatible` error.
+6. **`test_aoi_spatial_filtering`** — 1,000 entities in a zone. Verify client receives only entities
+   within AOI radius.
+7. **`test_aoi_always_relevant_party`** — Party member outside spatial AOI. Verify still replicated
+   via `AlwaysRelevant` rule.
+8. **`test_owner_only_visibility`** — Mark property as `OwnerOnly`. Verify non-owner clients do not
+   receive it.
+9. **`test_tiered_update_rate`** — Entity at 400 m. Verify update rate drops to far-tier Hz. Move to
+   10 m. Verify full-rate.
+10. **`test_priority_high_first`** — 500 entities, 50 KB budget. Verify high-priority entities
+    (target, hostiles) are in every tick's send list.
+11. **`test_priority_staleness_boost`** — Entity deferred for 10 ticks. Verify its priority is
+    boosted by staleness multiplier.
+12. **`test_dormancy_enter`** — Entity unchanged for threshold ticks. Verify it enters dormancy and
+    consumes zero bandwidth.
+13. **`test_dormancy_wake_on_change`** — Dormant entity's property changes. Verify it wakes and is
+    replicated next tick.
+14. **`test_dormancy_wake_explicit`** — Call `wake()` on a dormant entity. Verify it is replicated
+    next tick.
+15. **`test_prediction_immediate_response`** — Issue movement input. Verify client applies movement
+    within 1 frame, before server response.
+16. **`test_reconcile_on_mismatch`** — Inject a server correction differing from prediction. Verify
+    client replays unacked inputs and converges within 1 frame.
+17. **`test_reconcile_no_correction_on_match`** — Server state matches prediction. Verify no
+    rollback or replay occurs.
+18. **`test_input_buffer_redundancy`** — Build packet with redundancy=3. Verify it contains current
+    input plus 3 copies.
+19. **`test_input_buffer_loss_recovery`** — Drop 10% of input packets. Verify server processes all
+    inputs in order via redundancy.
+20. **`test_interpolation_smooth`** — Two snapshots 50 ms apart. Sample at alpha=0.5. Verify result
+    is midpoint.
+21. **`test_interpolation_adapts_jitter`** — Introduce 30 ms jitter. Verify interpolation delay
+    expands. Remove jitter. Verify delay contracts.
+22. **`test_extrapolation_no_freeze`** — Delay snapshot by 200 ms. Verify entity continues moving
+    via extrapolation.
+23. **`test_error_correction_decay`** — Apply 1 m error. Verify correction decays to below
+    `snap_threshold` within expected time.
+24. **`test_error_correction_teleport`** — Apply error exceeding `teleport_threshold`. Verify
+    instant snap, no smooth correction.
+25. **`test_lag_comp_rewind_hit`** — Attacker at 100 ms RTT fires at moving target. Verify server
+    rewinds hitbox and registers hit.
+26. **`test_lag_comp_max_window`** — Attacker at 300 ms RTT (exceeds 250 ms max). Verify rewind
+    clamped to 250 ms.
+27. **`test_lag_comp_favor_defender`** — Ambiguous hit at boundary. Verify server rules miss
+    (defender favored).
+28. **`test_jitter_buffer_steady_release`** — Insert snapshots with 0-50 ms jitter. Verify release
+    cadence is steady with no stutter.
+29. **`test_jitter_buffer_adapts`** — Increase jitter. Verify buffer depth expands. Stabilize.
+    Verify contraction within 5 seconds.
+30. **`test_rpc_server_valid`** — Invoke server RPC with valid params. Verify handler executes.
+31. **`test_rpc_server_invalid_params`** — Invoke with out-of-range params. Verify rejection with
+    `OutOfRange` error.
+32. **`test_rpc_server_rate_limit`** — Exceed rate limit. Verify `RateLimited` error returned.
+33. **`test_rpc_server_malformed`** — Send truncated payload. Verify `MalformedPayload` error, no
+    crash.
+34. **`test_rpc_client_delivery`** — Server invokes client RPC. Verify target receives it. Verify
+    non-targets do not.
+35. **`test_rpc_multicast_spatial`** — Multicast to 100 clients in area. Verify all 100 receive.
+    Verify out-of-area clients excluded.
+36. **`test_rpc_reliable_delivery`** — Send reliable RPC over 10% loss link. Verify delivery within
+    retransmission timeout.
+37. **`test_rpc_unreliable_no_retransmit`** — Send 1,000 unreliable RPCs. Verify zero
+    retransmissions.
+38. **`test_rpc_reliable_latest`** — Send 10 rapid reliable-latest RPCs. Verify only the last one is
+    delivered.
+39. **`test_rpc_param_serialization`** — Round-trip serialize 5 param types (int, float, string,
+    entity ref, enum). Verify fidelity.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_replication_10k_entities` | R-8.2.1 | 10,000 entities with 5% change rate. Verify bandwidth is 80%+ lower than full-state replication. |
-| `test_aoi_1000_clients` | R-8.2.3 | 100,000 entities, 1,000 clients. Verify AOI evaluation completes within 2 ms per tick. |
-| `test_cross_version_handshake` | R-8.2.2 | Connect client v1 to server v2. Verify replication works with added-field defaults. |
-| `test_reconcile_100ms_rtt` | R-8.4.1 | Client at 100 ms RTT. Issue input. Verify immediate local response. Inject server mismatch. Verify smooth correction with no visible teleport. |
-| `test_mobile_rollback_4_frames` | R-8.4.1 | Mobile client. Verify rollback replay limited to 4 frames. |
-| `test_interpolation_144fps_20hz` | R-8.4.3 | 144 FPS client, 20 Hz server. Verify smooth remote entity motion. |
-| `test_lag_comp_deterministic` | R-8.4.5 | Same input at 20/50/100/200 ms RTT. Verify identical hit results (deterministic rewinding). |
-| `test_budget_respects_congestion` | R-8.2.5 | Set 50 KB/s budget, 500 entities. Verify send rate never exceeds budget. |
-| `test_dormancy_70pct_idle` | R-8.2.6 | 10,000 entities, 7,000 unchanged. Verify dormant entities consume zero bandwidth. |
-| `test_multicast_vs_individual` | R-8.3.3 | Multicast to 100 clients vs 100 individual RPCs. Verify multicast is 5x+ more CPU-efficient. |
-| `test_rpc_fuzz` | R-8.3.5 | Send 100,000 randomized/malformed RPC payloads. Verify zero crashes, all rejected cleanly. |
+| Test                              | Req     |
+|-----------------------------------|---------|
+| `test_replication_10k_entities`   | R-8.2.1 |
+| `test_aoi_1000_clients`           | R-8.2.3 |
+| `test_cross_version_handshake`    | R-8.2.2 |
+| `test_reconcile_100ms_rtt`        | R-8.4.1 |
+| `test_mobile_rollback_4_frames`   | R-8.4.1 |
+| `test_interpolation_144fps_20hz`  | R-8.4.3 |
+| `test_lag_comp_deterministic`     | R-8.4.5 |
+| `test_budget_respects_congestion` | R-8.2.5 |
+| `test_dormancy_70pct_idle`        | R-8.2.6 |
+| `test_multicast_vs_individual`    | R-8.3.3 |
+| `test_rpc_fuzz`                   | R-8.3.5 |
+
+1. **`test_replication_10k_entities`** — 10,000 entities with 5% change rate. Verify bandwidth is
+   80%+ lower than full-state replication.
+2. **`test_aoi_1000_clients`** — 100,000 entities, 1,000 clients. Verify AOI evaluation completes
+   within 2 ms per tick.
+3. **`test_cross_version_handshake`** — Connect client v1 to server v2. Verify replication works
+   with added-field defaults.
+4. **`test_reconcile_100ms_rtt`** — Client at 100 ms RTT. Issue input. Verify immediate local
+   response. Inject server mismatch. Verify smooth correction with no visible teleport.
+5. **`test_mobile_rollback_4_frames`** — Mobile client. Verify rollback replay limited to 4 frames.
+6. **`test_interpolation_144fps_20hz`** — 144 FPS client, 20 Hz server. Verify smooth remote entity
+   motion.
+7. **`test_lag_comp_deterministic`** — Same input at 20/50/100/200 ms RTT. Verify identical hit
+   results (deterministic rewinding).
+8. **`test_budget_respects_congestion`** — Set 50 KB/s budget, 500 entities. Verify send rate never
+   exceeds budget.
+9. **`test_dormancy_70pct_idle`** — 10,000 entities, 7,000 unchanged. Verify dormant entities
+   consume zero bandwidth.
+10. **`test_multicast_vs_individual`** — Multicast to 100 clients vs 100 individual RPCs. Verify
+    multicast is 5x+ more CPU-efficient.
+11. **`test_rpc_fuzz`** — Send 100,000 randomized/malformed RPC payloads. Verify zero crashes, all
+    rejected cleanly.
 
 ### Benchmarks
 
@@ -2158,12 +2275,33 @@ stateDiagram-v2
     }
 ```
 
-| Edge Case | Detection | Resolution | Timeout | Key Types |
-|-----------|-----------|------------|---------|-----------|
-| Destroy while client has pending updates[^1] | Tombstone component inserted before despawn | Silently drop all pending deltas and predictions for the entity | 2x max RTT | `Tombstone`, `TombstoneConfig` |
-| Physics re-add after network hiccup[^2] | Authority epoch change during active simulation | Full-state `PhysicsTransferSnapshot` handoff via reliable channel; freeze until ACK | Until reliable ACK | `PhysicsTransferSnapshot` |
-| Concurrent structural changes vs state updates[^3] | Same-frame op collision (destroy + delta, remove + delta) | Fixed priority ordering: destroy > remove > add > delta; conflicting ops deduplicated | N/A (immediate) | `ReplicationOpPriority`, `ReplicationOp`, `ReplicationOpPayload` |
-| Split-brain during network partition[^4] | Epoch mismatch between two claiming authorities | Higher epoch wins; lower-epoch holder freezes entity and requests full re-sync from server | Until re-sync ACK | `AuthorityEpoch`, `AuthorityShard` |
+| Timeout            |
+|--------------------|
+| 2x max RTT         |
+| Until reliable ACK |
+| N/A (immediate)    |
+| Until re-sync ACK  |
+
+1. **Destroy while client has pending updates[^1]** — Destroy while client has pending updates[^1]
+   - **Detection:** Tombstone component inserted before despawn
+   - **Resolution:** Silently drop all pending deltas and predictions for the entity
+   - **Key Types:** `Tombstone`, `TombstoneConfig`
+2. **Physics re-add after network hiccup[^2]** — Physics re-add after network hiccup[^2]
+   - **Detection:** Authority epoch change during active simulation
+   - **Resolution:** Full-state `PhysicsTransferSnapshot` handoff via reliable channel; freeze until
+     ACK
+   - **Key Types:** `PhysicsTransferSnapshot`
+3. **Concurrent structural changes vs state updates[^3]** — Concurrent structural changes vs state
+   updates[^3]
+   - **Detection:** Same-frame op collision (destroy + delta, remove + delta)
+   - **Resolution:** Fixed priority ordering: destroy > remove > add > delta; conflicting ops
+     deduplicated
+   - **Key Types:** `ReplicationOpPriority`, `ReplicationOp`, `ReplicationOpPayload`
+4. **Split-brain during network partition[^4]** — Split-brain during network partition[^4]
+   - **Detection:** Epoch mismatch between two claiming authorities
+   - **Resolution:** Higher epoch wins; lower-epoch holder freezes entity and requests full re-sync
+     from server
+   - **Key Types:** `AuthorityEpoch`, `AuthorityShard`
 
 [^1]: See Tombstone handling below.
 [^2]: See Authority transfer with physics snapshot below.

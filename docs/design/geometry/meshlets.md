@@ -8,15 +8,23 @@
 > [user-stories/geometry-world/](../../user-stories/geometry-world/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-3.1.1 | R-3.1.1 | US-3.1.1 | Meshlet decomposition and DAG hierarchy |
-| F-3.1.2 | R-3.1.2 | US-3.1.2 | Two-phase GPU occlusion culling |
-| F-3.1.3 | R-3.1.3 | US-3.1.3 | Cluster and triangle culling |
-| F-3.1.4 | R-3.1.4 | US-3.1.4 | Mesh shader pipeline with indirect draw fallback |
-| F-3.1.5 | R-3.1.5 | US-3.1.5 | Screen-space error LOD selection |
-| F-3.1.6 | R-3.1.6 | US-3.1.6 | On-demand meshlet page streaming |
-| F-3.1.7 | R-3.1.7 | US-3.1.7 | Visibility buffer rendering |
+| Feature | Requirement | User Stories |
+|---------|-------------|--------------|
+| F-3.1.1 | R-3.1.1     | US-3.1.1     |
+| F-3.1.2 | R-3.1.2     | US-3.1.2     |
+| F-3.1.3 | R-3.1.3     | US-3.1.3     |
+| F-3.1.4 | R-3.1.4     | US-3.1.4     |
+| F-3.1.5 | R-3.1.5     | US-3.1.5     |
+| F-3.1.6 | R-3.1.6     | US-3.1.6     |
+| F-3.1.7 | R-3.1.7     | US-3.1.7     |
+
+1. **F-3.1.1** — Meshlet decomposition and DAG hierarchy
+2. **F-3.1.2** — Two-phase GPU occlusion culling
+3. **F-3.1.3** — Cluster and triangle culling
+4. **F-3.1.4** — Mesh shader pipeline with indirect draw fallback
+5. **F-3.1.5** — Screen-space error LOD selection
+6. **F-3.1.6** — On-demand meshlet page streaming
+7. **F-3.1.7** — Visibility buffer rendering
 
 ### Cross-Cutting Dependencies
 
@@ -1242,13 +1250,29 @@ sequenceDiagram
 
 ### GPU Backend Feature Matrix
 
-| Feature | Metal | D3D12 | Vulkan |
-|---------|-------|-------|--------|
-| Mesh shaders | Object + Mesh shaders (Metal 3) | Amplification + Mesh shaders (SM 6.5) | `VK_EXT_mesh_shader` task + mesh |
-| 64-bit atomics | `MTLGPUFamilyApple7`+ | SM 6.6 `InterlockedCompareExchange64` | `shaderBufferInt64Atomics` |
-| Indirect draw | `drawIndexedPrimitives:indirectBuffer:` | `ExecuteIndirect` | `vkCmdDrawIndexedIndirect` |
-| HZB mip gen | Compute shader | Compute shader | Compute shader |
-| Feedback readback | Shared memory buffer | Readback heap | Host-visible buffer |
+| Feature           |
+|-------------------|
+| Mesh shaders      |
+| 64-bit atomics    |
+| Indirect draw     |
+| HZB mip gen       |
+| Feedback readback |
+
+1. **Mesh shaders** — Object + Mesh shaders (Metal 3)
+   - **D3D12:** Amplification + Mesh shaders (SM 6.5)
+   - **Vulkan:** `VK_EXT_mesh_shader` task + mesh
+2. **64-bit atomics** — `MTLGPUFamilyApple7`+
+   - **D3D12:** SM 6.6 `InterlockedCompareExchange64`
+   - **Vulkan:** `shaderBufferInt64Atomics`
+3. **Indirect draw** — `drawIndexedPrimitives:indirectBuffer:`
+   - **D3D12:** `ExecuteIndirect`
+   - **Vulkan:** `vkCmdDrawIndexedIndirect`
+4. **HZB mip gen** — Compute shader
+   - **D3D12:** Compute shader
+   - **Vulkan:** Compute shader
+5. **Feedback readback** — Shared memory buffer
+   - **D3D12:** Readback heap
+   - **Vulkan:** Host-visible buffer
 
 ### Mesh Shader Fallback Path
 
@@ -1284,47 +1308,99 @@ All I/O uses the engine's controlled reactor poll point. No callbacks fire async
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `meshopt` | meshoptimizer FFI bindings | Industry-standard meshlet partitioning, vertex cache optimization, and mesh simplification. C library via bindgen. |
-| `lz4_flex` | LZ4 decompression | Fast decompression for latency-sensitive page loads. Pure Rust. |
-| `zstd` | Zstd compression/decompression | High-ratio compression for archived meshlet pages. C library via bindgen. |
+| Crate      | Purpose                        |
+|------------|--------------------------------|
+| `meshopt`  | meshoptimizer FFI bindings     |
+| `lz4_flex` | LZ4 decompression              |
+| `zstd`     | Zstd compression/decompression |
+
+1. **`meshopt`** — Industry-standard meshlet partitioning, vertex cache optimization, and mesh
+   simplification. C library via bindgen.
+2. **`lz4_flex`** — Fast decompression for latency-sensitive page loads. Pure Rust.
+3. **`zstd`** — High-ratio compression for archived meshlet pages. C library via bindgen.
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_partition_64v_124t` | R-3.1.1 | Partition a cube mesh; verify every meshlet has at most 64 vertices and 124 triangles. |
-| `test_bounding_sphere_encloses` | R-3.1.1 | For each meshlet, verify all vertices lie within the bounding sphere. |
-| `test_normal_cone_valid` | R-3.1.1 | For each meshlet, verify cone axis is unit length and cutoff is in [-1, 1]. |
-| `test_dag_cut_watertight` | R-3.1.1 | Take every possible cut through a DAG and verify the resulting mesh is watertight (no T-junctions). |
-| `test_dag_coarsening` | R-3.1.1 | Verify parent nodes have fewer meshlets than the sum of their children. |
-| `test_lod_error_monotonic` | R-3.1.5 | Verify `parent_error` increases monotonically from leaves to root. |
-| `test_lod_select_coarsest` | R-3.1.5 | Given a far camera, verify LOD resolver selects the root (coarsest) node. |
-| `test_lod_select_finest` | R-3.1.5 | Given a very close camera, verify LOD resolver selects leaf (finest) nodes. |
-| `test_visbuf_encode_decode` | R-3.1.7 | Round-trip encode/decode of `VisBufferEntry` through u64 packing. |
-| `test_visbuf_uniqueness` | R-3.1.7 | Verify no two entries in a packed u64 map to the same instance+triangle pair. |
-| `test_page_packing_fits` | R-3.1.6 | Verify all meshlet data fits within the declared page size. |
-| `test_page_alignment` | R-3.1.6 | Verify page offsets are aligned to 64 KiB boundaries. |
-| `test_empty_mesh_error` | R-3.1.1 | Pass empty vertex/index arrays and verify `EmptyMesh` error. |
-| `test_degenerate_triangle` | R-3.1.1 | Pass a mesh with zero-area triangles and verify `DegenerateGeometry` error. |
+| Test                            | Req     |
+|---------------------------------|---------|
+| `test_partition_64v_124t`       | R-3.1.1 |
+| `test_bounding_sphere_encloses` | R-3.1.1 |
+| `test_normal_cone_valid`        | R-3.1.1 |
+| `test_dag_cut_watertight`       | R-3.1.1 |
+| `test_dag_coarsening`           | R-3.1.1 |
+| `test_lod_error_monotonic`      | R-3.1.5 |
+| `test_lod_select_coarsest`      | R-3.1.5 |
+| `test_lod_select_finest`        | R-3.1.5 |
+| `test_visbuf_encode_decode`     | R-3.1.7 |
+| `test_visbuf_uniqueness`        | R-3.1.7 |
+| `test_page_packing_fits`        | R-3.1.6 |
+| `test_page_alignment`           | R-3.1.6 |
+| `test_empty_mesh_error`         | R-3.1.1 |
+| `test_degenerate_triangle`      | R-3.1.1 |
+
+1. **`test_partition_64v_124t`** — Partition a cube mesh; verify every meshlet has at most 64
+   vertices and 124 triangles.
+2. **`test_bounding_sphere_encloses`** — For each meshlet, verify all vertices lie within the
+   bounding sphere.
+3. **`test_normal_cone_valid`** — For each meshlet, verify cone axis is unit length and cutoff is in
+   [-1, 1].
+4. **`test_dag_cut_watertight`** — Take every possible cut through a DAG and verify the resulting
+   mesh is watertight (no T-junctions).
+5. **`test_dag_coarsening`** — Verify parent nodes have fewer meshlets than the sum of their
+   children.
+6. **`test_lod_error_monotonic`** — Verify `parent_error` increases monotonically from leaves to
+   root.
+7. **`test_lod_select_coarsest`** — Given a far camera, verify LOD resolver selects the root
+   (coarsest) node.
+8. **`test_lod_select_finest`** — Given a very close camera, verify LOD resolver selects leaf
+   (finest) nodes.
+9. **`test_visbuf_encode_decode`** — Round-trip encode/decode of `VisBufferEntry` through u64
+   packing.
+10. **`test_visbuf_uniqueness`** — Verify no two entries in a packed u64 map to the same
+    instance+triangle pair.
+11. **`test_page_packing_fits`** — Verify all meshlet data fits within the declared page size.
+12. **`test_page_alignment`** — Verify page offsets are aligned to 64 KiB boundaries.
+13. **`test_empty_mesh_error`** — Pass empty vertex/index arrays and verify `EmptyMesh` error.
+14. **`test_degenerate_triangle`** — Pass a mesh with zero-area triangles and verify
+    `DegenerateGeometry` error.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_bake_stanford_bunny` | R-3.1.1 | Bake the Stanford Bunny (69k triangles) and verify meshlet counts, DAG depth, and page count are within expected ranges. |
-| `test_bake_parallel_lod` | R-3.1.1 | Bake on thread pool with 4+ workers; verify identical output to single-threaded bake (determinism). |
-| `test_culling_frustum_gpu` | R-3.1.3 | Render a scene with meshlets outside the frustum; verify zero mesh shader invocations via GPU counters. |
-| `test_culling_occlusion_two_phase` | R-3.1.2 | Move an occluder to reveal geometry; verify no one-frame pop-in (disocclusion artifact). |
-| `test_culling_backface_cone` | R-3.1.3 | Render a sphere from outside; verify backfacing meshlets are culled (roughly half). |
-| `test_fallback_indirect_draw` | R-3.1.4 | Disable mesh shaders; verify identical visual output via indirect draw path. |
-| `test_visbuf_material_correctness` | R-3.1.7 | Render a multi-material mesh and verify each pixel resolves to the correct material via readback. |
-| `test_streaming_page_load` | R-3.1.6 | Request pages via async I/O; verify data integrity after decompression and upload. |
-| `test_streaming_eviction` | R-3.1.6 | Fill the page cache, then request new pages; verify LRU eviction and no corruption. |
-| `test_streaming_priority` | R-3.1.6 | Request pages at varying distances; verify closer pages load before distant ones. |
+| Test                               | Req     |
+|------------------------------------|---------|
+| `test_bake_stanford_bunny`         | R-3.1.1 |
+| `test_bake_parallel_lod`           | R-3.1.1 |
+| `test_culling_frustum_gpu`         | R-3.1.3 |
+| `test_culling_occlusion_two_phase` | R-3.1.2 |
+| `test_culling_backface_cone`       | R-3.1.3 |
+| `test_fallback_indirect_draw`      | R-3.1.4 |
+| `test_visbuf_material_correctness` | R-3.1.7 |
+| `test_streaming_page_load`         | R-3.1.6 |
+| `test_streaming_eviction`          | R-3.1.6 |
+| `test_streaming_priority`          | R-3.1.6 |
+
+1. **`test_bake_stanford_bunny`** — Bake the Stanford Bunny (69k triangles) and verify meshlet
+   counts, DAG depth, and page count are within expected ranges.
+2. **`test_bake_parallel_lod`** — Bake on thread pool with 4+ workers; verify identical output to
+   single-threaded bake (determinism).
+3. **`test_culling_frustum_gpu`** — Render a scene with meshlets outside the frustum; verify zero
+   mesh shader invocations via GPU counters.
+4. **`test_culling_occlusion_two_phase`** — Move an occluder to reveal geometry; verify no one-frame
+   pop-in (disocclusion artifact).
+5. **`test_culling_backface_cone`** — Render a sphere from outside; verify backfacing meshlets are
+   culled (roughly half).
+6. **`test_fallback_indirect_draw`** — Disable mesh shaders; verify identical visual output via
+   indirect draw path.
+7. **`test_visbuf_material_correctness`** — Render a multi-material mesh and verify each pixel
+   resolves to the correct material via readback.
+8. **`test_streaming_page_load`** — Request pages via async I/O; verify data integrity after
+   decompression and upload.
+9. **`test_streaming_eviction`** — Fill the page cache, then request new pages; verify LRU eviction
+   and no corruption.
+10. **`test_streaming_priority`** — Request pages at varying distances; verify closer pages load
+    before distant ones.
 
 ### GPU Benchmarks
 

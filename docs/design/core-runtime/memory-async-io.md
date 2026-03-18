@@ -10,31 +10,51 @@
 
 ### Memory Management (F-1.7 / R-1.7)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.7.1 | R-1.7.1, R-1.7.1a | Per-frame arena allocator with bump pointer and zero-cost reset |
-| F-1.7.2 | R-1.7.2 | Scoped arena with nested lifetimes, restores parent watermark on drop |
-| F-1.7.3 | R-1.7.3 | Typed pool allocator with O(1) alloc/dealloc via intrusive free list |
-| F-1.7.4 | R-1.7.4 | Generational index handles for safe resource references |
-| F-1.7.5 | R-1.7.5, R-1.7.5a | Slot map (dense-sparse set) with generational handle lookup |
-| F-1.7.6 | R-1.7.6 | Per-subsystem memory budgets with eviction/backpressure |
-| F-1.7.7 | R-1.7.7 | Profiling hooks compiled out in release builds |
-| F-1.7.8 | R-1.7.8 | Allocation tagging with subsystem propagation |
-| F-1.7.9 | R-1.7.9 | Arbitrary precision numeric types |
+| Feature | Requirement       |
+|---------|-------------------|
+| F-1.7.1 | R-1.7.1, R-1.7.1a |
+| F-1.7.2 | R-1.7.2           |
+| F-1.7.3 | R-1.7.3           |
+| F-1.7.4 | R-1.7.4           |
+| F-1.7.5 | R-1.7.5, R-1.7.5a |
+| F-1.7.6 | R-1.7.6           |
+| F-1.7.7 | R-1.7.7           |
+| F-1.7.8 | R-1.7.8           |
+| F-1.7.9 | R-1.7.9           |
+
+1. **F-1.7.1** — Per-frame arena allocator with bump pointer and zero-cost reset
+2. **F-1.7.2** — Scoped arena with nested lifetimes, restores parent watermark on drop
+3. **F-1.7.3** — Typed pool allocator with O(1) alloc/dealloc via intrusive free list
+4. **F-1.7.4** — Generational index handles for safe resource references
+5. **F-1.7.5** — Slot map (dense-sparse set) with generational handle lookup
+6. **F-1.7.6** — Per-subsystem memory budgets with eviction/backpressure
+7. **F-1.7.7** — Profiling hooks compiled out in release builds
+8. **F-1.7.8** — Allocation tagging with subsystem propagation
+9. **F-1.7.9** — Arbitrary precision numeric types
 
 ### Async I/O (F-1.8 / R-1.8)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.8.1 | R-1.8.1 | Platform I/O backend abstraction (IOCP, GCD, io_uring) |
-| F-1.8.2 | R-1.8.2, R-1.8.2a | Completion-based proactor model |
-| F-1.8.3 | R-1.8.3 | Async file I/O with explicit byte offsets |
-| F-1.8.4 | R-1.8.4 | Async network socket I/O (TCP/UDP) |
-| F-1.8.5 | R-1.8.5 | Async audio stream I/O with deadline hints |
-| F-1.8.6 | R-1.8.6 | Scatter-gather and vectored I/O |
-| F-1.8.7 | R-1.8.7 | I/O priority and deadline scheduling |
-| F-1.8.8 | R-1.8.8, R-1.8.8a | Cooperative I/O cancellation via tokens |
-| F-1.8.9 | R-1.8.9 | Registered buffer pools for zero-copy transfers |
+| Feature | Requirement       |
+|---------|-------------------|
+| F-1.8.1 | R-1.8.1           |
+| F-1.8.2 | R-1.8.2, R-1.8.2a |
+| F-1.8.3 | R-1.8.3           |
+| F-1.8.4 | R-1.8.4           |
+| F-1.8.5 | R-1.8.5           |
+| F-1.8.6 | R-1.8.6           |
+| F-1.8.7 | R-1.8.7           |
+| F-1.8.8 | R-1.8.8, R-1.8.8a |
+| F-1.8.9 | R-1.8.9           |
+
+1. **F-1.8.1** — Platform I/O backend abstraction (IOCP, GCD, io_uring)
+2. **F-1.8.2** — Completion-based proactor model
+3. **F-1.8.3** — Async file I/O with explicit byte offsets
+4. **F-1.8.4** — Async network socket I/O (TCP/UDP)
+5. **F-1.8.5** — Async audio stream I/O with deadline hints
+6. **F-1.8.6** — Scatter-gather and vectored I/O
+7. **F-1.8.7** — I/O priority and deadline scheduling
+8. **F-1.8.8** — Cooperative I/O cancellation via tokens
+9. **F-1.8.9** — Registered buffer pools for zero-copy transfers
 
 ## Overview
 
@@ -1216,11 +1236,15 @@ When multiple mounts overlap, the VFS resolves paths by mount priority (highest 
 
 ### Memory Backing
 
-| Platform | Virtual Memory API | Notes |
-|----------|-------------------|-------|
-| Windows | `VirtualAlloc` / `VirtualFree` | `MEM_RESERVE` + `MEM_COMMIT` for commit-on-demand pool growth |
-| macOS | `mmap` / `munmap` | `MAP_ANON` for arena backing; GCD-compatible |
-| Linux | `mmap` / `munmap` | `MAP_ANON | MAP_PRIVATE`; `madvise(MADV_DONTNEED)` for arena reset |
+| Platform | Virtual Memory API             |
+|----------|--------------------------------|
+| Windows  | `VirtualAlloc` / `VirtualFree` |
+| macOS    | `mmap` / `munmap`              |
+| Linux    | `mmap` / `munmap`              |
+
+1. **Windows** — `MEM_RESERVE` + `MEM_COMMIT` for commit-on-demand pool growth
+2. **macOS** — `MAP_ANON` for arena backing; GCD-compatible
+3. **Linux** — `MAP_ANON
 
 ### I/O Backend Mapping
 
@@ -1316,57 +1340,127 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 
 ### Unit Tests — Memory
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_arena_100k_allocs_under_1ms` | R-1.7.1 | 100,000 varying-size bump allocations in one frame. Verify total time < 1 ms. Verify watermark = sum of sizes + padding. |
-| `test_arena_reset_zero_cost` | R-1.7.1 | Allocate 8 MB, reset, verify watermark = 0 in < 1 us. |
-| `test_arena_overflow_error` | R-1.7.1a | Fill to 99% capacity. Attempt oversize alloc. Verify `ArenaError::OutOfMemory` with correct sizes. |
-| `test_arena_grow_by_doubling` | R-1.7.1a | Exhaust initial 8 MiB arena. Verify it doubles to 16 MiB. Verify growth stops at configured max. |
-| `test_scoped_arena_restore` | R-1.7.2 | Parent 1 MB. Child allocates 512 KB. Drop child. Verify parent remaining = 1 MB. |
-| `test_scoped_arena_nested_10` | R-1.7.2 | 10 nested scopes. Verify correct watermark at each level on drop. |
-| `test_pool_o1_alloc_dealloc` | R-1.7.3 | 10,000 random alloc/dealloc. Benchmark confirms constant time regardless of occupancy. |
-| `test_pool_zero_fragmentation` | R-1.7.3 | After random ops, verify total memory = block_count * block_size. |
-| `test_handle_generation_mismatch` | R-1.7.4 | Alloc handle, remove, alloc new at same index. Old handle returns `GenerationMismatch`. |
-| `test_handle_validate_1m` | R-1.7.4 | Validate 1 million handles. Verify O(1) per validation. |
-| `test_slotmap_dense_iteration` | R-1.7.5 | Insert 10,000, remove 5,000 random. Verify dense iteration visits exactly 5,000. |
-| `test_slotmap_4m_entries` | R-1.7.5a | Insert 4 million entries. Verify all lookups succeed. |
-| `test_slotmap_stale_error` | R-1.7.5a | Stale handle returns `GenerationMismatch` with expected/actual gen. |
-| `test_budget_eviction` | R-1.7.6 | Set 100 MB budget. Allocate to limit. Next alloc returns `BudgetExceeded`. |
-| `test_profiling_hooks_dev` | R-1.7.7 | Dev build: 1,000 allocations across 3 allocators. Verify correct counts, byte totals, peak. |
-| `test_profiling_compiled_out` | R-1.7.7 | Release build: verify no profiling symbol exists (binary inspection). |
-| `test_tag_propagation` | R-1.7.8 | Parent arena tagged "physics". Child scope inherits tag. Verify per-tag stats sum correctly. |
-| `test_bigint_determinism` | R-1.7.9 | Compute distance at 10M light-years. Verify bit-identical on all platforms. |
-| `test_bigfloat_to_f32_f64` | R-1.7.9 | Round-trip conversion. Verify deterministic across architectures. |
+| Test                               | Req      |
+|------------------------------------|----------|
+| `test_arena_100k_allocs_under_1ms` | R-1.7.1  |
+| `test_arena_reset_zero_cost`       | R-1.7.1  |
+| `test_arena_overflow_error`        | R-1.7.1a |
+| `test_arena_grow_by_doubling`      | R-1.7.1a |
+| `test_scoped_arena_restore`        | R-1.7.2  |
+| `test_scoped_arena_nested_10`      | R-1.7.2  |
+| `test_pool_o1_alloc_dealloc`       | R-1.7.3  |
+| `test_pool_zero_fragmentation`     | R-1.7.3  |
+| `test_handle_generation_mismatch`  | R-1.7.4  |
+| `test_handle_validate_1m`          | R-1.7.4  |
+| `test_slotmap_dense_iteration`     | R-1.7.5  |
+| `test_slotmap_4m_entries`          | R-1.7.5a |
+| `test_slotmap_stale_error`         | R-1.7.5a |
+| `test_budget_eviction`             | R-1.7.6  |
+| `test_profiling_hooks_dev`         | R-1.7.7  |
+| `test_profiling_compiled_out`      | R-1.7.7  |
+| `test_tag_propagation`             | R-1.7.8  |
+| `test_bigint_determinism`          | R-1.7.9  |
+| `test_bigfloat_to_f32_f64`         | R-1.7.9  |
+
+1. **`test_arena_100k_allocs_under_1ms`** — 100,000 varying-size bump allocations in one frame.
+   Verify total time < 1 ms. Verify watermark = sum of sizes + padding.
+2. **`test_arena_reset_zero_cost`** — Allocate 8 MB, reset, verify watermark = 0 in < 1 us.
+3. **`test_arena_overflow_error`** — Fill to 99% capacity. Attempt oversize alloc. Verify
+   `ArenaError::OutOfMemory` with correct sizes.
+4. **`test_arena_grow_by_doubling`** — Exhaust initial 8 MiB arena. Verify it doubles to 16 MiB.
+   Verify growth stops at configured max.
+5. **`test_scoped_arena_restore`** — Parent 1 MB. Child allocates 512 KB. Drop child. Verify parent
+   remaining = 1 MB.
+6. **`test_scoped_arena_nested_10`** — 10 nested scopes. Verify correct watermark at each level on
+   drop.
+7. **`test_pool_o1_alloc_dealloc`** — 10,000 random alloc/dealloc. Benchmark confirms constant time
+   regardless of occupancy.
+8. **`test_pool_zero_fragmentation`** — After random ops, verify total memory = block_count *
+   block_size.
+9. **`test_handle_generation_mismatch`** — Alloc handle, remove, alloc new at same index. Old handle
+   returns `GenerationMismatch`.
+10. **`test_handle_validate_1m`** — Validate 1 million handles. Verify O(1) per validation.
+11. **`test_slotmap_dense_iteration`** — Insert 10,000, remove 5,000 random. Verify dense iteration
+    visits exactly 5,000.
+12. **`test_slotmap_4m_entries`** — Insert 4 million entries. Verify all lookups succeed.
+13. **`test_slotmap_stale_error`** — Stale handle returns `GenerationMismatch` with expected/actual
+    gen.
+14. **`test_budget_eviction`** — Set 100 MB budget. Allocate to limit. Next alloc returns
+    `BudgetExceeded`.
+15. **`test_profiling_hooks_dev`** — Dev build: 1,000 allocations across 3 allocators. Verify
+    correct counts, byte totals, peak.
+16. **`test_profiling_compiled_out`** — Release build: verify no profiling symbol exists (binary
+    inspection).
+17. **`test_tag_propagation`** — Parent arena tagged "physics". Child scope inherits tag. Verify
+    per-tag stats sum correctly.
+18. **`test_bigint_determinism`** — Compute distance at 10M light-years. Verify bit-identical on all
+    platforms.
+19. **`test_bigfloat_to_f32_f64`** — Round-trip conversion. Verify deterministic across
+    architectures.
 
 ### Unit Tests — Async I/O
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_async_read_data_integrity` | R-1.8.3 | Write 4 MB at explicit offsets from 4 tasks. Read back. Verify integrity. |
-| `test_no_std_fs_calls` | R-1.8.3 | Static analysis: verify no `std::fs` or `std::io::Read/Write` in codebase. |
-| `test_completion_typed_result` | R-1.8.2 | Submit 1 MB write. Verify completion carries correct byte count and context. |
-| `test_completion_latency_p99` | R-1.8.2a | 10,000 concurrent 4 KB reads. Verify p99 delivery latency < 100 us. |
-| `test_vectored_write_integrity` | R-1.8.6 | Write 3 non-contiguous buffers via single vectored write. Read back, verify concatenation. |
-| `test_vectored_syscall_reduction` | R-1.8.6 | Benchmark vectored vs. individual writes. Verify >= 30% syscall reduction. |
-| `test_priority_ordering` | R-1.8.7 | Submit 100 background reads then 1 critical. Verify critical completes before 90% of background. |
-| `test_cancel_fires_completion` | R-1.8.8 | Submit 100 MB read, cancel within 1 ms. Verify `IoError::Cancelled` fires. Verify no buffer leak. |
-| `test_cancel_1000_no_leaks` | R-1.8.8a | Submit 1,000 ops, cancel all. Verify all complete within 10 ms. Verify no buffer/handle leaks. |
-| `test_buffer_pool_backpressure` | R-1.8.9 | Register 64 buffers. Submit 128 reads. Verify pool handles backpressure (queuing). |
-| `test_buffer_pool_reclaim` | R-1.8.9 | After completions, verify all buffers reclaimed to free list. |
-| `test_reactor_nothing_before_poll` | R-1.8.1 | Submit I/O. Verify no future wakes until `poll()` called. |
+| Test                               | Req      |
+|------------------------------------|----------|
+| `test_async_read_data_integrity`   | R-1.8.3  |
+| `test_no_std_fs_calls`             | R-1.8.3  |
+| `test_completion_typed_result`     | R-1.8.2  |
+| `test_completion_latency_p99`      | R-1.8.2a |
+| `test_vectored_write_integrity`    | R-1.8.6  |
+| `test_vectored_syscall_reduction`  | R-1.8.6  |
+| `test_priority_ordering`           | R-1.8.7  |
+| `test_cancel_fires_completion`     | R-1.8.8  |
+| `test_cancel_1000_no_leaks`        | R-1.8.8a |
+| `test_buffer_pool_backpressure`    | R-1.8.9  |
+| `test_buffer_pool_reclaim`         | R-1.8.9  |
+| `test_reactor_nothing_before_poll` | R-1.8.1  |
+
+1. **`test_async_read_data_integrity`** — Write 4 MB at explicit offsets from 4 tasks. Read back.
+   Verify integrity.
+2. **`test_no_std_fs_calls`** — Static analysis: verify no `std::fs` or `std::io::Read/Write` in
+   codebase.
+3. **`test_completion_typed_result`** — Submit 1 MB write. Verify completion carries correct byte
+   count and context.
+4. **`test_completion_latency_p99`** — 10,000 concurrent 4 KB reads. Verify p99 delivery latency <
+   100 us.
+5. **`test_vectored_write_integrity`** — Write 3 non-contiguous buffers via single vectored write.
+   Read back, verify concatenation.
+6. **`test_vectored_syscall_reduction`** — Benchmark vectored vs. individual writes. Verify >= 30%
+   syscall reduction.
+7. **`test_priority_ordering`** — Submit 100 background reads then 1 critical. Verify critical
+   completes before 90% of background.
+8. **`test_cancel_fires_completion`** — Submit 100 MB read, cancel within 1 ms. Verify
+   `IoError::Cancelled` fires. Verify no buffer leak.
+9. **`test_cancel_1000_no_leaks`** — Submit 1,000 ops, cancel all. Verify all complete within 10 ms.
+   Verify no buffer/handle leaks.
+10. **`test_buffer_pool_backpressure`** — Register 64 buffers. Submit 128 reads. Verify pool handles
+    backpressure (queuing).
+11. **`test_buffer_pool_reclaim`** — After completions, verify all buffers reclaimed to free list.
+12. **`test_reactor_nothing_before_poll`** — Submit I/O. Verify no future wakes until `poll()`
+    called.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_backend_per_platform` | R-1.8.1 | Same test suite passes on Windows, macOS, Linux via CI. |
-| `test_tcp_connect_accept_1mb` | R-1.8.4 | Async connect/accept, send 1 MB, verify receipt. |
-| `test_udp_1000_datagrams` | R-1.8.4 | Send 1,000 datagrams. Verify delivery count. |
-| `test_concurrent_tcp_500` | R-1.8.4 | 500 concurrent TCP connections. No handle leaks. |
-| `test_audio_latency_under_10ms` | R-1.8.5 | Audio writes + 100 MB background reads. p99 audio latency < 10 ms. Zero underruns over 60 s. |
-| `test_vfs_mount_resolution` | - | Mount 3 overlapping paths. Verify highest priority wins. |
-| `test_vfs_blake3_hash` | - | Write known data, query metadata, verify BLAKE3 hash matches. |
-| `test_budget_24h_server` | R-1.7.6 | 24-hour sustained server load. No OOM. Budget never exceeded. |
+| Test                            | Req     |
+|---------------------------------|---------|
+| `test_backend_per_platform`     | R-1.8.1 |
+| `test_tcp_connect_accept_1mb`   | R-1.8.4 |
+| `test_udp_1000_datagrams`       | R-1.8.4 |
+| `test_concurrent_tcp_500`       | R-1.8.4 |
+| `test_audio_latency_under_10ms` | R-1.8.5 |
+| `test_vfs_mount_resolution`     | -       |
+| `test_vfs_blake3_hash`          | -       |
+| `test_budget_24h_server`        | R-1.7.6 |
+
+1. **`test_backend_per_platform`** — Same test suite passes on Windows, macOS, Linux via CI.
+2. **`test_tcp_connect_accept_1mb`** — Async connect/accept, send 1 MB, verify receipt.
+3. **`test_udp_1000_datagrams`** — Send 1,000 datagrams. Verify delivery count.
+4. **`test_concurrent_tcp_500`** — 500 concurrent TCP connections. No handle leaks.
+5. **`test_audio_latency_under_10ms`** — Audio writes + 100 MB background reads. p99 audio latency <
+   10 ms. Zero underruns over 60 s.
+6. **`test_vfs_mount_resolution`** — Mount 3 overlapping paths. Verify highest priority wins.
+7. **`test_vfs_blake3_hash`** — Write known data, query metadata, verify BLAKE3 hash matches.
+8. **`test_budget_24h_server`** — 24-hour sustained server load. No OOM. Budget never exceeded.
 
 ### Benchmarks
 

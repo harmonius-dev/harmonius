@@ -10,33 +10,51 @@
 
 ### Asset Import
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-12.1.1 | R-12.1.1 | Native format ingestion with BLAKE3 validation and CAS deduplication |
-| F-12.1.2 | R-12.1.2 | Texture source import (PNG, JPEG, EXR, HDR, TIFF) |
-| F-12.1.3 | R-12.1.3 | Audio source import (WAV, FLAC, Ogg Vorbis) |
-| F-12.1.4 | R-12.1.4 | Import validation with file path, byte offset, and fix suggestions |
-| F-12.1.5 | R-12.1.5 | Batch import with progress, parallelism, and rollback-safe cancellation |
+| Feature  | Requirement |
+|----------|-------------|
+| F-12.1.1 | R-12.1.1    |
+| F-12.1.2 | R-12.1.2    |
+| F-12.1.3 | R-12.1.3    |
+| F-12.1.4 | R-12.1.4    |
+| F-12.1.5 | R-12.1.5    |
+
+1. **F-12.1.1** — Native format ingestion with BLAKE3 validation and CAS deduplication
+2. **F-12.1.2** — Texture source import (PNG, JPEG, EXR, HDR, TIFF)
+3. **F-12.1.3** — Audio source import (WAV, FLAC, Ogg Vorbis)
+4. **F-12.1.4** — Import validation with file path, byte offset, and fix suggestions
+5. **F-12.1.5** — Batch import with progress, parallelism, and rollback-safe cancellation
 
 ### Asset Database
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-12.3.1 | R-12.3.1 | Content-addressable storage keyed by BLAKE3 hash |
-| F-12.3.2 | R-12.3.2 | Persistent metadata store (IDs, paths, hashes, deps, tags, thumbnails) |
-| F-12.3.3 | R-12.3.3 | Hash-based import caching (source + settings + tool version) |
-| F-12.3.4 | R-12.3.4 | Incremental builds via bottom-up dependency invalidation |
-| F-12.3.5 | R-12.3.5 | Full-text and tag-based faceted search |
-| F-12.3.6 | R-12.3.6 | Async thumbnail generation during import |
-| F-12.3.10 | R-12.3.10 | Asset versioning with hash-based restore |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-12.3.1  | R-12.3.1    |
+| F-12.3.2  | R-12.3.2    |
+| F-12.3.3  | R-12.3.3    |
+| F-12.3.4  | R-12.3.4    |
+| F-12.3.5  | R-12.3.5    |
+| F-12.3.6  | R-12.3.6    |
+| F-12.3.10 | R-12.3.10   |
+
+1. **F-12.3.1** — Content-addressable storage keyed by BLAKE3 hash
+2. **F-12.3.2** — Persistent metadata store (IDs, paths, hashes, deps, tags, thumbnails)
+3. **F-12.3.3** — Hash-based import caching (source + settings + tool version)
+4. **F-12.3.4** — Incremental builds via bottom-up dependency invalidation
+5. **F-12.3.5** — Full-text and tag-based faceted search
+6. **F-12.3.6** — Async thumbnail generation during import
+7. **F-12.3.10** — Asset versioning with hash-based restore
 
 ### Cross-Cutting
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-12.2.8 | R-12.2.8 | Asset dependency graph tracking |
-| F-12.6.1 | R-12.6.1 | DCC plugin SDK for direct native-format export |
-| F-12.4.1 | R-12.4.1 | File watcher for hot reload triggering |
+| Feature  | Requirement |
+|----------|-------------|
+| F-12.2.8 | R-12.2.8    |
+| F-12.6.1 | R-12.6.1    |
+| F-12.4.1 | R-12.4.1    |
+
+1. **F-12.2.8** — Asset dependency graph tracking
+2. **F-12.6.1** — DCC plugin SDK for direct native-format export
+3. **F-12.4.1** — File watcher for hot reload triggering
 
 ## Overview
 
@@ -1620,11 +1638,18 @@ is used anywhere in the import or database subsystems.
 
 ### CAS Storage
 
-| Platform | CAS Root | Notes |
-|----------|----------|-------|
-| Windows | `%APPDATA%\Harmonius\cas\` | NTFS; long path support required |
-| macOS | `~/Library/Application Support/Harmonius/cas/` | APFS copy-on-write benefits deduplication |
-| Linux | `~/.local/share/harmonius/cas/` | ext4 or btrfs; btrfs reflink for fast copies |
+| Platform |
+|----------|
+| Windows  |
+| macOS    |
+| Linux    |
+
+1. **Windows** — `%APPDATA%\Harmonius\cas\`
+   - **Notes:** NTFS; long path support required
+2. **macOS** — `~/Library/Application Support/Harmonius/cas/`
+   - **Notes:** APFS copy-on-write benefits deduplication
+3. **Linux** — `~/.local/share/harmonius/cas/`
+   - **Notes:** ext4 or btrfs; btrfs reflink for fast copies
 
 ### Metadata Persistence
 
@@ -1670,58 +1695,113 @@ BLAKE3 is chosen for content hashing because it is:
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_content_hash_deterministic` | R-12.3.1 | Same data always produces same BLAKE3 hash |
-| `test_content_hash_different` | R-12.3.1 | Different data produces different hashes |
-| `test_cas_store_and_load` | R-12.3.1 | Store a blob, load by hash, verify contents match |
-| `test_cas_deduplication` | R-12.3.1 | Store same data twice, verify only one blob on disk |
-| `test_cas_gc_removes_unreferenced` | R-12.3.1 | GC removes blobs not in the referenced set |
-| `test_cas_gc_preserves_referenced` | R-12.3.1 | GC keeps blobs that are in the referenced set |
-| `test_metadata_put_get` | R-12.3.2 | Store and retrieve metadata by AssetId |
-| `test_metadata_remove` | R-12.3.2 | Remove metadata and confirm it is gone |
-| `test_metadata_transaction_commit` | R-12.1.5 | Commit a transaction and verify all writes applied |
-| `test_metadata_transaction_rollback` | R-12.1.5 | Drop transaction without commit; verify no writes applied |
-| `test_dep_graph_add_query` | R-12.2.8 | Add edges, query dependents and dependencies |
-| `test_dep_graph_transitive` | R-12.3.4 | Transitive dependents returns full chain |
-| `test_dep_graph_cycle_detect` | R-12.2.8 | Cycle detection returns the cycle path |
-| `test_dep_graph_topological_order` | R-12.3.4 | Topological sort respects all edges |
-| `test_cache_hit_skips_import` | R-12.3.3 | Cache hit returns cached result without running importer |
-| `test_cache_miss_triggers_import` | R-12.3.3 | Cache miss invokes the importer |
-| `test_cache_invalidation` | R-12.3.3 | Invalidated key causes a cache miss |
-| `test_validate_native_magic_bytes` | R-12.1.4 | Wrong magic bytes produce error with byte offset |
-| `test_validate_native_version` | R-12.1.4 | Wrong version produces error with fix suggestion |
-| `test_validate_native_hash_mismatch` | R-12.1.4 | Corrupted hash produces HashMismatch error |
-| `test_validate_texture_dimensions` | R-12.1.4 | Oversized texture produces warning |
-| `test_validate_audio_sample_rate` | R-12.1.4 | Unsupported sample rate produces error |
-| `test_search_by_text` | R-12.3.5 | Full-text search returns matching assets |
-| `test_search_by_tag` | R-12.3.5 | Tag filter returns correctly tagged assets |
-| `test_search_faceted` | R-12.3.5 | Combined type + tag + date filter works |
-| `test_version_record_and_history` | R-12.3.10 | Record versions, list in newest-first order |
-| `test_version_restore` | R-12.3.10 | Restore previous version, verify content matches |
-| `test_importer_registry_find` | US-12.1.7 | Registered importer found by extension |
-| `test_importer_registry_unknown` | US-12.1.7 | Unknown extension returns None |
+| Test                                 | Req       |
+|--------------------------------------|-----------|
+| `test_content_hash_deterministic`    | R-12.3.1  |
+| `test_content_hash_different`        | R-12.3.1  |
+| `test_cas_store_and_load`            | R-12.3.1  |
+| `test_cas_deduplication`             | R-12.3.1  |
+| `test_cas_gc_removes_unreferenced`   | R-12.3.1  |
+| `test_cas_gc_preserves_referenced`   | R-12.3.1  |
+| `test_metadata_put_get`              | R-12.3.2  |
+| `test_metadata_remove`               | R-12.3.2  |
+| `test_metadata_transaction_commit`   | R-12.1.5  |
+| `test_metadata_transaction_rollback` | R-12.1.5  |
+| `test_dep_graph_add_query`           | R-12.2.8  |
+| `test_dep_graph_transitive`          | R-12.3.4  |
+| `test_dep_graph_cycle_detect`        | R-12.2.8  |
+| `test_dep_graph_topological_order`   | R-12.3.4  |
+| `test_cache_hit_skips_import`        | R-12.3.3  |
+| `test_cache_miss_triggers_import`    | R-12.3.3  |
+| `test_cache_invalidation`            | R-12.3.3  |
+| `test_validate_native_magic_bytes`   | R-12.1.4  |
+| `test_validate_native_version`       | R-12.1.4  |
+| `test_validate_native_hash_mismatch` | R-12.1.4  |
+| `test_validate_texture_dimensions`   | R-12.1.4  |
+| `test_validate_audio_sample_rate`    | R-12.1.4  |
+| `test_search_by_text`                | R-12.3.5  |
+| `test_search_by_tag`                 | R-12.3.5  |
+| `test_search_faceted`                | R-12.3.5  |
+| `test_version_record_and_history`    | R-12.3.10 |
+| `test_version_restore`               | R-12.3.10 |
+| `test_importer_registry_find`        | US-12.1.7 |
+| `test_importer_registry_unknown`     | US-12.1.7 |
+
+1. **`test_content_hash_deterministic`** — Same data always produces same BLAKE3 hash
+2. **`test_content_hash_different`** — Different data produces different hashes
+3. **`test_cas_store_and_load`** — Store a blob, load by hash, verify contents match
+4. **`test_cas_deduplication`** — Store same data twice, verify only one blob on disk
+5. **`test_cas_gc_removes_unreferenced`** — GC removes blobs not in the referenced set
+6. **`test_cas_gc_preserves_referenced`** — GC keeps blobs that are in the referenced set
+7. **`test_metadata_put_get`** — Store and retrieve metadata by AssetId
+8. **`test_metadata_remove`** — Remove metadata and confirm it is gone
+9. **`test_metadata_transaction_commit`** — Commit a transaction and verify all writes applied
+10. **`test_metadata_transaction_rollback`** — Drop transaction without commit; verify no writes
+    applied
+11. **`test_dep_graph_add_query`** — Add edges, query dependents and dependencies
+12. **`test_dep_graph_transitive`** — Transitive dependents returns full chain
+13. **`test_dep_graph_cycle_detect`** — Cycle detection returns the cycle path
+14. **`test_dep_graph_topological_order`** — Topological sort respects all edges
+15. **`test_cache_hit_skips_import`** — Cache hit returns cached result without running importer
+16. **`test_cache_miss_triggers_import`** — Cache miss invokes the importer
+17. **`test_cache_invalidation`** — Invalidated key causes a cache miss
+18. **`test_validate_native_magic_bytes`** — Wrong magic bytes produce error with byte offset
+19. **`test_validate_native_version`** — Wrong version produces error with fix suggestion
+20. **`test_validate_native_hash_mismatch`** — Corrupted hash produces HashMismatch error
+21. **`test_validate_texture_dimensions`** — Oversized texture produces warning
+22. **`test_validate_audio_sample_rate`** — Unsupported sample rate produces error
+23. **`test_search_by_text`** — Full-text search returns matching assets
+24. **`test_search_by_tag`** — Tag filter returns correctly tagged assets
+25. **`test_search_faceted`** — Combined type + tag + date filter works
+26. **`test_version_record_and_history`** — Record versions, list in newest-first order
+27. **`test_version_restore`** — Restore previous version, verify content matches
+28. **`test_importer_registry_find`** — Registered importer found by extension
+29. **`test_importer_registry_unknown`** — Unknown extension returns None
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_import_native_end_to_end` | R-12.1.1 | Import a native-format file; verify CAS blob, metadata, and dep graph entry |
-| `test_import_png_end_to_end` | R-12.1.2 | Import a PNG; verify decoded sRGB data in CAS |
-| `test_import_exr_linear` | R-12.1.2 | Import an EXR; verify linear color space |
-| `test_import_wav_metadata` | R-12.1.3 | Import a WAV; verify sample rate, channels, loop points |
-| `test_import_flac_metadata` | R-12.1.3 | Import a FLAC; verify metadata extraction |
-| `test_import_ogg_metadata` | R-12.1.3 | Import an Ogg Vorbis; verify metadata extraction |
-| `test_batch_import_100_assets` | R-12.1.5 | Batch import 100 assets; verify all succeed with correct metadata |
-| `test_batch_cancel_rollback` | R-12.1.5 | Cancel mid-batch; verify no partial metadata entries |
-| `test_incremental_reimport` | R-12.3.4 | Modify a texture, reimport; verify only dependents rebuilt |
-| `test_incremental_vs_full_identical` | R-12.3.4 | Incremental build output is byte-identical to full build (US-12.3.13) |
-| `test_corrupt_file_graceful` | US-12.1.8 | Import truncated/zero-length/malformed files; verify error without crash |
-| `test_import_duplicate_dedup` | R-12.3.1 | Import same asset from two paths; verify single CAS blob, two metadata entries |
-| `test_cache_across_restarts` | R-12.3.3 | Import, restart, reimport; verify cache hit |
-| `test_version_restore_content` | R-12.3.10 | Create 3 versions, restore v1, verify hash matches original |
-| `test_journal_crash_recovery` | R-12.3.2 | Simulate crash mid-transaction; verify journal replay recovers clean state |
-| `test_ci_validation_reject` | US-12.1.6 | Run validation in headless mode; verify non-zero exit on schema violation |
+| Test                                 | Req       |
+|--------------------------------------|-----------|
+| `test_import_native_end_to_end`      | R-12.1.1  |
+| `test_import_png_end_to_end`         | R-12.1.2  |
+| `test_import_exr_linear`             | R-12.1.2  |
+| `test_import_wav_metadata`           | R-12.1.3  |
+| `test_import_flac_metadata`          | R-12.1.3  |
+| `test_import_ogg_metadata`           | R-12.1.3  |
+| `test_batch_import_100_assets`       | R-12.1.5  |
+| `test_batch_cancel_rollback`         | R-12.1.5  |
+| `test_incremental_reimport`          | R-12.3.4  |
+| `test_incremental_vs_full_identical` | R-12.3.4  |
+| `test_corrupt_file_graceful`         | US-12.1.8 |
+| `test_import_duplicate_dedup`        | R-12.3.1  |
+| `test_cache_across_restarts`         | R-12.3.3  |
+| `test_version_restore_content`       | R-12.3.10 |
+| `test_journal_crash_recovery`        | R-12.3.2  |
+| `test_ci_validation_reject`          | US-12.1.6 |
+
+1. **`test_import_native_end_to_end`** — Import a native-format file; verify CAS blob, metadata, and
+   dep graph entry
+2. **`test_import_png_end_to_end`** — Import a PNG; verify decoded sRGB data in CAS
+3. **`test_import_exr_linear`** — Import an EXR; verify linear color space
+4. **`test_import_wav_metadata`** — Import a WAV; verify sample rate, channels, loop points
+5. **`test_import_flac_metadata`** — Import a FLAC; verify metadata extraction
+6. **`test_import_ogg_metadata`** — Import an Ogg Vorbis; verify metadata extraction
+7. **`test_batch_import_100_assets`** — Batch import 100 assets; verify all succeed with correct
+   metadata
+8. **`test_batch_cancel_rollback`** — Cancel mid-batch; verify no partial metadata entries
+9. **`test_incremental_reimport`** — Modify a texture, reimport; verify only dependents rebuilt
+10. **`test_incremental_vs_full_identical`** — Incremental build output is byte-identical to full
+    build (US-12.3.13)
+11. **`test_corrupt_file_graceful`** — Import truncated/zero-length/malformed files; verify error
+    without crash
+12. **`test_import_duplicate_dedup`** — Import same asset from two paths; verify single CAS blob,
+    two metadata entries
+13. **`test_cache_across_restarts`** — Import, restart, reimport; verify cache hit
+14. **`test_version_restore_content`** — Create 3 versions, restore v1, verify hash matches original
+15. **`test_journal_crash_recovery`** — Simulate crash mid-transaction; verify journal replay
+    recovers clean state
+16. **`test_ci_validation_reject`** — Run validation in headless mode; verify non-zero exit on
+    schema violation
 
 ### Benchmarks
 

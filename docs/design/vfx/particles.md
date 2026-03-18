@@ -7,15 +7,24 @@
 > [user-stories/vfx/](../../user-stories/vfx/). The table below traces design elements to those
 > definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-11.1.1 | R-11.1.1 | US-11.1.1.1, US-11.1.1.2, US-11.1.1.3 | GPU compute shader particle simulation with persistent buffers, free-list, and indirect dispatch |
-| F-11.1.2 | R-11.1.2 | US-11.1.2.1, US-11.1.2.2, US-11.1.2.3 | Composable per-particle simulation modules fused into single compute dispatch |
-| F-11.1.3 | R-11.1.3 | US-11.1.3.1, US-11.1.3.2, US-11.1.3.3 | Sprite billboard, ribbon, and mesh particle rendering modes |
-| F-11.1.4 | R-11.1.4 | US-11.1.4.1, US-11.1.4.2, US-11.1.4.3 | Hierarchical LOD, GPU radix sort, and global budget manager |
-| F-11.1.5 | R-11.1.5 | US-11.1.5.1, US-11.1.5.2 | Event-driven sub-emitter spawning on birth, death, collision, manual trigger |
-| F-11.1.6 | R-11.1.6 | US-11.1.6.1, US-11.1.6.2 | Particle-driven dynamic point lights into clustered light buffer |
-| F-11.1.7 | R-11.1.7 | US-11.1.7.1, US-11.1.7.2 | Grid-based Eulerian GPU fluid simulation with volumetric rendering |
+| Feature  | Requirement | User Stories                          |
+|----------|-------------|---------------------------------------|
+| F-11.1.1 | R-11.1.1    | US-11.1.1.1, US-11.1.1.2, US-11.1.1.3 |
+| F-11.1.2 | R-11.1.2    | US-11.1.2.1, US-11.1.2.2, US-11.1.2.3 |
+| F-11.1.3 | R-11.1.3    | US-11.1.3.1, US-11.1.3.2, US-11.1.3.3 |
+| F-11.1.4 | R-11.1.4    | US-11.1.4.1, US-11.1.4.2, US-11.1.4.3 |
+| F-11.1.5 | R-11.1.5    | US-11.1.5.1, US-11.1.5.2              |
+| F-11.1.6 | R-11.1.6    | US-11.1.6.1, US-11.1.6.2              |
+| F-11.1.7 | R-11.1.7    | US-11.1.7.1, US-11.1.7.2              |
+
+1. **F-11.1.1** — GPU compute shader particle simulation with persistent buffers, free-list, and
+   indirect dispatch
+2. **F-11.1.2** — Composable per-particle simulation modules fused into single compute dispatch
+3. **F-11.1.3** — Sprite billboard, ribbon, and mesh particle rendering modes
+4. **F-11.1.4** — Hierarchical LOD, GPU radix sort, and global budget manager
+5. **F-11.1.5** — Event-driven sub-emitter spawning on birth, death, collision, manual trigger
+6. **F-11.1.6** — Particle-driven dynamic point lights into clustered light buffer
+7. **F-11.1.7** — Grid-based Eulerian GPU fluid simulation with volumetric rendering
 
 ### Cross-Cutting Dependencies
 
@@ -1755,13 +1764,19 @@ graph LR
 
 ### GPU Backend Mapping
 
-| Operation | D3D12 | Vulkan | Metal |
-|-----------|-------|--------|-------|
-| Compute dispatch | `Dispatch` on compute command list | `vkCmdDispatch` on compute queue | `dispatchThreadgroups` on compute encoder |
-| Indirect draw | `ExecuteIndirect` | `vkCmdDrawIndirect` | `drawPrimitives(indirectBuffer:)` |
-| Buffer barriers | `ResourceBarrier` UAV | `vkCmdPipelineBarrier` | Automatic hazard tracking |
-| Atomic counters | `InterlockedAdd` in HLSL | `atomicAdd` in SPIR-V (from HLSL) | `atomic_fetch_add` (from MSL via shader converter) |
-| Async compute | Separate compute queue | Separate queue family | Shared or private command queue |
+| Operation        | D3D12                              | Vulkan                            |
+|------------------|------------------------------------|-----------------------------------|
+| Compute dispatch | `Dispatch` on compute command list | `vkCmdDispatch` on compute queue  |
+| Indirect draw    | `ExecuteIndirect`                  | `vkCmdDrawIndirect`               |
+| Buffer barriers  | `ResourceBarrier` UAV              | `vkCmdPipelineBarrier`            |
+| Atomic counters  | `InterlockedAdd` in HLSL           | `atomicAdd` in SPIR-V (from HLSL) |
+| Async compute    | Separate compute queue             | Separate queue family             |
+
+1. **Compute dispatch** — `dispatchThreadgroups` on compute encoder
+2. **Indirect draw** — `drawPrimitives(indirectBuffer:)`
+3. **Buffer barriers** — Automatic hazard tracking
+4. **Atomic counters** — `atomic_fetch_add` (from MSL via shader converter)
+5. **Async compute** — Shared or private command queue
 
 ### Platform-Specific Behavior
 
@@ -1859,58 +1874,120 @@ void SimulateParticles(uint3 id : SV_DispatchThreadID) {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_emit_point_shape` | R-11.1.1 | Point emitter spawns particles at origin. Verify GPU buffer write. |
-| `test_emit_sphere_surface` | R-11.1.1 | Sphere surface emitter spawns at radius distance from origin. |
-| `test_emit_box_volume` | R-11.1.1 | Box emitter spawns within half-extent bounds. |
-| `test_emit_cone` | R-11.1.1 | Cone emitter spawns within angle and radius constraints. |
-| `test_emit_mesh_surface` | R-11.1.1 | Mesh surface emitter samples vertex buffer positions. |
-| `test_emit_skinned_mesh` | R-11.1.1 | Skinned mesh emitter samples animated vertex positions. |
-| `test_free_list_allocation` | R-11.1.1 | Emit then kill particles; verify free-list indices are recycled. |
-| `test_indirect_dispatch_args` | R-11.1.1 | Verify dispatch args match alive count after simulation. |
-| `test_gravity_module` | R-11.1.2 | Particle velocity increases by gravity * dt each frame. |
-| `test_curl_noise_module` | R-11.1.2 | Curl noise displaces particles; verify divergence-free motion. |
-| `test_drag_module` | R-11.1.2 | Drag reduces velocity toward zero over time. |
-| `test_color_over_life` | R-11.1.2 | Color matches gradient sample at normalized age. |
-| `test_size_over_life` | R-11.1.2 | Size matches curve sample at normalized age. |
-| `test_rotation_over_life` | R-11.1.2 | Rotation speed matches curve at normalized age. |
-| `test_depth_buffer_collision` | R-11.1.2 | Particle bounces off depth buffer with configured restitution. |
-| `test_sdf_collision` | R-11.1.2 | Particle bounces off SDF surface; disabled on mobile config. |
-| `test_fused_module_dispatch` | R-11.1.2 | All modules execute in single dispatch per emitter. |
-| `test_sprite_billboard` | R-11.1.3 | Sprite quads face camera from multiple angles. |
-| `test_flipbook_animation` | R-11.1.3 | Flipbook UV progresses at configured FPS. |
-| `test_soft_depth_fade` | R-11.1.3 | Alpha fades near depth buffer intersections. |
-| `test_ribbon_connectivity` | R-11.1.3 | Ribbon segments connect sequential particles without gaps. |
-| `test_ribbon_catmull_rom` | R-11.1.3 | Subdivided ribbon follows Catmull-Rom spline. |
-| `test_mesh_particle_instancing` | R-11.1.3 | Mesh particles render with correct per-instance transforms. |
-| `test_lod_tier_transitions` | R-11.1.4 | Emitter transitions through all 4 LOD tiers at correct distances. |
-| `test_lod_hysteresis` | R-11.1.4 | Tier does not oscillate at boundary distance. |
-| `test_budget_cap_enforced` | R-11.1.4 | Total alive never exceeds global_max per platform. |
-| `test_budget_priority_cull` | R-11.1.4 | Low-priority emitters culled before high-priority. |
-| `test_radix_sort_correctness` | R-11.1.4 | Sorted alive list is in back-to-front distance order. |
-| `test_sub_emitter_death` | R-11.1.5 | Child particles spawn at parent death position. |
-| `test_sub_emitter_collision` | R-11.1.5 | Child particles spawn at collision position with reflected velocity. |
-| `test_sub_emitter_inherit_velocity` | R-11.1.5 | Child particles inherit parent velocity at configured factor. |
-| `test_sub_emitter_depth_limit` | R-11.1.5 | Mobile limits sub-emitter depth to 1; desktop allows 4. |
-| `test_particle_light_injection` | R-11.1.6 | Particle lights appear in clustered light buffer. |
-| `test_particle_light_cap` | R-11.1.6 | Per-emitter light count does not exceed platform cap. |
-| `test_warm_up_particle_count` | R-11.1.1 | After warm-up, alive count matches expected spawn rate * duration. |
+| Test                                | Req      |
+|-------------------------------------|----------|
+| `test_emit_point_shape`             | R-11.1.1 |
+| `test_emit_sphere_surface`          | R-11.1.1 |
+| `test_emit_box_volume`              | R-11.1.1 |
+| `test_emit_cone`                    | R-11.1.1 |
+| `test_emit_mesh_surface`            | R-11.1.1 |
+| `test_emit_skinned_mesh`            | R-11.1.1 |
+| `test_free_list_allocation`         | R-11.1.1 |
+| `test_indirect_dispatch_args`       | R-11.1.1 |
+| `test_gravity_module`               | R-11.1.2 |
+| `test_curl_noise_module`            | R-11.1.2 |
+| `test_drag_module`                  | R-11.1.2 |
+| `test_color_over_life`              | R-11.1.2 |
+| `test_size_over_life`               | R-11.1.2 |
+| `test_rotation_over_life`           | R-11.1.2 |
+| `test_depth_buffer_collision`       | R-11.1.2 |
+| `test_sdf_collision`                | R-11.1.2 |
+| `test_fused_module_dispatch`        | R-11.1.2 |
+| `test_sprite_billboard`             | R-11.1.3 |
+| `test_flipbook_animation`           | R-11.1.3 |
+| `test_soft_depth_fade`              | R-11.1.3 |
+| `test_ribbon_connectivity`          | R-11.1.3 |
+| `test_ribbon_catmull_rom`           | R-11.1.3 |
+| `test_mesh_particle_instancing`     | R-11.1.3 |
+| `test_lod_tier_transitions`         | R-11.1.4 |
+| `test_lod_hysteresis`               | R-11.1.4 |
+| `test_budget_cap_enforced`          | R-11.1.4 |
+| `test_budget_priority_cull`         | R-11.1.4 |
+| `test_radix_sort_correctness`       | R-11.1.4 |
+| `test_sub_emitter_death`            | R-11.1.5 |
+| `test_sub_emitter_collision`        | R-11.1.5 |
+| `test_sub_emitter_inherit_velocity` | R-11.1.5 |
+| `test_sub_emitter_depth_limit`      | R-11.1.5 |
+| `test_particle_light_injection`     | R-11.1.6 |
+| `test_particle_light_cap`           | R-11.1.6 |
+| `test_warm_up_particle_count`       | R-11.1.1 |
+
+1. **`test_emit_point_shape`** — Point emitter spawns particles at origin. Verify GPU buffer write.
+2. **`test_emit_sphere_surface`** — Sphere surface emitter spawns at radius distance from origin.
+3. **`test_emit_box_volume`** — Box emitter spawns within half-extent bounds.
+4. **`test_emit_cone`** — Cone emitter spawns within angle and radius constraints.
+5. **`test_emit_mesh_surface`** — Mesh surface emitter samples vertex buffer positions.
+6. **`test_emit_skinned_mesh`** — Skinned mesh emitter samples animated vertex positions.
+7. **`test_free_list_allocation`** — Emit then kill particles; verify free-list indices are
+   recycled.
+8. **`test_indirect_dispatch_args`** — Verify dispatch args match alive count after simulation.
+9. **`test_gravity_module`** — Particle velocity increases by gravity * dt each frame.
+10. **`test_curl_noise_module`** — Curl noise displaces particles; verify divergence-free motion.
+11. **`test_drag_module`** — Drag reduces velocity toward zero over time.
+12. **`test_color_over_life`** — Color matches gradient sample at normalized age.
+13. **`test_size_over_life`** — Size matches curve sample at normalized age.
+14. **`test_rotation_over_life`** — Rotation speed matches curve at normalized age.
+15. **`test_depth_buffer_collision`** — Particle bounces off depth buffer with configured
+    restitution.
+16. **`test_sdf_collision`** — Particle bounces off SDF surface; disabled on mobile config.
+17. **`test_fused_module_dispatch`** — All modules execute in single dispatch per emitter.
+18. **`test_sprite_billboard`** — Sprite quads face camera from multiple angles.
+19. **`test_flipbook_animation`** — Flipbook UV progresses at configured FPS.
+20. **`test_soft_depth_fade`** — Alpha fades near depth buffer intersections.
+21. **`test_ribbon_connectivity`** — Ribbon segments connect sequential particles without gaps.
+22. **`test_ribbon_catmull_rom`** — Subdivided ribbon follows Catmull-Rom spline.
+23. **`test_mesh_particle_instancing`** — Mesh particles render with correct per-instance
+    transforms.
+24. **`test_lod_tier_transitions`** — Emitter transitions through all 4 LOD tiers at correct
+    distances.
+25. **`test_lod_hysteresis`** — Tier does not oscillate at boundary distance.
+26. **`test_budget_cap_enforced`** — Total alive never exceeds global_max per platform.
+27. **`test_budget_priority_cull`** — Low-priority emitters culled before high-priority.
+28. **`test_radix_sort_correctness`** — Sorted alive list is in back-to-front distance order.
+29. **`test_sub_emitter_death`** — Child particles spawn at parent death position.
+30. **`test_sub_emitter_collision`** — Child particles spawn at collision position with reflected
+    velocity.
+31. **`test_sub_emitter_inherit_velocity`** — Child particles inherit parent velocity at configured
+    factor.
+32. **`test_sub_emitter_depth_limit`** — Mobile limits sub-emitter depth to 1; desktop allows 4.
+33. **`test_particle_light_injection`** — Particle lights appear in clustered light buffer.
+34. **`test_particle_light_cap`** — Per-emitter light count does not exceed platform cap.
+35. **`test_warm_up_particle_count`** — After warm-up, alive count matches expected spawn rate *
+    duration.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_async_compute_overlap` | R-11.1.1 | Particle simulation overlaps with graphics on async compute queue. |
-| `test_graphics_queue_fallback` | R-11.1.1 | Simulation runs correctly when async compute is disabled. |
-| `test_40_player_raid_budget` | R-11.1.4 | 40 emitters with full modules; budget caps particles; frame rate stable. |
-| `test_effect_graph_compile` | R-11.1.2 | Effect graph with all module types compiles to valid fused shader. |
-| `test_platform_tier_configs` | R-11.1.4 | Budget, LOD distances, and module availability match each PlatformTier. |
-| `test_cascading_sub_emitters` | R-11.1.5 | Firework: burst -> death sub-emit -> color sparks. Full chain executes. |
-| `test_ribbon_moving_emitter` | R-11.1.3 | Ribbon trail follows moving entity without discontinuities. |
-| `test_warm_up_visual_parity` | R-11.1.1 | Warm-up result visually matches real-time simulation at same timestamp. |
-| `test_depth_collision_all_angles` | R-11.1.2 | Depth-buffer collision from multiple camera angles; no tunneling. |
-| `test_particle_lights_raid` | R-11.1.6 | 40 emitters with lights; per-tile cap enforced; lighting cost bounded. |
+| Test                              | Req      |
+|-----------------------------------|----------|
+| `test_async_compute_overlap`      | R-11.1.1 |
+| `test_graphics_queue_fallback`    | R-11.1.1 |
+| `test_40_player_raid_budget`      | R-11.1.4 |
+| `test_effect_graph_compile`       | R-11.1.2 |
+| `test_platform_tier_configs`      | R-11.1.4 |
+| `test_cascading_sub_emitters`     | R-11.1.5 |
+| `test_ribbon_moving_emitter`      | R-11.1.3 |
+| `test_warm_up_visual_parity`      | R-11.1.1 |
+| `test_depth_collision_all_angles` | R-11.1.2 |
+| `test_particle_lights_raid`       | R-11.1.6 |
+
+1. **`test_async_compute_overlap`** — Particle simulation overlaps with graphics on async compute
+   queue.
+2. **`test_graphics_queue_fallback`** — Simulation runs correctly when async compute is disabled.
+3. **`test_40_player_raid_budget`** — 40 emitters with full modules; budget caps particles; frame
+   rate stable.
+4. **`test_effect_graph_compile`** — Effect graph with all module types compiles to valid fused
+   shader.
+5. **`test_platform_tier_configs`** — Budget, LOD distances, and module availability match each
+   PlatformTier.
+6. **`test_cascading_sub_emitters`** — Firework: burst -> death sub-emit -> color sparks. Full chain
+   executes.
+7. **`test_ribbon_moving_emitter`** — Ribbon trail follows moving entity without discontinuities.
+8. **`test_warm_up_visual_parity`** — Warm-up result visually matches real-time simulation at same
+   timestamp.
+9. **`test_depth_collision_all_angles`** — Depth-buffer collision from multiple camera angles; no
+   tunneling.
+10. **`test_particle_lights_raid`** — 40 emitters with lights; per-tile cap enforced; lighting cost
+    bounded.
 
 ### Benchmarks
 
@@ -1929,12 +2006,17 @@ void SimulateParticles(uint3 id : SV_DispatchThreadID) {
 
 ### GPU Compute Availability
 
-| Backend | Compute Shaders | Mesh Shaders | Notes |
-|---------|----------------|-------------|-------|
-| D3D12 | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full compute particle support. |
-| Vulkan | Yes (1.0+) | Yes (task/mesh, optional) | Subgroup operations for reduction. |
-| Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
-| Mobile | Limited dispatch size | No mesh shaders | Reduced particle budgets (PlatformTier::Mobile). |
+| Backend | Compute Shaders       | Mesh Shaders                      |
+|---------|-----------------------|-----------------------------------|
+| D3D12   | Yes (SM 5.0+)         | Yes (SM 6.5+, optional)           |
+| Vulkan  | Yes (1.0+)            | Yes (task/mesh, optional)         |
+| Metal   | Yes (MSL 2.0+)        | Object/mesh (Apple GPU family 7+) |
+| Mobile  | Limited dispatch size | No mesh shaders                   |
+
+1. **D3D12** — Full compute particle support.
+2. **Vulkan** — Subgroup operations for reduction.
+3. **Metal** — Threadgroup memory for local sort.
+4. **Mobile** — Reduced particle budgets (PlatformTier::Mobile).
 
 The VFX effect graph editor (see [effect-graph.md](effect-graph.md)) is the visual authoring surface
 for particle system configurations.

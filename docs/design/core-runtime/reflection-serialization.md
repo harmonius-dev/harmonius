@@ -10,33 +10,55 @@
 
 ### Reflection (F-1.3 / R-1.3)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.3.1 | R-1.3.1, R-1.3.1a | Global type registry, O(1) lookup, 10k+ types |
-| F-1.3.2 | R-1.3.2 | Structured type descriptors (size, align, drop, clone, default) |
-| F-1.3.3 | R-1.3.3, R-1.3.3a | Reflective property access with dot-path syntax, < 500 ns |
-| F-1.3.4 | R-1.3.4 | Collection reflection (Vec, HashMap, HashSet) |
-| F-1.3.5 | R-1.3.5 | Type-erased DynamicValue with diff and patch |
-| F-1.3.6 | R-1.3.6 | Custom type and field attributes (ranges, skip, rename) |
-| F-1.3.7 | R-1.3.7 | Trait object registration and dispatch by TypeId |
-| F-1.3.8 | R-1.3.8, R-1.3.8a | Reflect trait with derive macro and attribute annotations |
-| F-1.3.9 | R-1.3.9 | Reflect sub-traits per type category |
-| F-1.3.10 | R-1.3.10 | FromReflect conversion trait |
+| Feature  | Requirement       |
+|----------|-------------------|
+| F-1.3.1  | R-1.3.1, R-1.3.1a |
+| F-1.3.2  | R-1.3.2           |
+| F-1.3.3  | R-1.3.3, R-1.3.3a |
+| F-1.3.4  | R-1.3.4           |
+| F-1.3.5  | R-1.3.5           |
+| F-1.3.6  | R-1.3.6           |
+| F-1.3.7  | R-1.3.7           |
+| F-1.3.8  | R-1.3.8, R-1.3.8a |
+| F-1.3.9  | R-1.3.9           |
+| F-1.3.10 | R-1.3.10          |
+
+1. **F-1.3.1** — Global type registry, O(1) lookup, 10k+ types
+2. **F-1.3.2** — Structured type descriptors (size, align, drop, clone, default)
+3. **F-1.3.3** — Reflective property access with dot-path syntax, < 500 ns
+4. **F-1.3.4** — Collection reflection (Vec, HashMap, HashSet)
+5. **F-1.3.5** — Type-erased DynamicValue with diff and patch
+6. **F-1.3.6** — Custom type and field attributes (ranges, skip, rename)
+7. **F-1.3.7** — Trait object registration and dispatch by TypeId
+8. **F-1.3.8** — Reflect trait with derive macro and attribute annotations
+9. **F-1.3.9** — Reflect sub-traits per type category
+10. **F-1.3.10** — FromReflect conversion trait
 
 ### Serialization (F-1.4 / R-1.4)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.4.1 | R-1.4.1, R-1.4.1a | Compact binary format, >= 500 MB/s, little-endian |
-| F-1.4.2 | R-1.4.2 | Zero-copy deserialization via memory mapping |
-| F-1.4.3 | R-1.4.3 | Human-readable text format (RON), round-trip fidelity |
-| F-1.4.4 | R-1.4.4 | Schema versioning with semantic version tags |
-| F-1.4.5 | R-1.4.5, R-1.4.5a | Data migration pipeline, 50+ step chains |
-| F-1.4.6 | R-1.4.6 | Asset-aware serialization with handle resolution |
-| F-1.4.7 | R-1.4.7 | Full scene serialization with entity ID remapping |
-| F-1.4.8 | R-1.4.8, R-1.4.8a | Mixed-format with binary companions, atomic writes |
-| F-1.4.9 | R-1.4.9, R-1.4.9a | Binary companion file format, append-friendly |
-| F-1.4.10 | R-1.4.10 | `#[binary]` field attribute for mixed-format control |
+| Feature  | Requirement       |
+|----------|-------------------|
+| F-1.4.1  | R-1.4.1, R-1.4.1a |
+| F-1.4.2  | R-1.4.2           |
+| F-1.4.3  | R-1.4.3           |
+| F-1.4.4  | R-1.4.4           |
+| F-1.4.5  | R-1.4.5, R-1.4.5a |
+| F-1.4.6  | R-1.4.6           |
+| F-1.4.7  | R-1.4.7           |
+| F-1.4.8  | R-1.4.8, R-1.4.8a |
+| F-1.4.9  | R-1.4.9, R-1.4.9a |
+| F-1.4.10 | R-1.4.10          |
+
+1. **F-1.4.1** — Compact binary format, >= 500 MB/s, little-endian
+2. **F-1.4.2** — Zero-copy deserialization via memory mapping
+3. **F-1.4.3** — Human-readable text format (RON), round-trip fidelity
+4. **F-1.4.4** — Schema versioning with semantic version tags
+5. **F-1.4.5** — Data migration pipeline, 50+ step chains
+6. **F-1.4.6** — Asset-aware serialization with handle resolution
+7. **F-1.4.7** — Full scene serialization with entity ID remapping
+8. **F-1.4.8** — Mixed-format with binary companions, atomic writes
+9. **F-1.4.9** — Binary companion file format, append-friendly
+10. **F-1.4.10** — `#[binary]` field attribute for mixed-format control
 
 ## Overview
 
@@ -2073,61 +2095,130 @@ The deserializer reads in chunks, constructing entities incrementally to avoid m
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_registry_10k_types` | R-1.3.1a | Register 10,000 types, verify O(1) lookup by ID and name. |
-| `test_registry_duplicate_id_error` | R-1.3.1a | Register duplicate TypeId, verify diagnostic error names both types. |
-| `test_registry_freeze_rejects_insert` | R-1.3.1 | After freeze(), verify register() panics. |
-| `test_type_descriptor_layout` | R-1.3.2 | Register struct, verify size, alignment, field count, offsets match. |
-| `test_dynamic_move_drop_clone` | R-1.3.2 | Construct type-erased instance via default_fn, clone, drop both. Custom allocator verifies no leaks. |
-| `test_property_path_nested` | R-1.3.3 | Read/write `outer.inner.value` via path API. Verify round-trip. |
-| `test_property_path_invalid` | R-1.3.3a | Access nonexistent path, verify error contains path and parent type. |
-| `test_property_path_perf` | R-1.3.3a | Access 6-segment path 100k times, verify < 500 ns per access. |
-| `test_collection_vec_reflect` | R-1.3.4 | Insert, remove, iterate, index Vec through reflection. |
-| `test_collection_map_reflect` | R-1.3.4 | Insert, remove, get HashMap through reflection. |
-| `test_dynamic_value_roundtrip` | R-1.3.5 | typed -> DynamicValue -> FromReflect -> verify identical. |
-| `test_diff_produces_minimal_patch` | R-1.3.5 | Change one field of a 10-field struct, verify patch has 1 op. |
-| `test_patch_apply_correct` | R-1.3.5 | Apply patch to typed value, verify result matches expected. |
-| `test_attributes_range_skip_rename` | R-1.3.6 | Register type with attributes, verify queryable at runtime. |
-| `test_trait_registration_resolve` | R-1.3.7 | Register Serialize trait for type A, resolve by TypeId, invoke, verify output. |
-| `test_trait_missing_error` | R-1.3.7 | Query unregistered trait, verify clear error. |
-| `test_derive_struct_reflect` | R-1.3.8 | Derive Reflect on struct, verify field access by name and index. |
-| `test_derive_enum_reflect` | R-1.3.8 | Derive Reflect on enum, verify variant access and field access. |
-| `test_derive_skip_attribute` | R-1.3.8a | `#[reflect(skip)]` field absent from reflection. |
-| `test_derive_rename_attribute` | R-1.3.8a | `#[reflect(rename)]` field uses overridden name. |
-| `test_derive_default_attribute` | R-1.3.8a | Missing field during patching receives default. |
-| `test_sub_trait_struct` | R-1.3.9 | Struct downcasts to ReflectStruct, not ReflectEnum. |
-| `test_sub_trait_enum` | R-1.3.9 | Enum downcasts to ReflectEnum, not ReflectStruct. |
-| `test_sub_trait_list` | R-1.3.9 | Vec downcasts to ReflectList with push/pop/len. |
-| `test_sub_trait_map` | R-1.3.9 | HashMap downcasts to ReflectMap with insert/get/remove. |
-| `test_from_reflect_missing_field` | R-1.3.10 | DynamicValue missing one field, FromReflect fills default. |
-| `test_from_reflect_incompatible` | R-1.3.10 | Incompatible DynamicValue returns None. |
-| `test_binary_serialize_mixed_types` | R-1.4.1 | Serialize struct with ints, floats, strings, nested structs. Deserialize and verify equality. |
-| `test_binary_malformed_error` | R-1.4.1a | Feed truncated data, verify error with byte offset. |
-| `test_binary_throughput` | R-1.4.1a | Serialize/deserialize 100k components, verify >= 500 MB/s. |
-| `test_text_roundtrip` | R-1.4.3 | Serialize complex struct to RON, deserialize, verify bit-exact equality. |
-| `test_text_edge_cases` | R-1.4.3 | Empty collections, optional fields, Unicode strings. |
-| `test_schema_version_migration` | R-1.4.4 | Serialize at v1.0.0, deserialize at v1.1.0, verify migration triggered. |
-| `test_migration_chain_3_steps` | R-1.4.5 | v1->v2->v3 chain, verify each step applied in order. |
-| `test_migration_chain_50_steps` | R-1.4.5a | 50-step chain, verify end-to-end success. |
-| `test_migration_missing_step` | R-1.4.5a | Remove one step, verify error identifies the gap. |
-| `test_companion_write_read` | R-1.4.9 | Write 3 blobs (1 compressed, 2 raw), read each, verify hash. |
-| `test_companion_dedup` | R-1.4.9 | Write duplicate blob, verify no additional storage. |
-| `test_companion_append` | R-1.4.9a | Create companion with 2 blobs, append third, verify all readable. |
-| `test_binary_attribute` | R-1.4.10 | `#[binary(compress = "lz4")]` field stored in companion, string inline. |
-| `test_atomic_write_interrupted` | R-1.4.8a | Simulate crash after text but before companion rename. Verify no partial files. |
+| Test                                  | Req      |
+|---------------------------------------|----------|
+| `test_registry_10k_types`             | R-1.3.1a |
+| `test_registry_duplicate_id_error`    | R-1.3.1a |
+| `test_registry_freeze_rejects_insert` | R-1.3.1  |
+| `test_type_descriptor_layout`         | R-1.3.2  |
+| `test_dynamic_move_drop_clone`        | R-1.3.2  |
+| `test_property_path_nested`           | R-1.3.3  |
+| `test_property_path_invalid`          | R-1.3.3a |
+| `test_property_path_perf`             | R-1.3.3a |
+| `test_collection_vec_reflect`         | R-1.3.4  |
+| `test_collection_map_reflect`         | R-1.3.4  |
+| `test_dynamic_value_roundtrip`        | R-1.3.5  |
+| `test_diff_produces_minimal_patch`    | R-1.3.5  |
+| `test_patch_apply_correct`            | R-1.3.5  |
+| `test_attributes_range_skip_rename`   | R-1.3.6  |
+| `test_trait_registration_resolve`     | R-1.3.7  |
+| `test_trait_missing_error`            | R-1.3.7  |
+| `test_derive_struct_reflect`          | R-1.3.8  |
+| `test_derive_enum_reflect`            | R-1.3.8  |
+| `test_derive_skip_attribute`          | R-1.3.8a |
+| `test_derive_rename_attribute`        | R-1.3.8a |
+| `test_derive_default_attribute`       | R-1.3.8a |
+| `test_sub_trait_struct`               | R-1.3.9  |
+| `test_sub_trait_enum`                 | R-1.3.9  |
+| `test_sub_trait_list`                 | R-1.3.9  |
+| `test_sub_trait_map`                  | R-1.3.9  |
+| `test_from_reflect_missing_field`     | R-1.3.10 |
+| `test_from_reflect_incompatible`      | R-1.3.10 |
+| `test_binary_serialize_mixed_types`   | R-1.4.1  |
+| `test_binary_malformed_error`         | R-1.4.1a |
+| `test_binary_throughput`              | R-1.4.1a |
+| `test_text_roundtrip`                 | R-1.4.3  |
+| `test_text_edge_cases`                | R-1.4.3  |
+| `test_schema_version_migration`       | R-1.4.4  |
+| `test_migration_chain_3_steps`        | R-1.4.5  |
+| `test_migration_chain_50_steps`       | R-1.4.5a |
+| `test_migration_missing_step`         | R-1.4.5a |
+| `test_companion_write_read`           | R-1.4.9  |
+| `test_companion_dedup`                | R-1.4.9  |
+| `test_companion_append`               | R-1.4.9a |
+| `test_binary_attribute`               | R-1.4.10 |
+| `test_atomic_write_interrupted`       | R-1.4.8a |
+
+1. **`test_registry_10k_types`** — Register 10,000 types, verify O(1) lookup by ID and name.
+2. **`test_registry_duplicate_id_error`** — Register duplicate TypeId, verify diagnostic error names
+   both types.
+3. **`test_registry_freeze_rejects_insert`** — After freeze(), verify register() panics.
+4. **`test_type_descriptor_layout`** — Register struct, verify size, alignment, field count, offsets
+   match.
+5. **`test_dynamic_move_drop_clone`** — Construct type-erased instance via default_fn, clone, drop
+   both. Custom allocator verifies no leaks.
+6. **`test_property_path_nested`** — Read/write `outer.inner.value` via path API. Verify round-trip.
+7. **`test_property_path_invalid`** — Access nonexistent path, verify error contains path and parent
+   type.
+8. **`test_property_path_perf`** — Access 6-segment path 100k times, verify < 500 ns per access.
+9. **`test_collection_vec_reflect`** — Insert, remove, iterate, index Vec through reflection.
+10. **`test_collection_map_reflect`** — Insert, remove, get HashMap through reflection.
+11. **`test_dynamic_value_roundtrip`** — typed -> DynamicValue -> FromReflect -> verify identical.
+12. **`test_diff_produces_minimal_patch`** — Change one field of a 10-field struct, verify patch has
+    1 op.
+13. **`test_patch_apply_correct`** — Apply patch to typed value, verify result matches expected.
+14. **`test_attributes_range_skip_rename`** — Register type with attributes, verify queryable at
+    runtime.
+15. **`test_trait_registration_resolve`** — Register Serialize trait for type A, resolve by TypeId,
+    invoke, verify output.
+16. **`test_trait_missing_error`** — Query unregistered trait, verify clear error.
+17. **`test_derive_struct_reflect`** — Derive Reflect on struct, verify field access by name and
+    index.
+18. **`test_derive_enum_reflect`** — Derive Reflect on enum, verify variant access and field access.
+19. **`test_derive_skip_attribute`** — `#[reflect(skip)]` field absent from reflection.
+20. **`test_derive_rename_attribute`** — `#[reflect(rename)]` field uses overridden name.
+21. **`test_derive_default_attribute`** — Missing field during patching receives default.
+22. **`test_sub_trait_struct`** — Struct downcasts to ReflectStruct, not ReflectEnum.
+23. **`test_sub_trait_enum`** — Enum downcasts to ReflectEnum, not ReflectStruct.
+24. **`test_sub_trait_list`** — Vec downcasts to ReflectList with push/pop/len.
+25. **`test_sub_trait_map`** — HashMap downcasts to ReflectMap with insert/get/remove.
+26. **`test_from_reflect_missing_field`** — DynamicValue missing one field, FromReflect fills
+    default.
+27. **`test_from_reflect_incompatible`** — Incompatible DynamicValue returns None.
+28. **`test_binary_serialize_mixed_types`** — Serialize struct with ints, floats, strings, nested
+    structs. Deserialize and verify equality.
+29. **`test_binary_malformed_error`** — Feed truncated data, verify error with byte offset.
+30. **`test_binary_throughput`** — Serialize/deserialize 100k components, verify >= 500 MB/s.
+31. **`test_text_roundtrip`** — Serialize complex struct to RON, deserialize, verify bit-exact
+    equality.
+32. **`test_text_edge_cases`** — Empty collections, optional fields, Unicode strings.
+33. **`test_schema_version_migration`** — Serialize at v1.0.0, deserialize at v1.1.0, verify
+    migration triggered.
+34. **`test_migration_chain_3_steps`** — v1->v2->v3 chain, verify each step applied in order.
+35. **`test_migration_chain_50_steps`** — 50-step chain, verify end-to-end success.
+36. **`test_migration_missing_step`** — Remove one step, verify error identifies the gap.
+37. **`test_companion_write_read`** — Write 3 blobs (1 compressed, 2 raw), read each, verify hash.
+38. **`test_companion_dedup`** — Write duplicate blob, verify no additional storage.
+39. **`test_companion_append`** — Create companion with 2 blobs, append third, verify all readable.
+40. **`test_binary_attribute`** — `#[binary(compress = "lz4")]` field stored in companion, string
+    inline.
+41. **`test_atomic_write_interrupted`** — Simulate crash after text but before companion rename.
+    Verify no partial files.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_registry_concurrent_reads` | R-1.3.1 | Register 500 types, freeze, read from 16 threads. ThreadSanitizer clean. |
-| `test_scene_roundtrip_1k_entities` | R-1.4.7 | 1,000 entities with hierarchy. Serialize, deserialize, verify full state. |
-| `test_scene_merge_no_collisions` | R-1.4.7 | Deserialize same scene twice into one world, verify remapped IDs. |
-| `test_mixed_format_scene` | R-1.4.8 | Scene with transforms inline and mesh vertices in binary companion. |
-| `test_asset_handle_resolution` | R-1.4.6 | Serialize asset handle, deserialize in fresh world, verify load request. |
-| `test_streaming_deser_mobile` | R-1.4.7 | 64 MB scene with 1 MB staging buffer, verify no memory spike. |
-| `test_zero_copy_256mb` | R-1.4.2 | Memory-map 256 MB asset, verify zero allocation beyond mmap. |
+| Test                               | Req     |
+|------------------------------------|---------|
+| `test_registry_concurrent_reads`   | R-1.3.1 |
+| `test_scene_roundtrip_1k_entities` | R-1.4.7 |
+| `test_scene_merge_no_collisions`   | R-1.4.7 |
+| `test_mixed_format_scene`          | R-1.4.8 |
+| `test_asset_handle_resolution`     | R-1.4.6 |
+| `test_streaming_deser_mobile`      | R-1.4.7 |
+| `test_zero_copy_256mb`             | R-1.4.2 |
+
+1. **`test_registry_concurrent_reads`** — Register 500 types, freeze, read from 16 threads.
+   ThreadSanitizer clean.
+2. **`test_scene_roundtrip_1k_entities`** — 1,000 entities with hierarchy. Serialize, deserialize,
+   verify full state.
+3. **`test_scene_merge_no_collisions`** — Deserialize same scene twice into one world, verify
+   remapped IDs.
+4. **`test_mixed_format_scene`** — Scene with transforms inline and mesh vertices in binary
+   companion.
+5. **`test_asset_handle_resolution`** — Serialize asset handle, deserialize in fresh world, verify
+   load request.
+6. **`test_streaming_deser_mobile`** — 64 MB scene with 1 MB staging buffer, verify no memory spike.
+7. **`test_zero_copy_256mb`** — Memory-map 256 MB asset, verify zero allocation beyond mmap.
 
 ### Benchmarks
 

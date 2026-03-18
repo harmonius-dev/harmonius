@@ -8,18 +8,29 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.6.1 | R-13.6.1 | Quest graph as DAG of typed objectives with conditional edges |
-| F-13.6.2 | R-13.6.2 | Prerequisite gating with composable boolean expressions |
-| F-13.6.3 | R-13.6.3 | Per-player quest journal with event-driven UI updates |
-| F-13.6.4 | R-13.6.4 | Branching dialogue trees with conditions and side effects |
-| F-13.6.5a | R-13.6.5a | Conversation camera framing and multi-NPC switching |
-| F-13.6.5b | R-13.6.5b | Gameplay state suppression during conversations |
-| F-13.6.5c | R-13.6.5c | Conversation interruption, state restore, and resumption |
-| F-13.6.6 | R-13.6.6 | Reward tables with level-scaling and group loot rules |
-| F-13.6.7a | R-13.6.7a | Server-driven world events altering zone state |
-| F-13.6.7b | R-13.6.7b | Per-player quest phasing via sub-level streaming |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-13.6.1  | R-13.6.1    |
+| F-13.6.2  | R-13.6.2    |
+| F-13.6.3  | R-13.6.3    |
+| F-13.6.4  | R-13.6.4    |
+| F-13.6.5a | R-13.6.5a   |
+| F-13.6.5b | R-13.6.5b   |
+| F-13.6.5c | R-13.6.5c   |
+| F-13.6.6  | R-13.6.6    |
+| F-13.6.7a | R-13.6.7a   |
+| F-13.6.7b | R-13.6.7b   |
+
+1. **F-13.6.1** — Quest graph as DAG of typed objectives with conditional edges
+2. **F-13.6.2** — Prerequisite gating with composable boolean expressions
+3. **F-13.6.3** — Per-player quest journal with event-driven UI updates
+4. **F-13.6.4** — Branching dialogue trees with conditions and side effects
+5. **F-13.6.5a** — Conversation camera framing and multi-NPC switching
+6. **F-13.6.5b** — Gameplay state suppression during conversations
+7. **F-13.6.5c** — Conversation interruption, state restore, and resumption
+8. **F-13.6.6** — Reward tables with level-scaling and group loot rules
+9. **F-13.6.7a** — Server-driven world events altering zone state
+10. **F-13.6.7b** — Per-player quest phasing via sub-level streaming
 
 ## Overview
 
@@ -1008,61 +1019,144 @@ fn distribute_rewards_impl(
 
 ## Platform Considerations
 
-| Aspect | Detail |
-|--------|--------|
-| Serialization | Quest graphs and dialogue trees use RON for textual authoring, binary for shipping builds. |
-| Reflection | All quest/dialogue types derive `Reflect` for editor property panels and save/load. |
-| Server authority | Quest state transitions and reward grants are validated server-side. Client sends requests; server evaluates and responds. |
-| Async I/O | Dialogue tree and quest graph assets are loaded via the async I/O reactor. Loading does not block the main thread. |
-| Localization | `LocalizedString` references a key in the localization database. Text and audio resolve per-locale at display time. |
-| Save/load | `QuestJournal`, `QuestState`, and `ConversationInterrupted` components are serialized via the save system. |
-| No-code | Both editors compile to serialized assets. No user-written code. Quest conditions and dialogue branches use the shared `PrerequisiteExpr` type. |
+| Aspect           |
+|------------------|
+| Serialization    |
+| Reflection       |
+| Server authority |
+| Async I/O        |
+| Localization     |
+| Save/load        |
+| No-code          |
+
+1. **Serialization** — Quest graphs and dialogue trees use RON for textual authoring, binary for
+   shipping builds.
+2. **Reflection** — All quest/dialogue types derive `Reflect` for editor property panels and
+   save/load.
+3. **Server authority** — Quest state transitions and reward grants are validated server-side.
+   Client sends requests; server evaluates and responds.
+4. **Async I/O** — Dialogue tree and quest graph assets are loaded via the async I/O reactor.
+   Loading does not block the main thread.
+5. **Localization** — `LocalizedString` references a key in the localization database. Text and
+   audio resolve per-locale at display time.
+6. **Save/load** — `QuestJournal`, `QuestState`, and `ConversationInterrupted` components are
+   serialized via the save system.
+7. **No-code** — Both editors compile to serialized assets. No user-written code. Quest conditions
+   and dialogue branches use the shared `PrerequisiteExpr` type.
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_quest_dag_validation_valid` | R-13.6.1 | Construct a valid 5-node DAG and assert `validate()` returns `Ok`. |
-| `test_quest_dag_cycle_detected` | R-13.6.1 | Insert a cycle and assert `CycleDetected` error with the correct cycle path. |
-| `test_quest_dag_orphan_node` | R-13.6.1 | Add a node with no incoming or outgoing edges. Assert `OrphanNode` error. |
-| `test_objective_kill_progress` | R-13.6.1 | Fire a kill event matching the target tag. Assert progress increments by 1. |
-| `test_objective_collect_progress` | R-13.6.1 | Add an item to inventory matching collect objective. Assert progress increments. |
-| `test_prerequisite_and` | R-13.6.2 | `And(LevelAtLeast(10), QuestCompleted(Q1))` — true only when both conditions met. |
-| `test_prerequisite_or` | R-13.6.2 | `Or(HasItem(I1, 1), ReputationAtLeast(F1, 100))` — true when either met. |
-| `test_prerequisite_not` | R-13.6.2 | `Not(QuestCompleted(Q2))` — true when quest not completed, false when completed. |
-| `test_prerequisite_time_window` | R-13.6.2 | `TimeWindow` with start/end dates. Assert true during window, false outside. |
-| `test_prerequisite_lazy_eval` | R-13.6.2 | Assert prerequisites are only evaluated on interaction, not per-frame. |
-| `test_journal_category_filter` | R-13.6.3 | Add quests of mixed categories. Filter by `Daily` and assert correct subset. |
-| `test_journal_search` | R-13.6.3 | Add quests with known names. Search by substring and assert matches. |
-| `test_journal_50_active_quests` | R-13.6.NF1 | Activate 50 quests and verify all track correctly without errors. |
-| `test_dialogue_condition_branch` | R-13.6.4 | Create a 3-branch dialogue with conditions on quest state, rep, and class. Assert correct branch for each condition set. |
-| `test_dialogue_effect_item_grant` | R-13.6.4 | Traverse a dialogue node with `GrantItem` effect. Assert item added to inventory. |
-| `test_dialogue_effect_rep_change` | R-13.6.4 | Traverse a node with `ChangeReputation`. Assert faction rep updated. |
-| `test_dialogue_localization` | R-13.6.4 | Load two locales. Assert distinct text per node per locale. |
-| `test_dialogue_eval_latency` | R-13.6.NF2 | 100-node tree, 20 conditional branches. Assert traversal < 5 ms. |
-| `test_reward_level_scaling` | R-13.6.6 | Grant XP reward with level curve. Assert scaled value matches curve sample. |
-| `test_reward_choice_of_n` | R-13.6.6 | Offer 3 item choices. Select index 1. Assert only that item granted. |
-| `test_reward_transactional` | R-13.6.6 | Interrupt mid-grant. Assert either all or no rewards were applied. |
-| `test_reward_group_loot` | R-13.6.6 | 5-player group completes quest. Assert each receives rewards per loot mode. |
-| `test_conversation_state_suppress` | R-13.6.5b | Start conversation with `Full` suppression. Assert HUD hidden, audio ducked, input suppressed. |
-| `test_conversation_state_restore` | R-13.6.5b | End conversation. Assert HUD, audio, input fully restored. |
-| `test_conversation_interrupt` | R-13.6.5c | Simulate combat during dialogue. Assert gameplay state restored, `ConversationInterrupted` saved. |
-| `test_conversation_resume` | R-13.6.5c | Re-engage NPC after interruption. Assert conversation resumes from saved node. |
+| Test                               | Req        |
+|------------------------------------|------------|
+| `test_quest_dag_validation_valid`  | R-13.6.1   |
+| `test_quest_dag_cycle_detected`    | R-13.6.1   |
+| `test_quest_dag_orphan_node`       | R-13.6.1   |
+| `test_objective_kill_progress`     | R-13.6.1   |
+| `test_objective_collect_progress`  | R-13.6.1   |
+| `test_prerequisite_and`            | R-13.6.2   |
+| `test_prerequisite_or`             | R-13.6.2   |
+| `test_prerequisite_not`            | R-13.6.2   |
+| `test_prerequisite_time_window`    | R-13.6.2   |
+| `test_prerequisite_lazy_eval`      | R-13.6.2   |
+| `test_journal_category_filter`     | R-13.6.3   |
+| `test_journal_search`              | R-13.6.3   |
+| `test_journal_50_active_quests`    | R-13.6.NF1 |
+| `test_dialogue_condition_branch`   | R-13.6.4   |
+| `test_dialogue_effect_item_grant`  | R-13.6.4   |
+| `test_dialogue_effect_rep_change`  | R-13.6.4   |
+| `test_dialogue_localization`       | R-13.6.4   |
+| `test_dialogue_eval_latency`       | R-13.6.NF2 |
+| `test_reward_level_scaling`        | R-13.6.6   |
+| `test_reward_choice_of_n`          | R-13.6.6   |
+| `test_reward_transactional`        | R-13.6.6   |
+| `test_reward_group_loot`           | R-13.6.6   |
+| `test_conversation_state_suppress` | R-13.6.5b  |
+| `test_conversation_state_restore`  | R-13.6.5b  |
+| `test_conversation_interrupt`      | R-13.6.5c  |
+| `test_conversation_resume`         | R-13.6.5c  |
+
+1. **`test_quest_dag_validation_valid`** — Construct a valid 5-node DAG and assert `validate()`
+   returns `Ok`.
+2. **`test_quest_dag_cycle_detected`** — Insert a cycle and assert `CycleDetected` error with the
+   correct cycle path.
+3. **`test_quest_dag_orphan_node`** — Add a node with no incoming or outgoing edges. Assert
+   `OrphanNode` error.
+4. **`test_objective_kill_progress`** — Fire a kill event matching the target tag. Assert progress
+   increments by 1.
+5. **`test_objective_collect_progress`** — Add an item to inventory matching collect objective.
+   Assert progress increments.
+6. **`test_prerequisite_and`** — `And(LevelAtLeast(10), QuestCompleted(Q1))` — true only when both
+   conditions met.
+7. **`test_prerequisite_or`** — `Or(HasItem(I1, 1), ReputationAtLeast(F1, 100))` — true when either
+   met.
+8. **`test_prerequisite_not`** — `Not(QuestCompleted(Q2))` — true when quest not completed, false
+   when completed.
+9. **`test_prerequisite_time_window`** — `TimeWindow` with start/end dates. Assert true during
+   window, false outside.
+10. **`test_prerequisite_lazy_eval`** — Assert prerequisites are only evaluated on interaction, not
+    per-frame.
+11. **`test_journal_category_filter`** — Add quests of mixed categories. Filter by `Daily` and
+    assert correct subset.
+12. **`test_journal_search`** — Add quests with known names. Search by substring and assert matches.
+13. **`test_journal_50_active_quests`** — Activate 50 quests and verify all track correctly without
+    errors.
+14. **`test_dialogue_condition_branch`** — Create a 3-branch dialogue with conditions on quest
+    state, rep, and class. Assert correct branch for each condition set.
+15. **`test_dialogue_effect_item_grant`** — Traverse a dialogue node with `GrantItem` effect. Assert
+    item added to inventory.
+16. **`test_dialogue_effect_rep_change`** — Traverse a node with `ChangeReputation`. Assert faction
+    rep updated.
+17. **`test_dialogue_localization`** — Load two locales. Assert distinct text per node per locale.
+18. **`test_dialogue_eval_latency`** — 100-node tree, 20 conditional branches. Assert traversal < 5
+    ms.
+19. **`test_reward_level_scaling`** — Grant XP reward with level curve. Assert scaled value matches
+    curve sample.
+20. **`test_reward_choice_of_n`** — Offer 3 item choices. Select index 1. Assert only that item
+    granted.
+21. **`test_reward_transactional`** — Interrupt mid-grant. Assert either all or no rewards were
+    applied.
+22. **`test_reward_group_loot`** — 5-player group completes quest. Assert each receives rewards per
+    loot mode.
+23. **`test_conversation_state_suppress`** — Start conversation with `Full` suppression. Assert HUD
+    hidden, audio ducked, input suppressed.
+24. **`test_conversation_state_restore`** — End conversation. Assert HUD, audio, input fully
+    restored.
+25. **`test_conversation_interrupt`** — Simulate combat during dialogue. Assert gameplay state
+    restored, `ConversationInterrupted` saved.
+26. **`test_conversation_resume`** — Re-engage NPC after interruption. Assert conversation resumes
+    from saved node.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_quest_full_lifecycle` | R-13.6.1-6 | Accept quest, complete all objectives, turn in, verify rewards granted and journal updated. |
-| `test_quest_event_propagation` | R-13.6.3 | Advance an objective and verify UI, map markers, and minimap all receive the event within the same frame. |
-| `test_server_rejects_tampered` | R-13.6.1 | Send a forged quest completion from a modified client. Assert server rejects it. |
-| `test_phasing_two_players` | R-13.6.7b | Two players at different quest stages in the same zone. Assert each sees the correct sub-level. |
-| `test_phase_transition_swap` | R-13.6.7b | Advance through a phase boundary. Assert old sub-level unloads and new loads with correct entities. |
-| `test_world_event_broadcast` | R-13.6.7a | Trigger a world event. Assert all connected clients receive the zone state change within 1 second. |
-| `test_disconnect_during_dialogue` | R-13.6.5c | Disconnect during conversation. Reconnect. Assert conversation state preserved for resumption. |
-| `test_camera_multi_speaker` | R-13.6.5a | Start a multi-NPC conversation. Assert camera switches to face each active speaker. |
+| Test                              | Req        |
+|-----------------------------------|------------|
+| `test_quest_full_lifecycle`       | R-13.6.1-6 |
+| `test_quest_event_propagation`    | R-13.6.3   |
+| `test_server_rejects_tampered`    | R-13.6.1   |
+| `test_phasing_two_players`        | R-13.6.7b  |
+| `test_phase_transition_swap`      | R-13.6.7b  |
+| `test_world_event_broadcast`      | R-13.6.7a  |
+| `test_disconnect_during_dialogue` | R-13.6.5c  |
+| `test_camera_multi_speaker`       | R-13.6.5a  |
+
+1. **`test_quest_full_lifecycle`** — Accept quest, complete all objectives, turn in, verify rewards
+   granted and journal updated.
+2. **`test_quest_event_propagation`** — Advance an objective and verify UI, map markers, and minimap
+   all receive the event within the same frame.
+3. **`test_server_rejects_tampered`** — Send a forged quest completion from a modified client.
+   Assert server rejects it.
+4. **`test_phasing_two_players`** — Two players at different quest stages in the same zone. Assert
+   each sees the correct sub-level.
+5. **`test_phase_transition_swap`** — Advance through a phase boundary. Assert old sub-level unloads
+   and new loads with correct entities.
+6. **`test_world_event_broadcast`** — Trigger a world event. Assert all connected clients receive
+   the zone state change within 1 second.
+7. **`test_disconnect_during_dialogue`** — Disconnect during conversation. Reconnect. Assert
+   conversation state preserved for resumption.
+8. **`test_camera_multi_speaker`** — Start a multi-NPC conversation. Assert camera switches to face
+   each active speaker.
 
 ### Benchmarks
 

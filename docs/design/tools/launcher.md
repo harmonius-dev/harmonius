@@ -8,14 +8,21 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.15.1 | R-15.15.1 | Engine version management (install, update, rollback, side-by-side) |
-| F-15.15.2 | R-15.15.2 | Automatic project upgrades via versioned migration scripts |
-| F-15.15.3 | R-15.15.3 | Project browser and creation wizard with genre templates |
-| F-15.15.4 | R-15.15.4 | `.harmonius` project file format and file association |
-| F-15.15.5 | R-15.15.5 | Cross-game preferences and account management |
-| F-15.15.6 | R-15.15.6 | Collaboration setup wizard (Git, LFS, collab server, roles) |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.15.1 | R-15.15.1   |
+| F-15.15.2 | R-15.15.2   |
+| F-15.15.3 | R-15.15.3   |
+| F-15.15.4 | R-15.15.4   |
+| F-15.15.5 | R-15.15.5   |
+| F-15.15.6 | R-15.15.6   |
+
+1. **F-15.15.1** — Engine version management (install, update, rollback, side-by-side)
+2. **F-15.15.2** — Automatic project upgrades via versioned migration scripts
+3. **F-15.15.3** — Project browser and creation wizard with genre templates
+4. **F-15.15.4** — `.harmonius` project file format and file association
+5. **F-15.15.5** — Cross-game preferences and account management
+6. **F-15.15.6** — Collaboration setup wizard (Git, LFS, collab server, roles)
 
 ## Overview
 
@@ -1035,19 +1042,30 @@ tampering.
 
 ### File Association
 
-| Platform | API | Details |
-|----------|-----|---------|
-| macOS | Launch Services (`LSRegisterURL`) | Set `CFBundleDocumentTypes` in Info.plist, register with `LSRegisterURL` via Swift/cxx.rs |
-| Windows | Registry (`HKCU\Software\Classes`) | Create `.harmonius` key, `shell\open\command` pointing to launcher, via `windows-sys` |
-| Linux | XDG MIME | Create `application/x-harmonius.xml` MIME type, install `.desktop` file, run `update-mime-database` |
+| Platform | API                                |
+|----------|------------------------------------|
+| macOS    | Launch Services (`LSRegisterURL`)  |
+| Windows  | Registry (`HKCU\Software\Classes`) |
+| Linux    | XDG MIME                           |
+
+1. **macOS** — Set `CFBundleDocumentTypes` in Info.plist, register with `LSRegisterURL` via
+   Swift/cxx.rs
+2. **Windows** — Create `.harmonius` key, `shell\open\command` pointing to launcher, via
+   `windows-sys`
+3. **Linux** — Create `application/x-harmonius.xml` MIME type, install `.desktop` file, run
+   `update-mime-database`
 
 ### Credential Storage
 
-| Platform | API | Notes |
-|----------|-----|-------|
-| macOS | Security.framework Keychain | `SecItemAdd`/`SecItemCopyMatching` via Swift wrappers through cxx.rs |
-| Windows | Credential Manager | `CredRead`/`CredWrite` via `windows-sys` crate |
-| Linux | libsecret (Secret Service API) | D-Bus org.freedesktop.secrets via C FFI / bindgen |
+| Platform | API                            |
+|----------|--------------------------------|
+| macOS    | Security.framework Keychain    |
+| Windows  | Credential Manager             |
+| Linux    | libsecret (Secret Service API) |
+
+1. **macOS** — `SecItemAdd`/`SecItemCopyMatching` via Swift wrappers through cxx.rs
+2. **Windows** — `CredRead`/`CredWrite` via `windows-sys` crate
+3. **Linux** — D-Bus org.freedesktop.secrets via C FFI / bindgen
 
 ### Version Install Directories
 
@@ -1077,47 +1095,91 @@ libcurl on Linux) wrapped via the `IoReactor`, consistent with [shared-cache.md]
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_version_catalog_parse` | R-15.15.1 | Parse version catalog JSON from the API. |
-| `test_version_install_isolated` | R-15.15.1 | Two installed versions share no files. |
-| `test_version_uninstall_frees_space` | R-15.15.1 | Uninstall removes directory and frees disk. |
-| `test_version_rollback` | R-15.15.1 | Rollback sets active version pointer without re-download. |
-| `test_version_integrity_blake3` | R-15.15.1 | Corrupted download detected via BLAKE3 mismatch. |
-| `test_project_file_roundtrip` | R-15.15.4 | Write and read `.harmonius` TOML produces identical data. |
-| `test_project_file_version_pin` | R-15.15.4 | Engine version pin is correctly stored and read. |
-| `test_migration_incremental` | R-15.15.2 | 1.2 to 1.5 runs three migration scripts in order. |
-| `test_migration_backup_created` | R-15.15.2 | Backup directory created before migration starts. |
-| `test_migration_restore` | R-15.15.2 | Restore from backup produces original project state. |
-| `test_migration_report` | R-15.15.2 | Report lists all changes, warnings, and deprecations. |
-| `test_migration_graph_api` | R-15.15.2 | Deprecated logic graph nodes replaced with new equivalents. |
-| `test_template_instantiate` | R-15.15.3 | Template produces valid project with correct modules. |
-| `test_template_each_genre` | R-15.15.3 | Every genre template (RPG, FPS, RTS, 2D, VR, empty) creates a valid project. |
-| `test_keychain_store_retrieve` | R-15.15.5 | Store and retrieve credential from platform keychain. |
-| `test_keychain_delete` | R-15.15.5 | Delete credential from platform keychain. |
-| `test_account_link_oauth` | R-15.15.5 | OAuth flow produces valid token for each provider. |
-| `test_account_switch` | R-15.15.5 | Switch active account changes which credentials are used. |
-| `test_preference_roundtrip` | R-15.15.5 | Serialize and deserialize preferences without data loss. |
-| `test_collab_wizard_validates` | R-15.15.6 | Wizard rejects invalid server URL with clear error. |
-| `test_collab_team_config_saved` | R-15.15.6 | Team config written to `.harmonius` and readable. |
+| Test                                 | Req       |
+|--------------------------------------|-----------|
+| `test_version_catalog_parse`         | R-15.15.1 |
+| `test_version_install_isolated`      | R-15.15.1 |
+| `test_version_uninstall_frees_space` | R-15.15.1 |
+| `test_version_rollback`              | R-15.15.1 |
+| `test_version_integrity_blake3`      | R-15.15.1 |
+| `test_project_file_roundtrip`        | R-15.15.4 |
+| `test_project_file_version_pin`      | R-15.15.4 |
+| `test_migration_incremental`         | R-15.15.2 |
+| `test_migration_backup_created`      | R-15.15.2 |
+| `test_migration_restore`             | R-15.15.2 |
+| `test_migration_report`              | R-15.15.2 |
+| `test_migration_graph_api`           | R-15.15.2 |
+| `test_template_instantiate`          | R-15.15.3 |
+| `test_template_each_genre`           | R-15.15.3 |
+| `test_keychain_store_retrieve`       | R-15.15.5 |
+| `test_keychain_delete`               | R-15.15.5 |
+| `test_account_link_oauth`            | R-15.15.5 |
+| `test_account_switch`                | R-15.15.5 |
+| `test_preference_roundtrip`          | R-15.15.5 |
+| `test_collab_wizard_validates`       | R-15.15.6 |
+| `test_collab_team_config_saved`      | R-15.15.6 |
+
+1. **`test_version_catalog_parse`** — Parse version catalog JSON from the API.
+2. **`test_version_install_isolated`** — Two installed versions share no files.
+3. **`test_version_uninstall_frees_space`** — Uninstall removes directory and frees disk.
+4. **`test_version_rollback`** — Rollback sets active version pointer without re-download.
+5. **`test_version_integrity_blake3`** — Corrupted download detected via BLAKE3 mismatch.
+6. **`test_project_file_roundtrip`** — Write and read `.harmonius` TOML produces identical data.
+7. **`test_project_file_version_pin`** — Engine version pin is correctly stored and read.
+8. **`test_migration_incremental`** — 1.2 to 1.5 runs three migration scripts in order.
+9. **`test_migration_backup_created`** — Backup directory created before migration starts.
+10. **`test_migration_restore`** — Restore from backup produces original project state.
+11. **`test_migration_report`** — Report lists all changes, warnings, and deprecations.
+12. **`test_migration_graph_api`** — Deprecated logic graph nodes replaced with new equivalents.
+13. **`test_template_instantiate`** — Template produces valid project with correct modules.
+14. **`test_template_each_genre`** — Every genre template (RPG, FPS, RTS, 2D, VR, empty) creates a
+    valid project.
+15. **`test_keychain_store_retrieve`** — Store and retrieve credential from platform keychain.
+16. **`test_keychain_delete`** — Delete credential from platform keychain.
+17. **`test_account_link_oauth`** — OAuth flow produces valid token for each provider.
+18. **`test_account_switch`** — Switch active account changes which credentials are used.
+19. **`test_preference_roundtrip`** — Serialize and deserialize preferences without data loss.
+20. **`test_collab_wizard_validates`** — Wizard rejects invalid server URL with clear error.
+21. **`test_collab_team_config_saved`** — Team config written to `.harmonius` and readable.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_install_and_launch` | R-15.15.1 | Install a version, launch editor, verify it starts. |
-| `test_side_by_side_versions` | R-15.15.1 | Install two versions, verify both are independently functional. |
-| `test_auto_update_macos` | R-15.15.1 | Sparkle update flow on macOS end-to-end. |
-| `test_auto_update_windows` | R-15.15.1 | WinSparkle update flow on Windows end-to-end. |
-| `test_auto_update_linux` | R-15.15.1 | AppImage delta update on Linux end-to-end. |
-| `test_file_association_macos` | R-15.15.4 | Register, double-click `.harmonius` file, verify launcher opens. |
-| `test_file_association_windows` | R-15.15.4 | Register, double-click `.harmonius` file, verify launcher opens. |
-| `test_file_association_linux` | R-15.15.4 | Register with XDG MIME, verify `xdg-open` launches correctly. |
-| `test_migration_full_pipeline` | R-15.15.2 | Migrate a real project across 3 versions, verify assets cook. |
-| `test_preference_sync_two_machines` | R-15.15.5 | Upload prefs from machine A, download on machine B, verify match. |
-| `test_keychain_per_platform` | R-15.15.5 | Keychain works on macOS (Keychain), Windows (CredMgr), Linux (libsecret). |
-| `test_collab_wizard_full_flow` | R-15.15.6 | Run wizard, verify Git, LFS, collab server all configured. |
-| `test_collab_config_inherited` | R-15.15.6 | Clone repo, verify team config inherited from `.harmonius` file. |
+| Test                                | Req       |
+|-------------------------------------|-----------|
+| `test_install_and_launch`           | R-15.15.1 |
+| `test_side_by_side_versions`        | R-15.15.1 |
+| `test_auto_update_macos`            | R-15.15.1 |
+| `test_auto_update_windows`          | R-15.15.1 |
+| `test_auto_update_linux`            | R-15.15.1 |
+| `test_file_association_macos`       | R-15.15.4 |
+| `test_file_association_windows`     | R-15.15.4 |
+| `test_file_association_linux`       | R-15.15.4 |
+| `test_migration_full_pipeline`      | R-15.15.2 |
+| `test_preference_sync_two_machines` | R-15.15.5 |
+| `test_keychain_per_platform`        | R-15.15.5 |
+| `test_collab_wizard_full_flow`      | R-15.15.6 |
+| `test_collab_config_inherited`      | R-15.15.6 |
+
+1. **`test_install_and_launch`** — Install a version, launch editor, verify it starts.
+2. **`test_side_by_side_versions`** — Install two versions, verify both are independently
+   functional.
+3. **`test_auto_update_macos`** — Sparkle update flow on macOS end-to-end.
+4. **`test_auto_update_windows`** — WinSparkle update flow on Windows end-to-end.
+5. **`test_auto_update_linux`** — AppImage delta update on Linux end-to-end.
+6. **`test_file_association_macos`** — Register, double-click `.harmonius` file, verify launcher
+   opens.
+7. **`test_file_association_windows`** — Register, double-click `.harmonius` file, verify launcher
+   opens.
+8. **`test_file_association_linux`** — Register with XDG MIME, verify `xdg-open` launches correctly.
+9. **`test_migration_full_pipeline`** — Migrate a real project across 3 versions, verify assets
+   cook.
+10. **`test_preference_sync_two_machines`** — Upload prefs from machine A, download on machine B,
+    verify match.
+11. **`test_keychain_per_platform`** — Keychain works on macOS (Keychain), Windows (CredMgr), Linux
+    (libsecret).
+12. **`test_collab_wizard_full_flow`** — Run wizard, verify Git, LFS, collab server all configured.
+13. **`test_collab_config_inherited`** — Clone repo, verify team config inherited from `.harmonius`
+    file.
 
 ### Benchmarks
 

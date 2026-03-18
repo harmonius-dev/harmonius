@@ -9,33 +9,55 @@
 
 ### Device Abstraction (R-6.1)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-6.1.1 | R-6.1.1 | Keyboard press, release, repeat with scancode and keycode |
-| F-6.1.2 | R-6.1.2 | Mouse button, motion, scroll with sub-pixel deltas |
-| F-6.1.3 | R-6.1.3 | Unified gamepad over XInput, DualSense, Switch Pro |
-| F-6.1.4 | R-6.1.4 | Multi-touch and pen with pressure normalization |
-| F-6.1.5 | R-6.1.5 | Device hot-plug detection and enumeration |
-| R-6.1.NF1 | -- | OS-to-action pipeline under 1 ms p99 |
-| R-6.1.NF2 | -- | Device enumeration within 5 ms startup, 2 ms hot-plug |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-6.1.1   | R-6.1.1     |
+| F-6.1.2   | R-6.1.2     |
+| F-6.1.3   | R-6.1.3     |
+| F-6.1.4   | R-6.1.4     |
+| F-6.1.5   | R-6.1.5     |
+| R-6.1.NF1 | --          |
+| R-6.1.NF2 | --          |
+
+1. **F-6.1.1** — Keyboard press, release, repeat with scancode and keycode
+2. **F-6.1.2** — Mouse button, motion, scroll with sub-pixel deltas
+3. **F-6.1.3** — Unified gamepad over XInput, DualSense, Switch Pro
+4. **F-6.1.4** — Multi-touch and pen with pressure normalization
+5. **F-6.1.5** — Device hot-plug detection and enumeration
+6. **R-6.1.NF1** — OS-to-action pipeline under 1 ms p99
+7. **R-6.1.NF2** — Device enumeration within 5 ms startup, 2 ms hot-plug
 
 ### Action Mapping (R-6.2)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-6.2.1 | R-6.2.1 | Typed actions: bool, axis 1D, axis 2D, axis 3D |
-| F-6.2.2 | R-6.2.2 | Mapping contexts with priority stacking |
-| F-6.2.3 | R-6.2.3 | Modifier chains: dead zone, curve, swizzle, negate, scalar |
-| F-6.2.4 | R-6.2.4 | Trigger conditions: pressed, released, hold, tap, pulse, chord, combo |
-| F-6.2.5 | R-6.2.5 | Runtime rebinding with conflict detection |
-| F-6.2.6 | R-6.2.6 | Platform-aware button glyph resolution |
-| F-6.2.7 | R-6.2.7 | Input recording and deterministic playback |
-| F-6.2.8 | R-6.2.8 | Combo input trees and directional sequences |
-| F-6.2.9 | R-6.2.9 | Input buffering and ability cancel windows |
-| F-6.2.10 | R-6.2.10 | Smoothing, acceleration, aim assist |
-| F-6.2.11 | R-6.2.11 | Controller-driven UI interaction |
-| R-6.2.NF1 | -- | 128 actions evaluated in under 0.2 ms per frame |
-| R-6.2.NF2 | -- | Rebinding persisted within 100 ms, restored within 50 ms |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-6.2.1   | R-6.2.1     |
+| F-6.2.2   | R-6.2.2     |
+| F-6.2.3   | R-6.2.3     |
+| F-6.2.4   | R-6.2.4     |
+| F-6.2.5   | R-6.2.5     |
+| F-6.2.6   | R-6.2.6     |
+| F-6.2.7   | R-6.2.7     |
+| F-6.2.8   | R-6.2.8     |
+| F-6.2.9   | R-6.2.9     |
+| F-6.2.10  | R-6.2.10    |
+| F-6.2.11  | R-6.2.11    |
+| R-6.2.NF1 | --          |
+| R-6.2.NF2 | --          |
+
+1. **F-6.2.1** — Typed actions: bool, axis 1D, axis 2D, axis 3D
+2. **F-6.2.2** — Mapping contexts with priority stacking
+3. **F-6.2.3** — Modifier chains: dead zone, curve, swizzle, negate, scalar
+4. **F-6.2.4** — Trigger conditions: pressed, released, hold, tap, pulse, chord, combo
+5. **F-6.2.5** — Runtime rebinding with conflict detection
+6. **F-6.2.6** — Platform-aware button glyph resolution
+7. **F-6.2.7** — Input recording and deterministic playback
+8. **F-6.2.8** — Combo input trees and directional sequences
+9. **F-6.2.9** — Input buffering and ability cancel windows
+10. **F-6.2.10** — Smoothing, acceleration, aim assist
+11. **F-6.2.11** — Controller-driven UI interaction
+12. **R-6.2.NF1** — 128 actions evaluated in under 0.2 ms per frame
+13. **R-6.2.NF2** — Rebinding persisted within 100 ms, restored within 50 ms
 
 ## Overview
 
@@ -1854,43 +1876,78 @@ Each trigger type follows a state machine:
 
 ### Keyboard
 
-| Platform | API | Crate / FFI | Notes |
-|----------|-----|-------------|-------|
-| Windows | `WM_KEYDOWN`, `WM_KEYUP`, `MapVirtualKey` | `windows-sys` | Scancodes from `lParam` bits 16-23 |
-| macOS | `IOHIDManager` key events | C++ wrapper via `cxx` | USB HID usage codes are native scancodes |
-| Linux | `evdev` `EV_KEY` events | `evdev` crate or C FFI via `bindgen` | `input_event.code` = Linux scancode, convert to USB HID |
+| Platform | Crate / FFI                          |
+|----------|--------------------------------------|
+| Windows  | `windows-sys`                        |
+| macOS    | C++ wrapper via `cxx`                |
+| Linux    | `evdev` crate or C FFI via `bindgen` |
+
+1. **Windows** — `WM_KEYDOWN`, `WM_KEYUP`, `MapVirtualKey`
+   - **Notes:** Scancodes from `lParam` bits 16-23
+2. **macOS** — `IOHIDManager` key events
+   - **Notes:** USB HID usage codes are native scancodes
+3. **Linux** — `evdev` `EV_KEY` events
+   - **Notes:** `input_event.code` = Linux scancode, convert to USB HID
 
 ### Mouse
 
-| Platform | API | Crate / FFI | Notes |
-|----------|-----|-------------|-------|
-| Windows | `WM_INPUT` (raw input), `RAWINPUTDEVICE` | `windows-sys` | Sub-pixel deltas; must register for raw input at init |
-| macOS | `CGEvent` with `kCGMouseEventDeltaX/Y` | C++ wrapper via `cxx` | Continuous scroll via `kCGScrollWheelEventFixedPtDeltaAxis1` |
-| Linux | `evdev` `EV_REL` (REL_X, REL_Y, REL_WHEEL) | `evdev` crate or `bindgen` | No sub-pixel; raw integer deltas |
+| Platform | Crate / FFI                |
+|----------|----------------------------|
+| Windows  | `windows-sys`              |
+| macOS    | C++ wrapper via `cxx`      |
+| Linux    | `evdev` crate or `bindgen` |
+
+1. **Windows** — `WM_INPUT` (raw input), `RAWINPUTDEVICE`
+   - **Notes:** Sub-pixel deltas; must register for raw input at init
+2. **macOS** — `CGEvent` with `kCGMouseEventDeltaX/Y`
+   - **Notes:** Continuous scroll via `kCGScrollWheelEventFixedPtDeltaAxis1`
+3. **Linux** — `evdev` `EV_REL` (REL_X, REL_Y, REL_WHEEL)
+   - **Notes:** No sub-pixel; raw integer deltas
 
 ### Gamepad
 
-| Platform | API | Crate / FFI | Notes |
-|----------|-----|-------------|-------|
-| Windows | XInput (`XInputGetState`), Windows.Gaming.Input | `windows-sys` | XInput for Xbox; WGI for DualSense/Switch via HID |
-| macOS | `GCController` | Swift wrapper via `cxx` | Supports Xbox, DualSense, Switch Pro natively on macOS 11+ |
-| Linux | `evdev` gamepad events | `evdev` crate or `bindgen` | Manual HID report parsing for DualSense motion data |
+| Platform | Crate / FFI                |
+|----------|----------------------------|
+| Windows  | `windows-sys`              |
+| macOS    | Swift wrapper via `cxx`    |
+| Linux    | `evdev` crate or `bindgen` |
+
+1. **Windows** — XInput (`XInputGetState`), Windows.Gaming.Input
+   - **Notes:** XInput for Xbox; WGI for DualSense/Switch via HID
+2. **macOS** — `GCController`
+   - **Notes:** Supports Xbox, DualSense, Switch Pro natively on macOS 11+
+3. **Linux** — `evdev` gamepad events
+   - **Notes:** Manual HID report parsing for DualSense motion data
 
 ### Touch and Pen
 
-| Platform | API | Crate / FFI | Notes |
-|----------|-----|-------------|-------|
-| Windows | `WM_POINTER` (Windows Ink) | `windows-sys` | Unified touch and pen; pressure via `pointerInfo` |
-| macOS | `NSTouch`, `NSEvent` tablet events | Swift wrapper via `cxx` | Pressure from `NSEvent.pressure`; tilt from `NSEvent.tilt` |
-| Linux | `libinput` multitouch slots, tablet tool events | C FFI via `bindgen` | Pressure normalization from device-specific ranges |
+| Platform | Crate / FFI             |
+|----------|-------------------------|
+| Windows  | `windows-sys`           |
+| macOS    | Swift wrapper via `cxx` |
+| Linux    | C FFI via `bindgen`     |
+
+1. **Windows** — `WM_POINTER` (Windows Ink)
+   - **Notes:** Unified touch and pen; pressure via `pointerInfo`
+2. **macOS** — `NSTouch`, `NSEvent` tablet events
+   - **Notes:** Pressure from `NSEvent.pressure`; tilt from `NSEvent.tilt`
+3. **Linux** — `libinput` multitouch slots, tablet tool events
+   - **Notes:** Pressure normalization from device-specific ranges
 
 ### Device Hot-Plug
 
-| Platform | API | Crate / FFI | Notes |
-|----------|-----|-------------|-------|
-| Windows | `WM_DEVICECHANGE`, `RegisterDeviceNotification` | `windows-sys` | Runs on window message pump thread |
-| macOS | `IOHIDManager` matching/removal callbacks | C++ wrapper via `cxx` | Callbacks routed to controlled GCD queue, drained at poll point |
-| Linux | `udev` monitor or `inotify` on `/dev/input/` | C FFI via `bindgen` | Background task polls udev fd via io_uring |
+| Platform | Crate / FFI           |
+|----------|-----------------------|
+| Windows  | `windows-sys`         |
+| macOS    | C++ wrapper via `cxx` |
+| Linux    | C FFI via `bindgen`   |
+
+1. **Windows** — `WM_DEVICECHANGE`, `RegisterDeviceNotification`
+   - **Notes:** Runs on window message pump thread
+2. **macOS** — `IOHIDManager` matching/removal callbacks
+   - **Notes:** Callbacks routed to controlled GCD queue, drained at poll point
+3. **Linux** — `udev` monitor or `inotify` on `/dev/input/`
+   - **Notes:** Background task polls udev fd via io_uring
 
 ### Mobile Platforms
 
@@ -1935,67 +1992,141 @@ All platforms normalize to USB HID usage codes:
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_scancode_normalization_win` | R-6.1.1 | All 104 Win32 scancodes map to correct USB HID codes. |
-| `test_scancode_normalization_linux` | R-6.1.1 | All 104 Linux evdev codes map to correct USB HID codes. |
-| `test_scancode_layout_independence` | R-6.1.1 | Same physical key on QWERTY and AZERTY produces same scancode, different keycode. |
-| `test_mouse_dpi_normalization` | R-6.1.2 | Delta values are scale-normalized across 100% and 200% DPI. |
-| `test_scroll_normalization` | R-6.1.2 | Trackpad continuous scroll and discrete mouse scroll produce equivalent axis values. |
-| `test_gamepad_button_mapping` | R-6.1.3 | Xbox South=A, PlayStation South=Cross, Switch South=B all map to GamepadButton::South. |
-| `test_gamepad_capability_query` | R-6.1.3 | DualSense reports gyro=true, Xbox reports gyro=false. |
-| `test_madgwick_orientation` | R-6.1.3 | Madgwick filter produces correct quaternion from known gyro/accel inputs. |
-| `test_touch_pressure_normalization` | R-6.1.4 | All backends produce pressure in [0.0, 1.0]. |
-| `test_touch_10_contacts` | R-6.1.4 | 10 simultaneous contacts tracked with correct IDs. |
-| `test_action_type_bool` | R-6.2.1 | Boolean action fires true/false from keyboard, gamepad, and touch. |
-| `test_action_type_axis2d` | R-6.2.1 | Axis2D action produces Vec2 from stick, WASD composite, and touch joystick. |
-| `test_action_type_mismatch` | R-6.2.1 | Binding axis2D source to bool action returns TypeMismatch error. |
-| `test_context_priority_consume` | R-6.2.2 | Higher-priority context consumes Escape; lower context does not fire. |
-| `test_context_passthrough` | R-6.2.2 | Unbound input in top context passes to lower context. |
-| `test_deadzone_radial` | R-6.2.3 | Input magnitude 0.10 with 0.15 threshold produces (0,0). Input 0.50 remaps correctly. |
-| `test_deadzone_axial` | R-6.2.3 | Each axis zeroed independently below its threshold. |
-| `test_response_curve_exponential` | R-6.2.3 | Exponential curve with exponent 2.0 produces v^2 output. |
-| `test_modifier_chain_order` | R-6.2.3 | Dead zone -> curve -> scalar 2.0 produces correct composed output. |
-| `test_trigger_pressed` | R-6.2.4 | Pressed fires on key-down frame only. |
-| `test_trigger_released` | R-6.2.4 | Released fires on key-up frame only. |
-| `test_trigger_hold` | R-6.2.4 | Hold fires after exactly the configured duration. |
-| `test_trigger_tap` | R-6.2.4 | Tap fires only if release is within threshold. |
-| `test_trigger_pulse` | R-6.2.4 | Pulse fires at each interval while held. |
-| `test_trigger_chord` | R-6.2.4 | Chord fires when all inputs active within window. |
-| `test_trigger_combo` | R-6.2.4 | Combo fires when inputs arrive in order within window. |
-| `test_rebind_success` | R-6.2.5 | Rebind action to new key succeeds. |
-| `test_rebind_conflict` | R-6.2.5 | Rebind to occupied key returns Conflict. |
-| `test_rebind_reserved` | R-6.2.5 | Rebind to PS button returns ReservedInput. |
-| `test_rebind_swap_resolution` | R-6.2.5 | Swap resolution correctly exchanges bindings. |
-| `test_glyph_xbox` | R-6.2.6 | Action bound to GamepadButton::South resolves to Xbox A glyph. |
-| `test_glyph_playstation` | R-6.2.6 | Same action resolves to PlayStation Cross glyph. |
-| `test_glyph_device_switch` | R-6.2.6 | Switching active device invalidates cache and resolves new glyphs. |
-| `test_combo_qcf` | R-6.2.8 | Down -> Down-Forward -> Forward -> Punch fires within window. |
-| `test_combo_timeout` | R-6.2.8 | Correct direction but exceeded window resets to root. |
-| `test_combo_cross_device` | R-6.2.8 | Stick, D-pad, and WASD produce identical combo results. |
-| `test_buffer_consume` | R-6.2.9 | Buffered dodge executes at cancel window start frame. |
-| `test_buffer_priority` | R-6.2.9 | Dodge beats attack when both buffered. |
-| `test_buffer_expiry` | R-6.2.9 | Expired buffer does not execute. |
-| `test_smoothing_reduces_jitter` | R-6.2.10 | 50 ms smoothing reduces variance by >= 80%. |
-| `test_acceleration_scaling` | R-6.2.10 | Max velocity input produces 2x output with 2x multiplier. |
-| `test_aim_magnetism` | R-6.2.10 | Crosshair deflects toward target, does not deflect with no target. |
+| Test                                | Req      |
+|-------------------------------------|----------|
+| `test_scancode_normalization_win`   | R-6.1.1  |
+| `test_scancode_normalization_linux` | R-6.1.1  |
+| `test_scancode_layout_independence` | R-6.1.1  |
+| `test_mouse_dpi_normalization`      | R-6.1.2  |
+| `test_scroll_normalization`         | R-6.1.2  |
+| `test_gamepad_button_mapping`       | R-6.1.3  |
+| `test_gamepad_capability_query`     | R-6.1.3  |
+| `test_madgwick_orientation`         | R-6.1.3  |
+| `test_touch_pressure_normalization` | R-6.1.4  |
+| `test_touch_10_contacts`            | R-6.1.4  |
+| `test_action_type_bool`             | R-6.2.1  |
+| `test_action_type_axis2d`           | R-6.2.1  |
+| `test_action_type_mismatch`         | R-6.2.1  |
+| `test_context_priority_consume`     | R-6.2.2  |
+| `test_context_passthrough`          | R-6.2.2  |
+| `test_deadzone_radial`              | R-6.2.3  |
+| `test_deadzone_axial`               | R-6.2.3  |
+| `test_response_curve_exponential`   | R-6.2.3  |
+| `test_modifier_chain_order`         | R-6.2.3  |
+| `test_trigger_pressed`              | R-6.2.4  |
+| `test_trigger_released`             | R-6.2.4  |
+| `test_trigger_hold`                 | R-6.2.4  |
+| `test_trigger_tap`                  | R-6.2.4  |
+| `test_trigger_pulse`                | R-6.2.4  |
+| `test_trigger_chord`                | R-6.2.4  |
+| `test_trigger_combo`                | R-6.2.4  |
+| `test_rebind_success`               | R-6.2.5  |
+| `test_rebind_conflict`              | R-6.2.5  |
+| `test_rebind_reserved`              | R-6.2.5  |
+| `test_rebind_swap_resolution`       | R-6.2.5  |
+| `test_glyph_xbox`                   | R-6.2.6  |
+| `test_glyph_playstation`            | R-6.2.6  |
+| `test_glyph_device_switch`          | R-6.2.6  |
+| `test_combo_qcf`                    | R-6.2.8  |
+| `test_combo_timeout`                | R-6.2.8  |
+| `test_combo_cross_device`           | R-6.2.8  |
+| `test_buffer_consume`               | R-6.2.9  |
+| `test_buffer_priority`              | R-6.2.9  |
+| `test_buffer_expiry`                | R-6.2.9  |
+| `test_smoothing_reduces_jitter`     | R-6.2.10 |
+| `test_acceleration_scaling`         | R-6.2.10 |
+| `test_aim_magnetism`                | R-6.2.10 |
+
+1. **`test_scancode_normalization_win`** — All 104 Win32 scancodes map to correct USB HID codes.
+2. **`test_scancode_normalization_linux`** — All 104 Linux evdev codes map to correct USB HID codes.
+3. **`test_scancode_layout_independence`** — Same physical key on QWERTY and AZERTY produces same
+   scancode, different keycode.
+4. **`test_mouse_dpi_normalization`** — Delta values are scale-normalized across 100% and 200% DPI.
+5. **`test_scroll_normalization`** — Trackpad continuous scroll and discrete mouse scroll produce
+   equivalent axis values.
+6. **`test_gamepad_button_mapping`** — Xbox South=A, PlayStation South=Cross, Switch South=B all map
+   to GamepadButton::South.
+7. **`test_gamepad_capability_query`** — DualSense reports gyro=true, Xbox reports gyro=false.
+8. **`test_madgwick_orientation`** — Madgwick filter produces correct quaternion from known
+   gyro/accel inputs.
+9. **`test_touch_pressure_normalization`** — All backends produce pressure in [0.0, 1.0].
+10. **`test_touch_10_contacts`** — 10 simultaneous contacts tracked with correct IDs.
+11. **`test_action_type_bool`** — Boolean action fires true/false from keyboard, gamepad, and touch.
+12. **`test_action_type_axis2d`** — Axis2D action produces Vec2 from stick, WASD composite, and
+    touch joystick.
+13. **`test_action_type_mismatch`** — Binding axis2D source to bool action returns TypeMismatch
+    error.
+14. **`test_context_priority_consume`** — Higher-priority context consumes Escape; lower context
+    does not fire.
+15. **`test_context_passthrough`** — Unbound input in top context passes to lower context.
+16. **`test_deadzone_radial`** — Input magnitude 0.10 with 0.15 threshold produces (0,0). Input 0.50
+    remaps correctly.
+17. **`test_deadzone_axial`** — Each axis zeroed independently below its threshold.
+18. **`test_response_curve_exponential`** — Exponential curve with exponent 2.0 produces v^2 output.
+19. **`test_modifier_chain_order`** — Dead zone -> curve -> scalar 2.0 produces correct composed
+    output.
+20. **`test_trigger_pressed`** — Pressed fires on key-down frame only.
+21. **`test_trigger_released`** — Released fires on key-up frame only.
+22. **`test_trigger_hold`** — Hold fires after exactly the configured duration.
+23. **`test_trigger_tap`** — Tap fires only if release is within threshold.
+24. **`test_trigger_pulse`** — Pulse fires at each interval while held.
+25. **`test_trigger_chord`** — Chord fires when all inputs active within window.
+26. **`test_trigger_combo`** — Combo fires when inputs arrive in order within window.
+27. **`test_rebind_success`** — Rebind action to new key succeeds.
+28. **`test_rebind_conflict`** — Rebind to occupied key returns Conflict.
+29. **`test_rebind_reserved`** — Rebind to PS button returns ReservedInput.
+30. **`test_rebind_swap_resolution`** — Swap resolution correctly exchanges bindings.
+31. **`test_glyph_xbox`** — Action bound to GamepadButton::South resolves to Xbox A glyph.
+32. **`test_glyph_playstation`** — Same action resolves to PlayStation Cross glyph.
+33. **`test_glyph_device_switch`** — Switching active device invalidates cache and resolves new
+    glyphs.
+34. **`test_combo_qcf`** — Down -> Down-Forward -> Forward -> Punch fires within window.
+35. **`test_combo_timeout`** — Correct direction but exceeded window resets to root.
+36. **`test_combo_cross_device`** — Stick, D-pad, and WASD produce identical combo results.
+37. **`test_buffer_consume`** — Buffered dodge executes at cancel window start frame.
+38. **`test_buffer_priority`** — Dodge beats attack when both buffered.
+39. **`test_buffer_expiry`** — Expired buffer does not execute.
+40. **`test_smoothing_reduces_jitter`** — 50 ms smoothing reduces variance by >= 80%.
+41. **`test_acceleration_scaling`** — Max velocity input produces 2x output with 2x multiplier.
+42. **`test_aim_magnetism`** — Crosshair deflects toward target, does not deflect with no target.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_hotplug_connect` | R-6.1.5 | Connect gamepad, assert DeviceConnected event within one frame. |
-| `test_hotplug_disconnect` | R-6.1.5 | Disconnect gamepad mid-gameplay, assert DeviceDisconnected event and no frame hitch. |
-| `test_hotplug_rapid_cycles` | R-6.1.5 | Connect/disconnect 10 times rapidly; no crashes, no leaked device slots. |
-| `test_cross_platform_keyboard` | R-6.1.1 | End-to-end keyboard capture on each platform produces identical scancodes. |
-| `test_cross_platform_gamepad` | R-6.1.3 | End-to-end gamepad capture on each platform produces identical button/axis values. |
-| `test_full_pipeline_latency` | R-6.1.NF1 | Inject timestamped OS event, measure delta to ActionState write. Assert p99 < 1 ms over 10k events. |
-| `test_enumeration_speed` | R-6.1.NF2 | Connect 4 devices, assert enumeration within 5 ms. |
-| `test_128_actions_throughput` | R-6.2.NF1 | 128 actions across 8 contexts with 4-stage modifiers. Assert evaluation < 0.2 ms. |
-| `test_rebind_persistence` | R-6.2.NF2 | Rebind 20 actions, measure save < 100 ms. Restart, measure restore < 50 ms. |
-| `test_recording_determinism` | R-6.2.7 | Record 30s input, playback, compare game state hash. |
-| `test_recording_speed_control` | R-6.2.7 | Playback at 0.5x and 2.0x produces same final state. |
-| `test_full_ui_navigability` | R-6.2.11 | Navigate every UI screen using only gamepad. Assert every widget reachable. |
+| Test                           | Req       |
+|--------------------------------|-----------|
+| `test_hotplug_connect`         | R-6.1.5   |
+| `test_hotplug_disconnect`      | R-6.1.5   |
+| `test_hotplug_rapid_cycles`    | R-6.1.5   |
+| `test_cross_platform_keyboard` | R-6.1.1   |
+| `test_cross_platform_gamepad`  | R-6.1.3   |
+| `test_full_pipeline_latency`   | R-6.1.NF1 |
+| `test_enumeration_speed`       | R-6.1.NF2 |
+| `test_128_actions_throughput`  | R-6.2.NF1 |
+| `test_rebind_persistence`      | R-6.2.NF2 |
+| `test_recording_determinism`   | R-6.2.7   |
+| `test_recording_speed_control` | R-6.2.7   |
+| `test_full_ui_navigability`    | R-6.2.11  |
+
+1. **`test_hotplug_connect`** — Connect gamepad, assert DeviceConnected event within one frame.
+2. **`test_hotplug_disconnect`** — Disconnect gamepad mid-gameplay, assert DeviceDisconnected event
+   and no frame hitch.
+3. **`test_hotplug_rapid_cycles`** — Connect/disconnect 10 times rapidly; no crashes, no leaked
+   device slots.
+4. **`test_cross_platform_keyboard`** — End-to-end keyboard capture on each platform produces
+   identical scancodes.
+5. **`test_cross_platform_gamepad`** — End-to-end gamepad capture on each platform produces
+   identical button/axis values.
+6. **`test_full_pipeline_latency`** — Inject timestamped OS event, measure delta to ActionState
+   write. Assert p99 < 1 ms over 10k events.
+7. **`test_enumeration_speed`** — Connect 4 devices, assert enumeration within 5 ms.
+8. **`test_128_actions_throughput`** — 128 actions across 8 contexts with 4-stage modifiers. Assert
+   evaluation < 0.2 ms.
+9. **`test_rebind_persistence`** — Rebind 20 actions, measure save < 100 ms. Restart, measure
+   restore < 50 ms.
+10. **`test_recording_determinism`** — Record 30s input, playback, compare game state hash.
+11. **`test_recording_speed_control`** — Playback at 0.5x and 2.0x produces same final state.
+12. **`test_full_ui_navigability`** — Navigate every UI screen using only gamepad. Assert every
+    widget reachable.
 
 ### Benchmarks
 

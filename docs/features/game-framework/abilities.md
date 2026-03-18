@@ -2,28 +2,158 @@
 
 ## Ability System
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|-------------|--------------|----------------|
-| F-13.10.1 | Ability Definition and Composition | A data-driven ability system where each ability is composed from modular building blocks: activation conditions (input trigger, AI decision, item use), resource costs (mana, stamina, cooldown timers), targeting (self, single target, AoE cone/sphere/line), gameplay effects (damage, heal, buff, debuff, knockback, stun), animation playback (montage reference with sync points), VFX (particle effect references with attachment points), audio (sound cue references for cast, impact, loop), and AI behavior hints (threat generation, interrupt priority). Abilities are authored as visual assets in the editor, not code. Each building block is a reusable component that can be shared across abilities — a "Fire Damage" effect component is used by both "Fireball" and "Flame Sword." | R-13.10.1 | F-15.8.4 (Gameplay Logic Graphs), F-9.4.7 (Animation Montages), F-11.6.1 (Effect Graph) | None |
-| F-13.10.2 | Ability Activation and Input Integration | Abilities bind to input actions (F-6.2.1) through configurable activation modes: press (instant cast), hold (channeled — ability active while held), charge (hold to charge, release to fire with charge-dependent power), combo (sequential presses within a timing window execute a combo chain), and toggle (press to activate, press again to deactivate). Activation respects ability state: cooldown remaining, resource availability, cast conditions (grounded, airborne, moving), and global cooldown groups. The input system communicates ability requests to the ability manager, which validates and executes through the logic graph. AI agents activate abilities through the same API with synthetic input events from behavior trees (F-7.3.1). | R-13.10.2 | F-13.10.1, F-6.2.1 (Input Actions), F-7.3.1 (Behavior Trees) | None |
-| F-13.10.3 | Gameplay Effect System | A composable effect system that modifies entity attributes: instant effects (deal 50 damage), duration effects (reduce speed by 30% for 5 seconds), periodic effects (heal 10 HP every 2 seconds for 10 seconds), and permanent effects (learn a new ability). Effects stack according to configurable rules: additive (multiple damage bonuses sum), multiplicative (multiple speed modifiers multiply), highest-wins (only the strongest buff applies), or non-stacking (refresh duration on reapply). Effects carry metadata: source entity, damage type (physical, fire, ice, poison), and gameplay tags for conditional interactions (fire damage removes frozen debuff). The effect system integrates with gameplay databases (F-13.7.9) for stat tables and damage formulas. | R-13.10.3 | F-13.10.1, F-13.7.9 (Stat Tables), F-13.7.5 (Formula DSL) | None |
+| ID        | Feature                                  | Requirements |
+|-----------|------------------------------------------|--------------|
+| F-13.10.1 | Ability Definition and Composition       | R-13.10.1    |
+| F-13.10.2 | Ability Activation and Input Integration | R-13.10.2    |
+| F-13.10.3 | Gameplay Effect System                   | R-13.10.3    |
+
+1. **F-13.10.1** — A data-driven ability system where each ability is composed from modular building
+   blocks: activation conditions (input trigger, AI decision, item use), resource costs (mana,
+   stamina, cooldown timers), targeting (self, single target, AoE cone/sphere/line), gameplay
+   effects (damage, heal, buff, debuff, knockback, stun), animation playback (montage reference with
+   sync points), VFX (particle effect references with attachment points), audio (sound cue
+   references for cast, impact, loop), and AI behavior hints (threat generation, interrupt
+   priority). Abilities are authored as visual assets in the editor, not code. Each building block
+   is a reusable component that can be shared across abilities — a "Fire Damage" effect component is
+   used by both "Fireball" and "Flame Sword."
+   - **Deps:** F-15.8.4 (Gameplay Logic Graphs), F-9.4.7 (Animation Montages), F-11.6.1 (Effect
+     Graph)
+2. **F-13.10.2** — Abilities bind to input actions (F-6.2.1) through configurable activation modes:
+   press (instant cast), hold (channeled — ability active while held), charge (hold to charge,
+   release to fire with charge-dependent power), combo (sequential presses within a timing window
+   execute a combo chain), and toggle (press to activate, press again to deactivate). Activation
+   respects ability state: cooldown remaining, resource availability, cast conditions (grounded,
+   airborne, moving), and global cooldown groups. The input system communicates ability requests to
+   the ability manager, which validates and executes through the logic graph. AI agents activate
+   abilities through the same API with synthetic input events from behavior trees (F-7.3.1).
+   - **Deps:** F-13.10.1, F-6.2.1 (Input Actions), F-7.3.1 (Behavior Trees)
+3. **F-13.10.3** — A composable effect system that modifies entity attributes: instant effects (deal
+   50 damage), duration effects (reduce speed by 30% for 5 seconds), periodic effects (heal 10 HP
+   every 2 seconds for 10 seconds), and permanent effects (learn a new ability). Effects stack
+   according to configurable rules: additive (multiple damage bonuses sum), multiplicative (multiple
+   speed modifiers multiply), highest-wins (only the strongest buff applies), or non-stacking
+   (refresh duration on reapply). Effects carry metadata: source entity, damage type (physical,
+   fire, ice, poison), and gameplay tags for conditional interactions (fire damage removes frozen
+   debuff). The effect system integrates with gameplay databases (F-13.7.9) for stat tables and
+   damage formulas.
+   - **Deps:** F-13.10.1, F-13.7.9 (Stat Tables), F-13.7.5 (Formula DSL)
 
 ## Melee and Ranged Combat
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|-------------|--------------|----------------|
-| F-13.10.4 | Melee Combat System | Close-range combat with hit detection driven by animation events (F-9.1.9) and physics shape casts (F-4.4.2). Weapon hitboxes are defined as collision shapes attached to skeleton bones, activated during attack animation windows. The combat system resolves hits against target hurtboxes (per-bone damage regions with multipliers — headshot, limb, body), applies directional damage (front, back, flank bonuses), and triggers hit reactions (stagger, knockback, death) through the animation state machine (F-9.4.1). Supports weapon trails (F-11.1.7), impact VFX (F-11.6.4), and hit-stop (brief time dilation on impact for game feel). Blocking, parrying, and dodge mechanics are implemented as ability states with invulnerability frames. | R-13.10.4 | F-13.10.1, F-9.1.9 (Animation Events), F-4.4.2 (Shape Casts), F-9.4.1 (State Machine) | None |
-| F-13.10.5 | Ranged Combat and Projectile System | Projectile-based ranged combat with configurable projectile behaviors: linear (bullets), arced (grenades, arrows), homing (missiles), beam (continuous ray), and spread (shotgun pattern). Projectiles are ECS entities with `Projectile`, `Velocity`, and `Collider` components, simulated by the physics system with optional gravity and wind. Hit detection uses continuous collision detection (F-4.1.5) for fast projectiles or ray casts for hitscan weapons. Projectiles carry effect payloads (F-13.10.3) applied on impact. The aiming system integrates with aim offsets (F-9.4.9) for accurate weapon pointing and supports aim assist on gamepad (magnetism, friction, snap-to-target configurable per weapon type). | R-13.10.5 | F-13.10.1, F-13.10.3, F-4.1.5 (CCD), F-9.4.9 (Aim Offsets) | None |
-| F-13.10.6 | Hitbox and Hurtbox System | Per-bone hit detection regions defined as collision shapes (capsules, boxes) attached to skeleton bones via socket transforms. Hurtboxes define damageable regions with per-region damage multipliers (head x2, torso x1, limbs x0.75), armor penetration modifiers, and critical hit zones. Hitboxes define damage-dealing regions activated during attack animations. The system supports: overlapping hitboxes (a sword swing hits multiple targets), multi-hit prevention (each swing hits each target at most once), and hitbox visualization in the editor and runtime debug overlay. Hitbox data is authored visually on the skeleton in the animation editor. For networked games, hitbox state is lag-compensated using the server's historical entity snapshots (F-8.4.5). | R-13.10.6 | F-9.1.1 (GPU Skinning), F-4.2.1 (Broadphase), F-8.4.5 (Lag Compensation) | None |
+| ID        | Feature                             | Requirements |
+|-----------|-------------------------------------|--------------|
+| F-13.10.4 | Melee Combat System                 | R-13.10.4    |
+| F-13.10.5 | Ranged Combat and Projectile System | R-13.10.5    |
+| F-13.10.6 | Hitbox and Hurtbox System           | R-13.10.6    |
+
+1. **F-13.10.4** — Close-range combat with hit detection driven by animation events (F-9.1.9) and
+   physics shape casts (F-4.4.2). Weapon hitboxes are defined as collision shapes attached to
+   skeleton bones, activated during attack animation windows. The combat system resolves hits
+   against target hurtboxes (per-bone damage regions with multipliers — headshot, limb, body),
+   applies directional damage (front, back, flank bonuses), and triggers hit reactions (stagger,
+   knockback, death) through the animation state machine (F-9.4.1). Supports weapon trails
+   (F-11.1.7), impact VFX (F-11.6.4), and hit-stop (brief time dilation on impact for game feel).
+   Blocking, parrying, and dodge mechanics are implemented as ability states with invulnerability
+   frames.
+   - **Deps:** F-13.10.1, F-9.1.9 (Animation Events), F-4.4.2 (Shape Casts), F-9.4.1 (State Machine)
+2. **F-13.10.5** — Projectile-based ranged combat with configurable projectile behaviors: linear
+   (bullets), arced (grenades, arrows), homing (missiles), beam (continuous ray), and spread
+   (shotgun pattern). Projectiles are ECS entities with `Projectile`, `Velocity`, and `Collider`
+   components, simulated by the physics system with optional gravity and wind. Hit detection uses
+   continuous collision detection (F-4.1.5) for fast projectiles or ray casts for hitscan weapons.
+   Projectiles carry effect payloads (F-13.10.3) applied on impact. The aiming system integrates
+   with aim offsets (F-9.4.9) for accurate weapon pointing and supports aim assist on gamepad
+   (magnetism, friction, snap-to-target configurable per weapon type).
+   - **Deps:** F-13.10.1, F-13.10.3, F-4.1.5 (CCD), F-9.4.9 (Aim Offsets)
+3. **F-13.10.6** — Per-bone hit detection regions defined as collision shapes (capsules, boxes)
+   attached to skeleton bones via socket transforms. Hurtboxes define damageable regions with
+   per-region damage multipliers (head x2, torso x1, limbs x0.75), armor penetration modifiers, and
+   critical hit zones. Hitboxes define damage-dealing regions activated during attack animations.
+   The system supports: overlapping hitboxes (a sword swing hits multiple targets), multi-hit
+   prevention (each swing hits each target at most once), and hitbox visualization in the editor and
+   runtime debug overlay. Hitbox data is authored visually on the skeleton in the animation editor.
+   For networked games, hitbox state is lag-compensated using the server's historical entity
+   snapshots (F-8.4.5).
+   - **Deps:** F-9.1.1 (GPU Skinning), F-4.2.1 (Broadphase), F-8.4.5 (Lag Compensation)
 
 ## Advanced Ability Systems
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|-------------|--------------|----------------|
-| F-13.10.7 | Area-of-Effect Targeting | Ground-targeted AoE placement with a reticle preview projected onto terrain and surfaces. Designers configure shape (cone, sphere, line, ring), radius/length/width, maximum placement range, and snap-to-ground behavior. The reticle preview shows the affected area with configurable color for valid/invalid placement and obstructed zones. A friendly fire toggle per ability controls whether allied entities inside the AoE receive the gameplay effect. AoE abilities integrate with the gameplay effect system (F-13.10.3) — all entities within the shape at detonation receive the attached effects. AI agents use the same targeting API with a world-position parameter instead of mouse/cursor input. | R-13.10.7 | F-13.10.1, F-13.10.3, F-4.4.2 (Shape Casts), F-3.2.1 (Terrain) | None |
-| F-13.10.8 | Healing Over Time (HoT) | Periodic healing effects that restore health at a configurable tick rate (e.g., heal 50 HP every 2 seconds for 12 seconds). Stacking rules per HoT type: refresh (reapplication resets duration without adding stacks), stack count (multiple applications accumulate up to a maximum, each ticking independently), and pandemic (reapplication extends duration by remaining time up to a cap). HoT snapshotting captures the caster's stats (healing power, critical chance) at application time and uses those values for all subsequent ticks, regardless of later stat changes. HoTs display as buff icons with duration and stack count in the HUD. Cleanse effects can selectively remove HoTs by gameplay tag. | R-13.10.8 | F-13.10.3 (Gameplay Effects), F-13.7.9 (Stat Tables), F-10.3.1 (HUD) | None |
-| F-13.10.9 | Damage Over Time (DoT) | Periodic damage effects that inflict damage at a configurable tick rate (e.g., 20 fire damage every 3 seconds for 15 seconds). Stacking rules per DoT type: refresh, stack count, and pandemic — identical to HoT stacking (F-13.10.8). DoT snapshotting captures the caster's stats (spell power, critical chance, damage modifiers) at application time for consistent tick values. DoTs carry damage type tags (fire, poison, bleed, shadow) for conditional interactions — fire DoTs are removed by ice cleanse, poison DoTs are removed by antidote. Cleanse abilities interact with DoTs by gameplay tag, removing matching DoTs and optionally granting a brief immunity window. DoTs display as debuff icons with duration, stack count, and damage-per-tick in the HUD. | R-13.10.9 | F-13.10.3 (Gameplay Effects), F-13.7.9 (Stat Tables), F-10.3.1 (HUD) | None |
-| F-13.10.10 | Status Ailments | Named status conditions applied as gameplay effects: stun (prevents all actions), slow (reduces movement speed by a percentage), root (prevents movement but allows actions), silence (prevents ability casting), blind (reduces hit chance or vision radius), fear (forces random movement away from source), charm (forces movement toward source), sleep (prevents all actions, broken by damage), knockback (applies impulse away from source), and pull (applies impulse toward source). Each status has: duration, a post-immunity window (target cannot receive the same status again for N seconds), and diminishing returns (successive applications of the same status reduce duration by a configurable percentage, down to a minimum). Status ailments display as debuff icons and play a visual indicator on the affected entity. | R-13.10.10 | F-13.10.3 (Gameplay Effects), F-4.1.8 (Character Controller), F-9.4.1 (Animation State Machine) | None |
-| F-13.10.11 | Usable Items | Consumable item activation from inventory (F-13.9.1). Item categories include potions (instant or periodic health/mana), scrolls (one-time ability activation), food (long-duration stat buffs), and elixirs (powerful timed buffs). Each usable item defines: charge count (uses before consumed), cooldown between uses, shared cooldown group (all potions share a cooldown), use-while-moving flag, cast time, and animation. Item effects are implemented as gameplay effects (F-13.10.3) applied to the user on activation. The inventory UI shows charge count, cooldown state, and item tooltip. Quick-slot bindings allow activating items from the action bar without opening inventory. | R-13.10.11 | F-13.9.1 (Inventory), F-13.10.3 (Gameplay Effects), F-13.10.2 (Ability Activation), F-10.3.1 (HUD) | None |
-| F-13.10.12 | Ability Conditions | A prerequisite system that gates ability activation behind configurable conditions evaluated at activation time. Condition types: requires equipped weapon type (sword, staff, bow), requires stance or form (defensive stance, bear form), requires resource threshold (at least 30% mana), requires active status or buff (must have "Enrage" buff), requires talent or skill unlock (talent tree node purchased), and requires combo state (must be in combo step 2). Conditions are composable with AND/OR/NOT logic. When a condition fails, the ability system reports the specific failing condition to the UI for player feedback (e.g., "Requires a sword"). Conditions are data-driven and authored in the ability editor alongside other ability building blocks. | R-13.10.12 | F-13.10.1, F-13.10.2, F-13.12.2 (Talent Trees), F-13.16.1 (Weapon Fire Modes) | None |
-| F-13.10.13 | Combo System | Sequential ability chains with timing windows and branching paths. A combo definition specifies an ordered sequence of abilities (combo steps) with per-step timing windows — the next step must be activated within the window or the combo resets. Branching combos allow different abilities at each step depending on input (light attack vs. heavy attack branches). Combo point generation: each step generates configurable combo points accumulated on the target or self. Combo point spending: finisher abilities consume accumulated combo points with effect scaling based on points spent. Combo state is tracked per entity as an ECS component. Visual feedback includes combo step indicators in the HUD and escalating VFX per combo step. | R-13.10.13 | F-13.10.1, F-13.10.2, F-13.10.3, F-9.4.7 (Animation Montages) | None |
+| ID         | Feature                  | Requirements |
+|------------|--------------------------|--------------|
+| F-13.10.7  | Area-of-Effect Targeting | R-13.10.7    |
+| F-13.10.8  | Healing Over Time (HoT)  | R-13.10.8    |
+| F-13.10.9  | Damage Over Time (DoT)   | R-13.10.9    |
+| F-13.10.10 | Status Ailments          | R-13.10.10   |
+| F-13.10.11 | Usable Items             | R-13.10.11   |
+| F-13.10.12 | Ability Conditions       | R-13.10.12   |
+| F-13.10.13 | Combo System             | R-13.10.13   |
+
+1. **F-13.10.7** — Ground-targeted AoE placement with a reticle preview projected onto terrain and
+   surfaces. Designers configure shape (cone, sphere, line, ring), radius/length/width, maximum
+   placement range, and snap-to-ground behavior. The reticle preview shows the affected area with
+   configurable color for valid/invalid placement and obstructed zones. A friendly fire toggle per
+   ability controls whether allied entities inside the AoE receive the gameplay effect. AoE
+   abilities integrate with the gameplay effect system (F-13.10.3) — all entities within the shape
+   at detonation receive the attached effects. AI agents use the same targeting API with a
+   world-position parameter instead of mouse/cursor input.
+   - **Deps:** F-13.10.1, F-13.10.3, F-4.4.2 (Shape Casts), F-3.2.1 (Terrain)
+2. **F-13.10.8** — Periodic healing effects that restore health at a configurable tick rate (e.g.,
+   heal 50 HP every 2 seconds for 12 seconds). Stacking rules per HoT type: refresh (reapplication
+   resets duration without adding stacks), stack count (multiple applications accumulate up to a
+   maximum, each ticking independently), and pandemic (reapplication extends duration by remaining
+   time up to a cap). HoT snapshotting captures the caster's stats (healing power, critical chance)
+   at application time and uses those values for all subsequent ticks, regardless of later stat
+   changes. HoTs display as buff icons with duration and stack count in the HUD. Cleanse effects can
+   selectively remove HoTs by gameplay tag.
+   - **Deps:** F-13.10.3 (Gameplay Effects), F-13.7.9 (Stat Tables), F-10.3.1 (HUD)
+3. **F-13.10.9** — Periodic damage effects that inflict damage at a configurable tick rate (e.g., 20
+   fire damage every 3 seconds for 15 seconds). Stacking rules per DoT type: refresh, stack count,
+   and pandemic — identical to HoT stacking (F-13.10.8). DoT snapshotting captures the caster's
+   stats (spell power, critical chance, damage modifiers) at application time for consistent tick
+   values. DoTs carry damage type tags (fire, poison, bleed, shadow) for conditional interactions —
+   fire DoTs are removed by ice cleanse, poison DoTs are removed by antidote. Cleanse abilities
+   interact with DoTs by gameplay tag, removing matching DoTs and optionally granting a brief
+   immunity window. DoTs display as debuff icons with duration, stack count, and damage-per-tick in
+   the HUD.
+   - **Deps:** F-13.10.3 (Gameplay Effects), F-13.7.9 (Stat Tables), F-10.3.1 (HUD)
+4. **F-13.10.10** — Named status conditions applied as gameplay effects: stun (prevents all
+   actions), slow (reduces movement speed by a percentage), root (prevents movement but allows
+   actions), silence (prevents ability casting), blind (reduces hit chance or vision radius), fear
+   (forces random movement away from source), charm (forces movement toward source), sleep (prevents
+   all actions, broken by damage), knockback (applies impulse away from source), and pull (applies
+   impulse toward source). Each status has: duration, a post-immunity window (target cannot receive
+   the same status again for N seconds), and diminishing returns (successive applications of the
+   same status reduce duration by a configurable percentage, down to a minimum). Status ailments
+   display as debuff icons and play a visual indicator on the affected entity.
+   - **Deps:** F-13.10.3 (Gameplay Effects), F-4.1.8 (Character Controller), F-9.4.1 (Animation
+     State Machine)
+5. **F-13.10.11** — Consumable item activation from inventory (F-13.9.1). Item categories include
+   potions (instant or periodic health/mana), scrolls (one-time ability activation), food
+   (long-duration stat buffs), and elixirs (powerful timed buffs). Each usable item defines: charge
+   count (uses before consumed), cooldown between uses, shared cooldown group (all potions share a
+   cooldown), use-while-moving flag, cast time, and animation. Item effects are implemented as
+   gameplay effects (F-13.10.3) applied to the user on activation. The inventory UI shows charge
+   count, cooldown state, and item tooltip. Quick-slot bindings allow activating items from the
+   action bar without opening inventory.
+   - **Deps:** F-13.9.1 (Inventory), F-13.10.3 (Gameplay Effects), F-13.10.2 (Ability Activation),
+     F-10.3.1 (HUD)
+6. **F-13.10.12** — A prerequisite system that gates ability activation behind configurable
+   conditions evaluated at activation time. Condition types: requires equipped weapon type (sword,
+   staff, bow), requires stance or form (defensive stance, bear form), requires resource threshold
+   (at least 30% mana), requires active status or buff (must have "Enrage" buff), requires talent or
+   skill unlock (talent tree node purchased), and requires combo state (must be in combo step 2).
+   Conditions are composable with AND/OR/NOT logic. When a condition fails, the ability system
+   reports the specific failing condition to the UI for player feedback (e.g., "Requires a sword").
+   Conditions are data-driven and authored in the ability editor alongside other ability building
+   blocks.
+   - **Deps:** F-13.10.1, F-13.10.2, F-13.12.2 (Talent Trees), F-13.16.1 (Weapon Fire Modes)
+7. **F-13.10.13** — Sequential ability chains with timing windows and branching paths. A combo
+   definition specifies an ordered sequence of abilities (combo steps) with per-step timing windows
+   — the next step must be activated within the window or the combo resets. Branching combos allow
+   different abilities at each step depending on input (light attack vs. heavy attack branches).
+   Combo point generation: each step generates configurable combo points accumulated on the target
+   or self. Combo point spending: finisher abilities consume accumulated combo points with effect
+   scaling based on points spent. Combo state is tracked per entity as an ECS component. Visual
+   feedback includes combo step indicators in the HUD and escalating VFX per combo step.
+   - **Deps:** F-13.10.1, F-13.10.2, F-13.10.3, F-9.4.7 (Animation Montages)

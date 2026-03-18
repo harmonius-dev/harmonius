@@ -8,27 +8,47 @@
 > [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
 > those definitions.
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-14.5.1 | R-14.5.1 | US-14.5.1, 7, 8, 13 | Cross-platform achievements with deferred unlock |
-| F-14.5.2 | R-14.5.2 | US-14.5.2, 15 | Leaderboards with batching and rate-limit caching |
-| F-14.5.3 | R-14.5.3 | US-14.5.3 | Rich presence throttled to 1 update / 15 s |
-| F-14.5.4 | R-14.5.4 | US-14.5.4, 16 | Platform voice/party bridge with Vivox fallback |
-| F-14.5.5 | R-14.5.5 | US-14.5.5, 12, 17 | Cloud storage with conflict resolution dialog |
-| F-14.5.6 | R-14.5.6 | US-14.5.6, 11 | Entitlement/DLC/subscription verification |
-| F-14.5.7 | R-14.5.7 | US-14.5.10, 14 | Console certification compliance |
-| F-14.6.1 | R-14.6.1 | US-14.6.1 | Platform SDK abstraction layer |
-| F-14.6.2 | R-14.6.2 | US-14.6.2 | Receipt validation pipeline |
-| F-14.6.3 | R-14.6.3 | US-14.6.3 | Subscription lifecycle management |
-| F-14.6.4 | R-14.6.4 | US-14.6.4 | Platform anti-cheat integration |
-| F-14.6.5 | R-14.6.5 | US-14.6.5 | Platform matchmaking bridge |
-| F-14.6.6 | R-14.6.6 | US-14.6.6 | Cross-platform progression sync |
-| F-14.6.7 | R-14.6.7 | US-14.6.7 | Mod support abstraction |
-| F-14.8.1 | R-14.8.1, R-14.8.2 | US-14.8.1, 2, 3 | Server-side console build service |
-| F-14.8.2 | R-14.8.3, R-14.8.4 | US-14.8.8, 9, 12 | Proprietary SDK isolation |
-| F-14.8.3 | R-14.8.5, R-14.8.6 | US-14.8.4, 5, 6, 7 | Shared build server |
-| F-14.8.4 | R-14.8.7, R-14.8.8 | US-14.8.10, 11 | Remote console deployment |
-| F-14.8.5 | R-14.8.9, R-14.8.10 | US-14.8.10 | Console build artifacts |
+| Feature  | Requirement         | User Story          |
+|----------|---------------------|---------------------|
+| F-14.5.1 | R-14.5.1            | US-14.5.1, 7, 8, 13 |
+| F-14.5.2 | R-14.5.2            | US-14.5.2, 15       |
+| F-14.5.3 | R-14.5.3            | US-14.5.3           |
+| F-14.5.4 | R-14.5.4            | US-14.5.4, 16       |
+| F-14.5.5 | R-14.5.5            | US-14.5.5, 12, 17   |
+| F-14.5.6 | R-14.5.6            | US-14.5.6, 11       |
+| F-14.5.7 | R-14.5.7            | US-14.5.10, 14      |
+| F-14.6.1 | R-14.6.1            | US-14.6.1           |
+| F-14.6.2 | R-14.6.2            | US-14.6.2           |
+| F-14.6.3 | R-14.6.3            | US-14.6.3           |
+| F-14.6.4 | R-14.6.4            | US-14.6.4           |
+| F-14.6.5 | R-14.6.5            | US-14.6.5           |
+| F-14.6.6 | R-14.6.6            | US-14.6.6           |
+| F-14.6.7 | R-14.6.7            | US-14.6.7           |
+| F-14.8.1 | R-14.8.1, R-14.8.2  | US-14.8.1, 2, 3     |
+| F-14.8.2 | R-14.8.3, R-14.8.4  | US-14.8.8, 9, 12    |
+| F-14.8.3 | R-14.8.5, R-14.8.6  | US-14.8.4, 5, 6, 7  |
+| F-14.8.4 | R-14.8.7, R-14.8.8  | US-14.8.10, 11      |
+| F-14.8.5 | R-14.8.9, R-14.8.10 | US-14.8.10          |
+
+1. **F-14.5.1** — Cross-platform achievements with deferred unlock
+2. **F-14.5.2** — Leaderboards with batching and rate-limit caching
+3. **F-14.5.3** — Rich presence throttled to 1 update / 15 s
+4. **F-14.5.4** — Platform voice/party bridge with Vivox fallback
+5. **F-14.5.5** — Cloud storage with conflict resolution dialog
+6. **F-14.5.6** — Entitlement/DLC/subscription verification
+7. **F-14.5.7** — Console certification compliance
+8. **F-14.6.1** — Platform SDK abstraction layer
+9. **F-14.6.2** — Receipt validation pipeline
+10. **F-14.6.3** — Subscription lifecycle management
+11. **F-14.6.4** — Platform anti-cheat integration
+12. **F-14.6.5** — Platform matchmaking bridge
+13. **F-14.6.6** — Cross-platform progression sync
+14. **F-14.6.7** — Mod support abstraction
+15. **F-14.8.1** — Server-side console build service
+16. **F-14.8.2** — Proprietary SDK isolation
+17. **F-14.8.3** — Shared build server
+18. **F-14.8.4** — Remote console deployment
+19. **F-14.8.5** — Console build artifacts
 
 ## Overview
 
@@ -278,86 +298,292 @@ harmonius_platform/
 
 ### Achievements
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `unlock(id)` | `ISteamUserStats::SetAchievement` | `GKAchievement.report` | `Games.Achievements.unlock` | `XblAchievement::UpdateAchievement` | `NpTrophy::UnlockTrophy` | N/A (no native) | `EOS_Achievements_UnlockAchievements` |
-| `set_progress(id, pct)` | `ISteamUserStats::IndicateAchievementProgress` | `GKAchievement.percentComplete` | `Games.Achievements.increment` | `XblAchievement::UpdateAchievement(progress)` | `NpTrophy::SetProgress` | N/A | `EOS_Achievements_UnlockAchievements` (binary) |
-| `list()` | `ISteamUserStats::GetAchievement` (iterate) | `GKAchievement.loadAchievements` | `Games.Achievements.list` | `XblAchievement::GetAchievements` | `NpTrophy::GetTrophyUnlockState` | N/A | `EOS_Achievements_QueryPlayerAchievements` |
+| Unified API             | Steam                                          |
+|-------------------------|------------------------------------------------|
+| `unlock(id)`            | `ISteamUserStats::SetAchievement`              |
+| `set_progress(id, pct)` | `ISteamUserStats::IndicateAchievementProgress` |
+| `list()`                | `ISteamUserStats::GetAchievement` (iterate)    |
+
+1. **`unlock(id)`**
+   - **Apple:** `GKAchievement.report`
+   - **Google:** `Games.Achievements.unlock`
+   - **Xbox:** `XblAchievement::UpdateAchievement`
+   - **PSN:** `NpTrophy::UnlockTrophy`
+   - **Nintendo:** N/A (no native)
+   - **EOS:** `EOS_Achievements_UnlockAchievements`
+2. **`set_progress(id, pct)`**
+   - **Apple:** `GKAchievement.percentComplete`
+   - **Google:** `Games.Achievements.increment`
+   - **Xbox:** `XblAchievement::UpdateAchievement(progress)`
+   - **PSN:** `NpTrophy::SetProgress`
+   - **EOS:** `EOS_Achievements_UnlockAchievements` (binary)
+3. **`list()`**
+   - **Apple:** `GKAchievement.loadAchievements`
+   - **Google:** `Games.Achievements.list`
+   - **Xbox:** `XblAchievement::GetAchievements`
+   - **PSN:** `NpTrophy::GetTrophyUnlockState`
+   - **EOS:** `EOS_Achievements_QueryPlayerAchievements`
 
 ### Leaderboards
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `submit_score(board, score)` | `ISteamUserStats::UploadLeaderboardScore` | `GKLeaderboard.submitScore` | `Games.Scores.submit` | `XblLeaderboard::UpdateStatistic` | `NpScore::RecordScore` | N/A | `EOS_Leaderboards_IngestStat` |
-| `query_global(board, range)` | `ISteamUserStats::DownloadLeaderboardEntries` | `GKLeaderboard.loadEntries(.global)` | `Games.Scores.list` | `XblLeaderboard::GetLeaderboard` | `NpScore::GetRankingByRange` | N/A | `EOS_Leaderboards_QueryLeaderboardRanks` |
-| `query_friends(board)` | `ISteamUserStats::DownloadLeaderboardEntries(Friends)` | `GKLeaderboard.loadEntries(.friends)` | `Games.Scores.list(collection: SOCIAL)` | `XblLeaderboard::GetLeaderboard(Social)` | `NpScore::GetFriendRanking` | N/A | `EOS_Leaderboards_QueryLeaderboardUserScores` |
+| Unified API                  | Steam                                                  |
+|------------------------------|--------------------------------------------------------|
+| `submit_score(board, score)` | `ISteamUserStats::UploadLeaderboardScore`              |
+| `query_global(board, range)` | `ISteamUserStats::DownloadLeaderboardEntries`          |
+| `query_friends(board)`       | `ISteamUserStats::DownloadLeaderboardEntries(Friends)` |
+
+1. **`submit_score(board, score)`**
+   - **Apple:** `GKLeaderboard.submitScore`
+   - **Google:** `Games.Scores.submit`
+   - **Xbox:** `XblLeaderboard::UpdateStatistic`
+   - **PSN:** `NpScore::RecordScore`
+   - **EOS:** `EOS_Leaderboards_IngestStat`
+2. **`query_global(board, range)`**
+   - **Apple:** `GKLeaderboard.loadEntries(.global)`
+   - **Google:** `Games.Scores.list`
+   - **Xbox:** `XblLeaderboard::GetLeaderboard`
+   - **PSN:** `NpScore::GetRankingByRange`
+   - **EOS:** `EOS_Leaderboards_QueryLeaderboardRanks`
+3. **`query_friends(board)`**
+   - **Apple:** `GKLeaderboard.loadEntries(.friends)`
+   - **Google:** `Games.Scores.list(collection: SOCIAL)`
+   - **Xbox:** `XblLeaderboard::GetLeaderboard(Social)`
+   - **PSN:** `NpScore::GetFriendRanking`
+   - **EOS:** `EOS_Leaderboards_QueryLeaderboardUserScores`
 
 ### In-App Purchases
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `query_products(ids)` | `ISteamMicroTxn::GetMicroTxnInfo` | `StoreKit2.Product.products(for:)` | `BillingClient.queryProductDetails` | `XStoreQueryAssociatedProducts` | `NpCommerce::GetProductInfo` | `nn::ec::ShopService` | `EOS_Ecom_QueryOffers` |
-| `initiate_purchase(id)` | `ISteamMicroTxn::InitTxn` + overlay | `Product.purchase()` | `BillingClient.launchBillingFlow` | `XStoreShowPurchaseUI` | `NpCommerce::InitiateCheckout` | `nn::ec::ShopService::ShowShop` | `EOS_Ecom_Checkout` |
-| `restore_purchases()` | N/A (server-side) | `Transaction.currentEntitlements` | `BillingClient.queryPurchases` | `XStoreQueryEntitlements` | `NpCommerce::GetEntitlements` | N/A | `EOS_Ecom_QueryEntitlements` |
-| `validate_receipt(receipt)` | `ISteamMicroTxn/FinalizeTxn` | App Store Server API v2 (JWS) | `androidpublisher.purchases.products` | Xbox Collections API | PSN Entitlement API | Nintendo eShop API | EOS verification |
+| Unified API                 |
+|-----------------------------|
+| `query_products(ids)`       |
+| `initiate_purchase(id)`     |
+| `restore_purchases()`       |
+| `validate_receipt(receipt)` |
+
+1. **`query_products(ids)`** — `ISteamMicroTxn::GetMicroTxnInfo`
+   - **Apple:** `StoreKit2.Product.products(for:)`
+   - **Google:** `BillingClient.queryProductDetails`
+   - **Xbox:** `XStoreQueryAssociatedProducts`
+   - **PSN:** `NpCommerce::GetProductInfo`
+   - **Nintendo:** `nn::ec::ShopService`
+   - **EOS:** `EOS_Ecom_QueryOffers`
+2. **`initiate_purchase(id)`** — `ISteamMicroTxn::InitTxn` + overlay
+   - **Apple:** `Product.purchase()`
+   - **Google:** `BillingClient.launchBillingFlow`
+   - **Xbox:** `XStoreShowPurchaseUI`
+   - **PSN:** `NpCommerce::InitiateCheckout`
+   - **Nintendo:** `nn::ec::ShopService::ShowShop`
+   - **EOS:** `EOS_Ecom_Checkout`
+3. **`restore_purchases()`** — N/A (server-side)
+   - **Apple:** `Transaction.currentEntitlements`
+   - **Google:** `BillingClient.queryPurchases`
+   - **Xbox:** `XStoreQueryEntitlements`
+   - **PSN:** `NpCommerce::GetEntitlements`
+   - **EOS:** `EOS_Ecom_QueryEntitlements`
+4. **`validate_receipt(receipt)`** — `ISteamMicroTxn/FinalizeTxn`
+   - **Apple:** App Store Server API v2 (JWS)
+   - **Google:** `androidpublisher.purchases.products`
+   - **Xbox:** Xbox Collections API
+   - **PSN:** PSN Entitlement API
+   - **Nintendo:** Nintendo eShop API
+   - **EOS:** EOS verification
 
 ### Subscriptions
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `check_status(id)` | `ISteamMicroTxn` recurring query | `StoreKit2.Transaction.currentEntitlements` | `purchases.subscriptionsv2` | `XStoreQueryGameLicense` | `NpCommerce::GetEntitlements` | N/A | `EOS_Ecom_QueryEntitlements` |
-| `manage_renewal(id, action)` | N/A (Steam Wallet) | `showManageSubscriptions()` | Deep link to Play Store | Xbox Settings deep link | PSN Settings deep link | N/A | N/A |
-| `handle_grace_period(id)` | N/A | `StoreKit2.RenewalInfo.gracePeriodExpirationDate` | `subscriptions.get (gracePeriod)` | XStoreQueryLicenseStatus | N/A | N/A | N/A |
+| Unified API                  | Steam                            |
+|------------------------------|----------------------------------|
+| `check_status(id)`           | `ISteamMicroTxn` recurring query |
+| `manage_renewal(id, action)` | N/A (Steam Wallet)               |
+| `handle_grace_period(id)`    | N/A                              |
+
+1. **`check_status(id)`**
+   - **Apple:** `StoreKit2.Transaction.currentEntitlements`
+   - **Google:** `purchases.subscriptionsv2`
+   - **Xbox:** `XStoreQueryGameLicense`
+   - **PSN:** `NpCommerce::GetEntitlements`
+   - **EOS:** `EOS_Ecom_QueryEntitlements`
+2. **`manage_renewal(id, action)`**
+   - **Apple:** `showManageSubscriptions()`
+   - **Google:** Deep link to Play Store
+   - **Xbox:** Xbox Settings deep link
+   - **PSN:** PSN Settings deep link
+3. **`handle_grace_period(id)`**
+   - **Apple:** `StoreKit2.RenewalInfo.gracePeriodExpirationDate`
+   - **Google:** `subscriptions.get (gracePeriod)`
+   - **Xbox:** XStoreQueryLicenseStatus
 
 ### Cloud Save
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `read(key)` | `ISteamRemoteStorage::FileRead` | `iCloud NSUbiquitousKeyValueStore` | `SnapshotsClient.open` | `XGameSaveReadBlobData` | `NpSaveData::Mount + Read` | `nn::fs::MountSaveData` | `EOS_PlayerDataStorage_ReadFile` |
-| `write(key, data)` | `ISteamRemoteStorage::FileWrite` | `iCloud NSUbiquitousKeyValueStore` | `SnapshotsClient.commitAndClose` | `XGameSaveWriteBlobData` | `NpSaveData::Write + Unmount` | `nn::fs::Commit` | `EOS_PlayerDataStorage_WriteFile` |
-| `resolve_conflict(local, remote)` | `ISteamRemoteStorage::FileWriteStreamOpen` (manual) | Automatic (iCloud merge) | `SnapshotsClient.resolveConflict` | `XGameSaveCreateUpdate` (manual) | Manual (timestamp compare) | Manual (single-slot) | Manual (version compare) |
+| Unified API                       | Steam                                               |
+|-----------------------------------|-----------------------------------------------------|
+| `read(key)`                       | `ISteamRemoteStorage::FileRead`                     |
+| `write(key, data)`                | `ISteamRemoteStorage::FileWrite`                    |
+| `resolve_conflict(local, remote)` | `ISteamRemoteStorage::FileWriteStreamOpen` (manual) |
+
+| Unified API                       |
+|-----------------------------------|
+| `read(key)`                       |
+| `write(key, data)`                |
+| `resolve_conflict(local, remote)` |
+
+1. **`read(key)`** — `iCloud NSUbiquitousKeyValueStore`
+   - **Google:** `SnapshotsClient.open`
+   - **Xbox:** `XGameSaveReadBlobData`
+   - **PSN:** `NpSaveData::Mount + Read`
+   - **Nintendo:** `nn::fs::MountSaveData`
+   - **EOS:** `EOS_PlayerDataStorage_ReadFile`
+2. **`write(key, data)`** — `iCloud NSUbiquitousKeyValueStore`
+   - **Google:** `SnapshotsClient.commitAndClose`
+   - **Xbox:** `XGameSaveWriteBlobData`
+   - **PSN:** `NpSaveData::Write + Unmount`
+   - **Nintendo:** `nn::fs::Commit`
+   - **EOS:** `EOS_PlayerDataStorage_WriteFile`
+3. **`resolve_conflict(local, remote)`** — Automatic (iCloud merge)
+   - **Google:** `SnapshotsClient.resolveConflict`
+   - **Xbox:** `XGameSaveCreateUpdate` (manual)
+   - **PSN:** Manual (timestamp compare)
+   - **Nintendo:** Manual (single-slot)
+   - **EOS:** Manual (version compare)
 
 ### Matchmaking
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `create_lobby(config)` | `ISteamMatchmaking::CreateLobby` | Game Center `GKMatchRequest` | Play Games `RealTimeMultiplayer` | `XblMultiplayer::CreateSession` | `NpMatching2::CreateRoom` | `nn::nex::MatchmakeExtension` | `EOS_Lobby_CreateLobby` |
-| `find_match(criteria)` | `ISteamMatchmaking::AddRequestLobbyListFilter` | `GKMatchmaker.findMatch` | `RealTimeMultiplayer.auto` | SmartMatch `XblMatchmaking` | `NpMatching2::SearchRoom` | `nn::nex::MatchmakeExtension` | `EOS_Lobby_SearchLobby` |
-| `join_lobby(id)` | `ISteamMatchmaking::JoinLobby` | `GKMatch.acceptInvite` | `RealTimeMultiplayer.join` | `XblMultiplayer::JoinSession` | `NpMatching2::JoinRoom` | `nn::nex::JoinMatchmake` | `EOS_Lobby_JoinLobby` |
+| Unified API            | Steam                                          |
+|------------------------|------------------------------------------------|
+| `create_lobby(config)` | `ISteamMatchmaking::CreateLobby`               |
+| `find_match(criteria)` | `ISteamMatchmaking::AddRequestLobbyListFilter` |
+| `join_lobby(id)`       | `ISteamMatchmaking::JoinLobby`                 |
+
+| Unified API            |
+|------------------------|
+| `create_lobby(config)` |
+| `find_match(criteria)` |
+| `join_lobby(id)`       |
+
+1. **`create_lobby(config)`** — Game Center `GKMatchRequest`
+   - **Google:** Play Games `RealTimeMultiplayer`
+   - **Xbox:** `XblMultiplayer::CreateSession`
+   - **PSN:** `NpMatching2::CreateRoom`
+   - **Nintendo:** `nn::nex::MatchmakeExtension`
+   - **EOS:** `EOS_Lobby_CreateLobby`
+2. **`find_match(criteria)`** — `GKMatchmaker.findMatch`
+   - **Google:** `RealTimeMultiplayer.auto`
+   - **Xbox:** SmartMatch `XblMatchmaking`
+   - **PSN:** `NpMatching2::SearchRoom`
+   - **Nintendo:** `nn::nex::MatchmakeExtension`
+   - **EOS:** `EOS_Lobby_SearchLobby`
+3. **`join_lobby(id)`** — `GKMatch.acceptInvite`
+   - **Google:** `RealTimeMultiplayer.join`
+   - **Xbox:** `XblMultiplayer::JoinSession`
+   - **PSN:** `NpMatching2::JoinRoom`
+   - **Nintendo:** `nn::nex::JoinMatchmake`
+   - **EOS:** `EOS_Lobby_JoinLobby`
 
 ### Voice Chat
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `start_session(channel)` | `ISteamUser::StartVoiceRecording` | N/A (Vivox fallback) | N/A (Vivox fallback) | `GameChat2::AddLocalUser` | `NpVoiceChat::Join` | N/A (Vivox fallback) | `EOS_RTC_JoinRoom` |
-| `stop_session()` | `ISteamUser::StopVoiceRecording` | N/A | N/A | `GameChat2::RemoveLocalUser` | `NpVoiceChat::Leave` | N/A | `EOS_RTC_LeaveRoom` |
-| `mute_player(id, muted)` | `ISteamFriends::SetListenForFriendMessages` | N/A | N/A | `GameChat2::SetCommunicationRelationship` | `NpVoiceChat::Mute` | N/A | `EOS_RTCAudio_UpdateReceiving` |
-| `set_spatial_position(pos)` | Custom (Steam lacks spatial) | N/A | N/A | `GameChat2::SetSpatialAudioPosition` | N/A (Vivox for spatial) | N/A | `EOS_RTCAudio_UpdateSpatial` |
+| Unified API                 | Steam                                       | Apple                |
+|-----------------------------|---------------------------------------------|----------------------|
+| `start_session(channel)`    | `ISteamUser::StartVoiceRecording`           | N/A (Vivox fallback) |
+| `stop_session()`            | `ISteamUser::StopVoiceRecording`            | N/A                  |
+| `mute_player(id, muted)`    | `ISteamFriends::SetListenForFriendMessages` | N/A                  |
+| `set_spatial_position(pos)` | Custom (Steam lacks spatial)                | N/A                  |
+
+1. **`start_session(channel)`**
+   - **Google:** N/A (Vivox fallback)
+   - **Xbox:** `GameChat2::AddLocalUser`
+   - **PSN:** `NpVoiceChat::Join`
+   - **Nintendo:** N/A (Vivox fallback)
+   - **EOS:** `EOS_RTC_JoinRoom`
+2. **`stop_session()`**
+   - **Xbox:** `GameChat2::RemoveLocalUser`
+   - **PSN:** `NpVoiceChat::Leave`
+   - **EOS:** `EOS_RTC_LeaveRoom`
+3. **`mute_player(id, muted)`**
+   - **Xbox:** `GameChat2::SetCommunicationRelationship`
+   - **PSN:** `NpVoiceChat::Mute`
+   - **EOS:** `EOS_RTCAudio_UpdateReceiving`
+4. **`set_spatial_position(pos)`**
+   - **Xbox:** `GameChat2::SetSpatialAudioPosition`
+   - **PSN:** N/A (Vivox for spatial)
+   - **EOS:** `EOS_RTCAudio_UpdateSpatial`
 
 ### Anti-Cheat
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `initialize()` | VAC session registration | N/A (custom fallback) | N/A (custom fallback) | TruePlay registration | N/A (custom fallback) | N/A (custom fallback) | `EOS_AntiCheatClient_BeginSession` |
-| `report_player(id, reason)` | `ISteamGameServer::SendUserDisconnect` | Custom report API | Custom report API | `TruePlay::ReportActivity` | Custom report API | Custom report API | `EOS_Reports_SendPlayerBehaviorReport` |
-| `check_ban_status(id)` | VAC ban callback | Custom ban DB | Custom ban DB | Xbox Enforcement API | Custom ban DB | Custom ban DB | `EOS_Sanctions_QueryActivePlayerSanctions` |
+| Unified API                 | Steam                                  | Apple                 |
+|-----------------------------|----------------------------------------|-----------------------|
+| `initialize()`              | VAC session registration               | N/A (custom fallback) |
+| `report_player(id, reason)` | `ISteamGameServer::SendUserDisconnect` | Custom report API     |
+| `check_ban_status(id)`      | VAC ban callback                       | Custom ban DB         |
+
+1. **`initialize()`**
+   - **Google:** N/A (custom fallback)
+   - **Xbox:** TruePlay registration
+   - **PSN:** N/A (custom fallback)
+   - **Nintendo:** N/A (custom fallback)
+   - **EOS:** `EOS_AntiCheatClient_BeginSession`
+2. **`report_player(id, reason)`**
+   - **Google:** Custom report API
+   - **Xbox:** `TruePlay::ReportActivity`
+   - **PSN:** Custom report API
+   - **Nintendo:** Custom report API
+   - **EOS:** `EOS_Reports_SendPlayerBehaviorReport`
+3. **`check_ban_status(id)`**
+   - **Google:** Custom ban DB
+   - **Xbox:** Xbox Enforcement API
+   - **PSN:** Custom ban DB
+   - **Nintendo:** Custom ban DB
+   - **EOS:** `EOS_Sanctions_QueryActivePlayerSanctions`
 
 ### Friends and Social
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `list_friends()` | `ISteamFriends::GetFriendCount/GetFriendByIndex` | `GKLocalPlayer.loadFriends` | `PlayGames.Players.connected` | `XblSocialManager::GetLocalUsers` | `NpFriends::GetFriendList` | `nn::friends::GetFriendList` | `EOS_Friends_QueryFriends` |
-| `send_invite(id, context)` | `ISteamFriends::InviteUserToGame` | `GKMatchmaker.sendInvite` | `RealTimeMultiplayer.invite` | `XblMultiplayer::SendInvites` | `NpInvitation::SendInvitation` | `nn::friends::ShowInvitation` | `EOS_CustomInvites_SendCustomInvite` |
-| `set_rich_presence(state)` | `ISteamFriends::SetRichPresence` | N/A | N/A | `XblPresence::SetPresence` | `NpPresence::SetPresence` | N/A | `EOS_Presence_SetPresence` |
+| Unified API                | Steam                                            |
+|----------------------------|--------------------------------------------------|
+| `list_friends()`           | `ISteamFriends::GetFriendCount/GetFriendByIndex` |
+| `send_invite(id, context)` | `ISteamFriends::InviteUserToGame`                |
+| `set_rich_presence(state)` | `ISteamFriends::SetRichPresence`                 |
+
+| Unified API                |
+|----------------------------|
+| `list_friends()`           |
+| `send_invite(id, context)` |
+| `set_rich_presence(state)` |
+
+1. **`list_friends()`** — `GKLocalPlayer.loadFriends`
+   - **Google:** `PlayGames.Players.connected`
+   - **Xbox:** `XblSocialManager::GetLocalUsers`
+   - **PSN:** `NpFriends::GetFriendList`
+   - **Nintendo:** `nn::friends::GetFriendList`
+   - **EOS:** `EOS_Friends_QueryFriends`
+2. **`send_invite(id, context)`** — `GKMatchmaker.sendInvite`
+   - **Google:** `RealTimeMultiplayer.invite`
+   - **Xbox:** `XblMultiplayer::SendInvites`
+   - **PSN:** `NpInvitation::SendInvitation`
+   - **Nintendo:** `nn::friends::ShowInvitation`
+   - **EOS:** `EOS_CustomInvites_SendCustomInvite`
+3. **`set_rich_presence(state)`**
+   - **Xbox:** `XblPresence::SetPresence`
+   - **PSN:** `NpPresence::SetPresence`
+   - **EOS:** `EOS_Presence_SetPresence`
 
 ### Mod Support
 
-| Unified API | Steam | Apple | Google | Xbox | PSN | Nintendo | EOS |
-|-------------|-------|-------|--------|------|-----|----------|-----|
-| `upload(manifest)` | `ISteamUGC::CreateItem + SubmitItemUpdate` | N/A | N/A | N/A (limited via Xbox Mods) | N/A | N/A | `EOS_Mods_InstallMod` (download only) |
-| `download(id)` | `ISteamUGC::DownloadItem` | N/A | N/A | N/A | N/A | N/A | `EOS_Mods_InstallMod` |
-| `subscribe(id)` | `ISteamUGC::SubscribeItem` | N/A | N/A | N/A | N/A | N/A | N/A |
-| `rate(id, score)` | `ISteamUGC::SetUserItemVote` | N/A | N/A | N/A | N/A | N/A | N/A |
+| Unified API        | Steam                                      | Apple | Google |
+|--------------------|--------------------------------------------|-------|--------|
+| `upload(manifest)` | `ISteamUGC::CreateItem + SubmitItemUpdate` | N/A   | N/A    |
+| `download(id)`     | `ISteamUGC::DownloadItem`                  | N/A   | N/A    |
+| `subscribe(id)`    | `ISteamUGC::SubscribeItem`                 | N/A   | N/A    |
+| `rate(id, score)`  | `ISteamUGC::SetUserItemVote`               | N/A   | N/A    |
+
+| Unified API        |
+|--------------------|
+| `upload(manifest)` |
+| `download(id)`     |
+| `subscribe(id)`    |
+| `rate(id, score)`  |
+
+1. **`upload(manifest)`** — N/A (limited via Xbox Mods)
+   - **EOS:** `EOS_Mods_InstallMod` (download only)
+2. **`download(id)`**
+   - **EOS:** `EOS_Mods_InstallMod`
 
 ## API Design
 
@@ -729,16 +955,46 @@ stateDiagram-v2
 
 ### Subscription States Per Platform
 
-| State | Apple | Google | Steam | Xbox | PSN |
-|-------|-------|--------|-------|------|-----|
-| **Active** | `subscriptionStatus == 1` | `SUBSCRIPTION_STATE_ACTIVE` | Active recurring | License valid | Entitlement active |
-| **Grace period** | `gracePeriodExpirationDate` set | `SUBSCRIPTION_STATE_IN_GRACE_PERIOD` | N/A | N/A | N/A |
-| **Billing retry** | `isInBillingRetryPeriod` | `SUBSCRIPTION_STATE_ON_HOLD` | N/A | N/A | N/A |
-| **Cancelled** | `autoRenewStatus == 0` | `SUBSCRIPTION_STATE_CANCELED` | Cancelled flag | Cancelled | Cancelled |
-| **Expired** | `expirationDate` passed | `SUBSCRIPTION_STATE_EXPIRED` | Expired | Expired | Expired |
-| **Paused** | N/A | `SUBSCRIPTION_STATE_PAUSED` | N/A | N/A | N/A |
-| **Revoked** | `revocationDate` set | Voided purchase | Refunded | Refunded | Refunded |
-| **Family shared** | `inFamilySharing` | N/A | Family Sharing | Game Pass family | N/A |
+| State             |
+|-------------------|
+| **Active**        |
+| **Grace period**  |
+| **Billing retry** |
+| **Cancelled**     |
+| **Expired**       |
+| **Paused**        |
+| **Revoked**       |
+| **Family shared** |
+
+1. ****Active**** — `subscriptionStatus == 1`
+   - **Google:** `SUBSCRIPTION_STATE_ACTIVE`
+   - **Steam:** Active recurring
+   - **Xbox:** License valid
+   - **PSN:** Entitlement active
+2. ****Grace period**** — `gracePeriodExpirationDate` set
+   - **Google:** `SUBSCRIPTION_STATE_IN_GRACE_PERIOD`
+3. ****Billing retry**** — `isInBillingRetryPeriod`
+   - **Google:** `SUBSCRIPTION_STATE_ON_HOLD`
+4. ****Cancelled**** — `autoRenewStatus == 0`
+   - **Google:** `SUBSCRIPTION_STATE_CANCELED`
+   - **Steam:** Cancelled flag
+   - **Xbox:** Cancelled
+   - **PSN:** Cancelled
+5. ****Expired**** — `expirationDate` passed
+   - **Google:** `SUBSCRIPTION_STATE_EXPIRED`
+   - **Steam:** Expired
+   - **Xbox:** Expired
+   - **PSN:** Expired
+6. ****Paused****
+   - **Google:** `SUBSCRIPTION_STATE_PAUSED`
+7. ****Revoked**** — `revocationDate` set
+   - **Google:** Voided purchase
+   - **Steam:** Refunded
+   - **Xbox:** Refunded
+   - **PSN:** Refunded
+8. ****Family shared**** — `inFamilySharing`
+   - **Steam:** Family Sharing
+   - **Xbox:** Game Pass family
 
 ### Server-Side Webhook Handling
 
@@ -818,15 +1074,37 @@ sequenceDiagram
 
 **When to use platform matchmaking vs custom:**
 
-| Platform | SDK Matchmaking | When to Use | Fallback |
-|----------|----------------|-------------|----------|
-| Steam | `ISteamMatchmaking` lobbies | Peer-to-peer casual games, LAN discovery | Custom for ranked/cross-play |
-| Apple | Game Center `GKMatchmaker` | iOS casual multiplayer | Custom for cross-play |
-| Google | Play Games `RealTimeMultiplayer` | Android casual multiplayer | Custom for cross-play |
-| Xbox | SmartMatch via `XblMatchmaking` | Xbox certification (mandatory for Xbox) | Custom for cross-play overlay |
-| PSN | `NpMatching2` | PSN certification compliance | Custom for cross-play |
-| Nintendo | NEX matchmaking | Nintendo certification | Custom for cross-play |
-| EOS | `EOS_Lobby` | Cross-platform fallback | Used as default cross-play |
+| Platform |
+|----------|
+| Steam    |
+| Apple    |
+| Google   |
+| Xbox     |
+| PSN      |
+| Nintendo |
+| EOS      |
+
+1. **Steam** — `ISteamMatchmaking` lobbies
+   - **When to Use:** Peer-to-peer casual games, LAN discovery
+   - **Fallback:** Custom for ranked/cross-play
+2. **Apple** — Game Center `GKMatchmaker`
+   - **When to Use:** iOS casual multiplayer
+   - **Fallback:** Custom for cross-play
+3. **Google** — Play Games `RealTimeMultiplayer`
+   - **When to Use:** Android casual multiplayer
+   - **Fallback:** Custom for cross-play
+4. **Xbox** — SmartMatch via `XblMatchmaking`
+   - **When to Use:** Xbox certification (mandatory for Xbox)
+   - **Fallback:** Custom for cross-play overlay
+5. **PSN** — `NpMatching2`
+   - **When to Use:** PSN certification compliance
+   - **Fallback:** Custom for cross-play
+6. **Nintendo** — NEX matchmaking
+   - **When to Use:** Nintendo certification
+   - **Fallback:** Custom for cross-play
+7. **EOS** — `EOS_Lobby`
+   - **When to Use:** Cross-platform fallback
+   - **Fallback:** Used as default cross-play
 
 **Integration with session system** (see [sessions-replay.md](../networking/sessions-replay.md)):
 
@@ -839,18 +1117,69 @@ sequenceDiagram
 
 ## Certification Compliance
 
-| Requirement | Steam | Apple | Xbox | PlayStation | Nintendo |
-|-------------|-------|-------|------|-------------|----------|
-| **Achievements/Trophies** | Optional (Steamworks review) | Optional (Game Center) | Mandatory (XR-015) | Mandatory (TRC R4060) | Optional |
-| **Controller support** | Recommended (Steam Input) | MFi controller | Mandatory (XR-022) | Mandatory (TRC R4020) | Mandatory (Joy-Con) |
-| **Suspend/Resume** | N/A | Background handling | Mandatory (XR-074) | Mandatory (TRC R4080) | Mandatory (Sleep mode) |
-| **Game save** | Optional (Steam Cloud) | Optional (iCloud) | Mandatory (XR-078) | Mandatory (TRC R4082) | Mandatory (Save data) |
-| **Privacy** | GDPR compliance | ATT + Privacy Manifest | COPPA via Xbox Family | Regional compliance | Regional compliance |
-| **Content rating** | Steam age gates | App Review (IARC) | ESRB/PEGI via Xbox | CERO/ESRB/PEGI | CERO/ESRB |
-| **Review process** | Steamworks build review | App Review (1-7 days) | XR certification | TRC certification | Lotcheck |
-| **Button mapping** | Flexible | System standard | XR-specific glyphs | TRC-specific glyphs | Handheld/docked modes |
-| **Network** | Steam Networking API | NSURLSession | Xbox Live required | PSN required | NSO required |
-| **User profile** | Steam profile | Apple ID | Xbox Live profile | PSN profile | Nintendo Account |
+| Requirement               |
+|---------------------------|
+| **Achievements/Trophies** |
+| **Controller support**    |
+| **Suspend/Resume**        |
+| **Game save**             |
+| **Privacy**               |
+| **Content rating**        |
+| **Review process**        |
+| **Button mapping**        |
+| **Network**               |
+| **User profile**          |
+
+1. ****Achievements/Trophies**** — Optional (Steamworks review)
+   - **Apple:** Optional (Game Center)
+   - **Xbox:** Mandatory (XR-015)
+   - **PlayStation:** Mandatory (TRC R4060)
+   - **Nintendo:** Optional
+2. ****Controller support**** — Recommended (Steam Input)
+   - **Apple:** MFi controller
+   - **Xbox:** Mandatory (XR-022)
+   - **PlayStation:** Mandatory (TRC R4020)
+   - **Nintendo:** Mandatory (Joy-Con)
+3. ****Suspend/Resume****
+   - **Apple:** Background handling
+   - **Xbox:** Mandatory (XR-074)
+   - **PlayStation:** Mandatory (TRC R4080)
+   - **Nintendo:** Mandatory (Sleep mode)
+4. ****Game save**** — Optional (Steam Cloud)
+   - **Apple:** Optional (iCloud)
+   - **Xbox:** Mandatory (XR-078)
+   - **PlayStation:** Mandatory (TRC R4082)
+   - **Nintendo:** Mandatory (Save data)
+5. ****Privacy**** — GDPR compliance
+   - **Apple:** ATT + Privacy Manifest
+   - **Xbox:** COPPA via Xbox Family
+   - **PlayStation:** Regional compliance
+   - **Nintendo:** Regional compliance
+6. ****Content rating**** — Steam age gates
+   - **Apple:** App Review (IARC)
+   - **Xbox:** ESRB/PEGI via Xbox
+   - **PlayStation:** CERO/ESRB/PEGI
+   - **Nintendo:** CERO/ESRB
+7. ****Review process**** — Steamworks build review
+   - **Apple:** App Review (1-7 days)
+   - **Xbox:** XR certification
+   - **PlayStation:** TRC certification
+   - **Nintendo:** Lotcheck
+8. ****Button mapping**** — Flexible
+   - **Apple:** System standard
+   - **Xbox:** XR-specific glyphs
+   - **PlayStation:** TRC-specific glyphs
+   - **Nintendo:** Handheld/docked modes
+9. ****Network**** — Steam Networking API
+   - **Apple:** NSURLSession
+   - **Xbox:** Xbox Live required
+   - **PlayStation:** PSN required
+   - **Nintendo:** NSO required
+10. ****User profile**** — Steam profile
+    - **Apple:** Apple ID
+    - **Xbox:** Xbox Live profile
+    - **PlayStation:** PSN profile
+    - **Nintendo:** Nintendo Account
 
 ## Cross-Platform Progression
 
@@ -988,15 +1317,30 @@ exclusively on a shared build server that holds the console SDK licenses.
 
 ### Client vs Server Responsibility
 
-| Component | Client (Open Source) | Server (Proprietary) |
-|-----------|----------------------|----------------------|
-| Platform trait definitions | Abstract `PlatformServices` trait and sub-traits | Console SDK implementations (PSN, Xbox, Nintendo) |
-| Build pipeline | Trigger build via REST API + monitor status | Compile against console SDKs, link, package, sign |
-| SDK headers/libraries | None -- zero proprietary code | PlayStation SDK, Xbox GDK, Nintendo SDK |
-| Console package formats | Not present in source tree | .pkg (PS5), .xvc (Xbox), .nsp (Switch) |
-| License required | No | Yes (1 per console platform per server) |
-| Dev kit deployment | Request deploy via REST API | Transfer package to dev kit, relay console output |
-| Artifact storage | Download from S3 | Upload signed packages to S3 |
+| Component                  |
+|----------------------------|
+| Platform trait definitions |
+| Build pipeline             |
+| SDK headers/libraries      |
+| Console package formats    |
+| License required           |
+| Dev kit deployment         |
+| Artifact storage           |
+
+1. **Platform trait definitions** — Abstract `PlatformServices` trait and sub-traits
+   - **Server (Proprietary):** Console SDK implementations (PSN, Xbox, Nintendo)
+2. **Build pipeline** — Trigger build via REST API + monitor status
+   - **Server (Proprietary):** Compile against console SDKs, link, package, sign
+3. **SDK headers/libraries** — None -- zero proprietary code
+   - **Server (Proprietary):** PlayStation SDK, Xbox GDK, Nintendo SDK
+4. **Console package formats** — Not present in source tree
+   - **Server (Proprietary):** .pkg (PS5), .xvc (Xbox), .nsp (Switch)
+5. **License required** — No
+   - **Server (Proprietary):** Yes (1 per console platform per server)
+6. **Dev kit deployment** — Request deploy via REST API
+   - **Server (Proprietary):** Transfer package to dev kit, relay console output
+7. **Artifact storage** — Download from S3
+   - **Server (Proprietary):** Upload signed packages to S3
 
 ### Build Flow
 
@@ -1095,13 +1439,19 @@ graph TD
 
 ### Requirements Trace
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-14.8.1 | R-14.8.1, R-14.8.2 | US-14.8.1, 2, 3 | Server-side console build service |
-| F-14.8.2 | R-14.8.3, R-14.8.4 | US-14.8.8, 9, 12 | Proprietary SDK isolation |
-| F-14.8.3 | R-14.8.5, R-14.8.6 | US-14.8.4, 5, 6, 7 | Shared build server |
-| F-14.8.4 | R-14.8.7, R-14.8.8 | US-14.8.10, 11 | Remote console deployment |
-| F-14.8.5 | R-14.8.9, R-14.8.10 | US-14.8.10 | Console build artifacts |
+| Feature  | Requirement         | User Story         |
+|----------|---------------------|--------------------|
+| F-14.8.1 | R-14.8.1, R-14.8.2  | US-14.8.1, 2, 3    |
+| F-14.8.2 | R-14.8.3, R-14.8.4  | US-14.8.8, 9, 12   |
+| F-14.8.3 | R-14.8.5, R-14.8.6  | US-14.8.4, 5, 6, 7 |
+| F-14.8.4 | R-14.8.7, R-14.8.8  | US-14.8.10, 11     |
+| F-14.8.5 | R-14.8.9, R-14.8.10 | US-14.8.10         |
+
+1. **F-14.8.1** — Server-side console build service
+2. **F-14.8.2** — Proprietary SDK isolation
+3. **F-14.8.3** — Shared build server
+4. **F-14.8.4** — Remote console deployment
+5. **F-14.8.5** — Console build artifacts
 
 ## Test Plan
 

@@ -1,64 +1,187 @@
 # User Stories — 6.4 Haptics & Feedback
 
-| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
-|----|---------|-------|---------------------|----------|--------------|
-| US-6.4.1.1 | engine developer (P-26) | low-frequency and high-frequency rumble motors driven independently with intensity and duration | tactile feedback is detailed |  |  |
-| US-6.4.1.2 | designer (P-5) | reusable rumble patterns as keyframe sequences with attack, sustain, and decay | haptic assets are authored visually |  |  |
-| US-6.4.1.3 | player (P-23) | distinct rumble for combat hits, ability impacts, and mount locomotion | actions have tactile presence |  |  |
-| US-6.4.1.4 | engine developer (P-26) | rumble patterns supporting looping, blending, and priority-based interruption | multiple haptic events compose correctly |  |  |
-| US-6.4.1.5 | engine developer (P-26) | motor intensity normalized to 0.0-1.0 across all backends | rumble is consistent across controllers |  |  |
-| US-6.4.1.6 | designer (P-5) | author rumble patterns in a data-driven format in the editor | haptic design is visual |  |  |
-| US-6.4.1.7 | engine tester (P-27) | verify rumble on Xbox, DualSense, and Switch Pro | all controllers produce haptic feedback |  |  |
-| US-6.4.1.8 | player (P-23) | rhythmic rumble when riding a horse at gallop | mount locomotion is felt |  |  |
-| US-6.4.1.9 | designer (P-5) | rumble patterns triggered by gameplay events | haptic feedback is data-driven |  |  |
-| US-6.4.1.10 | engine tester (P-27) | test rumble pattern priority when multiple events fire simultaneously | the highest priority wins |  |  |
-| US-6.4.1.11 | engine developer (P-26) | XInput left (low-freq) and right (high-freq) motors exposed | Xbox rumble works natively |  |  |
-| US-6.4.1.12 | QA tester (P-19) | verify rumble envelope (attack, sustain, decay) plays accurately | pattern timing is correct |  |  |
-| US-6.4.2.1 | engine developer (P-26) | DualSense L2/R2 adaptive trigger resistance controlled per-trigger | bowstring tension and brake feel work |  |  |
-| US-6.4.2.2 | engine developer (P-26) | resistance mode for adaptive triggers | bowstring draw and brake pedal have progressive resistance |  |  |
-| US-6.4.2.3 | engine developer (P-26) | vibration mode on adaptive triggers | machine gun recoil is felt through L2/R2 |  |  |
-| US-6.4.2.4 | player (P-23) | trigger resistance when drawing a bow | archery feels physical |  |  |
-| US-6.4.2.5 | engine developer (P-26) | sectioned resistance for gear shifting notches | vehicle gear changes are tactile |  |  |
-| US-6.4.2.6 | engine developer (P-26) | adaptive trigger effects to no-op on controllers without support | non-DualSense users are unaffected |  |  |
-| US-6.4.2.7 | engine tester (P-27) | verify trigger control via HID output reports on USB and Bluetooth | both connection modes work |  |  |
-| US-6.4.2.8 | designer (P-5) | author adaptive trigger effects in the visual editor | trigger feel is tunable |  |  |
-| US-6.4.2.9 | player (P-23) | trigger resistance when reeling in a fish | fishing feels physical |  |  |
-| US-6.4.2.10 | engine tester (P-27) | verify effects degrade to no-op on Xbox | fallback is clean |  |  |
-| US-6.4.2.11 | designer (P-5) | trigger effects configurable per context (combat, driving, fishing) | each activity has unique feel |  |  |
-| US-6.4.2.12 | QA tester (P-19) | test resistance, vibration, and sectioned modes on DualSense | all effect types work |  |  |
-| US-6.4.3.1 | engine developer (P-26) | HD haptic waveform playback on Switch Joy-Con and DualSense | fine textures and impacts are felt |  |  |
-| US-6.4.3.2 | engine developer (P-26) | HD haptics reproducing surface textures (stone, grass, sand) | footsteps feel different per surface |  |  |
-| US-6.4.3.3 | player (P-23) | footsteps to feel different on stone vs grass vs sand | surface type is tactile |  |  |
-| US-6.4.3.4 | engine developer (P-26) | a common waveform format with platform-specific conversion | HD haptics are cross-platform |  |  |
-| US-6.4.3.5 | engine developer (P-26) | Switch HD Rumble driven via frequency/amplitude pairs at 5ms | Joy-Con LRA actuators are controlled |  |  |
-| US-6.4.3.6 | engine developer (P-26) | DualSense haptics driven via arbitrary waveform playback | voice-coil actuators produce rich feedback |  |  |
-| US-6.4.3.7 | player (P-23) | lockpicking to provide tumbler feedback | the minigame feels physical |  |  |
-| US-6.4.3.8 | designer (P-5) | author haptic waveforms in the visual editor | HD haptic assets are tuned visually |  |  |
-| US-6.4.3.9 | engine tester (P-27) | verify HD haptic playback on Switch and DualSense | both platforms produce correct output |  |  |
-| US-6.4.3.10 | player (P-23) | rain tapping on my shield to produce fine haptic feedback | environmental effects are tactile |  |  |
-| US-6.4.3.11 | engine tester (P-27) | test common-to-platform waveform conversion | output matches on Joy-Con and DualSense |  |  |
-| US-6.4.3.12 | QA tester (P-19) | verify waveform playback timing matches keyframes | haptic rhythm is accurate |  |  |
-| US-6.4.4.1 | engine developer (P-26) | haptic waveforms generated from audio frequency bands and amplitude envelopes | tactile syncs with sound |  |  |
-| US-6.4.4.2 | engine developer (P-26) | frequency band extraction targeting 20-250 Hz | haptic actuators receive perceptible frequencies |  |  |
-| US-6.4.4.3 | player (P-23) | explosions to produce matching tactile feedback | every blast is felt through the controller |  |  |
-| US-6.4.4.4 | designer (P-5) | audio-driven haptics working automatically | hand-authored haptic assets are not needed for every effect |  |  |
-| US-6.4.4.5 | engine developer (P-26) | audio-to-haptic latency under 10ms | desynchronization is imperceptible |  |  |
-| US-6.4.4.6 | engine tester (P-27) | measure audio-to-haptic latency | it stays under 10ms |  |  |
-| US-6.4.4.7 | engine developer (P-26) | access to audio mix output for band extraction | frequency data is accurate |  |  |
-| US-6.4.4.8 | designer (P-5) | frequency band and amplitude parameters configurable | haptic generation is tunable |  |  |
-| US-6.4.4.9 | player (P-23) | environmental rumble (thunder, machinery) to match audio | ambient haptics are immersive |  |  |
-| US-6.4.4.10 | engine tester (P-27) | test audio-driven haptics for explosions, footsteps, and ambient | generation works for all types |  |  |
-| US-6.4.4.11 | QA tester (P-19) | verify haptic amplitude matches audio envelope | sync is accurate |  |  |
-| US-6.4.4.12 | engine developer (P-26) | audio-driven haptics blended with authored patterns | both sources compose |  |  |
-| US-6.4.5.1 | designer (P-5) | named profiles combining rumble, adaptive triggers, and HD haptics into reusable assets | haptic design is unified |  |  |
-| US-6.4.5.2 | designer (P-5) | profiles triggered by events with parameter binding | haptics are data-driven |  |  |
-| US-6.4.5.3 | player (P-23) | rich combined feedback (rumble + triggers + HD haptics) on DualSense | feedback is immersive |  |  |
-| US-6.4.5.4 | engine developer (P-26) | profiles degrading gracefully (full on DualSense, rumble-only on Xbox) | every controller gets feedback |  |  |
-| US-6.4.5.5 | designer (P-5) | fallback chain configurable in the profile asset | degradation is authored |  |  |
-| US-6.4.5.6 | engine tester (P-27) | fallback ordering validated at build time | every profile produces feedback on every controller class |  |  |
-| US-6.4.5.7 | engine developer (P-26) | profile parameters bound to gameplay values | intensity scales dynamically |  |  |
-| US-6.4.5.8 | player (P-23) | some haptic feedback on any controller | switching does not lose all feedback |  |  |
-| US-6.4.5.9 | designer (P-5) | author haptic profiles in the editor | combined assets are visual |  |  |
-| US-6.4.5.10 | engine tester (P-27) | test each profile on Xbox, DualSense, and Switch Pro | fallback works on all |  |  |
-| US-6.4.5.11 | QA tester (P-19) | verify profiles fallback to dual-motor rumble on generic controllers | minimum feedback is guaranteed |  |  |
-| US-6.4.5.12 | engine developer (P-26) | impact force parameter bound to rumble intensity | stronger hits produce stronger feedback |  |  |
+| ID          | Persona                 | Features | Requirements |
+|-------------|-------------------------|----------|--------------|
+| US-6.4.1.1  | engine developer (P-26) |          |              |
+| US-6.4.1.2  | designer (P-5)          |          |              |
+| US-6.4.1.3  | player (P-23)           |          |              |
+| US-6.4.1.4  | engine developer (P-26) |          |              |
+| US-6.4.1.5  | engine developer (P-26) |          |              |
+| US-6.4.1.6  | designer (P-5)          |          |              |
+| US-6.4.1.7  | engine tester (P-27)    |          |              |
+| US-6.4.1.8  | player (P-23)           |          |              |
+| US-6.4.1.9  | designer (P-5)          |          |              |
+| US-6.4.1.10 | engine tester (P-27)    |          |              |
+| US-6.4.1.11 | engine developer (P-26) |          |              |
+| US-6.4.1.12 | QA tester (P-19)        |          |              |
+| US-6.4.2.1  | engine developer (P-26) |          |              |
+| US-6.4.2.2  | engine developer (P-26) |          |              |
+| US-6.4.2.3  | engine developer (P-26) |          |              |
+| US-6.4.2.4  | player (P-23)           |          |              |
+| US-6.4.2.5  | engine developer (P-26) |          |              |
+| US-6.4.2.6  | engine developer (P-26) |          |              |
+| US-6.4.2.7  | engine tester (P-27)    |          |              |
+| US-6.4.2.8  | designer (P-5)          |          |              |
+| US-6.4.2.9  | player (P-23)           |          |              |
+| US-6.4.2.10 | engine tester (P-27)    |          |              |
+| US-6.4.2.11 | designer (P-5)          |          |              |
+| US-6.4.2.12 | QA tester (P-19)        |          |              |
+| US-6.4.3.1  | engine developer (P-26) |          |              |
+| US-6.4.3.2  | engine developer (P-26) |          |              |
+| US-6.4.3.3  | player (P-23)           |          |              |
+| US-6.4.3.4  | engine developer (P-26) |          |              |
+| US-6.4.3.5  | engine developer (P-26) |          |              |
+| US-6.4.3.6  | engine developer (P-26) |          |              |
+| US-6.4.3.7  | player (P-23)           |          |              |
+| US-6.4.3.8  | designer (P-5)          |          |              |
+| US-6.4.3.9  | engine tester (P-27)    |          |              |
+| US-6.4.3.10 | player (P-23)           |          |              |
+| US-6.4.3.11 | engine tester (P-27)    |          |              |
+| US-6.4.3.12 | QA tester (P-19)        |          |              |
+| US-6.4.4.1  | engine developer (P-26) |          |              |
+| US-6.4.4.2  | engine developer (P-26) |          |              |
+| US-6.4.4.3  | player (P-23)           |          |              |
+| US-6.4.4.4  | designer (P-5)          |          |              |
+| US-6.4.4.5  | engine developer (P-26) |          |              |
+| US-6.4.4.6  | engine tester (P-27)    |          |              |
+| US-6.4.4.7  | engine developer (P-26) |          |              |
+| US-6.4.4.8  | designer (P-5)          |          |              |
+| US-6.4.4.9  | player (P-23)           |          |              |
+| US-6.4.4.10 | engine tester (P-27)    |          |              |
+| US-6.4.4.11 | QA tester (P-19)        |          |              |
+| US-6.4.4.12 | engine developer (P-26) |          |              |
+| US-6.4.5.1  | designer (P-5)          |          |              |
+| US-6.4.5.2  | designer (P-5)          |          |              |
+| US-6.4.5.3  | player (P-23)           |          |              |
+| US-6.4.5.4  | engine developer (P-26) |          |              |
+| US-6.4.5.5  | designer (P-5)          |          |              |
+| US-6.4.5.6  | engine tester (P-27)    |          |              |
+| US-6.4.5.7  | engine developer (P-26) |          |              |
+| US-6.4.5.8  | player (P-23)           |          |              |
+| US-6.4.5.9  | designer (P-5)          |          |              |
+| US-6.4.5.10 | engine tester (P-27)    |          |              |
+| US-6.4.5.11 | QA tester (P-19)        |          |              |
+| US-6.4.5.12 | engine developer (P-26) |          |              |
+
+1. **US-6.4.1.1** — low-frequency and high-frequency rumble motors driven independently with
+   intensity and duration
+   - **Acceptance:** tactile feedback is detailed
+2. **US-6.4.1.2** — reusable rumble patterns as keyframe sequences with attack, sustain, and decay
+   - **Acceptance:** haptic assets are authored visually
+3. **US-6.4.1.3** — distinct rumble for combat hits, ability impacts, and mount locomotion
+   - **Acceptance:** actions have tactile presence
+4. **US-6.4.1.4** — rumble patterns supporting looping, blending, and priority-based interruption
+   - **Acceptance:** multiple haptic events compose correctly
+5. **US-6.4.1.5** — motor intensity normalized to 0.0-1.0 across all backends
+   - **Acceptance:** rumble is consistent across controllers
+6. **US-6.4.1.6** — author rumble patterns in a data-driven format in the editor
+   - **Acceptance:** haptic design is visual
+7. **US-6.4.1.7** — verify rumble on Xbox, DualSense, and Switch Pro
+   - **Acceptance:** all controllers produce haptic feedback
+8. **US-6.4.1.8** — rhythmic rumble when riding a horse at gallop
+   - **Acceptance:** mount locomotion is felt
+9. **US-6.4.1.9** — rumble patterns triggered by gameplay events
+   - **Acceptance:** haptic feedback is data-driven
+10. **US-6.4.1.10** — test rumble pattern priority when multiple events fire simultaneously
+    - **Acceptance:** the highest priority wins
+11. **US-6.4.1.11** — XInput left (low-freq) and right (high-freq) motors exposed
+    - **Acceptance:** Xbox rumble works natively
+12. **US-6.4.1.12** — verify rumble envelope (attack, sustain, decay) plays accurately
+    - **Acceptance:** pattern timing is correct
+13. **US-6.4.2.1** — DualSense L2/R2 adaptive trigger resistance controlled per-trigger
+    - **Acceptance:** bowstring tension and brake feel work
+14. **US-6.4.2.2** — resistance mode for adaptive triggers
+    - **Acceptance:** bowstring draw and brake pedal have progressive resistance
+15. **US-6.4.2.3** — vibration mode on adaptive triggers
+    - **Acceptance:** machine gun recoil is felt through L2/R2
+16. **US-6.4.2.4** — trigger resistance when drawing a bow
+    - **Acceptance:** archery feels physical
+17. **US-6.4.2.5** — sectioned resistance for gear shifting notches
+    - **Acceptance:** vehicle gear changes are tactile
+18. **US-6.4.2.6** — adaptive trigger effects to no-op on controllers without support
+    - **Acceptance:** non-DualSense users are unaffected
+19. **US-6.4.2.7** — verify trigger control via HID output reports on USB and Bluetooth
+    - **Acceptance:** both connection modes work
+20. **US-6.4.2.8** — author adaptive trigger effects in the visual editor
+    - **Acceptance:** trigger feel is tunable
+21. **US-6.4.2.9** — trigger resistance when reeling in a fish
+    - **Acceptance:** fishing feels physical
+22. **US-6.4.2.10** — verify effects degrade to no-op on Xbox
+    - **Acceptance:** fallback is clean
+23. **US-6.4.2.11** — trigger effects configurable per context (combat, driving, fishing)
+    - **Acceptance:** each activity has unique feel
+24. **US-6.4.2.12** — test resistance, vibration, and sectioned modes on DualSense
+    - **Acceptance:** all effect types work
+25. **US-6.4.3.1** — HD haptic waveform playback on Switch Joy-Con and DualSense
+    - **Acceptance:** fine textures and impacts are felt
+26. **US-6.4.3.2** — HD haptics reproducing surface textures (stone, grass, sand)
+    - **Acceptance:** footsteps feel different per surface
+27. **US-6.4.3.3** — footsteps to feel different on stone vs grass vs sand
+    - **Acceptance:** surface type is tactile
+28. **US-6.4.3.4** — a common waveform format with platform-specific conversion
+    - **Acceptance:** HD haptics are cross-platform
+29. **US-6.4.3.5** — Switch HD Rumble driven via frequency/amplitude pairs at 5ms
+    - **Acceptance:** Joy-Con LRA actuators are controlled
+30. **US-6.4.3.6** — DualSense haptics driven via arbitrary waveform playback
+    - **Acceptance:** voice-coil actuators produce rich feedback
+31. **US-6.4.3.7** — lockpicking to provide tumbler feedback
+    - **Acceptance:** the minigame feels physical
+32. **US-6.4.3.8** — author haptic waveforms in the visual editor
+    - **Acceptance:** HD haptic assets are tuned visually
+33. **US-6.4.3.9** — verify HD haptic playback on Switch and DualSense
+    - **Acceptance:** both platforms produce correct output
+34. **US-6.4.3.10** — rain tapping on my shield to produce fine haptic feedback
+    - **Acceptance:** environmental effects are tactile
+35. **US-6.4.3.11** — test common-to-platform waveform conversion
+    - **Acceptance:** output matches on Joy-Con and DualSense
+36. **US-6.4.3.12** — verify waveform playback timing matches keyframes
+    - **Acceptance:** haptic rhythm is accurate
+37. **US-6.4.4.1** — haptic waveforms generated from audio frequency bands and amplitude envelopes
+    - **Acceptance:** tactile syncs with sound
+38. **US-6.4.4.2** — frequency band extraction targeting 20-250 Hz
+    - **Acceptance:** haptic actuators receive perceptible frequencies
+39. **US-6.4.4.3** — explosions to produce matching tactile feedback
+    - **Acceptance:** every blast is felt through the controller
+40. **US-6.4.4.4** — audio-driven haptics working automatically
+    - **Acceptance:** hand-authored haptic assets are not needed for every effect
+41. **US-6.4.4.5** — audio-to-haptic latency under 10ms
+    - **Acceptance:** desynchronization is imperceptible
+42. **US-6.4.4.6** — measure audio-to-haptic latency
+    - **Acceptance:** it stays under 10ms
+43. **US-6.4.4.7** — access to audio mix output for band extraction
+    - **Acceptance:** frequency data is accurate
+44. **US-6.4.4.8** — frequency band and amplitude parameters configurable
+    - **Acceptance:** haptic generation is tunable
+45. **US-6.4.4.9** — environmental rumble (thunder, machinery) to match audio
+    - **Acceptance:** ambient haptics are immersive
+46. **US-6.4.4.10** — test audio-driven haptics for explosions, footsteps, and ambient
+    - **Acceptance:** generation works for all types
+47. **US-6.4.4.11** — verify haptic amplitude matches audio envelope
+    - **Acceptance:** sync is accurate
+48. **US-6.4.4.12** — audio-driven haptics blended with authored patterns
+    - **Acceptance:** both sources compose
+49. **US-6.4.5.1** — named profiles combining rumble, adaptive triggers, and HD haptics into
+    reusable assets
+    - **Acceptance:** haptic design is unified
+50. **US-6.4.5.2** — profiles triggered by events with parameter binding
+    - **Acceptance:** haptics are data-driven
+51. **US-6.4.5.3** — rich combined feedback (rumble + triggers + HD haptics) on DualSense
+    - **Acceptance:** feedback is immersive
+52. **US-6.4.5.4** — profiles degrading gracefully (full on DualSense, rumble-only on Xbox)
+    - **Acceptance:** every controller gets feedback
+53. **US-6.4.5.5** — fallback chain configurable in the profile asset
+    - **Acceptance:** degradation is authored
+54. **US-6.4.5.6** — fallback ordering validated at build time
+    - **Acceptance:** every profile produces feedback on every controller class
+55. **US-6.4.5.7** — profile parameters bound to gameplay values
+    - **Acceptance:** intensity scales dynamically
+56. **US-6.4.5.8** — some haptic feedback on any controller
+    - **Acceptance:** switching does not lose all feedback
+57. **US-6.4.5.9** — author haptic profiles in the editor
+    - **Acceptance:** combined assets are visual
+58. **US-6.4.5.10** — test each profile on Xbox, DualSense, and Switch Pro
+    - **Acceptance:** fallback works on all
+59. **US-6.4.5.11** — verify profiles fallback to dual-motor rumble on generic controllers
+    - **Acceptance:** minimum feedback is guaranteed
+60. **US-6.4.5.12** — impact force parameter bound to rumble intensity
+    - **Acceptance:** stronger hits produce stronger feedback

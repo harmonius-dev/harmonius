@@ -10,6 +10,7 @@ Language-specific coding standards for the Harmonius engine.
 | [C++](cpp.md) | C++ | FFI bridges (cxx.rs) |
 | [Swift](swift.md) | Swift | macOS platform (cxx.rs) |
 | [TypeScript](typescript.md) | TypeScript | Tooling, editor, build |
+| [Python](python.md) | Python | Scripts and tools (ruff) |
 | [HLSL](hlsl.md) | HLSL | Shader IL (DXC pipeline) |
 | [Markdown](markdown.md) | Markdown | Documentation (rumdl) |
 | [JSON](json.md) | JSON | Configuration files |
@@ -22,4 +23,4 @@ Language-specific coding standards for the Harmonius engine.
 2. **Functional first** — immutable data, pure functions, transform pipelines
 3. **Data-oriented** — arrays of structs or structs of arrays over object hierarchies
 4. **Test-driven** — write tests first, no mocking, use real dependencies or full fakes
-5. **100-character lines** — all code, comments, docs (tables exempt)
+5. **100-character lines** — all code, comments, docs, tables

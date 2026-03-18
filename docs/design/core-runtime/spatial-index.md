@@ -10,29 +10,43 @@
 
 ### Acceleration Structures (F-1.9.1–3 / R-1.9.1–3)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.9.1 | R-1.9.1 | Shared BVH as ECS resource, updated once per frame, read by all subsystems |
-| F-1.9.1 | R-1.9.1a | BVH memory <= 64 bytes/entity, SAH quality within 2x of full rebuild |
-| F-1.9.2 | R-1.9.2 | Incremental BVH updates via change detection, cost proportional to moved entities |
-| F-1.9.3 | R-1.9.3 | Optional grid/octree alongside BVH for cell-based queries |
+| Feature | Requirement |
+|---------|-------------|
+| F-1.9.1 | R-1.9.1     |
+| F-1.9.1 | R-1.9.1a    |
+| F-1.9.2 | R-1.9.2     |
+| F-1.9.3 | R-1.9.3     |
+
+1. **F-1.9.1** — Shared BVH as ECS resource, updated once per frame, read by all subsystems
+2. **F-1.9.1** — BVH memory <= 64 bytes/entity, SAH quality within 2x of full rebuild
+3. **F-1.9.2** — Incremental BVH updates via change detection, cost proportional to moved entities
+4. **F-1.9.3** — Optional grid/octree alongside BVH for cell-based queries
 
 ### Query Interface (F-1.9.4–5 / R-1.9.4–5)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.9.4 | R-1.9.4 | Unified query API: ray, shape, overlap, frustum, k-NN with ECS filters |
-| F-1.9.4 | R-1.9.4a | Ray cast < 10 us at 1M entities; frustum cull < 500 us at 1M entities |
-| F-1.9.5 | R-1.9.5 | Batch parallel queries via thread pool with SIMD acceleration |
+| Feature | Requirement |
+|---------|-------------|
+| F-1.9.4 | R-1.9.4     |
+| F-1.9.4 | R-1.9.4a    |
+| F-1.9.5 | R-1.9.5     |
+
+1. **F-1.9.4** — Unified query API: ray, shape, overlap, frustum, k-NN with ECS filters
+2. **F-1.9.4** — Ray cast < 10 us at 1M entities; frustum cull < 500 us at 1M entities
+3. **F-1.9.5** — Batch parallel queries via thread pool with SIMD acceleration
 
 ### Consumer Integration (F-1.9.6–9 / R-1.9.6–9)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-1.9.6 | R-1.9.6 | Physics broadphase reads shared BVH, no separate broadphase |
-| F-1.9.7 | R-1.9.7 | Rendering frustum culling reads shared BVH for all views |
-| F-1.9.8 | R-1.9.8 | Network relevancy uses grid/octree for area-of-interest |
-| F-1.9.9 | R-1.9.9 | AI perception and gameplay queries route through unified API |
+| Feature | Requirement |
+|---------|-------------|
+| F-1.9.6 | R-1.9.6     |
+| F-1.9.7 | R-1.9.7     |
+| F-1.9.8 | R-1.9.8     |
+| F-1.9.9 | R-1.9.9     |
+
+1. **F-1.9.6** — Physics broadphase reads shared BVH, no separate broadphase
+2. **F-1.9.7** — Rendering frustum culling reads shared BVH for all views
+3. **F-1.9.8** — Network relevancy uses grid/octree for area-of-interest
+4. **F-1.9.9** — AI perception and gameplay queries route through unified API
 
 ### Interoperability Contract
 
@@ -1673,10 +1687,13 @@ the synchronization boundary. This is the same pattern used by all ECS resources
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `smallvec` | Inline-allocated small vectors | Traversal stacks, query result buffers without heap allocation |
-| `glam` | Math types (Vec3, Mat4, Aabb) | SIMD-accelerated spatial math on all platforms |
+| Crate      | Purpose                        |
+|------------|--------------------------------|
+| `smallvec` | Inline-allocated small vectors |
+| `glam`     | Math types (Vec3, Mat4, Aabb)  |
+
+1. **`smallvec`** — Traversal stacks, query result buffers without heap allocation
+2. **`glam`** — SIMD-accelerated spatial math on all platforms
 
 ---
 
@@ -1722,40 +1739,95 @@ Provide `remove_with_hint(entity, cell)` for O(1) removal.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_aabb_intersection` | R-1.9.4 | AABB-AABB, AABB-ray, AABB-sphere, AABB-frustum intersection correctness against known geometric configurations. |
-| `test_bvh_insert_remove` | R-1.9.1 | Insert 1000 entities, remove 500, verify BVH invariants (all leaves reachable, parent AABBs enclose children). |
-| `test_bvh_sah_quality` | R-1.9.1a | Build BVH from 10K random AABBs. Verify SAH cost is within expected bounds. |
-| `test_bvh_incremental_refit` | R-1.9.2 | Insert 10K entities, move 100. Verify refit updates only moved nodes and their ancestors. |
-| `test_bvh_fat_aabb_skip` | R-1.9.2 | Move entity by small amount within fat AABB margin. Verify no tree structure change. |
-| `test_bvh_batch_insert` | R-1.9.2 | Batch-insert 1000 entities. Verify all are queryable and SAH quality is comparable to incremental single-inserts. |
-| `test_bvh_rebuild_quality` | R-1.9.1a | Degrade BVH via 1000 frames of random movement. Rebuild. Verify SAH quality returns to within 1.1x of fresh build. |
-| `test_bvh_stale_handle` | R-1.9.1 | Remove entity, attempt update with old handle. Verify `StaleHandle` error. |
-| `test_bvh_memory_budget` | R-1.9.1a | Insert 1M entities. Verify total memory is under 64 bytes per entity. |
-| `test_octree_insert_query` | R-1.9.3 | Insert 10K entities, query cells and ranges. Verify against brute-force. |
-| `test_octree_cross_cell_move` | R-1.9.3 | Move entity across cell boundary. Verify old cell loses it, new cell gains it. |
-| `test_grid_insert_query` | R-1.9.3 | Insert 10K entities into 2D grid, query radius. Verify against brute-force. |
-| `test_grid_boundary` | R-1.9.3 | Insert entity at grid boundary. Verify correct cell assignment. |
-| `test_ray_cast_accuracy` | R-1.9.4 | 1000 random rays against 10K entities. Verify all hits match brute-force ray-AABB test. |
-| `test_frustum_cull_accuracy` | R-1.9.4 | Frustum query against 10K entities. Compare result set to brute-force frustum-AABB test. Zero false negatives, zero false positives. |
-| `test_knn_accuracy` | R-1.9.4 | k-NN query (k=10) against 10K entities. Verify returned entities are the 10 closest by brute-force distance sort. |
-| `test_layer_filtering` | R-1.9.4 | Insert entities on different layers. Query with specific layer mask. Verify only matching-layer entities returned. |
-| `test_empty_index_queries` | R-1.9.4a | All query types against empty BVH. Verify empty result set (not error or panic). |
-| `test_query_sort_nearest` | R-1.9.4 | Ray cast with `QuerySort::Nearest`. Verify results ordered by ascending distance. |
+| Test                          | Req      |
+|-------------------------------|----------|
+| `test_aabb_intersection`      | R-1.9.4  |
+| `test_bvh_insert_remove`      | R-1.9.1  |
+| `test_bvh_sah_quality`        | R-1.9.1a |
+| `test_bvh_incremental_refit`  | R-1.9.2  |
+| `test_bvh_fat_aabb_skip`      | R-1.9.2  |
+| `test_bvh_batch_insert`       | R-1.9.2  |
+| `test_bvh_rebuild_quality`    | R-1.9.1a |
+| `test_bvh_stale_handle`       | R-1.9.1  |
+| `test_bvh_memory_budget`      | R-1.9.1a |
+| `test_octree_insert_query`    | R-1.9.3  |
+| `test_octree_cross_cell_move` | R-1.9.3  |
+| `test_grid_insert_query`      | R-1.9.3  |
+| `test_grid_boundary`          | R-1.9.3  |
+| `test_ray_cast_accuracy`      | R-1.9.4  |
+| `test_frustum_cull_accuracy`  | R-1.9.4  |
+| `test_knn_accuracy`           | R-1.9.4  |
+| `test_layer_filtering`        | R-1.9.4  |
+| `test_empty_index_queries`    | R-1.9.4a |
+| `test_query_sort_nearest`     | R-1.9.4  |
+
+1. **`test_aabb_intersection`** — AABB-AABB, AABB-ray, AABB-sphere, AABB-frustum intersection
+   correctness against known geometric configurations.
+2. **`test_bvh_insert_remove`** — Insert 1000 entities, remove 500, verify BVH invariants (all
+   leaves reachable, parent AABBs enclose children).
+3. **`test_bvh_sah_quality`** — Build BVH from 10K random AABBs. Verify SAH cost is within expected
+   bounds.
+4. **`test_bvh_incremental_refit`** — Insert 10K entities, move 100. Verify refit updates only moved
+   nodes and their ancestors.
+5. **`test_bvh_fat_aabb_skip`** — Move entity by small amount within fat AABB margin. Verify no tree
+   structure change.
+6. **`test_bvh_batch_insert`** — Batch-insert 1000 entities. Verify all are queryable and SAH
+   quality is comparable to incremental single-inserts.
+7. **`test_bvh_rebuild_quality`** — Degrade BVH via 1000 frames of random movement. Rebuild. Verify
+   SAH quality returns to within 1.1x of fresh build.
+8. **`test_bvh_stale_handle`** — Remove entity, attempt update with old handle. Verify `StaleHandle`
+   error.
+9. **`test_bvh_memory_budget`** — Insert 1M entities. Verify total memory is under 64 bytes per
+   entity.
+10. **`test_octree_insert_query`** — Insert 10K entities, query cells and ranges. Verify against
+    brute-force.
+11. **`test_octree_cross_cell_move`** — Move entity across cell boundary. Verify old cell loses it,
+    new cell gains it.
+12. **`test_grid_insert_query`** — Insert 10K entities into 2D grid, query radius. Verify against
+    brute-force.
+13. **`test_grid_boundary`** — Insert entity at grid boundary. Verify correct cell assignment.
+14. **`test_ray_cast_accuracy`** — 1000 random rays against 10K entities. Verify all hits match
+    brute-force ray-AABB test.
+15. **`test_frustum_cull_accuracy`** — Frustum query against 10K entities. Compare result set to
+    brute-force frustum-AABB test. Zero false negatives, zero false positives.
+16. **`test_knn_accuracy`** — k-NN query (k=10) against 10K entities. Verify returned entities are
+    the 10 closest by brute-force distance sort.
+17. **`test_layer_filtering`** — Insert entities on different layers. Query with specific layer
+    mask. Verify only matching-layer entities returned.
+18. **`test_empty_index_queries`** — All query types against empty BVH. Verify empty result set (not
+    error or panic).
+19. **`test_query_sort_nearest`** — Ray cast with `QuerySort::Nearest`. Verify results ordered by
+    ascending distance.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_shared_bvh_cross_subsystem` | R-1.9.1 | Move entity via Transform. Verify physics broadphase, rendering culling, and AI perception all see the updated position in the same frame. |
-| `test_physics_broadphase_shared` | R-1.9.6 | Create 1000 overlapping collider pairs. Verify physics detects all pairs via shared BVH. Verify no separate broadphase allocation. |
-| `test_rendering_frustum_shared` | R-1.9.7 | Place 10K entities, camera covering ~half. Verify ~5K marked visible. Verify shadow cascade produces different set. |
-| `test_network_relevancy_grid` | R-1.9.8 | 10K entities, 2 players at different positions. Verify each player's interest set contains only entities within radius. |
-| `test_ai_perception_sight_cone` | R-1.9.9 | 100 AI agents with sight cones, 500 targets. Verify sight cone query returns only entities within angular and distance bounds. |
-| `test_incremental_vs_full_build` | R-1.9.2 | Insert 1M entities, move 1% per frame for 100 frames. Verify incremental results match a full-rebuild reference. |
-| `test_parallel_consumer_safety` | R-1.9.1 | Run physics, rendering, and AI query systems in parallel. Verify no data races (run under ThreadSanitizer). |
-| `test_batch_matches_sequential` | R-1.9.5 | Submit 1000 queries both as batch and sequentially. Verify identical result sets. |
+| Test                              | Req     |
+|-----------------------------------|---------|
+| `test_shared_bvh_cross_subsystem` | R-1.9.1 |
+| `test_physics_broadphase_shared`  | R-1.9.6 |
+| `test_rendering_frustum_shared`   | R-1.9.7 |
+| `test_network_relevancy_grid`     | R-1.9.8 |
+| `test_ai_perception_sight_cone`   | R-1.9.9 |
+| `test_incremental_vs_full_build`  | R-1.9.2 |
+| `test_parallel_consumer_safety`   | R-1.9.1 |
+| `test_batch_matches_sequential`   | R-1.9.5 |
+
+1. **`test_shared_bvh_cross_subsystem`** — Move entity via Transform. Verify physics broadphase,
+   rendering culling, and AI perception all see the updated position in the same frame.
+2. **`test_physics_broadphase_shared`** — Create 1000 overlapping collider pairs. Verify physics
+   detects all pairs via shared BVH. Verify no separate broadphase allocation.
+3. **`test_rendering_frustum_shared`** — Place 10K entities, camera covering ~half. Verify ~5K
+   marked visible. Verify shadow cascade produces different set.
+4. **`test_network_relevancy_grid`** — 10K entities, 2 players at different positions. Verify each
+   player's interest set contains only entities within radius.
+5. **`test_ai_perception_sight_cone`** — 100 AI agents with sight cones, 500 targets. Verify sight
+   cone query returns only entities within angular and distance bounds.
+6. **`test_incremental_vs_full_build`** — Insert 1M entities, move 1% per frame for 100 frames.
+   Verify incremental results match a full-rebuild reference.
+7. **`test_parallel_consumer_safety`** — Run physics, rendering, and AI query systems in parallel.
+   Verify no data races (run under ThreadSanitizer).
+8. **`test_batch_matches_sequential`** — Submit 1000 queries both as batch and sequentially. Verify
+   identical result sets.
 
 ### Benchmarks
 
@@ -1793,12 +1865,29 @@ allocation-free alternatives.
 Three new methods extend the `SpatialQuery` trait. The original `query()` method is retained for
 convenience but documented as allocation-heavy.
 
-| Variant | Signature | Allocation | Use Case |
-|---------|-----------|------------|----------|
-| `query` | `fn query(&self, shape: &QueryShape, config: &QueryConfig) -> Vec<SpatialHit>` | Heap per call | Low-frequency convenience |
-| `query_into` | `fn query_into(&self, shape: &QueryShape, config: &QueryConfig, results: &mut Vec<SpatialHit>)` | None (caller-owned) | Reused buffer across frames |
-| `query_visitor` | `fn query_visitor(&self, shape: &QueryShape, config: &QueryConfig, visitor: impl FnMut(SpatialHit) -> ControlFlow<()>)` | None | Early-exit traversal |
-| `query_arena` | `fn query_arena<'a>(&self, shape: &QueryShape, config: &QueryConfig, arena: &'a Arena) -> &'a [SpatialHit]` | Arena bump | Per-frame budget queries |
+| Variant         | Allocation          | Use Case                    |
+|-----------------|---------------------|-----------------------------|
+| `query`         | Heap per call       | Low-frequency convenience   |
+| `query_into`    | None (caller-owned) | Reused buffer across frames |
+| `query_visitor` | None                | Early-exit traversal        |
+| `query_arena`   | Arena bump          | Per-frame budget queries    |
+
+1. **`query`** — `fn query(&self, shape: &QueryShape, config: &QueryConfig) -> Vec<SpatialHit>`
+2. **`query_into`** —
+   `fn query_into(&self, shape: &QueryShape, config: &QueryConfig, results: &mut Vec<SpatialHit>)`
+3. **`query_visitor`** —
+
+   ```rust
+   fn query_visitor(
+       &self,
+       shape: &QueryShape,
+       config: &QueryConfig,
+       visitor: impl FnMut(SpatialHit) -> ControlFlow<()>,
+   )
+   ```
+
+4. **`query_arena`** —
+   `fn query_arena<'a>(&self, shape: &QueryShape, config: &QueryConfig, arena: &'a Arena) -> &'a [SpatialHit]`
 
 ### Updated SpatialQuery Trait
 
@@ -1849,12 +1938,21 @@ classDiagram
 Each consumer subsystem should use the variant that best fits its access pattern and performance
 requirements.
 
-| Consumer | Variant | Rationale |
-|----------|---------|-----------|
-| Physics broadphase | `query_visitor` | Processes each AABB overlap pair inline; early exit when pair count exceeds budget |
-| Rendering culling | `query_into` | Reuses a visibility buffer (`Vec<SpatialHit>`) across frames; buffer size stabilizes after a few frames |
-| AI perception | `query_arena` | Multiple agents share one per-frame arena; results outlive individual queries for downstream filtering |
-| Gameplay / scripting | `query` | Called infrequently from visual scripting nodes; convenience outweighs allocation cost |
+| Consumer             | Variant         |
+|----------------------|-----------------|
+| Physics broadphase   | `query_visitor` |
+| Rendering culling    | `query_into`    |
+| AI perception        | `query_arena`   |
+| Gameplay / scripting | `query`         |
+
+1. **Physics broadphase** — Processes each AABB overlap pair inline; early exit when pair count
+   exceeds budget
+2. **Rendering culling** — Reuses a visibility buffer (`Vec<SpatialHit>`) across frames; buffer size
+   stabilizes after a few frames
+3. **AI perception** — Multiple agents share one per-frame arena; results outlive individual queries
+   for downstream filtering
+4. **Gameplay / scripting** — Called infrequently from visual scripting nodes; convenience outweighs
+   allocation cost
 
 ```rust
 // --- Physics broadphase (query_visitor) ---

@@ -29,6 +29,11 @@
             "type": "command"
           },
           {
+            "command": ".claude/hooks/check-python.sh",
+            "timeout": 30,
+            "type": "command"
+          },
+          {
             "command": ".claude/hooks/run-xcodegen.sh",
             "timeout": 30,
             "type": "command"

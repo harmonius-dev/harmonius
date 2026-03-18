@@ -1,0 +1,19 @@
+{
+  "name": "harmonius",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "husky": "^9.1.7"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "build": "scripts/build.sh",
+    "lint": "python3 scripts/hooks.py --all",
+    "prepare": "husky",
+    "test": "scripts/test.sh"
+  }
+}

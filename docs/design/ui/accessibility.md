@@ -7,15 +7,23 @@
 > [user-stories/ui-2d/](../../user-stories/ui-2d/). The table below traces design elements to those
 > definitions.
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-10.6.1 | R-10.6.1 | US-10.6.1, US-10.6.2, US-10.6.3 | Screen reader support |
-| F-10.6.2 | R-10.6.2 | US-10.6.4, US-10.6.5, US-10.6.6 | Subtitle and caption system |
-| F-10.6.3 | R-10.6.3 | US-10.6.7, US-10.6.8, US-10.6.9 | Colorblind modes |
-| F-10.6.4 | R-10.6.4 | US-10.6.10, US-10.6.11, US-10.6.12 | High contrast and scalable UI |
-| F-10.6.5 | R-10.6.5 | US-10.6.13, US-10.6.14, US-10.6.15 | Input remapping for accessibility |
-| F-10.6.6 | R-10.6.6 | US-10.6.16, US-10.6.17, US-10.6.18 | Text-to-speech for chat |
-| F-10.6.7 | R-10.6.7 | US-10.6.19, US-10.6.20, US-10.6.21 | WCAG 2.1 compliance |
+| Feature  | Requirement | User Story                         |
+|----------|-------------|------------------------------------|
+| F-10.6.1 | R-10.6.1    | US-10.6.1, US-10.6.2, US-10.6.3    |
+| F-10.6.2 | R-10.6.2    | US-10.6.4, US-10.6.5, US-10.6.6    |
+| F-10.6.3 | R-10.6.3    | US-10.6.7, US-10.6.8, US-10.6.9    |
+| F-10.6.4 | R-10.6.4    | US-10.6.10, US-10.6.11, US-10.6.12 |
+| F-10.6.5 | R-10.6.5    | US-10.6.13, US-10.6.14, US-10.6.15 |
+| F-10.6.6 | R-10.6.6    | US-10.6.16, US-10.6.17, US-10.6.18 |
+| F-10.6.7 | R-10.6.7    | US-10.6.19, US-10.6.20, US-10.6.21 |
+
+1. **F-10.6.1** — Screen reader support
+2. **F-10.6.2** — Subtitle and caption system
+3. **F-10.6.3** — Colorblind modes
+4. **F-10.6.4** — High contrast and scalable UI
+5. **F-10.6.5** — Input remapping for accessibility
+6. **F-10.6.6** — Text-to-speech for chat
+7. **F-10.6.7** — WCAG 2.1 compliance
 
 ## Overview
 
@@ -1388,11 +1396,15 @@ When `HighContrastSettings.enabled` is true:
 
 ### Screen Reader APIs
 
-| Platform | API | Access | Notes |
-|----------|-----|--------|-------|
-| macOS | NSAccessibility | Swift wrappers / cxx.rs | VoiceOver; uses NSAccessibilityElement protocol |
-| Windows | UI Automation | windows-sys | Narrator, JAWS, NVDA; COM-based provider model |
-| Linux | AT-SPI | D-Bus via zbus crate | Orca; AT-SPI2 over D-Bus IPC |
+| Platform | API             | Access                  |
+|----------|-----------------|-------------------------|
+| macOS    | NSAccessibility | Swift wrappers / cxx.rs |
+| Windows  | UI Automation   | windows-sys             |
+| Linux    | AT-SPI          | D-Bus via zbus crate    |
+
+1. **macOS** — VoiceOver; uses NSAccessibilityElement protocol
+2. **Windows** — Narrator, JAWS, NVDA; COM-based provider model
+3. **Linux** — Orca; AT-SPI2 over D-Bus IPC
 
 ### TTS APIs
 
@@ -1404,11 +1416,18 @@ When `HighContrastSettings.enabled` is true:
 
 ### DPI and System Preferences
 
-| Platform | DPI API | High Contrast | Reduced Motion |
-|----------|---------|---------------|----------------|
-| Windows | `GetDpiForWindow` | `SystemParametersInfoW(SPI_GETHIGHCONTRAST)` | `SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION)` |
-| macOS | `backingScaleFactor` | `accessibilityDisplayShouldIncreaseContrast` | `accessibilityDisplayShouldReduceMotion` |
-| Linux | `Xft.dpi` / `wl_output.scale` | GTK high-contrast theme detection | `prefers-reduced-motion` via portal |
+| Platform | DPI API                       |
+|----------|-------------------------------|
+| Windows  | `GetDpiForWindow`             |
+| macOS    | `backingScaleFactor`          |
+| Linux    | `Xft.dpi` / `wl_output.scale` |
+
+1. **Windows** — `SystemParametersInfoW(SPI_GETHIGHCONTRAST)`
+   - **Reduced Motion:** `SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION)`
+2. **macOS** — `accessibilityDisplayShouldIncreaseContrast`
+   - **Reduced Motion:** `accessibilityDisplayShouldReduceMotion`
+3. **Linux** — GTK high-contrast theme detection
+   - **Reduced Motion:** `prefers-reduced-motion` via portal
 
 ### Proposed Dependencies
 
@@ -1422,47 +1441,83 @@ When `HighContrastSettings.enabled` is true:
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_accessible_node_creation` | R-10.6.1 | Widget with role/label produces correct AccessibleNode |
-| `test_tree_sync_add_remove` | R-10.6.1 | Adding/removing widgets updates accessibility tree |
-| `test_live_region_announce` | R-10.6.1 | Live region change marked dirty with correct mode |
-| `test_focus_tab_order` | R-10.6.1 | Tab advances focus through all interactive widgets in order |
-| `test_subtitle_timing` | R-10.6.2 | Subtitle appears at start_time, disappears at end_time |
-| `test_caption_direction` | R-10.6.2 | Caption includes correct directional indicator |
-| `test_subtitle_settings` | R-10.6.2 | Changing font_size/color/position updates display |
-| `test_protan_matrix` | R-10.6.3 | Protanopia matrix transforms red to distinguishable hue |
-| `test_deutan_matrix` | R-10.6.3 | Deuteranopia matrix transforms green correctly |
-| `test_tritan_matrix` | R-10.6.3 | Tritanopia matrix transforms blue correctly |
-| `test_alternative_cues` | R-10.6.3 | Color-coded element has non-color cue attached |
-| `test_contrast_ratio_aa` | R-10.6.7 | White-on-black = 21:1, passes AA and AAA |
-| `test_contrast_ratio_fail` | R-10.6.7 | Light-gray-on-white < 4.5:1, fails AA normal |
-| `test_high_contrast_borders` | R-10.6.4 | High contrast mode increases border width to 3px |
-| `test_high_contrast_no_transparency` | R-10.6.4 | Decorative transparency removed in high contrast |
-| `test_ui_scale_80` | R-10.6.4 | All widgets scale correctly at 80% |
-| `test_ui_scale_250` | R-10.6.4 | All widgets scale correctly at 250% with no overflow |
-| `test_rebind_all_actions` | R-10.6.5 | Every action rebindable to a different key |
-| `test_hold_toggle` | R-10.6.5 | Hold-to-toggle activates on press, deactivates on next press |
-| `test_scanning_navigation` | R-10.6.5 | Scanning visits every interactive element |
-| `test_per_character_profile` | R-10.6.5 | Two character profiles load correct bindings |
-| `test_tts_channel_filter` | R-10.6.6 | TTS enabled on party only speaks party messages |
-| `test_tts_volume_control` | R-10.6.6 | Per-channel volume adjusts TTS output |
-| `test_reduced_motion_no_shake` | R-10.6.7 | Camera shake disabled when reduced motion active |
-| `test_focus_indicator_visible` | R-10.6.7 | Focus indicator renders on every focused widget |
+| Test                                 | Req      |
+|--------------------------------------|----------|
+| `test_accessible_node_creation`      | R-10.6.1 |
+| `test_tree_sync_add_remove`          | R-10.6.1 |
+| `test_live_region_announce`          | R-10.6.1 |
+| `test_focus_tab_order`               | R-10.6.1 |
+| `test_subtitle_timing`               | R-10.6.2 |
+| `test_caption_direction`             | R-10.6.2 |
+| `test_subtitle_settings`             | R-10.6.2 |
+| `test_protan_matrix`                 | R-10.6.3 |
+| `test_deutan_matrix`                 | R-10.6.3 |
+| `test_tritan_matrix`                 | R-10.6.3 |
+| `test_alternative_cues`              | R-10.6.3 |
+| `test_contrast_ratio_aa`             | R-10.6.7 |
+| `test_contrast_ratio_fail`           | R-10.6.7 |
+| `test_high_contrast_borders`         | R-10.6.4 |
+| `test_high_contrast_no_transparency` | R-10.6.4 |
+| `test_ui_scale_80`                   | R-10.6.4 |
+| `test_ui_scale_250`                  | R-10.6.4 |
+| `test_rebind_all_actions`            | R-10.6.5 |
+| `test_hold_toggle`                   | R-10.6.5 |
+| `test_scanning_navigation`           | R-10.6.5 |
+| `test_per_character_profile`         | R-10.6.5 |
+| `test_tts_channel_filter`            | R-10.6.6 |
+| `test_tts_volume_control`            | R-10.6.6 |
+| `test_reduced_motion_no_shake`       | R-10.6.7 |
+| `test_focus_indicator_visible`       | R-10.6.7 |
+
+1. **`test_accessible_node_creation`** — Widget with role/label produces correct AccessibleNode
+2. **`test_tree_sync_add_remove`** — Adding/removing widgets updates accessibility tree
+3. **`test_live_region_announce`** — Live region change marked dirty with correct mode
+4. **`test_focus_tab_order`** — Tab advances focus through all interactive widgets in order
+5. **`test_subtitle_timing`** — Subtitle appears at start_time, disappears at end_time
+6. **`test_caption_direction`** — Caption includes correct directional indicator
+7. **`test_subtitle_settings`** — Changing font_size/color/position updates display
+8. **`test_protan_matrix`** — Protanopia matrix transforms red to distinguishable hue
+9. **`test_deutan_matrix`** — Deuteranopia matrix transforms green correctly
+10. **`test_tritan_matrix`** — Tritanopia matrix transforms blue correctly
+11. **`test_alternative_cues`** — Color-coded element has non-color cue attached
+12. **`test_contrast_ratio_aa`** — White-on-black = 21:1, passes AA and AAA
+13. **`test_contrast_ratio_fail`** — Light-gray-on-white < 4.5:1, fails AA normal
+14. **`test_high_contrast_borders`** — High contrast mode increases border width to 3px
+15. **`test_high_contrast_no_transparency`** — Decorative transparency removed in high contrast
+16. **`test_ui_scale_80`** — All widgets scale correctly at 80%
+17. **`test_ui_scale_250`** — All widgets scale correctly at 250% with no overflow
+18. **`test_rebind_all_actions`** — Every action rebindable to a different key
+19. **`test_hold_toggle`** — Hold-to-toggle activates on press, deactivates on next press
+20. **`test_scanning_navigation`** — Scanning visits every interactive element
+21. **`test_per_character_profile`** — Two character profiles load correct bindings
+22. **`test_tts_channel_filter`** — TTS enabled on party only speaks party messages
+23. **`test_tts_volume_control`** — Per-channel volume adjusts TTS output
+24. **`test_reduced_motion_no_shake`** — Camera shake disabled when reduced motion active
+25. **`test_focus_indicator_visible`** — Focus indicator renders on every focused widget
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_voiceover_macos` | R-10.6.1 | VoiceOver announces all widget types correctly on macOS |
-| `test_narrator_windows` | R-10.6.1 | Narrator announces all widget types correctly on Windows |
-| `test_orca_linux` | R-10.6.1 | Orca announces all widget types correctly on Linux |
-| `test_subtitle_audio_sync` | R-10.6.2 | Subtitles sync within 100ms of audio playback |
-| `test_colorblind_preview` | R-10.6.3 | CVD mode toggles in settings with real-time preview |
-| `test_dpi_detection` | R-10.6.4 | Engine reads correct DPI from each platform |
-| `test_switch_device_full_ui` | R-10.6.5 | Single-button scanning reaches every UI element |
-| `test_tts_platform_voices` | R-10.6.6 | TTS uses native voices on each platform |
-| `test_wcag_all_screens` | R-10.6.7 | All menu/settings screens pass WCAG AA audit |
+| Test                         | Req      |
+|------------------------------|----------|
+| `test_voiceover_macos`       | R-10.6.1 |
+| `test_narrator_windows`      | R-10.6.1 |
+| `test_orca_linux`            | R-10.6.1 |
+| `test_subtitle_audio_sync`   | R-10.6.2 |
+| `test_colorblind_preview`    | R-10.6.3 |
+| `test_dpi_detection`         | R-10.6.4 |
+| `test_switch_device_full_ui` | R-10.6.5 |
+| `test_tts_platform_voices`   | R-10.6.6 |
+| `test_wcag_all_screens`      | R-10.6.7 |
+
+1. **`test_voiceover_macos`** — VoiceOver announces all widget types correctly on macOS
+2. **`test_narrator_windows`** — Narrator announces all widget types correctly on Windows
+3. **`test_orca_linux`** — Orca announces all widget types correctly on Linux
+4. **`test_subtitle_audio_sync`** — Subtitles sync within 100ms of audio playback
+5. **`test_colorblind_preview`** — CVD mode toggles in settings with real-time preview
+6. **`test_dpi_detection`** — Engine reads correct DPI from each platform
+7. **`test_switch_device_full_ui`** — Single-button scanning reaches every UI element
+8. **`test_tts_platform_voices`** — TTS uses native voices on each platform
+9. **`test_wcag_all_screens`** — All menu/settings screens pass WCAG AA audit
 
 ### Benchmarks
 

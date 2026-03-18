@@ -10,62 +10,101 @@
 
 ### Spatial Queries (4.4)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-4.4.1 | R-4.4.1 | Ray casting via shared BVH |
-| F-4.4.2 | R-4.4.2 | Shape casting (sweep tests) |
-| F-4.4.3 | R-4.4.3 | Overlap tests |
-| F-4.4.4 | R-4.4.4 | Closest point queries |
-| F-4.4.5 | R-4.4.5 | Batch query execution |
-| F-4.4.6 | R-4.4.6 | Query filtering and custom predicates |
+| Feature | Requirement |
+|---------|-------------|
+| F-4.4.1 | R-4.4.1     |
+| F-4.4.2 | R-4.4.2     |
+| F-4.4.3 | R-4.4.3     |
+| F-4.4.4 | R-4.4.4     |
+| F-4.4.5 | R-4.4.5     |
+| F-4.4.6 | R-4.4.6     |
+
+1. **F-4.4.1** — Ray casting via shared BVH
+2. **F-4.4.2** — Shape casting (sweep tests)
+3. **F-4.4.3** — Overlap tests
+4. **F-4.4.4** — Closest point queries
+5. **F-4.4.5** — Batch query execution
+6. **F-4.4.6** — Query filtering and custom predicates
 
 ### Vehicle Physics (4.5)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-4.5.1 | R-4.5.1 | Wheel suspension model |
-| F-4.5.2 | R-4.5.2 | Tire friction (Pacejka Magic Formula) |
-| F-4.5.3 | R-4.5.3 | Drivetrain simulation |
-| F-4.5.4 | R-4.5.4 | Anti-roll bars and stability control |
-| F-4.5.5 | R-4.5.5 | Tracked vehicle simulation |
-| F-4.5.6 | R-4.5.6 | Hover vehicle simulation |
-| F-4.5.7 | R-4.5.7 | Server-authoritative vehicle replication |
+| Feature | Requirement |
+|---------|-------------|
+| F-4.5.1 | R-4.5.1     |
+| F-4.5.2 | R-4.5.2     |
+| F-4.5.3 | R-4.5.3     |
+| F-4.5.4 | R-4.5.4     |
+| F-4.5.5 | R-4.5.5     |
+| F-4.5.6 | R-4.5.6     |
+| F-4.5.7 | R-4.5.7     |
+
+1. **F-4.5.1** — Wheel suspension model
+2. **F-4.5.2** — Tire friction (Pacejka Magic Formula)
+3. **F-4.5.3** — Drivetrain simulation
+4. **F-4.5.4** — Anti-roll bars and stability control
+5. **F-4.5.5** — Tracked vehicle simulation
+6. **F-4.5.6** — Hover vehicle simulation
+7. **F-4.5.7** — Server-authoritative vehicle replication
 
 ### Destruction and Fracture (4.6)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-4.6.1 | R-4.6.1 | Voronoi fracture generation |
-| F-4.6.2 | R-4.6.2 | Pre-fractured mesh authoring |
-| F-4.6.3 | R-4.6.3 | Runtime fracture and activation |
-| F-4.6.4 | R-4.6.4 | Progressive damage model |
-| F-4.6.5 | R-4.6.5 | Stress propagation and structural collapse |
-| F-4.6.6 | R-4.6.6 | Debris simulation and lifecycle |
-| F-4.6.7 | R-4.6.7 | Debris pooling and LOD |
+| Feature | Requirement |
+|---------|-------------|
+| F-4.6.1 | R-4.6.1     |
+| F-4.6.2 | R-4.6.2     |
+| F-4.6.3 | R-4.6.3     |
+| F-4.6.4 | R-4.6.4     |
+| F-4.6.5 | R-4.6.5     |
+| F-4.6.6 | R-4.6.6     |
+| F-4.6.7 | R-4.6.7     |
+
+1. **F-4.6.1** — Voronoi fracture generation
+2. **F-4.6.2** — Pre-fractured mesh authoring
+3. **F-4.6.3** — Runtime fracture and activation
+4. **F-4.6.4** — Progressive damage model
+5. **F-4.6.5** — Stress propagation and structural collapse
+6. **F-4.6.6** — Debris simulation and lifecycle
+7. **F-4.6.7** — Debris pooling and LOD
 
 ### Soft Body and Cloth (4.7)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-4.7.1 | R-4.7.1 | Position-based dynamics (XPBD) solver |
-| F-4.7.2 | R-4.7.2 | Cloth simulation |
-| F-4.7.3 | R-4.7.3 | Cloth self-collision |
-| F-4.7.4 | R-4.7.4 | Two-way rigid body coupling |
-| F-4.7.5 | R-4.7.5 | Wind interaction via shared wind field |
-| F-4.7.6 | R-4.7.6 | Cloth tearing |
-| F-4.7.7 | R-4.7.7 | Cloth level of detail |
+| Feature | Requirement |
+|---------|-------------|
+| F-4.7.1 | R-4.7.1     |
+| F-4.7.2 | R-4.7.2     |
+| F-4.7.3 | R-4.7.3     |
+| F-4.7.4 | R-4.7.4     |
+| F-4.7.5 | R-4.7.5     |
+| F-4.7.6 | R-4.7.6     |
+| F-4.7.7 | R-4.7.7     |
+
+1. **F-4.7.1** — Position-based dynamics (XPBD) solver
+2. **F-4.7.2** — Cloth simulation
+3. **F-4.7.3** — Cloth self-collision
+4. **F-4.7.4** — Two-way rigid body coupling
+5. **F-4.7.5** — Wind interaction via shared wind field
+6. **F-4.7.6** — Cloth tearing
+7. **F-4.7.7** — Cloth level of detail
 
 ### Fluid Simulation (4.8)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-4.8.1 | R-4.8.1 | SPH fluid simulation |
-| F-4.8.2 | R-4.8.2 | FLIP/PIC hybrid simulation |
-| F-4.8.3 | R-4.8.3 | Eulerian grid fluid solver |
-| F-4.8.4 | R-4.8.4 | Fluid surface reconstruction |
-| F-4.8.5 | R-4.8.5 | Water surface simulation |
-| F-4.8.6 | R-4.8.6 | Buoyancy and drag forces |
-| F-4.8.7 | R-4.8.7 | Two-way fluid-rigid body coupling |
+| Feature | Requirement |
+|---------|-------------|
+| F-4.8.1 | R-4.8.1     |
+| F-4.8.2 | R-4.8.2     |
+| F-4.8.3 | R-4.8.3     |
+| F-4.8.4 | R-4.8.4     |
+| F-4.8.5 | R-4.8.5     |
+| F-4.8.6 | R-4.8.6     |
+| F-4.8.7 | R-4.8.7     |
+
+1. **F-4.8.1** — SPH fluid simulation
+2. **F-4.8.2** — FLIP/PIC hybrid simulation
+3. **F-4.8.3** — Eulerian grid fluid solver
+4. **F-4.8.4** — Fluid surface reconstruction
+5. **F-4.8.5** — Water surface simulation
+6. **F-4.8.6** — Buoyancy and drag forces
+7. **F-4.8.7** — Two-way fluid-rigid body coupling
 
 ## Overview
 
@@ -1667,101 +1706,179 @@ Each physics tick, vehicle systems execute in order:
 
 ### Spatial Query Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_ray_cast_sphere_hit` | R-4.4.1 | Ray against known sphere, assert position error < 0.1 mm |
-| `test_ray_cast_normal_accuracy` | R-4.4.1 | Assert normal within 0.001 rad of analytical solution |
-| `test_ray_cast_all_shapes` | R-4.4.1 | Ray vs box, sphere, capsule, convex, trimesh, heightfield |
-| `test_ray_cast_miss` | R-4.4.1 | Ray with no obstacles returns None |
-| `test_ray_cast_50k_latency` | R-4.4.NF1 | Single ray vs 50K entities completes within 5 us |
-| `test_shape_cast_ground` | R-4.4.2 | Capsule sweep downward detects ground |
-| `test_shape_cast_no_hit` | R-4.4.2 | Sweep in empty direction returns None |
-| `test_shape_cast_contact_accuracy` | R-4.4.2 | Contact point within 0.1 mm of analytical |
-| `test_overlap_sphere_aoe` | R-4.4.3 | 100 entities, sphere overlap, zero false pos/neg |
-| `test_overlap_all_shapes` | R-4.4.3 | Box, capsule, convex hull overlaps |
-| `test_closest_point_accuracy` | R-4.4.4 | Closest point on sphere/box/capsule within 0.1 mm |
-| `test_closest_point_signed_dist` | R-4.4.4 | Inside = negative, outside = positive |
-| `test_batch_correctness` | R-4.4.5 | Batch results match individual query results |
-| `test_batch_parallel_speedup` | R-4.4.NF2 | 1000 rays on 8 cores: >= 4x faster than sequential |
-| `test_batch_scalability` | R-4.4.NF2 | 10K rays on 4/8/16 cores: >= 75% efficiency |
-| `test_filter_layers` | R-4.4.6 | Excluded layers never reach narrowphase |
-| `test_filter_with_without` | R-4.4.6 | With/Without structural filters work |
-| `test_filter_predicate` | R-4.4.6 | Custom predicate reduces candidate count |
-| `test_filter_combinations` | R-4.4.6 | All filter combinations produce correct results |
+| Test                               | Req       |
+|------------------------------------|-----------|
+| `test_ray_cast_sphere_hit`         | R-4.4.1   |
+| `test_ray_cast_normal_accuracy`    | R-4.4.1   |
+| `test_ray_cast_all_shapes`         | R-4.4.1   |
+| `test_ray_cast_miss`               | R-4.4.1   |
+| `test_ray_cast_50k_latency`        | R-4.4.NF1 |
+| `test_shape_cast_ground`           | R-4.4.2   |
+| `test_shape_cast_no_hit`           | R-4.4.2   |
+| `test_shape_cast_contact_accuracy` | R-4.4.2   |
+| `test_overlap_sphere_aoe`          | R-4.4.3   |
+| `test_overlap_all_shapes`          | R-4.4.3   |
+| `test_closest_point_accuracy`      | R-4.4.4   |
+| `test_closest_point_signed_dist`   | R-4.4.4   |
+| `test_batch_correctness`           | R-4.4.5   |
+| `test_batch_parallel_speedup`      | R-4.4.NF2 |
+| `test_batch_scalability`           | R-4.4.NF2 |
+| `test_filter_layers`               | R-4.4.6   |
+| `test_filter_with_without`         | R-4.4.6   |
+| `test_filter_predicate`            | R-4.4.6   |
+| `test_filter_combinations`         | R-4.4.6   |
+
+1. **`test_ray_cast_sphere_hit`** — Ray against known sphere, assert position error < 0.1 mm
+2. **`test_ray_cast_normal_accuracy`** — Assert normal within 0.001 rad of analytical solution
+3. **`test_ray_cast_all_shapes`** — Ray vs box, sphere, capsule, convex, trimesh, heightfield
+4. **`test_ray_cast_miss`** — Ray with no obstacles returns None
+5. **`test_ray_cast_50k_latency`** — Single ray vs 50K entities completes within 5 us
+6. **`test_shape_cast_ground`** — Capsule sweep downward detects ground
+7. **`test_shape_cast_no_hit`** — Sweep in empty direction returns None
+8. **`test_shape_cast_contact_accuracy`** — Contact point within 0.1 mm of analytical
+9. **`test_overlap_sphere_aoe`** — 100 entities, sphere overlap, zero false pos/neg
+10. **`test_overlap_all_shapes`** — Box, capsule, convex hull overlaps
+11. **`test_closest_point_accuracy`** — Closest point on sphere/box/capsule within 0.1 mm
+12. **`test_closest_point_signed_dist`** — Inside = negative, outside = positive
+13. **`test_batch_correctness`** — Batch results match individual query results
+14. **`test_batch_parallel_speedup`** — 1000 rays on 8 cores: >= 4x faster than sequential
+15. **`test_batch_scalability`** — 10K rays on 4/8/16 cores: >= 75% efficiency
+16. **`test_filter_layers`** — Excluded layers never reach narrowphase
+17. **`test_filter_with_without`** — With/Without structural filters work
+18. **`test_filter_predicate`** — Custom predicate reduces candidate count
+19. **`test_filter_combinations`** — All filter combinations produce correct results
 
 ### Vehicle Physics Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_suspension_rest` | R-4.5.1 | 1500 kg vehicle settles within 1 mm of rest in 2 s |
-| `test_suspension_20v_budget` | R-4.5.NF1 | 20 vehicles (4 wheels) within 4 ms |
-| `test_pacejka_curve` | R-4.5.2 | Sweep 0-20 deg slip, force within 5% of reference |
-| `test_surface_friction` | R-4.5.2 | Asphalt to ice reduces grip |
-| `test_torque_distribution` | R-4.5.3 | RWD torque sum = engine * gear ratio within 1% |
-| `test_differential_types` | R-4.5.3 | Open, LSD, locked produce correct split |
-| `test_anti_roll_effectiveness` | R-4.5.4 | 0.5g corner: >= 30% less roll with bars |
-| `test_tracked_turning_radius` | R-4.5.5 | L=5, R=3 m/s: radius within 10% of expected |
-| `test_hover_altitude` | R-4.5.6 | 4 repulsors at 2 m: stabilizes within 5% in 5 s |
-| `test_hover_velocity` | R-4.5.6 | Vertical velocity < 0.01 m/s at equilibrium |
-| `test_vehicle_replication` | R-4.5.7 | 100 ms latency: divergence < 10 cm |
-| `test_vehicle_bandwidth` | R-4.5.NF2 | Delta-compressed payload < 256 bytes/vehicle |
+| Test                           | Req       |
+|--------------------------------|-----------|
+| `test_suspension_rest`         | R-4.5.1   |
+| `test_suspension_20v_budget`   | R-4.5.NF1 |
+| `test_pacejka_curve`           | R-4.5.2   |
+| `test_surface_friction`        | R-4.5.2   |
+| `test_torque_distribution`     | R-4.5.3   |
+| `test_differential_types`      | R-4.5.3   |
+| `test_anti_roll_effectiveness` | R-4.5.4   |
+| `test_tracked_turning_radius`  | R-4.5.5   |
+| `test_hover_altitude`          | R-4.5.6   |
+| `test_hover_velocity`          | R-4.5.6   |
+| `test_vehicle_replication`     | R-4.5.7   |
+| `test_vehicle_bandwidth`       | R-4.5.NF2 |
+
+1. **`test_suspension_rest`** — 1500 kg vehicle settles within 1 mm of rest in 2 s
+2. **`test_suspension_20v_budget`** — 20 vehicles (4 wheels) within 4 ms
+3. **`test_pacejka_curve`** — Sweep 0-20 deg slip, force within 5% of reference
+4. **`test_surface_friction`** — Asphalt to ice reduces grip
+5. **`test_torque_distribution`** — RWD torque sum = engine * gear ratio within 1%
+6. **`test_differential_types`** — Open, LSD, locked produce correct split
+7. **`test_anti_roll_effectiveness`** — 0.5g corner: >= 30% less roll with bars
+8. **`test_tracked_turning_radius`** — L=5, R=3 m/s: radius within 10% of expected
+9. **`test_hover_altitude`** — 4 repulsors at 2 m: stabilizes within 5% in 5 s
+10. **`test_hover_velocity`** — Vertical velocity < 0.01 m/s at equilibrium
+11. **`test_vehicle_replication`** — 100 ms latency: divergence < 10 cm
+12. **`test_vehicle_bandwidth`** — Delta-compressed payload < 256 bytes/vehicle
 
 ### Destruction Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_voronoi_volume` | R-4.6.1 | 20-fragment cube: total volume within 1% |
-| `test_pre_fractured_load` | R-4.6.2 | 15-fragment asset loads and spawns in 1 frame |
-| `test_fracture_trigger` | R-4.6.3 | Damage > threshold despawns intact, spawns fragments |
-| `test_fracture_positions` | R-4.6.3 | Fragment transforms match asset layout |
-| `test_fracture_50frag_budget` | R-4.6.NF1 | 50-fragment activation within 2 ms |
-| `test_progressive_damage` | R-4.6.4 | 3-stage DamageHealth triggers in order, within 5% |
-| `test_damage_replication` | R-4.6.4 | DamageHealth replicates via ECS replication |
-| `test_structural_collapse` | R-4.6.5 | Break keystone: unsupported fragments fall |
-| `test_structural_200node` | R-4.6.NF3 | 200-node graph traversal within 0.5 ms |
-| `test_debris_cap` | R-4.6.NF2 | Cap 200: 500 spawned, active never exceeds 200 |
-| `test_debris_ttl` | R-4.6.6 | Expired debris despawned within 1 frame |
-| `test_debris_sustained` | R-4.6.NF2 | 2000 fragments, cap 500: stable frame rates |
-| `test_debris_pooling` | R-4.6.7 | Pooling reduces allocs by >= 80% |
-| `test_debris_lod_removal` | R-4.6.7 | Beyond max LOD: no RigidBody or Collider |
+| Test                          | Req       |
+|-------------------------------|-----------|
+| `test_voronoi_volume`         | R-4.6.1   |
+| `test_pre_fractured_load`     | R-4.6.2   |
+| `test_fracture_trigger`       | R-4.6.3   |
+| `test_fracture_positions`     | R-4.6.3   |
+| `test_fracture_50frag_budget` | R-4.6.NF1 |
+| `test_progressive_damage`     | R-4.6.4   |
+| `test_damage_replication`     | R-4.6.4   |
+| `test_structural_collapse`    | R-4.6.5   |
+| `test_structural_200node`     | R-4.6.NF3 |
+| `test_debris_cap`             | R-4.6.NF2 |
+| `test_debris_ttl`             | R-4.6.6   |
+| `test_debris_sustained`       | R-4.6.NF2 |
+| `test_debris_pooling`         | R-4.6.7   |
+| `test_debris_lod_removal`     | R-4.6.7   |
+
+1. **`test_voronoi_volume`** — 20-fragment cube: total volume within 1%
+2. **`test_pre_fractured_load`** — 15-fragment asset loads and spawns in 1 frame
+3. **`test_fracture_trigger`** — Damage > threshold despawns intact, spawns fragments
+4. **`test_fracture_positions`** — Fragment transforms match asset layout
+5. **`test_fracture_50frag_budget`** — 50-fragment activation within 2 ms
+6. **`test_progressive_damage`** — 3-stage DamageHealth triggers in order, within 5%
+7. **`test_damage_replication`** — DamageHealth replicates via ECS replication
+8. **`test_structural_collapse`** — Break keystone: unsupported fragments fall
+9. **`test_structural_200node`** — 200-node graph traversal within 0.5 ms
+10. **`test_debris_cap`** — Cap 200: 500 spawned, active never exceeds 200
+11. **`test_debris_ttl`** — Expired debris despawned within 1 frame
+12. **`test_debris_sustained`** — 2000 fragments, cap 500: stable frame rates
+13. **`test_debris_pooling`** — Pooling reduces allocs by >= 80%
+14. **`test_debris_lod_removal`** — Beyond max LOD: no RigidBody or Collider
 
 ### Soft Body and Cloth Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_xpbd_convergence` | R-4.7.1 | 10x10 grid, 10 iters: constraints within 1% |
-| `test_xpbd_single_budget` | R-4.7.NF1 | 20x20, 10 iters: within 0.5 ms |
-| `test_cloth_attachment` | R-4.7.2 | Attached particles within 0.1 mm of bone |
-| `test_cloth_gravity` | R-4.7.2 | Free particles fall, attached remain fixed |
-| `test_cloth_8_instance` | R-4.7.NF1 | 8 instances (20x20): within 4 ms total |
-| `test_cloth_memory` | R-4.7.NF2 | 20x20 cloth: <= 64 KB buffer size |
-| `test_self_collision` | R-4.7.3 | Cloth on sphere: no non-adjacent particles closer than thickness |
-| `test_two_way_coupling` | R-4.7.4 | 10 kg cloth on 1 kg body: ExternalForce non-zero |
-| `test_wind_proportional` | R-4.7.5 | Double wind strength: displacement increases >= 50% |
-| `test_wind_shared_field` | R-4.7.5 | Cloth reads shared texture, not WindSource directly |
-| `test_wind_16source_budget` | R-4.7.NF3 | 16 sources: wind field within 0.2 ms |
-| `test_cloth_tearing` | R-4.7.6 | Exceed threshold: cloth splits, particles preserved |
-| `test_cloth_lod_cost` | R-4.7.7 | LOD enabled: >= 50% cost reduction |
-| `test_cloth_lod_zero_sim` | R-4.7.7 | Beyond max LOD: zero solver invocations |
-| `test_cloth_lod_smooth` | R-4.7.7 | LOD transitions: no visible popping |
+| Test                        | Req       |
+|-----------------------------|-----------|
+| `test_xpbd_convergence`     | R-4.7.1   |
+| `test_xpbd_single_budget`   | R-4.7.NF1 |
+| `test_cloth_attachment`     | R-4.7.2   |
+| `test_cloth_gravity`        | R-4.7.2   |
+| `test_cloth_8_instance`     | R-4.7.NF1 |
+| `test_cloth_memory`         | R-4.7.NF2 |
+| `test_self_collision`       | R-4.7.3   |
+| `test_two_way_coupling`     | R-4.7.4   |
+| `test_wind_proportional`    | R-4.7.5   |
+| `test_wind_shared_field`    | R-4.7.5   |
+| `test_wind_16source_budget` | R-4.7.NF3 |
+| `test_cloth_tearing`        | R-4.7.6   |
+| `test_cloth_lod_cost`       | R-4.7.7   |
+| `test_cloth_lod_zero_sim`   | R-4.7.7   |
+| `test_cloth_lod_smooth`     | R-4.7.7   |
+
+1. **`test_xpbd_convergence`** — 10x10 grid, 10 iters: constraints within 1%
+2. **`test_xpbd_single_budget`** — 20x20, 10 iters: within 0.5 ms
+3. **`test_cloth_attachment`** — Attached particles within 0.1 mm of bone
+4. **`test_cloth_gravity`** — Free particles fall, attached remain fixed
+5. **`test_cloth_8_instance`** — 8 instances (20x20): within 4 ms total
+6. **`test_cloth_memory`** — 20x20 cloth: <= 64 KB buffer size
+7. **`test_self_collision`** — Cloth on sphere: no non-adjacent particles closer than thickness
+8. **`test_two_way_coupling`** — 10 kg cloth on 1 kg body: ExternalForce non-zero
+9. **`test_wind_proportional`** — Double wind strength: displacement increases >= 50%
+10. **`test_wind_shared_field`** — Cloth reads shared texture, not WindSource directly
+11. **`test_wind_16source_budget`** — 16 sources: wind field within 0.2 ms
+12. **`test_cloth_tearing`** — Exceed threshold: cloth splits, particles preserved
+13. **`test_cloth_lod_cost`** — LOD enabled: >= 50% cost reduction
+14. **`test_cloth_lod_zero_sim`** — Beyond max LOD: zero solver invocations
+15. **`test_cloth_lod_smooth`** — LOD transitions: no visible popping
 
 ### Fluid Simulation Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_sph_incompressibility` | R-4.8.1 | 1K particles, 500 ticks: density within 5% of rest |
-| `test_sph_50k_budget` | R-4.8.NF1 | 50K particles: GPU compute within 4 ms |
-| `test_flip_energy` | R-4.8.2 | Sealed box, no forces: energy loss < 10%/s |
-| `test_eulerian_divergence` | R-4.8.3 | 64x64x64 grid: residual divergence < 1e-4 |
-| `test_surface_watertight` | R-4.8.4 | 10K particles: mesh has no boundary edges |
-| `test_surface_recon_budget` | R-4.8.4 | 10K particles: reconstruction within 4 ms |
-| `test_water_tiling` | R-4.8.5 | Two adjacent tiles: edge gap < 1 mm |
-| `test_water_1km_budget` | R-4.8.NF3 | 1 km x 1 km: GPU within 0.5 ms |
-| `test_neutral_buoyancy` | R-4.8.6 | Equal density body: accel < 0.01 m/s^2 |
-| `test_buoyancy_64_budget` | R-4.8.6 | 64 bodies: within physics budget |
-| `test_splash_displacement` | R-4.8.7 | 10 kg sphere at 5 m/s: peak >= 10x rest spacing |
-| `test_fluid_deceleration` | R-4.8.7 | Sphere in fluid decelerates (slower than freefall) |
-| `test_fluid_memory` | R-4.8.NF2 | 4 volumes at max config: GPU memory <= 128 MB |
+| Test                         | Req       |
+|------------------------------|-----------|
+| `test_sph_incompressibility` | R-4.8.1   |
+| `test_sph_50k_budget`        | R-4.8.NF1 |
+| `test_flip_energy`           | R-4.8.2   |
+| `test_eulerian_divergence`   | R-4.8.3   |
+| `test_surface_watertight`    | R-4.8.4   |
+| `test_surface_recon_budget`  | R-4.8.4   |
+| `test_water_tiling`          | R-4.8.5   |
+| `test_water_1km_budget`      | R-4.8.NF3 |
+| `test_neutral_buoyancy`      | R-4.8.6   |
+| `test_buoyancy_64_budget`    | R-4.8.6   |
+| `test_splash_displacement`   | R-4.8.7   |
+| `test_fluid_deceleration`    | R-4.8.7   |
+| `test_fluid_memory`          | R-4.8.NF2 |
+
+1. **`test_sph_incompressibility`** — 1K particles, 500 ticks: density within 5% of rest
+2. **`test_sph_50k_budget`** — 50K particles: GPU compute within 4 ms
+3. **`test_flip_energy`** — Sealed box, no forces: energy loss < 10%/s
+4. **`test_eulerian_divergence`** — 64x64x64 grid: residual divergence < 1e-4
+5. **`test_surface_watertight`** — 10K particles: mesh has no boundary edges
+6. **`test_surface_recon_budget`** — 10K particles: reconstruction within 4 ms
+7. **`test_water_tiling`** — Two adjacent tiles: edge gap < 1 mm
+8. **`test_water_1km_budget`** — 1 km x 1 km: GPU within 0.5 ms
+9. **`test_neutral_buoyancy`** — Equal density body: accel < 0.01 m/s^2
+10. **`test_buoyancy_64_budget`** — 64 bodies: within physics budget
+11. **`test_splash_displacement`** — 10 kg sphere at 5 m/s: peak >= 10x rest spacing
+12. **`test_fluid_deceleration`** — Sphere in fluid decelerates (slower than freefall)
+13. **`test_fluid_memory`** — 4 volumes at max config: GPU memory <= 128 MB
 
 ### Benchmarks
 

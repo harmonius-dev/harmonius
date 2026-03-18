@@ -14,11 +14,24 @@ selection). No source code exists. No designs exist.
 
 No prerequisites. These are the first feature-groups to design and implement.
 
-| # | Feature-Group | Requirements | Features | Design | Implementation |
-|---|---------------|-------------|----------|--------|----------------|
-| 1 | Platform.Windowing | [window-display](../requirements/platform/window-display.md) | [window-display](../features/platform/window-display.md) | Not started | Not started |
-| 2 | Platform.Threading | [threading-async](../requirements/platform/threading-async.md) | [threading-async](../features/platform/threading-async.md) | Not started | Not started |
-| 3 | Platform.OS | [os-integration](../requirements/platform/os-integration.md), [crash-reporting](../requirements/platform/crash-reporting.md), [platform-services](../requirements/platform/platform-services.md), [filesystem](../requirements/platform/filesystem.md) | [os-integration](../features/platform/os-integration.md), [crash-reporting](../features/platform/crash-reporting.md), [platform-services](../features/platform/platform-services.md), [filesystem](../features/platform/filesystem.md) | Not started | Not started |
+| # | Feature-Group      | Design      | Implementation |
+|---|--------------------|-------------|----------------|
+| 1 | Platform.Windowing | Not started | Not started    |
+| 2 | Platform.Threading | Not started | Not started    |
+| 3 | Platform.OS        | Not started | Not started    |
+
+1. **1** — [window-display](../requirements/platform/window-display.md)
+   - **Features:** [window-display](../features/platform/window-display.md)
+2. **2** — [threading-async](../requirements/platform/threading-async.md)
+   - **Features:** [threading-async](../features/platform/threading-async.md)
+3. **3** — [os-integration](../requirements/platform/os-integration.md),
+   [crash-reporting](../requirements/platform/crash-reporting.md),
+   [platform-services](../requirements/platform/platform-services.md),
+   [filesystem](../requirements/platform/filesystem.md)
+   - **Features:** [os-integration](../features/platform/os-integration.md),
+     [crash-reporting](../features/platform/crash-reporting.md),
+     [platform-services](../features/platform/platform-services.md),
+     [filesystem](../features/platform/filesystem.md)
 
 **Exit criteria:** Windows open on macOS/Linux/Windows, thread pool executes tasks, async file I/O
 completes, crash handler captures dumps.
@@ -29,14 +42,34 @@ completes, crash handler captures dumps.
 
 Requires Wave 0. CoreRuntime.ECS should lead; other groups depend on its primitives.
 
-| # | Feature-Group | Requirements | Features | Design | Implementation |
-|---|---------------|-------------|----------|--------|----------------|
-| 4 | CoreRuntime.ECS | [entity-component-system](../requirements/core-runtime/entity-component-system.md) | [entity-component-system](../features/core-runtime/entity-component-system.md) | Not started | Not started |
-| 5 | CoreRuntime.SceneTransforms | [scene-and-transforms](../requirements/core-runtime/scene-and-transforms.md) | [scene-and-transforms](../features/core-runtime/scene-and-transforms.md) | Not started | Not started |
-| 6 | CoreRuntime.ReflectionSerialization | [reflection-and-type-system](../requirements/core-runtime/reflection-and-type-system.md), [serialization](../requirements/core-runtime/serialization.md) | [reflection-and-type-system](../features/core-runtime/reflection-and-type-system.md), [serialization](../features/core-runtime/serialization.md) | Not started | Not started |
-| 7 | CoreRuntime.EventsPlugins | [events-and-messaging](../requirements/core-runtime/events-and-messaging.md), [plugin-system](../requirements/core-runtime/plugin-system.md) | [events-and-messaging](../features/core-runtime/events-and-messaging.md), [plugin-system](../features/core-runtime/plugin-system.md) | Not started | Not started |
-| 8 | CoreRuntime.MemoryAsyncIO | [memory-management](../requirements/core-runtime/memory-management.md), [async-io](../requirements/core-runtime/async-io.md) | [memory-management](../features/core-runtime/memory-management.md), [async-io](../features/core-runtime/async-io.md) | Not started | Not started |
-| 9 | CoreRuntime.SpatialIndex | [spatial-indexing](../requirements/core-runtime/spatial-indexing.md) | [spatial-indexing](../features/core-runtime/spatial-indexing.md) | Not started | Not started |
+| # | Feature-Group                       | Design      | Implementation |
+|---|-------------------------------------|-------------|----------------|
+| 4 | CoreRuntime.ECS                     | Not started | Not started    |
+| 5 | CoreRuntime.SceneTransforms         | Not started | Not started    |
+| 6 | CoreRuntime.ReflectionSerialization | Not started | Not started    |
+| 7 | CoreRuntime.EventsPlugins           | Not started | Not started    |
+| 8 | CoreRuntime.MemoryAsyncIO           | Not started | Not started    |
+| 9 | CoreRuntime.SpatialIndex            | Not started | Not started    |
+
+1. **4** — [entity-component-system](../requirements/core-runtime/entity-component-system.md)
+   - **Features:** [entity-component-system](../features/core-runtime/entity-component-system.md)
+2. **5** — [scene-and-transforms](../requirements/core-runtime/scene-and-transforms.md)
+   - **Features:** [scene-and-transforms](../features/core-runtime/scene-and-transforms.md)
+3. **6** — [reflection-and-type-system](../requirements/core-runtime/reflection-and-type-system.md),
+   [serialization](../requirements/core-runtime/serialization.md)
+   - **Features:**
+     [reflection-and-type-system](../features/core-runtime/reflection-and-type-system.md),
+     [serialization](../features/core-runtime/serialization.md)
+4. **7** — [events-and-messaging](../requirements/core-runtime/events-and-messaging.md),
+   [plugin-system](../requirements/core-runtime/plugin-system.md)
+   - **Features:** [events-and-messaging](../features/core-runtime/events-and-messaging.md),
+     [plugin-system](../features/core-runtime/plugin-system.md)
+5. **8** — [memory-management](../requirements/core-runtime/memory-management.md),
+   [async-io](../requirements/core-runtime/async-io.md)
+   - **Features:** [memory-management](../features/core-runtime/memory-management.md),
+     [async-io](../features/core-runtime/async-io.md)
+6. **9** — [spatial-indexing](../requirements/core-runtime/spatial-indexing.md)
+   - **Features:** [spatial-indexing](../features/core-runtime/spatial-indexing.md)
 
 **Exit criteria:** Entities spawn, queries iterate, systems schedule in parallel, transforms
 propagate, events fire, types reflect, binary serialization round-trips, arena allocators work,
@@ -44,16 +77,25 @@ async I/O completes, spatial index inserts/queries work.
 
 **Interoperability contracts to lock before Wave 2:**
 
-| Contract | Defined By | Scope |
-|----------|-----------|-------|
-| Component trait + archetype API | CoreRuntime.ECS | How to define, register, query, and mutate components |
-| Entity handle type | CoreRuntime.ECS | Generational index format, validity checking |
-| System trait + scheduling API | CoreRuntime.ECS | How to declare systems, dependencies, and access patterns |
-| Event channel API | CoreRuntime.EventsPlugins | How to send and receive typed events |
-| Spatial index query API | CoreRuntime.SpatialIndex | Ray-cast, shape-cast, overlap, frustum, k-nearest |
-| Serialization trait | CoreRuntime.ReflectionSerialization | Binary/text encode/decode for components and assets |
-| Async I/O trait | CoreRuntime.MemoryAsyncIO | Read/write/cancel operations, completion callbacks |
-| Transform component schema | CoreRuntime.SceneTransforms | Position, rotation, scale, parent, world matrix |
+| Contract                        | Defined By                          |
+|---------------------------------|-------------------------------------|
+| Component trait + archetype API | CoreRuntime.ECS                     |
+| Entity handle type              | CoreRuntime.ECS                     |
+| System trait + scheduling API   | CoreRuntime.ECS                     |
+| Event channel API               | CoreRuntime.EventsPlugins           |
+| Spatial index query API         | CoreRuntime.SpatialIndex            |
+| Serialization trait             | CoreRuntime.ReflectionSerialization |
+| Async I/O trait                 | CoreRuntime.MemoryAsyncIO           |
+| Transform component schema      | CoreRuntime.SceneTransforms         |
+
+1. **Component trait + archetype API** — How to define, register, query, and mutate components
+2. **Entity handle type** — Generational index format, validity checking
+3. **System trait + scheduling API** — How to declare systems, dependencies, and access patterns
+4. **Event channel API** — How to send and receive typed events
+5. **Spatial index query API** — Ray-cast, shape-cast, overlap, frustum, k-nearest
+6. **Serialization trait** — Binary/text encode/decode for components and assets
+7. **Async I/O trait** — Read/write/cancel operations, completion callbacks
+8. **Transform component schema** — Position, rotation, scale, parent, world matrix
 
 ---
 
@@ -61,24 +103,58 @@ async I/O completes, spatial index inserts/queries work.
 
 Requires specific Wave 1 nodes. 9 feature-groups can proceed concurrently.
 
-| # | Feature-Group | Requirements | Features | Prereqs | Design | Impl |
-|---|---------------|-------------|----------|---------|--------|------|
-| 10 | Rendering.GPUAbstraction | [gpu-abstraction-layer](../requirements/rendering/gpu-abstraction-layer.md), [gpu-abstraction](../requirements/rendering/gpu-abstraction.md) | [gpu-abstraction-layer](../features/rendering/gpu-abstraction-layer.md) | Platform.Windowing, CoreRuntime.ECS | Not started | Not started |
-| 11 | ContentPipeline.AssetImport | [asset-import](../requirements/content-pipeline/asset-import.md) | [asset-import](../features/content-pipeline/asset-import.md) | CoreRuntime.MemoryAsyncIO, Platform.Threading | Not started | Not started |
-| 12 | ContentPipeline.AssetDatabase | [asset-database](../requirements/content-pipeline/asset-database.md) | [asset-database](../features/content-pipeline/asset-database.md) | CoreRuntime.ReflectionSerialization | Not started | Not started |
-| 13 | Physics.RigidBody | [rigid-body-dynamics](../requirements/physics/rigid-body-dynamics.md), [collision-detection](../requirements/physics/collision-detection.md) | [rigid-body-dynamics](../features/physics/rigid-body-dynamics.md), [collision-detection](../features/physics/collision-detection.md) | CoreRuntime.ECS, CoreRuntime.SpatialIndex | Not started | Not started |
-| 14 | Physics.SpatialQueries | [spatial-queries](../requirements/physics/spatial-queries.md) | [spatial-queries](../features/physics/spatial-queries.md) | CoreRuntime.SpatialIndex | Not started | Not started |
-| 15 | Input.DeviceAbstraction | [device-abstraction](../requirements/input/device-abstraction.md) | [device-abstraction](../features/input/device-abstraction.md) | Platform.Windowing, CoreRuntime.ECS | Not started | Not started |
-| 16 | Audio.Engine | [audio-engine](../requirements/audio/audio-engine.md) | [audio-engine](../features/audio/audio-engine.md) | Platform.OS, Platform.Threading, CoreRuntime.ECS | Not started | Not started |
-| 17 | Animation.Skeletal | [skeletal](../requirements/animation/skeletal.md) | [skeletal](../features/animation/skeletal.md) | CoreRuntime.ECS, CoreRuntime.SceneTransforms | Not started | Not started |
-| 18 | Networking.Transport | [transport-layer](../requirements/networking/transport-layer.md) | [transport-layer](../features/networking/transport-layer.md) | Platform.Threading, CoreRuntime.ECS | Not started | Not started |
+| #  | Feature-Group                 | Design      | Impl        |
+|----|-------------------------------|-------------|-------------|
+| 10 | Rendering.GPUAbstraction      | Not started | Not started |
+| 11 | ContentPipeline.AssetImport   | Not started | Not started |
+| 12 | ContentPipeline.AssetDatabase | Not started | Not started |
+| 13 | Physics.RigidBody             | Not started | Not started |
+| 14 | Physics.SpatialQueries        | Not started | Not started |
+| 15 | Input.DeviceAbstraction       | Not started | Not started |
+| 16 | Audio.Engine                  | Not started | Not started |
+| 17 | Animation.Skeletal            | Not started | Not started |
+| 18 | Networking.Transport          | Not started | Not started |
+
+1. **10** — [gpu-abstraction-layer](../requirements/rendering/gpu-abstraction-layer.md),
+   [gpu-abstraction](../requirements/rendering/gpu-abstraction.md)
+   - **Features:** [gpu-abstraction-layer](../features/rendering/gpu-abstraction-layer.md)
+   - **Prereqs:** Platform.Windowing, CoreRuntime.ECS
+2. **11** — [asset-import](../requirements/content-pipeline/asset-import.md)
+   - **Features:** [asset-import](../features/content-pipeline/asset-import.md)
+   - **Prereqs:** CoreRuntime.MemoryAsyncIO, Platform.Threading
+3. **12** — [asset-database](../requirements/content-pipeline/asset-database.md)
+   - **Features:** [asset-database](../features/content-pipeline/asset-database.md)
+   - **Prereqs:** CoreRuntime.ReflectionSerialization
+4. **13** — [rigid-body-dynamics](../requirements/physics/rigid-body-dynamics.md),
+   [collision-detection](../requirements/physics/collision-detection.md)
+   - **Features:** [rigid-body-dynamics](../features/physics/rigid-body-dynamics.md),
+     [collision-detection](../features/physics/collision-detection.md)
+   - **Prereqs:** CoreRuntime.ECS, CoreRuntime.SpatialIndex
+5. **14** — [spatial-queries](../requirements/physics/spatial-queries.md)
+   - **Features:** [spatial-queries](../features/physics/spatial-queries.md)
+   - **Prereqs:** CoreRuntime.SpatialIndex
+6. **15** — [device-abstraction](../requirements/input/device-abstraction.md)
+   - **Features:** [device-abstraction](../features/input/device-abstraction.md)
+   - **Prereqs:** Platform.Windowing, CoreRuntime.ECS
+7. **16** — [audio-engine](../requirements/audio/audio-engine.md)
+   - **Features:** [audio-engine](../features/audio/audio-engine.md)
+   - **Prereqs:** Platform.OS, Platform.Threading, CoreRuntime.ECS
+8. **17** — [skeletal](../requirements/animation/skeletal.md)
+   - **Features:** [skeletal](../features/animation/skeletal.md)
+   - **Prereqs:** CoreRuntime.ECS, CoreRuntime.SceneTransforms
+9. **18** — [transport-layer](../requirements/networking/transport-layer.md)
+   - **Features:** [transport-layer](../features/networking/transport-layer.md)
+   - **Prereqs:** Platform.Threading, CoreRuntime.ECS
 
 **Additional contracts to lock before Wave 3:**
 
-| Contract | Defined By | Scope |
-|----------|-----------|-------|
-| GPU backend trait | Rendering.GPUAbstraction | Device, command buffer, pipeline, buffer, texture APIs |
-| Asset handle type | ContentPipeline.AssetDatabase | Typed handle, load state, reference counting |
+| Contract          | Defined By                    |
+|-------------------|-------------------------------|
+| GPU backend trait | Rendering.GPUAbstraction      |
+| Asset handle type | ContentPipeline.AssetDatabase |
+
+1. **GPU backend trait** — Device, command buffer, pipeline, buffer, texture APIs
+2. **Asset handle type** — Typed handle, load state, reference counting
 
 **Exit criteria:** GPU device created and triangle renders, assets import from disk, rigid bodies
 simulate, ray-casts work, keyboard/mouse/gamepad input captured, audio plays, skeleton evaluates and
@@ -90,26 +166,66 @@ skins, network connection established.
 
 Requires specific Wave 2 nodes. 12 feature-groups can proceed concurrently.
 
-| # | Feature-Group | Requirements | Features | Prereqs | Design | Impl |
-|---|---------------|-------------|----------|---------|--------|------|
-| 19 | Rendering.RenderGraph | [render-graph](../requirements/rendering/render-graph.md) | [render-graph](../features/rendering/render-graph.md) | Rendering.GPUAbstraction | Not started | Not started |
-| 20 | ContentPipeline.AssetProcessing | [asset-processing](../requirements/content-pipeline/asset-processing.md) | [asset-processing](../features/content-pipeline/asset-processing.md) | ContentPipeline.AssetImport, Rendering.GPUAbstraction | Not started | Not started |
-| 21 | ContentPipeline.Streaming | [streaming-io](../requirements/content-pipeline/streaming-io.md) | [streaming-io](../features/content-pipeline/streaming-io.md) | ContentPipeline.AssetDatabase, CoreRuntime.MemoryAsyncIO | Not started | Not started |
-| 22 | Input.ActionsMapping | [input-actions-and-mapping](../requirements/input/input-actions-and-mapping.md) | [input-actions-and-mapping](../features/input/input-actions-and-mapping.md) | Input.DeviceAbstraction | Not started | Not started |
-| 23 | Audio.Spatial | [spatial-audio](../requirements/audio/spatial-audio.md) | [spatial-audio](../features/audio/spatial-audio.md) | Audio.Engine, CoreRuntime.SpatialIndex | Not started | Not started |
-| 24 | Animation.StateMachine | [state-machine](../requirements/animation/state-machine.md) | [state-machine](../features/animation/state-machine.md) | Animation.Skeletal | Not started | Not started |
-| 25 | Physics.Constraints | [constraints-and-joints](../requirements/physics/constraints-and-joints.md) | [constraints-and-joints](../features/physics/constraints-and-joints.md) | Physics.RigidBody | Not started | Not started |
-| 26 | AI.Navigation | [navigation](../requirements/ai/navigation.md) | [navigation](../features/ai/navigation.md) | CoreRuntime.SpatialIndex, Physics.SpatialQueries | Not started | Not started |
-| 27 | Networking.Replication | [state-replication](../requirements/networking/state-replication.md) | [state-replication](../features/networking/state-replication.md) | Networking.Transport, CoreRuntime.ReflectionSerialization, CoreRuntime.SpatialIndex | Not started | Not started |
-| 28 | GeometryWorld.MeshletPipeline | [meshlet-pipeline](../requirements/geometry-world/meshlet-pipeline.md) | [meshlet-pipeline](../features/geometry-world/meshlet-pipeline.md) | Rendering.GPUAbstraction, CoreRuntime.ECS | Not started | Not started |
-| 29 | UI2D.WidgetFramework | [widget-framework](../requirements/ui-2d/widget-framework.md) | [widget-framework](../features/ui-2d/widget-framework.md) | CoreRuntime.ECS, Input.DeviceAbstraction | Not started | Not started |
-| 30 | VFX.Particles | [particles](../requirements/vfx/particles.md) | [particles](../features/vfx/particles.md) | Rendering.GPUAbstraction, CoreRuntime.ECS | Not started | Not started |
+| #  | Feature-Group                   | Design      | Impl        |
+|----|---------------------------------|-------------|-------------|
+| 19 | Rendering.RenderGraph           | Not started | Not started |
+| 20 | ContentPipeline.AssetProcessing | Not started | Not started |
+| 21 | ContentPipeline.Streaming       | Not started | Not started |
+| 22 | Input.ActionsMapping            | Not started | Not started |
+| 23 | Audio.Spatial                   | Not started | Not started |
+| 24 | Animation.StateMachine          | Not started | Not started |
+| 25 | Physics.Constraints             | Not started | Not started |
+| 26 | AI.Navigation                   | Not started | Not started |
+| 27 | Networking.Replication          | Not started | Not started |
+| 28 | GeometryWorld.MeshletPipeline   | Not started | Not started |
+| 29 | UI2D.WidgetFramework            | Not started | Not started |
+| 30 | VFX.Particles                   | Not started | Not started |
+
+1. **19** — [render-graph](../requirements/rendering/render-graph.md)
+   - **Features:** [render-graph](../features/rendering/render-graph.md)
+   - **Prereqs:** Rendering.GPUAbstraction
+2. **20** — [asset-processing](../requirements/content-pipeline/asset-processing.md)
+   - **Features:** [asset-processing](../features/content-pipeline/asset-processing.md)
+   - **Prereqs:** ContentPipeline.AssetImport, Rendering.GPUAbstraction
+3. **21** — [streaming-io](../requirements/content-pipeline/streaming-io.md)
+   - **Features:** [streaming-io](../features/content-pipeline/streaming-io.md)
+   - **Prereqs:** ContentPipeline.AssetDatabase, CoreRuntime.MemoryAsyncIO
+4. **22** — [input-actions-and-mapping](../requirements/input/input-actions-and-mapping.md)
+   - **Features:** [input-actions-and-mapping](../features/input/input-actions-and-mapping.md)
+   - **Prereqs:** Input.DeviceAbstraction
+5. **23** — [spatial-audio](../requirements/audio/spatial-audio.md)
+   - **Features:** [spatial-audio](../features/audio/spatial-audio.md)
+   - **Prereqs:** Audio.Engine, CoreRuntime.SpatialIndex
+6. **24** — [state-machine](../requirements/animation/state-machine.md)
+   - **Features:** [state-machine](../features/animation/state-machine.md)
+   - **Prereqs:** Animation.Skeletal
+7. **25** — [constraints-and-joints](../requirements/physics/constraints-and-joints.md)
+   - **Features:** [constraints-and-joints](../features/physics/constraints-and-joints.md)
+   - **Prereqs:** Physics.RigidBody
+8. **26** — [navigation](../requirements/ai/navigation.md)
+   - **Features:** [navigation](../features/ai/navigation.md)
+   - **Prereqs:** CoreRuntime.SpatialIndex, Physics.SpatialQueries
+9. **27** — [state-replication](../requirements/networking/state-replication.md)
+   - **Features:** [state-replication](../features/networking/state-replication.md)
+   - **Prereqs:** Networking.Transport, CoreRuntime.ReflectionSerialization,
+     CoreRuntime.SpatialIndex
+10. **28** — [meshlet-pipeline](../requirements/geometry-world/meshlet-pipeline.md)
+    - **Features:** [meshlet-pipeline](../features/geometry-world/meshlet-pipeline.md)
+    - **Prereqs:** Rendering.GPUAbstraction, CoreRuntime.ECS
+11. **29** — [widget-framework](../requirements/ui-2d/widget-framework.md)
+    - **Features:** [widget-framework](../features/ui-2d/widget-framework.md)
+    - **Prereqs:** CoreRuntime.ECS, Input.DeviceAbstraction
+12. **30** — [particles](../requirements/vfx/particles.md)
+    - **Features:** [particles](../features/vfx/particles.md)
+    - **Prereqs:** Rendering.GPUAbstraction, CoreRuntime.ECS
 
 **Additional contract to lock before Wave 4:**
 
-| Contract | Defined By | Scope |
-|----------|-----------|-------|
-| Render graph pass API | Rendering.RenderGraph | How to declare passes, read/write resources, submit commands |
+| Contract              | Defined By            |
+|-----------------------|-----------------------|
+| Render graph pass API | Rendering.RenderGraph |
+
+1. **Render graph pass API** — How to declare passes, read/write resources, submit commands
 
 **Exit criteria:** Render graph executes passes with automatic barriers, shaders compile via
 DXC/MSC, assets stream from disk, input actions map to gameplay, spatial audio occludes, animation
@@ -122,27 +238,90 @@ replicate over network, meshlets render, widget tree lays out, particles simulat
 
 Requires specific Wave 3 nodes. 19 feature-groups can proceed concurrently.
 
-| # | Feature-Group | Requirements | Features | Prereqs | Design | Impl |
-|---|---------------|-------------|----------|---------|--------|------|
-| 31 | Rendering.CoreRendering | [core-rendering](../requirements/rendering/core-rendering.md), [scene-rendering-pipeline](../requirements/rendering/scene-rendering-pipeline.md) | [core-rendering](../features/rendering/core-rendering.md), [scene-rendering-pipeline](../features/rendering/scene-rendering-pipeline.md) | Rendering.RenderGraph, CoreRuntime.SpatialIndex, Animation.Skeletal | Not started | Not started |
-| 32 | Rendering.Lighting | [lighting](../requirements/rendering/lighting.md) | [lighting](../features/rendering/lighting.md) | Rendering.CoreRendering | Not started | Not started |
-| 33 | ContentPipeline.HotReload | [hot-reload](../requirements/content-pipeline/hot-reload.md) | [hot-reload](../features/content-pipeline/hot-reload.md) | ContentPipeline.AssetDatabase, ContentPipeline.AssetProcessing | Not started | Not started |
-| 34 | AI.Steering | [steering-avoidance](../requirements/ai/steering-avoidance.md) | [steering-avoidance](../features/ai/steering-avoidance.md) | AI.Navigation | Not started | Not started |
-| 35 | AI.Perception | [perception](../requirements/ai/perception.md) | [perception](../features/ai/perception.md) | CoreRuntime.SpatialIndex, AI.Navigation | Not started | Not started |
-| 36 | AI.BehaviorDecision | [behavior-trees](../requirements/ai/behavior-trees.md), [utility-ai](../requirements/ai/utility-ai.md), [goap](../requirements/ai/goap.md) | [behavior-trees](../features/ai/behavior-trees.md), [utility-ai](../features/ai/utility-ai.md), [goap](../features/ai/goap.md) | AI.Perception | Not started | Not started |
-| 37 | Animation.Procedural | [procedural](../requirements/animation/procedural.md) | [procedural](../features/animation/procedural.md) | Animation.Skeletal, Physics.RigidBody, Physics.Constraints | Not started | Not started |
-| 38 | Audio.DSP | [dsp-and-effects](../requirements/audio/dsp-and-effects.md) | [dsp-and-effects](../features/audio/dsp-and-effects.md) | Audio.Engine | Not started | Not started |
-| 39 | Networking.PredictionRollback | [prediction-and-rollback](../requirements/networking/prediction-and-rollback.md) | [prediction-and-rollback](../features/networking/prediction-and-rollback.md) | Networking.Replication, Physics.RigidBody | Not started | Not started |
-| 40 | Networking.Session | [session-management](../requirements/networking/session-management.md) | [session-management](../features/networking/session-management.md) | Networking.Transport | Not started | Not started |
-| 41 | GameFramework.GameplayPrimitives | [gameplay-primitives](../requirements/game-framework/gameplay-primitives.md) | [gameplay-primitives](../features/game-framework/gameplay-primitives.md) | CoreRuntime.ECS, CoreRuntime.SpatialIndex, Physics.RigidBody, Physics.SpatialQueries, Input.ActionsMapping | Not started | Not started |
-| 42 | GameFramework.Camera | [camera-system](../requirements/game-framework/camera-system.md) | [camera-system](../features/game-framework/camera-system.md) | CoreRuntime.SceneTransforms, Physics.SpatialQueries | Not started | Not started |
-| 43 | UI2D.UIRendering | [ui-rendering](../requirements/ui-2d/ui-rendering.md) | [ui-rendering](../features/ui-2d/ui-rendering.md) | UI2D.WidgetFramework, Rendering.RenderGraph, Rendering.GPUAbstraction | Not started | Not started |
-| 44 | UI2D.GameUI | [hud-and-game-ui](../requirements/ui-2d/hud-and-game-ui.md) | [hud-and-game-ui](../features/ui-2d/hud-and-game-ui.md) | UI2D.WidgetFramework, UI2D.UIRendering | Not started | Not started |
-| 45 | VFX.Decals | [decals](../requirements/vfx/decals.md) | [decals](../features/vfx/decals.md) | Rendering.RenderGraph | Not started | Not started |
-| 46 | VFX.ScreenEffects | [screen-effects](../requirements/vfx/screen-effects.md) | [screen-effects](../features/vfx/screen-effects.md) | Rendering.CoreRendering | Not started | Not started |
-| 47 | GeometryWorld.Terrain | [terrain](../requirements/geometry-world/terrain.md) | [terrain](../features/geometry-world/terrain.md) | Rendering.CoreRendering, ContentPipeline.Streaming, Physics.RigidBody | Not started | Not started |
-| 48 | GeometryWorld.Foliage | [foliage](../requirements/geometry-world/foliage.md) | [foliage](../features/geometry-world/foliage.md) | Rendering.CoreRendering, CoreRuntime.SpatialIndex, ContentPipeline.Streaming | Not started | Not started |
-| 49 | Input.Gestures | [gestures](../requirements/input/gestures.md) | [gestures](../features/input/gestures.md) | Input.DeviceAbstraction | Not started | Not started |
+| #  | Feature-Group                    | Design      | Impl        |
+|----|----------------------------------|-------------|-------------|
+| 31 | Rendering.CoreRendering          | Not started | Not started |
+| 32 | Rendering.Lighting               | Not started | Not started |
+| 33 | ContentPipeline.HotReload        | Not started | Not started |
+| 34 | AI.Steering                      | Not started | Not started |
+| 35 | AI.Perception                    | Not started | Not started |
+| 36 | AI.BehaviorDecision              | Not started | Not started |
+| 37 | Animation.Procedural             | Not started | Not started |
+| 38 | Audio.DSP                        | Not started | Not started |
+| 39 | Networking.PredictionRollback    | Not started | Not started |
+| 40 | Networking.Session               | Not started | Not started |
+| 41 | GameFramework.GameplayPrimitives | Not started | Not started |
+| 42 | GameFramework.Camera             | Not started | Not started |
+| 43 | UI2D.UIRendering                 | Not started | Not started |
+| 44 | UI2D.GameUI                      | Not started | Not started |
+| 45 | VFX.Decals                       | Not started | Not started |
+| 46 | VFX.ScreenEffects                | Not started | Not started |
+| 47 | GeometryWorld.Terrain            | Not started | Not started |
+| 48 | GeometryWorld.Foliage            | Not started | Not started |
+| 49 | Input.Gestures                   | Not started | Not started |
+
+1. **31** — [core-rendering](../requirements/rendering/core-rendering.md),
+   [scene-rendering-pipeline](../requirements/rendering/scene-rendering-pipeline.md)
+   - **Features:** [core-rendering](../features/rendering/core-rendering.md),
+     [scene-rendering-pipeline](../features/rendering/scene-rendering-pipeline.md)
+   - **Prereqs:** Rendering.RenderGraph, CoreRuntime.SpatialIndex, Animation.Skeletal
+2. **32** — [lighting](../requirements/rendering/lighting.md)
+   - **Features:** [lighting](../features/rendering/lighting.md)
+   - **Prereqs:** Rendering.CoreRendering
+3. **33** — [hot-reload](../requirements/content-pipeline/hot-reload.md)
+   - **Features:** [hot-reload](../features/content-pipeline/hot-reload.md)
+   - **Prereqs:** ContentPipeline.AssetDatabase, ContentPipeline.AssetProcessing
+4. **34** — [steering-avoidance](../requirements/ai/steering-avoidance.md)
+   - **Features:** [steering-avoidance](../features/ai/steering-avoidance.md)
+   - **Prereqs:** AI.Navigation
+5. **35** — [perception](../requirements/ai/perception.md)
+   - **Features:** [perception](../features/ai/perception.md)
+   - **Prereqs:** CoreRuntime.SpatialIndex, AI.Navigation
+6. **36** — [behavior-trees](../requirements/ai/behavior-trees.md),
+   [utility-ai](../requirements/ai/utility-ai.md), [goap](../requirements/ai/goap.md)
+   - **Features:** [behavior-trees](../features/ai/behavior-trees.md),
+     [utility-ai](../features/ai/utility-ai.md), [goap](../features/ai/goap.md)
+   - **Prereqs:** AI.Perception
+7. **37** — [procedural](../requirements/animation/procedural.md)
+   - **Features:** [procedural](../features/animation/procedural.md)
+   - **Prereqs:** Animation.Skeletal, Physics.RigidBody, Physics.Constraints
+8. **38** — [dsp-and-effects](../requirements/audio/dsp-and-effects.md)
+   - **Features:** [dsp-and-effects](../features/audio/dsp-and-effects.md)
+   - **Prereqs:** Audio.Engine
+9. **39** — [prediction-and-rollback](../requirements/networking/prediction-and-rollback.md)
+   - **Features:** [prediction-and-rollback](../features/networking/prediction-and-rollback.md)
+   - **Prereqs:** Networking.Replication, Physics.RigidBody
+10. **40** — [session-management](../requirements/networking/session-management.md)
+    - **Features:** [session-management](../features/networking/session-management.md)
+    - **Prereqs:** Networking.Transport
+11. **41** — [gameplay-primitives](../requirements/game-framework/gameplay-primitives.md)
+    - **Features:** [gameplay-primitives](../features/game-framework/gameplay-primitives.md)
+    - **Prereqs:** CoreRuntime.ECS, CoreRuntime.SpatialIndex, Physics.RigidBody,
+      Physics.SpatialQueries, Input.ActionsMapping
+12. **42** — [camera-system](../requirements/game-framework/camera-system.md)
+    - **Features:** [camera-system](../features/game-framework/camera-system.md)
+    - **Prereqs:** CoreRuntime.SceneTransforms, Physics.SpatialQueries
+13. **43** — [ui-rendering](../requirements/ui-2d/ui-rendering.md)
+    - **Features:** [ui-rendering](../features/ui-2d/ui-rendering.md)
+    - **Prereqs:** UI2D.WidgetFramework, Rendering.RenderGraph, Rendering.GPUAbstraction
+14. **44** — [hud-and-game-ui](../requirements/ui-2d/hud-and-game-ui.md)
+    - **Features:** [hud-and-game-ui](../features/ui-2d/hud-and-game-ui.md)
+    - **Prereqs:** UI2D.WidgetFramework, UI2D.UIRendering
+15. **45** — [decals](../requirements/vfx/decals.md)
+    - **Features:** [decals](../features/vfx/decals.md)
+    - **Prereqs:** Rendering.RenderGraph
+16. **46** — [screen-effects](../requirements/vfx/screen-effects.md)
+    - **Features:** [screen-effects](../features/vfx/screen-effects.md)
+    - **Prereqs:** Rendering.CoreRendering
+17. **47** — [terrain](../requirements/geometry-world/terrain.md)
+    - **Features:** [terrain](../features/geometry-world/terrain.md)
+    - **Prereqs:** Rendering.CoreRendering, ContentPipeline.Streaming, Physics.RigidBody
+18. **48** — [foliage](../requirements/geometry-world/foliage.md)
+    - **Features:** [foliage](../features/geometry-world/foliage.md)
+    - **Prereqs:** Rendering.CoreRendering, CoreRuntime.SpatialIndex, ContentPipeline.Streaming
+19. **49** — [gestures](../requirements/input/gestures.md)
+    - **Features:** [gestures](../features/input/gestures.md)
+    - **Prereqs:** Input.DeviceAbstraction
 
 **Exit criteria:** Lit PBR scene renders with shadows, hot reload works for all asset types, AI
 agents navigate and perceive, procedural animation (IK, ragdoll blend) works, audio has DSP chains,
@@ -155,28 +334,104 @@ HUD, decals and screen effects render, terrain and foliage render with streaming
 
 Requires specific Wave 4 nodes. 20 feature-groups can proceed concurrently.
 
-| # | Feature-Group | Requirements | Features | Prereqs | Design | Impl |
-|---|---------------|-------------|----------|---------|--------|------|
-| 50 | Rendering.AdvancedRendering | [advanced-rendering](../requirements/rendering/advanced-rendering.md), [advanced-materials](../requirements/rendering/advanced-materials.md), [character-rendering](../requirements/rendering/character-rendering.md), [environment](../requirements/rendering/environment.md), [post-processing](../requirements/rendering/post-processing.md), [anti-aliasing-upscaling](../requirements/rendering/anti-aliasing-upscaling.md), [stylized-effects](../requirements/rendering/stylized-effects.md) | [advanced-rendering](../features/rendering/advanced-rendering.md), [advanced-materials](../features/rendering/advanced-materials.md), [character-rendering](../features/rendering/character-rendering.md), [environment](../features/rendering/environment.md), [post-processing](../features/rendering/post-processing.md), [anti-aliasing-upscaling](../features/rendering/anti-aliasing-upscaling.md), [stylized-effects](../features/rendering/stylized-effects.md) | Rendering.Lighting | Not started | Not started |
-| 51 | ToolsEditor.EditorFramework | [editor-framework](../requirements/tools-editor/editor-framework.md) | [editor-framework](../features/tools-editor/editor-framework.md) | UI2D.WidgetFramework, CoreRuntime.ReflectionSerialization, ContentPipeline.HotReload, Rendering.CoreRendering, Input.ActionsMapping | Not started | Not started |
-| 52 | ToolsEditor.LogicGraph | [logic-graph](../requirements/tools-editor/logic-graph.md) | [logic-graph](../features/tools-editor/logic-graph.md) | CoreRuntime.ECS, CoreRuntime.EventsPlugins, ContentPipeline.HotReload | Not started | Not started |
-| 53 | ToolsEditor.MaterialEditor | [material-editor](../requirements/tools-editor/material-editor.md) | [material-editor](../features/tools-editor/material-editor.md) | Rendering.Lighting, ContentPipeline.HotReload | Not started | Not started |
-| 54 | ToolsEditor.Profiling | [profiling-tools](../requirements/tools-editor/profiling-tools.md) | [profiling-tools](../features/tools-editor/profiling-tools.md) | CoreRuntime.ECS, Platform.Threading | Not started | Not started |
-| 55 | GameFramework.SaveSystem | [save-system](../requirements/game-framework/save-system.md) | [save-system](../features/game-framework/save-system.md) | CoreRuntime.ReflectionSerialization, GameFramework.GameplayPrimitives | Not started | Not started |
-| 56 | GameFramework.Abilities | [abilities](../requirements/game-framework/abilities.md) | [abilities](../features/game-framework/abilities.md) | GameFramework.GameplayPrimitives, Animation.StateMachine, Physics.SpatialQueries | Not started | Not started |
-| 57 | GameFramework.WeaponSystem | [weapon-system](../requirements/game-framework/weapon-system.md) | [weapon-system](../features/game-framework/weapon-system.md) | GameFramework.GameplayPrimitives, Physics.SpatialQueries, Animation.StateMachine | Not started | Not started |
-| 58 | GameFramework.Progression | [progression](../requirements/game-framework/progression.md) | [progression](../features/game-framework/progression.md) | GameFramework.GameplayPrimitives | Not started | Not started |
-| 59 | GameFramework.WorldManagement | [world-management](../requirements/game-framework/world-management.md) | [world-management](../features/game-framework/world-management.md) | CoreRuntime.ECS, ContentPipeline.Streaming | Not started | Not started |
-| 60 | Physics.SoftBodyCloth | [soft-body-and-cloth](../requirements/physics/soft-body-and-cloth.md) | [soft-body-and-cloth](../features/physics/soft-body-and-cloth.md) | Physics.RigidBody, Animation.Skeletal | Not started | Not started |
-| 61 | Physics.Destruction | [destruction-and-fracture](../requirements/physics/destruction-and-fracture.md) | [destruction-and-fracture](../features/physics/destruction-and-fracture.md) | Physics.RigidBody, Physics.Constraints | Not started | Not started |
-| 62 | GeometryWorld.Water | [water](../requirements/geometry-world/water.md) | [water](../features/geometry-world/water.md) | Rendering.CoreRendering, Physics.RigidBody | Not started | Not started |
-| 63 | Audio.MusicSystem | [music-system](../requirements/audio/music-system.md) | [music-system](../features/audio/music-system.md) | Audio.Engine, Audio.DSP | Not started | Not started |
-| 64 | Audio.VoiceSpeech | [voice-and-speech](../requirements/audio/voice-and-speech.md) | [voice-and-speech](../features/audio/voice-and-speech.md) | Audio.Engine, Networking.Transport | Not started | Not started |
-| 65 | AI.CrowdTactical | [crowd-simulation](../requirements/ai/crowd-simulation.md), [tactical-combat](../requirements/ai/tactical-combat.md) | [crowd-simulation](../features/ai/crowd-simulation.md), [tactical-combat](../features/ai/tactical-combat.md) | AI.BehaviorDecision, AI.Steering | Not started | Not started |
-| 66 | VFX.Weather | [weather-environmental](../requirements/vfx/weather-environmental.md) | [weather-environmental](../features/vfx/weather-environmental.md) | VFX.Particles, Audio.Spatial | Not started | Not started |
-| 67 | VFX.EffectGraph | [effect-graph](../requirements/vfx/effect-graph.md) | [effect-graph](../features/vfx/effect-graph.md) | VFX.Particles, ToolsEditor.LogicGraph | Not started | Not started |
-| 68 | UI2D.2DGames | [2d-games](../requirements/ui-2d/2d-games.md) | [2d-games](../features/ui-2d/2d-games.md) | UI2D.WidgetFramework, Physics.RigidBody, Rendering.CoreRendering | Not started | Not started |
-| 69 | Networking.AntiCheat | [anti-cheat](../requirements/networking/anti-cheat.md) | [anti-cheat](../features/networking/anti-cheat.md) | Networking.Replication, GameFramework.GameplayPrimitives | Not started | Not started |
+| #  | Feature-Group                 | Design      | Impl        |
+|----|-------------------------------|-------------|-------------|
+| 50 | Rendering.AdvancedRendering   | Not started | Not started |
+| 51 | ToolsEditor.EditorFramework   | Not started | Not started |
+| 52 | ToolsEditor.LogicGraph        | Not started | Not started |
+| 53 | ToolsEditor.MaterialEditor    | Not started | Not started |
+| 54 | ToolsEditor.Profiling         | Not started | Not started |
+| 55 | GameFramework.SaveSystem      | Not started | Not started |
+| 56 | GameFramework.Abilities       | Not started | Not started |
+| 57 | GameFramework.WeaponSystem    | Not started | Not started |
+| 58 | GameFramework.Progression     | Not started | Not started |
+| 59 | GameFramework.WorldManagement | Not started | Not started |
+| 60 | Physics.SoftBodyCloth         | Not started | Not started |
+| 61 | Physics.Destruction           | Not started | Not started |
+| 62 | GeometryWorld.Water           | Not started | Not started |
+| 63 | Audio.MusicSystem             | Not started | Not started |
+| 64 | Audio.VoiceSpeech             | Not started | Not started |
+| 65 | AI.CrowdTactical              | Not started | Not started |
+| 66 | VFX.Weather                   | Not started | Not started |
+| 67 | VFX.EffectGraph               | Not started | Not started |
+| 68 | UI2D.2DGames                  | Not started | Not started |
+| 69 | Networking.AntiCheat          | Not started | Not started |
+
+1. **50** — [advanced-rendering](../requirements/rendering/advanced-rendering.md),
+   [advanced-materials](../requirements/rendering/advanced-materials.md),
+   [character-rendering](../requirements/rendering/character-rendering.md),
+   [environment](../requirements/rendering/environment.md),
+   [post-processing](../requirements/rendering/post-processing.md),
+   [anti-aliasing-upscaling](../requirements/rendering/anti-aliasing-upscaling.md),
+   [stylized-effects](../requirements/rendering/stylized-effects.md)
+   - **Features:** [advanced-rendering](../features/rendering/advanced-rendering.md),
+     [advanced-materials](../features/rendering/advanced-materials.md),
+     [character-rendering](../features/rendering/character-rendering.md),
+     [environment](../features/rendering/environment.md),
+     [post-processing](../features/rendering/post-processing.md),
+     [anti-aliasing-upscaling](../features/rendering/anti-aliasing-upscaling.md),
+     [stylized-effects](../features/rendering/stylized-effects.md)
+   - **Prereqs:** Rendering.Lighting
+2. **51** — [editor-framework](../requirements/tools-editor/editor-framework.md)
+   - **Features:** [editor-framework](../features/tools-editor/editor-framework.md)
+   - **Prereqs:** UI2D.WidgetFramework, CoreRuntime.ReflectionSerialization,
+     ContentPipeline.HotReload, Rendering.CoreRendering, Input.ActionsMapping
+3. **52** — [logic-graph](../requirements/tools-editor/logic-graph.md)
+   - **Features:** [logic-graph](../features/tools-editor/logic-graph.md)
+   - **Prereqs:** CoreRuntime.ECS, CoreRuntime.EventsPlugins, ContentPipeline.HotReload
+4. **53** — [material-editor](../requirements/tools-editor/material-editor.md)
+   - **Features:** [material-editor](../features/tools-editor/material-editor.md)
+   - **Prereqs:** Rendering.Lighting, ContentPipeline.HotReload
+5. **54** — [profiling-tools](../requirements/tools-editor/profiling-tools.md)
+   - **Features:** [profiling-tools](../features/tools-editor/profiling-tools.md)
+   - **Prereqs:** CoreRuntime.ECS, Platform.Threading
+6. **55** — [save-system](../requirements/game-framework/save-system.md)
+   - **Features:** [save-system](../features/game-framework/save-system.md)
+   - **Prereqs:** CoreRuntime.ReflectionSerialization, GameFramework.GameplayPrimitives
+7. **56** — [abilities](../requirements/game-framework/abilities.md)
+   - **Features:** [abilities](../features/game-framework/abilities.md)
+   - **Prereqs:** GameFramework.GameplayPrimitives, Animation.StateMachine, Physics.SpatialQueries
+8. **57** — [weapon-system](../requirements/game-framework/weapon-system.md)
+   - **Features:** [weapon-system](../features/game-framework/weapon-system.md)
+   - **Prereqs:** GameFramework.GameplayPrimitives, Physics.SpatialQueries, Animation.StateMachine
+9. **58** — [progression](../requirements/game-framework/progression.md)
+   - **Features:** [progression](../features/game-framework/progression.md)
+   - **Prereqs:** GameFramework.GameplayPrimitives
+10. **59** — [world-management](../requirements/game-framework/world-management.md)
+    - **Features:** [world-management](../features/game-framework/world-management.md)
+    - **Prereqs:** CoreRuntime.ECS, ContentPipeline.Streaming
+11. **60** — [soft-body-and-cloth](../requirements/physics/soft-body-and-cloth.md)
+    - **Features:** [soft-body-and-cloth](../features/physics/soft-body-and-cloth.md)
+    - **Prereqs:** Physics.RigidBody, Animation.Skeletal
+12. **61** — [destruction-and-fracture](../requirements/physics/destruction-and-fracture.md)
+    - **Features:** [destruction-and-fracture](../features/physics/destruction-and-fracture.md)
+    - **Prereqs:** Physics.RigidBody, Physics.Constraints
+13. **62** — [water](../requirements/geometry-world/water.md)
+    - **Features:** [water](../features/geometry-world/water.md)
+    - **Prereqs:** Rendering.CoreRendering, Physics.RigidBody
+14. **63** — [music-system](../requirements/audio/music-system.md)
+    - **Features:** [music-system](../features/audio/music-system.md)
+    - **Prereqs:** Audio.Engine, Audio.DSP
+15. **64** — [voice-and-speech](../requirements/audio/voice-and-speech.md)
+    - **Features:** [voice-and-speech](../features/audio/voice-and-speech.md)
+    - **Prereqs:** Audio.Engine, Networking.Transport
+16. **65** — [crowd-simulation](../requirements/ai/crowd-simulation.md),
+    [tactical-combat](../requirements/ai/tactical-combat.md)
+    - **Features:** [crowd-simulation](../features/ai/crowd-simulation.md),
+      [tactical-combat](../features/ai/tactical-combat.md)
+    - **Prereqs:** AI.BehaviorDecision, AI.Steering
+17. **66** — [weather-environmental](../requirements/vfx/weather-environmental.md)
+    - **Features:** [weather-environmental](../features/vfx/weather-environmental.md)
+    - **Prereqs:** VFX.Particles, Audio.Spatial
+18. **67** — [effect-graph](../requirements/vfx/effect-graph.md)
+    - **Features:** [effect-graph](../features/vfx/effect-graph.md)
+    - **Prereqs:** VFX.Particles, ToolsEditor.LogicGraph
+19. **68** — [2d-games](../requirements/ui-2d/2d-games.md)
+    - **Features:** [2d-games](../features/ui-2d/2d-games.md)
+    - **Prereqs:** UI2D.WidgetFramework, Physics.RigidBody, Rendering.CoreRendering
+20. **69** — [anti-cheat](../requirements/networking/anti-cheat.md)
+    - **Features:** [anti-cheat](../features/networking/anti-cheat.md)
+    - **Prereqs:** Networking.Replication, GameFramework.GameplayPrimitives
 
 ---
 
@@ -184,26 +439,111 @@ Requires specific Wave 4 nodes. 20 feature-groups can proceed concurrently.
 
 Requires specific Wave 5 nodes. 18 feature-groups can proceed concurrently.
 
-| # | Feature-Group | Requirements | Features | Prereqs | Design | Impl |
-|---|---------------|-------------|----------|---------|--------|------|
-| 70 | ToolsEditor.AnimationEditor | [animation-editor](../requirements/tools-editor/animation-editor.md) | [animation-editor](../features/tools-editor/animation-editor.md) | ToolsEditor.EditorFramework, Animation.StateMachine | Not started | Not started |
-| 71 | ToolsEditor.WorldBuilding | [world-building](../requirements/tools-editor/world-building.md) | [world-building](../features/tools-editor/world-building.md) | ToolsEditor.EditorFramework, GeometryWorld.Terrain, GeometryWorld.Foliage | Not started | Not started |
-| 72 | ToolsEditor.AdvancedTools | [version-control](../requirements/tools-editor/version-control.md), [remote-editing](../requirements/tools-editor/remote-editing.md), [ai-assistant](../requirements/tools-editor/ai-assistant.md), [ai-governance](../requirements/tools-editor/ai-governance.md), [deployment](../requirements/tools-editor/deployment.md), [launcher](../requirements/tools-editor/launcher.md), [localization-editor](../requirements/tools-editor/localization-editor.md), [mod-support](../requirements/tools-editor/mod-support.md), [shared-cache](../requirements/tools-editor/shared-cache.md) | [version-control](../features/tools-editor/version-control.md), [remote-editing](../features/tools-editor/remote-editing.md), [deployment](../features/tools-editor/deployment.md), [launcher](../features/tools-editor/launcher.md), [localization-editor](../features/tools-editor/localization-editor.md), [mod-support](../features/tools-editor/mod-support.md) | ToolsEditor.EditorFramework, Networking.Replication | Not started | Not started |
-| 73 | ContentPipeline.DCCPlugins | [dcc-plugins](../requirements/content-pipeline/dcc-plugins.md) | [dcc-plugins](../features/content-pipeline/dcc-plugins.md) | ContentPipeline.AssetImport, ContentPipeline.AssetProcessing | Not started | Not started |
-| 74 | Animation.ClothHair | [cloth-hair](../requirements/animation/cloth-hair.md) | [cloth-hair](../features/animation/cloth-hair.md) | Physics.SoftBodyCloth, Audio.VoiceSpeech, Rendering.AdvancedRendering | Not started | Not started |
-| 75 | Animation.FirstPerson | [first-person](../requirements/animation/first-person.md) | [first-person](../features/animation/first-person.md) | Animation.Skeletal, GameFramework.WeaponSystem | Not started | Not started |
-| 76 | VFX.Destruction | [destruction](../requirements/vfx/destruction.md) | [destruction](../features/vfx/destruction.md) | Physics.Destruction, VFX.Particles | Not started | Not started |
-| 77 | GameFramework.NPCSimulation | [npc-simulation](../requirements/game-framework/npc-simulation.md) | [npc-simulation](../features/game-framework/npc-simulation.md) | AI.BehaviorDecision, GameFramework.GameplayPrimitives | Not started | Not started |
-| 78 | GameFramework.Social | [social](../requirements/game-framework/social.md) | [social](../features/game-framework/social.md) | Networking.Session, GameFramework.GameplayPrimitives | Not started | Not started |
-| 79 | GameFramework.GameModes | [game-modes-misc](../requirements/game-framework/game-modes-misc.md) | [game-modes-misc](../features/game-framework/game-modes-misc.md) | Networking.Session, GameFramework.GameplayPrimitives | Not started | Not started |
-| 80 | GameFramework.StealthCover | [stealth-cover](../requirements/game-framework/stealth-cover.md) | [stealth-cover](../features/game-framework/stealth-cover.md) | AI.Perception, GameFramework.GameplayPrimitives | Not started | Not started |
-| 81 | GameFramework.GenreSpecific | [building-survival](../requirements/game-framework/building-survival.md), [racing](../requirements/game-framework/racing.md), [turn-based](../requirements/game-framework/turn-based.md), [fog-of-war](../requirements/game-framework/fog-of-war.md), [minigames](../requirements/game-framework/minigames.md), [pets-mounts](../requirements/game-framework/pets-mounts.md), [monetization](../requirements/game-framework/monetization.md), [traversal-interaction](../requirements/game-framework/traversal-interaction.md), [selection-system](../requirements/game-framework/selection-system.md) | [building-survival](../features/game-framework/building-survival.md), [racing](../features/game-framework/racing.md), [turn-based](../features/game-framework/turn-based.md), [fog-of-war](../features/game-framework/fog-of-war.md), [minigames](../features/game-framework/minigames.md), [pets-mounts](../features/game-framework/pets-mounts.md), [monetization](../features/game-framework/monetization.md), [traversal-interaction](../features/game-framework/traversal-interaction.md), [selection-system](../features/game-framework/selection-system.md) | GameFramework.GameplayPrimitives, GameFramework.Abilities, Physics.RigidBody, AI.Navigation | Not started | Not started |
-| 82 | GeometryWorld.TerrainVoxel | [terrain](../requirements/geometry-world/terrain.md) (voxel section) | [terrain](../features/geometry-world/terrain.md) (voxel section) | GeometryWorld.Terrain, Physics.Destruction | Not started | Not started |
-| 83 | GeometryWorld.ProceduralGeneration | [procedural-generation](../requirements/geometry-world/procedural-generation.md) | [procedural-generation](../features/geometry-world/procedural-generation.md) | GeometryWorld.Terrain, Rendering.AdvancedRendering, ContentPipeline.Streaming | Not started | Not started |
-| 84 | Physics.Fluid | [fluid-simulation](../requirements/physics/fluid-simulation.md) | [fluid-simulation](../features/physics/fluid-simulation.md) | Physics.RigidBody, GeometryWorld.Water | Not started | Not started |
-| 85 | Networking.MMO | [mmo-infrastructure](../requirements/networking/mmo-infrastructure.md) | [mmo-infrastructure](../features/networking/mmo-infrastructure.md) | Networking.Replication, GameFramework.WorldManagement, GameFramework.SaveSystem | Not started | Not started |
-| 86 | UI2D.Accessibility | [accessibility](../requirements/ui-2d/accessibility.md) | [accessibility](../features/ui-2d/accessibility.md) | UI2D.WidgetFramework, Audio.Engine, Input.ActionsMapping | Not started | Not started |
-| 87 | Input.VRInput | [vr-input](../requirements/input/vr-input.md) | [vr-input](../features/input/vr-input.md) | Input.DeviceAbstraction, Rendering.AdvancedRendering | Not started | Not started |
+| #  | Feature-Group                      | Design      | Impl        |
+|----|------------------------------------|-------------|-------------|
+| 70 | ToolsEditor.AnimationEditor        | Not started | Not started |
+| 71 | ToolsEditor.WorldBuilding          | Not started | Not started |
+| 72 | ToolsEditor.AdvancedTools          | Not started | Not started |
+| 73 | ContentPipeline.DCCPlugins         | Not started | Not started |
+| 74 | Animation.ClothHair                | Not started | Not started |
+| 75 | Animation.FirstPerson              | Not started | Not started |
+| 76 | VFX.Destruction                    | Not started | Not started |
+| 77 | GameFramework.NPCSimulation        | Not started | Not started |
+| 78 | GameFramework.Social               | Not started | Not started |
+| 79 | GameFramework.GameModes            | Not started | Not started |
+| 80 | GameFramework.StealthCover         | Not started | Not started |
+| 81 | GameFramework.GenreSpecific        | Not started | Not started |
+| 82 | GeometryWorld.TerrainVoxel         | Not started | Not started |
+| 83 | GeometryWorld.ProceduralGeneration | Not started | Not started |
+| 84 | Physics.Fluid                      | Not started | Not started |
+| 85 | Networking.MMO                     | Not started | Not started |
+| 86 | UI2D.Accessibility                 | Not started | Not started |
+| 87 | Input.VRInput                      | Not started | Not started |
+
+1. **70** — [animation-editor](../requirements/tools-editor/animation-editor.md)
+   - **Features:** [animation-editor](../features/tools-editor/animation-editor.md)
+   - **Prereqs:** ToolsEditor.EditorFramework, Animation.StateMachine
+2. **71** — [world-building](../requirements/tools-editor/world-building.md)
+   - **Features:** [world-building](../features/tools-editor/world-building.md)
+   - **Prereqs:** ToolsEditor.EditorFramework, GeometryWorld.Terrain, GeometryWorld.Foliage
+3. **72** — [version-control](../requirements/tools-editor/version-control.md),
+   [remote-editing](../requirements/tools-editor/remote-editing.md),
+   [ai-assistant](../requirements/tools-editor/ai-assistant.md),
+   [ai-governance](../requirements/tools-editor/ai-governance.md),
+   [deployment](../requirements/tools-editor/deployment.md),
+   [launcher](../requirements/tools-editor/launcher.md),
+   [localization-editor](../requirements/tools-editor/localization-editor.md),
+   [mod-support](../requirements/tools-editor/mod-support.md),
+   [shared-cache](../requirements/tools-editor/shared-cache.md)
+   - **Features:** [version-control](../features/tools-editor/version-control.md),
+     [remote-editing](../features/tools-editor/remote-editing.md),
+     [deployment](../features/tools-editor/deployment.md),
+     [launcher](../features/tools-editor/launcher.md),
+     [localization-editor](../features/tools-editor/localization-editor.md),
+     [mod-support](../features/tools-editor/mod-support.md)
+   - **Prereqs:** ToolsEditor.EditorFramework, Networking.Replication
+4. **73** — [dcc-plugins](../requirements/content-pipeline/dcc-plugins.md)
+   - **Features:** [dcc-plugins](../features/content-pipeline/dcc-plugins.md)
+   - **Prereqs:** ContentPipeline.AssetImport, ContentPipeline.AssetProcessing
+5. **74** — [cloth-hair](../requirements/animation/cloth-hair.md)
+   - **Features:** [cloth-hair](../features/animation/cloth-hair.md)
+   - **Prereqs:** Physics.SoftBodyCloth, Audio.VoiceSpeech, Rendering.AdvancedRendering
+6. **75** — [first-person](../requirements/animation/first-person.md)
+   - **Features:** [first-person](../features/animation/first-person.md)
+   - **Prereqs:** Animation.Skeletal, GameFramework.WeaponSystem
+7. **76** — [destruction](../requirements/vfx/destruction.md)
+   - **Features:** [destruction](../features/vfx/destruction.md)
+   - **Prereqs:** Physics.Destruction, VFX.Particles
+8. **77** — [npc-simulation](../requirements/game-framework/npc-simulation.md)
+   - **Features:** [npc-simulation](../features/game-framework/npc-simulation.md)
+   - **Prereqs:** AI.BehaviorDecision, GameFramework.GameplayPrimitives
+9. **78** — [social](../requirements/game-framework/social.md)
+   - **Features:** [social](../features/game-framework/social.md)
+   - **Prereqs:** Networking.Session, GameFramework.GameplayPrimitives
+10. **79** — [game-modes-misc](../requirements/game-framework/game-modes-misc.md)
+    - **Features:** [game-modes-misc](../features/game-framework/game-modes-misc.md)
+    - **Prereqs:** Networking.Session, GameFramework.GameplayPrimitives
+11. **80** — [stealth-cover](../requirements/game-framework/stealth-cover.md)
+    - **Features:** [stealth-cover](../features/game-framework/stealth-cover.md)
+    - **Prereqs:** AI.Perception, GameFramework.GameplayPrimitives
+12. **81** — [building-survival](../requirements/game-framework/building-survival.md),
+    [racing](../requirements/game-framework/racing.md),
+    [turn-based](../requirements/game-framework/turn-based.md),
+    [fog-of-war](../requirements/game-framework/fog-of-war.md),
+    [minigames](../requirements/game-framework/minigames.md),
+    [pets-mounts](../requirements/game-framework/pets-mounts.md),
+    [monetization](../requirements/game-framework/monetization.md),
+    [traversal-interaction](../requirements/game-framework/traversal-interaction.md),
+    [selection-system](../requirements/game-framework/selection-system.md)
+    - **Features:** [building-survival](../features/game-framework/building-survival.md),
+      [racing](../features/game-framework/racing.md),
+      [turn-based](../features/game-framework/turn-based.md),
+      [fog-of-war](../features/game-framework/fog-of-war.md),
+      [minigames](../features/game-framework/minigames.md),
+      [pets-mounts](../features/game-framework/pets-mounts.md),
+      [monetization](../features/game-framework/monetization.md),
+      [traversal-interaction](../features/game-framework/traversal-interaction.md),
+      [selection-system](../features/game-framework/selection-system.md)
+    - **Prereqs:** GameFramework.GameplayPrimitives, GameFramework.Abilities, Physics.RigidBody,
+      AI.Navigation
+13. **82** — [terrain](../requirements/geometry-world/terrain.md) (voxel section)
+    - **Features:** [terrain](../features/geometry-world/terrain.md) (voxel section)
+    - **Prereqs:** GeometryWorld.Terrain, Physics.Destruction
+14. **83** — [procedural-generation](../requirements/geometry-world/procedural-generation.md)
+    - **Features:** [procedural-generation](../features/geometry-world/procedural-generation.md)
+    - **Prereqs:** GeometryWorld.Terrain, Rendering.AdvancedRendering, ContentPipeline.Streaming
+15. **84** — [fluid-simulation](../requirements/physics/fluid-simulation.md)
+    - **Features:** [fluid-simulation](../features/physics/fluid-simulation.md)
+    - **Prereqs:** Physics.RigidBody, GeometryWorld.Water
+16. **85** — [mmo-infrastructure](../requirements/networking/mmo-infrastructure.md)
+    - **Features:** [mmo-infrastructure](../features/networking/mmo-infrastructure.md)
+    - **Prereqs:** Networking.Replication, GameFramework.WorldManagement, GameFramework.SaveSystem
+17. **86** — [accessibility](../requirements/ui-2d/accessibility.md)
+    - **Features:** [accessibility](../features/ui-2d/accessibility.md)
+    - **Prereqs:** UI2D.WidgetFramework, Audio.Engine, Input.ActionsMapping
+18. **87** — [vr-input](../requirements/input/vr-input.md)
+    - **Features:** [vr-input](../features/input/vr-input.md)
+    - **Prereqs:** Input.DeviceAbstraction, Rendering.AdvancedRendering
 
 ---
 
@@ -214,57 +554,154 @@ above. They should be folded into existing groups or promoted to new groups.
 
 ### Unmapped Requirements
 
-| File | Candidate Feature-Group |
-|------|------------------------|
-| [cross-cutting](../requirements/cross-cutting.md) | Spans all groups — constraints on all waves |
-| [animation/morph](../requirements/animation/morph.md) | Animation.Skeletal (morph targets are a skeletal subsystem) |
-| [input/haptics-and-feedback](../requirements/input/haptics-and-feedback.md) | Input.DeviceAbstraction or Input.ActionsMapping |
-| [physics/vehicle-physics](../requirements/physics/vehicle-physics.md) | New group: Physics.Vehicles, or fold into GameFramework.GenreSpecific |
-| [networking/remote-procedure-calls](../requirements/networking/remote-procedure-calls.md) | Networking.Replication (RPCs are a replication mechanism) |
-| [networking/replay-system](../requirements/networking/replay-system.md) | Networking.PredictionRollback (replay is a rollback byproduct) |
-| [content-pipeline/asset-versioning](../requirements/content-pipeline/asset-versioning.md) | ContentPipeline.AssetDatabase |
-| [geometry-world/sky-atmosphere](../requirements/geometry-world/sky-atmosphere.md) | Rendering.AdvancedRendering (sky is a rendering feature) or new GeometryWorld group |
-| [game-framework/inventory](../requirements/game-framework/inventory.md) | GameFramework.GenreSpecific or GameFramework.GameplayPrimitives |
-| [game-framework/quest-dialogue](../requirements/game-framework/quest-dialogue.md) | GameFramework.GenreSpecific |
-| [game-framework/character-customization](../requirements/game-framework/character-customization.md) | GameFramework.GenreSpecific |
-| [game-framework/cinematics](../requirements/game-framework/cinematics.md) | GameFramework.GenreSpecific or ToolsEditor group |
-| [game-framework/scripting](../requirements/game-framework/scripting.md) | ToolsEditor.LogicGraph (scripting = logic graph in no-code engine) |
-| [game-framework/gameplay-databases](../requirements/game-framework/gameplay-databases.md) | GameFramework.GameplayPrimitives |
-| [game-framework/advertising](../requirements/game-framework/advertising.md) | GameFramework.GenreSpecific |
-| [game-framework/block-voxel](../requirements/game-framework/block-voxel.md) | GeometryWorld.TerrainVoxel or GameFramework.GenreSpecific |
-| [tools-editor/level-editor](../requirements/tools-editor/level-editor.md) | ToolsEditor.EditorFramework or ToolsEditor.WorldBuilding |
-| [tools-editor/asset-store](../requirements/tools-editor/asset-store.md) | ToolsEditor.AdvancedTools |
-| [tools-editor/server-infrastructure](../requirements/tools-editor/server-infrastructure.md) | ToolsEditor.AdvancedTools |
-| [ui-2d/common-widgets](../requirements/ui-2d/common-widgets.md) | UI2D.WidgetFramework |
-| [ai/non-functional](../requirements/ai/non-functional.md) | Spans AI groups — performance constraints |
-| [networking/non-functional](../requirements/networking/non-functional.md) | Spans Networking groups — performance constraints |
-| [rendering/gpu-abstraction](../requirements/rendering/gpu-abstraction.md) | Rendering.GPUAbstraction (possibly duplicate of gpu-abstraction-layer) |
+| # | Requirement File | Group |
+|---|------------------|-------|
+| 1 | cross-cutting | (see below) |
+| 2 | animation/morph | (see below) |
+| 3 | input/haptics-and-feedback | (see below) |
+| 4 | physics/vehicle-physics | (see below) |
+| 5 | networking/remote-procedure-calls | (see below) |
+| 6 | networking/replay-system | (see below) |
+| 7 | content-pipeline/asset-versioning | (see below) |
+| 8 | geometry-world/sky-atmosphere | (see below) |
+| 9 | game-framework/inventory | (see below) |
+| 10 | game-framework/quest-dialogue | (see below) |
+| 11 | game-framework/character-customization | (see below) |
+| 12 | game-framework/cinematics | (see below) |
+| 13 | game-framework/scripting | (see below) |
+| 14 | game-framework/gameplay-databases | (see below) |
+| 15 | game-framework/advertising | (see below) |
+| 16 | game-framework/block-voxel | (see below) |
+| 17 | tools-editor/level-editor | (see below) |
+| 18 | tools-editor/asset-store | (see below) |
+| 19 | tools-editor/server-infrastructure | (see below) |
+| 20 | ui-2d/common-widgets | (see below) |
+| 21 | ai/non-functional | (see below) |
+| 22 | networking/non-functional | (see below) |
+| 23 | rendering/gpu-abstraction | (see below) |
+
+Candidate feature-group mappings:
+
+1. [cross-cutting](../requirements/cross-cutting.md) — Spans all groups; constraints on all waves.
+2. [animation/morph](../requirements/animation/morph.md) — Animation.Skeletal (morph targets are a
+   skeletal subsystem).
+3. [input/haptics-and-feedback](../requirements/input/haptics-and-feedback.md) —
+   Input.DeviceAbstraction or Input.ActionsMapping.
+4. [physics/vehicle-physics](../requirements/physics/vehicle-physics.md) — New group:
+   Physics.Vehicles, or fold into GameFramework.GenreSpecific.
+5. [networking/remote-procedure-calls](../requirements/networking/remote-procedure-calls.md) —
+   Networking.Replication (RPCs are a replication mechanism).
+6. [networking/replay-system](../requirements/networking/replay-system.md) —
+   Networking.PredictionRollback (replay is a rollback byproduct).
+7. [content-pipeline/asset-versioning](../requirements/content-pipeline/asset-versioning.md) —
+   ContentPipeline.AssetDatabase.
+8. [geometry-world/sky-atmosphere](../requirements/geometry-world/sky-atmosphere.md) —
+   Rendering.AdvancedRendering (sky is a rendering feature) or new GeometryWorld group.
+9. [game-framework/inventory](../requirements/game-framework/inventory.md) —
+   GameFramework.GenreSpecific or GameFramework.GameplayPrimitives.
+10. [game-framework/quest-dialogue](../requirements/game-framework/quest-dialogue.md) —
+    GameFramework.GenreSpecific.
+11. [game-framework/character-customization](../requirements/game-framework/character-customization.md)
+    — GameFramework.GenreSpecific.
+12. [game-framework/cinematics](../requirements/game-framework/cinematics.md) —
+    GameFramework.GenreSpecific or ToolsEditor group.
+13. [game-framework/scripting](../requirements/game-framework/scripting.md) — ToolsEditor.LogicGraph
+    (scripting = logic graph in no-code engine).
+14. [game-framework/gameplay-databases](../requirements/game-framework/gameplay-databases.md) —
+    GameFramework.GameplayPrimitives.
+15. [game-framework/advertising](../requirements/game-framework/advertising.md) —
+    GameFramework.GenreSpecific.
+16. [game-framework/block-voxel](../requirements/game-framework/block-voxel.md) —
+    GeometryWorld.TerrainVoxel or GameFramework.GenreSpecific.
+17. [tools-editor/level-editor](../requirements/tools-editor/level-editor.md) —
+    ToolsEditor.EditorFramework or ToolsEditor.WorldBuilding.
+18. [tools-editor/asset-store](../requirements/tools-editor/asset-store.md) —
+    ToolsEditor.AdvancedTools.
+19. [tools-editor/server-infrastructure](../requirements/tools-editor/server-infrastructure.md) —
+    ToolsEditor.AdvancedTools.
+20. [ui-2d/common-widgets](../requirements/ui-2d/common-widgets.md) — UI2D.WidgetFramework.
+21. [ai/non-functional](../requirements/ai/non-functional.md) — Spans AI groups; performance
+    constraints.
+22. [networking/non-functional](../requirements/networking/non-functional.md) — Spans Networking
+    groups; performance constraints.
+23. [rendering/gpu-abstraction](../requirements/rendering/gpu-abstraction.md) —
+    Rendering.GPUAbstraction (possibly duplicate of gpu-abstraction-layer).
 
 ### Unmapped Features
 
-| File | Candidate Feature-Group |
-|------|------------------------|
-| [animation/morph](../features/animation/morph.md) | Animation.Skeletal |
-| [input/haptics-and-feedback](../features/input/haptics-and-feedback.md) | Input.DeviceAbstraction |
-| [physics/vehicle-physics](../features/physics/vehicle-physics.md) | GameFramework.GenreSpecific |
-| [networking/remote-procedure-calls](../features/networking/remote-procedure-calls.md) | Networking.Replication |
-| [networking/replay-system](../features/networking/replay-system.md) | Networking.PredictionRollback |
-| [content-pipeline/asset-versioning](../features/content-pipeline/asset-versioning.md) | ContentPipeline.AssetDatabase |
-| [geometry-world/sky-atmosphere](../features/geometry-world/sky-atmosphere.md) | Rendering.AdvancedRendering |
-| [game-framework/inventory](../features/game-framework/inventory.md) | GameFramework.GenreSpecific |
-| [game-framework/quest-dialogue](../features/game-framework/quest-dialogue.md) | GameFramework.GenreSpecific |
-| [game-framework/character-customization](../features/game-framework/character-customization.md) | GameFramework.GenreSpecific |
-| [game-framework/cinematics](../features/game-framework/cinematics.md) | GameFramework.GenreSpecific |
-| [game-framework/scripting](../features/game-framework/scripting.md) | ToolsEditor.LogicGraph |
-| [game-framework/gameplay-databases](../features/game-framework/gameplay-databases.md) | GameFramework.GameplayPrimitives |
-| [game-framework/advertising](../features/game-framework/advertising.md) | GameFramework.GenreSpecific |
-| [game-framework/block-voxel](../features/game-framework/block-voxel.md) | GeometryWorld.TerrainVoxel |
-| [tools-editor/level-editor](../features/tools-editor/level-editor.md) | ToolsEditor.WorldBuilding |
-| [tools-editor/asset-store](../features/tools-editor/asset-store.md) | ToolsEditor.AdvancedTools |
-| [tools-editor/server-infrastructure](../features/tools-editor/server-infrastructure.md) | ToolsEditor.AdvancedTools |
-| [tools-editor/ai-assistant](../features/tools-editor/ai-assistant.md) | ToolsEditor.AdvancedTools |
-| [tools-editor/ai-governance](../features/tools-editor/ai-governance.md) | ToolsEditor.AdvancedTools |
-| [tools-editor/shared-cache](../features/tools-editor/shared-cache.md) | ToolsEditor.AdvancedTools |
-| [ui-2d/common-widgets](../features/ui-2d/common-widgets.md) | UI2D.WidgetFramework |
-| [audio/dsp-and-effects](../features/audio/dsp-and-effects.md) | Audio.DSP |
-| [audio/music-system](../features/audio/music-system.md) | Audio.MusicSystem |
+| Candidate Feature-Group          |
+|----------------------------------|
+| Animation.Skeletal               |
+| Input.DeviceAbstraction          |
+| GameFramework.GenreSpecific      |
+| Networking.Replication           |
+| Networking.PredictionRollback    |
+| ContentPipeline.AssetDatabase    |
+| Rendering.AdvancedRendering      |
+| GameFramework.GenreSpecific      |
+| GameFramework.GenreSpecific      |
+| GameFramework.GenreSpecific      |
+| GameFramework.GenreSpecific      |
+| ToolsEditor.LogicGraph           |
+| GameFramework.GameplayPrimitives |
+| GameFramework.GenreSpecific      |
+| GeometryWorld.TerrainVoxel       |
+| ToolsEditor.WorldBuilding        |
+| ToolsEditor.AdvancedTools        |
+| ToolsEditor.AdvancedTools        |
+| ToolsEditor.AdvancedTools        |
+| ToolsEditor.AdvancedTools        |
+| ToolsEditor.AdvancedTools        |
+| UI2D.WidgetFramework             |
+| Audio.DSP                        |
+| Audio.MusicSystem                |
+
+1. **[animation/morph](../features/animation/morph.md)** —
+   [animation/morph](../features/animation/morph.md)
+2. **[input/haptics-and-feedback](../features/input/haptics-and-feedback.md)** —
+   [input/haptics-and-feedback](../features/input/haptics-and-feedback.md)
+3. **[physics/vehicle-physics](../features/physics/vehicle-physics.md)** —
+   [physics/vehicle-physics](../features/physics/vehicle-physics.md)
+4. **[networking/remote-procedure-calls](../features/networking/remote-procedure-calls.md)** —
+   [networking/remote-procedure-calls](../features/networking/remote-procedure-calls.md)
+5. **[networking/replay-system](../features/networking/replay-system.md)** —
+   [networking/replay-system](../features/networking/replay-system.md)
+6. **[content-pipeline/asset-versioning](../features/content-pipeline/asset-versioning.md)** —
+   [content-pipeline/asset-versioning](../features/content-pipeline/asset-versioning.md)
+7. **[geometry-world/sky-atmosphere](../features/geometry-world/sky-atmosphere.md)** —
+   [geometry-world/sky-atmosphere](../features/geometry-world/sky-atmosphere.md)
+8. **[game-framework/inventory](../features/game-framework/inventory.md)** —
+   [game-framework/inventory](../features/game-framework/inventory.md)
+9. **[game-framework/quest-dialogue](../features/game-framework/quest-dialogue.md)** —
+   [game-framework/quest-dialogue](../features/game-framework/quest-dialogue.md)
+10.
+**[game-framework/character-customization](../features/game-framework/character-customization.md)**
+— [game-framework/character-customization](../features/game-framework/character-customization.md)
+11. **[game-framework/cinematics](../features/game-framework/cinematics.md)** —
+    [game-framework/cinematics](../features/game-framework/cinematics.md)
+12. **[game-framework/scripting](../features/game-framework/scripting.md)** —
+    [game-framework/scripting](../features/game-framework/scripting.md)
+13. **[game-framework/gameplay-databases](../features/game-framework/gameplay-databases.md)** —
+    [game-framework/gameplay-databases](../features/game-framework/gameplay-databases.md)
+14. **[game-framework/advertising](../features/game-framework/advertising.md)** —
+    [game-framework/advertising](../features/game-framework/advertising.md)
+15. **[game-framework/block-voxel](../features/game-framework/block-voxel.md)** —
+    [game-framework/block-voxel](../features/game-framework/block-voxel.md)
+16. **[tools-editor/level-editor](../features/tools-editor/level-editor.md)** —
+    [tools-editor/level-editor](../features/tools-editor/level-editor.md)
+17. **[tools-editor/asset-store](../features/tools-editor/asset-store.md)** —
+    [tools-editor/asset-store](../features/tools-editor/asset-store.md)
+18. **[tools-editor/server-infrastructure](../features/tools-editor/server-infrastructure.md)** —
+    [tools-editor/server-infrastructure](../features/tools-editor/server-infrastructure.md)
+19. **[tools-editor/ai-assistant](../features/tools-editor/ai-assistant.md)** —
+    [tools-editor/ai-assistant](../features/tools-editor/ai-assistant.md)
+20. **[tools-editor/ai-governance](../features/tools-editor/ai-governance.md)** —
+    [tools-editor/ai-governance](../features/tools-editor/ai-governance.md)
+21. **[tools-editor/shared-cache](../features/tools-editor/shared-cache.md)** —
+    [tools-editor/shared-cache](../features/tools-editor/shared-cache.md)
+22. **[ui-2d/common-widgets](../features/ui-2d/common-widgets.md)** —
+    [ui-2d/common-widgets](../features/ui-2d/common-widgets.md)
+23. **[audio/dsp-and-effects](../features/audio/dsp-and-effects.md)** —
+    [audio/dsp-and-effects](../features/audio/dsp-and-effects.md)
+24. **[audio/music-system](../features/audio/music-system.md)** —
+    [audio/music-system](../features/audio/music-system.md)

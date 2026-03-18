@@ -6,35 +6,173 @@
 
 ## Backend Trait and Command Encoding
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-2.1.1 | The engine **SHALL** define a top-level Rust trait with associated types for device, command buffer, pipeline state, and resource handles that all GPU backends implement, using generics for static dispatch with zero vtable overhead. | [F-2.1.1](../../features/rendering/gpu-abstraction-layer.md) | Static dispatch via generics eliminates virtual call overhead in the hot rendering path while providing a uniform API surface across backends. | Compile a test binary instantiating the trait with each backend (Metal, D3D12, Vulkan) and verify that the generated assembly contains no indirect call instructions at trait call sites. Confirm all associated types resolve at compile time. |
-| R-2.1.2 | The engine **SHALL** provide a trait-based command buffer abstraction supporting graphics, compute, and copy operations with type-safe resource binding, where command buffers are recorded independently and submitted as ordered batches to a queue. | [F-2.1.2](../../features/rendering/gpu-abstraction-layer.md) | A unified command buffer interface decouples rendering logic from backend-specific encoding APIs (MTLCommandBuffer, ID3D12GraphicsCommandList, VkCommandBuffer). | Record a command buffer containing at least one graphics, one compute, and one copy operation on each backend. Verify successful submission and GPU completion via fence signal. Confirm that binding a resource of the wrong type produces a compile-time error. |
-| R-2.1.3 | The engine **SHALL** provide a unified pipeline state object covering shader stages, vertex layout, blend state, depth-stencil configuration, and rasterizer settings that validates all state combinations at creation time so that command buffer encoding incurs no validation overhead. | [F-2.1.3](../../features/rendering/gpu-abstraction-layer.md) | Pre-validation at PSO creation time moves error detection to load time and ensures zero-cost encoding during frame submission. | Create pipeline states with valid and invalid configurations on each backend. Verify that invalid combinations return a structured error at creation time. Measure that PSO bind during command encoding adds zero conditional branches compared to raw backend calls. |
+| ID      | Derived From                                                 |
+|---------|--------------------------------------------------------------|
+| R-2.1.1 | [F-2.1.1](../../features/rendering/gpu-abstraction-layer.md) |
+| R-2.1.2 | [F-2.1.2](../../features/rendering/gpu-abstraction-layer.md) |
+| R-2.1.3 | [F-2.1.3](../../features/rendering/gpu-abstraction-layer.md) |
+
+1. **R-2.1.1** — The engine **SHALL** define a top-level Rust trait with associated types for
+   device, command buffer, pipeline state, and resource handles that all GPU backends implement,
+   using generics for static dispatch with zero vtable overhead.
+   - **Rationale:** Static dispatch via generics eliminates virtual call overhead in the hot
+     rendering path while providing a uniform API surface across backends.
+   - **Verification:** Compile a test binary instantiating the trait with each backend (Metal,
+     D3D12, Vulkan) and verify that the generated assembly contains no indirect call instructions at
+     trait call sites. Confirm all associated types resolve at compile time.
+2. **R-2.1.2** — The engine **SHALL** provide a trait-based command buffer abstraction supporting
+   graphics, compute, and copy operations with type-safe resource binding, where command buffers are
+   recorded independently and submitted as ordered batches to a queue.
+   - **Rationale:** A unified command buffer interface decouples rendering logic from
+     backend-specific encoding APIs (MTLCommandBuffer, ID3D12GraphicsCommandList, VkCommandBuffer).
+   - **Verification:** Record a command buffer containing at least one graphics, one compute, and
+     one copy operation on each backend. Verify successful submission and GPU completion via fence
+     signal. Confirm that binding a resource of the wrong type produces a compile-time error.
+3. **R-2.1.3** — The engine **SHALL** provide a unified pipeline state object covering shader
+   stages, vertex layout, blend state, depth-stencil configuration, and rasterizer settings that
+   validates all state combinations at creation time so that command buffer encoding incurs no
+   validation overhead.
+   - **Rationale:** Pre-validation at PSO creation time moves error detection to load time and
+     ensures zero-cost encoding during frame submission.
+   - **Verification:** Create pipeline states with valid and invalid configurations on each backend.
+     Verify that invalid combinations return a structured error at creation time. Measure that PSO
+     bind during command encoding adds zero conditional branches compared to raw backend calls.
 
 ## Platform Backends
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-2.1.4 | The engine **SHALL** implement the Metal GPU backend as a Swift library exposing a C-compatible API surface via `@_cdecl` functions, consumed by Rust through bindgen-generated bindings wrapped in safe Rust types that implement the backend trait, with no Objective-C or C++ in the FFI boundary. | [F-2.1.4](../../features/rendering/gpu-abstraction-layer.md) | Swift provides first-class Metal API access while `@_cdecl` produces a stable C ABI that bindgen can consume directly, avoiding fragile Objective-C bridging. | Build the Metal backend on macOS and iOS. Verify the FFI boundary contains only C-compatible function signatures (no Objective-C selectors, no C++ mangled symbols). Run the full GPU backend conformance suite and confirm all tests pass. |
-| R-2.1.5 | The engine **SHALL** implement the Direct3D 12 backend using C-compatible COM header bindings generated by bindgen, with safe Rust wrappers managing COM reference counting and providing typed interfaces for device, command list, and resource creation that satisfy the backend trait, with no C++ or windows-rs dependency. | [F-2.1.5](../../features/rendering/gpu-abstraction-layer.md) | Generating bindings directly from C-compatible COM headers avoids the maintenance burden and abstraction leaks of windows-rs while keeping the build dependency-free of C++. | Build the D3D12 backend on Windows. Verify no C++ translation units or windows-rs crate appear in the dependency graph. Run the GPU backend conformance suite. Verify COM reference counts reach zero on shutdown with no leaks reported by the debug layer. |
-| R-2.1.6 | The engine **SHALL** implement the Vulkan backend by generating Rust bindings from vulkan.h via bindgen, with safe Rust wrappers encapsulating instance, device, and queue lifetime management using RAII semantics, and validation layer integration enabled in debug builds. | [F-2.1.6](../../features/rendering/gpu-abstraction-layer.md) | Bindgen from the canonical vulkan.h ensures bindings stay current with the Vulkan spec. RAII wrappers prevent resource leaks. Validation layers catch errors during development. | Build the Vulkan backend on Windows and Linux. Confirm the Vulkan loader is discovered at runtime (no static linking). Run the GPU backend conformance suite with validation layers enabled and verify zero validation errors. Confirm all Vulkan handles are destroyed before instance destruction. |
+| ID      | Derived From                                                 |
+|---------|--------------------------------------------------------------|
+| R-2.1.4 | [F-2.1.4](../../features/rendering/gpu-abstraction-layer.md) |
+| R-2.1.5 | [F-2.1.5](../../features/rendering/gpu-abstraction-layer.md) |
+| R-2.1.6 | [F-2.1.6](../../features/rendering/gpu-abstraction-layer.md) |
+
+1. **R-2.1.4** — The engine **SHALL** implement the Metal GPU backend as a Swift library exposing a
+   C-compatible API surface via `@_cdecl` functions, consumed by Rust through bindgen-generated
+   bindings wrapped in safe Rust types that implement the backend trait, with no Objective-C or C++
+   in the FFI boundary.
+   - **Rationale:** Swift provides first-class Metal API access while `@_cdecl` produces a stable C
+     ABI that bindgen can consume directly, avoiding fragile Objective-C bridging.
+   - **Verification:** Build the Metal backend on macOS and iOS. Verify the FFI boundary contains
+     only C-compatible function signatures (no Objective-C selectors, no C++ mangled symbols). Run
+     the full GPU backend conformance suite and confirm all tests pass.
+2. **R-2.1.5** — The engine **SHALL** implement the Direct3D 12 backend using C-compatible COM
+   header bindings generated by bindgen, with safe Rust wrappers managing COM reference counting and
+   providing typed interfaces for device, command list, and resource creation that satisfy the
+   backend trait, with no C++ or windows-rs dependency.
+   - **Rationale:** Generating bindings directly from C-compatible COM headers avoids the
+     maintenance burden and abstraction leaks of windows-rs while keeping the build dependency-free
+     of C++.
+   - **Verification:** Build the D3D12 backend on Windows. Verify no C++ translation units or
+     windows-rs crate appear in the dependency graph. Run the GPU backend conformance suite. Verify
+     COM reference counts reach zero on shutdown with no leaks reported by the debug layer.
+3. **R-2.1.6** — The engine **SHALL** implement the Vulkan backend by generating Rust bindings from
+   vulkan.h via bindgen, with safe Rust wrappers encapsulating instance, device, and queue lifetime
+   management using RAII semantics, and validation layer integration enabled in debug builds.
+   - **Rationale:** Bindgen from the canonical vulkan.h ensures bindings stay current with the
+     Vulkan spec. RAII wrappers prevent resource leaks. Validation layers catch errors during
+     development.
+   - **Verification:** Build the Vulkan backend on Windows and Linux. Confirm the Vulkan loader is
+     discovered at runtime (no static linking). Run the GPU backend conformance suite with
+     validation layers enabled and verify zero validation errors. Confirm all Vulkan handles are
+     destroyed before instance destruction.
 
 ## GPU Runtime
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-2.1.7 | The engine **SHALL** provide a GPU heap sub-allocator that carves typed buffer and texture regions from pre-allocated memory blocks, reducing OS-level allocations to fewer than 64 per frame while respecting per-backend alignment requirements (256 B on D3D12, variable on Vulkan, page-aligned on Metal). | [F-2.1.7](../../features/rendering/gpu-abstraction-layer.md) | Sub-allocation from large heaps drastically reduces the number of costly OS-level GPU memory allocations, which is critical at high draw counts. | Render a scene with 10,000+ draw calls. Count OS-level GPU memory allocations per frame and verify fewer than 64. Verify that each sub-allocation offset satisfies the backend-specific alignment requirement. |
-| R-2.1.8 | The engine **SHALL** maintain a CPU-side shadow state tracker per command buffer that records current pipeline, binding, and render target state, filtering redundant state transitions before encoding to reduce driver overhead. | [F-2.1.8](../../features/rendering/gpu-abstraction-layer.md) | Filtering redundant state changes at the CPU side avoids unnecessary driver validation and GPU pipeline flushes during high-frequency draw submission. | Record a command buffer that sets the same pipeline state twice consecutively. Capture the backend API trace and verify that only one pipeline bind call reaches the driver. Measure that redundant-state filtering reduces total API calls by at least 20% in a scene with 1,000+ draws. |
-| R-2.1.9 | The engine **SHALL** automatically batch, merge, and reorder resource barriers within a command buffer, merging consecutive barriers targeting the same resource and inserting split barriers when a resource transition can overlap with independent work. | [F-2.1.9](../../features/rendering/gpu-abstraction-layer.md) | Barrier merging and split barriers reduce GPU pipeline stalls by allowing transitions to overlap with independent work. | Record a command buffer with three consecutive barriers on the same resource. Verify the backend receives a single merged barrier call. Insert a split barrier across independent work and verify via GPU capture that the transition overlaps with the intervening dispatch. On Metal, verify barrier calls are elided (driver-managed hazard tracking). |
-| R-2.1.10 | The engine **SHALL** provide backend-level support for GPU work graphs enabling GPU-driven dispatch without CPU round-trips, using the native Work Graphs API on D3D12 and compute-based emulation via indirect dispatch chains on Metal and Vulkan. | [F-2.1.10](../../features/rendering/gpu-abstraction-layer.md) | GPU work graphs eliminate CPU-GPU synchronization for GPU-driven pipelines. Emulation ensures consistent behavior on backends without native support. | Execute a work graph with producer and consumer nodes on D3D12 and verify output matches expected results with zero CPU round-trips (measured via timestamp queries). Run the same work graph on Metal and Vulkan via the emulated path and verify output matches the native path within floating-point tolerance. |
-| R-2.1.11 | The engine **SHALL** provide a runtime feature emulation layer that selects emulated code paths at device creation time based on capability queries, with no runtime branching in the rendering hot path, covering at minimum work graphs on Vulkan/Metal, mesh shaders on older Vulkan drivers, and enhanced barriers on D3D12 feature level below 12.2. | [F-2.1.11](../../features/rendering/gpu-abstraction-layer.md) | Emulation ensures consistent rendering behavior across hardware generations without polluting the hot path with per-frame capability checks. | Create a device on a backend lacking native mesh shader support. Verify the emulation path is selected at creation time and that the compiled shader pipeline contains no runtime capability branches. Render a reference scene and verify visual output matches the native path within a PSNR threshold of 40 dB. |
-| R-2.1.12 | The engine **SHALL** expose hardware timestamp queries, pipeline statistics, and occupancy counters through the GPU abstraction layer, where each render pass can be bracketed with begin/end timestamp queries whose results are read back one frame later to avoid stalls, reporting per-pass GPU time, vertex/fragment invocation counts, and bandwidth consumption. | [F-2.1.12](../../features/rendering/gpu-abstraction-layer.md) | Deferred readback avoids GPU stalls while providing accurate per-pass performance data for profiling and budget culling decisions. | Bracket five render passes with timestamp queries. Read results back on the following frame and verify non-zero, monotonically increasing timestamps. Verify pipeline statistics report non-zero vertex and fragment invocation counts for a scene with geometry. Confirm that query readback does not introduce any GPU idle time (measured via GPU profiler). |
+| ID       | Derived From                                                  |
+|----------|---------------------------------------------------------------|
+| R-2.1.7  | [F-2.1.7](../../features/rendering/gpu-abstraction-layer.md)  |
+| R-2.1.8  | [F-2.1.8](../../features/rendering/gpu-abstraction-layer.md)  |
+| R-2.1.9  | [F-2.1.9](../../features/rendering/gpu-abstraction-layer.md)  |
+| R-2.1.10 | [F-2.1.10](../../features/rendering/gpu-abstraction-layer.md) |
+| R-2.1.11 | [F-2.1.11](../../features/rendering/gpu-abstraction-layer.md) |
+| R-2.1.12 | [F-2.1.12](../../features/rendering/gpu-abstraction-layer.md) |
+
+1. **R-2.1.7** — The engine **SHALL** provide a GPU heap sub-allocator that carves typed buffer and
+   texture regions from pre-allocated memory blocks, reducing OS-level allocations to fewer than 64
+   per frame while respecting per-backend alignment requirements (256 B on D3D12, variable on
+   Vulkan, page-aligned on Metal).
+   - **Rationale:** Sub-allocation from large heaps drastically reduces the number of costly
+     OS-level GPU memory allocations, which is critical at high draw counts.
+   - **Verification:** Render a scene with 10,000+ draw calls. Count OS-level GPU memory allocations
+     per frame and verify fewer than 64. Verify that each sub-allocation offset satisfies the
+     backend-specific alignment requirement.
+2. **R-2.1.8** — The engine **SHALL** maintain a CPU-side shadow state tracker per command buffer
+   that records current pipeline, binding, and render target state, filtering redundant state
+   transitions before encoding to reduce driver overhead.
+   - **Rationale:** Filtering redundant state changes at the CPU side avoids unnecessary driver
+     validation and GPU pipeline flushes during high-frequency draw submission.
+   - **Verification:** Record a command buffer that sets the same pipeline state twice
+     consecutively. Capture the backend API trace and verify that only one pipeline bind call
+     reaches the driver. Measure that redundant-state filtering reduces total API calls by at least
+     20% in a scene with 1,000+ draws.
+3. **R-2.1.9** — The engine **SHALL** automatically batch, merge, and reorder resource barriers
+   within a command buffer, merging consecutive barriers targeting the same resource and inserting
+   split barriers when a resource transition can overlap with independent work.
+   - **Rationale:** Barrier merging and split barriers reduce GPU pipeline stalls by allowing
+     transitions to overlap with independent work.
+   - **Verification:** Record a command buffer with three consecutive barriers on the same resource.
+     Verify the backend receives a single merged barrier call. Insert a split barrier across
+     independent work and verify via GPU capture that the transition overlaps with the intervening
+     dispatch. On Metal, verify barrier calls are elided (driver-managed hazard tracking).
+4. **R-2.1.10** — The engine **SHALL** provide backend-level support for GPU work graphs enabling
+   GPU-driven dispatch without CPU round-trips, using the native Work Graphs API on D3D12 and
+   compute-based emulation via indirect dispatch chains on Metal and Vulkan.
+   - **Rationale:** GPU work graphs eliminate CPU-GPU synchronization for GPU-driven pipelines.
+     Emulation ensures consistent behavior on backends without native support.
+   - **Verification:** Execute a work graph with producer and consumer nodes on D3D12 and verify
+     output matches expected results with zero CPU round-trips (measured via timestamp queries). Run
+     the same work graph on Metal and Vulkan via the emulated path and verify output matches the
+     native path within floating-point tolerance.
+5. **R-2.1.11** — The engine **SHALL** provide a runtime feature emulation layer that selects
+   emulated code paths at device creation time based on capability queries, with no runtime
+   branching in the rendering hot path, covering at minimum work graphs on Vulkan/Metal, mesh
+   shaders on older Vulkan drivers, and enhanced barriers on D3D12 feature level below 12.2.
+   - **Rationale:** Emulation ensures consistent rendering behavior across hardware generations
+     without polluting the hot path with per-frame capability checks.
+   - **Verification:** Create a device on a backend lacking native mesh shader support. Verify the
+     emulation path is selected at creation time and that the compiled shader pipeline contains no
+     runtime capability branches. Render a reference scene and verify visual output matches the
+     native path within a PSNR threshold of 40 dB.
+6. **R-2.1.12** — The engine **SHALL** expose hardware timestamp queries, pipeline statistics, and
+   occupancy counters through the GPU abstraction layer, where each render pass can be bracketed
+   with begin/end timestamp queries whose results are read back one frame later to avoid stalls,
+   reporting per-pass GPU time, vertex/fragment invocation counts, and bandwidth consumption.
+   - **Rationale:** Deferred readback avoids GPU stalls while providing accurate per-pass
+     performance data for profiling and budget culling decisions.
+   - **Verification:** Bracket five render passes with timestamp queries. Read results back on the
+     following frame and verify non-zero, monotonically increasing timestamps. Verify pipeline
+     statistics report non-zero vertex and fragment invocation counts for a scene with geometry.
+     Confirm that query readback does not introduce any GPU idle time (measured via GPU profiler).
 
 ## Non-Functional Requirements
 
-| ID | Requirement | Rationale | Verification |
-|----|-------------|-----------|--------------|
-| NFR-2.1.1 | The GPU abstraction layer **SHALL** introduce no more than 5% CPU overhead compared to raw backend API calls in a draw-call-heavy benchmark (10,000+ draws per frame). Static dispatch via generics **SHALL** eliminate all vtable indirection in the rendering hot path. | The abstraction must not become a performance bottleneck; the generics-based design exists specifically to avoid runtime dispatch overhead. | Profile a 10,000-draw benchmark using the abstraction layer and again using raw backend calls. Measure CPU time in the submission path and confirm the delta is below 5%. |
-| NFR-2.1.2 | The GPU memory sub-allocator **SHALL** limit OS-level GPU memory allocations to fewer than 64 per frame across all resource types, and sub-allocation operations **SHALL** complete in O(1) amortized time. | OS-level GPU allocations are expensive kernel transitions; bounding their count is essential for consistent frame pacing. | Profile a complex scene (100,000+ draws) and count OS-level GPU allocations per frame. Verify the count remains below 64. Measure sub-allocation latency and confirm O(1) amortized time. |
-| NFR-2.1.3 | The CPU-side state tracker **SHALL** reduce redundant backend API calls by at least 20% in a scene with 1,000+ draws and **SHALL** consume no more than 64 KB of memory per command buffer. | State tracking must provide measurable API call reduction without excessive memory consumption per command buffer. | Record a 1,000-draw command buffer with and without state tracking. Compare total backend API calls and verify at least 20% reduction. Measure state tracker memory per command buffer and confirm it is below 64 KB. |
+| ID        |
+|-----------|
+| NFR-2.1.1 |
+| NFR-2.1.2 |
+| NFR-2.1.3 |
+
+1. **NFR-2.1.1** — The GPU abstraction layer **SHALL** introduce no more than 5% CPU overhead
+   compared to raw backend API calls in a draw-call-heavy benchmark (10,000+ draws per frame).
+   Static dispatch via generics **SHALL** eliminate all vtable indirection in the rendering hot
+   path.
+   - **Rationale:** The abstraction must not become a performance bottleneck; the generics-based
+     design exists specifically to avoid runtime dispatch overhead.
+   - **Verification:** Profile a 10,000-draw benchmark using the abstraction layer and again using
+     raw backend calls. Measure CPU time in the submission path and confirm the delta is below 5%.
+2. **NFR-2.1.2** — The GPU memory sub-allocator **SHALL** limit OS-level GPU memory allocations to
+   fewer than 64 per frame across all resource types, and sub-allocation operations **SHALL**
+   complete in O(1) amortized time.
+   - **Rationale:** OS-level GPU allocations are expensive kernel transitions; bounding their count
+     is essential for consistent frame pacing.
+   - **Verification:** Profile a complex scene (100,000+ draws) and count OS-level GPU allocations
+     per frame. Verify the count remains below 64. Measure sub-allocation latency and confirm O(1)
+     amortized time.
+3. **NFR-2.1.3** — The CPU-side state tracker **SHALL** reduce redundant backend API calls by at
+   least 20% in a scene with 1,000+ draws and **SHALL** consume no more than 64 KB of memory per
+   command buffer.
+   - **Rationale:** State tracking must provide measurable API call reduction without excessive
+     memory consumption per command buffer.
+   - **Verification:** Record a 1,000-draw command buffer with and without state tracking. Compare
+     total backend API calls and verify at least 20% reduction. Measure state tracker memory per
+     command buffer and confirm it is below 64 KB.

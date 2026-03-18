@@ -8,13 +8,19 @@
 > [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-8.8.1 | R-8.8.1 | Server-side cheat detection (movement, damage, cooldowns) |
-| F-8.8.2 | R-8.8.2 | Client integrity verification (memory hashing) |
-| F-8.8.3 | R-8.8.3 | Behavioral analysis and anomaly detection (Z-score) |
-| F-8.8.4 | R-8.8.4 | Economy exploit prevention (double-spend, gold farming) |
-| F-8.8.5 | R-8.8.5 | Rate limiting and abuse prevention (per-RPC budgets) |
+| Feature | Requirement |
+|---------|-------------|
+| F-8.8.1 | R-8.8.1     |
+| F-8.8.2 | R-8.8.2     |
+| F-8.8.3 | R-8.8.3     |
+| F-8.8.4 | R-8.8.4     |
+| F-8.8.5 | R-8.8.5     |
+
+1. **F-8.8.1** — Server-side cheat detection (movement, damage, cooldowns)
+2. **F-8.8.2** — Client integrity verification (memory hashing)
+3. **F-8.8.3** — Behavioral analysis and anomaly detection (Z-score)
+4. **F-8.8.4** — Economy exploit prevention (double-spend, gold farming)
+5. **F-8.8.5** — Rate limiting and abuse prevention (per-RPC budgets)
 
 ## Overview
 
@@ -1119,53 +1125,108 @@ to prevent capture/replay between sessions.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_movement_within_bounds` | R-8.8.1 | Client pos within max_distance; verify ok. |
-| `test_movement_speed_hack` | R-8.8.1 | Client pos exceeds max velocity * dt; verify SpeedHack violation. |
-| `test_movement_teleport` | R-8.8.1 | Position discontinuity exceeds threshold; verify Teleport violation. |
-| `test_movement_rtt_tolerance` | R-8.8.1 | High RTT (150 ms) with prediction error; verify no false positive. |
-| `test_movement_mobile_tolerance` | R-8.8.1 | Mobile client with jitter; verify wider thresholds prevent false flag. |
-| `test_damage_within_bounds` | R-8.8.1 | Reported damage within weapon stats * multipliers; verify ok. |
-| `test_damage_manipulation` | R-8.8.1 | Reported damage exceeds bounds; verify DamageManipulation violation. |
-| `test_cooldown_circumvention` | R-8.8.1 | Ability used during cooldown; verify violation. |
-| `test_craft_without_ingredients` | R-8.8.4 | Craft without owning ingredients; verify rejection. |
-| `test_double_spend_prevention` | R-8.8.4 | Two concurrent trades with same gold; verify one fails. |
-| `test_gold_farming_detection` | R-8.8.4 | 100 identical loops + bulk transfer; verify pattern flagged. |
-| `test_high_value_rate_limit` | R-8.8.4 | Transaction above threshold; verify delay applied. |
-| `test_integrity_valid_client` | R-8.8.2 | Unmodified client responds correctly; verify pass. |
-| `test_integrity_tampered_client` | R-8.8.2 | Modified code segment; verify hash mismatch detected. |
-| `test_integrity_replay_attack` | R-8.8.2 | Replay old response; verify rejection (nonce mismatch). |
-| `test_behavioral_normal` | R-8.8.3 | Consistent accuracy over 100 matches; verify no flag. |
-| `test_behavioral_sudden_jump` | R-8.8.3 | 3-sigma accuracy jump; verify anomaly flagged. |
-| `test_behavioral_gradual_improve` | R-8.8.3 | Gradual improvement over 50 matches; verify no false flag. |
-| `test_behavioral_input_segmentation` | R-8.8.3 | Touch vs mouse baselines are independent; verify separate stats. |
-| `test_rate_limit_allow` | R-8.8.5 | RPC within budget; verify Allow. |
-| `test_rate_limit_throttle` | R-8.8.5 | RPC at 2x rate; verify Throttle. |
-| `test_rate_limit_reject` | R-8.8.5 | RPC at 10x rate; verify Reject after burst allowance. |
-| `test_rate_limit_hot_reload` | R-8.8.5 | Reload config; verify new limits take effect within 5 s. |
-| `test_scorer_accumulation` | R-8.8.1 | Report 5 violations; verify score accumulates. |
-| `test_scorer_decay` | R-8.8.1 | Advance time; verify score decays. |
-| `test_escalation_warn` | R-8.8.1 | Score below kick threshold; verify Warn. |
-| `test_escalation_kick` | R-8.8.1 | Score above kick threshold; verify Kick. |
-| `test_escalation_ban` | R-8.8.1 | Score above ban threshold; verify PermaBan. |
+| Test                                 | Req     |
+|--------------------------------------|---------|
+| `test_movement_within_bounds`        | R-8.8.1 |
+| `test_movement_speed_hack`           | R-8.8.1 |
+| `test_movement_teleport`             | R-8.8.1 |
+| `test_movement_rtt_tolerance`        | R-8.8.1 |
+| `test_movement_mobile_tolerance`     | R-8.8.1 |
+| `test_damage_within_bounds`          | R-8.8.1 |
+| `test_damage_manipulation`           | R-8.8.1 |
+| `test_cooldown_circumvention`        | R-8.8.1 |
+| `test_craft_without_ingredients`     | R-8.8.4 |
+| `test_double_spend_prevention`       | R-8.8.4 |
+| `test_gold_farming_detection`        | R-8.8.4 |
+| `test_high_value_rate_limit`         | R-8.8.4 |
+| `test_integrity_valid_client`        | R-8.8.2 |
+| `test_integrity_tampered_client`     | R-8.8.2 |
+| `test_integrity_replay_attack`       | R-8.8.2 |
+| `test_behavioral_normal`             | R-8.8.3 |
+| `test_behavioral_sudden_jump`        | R-8.8.3 |
+| `test_behavioral_gradual_improve`    | R-8.8.3 |
+| `test_behavioral_input_segmentation` | R-8.8.3 |
+| `test_rate_limit_allow`              | R-8.8.5 |
+| `test_rate_limit_throttle`           | R-8.8.5 |
+| `test_rate_limit_reject`             | R-8.8.5 |
+| `test_rate_limit_hot_reload`         | R-8.8.5 |
+| `test_scorer_accumulation`           | R-8.8.1 |
+| `test_scorer_decay`                  | R-8.8.1 |
+| `test_escalation_warn`               | R-8.8.1 |
+| `test_escalation_kick`               | R-8.8.1 |
+| `test_escalation_ban`                | R-8.8.1 |
+
+1. **`test_movement_within_bounds`** — Client pos within max_distance; verify ok.
+2. **`test_movement_speed_hack`** — Client pos exceeds max velocity * dt; verify SpeedHack
+   violation.
+3. **`test_movement_teleport`** — Position discontinuity exceeds threshold; verify Teleport
+   violation.
+4. **`test_movement_rtt_tolerance`** — High RTT (150 ms) with prediction error; verify no false
+   positive.
+5. **`test_movement_mobile_tolerance`** — Mobile client with jitter; verify wider thresholds prevent
+   false flag.
+6. **`test_damage_within_bounds`** — Reported damage within weapon stats * multipliers; verify ok.
+7. **`test_damage_manipulation`** — Reported damage exceeds bounds; verify DamageManipulation
+   violation.
+8. **`test_cooldown_circumvention`** — Ability used during cooldown; verify violation.
+9. **`test_craft_without_ingredients`** — Craft without owning ingredients; verify rejection.
+10. **`test_double_spend_prevention`** — Two concurrent trades with same gold; verify one fails.
+11. **`test_gold_farming_detection`** — 100 identical loops + bulk transfer; verify pattern flagged.
+12. **`test_high_value_rate_limit`** — Transaction above threshold; verify delay applied.
+13. **`test_integrity_valid_client`** — Unmodified client responds correctly; verify pass.
+14. **`test_integrity_tampered_client`** — Modified code segment; verify hash mismatch detected.
+15. **`test_integrity_replay_attack`** — Replay old response; verify rejection (nonce mismatch).
+16. **`test_behavioral_normal`** — Consistent accuracy over 100 matches; verify no flag.
+17. **`test_behavioral_sudden_jump`** — 3-sigma accuracy jump; verify anomaly flagged.
+18. **`test_behavioral_gradual_improve`** — Gradual improvement over 50 matches; verify no false
+    flag.
+19. **`test_behavioral_input_segmentation`** — Touch vs mouse baselines are independent; verify
+    separate stats.
+20. **`test_rate_limit_allow`** — RPC within budget; verify Allow.
+21. **`test_rate_limit_throttle`** — RPC at 2x rate; verify Throttle.
+22. **`test_rate_limit_reject`** — RPC at 10x rate; verify Reject after burst allowance.
+23. **`test_rate_limit_hot_reload`** — Reload config; verify new limits take effect within 5 s.
+24. **`test_scorer_accumulation`** — Report 5 violations; verify score accumulates.
+25. **`test_scorer_decay`** — Advance time; verify score decays.
+26. **`test_escalation_warn`** — Score below kick threshold; verify Warn.
+27. **`test_escalation_kick`** — Score above kick threshold; verify Kick.
+28. **`test_escalation_ban`** — Score above ban threshold; verify PermaBan.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_speed_hack_detection_live` | R-8.8.1 | Submit movement exceeding max velocity; verify detection and correction. |
-| `test_teleport_detection_live` | R-8.8.1 | Submit position discontinuity; verify detection. |
-| `test_damage_hack_live` | R-8.8.1 | Submit damage exceeding weapon stats; verify rejection. |
-| `test_no_false_positive_150ms` | R-8.8.1 | Legitimate client at 150 ms RTT with prediction; verify no flag. |
-| `test_economy_concurrent_trade` | R-8.8.4 | Two concurrent trades spending same gold; verify one fails. |
-| `test_farming_pattern_live` | R-8.8.4 | Simulate gold farming loop; verify detection. |
-| `test_integrity_full_cycle` | R-8.8.2 | Issue challenge, receive response, validate; verify round-trip. |
-| `test_behavioral_100_match_history` | R-8.8.3 | Record 100 matches, inject anomaly at match 101; verify flagged. |
-| `test_rate_limit_sustained_abuse` | R-8.8.5 | Send 10x rate for 60 s; verify escalation from throttle to kick. |
-| `test_hot_reload_live` | R-8.8.5 | Hot-reload config during live session; verify new limits apply. |
-| `test_replay_based_verification` | R-8.8.1 | Record session, replay with cheat injected; verify detection matches live detection. |
-| `test_legitimate_high_skill_no_flag` | R-8.8.3 | Replay recorded sessions from high-skill players; verify no false positives. |
+| Test                                 | Req     |
+|--------------------------------------|---------|
+| `test_speed_hack_detection_live`     | R-8.8.1 |
+| `test_teleport_detection_live`       | R-8.8.1 |
+| `test_damage_hack_live`              | R-8.8.1 |
+| `test_no_false_positive_150ms`       | R-8.8.1 |
+| `test_economy_concurrent_trade`      | R-8.8.4 |
+| `test_farming_pattern_live`          | R-8.8.4 |
+| `test_integrity_full_cycle`          | R-8.8.2 |
+| `test_behavioral_100_match_history`  | R-8.8.3 |
+| `test_rate_limit_sustained_abuse`    | R-8.8.5 |
+| `test_hot_reload_live`               | R-8.8.5 |
+| `test_replay_based_verification`     | R-8.8.1 |
+| `test_legitimate_high_skill_no_flag` | R-8.8.3 |
+
+1. **`test_speed_hack_detection_live`** — Submit movement exceeding max velocity; verify detection
+   and correction.
+2. **`test_teleport_detection_live`** — Submit position discontinuity; verify detection.
+3. **`test_damage_hack_live`** — Submit damage exceeding weapon stats; verify rejection.
+4. **`test_no_false_positive_150ms`** — Legitimate client at 150 ms RTT with prediction; verify no
+   flag.
+5. **`test_economy_concurrent_trade`** — Two concurrent trades spending same gold; verify one fails.
+6. **`test_farming_pattern_live`** — Simulate gold farming loop; verify detection.
+7. **`test_integrity_full_cycle`** — Issue challenge, receive response, validate; verify round-trip.
+8. **`test_behavioral_100_match_history`** — Record 100 matches, inject anomaly at match 101; verify
+   flagged.
+9. **`test_rate_limit_sustained_abuse`** — Send 10x rate for 60 s; verify escalation from throttle
+   to kick.
+10. **`test_hot_reload_live`** — Hot-reload config during live session; verify new limits apply.
+11. **`test_replay_based_verification`** — Record session, replay with cheat injected; verify
+    detection matches live detection.
+12. **`test_legitimate_high_skill_no_flag`** — Replay recorded sessions from high-skill players;
+    verify no false positives.
 
 ### Benchmarks
 

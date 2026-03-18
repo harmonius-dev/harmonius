@@ -10,28 +10,45 @@
 
 ### Save System (F-13.3, R-13.3)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.3.1 | R-13.3.1 | Reflection-based save serialization with partial dirty-field writes |
-| F-13.3.2 | R-13.3.2 | Schema versioning with ordered migration transforms |
-| F-13.3.3 | R-13.3.3 | Checkpoint and autosave with rotating slots |
-| F-13.3.4 | R-13.3.4 | Save slot management with metadata and transactional operations |
-| F-13.3.5 | R-13.3.5 | Cloud save sync with platform-native APIs |
-| F-13.3.6 | R-13.3.6 | Async I/O pipeline with compression, encryption, checksumming |
+| Feature  | Requirement |
+|----------|-------------|
+| F-13.3.1 | R-13.3.1    |
+| F-13.3.2 | R-13.3.2    |
+| F-13.3.3 | R-13.3.3    |
+| F-13.3.4 | R-13.3.4    |
+| F-13.3.5 | R-13.3.5    |
+| F-13.3.6 | R-13.3.6    |
+
+1. **F-13.3.1** — Reflection-based save serialization with partial dirty-field writes
+2. **F-13.3.2** — Schema versioning with ordered migration transforms
+3. **F-13.3.3** — Checkpoint and autosave with rotating slots
+4. **F-13.3.4** — Save slot management with metadata and transactional operations
+5. **F-13.3.5** — Cloud save sync with platform-native APIs
+6. **F-13.3.6** — Async I/O pipeline with compression, encryption, checksumming
 
 ### Cinematics (F-13.5, R-13.5)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.5.1 | R-13.5.1 | Multi-track timeline sequencer with deterministic playback |
-| F-13.5.2 | R-13.5.2 | Cinematic camera modes with blending and DOF overrides |
-| F-13.5.3 | R-13.5.3 | Camera rails and splines with branching paths |
-| F-13.5.4 | R-13.5.4 | Actor animation blending between gameplay and cinematic |
-| F-13.5.5 | R-13.5.5 | Dialogue triggers with subtitles and lip-sync |
-| F-13.5.6a | R-13.5.6a | Cutscene skip with side-effect application |
-| F-13.5.6b | R-13.5.6b | Fast-forward playback at 2x and 4x |
-| F-13.5.6c | R-13.5.6c | Cutscene pause and resume |
-| F-13.5.7 | R-13.5.7 | Letterboxing with HUD suppression |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-13.5.1  | R-13.5.1    |
+| F-13.5.2  | R-13.5.2    |
+| F-13.5.3  | R-13.5.3    |
+| F-13.5.4  | R-13.5.4    |
+| F-13.5.5  | R-13.5.5    |
+| F-13.5.6a | R-13.5.6a   |
+| F-13.5.6b | R-13.5.6b   |
+| F-13.5.6c | R-13.5.6c   |
+| F-13.5.7  | R-13.5.7    |
+
+1. **F-13.5.1** — Multi-track timeline sequencer with deterministic playback
+2. **F-13.5.2** — Cinematic camera modes with blending and DOF overrides
+3. **F-13.5.3** — Camera rails and splines with branching paths
+4. **F-13.5.4** — Actor animation blending between gameplay and cinematic
+5. **F-13.5.5** — Dialogue triggers with subtitles and lip-sync
+6. **F-13.5.6a** — Cutscene skip with side-effect application
+7. **F-13.5.6b** — Fast-forward playback at 2x and 4x
+8. **F-13.5.6c** — Cutscene pause and resume
+9. **F-13.5.7** — Letterboxing with HUD suppression
 
 ### Non-Functional Requirements
 
@@ -1777,12 +1794,21 @@ All save I/O routes through the `AsyncIo` and `VirtualFileSystem` layers defined
 [memory-async-io.md](../core-runtime/memory-async-io.md). Platform backends are selected at compile
 time.
 
-| Operation | Windows (IOCP) | macOS (GCD) | Linux (io_uring) |
-|-----------|---------------|-------------|-----------------|
-| Save write | `WriteFile` + `OVERLAPPED` | `dispatch_io_write` via cxx.rs | `io_uring_prep_write` |
-| Save read | `ReadFile` + `OVERLAPPED` | `dispatch_io_read` via cxx.rs | `io_uring_prep_read` |
-| Atomic rename | `MoveFileEx` + `MOVEFILE_REPLACE_EXISTING` | `renameat2` / `rename` | `renameat2` + `RENAME_NOREPLACE` fallback to `rename` |
-| Temp file | `GetTempFileName` | `mkstemp` | `mkstemp` |
+| Operation     | macOS (GCD)                    |
+|---------------|--------------------------------|
+| Save write    | `dispatch_io_write` via cxx.rs |
+| Save read     | `dispatch_io_read` via cxx.rs  |
+| Atomic rename | `renameat2` / `rename`         |
+| Temp file     | `mkstemp`                      |
+
+1. **Save write** — `WriteFile` + `OVERLAPPED`
+   - **Linux (io_uring):** `io_uring_prep_write`
+2. **Save read** — `ReadFile` + `OVERLAPPED`
+   - **Linux (io_uring):** `io_uring_prep_read`
+3. **Atomic rename** — `MoveFileEx` + `MOVEFILE_REPLACE_EXISTING`
+   - **Linux (io_uring):** `renameat2` + `RENAME_NOREPLACE` fallback to `rename`
+4. **Temp file** — `GetTempFileName`
+   - **Linux (io_uring):** `mkstemp`
 
 ### Save Directory Locations
 
@@ -1828,70 +1854,169 @@ Note: `blake3` (for content hashing) is already approved in
 
 ### Unit Tests -- Save System
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_serialize_full_character` | R-13.3.1 | Create entity with 500 inventory items, 50 quests, 200 achievements. Serialize to binary, deserialize, verify all fields match via `Reflect::reflect_partial_eq`. |
-| `test_serialize_dirty_only` | R-13.3.1 | Modify 1 field on 1 of 100 entities. Incremental serialize. Verify only 1 entity serialized. Verify output size < 1% of full serialize. |
-| `test_reflect_auto_serialize` | R-13.3.1 | Add a new `#[derive(Reflect)]` component. Verify it serializes without custom code. |
-| `test_migration_v1_to_v3` | R-13.3.2 | Create v1 save. Register v1->v2 (add field) and v2->v3 (rename field). Load v1 save, verify v3 data correct. |
-| `test_migration_failure_preserves_original` | R-13.3.2 | Register a failing migration step. Attempt migration. Verify original DynamicValue unchanged. |
-| `test_migration_no_path` | R-13.3.2 | Request migration from v1 to v5 with only v1->v2 registered. Verify `MigrationError::NoPath`. |
-| `test_checkpoint_trigger` | R-13.3.3 | Emit a zone-transition event. Verify autosave triggered. Verify correct rotating slot used. |
-| `test_autosave_rotation` | R-13.3.3 | Trigger N+1 autosaves with N rotating slots. Verify oldest slot is overwritten. |
-| `test_autosave_crash_midwrite` | R-13.3.3 | Interrupt save pipeline after temp file write but before rename. Verify previous slot intact. |
-| `test_slot_metadata` | R-13.3.4 | Create slot, save, verify metadata fields (name, level, playtime, timestamp, zone, thumbnail hash). |
-| `test_slot_copy_transactional` | R-13.3.4 | Copy a slot. Interrupt mid-copy. Verify no partial copy file exists. |
-| `test_slot_delete` | R-13.3.4 | Delete a slot. Verify file removed and metadata cleared. |
-| `test_slot_export_import` | R-13.3.4 | Export a slot, delete it, import it back. Verify data identical. |
-| `test_pipeline_compress_encrypt_checksum` | R-13.3.6 | Write through pipeline. Read back. Verify data matches. Corrupt one byte; verify CRC-32 detects it. |
-| `test_pipeline_atomic_rename` | R-13.3.6 | Kill process after temp write, before rename. Verify no corrupt final file. |
-| `test_pipeline_priority_ordering` | R-13.3.6 | Submit autosave (Background) then explicit save (Normal). Verify explicit save completes first. |
-| `test_pipeline_lz4_vs_zstd` | R-13.3.6 | Compress same payload with both. Verify LZ4 faster, Zstd smaller. |
-| `test_encryption_wrong_key` | R-13.3.6 | Encrypt with key A, decrypt with key B. Verify `LoadError::DecryptionFailed`. |
+| Test                                        | Req      |
+|---------------------------------------------|----------|
+| `test_serialize_full_character`             | R-13.3.1 |
+| `test_serialize_dirty_only`                 | R-13.3.1 |
+| `test_reflect_auto_serialize`               | R-13.3.1 |
+| `test_migration_v1_to_v3`                   | R-13.3.2 |
+| `test_migration_failure_preserves_original` | R-13.3.2 |
+| `test_migration_no_path`                    | R-13.3.2 |
+| `test_checkpoint_trigger`                   | R-13.3.3 |
+| `test_autosave_rotation`                    | R-13.3.3 |
+| `test_autosave_crash_midwrite`              | R-13.3.3 |
+| `test_slot_metadata`                        | R-13.3.4 |
+| `test_slot_copy_transactional`              | R-13.3.4 |
+| `test_slot_delete`                          | R-13.3.4 |
+| `test_slot_export_import`                   | R-13.3.4 |
+| `test_pipeline_compress_encrypt_checksum`   | R-13.3.6 |
+| `test_pipeline_atomic_rename`               | R-13.3.6 |
+| `test_pipeline_priority_ordering`           | R-13.3.6 |
+| `test_pipeline_lz4_vs_zstd`                 | R-13.3.6 |
+| `test_encryption_wrong_key`                 | R-13.3.6 |
+
+1. **`test_serialize_full_character`** — Create entity with 500 inventory items, 50 quests, 200
+   achievements. Serialize to binary, deserialize, verify all fields match via
+   `Reflect::reflect_partial_eq`.
+2. **`test_serialize_dirty_only`** — Modify 1 field on 1 of 100 entities. Incremental serialize.
+   Verify only 1 entity serialized. Verify output size < 1% of full serialize.
+3. **`test_reflect_auto_serialize`** — Add a new `#[derive(Reflect)]` component. Verify it
+   serializes without custom code.
+4. **`test_migration_v1_to_v3`** — Create v1 save. Register v1->v2 (add field) and v2->v3 (rename
+   field). Load v1 save, verify v3 data correct.
+5. **`test_migration_failure_preserves_original`** — Register a failing migration step. Attempt
+   migration. Verify original DynamicValue unchanged.
+6. **`test_migration_no_path`** — Request migration from v1 to v5 with only v1->v2 registered.
+   Verify `MigrationError::NoPath`.
+7. **`test_checkpoint_trigger`** — Emit a zone-transition event. Verify autosave triggered. Verify
+   correct rotating slot used.
+8. **`test_autosave_rotation`** — Trigger N+1 autosaves with N rotating slots. Verify oldest slot is
+   overwritten.
+9. **`test_autosave_crash_midwrite`** — Interrupt save pipeline after temp file write but before
+   rename. Verify previous slot intact.
+10. **`test_slot_metadata`** — Create slot, save, verify metadata fields (name, level, playtime,
+    timestamp, zone, thumbnail hash).
+11. **`test_slot_copy_transactional`** — Copy a slot. Interrupt mid-copy. Verify no partial copy
+    file exists.
+12. **`test_slot_delete`** — Delete a slot. Verify file removed and metadata cleared.
+13. **`test_slot_export_import`** — Export a slot, delete it, import it back. Verify data identical.
+14. **`test_pipeline_compress_encrypt_checksum`** — Write through pipeline. Read back. Verify data
+    matches. Corrupt one byte; verify CRC-32 detects it.
+15. **`test_pipeline_atomic_rename`** — Kill process after temp write, before rename. Verify no
+    corrupt final file.
+16. **`test_pipeline_priority_ordering`** — Submit autosave (Background) then explicit save
+    (Normal). Verify explicit save completes first.
+17. **`test_pipeline_lz4_vs_zstd`** — Compress same payload with both. Verify LZ4 faster, Zstd
+    smaller.
+18. **`test_encryption_wrong_key`** — Encrypt with key A, decrypt with key B. Verify
+    `LoadError::DecryptionFailed`.
 
 ### Unit Tests -- Cinematics
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_timeline_deterministic_30_60_120` | R-13.5.1 | Play timeline at 30, 60, and 120 fps. Sample at t=1.0s, t=2.5s, t=5.0s. Verify identical track outputs at all framerates. |
-| `test_nested_sub_sequence` | R-13.5.1 | Parent sequence with child sub-sequence at t=2.0s. Verify child plays at correct position within parent. |
-| `test_keyframe_interpolation` | R-13.5.1 | Clip with 3 keyframes (0.0, 0.5, 1.0). Sample at 0.25 and 0.75. Verify correct Bezier interpolation. |
-| `test_camera_mode_fixed` | R-13.5.2 | Fixed camera shot. Verify position and rotation match authored values exactly. |
-| `test_camera_mode_tracking` | R-13.5.2 | Tracking shot with moving target. Verify camera follows with offset. |
-| `test_camera_blend_transition` | R-13.5.2 | Transition from fixed to tracking with EaseInOut. Sample at 50% transition. Verify blended values. |
-| `test_camera_dof_override` | R-13.5.2 | Set DOF override on shot. Verify `DepthOfField` component values applied. |
-| `test_spline_catmull_rom` | R-13.5.3 | 4 control points, evaluate at t=0.5. Verify position on Catmull-Rom curve. |
-| `test_spline_branching` | R-13.5.3 | 2 branches gated on condition. Toggle condition. Verify correct branch selected. |
-| `test_actor_blend_in` | R-13.5.4 | Start cutscene on moving actor. Sample blend at 50% duration. Verify weight = 0.5. |
-| `test_actor_blend_out` | R-13.5.4 | End cutscene. Verify blend-out restores gameplay animation state. |
-| `test_actor_partial_body` | R-13.5.4 | Upper body override. Verify lower body continues locomotion (blend weight 0.0 for lower). |
-| `test_dialogue_cue_timing` | R-13.5.5 | Place dialogue cue at t=3.0s. Play to t=3.0s. Verify `DialogueEvent` emitted. |
-| `test_subtitle_localization` | R-13.5.5 | Dialogue cue with localization key. Verify `SubtitleEvent` carries correct key. |
-| `test_skip_applies_all_effects` | R-13.5.6a | Timeline with 5 side effects. Skip at t=1.0s. Verify all 5 applied. |
-| `test_skip_multiplayer_unanimous` | R-13.5.6a | 4 players, Unanimous policy. 3 vote skip. Verify `SkipDecision::Pending`. 4th votes. Verify `Approved`. |
-| `test_skip_multiplayer_timeout` | R-13.5.6a | MajorityVote policy, 3 of 4 vote. Timeout expires. Verify skip approved. |
-| `test_fast_forward_2x` | R-13.5.6b | Play at 2x speed. Verify clock advances at 2x. Verify all triggers still fire. |
-| `test_fast_forward_4x_trigger_order` | R-13.5.6b | 10 triggers across 10 seconds. Play at 4x. Verify all 10 fire in order. |
-| `test_pause_freeze` | R-13.5.6c | Pause at t=2.5s. Wait 100 frames. Verify position still 2.5s. |
-| `test_resume_exact_frame` | R-13.5.6c | Pause at t=2.5s, resume. Verify next frame is t=2.5s + dt. |
-| `test_letterbox_aspect_ratios` | R-13.5.7 | Apply Anamorphic (2.39:1). Verify correct bar height calculation. |
-| `test_letterbox_hides_hud` | R-13.5.7 | Activate letterbox. Verify `suppress_hud = true` and `suppress_input = true`. |
+| Test                                    | Req       |
+|-----------------------------------------|-----------|
+| `test_timeline_deterministic_30_60_120` | R-13.5.1  |
+| `test_nested_sub_sequence`              | R-13.5.1  |
+| `test_keyframe_interpolation`           | R-13.5.1  |
+| `test_camera_mode_fixed`                | R-13.5.2  |
+| `test_camera_mode_tracking`             | R-13.5.2  |
+| `test_camera_blend_transition`          | R-13.5.2  |
+| `test_camera_dof_override`              | R-13.5.2  |
+| `test_spline_catmull_rom`               | R-13.5.3  |
+| `test_spline_branching`                 | R-13.5.3  |
+| `test_actor_blend_in`                   | R-13.5.4  |
+| `test_actor_blend_out`                  | R-13.5.4  |
+| `test_actor_partial_body`               | R-13.5.4  |
+| `test_dialogue_cue_timing`              | R-13.5.5  |
+| `test_subtitle_localization`            | R-13.5.5  |
+| `test_skip_applies_all_effects`         | R-13.5.6a |
+| `test_skip_multiplayer_unanimous`       | R-13.5.6a |
+| `test_skip_multiplayer_timeout`         | R-13.5.6a |
+| `test_fast_forward_2x`                  | R-13.5.6b |
+| `test_fast_forward_4x_trigger_order`    | R-13.5.6b |
+| `test_pause_freeze`                     | R-13.5.6c |
+| `test_resume_exact_frame`               | R-13.5.6c |
+| `test_letterbox_aspect_ratios`          | R-13.5.7  |
+| `test_letterbox_hides_hud`              | R-13.5.7  |
+
+1. **`test_timeline_deterministic_30_60_120`** — Play timeline at 30, 60, and 120 fps. Sample at
+   t=1.0s, t=2.5s, t=5.0s. Verify identical track outputs at all framerates.
+2. **`test_nested_sub_sequence`** — Parent sequence with child sub-sequence at t=2.0s. Verify child
+   plays at correct position within parent.
+3. **`test_keyframe_interpolation`** — Clip with 3 keyframes (0.0, 0.5, 1.0). Sample at 0.25 and
+   0.75. Verify correct Bezier interpolation.
+4. **`test_camera_mode_fixed`** — Fixed camera shot. Verify position and rotation match authored
+   values exactly.
+5. **`test_camera_mode_tracking`** — Tracking shot with moving target. Verify camera follows with
+   offset.
+6. **`test_camera_blend_transition`** — Transition from fixed to tracking with EaseInOut. Sample at
+   50% transition. Verify blended values.
+7. **`test_camera_dof_override`** — Set DOF override on shot. Verify `DepthOfField` component values
+   applied.
+8. **`test_spline_catmull_rom`** — 4 control points, evaluate at t=0.5. Verify position on
+   Catmull-Rom curve.
+9. **`test_spline_branching`** — 2 branches gated on condition. Toggle condition. Verify correct
+   branch selected.
+10. **`test_actor_blend_in`** — Start cutscene on moving actor. Sample blend at 50% duration. Verify
+    weight = 0.5.
+11. **`test_actor_blend_out`** — End cutscene. Verify blend-out restores gameplay animation state.
+12. **`test_actor_partial_body`** — Upper body override. Verify lower body continues locomotion
+    (blend weight 0.0 for lower).
+13. **`test_dialogue_cue_timing`** — Place dialogue cue at t=3.0s. Play to t=3.0s. Verify
+    `DialogueEvent` emitted.
+14. **`test_subtitle_localization`** — Dialogue cue with localization key. Verify `SubtitleEvent`
+    carries correct key.
+15. **`test_skip_applies_all_effects`** — Timeline with 5 side effects. Skip at t=1.0s. Verify all 5
+    applied.
+16. **`test_skip_multiplayer_unanimous`** — 4 players, Unanimous policy. 3 vote skip. Verify
+    `SkipDecision::Pending`. 4th votes. Verify `Approved`.
+17. **`test_skip_multiplayer_timeout`** — MajorityVote policy, 3 of 4 vote. Timeout expires. Verify
+    skip approved.
+18. **`test_fast_forward_2x`** — Play at 2x speed. Verify clock advances at 2x. Verify all triggers
+    still fire.
+19. **`test_fast_forward_4x_trigger_order`** — 10 triggers across 10 seconds. Play at 4x. Verify all
+    10 fire in order.
+20. **`test_pause_freeze`** — Pause at t=2.5s. Wait 100 frames. Verify position still 2.5s.
+21. **`test_resume_exact_frame`** — Pause at t=2.5s, resume. Verify next frame is t=2.5s + dt.
+22. **`test_letterbox_aspect_ratios`** — Apply Anamorphic (2.39:1). Verify correct bar height
+    calculation.
+23. **`test_letterbox_hides_hud`** — Activate letterbox. Verify `suppress_hud = true` and
+    `suppress_input = true`.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_save_load_roundtrip` | R-13.3.1, R-13.3.6 | Full save-load cycle: serialize world, pipeline write, pipeline read, migrate (no-op), deserialize, spawn. Verify world state matches. |
-| `test_save_no_frame_drop` | R-13.3.NF1 | Trigger save during 60fps gameplay. Verify zero frames exceed 16.67 ms. |
-| `test_save_under_100ms` | R-13.3.NF1 | 500 inventory items, 50 quests, 200 achievements. Measure p99 save time < 100 ms. |
-| `test_save_file_under_10mb` | R-13.3.NF2 | Max-progression character. Compress. Verify output < 10 MB. |
-| `test_crash_safety_10_points` | R-13.3.NF3 | Inject process kill at 10 random pipeline stages. Verify no data loss. |
-| `test_cloud_sync_upload` | R-13.3.5 | Save locally. Upload. Verify remote hash matches. |
-| `test_cloud_sync_conflict` | R-13.3.5 | Modify both local and remote. Sync. Verify `SyncResult::Conflict`. |
-| `test_cloud_sync_no_block` | R-13.3.5 | Upload during gameplay. Verify game thread never blocks > 1 ms. |
-| `test_sequencer_32_tracks` | R-13.5.NF1 | 32 simultaneous tracks. Measure per-frame evaluation < 0.5 ms. |
-| `test_skip_side_effects_under_1_frame` | R-13.5.NF2 | 20 side effects. Skip. Verify total application < 16.67 ms. |
-| `test_cinematic_end_to_end` | R-13.5.1--R-13.5.7 | Play a sequence with camera, animation, audio, dialogue, and letterbox tracks. Verify correct output. Skip. Verify all effects apply. |
+| Test                                   | Req                |
+|----------------------------------------|--------------------|
+| `test_save_load_roundtrip`             | R-13.3.1, R-13.3.6 |
+| `test_save_no_frame_drop`              | R-13.3.NF1         |
+| `test_save_under_100ms`                | R-13.3.NF1         |
+| `test_save_file_under_10mb`            | R-13.3.NF2         |
+| `test_crash_safety_10_points`          | R-13.3.NF3         |
+| `test_cloud_sync_upload`               | R-13.3.5           |
+| `test_cloud_sync_conflict`             | R-13.3.5           |
+| `test_cloud_sync_no_block`             | R-13.3.5           |
+| `test_sequencer_32_tracks`             | R-13.5.NF1         |
+| `test_skip_side_effects_under_1_frame` | R-13.5.NF2         |
+| `test_cinematic_end_to_end`            | R-13.5.1--R-13.5.7 |
+
+1. **`test_save_load_roundtrip`** — Full save-load cycle: serialize world, pipeline write, pipeline
+   read, migrate (no-op), deserialize, spawn. Verify world state matches.
+2. **`test_save_no_frame_drop`** — Trigger save during 60fps gameplay. Verify zero frames exceed
+   16.67 ms.
+3. **`test_save_under_100ms`** — 500 inventory items, 50 quests, 200 achievements. Measure p99 save
+   time < 100 ms.
+4. **`test_save_file_under_10mb`** — Max-progression character. Compress. Verify output < 10 MB.
+5. **`test_crash_safety_10_points`** — Inject process kill at 10 random pipeline stages. Verify no
+   data loss.
+6. **`test_cloud_sync_upload`** — Save locally. Upload. Verify remote hash matches.
+7. **`test_cloud_sync_conflict`** — Modify both local and remote. Sync. Verify
+   `SyncResult::Conflict`.
+8. **`test_cloud_sync_no_block`** — Upload during gameplay. Verify game thread never blocks > 1 ms.
+9. **`test_sequencer_32_tracks`** — 32 simultaneous tracks. Measure per-frame evaluation < 0.5 ms.
+10. **`test_skip_side_effects_under_1_frame`** — 20 side effects. Skip. Verify total application <
+    16.67 ms.
+11. **`test_cinematic_end_to_end`** — Play a sequence with camera, animation, audio, dialogue, and
+    letterbox tracks. Verify correct output. Skip. Verify all effects apply.
 
 ### Benchmarks
 

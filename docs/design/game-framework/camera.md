@@ -10,93 +10,143 @@
 
 ### Virtual Camera Framework
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.1 | R-13.25.1 | Virtual camera entity with priority selection |
-| F-13.25.2 | R-13.25.2 | Camera brain and output controller |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-13.25.1 | R-13.25.1   |
+| F-13.25.2 | R-13.25.2   |
+
+1. **F-13.25.1** — Virtual camera entity with priority selection
+2. **F-13.25.2** — Camera brain and output controller
 
 ### Position Control
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.3 | R-13.25.3 | Follow with 6 binding modes |
-| F-13.25.4 | R-13.25.4 | Orbital follow (sphere / three-ring) |
-| F-13.25.5 | R-13.25.5 | Third-person follow with shoulder offset |
-| F-13.25.6 | R-13.25.6 | Hard lock to target |
-| F-13.25.7 | R-13.25.7 | Position composer (adaptive framing) |
-| F-13.25.8 | R-13.25.8 | Spline dolly |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-13.25.3 | R-13.25.3   |
+| F-13.25.4 | R-13.25.4   |
+| F-13.25.5 | R-13.25.5   |
+| F-13.25.6 | R-13.25.6   |
+| F-13.25.7 | R-13.25.7   |
+| F-13.25.8 | R-13.25.8   |
+
+1. **F-13.25.3** — Follow with 6 binding modes
+2. **F-13.25.4** — Orbital follow (sphere / three-ring)
+3. **F-13.25.5** — Third-person follow with shoulder offset
+4. **F-13.25.6** — Hard lock to target
+5. **F-13.25.7** — Position composer (adaptive framing)
+6. **F-13.25.8** — Spline dolly
 
 ### Rotation Control
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.9 | R-13.25.9 | Rotation composer (adaptive aim) |
-| F-13.25.10 | R-13.25.10 | Hard look-at |
-| F-13.25.11 | R-13.25.11 | Pan and tilt (input-driven rotation) |
-| F-13.25.12 | R-13.25.12 | Rotate with follow target |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.25.9  | R-13.25.9   |
+| F-13.25.10 | R-13.25.10  |
+| F-13.25.11 | R-13.25.11  |
+| F-13.25.12 | R-13.25.12  |
+
+1. **F-13.25.9** — Rotation composer (adaptive aim)
+2. **F-13.25.10** — Hard look-at
+3. **F-13.25.11** — Pan and tilt (input-driven rotation)
+4. **F-13.25.12** — Rotate with follow target
 
 ### Spring Arm and Collision
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.13 | R-13.25.13 | Spring arm with collision retraction |
-| F-13.25.14 | R-13.25.14 | Deoccluder (line-of-sight preservation) |
-| F-13.25.15 | R-13.25.15 | Decollider (geometry penetration prevention) |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.25.13 | R-13.25.13  |
+| F-13.25.14 | R-13.25.14  |
+| F-13.25.15 | R-13.25.15  |
+
+1. **F-13.25.13** — Spring arm with collision retraction
+2. **F-13.25.14** — Deoccluder (line-of-sight preservation)
+3. **F-13.25.15** — Decollider (geometry penetration prevention)
 
 ### Blending and Transitions
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.16 | R-13.25.16 | 8-curve blend system with custom blend assets |
-| F-13.25.17 | R-13.25.17 | Weighted multi-camera mixing (up to 8) |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.25.16 | R-13.25.16  |
+| F-13.25.17 | R-13.25.17  |
+
+1. **F-13.25.16** — 8-curve blend system with custom blend assets
+2. **F-13.25.17** — Weighted multi-camera mixing (up to 8)
 
 ### Shake and Noise
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.18 | R-13.25.18 | Multi-channel Perlin noise profiles |
-| F-13.25.19 | R-13.25.19 | Impulse system (event-driven shake) |
-| F-13.25.20 | R-13.25.20 | Wave oscillation shake |
-| F-13.25.21 | R-13.25.21 | Composite shake patterns |
-| F-13.25.22 | R-13.25.22 | Sequencer-driven camera shake |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.25.18 | R-13.25.18  |
+| F-13.25.19 | R-13.25.19  |
+| F-13.25.20 | R-13.25.20  |
+| F-13.25.21 | R-13.25.21  |
+| F-13.25.22 | R-13.25.22  |
+
+1. **F-13.25.18** — Multi-channel Perlin noise profiles
+2. **F-13.25.19** — Impulse system (event-driven shake)
+3. **F-13.25.20** — Wave oscillation shake
+4. **F-13.25.21** — Composite shake patterns
+5. **F-13.25.22** — Sequencer-driven camera shake
 
 ### Camera Intelligence
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.23 | R-13.25.23 | State-driven camera switching |
-| F-13.25.24 | R-13.25.24 | Clear shot (automatic best-camera) |
-| F-13.25.25 | R-13.25.25 | Shot quality evaluator |
-| F-13.25.26 | R-13.25.26 | Camera sequencer (timed playlist) |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.25.23 | R-13.25.23  |
+| F-13.25.24 | R-13.25.24  |
+| F-13.25.25 | R-13.25.25  |
+| F-13.25.26 | R-13.25.26  |
+
+1. **F-13.25.23** — State-driven camera switching
+2. **F-13.25.24** — Clear shot (automatic best-camera)
+3. **F-13.25.25** — Shot quality evaluator
+4. **F-13.25.26** — Camera sequencer (timed playlist)
 
 ### Group and Multi-Target
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.27 | R-13.25.27 | Target group aggregation |
-| F-13.25.28 | R-13.25.28 | Group framing extension |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.25.27 | R-13.25.27  |
+| F-13.25.28 | R-13.25.28  |
+
+1. **F-13.25.27** — Target group aggregation
+2. **F-13.25.28** — Group framing extension
 
 ### Extensions
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.29 | R-13.25.29 | Camera confiner 2D |
-| F-13.25.30 | R-13.25.30 | Camera confiner 3D |
-| F-13.25.31 | R-13.25.31 | Follow zoom (constant screen-size) |
-| F-13.25.32 | R-13.25.32 | Auto focus |
-| F-13.25.33 | R-13.25.33 | Third-person aim (parallax correction) |
-| F-13.25.34 | R-13.25.34 | FreeLook modifier |
-| F-13.25.35 | R-13.25.35 | Recomposer (timeline override) |
-| F-13.25.36 | R-13.25.36 | Camera modifier stack |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.25.29 | R-13.25.29  |
+| F-13.25.30 | R-13.25.30  |
+| F-13.25.31 | R-13.25.31  |
+| F-13.25.32 | R-13.25.32  |
+| F-13.25.33 | R-13.25.33  |
+| F-13.25.34 | R-13.25.34  |
+| F-13.25.35 | R-13.25.35  |
+| F-13.25.36 | R-13.25.36  |
+
+1. **F-13.25.29** — Camera confiner 2D
+2. **F-13.25.30** — Camera confiner 3D
+3. **F-13.25.31** — Follow zoom (constant screen-size)
+4. **F-13.25.32** — Auto focus
+5. **F-13.25.33** — Third-person aim (parallax correction)
+6. **F-13.25.34** — FreeLook modifier
+7. **F-13.25.35** — Recomposer (timeline override)
+8. **F-13.25.36** — Camera modifier stack
 
 ### Input and Cinematic
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.25.37 | R-13.25.37 | Camera input axis controller |
-| F-13.25.38 | R-13.25.38 | Cine camera (physical lens) |
-| F-13.25.39 | R-13.25.39 | Camera rig presets (dolly, crane, jib) |
-| F-13.25.40 | R-13.25.40 | Picture-in-Picture |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.25.37 | R-13.25.37  |
+| F-13.25.38 | R-13.25.38  |
+| F-13.25.39 | R-13.25.39  |
+| F-13.25.40 | R-13.25.40  |
+
+1. **F-13.25.37** — Camera input axis controller
+2. **F-13.25.38** — Cine camera (physical lens)
+3. **F-13.25.39** — Camera rig presets (dolly, crane, jib)
+4. **F-13.25.40** — Picture-in-Picture
 
 ## Overview
 
@@ -1311,76 +1361,142 @@ No new external dependencies. Uses existing engine modules:
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_priority_selection` | R-13.25.1 | 3 cameras (priority 1, 5, 10); brain selects 10. Change 10 to 0; brain selects 5. |
-| `test_channel_mask_filter` | R-13.25.2 | 2 brains, 2 channels; each sees only its cameras. |
-| `test_fixed_update_timing` | R-13.25.2 | Fixed-update brain syncs with physics timestep. |
-| `test_follow_6_binding_modes` | R-13.25.3 | Rotate target 90 deg; verify offset transforms per mode. |
-| `test_follow_damping` | R-13.25.3 | Damping smooths position over multiple frames. |
-| `test_orbital_sphere_mode` | R-13.25.4 | Input axes rotate camera at configured radius. |
-| `test_orbital_three_ring` | R-13.25.4 | Camera follows spline surface from three radii. |
-| `test_orbital_recentering` | R-13.25.4 | Recentering activates after configured wait time. |
-| `test_third_person_shoulder_blend` | R-13.25.5 | Blend camera_side from 0 to 1; smooth transition. |
-| `test_third_person_collision` | R-13.25.5 | Obstacle between camera and target; camera retracts. |
-| `test_hard_lock_zero_offset` | R-13.25.6 | Camera matches target position exactly each frame. |
-| `test_position_composer_dead_zone` | R-13.25.7 | Target in dead zone; zero camera movement. |
-| `test_position_composer_hard_limit` | R-13.25.7 | Target at hard limit; immediate correction. |
-| `test_spline_dolly_fixed_speed` | R-13.25.8 | Camera traverses spline at constant velocity. |
-| `test_spline_dolly_nearest` | R-13.25.8 | Camera tracks closest spline point to target. |
-| `test_rotation_composer_dead_zone` | R-13.25.9 | Look-at in dead zone; no rotation change. |
-| `test_rotation_only` | R-13.25.9 | Position unchanged throughout rotation changes. |
-| `test_hard_look_at_centered` | R-13.25.10 | Target centered in frame at all positions. |
-| `test_pan_tilt_clamp` | R-13.25.11 | Vertical tilt clamps at 90 degrees. |
-| `test_pan_tilt_recentering` | R-13.25.11 | Recentering after configured wait time. |
-| `test_rotate_with_target` | R-13.25.12 | Camera rotation matches target each frame. |
-| `test_spring_arm_retraction` | R-13.25.13 | Obstacle at 3 m on 5 m arm; camera at 3 m. |
-| `test_spring_arm_extension` | R-13.25.13 | Remove obstacle; camera extends to 5 m. |
-| `test_spring_arm_rotation_inherit` | R-13.25.13 | Per-axis pitch/yaw/roll inheritance. |
-| `test_deoccluder_pull_forward` | R-13.25.14 | Obstacle between camera and target; camera pulls forward. |
-| `test_deoccluder_min_time` | R-13.25.14 | Brief obstruction below min time ignored. |
-| `test_decollider_terrain` | R-13.25.15 | Camera below terrain; pushed above surface. |
-| `test_decollider_smoothing` | R-13.25.15 | Smoothing time holds position to reduce jitter. |
-| `test_blend_8_curves` | R-13.25.16 | All 8 blend types produce distinct curves. |
-| `test_blend_custom_pair` | R-13.25.16 | Custom pair rule overrides wildcard. |
-| `test_mixer_weighted_average` | R-13.25.17 | 3 cameras (weights 1,2,1); output is weighted average. |
-| `test_mixer_zero_weight` | R-13.25.17 | Zero-weighted camera contributes nothing. |
-| `test_perlin_mute` | R-13.25.18 | Amplitude gain 0 produces zero output. |
-| `test_perlin_frequency_gain` | R-13.25.18 | 2x frequency gain doubles oscillation rate. |
-| `test_impulse_distance_attenuation` | R-13.25.19 | Closer camera receives more shake. |
-| `test_impulse_outside_radius` | R-13.25.19 | Camera beyond radius receives nothing. |
-| `test_impulse_additive` | R-13.25.19 | Two impulses composite additively. |
-| `test_wave_oscillation` | R-13.25.20 | 1 Hz sine; output oscillates correctly. |
-| `test_wave_blend_in` | R-13.25.20 | Blend-in ramps amplitude from 0. |
-| `test_composite_additive` | R-13.25.21 | Composite = sum of individual layers. |
-| `test_state_driven_mapping` | R-13.25.23 | State change activates mapped camera. |
-| `test_state_driven_wait_time` | R-13.25.23 | Transient state below wait time ignored. |
-| `test_clear_shot_selection` | R-13.25.24 | Best-scoring camera selected. |
-| `test_shot_quality_occlusion` | R-13.25.25 | Occluded camera scores lower. |
-| `test_sequencer_playlist` | R-13.25.26 | 3 cameras play in order with hold durations. |
-| `test_sequencer_loop` | R-13.25.26 | Loop mode restarts sequence. |
-| `test_target_group_bbox` | R-13.25.27 | Group center equals AABB center. |
-| `test_target_group_weighted` | R-13.25.27 | Weighted average respects member weights. |
-| `test_group_framing_spread` | R-13.25.28 | Members spread apart; FOV widens. |
-| `test_confiner_2d_boundary` | R-13.25.29 | Camera cannot show outside polygon. |
-| `test_confiner_3d_slowing` | R-13.25.30 | Slowing distance creates deceleration. |
-| `test_follow_zoom_fov_adjust` | R-13.25.31 | Target at 50 m; FOV adjusts to maintain size. |
-| `test_auto_focus_tracking` | R-13.25.32 | Focus distance tracks look-at target distance. |
-| `test_third_person_aim_parallax` | R-13.25.33 | Hit point matches crosshair, not weapon ray. |
-| `test_modifier_stack_order` | R-13.25.36 | Modifiers execute in priority order. |
-| `test_input_frame_independence` | R-13.25.37 | Same input at 30 fps and 120 fps; same result. |
-| `test_input_blend_suppression` | R-13.25.37 | Input suppressed during active blend. |
-| `test_cine_camera_fov` | R-13.25.38 | Super 35 + 50 mm = expected vertical FOV. |
+| Test                                | Req        |
+|-------------------------------------|------------|
+| `test_priority_selection`           | R-13.25.1  |
+| `test_channel_mask_filter`          | R-13.25.2  |
+| `test_fixed_update_timing`          | R-13.25.2  |
+| `test_follow_6_binding_modes`       | R-13.25.3  |
+| `test_follow_damping`               | R-13.25.3  |
+| `test_orbital_sphere_mode`          | R-13.25.4  |
+| `test_orbital_three_ring`           | R-13.25.4  |
+| `test_orbital_recentering`          | R-13.25.4  |
+| `test_third_person_shoulder_blend`  | R-13.25.5  |
+| `test_third_person_collision`       | R-13.25.5  |
+| `test_hard_lock_zero_offset`        | R-13.25.6  |
+| `test_position_composer_dead_zone`  | R-13.25.7  |
+| `test_position_composer_hard_limit` | R-13.25.7  |
+| `test_spline_dolly_fixed_speed`     | R-13.25.8  |
+| `test_spline_dolly_nearest`         | R-13.25.8  |
+| `test_rotation_composer_dead_zone`  | R-13.25.9  |
+| `test_rotation_only`                | R-13.25.9  |
+| `test_hard_look_at_centered`        | R-13.25.10 |
+| `test_pan_tilt_clamp`               | R-13.25.11 |
+| `test_pan_tilt_recentering`         | R-13.25.11 |
+| `test_rotate_with_target`           | R-13.25.12 |
+| `test_spring_arm_retraction`        | R-13.25.13 |
+| `test_spring_arm_extension`         | R-13.25.13 |
+| `test_spring_arm_rotation_inherit`  | R-13.25.13 |
+| `test_deoccluder_pull_forward`      | R-13.25.14 |
+| `test_deoccluder_min_time`          | R-13.25.14 |
+| `test_decollider_terrain`           | R-13.25.15 |
+| `test_decollider_smoothing`         | R-13.25.15 |
+| `test_blend_8_curves`               | R-13.25.16 |
+| `test_blend_custom_pair`            | R-13.25.16 |
+| `test_mixer_weighted_average`       | R-13.25.17 |
+| `test_mixer_zero_weight`            | R-13.25.17 |
+| `test_perlin_mute`                  | R-13.25.18 |
+| `test_perlin_frequency_gain`        | R-13.25.18 |
+| `test_impulse_distance_attenuation` | R-13.25.19 |
+| `test_impulse_outside_radius`       | R-13.25.19 |
+| `test_impulse_additive`             | R-13.25.19 |
+| `test_wave_oscillation`             | R-13.25.20 |
+| `test_wave_blend_in`                | R-13.25.20 |
+| `test_composite_additive`           | R-13.25.21 |
+| `test_state_driven_mapping`         | R-13.25.23 |
+| `test_state_driven_wait_time`       | R-13.25.23 |
+| `test_clear_shot_selection`         | R-13.25.24 |
+| `test_shot_quality_occlusion`       | R-13.25.25 |
+| `test_sequencer_playlist`           | R-13.25.26 |
+| `test_sequencer_loop`               | R-13.25.26 |
+| `test_target_group_bbox`            | R-13.25.27 |
+| `test_target_group_weighted`        | R-13.25.27 |
+| `test_group_framing_spread`         | R-13.25.28 |
+| `test_confiner_2d_boundary`         | R-13.25.29 |
+| `test_confiner_3d_slowing`          | R-13.25.30 |
+| `test_follow_zoom_fov_adjust`       | R-13.25.31 |
+| `test_auto_focus_tracking`          | R-13.25.32 |
+| `test_third_person_aim_parallax`    | R-13.25.33 |
+| `test_modifier_stack_order`         | R-13.25.36 |
+| `test_input_frame_independence`     | R-13.25.37 |
+| `test_input_blend_suppression`      | R-13.25.37 |
+| `test_cine_camera_fov`              | R-13.25.38 |
+
+1. **`test_priority_selection`** — 3 cameras (priority 1, 5, 10); brain selects 10. Change 10 to 0;
+   brain selects 5.
+2. **`test_channel_mask_filter`** — 2 brains, 2 channels; each sees only its cameras.
+3. **`test_fixed_update_timing`** — Fixed-update brain syncs with physics timestep.
+4. **`test_follow_6_binding_modes`** — Rotate target 90 deg; verify offset transforms per mode.
+5. **`test_follow_damping`** — Damping smooths position over multiple frames.
+6. **`test_orbital_sphere_mode`** — Input axes rotate camera at configured radius.
+7. **`test_orbital_three_ring`** — Camera follows spline surface from three radii.
+8. **`test_orbital_recentering`** — Recentering activates after configured wait time.
+9. **`test_third_person_shoulder_blend`** — Blend camera_side from 0 to 1; smooth transition.
+10. **`test_third_person_collision`** — Obstacle between camera and target; camera retracts.
+11. **`test_hard_lock_zero_offset`** — Camera matches target position exactly each frame.
+12. **`test_position_composer_dead_zone`** — Target in dead zone; zero camera movement.
+13. **`test_position_composer_hard_limit`** — Target at hard limit; immediate correction.
+14. **`test_spline_dolly_fixed_speed`** — Camera traverses spline at constant velocity.
+15. **`test_spline_dolly_nearest`** — Camera tracks closest spline point to target.
+16. **`test_rotation_composer_dead_zone`** — Look-at in dead zone; no rotation change.
+17. **`test_rotation_only`** — Position unchanged throughout rotation changes.
+18. **`test_hard_look_at_centered`** — Target centered in frame at all positions.
+19. **`test_pan_tilt_clamp`** — Vertical tilt clamps at 90 degrees.
+20. **`test_pan_tilt_recentering`** — Recentering after configured wait time.
+21. **`test_rotate_with_target`** — Camera rotation matches target each frame.
+22. **`test_spring_arm_retraction`** — Obstacle at 3 m on 5 m arm; camera at 3 m.
+23. **`test_spring_arm_extension`** — Remove obstacle; camera extends to 5 m.
+24. **`test_spring_arm_rotation_inherit`** — Per-axis pitch/yaw/roll inheritance.
+25. **`test_deoccluder_pull_forward`** — Obstacle between camera and target; camera pulls forward.
+26. **`test_deoccluder_min_time`** — Brief obstruction below min time ignored.
+27. **`test_decollider_terrain`** — Camera below terrain; pushed above surface.
+28. **`test_decollider_smoothing`** — Smoothing time holds position to reduce jitter.
+29. **`test_blend_8_curves`** — All 8 blend types produce distinct curves.
+30. **`test_blend_custom_pair`** — Custom pair rule overrides wildcard.
+31. **`test_mixer_weighted_average`** — 3 cameras (weights 1,2,1); output is weighted average.
+32. **`test_mixer_zero_weight`** — Zero-weighted camera contributes nothing.
+33. **`test_perlin_mute`** — Amplitude gain 0 produces zero output.
+34. **`test_perlin_frequency_gain`** — 2x frequency gain doubles oscillation rate.
+35. **`test_impulse_distance_attenuation`** — Closer camera receives more shake.
+36. **`test_impulse_outside_radius`** — Camera beyond radius receives nothing.
+37. **`test_impulse_additive`** — Two impulses composite additively.
+38. **`test_wave_oscillation`** — 1 Hz sine; output oscillates correctly.
+39. **`test_wave_blend_in`** — Blend-in ramps amplitude from 0.
+40. **`test_composite_additive`** — Composite = sum of individual layers.
+41. **`test_state_driven_mapping`** — State change activates mapped camera.
+42. **`test_state_driven_wait_time`** — Transient state below wait time ignored.
+43. **`test_clear_shot_selection`** — Best-scoring camera selected.
+44. **`test_shot_quality_occlusion`** — Occluded camera scores lower.
+45. **`test_sequencer_playlist`** — 3 cameras play in order with hold durations.
+46. **`test_sequencer_loop`** — Loop mode restarts sequence.
+47. **`test_target_group_bbox`** — Group center equals AABB center.
+48. **`test_target_group_weighted`** — Weighted average respects member weights.
+49. **`test_group_framing_spread`** — Members spread apart; FOV widens.
+50. **`test_confiner_2d_boundary`** — Camera cannot show outside polygon.
+51. **`test_confiner_3d_slowing`** — Slowing distance creates deceleration.
+52. **`test_follow_zoom_fov_adjust`** — Target at 50 m; FOV adjusts to maintain size.
+53. **`test_auto_focus_tracking`** — Focus distance tracks look-at target distance.
+54. **`test_third_person_aim_parallax`** — Hit point matches crosshair, not weapon ray.
+55. **`test_modifier_stack_order`** — Modifiers execute in priority order.
+56. **`test_input_frame_independence`** — Same input at 30 fps and 120 fps; same result.
+57. **`test_input_blend_suppression`** — Input suppressed during active blend.
+58. **`test_cine_camera_fov`** — Super 35 + 50 mm = expected vertical FOV.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_split_screen_4_brains` | NFR-13.25.1 | 4 brains with cameras, blending, and collision; < 4 ms total. |
-| `test_blend_smoothness_30fps` | NFR-13.25.2 | 1-second blend at 30 fps; no position jump > 0.01. |
-| `test_blend_smoothness_120fps` | NFR-13.25.2 | 1-second blend at 120 fps; no rotation jump > 0.1 deg. |
-| `test_pip_multiple_viewports` | R-13.25.40 | 2 PiP viewports render simultaneously on desktop. |
-| `test_pip_mobile_quarter_res` | R-13.25.40 | Mobile PiP at quarter resolution. |
+| Test                           | Req         |
+|--------------------------------|-------------|
+| `test_split_screen_4_brains`   | NFR-13.25.1 |
+| `test_blend_smoothness_30fps`  | NFR-13.25.2 |
+| `test_blend_smoothness_120fps` | NFR-13.25.2 |
+| `test_pip_multiple_viewports`  | R-13.25.40  |
+| `test_pip_mobile_quarter_res`  | R-13.25.40  |
+
+1. **`test_split_screen_4_brains`** — 4 brains with cameras, blending, and collision; < 4 ms total.
+2. **`test_blend_smoothness_30fps`** — 1-second blend at 30 fps; no position jump > 0.01.
+3. **`test_blend_smoothness_120fps`** — 1-second blend at 120 fps; no rotation jump > 0.1 deg.
+4. **`test_pip_multiple_viewports`** — 2 PiP viewports render simultaneously on desktop.
+5. **`test_pip_mobile_quarter_res`** — Mobile PiP at quarter resolution.
 
 ### Benchmarks
 

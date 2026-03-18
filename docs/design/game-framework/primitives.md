@@ -8,18 +8,29 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-13.1.1 | R-13.1.1 | US-13.1.1.1 -- US-13.1.1.8 | Hierarchical game mode state machine with nested sub-modes |
-| F-13.1.2 | R-13.1.2 | US-13.1.2.1 -- US-13.1.2.6 | Top-level game state lifecycle manager |
-| F-13.1.3 | R-13.1.3 | US-13.1.3.1 -- US-13.1.3.6 | Player controller input routing and context switching |
-| F-13.1.4 | R-13.1.4 | US-13.1.4.1 -- US-13.1.4.4 | Pawn/character separation with possession transfer |
-| F-13.1.5 | R-13.1.5 | US-13.1.5.1 -- US-13.1.5.6 | Data-driven gameplay ability system |
-| F-13.1.6 | R-13.1.6 | US-13.1.6.1 -- US-13.1.6.7 | Gameplay effect system with stacking and inhibition |
-| F-13.1.7 | R-13.1.7 | US-13.1.7.1 -- US-13.1.7.6 | Configurable damage pipeline with multiple schools |
-| F-13.1.8 | R-13.1.8 | US-13.1.8.1 -- US-13.1.8.6 | Death, respawn, and encounter reset |
-| F-13.1.9 | R-13.1.9 | US-13.1.9.1 -- US-13.1.9.6 | Modular system registration with dependency graph |
-| F-13.1.10 | R-13.1.10 | US-13.1.10.1 -- US-13.1.10.7 | Rust plugin API for third-party developers |
+| Feature   | Requirement | User Stories                 |
+|-----------|-------------|------------------------------|
+| F-13.1.1  | R-13.1.1    | US-13.1.1.1 -- US-13.1.1.8   |
+| F-13.1.2  | R-13.1.2    | US-13.1.2.1 -- US-13.1.2.6   |
+| F-13.1.3  | R-13.1.3    | US-13.1.3.1 -- US-13.1.3.6   |
+| F-13.1.4  | R-13.1.4    | US-13.1.4.1 -- US-13.1.4.4   |
+| F-13.1.5  | R-13.1.5    | US-13.1.5.1 -- US-13.1.5.6   |
+| F-13.1.6  | R-13.1.6    | US-13.1.6.1 -- US-13.1.6.7   |
+| F-13.1.7  | R-13.1.7    | US-13.1.7.1 -- US-13.1.7.6   |
+| F-13.1.8  | R-13.1.8    | US-13.1.8.1 -- US-13.1.8.6   |
+| F-13.1.9  | R-13.1.9    | US-13.1.9.1 -- US-13.1.9.6   |
+| F-13.1.10 | R-13.1.10   | US-13.1.10.1 -- US-13.1.10.7 |
+
+1. **F-13.1.1** — Hierarchical game mode state machine with nested sub-modes
+2. **F-13.1.2** — Top-level game state lifecycle manager
+3. **F-13.1.3** — Player controller input routing and context switching
+4. **F-13.1.4** — Pawn/character separation with possession transfer
+5. **F-13.1.5** — Data-driven gameplay ability system
+6. **F-13.1.6** — Gameplay effect system with stacking and inhibition
+7. **F-13.1.7** — Configurable damage pipeline with multiple schools
+8. **F-13.1.8** — Death, respawn, and encounter reset
+9. **F-13.1.9** — Modular system registration with dependency graph
+10. **F-13.1.10** — Rust plugin API for third-party developers
 
 **Note:** The Rust plugin API (F-13.1.10) is for editor-time extensions only, not runtime game
 logic. All runtime gameplay logic is authored via visual logic graphs (no-code), consistent with
@@ -1912,55 +1923,107 @@ constraint is satisfied by:
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_game_state_valid_transition` | R-13.1.2 | Transition MainMenu to Loading succeeds. |
-| `test_game_state_invalid_transition` | R-13.1.2 | Transition Loading to Paused returns `InvalidTransition`. |
-| `test_game_state_no_leak` | US-13.1.1.7 | Cycle all transitions 100x, verify zero resource growth. |
-| `test_mode_graph_validate_reachable` | US-13.1.1.8 | Graph with orphan mode returns `UnreachableMode`. |
-| `test_mode_graph_cycle_detection` | R-13.1.1 | Graph with cycle returns `CycleDetected`. |
-| `test_mode_sub_mode_enter_exit` | R-13.1.1 | Enter sub-mode, verify active, exit, verify parent active. |
-| `test_health_apply_damage` | R-13.1.7 | 100 HP - 30 damage = 70 HP. |
-| `test_health_clamp_zero` | R-13.1.7 | 10 HP - 50 damage = 0 HP, overkill = 40. |
-| `test_health_invulnerable` | R-13.1.7 | Invulnerable entity takes zero damage. |
-| `test_damage_armor_mitigation` | R-13.1.7 | 100 raw, 50% armor = 50 final. |
-| `test_damage_resistance_per_school` | R-13.1.7 | Fire resistance reduces fire but not physical. |
-| `test_damage_absorb_shield` | R-13.1.7 | Shield absorbs up to remaining, excess goes to health. |
-| `test_damage_determinism` | US-13.1.7.5 | 1000 identical inputs produce 1000 identical outputs. |
-| `test_tag_set_insert_remove` | -- | Insert 3 tags, remove 1, verify contains correctness. |
-| `test_tag_set_contains_all` | -- | `contains_all` returns true only when all present. |
-| `test_tag_set_contains_any` | -- | `contains_any` returns true when at least one present. |
-| `test_timer_tick_expiry` | R-13.1.NF2 | 1.5s timer at 60fps expires within 1ms of target. |
-| `test_timer_repeating` | R-13.1.NF2 | Repeating timer resets after expiry. |
-| `test_cooldown_not_ready` | US-13.1.5.6 | Trigger cooldown, verify `is_ready()` false. |
-| `test_cooldown_expired_event` | R-13.1.5 | Cooldown expires, event fires exactly once. |
-| `test_allegiance_symmetric` | R-13.1.4 | Set A hostile to B, verify B hostile to A. |
-| `test_allegiance_default_neutral` | R-13.1.4 | Unset relation defaults to Neutral. |
-| `test_pawn_possession_transfer` | US-13.1.4.4 | Possess pawn A, transfer to B, verify A state intact. |
-| `test_controller_context_clears_queue` | US-13.1.3.6 | Switching context clears the input queue. |
-| `test_spawn_from_template` | R-13.1.4 | Spawn from template, verify all components present. |
-| `test_spawn_with_children` | R-13.1.4 | Spawn template with 2 children, verify ChildOf relationships. |
-| `test_module_enable_transitive` | US-13.1.9.5 | Enable Combat, verify Physics and Animation auto-enabled. |
-| `test_module_disable_with_dependents` | R-13.1.9 | Disable Physics while Combat active returns error. |
-| `test_module_cycle_detection` | R-13.1.9 | Module graph with cycle returns `CycleDetected`. |
+| Test                                   | Req         |
+|----------------------------------------|-------------|
+| `test_game_state_valid_transition`     | R-13.1.2    |
+| `test_game_state_invalid_transition`   | R-13.1.2    |
+| `test_game_state_no_leak`              | US-13.1.1.7 |
+| `test_mode_graph_validate_reachable`   | US-13.1.1.8 |
+| `test_mode_graph_cycle_detection`      | R-13.1.1    |
+| `test_mode_sub_mode_enter_exit`        | R-13.1.1    |
+| `test_health_apply_damage`             | R-13.1.7    |
+| `test_health_clamp_zero`               | R-13.1.7    |
+| `test_health_invulnerable`             | R-13.1.7    |
+| `test_damage_armor_mitigation`         | R-13.1.7    |
+| `test_damage_resistance_per_school`    | R-13.1.7    |
+| `test_damage_absorb_shield`            | R-13.1.7    |
+| `test_damage_determinism`              | US-13.1.7.5 |
+| `test_tag_set_insert_remove`           | --          |
+| `test_tag_set_contains_all`            | --          |
+| `test_tag_set_contains_any`            | --          |
+| `test_timer_tick_expiry`               | R-13.1.NF2  |
+| `test_timer_repeating`                 | R-13.1.NF2  |
+| `test_cooldown_not_ready`              | US-13.1.5.6 |
+| `test_cooldown_expired_event`          | R-13.1.5    |
+| `test_allegiance_symmetric`            | R-13.1.4    |
+| `test_allegiance_default_neutral`      | R-13.1.4    |
+| `test_pawn_possession_transfer`        | US-13.1.4.4 |
+| `test_controller_context_clears_queue` | US-13.1.3.6 |
+| `test_spawn_from_template`             | R-13.1.4    |
+| `test_spawn_with_children`             | R-13.1.4    |
+| `test_module_enable_transitive`        | US-13.1.9.5 |
+| `test_module_disable_with_dependents`  | R-13.1.9    |
+| `test_module_cycle_detection`          | R-13.1.9    |
+
+1. **`test_game_state_valid_transition`** — Transition MainMenu to Loading succeeds.
+2. **`test_game_state_invalid_transition`** — Transition Loading to Paused returns
+   `InvalidTransition`.
+3. **`test_game_state_no_leak`** — Cycle all transitions 100x, verify zero resource growth.
+4. **`test_mode_graph_validate_reachable`** — Graph with orphan mode returns `UnreachableMode`.
+5. **`test_mode_graph_cycle_detection`** — Graph with cycle returns `CycleDetected`.
+6. **`test_mode_sub_mode_enter_exit`** — Enter sub-mode, verify active, exit, verify parent active.
+7. **`test_health_apply_damage`** — 100 HP - 30 damage = 70 HP.
+8. **`test_health_clamp_zero`** — 10 HP - 50 damage = 0 HP, overkill = 40.
+9. **`test_health_invulnerable`** — Invulnerable entity takes zero damage.
+10. **`test_damage_armor_mitigation`** — 100 raw, 50% armor = 50 final.
+11. **`test_damage_resistance_per_school`** — Fire resistance reduces fire but not physical.
+12. **`test_damage_absorb_shield`** — Shield absorbs up to remaining, excess goes to health.
+13. **`test_damage_determinism`** — 1000 identical inputs produce 1000 identical outputs.
+14. **`test_tag_set_insert_remove`** — Insert 3 tags, remove 1, verify contains correctness.
+15. **`test_tag_set_contains_all`** — `contains_all` returns true only when all present.
+16. **`test_tag_set_contains_any`** — `contains_any` returns true when at least one present.
+17. **`test_timer_tick_expiry`** — 1.5s timer at 60fps expires within 1ms of target.
+18. **`test_timer_repeating`** — Repeating timer resets after expiry.
+19. **`test_cooldown_not_ready`** — Trigger cooldown, verify `is_ready()` false.
+20. **`test_cooldown_expired_event`** — Cooldown expires, event fires exactly once.
+21. **`test_allegiance_symmetric`** — Set A hostile to B, verify B hostile to A.
+22. **`test_allegiance_default_neutral`** — Unset relation defaults to Neutral.
+23. **`test_pawn_possession_transfer`** — Possess pawn A, transfer to B, verify A state intact.
+24. **`test_controller_context_clears_queue`** — Switching context clears the input queue.
+25. **`test_spawn_from_template`** — Spawn from template, verify all components present.
+26. **`test_spawn_with_children`** — Spawn template with 2 children, verify ChildOf relationships.
+27. **`test_module_enable_transitive`** — Enable Combat, verify Physics and Animation auto-enabled.
+28. **`test_module_disable_with_dependents`** — Disable Physics while Combat active returns error.
+29. **`test_module_cycle_detection`** — Module graph with cycle returns `CycleDetected`.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_state_lifecycle` | R-13.1.2 | Transition through all states, verify resources load/unload at each step. |
-| `test_rapid_pause_unpause` | US-13.1.2.5 | 60 Hz pause/unpause for 10 seconds, verify no state corruption. |
-| `test_mode_transition_under_1_frame` | R-13.1.NF1 | Measure mode transition latency, assert < 16.67 ms. |
-| `test_damage_1k_events_per_frame` | R-13.1.7 | Process 1000 damage events, verify all health values correct and < 0.5 ms. |
-| `test_death_respawn_full_cycle` | R-13.1.8 | Kill entity, verify death state, wait for timer, verify respawn at correct point. |
-| `test_encounter_reset` | US-13.1.8.4 | Trigger wipe, verify boss HP restores, adds despawned, mode reverts. |
-| `test_death_debuff_stacking` | US-13.1.8.6 | Die 3 times, verify debuff stacks and timer resets. |
-| `test_spawn_100_entities` | -- | Spawn 100 entities from template, verify < 1 ms. |
-| `test_tag_query_10k_entities` | -- | 10K entities with 8 tags, filter by tag, verify < 0.1 ms. |
-| `test_cooldown_precision_144fps` | R-13.1.NF2 | Run 1.5s cooldown at 144 fps, verify <=1 ms drift over 1000 trials. |
-| `test_server_authoritative_state` | US-13.1.2.2 | Simulate client-server, verify both agree on state after transitions. |
-| `test_controller_all_contexts` | US-13.1.3.6 | Exercise all input context transitions, verify no input leaks. |
-| `test_effect_cleanup_on_death` | US-13.1.6.7 | Kill entity with active effects, verify no dangling references. |
+| Test                                 | Req         |
+|--------------------------------------|-------------|
+| `test_full_state_lifecycle`          | R-13.1.2    |
+| `test_rapid_pause_unpause`           | US-13.1.2.5 |
+| `test_mode_transition_under_1_frame` | R-13.1.NF1  |
+| `test_damage_1k_events_per_frame`    | R-13.1.7    |
+| `test_death_respawn_full_cycle`      | R-13.1.8    |
+| `test_encounter_reset`               | US-13.1.8.4 |
+| `test_death_debuff_stacking`         | US-13.1.8.6 |
+| `test_spawn_100_entities`            | --          |
+| `test_tag_query_10k_entities`        | --          |
+| `test_cooldown_precision_144fps`     | R-13.1.NF2  |
+| `test_server_authoritative_state`    | US-13.1.2.2 |
+| `test_controller_all_contexts`       | US-13.1.3.6 |
+| `test_effect_cleanup_on_death`       | US-13.1.6.7 |
+
+1. **`test_full_state_lifecycle`** — Transition through all states, verify resources load/unload at
+   each step.
+2. **`test_rapid_pause_unpause`** — 60 Hz pause/unpause for 10 seconds, verify no state corruption.
+3. **`test_mode_transition_under_1_frame`** — Measure mode transition latency, assert < 16.67 ms.
+4. **`test_damage_1k_events_per_frame`** — Process 1000 damage events, verify all health values
+   correct and < 0.5 ms.
+5. **`test_death_respawn_full_cycle`** — Kill entity, verify death state, wait for timer, verify
+   respawn at correct point.
+6. **`test_encounter_reset`** — Trigger wipe, verify boss HP restores, adds despawned, mode reverts.
+7. **`test_death_debuff_stacking`** — Die 3 times, verify debuff stacks and timer resets.
+8. **`test_spawn_100_entities`** — Spawn 100 entities from template, verify < 1 ms.
+9. **`test_tag_query_10k_entities`** — 10K entities with 8 tags, filter by tag, verify < 0.1 ms.
+10. **`test_cooldown_precision_144fps`** — Run 1.5s cooldown at 144 fps, verify <=1 ms drift over
+    1000 trials.
+11. **`test_server_authoritative_state`** — Simulate client-server, verify both agree on state after
+    transitions.
+12. **`test_controller_all_contexts`** — Exercise all input context transitions, verify no input
+    leaks.
+13. **`test_effect_cleanup_on_death`** — Kill entity with active effects, verify no dangling
+    references.
 
 ### Benchmarks
 

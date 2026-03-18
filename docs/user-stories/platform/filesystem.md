@@ -1,20 +1,70 @@
 # User Stories -- 14.6 Filesystem
 
-| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
-|----|---------|-------|-------------------|----------|-------------|
-| US-14.6.1 | game developer (P-15) | async file open, read, and write operations that return futures resolving on the I/O thread pool, so that file operations never block the game loop or worker threads on any platform |  |  |  |
-| US-14.6.2 | game developer (P-15) | async file create and delete operations with batch concurrency and recursive directory creation, so that bulk file operations (asset cache cleanup, temp file management) complete quickly without blocking |  |  |  |
-| US-14.6.3 | engine developer (P-26) | async file metadata queries (size, timestamps, permissions, type) with batch stat for multiple paths, so that the asset database and hot-reload watcher can detect changes without blocking worker threads |  |  |  |
-| US-14.6.4 | engine developer (P-26) | async directory enumeration that yields entries incrementally with configurable depth limits and glob-pattern filtering, so that scanning large asset directories does not block or allocate unbounded memory |  |  |  |
-| US-14.6.5 | game developer (P-15) | directory change notifications using platform-native APIs (ReadDirectoryChangesExW, FSEvents, inotify) with configurable debounce intervals, so that the hot-reload system detects file changes within milliseconds without polling |  |  |  |
-| US-14.6.6 | engine developer (P-26) | BLAKE3 content hash comparison to filter out metadata-only changes and duplicate events from editors that write via rename-into-place, so that only genuine content changes trigger re-import or hot-reload |  |  |  |
-| US-14.6.7 | engine developer (P-26) | canonical path resolution that handles Windows drive letters, UNC paths, long-path prefixes, macOS case insensitivity, and Linux case sensitivity, so that all engine subsystems use consistent keys and avoid duplicate asset entries from path aliasing |  |  |  |
-| US-14.6.8 | engine developer (P-26) | all filesystem operations implemented through IOCP on Windows, dispatch_io on macOS, and io_uring on Linux with zero Rust stdlib file I/O anywhere in the engine, so that I/O performance is optimal and consistent with project guidelines |  |  |  |
-| US-14.6.9 | engine tester (P-27) | automated tests that exercise async read, write, create, delete, stat, and enumerate operations on Windows, macOS, and Linux, verifying correct results and no blocking on the calling thread, so that platform I/O regressions are caught in CI |  |  |  |
-| US-14.6.10 | engine tester (P-27) | tests that create, modify, delete, and rename files in watched directories and verify the correct event types are delivered with proper debouncing, so that the file watcher reliably drives hot-reload on all platforms |  |  |  |
-| US-14.6.11 | engine tester (P-27) | benchmarks that measure async read and write throughput as a percentage of raw disk bandwidth on each platform, so that I can verify the I/O backend achieves at least 80% of theoretical throughput |  |  |  |
-| US-14.6.12 | DevOps engineer (P-16) | threaded POSIX fallback paths for io_uring operations that require kernel 6.6+ (e.g., IORING_OP_GETDENTS), so that the engine runs correctly on any Linux kernel 5.1+ without requiring an epoll fallback. The engine requires kernel 5.1 as the minimum Linux version and uses io_uring exclusively for all async I/O |  |  |  |
-| US-14.6.13 | game developer (P-15) | file change events delivered through a typed `FileEventStream` with an `async fn next()` method returning `FileEvent` structs, so that I can consume events using `.await` in async code without polling or registering callbacks |  |  |  |
-| US-14.6.14 | engine developer (P-26) | the content hasher to maintain an in-memory cache of BLAKE3 hashes keyed by canonical path, so that repeated metadata-only filesystem events do not trigger redundant full-file reads and hash computations |  |  |  |
-| US-14.6.15 | engine developer (P-26) | to insert a known BLAKE3 hash into the content hash cache after an asset import, so that the next filesystem event for that file can compare against the cached hash without re-reading the file |  |  |  |
-| US-14.6.16 | engine tester (P-27) | tests that cancel a file watch and verify `FileEventStream::next().await` returns `None`, so that stream termination semantics are validated and consumers can detect watch cancellation cleanly |  |  |  |
+| ID         | Persona                 | Features | Requirements |
+|------------|-------------------------|----------|--------------|
+| US-14.6.1  | game developer (P-15)   |          |              |
+| US-14.6.2  | game developer (P-15)   |          |              |
+| US-14.6.3  | engine developer (P-26) |          |              |
+| US-14.6.4  | engine developer (P-26) |          |              |
+| US-14.6.5  | game developer (P-15)   |          |              |
+| US-14.6.6  | engine developer (P-26) |          |              |
+| US-14.6.7  | engine developer (P-26) |          |              |
+| US-14.6.8  | engine developer (P-26) |          |              |
+| US-14.6.9  | engine tester (P-27)    |          |              |
+| US-14.6.10 | engine tester (P-27)    |          |              |
+| US-14.6.11 | engine tester (P-27)    |          |              |
+| US-14.6.12 | DevOps engineer (P-16)  |          |              |
+| US-14.6.13 | game developer (P-15)   |          |              |
+| US-14.6.14 | engine developer (P-26) |          |              |
+| US-14.6.15 | engine developer (P-26) |          |              |
+| US-14.6.16 | engine tester (P-27)    |          |              |
+
+1. **US-14.6.1** — async file open, read, and write operations that return futures resolving on the
+   I/O thread pool, so that file operations never block the game loop or worker threads on any
+   platform
+2. **US-14.6.2** — async file create and delete operations with batch concurrency and recursive
+   directory creation, so that bulk file operations (asset cache cleanup, temp file management)
+   complete quickly without blocking
+3. **US-14.6.3** — async file metadata queries (size, timestamps, permissions, type) with batch stat
+   for multiple paths, so that the asset database and hot-reload watcher can detect changes without
+   blocking worker threads
+4. **US-14.6.4** — async directory enumeration that yields entries incrementally with configurable
+   depth limits and glob-pattern filtering, so that scanning large asset directories does not block
+   or allocate unbounded memory
+5. **US-14.6.5** — directory change notifications using platform-native APIs
+   (ReadDirectoryChangesExW, FSEvents, inotify) with configurable debounce intervals, so that the
+   hot-reload system detects file changes within milliseconds without polling
+6. **US-14.6.6** — BLAKE3 content hash comparison to filter out metadata-only changes and duplicate
+   events from editors that write via rename-into-place, so that only genuine content changes
+   trigger re-import or hot-reload
+7. **US-14.6.7** — canonical path resolution that handles Windows drive letters, UNC paths,
+   long-path prefixes, macOS case insensitivity, and Linux case sensitivity, so that all engine
+   subsystems use consistent keys and avoid duplicate asset entries from path aliasing
+8. **US-14.6.8** — all filesystem operations implemented through IOCP on Windows, dispatch_io on
+   macOS, and io_uring on Linux with zero Rust stdlib file I/O anywhere in the engine, so that I/O
+   performance is optimal and consistent with project guidelines
+9. **US-14.6.9** — automated tests that exercise async read, write, create, delete, stat, and
+   enumerate operations on Windows, macOS, and Linux, verifying correct results and no blocking on
+   the calling thread, so that platform I/O regressions are caught in CI
+10. **US-14.6.10** — tests that create, modify, delete, and rename files in watched directories and
+    verify the correct event types are delivered with proper debouncing, so that the file watcher
+    reliably drives hot-reload on all platforms
+11. **US-14.6.11** — benchmarks that measure async read and write throughput as a percentage of raw
+    disk bandwidth on each platform, so that I can verify the I/O backend achieves at least 80% of
+    theoretical throughput
+12. **US-14.6.12** — threaded POSIX fallback paths for io_uring operations that require kernel 6.6+
+    (e.g., IORING_OP_GETDENTS), so that the engine runs correctly on any Linux kernel 5.1+ without
+    requiring an epoll fallback. The engine requires kernel 5.1 as the minimum Linux version and
+    uses io_uring exclusively for all async I/O
+13. **US-14.6.13** — file change events delivered through a typed `FileEventStream` with an
+    `async fn next()` method returning `FileEvent` structs, so that I can consume events using
+    `.await` in async code without polling or registering callbacks
+14. **US-14.6.14** — the content hasher to maintain an in-memory cache of BLAKE3 hashes keyed by
+    canonical path, so that repeated metadata-only filesystem events do not trigger redundant
+    full-file reads and hash computations
+15. **US-14.6.15** — to insert a known BLAKE3 hash into the content hash cache after an asset
+    import, so that the next filesystem event for that file can compare against the cached hash
+    without re-reading the file
+16. **US-14.6.16** — tests that cancel a file watch and verify `FileEventStream::next().await`
+    returns `None`, so that stream termination semantics are validated and consumers can detect
+    watch cancellation cleanly

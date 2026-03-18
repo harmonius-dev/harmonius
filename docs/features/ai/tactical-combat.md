@@ -1,10 +1,60 @@
 # 7.8 — Tactical Combat AI
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|-------------|--------------|----------------|
-| F-7.8.1 | Cover Evaluation and Scoring | AI agents evaluate cover positions by quality: protection angle, sight lines to targets, flanking exposure, distance to current target, and proximity to objectives. Cover positions are pre-computed from world geometry and cached in the shared spatial index (F-1.9.7). AI selects the highest-scoring cover position. Cover re-evaluation triggers when: the target moves significantly, the AI takes damage from an unexpected direction, or the current cover is destroyed. Cover scoring weights are configurable per AI archetype. | R-7.8.1 | F-7.3.1 (Behavior Trees), F-1.9.4 (Spatial Query), F-13.18.5 (Cover System) | Mobile evaluates fewer cover candidates (4 vs. 16 on desktop) per query and re-evaluates less frequently to bound spatial query cost. |
-| F-7.8.2 | Flanking and Pincer Behavior | AI agents coordinate to approach targets from multiple angles. The squad leader designates flanking assignments: one or more agents move to positions on the target's flank or rear while others maintain frontal pressure. Flanking paths avoid the target's line-of-sight. Agents synchronize their flanking approach -- flankers wait at staging positions until all are in position, then attack simultaneously. | R-7.8.2 | F-7.8.1, F-7.2.1 (Steering Behaviors), F-7.1.1 (NavMesh) | Mobile disables coordinated flanking; AI agents attack independently. Switch supports simplified flanking with 2-agent coordination max. |
-| F-7.8.3 | Squad Formation and Communication | AI squads maintain formations during movement (line, wedge, column, diamond, staggered) with configurable spacing. The squad leader determines the formation based on context. Squad members communicate target positions, flanking calls, retreat orders, and regroup commands. Communication is both functional (affects AI decision-making) and presentational (plays bark audio and floating text). Squads reform after combat with stragglers rejoining at rally points. | R-7.8.3 | F-7.2.5 (Formation Movement), F-7.3.1 (Behavior Trees), F-13.19.5 (Bark System) | Mobile limits squad size to 4 (vs. 8 on desktop). Mobile uses column formation only; context-adaptive formation selection disabled. |
-| F-7.8.4 | Suppressive Fire and Pinning | AI agents fire at a position to pin down targets without necessarily aiming to hit. Suppressive fire targets a zone rather than an entity. The suppression system applies a "suppressed" debuff to entities in the fire zone that: increases accuracy penalty, triggers suppression camera effects, and inhibits return fire. Suppression duration, accuracy, and ammo consumption are configurable per weapon type. | R-7.8.4 | F-7.8.1, F-13.16.1 (Weapon System), F-13.10.3 (Gameplay Effects) | Mobile disables coordinated suppression (requires flanking F-7.8.2). Suppression debuff and camera effects apply on all platforms. |
-| F-7.8.5 | Search and Investigation Patterns | When AI loses visual contact with a target, it systematically searches the area. Search patterns expand from last-known-position, check known hiding spots in priority order, search room-by-room, and coordinate with squad members to divide the search area. Search intensity decreases over time. Search patterns are authored as behavior tree subtrees with configurable parameters. | R-7.8.5 | F-7.3.1 (Behavior Trees), F-13.18.2 (AI Alert States), F-7.6.1 (Perception) | Mobile uses simplified search (move to last-known-position, scan once, return to patrol). Coordinated squad search division disabled on mobile. |
-| F-7.8.6 | Retreat and Fallback Behavior | AI retreats to secondary positions when: health drops below a threshold, current cover is destroyed, outnumbered beyond a configurable ratio, or ordered by squad leader. Retreat destination selection uses the cover evaluation system (F-7.8.1). Retreating agents use smoke grenades or suppressive fire to cover withdrawal. Morale-based retreat triggers cause entire squads to fall back when casualties exceed a threshold. | R-7.8.6 | F-7.8.1, F-7.3.1 (Behavior Trees) | Mobile uses simplified retreat (flee directly away from threat) without cover re-evaluation. Coordinated squad withdrawal disabled on mobile. |
+| ID      | Feature                           | Requirements |
+|---------|-----------------------------------|--------------|
+| F-7.8.1 | Cover Evaluation and Scoring      | R-7.8.1      |
+| F-7.8.2 | Flanking and Pincer Behavior      | R-7.8.2      |
+| F-7.8.3 | Squad Formation and Communication | R-7.8.3      |
+| F-7.8.4 | Suppressive Fire and Pinning      | R-7.8.4      |
+| F-7.8.5 | Search and Investigation Patterns | R-7.8.5      |
+| F-7.8.6 | Retreat and Fallback Behavior     | R-7.8.6      |
+
+1. **F-7.8.1** — AI agents evaluate cover positions by quality: protection angle, sight lines to
+   targets, flanking exposure, distance to current target, and proximity to objectives. Cover
+   positions are pre-computed from world geometry and cached in the shared spatial index (F-1.9.7).
+   AI selects the highest-scoring cover position. Cover re-evaluation triggers when: the target
+   moves significantly, the AI takes damage from an unexpected direction, or the current cover is
+   destroyed. Cover scoring weights are configurable per AI archetype.
+   - **Deps:** F-7.3.1 (Behavior Trees), F-1.9.4 (Spatial Query), F-13.18.5 (Cover System)
+   - **Platform:** Mobile evaluates fewer cover candidates (4 vs. 16 on desktop) per query and
+     re-evaluates less frequently to bound spatial query cost.
+2. **F-7.8.2** — AI agents coordinate to approach targets from multiple angles. The squad leader
+   designates flanking assignments: one or more agents move to positions on the target's flank or
+   rear while others maintain frontal pressure. Flanking paths avoid the target's line-of-sight.
+   Agents synchronize their flanking approach -- flankers wait at staging positions until all are in
+   position, then attack simultaneously.
+   - **Deps:** F-7.8.1, F-7.2.1 (Steering Behaviors), F-7.1.1 (NavMesh)
+   - **Platform:** Mobile disables coordinated flanking; AI agents attack independently. Switch
+     supports simplified flanking with 2-agent coordination max.
+3. **F-7.8.3** — AI squads maintain formations during movement (line, wedge, column, diamond,
+   staggered) with configurable spacing. The squad leader determines the formation based on context.
+   Squad members communicate target positions, flanking calls, retreat orders, and regroup commands.
+   Communication is both functional (affects AI decision-making) and presentational (plays bark
+   audio and floating text). Squads reform after combat with stragglers rejoining at rally points.
+   - **Deps:** F-7.2.5 (Formation Movement), F-7.3.1 (Behavior Trees), F-13.19.5 (Bark System)
+   - **Platform:** Mobile limits squad size to 4 (vs. 8 on desktop). Mobile uses column formation
+     only; context-adaptive formation selection disabled.
+4. **F-7.8.4** — AI agents fire at a position to pin down targets without necessarily aiming to hit.
+   Suppressive fire targets a zone rather than an entity. The suppression system applies a
+   "suppressed" debuff to entities in the fire zone that: increases accuracy penalty, triggers
+   suppression camera effects, and inhibits return fire. Suppression duration, accuracy, and ammo
+   consumption are configurable per weapon type.
+   - **Deps:** F-7.8.1, F-13.16.1 (Weapon System), F-13.10.3 (Gameplay Effects)
+   - **Platform:** Mobile disables coordinated suppression (requires flanking F-7.8.2). Suppression
+     debuff and camera effects apply on all platforms.
+5. **F-7.8.5** — When AI loses visual contact with a target, it systematically searches the area.
+   Search patterns expand from last-known-position, check known hiding spots in priority order,
+   search room-by-room, and coordinate with squad members to divide the search area. Search
+   intensity decreases over time. Search patterns are authored as behavior tree subtrees with
+   configurable parameters.
+   - **Deps:** F-7.3.1 (Behavior Trees), F-13.18.2 (AI Alert States), F-7.6.1 (Perception)
+   - **Platform:** Mobile uses simplified search (move to last-known-position, scan once, return to
+     patrol). Coordinated squad search division disabled on mobile.
+6. **F-7.8.6** — AI retreats to secondary positions when: health drops below a threshold, current
+   cover is destroyed, outnumbered beyond a configurable ratio, or ordered by squad leader. Retreat
+   destination selection uses the cover evaluation system (F-7.8.1). Retreating agents use smoke
+   grenades or suppressive fire to cover withdrawal. Morale-based retreat triggers cause entire
+   squads to fall back when casualties exceed a threshold.
+   - **Deps:** F-7.8.1, F-7.3.1 (Behavior Trees)
+   - **Platform:** Mobile uses simplified retreat (flee directly away from threat) without cover
+     re-evaluation. Coordinated squad withdrawal disabled on mobile.

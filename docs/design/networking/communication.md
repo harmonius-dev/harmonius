@@ -8,16 +8,25 @@
 > [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-8.9.1 | R-8.9.1 | US-8.9.1.1 -- US-8.9.1.6 | Unified channel system for game and editor |
-| F-8.9.2 | R-8.9.2 | US-8.9.2.1 -- US-8.9.2.7 | Text chat with persistence and search |
-| F-8.9.3 | R-8.9.3 | US-8.9.3.1 -- US-8.9.3.7 | Voice chat with spatial audio |
-| F-8.9.4 | R-8.9.4 | US-8.9.4.1 -- US-8.9.4.7 | E2E encrypted direct messaging |
-| F-8.9.5 | R-8.9.5 | US-8.9.5.1 -- US-8.9.5.8 | Profanity filter, mute, block, report |
-| F-8.9.6 | R-8.9.6 | US-8.9.6.1 -- US-8.9.6.6 | Spatial voice and virtual keyboard in VR |
-| F-8.9.7 | R-8.9.7 | US-8.9.7.1 -- US-8.9.7.6 | Opus transport with jitter buffer and PLC |
-| F-8.9.8 | R-8.9.8 | US-8.9.8.1 -- US-8.9.8.8 | Editor-game channel bridge |
+| Feature | Requirement | User Stories             |
+|---------|-------------|--------------------------|
+| F-8.9.1 | R-8.9.1     | US-8.9.1.1 -- US-8.9.1.6 |
+| F-8.9.2 | R-8.9.2     | US-8.9.2.1 -- US-8.9.2.7 |
+| F-8.9.3 | R-8.9.3     | US-8.9.3.1 -- US-8.9.3.7 |
+| F-8.9.4 | R-8.9.4     | US-8.9.4.1 -- US-8.9.4.7 |
+| F-8.9.5 | R-8.9.5     | US-8.9.5.1 -- US-8.9.5.8 |
+| F-8.9.6 | R-8.9.6     | US-8.9.6.1 -- US-8.9.6.6 |
+| F-8.9.7 | R-8.9.7     | US-8.9.7.1 -- US-8.9.7.6 |
+| F-8.9.8 | R-8.9.8     | US-8.9.8.1 -- US-8.9.8.8 |
+
+1. **F-8.9.1** — Unified channel system for game and editor
+2. **F-8.9.2** — Text chat with persistence and search
+3. **F-8.9.3** — Voice chat with spatial audio
+4. **F-8.9.4** — E2E encrypted direct messaging
+5. **F-8.9.5** — Profanity filter, mute, block, report
+6. **F-8.9.6** — Spatial voice and virtual keyboard in VR
+7. **F-8.9.7** — Opus transport with jitter buffer and PLC
+8. **F-8.9.8** — Editor-game channel bridge
 
 ### Cross-Cutting Dependencies
 

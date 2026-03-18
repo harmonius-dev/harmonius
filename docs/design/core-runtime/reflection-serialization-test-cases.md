@@ -6,336 +6,566 @@ Companion test cases for [reflection-serialization.md](reflection-serialization.
 
 ### TC-1.3.1.1 Registry 10K Types
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Register 10,000 types | All registered without error | R-1.3.1a |
-| 2 | Lookup each by TypeId | O(1) per lookup, all found | R-1.3.1a |
-| 3 | Lookup each by name | O(1) per lookup, all found | R-1.3.1a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.1a    |
+| 2 | R-1.3.1a    |
+| 3 | R-1.3.1a    |
+
+1. **#1** — Register 10,000 types
+   - **Expected:** All registered without error
+2. **#2** — Lookup each by TypeId
+   - **Expected:** O(1) per lookup, all found
+3. **#3** — Lookup each by name
+   - **Expected:** O(1) per lookup, all found
 
 ### TC-1.3.1.2 Registry Duplicate ID Error
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Register type A with TypeId X | Success | R-1.3.1a |
-| 2 | Register type B with same TypeId X | Error naming both A and B | R-1.3.1a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.1a    |
+| 2 | R-1.3.1a    |
+
+1. **#1** — Register type A with TypeId X
+   - **Expected:** Success
+2. **#2** — Register type B with same TypeId X
+   - **Expected:** Error naming both A and B
 
 ### TC-1.3.1.3 Registry Freeze Rejects Insert
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Call `freeze()` on registry | Frozen | R-1.3.1 |
-| 2 | Call `register::<T>()` | Panics | R-1.3.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.1     |
+| 2 | R-1.3.1     |
+
+1. **#1** — Call `freeze()` on registry
+   - **Expected:** Frozen
+2. **#2** — Call `register::<T>()`
+   - **Expected:** Panics
 
 ### TC-1.3.2.1 Type Descriptor Layout
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Register struct with fields (u32, f64, bool) | Descriptor created | R-1.3.2 |
-| 2 | Query size, alignment, field count, offsets | Match `std::mem::size_of`, `align_of`, and `offset_of` | R-1.3.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.2     |
+| 2 | R-1.3.2     |
+
+1. **#1** — Register struct with fields (u32, f64, bool)
+   - **Expected:** Descriptor created
+2. **#2** — Query size, alignment, field count, offsets
+   - **Expected:** Match `std::mem::size_of`, `align_of`, and `offset_of`
 
 ### TC-1.3.2.2 Dynamic Move Drop Clone
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Construct type-erased instance via `default_fn` | Instance created | R-1.3.2 |
-| 2 | Clone instance | Two independent copies | R-1.3.2 |
-| 3 | Drop both | Custom allocator reports zero leaks | R-1.3.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.2     |
+| 2 | R-1.3.2     |
+| 3 | R-1.3.2     |
+
+1. **#1** — Construct type-erased instance via `default_fn`
+   - **Expected:** Instance created
+2. **#2** — Clone instance
+   - **Expected:** Two independent copies
+3. **#3** — Drop both
+   - **Expected:** Custom allocator reports zero leaks
 
 ### TC-1.3.3.1 Property Path Nested
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Write 42 to `outer.inner.value` via path API | Write succeeds | R-1.3.3 |
-| 2 | Read `outer.inner.value` | Returns 42 | R-1.3.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.3     |
+| 2 | R-1.3.3     |
+
+1. **#1** — Write 42 to `outer.inner.value` via path API
+   - **Expected:** Write succeeds
+2. **#2** — Read `outer.inner.value`
+   - **Expected:** Returns 42
 
 ### TC-1.3.3.2 Property Path Invalid
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Access `outer.nonexistent.field` | Error containing "nonexistent" and parent type | R-1.3.3a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.3a    |
+
+1. **#1** — Access `outer.nonexistent.field`
+   - **Expected:** Error containing "nonexistent" and parent type
 
 ### TC-1.3.3.3 Property Path Performance
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Access 6-segment path 100,000 times | All accesses succeed | R-1.3.3a |
-| 2 | Measure per-access time | < 500 ns | R-1.3.3a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.3a    |
+| 2 | R-1.3.3a    |
+
+1. **#1** — Access 6-segment path 100,000 times
+   - **Expected:** All accesses succeed
+2. **#2** — Measure per-access time
+   - **Expected:** < 500 ns
 
 ### TC-1.3.4.1 Collection Vec Reflect
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Insert 3 elements into Vec via reflection | Vec length = 3 | R-1.3.4 |
-| 2 | Remove element at index 1 | Vec length = 2, correct values | R-1.3.4 |
-| 3 | Iterate via reflection | All remaining elements visited | R-1.3.4 |
-| 4 | Index access `[0]` | Returns first element | R-1.3.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.4     |
+| 2 | R-1.3.4     |
+| 3 | R-1.3.4     |
+| 4 | R-1.3.4     |
+
+1. **#1** — Insert 3 elements into Vec via reflection
+   - **Expected:** Vec length = 3
+2. **#2** — Remove element at index 1
+   - **Expected:** Vec length = 2, correct values
+3. **#3** — Iterate via reflection
+   - **Expected:** All remaining elements visited
+4. **#4** — Index access `[0]`
+   - **Expected:** Returns first element
 
 ### TC-1.3.4.2 Collection Map Reflect
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Insert ("a", 1), ("b", 2) via reflection | Map size = 2 | R-1.3.4 |
-| 2 | Get "a" | Returns 1 | R-1.3.4 |
-| 3 | Remove "b" | Map size = 1 | R-1.3.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.4     |
+| 2 | R-1.3.4     |
+| 3 | R-1.3.4     |
+
+1. **#1** — Insert ("a", 1), ("b", 2) via reflection
+   - **Expected:** Map size = 2
+2. **#2** — Get "a"
+   - **Expected:** Returns 1
+3. **#3** — Remove "b"
+   - **Expected:** Map size = 1
 
 ### TC-1.3.5.1 DynamicValue Roundtrip
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Typed struct -> `DynamicValue` | DynamicValue created | R-1.3.5 |
-| 2 | `FromReflect` back to typed | Identical to original | R-1.3.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.5     |
+| 2 | R-1.3.5     |
+
+1. **#1** — Typed struct -> `DynamicValue`
+   - **Expected:** DynamicValue created
+2. **#2** — `FromReflect` back to typed
+   - **Expected:** Identical to original
 
 ### TC-1.3.5.2 Diff Minimal Patch
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 10-field struct, change field 3 only | Diff produces patch with 1 op | R-1.3.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.5     |
+
+1. **#1** — 10-field struct, change field 3 only
+   - **Expected:** Diff produces patch with 1 op
 
 ### TC-1.3.5.3 Patch Apply Correct
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Apply SetField(field_3, 99) to struct | `struct.field_3 == 99` | R-1.3.5 |
-| 2 | Other fields unchanged | All 9 other fields identical | R-1.3.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.5     |
+| 2 | R-1.3.5     |
+
+1. **#1** — Apply SetField(field_3, 99) to struct
+   - **Expected:** `struct.field_3 == 99`
+2. **#2** — Other fields unchanged
+   - **Expected:** All 9 other fields identical
 
 ### TC-1.3.6.1 Attributes Range Skip Rename
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Register type with `#[reflect(min=0, max=100)]` | Attribute queryable at runtime | R-1.3.6 |
-| 2 | Query skip attribute on skipped field | `skip = true` | R-1.3.6 |
-| 3 | Query rename attribute | Returns overridden name | R-1.3.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.6     |
+| 2 | R-1.3.6     |
+| 3 | R-1.3.6     |
+
+1. **#1** — Register type with `#[reflect(min=0, max=100)]`
+   - **Expected:** Attribute queryable at runtime
+2. **#2** — Query skip attribute on skipped field
+   - **Expected:** `skip = true`
+3. **#3** — Query rename attribute
+   - **Expected:** Returns overridden name
 
 ### TC-1.3.7.1 Trait Registration and Resolve
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Register Serialize trait impl for type A | Registration succeeds | R-1.3.7 |
-| 2 | Resolve by TypeId, invoke serialize | Produces correct output | R-1.3.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.7     |
+| 2 | R-1.3.7     |
+
+1. **#1** — Register Serialize trait impl for type A
+   - **Expected:** Registration succeeds
+2. **#2** — Resolve by TypeId, invoke serialize
+   - **Expected:** Produces correct output
 
 ### TC-1.3.7.2 Trait Missing Error
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Query unregistered trait for type B | Error message with trait and type names | R-1.3.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.7     |
+
+1. **#1** — Query unregistered trait for type B
+   - **Expected:** Error message with trait and type names
 
 ### TC-1.3.8.1 Derive Struct Reflect
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `#[derive(Reflect)]` on struct with 3 fields | Reflect impl generated | R-1.3.8 |
-| 2 | Access field by name "x" | Returns correct value | R-1.3.8 |
-| 3 | Access field by index 0 | Returns same value as by name | R-1.3.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.8     |
+| 2 | R-1.3.8     |
+| 3 | R-1.3.8     |
+
+1. **#1** — `#[derive(Reflect)]` on struct with 3 fields
+   - **Expected:** Reflect impl generated
+2. **#2** — Access field by name "x"
+   - **Expected:** Returns correct value
+3. **#3** — Access field by index 0
+   - **Expected:** Returns same value as by name
 
 ### TC-1.3.8.2 Derive Enum Reflect
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `#[derive(Reflect)]` on enum with 3 variants | Reflect impl generated | R-1.3.8 |
-| 2 | Query current variant name | Returns correct variant | R-1.3.8 |
-| 3 | Access variant field | Returns correct data | R-1.3.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.8     |
+| 2 | R-1.3.8     |
+| 3 | R-1.3.8     |
+
+1. **#1** — `#[derive(Reflect)]` on enum with 3 variants
+   - **Expected:** Reflect impl generated
+2. **#2** — Query current variant name
+   - **Expected:** Returns correct variant
+3. **#3** — Access variant field
+   - **Expected:** Returns correct data
 
 ### TC-1.3.8.3 Derive Skip Attribute
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `#[reflect(skip)]` on field "secret" | Field absent from reflection | R-1.3.8a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.8a    |
+
+1. **#1** — `#[reflect(skip)]` on field "secret"
+   - **Expected:** Field absent from reflection
 
 ### TC-1.3.8.4 Derive Rename Attribute
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `#[reflect(rename = "display_name")]` on field "x" | Field accessed as "display_name" | R-1.3.8a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.8a    |
+
+1. **#1** — `#[reflect(rename = "display_name")]` on field "x"
+   - **Expected:** Field accessed as "display_name"
 
 ### TC-1.3.8.5 Derive Default Attribute
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Patch struct with missing field (has default) | Missing field receives default value | R-1.3.8a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.8a    |
+
+1. **#1** — Patch struct with missing field (has default)
+   - **Expected:** Missing field receives default value
 
 ### TC-1.3.9.1 Sub-trait Struct
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Downcast struct's Reflect to ReflectStruct | Succeeds | R-1.3.9 |
-| 2 | Downcast struct's Reflect to ReflectEnum | Returns None | R-1.3.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.9     |
+| 2 | R-1.3.9     |
+
+1. **#1** — Downcast struct's Reflect to ReflectStruct
+   - **Expected:** Succeeds
+2. **#2** — Downcast struct's Reflect to ReflectEnum
+   - **Expected:** Returns None
 
 ### TC-1.3.9.2 Sub-trait Enum
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Downcast enum's Reflect to ReflectEnum | Succeeds | R-1.3.9 |
-| 2 | Downcast enum's Reflect to ReflectStruct | Returns None | R-1.3.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.9     |
+| 2 | R-1.3.9     |
+
+1. **#1** — Downcast enum's Reflect to ReflectEnum
+   - **Expected:** Succeeds
+2. **#2** — Downcast enum's Reflect to ReflectStruct
+   - **Expected:** Returns None
 
 ### TC-1.3.9.3 Sub-trait List
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Downcast Vec to ReflectList | Succeeds | R-1.3.9 |
-| 2 | Call push, pop, len | All operations work correctly | R-1.3.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.9     |
+| 2 | R-1.3.9     |
+
+1. **#1** — Downcast Vec to ReflectList
+   - **Expected:** Succeeds
+2. **#2** — Call push, pop, len
+   - **Expected:** All operations work correctly
 
 ### TC-1.3.9.4 Sub-trait Map
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Downcast HashMap to ReflectMap | Succeeds | R-1.3.9 |
-| 2 | Call insert, get, remove | All operations work correctly | R-1.3.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.9     |
+| 2 | R-1.3.9     |
+
+1. **#1** — Downcast HashMap to ReflectMap
+   - **Expected:** Succeeds
+2. **#2** — Call insert, get, remove
+   - **Expected:** All operations work correctly
 
 ### TC-1.3.10.1 FromReflect Missing Field
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | DynamicValue with 2 of 3 fields | FromReflect fills third with default | R-1.3.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.10    |
+
+1. **#1** — DynamicValue with 2 of 3 fields
+   - **Expected:** FromReflect fills third with default
 
 ### TC-1.3.10.2 FromReflect Incompatible
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | DynamicValue with wrong type for field | `FromReflect` returns None | R-1.3.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.10    |
+
+1. **#1** — DynamicValue with wrong type for field
+   - **Expected:** `FromReflect` returns None
 
 ### TC-1.4.1.1 Binary Serialize Mixed Types
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Serialize struct with u32, f64, String, nested struct | Bytes produced | R-1.4.1 |
-| 2 | Deserialize | Value equals original | R-1.4.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.1     |
+| 2 | R-1.4.1     |
+
+1. **#1** — Serialize struct with u32, f64, String, nested struct
+   - **Expected:** Bytes produced
+2. **#2** — Deserialize
+   - **Expected:** Value equals original
 
 ### TC-1.4.1.2 Binary Malformed Error
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Feed truncated binary data | Error with byte offset of failure | R-1.4.1a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.1a    |
+
+1. **#1** — Feed truncated binary data
+   - **Expected:** Error with byte offset of failure
 
 ### TC-1.4.1.3 Binary Throughput
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Serialize/deserialize 100K components | Throughput >= 500 MB/s | R-1.4.1a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.1a    |
+
+1. **#1** — Serialize/deserialize 100K components
+   - **Expected:** Throughput >= 500 MB/s
 
 ### TC-1.4.3.1 Text Roundtrip
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Serialize complex struct to RON | Valid RON string | R-1.4.3 |
-| 2 | Deserialize RON back | Bit-exact equality with original | R-1.4.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.3     |
+| 2 | R-1.4.3     |
+
+1. **#1** — Serialize complex struct to RON
+   - **Expected:** Valid RON string
+2. **#2** — Deserialize RON back
+   - **Expected:** Bit-exact equality with original
 
 ### TC-1.4.3.2 Text Edge Cases
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Empty Vec, None Option, Unicode string | Serialize succeeds | R-1.4.3 |
-| 2 | Deserialize | Values match originals | R-1.4.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.3     |
+| 2 | R-1.4.3     |
+
+1. **#1** — Empty Vec, None Option, Unicode string
+   - **Expected:** Serialize succeeds
+2. **#2** — Deserialize
+   - **Expected:** Values match originals
 
 ### TC-1.4.4.1 Schema Version Migration
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Serialize at schema v1.0.0 | Binary with v1.0.0 tag | R-1.4.4 |
-| 2 | Deserialize at schema v1.1.0 | Migration triggered, data correct | R-1.4.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.4     |
+| 2 | R-1.4.4     |
+
+1. **#1** — Serialize at schema v1.0.0
+   - **Expected:** Binary with v1.0.0 tag
+2. **#2** — Deserialize at schema v1.1.0
+   - **Expected:** Migration triggered, data correct
 
 ### TC-1.4.5.1 Migration Chain 3 Steps
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Data at v1, migrations v1->v2->v3 registered | Chain exists | R-1.4.5 |
-| 2 | Deserialize at v3 | Each step applied in order, final data correct | R-1.4.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.5     |
+| 2 | R-1.4.5     |
+
+1. **#1** — Data at v1, migrations v1->v2->v3 registered
+   - **Expected:** Chain exists
+2. **#2** — Deserialize at v3
+   - **Expected:** Each step applied in order, final data correct
 
 ### TC-1.4.5.2 Migration Chain 50 Steps
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 50-step migration chain v1 through v50 | All registered | R-1.4.5a |
-| 2 | Deserialize v1 data at v50 | End-to-end success | R-1.4.5a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.5a    |
+| 2 | R-1.4.5a    |
+
+1. **#1** — 50-step migration chain v1 through v50
+   - **Expected:** All registered
+2. **#2** — Deserialize v1 data at v50
+   - **Expected:** End-to-end success
 
 ### TC-1.4.5.3 Migration Missing Step
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Remove step v2->v3 from chain | Gap exists | R-1.4.5a |
-| 2 | Attempt migration v1->v3 | Error identifies missing v2->v3 | R-1.4.5a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.5a    |
+| 2 | R-1.4.5a    |
+
+1. **#1** — Remove step v2->v3 from chain
+   - **Expected:** Gap exists
+2. **#2** — Attempt migration v1->v3
+   - **Expected:** Error identifies missing v2->v3
 
 ### TC-1.4.9.1 Companion Write Read
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Write 3 blobs (1 LZ4 compressed, 2 raw) | Companion file created | R-1.4.9 |
-| 2 | Read each blob back | Hash matches original for all 3 | R-1.4.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.9     |
+| 2 | R-1.4.9     |
+
+1. **#1** — Write 3 blobs (1 LZ4 compressed, 2 raw)
+   - **Expected:** Companion file created
+2. **#2** — Read each blob back
+   - **Expected:** Hash matches original for all 3
 
 ### TC-1.4.9.2 Companion Dedup
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Write blob A, write identical blob A again | No additional storage consumed | R-1.4.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.9     |
+
+1. **#1** — Write blob A, write identical blob A again
+   - **Expected:** No additional storage consumed
 
 ### TC-1.4.9.3 Companion Append
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Create companion with 2 blobs | 2 blobs readable | R-1.4.9a |
-| 2 | Append third blob | All 3 blobs readable | R-1.4.9a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.9a    |
+| 2 | R-1.4.9a    |
+
+1. **#1** — Create companion with 2 blobs
+   - **Expected:** 2 blobs readable
+2. **#2** — Append third blob
+   - **Expected:** All 3 blobs readable
 
 ### TC-1.4.10.1 Binary Attribute
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Field with `#[binary(compress = "lz4")]` | Field stored in companion (compressed) | R-1.4.10 |
-| 2 | String field without attribute | Field stored inline in text | R-1.4.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.10    |
+| 2 | R-1.4.10    |
+
+1. **#1** — Field with `#[binary(compress = "lz4")]`
+   - **Expected:** Field stored in companion (compressed)
+2. **#2** — String field without attribute
+   - **Expected:** Field stored inline in text
 
 ### TC-1.4.8.1 Atomic Write Interrupted
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Simulate crash after text write but before companion rename | No partial files on disk | R-1.4.8a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.8a    |
+
+1. **#1** — Simulate crash after text write but before companion rename
+   - **Expected:** No partial files on disk
 
 ## Integration Tests
 
 ### TC-1.3.1.I1 Registry Concurrent Reads
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Register 500 types, freeze | Registry frozen | R-1.3.1 |
-| 2 | 16 threads read concurrently | ThreadSanitizer clean, all reads correct | R-1.3.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.3.1     |
+| 2 | R-1.3.1     |
+
+1. **#1** — Register 500 types, freeze
+   - **Expected:** Registry frozen
+2. **#2** — 16 threads read concurrently
+   - **Expected:** ThreadSanitizer clean, all reads correct
 
 ### TC-1.4.7.I1 Scene Roundtrip 1K Entities
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 1,000 entities with hierarchy | All spawned | R-1.4.7 |
-| 2 | Serialize, deserialize | Full state matches original | R-1.4.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.7     |
+| 2 | R-1.4.7     |
+
+1. **#1** — 1,000 entities with hierarchy
+   - **Expected:** All spawned
+2. **#2** — Serialize, deserialize
+   - **Expected:** Full state matches original
 
 ### TC-1.4.7.I2 Scene Merge No Collisions
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Deserialize same scene twice into one world | Two copies exist | R-1.4.7 |
-| 2 | Verify entity IDs | All remapped, no collisions | R-1.4.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.7     |
+| 2 | R-1.4.7     |
+
+1. **#1** — Deserialize same scene twice into one world
+   - **Expected:** Two copies exist
+2. **#2** — Verify entity IDs
+   - **Expected:** All remapped, no collisions
 
 ### TC-1.4.8.I1 Mixed Format Scene
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Scene with transforms inline (text) and mesh vertices in binary companion | Loaded correctly | R-1.4.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.8     |
+
+1. **#1** — Scene with transforms inline (text) and mesh vertices in binary companion
+   - **Expected:** Loaded correctly
 
 ### TC-1.4.6.I1 Asset Handle Resolution
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Serialize asset handle | Handle persisted | R-1.4.6 |
-| 2 | Deserialize in fresh world | Load request issued for asset | R-1.4.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.6     |
+| 2 | R-1.4.6     |
+
+1. **#1** — Serialize asset handle
+   - **Expected:** Handle persisted
+2. **#2** — Deserialize in fresh world
+   - **Expected:** Load request issued for asset
 
 ### TC-1.4.7.I2 Streaming Deser Mobile
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 64 MB scene with 1 MB staging buffer | Deserialize completes | R-1.4.7 |
-| 2 | Monitor memory | No spike beyond staging buffer | R-1.4.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.7     |
+| 2 | R-1.4.7     |
+
+1. **#1** — 64 MB scene with 1 MB staging buffer
+   - **Expected:** Deserialize completes
+2. **#2** — Monitor memory
+   - **Expected:** No spike beyond staging buffer
 
 ### TC-1.4.2.I1 Zero Copy 256MB
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Memory-map 256 MB asset | Mapped successfully | R-1.4.2 |
-| 2 | Access fields | Zero allocation beyond mmap | R-1.4.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.4.2     |
+| 2 | R-1.4.2     |
+
+1. **#1** — Memory-map 256 MB asset
+   - **Expected:** Mapped successfully
+2. **#2** — Access fields
+   - **Expected:** Zero allocation beyond mmap
 
 ## Benchmarks
 

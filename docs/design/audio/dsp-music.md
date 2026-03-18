@@ -9,51 +9,87 @@
 
 ### DSP & Effects (5.3)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-5.3.1 | R-5.3.1 | Biquad filters (LP, HP, BP, notch) with per-sample coefficient smoothing |
-| F-5.3.2 | R-5.3.2 | Multi-band parametric EQ (up to 8 bands) per bus |
-| F-5.3.3 | R-5.3.3 | Algorithmic reverb via feedback delay network |
-| F-5.3.4 | R-5.3.4 | Convolution reverb with partitioned FFT, streamed IRs |
-| F-5.3.5 | R-5.3.5 | Compressor / limiter with look-ahead on master bus |
-| F-5.3.6 | R-5.3.6 | Delay, chorus, and flanger via modulated delay lines |
-| F-5.3.7 | R-5.3.7 | Pitch shifting (phase-vocoder desktop, OLA mobile) |
-| F-5.3.8 | R-5.3.8 | Custom DSP node registry with stateless process callbacks |
+| Feature | Requirement |
+|---------|-------------|
+| F-5.3.1 | R-5.3.1     |
+| F-5.3.2 | R-5.3.2     |
+| F-5.3.3 | R-5.3.3     |
+| F-5.3.4 | R-5.3.4     |
+| F-5.3.5 | R-5.3.5     |
+| F-5.3.6 | R-5.3.6     |
+| F-5.3.7 | R-5.3.7     |
+| F-5.3.8 | R-5.3.8     |
+
+1. **F-5.3.1** — Biquad filters (LP, HP, BP, notch) with per-sample coefficient smoothing
+2. **F-5.3.2** — Multi-band parametric EQ (up to 8 bands) per bus
+3. **F-5.3.3** — Algorithmic reverb via feedback delay network
+4. **F-5.3.4** — Convolution reverb with partitioned FFT, streamed IRs
+5. **F-5.3.5** — Compressor / limiter with look-ahead on master bus
+6. **F-5.3.6** — Delay, chorus, and flanger via modulated delay lines
+7. **F-5.3.7** — Pitch shifting (phase-vocoder desktop, OLA mobile)
+8. **F-5.3.8** — Custom DSP node registry with stateless process callbacks
 
 ### Adaptive Music (5.4)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-5.4.1 | R-5.4.1 | Vertical re-mixing with synchronized stems |
-| F-5.4.2 | R-5.4.2 | Horizontal re-sequencing via segment directed graph |
-| F-5.4.3 | R-5.4.3 | Transition rules: cut, crossfade, beat-sync, custom curve |
-| F-5.4.4 | R-5.4.4 | Tempo / beat clock with beat and bar events |
-| F-5.4.5 | R-5.4.5 | Stinger playback with cooldowns and priority ducking |
-| F-5.4.6 | R-5.4.6 | Playlists with weighted randomization and non-repeat |
-| F-5.4.7 | R-5.4.7 | Dynamic intensity parameter (0.0-1.0) driving all music systems |
+| Feature | Requirement |
+|---------|-------------|
+| F-5.4.1 | R-5.4.1     |
+| F-5.4.2 | R-5.4.2     |
+| F-5.4.3 | R-5.4.3     |
+| F-5.4.4 | R-5.4.4     |
+| F-5.4.5 | R-5.4.5     |
+| F-5.4.6 | R-5.4.6     |
+| F-5.4.7 | R-5.4.7     |
+
+1. **F-5.4.1** — Vertical re-mixing with synchronized stems
+2. **F-5.4.2** — Horizontal re-sequencing via segment directed graph
+3. **F-5.4.3** — Transition rules: cut, crossfade, beat-sync, custom curve
+4. **F-5.4.4** — Tempo / beat clock with beat and bar events
+5. **F-5.4.5** — Stinger playback with cooldowns and priority ducking
+6. **F-5.4.6** — Playlists with weighted randomization and non-repeat
+7. **F-5.4.7** — Dynamic intensity parameter (0.0-1.0) driving all music systems
 
 ### Voice & Speech (5.5)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-5.5.1 | R-5.5.1 | Opus voice chat codec (6-64 kbps), platform-native mic capture |
-| F-5.5.2 | R-5.5.2 | Adaptive jitter buffer with Opus PLC |
-| F-5.5.3 | R-5.5.3 | Voice activity detection and noise suppression |
-| F-5.5.4 | R-5.5.4 | Text-to-speech via platform-native APIs |
-| F-5.5.5 | R-5.5.5 | Viseme generation for lip sync (pre-recorded and live) |
-| F-5.5.6 | R-5.5.6 | Dialogue playback with priority queue and subtitles |
-| F-5.5.7 | R-5.5.7 | Branching dialogue graph with condition-gated edges |
-| F-5.5.8 | R-5.5.8 | Voice chat channel management (proximity, party, raid, etc.) |
-| F-5.5.9 | R-5.5.9 | Acoustic echo cancellation with comfort noise |
+| Feature | Requirement |
+|---------|-------------|
+| F-5.5.1 | R-5.5.1     |
+| F-5.5.2 | R-5.5.2     |
+| F-5.5.3 | R-5.5.3     |
+| F-5.5.4 | R-5.5.4     |
+| F-5.5.5 | R-5.5.5     |
+| F-5.5.6 | R-5.5.6     |
+| F-5.5.7 | R-5.5.7     |
+| F-5.5.8 | R-5.5.8     |
+| F-5.5.9 | R-5.5.9     |
+
+1. **F-5.5.1** — Opus voice chat codec (6-64 kbps), platform-native mic capture
+2. **F-5.5.2** — Adaptive jitter buffer with Opus PLC
+3. **F-5.5.3** — Voice activity detection and noise suppression
+4. **F-5.5.4** — Text-to-speech via platform-native APIs
+5. **F-5.5.5** — Viseme generation for lip sync (pre-recorded and live)
+6. **F-5.5.6** — Dialogue playback with priority queue and subtitles
+7. **F-5.5.7** — Branching dialogue graph with condition-gated edges
+8. **F-5.5.8** — Voice chat channel management (proximity, party, raid, etc.)
+9. **F-5.5.9** — Acoustic echo cancellation with comfort noise
 
 ### Non-Functional Requirements
 
-| Requirement | Target | Verification |
-|-------------|--------|--------------|
-| R-5.3.NF1 | 4-insert DSP chain per voice < 1 us/sample at 48 kHz | Benchmark 64 voices, 10k callbacks, p99 < 1 us |
-| R-5.4.NF1 | Music transition within one beat, no gap/click/phase error | Integration test: random-point transition, assert next-bar +/- 1 sample |
-| R-5.5.NF1 | Voice chat end-to-end latency < 150 ms (< 50 ms RTT) | Loopback test with 50 ms simulated RTT |
-| R-5.5.NF2 | Decode and mix >= 32 simultaneous voice streams | Stress test: 32 Opus streams at 24 kbps, 60 s, no underruns |
+| Requirement |
+|-------------|
+| R-5.3.NF1   |
+| R-5.4.NF1   |
+| R-5.5.NF1   |
+| R-5.5.NF2   |
+
+1. **R-5.3.NF1** — 4-insert DSP chain per voice < 1 us/sample at 48 kHz
+   - **Verification:** Benchmark 64 voices, 10k callbacks, p99 < 1 us
+2. **R-5.4.NF1** — Music transition within one beat, no gap/click/phase error
+   - **Verification:** Integration test: random-point transition, assert next-bar +/- 1 sample
+3. **R-5.5.NF1** — Voice chat end-to-end latency < 150 ms (< 50 ms RTT)
+   - **Verification:** Loopback test with 50 ms simulated RTT
+4. **R-5.5.NF2** — Decode and mix >= 32 simultaneous voice streams
+   - **Verification:** Stress test: 32 Opus streams at 24 kbps, 60 s, no underruns
 
 ## Overview
 
@@ -2212,77 +2248,167 @@ the engine's Opus transport.
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `opus` | Opus codec encode/decode | Industry-standard voice codec; low-latency, bandwidth-efficient |
-| `rustfft` | FFT for convolution reverb and pitch shifting | Pure Rust FFT; no C dependencies; well-maintained |
-| `smallvec` | Inline-allocated small vectors | Avoid heap allocation in hot DSP paths |
-| `crossbeam-queue` | Lock-free SPSC/MPSC ring buffers | Proven lock-free data structures |
-| `cxx` | C++ interop for macOS CoreAudio | Safe bridge to platform audio APIs |
-| `windows-sys` | Win32 WASAPI bindings | Zero-cost FFI to Windows audio capture |
+| Crate             |
+|-------------------|
+| `opus`            |
+| `rustfft`         |
+| `smallvec`        |
+| `crossbeam-queue` |
+| `cxx`             |
+| `windows-sys`     |
+
+1. **`opus`** — Opus codec encode/decode
+   - **Justification:** Industry-standard voice codec; low-latency, bandwidth-efficient
+2. **`rustfft`** — FFT for convolution reverb and pitch shifting
+   - **Justification:** Pure Rust FFT; no C dependencies; well-maintained
+3. **`smallvec`** — Inline-allocated small vectors
+   - **Justification:** Avoid heap allocation in hot DSP paths
+4. **`crossbeam-queue`** — Lock-free SPSC/MPSC ring buffers
+   - **Justification:** Proven lock-free data structures
+5. **`cxx`** — C++ interop for macOS CoreAudio
+   - **Justification:** Safe bridge to platform audio APIs
+6. **`windows-sys`** — Win32 WASAPI bindings
+   - **Justification:** Zero-cost FFI to Windows audio capture
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_biquad_lp_response` | R-5.3.1 | Process white noise through LP at 1 kHz; verify -3 dB at cutoff, -12 dB/oct rolloff within 0.5 dB |
-| `test_biquad_hp_response` | R-5.3.1 | Process white noise through HP at 1 kHz; verify response within 0.5 dB |
-| `test_biquad_bp_response` | R-5.3.1 | Process white noise through BP at 1 kHz, Q=2; verify passband and rolloff |
-| `test_biquad_notch_response` | R-5.3.1 | Verify notch attenuates center frequency by >= 30 dB |
-| `test_biquad_no_zipper` | R-5.3.1 | Sweep cutoff 200 Hz to 8 kHz over 100 ms; verify no clicks via zero-crossing analysis |
-| `test_biquad_stability` | R-5.3.1 | Test at extreme cutoff (20 Hz, Nyquist) and Q (0.1, 100); verify no NaN/Inf |
-| `test_eq_8_band_accuracy` | R-5.3.2 | Configure 8-band EQ, process flat spectrum; verify each band gain within 0.5 dB |
-| `test_eq_band_count_per_tier` | R-5.3.2 | Verify mobile=4, Switch=6, desktop=8 band limits |
-| `test_fdn_decay_time` | R-5.3.3 | Process impulse with 2.0s decay; verify RT60 within 10% |
-| `test_fdn_delay_count_per_tier` | R-5.3.3 | Verify mobile=4, Switch=8, desktop=16 delay lines |
-| `test_convolution_accuracy` | R-5.3.4 | Convolve known IR with impulse; verify output within -60 dB of reference |
-| `test_convolution_latency` | R-5.3.4 | Verify output latency <= one buffer period |
-| `test_convolution_unavail_mobile` | R-5.3.4 | Verify convolution reverb unavailable on mobile tier |
-| `test_compressor_curve` | R-5.3.5 | Feed signal 12 dB above threshold at 4:1; verify output within 0.5 dB of curve |
-| `test_limiter_clipping` | R-5.3.5 | Feed signal 6 dB above 0 dBFS; verify output peak <= 0 dBFS |
-| `test_delay_echo_timing` | R-5.3.6 | 500 ms delay, 50% feedback; verify echoes at 500 ms intervals, 6 dB decay within 0.5 dB |
-| `test_chorus_modulation` | R-5.3.6 | Verify chorus produces measurable pitch modulation in spectrum |
-| `test_pitch_shift_accuracy` | R-5.3.7 | Shift 440 Hz up 12 semitones; verify 880 Hz +/- 1%, artifacts < -40 dB |
-| `test_pitch_duration_preserved` | R-5.3.7 | Verify shifted output duration = input duration within 1 ms |
-| `test_custom_node_gain` | R-5.3.8 | Register 6 dB gain node; verify output +6 dB within 0.1 dB |
-| `test_custom_node_removal` | R-5.3.8 | Remove node at runtime; verify bus output reverts |
-| `test_beat_clock_accuracy` | R-5.4.4 | 120 BPM 4/4 for 10 s; verify exactly 20 beats and 5 bars |
-| `test_beat_clock_tempo_change` | R-5.4.4 | Change to 140 BPM mid-playback; verify beat intervals within 1 ms |
-| `test_stem_sync` | R-5.4.1 | Play 4-stem cue 60 s; cross-correlate, verify peak offset = 0 |
-| `test_stem_fade_smooth` | R-5.4.1 | Fade stem 1.0 to 0.0 over 500 ms; verify no clicks |
-| `test_bar_quantized_transition` | R-5.4.2 | Trigger transition mid-bar; verify switch at next bar within +/- 1 sample |
-| `test_stinger_cooldown` | R-5.4.5 | Trigger 2 stingers within cooldown; verify second suppressed |
-| `test_stinger_priority` | R-5.4.5 | High-priority stinger ducks low-priority |
-| `test_playlist_non_repeat` | R-5.4.6 | 20 shuffle selections; verify no consecutive repeat |
-| `test_playlist_weighted` | R-5.4.6 | Weight one track 10x; 1000 selections; verify proportional within 10% |
-| `test_intensity_clamping` | R-5.4.7 | Set intensity to -0.5 and 1.5; verify clamped to [0.0, 1.0] |
-| `test_opus_encode_decode` | R-5.5.1 | Round-trip 10 s at 24 kbps; verify PESQ > 3.0 |
-| `test_jitter_buffer_adaptive` | R-5.5.2 | Simulate 50 ms jitter, 5% loss; verify depth < 80 ms |
-| `test_plc_no_silence_gap` | R-5.5.2 | Drop packet; verify PLC fills gap (no silence > 1 Opus frame) |
-| `test_vad_gates_silence` | R-5.5.3 | Feed 10 s silence then 5 s speech; verify 0 packets during silence, onset < 20 ms |
-| `test_noise_suppression_snr` | R-5.5.3 | Speech + keyboard noise at 0 dB SNR; verify output SNR improves >= 20 dB |
-| `test_aec_erle` | R-5.5.9 | Play reference through speakers, capture mic; verify ERLE > 30 dB |
-| `test_aec_reconvergence` | R-5.5.9 | Change room acoustics; verify re-convergence < 2 s |
-| `test_viseme_timing` | R-5.5.5 | Process known phoneme content; verify viseme timestamps within 30 ms |
-| `test_dialogue_priority` | R-5.5.6 | Queue bark, trigger critical line; verify bark interrupted |
-| `test_dialogue_no_overlap` | R-5.5.6 | Queue 5 barks; verify sequential, no overlap |
+| Test                              | Req     |
+|-----------------------------------|---------|
+| `test_biquad_lp_response`         | R-5.3.1 |
+| `test_biquad_hp_response`         | R-5.3.1 |
+| `test_biquad_bp_response`         | R-5.3.1 |
+| `test_biquad_notch_response`      | R-5.3.1 |
+| `test_biquad_no_zipper`           | R-5.3.1 |
+| `test_biquad_stability`           | R-5.3.1 |
+| `test_eq_8_band_accuracy`         | R-5.3.2 |
+| `test_eq_band_count_per_tier`     | R-5.3.2 |
+| `test_fdn_decay_time`             | R-5.3.3 |
+| `test_fdn_delay_count_per_tier`   | R-5.3.3 |
+| `test_convolution_accuracy`       | R-5.3.4 |
+| `test_convolution_latency`        | R-5.3.4 |
+| `test_convolution_unavail_mobile` | R-5.3.4 |
+| `test_compressor_curve`           | R-5.3.5 |
+| `test_limiter_clipping`           | R-5.3.5 |
+| `test_delay_echo_timing`          | R-5.3.6 |
+| `test_chorus_modulation`          | R-5.3.6 |
+| `test_pitch_shift_accuracy`       | R-5.3.7 |
+| `test_pitch_duration_preserved`   | R-5.3.7 |
+| `test_custom_node_gain`           | R-5.3.8 |
+| `test_custom_node_removal`        | R-5.3.8 |
+| `test_beat_clock_accuracy`        | R-5.4.4 |
+| `test_beat_clock_tempo_change`    | R-5.4.4 |
+| `test_stem_sync`                  | R-5.4.1 |
+| `test_stem_fade_smooth`           | R-5.4.1 |
+| `test_bar_quantized_transition`   | R-5.4.2 |
+| `test_stinger_cooldown`           | R-5.4.5 |
+| `test_stinger_priority`           | R-5.4.5 |
+| `test_playlist_non_repeat`        | R-5.4.6 |
+| `test_playlist_weighted`          | R-5.4.6 |
+| `test_intensity_clamping`         | R-5.4.7 |
+| `test_opus_encode_decode`         | R-5.5.1 |
+| `test_jitter_buffer_adaptive`     | R-5.5.2 |
+| `test_plc_no_silence_gap`         | R-5.5.2 |
+| `test_vad_gates_silence`          | R-5.5.3 |
+| `test_noise_suppression_snr`      | R-5.5.3 |
+| `test_aec_erle`                   | R-5.5.9 |
+| `test_aec_reconvergence`          | R-5.5.9 |
+| `test_viseme_timing`              | R-5.5.5 |
+| `test_dialogue_priority`          | R-5.5.6 |
+| `test_dialogue_no_overlap`        | R-5.5.6 |
+
+1. **`test_biquad_lp_response`** — Process white noise through LP at 1 kHz; verify -3 dB at cutoff,
+   -12 dB/oct rolloff within 0.5 dB
+2. **`test_biquad_hp_response`** — Process white noise through HP at 1 kHz; verify response within
+   0.5 dB
+3. **`test_biquad_bp_response`** — Process white noise through BP at 1 kHz, Q=2; verify passband and
+   rolloff
+4. **`test_biquad_notch_response`** — Verify notch attenuates center frequency by >= 30 dB
+5. **`test_biquad_no_zipper`** — Sweep cutoff 200 Hz to 8 kHz over 100 ms; verify no clicks via
+   zero-crossing analysis
+6. **`test_biquad_stability`** — Test at extreme cutoff (20 Hz, Nyquist) and Q (0.1, 100); verify no
+   NaN/Inf
+7. **`test_eq_8_band_accuracy`** — Configure 8-band EQ, process flat spectrum; verify each band gain
+   within 0.5 dB
+8. **`test_eq_band_count_per_tier`** — Verify mobile=4, Switch=6, desktop=8 band limits
+9. **`test_fdn_decay_time`** — Process impulse with 2.0s decay; verify RT60 within 10%
+10. **`test_fdn_delay_count_per_tier`** — Verify mobile=4, Switch=8, desktop=16 delay lines
+11. **`test_convolution_accuracy`** — Convolve known IR with impulse; verify output within -60 dB of
+    reference
+12. **`test_convolution_latency`** — Verify output latency <= one buffer period
+13. **`test_convolution_unavail_mobile`** — Verify convolution reverb unavailable on mobile tier
+14. **`test_compressor_curve`** — Feed signal 12 dB above threshold at 4:1; verify output within 0.5
+    dB of curve
+15. **`test_limiter_clipping`** — Feed signal 6 dB above 0 dBFS; verify output peak <= 0 dBFS
+16. **`test_delay_echo_timing`** — 500 ms delay, 50% feedback; verify echoes at 500 ms intervals, 6
+    dB decay within 0.5 dB
+17. **`test_chorus_modulation`** — Verify chorus produces measurable pitch modulation in spectrum
+18. **`test_pitch_shift_accuracy`** — Shift 440 Hz up 12 semitones; verify 880 Hz +/- 1%, artifacts
+    < -40 dB
+19. **`test_pitch_duration_preserved`** — Verify shifted output duration = input duration within 1
+    ms
+20. **`test_custom_node_gain`** — Register 6 dB gain node; verify output +6 dB within 0.1 dB
+21. **`test_custom_node_removal`** — Remove node at runtime; verify bus output reverts
+22. **`test_beat_clock_accuracy`** — 120 BPM 4/4 for 10 s; verify exactly 20 beats and 5 bars
+23. **`test_beat_clock_tempo_change`** — Change to 140 BPM mid-playback; verify beat intervals
+    within 1 ms
+24. **`test_stem_sync`** — Play 4-stem cue 60 s; cross-correlate, verify peak offset = 0
+25. **`test_stem_fade_smooth`** — Fade stem 1.0 to 0.0 over 500 ms; verify no clicks
+26. **`test_bar_quantized_transition`** — Trigger transition mid-bar; verify switch at next bar
+    within +/- 1 sample
+27. **`test_stinger_cooldown`** — Trigger 2 stingers within cooldown; verify second suppressed
+28. **`test_stinger_priority`** — High-priority stinger ducks low-priority
+29. **`test_playlist_non_repeat`** — 20 shuffle selections; verify no consecutive repeat
+30. **`test_playlist_weighted`** — Weight one track 10x; 1000 selections; verify proportional within
+    10%
+31. **`test_intensity_clamping`** — Set intensity to -0.5 and 1.5; verify clamped to [0.0, 1.0]
+32. **`test_opus_encode_decode`** — Round-trip 10 s at 24 kbps; verify PESQ > 3.0
+33. **`test_jitter_buffer_adaptive`** — Simulate 50 ms jitter, 5% loss; verify depth < 80 ms
+34. **`test_plc_no_silence_gap`** — Drop packet; verify PLC fills gap (no silence > 1 Opus frame)
+35. **`test_vad_gates_silence`** — Feed 10 s silence then 5 s speech; verify 0 packets during
+    silence, onset < 20 ms
+36. **`test_noise_suppression_snr`** — Speech + keyboard noise at 0 dB SNR; verify output SNR
+    improves >= 20 dB
+37. **`test_aec_erle`** — Play reference through speakers, capture mic; verify ERLE > 30 dB
+38. **`test_aec_reconvergence`** — Change room acoustics; verify re-convergence < 2 s
+39. **`test_viseme_timing`** — Process known phoneme content; verify viseme timestamps within 30 ms
+40. **`test_dialogue_priority`** — Queue bark, trigger critical line; verify bark interrupted
+41. **`test_dialogue_no_overlap`** — Queue 5 barks; verify sequential, no overlap
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_dsp_chain_64_voices` | R-5.3.NF1 | 4-insert chain on 64 voices, 10k callbacks; verify p99 < 1 us/sample |
-| `test_music_zone_transition` | R-5.4.NF1 | Trigger bar-quantized transition at random point; verify next-bar +/- 1 sample, no clicks |
-| `test_voice_32_streams` | R-5.5.NF2 | Decode and mix 32 Opus streams at 24 kbps for 60 s; verify no underruns |
-| `test_voice_e2e_latency` | R-5.5.NF1 | Loopback capture-to-output with 50 ms RTT; verify < 150 ms total |
-| `test_intensity_drives_all` | R-5.4.7 | Ramp intensity 0.0 to 1.0; verify stems, segment selection, stinger probability all respond |
-| `test_platform_mic_capture` | R-5.5.1 | Verify WASAPI (Windows), CoreAudio (macOS), PipeWire/ALSA (Linux) capture works |
-| `test_channel_isolation` | R-5.5.8 | Create proximity, party, raid channels; verify independent volume and routing |
-| `test_subtitle_sync` | R-5.5.6 | Verify subtitle events within 16 ms of VO playback |
-| `test_proximity_attenuation` | R-5.5.8 | Verify proximity channel uses distance attenuation via shared spatial index |
-| `test_tts_platform_apis` | R-5.5.4 | Verify TTS uses SAPI (Windows), AVSpeechSynthesizer (macOS), Speech Dispatcher (Linux) |
+| Test                            | Req       |
+|---------------------------------|-----------|
+| `test_full_dsp_chain_64_voices` | R-5.3.NF1 |
+| `test_music_zone_transition`    | R-5.4.NF1 |
+| `test_voice_32_streams`         | R-5.5.NF2 |
+| `test_voice_e2e_latency`        | R-5.5.NF1 |
+| `test_intensity_drives_all`     | R-5.4.7   |
+| `test_platform_mic_capture`     | R-5.5.1   |
+| `test_channel_isolation`        | R-5.5.8   |
+| `test_subtitle_sync`            | R-5.5.6   |
+| `test_proximity_attenuation`    | R-5.5.8   |
+| `test_tts_platform_apis`        | R-5.5.4   |
+
+1. **`test_full_dsp_chain_64_voices`** — 4-insert chain on 64 voices, 10k callbacks; verify p99 < 1
+   us/sample
+2. **`test_music_zone_transition`** — Trigger bar-quantized transition at random point; verify
+   next-bar +/- 1 sample, no clicks
+3. **`test_voice_32_streams`** — Decode and mix 32 Opus streams at 24 kbps for 60 s; verify no
+   underruns
+4. **`test_voice_e2e_latency`** — Loopback capture-to-output with 50 ms RTT; verify < 150 ms total
+5. **`test_intensity_drives_all`** — Ramp intensity 0.0 to 1.0; verify stems, segment selection,
+   stinger probability all respond
+6. **`test_platform_mic_capture`** — Verify WASAPI (Windows), CoreAudio (macOS), PipeWire/ALSA
+   (Linux) capture works
+7. **`test_channel_isolation`** — Create proximity, party, raid channels; verify independent volume
+   and routing
+8. **`test_subtitle_sync`** — Verify subtitle events within 16 ms of VO playback
+9. **`test_proximity_attenuation`** — Verify proximity channel uses distance attenuation via shared
+   spatial index
+10. **`test_tts_platform_apis`** — Verify TTS uses SAPI (Windows), AVSpeechSynthesizer (macOS),
+    Speech Dispatcher (Linux)
 
 ### Benchmarks
 

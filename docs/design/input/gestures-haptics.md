@@ -9,37 +9,59 @@
 
 ### Gestures (6.3)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-6.3.1 | R-6.3.1 | Tap, multi-tap, and long press recognition |
-| F-6.3.2 | R-6.3.2 | Swipe direction recognition (cardinal + diagonal) |
-| F-6.3.3 | R-6.3.3 | Pinch, rotate, and pan gestures |
-| F-6.3.4 | R-6.3.4 | Gesture state machines with conflict resolution |
-| F-6.3.5 | R-6.3.5 | Custom gesture definition via visual editor |
-| R-6.3.NF1 | - | Discrete gesture latency within 1 frame; continuous within 2 frames |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-6.3.1   | R-6.3.1     |
+| F-6.3.2   | R-6.3.2     |
+| F-6.3.3   | R-6.3.3     |
+| F-6.3.4   | R-6.3.4     |
+| F-6.3.5   | R-6.3.5     |
+| R-6.3.NF1 | -           |
+
+1. **F-6.3.1** — Tap, multi-tap, and long press recognition
+2. **F-6.3.2** — Swipe direction recognition (cardinal + diagonal)
+3. **F-6.3.3** — Pinch, rotate, and pan gestures
+4. **F-6.3.4** — Gesture state machines with conflict resolution
+5. **F-6.3.5** — Custom gesture definition via visual editor
+6. **R-6.3.NF1** — Discrete gesture latency within 1 frame; continuous within 2 frames
 
 ### Haptics (6.4)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-6.4.1 | R-6.4.1 | Dual-motor rumble with pattern sequencing |
-| F-6.4.2 | R-6.4.2 | DualSense adaptive trigger effects |
-| F-6.4.3 | R-6.4.3 | High-definition haptic playback |
-| F-6.4.4 | R-6.4.4 | Audio-driven haptic generation |
-| F-6.4.5 | R-6.4.5 | Custom force feedback profiles with fallback |
-| R-6.4.NF1 | - | Haptic output latency within 5 ms of event |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-6.4.1   | R-6.4.1     |
+| F-6.4.2   | R-6.4.2     |
+| F-6.4.3   | R-6.4.3     |
+| F-6.4.4   | R-6.4.4     |
+| F-6.4.5   | R-6.4.5     |
+| R-6.4.NF1 | -           |
+
+1. **F-6.4.1** — Dual-motor rumble with pattern sequencing
+2. **F-6.4.2** — DualSense adaptive trigger effects
+3. **F-6.4.3** — High-definition haptic playback
+4. **F-6.4.4** — Audio-driven haptic generation
+5. **F-6.4.5** — Custom force feedback profiles with fallback
+6. **R-6.4.NF1** — Haptic output latency within 5 ms of event
 
 ### VR Input (6.5)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-6.5.1 | R-6.5.1 | 6DOF head-mounted display tracking |
-| F-6.5.2 | R-6.5.2 | Motion controller input (6DOF + buttons) |
-| F-6.5.3 | R-6.5.3 | Hand tracking and skeletal input (26 joints) |
-| F-6.5.4 | R-6.5.4 | Eye tracking and gaze input |
-| F-6.5.5 | R-6.5.5 | VR controller haptics |
-| R-6.5.NF1 | - | Motion-to-photon latency not exceeding 20 ms |
-| R-6.5.NF2 | - | Hand tracking joint updates at 30+ Hz, 5 mm accuracy |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-6.5.1   | R-6.5.1     |
+| F-6.5.2   | R-6.5.2     |
+| F-6.5.3   | R-6.5.3     |
+| F-6.5.4   | R-6.5.4     |
+| F-6.5.5   | R-6.5.5     |
+| R-6.5.NF1 | -           |
+| R-6.5.NF2 | -           |
+
+1. **F-6.5.1** — 6DOF head-mounted display tracking
+2. **F-6.5.2** — Motion controller input (6DOF + buttons)
+3. **F-6.5.3** — Hand tracking and skeletal input (26 joints)
+4. **F-6.5.4** — Eye tracking and gaze input
+5. **F-6.5.5** — VR controller haptics
+6. **R-6.5.NF1** — Motion-to-photon latency not exceeding 20 ms
+7. **R-6.5.NF2** — Hand tracking joint updates at 30+ Hz, 5 mm accuracy
 
 ## Overview
 
@@ -1692,24 +1714,51 @@ pub fn vr_tracking_system(
 
 ### Gesture Platform APIs
 
-| Platform | Touch API | Trackpad Gestures | Notes |
-|----------|-----------|-------------------|-------|
-| Windows | `WM_POINTER` | N/A | Touch and pen via pointer messages |
-| macOS | `NSTouch` / `NSEvent` | `NSEvent` magnification, rotation | Trackpad gestures use native NSEvent types |
-| Linux | `libinput` multitouch | N/A | Touch slots via `libinput_event_touch` |
-| iOS | `UITouch` | N/A | Primary mobile touch target |
-| Android | `MotionEvent` | N/A | Primary mobile touch target |
+| Platform | Touch API             | Trackpad Gestures                 |
+|----------|-----------------------|-----------------------------------|
+| Windows  | `WM_POINTER`          | N/A                               |
+| macOS    | `NSTouch` / `NSEvent` | `NSEvent` magnification, rotation |
+| Linux    | `libinput` multitouch | N/A                               |
+| iOS      | `UITouch`             | N/A                               |
+| Android  | `MotionEvent`         | N/A                               |
+
+1. **Windows** — Touch and pen via pointer messages
+2. **macOS** — Trackpad gestures use native NSEvent types
+3. **Linux** — Touch slots via `libinput_event_touch`
+4. **iOS** — Primary mobile touch target
+5. **Android** — Primary mobile touch target
 
 ### Haptic Platform APIs
 
-| Platform | Rumble API | HD Haptics | Adaptive Triggers | Notes |
-|----------|-----------|-----------|-------------------|-------|
-| Windows | XInput `XInputSetState` | N/A | DualSense HID (USB) | GameInput for newer controllers |
-| Windows | GameInput | N/A | DualSense HID (USB) | Windows.Gaming.Input alternative |
-| macOS | `GCController` haptics | CoreHaptics `CHHapticEngine` | DualSense HID (Bluetooth) | CoreHaptics for custom waveforms |
-| Linux | `evdev` `FF_RUMBLE` | N/A | DualSense HID (`hidraw`) | Force feedback via `ioctl` |
-| Switch | HD Rumble API | Freq/amp pairs at 5 ms | N/A | LRA actuators in Joy-Cons |
-| PS5 | DualSense SDK | Voice-coil waveform | Native SDK | Full haptic suite |
+| Platform |
+|----------|
+| Windows  |
+| Windows  |
+| macOS    |
+| Linux    |
+| Switch   |
+| PS5      |
+
+1. **Windows** — XInput `XInputSetState`
+   - **Adaptive Triggers:** DualSense HID (USB)
+   - **Notes:** GameInput for newer controllers
+2. **Windows** — GameInput
+   - **Adaptive Triggers:** DualSense HID (USB)
+   - **Notes:** Windows.Gaming.Input alternative
+3. **macOS** — `GCController` haptics
+   - **HD Haptics:** CoreHaptics `CHHapticEngine`
+   - **Adaptive Triggers:** DualSense HID (Bluetooth)
+   - **Notes:** CoreHaptics for custom waveforms
+4. **Linux** — `evdev` `FF_RUMBLE`
+   - **Adaptive Triggers:** DualSense HID (`hidraw`)
+   - **Notes:** Force feedback via `ioctl`
+5. **Switch** — HD Rumble API
+   - **HD Haptics:** Freq/amp pairs at 5 ms
+   - **Notes:** LRA actuators in Joy-Cons
+6. **PS5** — DualSense SDK
+   - **HD Haptics:** Voice-coil waveform
+   - **Adaptive Triggers:** Native SDK
+   - **Notes:** Full haptic suite
 
 ### VR Platform APIs
 
@@ -1746,79 +1795,163 @@ pub fn vr_tracking_system(
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_single_tap_recognition` | R-6.3.1 | Inject touch-down + touch-up within thresholds. Assert single-tap fires. |
-| `test_double_tap_recognition` | R-6.3.1 | Inject two taps within interval. Assert double-tap fires, single-tap does not. |
-| `test_long_press_recognition` | R-6.3.1 | Hold touch past duration. Assert long-press fires. |
-| `test_dpi_scaling` | R-6.3.1 | Set DPI to 2x reference. Assert distance threshold doubles. |
-| `test_swipe_cardinal` | R-6.3.2 | Inject rightward drag above thresholds. Assert swipe-right fires with velocity. |
-| `test_swipe_diagonal` | R-6.3.2 | Inject diagonal drag. Assert correct diagonal direction. |
-| `test_tap_swipe_filter` | R-6.3.2 | Inject short drag below threshold. Assert no swipe fires. |
-| `test_pinch_scale` | R-6.3.3 | Inject two fingers spreading. Assert scale factor > 1.0. |
-| `test_rotation_angle` | R-6.3.3 | Inject two rotating fingers. Assert correct angle delta. |
-| `test_simultaneous_pinch_pan` | R-6.3.3 | Inject spread + translate. Assert both pinch and pan fire. |
-| `test_require_failure` | R-6.3.4 | Configure tap require-failure of double-tap. Assert tap fires only after timeout. |
-| `test_simultaneous_strategy` | R-6.3.4 | Configure pan + pinch simultaneous. Assert both fire. |
-| `test_priority_strategy` | R-6.3.4 | Configure tap priority over long-press. Assert tap wins on conflict. |
-| `test_lifecycle_states` | R-6.3.4 | Verify Possible -> Began -> Changed -> Ended transitions. |
-| `test_cancelled_state` | R-6.3.4 | Interrupt gesture mid-flight. Assert Cancelled state. |
-| `test_custom_circle_gesture` | R-6.3.5 | Author circle swipe. Inject circular motion. Assert fires. Inject linear swipe. Assert does not. |
-| `test_custom_asset_loading` | R-6.3.5 | Load custom gesture as data asset. Assert hot-reload works. |
-| `test_dual_motor_independent` | R-6.4.1 | Set low=0.8, high=0.2. Verify output has correct per-motor values. |
-| `test_envelope_timing` | R-6.4.1 | Define 100ms attack / 200ms sustain / 100ms decay. Verify shape within 5ms. |
-| `test_priority_interruption` | R-6.4.1 | Trigger priority-3 during priority-5. Assert no interrupt. Trigger priority-7. Assert interrupt. |
-| `test_rumble_pattern_loop` | R-6.4.1 | Play a looping pattern for 3 loops. Verify continuous output. |
-| `test_adaptive_resistance` | R-6.4.2 | Apply resistance at 0.5 on DualSense. Verify HID output bytes. |
-| `test_adaptive_degradation` | R-6.4.2 | Apply adaptive effect on Xbox. Assert no error and no output. |
-| `test_waveform_conversion` | R-6.4.3 | Load 100Hz sine waveform. Verify Switch freq/amp pairs and DualSense raw output. |
-| `test_audio_band_extraction` | R-6.4.4 | Feed 100Hz sine at 0.8 amp. Assert output in 80-120Hz range. |
-| `test_audio_high_freq_reject` | R-6.4.4 | Feed 5kHz signal. Assert haptic amplitude near zero. |
-| `test_profile_full_dualsense` | R-6.4.5 | Play all-layer profile on DualSense. Assert all 3 layers activate. |
-| `test_profile_fallback_xbox` | R-6.4.5 | Play same profile on Xbox. Assert only rumble layer. |
-| `test_parameter_binding` | R-6.4.5 | Bind impact force = 0.5. Assert rumble intensity = 50% of base. |
-| `test_fallback_validation` | R-6.4.5 | Validate profiles at build time. Assert error for profile missing rumble fallback. |
+| Test                          | Req     |
+|-------------------------------|---------|
+| `test_single_tap_recognition` | R-6.3.1 |
+| `test_double_tap_recognition` | R-6.3.1 |
+| `test_long_press_recognition` | R-6.3.1 |
+| `test_dpi_scaling`            | R-6.3.1 |
+| `test_swipe_cardinal`         | R-6.3.2 |
+| `test_swipe_diagonal`         | R-6.3.2 |
+| `test_tap_swipe_filter`       | R-6.3.2 |
+| `test_pinch_scale`            | R-6.3.3 |
+| `test_rotation_angle`         | R-6.3.3 |
+| `test_simultaneous_pinch_pan` | R-6.3.3 |
+| `test_require_failure`        | R-6.3.4 |
+| `test_simultaneous_strategy`  | R-6.3.4 |
+| `test_priority_strategy`      | R-6.3.4 |
+| `test_lifecycle_states`       | R-6.3.4 |
+| `test_cancelled_state`        | R-6.3.4 |
+| `test_custom_circle_gesture`  | R-6.3.5 |
+| `test_custom_asset_loading`   | R-6.3.5 |
+| `test_dual_motor_independent` | R-6.4.1 |
+| `test_envelope_timing`        | R-6.4.1 |
+| `test_priority_interruption`  | R-6.4.1 |
+| `test_rumble_pattern_loop`    | R-6.4.1 |
+| `test_adaptive_resistance`    | R-6.4.2 |
+| `test_adaptive_degradation`   | R-6.4.2 |
+| `test_waveform_conversion`    | R-6.4.3 |
+| `test_audio_band_extraction`  | R-6.4.4 |
+| `test_audio_high_freq_reject` | R-6.4.4 |
+| `test_profile_full_dualsense` | R-6.4.5 |
+| `test_profile_fallback_xbox`  | R-6.4.5 |
+| `test_parameter_binding`      | R-6.4.5 |
+| `test_fallback_validation`    | R-6.4.5 |
+
+1. **`test_single_tap_recognition`** — Inject touch-down + touch-up within thresholds. Assert
+   single-tap fires.
+2. **`test_double_tap_recognition`** — Inject two taps within interval. Assert double-tap fires,
+   single-tap does not.
+3. **`test_long_press_recognition`** — Hold touch past duration. Assert long-press fires.
+4. **`test_dpi_scaling`** — Set DPI to 2x reference. Assert distance threshold doubles.
+5. **`test_swipe_cardinal`** — Inject rightward drag above thresholds. Assert swipe-right fires with
+   velocity.
+6. **`test_swipe_diagonal`** — Inject diagonal drag. Assert correct diagonal direction.
+7. **`test_tap_swipe_filter`** — Inject short drag below threshold. Assert no swipe fires.
+8. **`test_pinch_scale`** — Inject two fingers spreading. Assert scale factor > 1.0.
+9. **`test_rotation_angle`** — Inject two rotating fingers. Assert correct angle delta.
+10. **`test_simultaneous_pinch_pan`** — Inject spread + translate. Assert both pinch and pan fire.
+11. **`test_require_failure`** — Configure tap require-failure of double-tap. Assert tap fires only
+    after timeout.
+12. **`test_simultaneous_strategy`** — Configure pan + pinch simultaneous. Assert both fire.
+13. **`test_priority_strategy`** — Configure tap priority over long-press. Assert tap wins on
+    conflict.
+14. **`test_lifecycle_states`** — Verify Possible -> Began -> Changed -> Ended transitions.
+15. **`test_cancelled_state`** — Interrupt gesture mid-flight. Assert Cancelled state.
+16. **`test_custom_circle_gesture`** — Author circle swipe. Inject circular motion. Assert fires.
+    Inject linear swipe. Assert does not.
+17. **`test_custom_asset_loading`** — Load custom gesture as data asset. Assert hot-reload works.
+18. **`test_dual_motor_independent`** — Set low=0.8, high=0.2. Verify output has correct per-motor
+    values.
+19. **`test_envelope_timing`** — Define 100ms attack / 200ms sustain / 100ms decay. Verify shape
+    within 5ms.
+20. **`test_priority_interruption`** — Trigger priority-3 during priority-5. Assert no interrupt.
+    Trigger priority-7. Assert interrupt.
+21. **`test_rumble_pattern_loop`** — Play a looping pattern for 3 loops. Verify continuous output.
+22. **`test_adaptive_resistance`** — Apply resistance at 0.5 on DualSense. Verify HID output bytes.
+23. **`test_adaptive_degradation`** — Apply adaptive effect on Xbox. Assert no error and no output.
+24. **`test_waveform_conversion`** — Load 100Hz sine waveform. Verify Switch freq/amp pairs and
+    DualSense raw output.
+25. **`test_audio_band_extraction`** — Feed 100Hz sine at 0.8 amp. Assert output in 80-120Hz range.
+26. **`test_audio_high_freq_reject`** — Feed 5kHz signal. Assert haptic amplitude near zero.
+27. **`test_profile_full_dualsense`** — Play all-layer profile on DualSense. Assert all 3 layers
+    activate.
+28. **`test_profile_fallback_xbox`** — Play same profile on Xbox. Assert only rumble layer.
+29. **`test_parameter_binding`** — Bind impact force = 0.5. Assert rumble intensity = 50% of base.
+30. **`test_fallback_validation`** — Validate profiles at build time. Assert error for profile
+    missing rumble fallback.
 
 ### VR Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_hmd_6dof_update` | R-6.5.1 | Read HmdPose each frame. Assert position and orientation update. |
-| `test_tracking_loss_event` | R-6.5.1 | Simulate tracking loss. Assert status changes to Lost within 1 frame. |
-| `test_guardian_boundary` | R-6.5.1 | Move past boundary. Assert guardian event fires. |
-| `test_controller_6dof` | R-6.5.2 | Verify ControllerPose, buttons, triggers update each frame. |
-| `test_shared_action_mapping` | R-6.5.2 | Bind Fire to gamepad and VR trigger. Assert same action fires from either. |
-| `test_capacitive_touch` | R-6.5.2 | Verify capacitive touch present on supporting controllers, absent on others. |
-| `test_hand_26_joints` | R-6.5.3 | Display hand. Assert all 26 joints have valid positions. |
-| `test_pinch_gesture` | R-6.5.3 | Perform pinch. Assert pinch action fires. |
-| `test_custom_hand_gesture` | R-6.5.3 | Author thumbs-up in logic graph. Perform gesture. Assert action fires. |
-| `test_auto_switch` | R-6.5.3 | Hold controllers -> verify controller mode. Release -> verify hand mode. |
-| `test_gaze_ray_update` | R-6.5.4 | Read GazeRay each frame. Assert valid direction vector. |
-| `test_fixation_detection` | R-6.5.4 | Fixate on point for 500ms. Assert fixation event. |
-| `test_saccade_detection` | R-6.5.4 | Rapid eye movement. Assert saccade event. |
-| `test_vr_haptic_impulse` | R-6.5.5 | Trigger impulse at 0.8 amp / 150Hz on right hand. Verify output. |
-| `test_vr_haptic_continuous` | R-6.5.5 | Play continuous pattern. Verify sustained for configured duration. |
-| `test_vr_spatial_haptic` | R-6.5.5 | Move controller toward object. Assert intensity increases with proximity. |
-| `test_vr_asymmetric_haptic` | R-6.5.5 | Trigger different haptics per hand. Verify independence. |
+| Test                         | Req     |
+|------------------------------|---------|
+| `test_hmd_6dof_update`       | R-6.5.1 |
+| `test_tracking_loss_event`   | R-6.5.1 |
+| `test_guardian_boundary`     | R-6.5.1 |
+| `test_controller_6dof`       | R-6.5.2 |
+| `test_shared_action_mapping` | R-6.5.2 |
+| `test_capacitive_touch`      | R-6.5.2 |
+| `test_hand_26_joints`        | R-6.5.3 |
+| `test_pinch_gesture`         | R-6.5.3 |
+| `test_custom_hand_gesture`   | R-6.5.3 |
+| `test_auto_switch`           | R-6.5.3 |
+| `test_gaze_ray_update`       | R-6.5.4 |
+| `test_fixation_detection`    | R-6.5.4 |
+| `test_saccade_detection`     | R-6.5.4 |
+| `test_vr_haptic_impulse`     | R-6.5.5 |
+| `test_vr_haptic_continuous`  | R-6.5.5 |
+| `test_vr_spatial_haptic`     | R-6.5.5 |
+| `test_vr_asymmetric_haptic`  | R-6.5.5 |
+
+1. **`test_hmd_6dof_update`** — Read HmdPose each frame. Assert position and orientation update.
+2. **`test_tracking_loss_event`** — Simulate tracking loss. Assert status changes to Lost within 1
+   frame.
+3. **`test_guardian_boundary`** — Move past boundary. Assert guardian event fires.
+4. **`test_controller_6dof`** — Verify ControllerPose, buttons, triggers update each frame.
+5. **`test_shared_action_mapping`** — Bind Fire to gamepad and VR trigger. Assert same action fires
+   from either.
+6. **`test_capacitive_touch`** — Verify capacitive touch present on supporting controllers, absent
+   on others.
+7. **`test_hand_26_joints`** — Display hand. Assert all 26 joints have valid positions.
+8. **`test_pinch_gesture`** — Perform pinch. Assert pinch action fires.
+9. **`test_custom_hand_gesture`** — Author thumbs-up in logic graph. Perform gesture. Assert action
+   fires.
+10. **`test_auto_switch`** — Hold controllers -> verify controller mode. Release -> verify hand
+    mode.
+11. **`test_gaze_ray_update`** — Read GazeRay each frame. Assert valid direction vector.
+12. **`test_fixation_detection`** — Fixate on point for 500ms. Assert fixation event.
+13. **`test_saccade_detection`** — Rapid eye movement. Assert saccade event.
+14. **`test_vr_haptic_impulse`** — Trigger impulse at 0.8 amp / 150Hz on right hand. Verify output.
+15. **`test_vr_haptic_continuous`** — Play continuous pattern. Verify sustained for configured
+    duration.
+16. **`test_vr_spatial_haptic`** — Move controller toward object. Assert intensity increases with
+    proximity.
+17. **`test_vr_asymmetric_haptic`** — Trigger different haptics per hand. Verify independence.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_gesture_latency_discrete` | R-6.3.NF1 | Inject tap. Measure frames to event. Assert within 1 frame. |
-| `test_gesture_latency_continuous` | R-6.3.NF1 | Inject swipe. Measure frames from threshold crossing. Assert within 2 frames. |
-| `test_haptic_output_latency` | R-6.4.NF1 | Trigger rumble. Measure time to HID report. Assert p99 < 5 ms. |
-| `test_audio_haptic_sync` | R-6.4.4 | Measure audio-to-haptic timestamp delta. Assert < 10 ms. |
-| `test_motion_to_photon` | R-6.5.NF1 | Measure pose-to-scanout delta. Assert < 20 ms at 90 Hz. |
-| `test_hand_tracking_rate` | R-6.5.NF2 | Track hand for 10s. Assert updates at >= 30 Hz. |
-| `test_hand_tracking_accuracy` | R-6.5.NF2 | Compare engine positions vs SDK. Assert < 5 mm RMS. |
-| `test_rumble_all_controllers` | R-6.4.1 | Test rumble on Xbox, DualSense, Switch Pro. |
-| `test_adaptive_all_modes` | R-6.4.2 | Test resistance, vibration, sectioned on DualSense. |
-| `test_hmd_all_headsets` | R-6.5.1 | Test head tracking on PCVR, Quest, PSVR2. |
-| `test_controllers_all_platforms` | R-6.5.2 | Test Oculus Touch, Index, PSVR2 Sense, Quest Touch. |
-| `test_hand_tracking_all` | R-6.5.3 | Test hand tracking on Quest and PC OpenXR. |
-| `test_eye_tracking_all` | R-6.5.4 | Test on PSVR2, Quest Pro, PC Tobii. |
-| `test_profiles_all_controllers` | R-6.4.5 | Test each profile on each controller class. |
+| Test                              | Req       |
+|-----------------------------------|-----------|
+| `test_gesture_latency_discrete`   | R-6.3.NF1 |
+| `test_gesture_latency_continuous` | R-6.3.NF1 |
+| `test_haptic_output_latency`      | R-6.4.NF1 |
+| `test_audio_haptic_sync`          | R-6.4.4   |
+| `test_motion_to_photon`           | R-6.5.NF1 |
+| `test_hand_tracking_rate`         | R-6.5.NF2 |
+| `test_hand_tracking_accuracy`     | R-6.5.NF2 |
+| `test_rumble_all_controllers`     | R-6.4.1   |
+| `test_adaptive_all_modes`         | R-6.4.2   |
+| `test_hmd_all_headsets`           | R-6.5.1   |
+| `test_controllers_all_platforms`  | R-6.5.2   |
+| `test_hand_tracking_all`          | R-6.5.3   |
+| `test_eye_tracking_all`           | R-6.5.4   |
+| `test_profiles_all_controllers`   | R-6.4.5   |
+
+1. **`test_gesture_latency_discrete`** — Inject tap. Measure frames to event. Assert within 1 frame.
+2. **`test_gesture_latency_continuous`** — Inject swipe. Measure frames from threshold crossing.
+   Assert within 2 frames.
+3. **`test_haptic_output_latency`** — Trigger rumble. Measure time to HID report. Assert p99 < 5 ms.
+4. **`test_audio_haptic_sync`** — Measure audio-to-haptic timestamp delta. Assert < 10 ms.
+5. **`test_motion_to_photon`** — Measure pose-to-scanout delta. Assert < 20 ms at 90 Hz.
+6. **`test_hand_tracking_rate`** — Track hand for 10s. Assert updates at >= 30 Hz.
+7. **`test_hand_tracking_accuracy`** — Compare engine positions vs SDK. Assert < 5 mm RMS.
+8. **`test_rumble_all_controllers`** — Test rumble on Xbox, DualSense, Switch Pro.
+9. **`test_adaptive_all_modes`** — Test resistance, vibration, sectioned on DualSense.
+10. **`test_hmd_all_headsets`** — Test head tracking on PCVR, Quest, PSVR2.
+11. **`test_controllers_all_platforms`** — Test Oculus Touch, Index, PSVR2 Sense, Quest Touch.
+12. **`test_hand_tracking_all`** — Test hand tracking on Quest and PC OpenXR.
+13. **`test_eye_tracking_all`** — Test on PSVR2, Quest Pro, PC Tobii.
+14. **`test_profiles_all_controllers`** — Test each profile on each controller class.
 
 ### Benchmarks
 

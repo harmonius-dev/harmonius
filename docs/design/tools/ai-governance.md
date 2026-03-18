@@ -10,35 +10,59 @@
 
 ### AI Governance (R-15.7)
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-15.7.1 | R-15.7.1 | US-15.7.1.1 -- US-15.7.1.5 | AI content provenance tagging |
-| F-15.7.2 | R-15.7.2 | US-15.7.2.1 -- US-15.7.2.4 | Human modification tracking |
-| F-15.7.3 | R-15.7.3 | US-15.7.3.1 -- US-15.7.3.4 | Generative AI feature toggle |
-| F-15.7.4 | R-15.7.4 | US-15.7.4.1 -- US-15.7.4.4 | AI assistance toggle |
-| F-15.7.5 | R-15.7.5 | US-15.7.5.1 -- US-15.7.5.5 | Enterprise remote administration |
-| F-15.7.6 | R-15.7.6 | US-15.7.6.1 -- US-15.7.6.4 | AI content audit trail |
-| F-15.7.7 | R-15.7.7 | US-15.7.7.1 -- US-15.7.7.6 | AI content review workflow |
-| F-15.7.8 | R-15.7.8 | US-15.7.8.1 -- US-15.7.8.4 | Provenance metadata in packaged builds |
+| Feature  | Requirement | User Stories               |
+|----------|-------------|----------------------------|
+| F-15.7.1 | R-15.7.1    | US-15.7.1.1 -- US-15.7.1.5 |
+| F-15.7.2 | R-15.7.2    | US-15.7.2.1 -- US-15.7.2.4 |
+| F-15.7.3 | R-15.7.3    | US-15.7.3.1 -- US-15.7.3.4 |
+| F-15.7.4 | R-15.7.4    | US-15.7.4.1 -- US-15.7.4.4 |
+| F-15.7.5 | R-15.7.5    | US-15.7.5.1 -- US-15.7.5.5 |
+| F-15.7.6 | R-15.7.6    | US-15.7.6.1 -- US-15.7.6.4 |
+| F-15.7.7 | R-15.7.7    | US-15.7.7.1 -- US-15.7.7.6 |
+| F-15.7.8 | R-15.7.8    | US-15.7.8.1 -- US-15.7.8.4 |
+
+1. **F-15.7.1** — AI content provenance tagging
+2. **F-15.7.2** — Human modification tracking
+3. **F-15.7.3** — Generative AI feature toggle
+4. **F-15.7.4** — AI assistance toggle
+5. **F-15.7.5** — Enterprise remote administration
+6. **F-15.7.6** — AI content audit trail
+7. **F-15.7.7** — AI content review workflow
+8. **F-15.7.8** — Provenance metadata in packaged builds
 
 ### AI Assistant (R-15.9)
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-15.9.1a | R-15.9.1a | US-15.9.1a.1 -- US-15.9.1a.4 | Speech-to-text pipeline |
-| F-15.9.1b | R-15.9.1b | US-15.9.1b.1 -- US-15.9.1b.4 | Voice command interpretation |
-| F-15.9.1c | R-15.9.1c | US-15.9.1c.1 -- US-15.9.1c.4 | Voice activation modes |
-| F-15.9.2 | R-15.9.2 | US-15.9.2.1 -- US-15.9.2.6 | AI assistant tool interface |
-| F-15.9.3 | R-15.9.3 | US-15.9.3.1 -- US-15.9.3.6 | Visual and graphical tool access |
-| F-15.9.4 | R-15.9.4 | US-15.9.4.1 -- US-15.9.4.4 | Keyboard shortcut recommendations |
-| F-15.9.5 | R-15.9.5 | US-15.9.5.1 -- US-15.9.5.4 | Contextual action reminders |
-| F-15.9.6a | R-15.9.6a | US-15.9.6a.1 -- US-15.9.6a.4 | Headless editor API layer |
-| F-15.9.6b | R-15.9.6b | US-15.9.6b.1 -- US-15.9.6b.4 | Agent orchestration |
-| F-15.9.6c | R-15.9.6c | US-15.9.6c.1 -- US-15.9.6c.4 | CI/CD agent integration |
-| F-15.9.7 | R-15.9.7 | US-15.9.7.1 -- US-15.9.7.5 | Screenshot and screen recording |
-| F-15.9.8 | R-15.9.8 | US-15.9.8.1 -- US-15.9.8.5 | UI accessibility tree analysis |
-| F-15.9.9 | R-15.9.9 | US-15.9.9.1 -- US-15.9.9.4 | Multi-modal understanding |
-| F-15.9.10 | R-15.9.10 | US-15.9.10.1 -- US-15.9.10.6 | AI assistance administration |
+| Feature   | Requirement | User Stories                 |
+|-----------|-------------|------------------------------|
+| F-15.9.1a | R-15.9.1a   | US-15.9.1a.1 -- US-15.9.1a.4 |
+| F-15.9.1b | R-15.9.1b   | US-15.9.1b.1 -- US-15.9.1b.4 |
+| F-15.9.1c | R-15.9.1c   | US-15.9.1c.1 -- US-15.9.1c.4 |
+| F-15.9.2  | R-15.9.2    | US-15.9.2.1 -- US-15.9.2.6   |
+| F-15.9.3  | R-15.9.3    | US-15.9.3.1 -- US-15.9.3.6   |
+| F-15.9.4  | R-15.9.4    | US-15.9.4.1 -- US-15.9.4.4   |
+| F-15.9.5  | R-15.9.5    | US-15.9.5.1 -- US-15.9.5.4   |
+| F-15.9.6a | R-15.9.6a   | US-15.9.6a.1 -- US-15.9.6a.4 |
+| F-15.9.6b | R-15.9.6b   | US-15.9.6b.1 -- US-15.9.6b.4 |
+| F-15.9.6c | R-15.9.6c   | US-15.9.6c.1 -- US-15.9.6c.4 |
+| F-15.9.7  | R-15.9.7    | US-15.9.7.1 -- US-15.9.7.5   |
+| F-15.9.8  | R-15.9.8    | US-15.9.8.1 -- US-15.9.8.5   |
+| F-15.9.9  | R-15.9.9    | US-15.9.9.1 -- US-15.9.9.4   |
+| F-15.9.10 | R-15.9.10   | US-15.9.10.1 -- US-15.9.10.6 |
+
+1. **F-15.9.1a** — Speech-to-text pipeline
+2. **F-15.9.1b** — Voice command interpretation
+3. **F-15.9.1c** — Voice activation modes
+4. **F-15.9.2** — AI assistant tool interface
+5. **F-15.9.3** — Visual and graphical tool access
+6. **F-15.9.4** — Keyboard shortcut recommendations
+7. **F-15.9.5** — Contextual action reminders
+8. **F-15.9.6a** — Headless editor API layer
+9. **F-15.9.6b** — Agent orchestration
+10. **F-15.9.6c** — CI/CD agent integration
+11. **F-15.9.7** — Screenshot and screen recording
+12. **F-15.9.8** — UI accessibility tree analysis
+13. **F-15.9.9** — Multi-modal understanding
+14. **F-15.9.10** — AI assistance administration
 
 ## Overview
 
@@ -1848,50 +1872,116 @@ Linux).
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_provenance_tag_attach_and_query` | R-15.7.1 | Tag an asset, verify tag fields match, query returns correct tag. |
-| `test_provenance_survives_serialization` | R-15.7.1 | Serialize and deserialize a tagged asset; verify tag is preserved. |
-| `test_provenance_removal_on_full_replace` | R-15.7.1, R-15.7.2 | Mark all regions modified; verify provenance tag is automatically removed. |
-| `test_modification_bitmask_granularity` | R-15.7.2 | Create bitmasks for each granularity (vertex group, tile, row, node); verify per-region tracking. |
-| `test_bitmask_under_1kb` | R-15.7.2 | Verify bitmask size < 1 KB for typical asset region counts (up to 8000 regions). |
-| `test_modification_pct_calculation` | R-15.7.2 | Mark partial regions; verify percentage matches expected. |
-| `test_generative_toggle_disables_llm` | R-15.7.3 | Disable generative AI; verify LLM content generation returns `FeatureDisabled`. |
-| `test_deterministic_ai_unaffected` | R-15.7.3 | Disable generative AI; verify pathfinding, BT, GOAP still function. |
-| `test_toggle_independence` | R-15.7.4 | Test all four toggle combinations; verify each feature set is correct. |
-| `test_toggle_persistence` | R-15.7.4 | Save and load toggle state; verify round-trip correctness. |
-| `test_ed25519_signature_verification` | R-15.7.5 | Sign a policy, verify with correct key. Tamper with policy, verify rejection. |
-| `test_stale_policy_rejected` | R-15.7.5 | Send a policy with version <= current; verify rejection. |
-| `test_audit_hash_chain` | R-15.7.6 | Append 100 entries; validate chain. Tamper with entry 50; verify chain breaks at 50. |
-| `test_audit_rotation_preserves_chain` | R-15.7.6 | Rotate segments; validate chain across segments. |
-| `test_review_auto_approve_threshold` | R-15.7.7 | Set threshold to 80%; mark 80% modified; verify auto-approval. |
-| `test_review_blocks_unapproved` | R-15.7.7 | Verify unapproved assets are not marked as approved. |
-| `test_packaged_provenance_minimal` | R-15.7.8 | Package provenance; verify only flags and AI system ID are retained. |
-| `test_rate_limiter_token_bucket` | R-15.9.10 | Exhaust bucket; verify rate limit error. Wait for refill; verify permit granted. |
-| `test_quota_requests_per_hour` | R-15.9.10 | Exceed hourly request quota; verify error. |
-| `test_quota_tokens_per_day` | R-15.9.10 | Exceed daily token quota; verify error. |
-| `test_tool_allowlist` | R-15.9.10 | Set allowlist; verify allowed tool passes, unlisted tool blocked. |
-| `test_tool_blocklist` | R-15.9.10 | Set blocklist; verify blocked tool rejected, others pass. |
-| `test_tool_validation` | R-15.9.2 | Invoke tool with invalid parameters; verify validation error. |
-| `test_tool_undo_integration` | R-15.9.2 | Execute tool; verify undo command recorded in undo stack. |
-| `test_agent_isolation` | R-15.9.6b | Create two agents; modify selection in one; verify other agent's selection unchanged. |
-| `test_agent_independent_undo` | R-15.9.6b | Execute tool in each agent; undo in one; verify other agent unaffected. |
-| `test_context_build_precedence` | R-15.9.9 | Build prompt with both accessibility and screenshot; verify structured data appears before pixel data. |
+| Test                                      | Req                |
+|-------------------------------------------|--------------------|
+| `test_provenance_tag_attach_and_query`    | R-15.7.1           |
+| `test_provenance_survives_serialization`  | R-15.7.1           |
+| `test_provenance_removal_on_full_replace` | R-15.7.1, R-15.7.2 |
+| `test_modification_bitmask_granularity`   | R-15.7.2           |
+| `test_bitmask_under_1kb`                  | R-15.7.2           |
+| `test_modification_pct_calculation`       | R-15.7.2           |
+| `test_generative_toggle_disables_llm`     | R-15.7.3           |
+| `test_deterministic_ai_unaffected`        | R-15.7.3           |
+| `test_toggle_independence`                | R-15.7.4           |
+| `test_toggle_persistence`                 | R-15.7.4           |
+| `test_ed25519_signature_verification`     | R-15.7.5           |
+| `test_stale_policy_rejected`              | R-15.7.5           |
+| `test_audit_hash_chain`                   | R-15.7.6           |
+| `test_audit_rotation_preserves_chain`     | R-15.7.6           |
+| `test_review_auto_approve_threshold`      | R-15.7.7           |
+| `test_review_blocks_unapproved`           | R-15.7.7           |
+| `test_packaged_provenance_minimal`        | R-15.7.8           |
+| `test_rate_limiter_token_bucket`          | R-15.9.10          |
+| `test_quota_requests_per_hour`            | R-15.9.10          |
+| `test_quota_tokens_per_day`               | R-15.9.10          |
+| `test_tool_allowlist`                     | R-15.9.10          |
+| `test_tool_blocklist`                     | R-15.9.10          |
+| `test_tool_validation`                    | R-15.9.2           |
+| `test_tool_undo_integration`              | R-15.9.2           |
+| `test_agent_isolation`                    | R-15.9.6b          |
+| `test_agent_independent_undo`             | R-15.9.6b          |
+| `test_context_build_precedence`           | R-15.9.9           |
+
+1. **`test_provenance_tag_attach_and_query`** — Tag an asset, verify tag fields match, query returns
+   correct tag.
+2. **`test_provenance_survives_serialization`** — Serialize and deserialize a tagged asset; verify
+   tag is preserved.
+3. **`test_provenance_removal_on_full_replace`** — Mark all regions modified; verify provenance tag
+   is automatically removed.
+4. **`test_modification_bitmask_granularity`** — Create bitmasks for each granularity (vertex group,
+   tile, row, node); verify per-region tracking.
+5. **`test_bitmask_under_1kb`** — Verify bitmask size < 1 KB for typical asset region counts (up to
+   8000 regions).
+6. **`test_modification_pct_calculation`** — Mark partial regions; verify percentage matches
+   expected.
+7. **`test_generative_toggle_disables_llm`** — Disable generative AI; verify LLM content generation
+   returns `FeatureDisabled`.
+8. **`test_deterministic_ai_unaffected`** — Disable generative AI; verify pathfinding, BT, GOAP
+   still function.
+9. **`test_toggle_independence`** — Test all four toggle combinations; verify each feature set is
+   correct.
+10. **`test_toggle_persistence`** — Save and load toggle state; verify round-trip correctness.
+11. **`test_ed25519_signature_verification`** — Sign a policy, verify with correct key. Tamper with
+    policy, verify rejection.
+12. **`test_stale_policy_rejected`** — Send a policy with version <= current; verify rejection.
+13. **`test_audit_hash_chain`** — Append 100 entries; validate chain. Tamper with entry 50; verify
+    chain breaks at 50.
+14. **`test_audit_rotation_preserves_chain`** — Rotate segments; validate chain across segments.
+15. **`test_review_auto_approve_threshold`** — Set threshold to 80%; mark 80% modified; verify
+    auto-approval.
+16. **`test_review_blocks_unapproved`** — Verify unapproved assets are not marked as approved.
+17. **`test_packaged_provenance_minimal`** — Package provenance; verify only flags and AI system ID
+    are retained.
+18. **`test_rate_limiter_token_bucket`** — Exhaust bucket; verify rate limit error. Wait for refill;
+    verify permit granted.
+19. **`test_quota_requests_per_hour`** — Exceed hourly request quota; verify error.
+20. **`test_quota_tokens_per_day`** — Exceed daily token quota; verify error.
+21. **`test_tool_allowlist`** — Set allowlist; verify allowed tool passes, unlisted tool blocked.
+22. **`test_tool_blocklist`** — Set blocklist; verify blocked tool rejected, others pass.
+23. **`test_tool_validation`** — Invoke tool with invalid parameters; verify validation error.
+24. **`test_tool_undo_integration`** — Execute tool; verify undo command recorded in undo stack.
+25. **`test_agent_isolation`** — Create two agents; modify selection in one; verify other agent's
+    selection unchanged.
+26. **`test_agent_independent_undo`** — Execute tool in each agent; undo in one; verify other agent
+    unaffected.
+27. **`test_context_build_precedence`** — Build prompt with both accessibility and screenshot;
+    verify structured data appears before pixel data.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_provenance_pipeline_survival` | R-15.7.1 | Tag asset, run through import/cook/package pipeline; verify tag present in packaged output. |
-| `test_policy_push_via_websocket` | R-15.7.5 | Start mock admin server; push signed policy via WebSocket; verify editor applies it. |
-| `test_policy_pull_via_https` | R-15.7.5 | Start mock admin server; poll for policy via HTTPS; verify editor applies it. |
-| `test_audit_replication` | R-15.7.6 | Append entries locally; replicate to mock server; verify all entries received. |
-| `test_review_workflow_end_to_end` | R-15.7.7 | Generate AI asset, route to review, approve, verify asset enters production database. |
-| `test_llm_request_async` | R-15.9.2 | Send request to mock LLM API via IoReactor; verify response parsing and tool call extraction. |
-| `test_voice_command_roundtrip` | R-15.9.1b | Feed transcript to CommandInterpreter with mock LLM; verify correct tool invocation. |
-| `test_headless_tool_execution` | R-15.9.6a | Execute tool via headless API; verify result matches interactive execution. |
-| `test_ci_agent_artifact_production` | R-15.9.6c | Run agent in headless mode; verify build artifact produced. |
-| `test_offline_then_reconnect` | R-15.9.10 | Operate without policy server; reconnect; verify local logs replicate. |
+| Test                                | Req       |
+|-------------------------------------|-----------|
+| `test_provenance_pipeline_survival` | R-15.7.1  |
+| `test_policy_push_via_websocket`    | R-15.7.5  |
+| `test_policy_pull_via_https`        | R-15.7.5  |
+| `test_audit_replication`            | R-15.7.6  |
+| `test_review_workflow_end_to_end`   | R-15.7.7  |
+| `test_llm_request_async`            | R-15.9.2  |
+| `test_voice_command_roundtrip`      | R-15.9.1b |
+| `test_headless_tool_execution`      | R-15.9.6a |
+| `test_ci_agent_artifact_production` | R-15.9.6c |
+| `test_offline_then_reconnect`       | R-15.9.10 |
+
+1. **`test_provenance_pipeline_survival`** — Tag asset, run through import/cook/package pipeline;
+   verify tag present in packaged output.
+2. **`test_policy_push_via_websocket`** — Start mock admin server; push signed policy via WebSocket;
+   verify editor applies it.
+3. **`test_policy_pull_via_https`** — Start mock admin server; poll for policy via HTTPS; verify
+   editor applies it.
+4. **`test_audit_replication`** — Append entries locally; replicate to mock server; verify all
+   entries received.
+5. **`test_review_workflow_end_to_end`** — Generate AI asset, route to review, approve, verify asset
+   enters production database.
+6. **`test_llm_request_async`** — Send request to mock LLM API via IoReactor; verify response
+   parsing and tool call extraction.
+7. **`test_voice_command_roundtrip`** — Feed transcript to CommandInterpreter with mock LLM; verify
+   correct tool invocation.
+8. **`test_headless_tool_execution`** — Execute tool via headless API; verify result matches
+   interactive execution.
+9. **`test_ci_agent_artifact_production`** — Run agent in headless mode; verify build artifact
+   produced.
+10. **`test_offline_then_reconnect`** — Operate without policy server; reconnect; verify local logs
+    replicate.
 
 ### Benchmarks
 
@@ -2261,11 +2351,18 @@ impl KeychainReader {
 
 ### Credential Storage -- Platform Details
 
-| Platform | API | Access | Notes |
-|----------|-----|--------|-------|
-| macOS | Security.framework | cxx.rs bridge to `SecItemCopyMatching`, `SecItemAdd`, `SecItemDelete` | Keychain items tagged with `kSecAttrService = "com.harmonius.ai"` |
-| Windows | wincred | `CredReadW`, `CredWriteW`, `CredDeleteW` via FFI | Credentials stored under `harmonius/ai/{provider_id}` target |
-| Linux | libsecret | D-Bus `org.freedesktop.secrets` via FFI | Secret stored in the default collection with `provider` attribute |
+| Platform | API                |
+|----------|--------------------|
+| macOS    | Security.framework |
+| Windows  | wincred            |
+| Linux    | libsecret          |
+
+1. **macOS** — cxx.rs bridge to `SecItemCopyMatching`, `SecItemAdd`, `SecItemDelete`
+   - **Notes:** Keychain items tagged with `kSecAttrService = "com.harmonius.ai"`
+2. **Windows** — `CredReadW`, `CredWriteW`, `CredDeleteW` via FFI
+   - **Notes:** Credentials stored under `harmonius/ai/{provider_id}` target
+3. **Linux** — D-Bus `org.freedesktop.secrets` via FFI
+   - **Notes:** Secret stored in the default collection with `provider` attribute
 
 ### Privacy Model
 

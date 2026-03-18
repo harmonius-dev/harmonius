@@ -9,49 +9,79 @@
 
 ### Decals (11.2)
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-11.2.1 | R-11.2.1 | US-11.2.1.1, US-11.2.1.2, US-11.2.1.3 | Deferred and projected decals with per-channel G-buffer modification |
-| F-11.2.2 | R-11.2.2 | US-11.2.2.1, US-11.2.2.2 | Mesh decals with tangent-space normals for persistent markings |
-| F-11.2.3 | R-11.2.3 | US-11.2.3.1, US-11.2.3.2 | Runtime decal atlas packing with LRU eviction |
-| F-11.2.4 | R-11.2.4 | US-11.2.4.1, US-11.2.4.2, US-11.2.4.3 | Priority layering, blend modes, timed lifecycle |
-| F-11.2.5 | R-11.2.5 | US-11.2.5.1, US-11.2.5.2 | Procedural blood and damage decals from hit events |
-| F-11.2.6 | R-11.2.6 | US-11.2.6.1, US-11.2.6.2, US-11.2.6.3 | Surface-aware footprints and tire tracks |
+| Feature  | Requirement | User Story                            |
+|----------|-------------|---------------------------------------|
+| F-11.2.1 | R-11.2.1    | US-11.2.1.1, US-11.2.1.2, US-11.2.1.3 |
+| F-11.2.2 | R-11.2.2    | US-11.2.2.1, US-11.2.2.2              |
+| F-11.2.3 | R-11.2.3    | US-11.2.3.1, US-11.2.3.2              |
+| F-11.2.4 | R-11.2.4    | US-11.2.4.1, US-11.2.4.2, US-11.2.4.3 |
+| F-11.2.5 | R-11.2.5    | US-11.2.5.1, US-11.2.5.2              |
+| F-11.2.6 | R-11.2.6    | US-11.2.6.1, US-11.2.6.2, US-11.2.6.3 |
+
+1. **F-11.2.1** — Deferred and projected decals with per-channel G-buffer modification
+2. **F-11.2.2** — Mesh decals with tangent-space normals for persistent markings
+3. **F-11.2.3** — Runtime decal atlas packing with LRU eviction
+4. **F-11.2.4** — Priority layering, blend modes, timed lifecycle
+5. **F-11.2.5** — Procedural blood and damage decals from hit events
+6. **F-11.2.6** — Surface-aware footprints and tire tracks
 
 ### Screen Effects (11.3)
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-11.3.1 | R-11.3.1 | US-11.3.1.1, US-11.3.1.2, US-11.3.1.3 | Perlin-noise camera shake with additive layering |
-| F-11.3.2 | R-11.3.2 | US-11.3.2.1, US-11.3.2.2 | Per-object and camera motion blur from velocity buffers |
-| F-11.3.3 | R-11.3.3 | US-11.3.3.1, US-11.3.3.2, US-11.3.3.3 | Screen-space lens flare with authored templates |
-| F-11.3.4 | R-11.3.4 | US-11.3.4.1, US-11.3.4.2 | Chromatic aberration, film grain, and vignette |
-| F-11.3.5 | R-11.3.5 | US-11.3.5.1, US-11.3.5.2 | Heat haze and screen-space refraction distortion |
-| F-11.3.6 | R-11.3.6 | US-11.3.6.1, US-11.3.6.2, US-11.3.6.3 | Damage overlays and screen flash compositing |
+| Feature  | Requirement | User Story                            |
+|----------|-------------|---------------------------------------|
+| F-11.3.1 | R-11.3.1    | US-11.3.1.1, US-11.3.1.2, US-11.3.1.3 |
+| F-11.3.2 | R-11.3.2    | US-11.3.2.1, US-11.3.2.2              |
+| F-11.3.3 | R-11.3.3    | US-11.3.3.1, US-11.3.3.2, US-11.3.3.3 |
+| F-11.3.4 | R-11.3.4    | US-11.3.4.1, US-11.3.4.2              |
+| F-11.3.5 | R-11.3.5    | US-11.3.5.1, US-11.3.5.2              |
+| F-11.3.6 | R-11.3.6    | US-11.3.6.1, US-11.3.6.2, US-11.3.6.3 |
+
+1. **F-11.3.1** — Perlin-noise camera shake with additive layering
+2. **F-11.3.2** — Per-object and camera motion blur from velocity buffers
+3. **F-11.3.3** — Screen-space lens flare with authored templates
+4. **F-11.3.4** — Chromatic aberration, film grain, and vignette
+5. **F-11.3.5** — Heat haze and screen-space refraction distortion
+6. **F-11.3.6** — Damage overlays and screen flash compositing
 
 ### Weather and Environmental FX (11.4)
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-11.4.1 | R-11.4.1 | US-11.4.1.1, US-11.4.1.2, US-11.4.1.3 | Multi-layered rain with screen droplets |
-| F-11.4.2 | R-11.4.2 | US-11.4.2.1, US-11.4.2.2, US-11.4.2.3 | Dynamic puddles and material-driven wet surfaces |
-| F-11.4.3 | R-11.4.3 | US-11.4.3.1, US-11.4.3.2, US-11.4.3.3 | Vertex-displacement snow with deformation trails |
-| F-11.4.4 | R-11.4.4 | US-11.4.4.1, US-11.4.4.2 | Localized volumetric fog volumes |
-| F-11.4.5 | R-11.4.5 | US-11.4.5.1, US-11.4.5.2, US-11.4.5.3 | Procedural branching lightning with light emission |
-| F-11.4.6 | R-11.4.6 | US-11.4.6.1, US-11.4.6.2, US-11.4.6.3 | Wind-driven debris and dust storm visibility |
-| F-11.4.7 | R-11.4.7 | US-11.4.7.1, US-11.4.7.2, US-11.4.7.3 | Underwater caustics, depth fog, and god rays |
+| Feature  | Requirement | User Story                            |
+|----------|-------------|---------------------------------------|
+| F-11.4.1 | R-11.4.1    | US-11.4.1.1, US-11.4.1.2, US-11.4.1.3 |
+| F-11.4.2 | R-11.4.2    | US-11.4.2.1, US-11.4.2.2, US-11.4.2.3 |
+| F-11.4.3 | R-11.4.3    | US-11.4.3.1, US-11.4.3.2, US-11.4.3.3 |
+| F-11.4.4 | R-11.4.4    | US-11.4.4.1, US-11.4.4.2              |
+| F-11.4.5 | R-11.4.5    | US-11.4.5.1, US-11.4.5.2, US-11.4.5.3 |
+| F-11.4.6 | R-11.4.6    | US-11.4.6.1, US-11.4.6.2, US-11.4.6.3 |
+| F-11.4.7 | R-11.4.7    | US-11.4.7.1, US-11.4.7.2, US-11.4.7.3 |
+
+1. **F-11.4.1** — Multi-layered rain with screen droplets
+2. **F-11.4.2** — Dynamic puddles and material-driven wet surfaces
+3. **F-11.4.3** — Vertex-displacement snow with deformation trails
+4. **F-11.4.4** — Localized volumetric fog volumes
+5. **F-11.4.5** — Procedural branching lightning with light emission
+6. **F-11.4.6** — Wind-driven debris and dust storm visibility
+7. **F-11.4.7** — Underwater caustics, depth fog, and god rays
 
 ### Destruction VFX (11.5)
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-11.5.1 | R-11.5.1 | US-11.5.1.1, US-11.5.1.2, US-11.5.1.3 | Event-driven debris spawning with global budget |
-| F-11.5.2 | R-11.5.2 | US-11.5.2.1, US-11.5.2.2 | Material-colored dust clouds and wind-driven smoke |
-| F-11.5.3 | R-11.5.3 | US-11.5.3.1, US-11.5.3.2, US-11.5.3.3 | Sparks with bounce collision and drifting embers |
-| F-11.5.4 | R-11.5.4 | US-11.5.4.1, US-11.5.4.2, US-11.5.4.3 | Animated crack decals from stress propagation |
-| F-11.5.5 | R-11.5.5 | US-11.5.5.1, US-11.5.5.2 | Persistent scorch marks modifying G-buffer channels |
-| F-11.5.6 | R-11.5.6 | US-11.5.6.1, US-11.5.6.2 | Expanding spherical shockwave distortion |
-| F-11.5.7 | R-11.5.7 | US-11.5.7.1, US-11.5.7.2, US-11.5.7.3 | Surface-spreading fire propagation visuals |
+| Feature  | Requirement | User Story                            |
+|----------|-------------|---------------------------------------|
+| F-11.5.1 | R-11.5.1    | US-11.5.1.1, US-11.5.1.2, US-11.5.1.3 |
+| F-11.5.2 | R-11.5.2    | US-11.5.2.1, US-11.5.2.2              |
+| F-11.5.3 | R-11.5.3    | US-11.5.3.1, US-11.5.3.2, US-11.5.3.3 |
+| F-11.5.4 | R-11.5.4    | US-11.5.4.1, US-11.5.4.2, US-11.5.4.3 |
+| F-11.5.5 | R-11.5.5    | US-11.5.5.1, US-11.5.5.2              |
+| F-11.5.6 | R-11.5.6    | US-11.5.6.1, US-11.5.6.2              |
+| F-11.5.7 | R-11.5.7    | US-11.5.7.1, US-11.5.7.2, US-11.5.7.3 |
+
+1. **F-11.5.1** — Event-driven debris spawning with global budget
+2. **F-11.5.2** — Material-colored dust clouds and wind-driven smoke
+3. **F-11.5.3** — Sparks with bounce collision and drifting embers
+4. **F-11.5.4** — Animated crack decals from stress propagation
+5. **F-11.5.5** — Persistent scorch marks modifying G-buffer channels
+6. **F-11.5.6** — Expanding spherical shockwave distortion
+7. **F-11.5.7** — Surface-spreading fire propagation visuals
 
 ## Overview
 
@@ -2374,52 +2404,131 @@ pub fn scorch_mark_system(
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_decal_lifecycle_phases` | R-11.2.4 | Create a decal with 1s fade-in, 2s sustain, 1s dissolve. Advance time and verify phase transitions and opacity at each boundary. |
-| `test_decal_priority_sorting` | R-11.2.4 | Create decals with priorities 1, 3, 5 on the same surface. Verify render order is ascending priority. |
-| `test_decal_pool_reclaim` | R-11.2.4 | Exhaust the pool. Verify oldest low-priority decals are reclaimed first. New high-priority decals succeed. |
-| `test_atlas_pack_and_lookup` | R-11.2.3 | Pack 50 textures into the atlas. Verify each returns a valid region. Look up each by AssetId and confirm match. |
-| `test_atlas_lru_eviction` | R-11.2.3 | Pack textures exceeding budget. Verify LRU eviction removes least-recently-touched entries. |
-| `test_shake_decay` | R-11.3.1 | Create a ShakeSource with decay_rate=2.0. After 3s, verify amplitude is below 0.01. |
-| `test_shake_additive_clamping` | R-11.3.1 | Spawn 10 simultaneous shake sources. Verify total offset does not exceed max_amp. |
-| `test_shake_reduced_motion` | R-11.3.1 | Enable reduced_motion with attenuation=0.0. Verify CameraShakeOffset is zero. |
-| `test_overlay_lifecycle` | R-11.3.6 | Create an overlay with 0.5s fade-in, 1s sustain, 0.5s fade-out. Verify timing and opacity. |
-| `test_overlay_count_cap` | R-11.3.6 | Try to allocate overlays beyond platform max. Verify allocation fails. |
-| `test_weather_state_transition` | R-11.4.1 | Transition from Clear to Rain. Verify intensity ramps up and rain systems activate. |
-| `test_puddle_accumulate_drain` | R-11.4.2 | Accumulate puddle for 5s, then stop rain. Verify depth increases then drains to zero. |
-| `test_wet_surface_material` | R-11.4.2 | Set wetness=1.0 on Stone, Metal, Dirt. Verify roughness and albedo responses match spec. |
-| `test_snow_deformation_fade` | R-11.4.3 | Stamp a deformation trail. Continue snowfall. Verify trail fades over time. |
-| `test_lightning_branch_depth` | R-11.4.5 | Generate bolt on mobile tier. Verify max branch depth is 2. Desktop: verify 4. |
-| `test_debris_budget_cap` | R-11.5.1 | Trigger destruction events exceeding the global debris budget. Verify concurrent fragments never exceed cap. |
-| `test_dust_color_by_material` | R-11.5.2 | Destroy stone and wood objects. Verify dust particle color matches material palette. |
-| `test_spark_color_fade` | R-11.5.3 | Spawn sparks. Verify color interpolates from white to orange to dark over lifetime. |
-| `test_crack_growth_rate` | R-11.5.4 | Apply incremental damage. Verify crack radius increases faster with more accumulated damage. |
-| `test_scorch_persistence` | R-11.5.5 | Place scorch mark. Verify it renders above transient combat decals in priority order. |
-| `test_shockwave_expansion` | R-11.5.6 | Spawn shockwave at origin. After 1s at speed=50, verify radius is approximately 50. |
-| `test_fire_material_blocking` | R-11.5.7 | Set up wood and stone zones. Ignite wood. Verify fire spreads on wood, not on stone. |
-| `test_budget_per_platform` | All | Create EffectBudget for each PlatformTier. Verify limits match the specification table. |
+| Test                            | Req      |
+|---------------------------------|----------|
+| `test_decal_lifecycle_phases`   | R-11.2.4 |
+| `test_decal_priority_sorting`   | R-11.2.4 |
+| `test_decal_pool_reclaim`       | R-11.2.4 |
+| `test_atlas_pack_and_lookup`    | R-11.2.3 |
+| `test_atlas_lru_eviction`       | R-11.2.3 |
+| `test_shake_decay`              | R-11.3.1 |
+| `test_shake_additive_clamping`  | R-11.3.1 |
+| `test_shake_reduced_motion`     | R-11.3.1 |
+| `test_overlay_lifecycle`        | R-11.3.6 |
+| `test_overlay_count_cap`        | R-11.3.6 |
+| `test_weather_state_transition` | R-11.4.1 |
+| `test_puddle_accumulate_drain`  | R-11.4.2 |
+| `test_wet_surface_material`     | R-11.4.2 |
+| `test_snow_deformation_fade`    | R-11.4.3 |
+| `test_lightning_branch_depth`   | R-11.4.5 |
+| `test_debris_budget_cap`        | R-11.5.1 |
+| `test_dust_color_by_material`   | R-11.5.2 |
+| `test_spark_color_fade`         | R-11.5.3 |
+| `test_crack_growth_rate`        | R-11.5.4 |
+| `test_scorch_persistence`       | R-11.5.5 |
+| `test_shockwave_expansion`      | R-11.5.6 |
+| `test_fire_material_blocking`   | R-11.5.7 |
+| `test_budget_per_platform`      | All      |
+
+1. **`test_decal_lifecycle_phases`** — Create a decal with 1s fade-in, 2s sustain, 1s dissolve.
+   Advance time and verify phase transitions and opacity at each boundary.
+2. **`test_decal_priority_sorting`** — Create decals with priorities 1, 3, 5 on the same surface.
+   Verify render order is ascending priority.
+3. **`test_decal_pool_reclaim`** — Exhaust the pool. Verify oldest low-priority decals are reclaimed
+   first. New high-priority decals succeed.
+4. **`test_atlas_pack_and_lookup`** — Pack 50 textures into the atlas. Verify each returns a valid
+   region. Look up each by AssetId and confirm match.
+5. **`test_atlas_lru_eviction`** — Pack textures exceeding budget. Verify LRU eviction removes
+   least-recently-touched entries.
+6. **`test_shake_decay`** — Create a ShakeSource with decay_rate=2.0. After 3s, verify amplitude is
+   below 0.01.
+7. **`test_shake_additive_clamping`** — Spawn 10 simultaneous shake sources. Verify total offset
+   does not exceed max_amp.
+8. **`test_shake_reduced_motion`** — Enable reduced_motion with attenuation=0.0. Verify
+   CameraShakeOffset is zero.
+9. **`test_overlay_lifecycle`** — Create an overlay with 0.5s fade-in, 1s sustain, 0.5s fade-out.
+   Verify timing and opacity.
+10. **`test_overlay_count_cap`** — Try to allocate overlays beyond platform max. Verify allocation
+    fails.
+11. **`test_weather_state_transition`** — Transition from Clear to Rain. Verify intensity ramps up
+    and rain systems activate.
+12. **`test_puddle_accumulate_drain`** — Accumulate puddle for 5s, then stop rain. Verify depth
+    increases then drains to zero.
+13. **`test_wet_surface_material`** — Set wetness=1.0 on Stone, Metal, Dirt. Verify roughness and
+    albedo responses match spec.
+14. **`test_snow_deformation_fade`** — Stamp a deformation trail. Continue snowfall. Verify trail
+    fades over time.
+15. **`test_lightning_branch_depth`** — Generate bolt on mobile tier. Verify max branch depth is 2.
+    Desktop: verify 4.
+16. **`test_debris_budget_cap`** — Trigger destruction events exceeding the global debris budget.
+    Verify concurrent fragments never exceed cap.
+17. **`test_dust_color_by_material`** — Destroy stone and wood objects. Verify dust particle color
+    matches material palette.
+18. **`test_spark_color_fade`** — Spawn sparks. Verify color interpolates from white to orange to
+    dark over lifetime.
+19. **`test_crack_growth_rate`** — Apply incremental damage. Verify crack radius increases faster
+    with more accumulated damage.
+20. **`test_scorch_persistence`** — Place scorch mark. Verify it renders above transient combat
+    decals in priority order.
+21. **`test_shockwave_expansion`** — Spawn shockwave at origin. After 1s at speed=50, verify radius
+    is approximately 50.
+22. **`test_fire_material_blocking`** — Set up wood and stone zones. Ignite wood. Verify fire
+    spreads on wood, not on stone.
+23. **`test_budget_per_platform`** — Create EffectBudget for each PlatformTier. Verify limits match
+    the specification table.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_decal_gbuffer_blend` | R-11.2.1 | Place a deferred decal across a mesh/terrain boundary. Render frame. Verify G-buffer albedo, normal, roughness modified within OBB and unmodified outside. |
-| `test_decal_angle_attenuation` | R-11.2.1 | Place decal on a 80-degree surface. Verify attenuation reduces opacity to near zero. |
-| `test_atlas_500_decals` | R-11.2.3 | Spawn 500 decals with 50 unique textures. Verify draw calls proportional to atlas page count, not decal count. |
-| `test_footprint_per_material` | R-11.2.6 | Walk character across mud, snow, sand. Verify footprint shape and material response differ. |
-| `test_motion_blur_framerate` | R-11.3.2 | Render at 30 and 60 fps. Verify blur width is consistent (scaled by frame rate). |
-| `test_flare_occlusion` | R-11.3.3 | Partially occlude a light. Verify temporal smoothing prevents popping. |
-| `test_distortion_overlap` | R-11.3.5 | Spawn 5 overlapping heat haze sources. Verify half-res buffer bounds cost. |
-| `test_rain_full_pipeline` | R-11.4.1 | Enable rain at full intensity. Verify particle streaks, screen droplets, and ripple normals all active. Move under shelter; verify droplets cease. |
-| `test_puddle_dynamic` | R-11.4.2 | Rain over varied terrain for 30s. Verify puddles in concavities, dry on ridges. |
-| `test_snow_full_pipeline` | R-11.4.3 | Enable snow for 60s. Verify accumulation on upward surfaces. Walk through; verify deformation. Continue snow; verify trails fill. |
-| `test_fog_volume_bounds` | R-11.4.4 | Place box fog volume. Verify fog confined to bounds; outside volume clear. |
-| `test_lightning_light` | R-11.4.5 | Trigger bolt. Verify clustered light buffer receives a light burst with decay. |
-| `test_debris_full_pipeline` | R-11.5.1 | Destroy object with 10-entry debris table. Verify fragments spawn with correct material and velocity cone. |
-| `test_smoke_wind` | R-11.5.2 | Destroy structure with wind field active. Verify smoke drift aligns with wind within 15 degrees. |
-| `test_shockwave_composite` | R-11.5.6 | Trigger two overlapping explosions. Verify combined distortion does not exceed configured max. |
-| `test_fire_spread_wind` | R-11.5.7 | Ignite surface with wind. Verify spread rate increases downwind. |
+| Test                           | Req      |
+|--------------------------------|----------|
+| `test_decal_gbuffer_blend`     | R-11.2.1 |
+| `test_decal_angle_attenuation` | R-11.2.1 |
+| `test_atlas_500_decals`        | R-11.2.3 |
+| `test_footprint_per_material`  | R-11.2.6 |
+| `test_motion_blur_framerate`   | R-11.3.2 |
+| `test_flare_occlusion`         | R-11.3.3 |
+| `test_distortion_overlap`      | R-11.3.5 |
+| `test_rain_full_pipeline`      | R-11.4.1 |
+| `test_puddle_dynamic`          | R-11.4.2 |
+| `test_snow_full_pipeline`      | R-11.4.3 |
+| `test_fog_volume_bounds`       | R-11.4.4 |
+| `test_lightning_light`         | R-11.4.5 |
+| `test_debris_full_pipeline`    | R-11.5.1 |
+| `test_smoke_wind`              | R-11.5.2 |
+| `test_shockwave_composite`     | R-11.5.6 |
+| `test_fire_spread_wind`        | R-11.5.7 |
+
+1. **`test_decal_gbuffer_blend`** — Place a deferred decal across a mesh/terrain boundary. Render
+   frame. Verify G-buffer albedo, normal, roughness modified within OBB and unmodified outside.
+2. **`test_decal_angle_attenuation`** — Place decal on a 80-degree surface. Verify attenuation
+   reduces opacity to near zero.
+3. **`test_atlas_500_decals`** — Spawn 500 decals with 50 unique textures. Verify draw calls
+   proportional to atlas page count, not decal count.
+4. **`test_footprint_per_material`** — Walk character across mud, snow, sand. Verify footprint shape
+   and material response differ.
+5. **`test_motion_blur_framerate`** — Render at 30 and 60 fps. Verify blur width is consistent
+   (scaled by frame rate).
+6. **`test_flare_occlusion`** — Partially occlude a light. Verify temporal smoothing prevents
+   popping.
+7. **`test_distortion_overlap`** — Spawn 5 overlapping heat haze sources. Verify half-res buffer
+   bounds cost.
+8. **`test_rain_full_pipeline`** — Enable rain at full intensity. Verify particle streaks, screen
+   droplets, and ripple normals all active. Move under shelter; verify droplets cease.
+9. **`test_puddle_dynamic`** — Rain over varied terrain for 30s. Verify puddles in concavities, dry
+   on ridges.
+10. **`test_snow_full_pipeline`** — Enable snow for 60s. Verify accumulation on upward surfaces.
+    Walk through; verify deformation. Continue snow; verify trails fill.
+11. **`test_fog_volume_bounds`** — Place box fog volume. Verify fog confined to bounds; outside
+    volume clear.
+12. **`test_lightning_light`** — Trigger bolt. Verify clustered light buffer receives a light burst
+    with decay.
+13. **`test_debris_full_pipeline`** — Destroy object with 10-entry debris table. Verify fragments
+    spawn with correct material and velocity cone.
+14. **`test_smoke_wind`** — Destroy structure with wind field active. Verify smoke drift aligns with
+    wind within 15 degrees.
+15. **`test_shockwave_composite`** — Trigger two overlapping explosions. Verify combined distortion
+    does not exceed configured max.
+16. **`test_fire_spread_wind`** — Ignite surface with wind. Verify spread rate increases downwind.
 
 ### Benchmarks
 
@@ -2439,12 +2548,17 @@ pub fn scorch_mark_system(
 
 ### GPU Compute Availability
 
-| Backend | Compute Shaders | Mesh Shaders | Notes |
-|---------|----------------|-------------|-------|
-| D3D12 | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full compute effects support. |
-| Vulkan | Yes (1.0+) | Yes (task/mesh, optional) | Subgroup operations for reduction. |
-| Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
-| Mobile | Limited dispatch size | No mesh shaders | Reduced effect budgets (PlatformTier::Mobile). |
+| Backend | Compute Shaders       | Mesh Shaders                      |
+|---------|-----------------------|-----------------------------------|
+| D3D12   | Yes (SM 5.0+)         | Yes (SM 6.5+, optional)           |
+| Vulkan  | Yes (1.0+)            | Yes (task/mesh, optional)         |
+| Metal   | Yes (MSL 2.0+)        | Object/mesh (Apple GPU family 7+) |
+| Mobile  | Limited dispatch size | No mesh shaders                   |
+
+1. **D3D12** — Full compute effects support.
+2. **Vulkan** — Subgroup operations for reduction.
+3. **Metal** — Threadgroup memory for local sort.
+4. **Mobile** — Reduced effect budgets (PlatformTier::Mobile).
 
 Falloff attenuation uses the shared `FalloffCurve` type (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).

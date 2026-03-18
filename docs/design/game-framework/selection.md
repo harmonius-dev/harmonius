@@ -8,22 +8,37 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.11.1 | R-13.11.1 | 3D world picking via raycast through shared spatial index |
-| F-13.11.2 | R-13.11.2 | 2D screen-space picking with touch slop |
-| F-13.11.3 | R-13.11.3 | ECS-based selection state with modes and observer events |
-| F-13.11.4a | R-13.11.4a | RTS selection preset (box select, control groups) |
-| F-13.11.4b | R-13.11.4b | RPG selection preset (tab-cycle, target-of-target) |
-| F-13.11.4c | R-13.11.4c | Action selection preset (auto-target, lock-on) |
-| F-13.11.4d | R-13.11.4d | Builder/sandbox selection preset (gizmos, hierarchy) |
-| F-13.11.5 | R-13.11.5 | Runtime selection groups with set operations |
-| F-13.11.6a | R-13.11.6a | Command dispatch to selection via ability system |
-| F-13.11.6b | R-13.11.6b | Formation movement with data-driven templates |
-| F-13.11.6c | R-13.11.6c | Split and subgroup commands |
-| F-13.11.6d | R-13.11.6d | Command history with single-level undo |
-| F-13.11.7 | R-13.11.7 | Marquee (box) selection with modifier keys |
-| F-13.11.8 | R-13.11.8 | Selection visual feedback (outlines, circles, decals) |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.11.1  | R-13.11.1   |
+| F-13.11.2  | R-13.11.2   |
+| F-13.11.3  | R-13.11.3   |
+| F-13.11.4a | R-13.11.4a  |
+| F-13.11.4b | R-13.11.4b  |
+| F-13.11.4c | R-13.11.4c  |
+| F-13.11.4d | R-13.11.4d  |
+| F-13.11.5  | R-13.11.5   |
+| F-13.11.6a | R-13.11.6a  |
+| F-13.11.6b | R-13.11.6b  |
+| F-13.11.6c | R-13.11.6c  |
+| F-13.11.6d | R-13.11.6d  |
+| F-13.11.7  | R-13.11.7   |
+| F-13.11.8  | R-13.11.8   |
+
+1. **F-13.11.1** — 3D world picking via raycast through shared spatial index
+2. **F-13.11.2** — 2D screen-space picking with touch slop
+3. **F-13.11.3** — ECS-based selection state with modes and observer events
+4. **F-13.11.4a** — RTS selection preset (box select, control groups)
+5. **F-13.11.4b** — RPG selection preset (tab-cycle, target-of-target)
+6. **F-13.11.4c** — Action selection preset (auto-target, lock-on)
+7. **F-13.11.4d** — Builder/sandbox selection preset (gizmos, hierarchy)
+8. **F-13.11.5** — Runtime selection groups with set operations
+9. **F-13.11.6a** — Command dispatch to selection via ability system
+10. **F-13.11.6b** — Formation movement with data-driven templates
+11. **F-13.11.6c** — Split and subgroup commands
+12. **F-13.11.6d** — Command history with single-level undo
+13. **F-13.11.7** — Marquee (box) selection with modifier keys
+14. **F-13.11.8** — Selection visual feedback (outlines, circles, decals)
 
 ## Overview
 
@@ -872,69 +887,127 @@ release
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_pick_nearest_3d` | R-13.11.1 | 10,000 entities, pick returns correct entity < 1ms |
-| `test_pick_priority` | R-13.11.1 | Interactive object picked over scenery at same position |
-| `test_pick_all_sorted` | R-13.11.1 | All entities along ray returned sorted by distance |
-| `test_pick_bone` | R-13.11.1 | Skeletal mesh pick reports hit bone |
-| `test_pick_no_selectable` | R-13.11.1 | Entity without Selectable excluded from results |
-| `test_pick_2d_zorder` | R-13.11.2 | Topmost UI widget picked in overlapping stack |
-| `test_pick_2d_circular` | R-13.11.2 | Circular hit area: inside = hit, outside = miss |
-| `test_pick_2d_alpha` | R-13.11.2 | Click on transparent pixel = no hit |
-| `test_pick_touch_slop` | R-13.11.2 | Tap near button with slop = hit |
-| `test_selection_single` | R-13.11.3 | Click A, then B: only B selected |
-| `test_selection_additive` | R-13.11.3 | Shift+click B: both A and B selected |
-| `test_selection_subtractive` | R-13.11.3 | Ctrl+click A: A removed, B remains |
-| `test_selection_toggle` | R-13.11.3 | Toggle mode: click A toggles membership |
-| `test_selection_exclusive` | R-13.11.3 | Exclusive: only one entity at a time |
-| `test_selection_component` | R-13.11.3 | Selected component added/removed on state change |
-| `test_selection_event` | R-13.11.3 | Observer fires with correct added/removed lists |
-| `test_selection_multiplayer` | R-13.11.3 | Spectator sees observed player's selection |
-| `test_rts_box_select` | R-13.11.4a | Marquee selects all intersecting entities |
-| `test_rts_control_group` | R-13.11.4a | Ctrl+1 assign, 1 recall: correct entities |
-| `test_rts_double_click` | R-13.11.4a | Double-click selects all of same type in view |
-| `test_rpg_tab_cycle` | R-13.11.4b | Tab cycles through nearby enemies by distance |
-| `test_rpg_target_of_target` | R-13.11.4b | Target-of-target displays enemy's current target |
-| `test_action_auto_target` | R-13.11.4c | Auto-target selects nearest enemy |
-| `test_action_lock_on` | R-13.11.4c | Lock-on toggle focuses camera on target |
-| `test_action_stick_switch` | R-13.11.4c | Right-stick flick switches target in arc |
-| `test_builder_hierarchy` | R-13.11.4d | Select parent selects children |
-| `test_builder_group_ungroup` | R-13.11.4d | Group entities, select group = all members |
-| `test_group_assign_recall` | R-13.11.5 | Assign 5 to group 1, recall returns 5 |
-| `test_group_union` | R-13.11.5 | Union of overlapping groups = combined set |
-| `test_group_intersection` | R-13.11.5 | Intersection returns only shared entities |
-| `test_group_difference` | R-13.11.5 | Difference removes B from A |
-| `test_group_persist` | R-13.11.5 | Save/load preserves groups |
-| `test_group_local_mp` | R-13.11.5 | Groups not replicated in multiplayer |
-| `test_command_move` | R-13.11.6a | Move command sent to mobile units only |
-| `test_command_mixed` | R-13.11.6a | Mixed selection: buildings skip move |
-| `test_formation_line` | R-13.11.6b | Line formation maintains relative positions |
-| `test_formation_switch` | R-13.11.6b | Switch template: new shape applies |
-| `test_split_even` | R-13.11.6c | 10 units split evenly into 2 groups of 5 |
-| `test_split_by_tag` | R-13.11.6c | Melee and ranged split into separate groups |
-| `test_undo_within_timeout` | R-13.11.6d | Ctrl+Z within timeout restores pre-state |
-| `test_undo_expired` | R-13.11.6d | Ctrl+Z after timeout rejected |
-| `test_marquee_intersect` | R-13.11.7 | Box over 200 entities: all selected |
-| `test_marquee_additive` | R-13.11.7 | Shift+drag adds to existing selection |
-| `test_marquee_subtractive` | R-13.11.7 | Ctrl+drag removes from selection |
-| `test_marquee_touch` | R-13.11.7 | Long-press+drag activates on touch |
-| `test_outline_selected` | R-13.11.8 | Selected entity gets colored outline |
-| `test_outline_hover` | R-13.11.8 | Hovered entity gets thinner outline |
-| `test_ground_circle` | R-13.11.8 | RTS: team-colored ground circle under units |
-| `test_sprite_outline` | R-13.11.8 | 2D: pixel-perfect outline on selected sprite |
-| `test_hero_indicator` | R-13.11.8 | Hero entity uses distinct indicator style |
-| `test_preset_switch` | R-13.11.8 | Switch preset: visual style updates |
+| Test                         | Req        |
+|------------------------------|------------|
+| `test_pick_nearest_3d`       | R-13.11.1  |
+| `test_pick_priority`         | R-13.11.1  |
+| `test_pick_all_sorted`       | R-13.11.1  |
+| `test_pick_bone`             | R-13.11.1  |
+| `test_pick_no_selectable`    | R-13.11.1  |
+| `test_pick_2d_zorder`        | R-13.11.2  |
+| `test_pick_2d_circular`      | R-13.11.2  |
+| `test_pick_2d_alpha`         | R-13.11.2  |
+| `test_pick_touch_slop`       | R-13.11.2  |
+| `test_selection_single`      | R-13.11.3  |
+| `test_selection_additive`    | R-13.11.3  |
+| `test_selection_subtractive` | R-13.11.3  |
+| `test_selection_toggle`      | R-13.11.3  |
+| `test_selection_exclusive`   | R-13.11.3  |
+| `test_selection_component`   | R-13.11.3  |
+| `test_selection_event`       | R-13.11.3  |
+| `test_selection_multiplayer` | R-13.11.3  |
+| `test_rts_box_select`        | R-13.11.4a |
+| `test_rts_control_group`     | R-13.11.4a |
+| `test_rts_double_click`      | R-13.11.4a |
+| `test_rpg_tab_cycle`         | R-13.11.4b |
+| `test_rpg_target_of_target`  | R-13.11.4b |
+| `test_action_auto_target`    | R-13.11.4c |
+| `test_action_lock_on`        | R-13.11.4c |
+| `test_action_stick_switch`   | R-13.11.4c |
+| `test_builder_hierarchy`     | R-13.11.4d |
+| `test_builder_group_ungroup` | R-13.11.4d |
+| `test_group_assign_recall`   | R-13.11.5  |
+| `test_group_union`           | R-13.11.5  |
+| `test_group_intersection`    | R-13.11.5  |
+| `test_group_difference`      | R-13.11.5  |
+| `test_group_persist`         | R-13.11.5  |
+| `test_group_local_mp`        | R-13.11.5  |
+| `test_command_move`          | R-13.11.6a |
+| `test_command_mixed`         | R-13.11.6a |
+| `test_formation_line`        | R-13.11.6b |
+| `test_formation_switch`      | R-13.11.6b |
+| `test_split_even`            | R-13.11.6c |
+| `test_split_by_tag`          | R-13.11.6c |
+| `test_undo_within_timeout`   | R-13.11.6d |
+| `test_undo_expired`          | R-13.11.6d |
+| `test_marquee_intersect`     | R-13.11.7  |
+| `test_marquee_additive`      | R-13.11.7  |
+| `test_marquee_subtractive`   | R-13.11.7  |
+| `test_marquee_touch`         | R-13.11.7  |
+| `test_outline_selected`      | R-13.11.8  |
+| `test_outline_hover`         | R-13.11.8  |
+| `test_ground_circle`         | R-13.11.8  |
+| `test_sprite_outline`        | R-13.11.8  |
+| `test_hero_indicator`        | R-13.11.8  |
+| `test_preset_switch`         | R-13.11.8  |
+
+1. **`test_pick_nearest_3d`** — 10,000 entities, pick returns correct entity < 1ms
+2. **`test_pick_priority`** — Interactive object picked over scenery at same position
+3. **`test_pick_all_sorted`** — All entities along ray returned sorted by distance
+4. **`test_pick_bone`** — Skeletal mesh pick reports hit bone
+5. **`test_pick_no_selectable`** — Entity without Selectable excluded from results
+6. **`test_pick_2d_zorder`** — Topmost UI widget picked in overlapping stack
+7. **`test_pick_2d_circular`** — Circular hit area: inside = hit, outside = miss
+8. **`test_pick_2d_alpha`** — Click on transparent pixel = no hit
+9. **`test_pick_touch_slop`** — Tap near button with slop = hit
+10. **`test_selection_single`** — Click A, then B: only B selected
+11. **`test_selection_additive`** — Shift+click B: both A and B selected
+12. **`test_selection_subtractive`** — Ctrl+click A: A removed, B remains
+13. **`test_selection_toggle`** — Toggle mode: click A toggles membership
+14. **`test_selection_exclusive`** — Exclusive: only one entity at a time
+15. **`test_selection_component`** — Selected component added/removed on state change
+16. **`test_selection_event`** — Observer fires with correct added/removed lists
+17. **`test_selection_multiplayer`** — Spectator sees observed player's selection
+18. **`test_rts_box_select`** — Marquee selects all intersecting entities
+19. **`test_rts_control_group`** — Ctrl+1 assign, 1 recall: correct entities
+20. **`test_rts_double_click`** — Double-click selects all of same type in view
+21. **`test_rpg_tab_cycle`** — Tab cycles through nearby enemies by distance
+22. **`test_rpg_target_of_target`** — Target-of-target displays enemy's current target
+23. **`test_action_auto_target`** — Auto-target selects nearest enemy
+24. **`test_action_lock_on`** — Lock-on toggle focuses camera on target
+25. **`test_action_stick_switch`** — Right-stick flick switches target in arc
+26. **`test_builder_hierarchy`** — Select parent selects children
+27. **`test_builder_group_ungroup`** — Group entities, select group = all members
+28. **`test_group_assign_recall`** — Assign 5 to group 1, recall returns 5
+29. **`test_group_union`** — Union of overlapping groups = combined set
+30. **`test_group_intersection`** — Intersection returns only shared entities
+31. **`test_group_difference`** — Difference removes B from A
+32. **`test_group_persist`** — Save/load preserves groups
+33. **`test_group_local_mp`** — Groups not replicated in multiplayer
+34. **`test_command_move`** — Move command sent to mobile units only
+35. **`test_command_mixed`** — Mixed selection: buildings skip move
+36. **`test_formation_line`** — Line formation maintains relative positions
+37. **`test_formation_switch`** — Switch template: new shape applies
+38. **`test_split_even`** — 10 units split evenly into 2 groups of 5
+39. **`test_split_by_tag`** — Melee and ranged split into separate groups
+40. **`test_undo_within_timeout`** — Ctrl+Z within timeout restores pre-state
+41. **`test_undo_expired`** — Ctrl+Z after timeout rejected
+42. **`test_marquee_intersect`** — Box over 200 entities: all selected
+43. **`test_marquee_additive`** — Shift+drag adds to existing selection
+44. **`test_marquee_subtractive`** — Ctrl+drag removes from selection
+45. **`test_marquee_touch`** — Long-press+drag activates on touch
+46. **`test_outline_selected`** — Selected entity gets colored outline
+47. **`test_outline_hover`** — Hovered entity gets thinner outline
+48. **`test_ground_circle`** — RTS: team-colored ground circle under units
+49. **`test_sprite_outline`** — 2D: pixel-perfect outline on selected sprite
+50. **`test_hero_indicator`** — Hero entity uses distinct indicator style
+51. **`test_preset_switch`** — Switch preset: visual style updates
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_500_selection_perf` | R-13.11.NF1 | 500 entity selection change dispatch < 1ms |
-| `test_500_command_dispatch` | R-13.11.NF1 | Group move to 500 entities < 1ms |
-| `test_marquee_200_60fps` | R-13.11.NF2 | Drag over 200 entities: no frame > 16.67ms |
-| `test_pick_10k_entities` | R-13.11.1 | Raycast pick in 10,000 entity scene < 1ms |
-| `test_full_pipeline` | All | Click -> pick -> select -> outline -> command: end-to-end |
+| Test                        | Req         |
+|-----------------------------|-------------|
+| `test_500_selection_perf`   | R-13.11.NF1 |
+| `test_500_command_dispatch` | R-13.11.NF1 |
+| `test_marquee_200_60fps`    | R-13.11.NF2 |
+| `test_pick_10k_entities`    | R-13.11.1   |
+| `test_full_pipeline`        | All         |
+
+1. **`test_500_selection_perf`** — 500 entity selection change dispatch < 1ms
+2. **`test_500_command_dispatch`** — Group move to 500 entities < 1ms
+3. **`test_marquee_200_60fps`** — Drag over 200 entities: no frame > 16.67ms
+4. **`test_pick_10k_entities`** — Raycast pick in 10,000 entity scene < 1ms
+5. **`test_full_pipeline`** — Click -> pick -> select -> outline -> command: end-to-end
 
 ### Benchmarks
 

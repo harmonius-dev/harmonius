@@ -7,19 +7,31 @@
 > [user-stories/ui-2d/](../../user-stories/ui-2d/). The table below traces design elements to those
 > definitions.
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-10.5.1 | R-10.5.1 | US-10.5.1 | Sprite rendering and sprite sheets |
-| F-10.5.2 | R-10.5.2 | US-10.5.2, US-10.5.3 | Frame-based sprite animation |
-| F-10.5.6 | R-10.5.6 | US-10.5.8, US-10.5.9 | Tilemap rendering (orthogonal) |
-| F-10.5.7 | R-10.5.7 | US-10.5.10, US-10.5.11 | Isometric and hex tilemaps |
-| F-10.5.9 | R-10.5.9 | US-10.5.13, US-10.5.14 | 2D camera and parallax |
-| F-10.5.10 | R-10.5.10 | US-10.5.15, US-10.5.16 | 2D rigid body physics |
-| F-10.5.11 | R-10.5.11 | US-10.5.17 | 2D collision shapes and tilemap colliders |
-| F-10.5.12 | R-10.5.12 | US-10.5.18 | 2D joints and constraints |
-| F-10.5.13 | R-10.5.13 | US-10.5.19 | 2D spatial queries |
-| F-10.5.14 | R-10.5.14 | US-10.5.20, US-10.5.21 | 2D dynamic lighting |
-| F-10.5.15 | R-10.5.15 | US-10.5.22 | 2D particle effects |
+| Feature   | Requirement | User Story             |
+|-----------|-------------|------------------------|
+| F-10.5.1  | R-10.5.1    | US-10.5.1              |
+| F-10.5.2  | R-10.5.2    | US-10.5.2, US-10.5.3   |
+| F-10.5.6  | R-10.5.6    | US-10.5.8, US-10.5.9   |
+| F-10.5.7  | R-10.5.7    | US-10.5.10, US-10.5.11 |
+| F-10.5.9  | R-10.5.9    | US-10.5.13, US-10.5.14 |
+| F-10.5.10 | R-10.5.10   | US-10.5.15, US-10.5.16 |
+| F-10.5.11 | R-10.5.11   | US-10.5.17             |
+| F-10.5.12 | R-10.5.12   | US-10.5.18             |
+| F-10.5.13 | R-10.5.13   | US-10.5.19             |
+| F-10.5.14 | R-10.5.14   | US-10.5.20, US-10.5.21 |
+| F-10.5.15 | R-10.5.15   | US-10.5.22             |
+
+1. **F-10.5.1** — Sprite rendering and sprite sheets
+2. **F-10.5.2** — Frame-based sprite animation
+3. **F-10.5.6** — Tilemap rendering (orthogonal)
+4. **F-10.5.7** — Isometric and hex tilemaps
+5. **F-10.5.9** — 2D camera and parallax
+6. **F-10.5.10** — 2D rigid body physics
+7. **F-10.5.11** — 2D collision shapes and tilemap colliders
+8. **F-10.5.12** — 2D joints and constraints
+9. **F-10.5.13** — 2D spatial queries
+10. **F-10.5.14** — 2D dynamic lighting
+11. **F-10.5.15** — 2D particle effects
 
 ## Overview
 
@@ -1244,44 +1256,78 @@ For server-authoritative and rollback netcode:
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_sprite_batch_by_atlas` | R-10.5.1 | 10K sprites, 4 atlas pages -- batch count = atlas-page/blend-mode combos |
-| `test_sprite_z_order_sort` | R-10.5.1 | Sprites sorted by layer then z_order within each batch |
-| `test_anim_loop_mode` | R-10.5.2 | Loop mode wraps frame index at clip end |
-| `test_anim_pingpong` | R-10.5.2 | Ping-pong reverses direction at clip boundaries |
-| `test_anim_oneshot` | R-10.5.2 | One-shot stops at last frame, state = Finished |
-| `test_anim_event_fire` | R-10.5.2 | Animation event fires at correct frame |
-| `test_tilemap_ortho_coord` | R-10.5.6 | Orthogonal screen-to-tile round-trip |
-| `test_tilemap_iso_diamond` | R-10.5.7 | Isometric diamond coordinate conversion |
-| `test_tilemap_hex_coord` | R-10.5.7 | Hex pointy-top coordinate conversion |
-| `test_tilemap_auto_tile` | R-10.5.6 | Auto-tile neighbor mask selects correct UV |
-| `test_tilemap_collider_merge` | R-10.5.11 | 100x100 tilemap edge merge reduces colliders by 90%+ |
-| `test_camera_deadzone` | R-10.5.9 | Target inside dead zone does not move camera |
-| `test_camera_pixel_snap` | R-10.5.9 | Pixel-perfect snap rounds to grid |
-| `test_parallax_scroll_rate` | R-10.5.9 | Layer at 0.5 scroll rate moves at half camera delta |
-| `test_rigidbody_gravity` | R-10.5.10 | Dynamic body accelerates under gravity |
-| `test_ccd_tunnel_prevention` | R-10.5.10 | Fast projectile does not tunnel through thin wall |
-| `test_one_way_platform` | R-10.5.10 | Body passes up, collides down |
-| `test_deterministic_sim` | R-10.5.10 | 1000 steps, fixed seed, bit-identical across runs |
-| `test_joint_revolute_limits` | R-10.5.12 | Revolute joint respects angle limits |
-| `test_joint_break_force` | R-10.5.12 | Joint breaks when force exceeds threshold |
-| `test_ray_cast_2d` | R-10.5.13 | Ray hits nearest collider, correct point/normal |
-| `test_overlap_2d` | R-10.5.13 | Circle overlap returns all intersecting entities |
-| `test_light_shadow_cast` | R-10.5.14 | Point light shadow matches occluder silhouette |
-| `test_normal_map_response` | R-10.5.14 | Normal-mapped sprite changes shading with light dir |
-| `test_emissive_no_light` | R-10.5.14 | Emissive sprite visible with zero ambient light |
+| Test                          | Req       |
+|-------------------------------|-----------|
+| `test_sprite_batch_by_atlas`  | R-10.5.1  |
+| `test_sprite_z_order_sort`    | R-10.5.1  |
+| `test_anim_loop_mode`         | R-10.5.2  |
+| `test_anim_pingpong`          | R-10.5.2  |
+| `test_anim_oneshot`           | R-10.5.2  |
+| `test_anim_event_fire`        | R-10.5.2  |
+| `test_tilemap_ortho_coord`    | R-10.5.6  |
+| `test_tilemap_iso_diamond`    | R-10.5.7  |
+| `test_tilemap_hex_coord`      | R-10.5.7  |
+| `test_tilemap_auto_tile`      | R-10.5.6  |
+| `test_tilemap_collider_merge` | R-10.5.11 |
+| `test_camera_deadzone`        | R-10.5.9  |
+| `test_camera_pixel_snap`      | R-10.5.9  |
+| `test_parallax_scroll_rate`   | R-10.5.9  |
+| `test_rigidbody_gravity`      | R-10.5.10 |
+| `test_ccd_tunnel_prevention`  | R-10.5.10 |
+| `test_one_way_platform`       | R-10.5.10 |
+| `test_deterministic_sim`      | R-10.5.10 |
+| `test_joint_revolute_limits`  | R-10.5.12 |
+| `test_joint_break_force`      | R-10.5.12 |
+| `test_ray_cast_2d`            | R-10.5.13 |
+| `test_overlap_2d`             | R-10.5.13 |
+| `test_light_shadow_cast`      | R-10.5.14 |
+| `test_normal_map_response`    | R-10.5.14 |
+| `test_emissive_no_light`      | R-10.5.14 |
+
+1. **`test_sprite_batch_by_atlas`** — 10K sprites, 4 atlas pages -- batch count =
+   atlas-page/blend-mode combos
+2. **`test_sprite_z_order_sort`** — Sprites sorted by layer then z_order within each batch
+3. **`test_anim_loop_mode`** — Loop mode wraps frame index at clip end
+4. **`test_anim_pingpong`** — Ping-pong reverses direction at clip boundaries
+5. **`test_anim_oneshot`** — One-shot stops at last frame, state = Finished
+6. **`test_anim_event_fire`** — Animation event fires at correct frame
+7. **`test_tilemap_ortho_coord`** — Orthogonal screen-to-tile round-trip
+8. **`test_tilemap_iso_diamond`** — Isometric diamond coordinate conversion
+9. **`test_tilemap_hex_coord`** — Hex pointy-top coordinate conversion
+10. **`test_tilemap_auto_tile`** — Auto-tile neighbor mask selects correct UV
+11. **`test_tilemap_collider_merge`** — 100x100 tilemap edge merge reduces colliders by 90%+
+12. **`test_camera_deadzone`** — Target inside dead zone does not move camera
+13. **`test_camera_pixel_snap`** — Pixel-perfect snap rounds to grid
+14. **`test_parallax_scroll_rate`** — Layer at 0.5 scroll rate moves at half camera delta
+15. **`test_rigidbody_gravity`** — Dynamic body accelerates under gravity
+16. **`test_ccd_tunnel_prevention`** — Fast projectile does not tunnel through thin wall
+17. **`test_one_way_platform`** — Body passes up, collides down
+18. **`test_deterministic_sim`** — 1000 steps, fixed seed, bit-identical across runs
+19. **`test_joint_revolute_limits`** — Revolute joint respects angle limits
+20. **`test_joint_break_force`** — Joint breaks when force exceeds threshold
+21. **`test_ray_cast_2d`** — Ray hits nearest collider, correct point/normal
+22. **`test_overlap_2d`** — Circle overlap returns all intersecting entities
+23. **`test_light_shadow_cast`** — Point light shadow matches occluder silhouette
+24. **`test_normal_map_response`** — Normal-mapped sprite changes shading with light dir
+25. **`test_emissive_no_light`** — Emissive sprite visible with zero ambient light
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_tilemap_stream_culling` | R-10.5.6 | Only viewport-visible chunks dispatched |
-| `test_10k_sprites_60fps` | R-10.5.1 | 10K sprites render at 60 fps on desktop |
-| `test_physics_collision_events` | R-10.5.10 | CollisionStart2D / End2D fire correctly |
-| `test_split_screen_render` | R-10.5.9 | Two Camera2D viewports render independently |
-| `test_mobile_light_cap` | R-10.5.14 | Mobile path caps at 8 lights, half-res map |
-| `test_iso_depth_sorting` | R-10.5.7 | Overlapping isometric tiles sort correctly |
+| Test                            | Req       |
+|---------------------------------|-----------|
+| `test_tilemap_stream_culling`   | R-10.5.6  |
+| `test_10k_sprites_60fps`        | R-10.5.1  |
+| `test_physics_collision_events` | R-10.5.10 |
+| `test_split_screen_render`      | R-10.5.9  |
+| `test_mobile_light_cap`         | R-10.5.14 |
+| `test_iso_depth_sorting`        | R-10.5.7  |
+
+1. **`test_tilemap_stream_culling`** — Only viewport-visible chunks dispatched
+2. **`test_10k_sprites_60fps`** — 10K sprites render at 60 fps on desktop
+3. **`test_physics_collision_events`** — CollisionStart2D / End2D fire correctly
+4. **`test_split_screen_render`** — Two Camera2D viewports render independently
+5. **`test_mobile_light_cap`** — Mobile path caps at 8 lights, half-res map
+6. **`test_iso_depth_sorting`** — Overlapping isometric tiles sort correctly
 
 ### Benchmarks
 

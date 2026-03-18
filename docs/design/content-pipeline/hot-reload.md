@@ -8,15 +8,23 @@
 > [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
 > design elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-12.4.1 | R-12.4.1 | US-12.4.5 | File watcher daemon with platform-native APIs, debounce, and deduplication |
-| F-12.4.2 | R-12.4.2 | US-12.4.1, US-12.4.9, US-12.4.10, US-12.4.15 | Asset hot reload with descriptor heap and atomic pointer swap |
-| F-12.4.3 | R-12.4.3 | US-12.4.2, US-12.4.8, US-12.4.12 | Shader hot reload with permutation recompilation and error overlay |
-| F-12.4.4 | R-12.4.4 | US-12.4.3, US-12.4.11, US-12.4.12 | Logic graph hot reload with state preservation |
-| F-12.4.5 | R-12.4.5 | US-12.4.4, US-12.4.16 | UI hot reload preserving scroll, focus, and animation state |
-| F-12.4.6 | R-12.4.6 | US-12.4.6, US-12.4.12 | Partial re-import of modified sub-assets only |
-| F-12.4.7 | R-12.4.7 | US-12.4.7, US-12.4.13 | Bidirectional editor-runtime synchronization channel |
+| Feature  | Requirement | User Stories                                 |
+|----------|-------------|----------------------------------------------|
+| F-12.4.1 | R-12.4.1    | US-12.4.5                                    |
+| F-12.4.2 | R-12.4.2    | US-12.4.1, US-12.4.9, US-12.4.10, US-12.4.15 |
+| F-12.4.3 | R-12.4.3    | US-12.4.2, US-12.4.8, US-12.4.12             |
+| F-12.4.4 | R-12.4.4    | US-12.4.3, US-12.4.11, US-12.4.12            |
+| F-12.4.5 | R-12.4.5    | US-12.4.4, US-12.4.16                        |
+| F-12.4.6 | R-12.4.6    | US-12.4.6, US-12.4.12                        |
+| F-12.4.7 | R-12.4.7    | US-12.4.7, US-12.4.13                        |
+
+1. **F-12.4.1** — File watcher daemon with platform-native APIs, debounce, and deduplication
+2. **F-12.4.2** — Asset hot reload with descriptor heap and atomic pointer swap
+3. **F-12.4.3** — Shader hot reload with permutation recompilation and error overlay
+4. **F-12.4.4** — Logic graph hot reload with state preservation
+5. **F-12.4.5** — UI hot reload preserving scroll, focus, and animation state
+6. **F-12.4.6** — Partial re-import of modified sub-assets only
+7. **F-12.4.7** — Bidirectional editor-runtime synchronization channel
 
 ### Cross-Cutting Dependencies
 
@@ -1297,11 +1305,18 @@ loop {
 
 ### File Watcher Backends
 
-| Platform | API | Notes |
-|----------|-----|-------|
-| Windows | `ReadDirectoryChangesExW` | Async via IOCP. Supports recursive watching natively. Buffer overflow requires re-scan. |
-| macOS | `FSEvents` | Recursive watching with latency coalescing. Events delivered to GCD dispatch queue, drained at poll point. |
-| Linux | `inotify_add_watch` | One watch per directory for recursive mode. Event reads via io_uring. Watch limit governed by `fs.inotify.max_user_watches`. |
+| Platform | API                       |
+|----------|---------------------------|
+| Windows  | `ReadDirectoryChangesExW` |
+| macOS    | `FSEvents`                |
+| Linux    | `inotify_add_watch`       |
+
+1. **Windows** — Async via IOCP. Supports recursive watching natively. Buffer overflow requires
+   re-scan.
+2. **macOS** — Recursive watching with latency coalescing. Events delivered to GCD dispatch queue,
+   drained at poll point.
+3. **Linux** — One watch per directory for recursive mode. Event reads via io_uring. Watch limit
+   governed by `fs.inotify.max_user_watches`.
 
 ### Swap Strategy per Asset Type
 
@@ -1356,41 +1371,100 @@ changes. On Linux, inotify emits `IN_Q_OVERFLOW`. Recovery strategy:
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_change_detector_filters_false_positive` | R-12.4.1 | Touch a file without changing content. Verify no reload request is generated after BLAKE3 comparison. |
-| `test_change_detector_resolves_dependents` | R-12.4.2 | Change a texture referenced by 3 materials. Verify all 3 materials appear in the reload request's dependents list. |
-| `test_handle_table_swap_preserves_handle` | R-12.4.2 | Allocate a handle, swap the pointer, resolve the handle. Verify it returns the new data. |
-| `test_handle_table_stale_generation` | R-12.4.2 | Allocate a handle, retire it, allocate a new slot in the same index. Verify the old handle returns None. |
-| `test_swap_scheduler_applies_at_boundary` | US-12.4.9 | Schedule a swap, verify it is not applied until `apply_pending_swaps` is called. |
-| `test_swap_scheduler_retires_after_fence` | R-12.4.2 | Schedule and apply a swap. Verify the old data is not freed until `retire_old_assets` is called with a fence value >= the swap frame. |
-| `test_shader_reloader_identifies_permutations` | R-12.4.3 | Register 8 permutations for a shader. Verify `affected_permutations` returns all 8. |
-| `test_shader_reloader_error_preserves_old` | R-12.4.3 | Compile a shader with an error. Verify the old PSO remains active and errors are reported. |
-| `test_logic_graph_compatible_layout` | R-12.4.4 | Reload a graph with the same variable layout. Verify state is preserved and `patched_count > 0`. |
-| `test_logic_graph_incompatible_layout` | R-12.4.4 | Reload a graph with a changed variable layout. Verify instances are restarted and `restarted_count > 0`. |
-| `test_ui_reloader_preserves_scroll` | R-12.4.5 | Set a scroll position, reload UI, verify the position is restored. |
-| `test_ui_reloader_preserves_focus` | R-12.4.5 | Set focus on a widget, reload UI, verify focus is restored. |
-| `test_partial_reimport_single_clip` | R-12.4.6 | Modify 1 of 10 animation clips. Verify only 1 sub-asset is reimported. |
-| `test_debounce_coalesces_rapid_events` | R-12.4.1 | Write to the same file 5 times in 20 ms. Verify exactly 1 reload request is generated. |
-| `test_editor_sync_property_roundtrip` | R-12.4.7 | Send a PropertyChanged message from editor to runtime and verify the property is applied. |
+| Test                                           | Req       |
+|------------------------------------------------|-----------|
+| `test_change_detector_filters_false_positive`  | R-12.4.1  |
+| `test_change_detector_resolves_dependents`     | R-12.4.2  |
+| `test_handle_table_swap_preserves_handle`      | R-12.4.2  |
+| `test_handle_table_stale_generation`           | R-12.4.2  |
+| `test_swap_scheduler_applies_at_boundary`      | US-12.4.9 |
+| `test_swap_scheduler_retires_after_fence`      | R-12.4.2  |
+| `test_shader_reloader_identifies_permutations` | R-12.4.3  |
+| `test_shader_reloader_error_preserves_old`     | R-12.4.3  |
+| `test_logic_graph_compatible_layout`           | R-12.4.4  |
+| `test_logic_graph_incompatible_layout`         | R-12.4.4  |
+| `test_ui_reloader_preserves_scroll`            | R-12.4.5  |
+| `test_ui_reloader_preserves_focus`             | R-12.4.5  |
+| `test_partial_reimport_single_clip`            | R-12.4.6  |
+| `test_debounce_coalesces_rapid_events`         | R-12.4.1  |
+| `test_editor_sync_property_roundtrip`          | R-12.4.7  |
+
+1. **`test_change_detector_filters_false_positive`** — Touch a file without changing content. Verify
+   no reload request is generated after BLAKE3 comparison.
+2. **`test_change_detector_resolves_dependents`** — Change a texture referenced by 3 materials.
+   Verify all 3 materials appear in the reload request's dependents list.
+3. **`test_handle_table_swap_preserves_handle`** — Allocate a handle, swap the pointer, resolve the
+   handle. Verify it returns the new data.
+4. **`test_handle_table_stale_generation`** — Allocate a handle, retire it, allocate a new slot in
+   the same index. Verify the old handle returns None.
+5. **`test_swap_scheduler_applies_at_boundary`** — Schedule a swap, verify it is not applied until
+   `apply_pending_swaps` is called.
+6. **`test_swap_scheduler_retires_after_fence`** — Schedule and apply a swap. Verify the old data is
+   not freed until `retire_old_assets` is called with a fence value >= the swap frame.
+7. **`test_shader_reloader_identifies_permutations`** — Register 8 permutations for a shader. Verify
+   `affected_permutations` returns all 8.
+8. **`test_shader_reloader_error_preserves_old`** — Compile a shader with an error. Verify the old
+   PSO remains active and errors are reported.
+9. **`test_logic_graph_compatible_layout`** — Reload a graph with the same variable layout. Verify
+   state is preserved and `patched_count > 0`.
+10. **`test_logic_graph_incompatible_layout`** — Reload a graph with a changed variable layout.
+    Verify instances are restarted and `restarted_count > 0`.
+11. **`test_ui_reloader_preserves_scroll`** — Set a scroll position, reload UI, verify the position
+    is restored.
+12. **`test_ui_reloader_preserves_focus`** — Set focus on a widget, reload UI, verify focus is
+    restored.
+13. **`test_partial_reimport_single_clip`** — Modify 1 of 10 animation clips. Verify only 1
+    sub-asset is reimported.
+14. **`test_debounce_coalesces_rapid_events`** — Write to the same file 5 times in 20 ms. Verify
+    exactly 1 reload request is generated.
+15. **`test_editor_sync_property_roundtrip`** — Send a PropertyChanged message from editor to
+    runtime and verify the property is applied.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_texture_hot_reload_e2e` | R-12.4.2 | Load a scene with a textured mesh, modify the source texture, verify the runtime texture updates within 2 seconds without restart. Capture frames before and after to verify no artifacts. |
-| `test_mesh_hot_reload_e2e` | R-12.4.2 | Modify a mesh source file, verify the runtime mesh updates within 3 seconds with no visual glitches during the swap. |
-| `test_shader_hot_reload_valid` | R-12.4.3 | Modify a shader with a valid change, verify PSO updates within one frame boundary. |
-| `test_shader_hot_reload_error_overlay` | R-12.4.3 | Introduce a shader syntax error, verify the error overlay appears and the previous shader continues rendering. |
-| `test_logic_graph_reload_500ms` | R-12.4.4 | Modify a logic graph, verify hot reload completes within 500 ms with state preserved. |
-| `test_ui_reload_preserves_all_state` | R-12.4.5 | Reload a UI with active scroll, focus, and animation. Verify all three are preserved. |
-| `test_partial_reimport_latency` | R-12.4.6 | Partial reimport of 1/10 clips. Verify latency is under 20% of full reimport. |
-| `test_editor_runtime_sync_100ms` | R-12.4.7 | Change a material parameter in the editor, verify runtime reflects it within 100 ms. |
-| `test_multi_device_sync` | R-12.4.7 | Connect 3 runtime instances, verify all receive synchronized changes. |
-| `test_hot_reload_no_memory_leak` | US-12.4.10 | Repeatedly hot reload textures, meshes, shaders, and logic graphs 100 times. Verify CPU and GPU memory usage does not grow unboundedly. |
-| `test_buffer_overflow_recovery` | R-12.4.1 | Trigger a ReadDirectoryChangesW buffer overflow by writing 10,000 files rapidly. Verify the watcher recovers via full scan and no changes are missed. |
-| `test_dcc_live_link_reload` | US-12.4.14 | Push a change through a DCC plugin live link, verify the engine hot reloads the asset correctly. |
-| `test_platform_watcher_latency` | R-12.4.1 | Write a file and measure time to event dispatch. Verify under 500 ms on all platforms. |
+| Test                                   | Req        |
+|----------------------------------------|------------|
+| `test_texture_hot_reload_e2e`          | R-12.4.2   |
+| `test_mesh_hot_reload_e2e`             | R-12.4.2   |
+| `test_shader_hot_reload_valid`         | R-12.4.3   |
+| `test_shader_hot_reload_error_overlay` | R-12.4.3   |
+| `test_logic_graph_reload_500ms`        | R-12.4.4   |
+| `test_ui_reload_preserves_all_state`   | R-12.4.5   |
+| `test_partial_reimport_latency`        | R-12.4.6   |
+| `test_editor_runtime_sync_100ms`       | R-12.4.7   |
+| `test_multi_device_sync`               | R-12.4.7   |
+| `test_hot_reload_no_memory_leak`       | US-12.4.10 |
+| `test_buffer_overflow_recovery`        | R-12.4.1   |
+| `test_dcc_live_link_reload`            | US-12.4.14 |
+| `test_platform_watcher_latency`        | R-12.4.1   |
+
+1. **`test_texture_hot_reload_e2e`** — Load a scene with a textured mesh, modify the source texture,
+   verify the runtime texture updates within 2 seconds without restart. Capture frames before and
+   after to verify no artifacts.
+2. **`test_mesh_hot_reload_e2e`** — Modify a mesh source file, verify the runtime mesh updates
+   within 3 seconds with no visual glitches during the swap.
+3. **`test_shader_hot_reload_valid`** — Modify a shader with a valid change, verify PSO updates
+   within one frame boundary.
+4. **`test_shader_hot_reload_error_overlay`** — Introduce a shader syntax error, verify the error
+   overlay appears and the previous shader continues rendering.
+5. **`test_logic_graph_reload_500ms`** — Modify a logic graph, verify hot reload completes within
+   500 ms with state preserved.
+6. **`test_ui_reload_preserves_all_state`** — Reload a UI with active scroll, focus, and animation.
+   Verify all three are preserved.
+7. **`test_partial_reimport_latency`** — Partial reimport of 1/10 clips. Verify latency is under 20%
+   of full reimport.
+8. **`test_editor_runtime_sync_100ms`** — Change a material parameter in the editor, verify runtime
+   reflects it within 100 ms.
+9. **`test_multi_device_sync`** — Connect 3 runtime instances, verify all receive synchronized
+   changes.
+10. **`test_hot_reload_no_memory_leak`** — Repeatedly hot reload textures, meshes, shaders, and
+    logic graphs 100 times. Verify CPU and GPU memory usage does not grow unboundedly.
+11. **`test_buffer_overflow_recovery`** — Trigger a ReadDirectoryChangesW buffer overflow by writing
+    10,000 files rapidly. Verify the watcher recovers via full scan and no changes are missed.
+12. **`test_dcc_live_link_reload`** — Push a change through a DCC plugin live link, verify the
+    engine hot reloads the asset correctly.
+13. **`test_platform_watcher_latency`** — Write a file and measure time to event dispatch. Verify
+    under 500 ms on all platforms.
 
 ### Benchmarks
 

@@ -8,17 +8,27 @@
 > [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
 > design elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-12.2.1 | R-12.2.1 | US-12.2.1, US-12.2.12, US-12.2.17 | Texture compression (BC7, ASTC, ETC2) per platform with quality presets |
-| F-12.2.2 | R-12.2.2 | US-12.2.2, US-12.2.13 | LOD chain generation via edge-collapse simplification |
-| F-12.2.3 | R-12.2.3 | US-12.2.3, US-12.2.19 | Meshlet building (64v/124t) with AABB and normal cone bounds |
-| F-12.2.4 | R-12.2.4 | US-12.2.4 | Vertex cache and overdraw optimization per meshlet |
-| F-12.2.5 | R-12.2.5 | US-12.2.5, US-12.2.20 | Lightmap UV atlas generation with uniform texel density |
-| F-12.2.6 | R-12.2.6 | US-12.2.6, US-12.2.18 | Audio encoding (Opus, ADPCM, PCM) by import preset |
-| F-12.2.7 | R-12.2.7 | US-12.2.7, US-12.2.11, US-12.2.16 | Shader graph to clean HLSL code generation |
-| F-12.2.8 | R-12.2.8 | US-12.2.9 | Asset dependency graph for incremental rebuilds |
-| F-12.2.9 | R-12.2.9 | US-12.2.8, US-12.2.10, US-12.2.14 | DXC and Metal Shader Converter bytecode pipeline |
+| Feature  | Requirement | User Stories                      |
+|----------|-------------|-----------------------------------|
+| F-12.2.1 | R-12.2.1    | US-12.2.1, US-12.2.12, US-12.2.17 |
+| F-12.2.2 | R-12.2.2    | US-12.2.2, US-12.2.13             |
+| F-12.2.3 | R-12.2.3    | US-12.2.3, US-12.2.19             |
+| F-12.2.4 | R-12.2.4    | US-12.2.4                         |
+| F-12.2.5 | R-12.2.5    | US-12.2.5, US-12.2.20             |
+| F-12.2.6 | R-12.2.6    | US-12.2.6, US-12.2.18             |
+| F-12.2.7 | R-12.2.7    | US-12.2.7, US-12.2.11, US-12.2.16 |
+| F-12.2.8 | R-12.2.8    | US-12.2.9                         |
+| F-12.2.9 | R-12.2.9    | US-12.2.8, US-12.2.10, US-12.2.14 |
+
+1. **F-12.2.1** — Texture compression (BC7, ASTC, ETC2) per platform with quality presets
+2. **F-12.2.2** — LOD chain generation via edge-collapse simplification
+3. **F-12.2.3** — Meshlet building (64v/124t) with AABB and normal cone bounds
+4. **F-12.2.4** — Vertex cache and overdraw optimization per meshlet
+5. **F-12.2.5** — Lightmap UV atlas generation with uniform texel density
+6. **F-12.2.6** — Audio encoding (Opus, ADPCM, PCM) by import preset
+7. **F-12.2.7** — Shader graph to clean HLSL code generation
+8. **F-12.2.8** — Asset dependency graph for incremental rebuilds
+9. **F-12.2.9** — DXC and Metal Shader Converter bytecode pipeline
 
 ### Cross-Cutting Dependencies
 
@@ -1579,12 +1589,17 @@ flowchart TD
 
 ### FFI Dependencies
 
-| Library | Language | FFI Bridge | Purpose |
-|---------|----------|------------|---------|
-| DXC | C++ | cxx.rs | HLSL → DXIL, HLSL → SPIR-V |
-| Metal Shader Converter | C++ | cxx.rs | DXIL → MSL |
-| meshoptimizer | C/C++ | cxx.rs | LOD generation, meshlet building, vertex cache/overdraw optimization |
-| blake3 | Rust | Native crate | Content hashing for incremental cache |
+| Library                | Language | FFI Bridge   |
+|------------------------|----------|--------------|
+| DXC                    | C++      | cxx.rs       |
+| Metal Shader Converter | C++      | cxx.rs       |
+| meshoptimizer          | C/C++    | cxx.rs       |
+| blake3                 | Rust     | Native crate |
+
+1. **DXC** — HLSL → DXIL, HLSL → SPIR-V
+2. **Metal Shader Converter** — DXIL → MSL
+3. **meshoptimizer** — LOD generation, meshlet building, vertex cache/overdraw optimization
+4. **blake3** — Content hashing for incremental cache
 
 ### Concurrency Model
 
@@ -1630,51 +1645,113 @@ processor ever blocks a worker thread on I/O.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_texture_bc7_roundtrip` | R-12.2.1 | Compress 1K test texture to BC7; decompress; verify PSNR > 40 dB. |
-| `test_texture_astc_roundtrip` | R-12.2.1 | Compress to ASTC 4x4; decompress; verify PSNR > 38 dB. |
-| `test_texture_etc2_roundtrip` | R-12.2.1 | Compress to ETC2; decompress; verify PSNR > 35 dB. |
-| `test_texture_format_selection` | R-12.2.1 | Verify each PlatformTarget selects correct format from override table. |
-| `test_lod_triangle_ratios` | R-12.2.2 | Generate 4-level LOD chain; verify each level meets triangle ratio within 5%. |
-| `test_lod_silhouette_preservation` | R-12.2.2 | Verify Hausdorff distance stays below error threshold per LOD. |
-| `test_meshlet_size_limits` | R-12.2.3 | Build meshlets; verify no meshlet exceeds 64 vertices or 124 triangles. |
-| `test_meshlet_bounds_valid` | R-12.2.3 | Verify every meshlet has a non-degenerate AABB and valid normal cone. |
-| `test_vertex_cache_acmr` | R-12.2.4 | Measure ACMR before/after optimization; verify improvement > 20%. |
-| `test_overdraw_reduction` | R-12.2.4 | Measure overdraw ratio before/after; verify reduction. |
-| `test_lightmap_uv_no_overlap` | R-12.2.5 | Generate lightmap UVs; verify zero chart overlaps via rasterization test. |
-| `test_lightmap_texel_density` | R-12.2.5 | Verify texel density variance < 10% across charts. |
-| `test_audio_opus_encode` | R-12.2.6 | Encode WAV to Opus at 128 kbps; decode; verify SNR > 30 dB. |
-| `test_audio_adpcm_latency` | R-12.2.6 | Encode to ADPCM; measure decode latency; verify < 1 ms for 100 ms clip. |
-| `test_audio_pcm_passthrough` | R-12.2.6 | PCM encoding preserves exact sample values (bit-exact). |
-| `test_hlsl_codegen_valid` | R-12.2.7 | Generate HLSL from 20-node graph; verify valid HLSL syntax. |
-| `test_hlsl_no_template_markers` | R-12.2.7 | Verify output contains no `{{`, `%%`, `<%>` markers. |
-| `test_hlsl_source_map` | R-12.2.7 | Verify every HLSL line maps to a graph node via source map. |
-| `test_variant_pruning` | R-12.2.7 | Graph with 8 parameters; verify only reachable variants are generated. |
-| `test_dependency_graph_cycle` | R-12.2.8 | Introduce circular reference; verify CycleDetected error. |
-| `test_incremental_cache_hit` | R-12.2.8 | Process asset; re-process without changes; verify cache hit (skipped). |
-| `test_incremental_invalidation` | R-12.2.8 | Change shared texture; verify dependent materials are reprocessed. |
-| `test_dxc_hlsl_to_dxil` | R-12.2.9 | Compile test HLSL to DXIL; verify valid bytecode. |
-| `test_dxc_hlsl_to_spirv` | R-12.2.9 | Compile test HLSL to SPIR-V; verify valid bytecode. |
-| `test_msc_dxil_to_msl` | R-12.2.9 | Translate DXIL to MSL via Metal Shader Converter; verify valid output. |
-| `test_shader_reflection` | R-12.2.9 | Compile HLSL; verify reflected bindings match source declarations. |
-| `test_shader_dce` | R-12.2.9 | Compile HLSL with dead code; verify dead code is eliminated. |
-| `test_shader_error_tracing` | R-12.2.9 | Introduce HLSL error; verify error maps to graph node via source map. |
-| `test_content_hash_deterministic` | R-12.2.8 | Same source + config produces identical BLAKE3 hash across runs. |
-| `test_processing_graph_ordering` | R-12.2.8 | Build graph; verify topological sort respects all dependency edges. |
+| Test                               | Req      |
+|------------------------------------|----------|
+| `test_texture_bc7_roundtrip`       | R-12.2.1 |
+| `test_texture_astc_roundtrip`      | R-12.2.1 |
+| `test_texture_etc2_roundtrip`      | R-12.2.1 |
+| `test_texture_format_selection`    | R-12.2.1 |
+| `test_lod_triangle_ratios`         | R-12.2.2 |
+| `test_lod_silhouette_preservation` | R-12.2.2 |
+| `test_meshlet_size_limits`         | R-12.2.3 |
+| `test_meshlet_bounds_valid`        | R-12.2.3 |
+| `test_vertex_cache_acmr`           | R-12.2.4 |
+| `test_overdraw_reduction`          | R-12.2.4 |
+| `test_lightmap_uv_no_overlap`      | R-12.2.5 |
+| `test_lightmap_texel_density`      | R-12.2.5 |
+| `test_audio_opus_encode`           | R-12.2.6 |
+| `test_audio_adpcm_latency`         | R-12.2.6 |
+| `test_audio_pcm_passthrough`       | R-12.2.6 |
+| `test_hlsl_codegen_valid`          | R-12.2.7 |
+| `test_hlsl_no_template_markers`    | R-12.2.7 |
+| `test_hlsl_source_map`             | R-12.2.7 |
+| `test_variant_pruning`             | R-12.2.7 |
+| `test_dependency_graph_cycle`      | R-12.2.8 |
+| `test_incremental_cache_hit`       | R-12.2.8 |
+| `test_incremental_invalidation`    | R-12.2.8 |
+| `test_dxc_hlsl_to_dxil`            | R-12.2.9 |
+| `test_dxc_hlsl_to_spirv`           | R-12.2.9 |
+| `test_msc_dxil_to_msl`             | R-12.2.9 |
+| `test_shader_reflection`           | R-12.2.9 |
+| `test_shader_dce`                  | R-12.2.9 |
+| `test_shader_error_tracing`        | R-12.2.9 |
+| `test_content_hash_deterministic`  | R-12.2.8 |
+| `test_processing_graph_ordering`   | R-12.2.8 |
+
+1. **`test_texture_bc7_roundtrip`** — Compress 1K test texture to BC7; decompress; verify PSNR > 40
+   dB.
+2. **`test_texture_astc_roundtrip`** — Compress to ASTC 4x4; decompress; verify PSNR > 38 dB.
+3. **`test_texture_etc2_roundtrip`** — Compress to ETC2; decompress; verify PSNR > 35 dB.
+4. **`test_texture_format_selection`** — Verify each PlatformTarget selects correct format from
+   override table.
+5. **`test_lod_triangle_ratios`** — Generate 4-level LOD chain; verify each level meets triangle
+   ratio within 5%.
+6. **`test_lod_silhouette_preservation`** — Verify Hausdorff distance stays below error threshold
+   per LOD.
+7. **`test_meshlet_size_limits`** — Build meshlets; verify no meshlet exceeds 64 vertices or 124
+   triangles.
+8. **`test_meshlet_bounds_valid`** — Verify every meshlet has a non-degenerate AABB and valid normal
+   cone.
+9. **`test_vertex_cache_acmr`** — Measure ACMR before/after optimization; verify improvement > 20%.
+10. **`test_overdraw_reduction`** — Measure overdraw ratio before/after; verify reduction.
+11. **`test_lightmap_uv_no_overlap`** — Generate lightmap UVs; verify zero chart overlaps via
+    rasterization test.
+12. **`test_lightmap_texel_density`** — Verify texel density variance < 10% across charts.
+13. **`test_audio_opus_encode`** — Encode WAV to Opus at 128 kbps; decode; verify SNR > 30 dB.
+14. **`test_audio_adpcm_latency`** — Encode to ADPCM; measure decode latency; verify < 1 ms for 100
+    ms clip.
+15. **`test_audio_pcm_passthrough`** — PCM encoding preserves exact sample values (bit-exact).
+16. **`test_hlsl_codegen_valid`** — Generate HLSL from 20-node graph; verify valid HLSL syntax.
+17. **`test_hlsl_no_template_markers`** — Verify output contains no `{{`, `%%`, `<%>` markers.
+18. **`test_hlsl_source_map`** — Verify every HLSL line maps to a graph node via source map.
+19. **`test_variant_pruning`** — Graph with 8 parameters; verify only reachable variants are
+    generated.
+20. **`test_dependency_graph_cycle`** — Introduce circular reference; verify CycleDetected error.
+21. **`test_incremental_cache_hit`** — Process asset; re-process without changes; verify cache hit
+    (skipped).
+22. **`test_incremental_invalidation`** — Change shared texture; verify dependent materials are
+    reprocessed.
+23. **`test_dxc_hlsl_to_dxil`** — Compile test HLSL to DXIL; verify valid bytecode.
+24. **`test_dxc_hlsl_to_spirv`** — Compile test HLSL to SPIR-V; verify valid bytecode.
+25. **`test_msc_dxil_to_msl`** — Translate DXIL to MSL via Metal Shader Converter; verify valid
+    output.
+26. **`test_shader_reflection`** — Compile HLSL; verify reflected bindings match source
+    declarations.
+27. **`test_shader_dce`** — Compile HLSL with dead code; verify dead code is eliminated.
+28. **`test_shader_error_tracing`** — Introduce HLSL error; verify error maps to graph node via
+    source map.
+29. **`test_content_hash_deterministic`** — Same source + config produces identical BLAKE3 hash
+    across runs.
+30. **`test_processing_graph_ordering`** — Build graph; verify topological sort respects all
+    dependency edges.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_pipeline_texture` | R-12.2.1 | Import PNG, process for 3 platforms, verify 3 distinct artifacts in CAS. |
-| `test_full_pipeline_mesh` | R-12.2.2-4 | Import mesh via DCC plugin; verify LODs, meshlets, and optimized output. |
-| `test_full_pipeline_shader` | R-12.2.7, R-12.2.9 | Shader graph to HLSL to DXIL + SPIR-V + MSL; verify all outputs. |
-| `test_full_pipeline_audio` | R-12.2.6 | Import WAV; process as Opus, ADPCM, PCM; verify all 3 artifacts. |
-| `test_multi_platform_build` | All | Process 100 assets for 3 platforms; verify correct format per platform. |
-| `test_incremental_rebuild_e2e` | R-12.2.8 | Full build, modify 1 texture, rebuild; verify only dependents reprocessed. |
-| `test_parallel_utilization` | All | Process 1000 assets; verify >= 90% thread utilization. |
-| `test_shader_error_to_graph_node` | R-12.2.9 | Introduce graph node error; verify editor can navigate to node. |
+| Test                              | Req                |
+|-----------------------------------|--------------------|
+| `test_full_pipeline_texture`      | R-12.2.1           |
+| `test_full_pipeline_mesh`         | R-12.2.2-4         |
+| `test_full_pipeline_shader`       | R-12.2.7, R-12.2.9 |
+| `test_full_pipeline_audio`        | R-12.2.6           |
+| `test_multi_platform_build`       | All                |
+| `test_incremental_rebuild_e2e`    | R-12.2.8           |
+| `test_parallel_utilization`       | All                |
+| `test_shader_error_to_graph_node` | R-12.2.9           |
+
+1. **`test_full_pipeline_texture`** — Import PNG, process for 3 platforms, verify 3 distinct
+   artifacts in CAS.
+2. **`test_full_pipeline_mesh`** — Import mesh via DCC plugin; verify LODs, meshlets, and optimized
+   output.
+3. **`test_full_pipeline_shader`** — Shader graph to HLSL to DXIL + SPIR-V + MSL; verify all
+   outputs.
+4. **`test_full_pipeline_audio`** — Import WAV; process as Opus, ADPCM, PCM; verify all 3 artifacts.
+5. **`test_multi_platform_build`** — Process 100 assets for 3 platforms; verify correct format per
+   platform.
+6. **`test_incremental_rebuild_e2e`** — Full build, modify 1 texture, rebuild; verify only
+   dependents reprocessed.
+7. **`test_parallel_utilization`** — Process 1000 assets; verify >= 90% thread utilization.
+8. **`test_shader_error_to_graph_node`** — Introduce graph node error; verify editor can navigate to
+   node.
 
 ### Benchmarks
 

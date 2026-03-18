@@ -8,16 +8,25 @@
 > [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-8.1.1 | R-8.1.1 | US-8.1.1, US-8.1.10 | Connection handshake and authentication |
-| F-8.1.2 | R-8.1.2, R-8.NFR.7 | US-8.1.2, US-8.1.12 | Connection lifecycle management |
-| F-8.1.3 | R-8.1.3, R-8.NFR.12 | US-8.1.4 | Reliable ordered channel |
-| F-8.1.4 | R-8.1.4 | US-8.1.5 | Unreliable and unordered channels |
-| F-8.1.5 | R-8.1.5, R-8.NFR.11 | US-8.1.6 | DTLS encryption |
-| F-8.1.6 | R-8.1.6 | US-8.1.7 | Packet fragmentation, reassembly, MTU discovery |
-| F-8.1.7 | R-8.1.7 | US-8.1.8 | Bandwidth estimation and congestion control |
-| F-8.1.8 | R-8.1.8 | US-8.1.3, US-8.1.9 | Network diagnostics and quality indicators |
+| Feature | Requirement         | User Story          |
+|---------|---------------------|---------------------|
+| F-8.1.1 | R-8.1.1             | US-8.1.1, US-8.1.10 |
+| F-8.1.2 | R-8.1.2, R-8.NFR.7  | US-8.1.2, US-8.1.12 |
+| F-8.1.3 | R-8.1.3, R-8.NFR.12 | US-8.1.4            |
+| F-8.1.4 | R-8.1.4             | US-8.1.5            |
+| F-8.1.5 | R-8.1.5, R-8.NFR.11 | US-8.1.6            |
+| F-8.1.6 | R-8.1.6             | US-8.1.7            |
+| F-8.1.7 | R-8.1.7             | US-8.1.8            |
+| F-8.1.8 | R-8.1.8             | US-8.1.3, US-8.1.9  |
+
+1. **F-8.1.1** — Connection handshake and authentication
+2. **F-8.1.2** — Connection lifecycle management
+3. **F-8.1.3** — Reliable ordered channel
+4. **F-8.1.4** — Unreliable and unordered channels
+5. **F-8.1.5** — DTLS encryption
+6. **F-8.1.6** — Packet fragmentation, reassembly, MTU discovery
+7. **F-8.1.7** — Bandwidth estimation and congestion control
+8. **F-8.1.8** — Network diagnostics and quality indicators
 
 Cross-cutting constraints:
 
@@ -1843,19 +1852,30 @@ for id in expired {
 
 ### Socket I/O
 
-| Platform | API | Async Integration |
-|----------|-----|-------------------|
-| Windows | `WSASendTo` / `WSARecvFrom` (overlapped) | Registered with IOCP via `CreateIoCompletionPort`. Completions harvested at `reactor.poll()` via `GetQueuedCompletionStatusEx`. |
-| macOS | `sendto` / `recvfrom` (non-blocking) | Readiness monitored via `dispatch_source_create(DISPATCH_SOURCE_TYPE_READ)`. Controlled drain at `reactor.poll()` via `dispatch_sync` on a serial queue. |
-| Linux | `sendto` / `recvfrom` via io_uring | Submitted as `IORING_OP_SENDTO` / `IORING_OP_RECVFROM` SQEs. Completions harvested at `reactor.poll()` via `io_uring_peek_cqe`. Kernel 5.6+ for `IORING_OP_RECVMSG`. |
+| Platform | API                                      |
+|----------|------------------------------------------|
+| Windows  | `WSASendTo` / `WSARecvFrom` (overlapped) |
+| macOS    | `sendto` / `recvfrom` (non-blocking)     |
+| Linux    | `sendto` / `recvfrom` via io_uring       |
+
+1. **Windows** — Registered with IOCP via `CreateIoCompletionPort`. Completions harvested at
+   `reactor.poll()` via `GetQueuedCompletionStatusEx`.
+2. **macOS** — Readiness monitored via `dispatch_source_create(DISPATCH_SOURCE_TYPE_READ)`.
+   Controlled drain at `reactor.poll()` via `dispatch_sync` on a serial queue.
+3. **Linux** — Submitted as `IORING_OP_SENDTO` / `IORING_OP_RECVFROM` SQEs. Completions harvested at
+   `reactor.poll()` via `io_uring_peek_cqe`. Kernel 5.6+ for `IORING_OP_RECVMSG`.
 
 ### DTLS Backend
 
-| Platform | Library | Notes |
-|----------|---------|-------|
-| Windows | Schannel | Via `windows-sys`. Hardware AES-NI. FIPS-compliant. |
-| macOS | Security.framework | Via cxx.rs C++ wrappers. Hardware AES acceleration on Apple Silicon. |
-| Linux | rustls | Pure Rust. Uses `ring` crate for AES-GCM. Hardware AES-NI on x86_64. |
+| Platform | Library            |
+|----------|--------------------|
+| Windows  | Schannel           |
+| macOS    | Security.framework |
+| Linux    | rustls             |
+
+1. **Windows** — Via `windows-sys`. Hardware AES-NI. FIPS-compliant.
+2. **macOS** — Via cxx.rs C++ wrappers. Hardware AES acceleration on Apple Silicon.
+3. **Linux** — Pure Rust. Uses `ring` crate for AES-GCM. Hardware AES-NI on x86_64.
 
 ### Platform Defaults
 
@@ -1893,53 +1913,127 @@ via explicit system dependencies for all mutating transport systems.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_sequence_wrap` | R-8.1.3 | Verify `SequenceNumber::is_newer_than` handles 16-bit wrapping correctly across the u16 boundary. |
-| `test_sack_bitfield` | R-8.1.3 | Send 50 packets, drop 5 randomly. Verify SACK bitfield correctly identifies gaps and acked ranges. |
-| `test_rtt_estimator` | R-8.1.8 | Feed known RTT samples. Verify SRTT and RTO converge to expected values per Jacobson/Karels. |
-| `test_fast_retransmit` | R-8.1.3 | Drop packet N, send N+1..N+3. Verify fast retransmit of N after 3 SACKs without waiting for RTO. |
-| `test_rto_backoff` | R-8.1.3 | Drop a packet repeatedly. Verify RTO doubles each timeout up to the 2000 ms cap. |
-| `test_unreliable_sequenced_drop_stale` | R-8.1.4 | Deliver packets 1, 3, 2. Verify packet 2 is dropped (stale). |
-| `test_unreliable_unordered_delivers_all` | R-8.1.4 | Deliver packets 3, 1, 2. Verify all three are delivered in receive order. |
-| `test_reliable_unordered` | R-8.1.4 | Send with 10% simulated loss. Verify all messages arrive but order is not enforced. |
-| `test_fragment_roundtrip` | R-8.1.6 | Fragment a 32 KiB payload at 1200-byte MTU. Verify reassembly produces the original. |
-| `test_fragment_timeout` | R-8.1.6 | Send all fragments except the last. Verify the group expires after the configured timeout. |
-| `test_mtu_fallback` | R-8.1.6 | Simulate 3 failed MTU probes. Verify fallback to 1200-byte default. |
-| `test_congestion_slow_start` | R-8.1.7 | Verify cwnd doubles per RTT during slow start. |
-| `test_congestion_loss_recovery` | R-8.1.7 | Trigger loss. Verify cwnd reduces to 70% and enters Recovery state. |
-| `test_send_pacing` | R-8.1.7 | Verify packets are spread across the RTT window, not bursted. |
-| `test_cookie_generation` | R-8.1.1 | Generate cookies for different addresses. Verify uniqueness and time-based expiration. |
-| `test_cookie_validation` | R-8.1.1 | Verify valid cookies are accepted. Verify expired cookies are rejected. Verify forged cookies are rejected. |
-| `test_replay_detection` | R-8.1.1 | Send AuthRequest, replay it. Verify the replay is rejected. |
-| `test_connection_state_transitions` | R-8.1.2 | Walk through all state transitions. Verify illegal transitions are rejected. |
-| `test_timing_wheel_o1` | R-8.NFR.7 | Schedule 10,000 timeouts. Verify tick() time is constant regardless of count. |
-| `test_dtls_encrypt_decrypt` | R-8.1.5 | Encrypt and decrypt a payload. Verify roundtrip integrity. |
-| `test_dtls_tamper_detection` | R-8.1.5 | Encrypt, modify one byte, attempt decrypt. Verify auth tag failure. |
-| `test_nonce_replay_rejection` | R-8.1.5 | Replay a previously received nonce. Verify the packet is rejected. |
-| `test_packet_codec_roundtrip` | - | Encode and decode all PacketType variants. Verify bit-exact roundtrip. |
-| `test_stats_ewma_convergence` | R-8.1.8 | Feed stable 5% loss for 100 samples. Verify the EWMA converges to 5% +/- 1%. |
+| Test                                     | Req       |
+|------------------------------------------|-----------|
+| `test_sequence_wrap`                     | R-8.1.3   |
+| `test_sack_bitfield`                     | R-8.1.3   |
+| `test_rtt_estimator`                     | R-8.1.8   |
+| `test_fast_retransmit`                   | R-8.1.3   |
+| `test_rto_backoff`                       | R-8.1.3   |
+| `test_unreliable_sequenced_drop_stale`   | R-8.1.4   |
+| `test_unreliable_unordered_delivers_all` | R-8.1.4   |
+| `test_reliable_unordered`                | R-8.1.4   |
+| `test_fragment_roundtrip`                | R-8.1.6   |
+| `test_fragment_timeout`                  | R-8.1.6   |
+| `test_mtu_fallback`                      | R-8.1.6   |
+| `test_congestion_slow_start`             | R-8.1.7   |
+| `test_congestion_loss_recovery`          | R-8.1.7   |
+| `test_send_pacing`                       | R-8.1.7   |
+| `test_cookie_generation`                 | R-8.1.1   |
+| `test_cookie_validation`                 | R-8.1.1   |
+| `test_replay_detection`                  | R-8.1.1   |
+| `test_connection_state_transitions`      | R-8.1.2   |
+| `test_timing_wheel_o1`                   | R-8.NFR.7 |
+| `test_dtls_encrypt_decrypt`              | R-8.1.5   |
+| `test_dtls_tamper_detection`             | R-8.1.5   |
+| `test_nonce_replay_rejection`            | R-8.1.5   |
+| `test_packet_codec_roundtrip`            | -         |
+| `test_stats_ewma_convergence`            | R-8.1.8   |
+
+1. **`test_sequence_wrap`** — Verify `SequenceNumber::is_newer_than` handles 16-bit wrapping
+   correctly across the u16 boundary.
+2. **`test_sack_bitfield`** — Send 50 packets, drop 5 randomly. Verify SACK bitfield correctly
+   identifies gaps and acked ranges.
+3. **`test_rtt_estimator`** — Feed known RTT samples. Verify SRTT and RTO converge to expected
+   values per Jacobson/Karels.
+4. **`test_fast_retransmit`** — Drop packet N, send N+1..N+3. Verify fast retransmit of N after 3
+   SACKs without waiting for RTO.
+5. **`test_rto_backoff`** — Drop a packet repeatedly. Verify RTO doubles each timeout up to the 2000
+   ms cap.
+6. **`test_unreliable_sequenced_drop_stale`** — Deliver packets 1, 3, 2. Verify packet 2 is dropped
+   (stale).
+7. **`test_unreliable_unordered_delivers_all`** — Deliver packets 3, 1, 2. Verify all three are
+   delivered in receive order.
+8. **`test_reliable_unordered`** — Send with 10% simulated loss. Verify all messages arrive but
+   order is not enforced.
+9. **`test_fragment_roundtrip`** — Fragment a 32 KiB payload at 1200-byte MTU. Verify reassembly
+   produces the original.
+10. **`test_fragment_timeout`** — Send all fragments except the last. Verify the group expires after
+    the configured timeout.
+11. **`test_mtu_fallback`** — Simulate 3 failed MTU probes. Verify fallback to 1200-byte default.
+12. **`test_congestion_slow_start`** — Verify cwnd doubles per RTT during slow start.
+13. **`test_congestion_loss_recovery`** — Trigger loss. Verify cwnd reduces to 70% and enters
+    Recovery state.
+14. **`test_send_pacing`** — Verify packets are spread across the RTT window, not bursted.
+15. **`test_cookie_generation`** — Generate cookies for different addresses. Verify uniqueness and
+    time-based expiration.
+16. **`test_cookie_validation`** — Verify valid cookies are accepted. Verify expired cookies are
+    rejected. Verify forged cookies are rejected.
+17. **`test_replay_detection`** — Send AuthRequest, replay it. Verify the replay is rejected.
+18. **`test_connection_state_transitions`** — Walk through all state transitions. Verify illegal
+    transitions are rejected.
+19. **`test_timing_wheel_o1`** — Schedule 10,000 timeouts. Verify tick() time is constant regardless
+    of count.
+20. **`test_dtls_encrypt_decrypt`** — Encrypt and decrypt a payload. Verify roundtrip integrity.
+21. **`test_dtls_tamper_detection`** — Encrypt, modify one byte, attempt decrypt. Verify auth tag
+    failure.
+22. **`test_nonce_replay_rejection`** — Replay a previously received nonce. Verify the packet is
+    rejected.
+23. **`test_packet_codec_roundtrip`** — Encode and decode all PacketType variants. Verify bit-exact
+    roundtrip.
+24. **`test_stats_ewma_convergence`** — Feed stable 5% loss for 100 samples. Verify the EWMA
+    converges to 5% +/- 1%.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_handshake_10k_concurrent` | R-8.1.1 | 10,000 concurrent handshakes complete within 2 seconds. |
-| `test_handshake_replay_rejection` | R-8.1.1 | Capture and replay handshake. Verify server rejects. |
-| `test_flood_50k_connections` | R-8.1.1 | Flood 50,000 connection attempts/sec. Verify server remains responsive to legitimate clients. |
-| `test_reliable_100k_lossy` | R-8.1.3, R-8.NFR.12 | Send 100,000 numbered messages with 10% loss, 50 ms latency. Verify all arrive in order with zero loss. |
-| `test_reliable_15pct_loss` | R-8.NFR.12 | 15% loss, 200 ms RTT. Verify 100% delivery. Verify retransmit latency within 1.5x RTT. |
-| `test_10k_connections_keepalive` | R-8.1.2, R-8.NFR.7 | Establish 10,000 connections. Verify keepalive CPU cost is below 0.1 ms per tick. |
-| `test_64k_payload_fragmentation` | R-8.1.6 | Send a 64 KiB payload over a 1400-byte MTU link. Verify correct reassembly. |
-| `test_pmtud_blocked_fallback` | R-8.1.6 | Block PMTUD probes. Verify fallback to 1200-byte MTU. |
-| `test_congestion_1mbps` | R-8.1.7 | Simulate 1 Mbps link with 2% loss. Verify convergence to within 10% of capacity in 5 seconds. No sawtooth > 20% of average. |
-| `test_congestion_10gbps` | R-8.1.7 | Loopback 10 Gbps test. Verify controller scales to full link capacity. |
-| `test_dtls_key_rotation` | R-8.1.5 | Trigger key rotation during active traffic. Verify zero packet loss during rotation. |
-| `test_dtls_hw_aes_throughput` | R-8.NFR.11 | Benchmark AES-GCM. Verify >= 1 Gbps with hardware acceleration. |
-| `test_diagnostics_accuracy` | R-8.1.8 | Inject 100 ms latency and 5% loss. Verify RTT within 10%. Verify loss converges to 5% +/- 1% within 10 seconds. |
-| `test_mobile_profile` | US-8.1.13 | Enable mobile profile. Verify heartbeat = 5 s, timeout = 60 s, initial rate = 500 Kbps. |
-| `test_graceful_disconnect` | R-8.1.2 | Disconnect gracefully. Verify disconnect ack is received and resources are released. |
-| `test_migration_roundtrip` | R-8.1.2 | Trigger migration. Verify connection transitions Active -> Migrating -> Active with zero message loss. |
+| Test                              | Req                 |
+|-----------------------------------|---------------------|
+| `test_handshake_10k_concurrent`   | R-8.1.1             |
+| `test_handshake_replay_rejection` | R-8.1.1             |
+| `test_flood_50k_connections`      | R-8.1.1             |
+| `test_reliable_100k_lossy`        | R-8.1.3, R-8.NFR.12 |
+| `test_reliable_15pct_loss`        | R-8.NFR.12          |
+| `test_10k_connections_keepalive`  | R-8.1.2, R-8.NFR.7  |
+| `test_64k_payload_fragmentation`  | R-8.1.6             |
+| `test_pmtud_blocked_fallback`     | R-8.1.6             |
+| `test_congestion_1mbps`           | R-8.1.7             |
+| `test_congestion_10gbps`          | R-8.1.7             |
+| `test_dtls_key_rotation`          | R-8.1.5             |
+| `test_dtls_hw_aes_throughput`     | R-8.NFR.11          |
+| `test_diagnostics_accuracy`       | R-8.1.8             |
+| `test_mobile_profile`             | US-8.1.13           |
+| `test_graceful_disconnect`        | R-8.1.2             |
+| `test_migration_roundtrip`        | R-8.1.2             |
+
+1. **`test_handshake_10k_concurrent`** — 10,000 concurrent handshakes complete within 2 seconds.
+2. **`test_handshake_replay_rejection`** — Capture and replay handshake. Verify server rejects.
+3. **`test_flood_50k_connections`** — Flood 50,000 connection attempts/sec. Verify server remains
+   responsive to legitimate clients.
+4. **`test_reliable_100k_lossy`** — Send 100,000 numbered messages with 10% loss, 50 ms latency.
+   Verify all arrive in order with zero loss.
+5. **`test_reliable_15pct_loss`** — 15% loss, 200 ms RTT. Verify 100% delivery. Verify retransmit
+   latency within 1.5x RTT.
+6. **`test_10k_connections_keepalive`** — Establish 10,000 connections. Verify keepalive CPU cost is
+   below 0.1 ms per tick.
+7. **`test_64k_payload_fragmentation`** — Send a 64 KiB payload over a 1400-byte MTU link. Verify
+   correct reassembly.
+8. **`test_pmtud_blocked_fallback`** — Block PMTUD probes. Verify fallback to 1200-byte MTU.
+9. **`test_congestion_1mbps`** — Simulate 1 Mbps link with 2% loss. Verify convergence to within 10%
+   of capacity in 5 seconds. No sawtooth > 20% of average.
+10. **`test_congestion_10gbps`** — Loopback 10 Gbps test. Verify controller scales to full link
+    capacity.
+11. **`test_dtls_key_rotation`** — Trigger key rotation during active traffic. Verify zero packet
+    loss during rotation.
+12. **`test_dtls_hw_aes_throughput`** — Benchmark AES-GCM. Verify >= 1 Gbps with hardware
+    acceleration.
+13. **`test_diagnostics_accuracy`** — Inject 100 ms latency and 5% loss. Verify RTT within 10%.
+    Verify loss converges to 5% +/- 1% within 10 seconds.
+14. **`test_mobile_profile`** — Enable mobile profile. Verify heartbeat = 5 s, timeout = 60 s,
+    initial rate = 500 Kbps.
+15. **`test_graceful_disconnect`** — Disconnect gracefully. Verify disconnect ack is received and
+    resources are released.
+16. **`test_migration_roundtrip`** — Trigger migration. Verify connection transitions Active ->
+    Migrating -> Active with zero message loss.
 
 ### Benchmarks
 

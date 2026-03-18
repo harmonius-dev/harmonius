@@ -15,7 +15,8 @@ docs/standards/
   {language}.md             — per-language standard
 ```
 
-Languages: `rust`, `cpp`, `swift`, `typescript`, `hlsl`, `markdown`, `json`, `toml`, `yaml`.
+Languages: `rust`, `cpp`, `swift`, `typescript`, `python`, `hlsl`, `markdown`, `json`, `toml`,
+`yaml`.
 
 ## Rules
 

@@ -8,72 +8,137 @@
 > [user-stories/geometry-world/](../../user-stories/geometry-world/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-3.6.1 | R-3.6.1 | Node-based procedural content graph |
-| F-3.6.2 | R-3.6.2 | Point generation nodes |
-| F-3.6.3 | R-3.6.3 | Point filtering and transformation |
-| F-3.6.4 | R-3.6.4 | Mesh spawning from points |
-| F-3.6.5 | R-3.6.5 | Deterministic seeding (xxHash) |
-| F-3.6.6 | R-3.6.6 | Point attributes and metadata |
-| F-3.6.7 | R-3.6.7 | Point set boolean operations |
-| F-3.6.8 | R-3.6.8 | Control flow: loops, branches, subgraphs |
-| F-3.6.9 | R-3.6.9 | Non-destructive terrain stamps |
-| F-3.6.10 | R-3.6.10 | Terrain texture stamps |
-| F-3.6.11 | R-3.6.11 | Biome distribution (Whittaker diagram) |
-| F-3.6.12 | R-3.6.12 | Rule-based vegetation placement (GPU) |
-| F-3.6.13 | R-3.6.13 | Vegetation clearing along splines |
-| F-3.6.14 | R-3.6.14 | Spline-based road generation |
-| F-3.6.15 | R-3.6.15 | L-system road network generation |
-| F-3.6.16 | R-3.6.16 | Spline SDF caching |
-| F-3.6.17 | R-3.6.17 | Road intersection and junction generation |
-| F-3.6.18 | R-3.6.18 | Shape grammar building generator |
-| F-3.6.19 | R-3.6.19 | Modular building assembly |
-| F-3.6.20 | R-3.6.20 | 2D tile-based Wave Function Collapse |
-| F-3.6.21 | R-3.6.21 | 3D voxel WFC |
-| F-3.6.22 | R-3.6.22 | WFC constraint painting |
-| F-3.6.23 | R-3.6.23 | Socket-based modular assembly engine |
-| F-3.6.24 | R-3.6.24 | Procedural object generation rules |
-| F-3.6.25 | R-3.6.25 | Houdini Engine procedural pipeline |
-| F-3.6.26 | R-3.6.26 | Hierarchical modular composition |
-| F-3.6.27 | R-3.6.27 | Interactive PCG authoring tools |
-| F-3.6.28 | R-3.6.28 | Artist-guided constraint authoring |
-| F-3.6.29 | R-3.6.29 | AI-driven content generation |
-| F-3.6.30 | R-3.6.30 | Constraint satisfaction solver |
-| F-3.6.31 | R-3.6.31 | Runtime chunk-based generation |
-| F-3.6.32 | R-3.6.32 | GPU compute generation |
-| F-3.6.33 | R-3.6.33 | Noise function library (CPU + GPU) |
-| F-3.6.34 | R-3.6.34 | Planetary terrain generation |
-| F-3.6.35 | R-3.6.35 | City and settlement generation |
-| F-3.6.36 | R-3.6.36 | Faction and civilization generation |
-| F-3.6.37 | R-3.6.37 | Procedural quest generation |
-| F-3.6.38 | R-3.6.38 | Dynamic ecosystem simulation |
-| F-3.6.39 | R-3.6.39 | Civilization time-scale simulation |
-| F-3.6.40 | R-3.6.40 | Procedural enemy and creature placement |
-| F-3.6.41 | R-3.6.41 | Procedural loot and economy distribution |
-| F-3.6.42 | R-3.6.42 | Plate tectonics simulation |
-| F-3.6.43 | R-3.6.43 | Climate and atmospheric simulation |
-| F-3.6.44 | R-3.6.44 | Biome classification (16+ types) |
-| F-3.6.45 | R-3.6.45 | Hydrological system and water bodies |
-| F-3.6.46 | R-3.6.46 | Geological landform generation (30+ types) |
-| F-3.6.47 | R-3.6.47 | Earth/GIS data import |
-| F-3.6.48 | R-3.6.48 | Configurable planet parameters (7+ presets) |
-| F-3.6.49 | R-3.6.49 | Star system generation and stellar lifecycle |
-| F-3.6.50 | R-3.6.50 | Protoplanetary accretion simulation |
-| F-3.6.51 | R-3.6.51 | Planetary collision / giant impact sim |
-| F-3.6.52 | R-3.6.52 | Gas giant and non-terrestrial planet gen |
-| F-3.6.53 | R-3.6.53 | Moon and ring system generation |
-| F-3.6.54 | R-3.6.54 | Automatic planet type classification |
-| F-3.6.55 | R-3.6.55 | Galaxy structure generation |
-| F-3.6.56 | R-3.6.56 | Supermassive black hole rendering |
-| F-3.6.57 | R-3.6.57 | Dark matter and large-scale structure |
-| F-3.6.58 | R-3.6.58 | Stellar collision simulation |
-| F-3.6.59 | R-3.6.59 | Black hole formation and merger |
-| F-3.6.60 | R-3.6.60 | Universe generation pipeline (7 phases) |
-| F-3.6.61 | R-3.6.61 | Planetary mineralogy and resources |
-| F-3.6.62 | R-3.6.62 | Server-side universe generation |
-| F-3.6.63 | R-3.6.63 | Sparse cosmic data storage (128-bit keys) |
-| F-3.6.64 | R-3.6.64 | On-demand hierarchical detail (6+ LOD tiers) |
+| Feature  | Requirement |
+|----------|-------------|
+| F-3.6.1  | R-3.6.1     |
+| F-3.6.2  | R-3.6.2     |
+| F-3.6.3  | R-3.6.3     |
+| F-3.6.4  | R-3.6.4     |
+| F-3.6.5  | R-3.6.5     |
+| F-3.6.6  | R-3.6.6     |
+| F-3.6.7  | R-3.6.7     |
+| F-3.6.8  | R-3.6.8     |
+| F-3.6.9  | R-3.6.9     |
+| F-3.6.10 | R-3.6.10    |
+| F-3.6.11 | R-3.6.11    |
+| F-3.6.12 | R-3.6.12    |
+| F-3.6.13 | R-3.6.13    |
+| F-3.6.14 | R-3.6.14    |
+| F-3.6.15 | R-3.6.15    |
+| F-3.6.16 | R-3.6.16    |
+| F-3.6.17 | R-3.6.17    |
+| F-3.6.18 | R-3.6.18    |
+| F-3.6.19 | R-3.6.19    |
+| F-3.6.20 | R-3.6.20    |
+| F-3.6.21 | R-3.6.21    |
+| F-3.6.22 | R-3.6.22    |
+| F-3.6.23 | R-3.6.23    |
+| F-3.6.24 | R-3.6.24    |
+| F-3.6.25 | R-3.6.25    |
+| F-3.6.26 | R-3.6.26    |
+| F-3.6.27 | R-3.6.27    |
+| F-3.6.28 | R-3.6.28    |
+| F-3.6.29 | R-3.6.29    |
+| F-3.6.30 | R-3.6.30    |
+| F-3.6.31 | R-3.6.31    |
+| F-3.6.32 | R-3.6.32    |
+| F-3.6.33 | R-3.6.33    |
+| F-3.6.34 | R-3.6.34    |
+| F-3.6.35 | R-3.6.35    |
+| F-3.6.36 | R-3.6.36    |
+| F-3.6.37 | R-3.6.37    |
+| F-3.6.38 | R-3.6.38    |
+| F-3.6.39 | R-3.6.39    |
+| F-3.6.40 | R-3.6.40    |
+| F-3.6.41 | R-3.6.41    |
+| F-3.6.42 | R-3.6.42    |
+| F-3.6.43 | R-3.6.43    |
+| F-3.6.44 | R-3.6.44    |
+| F-3.6.45 | R-3.6.45    |
+| F-3.6.46 | R-3.6.46    |
+| F-3.6.47 | R-3.6.47    |
+| F-3.6.48 | R-3.6.48    |
+| F-3.6.49 | R-3.6.49    |
+| F-3.6.50 | R-3.6.50    |
+| F-3.6.51 | R-3.6.51    |
+| F-3.6.52 | R-3.6.52    |
+| F-3.6.53 | R-3.6.53    |
+| F-3.6.54 | R-3.6.54    |
+| F-3.6.55 | R-3.6.55    |
+| F-3.6.56 | R-3.6.56    |
+| F-3.6.57 | R-3.6.57    |
+| F-3.6.58 | R-3.6.58    |
+| F-3.6.59 | R-3.6.59    |
+| F-3.6.60 | R-3.6.60    |
+| F-3.6.61 | R-3.6.61    |
+| F-3.6.62 | R-3.6.62    |
+| F-3.6.63 | R-3.6.63    |
+| F-3.6.64 | R-3.6.64    |
+
+1. **F-3.6.1** — Node-based procedural content graph
+2. **F-3.6.2** — Point generation nodes
+3. **F-3.6.3** — Point filtering and transformation
+4. **F-3.6.4** — Mesh spawning from points
+5. **F-3.6.5** — Deterministic seeding (xxHash)
+6. **F-3.6.6** — Point attributes and metadata
+7. **F-3.6.7** — Point set boolean operations
+8. **F-3.6.8** — Control flow: loops, branches, subgraphs
+9. **F-3.6.9** — Non-destructive terrain stamps
+10. **F-3.6.10** — Terrain texture stamps
+11. **F-3.6.11** — Biome distribution (Whittaker diagram)
+12. **F-3.6.12** — Rule-based vegetation placement (GPU)
+13. **F-3.6.13** — Vegetation clearing along splines
+14. **F-3.6.14** — Spline-based road generation
+15. **F-3.6.15** — L-system road network generation
+16. **F-3.6.16** — Spline SDF caching
+17. **F-3.6.17** — Road intersection and junction generation
+18. **F-3.6.18** — Shape grammar building generator
+19. **F-3.6.19** — Modular building assembly
+20. **F-3.6.20** — 2D tile-based Wave Function Collapse
+21. **F-3.6.21** — 3D voxel WFC
+22. **F-3.6.22** — WFC constraint painting
+23. **F-3.6.23** — Socket-based modular assembly engine
+24. **F-3.6.24** — Procedural object generation rules
+25. **F-3.6.25** — Houdini Engine procedural pipeline
+26. **F-3.6.26** — Hierarchical modular composition
+27. **F-3.6.27** — Interactive PCG authoring tools
+28. **F-3.6.28** — Artist-guided constraint authoring
+29. **F-3.6.29** — AI-driven content generation
+30. **F-3.6.30** — Constraint satisfaction solver
+31. **F-3.6.31** — Runtime chunk-based generation
+32. **F-3.6.32** — GPU compute generation
+33. **F-3.6.33** — Noise function library (CPU + GPU)
+34. **F-3.6.34** — Planetary terrain generation
+35. **F-3.6.35** — City and settlement generation
+36. **F-3.6.36** — Faction and civilization generation
+37. **F-3.6.37** — Procedural quest generation
+38. **F-3.6.38** — Dynamic ecosystem simulation
+39. **F-3.6.39** — Civilization time-scale simulation
+40. **F-3.6.40** — Procedural enemy and creature placement
+41. **F-3.6.41** — Procedural loot and economy distribution
+42. **F-3.6.42** — Plate tectonics simulation
+43. **F-3.6.43** — Climate and atmospheric simulation
+44. **F-3.6.44** — Biome classification (16+ types)
+45. **F-3.6.45** — Hydrological system and water bodies
+46. **F-3.6.46** — Geological landform generation (30+ types)
+47. **F-3.6.47** — Earth/GIS data import
+48. **F-3.6.48** — Configurable planet parameters (7+ presets)
+49. **F-3.6.49** — Star system generation and stellar lifecycle
+50. **F-3.6.50** — Protoplanetary accretion simulation
+51. **F-3.6.51** — Planetary collision / giant impact sim
+52. **F-3.6.52** — Gas giant and non-terrestrial planet gen
+53. **F-3.6.53** — Moon and ring system generation
+54. **F-3.6.54** — Automatic planet type classification
+55. **F-3.6.55** — Galaxy structure generation
+56. **F-3.6.56** — Supermassive black hole rendering
+57. **F-3.6.57** — Dark matter and large-scale structure
+58. **F-3.6.58** — Stellar collision simulation
+59. **F-3.6.59** — Black hole formation and merger
+60. **F-3.6.60** — Universe generation pipeline (7 phases)
+61. **F-3.6.61** — Planetary mineralogy and resources
+62. **F-3.6.62** — Server-side universe generation
+63. **F-3.6.63** — Sparse cosmic data storage (128-bit keys)
+64. **F-3.6.64** — On-demand hierarchical detail (6+ LOD tiers)
 
 ## Overview
 
@@ -1631,19 +1696,45 @@ world_seed
 
 ### Scaling Tiers
 
-| Tier | Chunk Size | Activation Radius | Frame Budget | Point Budget | WFC 2D Grid | WFC 3D Grid | Noise Octaves |
-|------|-----------|-------------------|-------------|-------------|-------------|-------------|---------------|
-| Mobile | 256m | 512m | 2 ms | 10K | 32x32 | 16x16x8 | 4 |
-| Switch | 256m | 768m | 3 ms | 50K | 64x64 | 32x32x16 | 6 |
-| Desktop | 128m | 1536m | 8 ms | 500K+ | 128x128 | 64x64x32 | 8 |
+| Tier    |
+|---------|
+| Mobile  |
+| Switch  |
+| Desktop |
+
+1. **Mobile** — 256m
+   - **Activation Radius:** 512m
+   - **Frame Budget:** 2 ms
+   - **Point Budget:** 10K
+   - **WFC 2D Grid:** 32x32
+   - **WFC 3D Grid:** 16x16x8
+   - **Noise Octaves:** 4
+2. **Switch** — 256m
+   - **Activation Radius:** 768m
+   - **Frame Budget:** 3 ms
+   - **Point Budget:** 50K
+   - **WFC 2D Grid:** 64x64
+   - **WFC 3D Grid:** 32x32x16
+   - **Noise Octaves:** 6
+3. **Desktop** — 128m
+   - **Activation Radius:** 1536m
+   - **Frame Budget:** 8 ms
+   - **Point Budget:** 500K+
+   - **WFC 2D Grid:** 128x128
+   - **WFC 3D Grid:** 64x64x32
+   - **Noise Octaves:** 8
 
 ### Platform-Specific Notes
 
-| Platform | I/O | GPU Compute | Concurrency |
-|----------|-----|-------------|-------------|
-| Windows | IOCP for async chunk load | D3D12 compute shaders via DXC | Thread pool, scoped tasks |
-| macOS | GCD / Dispatch IO | Metal compute shaders (HLSL via Metal Shader Converter) | GCD dispatch queues |
-| Linux | io_uring for async chunk load | Vulkan compute shaders (HLSL via DXC to SPIR-V) | Thread pool, scoped tasks |
+| Platform | I/O                           | Concurrency               |
+|----------|-------------------------------|---------------------------|
+| Windows  | IOCP for async chunk load     | Thread pool, scoped tasks |
+| macOS    | GCD / Dispatch IO             | GCD dispatch queues       |
+| Linux    | io_uring for async chunk load | Thread pool, scoped tasks |
+
+1. **Windows** — D3D12 compute shaders via DXC
+2. **macOS** — Metal compute shaders (HLSL via Metal Shader Converter)
+3. **Linux** — Vulkan compute shaders (HLSL via DXC to SPIR-V)
 
 ### Computation Distribution
 
@@ -1666,84 +1757,180 @@ world_seed
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `xxhash-rust` | Deterministic seed hashing | Fast, portable, no_std; industry standard for game seeds |
-| `smallvec` | Inline-allocated vectors for pins, sockets | Avoids heap alloc for small collections |
-| `ahash` | Fast HashMap for attribute stores | Non-cryptographic; faster than SipHash for lookups |
+| Crate         |
+|---------------|
+| `xxhash-rust` |
+| `smallvec`    |
+| `ahash`       |
+
+1. **`xxhash-rust`** — Deterministic seed hashing
+   - **Justification:** Fast, portable, no_std; industry standard for game seeds
+2. **`smallvec`** — Inline-allocated vectors for pins, sockets
+   - **Justification:** Avoids heap alloc for small collections
+3. **`ahash`** — Fast HashMap for attribute stores
+   - **Justification:** Non-cryptographic; faster than SipHash for lookups
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_graph_validate_cycle` | R-3.6.1 | Graph with cycle returns `CycleDetected`. |
-| `test_graph_validate_type_mismatch` | R-3.6.1 | Connecting PointSet output to Scalar input returns `TypeMismatch`. |
-| `test_graph_subgraph_io` | R-3.6.8 | Subgraph with 1 input and 1 output evaluates identically to inlined nodes. |
-| `test_poisson_disk_min_distance` | R-3.6.2 | Poisson disk points on a flat surface maintain minimum inter-point distance. |
-| `test_point_filter_height_range` | R-3.6.3 | Height filter removes all points outside the configured range. |
-| `test_point_set_union` | R-3.6.7 | Union of two disjoint sets has count = A + B. |
-| `test_point_set_difference` | R-3.6.7 | Difference of A minus B excludes all points within B's bounds. |
-| `test_seed_determinism` | R-3.6.5 | Same seed produces bit-identical output across two evaluations. |
-| `test_seed_cross_thread` | R-3.6.5 | Same seed produces identical output regardless of thread count. |
-| `test_attribute_insert_get` | R-3.6.6 | Insert a "biome_id" u32 column; get returns correct values. |
-| `test_attribute_partition` | R-3.6.6 | Partition by attribute produces correct subsets. |
-| `test_noise_perlin_range` | R-3.6.33 | Perlin noise output is in [-1, 1] for 10K samples. |
-| `test_noise_simplex_range` | R-3.6.33 | Simplex noise output is in [-1, 1] for 10K samples. |
-| `test_noise_worley_positive` | R-3.6.33 | Worley noise output is in [0, +inf) for 10K samples. |
-| `test_noise_cpu_gpu_identical` | R-3.6.33 | CPU and GPU noise produce bit-identical results for 1K sample points. |
-| `test_noise_deterministic` | R-3.6.33 | Same seed + same coords = identical noise value. |
-| `test_wfc_2d_all_collapsed` | R-3.6.20 | 20x20 grid: all cells collapsed, all adjacency constraints satisfied. |
-| `test_wfc_2d_deterministic` | R-3.6.20 | Same seed produces identical WFC output. |
-| `test_wfc_2d_pin_cell` | R-3.6.22 | Pinned cell retains its tile after solving. |
-| `test_wfc_3d_boundary_share` | R-3.6.21 | Two adjacent chunks share boundary constraints without contradiction. |
-| `test_shape_grammar_floor_count` | R-3.6.18 | Grammar with 5-floor param produces 5 horizontal divisions. |
-| `test_socket_type_mismatch` | R-3.6.23 | Connecting incompatible socket types returns error. |
-| `test_socket_transform_resolve` | R-3.6.23 | Connected pieces have correct world-space transforms. |
-| `test_csp_min_distance` | R-3.6.30 | Solver enforces 50m minimum distance between all placed buildings. |
-| `test_csp_unsatisfiable` | R-3.6.30 | Unsatisfiable constraint set returns error, not infinite loop. |
-| `test_stamp_nondestructive` | R-3.6.9 | Apply A-B-C stamps; remove B; result equals A+C. |
-| `test_stamp_reorder` | R-3.6.9 | Reordering stamps C-A produces a different but valid result. |
-| `test_biome_whittaker` | R-3.6.11 | Equatorial lowland gets tropical biome; polar highland gets tundra. |
-| `test_spline_sdf_accuracy` | R-3.6.16 | SDF texture matches brute-force polynomial eval within 0.5m for 50 random samples. |
-| `test_vegetation_slope_filter` | R-3.6.12 | No vegetation instances on slopes > 30 degrees when rule specifies < 30. |
-| `test_cosmic_key_precision` | R-3.6.63 | 128-bit key has sub-meter precision at 10 billion light-year distances. |
-| `test_cosmic_octree_sparse` | R-3.6.63 | Empty octree region uses < 1KB. |
-| `test_star_spectral_distribution` | R-3.6.49 | 100 generated stars follow the initial mass function distribution. |
-| `test_planet_classification` | R-3.6.54 | Inner planet classified as rocky; outer planet as gas giant. |
+| Test                                | Req      |
+|-------------------------------------|----------|
+| `test_graph_validate_cycle`         | R-3.6.1  |
+| `test_graph_validate_type_mismatch` | R-3.6.1  |
+| `test_graph_subgraph_io`            | R-3.6.8  |
+| `test_poisson_disk_min_distance`    | R-3.6.2  |
+| `test_point_filter_height_range`    | R-3.6.3  |
+| `test_point_set_union`              | R-3.6.7  |
+| `test_point_set_difference`         | R-3.6.7  |
+| `test_seed_determinism`             | R-3.6.5  |
+| `test_seed_cross_thread`            | R-3.6.5  |
+| `test_attribute_insert_get`         | R-3.6.6  |
+| `test_attribute_partition`          | R-3.6.6  |
+| `test_noise_perlin_range`           | R-3.6.33 |
+| `test_noise_simplex_range`          | R-3.6.33 |
+| `test_noise_worley_positive`        | R-3.6.33 |
+| `test_noise_cpu_gpu_identical`      | R-3.6.33 |
+| `test_noise_deterministic`          | R-3.6.33 |
+| `test_wfc_2d_all_collapsed`         | R-3.6.20 |
+| `test_wfc_2d_deterministic`         | R-3.6.20 |
+| `test_wfc_2d_pin_cell`              | R-3.6.22 |
+| `test_wfc_3d_boundary_share`        | R-3.6.21 |
+| `test_shape_grammar_floor_count`    | R-3.6.18 |
+| `test_socket_type_mismatch`         | R-3.6.23 |
+| `test_socket_transform_resolve`     | R-3.6.23 |
+| `test_csp_min_distance`             | R-3.6.30 |
+| `test_csp_unsatisfiable`            | R-3.6.30 |
+| `test_stamp_nondestructive`         | R-3.6.9  |
+| `test_stamp_reorder`                | R-3.6.9  |
+| `test_biome_whittaker`              | R-3.6.11 |
+| `test_spline_sdf_accuracy`          | R-3.6.16 |
+| `test_vegetation_slope_filter`      | R-3.6.12 |
+| `test_cosmic_key_precision`         | R-3.6.63 |
+| `test_cosmic_octree_sparse`         | R-3.6.63 |
+| `test_star_spectral_distribution`   | R-3.6.49 |
+| `test_planet_classification`        | R-3.6.54 |
+
+1. **`test_graph_validate_cycle`** — Graph with cycle returns `CycleDetected`.
+2. **`test_graph_validate_type_mismatch`** — Connecting PointSet output to Scalar input returns
+   `TypeMismatch`.
+3. **`test_graph_subgraph_io`** — Subgraph with 1 input and 1 output evaluates identically to
+   inlined nodes.
+4. **`test_poisson_disk_min_distance`** — Poisson disk points on a flat surface maintain minimum
+   inter-point distance.
+5. **`test_point_filter_height_range`** — Height filter removes all points outside the configured
+   range.
+6. **`test_point_set_union`** — Union of two disjoint sets has count = A + B.
+7. **`test_point_set_difference`** — Difference of A minus B excludes all points within B's bounds.
+8. **`test_seed_determinism`** — Same seed produces bit-identical output across two evaluations.
+9. **`test_seed_cross_thread`** — Same seed produces identical output regardless of thread count.
+10. **`test_attribute_insert_get`** — Insert a "biome_id" u32 column; get returns correct values.
+11. **`test_attribute_partition`** — Partition by attribute produces correct subsets.
+12. **`test_noise_perlin_range`** — Perlin noise output is in [-1, 1] for 10K samples.
+13. **`test_noise_simplex_range`** — Simplex noise output is in [-1, 1] for 10K samples.
+14. **`test_noise_worley_positive`** — Worley noise output is in [0, +inf) for 10K samples.
+15. **`test_noise_cpu_gpu_identical`** — CPU and GPU noise produce bit-identical results for 1K
+    sample points.
+16. **`test_noise_deterministic`** — Same seed + same coords = identical noise value.
+17. **`test_wfc_2d_all_collapsed`** — 20x20 grid: all cells collapsed, all adjacency constraints
+    satisfied.
+18. **`test_wfc_2d_deterministic`** — Same seed produces identical WFC output.
+19. **`test_wfc_2d_pin_cell`** — Pinned cell retains its tile after solving.
+20. **`test_wfc_3d_boundary_share`** — Two adjacent chunks share boundary constraints without
+    contradiction.
+21. **`test_shape_grammar_floor_count`** — Grammar with 5-floor param produces 5 horizontal
+    divisions.
+22. **`test_socket_type_mismatch`** — Connecting incompatible socket types returns error.
+23. **`test_socket_transform_resolve`** — Connected pieces have correct world-space transforms.
+24. **`test_csp_min_distance`** — Solver enforces 50m minimum distance between all placed buildings.
+25. **`test_csp_unsatisfiable`** — Unsatisfiable constraint set returns error, not infinite loop.
+26. **`test_stamp_nondestructive`** — Apply A-B-C stamps; remove B; result equals A+C.
+27. **`test_stamp_reorder`** — Reordering stamps C-A produces a different but valid result.
+28. **`test_biome_whittaker`** — Equatorial lowland gets tropical biome; polar highland gets tundra.
+29. **`test_spline_sdf_accuracy`** — SDF texture matches brute-force polynomial eval within 0.5m for
+    50 random samples.
+30. **`test_vegetation_slope_filter`** — No vegetation instances on slopes > 30 degrees when rule
+    specifies < 30.
+31. **`test_cosmic_key_precision`** — 128-bit key has sub-meter precision at 10 billion light-year
+    distances.
+32. **`test_cosmic_octree_sparse`** — Empty octree region uses < 1KB.
+33. **`test_star_spectral_distribution`** — 100 generated stars follow the initial mass function
+    distribution.
+34. **`test_planet_classification`** — Inner planet classified as rocky; outer planet as gas giant.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_graph_end_to_end` | R-3.6.1 | Build graph: point gen -> filter -> spawn. Assert entity count matches expected output. |
-| `test_graph_editor_runtime_parity` | R-3.6.1 | Same graph produces identical output in editor and runtime evaluation contexts. |
-| `test_chunk_generate_and_revisit` | R-3.6.31 | Generate chunk, evict it, revisit: output is bit-identical. |
-| `test_chunk_activation_radius` | R-3.6.31 | Move camera through 20 boundaries; all chunks generate before becoming visible. |
-| `test_chunk_memory_eviction` | R-3.6.31 | Total memory stays within budget after generating 100 chunks. |
-| `test_gpu_heightmap_vs_cpu` | R-3.6.32 | GPU-generated heightmap matches CPU reference within float tolerance. |
-| `test_gpu_single_frame` | R-3.6.32 | 512x512 heightmap generates within one frame (< 16.6 ms). |
-| `test_vegetation_100k_instances` | R-3.6.12 | 100K+ vegetation instances without dropping below target frame rate. |
-| `test_road_network_connected` | R-3.6.15 | 3 population centers all connected via primary roads. |
-| `test_road_slope_limit` | R-3.6.15 | No road segment exceeds configured max slope. |
-| `test_intersection_geometry` | R-3.6.17 | Crossing splines generate crossroads junction with continuous terrain. |
-| `test_modular_building_3story` | R-3.6.19 | 3-story L-shaped building: all sockets match, no overlapping geometry. |
-| `test_hierarchical_composition` | R-3.6.26 | Walls -> room -> floor -> building: all transforms correct. |
-| `test_settlement_scaling` | R-3.6.35 | Population 10K: road network, building lots, distinct zoning. |
-| `test_faction_territories` | R-3.6.36 | 5 factions: each controls >= 1 settlement, buffer zones between rivals. |
-| `test_ecosystem_lotka_volterra` | R-3.6.38 | 100 prey + 20 predators oscillate correctly over 100 ticks. |
-| `test_history_ruins` | R-3.6.39 | 10 epochs: at least one fallen faction with ruined settlements. |
-| `test_planet_biome_diversity` | R-3.6.44 | Generated planet has >= 16 distinct biome types. |
-| `test_planet_river_downhill` | R-3.6.45 | All river segments flow strictly downhill. |
-| `test_planet_landform_count` | R-3.6.46 | Generated planet has >= 30 distinct landform types in geologically appropriate contexts. |
-| `test_gis_import_accuracy` | R-3.6.47 | 100km x 100km Earth import: RMS elevation error < 5m. |
-| `test_planet_presets_distinct` | R-3.6.48 | All 7 presets produce visually distinct terrain/biome distributions. |
-| `test_accretion_frost_line` | R-3.6.50 | Gas giants form beyond frost line in 50 generated systems. |
-| `test_universe_cosmic_to_surface` | R-3.6.60 | Zoom from cosmic web to surface: consistent LOD at each tier. |
-| `test_universe_deterministic` | R-3.6.60 | Regenerate from same seed: identical output. |
-| `test_universe_memory_budget` | R-3.6.64 | Explore 100 systems: memory stays within budget. |
-| `test_lod_resolve_time` | R-3.6.64 | Each LOD tier resolves within 5 seconds. |
+| Test                               | Req      |
+|------------------------------------|----------|
+| `test_graph_end_to_end`            | R-3.6.1  |
+| `test_graph_editor_runtime_parity` | R-3.6.1  |
+| `test_chunk_generate_and_revisit`  | R-3.6.31 |
+| `test_chunk_activation_radius`     | R-3.6.31 |
+| `test_chunk_memory_eviction`       | R-3.6.31 |
+| `test_gpu_heightmap_vs_cpu`        | R-3.6.32 |
+| `test_gpu_single_frame`            | R-3.6.32 |
+| `test_vegetation_100k_instances`   | R-3.6.12 |
+| `test_road_network_connected`      | R-3.6.15 |
+| `test_road_slope_limit`            | R-3.6.15 |
+| `test_intersection_geometry`       | R-3.6.17 |
+| `test_modular_building_3story`     | R-3.6.19 |
+| `test_hierarchical_composition`    | R-3.6.26 |
+| `test_settlement_scaling`          | R-3.6.35 |
+| `test_faction_territories`         | R-3.6.36 |
+| `test_ecosystem_lotka_volterra`    | R-3.6.38 |
+| `test_history_ruins`               | R-3.6.39 |
+| `test_planet_biome_diversity`      | R-3.6.44 |
+| `test_planet_river_downhill`       | R-3.6.45 |
+| `test_planet_landform_count`       | R-3.6.46 |
+| `test_gis_import_accuracy`         | R-3.6.47 |
+| `test_planet_presets_distinct`     | R-3.6.48 |
+| `test_accretion_frost_line`        | R-3.6.50 |
+| `test_universe_cosmic_to_surface`  | R-3.6.60 |
+| `test_universe_deterministic`      | R-3.6.60 |
+| `test_universe_memory_budget`      | R-3.6.64 |
+| `test_lod_resolve_time`            | R-3.6.64 |
+
+1. **`test_graph_end_to_end`** — Build graph: point gen -> filter -> spawn. Assert entity count
+   matches expected output.
+2. **`test_graph_editor_runtime_parity`** — Same graph produces identical output in editor and
+   runtime evaluation contexts.
+3. **`test_chunk_generate_and_revisit`** — Generate chunk, evict it, revisit: output is
+   bit-identical.
+4. **`test_chunk_activation_radius`** — Move camera through 20 boundaries; all chunks generate
+   before becoming visible.
+5. **`test_chunk_memory_eviction`** — Total memory stays within budget after generating 100 chunks.
+6. **`test_gpu_heightmap_vs_cpu`** — GPU-generated heightmap matches CPU reference within float
+   tolerance.
+7. **`test_gpu_single_frame`** — 512x512 heightmap generates within one frame (< 16.6 ms).
+8. **`test_vegetation_100k_instances`** — 100K+ vegetation instances without dropping below target
+   frame rate.
+9. **`test_road_network_connected`** — 3 population centers all connected via primary roads.
+10. **`test_road_slope_limit`** — No road segment exceeds configured max slope.
+11. **`test_intersection_geometry`** — Crossing splines generate crossroads junction with continuous
+    terrain.
+12. **`test_modular_building_3story`** — 3-story L-shaped building: all sockets match, no
+    overlapping geometry.
+13. **`test_hierarchical_composition`** — Walls -> room -> floor -> building: all transforms
+    correct.
+14. **`test_settlement_scaling`** — Population 10K: road network, building lots, distinct zoning.
+15. **`test_faction_territories`** — 5 factions: each controls >= 1 settlement, buffer zones between
+    rivals.
+16. **`test_ecosystem_lotka_volterra`** — 100 prey + 20 predators oscillate correctly over 100
+    ticks.
+17. **`test_history_ruins`** — 10 epochs: at least one fallen faction with ruined settlements.
+18. **`test_planet_biome_diversity`** — Generated planet has >= 16 distinct biome types.
+19. **`test_planet_river_downhill`** — All river segments flow strictly downhill.
+20. **`test_planet_landform_count`** — Generated planet has >= 30 distinct landform types in
+    geologically appropriate contexts.
+21. **`test_gis_import_accuracy`** — 100km x 100km Earth import: RMS elevation error < 5m.
+22. **`test_planet_presets_distinct`** — All 7 presets produce visually distinct terrain/biome
+    distributions.
+23. **`test_accretion_frost_line`** — Gas giants form beyond frost line in 50 generated systems.
+24. **`test_universe_cosmic_to_surface`** — Zoom from cosmic web to surface: consistent LOD at each
+    tier.
+25. **`test_universe_deterministic`** — Regenerate from same seed: identical output.
+26. **`test_universe_memory_budget`** — Explore 100 systems: memory stays within budget.
+27. **`test_lod_resolve_time`** — Each LOD tier resolves within 5 seconds.
 
 ### Benchmarks
 

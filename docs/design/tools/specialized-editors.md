@@ -10,33 +10,51 @@
 
 ### Graph-Based Editors
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.4.6 | R-15.4.6 | Animation state machine editor with transition debugging |
-| F-15.8.7 | R-15.8.7 | Animation logic graphs — blend trees, IK |
-| F-15.13.1 | R-15.13.1 | Behavior tree editor for AI authoring |
-| F-15.13.2 | R-15.13.2 | State machine editor for AI states and transitions |
-| F-15.14.1 | R-15.14.1 | Quest editor for objectives and progression |
-| F-15.5.1 | R-15.5.1 | Visual effect graph editor |
-| F-15.3.1 | R-15.3.1 | Material graph editor |
-| F-15.8.9 | R-15.8.9 | Custom logic graph node extensions |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.4.6  | R-15.4.6    |
+| F-15.8.7  | R-15.8.7    |
+| F-15.13.1 | R-15.13.1   |
+| F-15.13.2 | R-15.13.2   |
+| F-15.14.1 | R-15.14.1   |
+| F-15.5.1  | R-15.5.1    |
+| F-15.3.1  | R-15.3.1    |
+| F-15.8.9  | R-15.8.9    |
+
+1. **F-15.4.6** — Animation state machine editor with transition debugging
+2. **F-15.8.7** — Animation logic graphs — blend trees, IK
+3. **F-15.13.1** — Behavior tree editor for AI authoring
+4. **F-15.13.2** — State machine editor for AI states and transitions
+5. **F-15.14.1** — Quest editor for objectives and progression
+6. **F-15.5.1** — Visual effect graph editor
+7. **F-15.3.1** — Material graph editor
+8. **F-15.8.9** — Custom logic graph node extensions
 
 ### Table-Based Editors
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.15.1 | R-15.15.1 | Loot table editor with simulation preview |
-| F-15.15.2 | R-15.15.2 | Ability ledger for combat stats |
-| F-15.15.3 | R-15.15.3 | Equipment stat tables with comparison |
-| F-15.15.4 | R-15.15.4 | Price ledger with inflation simulation |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.15.1 | R-15.15.1   |
+| F-15.15.2 | R-15.15.2   |
+| F-15.15.3 | R-15.15.3   |
+| F-15.15.4 | R-15.15.4   |
+
+1. **F-15.15.1** — Loot table editor with simulation preview
+2. **F-15.15.2** — Ability ledger for combat stats
+3. **F-15.15.3** — Equipment stat tables with comparison
+4. **F-15.15.4** — Price ledger with inflation simulation
 
 ### Entity Editor
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.1.4 | R-15.1.4 | Entity selection and hierarchy |
-| F-15.1.8 | R-15.1.8 | Plugin-driven component inspectors |
-| F-15.2.1 | R-15.2.1 | Prefab overrides display |
+| Feature  | Requirement |
+|----------|-------------|
+| F-15.1.4 | R-15.1.4    |
+| F-15.1.8 | R-15.1.8    |
+| F-15.2.1 | R-15.2.1    |
+
+1. **F-15.1.4** — Entity selection and hierarchy
+2. **F-15.1.8** — Plugin-driven component inspectors
+3. **F-15.2.1** — Prefab overrides display
 
 ### Cross-Cutting Dependencies
 

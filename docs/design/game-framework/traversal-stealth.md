@@ -10,31 +10,51 @@
 
 ### Traversal and Interaction
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.17.1 | R-13.17.1 | World object interaction (raycast, proximity, radial menu) |
-| F-13.17.2 | R-13.17.2 | Door and lock system with AI integration |
-| F-13.17.3 | R-13.17.3 | Physics object pickup and throw |
-| F-13.17.4a | R-13.17.4a | Traversal detection via shape casts |
-| F-13.17.4b | R-13.17.4b | Vault and mantle actions |
-| F-13.17.4c | R-13.17.4c | Wall run |
-| F-13.17.4d | R-13.17.4d | Crouch slide |
-| F-13.17.4e | R-13.17.4e | Balance beam traversal |
-| F-13.17.5a | R-13.17.5a | Free-climb with IK grip points |
-| F-13.17.5b | R-13.17.5b | Ladder traversal |
-| F-13.17.5c | R-13.17.5c | Ledge grab and shimmy |
-| F-13.17.6 | R-13.17.6 | Swimming and diving |
-| F-13.17.7 | R-13.17.7 | Grappling hook and zipline |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.17.1  | R-13.17.1   |
+| F-13.17.2  | R-13.17.2   |
+| F-13.17.3  | R-13.17.3   |
+| F-13.17.4a | R-13.17.4a  |
+| F-13.17.4b | R-13.17.4b  |
+| F-13.17.4c | R-13.17.4c  |
+| F-13.17.4d | R-13.17.4d  |
+| F-13.17.4e | R-13.17.4e  |
+| F-13.17.5a | R-13.17.5a  |
+| F-13.17.5b | R-13.17.5b  |
+| F-13.17.5c | R-13.17.5c  |
+| F-13.17.6  | R-13.17.6   |
+| F-13.17.7  | R-13.17.7   |
+
+1. **F-13.17.1** — World object interaction (raycast, proximity, radial menu)
+2. **F-13.17.2** — Door and lock system with AI integration
+3. **F-13.17.3** — Physics object pickup and throw
+4. **F-13.17.4a** — Traversal detection via shape casts
+5. **F-13.17.4b** — Vault and mantle actions
+6. **F-13.17.4c** — Wall run
+7. **F-13.17.4d** — Crouch slide
+8. **F-13.17.4e** — Balance beam traversal
+9. **F-13.17.5a** — Free-climb with IK grip points
+10. **F-13.17.5b** — Ladder traversal
+11. **F-13.17.5c** — Ledge grab and shimmy
+12. **F-13.17.6** — Swimming and diving
+13. **F-13.17.7** — Grappling hook and zipline
 
 ### Stealth and Cover
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.18.1 | R-13.18.1 | Player visibility and stealth scoring |
-| F-13.18.2 | R-13.18.2 | AI alert state machine (5 states) |
-| F-13.18.3 | R-13.18.3 | Noise generation and distraction |
-| F-13.18.4 | R-13.18.4 | Stealth takedown system |
-| F-13.18.5 | R-13.18.5 | Cover point detection and usage |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-13.18.1 | R-13.18.1   |
+| F-13.18.2 | R-13.18.2   |
+| F-13.18.3 | R-13.18.3   |
+| F-13.18.4 | R-13.18.4   |
+| F-13.18.5 | R-13.18.5   |
+
+1. **F-13.18.1** — Player visibility and stealth scoring
+2. **F-13.18.2** — AI alert state machine (5 states)
+3. **F-13.18.3** — Noise generation and distraction
+4. **F-13.18.4** — Stealth takedown system
+5. **F-13.18.5** — Cover point detection and usage
 
 ## Overview
 
@@ -1112,61 +1132,111 @@ No new external dependencies. Uses existing engine modules:
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_vault_height_classification` | R-13.17.4a | 0.5 m obstacle classified as vault. |
-| `test_mantle_height_classification` | R-13.17.4a | 1.5 m obstacle classified as mantle. |
-| `test_auto_detection_no_tags` | R-13.17.4a | Auto-detection works without editor tags. |
-| `test_vault_stamina_deduction` | R-13.17.4b | Vault deducts configured stamina. |
-| `test_vault_fails_low_stamina` | R-13.17.4b | Vault blocked when stamina insufficient. |
-| `test_vault_min_approach_speed` | R-13.17.4b | Vault fails below minimum speed. |
-| `test_wall_run_gravity_timer` | R-13.17.4c | Wall-run terminates after max duration. |
-| `test_wall_run_jump_off_angle` | R-13.17.4c | Jump-off launches at configured angle. |
-| `test_slide_distance_scales` | R-13.17.4d | Higher entry speed = longer slide. |
-| `test_slide_downhill_extends` | R-13.17.4d | Downhill slope extends slide distance. |
-| `test_balance_fall_on_speed` | R-13.17.4e | Moving too fast on narrow surface causes fall. |
-| `test_climb_stamina_drain` | R-13.17.5a | Stamina depletes; character falls at zero. |
-| `test_climb_rest_point` | R-13.17.5a | Rest point pauses stamina drain. |
-| `test_ladder_no_stamina` | R-13.17.5b | Ladder does not consume stamina. |
-| `test_ledge_grab_airborne` | R-13.17.5c | Ledge grab triggers only when airborne. |
-| `test_swim_oxygen_drain` | R-13.17.6 | Oxygen drains while submerged. |
-| `test_drowning_damage` | R-13.17.6 | Drowning damage applied at zero oxygen. |
-| `test_grapple_range_limit` | R-13.17.7 | Hook only attaches within range. |
-| `test_interaction_instant` | R-13.17.1 | Instant interaction executes on input. |
-| `test_interaction_channeled` | R-13.17.1 | Channeled interaction requires hold. |
-| `test_interaction_cancel` | R-13.17.1 | Moving during channel cancels it. |
-| `test_door_key_required` | R-13.17.2 | Locked door rejects player without key. |
-| `test_door_npc_key_usage` | R-13.17.2 | NPC with key opens locked door. |
-| `test_pickup_hold_point` | R-13.17.3 | Object attaches to hold point. |
-| `test_throw_damage` | R-13.17.3 | Thrown object deals damage. |
-| `test_visibility_darkness` | R-13.18.1 | Darkness reduces visibility score. |
-| `test_visibility_crouch` | R-13.18.1 | Crouching reduces visibility. |
-| `test_visibility_override` | R-13.18.1 | Invisibility ability sets score to 0. |
-| `test_alert_hysteresis` | R-13.18.2 | Brief glimpse reaches suspicious but not alerted. |
-| `test_alert_sustained_detection` | R-13.18.2 | Sustained detection transitions to alerted. |
-| `test_alert_search_timeout` | R-13.18.2 | Searching returns to patrol after timeout. |
-| `test_noise_distance_attenuation` | R-13.18.3 | Noise intensity decreases with distance. |
-| `test_noise_wall_occlusion` | R-13.18.3 | Closed door attenuates noise. |
-| `test_distraction_lure` | R-13.18.3 | Thrown distraction lures AI to impact. |
-| `test_takedown_silent` | R-13.18.4 | Silent takedown does not alert nearby AI. |
-| `test_takedown_loud_alerts` | R-13.18.4 | Loud takedown alerts nearby AI. |
-| `test_takedown_preconditions` | R-13.18.4 | Requires behind + unaware state. |
-| `test_cover_half_classification` | R-13.18.5 | Waist-high wall = half cover. |
-| `test_cover_full_classification` | R-13.18.5 | Standing wall = full cover. |
-| `test_cover_peek_exposure` | R-13.18.5 | Peeking exposes partial body. |
-| `test_cover_blind_fire_accuracy` | R-13.18.5 | Blind fire has reduced accuracy. |
-| `test_cover_to_cover_sprint` | R-13.18.5 | Sprint between adjacent covers. |
-| `test_cover_directional_flank` | R-13.18.5 | Flanking negates directional cover. |
+| Test                                | Req        |
+|-------------------------------------|------------|
+| `test_vault_height_classification`  | R-13.17.4a |
+| `test_mantle_height_classification` | R-13.17.4a |
+| `test_auto_detection_no_tags`       | R-13.17.4a |
+| `test_vault_stamina_deduction`      | R-13.17.4b |
+| `test_vault_fails_low_stamina`      | R-13.17.4b |
+| `test_vault_min_approach_speed`     | R-13.17.4b |
+| `test_wall_run_gravity_timer`       | R-13.17.4c |
+| `test_wall_run_jump_off_angle`      | R-13.17.4c |
+| `test_slide_distance_scales`        | R-13.17.4d |
+| `test_slide_downhill_extends`       | R-13.17.4d |
+| `test_balance_fall_on_speed`        | R-13.17.4e |
+| `test_climb_stamina_drain`          | R-13.17.5a |
+| `test_climb_rest_point`             | R-13.17.5a |
+| `test_ladder_no_stamina`            | R-13.17.5b |
+| `test_ledge_grab_airborne`          | R-13.17.5c |
+| `test_swim_oxygen_drain`            | R-13.17.6  |
+| `test_drowning_damage`              | R-13.17.6  |
+| `test_grapple_range_limit`          | R-13.17.7  |
+| `test_interaction_instant`          | R-13.17.1  |
+| `test_interaction_channeled`        | R-13.17.1  |
+| `test_interaction_cancel`           | R-13.17.1  |
+| `test_door_key_required`            | R-13.17.2  |
+| `test_door_npc_key_usage`           | R-13.17.2  |
+| `test_pickup_hold_point`            | R-13.17.3  |
+| `test_throw_damage`                 | R-13.17.3  |
+| `test_visibility_darkness`          | R-13.18.1  |
+| `test_visibility_crouch`            | R-13.18.1  |
+| `test_visibility_override`          | R-13.18.1  |
+| `test_alert_hysteresis`             | R-13.18.2  |
+| `test_alert_sustained_detection`    | R-13.18.2  |
+| `test_alert_search_timeout`         | R-13.18.2  |
+| `test_noise_distance_attenuation`   | R-13.18.3  |
+| `test_noise_wall_occlusion`         | R-13.18.3  |
+| `test_distraction_lure`             | R-13.18.3  |
+| `test_takedown_silent`              | R-13.18.4  |
+| `test_takedown_loud_alerts`         | R-13.18.4  |
+| `test_takedown_preconditions`       | R-13.18.4  |
+| `test_cover_half_classification`    | R-13.18.5  |
+| `test_cover_full_classification`    | R-13.18.5  |
+| `test_cover_peek_exposure`          | R-13.18.5  |
+| `test_cover_blind_fire_accuracy`    | R-13.18.5  |
+| `test_cover_to_cover_sprint`        | R-13.18.5  |
+| `test_cover_directional_flank`      | R-13.18.5  |
+
+1. **`test_vault_height_classification`** — 0.5 m obstacle classified as vault.
+2. **`test_mantle_height_classification`** — 1.5 m obstacle classified as mantle.
+3. **`test_auto_detection_no_tags`** — Auto-detection works without editor tags.
+4. **`test_vault_stamina_deduction`** — Vault deducts configured stamina.
+5. **`test_vault_fails_low_stamina`** — Vault blocked when stamina insufficient.
+6. **`test_vault_min_approach_speed`** — Vault fails below minimum speed.
+7. **`test_wall_run_gravity_timer`** — Wall-run terminates after max duration.
+8. **`test_wall_run_jump_off_angle`** — Jump-off launches at configured angle.
+9. **`test_slide_distance_scales`** — Higher entry speed = longer slide.
+10. **`test_slide_downhill_extends`** — Downhill slope extends slide distance.
+11. **`test_balance_fall_on_speed`** — Moving too fast on narrow surface causes fall.
+12. **`test_climb_stamina_drain`** — Stamina depletes; character falls at zero.
+13. **`test_climb_rest_point`** — Rest point pauses stamina drain.
+14. **`test_ladder_no_stamina`** — Ladder does not consume stamina.
+15. **`test_ledge_grab_airborne`** — Ledge grab triggers only when airborne.
+16. **`test_swim_oxygen_drain`** — Oxygen drains while submerged.
+17. **`test_drowning_damage`** — Drowning damage applied at zero oxygen.
+18. **`test_grapple_range_limit`** — Hook only attaches within range.
+19. **`test_interaction_instant`** — Instant interaction executes on input.
+20. **`test_interaction_channeled`** — Channeled interaction requires hold.
+21. **`test_interaction_cancel`** — Moving during channel cancels it.
+22. **`test_door_key_required`** — Locked door rejects player without key.
+23. **`test_door_npc_key_usage`** — NPC with key opens locked door.
+24. **`test_pickup_hold_point`** — Object attaches to hold point.
+25. **`test_throw_damage`** — Thrown object deals damage.
+26. **`test_visibility_darkness`** — Darkness reduces visibility score.
+27. **`test_visibility_crouch`** — Crouching reduces visibility.
+28. **`test_visibility_override`** — Invisibility ability sets score to 0.
+29. **`test_alert_hysteresis`** — Brief glimpse reaches suspicious but not alerted.
+30. **`test_alert_sustained_detection`** — Sustained detection transitions to alerted.
+31. **`test_alert_search_timeout`** — Searching returns to patrol after timeout.
+32. **`test_noise_distance_attenuation`** — Noise intensity decreases with distance.
+33. **`test_noise_wall_occlusion`** — Closed door attenuates noise.
+34. **`test_distraction_lure`** — Thrown distraction lures AI to impact.
+35. **`test_takedown_silent`** — Silent takedown does not alert nearby AI.
+36. **`test_takedown_loud_alerts`** — Loud takedown alerts nearby AI.
+37. **`test_takedown_preconditions`** — Requires behind + unaware state.
+38. **`test_cover_half_classification`** — Waist-high wall = half cover.
+39. **`test_cover_full_classification`** — Standing wall = full cover.
+40. **`test_cover_peek_exposure`** — Peeking exposes partial body.
+41. **`test_cover_blind_fire_accuracy`** — Blind fire has reduced accuracy.
+42. **`test_cover_to_cover_sprint`** — Sprint between adjacent covers.
+43. **`test_cover_directional_flank`** — Flanking negates directional cover.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_traversal_animation_transition` | NFR-13.17.1 | Animation starts within 2 frames of detection. |
-| `test_traversal_200_interactables` | NFR-13.17.2 | 200 interactables within range, < 1 ms detection. |
-| `test_stealth_32_entities` | NFR-13.18.1 | 32 tracked entities, visibility < 2 ms total. |
-| `test_cover_10k_surfaces` | NFR-13.18.2 | 10,000 surfaces detected < 500 ms at load. |
-| `test_ai_cover_scoring` | R-13.18.5 | AI selects cover via scoring, consistent with player. |
+| Test                                  | Req         |
+|---------------------------------------|-------------|
+| `test_traversal_animation_transition` | NFR-13.17.1 |
+| `test_traversal_200_interactables`    | NFR-13.17.2 |
+| `test_stealth_32_entities`            | NFR-13.18.1 |
+| `test_cover_10k_surfaces`             | NFR-13.18.2 |
+| `test_ai_cover_scoring`               | R-13.18.5   |
+
+1. **`test_traversal_animation_transition`** — Animation starts within 2 frames of detection.
+2. **`test_traversal_200_interactables`** — 200 interactables within range, < 1 ms detection.
+3. **`test_stealth_32_entities`** — 32 tracked entities, visibility < 2 ms total.
+4. **`test_cover_10k_surfaces`** — 10,000 surfaces detected < 500 ms at load.
+5. **`test_ai_cover_scoring`** — AI selects cover via scoring, consistent with player.
 
 ### Benchmarks
 

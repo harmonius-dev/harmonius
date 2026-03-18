@@ -9,25 +9,39 @@
 
 ### Steering & Avoidance (F-7.2 / R-7.2)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-7.2.1 | R-7.2.1 | ORCA local avoidance; deadlock-free velocity computation for dense areas |
-| F-7.2.2 | R-7.2.2 | Feeler-ray obstacle avoidance against static geometry; correction layer after ORCA |
-| F-7.2.3 | R-7.2.3 | Core steering primitives: seek, flee, arrive, wander, pursuit, evade |
-| F-7.2.4 | R-7.2.4 | Weighted and priority-pipeline blending of multiple active behaviors |
-| F-7.2.5 | R-7.2.5 | Formation movement: leader-follower with parameterized slot layouts |
-| F-7.2.6 | R-7.2.6 | Group steering: shared velocity goal, cohesion, alignment corrections |
+| Feature | Requirement |
+|---------|-------------|
+| F-7.2.1 | R-7.2.1     |
+| F-7.2.2 | R-7.2.2     |
+| F-7.2.3 | R-7.2.3     |
+| F-7.2.4 | R-7.2.4     |
+| F-7.2.5 | R-7.2.5     |
+| F-7.2.6 | R-7.2.6     |
+
+1. **F-7.2.1** — ORCA local avoidance; deadlock-free velocity computation for dense areas
+2. **F-7.2.2** — Feeler-ray obstacle avoidance against static geometry; correction layer after ORCA
+3. **F-7.2.3** — Core steering primitives: seek, flee, arrive, wander, pursuit, evade
+4. **F-7.2.4** — Weighted and priority-pipeline blending of multiple active behaviors
+5. **F-7.2.5** — Formation movement: leader-follower with parameterized slot layouts
+6. **F-7.2.6** — Group steering: shared velocity goal, cohesion, alignment corrections
 
 ### Crowd Simulation (F-7.7 / R-7.7)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-7.7.1 | R-7.7.1 | Reynolds flocking: separation, alignment, cohesion with tunable weights |
-| F-7.7.2 | R-7.7.2 | Dijkstra flow fields for mass navigation at constant per-agent cost |
-| F-7.7.3 | R-7.7.3 | Tiled flow field streaming and LRU caching keyed by goal + cost version |
-| F-7.7.4 | R-7.7.4 | Mass entity simulation with minimal per-agent state; platform-scaled budgets |
-| F-7.7.5 | R-7.7.5 | AI LOD tiers (high/mid/low) with global budget scheduler |
-| F-7.7.6 | R-7.7.6 | Per-cell density caps with overflow redirect or despawn |
+| Feature | Requirement |
+|---------|-------------|
+| F-7.7.1 | R-7.7.1     |
+| F-7.7.2 | R-7.7.2     |
+| F-7.7.3 | R-7.7.3     |
+| F-7.7.4 | R-7.7.4     |
+| F-7.7.5 | R-7.7.5     |
+| F-7.7.6 | R-7.7.6     |
+
+1. **F-7.7.1** — Reynolds flocking: separation, alignment, cohesion with tunable weights
+2. **F-7.7.2** — Dijkstra flow fields for mass navigation at constant per-agent cost
+3. **F-7.7.3** — Tiled flow field streaming and LRU caching keyed by goal + cost version
+4. **F-7.7.4** — Mass entity simulation with minimal per-agent state; platform-scaled budgets
+5. **F-7.7.5** — AI LOD tiers (high/mid/low) with global budget scheduler
+6. **F-7.7.6** — Per-cell density caps with overflow redirect or despawn
 
 ### Cross-Cutting Dependencies
 
@@ -1847,12 +1861,19 @@ This path is optional. The CPU path is always available as fallback on all platf
 
 ### Platform-Specific Notes
 
-| Platform | Notes |
-|----------|-------|
-| Windows | SIMD via `std::arch::x86_64` for batch steering math. GPU crowds via D3D12 compute. |
-| macOS | SIMD via `std::arch::aarch64` (NEON). GPU crowds via Metal compute. GCD scoped tasks for parallel flocking batches. |
-| Linux | SIMD via `std::arch::x86_64`. GPU crowds via Vulkan compute. io_uring not relevant (CPU-bound subsystem). |
-| Mobile | Smallest budgets. GPU crowd path disabled. Aggressive LOD and despawn. |
+| Platform |
+|----------|
+| Windows  |
+| macOS    |
+| Linux    |
+| Mobile   |
+
+1. **Windows** — SIMD via `std::arch::x86_64` for batch steering math. GPU crowds via D3D12 compute.
+2. **macOS** — SIMD via `std::arch::aarch64` (NEON). GPU crowds via Metal compute. GCD scoped tasks
+   for parallel flocking batches.
+3. **Linux** — SIMD via `std::arch::x86_64`. GPU crowds via Vulkan compute. io_uring not relevant
+   (CPU-bound subsystem).
+4. **Mobile** — Smallest budgets. GPU crowd path disabled. Aggressive LOD and despawn.
 
 ---
 
@@ -1860,49 +1881,93 @@ This path is optional. The CPU path is always available as fallback on all platf
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_seek_toward_target` | R-7.2.3 | Seek produces force toward target position. |
-| `test_flee_away_from_threat` | R-7.2.3 | Flee produces force away from threat. |
-| `test_arrive_decelerates` | R-7.2.3 | Arrive force decreases within decel_radius. |
-| `test_arrive_stops_at_target` | R-7.2.3 | Agent stops within 0.1 m of target. |
-| `test_wander_stays_bounded` | R-7.2.3 | 1000 wander ticks stay within configured area. |
-| `test_pursuit_intercepts` | R-7.2.3 | Pursuit reaches moving target faster than seek. |
-| `test_evade_escapes` | R-7.2.3 | Evade increases distance from moving threat. |
-| `test_weighted_blend_sum` | R-7.2.4 | Known weights produce expected blended vector. |
-| `test_priority_blend_order` | R-7.2.4 | Higher-priority force satisfied before lower. |
-| `test_priority_no_zero_force` | R-7.2.4 | Conflicting forces never cancel to zero movement. |
-| `test_orca_no_overlap` | R-7.2.1 | 200 agents in confined area: zero pairwise overlap. |
-| `test_orca_deadlock_free` | R-7.2.1 | Two opposing groups in narrow passage resolve. |
-| `test_obstacle_no_clip` | R-7.2.2 | Agent with feeler rays never clips static walls. |
-| `test_formation_offsets` | R-7.2.5 | Formation members within 0.5 m of configured offset. |
-| `test_formation_narrow_adjust` | R-7.2.5 | Formation compresses in narrow passage without clipping. |
-| `test_formation_reassign` | R-7.2.5 | Remaining members reassign to valid slots after loss. |
-| `test_group_cohesion` | R-7.2.6 | Group radius stays within 1.5x of initial after turns. |
-| `test_group_velocity_converge` | R-7.2.6 | Members converge to shared velocity within 60 ticks. |
-| `test_flocking_separation` | R-7.7.1 | Minimum pairwise distance > 0.5 m in flock. |
-| `test_flocking_cohesion` | R-7.7.1 | Flock members stay within configurable radius. |
-| `test_flow_field_correctness` | R-7.7.2 | Following directions from any cell reaches goal. |
-| `test_flow_field_constant_cost` | R-7.7.2 | Per-agent sample cost is O(1) regardless of count. |
-| `test_flow_cache_hit` | R-7.7.3 | Same (goal, cost_version) returns cached field. |
-| `test_flow_cache_invalidation` | R-7.7.3 | Cost version change evicts stale entries. |
-| `test_flow_cache_lru_eviction` | R-7.7.3 | Oldest entry evicted when cache is full. |
-| `test_density_cap_enforced` | R-7.7.6 | No cell exceeds configured cap after enforcement. |
-| `test_density_redirect` | R-7.7.6 | Overflow agents receive redirect action. |
-| `test_lod_assignment` | R-7.7.5 | Agents within high_radius get High tier. |
-| `test_lod_force_high` | R-7.7.5 | force_high_lod overrides distance. |
-| `test_lod_budget_cap` | R-7.7.5 | High-LOD count does not exceed max_agents. |
+| Test                            | Req     |
+|---------------------------------|---------|
+| `test_seek_toward_target`       | R-7.2.3 |
+| `test_flee_away_from_threat`    | R-7.2.3 |
+| `test_arrive_decelerates`       | R-7.2.3 |
+| `test_arrive_stops_at_target`   | R-7.2.3 |
+| `test_wander_stays_bounded`     | R-7.2.3 |
+| `test_pursuit_intercepts`       | R-7.2.3 |
+| `test_evade_escapes`            | R-7.2.3 |
+| `test_weighted_blend_sum`       | R-7.2.4 |
+| `test_priority_blend_order`     | R-7.2.4 |
+| `test_priority_no_zero_force`   | R-7.2.4 |
+| `test_orca_no_overlap`          | R-7.2.1 |
+| `test_orca_deadlock_free`       | R-7.2.1 |
+| `test_obstacle_no_clip`         | R-7.2.2 |
+| `test_formation_offsets`        | R-7.2.5 |
+| `test_formation_narrow_adjust`  | R-7.2.5 |
+| `test_formation_reassign`       | R-7.2.5 |
+| `test_group_cohesion`           | R-7.2.6 |
+| `test_group_velocity_converge`  | R-7.2.6 |
+| `test_flocking_separation`      | R-7.7.1 |
+| `test_flocking_cohesion`        | R-7.7.1 |
+| `test_flow_field_correctness`   | R-7.7.2 |
+| `test_flow_field_constant_cost` | R-7.7.2 |
+| `test_flow_cache_hit`           | R-7.7.3 |
+| `test_flow_cache_invalidation`  | R-7.7.3 |
+| `test_flow_cache_lru_eviction`  | R-7.7.3 |
+| `test_density_cap_enforced`     | R-7.7.6 |
+| `test_density_redirect`         | R-7.7.6 |
+| `test_lod_assignment`           | R-7.7.5 |
+| `test_lod_force_high`           | R-7.7.5 |
+| `test_lod_budget_cap`           | R-7.7.5 |
+
+1. **`test_seek_toward_target`** — Seek produces force toward target position.
+2. **`test_flee_away_from_threat`** — Flee produces force away from threat.
+3. **`test_arrive_decelerates`** — Arrive force decreases within decel_radius.
+4. **`test_arrive_stops_at_target`** — Agent stops within 0.1 m of target.
+5. **`test_wander_stays_bounded`** — 1000 wander ticks stay within configured area.
+6. **`test_pursuit_intercepts`** — Pursuit reaches moving target faster than seek.
+7. **`test_evade_escapes`** — Evade increases distance from moving threat.
+8. **`test_weighted_blend_sum`** — Known weights produce expected blended vector.
+9. **`test_priority_blend_order`** — Higher-priority force satisfied before lower.
+10. **`test_priority_no_zero_force`** — Conflicting forces never cancel to zero movement.
+11. **`test_orca_no_overlap`** — 200 agents in confined area: zero pairwise overlap.
+12. **`test_orca_deadlock_free`** — Two opposing groups in narrow passage resolve.
+13. **`test_obstacle_no_clip`** — Agent with feeler rays never clips static walls.
+14. **`test_formation_offsets`** — Formation members within 0.5 m of configured offset.
+15. **`test_formation_narrow_adjust`** — Formation compresses in narrow passage without clipping.
+16. **`test_formation_reassign`** — Remaining members reassign to valid slots after loss.
+17. **`test_group_cohesion`** — Group radius stays within 1.5x of initial after turns.
+18. **`test_group_velocity_converge`** — Members converge to shared velocity within 60 ticks.
+19. **`test_flocking_separation`** — Minimum pairwise distance > 0.5 m in flock.
+20. **`test_flocking_cohesion`** — Flock members stay within configurable radius.
+21. **`test_flow_field_correctness`** — Following directions from any cell reaches goal.
+22. **`test_flow_field_constant_cost`** — Per-agent sample cost is O(1) regardless of count.
+23. **`test_flow_cache_hit`** — Same (goal, cost_version) returns cached field.
+24. **`test_flow_cache_invalidation`** — Cost version change evicts stale entries.
+25. **`test_flow_cache_lru_eviction`** — Oldest entry evicted when cache is full.
+26. **`test_density_cap_enforced`** — No cell exceeds configured cap after enforcement.
+27. **`test_density_redirect`** — Overflow agents receive redirect action.
+28. **`test_lod_assignment`** — Agents within high_radius get High tier.
+29. **`test_lod_force_high`** — force_high_lod overrides distance.
+30. **`test_lod_budget_cap`** — High-LOD count does not exceed max_agents.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_steering_pipeline_e2e` | R-7.2 | 100 agents with mixed behaviors complete 300 ticks without NaN or overlap. |
-| `test_crowd_10k_stability` | R-7.7.4 | 10,000 crowd agents simulate for 600 ticks; CPU time scales linearly. |
-| `test_mixed_lod_transition` | R-7.7.5 | Agent transitions high -> mid -> low -> high without behavior discontinuity. |
-| `test_formation_through_crowd` | R-7.2.5 | Formation moves through dense crowd; members maintain offsets within tolerance. |
-| `test_density_with_flow_field` | R-7.7.6 | Overflow agents successfully reach goal via alternate flow field. |
-| `test_gpu_crowd_matches_cpu` | R-7.7.4 | GPU crowd output matches CPU path within floating-point tolerance. |
+| Test                           | Req     |
+|--------------------------------|---------|
+| `test_steering_pipeline_e2e`   | R-7.2   |
+| `test_crowd_10k_stability`     | R-7.7.4 |
+| `test_mixed_lod_transition`    | R-7.7.5 |
+| `test_formation_through_crowd` | R-7.2.5 |
+| `test_density_with_flow_field` | R-7.7.6 |
+| `test_gpu_crowd_matches_cpu`   | R-7.7.4 |
+
+1. **`test_steering_pipeline_e2e`** — 100 agents with mixed behaviors complete 300 ticks without NaN
+   or overlap.
+2. **`test_crowd_10k_stability`** — 10,000 crowd agents simulate for 600 ticks; CPU time scales
+   linearly.
+3. **`test_mixed_lod_transition`** — Agent transitions high -> mid -> low -> high without behavior
+   discontinuity.
+4. **`test_formation_through_crowd`** — Formation moves through dense crowd; members maintain
+   offsets within tolerance.
+5. **`test_density_with_flow_field`** — Overflow agents successfully reach goal via alternate flow
+   field.
+6. **`test_gpu_crowd_matches_cpu`** — GPU crowd output matches CPU path within floating-point
+   tolerance.
 
 ### Benchmarks
 

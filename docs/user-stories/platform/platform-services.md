@@ -1,32 +1,114 @@
 # User Stories -- 14.5 Platform Services
 
-| ID | Persona | Story | Acceptance Criteria | Features | Requirements |
-|----|---------|-------|-------------------|----------|-------------|
-| US-14.5.1 | player (P-23) | achievements to unlock on Steam, PlayStation, and Xbox when I reach MMO milestones (first raid clear, max level), so that my accomplishments are visible on my platform profile regardless of where I play |  |  |  |
-| US-14.5.2 | player (P-23) | to submit and view ranked scores (DPS rankings, PvP ladders, speedrun timers) through platform leaderboard APIs, so that I can compare my performance with friends and the global community |  |  |  |
-| US-14.5.3 | player (P-23) | my platform status to show my current zone, party size, and activity type, so that friends on my platform's social UI can see what I am doing and join me |  |  |  |
-| US-14.5.4 | player (P-23) | the game to bridge with my platform's party voice system (Steam Voice, PlayStation, Xbox Game Chat 2), so that voice chat works automatically with my party without manual channel configuration |  |  |  |
-| US-14.5.5 | player (P-23) | key bindings, UI layouts, and add-on configurations saved to platform cloud storage, so that my preferences are preserved when I switch machines or reinstall |  |  |  |
-| US-14.5.6 | player (P-23) | the game to verify my owned entitlements (base game, expansions, DLC, subscription) at login and periodically during play, so that content access is gated correctly without requiring a restart for new purchases |  |  |  |
-| US-14.5.7 | game developer (P-15) | unified abstractions for achievements, leaderboards, rich presence, voice, cloud storage, and entitlements, so that gameplay code integrates with platform services without branching per platform |  |  |  |
-| US-14.5.8 | engine developer (P-26) | achievement unlocks to be queued and retried when the platform service is temporarily unavailable (offline play, network hiccup), so that no achievement is lost due to transient connectivity issues |  |  |  |
-| US-14.5.9 | engine developer (P-26) | each platform's identity provider integration (Steam, PSN, Xbox Live, Apple Game Center) encapsulated behind the unified service layer, so that first-party authentication SDK requirements are met without leaking platform details to gameplay code |  |  |  |
-| US-14.5.10 | game developer (P-15) | the engine to enforce console certification compliance (suspend/resume, system UI overlays, controller disconnect prompts, safe-area rendering, accessibility mandates), so that the game passes PlayStation and Xbox certification without platform-specific fixes in gameplay code |  |  |  |
-| US-14.5.11 | designer (P-5) | unavailable content to be hidden or clearly marked with a purchase redirect to the platform storefront, so that players understand what they can access and certification requirements for DLC presentation are met |  |  |  |
-| US-14.5.12 | DevOps engineer (P-16) | the cloud save system to respect per-platform file size and total quota limits, so that saves do not fail or get rejected during console certification testing |  |  |  |
-| US-14.5.13 | engine tester (P-27) | automated tests that trigger achievement unlock, leaderboard submission, and rich presence updates on each platform API, verifying correct results, so that platform service regressions are caught before certification |  |  |  |
-| US-14.5.14 | engine tester (P-27) | tests that simulate console suspend, resume, and memory pressure events, verifying the engine saves state, releases resources within platform deadlines, and restores cleanly, so that certification-blocking issues are caught in automated testing |  |  |  |
-| US-14.5.15 | engine developer (P-26) | leaderboard query results cached and requests throttled to respect platform-imposed rate limits, so that frequent UI refreshes do not cause API throttling or certification failures |  |  |  |
-| US-14.5.16 | engine tester (P-27) | tests that verify platform voice chat bridging works for cross-play parties using Vivox as fallback when platform voice is unavailable, so that voice communication works reliably in all party configurations |  |  |  |
-| US-14.5.17 | player (P-23) | my graphics settings, keybindings, and audio volumes to sync to the cloud and restore automatically when I log in on a different PC, so that I don't have to reconfigure everything when I play on my laptop vs my desktop |  |  |  |
-| US-14.5.18 | player (P-23) | a clear dialog showing which settings differ when my local and cloud preferences diverge after offline play on two machines, so that I can choose which version to keep rather than losing my carefully tuned keybindings |  |  |  |
-| US-14.5.19 | game developer (P-15) | the preferences API to use atomic writes and return defaults for missing keys, so that a crash mid-save never corrupts the preferences file and missing entries don't cause errors |  |  |  |
-| US-14.5.20 | player (P-23) | to see how much disk space downloaded DLC, mods, and streaming content are using and clear specific categories from the settings menu, so that I can free disk space without uninstalling the game |  |  |  |
-| US-14.5.21 | engine developer (P-26) | the local cache manager to evict least-recently-used entries by category priority when the cache exceeds its configured maximum, so that the game never fails a download due to disk-full errors |  |  |  |
-| US-14.5.22 | game developer (P-15) | compiled assets, shader bytecode, and logic graph bytecode cached locally in `.harmonius/cache/` with hash-based invalidation, so that incremental builds take seconds instead of minutes for unchanged assets |  |  |  |
-| US-14.5.23 | DevOps engineer (P-16) | the build system to check the local cache first, then the shared S3-backed network cache, before doing a full rebuild, so that team members benefit from each other's cached builds without duplicating compilation |  |  |  |
-| US-14.5.24 | player (P-23) | the game to cache compiled pipeline states to disk so that shader compilation stutter only happens once per material, so that I don't experience hitches every time I enter a new area or encounter a new effect |  |  |  |
-| US-14.5.25 | DevOps engineer (P-16) | the cook process to generate a pre-built PSO cache from a reference playthrough that ships with the game, so that players experience zero shader stutter on first launch with no warmup needed |  |  |  |
-| US-14.5.26 | engine tester (P-27) | tests that verify PSO cache entries are invalidated when the GPU driver version changes, so that players don't load stale bytecode that could cause rendering artifacts after updating drivers |  |  |  |
-| US-14.5.27 | player (P-23) | the engine to clean up leftover temp files from previous crashed sessions on startup, so that temporary data doesn't accumulate and waste disk space over time |  |  |  |
-| US-14.5.28 | engine developer (P-26) | the temp file system to guarantee that all temp data is recreatable from non-temp sources via RAII handles that auto-delete on drop, so that deleting the entire temp directory never causes data loss |  |  |  |
+| ID         | Persona                 | Features | Requirements |
+|------------|-------------------------|----------|--------------|
+| US-14.5.1  | player (P-23)           |          |              |
+| US-14.5.2  | player (P-23)           |          |              |
+| US-14.5.3  | player (P-23)           |          |              |
+| US-14.5.4  | player (P-23)           |          |              |
+| US-14.5.5  | player (P-23)           |          |              |
+| US-14.5.6  | player (P-23)           |          |              |
+| US-14.5.7  | game developer (P-15)   |          |              |
+| US-14.5.8  | engine developer (P-26) |          |              |
+| US-14.5.9  | engine developer (P-26) |          |              |
+| US-14.5.10 | game developer (P-15)   |          |              |
+| US-14.5.11 | designer (P-5)          |          |              |
+| US-14.5.12 | DevOps engineer (P-16)  |          |              |
+| US-14.5.13 | engine tester (P-27)    |          |              |
+| US-14.5.14 | engine tester (P-27)    |          |              |
+| US-14.5.15 | engine developer (P-26) |          |              |
+| US-14.5.16 | engine tester (P-27)    |          |              |
+| US-14.5.17 | player (P-23)           |          |              |
+| US-14.5.18 | player (P-23)           |          |              |
+| US-14.5.19 | game developer (P-15)   |          |              |
+| US-14.5.20 | player (P-23)           |          |              |
+| US-14.5.21 | engine developer (P-26) |          |              |
+| US-14.5.22 | game developer (P-15)   |          |              |
+| US-14.5.23 | DevOps engineer (P-16)  |          |              |
+| US-14.5.24 | player (P-23)           |          |              |
+| US-14.5.25 | DevOps engineer (P-16)  |          |              |
+| US-14.5.26 | engine tester (P-27)    |          |              |
+| US-14.5.27 | player (P-23)           |          |              |
+| US-14.5.28 | engine developer (P-26) |          |              |
+
+1. **US-14.5.1** — achievements to unlock on Steam, PlayStation, and Xbox when I reach MMO
+   milestones (first raid clear, max level), so that my accomplishments are visible on my platform
+   profile regardless of where I play
+2. **US-14.5.2** — to submit and view ranked scores (DPS rankings, PvP ladders, speedrun timers)
+   through platform leaderboard APIs, so that I can compare my performance with friends and the
+   global community
+3. **US-14.5.3** — my platform status to show my current zone, party size, and activity type, so
+   that friends on my platform's social UI can see what I am doing and join me
+4. **US-14.5.4** — the game to bridge with my platform's party voice system (Steam Voice,
+   PlayStation, Xbox Game Chat 2), so that voice chat works automatically with my party without
+   manual channel configuration
+5. **US-14.5.5** — key bindings, UI layouts, and add-on configurations saved to platform cloud
+   storage, so that my preferences are preserved when I switch machines or reinstall
+6. **US-14.5.6** — the game to verify my owned entitlements (base game, expansions, DLC,
+   subscription) at login and periodically during play, so that content access is gated correctly
+   without requiring a restart for new purchases
+7. **US-14.5.7** — unified abstractions for achievements, leaderboards, rich presence, voice, cloud
+   storage, and entitlements, so that gameplay code integrates with platform services without
+   branching per platform
+8. **US-14.5.8** — achievement unlocks to be queued and retried when the platform service is
+   temporarily unavailable (offline play, network hiccup), so that no achievement is lost due to
+   transient connectivity issues
+9. **US-14.5.9** — each platform's identity provider integration (Steam, PSN, Xbox Live, Apple Game
+   Center) encapsulated behind the unified service layer, so that first-party authentication SDK
+   requirements are met without leaking platform details to gameplay code
+10. **US-14.5.10** — the engine to enforce console certification compliance (suspend/resume, system
+    UI overlays, controller disconnect prompts, safe-area rendering, accessibility mandates), so
+    that the game passes PlayStation and Xbox certification without platform-specific fixes in
+    gameplay code
+11. **US-14.5.11** — unavailable content to be hidden or clearly marked with a purchase redirect to
+    the platform storefront, so that players understand what they can access and certification
+    requirements for DLC presentation are met
+12. **US-14.5.12** — the cloud save system to respect per-platform file size and total quota limits,
+    so that saves do not fail or get rejected during console certification testing
+13. **US-14.5.13** — automated tests that trigger achievement unlock, leaderboard submission, and
+    rich presence updates on each platform API, verifying correct results, so that platform service
+    regressions are caught before certification
+14. **US-14.5.14** — tests that simulate console suspend, resume, and memory pressure events,
+    verifying the engine saves state, releases resources within platform deadlines, and restores
+    cleanly, so that certification-blocking issues are caught in automated testing
+15. **US-14.5.15** — leaderboard query results cached and requests throttled to respect
+    platform-imposed rate limits, so that frequent UI refreshes do not cause API throttling or
+    certification failures
+16. **US-14.5.16** — tests that verify platform voice chat bridging works for cross-play parties
+    using Vivox as fallback when platform voice is unavailable, so that voice communication works
+    reliably in all party configurations
+17. **US-14.5.17** — my graphics settings, keybindings, and audio volumes to sync to the cloud and
+    restore automatically when I log in on a different PC, so that I don't have to reconfigure
+    everything when I play on my laptop vs my desktop
+18. **US-14.5.18** — a clear dialog showing which settings differ when my local and cloud
+    preferences diverge after offline play on two machines, so that I can choose which version to
+    keep rather than losing my carefully tuned keybindings
+19. **US-14.5.19** — the preferences API to use atomic writes and return defaults for missing keys,
+    so that a crash mid-save never corrupts the preferences file and missing entries don't cause
+    errors
+20. **US-14.5.20** — to see how much disk space downloaded DLC, mods, and streaming content are
+    using and clear specific categories from the settings menu, so that I can free disk space
+    without uninstalling the game
+21. **US-14.5.21** — the local cache manager to evict least-recently-used entries by category
+    priority when the cache exceeds its configured maximum, so that the game never fails a download
+    due to disk-full errors
+22. **US-14.5.22** — compiled assets, shader bytecode, and logic graph bytecode cached locally in
+    `.harmonius/cache/` with hash-based invalidation, so that incremental builds take seconds
+    instead of minutes for unchanged assets
+23. **US-14.5.23** — the build system to check the local cache first, then the shared S3-backed
+    network cache, before doing a full rebuild, so that team members benefit from each other's
+    cached builds without duplicating compilation
+24. **US-14.5.24** — the game to cache compiled pipeline states to disk so that shader compilation
+    stutter only happens once per material, so that I don't experience hitches every time I enter a
+    new area or encounter a new effect
+25. **US-14.5.25** — the cook process to generate a pre-built PSO cache from a reference playthrough
+    that ships with the game, so that players experience zero shader stutter on first launch with no
+    warmup needed
+26. **US-14.5.26** — tests that verify PSO cache entries are invalidated when the GPU driver version
+    changes, so that players don't load stale bytecode that could cause rendering artifacts after
+    updating drivers
+27. **US-14.5.27** — the engine to clean up leftover temp files from previous crashed sessions on
+    startup, so that temporary data doesn't accumulate and waste disk space over time
+28. **US-14.5.28** — the temp file system to guarantee that all temp data is recreatable from
+    non-temp sources via RAII handles that auto-delete on drop, so that deleting the entire temp
+    directory never causes data loss

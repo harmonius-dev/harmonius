@@ -65,13 +65,24 @@ requirement, and user story per module.
 
 ## Documentation
 
-| Directory | What you will find |
-|-----------|-------------------|
-| [docs/architecture.md](docs/architecture.md) | Engine overview with Mermaid diagrams and per-module cross-references |
-| [docs/design/](docs/design/) | 87 design documents with API pseudocode, class diagrams, and companion test cases |
-| [docs/features/](docs/features/) | 1,381 feature definitions organized by domain |
-| [docs/requirements/](docs/requirements/) | 1,171 functional and non-functional requirements |
-| [docs/user-stories/](docs/user-stories/) | 5,859 user stories across 27 personas |
-| [docs/standards/](docs/standards/) | Coding standards for Rust, C++, Swift, TypeScript, HLSL, Markdown, JSON, TOML, YAML |
-| [docs/design/constraints.md](docs/design/constraints.md) | Project-wide design constraints (language, platform, async model) |
-| [docs/design/plan.md](docs/design/plan.md) | Design wave schedule and dependency DAG |
+| Directory                                                |
+|----------------------------------------------------------|
+| [docs/architecture.md](docs/architecture.md)             |
+| [docs/design/](docs/design/)                             |
+| [docs/features/](docs/features/)                         |
+| [docs/requirements/](docs/requirements/)                 |
+| [docs/user-stories/](docs/user-stories/)                 |
+| [docs/standards/](docs/standards/)                       |
+| [docs/design/constraints.md](docs/design/constraints.md) |
+
+1. **[docs/architecture.md](docs/architecture.md)** — Engine overview with Mermaid diagrams and
+   per-module cross-references
+2. **[docs/design/](docs/design/)** — 87 design documents with API pseudocode, class diagrams, and
+   companion test cases
+3. **[docs/features/](docs/features/)** — 1,381 feature definitions organized by domain
+4. **[docs/requirements/](docs/requirements/)** — 1,171 functional and non-functional requirements
+5. **[docs/user-stories/](docs/user-stories/)** — 5,859 user stories across 27 personas
+6. **[docs/standards/](docs/standards/)** — Coding standards for Rust, C++, Swift, TypeScript, HLSL,
+   Markdown, JSON, TOML, YAML
+7. **[docs/design/constraints.md](docs/design/constraints.md)** — Project-wide design constraints
+   (language, platform, async model)

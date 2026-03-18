@@ -2,20 +2,33 @@
 
 ## Requirements Trace
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-4.3.1 | R-4.3.1 | Core joint types: revolute, prismatic, fixed, distance |
-| F-4.3.2 | R-4.3.2 | Advanced joints: spring, cone-twist, generic 6DOF |
-| F-4.3.3 | R-4.3.3 | Joint motors (velocity/position) and angular/linear limits |
-| F-4.3.4 | R-4.3.4 | Breakable joints with force/torque thresholds |
-| F-4.3.5 | R-4.3.5 | Ragdoll configuration from skeleton asset definitions |
-| F-4.3.6 | R-4.3.6 | Joint chains and ropes from chain definition assets |
-| F-4.3.7 | R-4.3.7 | SI and TGS constraint solvers with warm starting |
-| F-4.3.8 | R-4.3.8 | Limb severance and joint destruction |
-| F-4.3.9 | R-4.3.9 | Prosthetic and limb replacement |
-| R-4.3.NF1 | -- | Solver throughput: 5000 rows/ms, 500 joints in 4 ms |
-| R-4.3.NF2 | -- | Ragdoll activation: 0.5 ms per ragdoll, 8 per frame |
-| R-4.3.NF3 | -- | Chain stability: 32 segments, 60 s, drift below 1 mm |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-4.3.1   | R-4.3.1     |
+| F-4.3.2   | R-4.3.2     |
+| F-4.3.3   | R-4.3.3     |
+| F-4.3.4   | R-4.3.4     |
+| F-4.3.5   | R-4.3.5     |
+| F-4.3.6   | R-4.3.6     |
+| F-4.3.7   | R-4.3.7     |
+| F-4.3.8   | R-4.3.8     |
+| F-4.3.9   | R-4.3.9     |
+| R-4.3.NF1 | --          |
+| R-4.3.NF2 | --          |
+| R-4.3.NF3 | --          |
+
+1. **F-4.3.1** — Core joint types: revolute, prismatic, fixed, distance
+2. **F-4.3.2** — Advanced joints: spring, cone-twist, generic 6DOF
+3. **F-4.3.3** — Joint motors (velocity/position) and angular/linear limits
+4. **F-4.3.4** — Breakable joints with force/torque thresholds
+5. **F-4.3.5** — Ragdoll configuration from skeleton asset definitions
+6. **F-4.3.6** — Joint chains and ropes from chain definition assets
+7. **F-4.3.7** — SI and TGS constraint solvers with warm starting
+8. **F-4.3.8** — Limb severance and joint destruction
+9. **F-4.3.9** — Prosthetic and limb replacement
+10. **R-4.3.NF1** — Solver throughput: 5000 rows/ms, 500 joints in 4 ms
+11. **R-4.3.NF2** — Ragdoll activation: 0.5 ms per ragdoll, 8 per frame
+12. **R-4.3.NF3** — Chain stability: 32 segments, 60 s, drift below 1 mm
 
 ## Overview
 
@@ -1587,51 +1600,122 @@ fn physics_substep_schedule() -> TaskGraph {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_revolute_5dof_lock` | R-4.3.1 | Create revolute joint, verify 5 DOF constrained, free axis rotates. |
-| `test_prismatic_5dof_lock` | R-4.3.1 | Create prismatic joint, verify 5 DOF constrained, free axis slides. |
-| `test_fixed_6dof_lock` | R-4.3.1 | Create fixed joint, verify all 6 DOF locked, zero relative motion. |
-| `test_distance_separation` | R-4.3.1 | Create distance joint, apply force, verify separation stays within 1mm of target. |
-| `test_spring_equilibrium` | R-4.3.2 | Create spring joint, verify oscillation converges to rest length. |
-| `test_cone_twist_limits` | R-4.3.2 | Create cone-twist with 45-deg limit, apply torque, verify angle does not exceed 45.5 deg over 1000 ticks (US-4.3.2.4). |
-| `test_6dof_per_axis_lock` | R-4.3.2 | Lock X, limit Y, free Z. Verify X frozen, Y bounded, Z unconstrained. Verify axis independence (US-4.3.2.9). |
-| `test_motor_velocity_target` | R-4.3.3 | Set motor target 2 rad/s, verify steady state within 1% (US-4.3.3.4). |
-| `test_motor_position_target` | R-4.3.3 | Set motor to position mode, verify convergence to target angle. |
-| `test_motor_max_force_clamp` | R-4.3.3 | Apply heavy load, verify motor does not exceed max force (US-4.3.3.5). |
-| `test_limits_angular_clamp` | R-4.3.3 | Set +/-45 deg limits, apply excess torque, verify no exceed 45.5 deg (US-4.3.3.5). |
-| `test_limits_restitution` | R-4.3.3 | Verify limit bounce with restitution > 0. |
-| `test_break_force_threshold` | R-4.3.4 | Create 1000N breakable joint, apply 1500N, verify despawn within one substep (US-4.3.4.3). |
-| `test_break_event_payload` | R-4.3.4 | Verify JointBroken event contains both body entities and force magnitude (US-4.3.4.4). |
-| `test_break_torque_threshold` | R-4.3.4 | Verify torque-based breaking works independently of force threshold. |
-| `test_break_varied_directions` | R-4.3.4 | Test breaking under tension, compression, shear, torsion (US-4.3.4.9). |
-| `test_warm_start_convergence` | R-4.3.7 | Verify warm-started solver converges in fewer iterations than cold start. |
-| `test_si_solver_correctness` | R-4.3.7 | Run SI solver on known configuration, verify impulses match reference. |
-| `test_tgs_solver_correctness` | R-4.3.7 | Run TGS solver, verify impulses and positions match reference. |
-| `test_solver_determinism` | R-4.3.7 | Run same scenario twice, assert bit-identical results (US-4.3.7.5). |
-| `test_island_partitioning` | R-4.3.7 | Create 3 disconnected groups, verify 3 islands with correct membership. |
-| `test_island_incremental` | R-4.3.7 | Add/remove joints, verify islands update correctly without full rebuild. |
-| `test_ragdoll_activation` | R-4.3.5 | Activate ragdoll on 20-bone skeleton, verify all joints spawn with correct types/limits (US-4.3.5.3). |
-| `test_ragdoll_deactivation` | R-4.3.5 | Deactivate ragdoll, verify all joint entities despawned. |
-| `test_chain_spawn` | R-4.3.6 | Spawn 32-segment chain, verify correct entity count and connectivity. |
-| `test_limb_health_zero_severs` | R-4.3.8 | Reduce LimbHealth to zero, verify joint despawned and JointSevered event fires (US-4.3.8.3, US-4.3.8.4). |
-| `test_constraint_row_count` | R-4.3.1 | Verify each joint type generates the expected number of constraint rows. |
+| Test                           | Req     |
+|--------------------------------|---------|
+| `test_revolute_5dof_lock`      | R-4.3.1 |
+| `test_prismatic_5dof_lock`     | R-4.3.1 |
+| `test_fixed_6dof_lock`         | R-4.3.1 |
+| `test_distance_separation`     | R-4.3.1 |
+| `test_spring_equilibrium`      | R-4.3.2 |
+| `test_cone_twist_limits`       | R-4.3.2 |
+| `test_6dof_per_axis_lock`      | R-4.3.2 |
+| `test_motor_velocity_target`   | R-4.3.3 |
+| `test_motor_position_target`   | R-4.3.3 |
+| `test_motor_max_force_clamp`   | R-4.3.3 |
+| `test_limits_angular_clamp`    | R-4.3.3 |
+| `test_limits_restitution`      | R-4.3.3 |
+| `test_break_force_threshold`   | R-4.3.4 |
+| `test_break_event_payload`     | R-4.3.4 |
+| `test_break_torque_threshold`  | R-4.3.4 |
+| `test_break_varied_directions` | R-4.3.4 |
+| `test_warm_start_convergence`  | R-4.3.7 |
+| `test_si_solver_correctness`   | R-4.3.7 |
+| `test_tgs_solver_correctness`  | R-4.3.7 |
+| `test_solver_determinism`      | R-4.3.7 |
+| `test_island_partitioning`     | R-4.3.7 |
+| `test_island_incremental`      | R-4.3.7 |
+| `test_ragdoll_activation`      | R-4.3.5 |
+| `test_ragdoll_deactivation`    | R-4.3.5 |
+| `test_chain_spawn`             | R-4.3.6 |
+| `test_limb_health_zero_severs` | R-4.3.8 |
+| `test_constraint_row_count`    | R-4.3.1 |
+
+1. **`test_revolute_5dof_lock`** — Create revolute joint, verify 5 DOF constrained, free axis
+   rotates.
+2. **`test_prismatic_5dof_lock`** — Create prismatic joint, verify 5 DOF constrained, free axis
+   slides.
+3. **`test_fixed_6dof_lock`** — Create fixed joint, verify all 6 DOF locked, zero relative motion.
+4. **`test_distance_separation`** — Create distance joint, apply force, verify separation stays
+   within 1mm of target.
+5. **`test_spring_equilibrium`** — Create spring joint, verify oscillation converges to rest length.
+6. **`test_cone_twist_limits`** — Create cone-twist with 45-deg limit, apply torque, verify angle
+   does not exceed 45.5 deg over 1000 ticks (US-4.3.2.4).
+7. **`test_6dof_per_axis_lock`** — Lock X, limit Y, free Z. Verify X frozen, Y bounded, Z
+   unconstrained. Verify axis independence (US-4.3.2.9).
+8. **`test_motor_velocity_target`** — Set motor target 2 rad/s, verify steady state within 1%
+   (US-4.3.3.4).
+9. **`test_motor_position_target`** — Set motor to position mode, verify convergence to target
+   angle.
+10. **`test_motor_max_force_clamp`** — Apply heavy load, verify motor does not exceed max force
+    (US-4.3.3.5).
+11. **`test_limits_angular_clamp`** — Set +/-45 deg limits, apply excess torque, verify no exceed
+    45.5 deg (US-4.3.3.5).
+12. **`test_limits_restitution`** — Verify limit bounce with restitution > 0.
+13. **`test_break_force_threshold`** — Create 1000N breakable joint, apply 1500N, verify despawn
+    within one substep (US-4.3.4.3).
+14. **`test_break_event_payload`** — Verify JointBroken event contains both body entities and force
+    magnitude (US-4.3.4.4).
+15. **`test_break_torque_threshold`** — Verify torque-based breaking works independently of force
+    threshold.
+16. **`test_break_varied_directions`** — Test breaking under tension, compression, shear, torsion
+    (US-4.3.4.9).
+17. **`test_warm_start_convergence`** — Verify warm-started solver converges in fewer iterations
+    than cold start.
+18. **`test_si_solver_correctness`** — Run SI solver on known configuration, verify impulses match
+    reference.
+19. **`test_tgs_solver_correctness`** — Run TGS solver, verify impulses and positions match
+    reference.
+20. **`test_solver_determinism`** — Run same scenario twice, assert bit-identical results
+    (US-4.3.7.5).
+21. **`test_island_partitioning`** — Create 3 disconnected groups, verify 3 islands with correct
+    membership.
+22. **`test_island_incremental`** — Add/remove joints, verify islands update correctly without full
+    rebuild.
+23. **`test_ragdoll_activation`** — Activate ragdoll on 20-bone skeleton, verify all joints spawn
+    with correct types/limits (US-4.3.5.3).
+24. **`test_ragdoll_deactivation`** — Deactivate ragdoll, verify all joint entities despawned.
+25. **`test_chain_spawn`** — Spawn 32-segment chain, verify correct entity count and connectivity.
+26. **`test_limb_health_zero_severs`** — Reduce LimbHealth to zero, verify joint despawned and
+    JointSevered event fires (US-4.3.8.3, US-4.3.8.4).
+27. **`test_constraint_row_count`** — Verify each joint type generates the expected number of
+    constraint rows.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_core_joint_drift` | R-4.3.1 | Connect two 1kg bodies with each joint type, apply forces 500 ticks at 8 iterations, assert drift below 1mm (US-4.3.1.5). |
-| `test_tgs_drift_reduction` | R-4.3.7 | 10-body chain, 1000 ticks, SI vs TGS at 8 iterations. Assert TGS drift at least 30% lower (US-4.3.7.3). |
-| `test_ragdoll_stability` | R-4.3.5 | Simulate active ragdoll 100 ticks, assert no violation exceeds 5mm (US-4.3.5.4). |
-| `test_ragdoll_on_slopes` | R-4.3.5 | Ragdoll on 30-degree slope, verify no jitter or tunneling (US-4.3.5.8). |
-| `test_chain_stability_60s` | R-4.3.6 | 32-segment chain, 60 seconds, 4 substeps. Assert separation below 1mm, energy gain below 1%/s (R-4.3.NF3). |
-| `test_chain_collision` | R-4.3.6 | Chain draped over obstacle, verify collision response (US-4.3.6.8). |
-| `test_chain_extreme_tension` | R-4.3.6 | Apply extreme tension, verify chain does not explode (US-4.3.6.12). |
-| `test_parallel_island_solve` | R-4.3.7 | Create 16 independent islands, verify all solved correctly in parallel. |
-| `test_ragdoll_to_animation` | R-4.3.5 | Transition ragdoll back to animation, verify smooth blend (US-4.3.5.12). |
-| `test_prosthetic_attachment` | R-4.3.9 | Sever limb, attach prosthetic, verify constraints restored (US-4.3.9.3). |
-| `test_severance_locomotion` | R-4.3.8 | Sever leg, verify skeleton adapts locomotion (US-4.3.8.5). |
+| Test                         | Req     |
+|------------------------------|---------|
+| `test_core_joint_drift`      | R-4.3.1 |
+| `test_tgs_drift_reduction`   | R-4.3.7 |
+| `test_ragdoll_stability`     | R-4.3.5 |
+| `test_ragdoll_on_slopes`     | R-4.3.5 |
+| `test_chain_stability_60s`   | R-4.3.6 |
+| `test_chain_collision`       | R-4.3.6 |
+| `test_chain_extreme_tension` | R-4.3.6 |
+| `test_parallel_island_solve` | R-4.3.7 |
+| `test_ragdoll_to_animation`  | R-4.3.5 |
+| `test_prosthetic_attachment` | R-4.3.9 |
+| `test_severance_locomotion`  | R-4.3.8 |
+
+1. **`test_core_joint_drift`** — Connect two 1kg bodies with each joint type, apply forces 500 ticks
+   at 8 iterations, assert drift below 1mm (US-4.3.1.5).
+2. **`test_tgs_drift_reduction`** — 10-body chain, 1000 ticks, SI vs TGS at 8 iterations. Assert TGS
+   drift at least 30% lower (US-4.3.7.3).
+3. **`test_ragdoll_stability`** — Simulate active ragdoll 100 ticks, assert no violation exceeds 5mm
+   (US-4.3.5.4).
+4. **`test_ragdoll_on_slopes`** — Ragdoll on 30-degree slope, verify no jitter or tunneling
+   (US-4.3.5.8).
+5. **`test_chain_stability_60s`** — 32-segment chain, 60 seconds, 4 substeps. Assert separation
+   below 1mm, energy gain below 1%/s (R-4.3.NF3).
+6. **`test_chain_collision`** — Chain draped over obstacle, verify collision response (US-4.3.6.8).
+7. **`test_chain_extreme_tension`** — Apply extreme tension, verify chain does not explode
+   (US-4.3.6.12).
+8. **`test_parallel_island_solve`** — Create 16 independent islands, verify all solved correctly in
+   parallel.
+9. **`test_ragdoll_to_animation`** — Transition ragdoll back to animation, verify smooth blend
+   (US-4.3.5.12).
+10. **`test_prosthetic_attachment`** — Sever limb, attach prosthetic, verify constraints restored
+    (US-4.3.9.3).
+11. **`test_severance_locomotion`** — Sever leg, verify skeleton adapts locomotion (US-4.3.8.5).
 
 ### Benchmarks
 

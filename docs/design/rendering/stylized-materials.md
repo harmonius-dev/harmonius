@@ -10,26 +10,41 @@
 
 ### Stylized Effects (F-2.11 / R-2.11)
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-2.11.1 | R-2.11.1 | US-2.11.1.1, US-2.11.1.2, US-2.11.1.3 | 2D/3D outline rendering (Sobel, jump-flood, shell extrusion) |
-| F-2.11.2 | R-2.11.2 | US-2.11.2.1, US-2.11.2.2, US-2.11.2.3 | Highlight and glow (stencil, Gaussian blur, fresnel rim) |
-| F-2.11.3 | R-2.11.3 | US-2.11.3.1, US-2.11.3.2, US-2.11.3.3 | Advanced toon shading (band ramps, specular shapes, hatching) |
-| F-2.11.4 | R-2.11.4 | US-2.11.4.1, US-2.11.4.2, US-2.11.4.3 | Cut-through visibility and roof fading |
-| F-2.11.5 | R-2.11.5 | US-2.11.5.1, US-2.11.5.2, US-2.11.5.3 | X-ray silhouette rendering |
+| Feature  | Requirement | User Stories                          |
+|----------|-------------|---------------------------------------|
+| F-2.11.1 | R-2.11.1    | US-2.11.1.1, US-2.11.1.2, US-2.11.1.3 |
+| F-2.11.2 | R-2.11.2    | US-2.11.2.1, US-2.11.2.2, US-2.11.2.3 |
+| F-2.11.3 | R-2.11.3    | US-2.11.3.1, US-2.11.3.2, US-2.11.3.3 |
+| F-2.11.4 | R-2.11.4    | US-2.11.4.1, US-2.11.4.2, US-2.11.4.3 |
+| F-2.11.5 | R-2.11.5    | US-2.11.5.1, US-2.11.5.2, US-2.11.5.3 |
+
+1. **F-2.11.1** — 2D/3D outline rendering (Sobel, jump-flood, shell extrusion)
+2. **F-2.11.2** — Highlight and glow (stencil, Gaussian blur, fresnel rim)
+3. **F-2.11.3** — Advanced toon shading (band ramps, specular shapes, hatching)
+4. **F-2.11.4** — Cut-through visibility and roof fading
+5. **F-2.11.5** — X-ray silhouette rendering
 
 ### Advanced Materials (F-2.12 / R-2.12)
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-2.12.1 | R-2.12.1 | US-2.12.1.1, US-2.12.1.2, US-2.12.1.3 | Glass/crystal refraction (IOR, dispersion, absorption) |
-| F-2.12.3 | R-2.12.3 | US-2.12.3.1, US-2.12.3.2, US-2.12.3.3 | Emissive materials (HDR bloom, animated emission) |
-| F-2.12.4 | R-2.12.4 | US-2.12.4.1, US-2.12.4.2, US-2.12.4.3 | Heightmap tessellation and parallax occlusion mapping |
-| F-2.12.5 | R-2.12.5 | US-2.12.5.1, US-2.12.5.2, US-2.12.5.3 | Fabric/cloth materials (sheen BRDF, transmission) |
-| F-2.12.6 | R-2.12.6 | US-2.12.6.1, US-2.12.6.2, US-2.12.6.3 | Metal, wood, stone (anisotropy, SSS, weathering) |
-| F-2.12.7 | R-2.12.7 | US-2.12.7.1, US-2.12.7.2 | Rubber, wax, soft surfaces (deformation-driven SSS) |
-| F-2.12.8 | R-2.12.8 | US-2.12.8.1, US-2.12.8.2, US-2.12.8.3 | Clearcoat and multi-layer materials |
-| F-2.12.9 | R-2.12.9 | US-2.12.9.1, US-2.12.9.2, US-2.12.9.3 | Custom material graphs (visual node editor) |
+| Feature  | Requirement | User Stories                          |
+|----------|-------------|---------------------------------------|
+| F-2.12.1 | R-2.12.1    | US-2.12.1.1, US-2.12.1.2, US-2.12.1.3 |
+| F-2.12.3 | R-2.12.3    | US-2.12.3.1, US-2.12.3.2, US-2.12.3.3 |
+| F-2.12.4 | R-2.12.4    | US-2.12.4.1, US-2.12.4.2, US-2.12.4.3 |
+| F-2.12.5 | R-2.12.5    | US-2.12.5.1, US-2.12.5.2, US-2.12.5.3 |
+| F-2.12.6 | R-2.12.6    | US-2.12.6.1, US-2.12.6.2, US-2.12.6.3 |
+| F-2.12.7 | R-2.12.7    | US-2.12.7.1, US-2.12.7.2              |
+| F-2.12.8 | R-2.12.8    | US-2.12.8.1, US-2.12.8.2, US-2.12.8.3 |
+| F-2.12.9 | R-2.12.9    | US-2.12.9.1, US-2.12.9.2, US-2.12.9.3 |
+
+1. **F-2.12.1** — Glass/crystal refraction (IOR, dispersion, absorption)
+2. **F-2.12.3** — Emissive materials (HDR bloom, animated emission)
+3. **F-2.12.4** — Heightmap tessellation and parallax occlusion mapping
+4. **F-2.12.5** — Fabric/cloth materials (sheen BRDF, transmission)
+5. **F-2.12.6** — Metal, wood, stone (anisotropy, SSS, weathering)
+6. **F-2.12.7** — Rubber, wax, soft surfaces (deformation-driven SSS)
+7. **F-2.12.8** — Clearcoat and multi-layer materials
+8. **F-2.12.9** — Custom material graphs (visual node editor)
 
 ### Non-Functional Requirements
 
@@ -43,14 +58,21 @@
 
 ### Cross-Cutting Constraints
 
-| Constraint | Source | Impact |
-|------------|--------|--------|
-| HLSL shader IL | Design Constraints | All shading code authored in HLSL; compiled via DXC |
-| Metal/D3D12/Vulkan | Design Constraints | Three GPU backends via static dispatch |
-| 100% ECS-based | Design Constraints | All material/style data as components, all logic as systems |
-| No-code engine | Design Constraints | Visual node graph is the only authoring surface |
-| Static dispatch | Design Constraints | No vtables; generic trait implementations |
-| Rust stable only | Design Constraints | No nightly features |
+| Constraint         | Source             |
+|--------------------|--------------------|
+| HLSL shader IL     | Design Constraints |
+| Metal/D3D12/Vulkan | Design Constraints |
+| 100% ECS-based     | Design Constraints |
+| No-code engine     | Design Constraints |
+| Static dispatch    | Design Constraints |
+| Rust stable only   | Design Constraints |
+
+1. **HLSL shader IL** — All shading code authored in HLSL; compiled via DXC
+2. **Metal/D3D12/Vulkan** — Three GPU backends via static dispatch
+3. **100% ECS-based** — All material/style data as components, all logic as systems
+4. **No-code engine** — Visual node graph is the only authoring surface
+5. **Static dispatch** — No vtables; generic trait implementations
+6. **Rust stable only** — No nightly features
 
 ## Overview
 
@@ -1641,11 +1663,18 @@ asset processing (F-12.3.1).
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `smallvec` | Inline small vectors for layers, bands | Avoids heap allocation for small layer stacks |
-| `cxx` | C++ interop for DXC and Metal Shader Converter | Required by design constraints for shader compilation |
-| `hashbrown` | Fast hash map for permutation cache | Industry-standard; used widely in Rust ecosystem |
+| Crate       |
+|-------------|
+| `smallvec`  |
+| `cxx`       |
+| `hashbrown` |
+
+1. **`smallvec`** — Inline small vectors for layers, bands
+   - **Justification:** Avoids heap allocation for small layer stacks
+2. **`cxx`** — C++ interop for DXC and Metal Shader Converter
+   - **Justification:** Required by design constraints for shader compilation
+3. **`hashbrown`** — Fast hash map for permutation cache
+   - **Justification:** Industry-standard; used widely in Rust ecosystem
 
 ### VFX Material Integration
 
@@ -1659,70 +1688,183 @@ consistent HLSL emission and compilation.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_graph_add_remove_nodes` | R-2.12.9 | Add 100 nodes, remove 50, verify graph integrity. |
-| `test_graph_cycle_detection` | R-2.12.9 | Create a cycle in the material graph; verify `CycleDetected` error. |
-| `test_graph_type_mismatch` | R-2.12.9 | Connect a Float output to a Texture2D input; verify `TypeMismatch` error. |
-| `test_graph_dead_node_elimination` | R-2.12.9 | Add nodes not connected to any output; verify they are excluded from compiled HLSL. |
-| `test_graph_constant_folding` | R-2.12.9 | Connect two constant nodes through Add; verify the result is folded to a single constant in HLSL. |
-| `test_tier_budget_mobile` | R-2.12.9 | Create a 65-node graph; verify `TierBudgetExceeded` for Mobile tier. |
-| `test_tier_budget_switch` | R-2.12.9 | Create a 129-node graph; verify `TierBudgetExceeded` for Switch tier. |
-| `test_tier_budget_desktop_unlimited` | R-2.12.9 | Create a 1000-node graph; verify it compiles for Desktop tier. |
-| `test_permutation_key_hash_unique` | R-2.12.9 | Generate 10,000 random permutation keys; verify no hash collisions. |
-| `test_permutation_cache_hit` | R-2.12.9 | Compile a material, query again; verify cache hit without recompilation. |
-| `test_permutation_cache_invalidate` | R-2.12.9 | Compile, invalidate, query; verify recompilation occurs. |
-| `test_toon_band_quantization` | R-2.11.3 | Pass NdotL values through band quantization; verify output matches expected band thresholds. |
-| `test_toon_specular_shapes` | R-2.11.3 | Render circular, star, and cross specular shapes; verify mask geometry. |
-| `test_outline_sobel_edge` | R-2.11.1 | Provide depth+normal buffers with a known edge; verify Sobel detects it. |
-| `test_outline_jfa_distance` | R-2.11.1 | Seed a silhouette; run JFA passes; verify per-pixel distance within tolerance. |
-| `test_outline_priority_ordering` | R-2.11.1 | Assign two outlines with different priorities; verify higher priority wins. |
-| `test_outline_multi_layer_compose` | R-2.11.1 | Apply selection + team + quest outlines; verify additive composition. |
-| `test_highlight_pulse_sinusoidal` | R-2.11.2 | Set pulse speed and amplitude; verify intensity follows sin(t * speed) * amplitude. |
-| `test_highlight_mode_inner_glow` | R-2.11.2 | Set InnerGlow mode; verify flat color fill at specified opacity. |
-| `test_glass_ior_refraction` | R-2.12.1 | Render through a glass surface with IOR=1.5; verify UV distortion matches Snell's law. |
-| `test_glass_thin_vs_thick` | R-2.12.1 | Compare thin-surface and thick-surface modes; verify different refraction paths. |
-| `test_glass_fresnel_grazing` | R-2.12.1 | Verify reflection intensity increases at grazing angles following Schlick approximation. |
-| `test_fabric_sheen_brdf` | R-2.12.5 | Evaluate Charlie/Ashikhmin sheen BRDF; verify energy conservation. |
-| `test_metal_anisotropy_direction` | R-2.12.6 | Apply a direction map to brushed metal; verify specular stretches along the tangent. |
-| `test_clearcoat_dual_specular` | R-2.12.8 | Render a clearcoated material; verify two distinct specular highlights. |
-| `test_layer_blend_height_based` | R-2.12.8 | Blend rust over metal via height; verify smooth transition at height boundary. |
-| `test_layer_count_limit_per_tier` | R-2.12.8 | Push 5 layers on Mobile tier; verify compile error for excess layers. |
-| `test_pom_self_shadow` | R-2.12.4 | Enable POM self-shadow; verify shadow appears in occluded regions. |
-| `test_emissive_bloom_trigger` | R-2.12.3 | Set HDR emission intensity above bloom threshold; verify bloom pass activates. |
-| `test_emissive_scroll_uv` | R-2.12.3 | Set ScrollUv animation; verify UV offset increases with time. |
-| `test_weathering_age_progression` | R-2.12.6 | Increase age from 0 to 1; verify procedural overlay intensity increases monotonically. |
-| `test_wax_thickness_transmission` | R-2.12.7 | Render thin wax backlit; verify transmission visible. Render thick wax; verify opaque. |
-| `test_cut_through_volume_mode` | R-2.11.4 | Place entity below occluder in volume mode; verify fade begins within 1 frame. |
-| `test_cut_through_ray_mode` | R-2.11.4 | Place occluder between camera and target; verify dissolve in ray mode. |
-| `test_xray_depth_comparison` | R-2.11.5 | Place XRayVisible entity behind wall; verify silhouette rendered. |
-| `test_xray_priority_filter` | R-2.11.5 | Set priorities; verify high-priority shows, low-priority hidden when toggled off. |
-| `test_pixel_art_palette_restrict` | - | Apply 8-color palette to scene; verify output contains exactly 8 unique colors. |
-| `test_pixel_art_nearest_neighbor` | - | Upscale at 4x; verify no bilinear interpolation artifacts. |
-| `test_subgraph_composition` | R-2.12.9 | Compose two sub-graphs into a parent graph; verify correct HLSL emission. |
+| Test                                 | Req      |
+|--------------------------------------|----------|
+| `test_graph_add_remove_nodes`        | R-2.12.9 |
+| `test_graph_cycle_detection`         | R-2.12.9 |
+| `test_graph_type_mismatch`           | R-2.12.9 |
+| `test_graph_dead_node_elimination`   | R-2.12.9 |
+| `test_graph_constant_folding`        | R-2.12.9 |
+| `test_tier_budget_mobile`            | R-2.12.9 |
+| `test_tier_budget_switch`            | R-2.12.9 |
+| `test_tier_budget_desktop_unlimited` | R-2.12.9 |
+| `test_permutation_key_hash_unique`   | R-2.12.9 |
+| `test_permutation_cache_hit`         | R-2.12.9 |
+| `test_permutation_cache_invalidate`  | R-2.12.9 |
+| `test_toon_band_quantization`        | R-2.11.3 |
+| `test_toon_specular_shapes`          | R-2.11.3 |
+| `test_outline_sobel_edge`            | R-2.11.1 |
+| `test_outline_jfa_distance`          | R-2.11.1 |
+| `test_outline_priority_ordering`     | R-2.11.1 |
+| `test_outline_multi_layer_compose`   | R-2.11.1 |
+| `test_highlight_pulse_sinusoidal`    | R-2.11.2 |
+| `test_highlight_mode_inner_glow`     | R-2.11.2 |
+| `test_glass_ior_refraction`          | R-2.12.1 |
+| `test_glass_thin_vs_thick`           | R-2.12.1 |
+| `test_glass_fresnel_grazing`         | R-2.12.1 |
+| `test_fabric_sheen_brdf`             | R-2.12.5 |
+| `test_metal_anisotropy_direction`    | R-2.12.6 |
+| `test_clearcoat_dual_specular`       | R-2.12.8 |
+| `test_layer_blend_height_based`      | R-2.12.8 |
+| `test_layer_count_limit_per_tier`    | R-2.12.8 |
+| `test_pom_self_shadow`               | R-2.12.4 |
+| `test_emissive_bloom_trigger`        | R-2.12.3 |
+| `test_emissive_scroll_uv`            | R-2.12.3 |
+| `test_weathering_age_progression`    | R-2.12.6 |
+| `test_wax_thickness_transmission`    | R-2.12.7 |
+| `test_cut_through_volume_mode`       | R-2.11.4 |
+| `test_cut_through_ray_mode`          | R-2.11.4 |
+| `test_xray_depth_comparison`         | R-2.11.5 |
+| `test_xray_priority_filter`          | R-2.11.5 |
+| `test_pixel_art_palette_restrict`    | -        |
+| `test_pixel_art_nearest_neighbor`    | -        |
+| `test_subgraph_composition`          | R-2.12.9 |
+
+1. **`test_graph_add_remove_nodes`** — Add 100 nodes, remove 50, verify graph integrity.
+2. **`test_graph_cycle_detection`** — Create a cycle in the material graph; verify `CycleDetected`
+   error.
+3. **`test_graph_type_mismatch`** — Connect a Float output to a Texture2D input; verify
+   `TypeMismatch` error.
+4. **`test_graph_dead_node_elimination`** — Add nodes not connected to any output; verify they are
+   excluded from compiled HLSL.
+5. **`test_graph_constant_folding`** — Connect two constant nodes through Add; verify the result is
+   folded to a single constant in HLSL.
+6. **`test_tier_budget_mobile`** — Create a 65-node graph; verify `TierBudgetExceeded` for Mobile
+   tier.
+7. **`test_tier_budget_switch`** — Create a 129-node graph; verify `TierBudgetExceeded` for Switch
+   tier.
+8. **`test_tier_budget_desktop_unlimited`** — Create a 1000-node graph; verify it compiles for
+   Desktop tier.
+9. **`test_permutation_key_hash_unique`** — Generate 10,000 random permutation keys; verify no hash
+   collisions.
+10. **`test_permutation_cache_hit`** — Compile a material, query again; verify cache hit without
+    recompilation.
+11. **`test_permutation_cache_invalidate`** — Compile, invalidate, query; verify recompilation
+    occurs.
+12. **`test_toon_band_quantization`** — Pass NdotL values through band quantization; verify output
+    matches expected band thresholds.
+13. **`test_toon_specular_shapes`** — Render circular, star, and cross specular shapes; verify mask
+    geometry.
+14. **`test_outline_sobel_edge`** — Provide depth+normal buffers with a known edge; verify Sobel
+    detects it.
+15. **`test_outline_jfa_distance`** — Seed a silhouette; run JFA passes; verify per-pixel distance
+    within tolerance.
+16. **`test_outline_priority_ordering`** — Assign two outlines with different priorities; verify
+    higher priority wins.
+17. **`test_outline_multi_layer_compose`** — Apply selection + team + quest outlines; verify
+    additive composition.
+18. **`test_highlight_pulse_sinusoidal`** — Set pulse speed and amplitude; verify intensity follows
+    sin(t *speed)* amplitude.
+19. **`test_highlight_mode_inner_glow`** — Set InnerGlow mode; verify flat color fill at specified
+    opacity.
+20. **`test_glass_ior_refraction`** — Render through a glass surface with IOR=1.5; verify UV
+    distortion matches Snell's law.
+21. **`test_glass_thin_vs_thick`** — Compare thin-surface and thick-surface modes; verify different
+    refraction paths.
+22. **`test_glass_fresnel_grazing`** — Verify reflection intensity increases at grazing angles
+    following Schlick approximation.
+23. **`test_fabric_sheen_brdf`** — Evaluate Charlie/Ashikhmin sheen BRDF; verify energy
+    conservation.
+24. **`test_metal_anisotropy_direction`** — Apply a direction map to brushed metal; verify specular
+    stretches along the tangent.
+25. **`test_clearcoat_dual_specular`** — Render a clearcoated material; verify two distinct specular
+    highlights.
+26. **`test_layer_blend_height_based`** — Blend rust over metal via height; verify smooth transition
+    at height boundary.
+27. **`test_layer_count_limit_per_tier`** — Push 5 layers on Mobile tier; verify compile error for
+    excess layers.
+28. **`test_pom_self_shadow`** — Enable POM self-shadow; verify shadow appears in occluded regions.
+29. **`test_emissive_bloom_trigger`** — Set HDR emission intensity above bloom threshold; verify
+    bloom pass activates.
+30. **`test_emissive_scroll_uv`** — Set ScrollUv animation; verify UV offset increases with time.
+31. **`test_weathering_age_progression`** — Increase age from 0 to 1; verify procedural overlay
+    intensity increases monotonically.
+32. **`test_wax_thickness_transmission`** — Render thin wax backlit; verify transmission visible.
+    Render thick wax; verify opaque.
+33. **`test_cut_through_volume_mode`** — Place entity below occluder in volume mode; verify fade
+    begins within 1 frame.
+34. **`test_cut_through_ray_mode`** — Place occluder between camera and target; verify dissolve in
+    ray mode.
+35. **`test_xray_depth_comparison`** — Place XRayVisible entity behind wall; verify silhouette
+    rendered.
+36. **`test_xray_priority_filter`** — Set priorities; verify high-priority shows, low-priority
+    hidden when toggled off.
+37. **`test_pixel_art_palette_restrict`** — Apply 8-color palette to scene; verify output contains
+    exactly 8 unique colors.
+38. **`test_pixel_art_nearest_neighbor`** — Upscale at 4x; verify no bilinear interpolation
+    artifacts.
+39. **`test_subgraph_composition`** — Compose two sub-graphs into a parent graph; verify correct
+    HLSL emission.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_toon_pipeline` | R-2.11.3 | Render a lit scene with toon material, outlines, and highlights; verify visual output against reference. |
-| `test_toon_and_pbr_mixed` | R-2.11.3 | Scene with both PBR and toon entities; verify each shaded correctly by ShadingModelId. |
-| `test_painterly_kuwahara` | - | Apply painterly post-process to a test scene; verify Kuwahara softening and edge darkening. |
-| `test_pixel_art_full_pipeline` | - | Render at 320x180, restrict palette, upscale to 1920x1080; verify pixel-perfect output. |
-| `test_glass_screen_space_fallback` | R-2.12.1 | Disable RT; verify glass falls back to screen-space refraction without artifacts. |
-| `test_glass_rt_refraction` | R-2.12.1 | Enable RT; render crystal gemstone; verify internal refraction paths. |
-| `test_fabric_cloth_integration` | R-2.12.5 | Fabric material on cloth-simulated mesh; verify shading updates with deformation. |
-| `test_multi_layer_weathered_pipe` | R-2.12.8 | 3-layer material (metal + rust + wet clearcoat); verify blending and runtime parameter drive. |
-| `test_clearcoat_rain_wetting` | R-2.12.8 | Drive wetness parameter over time; verify clearcoat roughness and reflectivity change. |
-| `test_parallax_tessellation_vs_pom` | R-2.12.4 | Compare tessellation and POM on same heightmap; verify both produce visible depth. |
-| `test_emissive_gi_contribution` | R-2.12.3 | Enable RT GI; place emissive surface near wall; verify indirect colored light on wall. |
-| `test_xray_through_wall` | R-2.11.5 | Scene with wall and XRayVisible ally; verify colored silhouette visible through wall. |
-| `test_cut_through_isometric` | R-2.11.4 | Isometric camera above roofed building; move player inside; verify roof fades. |
-| `test_outline_jfa_fallback_sobel` | R-2.11.1 | Disable compute capability; verify JFA outlines fall back to Sobel. |
-| `test_material_hot_reload` | R-2.12.9 | Modify a material graph at runtime; verify live preview updates within 1 second. |
-| `test_compile_all_backends` | R-2.12.9 | Compile a 100-node graph to D3D12, Vulkan, and Metal; verify all succeed under 5 seconds. |
-| `test_permutation_warm_parallel` | R-2.12.9 | Warm 50 permutations in parallel; verify all compile without errors. |
-| `test_deformation_roughness_rubber` | R-2.12.7 | Stretch a rubber entity via physics; verify roughness increases in real time. |
+| Test                                | Req      |
+|-------------------------------------|----------|
+| `test_full_toon_pipeline`           | R-2.11.3 |
+| `test_toon_and_pbr_mixed`           | R-2.11.3 |
+| `test_painterly_kuwahara`           | -        |
+| `test_pixel_art_full_pipeline`      | -        |
+| `test_glass_screen_space_fallback`  | R-2.12.1 |
+| `test_glass_rt_refraction`          | R-2.12.1 |
+| `test_fabric_cloth_integration`     | R-2.12.5 |
+| `test_multi_layer_weathered_pipe`   | R-2.12.8 |
+| `test_clearcoat_rain_wetting`       | R-2.12.8 |
+| `test_parallax_tessellation_vs_pom` | R-2.12.4 |
+| `test_emissive_gi_contribution`     | R-2.12.3 |
+| `test_xray_through_wall`            | R-2.11.5 |
+| `test_cut_through_isometric`        | R-2.11.4 |
+| `test_outline_jfa_fallback_sobel`   | R-2.11.1 |
+| `test_material_hot_reload`          | R-2.12.9 |
+| `test_compile_all_backends`         | R-2.12.9 |
+| `test_permutation_warm_parallel`    | R-2.12.9 |
+| `test_deformation_roughness_rubber` | R-2.12.7 |
+
+1. **`test_full_toon_pipeline`** — Render a lit scene with toon material, outlines, and highlights;
+   verify visual output against reference.
+2. **`test_toon_and_pbr_mixed`** — Scene with both PBR and toon entities; verify each shaded
+   correctly by ShadingModelId.
+3. **`test_painterly_kuwahara`** — Apply painterly post-process to a test scene; verify Kuwahara
+   softening and edge darkening.
+4. **`test_pixel_art_full_pipeline`** — Render at 320x180, restrict palette, upscale to 1920x1080;
+   verify pixel-perfect output.
+5. **`test_glass_screen_space_fallback`** — Disable RT; verify glass falls back to screen-space
+   refraction without artifacts.
+6. **`test_glass_rt_refraction`** — Enable RT; render crystal gemstone; verify internal refraction
+   paths.
+7. **`test_fabric_cloth_integration`** — Fabric material on cloth-simulated mesh; verify shading
+   updates with deformation.
+8. **`test_multi_layer_weathered_pipe`** — 3-layer material (metal + rust + wet clearcoat); verify
+   blending and runtime parameter drive.
+9. **`test_clearcoat_rain_wetting`** — Drive wetness parameter over time; verify clearcoat roughness
+   and reflectivity change.
+10. **`test_parallax_tessellation_vs_pom`** — Compare tessellation and POM on same heightmap; verify
+    both produce visible depth.
+11. **`test_emissive_gi_contribution`** — Enable RT GI; place emissive surface near wall; verify
+    indirect colored light on wall.
+12. **`test_xray_through_wall`** — Scene with wall and XRayVisible ally; verify colored silhouette
+    visible through wall.
+13. **`test_cut_through_isometric`** — Isometric camera above roofed building; move player inside;
+    verify roof fades.
+14. **`test_outline_jfa_fallback_sobel`** — Disable compute capability; verify JFA outlines fall
+    back to Sobel.
+15. **`test_material_hot_reload`** — Modify a material graph at runtime; verify live preview updates
+    within 1 second.
+16. **`test_compile_all_backends`** — Compile a 100-node graph to D3D12, Vulkan, and Metal; verify
+    all succeed under 5 seconds.
+17. **`test_permutation_warm_parallel`** — Warm 50 permutations in parallel; verify all compile
+    without errors.
+18. **`test_deformation_roughness_rubber`** — Stretch a rubber entity via physics; verify roughness
+    increases in real time.
 
 ### Benchmarks
 

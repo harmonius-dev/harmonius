@@ -6,238 +6,362 @@ Companion test cases for [processing.md](processing.md).
 
 ### TC-12.2.1.1 BC7 Compression Roundtrip
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 1024x1024 RGBA test texture | BC7 compressed output | R-12.2.1 |
-| 2 | Decompress BC7 output | PSNR > 40 dB vs original | R-12.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.1    |
+| 2 | R-12.2.1    |
+
+1. **#1** — 1024x1024 RGBA test texture
+   - **Expected:** BC7 compressed output
+2. **#2** — Decompress BC7 output
+   - **Expected:** PSNR > 40 dB vs original
 
 ### TC-12.2.1.2 ASTC Compression Roundtrip
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 1024x1024 RGBA test texture | ASTC 4x4 compressed output | R-12.2.1 |
-| 2 | Decompress ASTC output | PSNR > 38 dB vs original | R-12.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.1    |
+| 2 | R-12.2.1    |
+
+1. **#1** — 1024x1024 RGBA test texture
+   - **Expected:** ASTC 4x4 compressed output
+2. **#2** — Decompress ASTC output
+   - **Expected:** PSNR > 38 dB vs original
 
 ### TC-12.2.1.3 ETC2 Compression Roundtrip
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 1024x1024 RGBA test texture | ETC2 compressed output | R-12.2.1 |
-| 2 | Decompress ETC2 output | PSNR > 35 dB vs original | R-12.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.1    |
+| 2 | R-12.2.1    |
+
+1. **#1** — 1024x1024 RGBA test texture
+   - **Expected:** ETC2 compressed output
+2. **#2** — Decompress ETC2 output
+   - **Expected:** PSNR > 35 dB vs original
 
 ### TC-12.2.1.4 Platform Format Selection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | PlatformTarget::Windows | BC7 selected | R-12.2.1 |
-| 2 | PlatformTarget::iOS | ASTC selected | R-12.2.1 |
-| 3 | PlatformTarget::Android | ETC2 selected | R-12.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.1    |
+| 2 | R-12.2.1    |
+| 3 | R-12.2.1    |
+
+1. **#1** — PlatformTarget::Windows
+   - **Expected:** BC7 selected
+2. **#2** — PlatformTarget::iOS
+   - **Expected:** ASTC selected
+3. **#3** — PlatformTarget::Android
+   - **Expected:** ETC2 selected
 
 ### TC-12.2.2.1 LOD Triangle Ratios
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 100K triangle mesh; generate 4-level LOD chain | Each level meets target ratio within 5% tolerance | R-12.2.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.2    |
+
+1. **#1** — 100K triangle mesh; generate 4-level LOD chain
+   - **Expected:** Each level meets target ratio within 5% tolerance
 
 ### TC-12.2.2.2 LOD Silhouette Preservation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 100K triangle mesh; generate LOD chain | Hausdorff distance below error threshold per LOD level | R-12.2.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.2    |
+
+1. **#1** — 100K triangle mesh; generate LOD chain
+   - **Expected:** Hausdorff distance below error threshold per LOD level
 
 ### TC-12.2.3.1 Meshlet Size Limits
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 50K triangle mesh; build meshlets | No meshlet exceeds 64 vertices or 124 triangles | R-12.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.3    |
+
+1. **#1** — 50K triangle mesh; build meshlets
+   - **Expected:** No meshlet exceeds 64 vertices or 124 triangles
 
 ### TC-12.2.3.2 Meshlet Bounds Validity
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 50K triangle mesh; build meshlets | Every meshlet has non-degenerate AABB and valid normal cone | R-12.2.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.3    |
+
+1. **#1** — 50K triangle mesh; build meshlets
+   - **Expected:** Every meshlet has non-degenerate AABB and valid normal cone
 
 ### TC-12.2.4.1 Vertex Cache ACMR Improvement
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Unoptimized 100K triangle mesh | ACMR after optimization > 20% improvement over before | R-12.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.4    |
+
+1. **#1** — Unoptimized 100K triangle mesh
+   - **Expected:** ACMR after optimization > 20% improvement over before
 
 ### TC-12.2.4.2 Overdraw Reduction
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Unoptimized 100K triangle mesh | Overdraw ratio after < overdraw ratio before | R-12.2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.4    |
+
+1. **#1** — Unoptimized 100K triangle mesh
+   - **Expected:** Overdraw ratio after < overdraw ratio before
 
 ### TC-12.2.5.1 Lightmap UV No Overlap
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Mesh with 500 faces; generate lightmap UVs | Zero chart overlaps via rasterization test | R-12.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.5    |
+
+1. **#1** — Mesh with 500 faces; generate lightmap UVs
+   - **Expected:** Zero chart overlaps via rasterization test
 
 ### TC-12.2.5.2 Lightmap Texel Density Uniformity
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Mesh with 500 faces; generate lightmap UVs | Texel density variance < 10% across charts | R-12.2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.5    |
+
+1. **#1** — Mesh with 500 faces; generate lightmap UVs
+   - **Expected:** Texel density variance < 10% across charts
 
 ### TC-12.2.6.1 Opus Encode Quality
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 10 s WAV file; encode to Opus at 128 kbps | Decoded SNR > 30 dB vs original | R-12.2.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.6    |
+
+1. **#1** — 10 s WAV file; encode to Opus at 128 kbps
+   - **Expected:** Decoded SNR > 30 dB vs original
 
 ### TC-12.2.6.2 ADPCM Decode Latency
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 100 ms WAV clip; encode to ADPCM | Decode latency < 1 ms | R-12.2.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.6    |
+
+1. **#1** — 100 ms WAV clip; encode to ADPCM
+   - **Expected:** Decode latency < 1 ms
 
 ### TC-12.2.6.3 PCM Passthrough Bit-Exact
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 100 ms WAV clip; encode as PCM | Output samples bit-exact match input samples | R-12.2.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.6    |
+
+1. **#1** — 100 ms WAV clip; encode as PCM
+   - **Expected:** Output samples bit-exact match input samples
 
 ### TC-12.2.7.1 HLSL Code Generation Valid Syntax
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 20-node shader graph | Generated HLSL passes syntax validation | R-12.2.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.7    |
+
+1. **#1** — 20-node shader graph
+   - **Expected:** Generated HLSL passes syntax validation
 
 ### TC-12.2.7.2 HLSL No Template Markers
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 20-node shader graph | Output contains no `{{`, `%%`, or `<%>` markers | R-12.2.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.7    |
+
+1. **#1** — 20-node shader graph
+   - **Expected:** Output contains no `{{`, `%%`, or `<%>` markers
 
 ### TC-12.2.7.3 HLSL Source Map Coverage
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 20-node shader graph | Every HLSL line maps to a graph node via source map | R-12.2.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.7    |
+
+1. **#1** — 20-node shader graph
+   - **Expected:** Every HLSL line maps to a graph node via source map
 
 ### TC-12.2.7.4 Variant Pruning
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Shader graph with 8 boolean parameters (256 possible) | Only reachable variants generated; count < 256 | R-12.2.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.7    |
+
+1. **#1** — Shader graph with 8 boolean parameters (256 possible)
+   - **Expected:** Only reachable variants generated; count < 256
 
 ### TC-12.2.8.1 Dependency Graph Cycle Detection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Add circular reference A->B->C->A | CycleDetected error | R-12.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.8    |
+
+1. **#1** — Add circular reference A->B->C->A
+   - **Expected:** CycleDetected error
 
 ### TC-12.2.8.2 Incremental Cache Hit
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Process asset X; re-process without changes | Cache hit; processing skipped | R-12.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.8    |
+
+1. **#1** — Process asset X; re-process without changes
+   - **Expected:** Cache hit; processing skipped
 
 ### TC-12.2.8.3 Incremental Invalidation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Change shared texture T1 used by materials M1, M2 | M1 and M2 reprocessed; unrelated assets skipped | R-12.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.8    |
+
+1. **#1** — Change shared texture T1 used by materials M1, M2
+   - **Expected:** M1 and M2 reprocessed; unrelated assets skipped
 
 ### TC-12.2.9.1 DXC HLSL to DXIL
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Valid HLSL test shader | Valid DXIL bytecode | R-12.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.9    |
+
+1. **#1** — Valid HLSL test shader
+   - **Expected:** Valid DXIL bytecode
 
 ### TC-12.2.9.2 DXC HLSL to SPIR-V
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Valid HLSL test shader | Valid SPIR-V bytecode | R-12.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.9    |
+
+1. **#1** — Valid HLSL test shader
+   - **Expected:** Valid SPIR-V bytecode
 
 ### TC-12.2.9.3 MSC DXIL to MSL
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Valid DXIL bytecode | Valid MSL source output | R-12.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.9    |
+
+1. **#1** — Valid DXIL bytecode
+   - **Expected:** Valid MSL source output
 
 ### TC-12.2.9.4 Shader Reflection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | HLSL with 3 texture bindings and 2 CBVs | Reflected bindings match source declarations | R-12.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.9    |
+
+1. **#1** — HLSL with 3 texture bindings and 2 CBVs
+   - **Expected:** Reflected bindings match source declarations
 
 ### TC-12.2.9.5 Shader Dead Code Elimination
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | HLSL with unreachable branch | Dead code eliminated in output bytecode | R-12.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.9    |
+
+1. **#1** — HLSL with unreachable branch
+   - **Expected:** Dead code eliminated in output bytecode
 
 ### TC-12.2.9.6 Shader Error Source Tracing
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | HLSL with type mismatch error | Error maps to originating graph node via source map | R-12.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.9    |
+
+1. **#1** — HLSL with type mismatch error
+   - **Expected:** Error maps to originating graph node via source map
 
 ### TC-12.2.8.4 Content Hash Determinism
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Same source + config; run twice | Identical BLAKE3 hash both runs | R-12.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.8    |
+
+1. **#1** — Same source + config; run twice
+   - **Expected:** Identical BLAKE3 hash both runs
 
 ### TC-12.2.8.5 Processing Graph Topological Order
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Build graph with edges A->B, B->C, A->C | Topological sort: A before B, B before C | R-12.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.8    |
+
+1. **#1** — Build graph with edges A->B, B->C, A->C
+   - **Expected:** Topological sort: A before B, B before C
 
 ## Integration Tests
 
 ### TC-12.2.1.I1 Full Pipeline Texture
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Import PNG; process for Windows, iOS, Android | 3 distinct compressed artifacts in CAS (BC7, ASTC, ETC2) | R-12.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.1    |
+
+1. **#1** — Import PNG; process for Windows, iOS, Android
+   - **Expected:** 3 distinct compressed artifacts in CAS (BC7, ASTC, ETC2)
 
 ### TC-12.2.2.I1 Full Pipeline Mesh
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Import mesh via DCC plugin | LOD chain, meshlets, and optimized index buffer in output | R-12.2.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.2    |
+
+1. **#1** — Import mesh via DCC plugin
+   - **Expected:** LOD chain, meshlets, and optimized index buffer in output
 
 ### TC-12.2.7.I1 Full Pipeline Shader
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Shader graph to HLSL to all backends | Valid DXIL, SPIR-V, and MSL outputs | R-12.2.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.7    |
+
+1. **#1** — Shader graph to HLSL to all backends
+   - **Expected:** Valid DXIL, SPIR-V, and MSL outputs
 
 ### TC-12.2.6.I1 Full Pipeline Audio
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Import WAV; process as Opus, ADPCM, PCM | 3 artifacts in CAS, one per encoding | R-12.2.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.6    |
+
+1. **#1** — Import WAV; process as Opus, ADPCM, PCM
+   - **Expected:** 3 artifacts in CAS, one per encoding
 
 ### TC-12.2.1.I2 Multi-Platform Build
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Process 100 assets for 3 platforms | Correct format per platform for all 100 assets | R-12.2.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.1    |
+
+1. **#1** — Process 100 assets for 3 platforms
+   - **Expected:** Correct format per platform for all 100 assets
 
 ### TC-12.2.8.I1 Incremental Rebuild End-to-End
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Full build of 50 assets; modify 1 texture; rebuild | Only dependents reprocessed; others use cache | R-12.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.8    |
+
+1. **#1** — Full build of 50 assets; modify 1 texture; rebuild
+   - **Expected:** Only dependents reprocessed; others use cache
 
 ### TC-12.2.8.I2 Parallel Thread Utilization
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Process 1000 assets on 8-core machine | Thread utilization >= 90% | R-12.2.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.8    |
+
+1. **#1** — Process 1000 assets on 8-core machine
+   - **Expected:** Thread utilization >= 90%
 
 ### TC-12.2.9.I1 Shader Error to Graph Node Navigation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Introduce error in graph node N5 | Editor can navigate to node N5 from error message | R-12.2.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-12.2.9    |
+
+1. **#1** — Introduce error in graph node N5
+   - **Expected:** Editor can navigate to node N5 from error message
 
 ## Benchmarks
 

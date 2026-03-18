@@ -6,194 +6,293 @@ Companion test cases for [effect-graph.md](effect-graph.md).
 
 ### TC-11.6.1.1 Validate Complete Graph
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph with Spawn, Initialize, Update, Output context nodes | `validate()` returns `Ok(ValidatedGraph)` | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Graph with Spawn, Initialize, Update, Output context nodes
+   - **Expected:** `validate()` returns `Ok(ValidatedGraph)`
 
 ### TC-11.6.1.2 Validate Missing Context
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph missing Spawn context node | Returns `Err(MissingContext { stage: Spawn })` | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Graph missing Spawn context node
+   - **Expected:** Returns `Err(MissingContext { stage: Spawn })`
 
 ### TC-11.6.1.3 Validate Type Mismatch
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Edge connecting Float output pin to Vec3 input pin | Returns `Err(TypeMismatch { expected: Vec3, found: Float })` | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Edge connecting Float output pin to Vec3 input pin
+   - **Expected:** Returns `Err(TypeMismatch { expected: Vec3, found: Float })`
 
 ### TC-11.6.1.4 Validate Cycle Detection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Cyclic dataflow: A -> B -> C -> A | Returns `Err(CycleDetected)` with cycle path [A, B, C] | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Cyclic dataflow: A -> B -> C -> A
+   - **Expected:** Returns `Err(CycleDetected)` with cycle path [A, B, C]
 
 ### TC-11.6.1.5 Validate Mobile Node Limit
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Mobile tier graph with 33 nodes (limit = 32) | Returns `Err(NodeCountExceeded { count: 33, limit: 32 })` | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Mobile tier graph with 33 nodes (limit = 32)
+   - **Expected:** Returns `Err(NodeCountExceeded { count: 33, limit: 32 })`
 
 ### TC-11.6.2.1 Validate Mobile Custom Node
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Per-particle custom node on Mobile tier | Returns `Err(MobilePerParticleCustomNode)` | R-11.6.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.2    |
+
+1. **#1** — Per-particle custom node on Mobile tier
+   - **Expected:** Returns `Err(MobilePerParticleCustomNode)`
 
 ### TC-11.6.1.6 Codegen Gravity Update
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph with gravity + position integration nodes | Valid HLSL with correct buffer bindings for positions and velocities | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Graph with gravity + position integration nodes
+   - **Expected:** Valid HLSL with correct buffer bindings for positions and velocities
 
 ### TC-11.6.1.7 Codegen Noise Operator
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph with Noise node | Generated HLSL contains correct noise function call | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Graph with Noise node
+   - **Expected:** Generated HLSL contains correct noise function call
 
 ### TC-11.6.1.8 Codegen Sample Curve
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph with SampleCurve node | HLSL emits texture sample with correct UV mapping | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Graph with SampleCurve node
+   - **Expected:** HLSL emits texture sample with correct UV mapping
 
 ### TC-11.6.1.9 Codegen Branch
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph with Branch node | HLSL emits conditional with both true and false paths | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Graph with Branch node
+   - **Expected:** HLSL emits conditional with both true and false paths
 
 ### TC-11.6.1.10 Topological Sort
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph with A -> B -> C dependency chain | Sorted order: [A, B, C] | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Graph with A -> B -> C dependency chain
+   - **Expected:** Sorted order: [A, B, C]
 
 ### TC-11.6.1.11 Dead Node Elimination
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph with disconnected node D (not reachable from output) | D removed during flatten pass | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Graph with disconnected node D (not reachable from output)
+   - **Expected:** D removed during flatten pass
 
 ### TC-11.6.3.1 Param Default Value
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Unconnected parameter pin with default=2.0 | Codegen uses 2.0 as constant in HLSL | R-11.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.3    |
+
+1. **#1** — Unconnected parameter pin with default=2.0
+   - **Expected:** Codegen uses 2.0 as constant in HLSL
 
 ### TC-11.6.3.2 Param Override
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | ParamOverride { name: "intensity", value: 0.5 } | Correct cbuffer offset written with 0.5 | R-11.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.3    |
+
+1. **#1** — ParamOverride { name: "intensity", value: 0.5 }
+   - **Expected:** Correct cbuffer offset written with 0.5
 
 ### TC-11.6.5.1 LOD Tier Selection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Emitter at distance < reduced_distance | LodTier::Full | R-11.6.5 |
-| 2 | Emitter at distance between reduced and impostor | LodTier::Reduced | R-11.6.5 |
-| 3 | Emitter at distance > cull_distance | LodTier::Culled | R-11.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.5    |
+| 2 | R-11.6.5    |
+| 3 | R-11.6.5    |
+
+1. **#1** — Emitter at distance < reduced_distance
+   - **Expected:** LodTier::Full
+2. **#2** — Emitter at distance between reduced and impostor
+   - **Expected:** LodTier::Reduced
+3. **#3** — Emitter at distance > cull_distance
+   - **Expected:** LodTier::Culled
 
 ### TC-11.6.5.2 LOD Hysteresis
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Emitter oscillating near reduced_distance threshold | No flicker between Full and Reduced tiers | R-11.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.5    |
+
+1. **#1** — Emitter oscillating near reduced_distance threshold
+   - **Expected:** No flicker between Full and Reduced tiers
 
 ### TC-11.6.5.3 Budget Priority Ordering
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Over budget with Low, Medium, High emitters | Low scaled down first, then Medium | R-11.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.5    |
+
+1. **#1** — Over budget with Low, Medium, High emitters
+   - **Expected:** Low scaled down first, then Medium
 
 ### TC-11.6.5.4 Budget Critical Immune
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Critical-priority effect under budget pressure | Never scaled or culled | R-11.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.5    |
+
+1. **#1** — Critical-priority effect under budget pressure
+   - **Expected:** Never scaled or culled
 
 ### TC-11.1.1.1 Spawn Shape Coverage
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | SpawnShape::Sphere { radius: 5.0 } | All particles within 5.0 units of origin | R-11.1.1 |
-| 2 | SpawnShape::Box { half_extents: (2, 3, 4) } | All particles within box bounds | R-11.1.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.1.1    |
+| 2 | R-11.1.1    |
+
+1. **#1** — SpawnShape::Sphere { radius: 5.0 }
+   - **Expected:** All particles within 5.0 units of origin
+2. **#2** — SpawnShape::Box { half_extents: (2, 3, 4) }
+   - **Expected:** All particles within box bounds
 
 ## Integration Tests
 
 ### TC-11.6.1.I1 Compile and Dispatch
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Compile graph end-to-end, dispatch compute kernels | Particle buffer contains expected state after simulation | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Compile graph end-to-end, dispatch compute kernels
+   - **Expected:** Particle buffer contains expected state after simulation
 
 ### TC-11.6.4.I1 Event Spawn Collision
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Physics collision triggers observer | VfxSpawnEvent creates effect at contact point with correct normal | R-11.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.4    |
+
+1. **#1** — Physics collision triggers observer
+   - **Expected:** VfxSpawnEvent creates effect at contact point with correct normal
 
 ### TC-11.6.4.I2 Event Spawn Anim Notify
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Animation notify triggers observer | VFX spawns at bone position with correct velocity | R-11.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.4    |
+
+1. **#1** — Animation notify triggers observer
+   - **Expected:** VFX spawns at bone position with correct velocity
 
 ### TC-11.6.4.I3 Event Spawn Attach
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Spawn effect with attach_to entity | Effect follows parent entity transform | R-11.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.4    |
+
+1. **#1** — Spawn effect with attach_to entity
+   - **Expected:** Effect follows parent entity transform
 
 ### TC-11.6.3.I1 Param Data Binding
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Bind parameter to ECS component, change value | Effect updates within one frame | R-11.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.3    |
+
+1. **#1** — Bind parameter to ECS component, change value
+   - **Expected:** Effect updates within one frame
 
 ### TC-11.6.2.I1 Custom Node Per Emitter
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Custom node via logic graph compiled into effect | Output matches expected values | R-11.6.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.2    |
+
+1. **#1** — Custom node via logic graph compiled into effect
+   - **Expected:** Output matches expected values
 
 ### TC-11.6.1.I2 Preview Scrub
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Open preview, scrub to t=2.0 | Particle state matches t=2.0 simulation | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Open preview, scrub to t=2.0
+   - **Expected:** Particle state matches t=2.0 simulation
 
 ### TC-11.6.1.I3 Preview Stats
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Open preview, check stats | Per-emitter alive count and GPU time are non-zero | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Open preview, check stats
+   - **Expected:** Per-emitter alive count and GPU time are non-zero
 
 ### TC-11.6.1.I4 Shader Cache Hit
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Compile same graph twice | Second compile reads from cache, no DXC invocation | R-11.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.6.1    |
+
+1. **#1** — Compile same graph twice
+   - **Expected:** Second compile reads from cache, no DXC invocation
 
 ### TC-11.1.3.I1 Output Sprite Render
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Compile sprite output graph | Draw-indirect args produce correct billboard draws | R-11.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.1.3    |
+
+1. **#1** — Compile sprite output graph
+   - **Expected:** Draw-indirect args produce correct billboard draws
 
 ### TC-11.1.3.I2 Output Mesh Render
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Compile mesh output graph | GPU instancing with per-particle transforms | R-11.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.1.3    |
+
+1. **#1** — Compile mesh output graph
+   - **Expected:** GPU instancing with per-particle transforms
 
 ### TC-11.1.3.I3 Output Ribbon Render
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Compile ribbon output graph | Spline geometry connects sequential particles | R-11.1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-11.1.3    |
+
+1. **#1** — Compile ribbon output graph
+   - **Expected:** Spline geometry connects sequential particles
 
 ## Benchmarks
 

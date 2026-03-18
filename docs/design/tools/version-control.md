@@ -8,16 +8,25 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.10.1 | R-15.10.1 | Native Git integration via libgit2 |
-| F-15.10.2 | R-15.10.2 | Git LFS management with auto-tracking and locking |
-| F-15.10.3 | R-15.10.3 | Asset-aware three-way structural merge driver |
-| F-15.10.4 | R-15.10.4 | Branch-per-feature workflow with cache preservation |
-| F-15.10.5 | R-15.10.5 | Collaborative presence and pessimistic locking |
-| F-15.10.6 | R-15.10.6 | Partial clone and sparse checkout |
-| F-15.10.7 | R-15.10.7 | Named shelves for work-in-progress |
-| F-15.10.8 | R-15.10.8 | Multi-provider Git hosting support |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.10.1 | R-15.10.1   |
+| F-15.10.2 | R-15.10.2   |
+| F-15.10.3 | R-15.10.3   |
+| F-15.10.4 | R-15.10.4   |
+| F-15.10.5 | R-15.10.5   |
+| F-15.10.6 | R-15.10.6   |
+| F-15.10.7 | R-15.10.7   |
+| F-15.10.8 | R-15.10.8   |
+
+1. **F-15.10.1** — Native Git integration via libgit2
+2. **F-15.10.2** — Git LFS management with auto-tracking and locking
+3. **F-15.10.3** — Asset-aware three-way structural merge driver
+4. **F-15.10.4** — Branch-per-feature workflow with cache preservation
+5. **F-15.10.5** — Collaborative presence and pessimistic locking
+6. **F-15.10.6** — Partial clone and sparse checkout
+7. **F-15.10.7** — Named shelves for work-in-progress
+8. **F-15.10.8** — Multi-provider Git hosting support
 
 ## Overview
 
@@ -935,38 +944,65 @@ pub enum VcError {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_stage_lfs_auto_tracking` | R-15.10.2 | Stage a .png file, verify LFS pointer created |
-| `test_stage_non_lfs_file` | R-15.10.1 | Stage a .txt file, verify direct staging |
-| `test_lfs_size_threshold` | R-15.10.2 | File above threshold is LFS-tracked |
-| `test_structural_merge_clean` | R-15.10.3 | Three-way merge with non-overlapping edits succeeds |
-| `test_structural_merge_conflict` | R-15.10.3 | Overlapping edits produce MergeConflict list |
-| `test_merge_driver_registration` | R-15.10.3 | .gitattributes contains harmonius merge driver |
-| `test_branch_create_and_switch` | R-15.10.4 | Create branch, switch to it, HEAD matches |
-| `test_branch_switch_warns_dirty` | R-15.10.4 | Dirty working tree produces warning |
-| `test_shelf_create_and_apply` | R-15.10.7 | Shelf round-trips modifications correctly |
-| `test_shelf_structural_merge` | R-15.10.7 | Applying shelf merges with current changes |
-| `test_provider_detect_github` | R-15.10.8 | GitHub remote URL detected as GitHub provider |
-| `test_provider_detect_gitlab` | R-15.10.8 | GitLab remote URL detected as GitLab provider |
-| `test_sparse_checkout_patterns` | R-15.10.6 | Role patterns produce correct sparse config |
-| `test_changelist_grouping` | R-15.10.1 | Files assigned to named changelists |
-| `test_credential_store_roundtrip` | R-15.10.1 | Store and retrieve credential per platform |
+| Test                              | Req       |
+|-----------------------------------|-----------|
+| `test_stage_lfs_auto_tracking`    | R-15.10.2 |
+| `test_stage_non_lfs_file`         | R-15.10.1 |
+| `test_lfs_size_threshold`         | R-15.10.2 |
+| `test_structural_merge_clean`     | R-15.10.3 |
+| `test_structural_merge_conflict`  | R-15.10.3 |
+| `test_merge_driver_registration`  | R-15.10.3 |
+| `test_branch_create_and_switch`   | R-15.10.4 |
+| `test_branch_switch_warns_dirty`  | R-15.10.4 |
+| `test_shelf_create_and_apply`     | R-15.10.7 |
+| `test_shelf_structural_merge`     | R-15.10.7 |
+| `test_provider_detect_github`     | R-15.10.8 |
+| `test_provider_detect_gitlab`     | R-15.10.8 |
+| `test_sparse_checkout_patterns`   | R-15.10.6 |
+| `test_changelist_grouping`        | R-15.10.1 |
+| `test_credential_store_roundtrip` | R-15.10.1 |
+
+1. **`test_stage_lfs_auto_tracking`** — Stage a .png file, verify LFS pointer created
+2. **`test_stage_non_lfs_file`** — Stage a .txt file, verify direct staging
+3. **`test_lfs_size_threshold`** — File above threshold is LFS-tracked
+4. **`test_structural_merge_clean`** — Three-way merge with non-overlapping edits succeeds
+5. **`test_structural_merge_conflict`** — Overlapping edits produce MergeConflict list
+6. **`test_merge_driver_registration`** — .gitattributes contains harmonius merge driver
+7. **`test_branch_create_and_switch`** — Create branch, switch to it, HEAD matches
+8. **`test_branch_switch_warns_dirty`** — Dirty working tree produces warning
+9. **`test_shelf_create_and_apply`** — Shelf round-trips modifications correctly
+10. **`test_shelf_structural_merge`** — Applying shelf merges with current changes
+11. **`test_provider_detect_github`** — GitHub remote URL detected as GitHub provider
+12. **`test_provider_detect_gitlab`** — GitLab remote URL detected as GitLab provider
+13. **`test_sparse_checkout_patterns`** — Role patterns produce correct sparse config
+14. **`test_changelist_grouping`** — Files assigned to named changelists
+15. **`test_credential_store_roundtrip`** — Store and retrieve credential per platform
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_commit_push_pull` | R-15.10.1 | Full commit-push-pull cycle against local bare repo |
-| `test_lfs_lock_unlock` | R-15.10.2 | Lock, verify lock list, unlock, verify cleared |
-| `test_merge_driver_git_invoke` | R-15.10.3 | Git merge invokes custom driver, produces correct output |
-| `test_branch_switch_cache_preserved` | R-15.10.4 | Unchanged assets retain cache entries after switch |
-| `test_presence_websocket` | R-15.10.5 | Two instances see each other's presence via WebSocket |
-| `test_presence_fallback_lfs` | R-15.10.5 | Presence falls back to LFS lock polling when WS is down |
-| `test_partial_clone_size` | R-15.10.6 | Blobless clone is smaller than full clone |
-| `test_on_demand_fetch` | R-15.10.6 | Missing blob fetched on demand without blocking |
-| `test_shelf_share_via_cache` | R-15.10.7 | Shelf uploaded to shared cache, downloaded by another client |
-| `test_pr_create_github` | R-15.10.8 | PR created via GitHub API with correct fields |
+| Test                                 | Req       |
+|--------------------------------------|-----------|
+| `test_commit_push_pull`              | R-15.10.1 |
+| `test_lfs_lock_unlock`               | R-15.10.2 |
+| `test_merge_driver_git_invoke`       | R-15.10.3 |
+| `test_branch_switch_cache_preserved` | R-15.10.4 |
+| `test_presence_websocket`            | R-15.10.5 |
+| `test_presence_fallback_lfs`         | R-15.10.5 |
+| `test_partial_clone_size`            | R-15.10.6 |
+| `test_on_demand_fetch`               | R-15.10.6 |
+| `test_shelf_share_via_cache`         | R-15.10.7 |
+| `test_pr_create_github`              | R-15.10.8 |
+
+1. **`test_commit_push_pull`** — Full commit-push-pull cycle against local bare repo
+2. **`test_lfs_lock_unlock`** — Lock, verify lock list, unlock, verify cleared
+3. **`test_merge_driver_git_invoke`** — Git merge invokes custom driver, produces correct output
+4. **`test_branch_switch_cache_preserved`** — Unchanged assets retain cache entries after switch
+5. **`test_presence_websocket`** — Two instances see each other's presence via WebSocket
+6. **`test_presence_fallback_lfs`** — Presence falls back to LFS lock polling when WS is down
+7. **`test_partial_clone_size`** — Blobless clone is smaller than full clone
+8. **`test_on_demand_fetch`** — Missing blob fetched on demand without blocking
+9. **`test_shelf_share_via_cache`** — Shelf uploaded to shared cache, downloaded by another client
+10. **`test_pr_create_github`** — PR created via GitHub API with correct fields
 
 ### Benchmarks
 

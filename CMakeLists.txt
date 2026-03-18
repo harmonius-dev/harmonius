@@ -11,7 +11,11 @@ project(
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_MODULE_STD ON)
+
+# Enable import std; when libc++ modules.json is available
+if(EXISTS "${CMAKE_CXX_STDLIB_MODULES_JSON}")
+  set(CMAKE_CXX_MODULE_STD ON)
+endif()
 
 # On macOS with homebrew LLVM, point CMake at the libc++ modules.json
 if(APPLE AND CMAKE_CXX_COMPILER MATCHES "llvm")
@@ -62,4 +66,21 @@ elseif(HARMONIUS_GPU_BACKEND STREQUAL "vulkan")
   find_package(Vulkan REQUIRED)
 elseif(HARMONIUS_GPU_BACKEND STREQUAL "d3d12")
   find_package(directx-headers CONFIG REQUIRED)
+endif()
+
+# Engine library
+add_library(harmonius-cpp STATIC src/cpp/harmonius.cpp)
+
+# Tests
+enable_testing()
+if(EXISTS "${CMAKE_SOURCE_DIR}/src/cpp/tests")
+  file(
+    GLOB_RECURSE TEST_SOURCES
+    "${CMAKE_SOURCE_DIR}/src/cpp/tests/*.cpp"
+  )
+  if(TEST_SOURCES)
+    add_executable(harmonius-tests ${TEST_SOURCES})
+    target_link_libraries(harmonius-tests PRIVATE harmonius-cpp)
+    add_test(NAME harmonius-cpp-tests COMMAND harmonius-tests)
+  endif()
 endif()

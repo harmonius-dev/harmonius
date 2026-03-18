@@ -8,18 +8,29 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.18.1 | R-15.18.1 | AWS CDK deployment stacks (Free Tier + Enterprise) |
-| F-15.18.2 | R-15.18.2 | Live collaboration server (CRDT, WebSocket, RDS, S3) |
-| F-15.18.3 | R-15.18.3 | Git and Git LFS hosting with locking |
-| F-15.18.4 | R-15.18.4 | Asset and shader compilation server (build farm) |
-| F-15.18.5 | R-15.18.5 | Signing and distribution server |
-| F-15.18.6 | R-15.18.6 | Continuous deployment pipeline |
-| F-15.18.7 | R-15.18.7 | Test runner infrastructure |
-| F-15.18.8 | R-15.18.8 | Shared cache and database services |
-| F-15.18.9 | R-15.18.9 | Backup and disaster recovery |
-| F-15.18.10 | R-15.18.10 | Enterprise security configuration |
+| Feature    | Requirement |
+|------------|-------------|
+| F-15.18.1  | R-15.18.1   |
+| F-15.18.2  | R-15.18.2   |
+| F-15.18.3  | R-15.18.3   |
+| F-15.18.4  | R-15.18.4   |
+| F-15.18.5  | R-15.18.5   |
+| F-15.18.6  | R-15.18.6   |
+| F-15.18.7  | R-15.18.7   |
+| F-15.18.8  | R-15.18.8   |
+| F-15.18.9  | R-15.18.9   |
+| F-15.18.10 | R-15.18.10  |
+
+1. **F-15.18.1** — AWS CDK deployment stacks (Free Tier + Enterprise)
+2. **F-15.18.2** — Live collaboration server (CRDT, WebSocket, RDS, S3)
+3. **F-15.18.3** — Git and Git LFS hosting with locking
+4. **F-15.18.4** — Asset and shader compilation server (build farm)
+5. **F-15.18.5** — Signing and distribution server
+6. **F-15.18.6** — Continuous deployment pipeline
+7. **F-15.18.7** — Test runner infrastructure
+8. **F-15.18.8** — Shared cache and database services
+9. **F-15.18.9** — Backup and disaster recovery
+10. **F-15.18.10** — Enterprise security configuration
 
 ## Overview
 
@@ -1176,41 +1187,83 @@ async fn submit_build(
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_free_tier_instance_sizes` | R-15.18.1 | Verify Free Tier profile uses only t3.micro/t4g.micro instances |
-| `test_enterprise_multi_az` | R-15.18.1 | Verify Enterprise profile creates resources in 3 AZs |
-| `test_stack_outputs_contain_endpoints` | R-15.18.1 | Verify CDK stack outputs include all endpoint URLs and API keys |
-| `test_collab_crdt_merge` | R-15.18.2 | Verify CRDT operations merge correctly with concurrent edits |
-| `test_collab_presence_tracking` | R-15.18.2 | Verify presence updates propagate to all session members |
-| `test_git_api_compatibility` | R-15.18.3 | Verify Forgejo REST API matches GitHub API for editor operations |
-| `test_lfs_lock_unlock` | R-15.18.3 | Verify LFS lock prevents concurrent binary edits |
-| `test_build_job_cache_hit` | R-15.18.4 | Verify cache hit returns artifact without queuing job |
-| `test_build_job_cache_miss` | R-15.18.4 | Verify cache miss enqueues job and returns result |
-| `test_signing_secrets_not_on_disk` | R-15.18.5 | Verify signing credentials are fetched from Secrets Manager only |
-| `test_pipeline_failed_test_blocks` | R-15.18.6 | Verify failed test stage prevents progression to packaging |
-| `test_screenshot_diff_threshold` | R-15.18.7 | Verify screenshot comparison respects pixel/percent thresholds |
-| `test_kms_encryption_enabled` | R-15.18.8 | Verify KMS encryption on all S3 buckets, RDS, DynamoDB |
-| `test_rds_backup_retention` | R-15.18.9 | Verify RDS backup retention matches profile (7 or 35 days) |
-| `test_waf_sql_injection_block` | R-15.18.10 | Verify WAF blocks SQL injection in HTTP requests |
+| Test                                   | Req        |
+|----------------------------------------|------------|
+| `test_free_tier_instance_sizes`        | R-15.18.1  |
+| `test_enterprise_multi_az`             | R-15.18.1  |
+| `test_stack_outputs_contain_endpoints` | R-15.18.1  |
+| `test_collab_crdt_merge`               | R-15.18.2  |
+| `test_collab_presence_tracking`        | R-15.18.2  |
+| `test_git_api_compatibility`           | R-15.18.3  |
+| `test_lfs_lock_unlock`                 | R-15.18.3  |
+| `test_build_job_cache_hit`             | R-15.18.4  |
+| `test_build_job_cache_miss`            | R-15.18.4  |
+| `test_signing_secrets_not_on_disk`     | R-15.18.5  |
+| `test_pipeline_failed_test_blocks`     | R-15.18.6  |
+| `test_screenshot_diff_threshold`       | R-15.18.7  |
+| `test_kms_encryption_enabled`          | R-15.18.8  |
+| `test_rds_backup_retention`            | R-15.18.9  |
+| `test_waf_sql_injection_block`         | R-15.18.10 |
+
+1. **`test_free_tier_instance_sizes`** — Verify Free Tier profile uses only t3.micro/t4g.micro
+   instances
+2. **`test_enterprise_multi_az`** — Verify Enterprise profile creates resources in 3 AZs
+3. **`test_stack_outputs_contain_endpoints`** — Verify CDK stack outputs include all endpoint URLs
+   and API keys
+4. **`test_collab_crdt_merge`** — Verify CRDT operations merge correctly with concurrent edits
+5. **`test_collab_presence_tracking`** — Verify presence updates propagate to all session members
+6. **`test_git_api_compatibility`** — Verify Forgejo REST API matches GitHub API for editor
+   operations
+7. **`test_lfs_lock_unlock`** — Verify LFS lock prevents concurrent binary edits
+8. **`test_build_job_cache_hit`** — Verify cache hit returns artifact without queuing job
+9. **`test_build_job_cache_miss`** — Verify cache miss enqueues job and returns result
+10. **`test_signing_secrets_not_on_disk`** — Verify signing credentials are fetched from Secrets
+    Manager only
+11. **`test_pipeline_failed_test_blocks`** — Verify failed test stage prevents progression to
+    packaging
+12. **`test_screenshot_diff_threshold`** — Verify screenshot comparison respects pixel/percent
+    thresholds
+13. **`test_kms_encryption_enabled`** — Verify KMS encryption on all S3 buckets, RDS, DynamoDB
+14. **`test_rds_backup_retention`** — Verify RDS backup retention matches profile (7 or 35 days)
+15. **`test_waf_sql_injection_block`** — Verify WAF blocks SQL injection in HTTP requests
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_stack_deploy_free_tier` | R-15.18.1 | Deploy full Free Tier stack, verify all endpoints respond |
-| `test_full_stack_deploy_enterprise` | R-15.18.1 | Deploy full Enterprise stack, verify multi-AZ and security |
-| `test_collab_two_editors_sync` | R-15.18.2 | Two editor instances edit the same entity via collaboration server |
-| `test_git_push_pull_lfs` | R-15.18.3 | Push a repo with LFS objects, pull from another client, verify data |
-| `test_build_farm_shader_compile` | R-15.18.4 | Submit shader compilation, verify output matches local compile |
-| `test_build_farm_auto_scale` | R-15.18.4 | Flood queue with jobs, verify ASG scales out, then back in |
-| `test_pipeline_end_to_end` | R-15.18.6 | Push commit, verify pipeline completes all stages |
-| `test_pipeline_failure_notification` | R-15.18.6 | Push failing commit, verify SNS notification sent |
-| `test_screenshot_regression_blocks` | R-15.18.7 | Introduce visual regression, verify pipeline halted |
-| `test_restore_rds_backup` | R-15.18.9 | Delete data, restore from backup, verify recovery |
-| `test_cross_region_replication` | R-15.18.9 | Write to primary, verify data appears in DR region |
-| `test_deploy_completes_under_15min` | US-15.18.1.7 | Verify full stack deployment completes within 15 minutes |
-| `test_free_tier_cost_limits` | US-15.18.1.4 | Verify Free Tier stays within AWS Free Tier resource limits |
+| Test                                 | Req          |
+|--------------------------------------|--------------|
+| `test_full_stack_deploy_free_tier`   | R-15.18.1    |
+| `test_full_stack_deploy_enterprise`  | R-15.18.1    |
+| `test_collab_two_editors_sync`       | R-15.18.2    |
+| `test_git_push_pull_lfs`             | R-15.18.3    |
+| `test_build_farm_shader_compile`     | R-15.18.4    |
+| `test_build_farm_auto_scale`         | R-15.18.4    |
+| `test_pipeline_end_to_end`           | R-15.18.6    |
+| `test_pipeline_failure_notification` | R-15.18.6    |
+| `test_screenshot_regression_blocks`  | R-15.18.7    |
+| `test_restore_rds_backup`            | R-15.18.9    |
+| `test_cross_region_replication`      | R-15.18.9    |
+| `test_deploy_completes_under_15min`  | US-15.18.1.7 |
+| `test_free_tier_cost_limits`         | US-15.18.1.4 |
+
+1. **`test_full_stack_deploy_free_tier`** — Deploy full Free Tier stack, verify all endpoints
+   respond
+2. **`test_full_stack_deploy_enterprise`** — Deploy full Enterprise stack, verify multi-AZ and
+   security
+3. **`test_collab_two_editors_sync`** — Two editor instances edit the same entity via collaboration
+   server
+4. **`test_git_push_pull_lfs`** — Push a repo with LFS objects, pull from another client, verify
+   data
+5. **`test_build_farm_shader_compile`** — Submit shader compilation, verify output matches local
+   compile
+6. **`test_build_farm_auto_scale`** — Flood queue with jobs, verify ASG scales out, then back in
+7. **`test_pipeline_end_to_end`** — Push commit, verify pipeline completes all stages
+8. **`test_pipeline_failure_notification`** — Push failing commit, verify SNS notification sent
+9. **`test_screenshot_regression_blocks`** — Introduce visual regression, verify pipeline halted
+10. **`test_restore_rds_backup`** — Delete data, restore from backup, verify recovery
+11. **`test_cross_region_replication`** — Write to primary, verify data appears in DR region
+12. **`test_deploy_completes_under_15min`** — Verify full stack deployment completes within 15
+    minutes
+13. **`test_free_tier_cost_limits`** — Verify Free Tier stays within AWS Free Tier resource limits
 
 ### CDK Snapshot Tests
 
@@ -1280,18 +1333,29 @@ acceptable cohesion exception given that AWS CDK has no mature Rust alternative.
 
 ### Requirements Trace
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.18.11 | R-15.18.11 | CDK stacks with open-source-only dependencies |
-| F-15.18.12 | R-15.18.12 | 1-click AWS Marketplace deployment |
-| F-15.18.13 | R-15.18.13 | Grafana-based service admin dashboard |
-| F-15.18.14 | R-15.18.14 | Scaling profiles (Solo/Team/Studio/Production) |
-| F-15.18.15 | R-15.18.15 | Self-hosted build cache (S3 + Redis) |
-| F-15.18.16 | R-15.18.16 | Self-hosted collaboration (PostgreSQL + Redis + NATS) |
-| F-15.18.17 | R-15.18.17 | Self-hosted matchmaking (PostgreSQL + Redis + NATS) |
-| F-15.18.18 | R-15.18.18 | Self-hosted asset store (PostgreSQL + OpenSearch + S3) |
-| F-15.18.19 | R-15.18.19 | Health monitoring (Prometheus + Grafana + Loki) |
-| F-15.18.20 | R-15.18.20 | Multi-region deployment with failover |
+| Feature    | Requirement |
+|------------|-------------|
+| F-15.18.11 | R-15.18.11  |
+| F-15.18.12 | R-15.18.12  |
+| F-15.18.13 | R-15.18.13  |
+| F-15.18.14 | R-15.18.14  |
+| F-15.18.15 | R-15.18.15  |
+| F-15.18.16 | R-15.18.16  |
+| F-15.18.17 | R-15.18.17  |
+| F-15.18.18 | R-15.18.18  |
+| F-15.18.19 | R-15.18.19  |
+| F-15.18.20 | R-15.18.20  |
+
+1. **F-15.18.11** — CDK stacks with open-source-only dependencies
+2. **F-15.18.12** — 1-click AWS Marketplace deployment
+3. **F-15.18.13** — Grafana-based service admin dashboard
+4. **F-15.18.14** — Scaling profiles (Solo/Team/Studio/Production)
+5. **F-15.18.15** — Self-hosted build cache (S3 + Redis)
+6. **F-15.18.16** — Self-hosted collaboration (PostgreSQL + Redis + NATS)
+7. **F-15.18.17** — Self-hosted matchmaking (PostgreSQL + Redis + NATS)
+8. **F-15.18.18** — Self-hosted asset store (PostgreSQL + OpenSearch + S3)
+9. **F-15.18.19** — Health monitoring (Prometheus + Grafana + Loki)
+10. **F-15.18.20** — Multi-region deployment with failover
 
 ### Open-Source Dependency Map
 
@@ -1387,20 +1451,35 @@ graph TD
 
 ### Scaling Profile Comparison
 
-| Resource | Solo (~$20/mo) | Team (~$100/mo) | Studio (~$500/mo) | Production (~$2000+/mo) |
-|----------|----------------|-----------------|--------------------|-----------------------|
-| PostgreSQL | db.t4g.micro, 20 GB, single-AZ | db.t4g.small, 50 GB, single-AZ | db.t4g.medium, 200 GB, multi-AZ | db.r6g.large, 500 GB, multi-AZ, read replicas |
-| Redis/Valkey | cache.t4g.micro, 1 node | cache.t4g.small, 1 node | cache.t4g.medium, 2 nodes | cache.r6g.large, 3-node cluster |
-| Keycloak | 0.25 vCPU Fargate | 0.5 vCPU Fargate | 1 vCPU, 2 tasks | 2 vCPU, 4 tasks, multi-AZ |
-| NATS | 0.25 vCPU Fargate, 1 node | 0.5 vCPU, 1 node | 1 vCPU, 3-node cluster | 2 vCPU, 5-node cluster, multi-region |
-| Forgejo | t4g.micro EC2, 10 GB | t4g.small, 50 GB | t4g.medium, 200 GB | m6g.large, unlimited, CDN |
-| Build farm | t4g.micro, 1 instance | t4g.small, 1-3 ASG | c6g.large, 2-8 ASG | c6g.2xlarge + g5.xlarge, 4-20 ASG |
-| Collaboration | 0.25 vCPU, 1 task | 0.5 vCPU, 1-2 tasks | 1 vCPU, 2-6 tasks | 2 vCPU, 4-20 tasks, multi-AZ |
-| OpenSearch | None (SQLite) | t3.small.search, 1 node | t3.medium.search, 2 nodes | r6g.large.search, 3-node cluster |
-| Monitoring | Grafana only, 0.25 vCPU | Grafana + Prometheus | Full stack (Prom + Grafana + Loki) | Full stack, multi-AZ, 30-day retention |
-| S3 storage | 10 GB | 100 GB | 500 GB | Unlimited, CloudFront CDN |
-| Users | 1 | 2-10 | 10-50 | 50+ |
-| AZs | 1 | 1 | 2 | 3 |
+| Resource      | Solo (~$20/mo)                 | Team (~$100/mo)                |
+|---------------|--------------------------------|--------------------------------|
+| PostgreSQL    | db.t4g.micro, 20 GB, single-AZ | db.t4g.small, 50 GB, single-AZ |
+| Redis/Valkey  | cache.t4g.micro, 1 node        | cache.t4g.small, 1 node        |
+| Keycloak      | 0.25 vCPU Fargate              | 0.5 vCPU Fargate               |
+| NATS          | 0.25 vCPU Fargate, 1 node      | 0.5 vCPU, 1 node               |
+| Forgejo       | t4g.micro EC2, 10 GB           | t4g.small, 50 GB               |
+| Build farm    | t4g.micro, 1 instance          | t4g.small, 1-3 ASG             |
+| Collaboration | 0.25 vCPU, 1 task              | 0.5 vCPU, 1-2 tasks            |
+| OpenSearch    | None (SQLite)                  | t3.small.search, 1 node        |
+| Monitoring    | Grafana only, 0.25 vCPU        | Grafana + Prometheus           |
+| S3 storage    | 10 GB                          | 100 GB                         |
+| Users         | 1                              | 2-10                           |
+| AZs           | 1                              | 1                              |
+
+| Resource | Studio (~$500/mo) | Production (~$2000+/mo) |
+|----------|-------------------|-------------------------|
+| PostgreSQL | db.t4g.medium, 200 GB, multi-AZ | db.r6g.large, 500 GB, multi-AZ, read replicas |
+| Redis/Valkey | cache.t4g.medium, 2 nodes | cache.r6g.large, 3-node cluster |
+| Keycloak | 1 vCPU, 2 tasks | 2 vCPU, 4 tasks, multi-AZ |
+| NATS | 1 vCPU, 3-node cluster | 2 vCPU, 5-node cluster, multi-region |
+| Forgejo | t4g.medium, 200 GB | m6g.large, unlimited, CDN |
+| Build farm | c6g.large, 2-8 ASG | c6g.2xlarge + g5.xlarge, 4-20 ASG |
+| Collaboration | 1 vCPU, 2-6 tasks | 2 vCPU, 4-20 tasks, multi-AZ |
+| OpenSearch | t3.medium.search, 2 nodes | r6g.large.search, 3-node cluster |
+| Monitoring | Full stack (Prom + Grafana + Loki) | Full stack, multi-AZ, 30-day retention |
+| S3 storage | 500 GB | Unlimited, CloudFront CDN |
+| Users | 10-50 | 50+ |
+| AZs | 2 | 3 |
 
 ### Open-Source Service Deployment Sequence
 

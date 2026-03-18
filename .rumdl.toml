@@ -2,26 +2,25 @@
 
 [global]
 exclude = [
-    ".git",
-    ".github",
-    "**/CLAUDE.md",
-    "build",
-    "node_modules",
-    "vcpkg_installed",
-    "vendor",
+  ".git",
+  ".github",
+  "**/CLAUDE.md",
+  "build",
+  "node_modules",
+  "vcpkg_installed",
+  "vendor",
 ]
 flavor = "gfm"
-respect-gitignore = true
 
 [MD033]
 allowed-elements = ["br"]
 
 [MD013]
-code-blocks = false
+code-blocks = true
 headings = true
 line-length = 100
 paragraphs = true
 reflow = true
 reflow-mode = "normalize"
 strict = false
-tables = false
+tables = true

@@ -8,17 +8,27 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-15.1.1 | R-15.1.1 | US-15.1.1.1--US-15.1.1.13 | Dockable panel layout with drag, drop, split, tab, float, and persistent profiles |
-| F-15.1.2 | R-15.1.2 | US-15.1.2.1--US-15.1.2.8 | Multiple simultaneous 3D viewports with independent cameras and render settings |
-| F-15.1.3 | R-15.1.3 | US-15.1.3.1--US-15.1.3.9 | Undo/redo via command pattern with transaction grouping and crash recovery |
-| F-15.1.4 | R-15.1.4 | US-15.1.4.1--US-15.1.4.10 | Unified selection model with click, marquee, lasso, sub-object, and named sets |
-| F-15.1.5 | R-15.1.5 | US-15.1.5.1--US-15.1.5.8 | Transform gizmos with axis/plane constraints, snap, and reference frames |
-| F-15.1.6 | R-15.1.6 | US-15.1.6.1--US-15.1.6.6 | Bounds, distance, angle, and area measurement gizmos |
-| F-15.1.7 | R-15.1.7 | US-15.1.7.1--US-15.1.7.8 | Centralized preferences with versioned JSON and per-user overrides |
-| F-15.1.8 | R-15.1.8 | US-15.1.8.1--US-15.1.8.9 | Editor extension/plugin API with hot reload |
-| F-15.1.9 | R-15.1.9 | US-15.1.9.1--US-15.1.9.8 | VR editor mode with motion controller gizmos |
+| Feature  | Requirement | User Stories              |
+|----------|-------------|---------------------------|
+| F-15.1.1 | R-15.1.1    | US-15.1.1.1--US-15.1.1.13 |
+| F-15.1.2 | R-15.1.2    | US-15.1.2.1--US-15.1.2.8  |
+| F-15.1.3 | R-15.1.3    | US-15.1.3.1--US-15.1.3.9  |
+| F-15.1.4 | R-15.1.4    | US-15.1.4.1--US-15.1.4.10 |
+| F-15.1.5 | R-15.1.5    | US-15.1.5.1--US-15.1.5.8  |
+| F-15.1.6 | R-15.1.6    | US-15.1.6.1--US-15.1.6.6  |
+| F-15.1.7 | R-15.1.7    | US-15.1.7.1--US-15.1.7.8  |
+| F-15.1.8 | R-15.1.8    | US-15.1.8.1--US-15.1.8.9  |
+| F-15.1.9 | R-15.1.9    | US-15.1.9.1--US-15.1.9.8  |
+
+1. **F-15.1.1** — Dockable panel layout with drag, drop, split, tab, float, and persistent profiles
+2. **F-15.1.2** — Multiple simultaneous 3D viewports with independent cameras and render settings
+3. **F-15.1.3** — Undo/redo via command pattern with transaction grouping and crash recovery
+4. **F-15.1.4** — Unified selection model with click, marquee, lasso, sub-object, and named sets
+5. **F-15.1.5** — Transform gizmos with axis/plane constraints, snap, and reference frames
+6. **F-15.1.6** — Bounds, distance, angle, and area measurement gizmos
+7. **F-15.1.7** — Centralized preferences with versioned JSON and per-user overrides
+8. **F-15.1.8** — Editor extension/plugin API with hot reload
+9. **F-15.1.9** — VR editor mode with motion controller gizmos
 
 ### Cross-Cutting Dependencies
 
@@ -2133,34 +2143,54 @@ if recovery_file_exists(&recovery_path) {
 
 ### Windows
 
-| Component | API | Notes |
-|-----------|-----|-------|
-| Floating panels | `CreateWindowEx` | Via `windows-sys`. Child window with `WS_POPUP` style for borderless float. |
-| Virtual desktops | `IVirtualDesktopManager` | Track floating panels across virtual desktops (US-15.1.1.12). |
-| DPI | `WM_DPICHANGED` | Floating panels respond to per-monitor DPI changes independently. |
-| Clipboard | `OpenClipboard` / `SetClipboardData` | Copy/paste for property values and entities. |
-| File dialogs | `IFileOpenDialog` | Native open/save dialogs for asset import and layout export. |
+| Component        | API                                  |
+|------------------|--------------------------------------|
+| Floating panels  | `CreateWindowEx`                     |
+| Virtual desktops | `IVirtualDesktopManager`             |
+| DPI              | `WM_DPICHANGED`                      |
+| Clipboard        | `OpenClipboard` / `SetClipboardData` |
+| File dialogs     | `IFileOpenDialog`                    |
+
+1. **Floating panels** — Via `windows-sys`. Child window with `WS_POPUP` style for borderless float.
+2. **Virtual desktops** — Track floating panels across virtual desktops (US-15.1.1.12).
+3. **DPI** — Floating panels respond to per-monitor DPI changes independently.
+4. **Clipboard** — Copy/paste for property values and entities.
+5. **File dialogs** — Native open/save dialogs for asset import and layout export.
 
 ### macOS
 
-| Component | API | Notes |
-|-----------|-----|-------|
-| Floating panels | `NSWindow` via Swift/cxx | `NSPanel` subclass with `NSWindowStyleMaskUtilityWindow` for Expose integration (US-15.1.1.11). |
-| Spaces | `NSWindow.collectionBehavior` | `.moveToActiveSpace` ensures panels follow the user. |
-| DPI | `NSScreen.backingScaleFactor` | Retina scaling applied per floating window. |
-| Clipboard | `NSPasteboard` | Via Swift wrappers through cxx. |
-| File dialogs | `NSOpenPanel` / `NSSavePanel` | Native file chooser sheets. |
-| Cmd key | `NSEvent.modifierFlags` | Hotkey system maps Cmd to `meta` field. |
+| Component       | API                           |
+|-----------------|-------------------------------|
+| Floating panels | `NSWindow` via Swift/cxx      |
+| Spaces          | `NSWindow.collectionBehavior` |
+| DPI             | `NSScreen.backingScaleFactor` |
+| Clipboard       | `NSPasteboard`                |
+| File dialogs    | `NSOpenPanel` / `NSSavePanel` |
+| Cmd key         | `NSEvent.modifierFlags`       |
+
+1. **Floating panels** — `NSPanel` subclass with `NSWindowStyleMaskUtilityWindow` for Expose
+   integration (US-15.1.1.11).
+2. **Spaces** — `.moveToActiveSpace` ensures panels follow the user.
+3. **DPI** — Retina scaling applied per floating window.
+4. **Clipboard** — Via Swift wrappers through cxx.
+5. **File dialogs** — Native file chooser sheets.
+6. **Cmd key** — Hotkey system maps Cmd to `meta` field.
 
 ### Linux
 
-| Component | API | Notes |
-|-----------|-----|-------|
-| Floating panels (X11) | `xcb_create_window` | `override_redirect` for floating panels without WM decoration. |
-| Floating panels (Wayland) | `xdg_popup` / `layer_shell` | Protocol-compliant popups. |
-| DPI | `Xft.dpi` / `wl_output.scale` | Per-monitor scale factor applied. |
-| Clipboard | `XCB_ATOM` selection / `wl_data_device` | X11 and Wayland clipboard protocols. |
-| File dialogs | Portal via D-Bus (`xdg-desktop-portal`) | Sandbox-compatible file chooser. |
+| Component                 | API                                     |
+|---------------------------|-----------------------------------------|
+| Floating panels (X11)     | `xcb_create_window`                     |
+| Floating panels (Wayland) | `xdg_popup` / `layer_shell`             |
+| DPI                       | `Xft.dpi` / `wl_output.scale`           |
+| Clipboard                 | `XCB_ATOM` selection / `wl_data_device` |
+| File dialogs              | Portal via D-Bus (`xdg-desktop-portal`) |
+
+1. **Floating panels (X11)** — `override_redirect` for floating panels without WM decoration.
+2. **Floating panels (Wayland)** — Protocol-compliant popups.
+3. **DPI** — Per-monitor scale factor applied.
+4. **Clipboard** — X11 and Wayland clipboard protocols.
+5. **File dialogs** — Sandbox-compatible file chooser.
 
 ### Multi-Monitor Layout Persistence
 
@@ -2184,61 +2214,131 @@ pub struct FloatingPanelLayout {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_dock_split_horizontal` | R-15.1.1 | Split a panel horizontally, verify two children with correct ratio. |
-| `test_dock_split_vertical` | R-15.1.1 | Split a panel vertically, verify layout. |
-| `test_dock_add_tab` | R-15.1.1 | Add a tab to a tab group, verify panel list. |
-| `test_dock_float_and_redock` | R-15.1.1 | Float a panel, verify window handle created. Redock, verify window destroyed. |
-| `test_dock_close_collapses_split` | R-15.1.1 | Close the only panel in a split child; verify the split node collapses. |
-| `test_layout_save_load` | R-15.1.1 | Save a layout profile to JSON, reload, verify tree equality. |
-| `test_layout_schema_migration` | R-15.1.1 | Load an older-version layout JSON, verify migration produces valid tree. |
-| `test_viewport_create_destroy` | R-15.1.2 | Create 3 viewports, verify independent swapchains, destroy one, verify cleanup. |
-| `test_viewport_screen_to_ray` | R-15.1.2 | Screen center maps to forward ray; screen corner maps to frustum edge ray. |
-| `test_viewport_camera_modes` | R-15.1.2 | Each CameraMode produces correct projection (perspective vs ortho). |
-| `test_undo_single_command` | R-15.1.3 | Execute, undo, verify state reverted. Redo, verify state restored. |
-| `test_undo_transaction` | R-15.1.3 | Execute transaction of 5 commands, undo once, all 5 reverted. |
-| `test_undo_clears_redo` | R-15.1.3 | Undo, then execute new command, verify redo stack cleared. |
-| `test_undo_crash_recovery` | R-15.1.3 | Save history, reload, replay all commands, verify final state matches. |
-| `test_selection_click` | R-15.1.4 | Click-select entity, verify single selection. |
-| `test_selection_marquee` | R-15.1.4 | Marquee over 10 entities, verify all 10 selected. |
-| `test_selection_additive` | R-15.1.4 | Select A, Shift-select B, verify both selected. |
-| `test_selection_subtractive` | R-15.1.4 | Select A and B, Ctrl-select B, verify only A remains. |
-| `test_selection_saved_sets` | R-15.1.4 | Save a selection set, clear, restore, verify same items. |
-| `test_selection_sub_object` | R-15.1.4 | Select vertex 42 on entity, verify sub-object selection. |
-| `test_gizmo_translate_axis_x` | R-15.1.5 | Drag translate gizmo along X, verify delta Y and Z are zero. |
-| `test_gizmo_rotate_snap` | R-15.1.5 | Rotate with 15-degree snap, verify angle quantized to 15-degree increments. |
-| `test_gizmo_scale_uniform` | R-15.1.5 | Uniform scale gizmo, verify all axes scale equally. |
-| `test_gizmo_reference_frames` | R-15.1.5 | World vs local frame produces different axis orientations. |
-| `test_measurement_distance` | R-15.1.6 | Two points 10 units apart, verify distance = 10.0. |
-| `test_measurement_angle` | R-15.1.6 | Three points forming 90-degree angle, verify result. |
-| `test_measurement_bounds_aabb` | R-15.1.6 | Entity bounds match mesh extents. |
-| `test_hotkey_bind_lookup` | R-15.1.7 | Bind Ctrl+Z to undo, look up Ctrl+Z, verify undo returned. |
-| `test_hotkey_conflict_detection` | R-15.1.7 | Bind same key to two actions, verify conflict reported. |
-| `test_prefs_user_override` | R-15.1.7 | Set team default, set user override, verify user value returned. Remove override, verify team default. |
-| `test_prefs_schema_migration` | R-15.1.7 | Load v1 prefs, migrate to v2, verify new keys populated. |
-| `test_inspector_generates_slider` | R-15.1.7 | Struct with `#[reflect(range)]` f32 field produces slider widget. |
-| `test_inspector_multi_select` | R-15.1.7 | Two entities with differing health values show "Mixed". |
-| `test_plugin_register_panel` | R-15.1.8 | Load plugin, verify panel appears in panel registry. |
-| `test_plugin_unload_cleanup` | R-15.1.8 | Unload plugin, verify panel, gizmo, and menu entries removed. |
-| `test_plugin_hot_reload` | R-15.1.8 | Modify plugin, hot-reload, verify updated behavior. |
-| `test_console_filter_by_level` | -- | Push 100 entries, filter by Error, verify only errors returned. |
-| `test_console_capacity_eviction` | -- | Push entries beyond capacity, verify oldest evicted. |
+| Test                              | Req      |
+|-----------------------------------|----------|
+| `test_dock_split_horizontal`      | R-15.1.1 |
+| `test_dock_split_vertical`        | R-15.1.1 |
+| `test_dock_add_tab`               | R-15.1.1 |
+| `test_dock_float_and_redock`      | R-15.1.1 |
+| `test_dock_close_collapses_split` | R-15.1.1 |
+| `test_layout_save_load`           | R-15.1.1 |
+| `test_layout_schema_migration`    | R-15.1.1 |
+| `test_viewport_create_destroy`    | R-15.1.2 |
+| `test_viewport_screen_to_ray`     | R-15.1.2 |
+| `test_viewport_camera_modes`      | R-15.1.2 |
+| `test_undo_single_command`        | R-15.1.3 |
+| `test_undo_transaction`           | R-15.1.3 |
+| `test_undo_clears_redo`           | R-15.1.3 |
+| `test_undo_crash_recovery`        | R-15.1.3 |
+| `test_selection_click`            | R-15.1.4 |
+| `test_selection_marquee`          | R-15.1.4 |
+| `test_selection_additive`         | R-15.1.4 |
+| `test_selection_subtractive`      | R-15.1.4 |
+| `test_selection_saved_sets`       | R-15.1.4 |
+| `test_selection_sub_object`       | R-15.1.4 |
+| `test_gizmo_translate_axis_x`     | R-15.1.5 |
+| `test_gizmo_rotate_snap`          | R-15.1.5 |
+| `test_gizmo_scale_uniform`        | R-15.1.5 |
+| `test_gizmo_reference_frames`     | R-15.1.5 |
+| `test_measurement_distance`       | R-15.1.6 |
+| `test_measurement_angle`          | R-15.1.6 |
+| `test_measurement_bounds_aabb`    | R-15.1.6 |
+| `test_hotkey_bind_lookup`         | R-15.1.7 |
+| `test_hotkey_conflict_detection`  | R-15.1.7 |
+| `test_prefs_user_override`        | R-15.1.7 |
+| `test_prefs_schema_migration`     | R-15.1.7 |
+| `test_inspector_generates_slider` | R-15.1.7 |
+| `test_inspector_multi_select`     | R-15.1.7 |
+| `test_plugin_register_panel`      | R-15.1.8 |
+| `test_plugin_unload_cleanup`      | R-15.1.8 |
+| `test_plugin_hot_reload`          | R-15.1.8 |
+| `test_console_filter_by_level`    | --       |
+| `test_console_capacity_eviction`  | --       |
+
+1. **`test_dock_split_horizontal`** — Split a panel horizontally, verify two children with correct
+   ratio.
+2. **`test_dock_split_vertical`** — Split a panel vertically, verify layout.
+3. **`test_dock_add_tab`** — Add a tab to a tab group, verify panel list.
+4. **`test_dock_float_and_redock`** — Float a panel, verify window handle created. Redock, verify
+   window destroyed.
+5. **`test_dock_close_collapses_split`** — Close the only panel in a split child; verify the split
+   node collapses.
+6. **`test_layout_save_load`** — Save a layout profile to JSON, reload, verify tree equality.
+7. **`test_layout_schema_migration`** — Load an older-version layout JSON, verify migration produces
+   valid tree.
+8. **`test_viewport_create_destroy`** — Create 3 viewports, verify independent swapchains, destroy
+   one, verify cleanup.
+9. **`test_viewport_screen_to_ray`** — Screen center maps to forward ray; screen corner maps to
+   frustum edge ray.
+10. **`test_viewport_camera_modes`** — Each CameraMode produces correct projection (perspective vs
+    ortho).
+11. **`test_undo_single_command`** — Execute, undo, verify state reverted. Redo, verify state
+    restored.
+12. **`test_undo_transaction`** — Execute transaction of 5 commands, undo once, all 5 reverted.
+13. **`test_undo_clears_redo`** — Undo, then execute new command, verify redo stack cleared.
+14. **`test_undo_crash_recovery`** — Save history, reload, replay all commands, verify final state
+    matches.
+15. **`test_selection_click`** — Click-select entity, verify single selection.
+16. **`test_selection_marquee`** — Marquee over 10 entities, verify all 10 selected.
+17. **`test_selection_additive`** — Select A, Shift-select B, verify both selected.
+18. **`test_selection_subtractive`** — Select A and B, Ctrl-select B, verify only A remains.
+19. **`test_selection_saved_sets`** — Save a selection set, clear, restore, verify same items.
+20. **`test_selection_sub_object`** — Select vertex 42 on entity, verify sub-object selection.
+21. **`test_gizmo_translate_axis_x`** — Drag translate gizmo along X, verify delta Y and Z are zero.
+22. **`test_gizmo_rotate_snap`** — Rotate with 15-degree snap, verify angle quantized to 15-degree
+    increments.
+23. **`test_gizmo_scale_uniform`** — Uniform scale gizmo, verify all axes scale equally.
+24. **`test_gizmo_reference_frames`** — World vs local frame produces different axis orientations.
+25. **`test_measurement_distance`** — Two points 10 units apart, verify distance = 10.0.
+26. **`test_measurement_angle`** — Three points forming 90-degree angle, verify result.
+27. **`test_measurement_bounds_aabb`** — Entity bounds match mesh extents.
+28. **`test_hotkey_bind_lookup`** — Bind Ctrl+Z to undo, look up Ctrl+Z, verify undo returned.
+29. **`test_hotkey_conflict_detection`** — Bind same key to two actions, verify conflict reported.
+30. **`test_prefs_user_override`** — Set team default, set user override, verify user value
+    returned. Remove override, verify team default.
+31. **`test_prefs_schema_migration`** — Load v1 prefs, migrate to v2, verify new keys populated.
+32. **`test_inspector_generates_slider`** — Struct with `#[reflect(range)]` f32 field produces
+    slider widget.
+33. **`test_inspector_multi_select`** — Two entities with differing health values show "Mixed".
+34. **`test_plugin_register_panel`** — Load plugin, verify panel appears in panel registry.
+35. **`test_plugin_unload_cleanup`** — Unload plugin, verify panel, gizmo, and menu entries removed.
+36. **`test_plugin_hot_reload`** — Modify plugin, hot-reload, verify updated behavior.
+37. **`test_console_filter_by_level`** — Push 100 entries, filter by Error, verify only errors
+    returned.
+38. **`test_console_capacity_eviction`** — Push entries beyond capacity, verify oldest evicted.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_edit_cycle` | R-15.1.3, R-15.1.4, R-15.1.5 | Select entity, translate via gizmo, undo, redo, verify transforms. |
-| `test_play_mode_snapshot_restore` | R-15.1.3 | Enter play mode, modify entities, stop, verify original state restored. |
-| `test_layout_profile_switch` | R-15.1.1 | Save two profiles, switch between them, verify panel arrangement changes. |
-| `test_multi_viewport_independent` | R-15.1.2 | Three viewports with different cameras, verify each renders correct perspective. |
-| `test_property_change_undo` | R-15.1.3 | Change property via inspector, undo, verify old value. |
-| `test_float_panel_cross_monitor` | R-15.1.1 | Float panel, move to second display, save layout, restore on single display, verify fallback. |
-| `test_event_bridge_sync` | R-15.1.3 | Editor command modifies game world entity, verify change visible in game world query. |
-| `test_plugin_isolation` | R-15.1.8 | Load a panicking plugin, verify editor continues running. |
-| `test_selection_to_inspector` | R-15.1.4 | Select entity, verify inspector shows its components. Change selection, verify inspector updates. |
-| `test_platform_floating_panel` | R-15.1.1 | Float a panel, verify native window created per platform (NSWindow / CreateWindowEx / xcb). |
+| Test                              | Req                          |
+|-----------------------------------|------------------------------|
+| `test_full_edit_cycle`            | R-15.1.3, R-15.1.4, R-15.1.5 |
+| `test_play_mode_snapshot_restore` | R-15.1.3                     |
+| `test_layout_profile_switch`      | R-15.1.1                     |
+| `test_multi_viewport_independent` | R-15.1.2                     |
+| `test_property_change_undo`       | R-15.1.3                     |
+| `test_float_panel_cross_monitor`  | R-15.1.1                     |
+| `test_event_bridge_sync`          | R-15.1.3                     |
+| `test_plugin_isolation`           | R-15.1.8                     |
+| `test_selection_to_inspector`     | R-15.1.4                     |
+| `test_platform_floating_panel`    | R-15.1.1                     |
+
+1. **`test_full_edit_cycle`** — Select entity, translate via gizmo, undo, redo, verify transforms.
+2. **`test_play_mode_snapshot_restore`** — Enter play mode, modify entities, stop, verify original
+   state restored.
+3. **`test_layout_profile_switch`** — Save two profiles, switch between them, verify panel
+   arrangement changes.
+4. **`test_multi_viewport_independent`** — Three viewports with different cameras, verify each
+   renders correct perspective.
+5. **`test_property_change_undo`** — Change property via inspector, undo, verify old value.
+6. **`test_float_panel_cross_monitor`** — Float panel, move to second display, save layout, restore
+   on single display, verify fallback.
+7. **`test_event_bridge_sync`** — Editor command modifies game world entity, verify change visible
+   in game world query.
+8. **`test_plugin_isolation`** — Load a panicking plugin, verify editor continues running.
+9. **`test_selection_to_inspector`** — Select entity, verify inspector shows its components. Change
+   selection, verify inspector updates.
+10. **`test_platform_floating_panel`** — Float a panel, verify native window created per platform
+    (NSWindow / CreateWindowEx / xcb).
 
 ### Performance Benchmarks
 
@@ -2257,13 +2357,24 @@ pub struct FloatingPanelLayout {
 
 ### Stress Tests
 
-| Test | Description |
-|------|-------------|
-| `stress_undo_100k_commands` | Push 100,000 commands, verify undo/redo traversal without memory leaks. |
-| `stress_selection_50k_entities` | Select 50,000 entities via marquee, verify response under 100 ms. |
-| `stress_inspector_deep_nesting` | Component with 10 levels of nested structs, verify inspector generates correctly. |
-| `stress_8_viewports` | Open 8 viewports simultaneously, verify frame rate remains above 30 FPS. |
-| `stress_plugin_load_unload_cycle` | Load and unload a plugin 100 times, verify no resource leaks. |
+| Test                              |
+|-----------------------------------|
+| `stress_undo_100k_commands`       |
+| `stress_selection_50k_entities`   |
+| `stress_inspector_deep_nesting`   |
+| `stress_8_viewports`              |
+| `stress_plugin_load_unload_cycle` |
+
+1. **`stress_undo_100k_commands`** — Push 100,000 commands, verify undo/redo traversal without
+   memory leaks.
+2. **`stress_selection_50k_entities`** — Select 50,000 entities via marquee, verify response under
+   100 ms.
+3. **`stress_inspector_deep_nesting`** — Component with 10 levels of nested structs, verify
+   inspector generates correctly.
+4. **`stress_8_viewports`** — Open 8 viewports simultaneously, verify frame rate remains above 30
+   FPS.
+5. **`stress_plugin_load_unload_cycle`** — Load and unload a plugin 100 times, verify no resource
+   leaks.
 
 ## Design Q & A
 

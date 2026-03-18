@@ -8,14 +8,24 @@
 > [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
 > those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-14.1.1 | R-14.1.1 | Create, resize, minimize, maximize, restore, and destroy native windows with consistent cross-platform API |
-| F-14.1.2 | R-14.1.2 | Switch between exclusive fullscreen, borderless fullscreen, and windowed modes without GPU device loss |
-| F-14.1.3 | R-14.1.3 | Enumerate connected displays with resolution, refresh rate, HDR capability, and position; re-enumerate on hot-plug |
-| F-14.1.4 | R-14.1.4 | Per-monitor DPI detection with correct fractional scaling at 125%, 150%, and 200% |
-| F-14.1.5 | R-14.1.5 | Immediate, FIFO, and mailbox presentation modes with independent frame rate cap |
-| F-14.1.6 | R-14.1.6 | HDR output with correct color space and peak luminance metadata per platform |
+| Feature  | Requirement |
+|----------|-------------|
+| F-14.1.1 | R-14.1.1    |
+| F-14.1.2 | R-14.1.2    |
+| F-14.1.3 | R-14.1.3    |
+| F-14.1.4 | R-14.1.4    |
+| F-14.1.5 | R-14.1.5    |
+| F-14.1.6 | R-14.1.6    |
+
+1. **F-14.1.1** — Create, resize, minimize, maximize, restore, and destroy native windows with
+   consistent cross-platform API
+2. **F-14.1.2** — Switch between exclusive fullscreen, borderless fullscreen, and windowed modes
+   without GPU device loss
+3. **F-14.1.3** — Enumerate connected displays with resolution, refresh rate, HDR capability, and
+   position; re-enumerate on hot-plug
+4. **F-14.1.4** — Per-monitor DPI detection with correct fractional scaling at 125%, 150%, and 200%
+5. **F-14.1.5** — Immediate, FIFO, and mailbox presentation modes with independent frame rate cap
+6. **F-14.1.6** — HDR output with correct color space and peak luminance metadata per platform
 
 ## Overview
 
@@ -1108,55 +1118,106 @@ The windowing subsystem is responsible for:
 
 ### Window Creation
 
-| Platform | API | Notes |
-|----------|-----|-------|
-| Windows | `CreateWindowEx` | COM initialized via `CoInitializeEx`. Window class registered with `RegisterClassExW`. Uses `windows-sys` for FFI. |
-| macOS | `NSWindow` via Swift / cxx | `NSApplication` must be initialized on the main thread. `NSWindow` created with `initWithContentRect:styleMask:`. Swift wrappers accessed through `cxx`. |
-| Linux X11 | `xcb_create_window` | Connection opened via `xcb_connect`. Window attributes set via `xcb_change_window_attributes`. |
-| Linux Wayland | `wl_compositor_create_surface` | `wl_display_connect` + `wl_registry_bind` for compositor. `xdg_wm_base` for shell surface. |
+| Platform      | API                            |
+|---------------|--------------------------------|
+| Windows       | `CreateWindowEx`               |
+| macOS         | `NSWindow` via Swift / cxx     |
+| Linux X11     | `xcb_create_window`            |
+| Linux Wayland | `wl_compositor_create_surface` |
+
+1. **Windows** — COM initialized via `CoInitializeEx`. Window class registered with
+   `RegisterClassExW`. Uses `windows-sys` for FFI.
+2. **macOS** — `NSApplication` must be initialized on the main thread. `NSWindow` created with
+   `initWithContentRect:styleMask:`. Swift wrappers accessed through `cxx`.
+3. **Linux X11** — Connection opened via `xcb_connect`. Window attributes set via
+   `xcb_change_window_attributes`.
+4. **Linux Wayland** — `wl_display_connect` + `wl_registry_bind` for compositor. `xdg_wm_base` for
+   shell surface.
 
 ### Fullscreen Transitions
 
-| Platform | Borderless Fullscreen | Exclusive Fullscreen |
-|----------|-----------------------|----------------------|
-| Windows | Set `WS_POPUP` style, resize to monitor bounds via `SetWindowPos` | `IDXGISwapChain::SetFullscreenState(TRUE)` |
-| macOS | `NSWindow.setStyleMask(.borderless)` + resize to screen frame | `NSWindow.toggleFullScreen` with `NSApplicationPresentationFullScreen` |
-| Linux X11 | `_NET_WM_STATE_FULLSCREEN` via `xcb_send_event` | `XRandR` mode change + `_NET_WM_STATE_FULLSCREEN` |
-| Linux Wayland | `xdg_toplevel_set_fullscreen` | Wayland does not support exclusive fullscreen; falls back to compositor fullscreen |
+| Platform      |
+|---------------|
+| Windows       |
+| macOS         |
+| Linux X11     |
+| Linux Wayland |
+
+1. **Windows** — Set `WS_POPUP` style, resize to monitor bounds via `SetWindowPos`
+   - **Exclusive Fullscreen:** `IDXGISwapChain::SetFullscreenState(TRUE)`
+2. **macOS** — `NSWindow.setStyleMask(.borderless)` + resize to screen frame
+   - **Exclusive Fullscreen:** `NSWindow.toggleFullScreen` with
+     `NSApplicationPresentationFullScreen`
+3. **Linux X11** — `_NET_WM_STATE_FULLSCREEN` via `xcb_send_event`
+   - **Exclusive Fullscreen:** `XRandR` mode change + `_NET_WM_STATE_FULLSCREEN`
+4. **Linux Wayland** — `xdg_toplevel_set_fullscreen`
+   - **Exclusive Fullscreen:** Wayland does not support exclusive fullscreen; falls back to
+     compositor fullscreen
 
 ### DPI Detection
 
-| Platform | API | Fractional Support |
-|----------|-----|--------------------|
-| Windows | `SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2)`, `WM_DPICHANGED` | Yes — 125%, 150% via `GetDpiForWindow` returning values like 120, 144 |
-| macOS | `NSWindow.backingScaleFactor` | Integer only (1x or 2x). Fractional not applicable. |
-| Linux X11 | `Xft.dpi` X resource | Typically integer. Fractional requires manual computation. |
-| Linux Wayland | `wl_output.scale` (integer), `wp_fractional_scale_v1` (fractional) | Yes — `wp_fractional_scale_v1` reports scale as `scale * 120` |
+| Platform      |
+|---------------|
+| Windows       |
+| macOS         |
+| Linux X11     |
+| Linux Wayland |
+
+1. **Windows** — `SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2)`, `WM_DPICHANGED`
+   - **Fractional Support:** Yes — 125%, 150% via `GetDpiForWindow` returning values like 120, 144
+2. **macOS** — `NSWindow.backingScaleFactor`
+   - **Fractional Support:** Integer only (1x or 2x). Fractional not applicable.
+3. **Linux X11** — `Xft.dpi` X resource
+   - **Fractional Support:** Typically integer. Fractional requires manual computation.
+4. **Linux Wayland** — `wl_output.scale` (integer), `wp_fractional_scale_v1` (fractional)
+   - **Fractional Support:** Yes — `wp_fractional_scale_v1` reports scale as `scale * 120`
 
 ### HDR Negotiation
 
-| Platform | Color Space | Metadata API | Swapchain Format |
-|----------|-------------|--------------|------------------|
-| Windows | `DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020` | `DXGI_HDR_METADATA_HDR10` via `IDXGISwapChain4::SetHDRMetaData` | `DXGI_FORMAT_R16G16B16A16_FLOAT` (scRGB) |
-| macOS | Extended linear sRGB via `CGColorSpace` | `CAMetalLayer.edrMetadata` + `NSScreen.maximumExtendedDynamicRangeColorComponentValue` | `MTLPixelFormatRGBA16Float` |
-| Linux Wayland | BT.2020 PQ via `wp_color_management_v1` | Experimental — limited compositor support (KDE 6.0+, GNOME WIP) | `VK_FORMAT_A2B10G10R10_UNORM_PACK32` |
+| Platform      | Swapchain Format                         |
+|---------------|------------------------------------------|
+| Windows       | `DXGI_FORMAT_R16G16B16A16_FLOAT` (scRGB) |
+| macOS         | `MTLPixelFormatRGBA16Float`              |
+| Linux Wayland | `VK_FORMAT_A2B10G10R10_UNORM_PACK32`     |
+
+1. **Windows** — `DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020`
+   - **Metadata API:** `DXGI_HDR_METADATA_HDR10` via `IDXGISwapChain4::SetHDRMetaData`
+2. **macOS** — Extended linear sRGB via `CGColorSpace`
+   - **Metadata API:** `CAMetalLayer.edrMetadata` +
+     `NSScreen.maximumExtendedDynamicRangeColorComponentValue`
+3. **Linux Wayland** — BT.2020 PQ via `wp_color_management_v1`
+   - **Metadata API:** Experimental — limited compositor support (KDE 6.0+, GNOME WIP)
 
 ### VSync / Presentation Modes
 
-| Platform | Immediate | FIFO | Mailbox |
-|----------|-----------|------|---------|
-| Windows (Vulkan) | `VK_PRESENT_MODE_IMMEDIATE_KHR` | `VK_PRESENT_MODE_FIFO_KHR` | `VK_PRESENT_MODE_MAILBOX_KHR` |
-| Windows (DX12) | `DXGI_SWAP_EFFECT_FLIP_DISCARD` + `SyncInterval=0` | `SyncInterval=1` | `DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT` + `SyncInterval=0` + 3 buffers |
-| macOS (Metal) | `CAMetalLayer.displaySyncEnabled = false` | `displaySyncEnabled = true` | Manual frame pacing with `CAMetalLayer.maximumDrawableCount = 3` |
-| Linux (Vulkan) | `VK_PRESENT_MODE_IMMEDIATE_KHR` | `VK_PRESENT_MODE_FIFO_KHR` | `VK_PRESENT_MODE_MAILBOX_KHR` |
+| Platform         | FIFO                        |
+|------------------|-----------------------------|
+| Windows (Vulkan) | `VK_PRESENT_MODE_FIFO_KHR`  |
+| Windows (DX12)   | `SyncInterval=1`            |
+| macOS (Metal)    | `displaySyncEnabled = true` |
+| Linux (Vulkan)   | `VK_PRESENT_MODE_FIFO_KHR`  |
+
+1. **Windows (Vulkan)** — `VK_PRESENT_MODE_IMMEDIATE_KHR`
+   - **Mailbox:** `VK_PRESENT_MODE_MAILBOX_KHR`
+2. **Windows (DX12)** — `DXGI_SWAP_EFFECT_FLIP_DISCARD` + `SyncInterval=0`
+   - **Mailbox:** `DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT` + `SyncInterval=0` + 3
+     buffers
+3. **macOS (Metal)** — `CAMetalLayer.displaySyncEnabled = false`
+   - **Mailbox:** Manual frame pacing with `CAMetalLayer.maximumDrawableCount = 3`
+4. **Linux (Vulkan)** — `VK_PRESENT_MODE_IMMEDIATE_KHR`
+   - **Mailbox:** `VK_PRESENT_MODE_MAILBOX_KHR`
 
 ### Mobile and Console Platforms
 
-| Platform | Window API | Notes |
-|----------|-----------|-------|
-| iOS | `UIWindow` via Swift/cxx.rs | Single fullscreen window. `UIScreen` for display info. No resize. |
-| Android | `ANativeWindow` via NDK/bindgen | `NativeActivity` lifecycle. Surface created/destroyed events. |
-| Consoles | Platform SDK | Single fullscreen output. Vendor NDA APIs. |
+| Platform | Window API                      |
+|----------|---------------------------------|
+| iOS      | `UIWindow` via Swift/cxx.rs     |
+| Android  | `ANativeWindow` via NDK/bindgen |
+| Consoles | Platform SDK                    |
+
+1. **iOS** — Single fullscreen window. `UIScreen` for display info. No resize.
+2. **Android** — `NativeActivity` lifecycle. Surface created/destroyed events.
+3. **Consoles** — Single fullscreen output. Vendor NDA APIs.
 
 Mobile windowing is single-fullscreen-only. The `Window` abstraction degrades gracefully:
 `set_size`, `set_position`, and `set_mode` return `Err(Unsupported)` on platforms that do not
@@ -1167,41 +1228,106 @@ events (`onPause`, `onResume`) are mapped to `WindowEvent::FocusChanged`.
 
 ### Unit Tests
 
-| Test | Requirement | Description |
-|------|-------------|-------------|
-| `test_window_config_default` | R-14.1.1 | Verify `WindowConfig::default()` produces a 1280x720 windowed config with FIFO, HDR disabled, and system-scaled DPI policy. |
-| `test_logical_to_physical_100` | R-14.1.4 | At 1.0 scale factor, `LogicalSize(1280, 720).to_physical(1.0)` equals `PhysicalSize(1280, 720)`. |
-| `test_logical_to_physical_125` | R-14.1.4 | At 1.25 scale factor, `LogicalSize(1280, 720).to_physical(1.25)` equals `PhysicalSize(1600, 900)`. |
-| `test_logical_to_physical_150` | R-14.1.4 | At 1.5 scale factor, `LogicalSize(1280, 720).to_physical(1.5)` equals `PhysicalSize(1920, 1080)`. |
-| `test_logical_to_physical_200` | R-14.1.4 | At 2.0 scale factor, `LogicalSize(1280, 720).to_physical(2.0)` equals `PhysicalSize(2560, 1440)`. |
-| `test_hdr_config_disabled` | R-14.1.6 | `HdrConfig::disabled()` has `enabled == false`, `color_space == Srgb`, `peak_luminance_nits == 80.0`. |
-| `test_hdr_config_platform_default_windows` | R-14.1.6 | On Windows, `HdrConfig::platform_default(1000.0)` selects `ScRgb` with 1000 nits. |
-| `test_hdr_config_platform_default_macos` | R-14.1.6 | On macOS, `HdrConfig::platform_default(1000.0)` selects `ExtendedLinearSrgb`. |
-| `test_hdr_config_platform_default_linux` | R-14.1.6 | On Linux, `HdrConfig::platform_default(1000.0)` selects `Bt2020Pq`. |
-| `test_display_id_equality` | R-14.1.3 | Two `DisplayId` values with the same inner value are equal; different values are not. |
-| `test_present_mode_variants` | R-14.1.5 | Verify `PresentMode` has exactly three variants: `Immediate`, `Fifo`, `Mailbox`. |
-| `test_frame_rate_cap_variants` | R-14.1.5 | Verify `FrameRateCap::Capped(30)` and `FrameRateCap::Uncapped` are distinct. |
+| Test                                       | Requirement |
+|--------------------------------------------|-------------|
+| `test_window_config_default`               | R-14.1.1    |
+| `test_logical_to_physical_100`             | R-14.1.4    |
+| `test_logical_to_physical_125`             | R-14.1.4    |
+| `test_logical_to_physical_150`             | R-14.1.4    |
+| `test_logical_to_physical_200`             | R-14.1.4    |
+| `test_hdr_config_disabled`                 | R-14.1.6    |
+| `test_hdr_config_platform_default_windows` | R-14.1.6    |
+| `test_hdr_config_platform_default_macos`   | R-14.1.6    |
+| `test_hdr_config_platform_default_linux`   | R-14.1.6    |
+| `test_display_id_equality`                 | R-14.1.3    |
+| `test_present_mode_variants`               | R-14.1.5    |
+| `test_frame_rate_cap_variants`             | R-14.1.5    |
+
+1. **`test_window_config_default`** — Verify `WindowConfig::default()` produces a 1280x720 windowed
+   config with FIFO, HDR disabled, and system-scaled DPI policy.
+2. **`test_logical_to_physical_100`** — At 1.0 scale factor,
+   `LogicalSize(1280, 720).to_physical(1.0)` equals `PhysicalSize(1280, 720)`.
+3. **`test_logical_to_physical_125`** — At 1.25 scale factor,
+   `LogicalSize(1280, 720).to_physical(1.25)` equals `PhysicalSize(1600, 900)`.
+4. **`test_logical_to_physical_150`** — At 1.5 scale factor,
+   `LogicalSize(1280, 720).to_physical(1.5)` equals `PhysicalSize(1920, 1080)`.
+5. **`test_logical_to_physical_200`** — At 2.0 scale factor,
+   `LogicalSize(1280, 720).to_physical(2.0)` equals `PhysicalSize(2560, 1440)`.
+6. **`test_hdr_config_disabled`** — `HdrConfig::disabled()` has `enabled == false`,
+   `color_space == Srgb`, `peak_luminance_nits == 80.0`.
+7. **`test_hdr_config_platform_default_windows`** — On Windows,
+   `HdrConfig::platform_default(1000.0)` selects `ScRgb` with 1000 nits.
+8. **`test_hdr_config_platform_default_macos`** — On macOS, `HdrConfig::platform_default(1000.0)`
+   selects `ExtendedLinearSrgb`.
+9. **`test_hdr_config_platform_default_linux`** — On Linux, `HdrConfig::platform_default(1000.0)`
+   selects `Bt2020Pq`.
+10. **`test_display_id_equality`** — Two `DisplayId` values with the same inner value are equal;
+    different values are not.
+11. **`test_present_mode_variants`** — Verify `PresentMode` has exactly three variants: `Immediate`,
+    `Fifo`, `Mailbox`.
+12. **`test_frame_rate_cap_variants`** — Verify `FrameRateCap::Capped(30)` and
+    `FrameRateCap::Uncapped` are distinct.
 
 ### Integration Tests
 
-| Test | Requirement | Description |
-|------|-------------|-------------|
-| `test_window_lifecycle` | R-14.1.1 | On each platform, create a window, resize to 1920x1080, minimize, maximize, restore, and destroy. Assert each state transition emits the correct `WindowEvent` and dimensions match after resize. |
-| `test_auxiliary_window` | R-14.1.1 | Create a primary window and an auxiliary window. Verify they operate independently — resizing one does not affect the other. Destroy auxiliary first, verify primary continues. |
-| `test_fullscreen_cycle_no_device_loss` | R-14.1.2 | On each platform, cycle: Windowed -> BorderlessFullscreen -> ExclusiveFullscreen -> Windowed. Assert no GPU device loss occurs. Assert the rendered frame is visible within two VSync intervals of each transition. Verify backbuffer resolution matches display resolution in fullscreen modes. |
-| `test_borderless_alt_tab` | R-14.1.2 | In borderless fullscreen, simulate Alt+Tab, verify the window loses focus without mode change and regains focus on return. |
-| `test_display_enumeration` | R-14.1.3 | On a multi-monitor system, enumerate displays. Assert each reports valid resolution (> 0x0), refresh rate (> 0), and position. Assert at least one display is marked primary. |
-| `test_display_hot_plug` | R-14.1.3 | Simulate a display connect/disconnect event. Verify re-enumeration fires within one frame. Assert the display list updates correctly. |
-| `test_window_move_to_display` | R-14.1.3 | Programmatically move the window to each enumerated display. Assert `current_display()` returns the target display after each move. |
-| `test_dpi_change_multi_monitor` | R-14.1.4 | On a dual-monitor system with different DPI values (e.g., 96 and 192), drag the window between monitors. Assert `DpiChanged` event fires with correct old and new scale factors. Assert `current_dpi()` updates within one frame. |
-| `test_fractional_dpi_scaling` | R-14.1.4 | Render UI text and buttons at 100%, 125%, 150%, and 200% scale. Assert text is rendered at native resolution (no bilinear blur). Assert button hit regions match their visual bounds within 1 pixel. |
-| `test_vsync_fifo_frame_pacing` | R-14.1.5 | Set `PresentMode::Fifo`, render 300 frames, measure frame times. Assert frame intervals match VSync period within 0.5 ms tolerance. |
-| `test_vsync_mailbox_no_tearing` | R-14.1.5 | Set `PresentMode::Mailbox`, render 300 frames. Assert no tearing artifacts via scanline-based detection. |
-| `test_frame_rate_cap_30fps` | R-14.1.5 | Set `FrameRateCap::Capped(30)` on a 60 Hz display. Render 300 frames, assert frame intervals are 33.3 ms within 1 ms tolerance. |
-| `test_hdr_swapchain_format` | R-14.1.6 | On an HDR-capable display, enable HDR. Assert the swapchain reports an HDR-compatible format (scRGB/FP16 on Windows, extended linear sRGB on macOS). |
-| `test_hdr_above_1_not_clipped` | R-14.1.6 | With HDR enabled, render a test pattern with pixel values above 1.0. Capture the output and verify values are not clipped. |
-| `test_hdr_peak_luminance_metadata` | R-14.1.6 | Enable HDR with `peak_luminance_nits = 1000.0`. Verify the OS-reported metadata matches the display's reported capability. |
-| `test_hdr_unsupported_display` | R-14.1.6 | On an SDR-only display, call `enable_hdr()`. Assert it returns `HdrError::DisplayNotHdrCapable`. |
+| Test                                   | Requirement |
+|----------------------------------------|-------------|
+| `test_window_lifecycle`                | R-14.1.1    |
+| `test_auxiliary_window`                | R-14.1.1    |
+| `test_fullscreen_cycle_no_device_loss` | R-14.1.2    |
+| `test_borderless_alt_tab`              | R-14.1.2    |
+| `test_display_enumeration`             | R-14.1.3    |
+| `test_display_hot_plug`                | R-14.1.3    |
+| `test_window_move_to_display`          | R-14.1.3    |
+| `test_dpi_change_multi_monitor`        | R-14.1.4    |
+| `test_fractional_dpi_scaling`          | R-14.1.4    |
+| `test_vsync_fifo_frame_pacing`         | R-14.1.5    |
+| `test_vsync_mailbox_no_tearing`        | R-14.1.5    |
+| `test_frame_rate_cap_30fps`            | R-14.1.5    |
+| `test_hdr_swapchain_format`            | R-14.1.6    |
+| `test_hdr_above_1_not_clipped`         | R-14.1.6    |
+| `test_hdr_peak_luminance_metadata`     | R-14.1.6    |
+| `test_hdr_unsupported_display`         | R-14.1.6    |
+
+1. **`test_window_lifecycle`** — On each platform, create a window, resize to 1920x1080, minimize,
+   maximize, restore, and destroy. Assert each state transition emits the correct `WindowEvent` and
+   dimensions match after resize.
+2. **`test_auxiliary_window`** — Create a primary window and an auxiliary window. Verify they
+   operate independently — resizing one does not affect the other. Destroy auxiliary first, verify
+   primary continues.
+3. **`test_fullscreen_cycle_no_device_loss`** — On each platform, cycle: Windowed ->
+   BorderlessFullscreen -> ExclusiveFullscreen -> Windowed. Assert no GPU device loss occurs. Assert
+   the rendered frame is visible within two VSync intervals of each transition. Verify backbuffer
+   resolution matches display resolution in fullscreen modes.
+4. **`test_borderless_alt_tab`** — In borderless fullscreen, simulate Alt+Tab, verify the window
+   loses focus without mode change and regains focus on return.
+5. **`test_display_enumeration`** — On a multi-monitor system, enumerate displays. Assert each
+   reports valid resolution (> 0x0), refresh rate (> 0), and position. Assert at least one display
+   is marked primary.
+6. **`test_display_hot_plug`** — Simulate a display connect/disconnect event. Verify re-enumeration
+   fires within one frame. Assert the display list updates correctly.
+7. **`test_window_move_to_display`** — Programmatically move the window to each enumerated display.
+   Assert `current_display()` returns the target display after each move.
+8. **`test_dpi_change_multi_monitor`** — On a dual-monitor system with different DPI values (e.g.,
+   96 and 192), drag the window between monitors. Assert `DpiChanged` event fires with correct old
+   and new scale factors. Assert `current_dpi()` updates within one frame.
+9. **`test_fractional_dpi_scaling`** — Render UI text and buttons at 100%, 125%, 150%, and 200%
+   scale. Assert text is rendered at native resolution (no bilinear blur). Assert button hit regions
+   match their visual bounds within 1 pixel.
+10. **`test_vsync_fifo_frame_pacing`** — Set `PresentMode::Fifo`, render 300 frames, measure frame
+    times. Assert frame intervals match VSync period within 0.5 ms tolerance.
+11. **`test_vsync_mailbox_no_tearing`** — Set `PresentMode::Mailbox`, render 300 frames. Assert no
+    tearing artifacts via scanline-based detection.
+12. **`test_frame_rate_cap_30fps`** — Set `FrameRateCap::Capped(30)` on a 60 Hz display. Render 300
+    frames, assert frame intervals are 33.3 ms within 1 ms tolerance.
+13. **`test_hdr_swapchain_format`** — On an HDR-capable display, enable HDR. Assert the swapchain
+    reports an HDR-compatible format (scRGB/FP16 on Windows, extended linear sRGB on macOS).
+14. **`test_hdr_above_1_not_clipped`** — With HDR enabled, render a test pattern with pixel values
+    above 1.0. Capture the output and verify values are not clipped.
+15. **`test_hdr_peak_luminance_metadata`** — Enable HDR with `peak_luminance_nits = 1000.0`. Verify
+    the OS-reported metadata matches the display's reported capability.
+16. **`test_hdr_unsupported_display`** — On an SDR-only display, call `enable_hdr()`. Assert it
+    returns `HdrError::DisplayNotHdrCapable`.
 
 ### Benchmarks
 
@@ -1303,9 +1429,19 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
 
 ## Proposed Dependencies
 
-| Crate | Version | Purpose | Justification |
-|-------|---------|---------|---------------|
-| `raw-window-handle` | latest | Platform-native handle interop | De facto standard trait for passing native window handles to GPU backends (wgpu, ash, metal-rs). Zero-cost abstraction — trait implementations on our `RawWindowHandle` enum. Independent of any windowing library. |
-| `windows-sys` | latest | Win32 API bindings (Windows) | Zero-cost FFI for `CreateWindowEx`, `SetWindowPos`, DXGI output enumeration, `SetProcessDpiAwarenessContext`, HDR metadata APIs. Used only via `cfg(target_os = "windows")`. |
-| `cxx` | latest | Swift/C++ FFI bridge (macOS) | Enables calling Swift wrappers for `NSWindow`, `NSScreen`, `CAMetalLayer`, and `NSApplication` from Rust. Used only via `cfg(target_os = "macos")`. |
-| `bindgen` | latest | C FFI bindings (Linux, build) | Generates Rust bindings for xcb (X11) and Wayland client libraries at build time. Used only via `cfg(target_os = "linux")`. |
+| Crate               | Version | Purpose                        |
+|---------------------|---------|--------------------------------|
+| `raw-window-handle` | latest  | Platform-native handle interop |
+| `windows-sys`       | latest  | Win32 API bindings (Windows)   |
+| `cxx`               | latest  | Swift/C++ FFI bridge (macOS)   |
+| `bindgen`           | latest  | C FFI bindings (Linux, build)  |
+
+1. **`raw-window-handle`** — De facto standard trait for passing native window handles to GPU
+   backends (wgpu, ash, metal-rs). Zero-cost abstraction — trait implementations on our
+   `RawWindowHandle` enum. Independent of any windowing library.
+2. **`windows-sys`** — Zero-cost FFI for `CreateWindowEx`, `SetWindowPos`, DXGI output enumeration,
+   `SetProcessDpiAwarenessContext`, HDR metadata APIs. Used only via `cfg(target_os = "windows")`.
+3. **`cxx`** — Enables calling Swift wrappers for `NSWindow`, `NSScreen`, `CAMetalLayer`, and
+   `NSApplication` from Rust. Used only via `cfg(target_os = "macos")`.
+4. **`bindgen`** — Generates Rust bindings for xcb (X11) and Wayland client libraries at build time.
+   Used only via `cfg(target_os = "linux")`.

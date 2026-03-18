@@ -25,7 +25,8 @@ if [ -f CMakeLists.txt ]; then
   else
     PRESET="windows-debug-d3d12"
   fi
-  cmake --preset "$PRESET" 2>&1 || FAILED=1
+  VCPKG_FEATURE_FLAGS="-registries" \
+    cmake --preset "$PRESET" 2>&1 || FAILED=1
   cmake --build --preset "$PRESET" 2>&1 || FAILED=1
 else
   echo "  (skipped — no CMakeLists.txt)"

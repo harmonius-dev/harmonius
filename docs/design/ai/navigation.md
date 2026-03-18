@@ -7,23 +7,39 @@
 > [user-stories/ai/](../../user-stories/ai/). The table below traces design elements to those
 > definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-7.1.1 | R-7.1.1 | US-7.1.1.1 -- US-7.1.1.12 | Recast-style voxelization NavMesh generation with configurable agent params |
-| F-7.1.2 | R-7.1.2 | US-7.1.2.1 -- US-7.1.2.12 | Fixed-size NavMesh tiles aligned to world streaming grid |
-| F-7.1.3 | R-7.1.3 | US-7.1.3.1 -- US-7.1.3.12 | A* pathfinding with area-type costs and per-tick CPU budget |
-| F-7.1.4 | R-7.1.4 | US-7.1.4.1 -- US-7.1.4.12 | Funnel algorithm converting polygon corridors to minimal waypoints |
-| F-7.1.5 | R-7.1.5 | US-7.1.5.1 -- US-7.1.5.12 | Path smoothing with Catmull-Rom/Bezier interpolation |
-| F-7.1.6 | R-7.1.6 | US-7.1.6.1 -- US-7.1.6.12 | Dynamic obstacle carving with tile-local re-carving |
-| F-7.1.7 | R-7.1.7 | US-7.1.7.1 -- US-7.1.7.12 | Off-mesh links for jumps, ladders, doors, swimming |
-| F-7.1.8 | R-7.1.8 | US-7.1.8.1 -- US-7.1.8.12 | Incremental tile rebuild on geometry change |
-| F-7.1.9 | R-7.1.9 | US-7.1.9.1 -- US-7.1.9.12 | Background NavMesh generation on worker threads |
-| F-7.1.10 | R-7.1.10 | US-7.1.10.1 -- US-7.1.10.12 | Destruction-triggered NavMesh invalidation and rebuild |
-| F-7.1.11 | R-7.1.11 | US-7.1.11.1 -- US-7.1.11.12 | Player-built structure NavMesh obstacle integration |
-| F-7.1.12 | R-7.1.12 | US-7.1.12.1 -- US-7.1.12.12 | Multiple NavMesh layers for different agent sizes |
-| F-7.1.13 | R-7.1.13 | US-7.1.13.1 -- US-7.1.13.12 | Runtime area cost modification without mesh rebuild |
-| F-7.1.14 | R-7.1.14 | US-7.1.14.1 -- US-7.1.14.12 | Hierarchical pathfinding (HPA*) for long-distance queries |
-| F-7.1.15 | R-7.1.15 | US-7.1.15.1 -- US-7.1.15.12 | Debug visualization of NavMesh, paths, and overlays |
+| Feature  | Requirement | User Stories                |
+|----------|-------------|-----------------------------|
+| F-7.1.1  | R-7.1.1     | US-7.1.1.1 -- US-7.1.1.12   |
+| F-7.1.2  | R-7.1.2     | US-7.1.2.1 -- US-7.1.2.12   |
+| F-7.1.3  | R-7.1.3     | US-7.1.3.1 -- US-7.1.3.12   |
+| F-7.1.4  | R-7.1.4     | US-7.1.4.1 -- US-7.1.4.12   |
+| F-7.1.5  | R-7.1.5     | US-7.1.5.1 -- US-7.1.5.12   |
+| F-7.1.6  | R-7.1.6     | US-7.1.6.1 -- US-7.1.6.12   |
+| F-7.1.7  | R-7.1.7     | US-7.1.7.1 -- US-7.1.7.12   |
+| F-7.1.8  | R-7.1.8     | US-7.1.8.1 -- US-7.1.8.12   |
+| F-7.1.9  | R-7.1.9     | US-7.1.9.1 -- US-7.1.9.12   |
+| F-7.1.10 | R-7.1.10    | US-7.1.10.1 -- US-7.1.10.12 |
+| F-7.1.11 | R-7.1.11    | US-7.1.11.1 -- US-7.1.11.12 |
+| F-7.1.12 | R-7.1.12    | US-7.1.12.1 -- US-7.1.12.12 |
+| F-7.1.13 | R-7.1.13    | US-7.1.13.1 -- US-7.1.13.12 |
+| F-7.1.14 | R-7.1.14    | US-7.1.14.1 -- US-7.1.14.12 |
+| F-7.1.15 | R-7.1.15    | US-7.1.15.1 -- US-7.1.15.12 |
+
+1. **F-7.1.1** — Recast-style voxelization NavMesh generation with configurable agent params
+2. **F-7.1.2** — Fixed-size NavMesh tiles aligned to world streaming grid
+3. **F-7.1.3** — A* pathfinding with area-type costs and per-tick CPU budget
+4. **F-7.1.4** — Funnel algorithm converting polygon corridors to minimal waypoints
+5. **F-7.1.5** — Path smoothing with Catmull-Rom/Bezier interpolation
+6. **F-7.1.6** — Dynamic obstacle carving with tile-local re-carving
+7. **F-7.1.7** — Off-mesh links for jumps, ladders, doors, swimming
+8. **F-7.1.8** — Incremental tile rebuild on geometry change
+9. **F-7.1.9** — Background NavMesh generation on worker threads
+10. **F-7.1.10** — Destruction-triggered NavMesh invalidation and rebuild
+11. **F-7.1.11** — Player-built structure NavMesh obstacle integration
+12. **F-7.1.12** — Multiple NavMesh layers for different agent sizes
+13. **F-7.1.13** — Runtime area cost modification without mesh rebuild
+14. **F-7.1.14** — Hierarchical pathfinding (HPA*) for long-distance queries
+15. **F-7.1.15** — Debug visualization of NavMesh, paths, and overlays
 
 ### Cross-Cutting Dependencies
 
@@ -1614,56 +1630,119 @@ default path is async-friendly stack-local search state.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_voxelize_flat_plane` | R-7.1.1 | Flat plane produces single walkable polygon covering full surface. |
-| `test_slope_exclusion` | R-7.1.1 | Surfaces exceeding max slope are excluded from NavMesh. |
-| `test_agent_radius_erosion` | R-7.1.1 | Narrow passage excluded for large-radius agent, included for small. |
-| `test_tile_coord_mapping` | R-7.1.2 | World position maps to correct TileCoord. |
-| `test_cross_tile_path` | R-7.1.2 | Path crossing tile boundary produces continuous corridor. |
-| `test_astar_optimal` | R-7.1.3 | A* produces shortest-cost path on known reference graph. |
-| `test_area_cost_routing` | R-7.1.3 | Agent prefers road (cost 0.5) over swamp (cost 3.0). |
-| `test_lava_impassable` | R-7.1.3 | Path avoids infinite-cost lava; returns NotFound if no alternative. |
-| `test_funnel_minimal_waypoints` | R-7.1.4 | Funnel output has fewer waypoints than corridor polygon count. |
-| `test_funnel_on_mesh` | R-7.1.4 | All funnel waypoints lie within NavMesh boundaries. |
-| `test_catmull_rom_on_mesh` | R-7.1.5 | All Catmull-Rom interpolated points lie on valid NavMesh polygons. |
-| `test_linear_fallback_mobile` | R-7.1.5 | Mobile config forces Linear even when CatmullRom requested. |
-| `test_carve_blocks_path` | R-7.1.6 | Carved obstacle blocks pathfinding through affected polygons. |
-| `test_uncarve_restores` | R-7.1.6 | Removing obstacle restores original polygon flags. |
-| `test_link_cost_included` | R-7.1.7 | Path cost includes off-mesh link traversal cost. |
-| `test_link_precondition` | R-7.1.7 | Agent without required ability cannot use precondition-gated link. |
-| `test_link_one_way` | R-7.1.7 | One-way link traversable forward only; reverse path avoids it. |
-| `test_incremental_rebuild_scope` | R-7.1.8 | Only affected tile and neighbors are rebuilt; others unchanged. |
-| `test_incremental_equals_full` | R-7.1.8 | Incremental rebuild produces identical result to full rebake. |
-| `test_pending_tile_fallback` | R-7.1.9 | Agent navigating pending tile uses stale data as fallback. |
-| `test_atomic_tile_swap` | R-7.1.9 | Tile swap is atomic; no partial tile data is ever readable. |
-| `test_destruction_opens_path` | R-7.1.10 | Destroying wall creates passable corridor through breach. |
-| `test_rubble_creates_obstacle` | R-7.1.10 | Rubble from destruction blocks pathfinding. |
-| `test_structure_blocks_path` | R-7.1.11 | Placed impassable structure blocks agent paths. |
-| `test_auto_link_ramp` | R-7.1.11 | Ramp structure auto-generates link from ground to platform. |
-| `test_multi_layer_isolation` | R-7.1.12 | Large agent cannot path through narrow doorway; small agent can. |
-| `test_layer_assignment` | R-7.1.12 | Agent queries only its assigned NavMesh layer. |
-| `test_dynamic_cost_reroute` | R-7.1.13 | Increasing area cost causes agent to choose alternate route. |
-| `test_faction_cost_override` | R-7.1.13 | Two agents with different faction overrides take different routes. |
-| `test_cost_change_no_rebuild` | R-7.1.13 | Cost modification does not trigger any tile rebuild. |
-| `test_hpa_valid_path` | R-7.1.14 | HPA* produces valid end-to-end path between distant points. |
-| `test_hpa_bounded_cost` | R-7.1.14 | 50-tile HPA* query completes within 2x time of 5-tile query. |
-| `test_cluster_update` | R-7.1.14 | Rebuilding one tile updates only its cluster in the graph. |
+| Test                             | Req      |
+|----------------------------------|----------|
+| `test_voxelize_flat_plane`       | R-7.1.1  |
+| `test_slope_exclusion`           | R-7.1.1  |
+| `test_agent_radius_erosion`      | R-7.1.1  |
+| `test_tile_coord_mapping`        | R-7.1.2  |
+| `test_cross_tile_path`           | R-7.1.2  |
+| `test_astar_optimal`             | R-7.1.3  |
+| `test_area_cost_routing`         | R-7.1.3  |
+| `test_lava_impassable`           | R-7.1.3  |
+| `test_funnel_minimal_waypoints`  | R-7.1.4  |
+| `test_funnel_on_mesh`            | R-7.1.4  |
+| `test_catmull_rom_on_mesh`       | R-7.1.5  |
+| `test_linear_fallback_mobile`    | R-7.1.5  |
+| `test_carve_blocks_path`         | R-7.1.6  |
+| `test_uncarve_restores`          | R-7.1.6  |
+| `test_link_cost_included`        | R-7.1.7  |
+| `test_link_precondition`         | R-7.1.7  |
+| `test_link_one_way`              | R-7.1.7  |
+| `test_incremental_rebuild_scope` | R-7.1.8  |
+| `test_incremental_equals_full`   | R-7.1.8  |
+| `test_pending_tile_fallback`     | R-7.1.9  |
+| `test_atomic_tile_swap`          | R-7.1.9  |
+| `test_destruction_opens_path`    | R-7.1.10 |
+| `test_rubble_creates_obstacle`   | R-7.1.10 |
+| `test_structure_blocks_path`     | R-7.1.11 |
+| `test_auto_link_ramp`            | R-7.1.11 |
+| `test_multi_layer_isolation`     | R-7.1.12 |
+| `test_layer_assignment`          | R-7.1.12 |
+| `test_dynamic_cost_reroute`      | R-7.1.13 |
+| `test_faction_cost_override`     | R-7.1.13 |
+| `test_cost_change_no_rebuild`    | R-7.1.13 |
+| `test_hpa_valid_path`            | R-7.1.14 |
+| `test_hpa_bounded_cost`          | R-7.1.14 |
+| `test_cluster_update`            | R-7.1.14 |
+
+1. **`test_voxelize_flat_plane`** — Flat plane produces single walkable polygon covering full
+   surface.
+2. **`test_slope_exclusion`** — Surfaces exceeding max slope are excluded from NavMesh.
+3. **`test_agent_radius_erosion`** — Narrow passage excluded for large-radius agent, included for
+   small.
+4. **`test_tile_coord_mapping`** — World position maps to correct TileCoord.
+5. **`test_cross_tile_path`** — Path crossing tile boundary produces continuous corridor.
+6. **`test_astar_optimal`** — A* produces shortest-cost path on known reference graph.
+7. **`test_area_cost_routing`** — Agent prefers road (cost 0.5) over swamp (cost 3.0).
+8. **`test_lava_impassable`** — Path avoids infinite-cost lava; returns NotFound if no alternative.
+9. **`test_funnel_minimal_waypoints`** — Funnel output has fewer waypoints than corridor polygon
+   count.
+10. **`test_funnel_on_mesh`** — All funnel waypoints lie within NavMesh boundaries.
+11. **`test_catmull_rom_on_mesh`** — All Catmull-Rom interpolated points lie on valid NavMesh
+    polygons.
+12. **`test_linear_fallback_mobile`** — Mobile config forces Linear even when CatmullRom requested.
+13. **`test_carve_blocks_path`** — Carved obstacle blocks pathfinding through affected polygons.
+14. **`test_uncarve_restores`** — Removing obstacle restores original polygon flags.
+15. **`test_link_cost_included`** — Path cost includes off-mesh link traversal cost.
+16. **`test_link_precondition`** — Agent without required ability cannot use precondition-gated
+    link.
+17. **`test_link_one_way`** — One-way link traversable forward only; reverse path avoids it.
+18. **`test_incremental_rebuild_scope`** — Only affected tile and neighbors are rebuilt; others
+    unchanged.
+19. **`test_incremental_equals_full`** — Incremental rebuild produces identical result to full
+    rebake.
+20. **`test_pending_tile_fallback`** — Agent navigating pending tile uses stale data as fallback.
+21. **`test_atomic_tile_swap`** — Tile swap is atomic; no partial tile data is ever readable.
+22. **`test_destruction_opens_path`** — Destroying wall creates passable corridor through breach.
+23. **`test_rubble_creates_obstacle`** — Rubble from destruction blocks pathfinding.
+24. **`test_structure_blocks_path`** — Placed impassable structure blocks agent paths.
+25. **`test_auto_link_ramp`** — Ramp structure auto-generates link from ground to platform.
+26. **`test_multi_layer_isolation`** — Large agent cannot path through narrow doorway; small agent
+    can.
+27. **`test_layer_assignment`** — Agent queries only its assigned NavMesh layer.
+28. **`test_dynamic_cost_reroute`** — Increasing area cost causes agent to choose alternate route.
+29. **`test_faction_cost_override`** — Two agents with different faction overrides take different
+    routes.
+30. **`test_cost_change_no_rebuild`** — Cost modification does not trigger any tile rebuild.
+31. **`test_hpa_valid_path`** — HPA* produces valid end-to-end path between distant points.
+32. **`test_hpa_bounded_cost`** — 50-tile HPA* query completes within 2x time of 5-tile query.
+33. **`test_cluster_update`** — Rebuilding one tile updates only its cluster in the graph.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_path_request_lifecycle` | R-7.1.3 | Full ECS lifecycle: PathRequest added, PathResult produced, PathRequest removed. |
-| `test_obstacle_carve_repath` | R-7.1.6 | Obstacle placed in agent's path triggers automatic repath to alternate route. |
-| `test_destruction_rebuild_repath` | R-7.1.10 | Destruction event triggers rebuild, then agents repath through breach. |
-| `test_tile_streaming_load_unload` | R-7.1.2 | Moving agent causes tiles to stream in ahead and unload behind. |
-| `test_background_gen_no_block` | R-7.1.9 | Main-thread frame time does not increase > 5% during background generation. |
-| `test_multi_agent_parallel` | R-7.1.3 | 128 concurrent path queries all produce correct results under ThreadSanitizer. |
-| `test_structure_place_remove_cycle` | R-7.1.11 | Place structure, verify blocked, remove, verify restored. |
-| `test_hpa_cross_continent` | R-7.1.14 | 1000 agents with cross-continent goals all receive valid paths within server budget. |
-| `test_carve_throttle_mobile` | R-7.1.6 | Mobile config limits carve operations to 4 per tick. |
-| `test_rebuild_priority_ordering` | R-7.1.10 | Tiles with more affected agents rebuild before tiles with fewer. |
+| Test                                | Req      |
+|-------------------------------------|----------|
+| `test_path_request_lifecycle`       | R-7.1.3  |
+| `test_obstacle_carve_repath`        | R-7.1.6  |
+| `test_destruction_rebuild_repath`   | R-7.1.10 |
+| `test_tile_streaming_load_unload`   | R-7.1.2  |
+| `test_background_gen_no_block`      | R-7.1.9  |
+| `test_multi_agent_parallel`         | R-7.1.3  |
+| `test_structure_place_remove_cycle` | R-7.1.11 |
+| `test_hpa_cross_continent`          | R-7.1.14 |
+| `test_carve_throttle_mobile`        | R-7.1.6  |
+| `test_rebuild_priority_ordering`    | R-7.1.10 |
+
+1. **`test_path_request_lifecycle`** — Full ECS lifecycle: PathRequest added, PathResult produced,
+   PathRequest removed.
+2. **`test_obstacle_carve_repath`** — Obstacle placed in agent's path triggers automatic repath to
+   alternate route.
+3. **`test_destruction_rebuild_repath`** — Destruction event triggers rebuild, then agents repath
+   through breach.
+4. **`test_tile_streaming_load_unload`** — Moving agent causes tiles to stream in ahead and unload
+   behind.
+5. **`test_background_gen_no_block`** — Main-thread frame time does not increase > 5% during
+   background generation.
+6. **`test_multi_agent_parallel`** — 128 concurrent path queries all produce correct results under
+   ThreadSanitizer.
+7. **`test_structure_place_remove_cycle`** — Place structure, verify blocked, remove, verify
+   restored.
+8. **`test_hpa_cross_continent`** — 1000 agents with cross-continent goals all receive valid paths
+   within server budget.
+9. **`test_carve_throttle_mobile`** — Mobile config limits carve operations to 4 per tick.
+10. **`test_rebuild_priority_ordering`** — Tiles with more affected agents rebuild before tiles with
+    fewer.
 
 ### Benchmarks
 

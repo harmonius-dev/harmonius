@@ -8,17 +8,27 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-13.10.1 | R-13.10.1 | US-13.10.1.1 -- US-13.10.1.5 | Data-driven ability composition from modular building blocks |
-| F-13.10.2 | R-13.10.2 | US-13.10.2.1 -- US-13.10.2.5 | Ability activation modes with input integration |
-| F-13.10.3 | R-13.10.3 | US-13.10.3.1 -- US-13.10.3.5 | Composable gameplay effect system |
-| F-13.10.4 | R-13.10.4 | US-13.10.4.1 -- US-13.10.4.5 | Animation-driven melee combat |
-| F-13.10.5 | R-13.10.5 | US-13.10.5.1 -- US-13.10.5.5 | Projectile-based ranged combat |
-| F-13.10.6 | R-13.10.6 | US-13.10.6.1 -- US-13.10.6.5 | Hitbox and hurtbox system |
-| -- | R-13.10.NF1 | -- | 64 concurrent effects per entity under 0.1 ms |
-| -- | R-13.10.NF2 | -- | Ability activation within 1 frame of input |
-| -- | R-13.10.NF3 | -- | Melee hit detection within 1 frame of anim event |
+| Feature   | Requirement | User Stories                 |
+|-----------|-------------|------------------------------|
+| F-13.10.1 | R-13.10.1   | US-13.10.1.1 -- US-13.10.1.5 |
+| F-13.10.2 | R-13.10.2   | US-13.10.2.1 -- US-13.10.2.5 |
+| F-13.10.3 | R-13.10.3   | US-13.10.3.1 -- US-13.10.3.5 |
+| F-13.10.4 | R-13.10.4   | US-13.10.4.1 -- US-13.10.4.5 |
+| F-13.10.5 | R-13.10.5   | US-13.10.5.1 -- US-13.10.5.5 |
+| F-13.10.6 | R-13.10.6   | US-13.10.6.1 -- US-13.10.6.5 |
+| --        | R-13.10.NF1 | --                           |
+| --        | R-13.10.NF2 | --                           |
+| --        | R-13.10.NF3 | --                           |
+
+1. **F-13.10.1** — Data-driven ability composition from modular building blocks
+2. **F-13.10.2** — Ability activation modes with input integration
+3. **F-13.10.3** — Composable gameplay effect system
+4. **F-13.10.4** — Animation-driven melee combat
+5. **F-13.10.5** — Projectile-based ranged combat
+6. **F-13.10.6** — Hitbox and hurtbox system
+7. **--** — 64 concurrent effects per entity under 0.1 ms
+8. **--** — Ability activation within 1 frame of input
+9. **--** — Melee hit detection within 1 frame of anim event
 
 ## Overview
 
@@ -937,66 +947,142 @@ Each step is a separate ability with its own hitbox timing, damage, and animatio
 
 ## Platform Considerations
 
-| Component | Platform Impact | Notes |
-|-----------|----------------|-------|
-| Shared spatial index | All platforms | Shape casts for hitboxes and projectile CCD use the same BVH/octree shared with physics, rendering, and networking |
-| Gameplay tags | All platforms | 128-bit bitmask operations are 2 instructions on all targets (AND, CMP) |
-| Effect evaluation | All platforms | Tight loop over SmallVec; cache-friendly iteration |
-| Lag compensation | Server only | Historical snapshot ring buffer consumes memory proportional to max compensated latency |
-| Aim assist | Gamepad only | Active only when gamepad input is detected; no overhead on keyboard/mouse |
-| Visual ability editor | Editor only | Desktop editor surfaces; not compiled into runtime |
+| Component             | Platform Impact |
+|-----------------------|-----------------|
+| Shared spatial index  | All platforms   |
+| Gameplay tags         | All platforms   |
+| Effect evaluation     | All platforms   |
+| Lag compensation      | Server only     |
+| Aim assist            | Gamepad only    |
+| Visual ability editor | Editor only     |
+
+1. **Shared spatial index** — Shape casts for hitboxes and projectile CCD use the same BVH/octree
+   shared with physics, rendering, and networking
+2. **Gameplay tags** — 128-bit bitmask operations are 2 instructions on all targets (AND, CMP)
+3. **Effect evaluation** — Tight loop over SmallVec; cache-friendly iteration
+4. **Lag compensation** — Historical snapshot ring buffer consumes memory proportional to max
+   compensated latency
+5. **Aim assist** — Active only when gamepad input is detected; no overhead on keyboard/mouse
+6. **Visual ability editor** — Desktop editor surfaces; not compiled into runtime
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_tag_set_operations` | R-13.10.1 | Insert, remove, union, intersection, has_any, has_all on GameplayTagSet. Verify O(1) bitmask behavior. |
-| `test_ability_activation_press` | R-13.10.2 | Activate a press-mode ability. Verify resource deducted, cooldown started, animation triggered. |
-| `test_activation_rejected_cooldown` | R-13.10.2 | Attempt activation while on cooldown. Verify rejection with remaining time. |
-| `test_activation_rejected_resource` | R-13.10.2 | Attempt activation with insufficient mana. Verify rejection with required vs current amounts. |
-| `test_activation_rejected_blocked_tag` | R-13.10.2 | Attempt activation while stunned (blocked tag present). Verify rejection. |
-| `test_hold_activation` | R-13.10.2 | Activate hold-mode ability. Verify active while held, deactivates on release. |
-| `test_charge_activation` | R-13.10.2 | Charge ability for varying durations. Verify power scales with charge time, capped at max. |
-| `test_toggle_activation` | R-13.10.2 | Press toggle ability twice. Verify activates on first, deactivates on second. |
-| `test_combo_chain_advance` | R-13.10.2 | Execute 3-step combo within timing windows. Verify each step fires the correct ability. |
-| `test_combo_window_expiry` | R-13.10.2 | Let combo window expire between steps. Verify reset to step 0. |
-| `test_ai_synthetic_input` | R-13.10.2 | AI sends ActivateAbilityRequest. Verify identical execution path to player input. |
-| `test_effect_instant_damage` | R-13.10.3 | Apply instant 50 damage. Verify health reduced by 50. |
-| `test_effect_duration_buff` | R-13.10.3 | Apply 30% speed buff for 5s. Verify speed increased, then restored after expiry. |
-| `test_effect_periodic_heal` | R-13.10.3 | Apply heal 10 HP every 2s for 10s. Verify exactly 5 ticks. |
-| `test_stacking_additive` | R-13.10.3 | Apply two +10 damage bonuses. Verify total bonus is +20. |
-| `test_stacking_multiplicative` | R-13.10.3 | Apply 1.2x and 1.5x multipliers. Verify total is 1.8x. |
-| `test_stacking_highest_wins` | R-13.10.3 | Apply +15% and +25% buffs. Verify only +25% applies. |
-| `test_stacking_non_stacking` | R-13.10.3 | Reapply same debuff. Verify duration refreshed, magnitude unchanged. |
-| `test_tag_interaction_fire_frozen` | R-13.10.3 | Apply fire damage to frozen target. Verify frozen debuff removed. |
-| `test_hitbox_activation_timing` | R-13.10.4 | Play attack animation. Verify hitbox active only during defined window. |
-| `test_hurtbox_head_multiplier` | R-13.10.4 | Strike head hurtbox (x2). Verify damage doubled. |
-| `test_hurtbox_limb_multiplier` | R-13.10.4 | Strike limb hurtbox (x0.75). Verify damage reduced. |
-| `test_directional_back_bonus` | R-13.10.4 | Attack from behind. Verify back-attack multiplier applied. |
-| `test_multi_hit_prevention` | R-13.10.4 | Swing through same target twice. Verify only one hit per swing. |
-| `test_hit_stop_time_dilation` | R-13.10.4 | Land a melee hit. Verify time scale reduced for configured duration. |
-| `test_projectile_linear` | R-13.10.5 | Fire linear projectile. Verify straight-line travel. |
-| `test_projectile_arced` | R-13.10.5 | Fire arced projectile. Verify parabolic trajectory under gravity. |
-| `test_projectile_homing` | R-13.10.5 | Fire homing projectile at moving target. Verify course correction. |
-| `test_projectile_spread` | R-13.10.5 | Fire spread projectile. Verify correct pellet count within cone angle. |
-| `test_projectile_ccd` | R-13.10.5 | Fire fast projectile at thin wall. Verify CCD prevents tunneling. |
-| `test_projectile_effect_payload` | R-13.10.5 | Projectile impacts target. Verify effect payload applies. |
-| `test_aim_assist_magnetism` | R-13.10.5 | Aim near target with gamepad. Verify aim snaps within radius. |
+| Test                                   | Req       |
+|----------------------------------------|-----------|
+| `test_tag_set_operations`              | R-13.10.1 |
+| `test_ability_activation_press`        | R-13.10.2 |
+| `test_activation_rejected_cooldown`    | R-13.10.2 |
+| `test_activation_rejected_resource`    | R-13.10.2 |
+| `test_activation_rejected_blocked_tag` | R-13.10.2 |
+| `test_hold_activation`                 | R-13.10.2 |
+| `test_charge_activation`               | R-13.10.2 |
+| `test_toggle_activation`               | R-13.10.2 |
+| `test_combo_chain_advance`             | R-13.10.2 |
+| `test_combo_window_expiry`             | R-13.10.2 |
+| `test_ai_synthetic_input`              | R-13.10.2 |
+| `test_effect_instant_damage`           | R-13.10.3 |
+| `test_effect_duration_buff`            | R-13.10.3 |
+| `test_effect_periodic_heal`            | R-13.10.3 |
+| `test_stacking_additive`               | R-13.10.3 |
+| `test_stacking_multiplicative`         | R-13.10.3 |
+| `test_stacking_highest_wins`           | R-13.10.3 |
+| `test_stacking_non_stacking`           | R-13.10.3 |
+| `test_tag_interaction_fire_frozen`     | R-13.10.3 |
+| `test_hitbox_activation_timing`        | R-13.10.4 |
+| `test_hurtbox_head_multiplier`         | R-13.10.4 |
+| `test_hurtbox_limb_multiplier`         | R-13.10.4 |
+| `test_directional_back_bonus`          | R-13.10.4 |
+| `test_multi_hit_prevention`            | R-13.10.4 |
+| `test_hit_stop_time_dilation`          | R-13.10.4 |
+| `test_projectile_linear`               | R-13.10.5 |
+| `test_projectile_arced`                | R-13.10.5 |
+| `test_projectile_homing`               | R-13.10.5 |
+| `test_projectile_spread`               | R-13.10.5 |
+| `test_projectile_ccd`                  | R-13.10.5 |
+| `test_projectile_effect_payload`       | R-13.10.5 |
+| `test_aim_assist_magnetism`            | R-13.10.5 |
+
+1. **`test_tag_set_operations`** — Insert, remove, union, intersection, has_any, has_all on
+   GameplayTagSet. Verify O(1) bitmask behavior.
+2. **`test_ability_activation_press`** — Activate a press-mode ability. Verify resource deducted,
+   cooldown started, animation triggered.
+3. **`test_activation_rejected_cooldown`** — Attempt activation while on cooldown. Verify rejection
+   with remaining time.
+4. **`test_activation_rejected_resource`** — Attempt activation with insufficient mana. Verify
+   rejection with required vs current amounts.
+5. **`test_activation_rejected_blocked_tag`** — Attempt activation while stunned (blocked tag
+   present). Verify rejection.
+6. **`test_hold_activation`** — Activate hold-mode ability. Verify active while held, deactivates on
+   release.
+7. **`test_charge_activation`** — Charge ability for varying durations. Verify power scales with
+   charge time, capped at max.
+8. **`test_toggle_activation`** — Press toggle ability twice. Verify activates on first, deactivates
+   on second.
+9. **`test_combo_chain_advance`** — Execute 3-step combo within timing windows. Verify each step
+   fires the correct ability.
+10. **`test_combo_window_expiry`** — Let combo window expire between steps. Verify reset to step 0.
+11. **`test_ai_synthetic_input`** — AI sends ActivateAbilityRequest. Verify identical execution path
+    to player input.
+12. **`test_effect_instant_damage`** — Apply instant 50 damage. Verify health reduced by 50.
+13. **`test_effect_duration_buff`** — Apply 30% speed buff for 5s. Verify speed increased, then
+    restored after expiry.
+14. **`test_effect_periodic_heal`** — Apply heal 10 HP every 2s for 10s. Verify exactly 5 ticks.
+15. **`test_stacking_additive`** — Apply two +10 damage bonuses. Verify total bonus is +20.
+16. **`test_stacking_multiplicative`** — Apply 1.2x and 1.5x multipliers. Verify total is 1.8x.
+17. **`test_stacking_highest_wins`** — Apply +15% and +25% buffs. Verify only +25% applies.
+18. **`test_stacking_non_stacking`** — Reapply same debuff. Verify duration refreshed, magnitude
+    unchanged.
+19. **`test_tag_interaction_fire_frozen`** — Apply fire damage to frozen target. Verify frozen
+    debuff removed.
+20. **`test_hitbox_activation_timing`** — Play attack animation. Verify hitbox active only during
+    defined window.
+21. **`test_hurtbox_head_multiplier`** — Strike head hurtbox (x2). Verify damage doubled.
+22. **`test_hurtbox_limb_multiplier`** — Strike limb hurtbox (x0.75). Verify damage reduced.
+23. **`test_directional_back_bonus`** — Attack from behind. Verify back-attack multiplier applied.
+24. **`test_multi_hit_prevention`** — Swing through same target twice. Verify only one hit per
+    swing.
+25. **`test_hit_stop_time_dilation`** — Land a melee hit. Verify time scale reduced for configured
+    duration.
+26. **`test_projectile_linear`** — Fire linear projectile. Verify straight-line travel.
+27. **`test_projectile_arced`** — Fire arced projectile. Verify parabolic trajectory under gravity.
+28. **`test_projectile_homing`** — Fire homing projectile at moving target. Verify course
+    correction.
+29. **`test_projectile_spread`** — Fire spread projectile. Verify correct pellet count within cone
+    angle.
+30. **`test_projectile_ccd`** — Fire fast projectile at thin wall. Verify CCD prevents tunneling.
+31. **`test_projectile_effect_payload`** — Projectile impacts target. Verify effect payload applies.
+32. **`test_aim_assist_magnetism`** — Aim near target with gamepad. Verify aim snaps within radius.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_ability_full_cycle` | R-13.10.1, NF2 | Activate ability, verify animation + VFX + effect all within 1 frame. |
-| `test_melee_full_pipeline` | R-13.10.4, NF3 | Swing weapon, verify hitbox activates, spatial query runs, damage applies, hit reaction plays -- all within 1 frame of animation event. |
-| `test_ranged_full_pipeline` | R-13.10.5 | Fire weapon, projectile flies, impacts target, effect applies, surface VFX spawns. |
-| `test_combo_into_ability` | R-13.10.2 | Execute combo chain where final step triggers a ranged projectile. Verify full combo-to-projectile flow. |
-| `test_64_concurrent_effects` | R-13.10.NF1 | Apply 64 effects to one entity. Verify all evaluate correctly within 0.1 ms. |
-| `test_40_entity_raid` | R-13.10.NF1 | 40 entities with 64 effects each. Verify total evaluation under 4 ms. |
-| `test_lag_comp_100ms` | R-13.10.6 | Simulate 100 ms latency. Verify server resolves hits against historical snapshots at client fire time. |
-| `test_shared_effect_component` | R-13.10.1 | Two abilities share a "Fire Damage" effect. Verify both produce identical damage. |
+| Test                           | Req            |
+|--------------------------------|----------------|
+| `test_ability_full_cycle`      | R-13.10.1, NF2 |
+| `test_melee_full_pipeline`     | R-13.10.4, NF3 |
+| `test_ranged_full_pipeline`    | R-13.10.5      |
+| `test_combo_into_ability`      | R-13.10.2      |
+| `test_64_concurrent_effects`   | R-13.10.NF1    |
+| `test_40_entity_raid`          | R-13.10.NF1    |
+| `test_lag_comp_100ms`          | R-13.10.6      |
+| `test_shared_effect_component` | R-13.10.1      |
+
+1. **`test_ability_full_cycle`** — Activate ability, verify animation + VFX + effect all within 1
+   frame.
+2. **`test_melee_full_pipeline`** — Swing weapon, verify hitbox activates, spatial query runs,
+   damage applies, hit reaction plays -- all within 1 frame of animation event.
+3. **`test_ranged_full_pipeline`** — Fire weapon, projectile flies, impacts target, effect applies,
+   surface VFX spawns.
+4. **`test_combo_into_ability`** — Execute combo chain where final step triggers a ranged
+   projectile. Verify full combo-to-projectile flow.
+5. **`test_64_concurrent_effects`** — Apply 64 effects to one entity. Verify all evaluate correctly
+   within 0.1 ms.
+6. **`test_40_entity_raid`** — 40 entities with 64 effects each. Verify total evaluation under 4 ms.
+7. **`test_lag_comp_100ms`** — Simulate 100 ms latency. Verify server resolves hits against
+   historical snapshots at client fire time.
+8. **`test_shared_effect_component`** — Two abilities share a "Fire Damage" effect. Verify both
+   produce identical damage.
 
 ### Benchmarks
 

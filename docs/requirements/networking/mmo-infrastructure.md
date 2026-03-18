@@ -2,28 +2,120 @@
 
 ## World Topology
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-8.7.1 | World Sharding and Instancing: The engine **SHALL** partition the persistent game world into shards (full world copies for population management) and instances (isolated zone copies for dungeons, raids, battlegrounds), managing character-to-shard assignment, cross-shard social features, shard merging/splitting based on population, and parameterized instance difficulty and lockout timers. | [F-8.7.1](../../features/networking/mmo-infrastructure.md) | No single server can host an entire MMO population; sharding and instancing are the fundamental scaling mechanisms for persistent worlds. | Integration test: create 3 shards and verify players are assigned to shards based on configured rules. Verify cross-shard friends list, guild roster, and mail operate correctly. Spin up a dungeon instance with difficulty parameters and verify isolated state. Verify shard merge moves all players and state to the target shard without data loss. Verify instance lockout timers prevent re-entry within the configured cooldown. |
-| R-8.7.2 | Seamless Zone Transitions: The engine **SHALL** transfer players between zone server processes without loading screens or disconnects, handing off replicated state, pending RPCs, and input buffer to the destination server while the client transparently rebinds its connection, with boundary overlap regions for entities near zone edges to prevent pop-in. | [F-8.7.2](../../features/networking/mmo-infrastructure.md) | Loading screens break immersion in open-world MMOs; seamless transitions maintain the illusion of a continuous world. | Integration test: move a player across a zone boundary and verify no loading screen, no disconnect, and no visible state discontinuity. Verify entities in the boundary overlap region are visible from both zones simultaneously. Verify pending RPCs and input buffer transfer to the destination server and execute correctly. |
+| ID      | Derived From                                               |
+|---------|------------------------------------------------------------|
+| R-8.7.1 | [F-8.7.1](../../features/networking/mmo-infrastructure.md) |
+| R-8.7.2 | [F-8.7.2](../../features/networking/mmo-infrastructure.md) |
+
+1. **R-8.7.1** — World Sharding and Instancing: The engine **SHALL** partition the persistent game
+   world into shards (full world copies for population management) and instances (isolated zone
+   copies for dungeons, raids, battlegrounds), managing character-to-shard assignment, cross-shard
+   social features, shard merging/splitting based on population, and parameterized instance
+   difficulty and lockout timers.
+   - **Rationale:** No single server can host an entire MMO population; sharding and instancing are
+     the fundamental scaling mechanisms for persistent worlds.
+   - **Verification:** Integration test: create 3 shards and verify players are assigned to shards
+     based on configured rules. Verify cross-shard friends list, guild roster, and mail operate
+     correctly. Spin up a dungeon instance with difficulty parameters and verify isolated state.
+     Verify shard merge moves all players and state to the target shard without data loss. Verify
+     instance lockout timers prevent re-entry within the configured cooldown.
+2. **R-8.7.2** — Seamless Zone Transitions: The engine **SHALL** transfer players between zone
+   server processes without loading screens or disconnects, handing off replicated state, pending
+   RPCs, and input buffer to the destination server while the client transparently rebinds its
+   connection, with boundary overlap regions for entities near zone edges to prevent pop-in.
+   - **Rationale:** Loading screens break immersion in open-world MMOs; seamless transitions
+     maintain the illusion of a continuous world.
+   - **Verification:** Integration test: move a player across a zone boundary and verify no loading
+     screen, no disconnect, and no visible state discontinuity. Verify entities in the boundary
+     overlap region are visible from both zones simultaneously. Verify pending RPCs and input buffer
+     transfer to the destination server and execute correctly.
 
 ## Server Mesh
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-8.7.3 | Dynamic Server Mesh: The engine **SHALL** distribute the continuous game world across a mesh of server processes where each process owns a spatial region that dynamically resizes based on entity density and CPU load, splitting overloaded regions across additional server processes and merging underutilized regions to conserve resources. | [F-8.7.3](../../features/networking/mmo-infrastructure.md) | Fixed zone boundaries cannot handle dynamic player concentrations like guild sieges or world boss events; dynamic spatial partitioning adapts to real-time load. | Integration test: simulate 500 players converging on a single region. Verify the mesh controller splits the region across 2 or more server processes within 10 seconds. Disperse the players and verify regions merge back within 30 seconds. Verify no player experiences a disconnect or visible glitch during split or merge operations. |
-| R-8.7.4 | Player Migration Between Servers: The engine **SHALL** migrate a player's authoritative simulation state (entity state, active buffs, cooldown timers, pending RPCs, prediction history) from one server process to another with zero downtime and no perceptible interruption, completing the handoff in under 100 ms while the client continues rendering using extrapolation. | [F-8.7.4](../../features/networking/mmo-infrastructure.md) | Zone transitions, load balancing, and server mesh rebalancing all require moving players between servers without disrupting gameplay. | Integration test: migrate a player mid-combat with active buffs and cooldowns. Verify all state (buffs, cooldowns, pending RPCs) is present on the destination server. Measure handoff duration and verify it is under 100 ms. Verify the client renders continuously using extrapolation during the handoff with no visible freeze or teleport. |
+| ID      | Derived From                                               |
+|---------|------------------------------------------------------------|
+| R-8.7.3 | [F-8.7.3](../../features/networking/mmo-infrastructure.md) |
+| R-8.7.4 | [F-8.7.4](../../features/networking/mmo-infrastructure.md) |
+
+1. **R-8.7.3** — Dynamic Server Mesh: The engine **SHALL** distribute the continuous game world
+   across a mesh of server processes where each process owns a spatial region that dynamically
+   resizes based on entity density and CPU load, splitting overloaded regions across additional
+   server processes and merging underutilized regions to conserve resources.
+   - **Rationale:** Fixed zone boundaries cannot handle dynamic player concentrations like guild
+     sieges or world boss events; dynamic spatial partitioning adapts to real-time load.
+   - **Verification:** Integration test: simulate 500 players converging on a single region. Verify
+     the mesh controller splits the region across 2 or more server processes within 10 seconds.
+     Disperse the players and verify regions merge back within 30 seconds. Verify no player
+     experiences a disconnect or visible glitch during split or merge operations.
+2. **R-8.7.4** — Player Migration Between Servers: The engine **SHALL** migrate a player's
+   authoritative simulation state (entity state, active buffs, cooldown timers, pending RPCs,
+   prediction history) from one server process to another with zero downtime and no perceptible
+   interruption, completing the handoff in under 100 ms while the client continues rendering using
+   extrapolation.
+   - **Rationale:** Zone transitions, load balancing, and server mesh rebalancing all require moving
+     players between servers without disrupting gameplay.
+   - **Verification:** Integration test: migrate a player mid-combat with active buffs and
+     cooldowns. Verify all state (buffs, cooldowns, pending RPCs) is present on the destination
+     server. Measure handoff duration and verify it is under 100 ms. Verify the client renders
+     continuously using extrapolation during the handoff with no visible freeze or teleport.
 
 ## Persistence
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-8.7.5 | Persistent World State and Database Integration: The engine **SHALL** store and retrieve persistent world state (characters, inventories, guilds, auction listings, housing, quest progress) through an async database access layer that never blocks the game simulation tick, supporting transactional writes for atomic operations and sustained write throughput of tens of thousands of transactions per second across the server fleet. | [F-8.7.5](../../features/networking/mmo-infrastructure.md) | Persistent state is the foundation of an MMO; database access must be non-blocking to maintain tick rate and transactional to prevent data corruption. | Integration test: perform 10,000 concurrent character saves and verify all complete without blocking the simulation tick. Execute a trade (transactional write involving two inventories) and verify atomicity by simulating a crash mid-transaction and confirming rollback. Benchmark sustained write throughput and verify it exceeds 10,000 transactions per second. Verify database access uses platform-native async I/O (IOCP, GCD, io_uring). |
-| R-8.7.6 | Load Balancing and Auto-Scaling: The engine **SHALL** monitor server process CPU, memory, network utilization, and player count in real time, automatically provisioning or deprovisioning server processes to match demand, reacting to population surges within seconds and scaling down by draining players before terminating underutilized servers. | [F-8.7.6](../../features/networking/mmo-infrastructure.md) | MMO populations fluctuate dramatically; auto-scaling prevents both overprovisioning costs and underprovisioning outages. | Load test: simulate a population surge of 5,000 players over 60 seconds. Verify new server processes are provisioned and accepting players within 30 seconds. Simulate population decline and verify underutilized servers are drained (all players migrated) before termination. Verify load balancing distributes new connections to the least-loaded eligible server. |
-| R-8.7.7 | Cross-Shard Services: The engine **SHALL** provide shared services operating across all shards (global auction house, cross-shard mail, group finder, global chat, friends list, guild management) as independent microservices with their own persistence, resolving concurrent operations deterministically. | [F-8.7.7](../../features/networking/mmo-infrastructure.md) | Players expect social and economic features to work across shard boundaries; independent microservices isolate failure domains and scale independently. | Integration test: list an auction item on shard A and verify it is visible and purchasable from shard B. Send cross-shard mail with an attachment and verify delivery. Simulate concurrent auction bid and buyout on the same item and verify deterministic resolution (one succeeds, one fails with correct error). Verify each service continues operating when one shard is offline. |
+| ID      | Derived From                                               |
+|---------|------------------------------------------------------------|
+| R-8.7.5 | [F-8.7.5](../../features/networking/mmo-infrastructure.md) |
+| R-8.7.6 | [F-8.7.6](../../features/networking/mmo-infrastructure.md) |
+| R-8.7.7 | [F-8.7.7](../../features/networking/mmo-infrastructure.md) |
+
+1. **R-8.7.5** — Persistent World State and Database Integration: The engine **SHALL** store and
+   retrieve persistent world state (characters, inventories, guilds, auction listings, housing,
+   quest progress) through an async database access layer that never blocks the game simulation
+   tick, supporting transactional writes for atomic operations and sustained write throughput of
+   tens of thousands of transactions per second across the server fleet.
+   - **Rationale:** Persistent state is the foundation of an MMO; database access must be
+     non-blocking to maintain tick rate and transactional to prevent data corruption.
+   - **Verification:** Integration test: perform 10,000 concurrent character saves and verify all
+     complete without blocking the simulation tick. Execute a trade (transactional write involving
+     two inventories) and verify atomicity by simulating a crash mid-transaction and confirming
+     rollback. Benchmark sustained write throughput and verify it exceeds 10,000 transactions per
+     second. Verify database access uses platform-native async I/O (IOCP, GCD, io_uring).
+2. **R-8.7.6** — Load Balancing and Auto-Scaling: The engine **SHALL** monitor server process CPU,
+   memory, network utilization, and player count in real time, automatically provisioning or
+   deprovisioning server processes to match demand, reacting to population surges within seconds and
+   scaling down by draining players before terminating underutilized servers.
+   - **Rationale:** MMO populations fluctuate dramatically; auto-scaling prevents both
+     overprovisioning costs and underprovisioning outages.
+   - **Verification:** Load test: simulate a population surge of 5,000 players over 60 seconds.
+     Verify new server processes are provisioned and accepting players within 30 seconds. Simulate
+     population decline and verify underutilized servers are drained (all players migrated) before
+     termination. Verify load balancing distributes new connections to the least-loaded eligible
+     server.
+3. **R-8.7.7** — Cross-Shard Services: The engine **SHALL** provide shared services operating across
+   all shards (global auction house, cross-shard mail, group finder, global chat, friends list,
+   guild management) as independent microservices with their own persistence, resolving concurrent
+   operations deterministically.
+   - **Rationale:** Players expect social and economic features to work across shard boundaries;
+     independent microservices isolate failure domains and scale independently.
+   - **Verification:** Integration test: list an auction item on shard A and verify it is visible
+     and purchasable from shard B. Send cross-shard mail with an attachment and verify delivery.
+     Simulate concurrent auction bid and buyout on the same item and verify deterministic resolution
+     (one succeeds, one fails with correct error). Verify each service continues operating when one
+     shard is offline.
 
 ## Inter-Server Communication
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-8.7.8 | Inter-Server Communication Bus: The engine **SHALL** provide a typed, serialized message bus for server-to-server communication over persistent TCP connections with automatic reconnection, supporting publish-subscribe channels and point-to-point routing, with configurable per-channel delivery guarantees (at-most-once, at-least-once, exactly-once). | [F-8.7.8](../../features/networking/mmo-infrastructure.md) | Server mesh coordination, cross-shard events, and global chat require reliable inter-server messaging with appropriate delivery guarantees per use case. | Integration test: publish a message on a subscribe channel and verify all subscribed servers receive it. Send a point-to-point message and verify only the target server receives it. Simulate a server disconnect and verify automatic reconnection within 5 seconds. Verify at-least-once delivery retransmits on acknowledgment failure. Verify exactly-once delivery deduplicates a retransmitted economy transaction. |
+| ID      | Derived From                                               |
+|---------|------------------------------------------------------------|
+| R-8.7.8 | [F-8.7.8](../../features/networking/mmo-infrastructure.md) |
+
+1. **R-8.7.8** — Inter-Server Communication Bus: The engine **SHALL** provide a typed, serialized
+   message bus for server-to-server communication over persistent TCP connections with automatic
+   reconnection, supporting publish-subscribe channels and point-to-point routing, with configurable
+   per-channel delivery guarantees (at-most-once, at-least-once, exactly-once).
+   - **Rationale:** Server mesh coordination, cross-shard events, and global chat require reliable
+     inter-server messaging with appropriate delivery guarantees per use case.
+   - **Verification:** Integration test: publish a message on a subscribe channel and verify all
+     subscribed servers receive it. Send a point-to-point message and verify only the target server
+     receives it. Simulate a server disconnect and verify automatic reconnection within 5 seconds.
+     Verify at-least-once delivery retransmits on acknowledgment failure. Verify exactly-once
+     delivery deduplicates a retransmitted economy transaction.

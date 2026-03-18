@@ -8,22 +8,37 @@
 > [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-8.5.1 | R-8.5.1 | Login and authentication via OAuth 2.0 / platform accounts |
-| F-8.5.2 | R-8.5.2 | Skill-based and region-based matchmaking (Glicko-2) |
-| F-8.5.3 | R-8.5.3 | Lobby and party system with role designation |
-| F-8.5.4 | R-8.5.4 | Dedicated server cluster management |
-| F-8.5.5 | R-8.5.5 | Session discovery and reconnection (120 s grace) |
-| F-8.5.6 | R-8.5.6 | Cross-play matchmaking and account linking |
-| F-8.5.7 | R-8.5.7 | Login queue and capacity management |
-| F-8.5.8 | R-8.5.8 | Headless dedicated game server (Docker) |
-| F-8.5.9 | R-8.5.9 | Skill-based matchmaking microservice (Glicko-2) |
-| F-8.6.1 | R-8.6.1 | State recording with snapshots and deltas |
-| F-8.6.2 | R-8.6.2 | Deterministic playback without live server |
-| F-8.6.3 | R-8.6.3 | Seek, fast-forward, slow motion, pause |
-| F-8.6.4 | R-8.6.4 | Live spectator mode with configurable delay |
-| F-8.6.5 | R-8.6.5 | Kill cam and highlight extraction |
+| Feature | Requirement |
+|---------|-------------|
+| F-8.5.1 | R-8.5.1     |
+| F-8.5.2 | R-8.5.2     |
+| F-8.5.3 | R-8.5.3     |
+| F-8.5.4 | R-8.5.4     |
+| F-8.5.5 | R-8.5.5     |
+| F-8.5.6 | R-8.5.6     |
+| F-8.5.7 | R-8.5.7     |
+| F-8.5.8 | R-8.5.8     |
+| F-8.5.9 | R-8.5.9     |
+| F-8.6.1 | R-8.6.1     |
+| F-8.6.2 | R-8.6.2     |
+| F-8.6.3 | R-8.6.3     |
+| F-8.6.4 | R-8.6.4     |
+| F-8.6.5 | R-8.6.5     |
+
+1. **F-8.5.1** — Login and authentication via OAuth 2.0 / platform accounts
+2. **F-8.5.2** — Skill-based and region-based matchmaking (Glicko-2)
+3. **F-8.5.3** — Lobby and party system with role designation
+4. **F-8.5.4** — Dedicated server cluster management
+5. **F-8.5.5** — Session discovery and reconnection (120 s grace)
+6. **F-8.5.6** — Cross-play matchmaking and account linking
+7. **F-8.5.7** — Login queue and capacity management
+8. **F-8.5.8** — Headless dedicated game server (Docker)
+9. **F-8.5.9** — Skill-based matchmaking microservice (Glicko-2)
+10. **F-8.6.1** — State recording with snapshots and deltas
+11. **F-8.6.2** — Deterministic playback without live server
+12. **F-8.6.3** — Seek, fast-forward, slow motion, pause
+13. **F-8.6.4** — Live spectator mode with configurable delay
+14. **F-8.6.5** — Kill cam and highlight extraction
 
 ## Overview
 
@@ -1366,47 +1381,104 @@ pub enum QueueError {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_auth_valid_token` | R-8.5.1 | Issue and validate a session token; verify account_id roundtrip. |
-| `test_auth_expired_token` | R-8.5.1 | Validate an expired token; verify rejection. |
-| `test_auth_mfa_challenge` | R-8.5.1 | Simulate MFA challenge-response; verify success and failure paths. |
-| `test_glicko2_rating_update` | R-8.5.9 | Update rating after win/loss; verify rating, deviation, volatility change correctly. |
-| `test_glicko2_window_widening` | R-8.5.9 | Simulate queue time exceeding widen interval; verify window expands by configured step. |
-| `test_party_create_invite_accept` | R-8.5.3 | Create party, invite player, accept; verify membership and roles. |
-| `test_party_persist_across_snapshot` | R-8.5.3 | Snapshot and restore a party; verify all members and roles preserved. |
-| `test_ready_check_all_ready` | R-8.5.3 | All members respond ready; verify `AllReady` result. |
-| `test_ready_check_timeout` | R-8.5.3 | One member does not respond; verify `Timeout` result. |
-| `test_reconnect_within_grace` | R-8.5.5 | Preserve and restore within grace window; verify full state. |
-| `test_reconnect_expired_grace` | R-8.5.5 | Attempt restore after expiry; verify `GraceExpired` error. |
-| `test_login_queue_priority` | R-8.5.7 | Enqueue standard and VIP; verify VIP dequeues first. |
-| `test_login_queue_position_preserve` | R-8.5.7 | Disconnect and reconnect within timeout; verify position preserved. |
-| `test_replay_delta_compression` | R-8.6.1 | Record 100 ticks; verify deltas are smaller than full snapshots. |
-| `test_replay_snapshot_interval` | R-8.6.1 | Record with interval=10; verify every 10th tick is a full snapshot. |
-| `test_replay_seek_to_keyframe` | R-8.6.3 | Seek to a keyframe tick; verify index returns exact match. |
-| `test_replay_seek_between_keyframes` | R-8.6.3 | Seek between keyframes; verify nearest-before keyframe is loaded. |
-| `test_killcam_buffer_rolling` | R-8.6.5 | Push 20 s of ticks into 15 s buffer; verify oldest 5 s evicted. |
-| `test_killcam_extract` | R-8.6.5 | Extract 10 s clip; verify correct tick range and attacker entity. |
-| `test_highlight_extract_clip` | R-8.6.5 | Extract sub-replay; verify header, index, and data are self-contained. |
+| Test                                 | Req     |
+|--------------------------------------|---------|
+| `test_auth_valid_token`              | R-8.5.1 |
+| `test_auth_expired_token`            | R-8.5.1 |
+| `test_auth_mfa_challenge`            | R-8.5.1 |
+| `test_glicko2_rating_update`         | R-8.5.9 |
+| `test_glicko2_window_widening`       | R-8.5.9 |
+| `test_party_create_invite_accept`    | R-8.5.3 |
+| `test_party_persist_across_snapshot` | R-8.5.3 |
+| `test_ready_check_all_ready`         | R-8.5.3 |
+| `test_ready_check_timeout`           | R-8.5.3 |
+| `test_reconnect_within_grace`        | R-8.5.5 |
+| `test_reconnect_expired_grace`       | R-8.5.5 |
+| `test_login_queue_priority`          | R-8.5.7 |
+| `test_login_queue_position_preserve` | R-8.5.7 |
+| `test_replay_delta_compression`      | R-8.6.1 |
+| `test_replay_snapshot_interval`      | R-8.6.1 |
+| `test_replay_seek_to_keyframe`       | R-8.6.3 |
+| `test_replay_seek_between_keyframes` | R-8.6.3 |
+| `test_killcam_buffer_rolling`        | R-8.6.5 |
+| `test_killcam_extract`               | R-8.6.5 |
+| `test_highlight_extract_clip`        | R-8.6.5 |
+
+1. **`test_auth_valid_token`** — Issue and validate a session token; verify account_id roundtrip.
+2. **`test_auth_expired_token`** — Validate an expired token; verify rejection.
+3. **`test_auth_mfa_challenge`** — Simulate MFA challenge-response; verify success and failure
+   paths.
+4. **`test_glicko2_rating_update`** — Update rating after win/loss; verify rating, deviation,
+   volatility change correctly.
+5. **`test_glicko2_window_widening`** — Simulate queue time exceeding widen interval; verify window
+   expands by configured step.
+6. **`test_party_create_invite_accept`** — Create party, invite player, accept; verify membership
+   and roles.
+7. **`test_party_persist_across_snapshot`** — Snapshot and restore a party; verify all members and
+   roles preserved.
+8. **`test_ready_check_all_ready`** — All members respond ready; verify `AllReady` result.
+9. **`test_ready_check_timeout`** — One member does not respond; verify `Timeout` result.
+10. **`test_reconnect_within_grace`** — Preserve and restore within grace window; verify full state.
+11. **`test_reconnect_expired_grace`** — Attempt restore after expiry; verify `GraceExpired` error.
+12. **`test_login_queue_priority`** — Enqueue standard and VIP; verify VIP dequeues first.
+13. **`test_login_queue_position_preserve`** — Disconnect and reconnect within timeout; verify
+    position preserved.
+14. **`test_replay_delta_compression`** — Record 100 ticks; verify deltas are smaller than full
+    snapshots.
+15. **`test_replay_snapshot_interval`** — Record with interval=10; verify every 10th tick is a full
+    snapshot.
+16. **`test_replay_seek_to_keyframe`** — Seek to a keyframe tick; verify index returns exact match.
+17. **`test_replay_seek_between_keyframes`** — Seek between keyframes; verify nearest-before
+    keyframe is loaded.
+18. **`test_killcam_buffer_rolling`** — Push 20 s of ticks into 15 s buffer; verify oldest 5 s
+    evicted.
+19. **`test_killcam_extract`** — Extract 10 s clip; verify correct tick range and attacker entity.
+20. **`test_highlight_extract_clip`** — Extract sub-replay; verify header, index, and data are
+    self-contained.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_5000_concurrent_logins` | R-8.5.1 | Authenticate 5,000 concurrent logins; verify all complete within 5 s. |
-| `test_cross_play_matchmaking` | R-8.5.6 | Match PC + PS + Xbox players; verify all connect to same instance. |
-| `test_cross_play_opt_out` | R-8.5.6 | Opt out of cross-play; verify same-platform match only. |
-| `test_matchmaking_20k_players` | R-8.5.2 | Enqueue 20,000 players; verify all matched within 120 s with skill variance under threshold. |
-| `test_reconnect_full_state` | R-8.5.5 | Connect, simulate 10 s outage, reconnect; verify position, buffs, party restored. |
-| `test_headless_64_players` | R-8.5.8 | Launch headless Docker container, connect 64 players; verify tick rate maintained and health endpoint correct. |
-| `test_headless_memory_budget` | R-8.5.8.NF1 | 64 players, 30 tps, 10 min; verify RSS under 512 MB. |
-| `test_rolling_restart_zero_disconnects` | R-8.5.4 | Initiate rolling restart; verify all players drained and migrated. |
-| `test_replay_determinism` | R-8.6.2 | Record 60 s, play back twice; verify frame checksums match at 10 sample points. |
-| `test_replay_seek_2h` | R-8.6.3 | Record 2-hour replay, seek to midpoint; verify seek completes within 1 s. |
-| `test_spectator_1000_viewers` | R-8.6.4 | Connect 1,000 spectators via relay; verify delay and no gameplay RPC. |
-| `test_spectator_delay_prevents_ghosting` | R-8.6.4 | Verify spectator data arrives no earlier than configured delay. |
-| `test_killcam_delivery` | R-8.6.5 | Trigger death event; verify victim receives kill cam within 2 s. |
-| `test_cross_platform_replay` | R-8.6.2 | Record on PC, play back on mobile; verify visual hash match. |
+| Test                                     | Req         |
+|------------------------------------------|-------------|
+| `test_5000_concurrent_logins`            | R-8.5.1     |
+| `test_cross_play_matchmaking`            | R-8.5.6     |
+| `test_cross_play_opt_out`                | R-8.5.6     |
+| `test_matchmaking_20k_players`           | R-8.5.2     |
+| `test_reconnect_full_state`              | R-8.5.5     |
+| `test_headless_64_players`               | R-8.5.8     |
+| `test_headless_memory_budget`            | R-8.5.8.NF1 |
+| `test_rolling_restart_zero_disconnects`  | R-8.5.4     |
+| `test_replay_determinism`                | R-8.6.2     |
+| `test_replay_seek_2h`                    | R-8.6.3     |
+| `test_spectator_1000_viewers`            | R-8.6.4     |
+| `test_spectator_delay_prevents_ghosting` | R-8.6.4     |
+| `test_killcam_delivery`                  | R-8.6.5     |
+| `test_cross_platform_replay`             | R-8.6.2     |
+
+1. **`test_5000_concurrent_logins`** — Authenticate 5,000 concurrent logins; verify all complete
+   within 5 s.
+2. **`test_cross_play_matchmaking`** — Match PC + PS + Xbox players; verify all connect to same
+   instance.
+3. **`test_cross_play_opt_out`** — Opt out of cross-play; verify same-platform match only.
+4. **`test_matchmaking_20k_players`** — Enqueue 20,000 players; verify all matched within 120 s with
+   skill variance under threshold.
+5. **`test_reconnect_full_state`** — Connect, simulate 10 s outage, reconnect; verify position,
+   buffs, party restored.
+6. **`test_headless_64_players`** — Launch headless Docker container, connect 64 players; verify
+   tick rate maintained and health endpoint correct.
+7. **`test_headless_memory_budget`** — 64 players, 30 tps, 10 min; verify RSS under 512 MB.
+8. **`test_rolling_restart_zero_disconnects`** — Initiate rolling restart; verify all players
+   drained and migrated.
+9. **`test_replay_determinism`** — Record 60 s, play back twice; verify frame checksums match at 10
+   sample points.
+10. **`test_replay_seek_2h`** — Record 2-hour replay, seek to midpoint; verify seek completes within
+    1 s.
+11. **`test_spectator_1000_viewers`** — Connect 1,000 spectators via relay; verify delay and no
+    gameplay RPC.
+12. **`test_spectator_delay_prevents_ghosting`** — Verify spectator data arrives no earlier than
+    configured delay.
+13. **`test_killcam_delivery`** — Trigger death event; verify victim receives kill cam within 2 s.
+14. **`test_cross_platform_replay`** — Record on PC, play back on mobile; verify visual hash match.
 
 ### Benchmarks
 

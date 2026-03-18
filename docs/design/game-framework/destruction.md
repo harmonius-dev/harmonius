@@ -8,15 +8,23 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-4.6.1 | R-4.6.1 | Voronoi fracture generation at build time |
-| F-4.6.2 | R-4.6.2 | Pre-fractured mesh authoring from DCC tools |
-| F-4.6.3 | R-4.6.3 | Runtime fracture activation on damage threshold |
-| F-4.6.4 | R-4.6.4 | Progressive damage model with visual stages |
-| F-4.6.5 | R-4.6.5 | Stress propagation and structural collapse |
-| F-4.6.6 | R-4.6.6 | Debris simulation and lifecycle management |
-| F-4.6.7 | R-4.6.7 | Debris pooling and LOD |
+| Feature | Requirement |
+|---------|-------------|
+| F-4.6.1 | R-4.6.1     |
+| F-4.6.2 | R-4.6.2     |
+| F-4.6.3 | R-4.6.3     |
+| F-4.6.4 | R-4.6.4     |
+| F-4.6.5 | R-4.6.5     |
+| F-4.6.6 | R-4.6.6     |
+| F-4.6.7 | R-4.6.7     |
+
+1. **F-4.6.1** — Voronoi fracture generation at build time
+2. **F-4.6.2** — Pre-fractured mesh authoring from DCC tools
+3. **F-4.6.3** — Runtime fracture activation on damage threshold
+4. **F-4.6.4** — Progressive damage model with visual stages
+5. **F-4.6.5** — Stress propagation and structural collapse
+6. **F-4.6.6** — Debris simulation and lifecycle management
+7. **F-4.6.7** — Debris pooling and LOD
 
 ## Overview
 
@@ -676,36 +684,69 @@ No new external dependencies required. The destruction system uses existing engi
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_voronoi_volume_preservation` | R-4.6.1 | Fracture unit cube into 20 fragments; assert total volume within 1% of original. |
-| `test_convex_hull_validity` | R-4.6.1 | All generated fragments are valid convex hulls. |
-| `test_platform_fragment_cap` | R-4.6.1 | Mobile fracture capped at 8 fragments. |
-| `test_dcc_asset_load` | R-4.6.2 | Load pre-fractured asset; verify fragment count, connectivity, and joint configs. |
-| `test_fracture_activation_threshold` | R-4.6.3 | Apply damage exceeding threshold; assert intact entity despawned and fragments spawned. |
-| `test_fragment_transform_accuracy` | R-4.6.3 | Fragment positions match fracture asset layout within 0.001 m. |
-| `test_activation_budget_per_frame` | R-4.6.3 | Mobile: max 1 activation per frame enforced. |
-| `test_staggered_spawning` | R-4.6.3 | 64-fragment object on mobile spawns across multiple frames. |
-| `test_damage_accumulation` | R-4.6.4 | Apply 3 impacts; verify integrity decreases proportionally. |
-| `test_visual_stage_progression` | R-4.6.4 | 3-stage DamageHealth; each stage triggers in order. |
-| `test_damage_from_multiple_types` | R-4.6.4 | Projectile, explosion, and melee all accumulate correctly. |
-| `test_cascading_collapse` | R-4.6.5 | 3-column arch; break keystone; unsupported fragments fall. |
-| `test_anchor_connectivity` | R-4.6.5 | Fragments connected to anchor remain supported. |
-| `test_mobile_structural_disabled` | R-4.6.5 | Mobile uses pre-baked sequences, not runtime analysis. |
-| `test_debris_ttl_expiration` | R-4.6.6 | Debris despawned within 1 frame of TTL expiry. |
-| `test_debris_cap_enforcement` | R-4.6.6 | Spawn 500 debris with cap 200; oldest despawned first. |
-| `test_debris_sleep_transition` | R-4.6.6 | Settled debris enters sleeping state with zero sim cost. |
-| `test_pooling_reduces_alloc` | R-4.6.7 | 10 destructions with pooling vs without; pooling reduces allocations by 80%+. |
-| `test_lod_component_removal` | R-4.6.7 | Debris beyond particle distance has no RigidBody or Collider. |
+| Test                                 | Req     |
+|--------------------------------------|---------|
+| `test_voronoi_volume_preservation`   | R-4.6.1 |
+| `test_convex_hull_validity`          | R-4.6.1 |
+| `test_platform_fragment_cap`         | R-4.6.1 |
+| `test_dcc_asset_load`                | R-4.6.2 |
+| `test_fracture_activation_threshold` | R-4.6.3 |
+| `test_fragment_transform_accuracy`   | R-4.6.3 |
+| `test_activation_budget_per_frame`   | R-4.6.3 |
+| `test_staggered_spawning`            | R-4.6.3 |
+| `test_damage_accumulation`           | R-4.6.4 |
+| `test_visual_stage_progression`      | R-4.6.4 |
+| `test_damage_from_multiple_types`    | R-4.6.4 |
+| `test_cascading_collapse`            | R-4.6.5 |
+| `test_anchor_connectivity`           | R-4.6.5 |
+| `test_mobile_structural_disabled`    | R-4.6.5 |
+| `test_debris_ttl_expiration`         | R-4.6.6 |
+| `test_debris_cap_enforcement`        | R-4.6.6 |
+| `test_debris_sleep_transition`       | R-4.6.6 |
+| `test_pooling_reduces_alloc`         | R-4.6.7 |
+| `test_lod_component_removal`         | R-4.6.7 |
+
+1. **`test_voronoi_volume_preservation`** — Fracture unit cube into 20 fragments; assert total
+   volume within 1% of original.
+2. **`test_convex_hull_validity`** — All generated fragments are valid convex hulls.
+3. **`test_platform_fragment_cap`** — Mobile fracture capped at 8 fragments.
+4. **`test_dcc_asset_load`** — Load pre-fractured asset; verify fragment count, connectivity, and
+   joint configs.
+5. **`test_fracture_activation_threshold`** — Apply damage exceeding threshold; assert intact entity
+   despawned and fragments spawned.
+6. **`test_fragment_transform_accuracy`** — Fragment positions match fracture asset layout within
+   0.001 m.
+7. **`test_activation_budget_per_frame`** — Mobile: max 1 activation per frame enforced.
+8. **`test_staggered_spawning`** — 64-fragment object on mobile spawns across multiple frames.
+9. **`test_damage_accumulation`** — Apply 3 impacts; verify integrity decreases proportionally.
+10. **`test_visual_stage_progression`** — 3-stage DamageHealth; each stage triggers in order.
+11. **`test_damage_from_multiple_types`** — Projectile, explosion, and melee all accumulate
+    correctly.
+12. **`test_cascading_collapse`** — 3-column arch; break keystone; unsupported fragments fall.
+13. **`test_anchor_connectivity`** — Fragments connected to anchor remain supported.
+14. **`test_mobile_structural_disabled`** — Mobile uses pre-baked sequences, not runtime analysis.
+15. **`test_debris_ttl_expiration`** — Debris despawned within 1 frame of TTL expiry.
+16. **`test_debris_cap_enforcement`** — Spawn 500 debris with cap 200; oldest despawned first.
+17. **`test_debris_sleep_transition`** — Settled debris enters sleeping state with zero sim cost.
+18. **`test_pooling_reduces_alloc`** — 10 destructions with pooling vs without; pooling reduces
+    allocations by 80%+.
+19. **`test_lod_component_removal`** — Debris beyond particle distance has no RigidBody or Collider.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_damage_replication` | R-4.6.4 | Server DamageHealth replicates to client; client cannot modify locally. |
-| `test_destruction_with_cover` | R-4.6.3 | Destroying cover object removes cover points from spatial index. |
-| `test_destruction_audio` | R-4.6.3 | Fracture activation emits destruction audio event. |
-| `test_debris_visual_particles` | R-4.6.7 | Distant debris rendered as visual particles without physics. |
+| Test                           | Req     |
+|--------------------------------|---------|
+| `test_damage_replication`      | R-4.6.4 |
+| `test_destruction_with_cover`  | R-4.6.3 |
+| `test_destruction_audio`       | R-4.6.3 |
+| `test_debris_visual_particles` | R-4.6.7 |
+
+1. **`test_damage_replication`** — Server DamageHealth replicates to client; client cannot modify
+   locally.
+2. **`test_destruction_with_cover`** — Destroying cover object removes cover points from spatial
+   index.
+3. **`test_destruction_audio`** — Fracture activation emits destruction audio event.
+4. **`test_debris_visual_particles`** — Distant debris rendered as visual particles without physics.
 
 ### Benchmarks
 
@@ -726,17 +767,37 @@ frame-by-frame contract, systems may fire out of order or miss events.
 **Frame-by-frame timeline.** All systems operate on shared ECS components with no private
 cross-system channels.
 
-| Frame | System | Action | Components Read | Components Written |
-|-------|--------|--------|-----------------|-------------------|
-| N | Destruction | Impact detected; spawn fragment entities | `ContactEvent` | `RigidBody`, `Collider`, `Mesh`, `Transform`, `DebrisLifetime`, `DestructionFragment` |
-| N | VFX | Spawn particle emitters (dust, sparks) at impact point | `Transform`, `DestructionFragment` | Emitter components |
-| N | Audio | Play impact sound at impact point position | `Transform` | Audio events |
-| N+1 | Physics | Simulate fragment trajectories (gravity, impulse) | `RigidBody`, `Collider` | `RigidBody`, `Collider` |
-| N+1 | VFX | Update particle simulation (dust cloud expands, sparks arc) | `Transform` | Emitter components |
-| N+2..N+K | Physics | Fragments settle; velocities decay | `RigidBody`, `Collider` | `RigidBody`, `Collider` |
-| N+2..N+K | VFX | Particles fade over lifetime | `Transform` | Emitter components |
-| N+2..N+K | Audio | Secondary sounds (debris landing) | `Transform`, `ContactEvent` | Audio events |
-| N+M | Cleanup | Cull fragments below size/TTL threshold; despawn expired emitters | `DebrisLifetime` | Despawn commands |
+| Frame    | System      | Components Read                    |
+|----------|-------------|------------------------------------|
+| N        | Destruction | `ContactEvent`                     |
+| N        | VFX         | `Transform`, `DestructionFragment` |
+| N        | Audio       | `Transform`                        |
+| N+1      | Physics     | `RigidBody`, `Collider`            |
+| N+1      | VFX         | `Transform`                        |
+| N+2..N+K | Physics     | `RigidBody`, `Collider`            |
+| N+2..N+K | VFX         | `Transform`                        |
+| N+2..N+K | Audio       | `Transform`, `ContactEvent`        |
+| N+M      | Cleanup     | `DebrisLifetime`                   |
+
+1. **N** — Impact detected; spawn fragment entities
+   - **Components Written:** `RigidBody`, `Collider`, `Mesh`, `Transform`, `DebrisLifetime`,
+     `DestructionFragment`
+2. **N** — Spawn particle emitters (dust, sparks) at impact point
+   - **Components Written:** Emitter components
+3. **N** — Play impact sound at impact point position
+   - **Components Written:** Audio events
+4. **N+1** — Simulate fragment trajectories (gravity, impulse)
+   - **Components Written:** `RigidBody`, `Collider`
+5. **N+1** — Update particle simulation (dust cloud expands, sparks arc)
+   - **Components Written:** Emitter components
+6. **N+2..N+K** — Fragments settle; velocities decay
+   - **Components Written:** `RigidBody`, `Collider`
+7. **N+2..N+K** — Particles fade over lifetime
+   - **Components Written:** Emitter components
+8. **N+2..N+K** — Secondary sounds (debris landing)
+   - **Components Written:** Audio events
+9. **N+M** — Cull fragments below size/TTL threshold; despawn expired emitters
+   - **Components Written:** Despawn commands
 
 **Sequence.**
 

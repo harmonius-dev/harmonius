@@ -29,34 +29,74 @@ See [personas.md](personas.md) for the complete persona catalog (27 personas).
 
 ## 1. Core Runtime
 
-| File | Area | Stories |
-|------|------|---------|
-| [entity-component-system.md](core-runtime/entity-component-system.md) | Entity Component System | 53 |
-| [async-io.md](core-runtime/async-io.md) | Async I/O | 20 |
-| [memory-management.md](core-runtime/memory-management.md) | Memory Management | 18 |
-| [serialization.md](core-runtime/serialization.md) | Serialization | 17 |
-| [events-and-messaging.md](core-runtime/events-and-messaging.md) | Events & Messaging | 16 |
-| [spatial-indexing.md](core-runtime/spatial-indexing.md) | Spatial Indexing | 16 |
-| [plugin-system.md](core-runtime/plugin-system.md) | Plugin System | 14 |
-| [reflection-and-type-system.md](core-runtime/reflection-and-type-system.md) | Reflection & Type System | 14 |
-| [scene-and-transforms.md](core-runtime/scene-and-transforms.md) | Scene & Transforms | 13 |
+| Area                     | Stories |
+|--------------------------|---------|
+| Entity Component System  | 53      |
+| Async I/O                | 20      |
+| Memory Management        | 18      |
+| Serialization            | 17      |
+| Events & Messaging       | 16      |
+| Spatial Indexing         | 16      |
+| Plugin System            | 14      |
+| Reflection & Type System | 14      |
+| Scene & Transforms       | 13      |
+
+1. **[entity-component-system.md](core-runtime/entity-component-system.md)** —
+   [entity-component-system.md](core-runtime/entity-component-system.md)
+2. **[async-io.md](core-runtime/async-io.md)** — [async-io.md](core-runtime/async-io.md)
+3. **[memory-management.md](core-runtime/memory-management.md)** —
+   [memory-management.md](core-runtime/memory-management.md)
+4. **[serialization.md](core-runtime/serialization.md)** —
+   [serialization.md](core-runtime/serialization.md)
+5. **[events-and-messaging.md](core-runtime/events-and-messaging.md)** —
+   [events-and-messaging.md](core-runtime/events-and-messaging.md)
+6. **[spatial-indexing.md](core-runtime/spatial-indexing.md)** —
+   [spatial-indexing.md](core-runtime/spatial-indexing.md)
+7. **[plugin-system.md](core-runtime/plugin-system.md)** —
+   [plugin-system.md](core-runtime/plugin-system.md)
+8. **[reflection-and-type-system.md](core-runtime/reflection-and-type-system.md)** —
+   [reflection-and-type-system.md](core-runtime/reflection-and-type-system.md)
+9. **[scene-and-transforms.md](core-runtime/scene-and-transforms.md)** —
+   [scene-and-transforms.md](core-runtime/scene-and-transforms.md)
 
 ## 2. Rendering
 
-| File | Area | Stories |
-|------|------|---------|
-| [lighting.md](rendering/lighting.md) | Lighting | 46 |
-| [post-processing.md](rendering/post-processing.md) | Post-Processing | 42 |
-| [advanced-rendering.md](rendering/advanced-rendering.md) | Advanced Rendering | 33 |
-| [core-rendering.md](rendering/core-rendering.md) | Core Rendering | 30 |
-| [render-graph.md](rendering/render-graph.md) | Render Graph | 26 |
-| [advanced-materials.md](rendering/advanced-materials.md) | Advanced Materials | 25 |
-| [gpu-abstraction-layer.md](rendering/gpu-abstraction-layer.md) | GPU Abstraction Layer | 25 |
-| [environment.md](rendering/environment.md) | Environment | 23 |
-| [scene-rendering-pipeline.md](rendering/scene-rendering-pipeline.md) | Scene Rendering Pipeline | 21 |
-| [anti-aliasing-upscaling.md](rendering/anti-aliasing-upscaling.md) | Anti-Aliasing & Upscaling | 19 |
-| [character-rendering.md](rendering/character-rendering.md) | Character Rendering | 19 |
-| [stylized-effects.md](rendering/stylized-effects.md) | Stylized Effects | 15 |
+| Area                      | Stories |
+|---------------------------|---------|
+| Lighting                  | 46      |
+| Post-Processing           | 42      |
+| Advanced Rendering        | 33      |
+| Core Rendering            | 30      |
+| Render Graph              | 26      |
+| Advanced Materials        | 25      |
+| GPU Abstraction Layer     | 25      |
+| Environment               | 23      |
+| Scene Rendering Pipeline  | 21      |
+| Anti-Aliasing & Upscaling | 19      |
+| Character Rendering       | 19      |
+| Stylized Effects          | 15      |
+
+1. **[lighting.md](rendering/lighting.md)** — [lighting.md](rendering/lighting.md)
+2. **[post-processing.md](rendering/post-processing.md)** —
+   [post-processing.md](rendering/post-processing.md)
+3. **[advanced-rendering.md](rendering/advanced-rendering.md)** —
+   [advanced-rendering.md](rendering/advanced-rendering.md)
+4. **[core-rendering.md](rendering/core-rendering.md)** —
+   [core-rendering.md](rendering/core-rendering.md)
+5. **[render-graph.md](rendering/render-graph.md)** — [render-graph.md](rendering/render-graph.md)
+6. **[advanced-materials.md](rendering/advanced-materials.md)** —
+   [advanced-materials.md](rendering/advanced-materials.md)
+7. **[gpu-abstraction-layer.md](rendering/gpu-abstraction-layer.md)** —
+   [gpu-abstraction-layer.md](rendering/gpu-abstraction-layer.md)
+8. **[environment.md](rendering/environment.md)** — [environment.md](rendering/environment.md)
+9. **[scene-rendering-pipeline.md](rendering/scene-rendering-pipeline.md)** —
+   [scene-rendering-pipeline.md](rendering/scene-rendering-pipeline.md)
+10. **[anti-aliasing-upscaling.md](rendering/anti-aliasing-upscaling.md)** —
+    [anti-aliasing-upscaling.md](rendering/anti-aliasing-upscaling.md)
+11. **[character-rendering.md](rendering/character-rendering.md)** —
+    [character-rendering.md](rendering/character-rendering.md)
+12. **[stylized-effects.md](rendering/stylized-effects.md)** —
+    [stylized-effects.md](rendering/stylized-effects.md)
 
 ## 3. Geometry & World
 
@@ -94,13 +134,22 @@ See [personas.md](personas.md) for the complete persona catalog (27 personas).
 
 ## 6. Input
 
-| File | Area | Stories |
-|------|------|---------|
-| [input-actions-and-mapping.md](input/input-actions-and-mapping.md) | Input Actions & Mapping | 132 |
-| [device-abstraction.md](input/device-abstraction.md) | Device Abstraction | 60 |
-| [gestures.md](input/gestures.md) | Gestures | 60 |
-| [haptics-and-feedback.md](input/haptics-and-feedback.md) | Haptics & Feedback | 60 |
-| [vr-input.md](input/vr-input.md) | VR Input | 60 |
+| Area                    | Stories |
+|-------------------------|---------|
+| Input Actions & Mapping | 132     |
+| Device Abstraction      | 60      |
+| Gestures                | 60      |
+| Haptics & Feedback      | 60      |
+| VR Input                | 60      |
+
+1. **[input-actions-and-mapping.md](input/input-actions-and-mapping.md)** —
+   [input-actions-and-mapping.md](input/input-actions-and-mapping.md)
+2. **[device-abstraction.md](input/device-abstraction.md)** —
+   [device-abstraction.md](input/device-abstraction.md)
+3. **[gestures.md](input/gestures.md)** — [gestures.md](input/gestures.md)
+4. **[haptics-and-feedback.md](input/haptics-and-feedback.md)** —
+   [haptics-and-feedback.md](input/haptics-and-feedback.md)
+5. **[vr-input.md](input/vr-input.md)** — [vr-input.md](input/vr-input.md)
 
 ## 7. AI
 
@@ -175,36 +224,87 @@ See [personas.md](personas.md) for the complete persona catalog (27 personas).
 
 ## 13. Game Framework
 
-| File | Area | Stories |
-|------|------|---------|
-| [camera-system.md](game-framework/camera-system.md) | Camera System | 125 |
-| [building-survival.md](game-framework/building-survival.md) | Building & Survival | 96 |
-| [social.md](game-framework/social.md) | Social | 94 |
-| [block-voxel.md](game-framework/block-voxel.md) | Block & Voxel | 84 |
-| [monetization.md](game-framework/monetization.md) | Monetization | 80 |
-| [progression.md](game-framework/progression.md) | Progression | 78 |
-| [traversal-interaction.md](game-framework/traversal-interaction.md) | Traversal & Interaction | 77 |
-| [npc-simulation.md](game-framework/npc-simulation.md) | NPC Simulation | 75 |
-| [weapon-system.md](game-framework/weapon-system.md) | Weapon System | 74 |
-| [game-modes-misc.md](game-framework/game-modes-misc.md) | Game Modes & Misc | 67 |
-| [gameplay-primitives.md](game-framework/gameplay-primitives.md) | Gameplay Primitives | 62 |
-| [selection-system.md](game-framework/selection-system.md) | Selection System | 55 |
-| [pets-mounts.md](game-framework/pets-mounts.md) | Pets & Mounts | 53 |
-| [minigames.md](game-framework/minigames.md) | Minigames | 52 |
-| [character-customization.md](game-framework/character-customization.md) | Character Customization | 49 |
-| [gameplay-databases.md](game-framework/gameplay-databases.md) | Gameplay Databases | 42 |
-| [quest-dialogue.md](game-framework/quest-dialogue.md) | Quest & Dialogue | 41 |
-| [inventory.md](game-framework/inventory.md) | Inventory | 38 |
-| [stealth-cover.md](game-framework/stealth-cover.md) | Stealth & Cover | 35 |
-| [racing.md](game-framework/racing.md) | Racing | 33 |
-| [turn-based.md](game-framework/turn-based.md) | Turn-Based | 33 |
-| [world-management.md](game-framework/world-management.md) | World Management | 32 |
-| [abilities.md](game-framework/abilities.md) | Abilities | 30 |
-| [cinematics.md](game-framework/cinematics.md) | Cinematics | 30 |
-| [advertising.md](game-framework/advertising.md) | Advertising | 25 |
-| [save-system.md](game-framework/save-system.md) | Save System | 24 |
-| [fog-of-war.md](game-framework/fog-of-war.md) | Fog of War | 23 |
-| [scripting.md](game-framework/scripting.md) | Scripting | 17 |
+| Area                    | Stories |
+|-------------------------|---------|
+| Camera System           | 125     |
+| Building & Survival     | 96      |
+| Social                  | 94      |
+| Block & Voxel           | 84      |
+| Monetization            | 80      |
+| Progression             | 78      |
+| Traversal & Interaction | 77      |
+| NPC Simulation          | 75      |
+| Weapon System           | 74      |
+| Game Modes & Misc       | 67      |
+| Gameplay Primitives     | 62      |
+| Selection System        | 55      |
+| Pets & Mounts           | 53      |
+| Minigames               | 52      |
+| Character Customization | 49      |
+| Gameplay Databases      | 42      |
+| Quest & Dialogue        | 41      |
+| Inventory               | 38      |
+| Stealth & Cover         | 35      |
+| Racing                  | 33      |
+| Turn-Based              | 33      |
+| World Management        | 32      |
+| Abilities               | 30      |
+| Cinematics              | 30      |
+| Advertising             | 25      |
+| Save System             | 24      |
+| Fog of War              | 23      |
+| Scripting               | 17      |
+
+1. **[camera-system.md](game-framework/camera-system.md)** —
+   [camera-system.md](game-framework/camera-system.md)
+2. **[building-survival.md](game-framework/building-survival.md)** —
+   [building-survival.md](game-framework/building-survival.md)
+3. **[social.md](game-framework/social.md)** — [social.md](game-framework/social.md)
+4. **[block-voxel.md](game-framework/block-voxel.md)** —
+   [block-voxel.md](game-framework/block-voxel.md)
+5. **[monetization.md](game-framework/monetization.md)** —
+   [monetization.md](game-framework/monetization.md)
+6. **[progression.md](game-framework/progression.md)** —
+   [progression.md](game-framework/progression.md)
+7. **[traversal-interaction.md](game-framework/traversal-interaction.md)** —
+   [traversal-interaction.md](game-framework/traversal-interaction.md)
+8. **[npc-simulation.md](game-framework/npc-simulation.md)** —
+   [npc-simulation.md](game-framework/npc-simulation.md)
+9. **[weapon-system.md](game-framework/weapon-system.md)** —
+   [weapon-system.md](game-framework/weapon-system.md)
+10. **[game-modes-misc.md](game-framework/game-modes-misc.md)** —
+    [game-modes-misc.md](game-framework/game-modes-misc.md)
+11. **[gameplay-primitives.md](game-framework/gameplay-primitives.md)** —
+    [gameplay-primitives.md](game-framework/gameplay-primitives.md)
+12. **[selection-system.md](game-framework/selection-system.md)** —
+    [selection-system.md](game-framework/selection-system.md)
+13. **[pets-mounts.md](game-framework/pets-mounts.md)** —
+    [pets-mounts.md](game-framework/pets-mounts.md)
+14. **[minigames.md](game-framework/minigames.md)** — [minigames.md](game-framework/minigames.md)
+15. **[character-customization.md](game-framework/character-customization.md)** —
+    [character-customization.md](game-framework/character-customization.md)
+16. **[gameplay-databases.md](game-framework/gameplay-databases.md)** —
+    [gameplay-databases.md](game-framework/gameplay-databases.md)
+17. **[quest-dialogue.md](game-framework/quest-dialogue.md)** —
+    [quest-dialogue.md](game-framework/quest-dialogue.md)
+18. **[inventory.md](game-framework/inventory.md)** — [inventory.md](game-framework/inventory.md)
+19. **[stealth-cover.md](game-framework/stealth-cover.md)** —
+    [stealth-cover.md](game-framework/stealth-cover.md)
+20. **[racing.md](game-framework/racing.md)** — [racing.md](game-framework/racing.md)
+21. **[turn-based.md](game-framework/turn-based.md)** —
+    [turn-based.md](game-framework/turn-based.md)
+22. **[world-management.md](game-framework/world-management.md)** —
+    [world-management.md](game-framework/world-management.md)
+23. **[abilities.md](game-framework/abilities.md)** — [abilities.md](game-framework/abilities.md)
+24. **[cinematics.md](game-framework/cinematics.md)** —
+    [cinematics.md](game-framework/cinematics.md)
+25. **[advertising.md](game-framework/advertising.md)** —
+    [advertising.md](game-framework/advertising.md)
+26. **[save-system.md](game-framework/save-system.md)** —
+    [save-system.md](game-framework/save-system.md)
+27. **[fog-of-war.md](game-framework/fog-of-war.md)** —
+    [fog-of-war.md](game-framework/fog-of-war.md)
+28. **[scripting.md](game-framework/scripting.md)** — [scripting.md](game-framework/scripting.md)
 
 ## 14. Platform
 

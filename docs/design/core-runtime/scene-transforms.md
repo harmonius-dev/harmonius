@@ -8,15 +8,25 @@
 > [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-1.2.1 | R-1.2.1 | US-1.2.1, US-1.2.2 | Entity-based scene hierarchy with parent-child ECS relationships and batched modifications |
-| F-1.2.2 | R-1.2.2, R-1.2.2a | US-1.2.3, US-1.2.4 | Allocation-free DFS/BFS traversal iterators with early termination and subtree skipping |
-| F-1.2.3 | R-1.2.3 | US-1.2.5, US-1.2.6 | Cascading lifecycle propagation with optional orphan-on-delete semantics |
-| F-1.2.4 | R-1.2.4, R-1.2.4a | US-1.2.7, US-1.2.8, US-1.2.13 | Parallel hierarchical transform propagation with iterative top-down traversal |
-| F-1.2.5 | R-1.2.5 | US-1.2.9, US-1.2.10 | Dirty tracking via ECS tick-based change detection to skip static subtrees |
-| F-1.2.6 | R-1.2.6 | US-1.2.11 | Spatial partitioning delegated to shared BVH spatial index (F-1.9.1) |
-| F-1.2.7 | R-1.2.7 | US-1.2.12 | Spatial scene queries combining spatial and ECS archetype filtering |
+| Feature | Requirement       | User Stories                  |
+|---------|-------------------|-------------------------------|
+| F-1.2.1 | R-1.2.1           | US-1.2.1, US-1.2.2            |
+| F-1.2.2 | R-1.2.2, R-1.2.2a | US-1.2.3, US-1.2.4            |
+| F-1.2.3 | R-1.2.3           | US-1.2.5, US-1.2.6            |
+| F-1.2.4 | R-1.2.4, R-1.2.4a | US-1.2.7, US-1.2.8, US-1.2.13 |
+| F-1.2.5 | R-1.2.5           | US-1.2.9, US-1.2.10           |
+| F-1.2.6 | R-1.2.6           | US-1.2.11                     |
+| F-1.2.7 | R-1.2.7           | US-1.2.12                     |
+
+1. **F-1.2.1** — Entity-based scene hierarchy with parent-child ECS relationships and batched
+   modifications
+2. **F-1.2.2** — Allocation-free DFS/BFS traversal iterators with early termination and subtree
+   skipping
+3. **F-1.2.3** — Cascading lifecycle propagation with optional orphan-on-delete semantics
+4. **F-1.2.4** — Parallel hierarchical transform propagation with iterative top-down traversal
+5. **F-1.2.5** — Dirty tracking via ECS tick-based change detection to skip static subtrees
+6. **F-1.2.6** — Spatial partitioning delegated to shared BVH spatial index (F-1.9.1)
+7. **F-1.2.7** — Spatial scene queries combining spatial and ECS archetype filtering
 
 ### Cross-Cutting Dependencies
 
@@ -1236,57 +1246,117 @@ No custom SIMD code is needed; `glam` handles this transparently.
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `smallvec` | Inline-allocated small vectors | Traversal stacks and child lists without heap allocation |
-| `glam` | Math types (Vec3, Quat, Mat4) | SIMD-accelerated transform composition on all platforms |
+| Crate      | Purpose                        |
+|------------|--------------------------------|
+| `smallvec` | Inline-allocated small vectors |
+| `glam`     | Math types (Vec3, Quat, Mat4)  |
+
+1. **`smallvec`** — Traversal stacks and child lists without heap allocation
+2. **`glam`** — SIMD-accelerated transform composition on all platforms
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_transform_identity` | R-1.2.4 | `Transform::IDENTITY.local_matrix()` returns `Mat4::IDENTITY`. |
-| `test_transform_compose_trs` | R-1.2.4 | Verify T * R * S composition matches reference matrix. |
-| `test_global_transform_decompose` | R-1.2.4 | Round-trip: compose then decompose translation, rotation, scale. |
-| `test_hierarchy_single_parent` | R-1.2.1 | Entity has at most one Parent. Setting a new parent removes the old one. |
-| `test_children_ordering` | R-1.2.1 | Children list preserves insertion order after add/remove. |
-| `test_set_parent_command` | R-1.2.1 | `set_parent` via command buffer adds Parent, updates Children, emits event. |
-| `test_remove_parent_command` | R-1.2.1 | `remove_parent` removes Parent, updates old parent's Children, emits event. |
-| `test_reparent_child` | R-1.2.1 | Moving a child to a new parent removes it from old parent's Children. |
-| `test_cascade_despawn` | R-1.2.3 | Despawning parent recursively despawns 3-level hierarchy. |
-| `test_orphan_on_delete` | R-1.2.3 | `despawn_orphaning` reparents children to root. |
-| `test_no_orphaned_entities` | R-1.2.3 | After cascading delete, world contains zero orphaned entities. |
-| `test_dfs_traversal_order` | R-1.2.2 | 5-level tree: verify DFS visit order matches expected sequence. |
-| `test_bfs_traversal_order` | R-1.2.2 | 5-level tree: verify BFS visit order matches expected sequence. |
-| `test_traversal_skip_subtree` | R-1.2.2 | Skip a subtree during DFS; verify skipped entities not visited. |
-| `test_traversal_early_termination` | R-1.2.2 | Break after N nodes; verify only N nodes visited. |
-| `test_traversal_256_depth` | R-1.2.2a | 256-level chain: verify zero heap allocations and correct traversal. |
-| `test_traversal_300_depth_fallback` | R-1.2.2a | 300-level chain: verify correct traversal via heap fallback. |
-| `test_traversal_depth_warning` | R-1.2.2a | 129-level tree: verify diagnostic warning fires. |
-| `test_propagation_root_only` | R-1.2.4 | Root entity with no parent: `GlobalTransform == Transform.local_matrix()`. |
-| `test_propagation_two_levels` | R-1.2.4 | Parent + child: child's GlobalTransform = parent.global * child.local. |
-| `test_propagation_deep_chain` | R-1.2.4 | 50-level chain: verify leaf's GlobalTransform matches serial reference. |
-| `test_propagation_no_stack_overflow` | R-1.2.4 | 1000-level chain: verify no stack overflow (iterative algorithm). |
-| `test_dirty_tracking_unchanged` | R-1.2.5 | Unmodified entity: GlobalTransform not recomputed. |
-| `test_dirty_leaf_only` | R-1.2.5 | Modify leaf only: only leaf's GlobalTransform recomputed. |
-| `test_dirty_root_propagates` | R-1.2.5 | Modify root: all descendants recomputed. |
-| `test_dirty_no_false_marks` | R-1.2.5 | Read-only access to Transform does not trigger dirty flag. |
-| `test_scene_serialize_roundtrip` | R-1.2.1 | Serialize scene, deserialize, verify identical hierarchy and transforms. |
-| `test_scene_entity_remap` | R-1.2.1 | Spawn scene: verify entity references in components are remapped. |
-| `test_scene_spawn_as_child` | R-1.2.1 | Spawn scene under a parent: roots become children of target parent. |
-| `test_scene_cyclic_detection` | R-1.2.1 | Attempt to serialize cyclic hierarchy: returns `CyclicHierarchy` error. |
+| Test                                 | Req      |
+|--------------------------------------|----------|
+| `test_transform_identity`            | R-1.2.4  |
+| `test_transform_compose_trs`         | R-1.2.4  |
+| `test_global_transform_decompose`    | R-1.2.4  |
+| `test_hierarchy_single_parent`       | R-1.2.1  |
+| `test_children_ordering`             | R-1.2.1  |
+| `test_set_parent_command`            | R-1.2.1  |
+| `test_remove_parent_command`         | R-1.2.1  |
+| `test_reparent_child`                | R-1.2.1  |
+| `test_cascade_despawn`               | R-1.2.3  |
+| `test_orphan_on_delete`              | R-1.2.3  |
+| `test_no_orphaned_entities`          | R-1.2.3  |
+| `test_dfs_traversal_order`           | R-1.2.2  |
+| `test_bfs_traversal_order`           | R-1.2.2  |
+| `test_traversal_skip_subtree`        | R-1.2.2  |
+| `test_traversal_early_termination`   | R-1.2.2  |
+| `test_traversal_256_depth`           | R-1.2.2a |
+| `test_traversal_300_depth_fallback`  | R-1.2.2a |
+| `test_traversal_depth_warning`       | R-1.2.2a |
+| `test_propagation_root_only`         | R-1.2.4  |
+| `test_propagation_two_levels`        | R-1.2.4  |
+| `test_propagation_deep_chain`        | R-1.2.4  |
+| `test_propagation_no_stack_overflow` | R-1.2.4  |
+| `test_dirty_tracking_unchanged`      | R-1.2.5  |
+| `test_dirty_leaf_only`               | R-1.2.5  |
+| `test_dirty_root_propagates`         | R-1.2.5  |
+| `test_dirty_no_false_marks`          | R-1.2.5  |
+| `test_scene_serialize_roundtrip`     | R-1.2.1  |
+| `test_scene_entity_remap`            | R-1.2.1  |
+| `test_scene_spawn_as_child`          | R-1.2.1  |
+| `test_scene_cyclic_detection`        | R-1.2.1  |
+
+1. **`test_transform_identity`** — `Transform::IDENTITY.local_matrix()` returns `Mat4::IDENTITY`.
+2. **`test_transform_compose_trs`** — Verify T * R * S composition matches reference matrix.
+3. **`test_global_transform_decompose`** — Round-trip: compose then decompose translation, rotation,
+   scale.
+4. **`test_hierarchy_single_parent`** — Entity has at most one Parent. Setting a new parent removes
+   the old one.
+5. **`test_children_ordering`** — Children list preserves insertion order after add/remove.
+6. **`test_set_parent_command`** — `set_parent` via command buffer adds Parent, updates Children,
+   emits event.
+7. **`test_remove_parent_command`** — `remove_parent` removes Parent, updates old parent's Children,
+   emits event.
+8. **`test_reparent_child`** — Moving a child to a new parent removes it from old parent's Children.
+9. **`test_cascade_despawn`** — Despawning parent recursively despawns 3-level hierarchy.
+10. **`test_orphan_on_delete`** — `despawn_orphaning` reparents children to root.
+11. **`test_no_orphaned_entities`** — After cascading delete, world contains zero orphaned entities.
+12. **`test_dfs_traversal_order`** — 5-level tree: verify DFS visit order matches expected sequence.
+13. **`test_bfs_traversal_order`** — 5-level tree: verify BFS visit order matches expected sequence.
+14. **`test_traversal_skip_subtree`** — Skip a subtree during DFS; verify skipped entities not
+    visited.
+15. **`test_traversal_early_termination`** — Break after N nodes; verify only N nodes visited.
+16. **`test_traversal_256_depth`** — 256-level chain: verify zero heap allocations and correct
+    traversal.
+17. **`test_traversal_300_depth_fallback`** — 300-level chain: verify correct traversal via heap
+    fallback.
+18. **`test_traversal_depth_warning`** — 129-level tree: verify diagnostic warning fires.
+19. **`test_propagation_root_only`** — Root entity with no parent:
+    `GlobalTransform == Transform.local_matrix()`.
+20. **`test_propagation_two_levels`** — Parent + child: child's GlobalTransform = parent.global *
+    child.local.
+21. **`test_propagation_deep_chain`** — 50-level chain: verify leaf's GlobalTransform matches serial
+    reference.
+22. **`test_propagation_no_stack_overflow`** — 1000-level chain: verify no stack overflow (iterative
+    algorithm).
+23. **`test_dirty_tracking_unchanged`** — Unmodified entity: GlobalTransform not recomputed.
+24. **`test_dirty_leaf_only`** — Modify leaf only: only leaf's GlobalTransform recomputed.
+25. **`test_dirty_root_propagates`** — Modify root: all descendants recomputed.
+26. **`test_dirty_no_false_marks`** — Read-only access to Transform does not trigger dirty flag.
+27. **`test_scene_serialize_roundtrip`** — Serialize scene, deserialize, verify identical hierarchy
+    and transforms.
+28. **`test_scene_entity_remap`** — Spawn scene: verify entity references in components are
+    remapped.
+29. **`test_scene_spawn_as_child`** — Spawn scene under a parent: roots become children of target
+    parent.
+30. **`test_scene_cyclic_detection`** — Attempt to serialize cyclic hierarchy: returns
+    `CyclicHierarchy` error.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_parallel_propagation_correctness` | R-1.2.4 | 100K entities, mixed depths 1-50: parallel results match serial reference. |
-| `test_propagation_same_frame` | R-1.2.4a | Modify Transform in Update, read GlobalTransform in PreRender: no 1-frame lag. |
-| `test_hierarchy_during_parallel` | R-1.2.1 | Hierarchy modifications via commands during parallel iteration: no data races (run under ThreadSanitizer). |
-| `test_spatial_index_after_propagation` | R-1.2.6 | After propagation, spatial query returns entities at correct world positions. |
-| `test_scene_with_prefabs` | R-1.2.1 | Scene containing prefab instances: verify hierarchy and overrides preserved. |
+| Test                                    | Req      |
+|-----------------------------------------|----------|
+| `test_parallel_propagation_correctness` | R-1.2.4  |
+| `test_propagation_same_frame`           | R-1.2.4a |
+| `test_hierarchy_during_parallel`        | R-1.2.1  |
+| `test_spatial_index_after_propagation`  | R-1.2.6  |
+| `test_scene_with_prefabs`               | R-1.2.1  |
+
+1. **`test_parallel_propagation_correctness`** — 100K entities, mixed depths 1-50: parallel results
+   match serial reference.
+2. **`test_propagation_same_frame`** — Modify Transform in Update, read GlobalTransform in
+   PreRender: no 1-frame lag.
+3. **`test_hierarchy_during_parallel`** — Hierarchy modifications via commands during parallel
+   iteration: no data races (run under ThreadSanitizer).
+4. **`test_spatial_index_after_propagation`** — After propagation, spatial query returns entities at
+   correct world positions.
+5. **`test_scene_with_prefabs`** — Scene containing prefab instances: verify hierarchy and overrides
+   preserved.
 
 ### Benchmarks
 

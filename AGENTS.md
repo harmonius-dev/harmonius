@@ -8,8 +8,10 @@ This handbook provides guidelines and best practices for agents working on the H
 - Never create ASCII diagrams. Instead, create Mermaid diagrams. Always render Mermaid diagrams with
   the MCP to ensure correctness and readability.
 - Always limit lines to 100 characters for all code, configuration, documentation, and comments. The
-  limit may be exceeded if the line cannot be split without changing semantics. The line length
-  limit does not apply to tables in Markdown documents.
+  limit may be exceeded if the line cannot be split without changing semantics.
+- Tables in Markdown documents must also fit within 100 characters per line. Keep short identifiers
+  (IDs, names, refs) in the table and move long content (descriptions, rationale, verification) into
+  a numbered detail list below the table. Split wide tables into two tables sharing column 0 as key.
 - Always sort JSON documents by keys in lexicographical order. Do not sort JSON arrays, only JSON
   objects.
 - Be visual when possible. Use Mermaid diagrams frequently to illustrate concepts to me during
@@ -31,6 +33,7 @@ standard before writing or reviewing code in any language.
 | [C++](docs/standards/cpp.md) | FFI bridges (cxx.rs) |
 | [Swift](docs/standards/swift.md) | macOS platform (cxx.rs) |
 | [TypeScript](docs/standards/typescript.md) | Tooling, editor, build |
+| [Python](docs/standards/python.md) | Scripts and tools (ruff) |
 | [HLSL](docs/standards/hlsl.md) | Shader IL (DXC pipeline) |
 | [Markdown](docs/standards/markdown.md) | Documentation (rumdl) |
 | [JSON](docs/standards/json.md) | Configuration files |

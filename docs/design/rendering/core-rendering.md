@@ -10,31 +10,55 @@
 
 ### Functional Requirements
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-2.3.1 | R-2.3.1 | US-2.3.1.1, US-2.3.1.2, US-2.3.1.3 | Direct lighting: point, spot, directional with unified light buffer |
-| F-2.3.2 | R-2.3.2 | US-2.3.2.1, US-2.3.2.2 | GPU meshlet-level frustum culling via compute |
-| F-2.3.3 | R-2.3.3 | US-2.3.3.1, US-2.3.3.2 | Meshlet-level backface culling via normal cones |
-| F-2.3.4 | R-2.3.4 | US-2.3.4.1, US-2.3.4.2, US-2.3.4.3 | Two-phase HZB occlusion culling |
-| F-2.3.5 | R-2.3.5 | US-2.3.5.1, US-2.3.5.2 | Orthographic camera projection |
-| F-2.3.6 | R-2.3.6 | US-2.3.6.1, US-2.3.6.2 | Perspective projection with reverse-Z |
-| F-2.3.7 | R-2.3.7 | US-2.3.7.1, US-2.3.7.2, US-2.3.7.3 | GPU-driven instancing and batch compaction |
-| F-2.3.8 | R-2.3.8 | US-2.3.8.1, US-2.3.8.2 | Render-to-texture with automatic barriers |
-| F-2.3.9 | R-2.3.9 | US-2.3.9.1, US-2.3.9.2 | Static and dynamic cubemap rendering |
-| F-2.3.10 | R-2.3.10 | US-2.3.10.1, US-2.3.10.2 | Scene capture (planar and cubemap) |
-| F-2.3.11 | R-2.3.11 | US-2.3.11.1, US-2.3.11.2, US-2.3.11.3 | Dynamic resolution scaling with GPU feedback |
-| F-2.3.12 | R-2.3.12 | US-2.3.12.1, US-2.3.12.2 | Subsurface scattering (screen-space and RT) |
-| F-2.3.13 | R-2.3.13 | US-2.3.13.1, US-2.3.13.2 | Alpha mask cutout geometry |
-| F-2.10.1 | R-2.10.1 | US-2.10.1.1, US-2.10.1.2 | Render proxy extraction on dedicated thread via immutable ECS queries |
-| F-2.10.2 | R-2.10.2 | US-2.10.2.1, US-2.10.2.2 | SoA proxy components (mesh, material, transform, bounds) for GPU upload |
-| F-2.10.3 | R-2.10.3 | US-2.10.3.1, US-2.10.3.2, US-2.10.3.3 | Dirty-flag incremental proxy updates, O(changed) per frame |
-| F-2.10.4 | R-2.10.4 | US-2.10.4.1, US-2.10.4.2 | View and camera registration with projection, viewport, platform tier |
-| F-2.10.5 | R-2.10.5 | US-2.10.5.1, US-2.10.5.2 | Multi-view rendering from single snapshot (shadows, probes, VR) |
-| F-2.10.6 | R-2.10.6 | US-2.10.6.1, US-2.10.6.2 | Per-view draw lists with sort keys minimizing state changes |
-| F-2.10.7 | R-2.10.7 | US-2.10.7.1, US-2.10.7.2 | GPU compute batch compaction into indirect draw buffers |
-| F-2.10.8 | R-2.10.8 | US-2.10.8.1, US-2.10.8.2 | Bindless material parameter binding via per-instance descriptor indices |
-| F-2.10.9 | R-2.10.9 | US-2.10.9.1, US-2.10.9.2 | Immediate-mode debug draw API, compile-time gated for shipping |
-| F-2.10.10 | R-2.10.10 | US-2.10.10.1, US-2.10.10.2 | Buffer visualization modes (depth, normals, overdraw, etc.) |
+| Feature   | Requirement | User Stories                          |
+|-----------|-------------|---------------------------------------|
+| F-2.3.1   | R-2.3.1     | US-2.3.1.1, US-2.3.1.2, US-2.3.1.3    |
+| F-2.3.2   | R-2.3.2     | US-2.3.2.1, US-2.3.2.2                |
+| F-2.3.3   | R-2.3.3     | US-2.3.3.1, US-2.3.3.2                |
+| F-2.3.4   | R-2.3.4     | US-2.3.4.1, US-2.3.4.2, US-2.3.4.3    |
+| F-2.3.5   | R-2.3.5     | US-2.3.5.1, US-2.3.5.2                |
+| F-2.3.6   | R-2.3.6     | US-2.3.6.1, US-2.3.6.2                |
+| F-2.3.7   | R-2.3.7     | US-2.3.7.1, US-2.3.7.2, US-2.3.7.3    |
+| F-2.3.8   | R-2.3.8     | US-2.3.8.1, US-2.3.8.2                |
+| F-2.3.9   | R-2.3.9     | US-2.3.9.1, US-2.3.9.2                |
+| F-2.3.10  | R-2.3.10    | US-2.3.10.1, US-2.3.10.2              |
+| F-2.3.11  | R-2.3.11    | US-2.3.11.1, US-2.3.11.2, US-2.3.11.3 |
+| F-2.3.12  | R-2.3.12    | US-2.3.12.1, US-2.3.12.2              |
+| F-2.3.13  | R-2.3.13    | US-2.3.13.1, US-2.3.13.2              |
+| F-2.10.1  | R-2.10.1    | US-2.10.1.1, US-2.10.1.2              |
+| F-2.10.2  | R-2.10.2    | US-2.10.2.1, US-2.10.2.2              |
+| F-2.10.3  | R-2.10.3    | US-2.10.3.1, US-2.10.3.2, US-2.10.3.3 |
+| F-2.10.4  | R-2.10.4    | US-2.10.4.1, US-2.10.4.2              |
+| F-2.10.5  | R-2.10.5    | US-2.10.5.1, US-2.10.5.2              |
+| F-2.10.6  | R-2.10.6    | US-2.10.6.1, US-2.10.6.2              |
+| F-2.10.7  | R-2.10.7    | US-2.10.7.1, US-2.10.7.2              |
+| F-2.10.8  | R-2.10.8    | US-2.10.8.1, US-2.10.8.2              |
+| F-2.10.9  | R-2.10.9    | US-2.10.9.1, US-2.10.9.2              |
+| F-2.10.10 | R-2.10.10   | US-2.10.10.1, US-2.10.10.2            |
+
+1. **F-2.3.1** — Direct lighting: point, spot, directional with unified light buffer
+2. **F-2.3.2** — GPU meshlet-level frustum culling via compute
+3. **F-2.3.3** — Meshlet-level backface culling via normal cones
+4. **F-2.3.4** — Two-phase HZB occlusion culling
+5. **F-2.3.5** — Orthographic camera projection
+6. **F-2.3.6** — Perspective projection with reverse-Z
+7. **F-2.3.7** — GPU-driven instancing and batch compaction
+8. **F-2.3.8** — Render-to-texture with automatic barriers
+9. **F-2.3.9** — Static and dynamic cubemap rendering
+10. **F-2.3.10** — Scene capture (planar and cubemap)
+11. **F-2.3.11** — Dynamic resolution scaling with GPU feedback
+12. **F-2.3.12** — Subsurface scattering (screen-space and RT)
+13. **F-2.3.13** — Alpha mask cutout geometry
+14. **F-2.10.1** — Render proxy extraction on dedicated thread via immutable ECS queries
+15. **F-2.10.2** — SoA proxy components (mesh, material, transform, bounds) for GPU upload
+16. **F-2.10.3** — Dirty-flag incremental proxy updates, O(changed) per frame
+17. **F-2.10.4** — View and camera registration with projection, viewport, platform tier
+18. **F-2.10.5** — Multi-view rendering from single snapshot (shadows, probes, VR)
+19. **F-2.10.6** — Per-view draw lists with sort keys minimizing state changes
+20. **F-2.10.7** — GPU compute batch compaction into indirect draw buffers
+21. **F-2.10.8** — Bindless material parameter binding via per-instance descriptor indices
+22. **F-2.10.9** — Immediate-mode debug draw API, compile-time gated for shipping
+23. **F-2.10.10** — Buffer visualization modes (depth, normals, overdraw, etc.)
 
 ### Non-Functional Requirements
 
@@ -49,34 +73,61 @@
 
 ### Cross-Cutting Dependencies
 
-| Dependency | Source | Consumed API |
-|------------|--------|--------------|
-| ECS world and queries | F-1.1.1, F-1.1.17, F-1.1.20 | Archetype storage, composable queries, parallel iteration |
-| Change detection | F-1.1.22 | Tick-based `Changed<T>` queries for incremental extraction |
-| System scheduling | F-1.1.25, F-1.1.26 | `PreRender` and `Render` phase ordering |
-| Shared spatial index | F-1.9.1, F-1.9.4, F-1.9.7 | BVH frustum query for visibility determination |
-| Scene transforms | F-1.2.4 | `GlobalTransform` world-space matrices |
-| Render graph | F-2.2.1, F-2.2.9, F-2.2.10 | Pass registration, multi-view execution, parallel encoding |
-| GPU backend trait | F-2.1.1 | `GpuBackend` associated types |
-| Command buffer | F-2.1.2 | `CommandBuffer::dispatch`, `draw_indexed_indirect` |
-| Pipeline state | F-2.1.3 | `PipelineState` creation and binding |
-| GPU sub-allocator | F-2.1.7 | `GpuAllocator::alloc_buffer`, `alloc_texture` |
-| GPU state tracking | F-2.1.8 | Redundant state filtering |
-| Barrier optimization | F-2.1.9 | Automatic barrier batching |
-| GPU timing queries | F-2.1.12 | `TimestampQuery` for DRS feedback |
-| Transient resources | F-2.2.3 | Virtual resource handles |
-| Render proxy extraction | F-2.10.1 | Frame snapshot from ECS |
-| Render components | F-2.10.2 | SoA proxy layout |
-| Change detection (render) | F-2.10.3 | Dirty-flag incremental upload |
-| Draw list construction | F-2.10.6 | Sort key generation |
-| Meshlet decomposition | F-3.1.1 | Meshlet AABB, normal cone, LOD DAG |
-| Two-phase HZB (shared) | F-3.1.2 | HZB build and test shaders |
-| Thread pool | F-14.3.1, F-14.3.3 | Scoped parallel tasks, task graph execution |
-| PBR materials | F-2.4.3 | Cook-Torrance BRDF evaluation |
-| Forward+ tiled | F-2.4.1 | Tiled/clustered light assignment |
-| Deferred G-buffer | F-2.4.2 | G-buffer layout and lighting pass |
-| Viewport | gpu-abstraction | `Viewport` defined in `harmonius_gpu` (not redefined here) |
-| Platform tier | shared-primitives | `PlatformTier` enum (not redefined here) |
+| Dependency                | Source                      |
+|---------------------------|-----------------------------|
+| ECS world and queries     | F-1.1.1, F-1.1.17, F-1.1.20 |
+| Change detection          | F-1.1.22                    |
+| System scheduling         | F-1.1.25, F-1.1.26          |
+| Shared spatial index      | F-1.9.1, F-1.9.4, F-1.9.7   |
+| Scene transforms          | F-1.2.4                     |
+| Render graph              | F-2.2.1, F-2.2.9, F-2.2.10  |
+| GPU backend trait         | F-2.1.1                     |
+| Command buffer            | F-2.1.2                     |
+| Pipeline state            | F-2.1.3                     |
+| GPU sub-allocator         | F-2.1.7                     |
+| GPU state tracking        | F-2.1.8                     |
+| Barrier optimization      | F-2.1.9                     |
+| GPU timing queries        | F-2.1.12                    |
+| Transient resources       | F-2.2.3                     |
+| Render proxy extraction   | F-2.10.1                    |
+| Render components         | F-2.10.2                    |
+| Change detection (render) | F-2.10.3                    |
+| Draw list construction    | F-2.10.6                    |
+| Meshlet decomposition     | F-3.1.1                     |
+| Two-phase HZB (shared)    | F-3.1.2                     |
+| Thread pool               | F-14.3.1, F-14.3.3          |
+| PBR materials             | F-2.4.3                     |
+| Forward+ tiled            | F-2.4.1                     |
+| Deferred G-buffer         | F-2.4.2                     |
+| Viewport                  | gpu-abstraction             |
+| Platform tier             | shared-primitives           |
+
+1. **ECS world and queries** — Archetype storage, composable queries, parallel iteration
+2. **Change detection** — Tick-based `Changed<T>` queries for incremental extraction
+3. **System scheduling** — `PreRender` and `Render` phase ordering
+4. **Shared spatial index** — BVH frustum query for visibility determination
+5. **Scene transforms** — `GlobalTransform` world-space matrices
+6. **Render graph** — Pass registration, multi-view execution, parallel encoding
+7. **GPU backend trait** — `GpuBackend` associated types
+8. **Command buffer** — `CommandBuffer::dispatch`, `draw_indexed_indirect`
+9. **Pipeline state** — `PipelineState` creation and binding
+10. **GPU sub-allocator** — `GpuAllocator::alloc_buffer`, `alloc_texture`
+11. **GPU state tracking** — Redundant state filtering
+12. **Barrier optimization** — Automatic barrier batching
+13. **GPU timing queries** — `TimestampQuery` for DRS feedback
+14. **Transient resources** — Virtual resource handles
+15. **Render proxy extraction** — Frame snapshot from ECS
+16. **Render components** — SoA proxy layout
+17. **Change detection (render)** — Dirty-flag incremental upload
+18. **Draw list construction** — Sort key generation
+19. **Meshlet decomposition** — Meshlet AABB, normal cone, LOD DAG
+20. **Two-phase HZB (shared)** — HZB build and test shaders
+21. **Thread pool** — Scoped parallel tasks, task graph execution
+22. **PBR materials** — Cook-Torrance BRDF evaluation
+23. **Forward+ tiled** — Tiled/clustered light assignment
+24. **Deferred G-buffer** — G-buffer layout and lighting pass
+25. **Viewport** — `Viewport` defined in `harmonius_gpu` (not redefined here)
+26. **Platform tier** — `PlatformTier` enum (not redefined here)
 
 ## Overview
 
@@ -2872,27 +2923,51 @@ sequenceDiagram
 
 ### Platform Scaling
 
-| Tier | Max Proxies | Max Views | Indirect Draw | Draw Lists |
-|------|-------------|-----------|---------------|------------|
-| Mobile | 50K | 4 (main + 2-3 shadows) | Vulkan 1.1+ / Metal GPU family 3+ | Smaller compaction buffers |
-| Switch | 200K | 8 | Full indirect compaction | Medium buffers |
-| Desktop | 1M+ | Configurable, dozens | Full indirect compaction | Large buffers |
+| Tier    |
+|---------|
+| Mobile  |
+| Switch  |
+| Desktop |
+
+1. **Mobile** — 50K
+   - **Max Views:** 4 (main + 2-3 shadows)
+   - **Indirect Draw:** Vulkan 1.1+ / Metal GPU family 3+
+   - **Draw Lists:** Smaller compaction buffers
+2. **Switch** — 200K
+   - **Max Views:** 8
+   - **Indirect Draw:** Full indirect compaction
+   - **Draw Lists:** Medium buffers
+3. **Desktop** — 1M+
+   - **Max Views:** Configurable, dozens
+   - **Indirect Draw:** Full indirect compaction
+   - **Draw Lists:** Large buffers
 
 ### Backend-Specific Bindless Binding
 
-| Backend | Mechanism | Notes |
-|---------|-----------|-------|
-| Metal | Argument buffers | `MTLArgumentEncoder` writes bindless indices into an argument buffer bound once per frame. |
-| D3D12 | Bindless SRV heap | Root descriptor table points to a shader-visible CBV/SRV/UAV heap. Indices stored in per-instance data. |
-| Vulkan | `VK_EXT_descriptor_indexing` | `UPDATE_AFTER_BIND` descriptors in a single large descriptor set. Non-uniform indexing in shader. |
+| Backend | Mechanism                    |
+|---------|------------------------------|
+| Metal   | Argument buffers             |
+| D3D12   | Bindless SRV heap            |
+| Vulkan  | `VK_EXT_descriptor_indexing` |
+
+1. **Metal** — `MTLArgumentEncoder` writes bindless indices into an argument buffer bound once per
+   frame.
+2. **D3D12** — Root descriptor table points to a shader-visible CBV/SRV/UAV heap. Indices stored in
+   per-instance data.
+3. **Vulkan** — `UPDATE_AFTER_BIND` descriptors in a single large descriptor set. Non-uniform
+   indexing in shader.
 
 ### Indirect Draw API Mapping
 
-| Backend | Indirect Draw API | Count Buffer |
-|---------|-------------------|--------------|
-| Metal | `drawIndexedPrimitives(indirectBuffer:)` | `MTLIndirectCommandBuffer` with `executeCommandsInBuffer` |
-| D3D12 | `ExecuteIndirect` | `ID3D12CommandSignature` with draw count in a separate buffer |
-| Vulkan | `vkCmdDrawIndexedIndirectCount` | Requires `VK_KHR_draw_indirect_count` (core in Vulkan 1.2) |
+| Backend | Indirect Draw API                        |
+|---------|------------------------------------------|
+| Metal   | `drawIndexedPrimitives(indirectBuffer:)` |
+| D3D12   | `ExecuteIndirect`                        |
+| Vulkan  | `vkCmdDrawIndexedIndirectCount`          |
+
+1. **Metal** — `MTLIndirectCommandBuffer` with `executeCommandsInBuffer`
+2. **D3D12** — `ID3D12CommandSignature` with draw count in a separate buffer
+3. **Vulkan** — Requires `VK_KHR_draw_indirect_count` (core in Vulkan 1.2)
 
 ### Dynamic Resolution Bounds
 
@@ -2926,11 +3001,15 @@ Depth comparison uses `GREATER` instead of `LESS`.
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `bitflags` | `InstanceFlags`, `ShaderFeatures`, `RenderLayerMask` | Standard Rust bitflag pattern |
-| `bytemuck` | Safe transmute for GPU buffer types (`Pod`, `Zeroable`) | Zero-cost GPU buffer mapping |
-| `smallvec` | Inline-allocated light lists, face lists | Avoids heap allocation in hot paths |
+| Crate      | Justification                       |
+|------------|-------------------------------------|
+| `bitflags` | Standard Rust bitflag pattern       |
+| `bytemuck` | Zero-cost GPU buffer mapping        |
+| `smallvec` | Avoids heap allocation in hot paths |
+
+1. **`bitflags`** — `InstanceFlags`, `ShaderFeatures`, `RenderLayerMask`
+2. **`bytemuck`** — Safe transmute for GPU buffer types (`Pod`, `Zeroable`)
+3. **`smallvec`** — Inline-allocated light lists, face lists
 
 ## Performance Notes
 
@@ -2950,45 +3029,100 @@ triangle ID, second pass resolves material). Gate via `PlatformTier::Mobile` cap
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_sort_key_opaque_ordering` | R-2.3.7 | Verify opaque sort keys order by pipeline, then material, then front-to-back depth. |
-| `test_sort_key_transparent_ordering` | R-2.3.7, R-2.4.5 | Verify transparent sort keys order back-to-front. |
-| `test_perspective_reverse_z_near_far` | R-2.3.6 | Near plane maps to depth 1.0, far maps to 0.0. Infinite far produces valid matrix. |
-| `test_orthographic_reverse_z` | R-2.3.5 | Orthographic projection produces linear depth in [0, 1] with reverse mapping. |
-| `test_frustum_plane_extraction` | R-2.3.2 | Extracted planes correctly classify known inside/outside points. |
-| `test_render_layer_mask_filtering` | R-2.3.7 | Entities with non-intersecting layer masks are excluded from extraction. |
-| `test_instance_flags_packing` | R-2.3.13 | `InstanceFlags` round-trips through u32. Two-sided flag skips backface cull. |
-| `test_drs_convergence` | NFR-2.3.2 | DRS converges within 5 frames of a step-change in GPU load. No oscillation > 5%. |
-| `test_drs_clamp_bounds` | R-2.3.11 | DRS scale never exceeds max or falls below min. |
-| `test_material_permutation_cache` | R-2.4.3 | Same PermutationKey returns the same cached PipelineState. |
-| `test_bindless_alloc_free_reuse` | R-2.10.8 | Freed BindlessIndex is recycled on next allocation. |
-| `test_batch_compaction_count` | NFR-2.3.3 | 10,000 instances across 10 materials produce exactly 10 indirect draws. |
-| `test_view_uniform_struct_size` | R-2.3.6 | `ViewUniform` size matches expected GPU layout (std140/std430). |
-| `test_light_gpu_struct_alignment` | R-2.3.1 | `LightGpu` is 16-byte aligned and matches HLSL `cbuffer` layout. |
-| `test_two_sided_skips_backface_cull` | R-2.3.3 | Meshlets flagged two-sided bypass normal cone test. |
-| `test_alpha_cutout_in_shadow_pass` | R-2.3.13 | Alpha-cutout geometry generates shadow draw commands. |
-| `test_proxy_insert_remove_reuse` | R-2.10.2 | ProxyStore recycles freed indices correctly. |
-| `test_proxy_dirty_flags_cleared` | R-2.10.3 | Dirty flags clear after `clear_dirty_flags` call. |
-| `test_proxy_incremental_update` | R-2.10.3 | Only dirty-flagged fields are touched during update. |
+| Test                                  | Req              |
+|---------------------------------------|------------------|
+| `test_sort_key_opaque_ordering`       | R-2.3.7          |
+| `test_sort_key_transparent_ordering`  | R-2.3.7, R-2.4.5 |
+| `test_perspective_reverse_z_near_far` | R-2.3.6          |
+| `test_orthographic_reverse_z`         | R-2.3.5          |
+| `test_frustum_plane_extraction`       | R-2.3.2          |
+| `test_render_layer_mask_filtering`    | R-2.3.7          |
+| `test_instance_flags_packing`         | R-2.3.13         |
+| `test_drs_convergence`                | NFR-2.3.2        |
+| `test_drs_clamp_bounds`               | R-2.3.11         |
+| `test_material_permutation_cache`     | R-2.4.3          |
+| `test_bindless_alloc_free_reuse`      | R-2.10.8         |
+| `test_batch_compaction_count`         | NFR-2.3.3        |
+| `test_view_uniform_struct_size`       | R-2.3.6          |
+| `test_light_gpu_struct_alignment`     | R-2.3.1          |
+| `test_two_sided_skips_backface_cull`  | R-2.3.3          |
+| `test_alpha_cutout_in_shadow_pass`    | R-2.3.13         |
+| `test_proxy_insert_remove_reuse`      | R-2.10.2         |
+| `test_proxy_dirty_flags_cleared`      | R-2.10.3         |
+| `test_proxy_incremental_update`       | R-2.10.3         |
+
+1. **`test_sort_key_opaque_ordering`** — Verify opaque sort keys order by pipeline, then material,
+   then front-to-back depth.
+2. **`test_sort_key_transparent_ordering`** — Verify transparent sort keys order back-to-front.
+3. **`test_perspective_reverse_z_near_far`** — Near plane maps to depth 1.0, far maps to 0.0.
+   Infinite far produces valid matrix.
+4. **`test_orthographic_reverse_z`** — Orthographic projection produces linear depth in [0, 1] with
+   reverse mapping.
+5. **`test_frustum_plane_extraction`** — Extracted planes correctly classify known inside/outside
+   points.
+6. **`test_render_layer_mask_filtering`** — Entities with non-intersecting layer masks are excluded
+   from extraction.
+7. **`test_instance_flags_packing`** — `InstanceFlags` round-trips through u32. Two-sided flag skips
+   backface cull.
+8. **`test_drs_convergence`** — DRS converges within 5 frames of a step-change in GPU load. No
+   oscillation > 5%.
+9. **`test_drs_clamp_bounds`** — DRS scale never exceeds max or falls below min.
+10. **`test_material_permutation_cache`** — Same PermutationKey returns the same cached
+    PipelineState.
+11. **`test_bindless_alloc_free_reuse`** — Freed BindlessIndex is recycled on next allocation.
+12. **`test_batch_compaction_count`** — 10,000 instances across 10 materials produce exactly 10
+    indirect draws.
+13. **`test_view_uniform_struct_size`** — `ViewUniform` size matches expected GPU layout
+    (std140/std430).
+14. **`test_light_gpu_struct_alignment`** — `LightGpu` is 16-byte aligned and matches HLSL `cbuffer`
+    layout.
+15. **`test_two_sided_skips_backface_cull`** — Meshlets flagged two-sided bypass normal cone test.
+16. **`test_alpha_cutout_in_shadow_pass`** — Alpha-cutout geometry generates shadow draw commands.
+17. **`test_proxy_insert_remove_reuse`** — ProxyStore recycles freed indices correctly.
+18. **`test_proxy_dirty_flags_cleared`** — Dirty flags clear after `clear_dirty_flags` call.
+19. **`test_proxy_incremental_update`** — Only dirty-flagged fields are touched during update.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_forward_deferred_parity` | R-2.3.1 | Same scene rendered via forward+ and deferred produces pixel-identical lighting (within FP tolerance). |
-| `test_frustum_cull_gpu_vs_cpu` | R-2.3.2 | GPU frustum cull results match CPU reference for 10,000 meshlets at 1-degree camera sweeps. |
-| `test_hzb_two_phase_no_popin` | R-2.3.4 | Fast camera pan revealing occluded geometry shows no single-frame pop-in. Phase 2 recovers geometry same frame. |
-| `test_hzb_occlusion_reduction` | R-2.3.4 | Dense urban scene achieves >= 30% draw call reduction from occlusion culling. |
-| `test_cubemap_face_seams` | R-2.3.9 | Dynamic cubemap faces produce seamless edges (no visible seam artifacts). |
-| `test_scene_capture_same_frame` | R-2.3.10 | Scene capture texture is usable as material input in the same frame it was rendered. |
-| `test_drs_under_load` | R-2.3.11 | Resolution decreases within 5 frames when scene exceeds budget, increases when load drops. |
-| `test_reverse_z_cross_backend` | R-2.3.6 | Depth buffer clears to 0.0 and comparison uses GREATER on Metal, D3D12, and Vulkan. |
-| `test_sss_profile_scatter` | R-2.3.12 | Skin SSS profile produces visible light transmission at shadow terminator. |
-| `test_alpha_cutout_shadow_shape` | R-2.3.13 | Shadow cast by alpha-cutout quad matches the alpha mask shape. |
-| `test_extraction_100k_entities` | NFR-2.10.1 | Full extraction of 100K entities completes in < 2.0 ms. |
-| `test_extraction_1pct_dirty` | NFR-2.10.1 | Incremental extraction with 1% dirty completes in < 0.5 ms. |
-| `test_draw_list_throughput` | NFR-2.10.2 | Draw list construction processes >= 500K proxies/ms/core. |
+| Test                             | Req        |
+|----------------------------------|------------|
+| `test_forward_deferred_parity`   | R-2.3.1    |
+| `test_frustum_cull_gpu_vs_cpu`   | R-2.3.2    |
+| `test_hzb_two_phase_no_popin`    | R-2.3.4    |
+| `test_hzb_occlusion_reduction`   | R-2.3.4    |
+| `test_cubemap_face_seams`        | R-2.3.9    |
+| `test_scene_capture_same_frame`  | R-2.3.10   |
+| `test_drs_under_load`            | R-2.3.11   |
+| `test_reverse_z_cross_backend`   | R-2.3.6    |
+| `test_sss_profile_scatter`       | R-2.3.12   |
+| `test_alpha_cutout_shadow_shape` | R-2.3.13   |
+| `test_extraction_100k_entities`  | NFR-2.10.1 |
+| `test_extraction_1pct_dirty`     | NFR-2.10.1 |
+| `test_draw_list_throughput`      | NFR-2.10.2 |
+
+1. **`test_forward_deferred_parity`** — Same scene rendered via forward+ and deferred produces
+   pixel-identical lighting (within FP tolerance).
+2. **`test_frustum_cull_gpu_vs_cpu`** — GPU frustum cull results match CPU reference for 10,000
+   meshlets at 1-degree camera sweeps.
+3. **`test_hzb_two_phase_no_popin`** — Fast camera pan revealing occluded geometry shows no
+   single-frame pop-in. Phase 2 recovers geometry same frame.
+4. **`test_hzb_occlusion_reduction`** — Dense urban scene achieves >= 30% draw call reduction from
+   occlusion culling.
+5. **`test_cubemap_face_seams`** — Dynamic cubemap faces produce seamless edges (no visible seam
+   artifacts).
+6. **`test_scene_capture_same_frame`** — Scene capture texture is usable as material input in the
+   same frame it was rendered.
+7. **`test_drs_under_load`** — Resolution decreases within 5 frames when scene exceeds budget,
+   increases when load drops.
+8. **`test_reverse_z_cross_backend`** — Depth buffer clears to 0.0 and comparison uses GREATER on
+   Metal, D3D12, and Vulkan.
+9. **`test_sss_profile_scatter`** — Skin SSS profile produces visible light transmission at shadow
+   terminator.
+10. **`test_alpha_cutout_shadow_shape`** — Shadow cast by alpha-cutout quad matches the alpha mask
+    shape.
+11. **`test_extraction_100k_entities`** — Full extraction of 100K entities completes in < 2.0 ms.
+12. **`test_extraction_1pct_dirty`** — Incremental extraction with 1% dirty completes in < 0.5 ms.
+13. **`test_draw_list_throughput`** — Draw list construction processes >= 500K proxies/ms/core.
 
 ### GPU Benchmarks
 

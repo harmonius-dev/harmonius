@@ -2,28 +2,101 @@
 
 ## World Topology
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|--------------|--------------|----------------|
-| F-8.7.1 | World Sharding and Instancing | Partition the persistent game world into shards (full world copies for population management) and instances (isolated copies of specific zones for dungeons, raids, battlegrounds). The sharding layer manages character-to-shard assignment, cross-shard social features (friends, guilds, mail, auction house), and shard merging/splitting based on population. Instancing supports parameterized difficulty, lockout timers, and group-scoped state. | R-8.7.1 | F-8.5.4 | Server-side infrastructure; same topology serves all client platforms. Mobile clients connect to the same shards as desktop/console. |
-| F-8.7.2 | Seamless Zone Transitions | Transfer players between zone server processes without loading screens or disconnects. The source server hands off the player's replicated state, pending RPCs, and input buffer to the destination server while the client transparently rebinds its connection. Entities near zone boundaries are co-simulated by adjacent servers using a boundary overlap region to prevent pop-in and state discontinuities. | R-8.7.2 | F-8.7.1, F-8.2.1, F-8.1.2 | Mobile may show a brief loading indicator during zone handoff due to higher reconnection latency on cellular. Overlap region size is server-configured. |
+| ID      | Feature                       | Requirements |
+|---------|-------------------------------|--------------|
+| F-8.7.1 | World Sharding and Instancing | R-8.7.1      |
+| F-8.7.2 | Seamless Zone Transitions     | R-8.7.2      |
+
+1. **F-8.7.1** — Partition the persistent game world into shards (full world copies for population
+   management) and instances (isolated copies of specific zones for dungeons, raids, battlegrounds).
+   The sharding layer manages character-to-shard assignment, cross-shard social features (friends,
+   guilds, mail, auction house), and shard merging/splitting based on population. Instancing
+   supports parameterized difficulty, lockout timers, and group-scoped state.
+   - **Deps:** F-8.5.4
+   - **Platform:** Server-side infrastructure; same topology serves all client platforms. Mobile
+     clients connect to the same shards as desktop/console.
+2. **F-8.7.2** — Transfer players between zone server processes without loading screens or
+   disconnects. The source server hands off the player's replicated state, pending RPCs, and input
+   buffer to the destination server while the client transparently rebinds its connection. Entities
+   near zone boundaries are co-simulated by adjacent servers using a boundary overlap region to
+   prevent pop-in and state discontinuities.
+   - **Deps:** F-8.7.1, F-8.2.1, F-8.1.2
+   - **Platform:** Mobile may show a brief loading indicator during zone handoff due to higher
+     reconnection latency on cellular. Overlap region size is server-configured.
 
 ## Server Mesh
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|--------------|--------------|----------------|
-| F-8.7.3 | Dynamic Server Mesh | Distribute the continuous game world across a mesh of server processes where each process owns a spatial region, and regions dynamically resize based on entity density and CPU load. When a region becomes overloaded (e.g., a guild siege concentrates hundreds of players), the mesh controller splits it across additional server processes. When load subsides, regions merge to conserve resources. Inspired by SpatialOS-style spatial partitioning but purpose-built for MMO gameplay patterns. | R-8.7.3 | F-8.7.2, F-8.5.4 | Server-side infrastructure; transparent to all client platforms. Server mesh decisions may factor in mobile client ratio to adjust entity budgets. |
-| F-8.7.4 | Player Migration Between Servers | Migrate a player's authoritative simulation state from one server process to another — during zone transitions, load balancing, or server mesh rebalancing — with zero downtime and no perceptible interruption. Migration transfers entity state, active buffs/debuffs, cooldown timers, pending RPCs, and the client's prediction history. The client continues rendering using extrapolation during the brief handoff window (target < 100 ms). | R-8.7.4 | F-8.7.3, F-8.4.4, F-8.1.2 | Mobile handoff may exceed 100 ms target on cellular due to connection re-establishment latency; extrapolation window is extended accordingly. |
+| ID      | Feature                          | Requirements |
+|---------|----------------------------------|--------------|
+| F-8.7.3 | Dynamic Server Mesh              | R-8.7.3      |
+| F-8.7.4 | Player Migration Between Servers | R-8.7.4      |
+
+1. **F-8.7.3** — Distribute the continuous game world across a mesh of server processes where each
+   process owns a spatial region, and regions dynamically resize based on entity density and CPU
+   load. When a region becomes overloaded (e.g., a guild siege concentrates hundreds of players),
+   the mesh controller splits it across additional server processes. When load subsides, regions
+   merge to conserve resources. Inspired by SpatialOS-style spatial partitioning but purpose-built
+   for MMO gameplay patterns.
+   - **Deps:** F-8.7.2, F-8.5.4
+   - **Platform:** Server-side infrastructure; transparent to all client platforms. Server mesh
+     decisions may factor in mobile client ratio to adjust entity budgets.
+2. **F-8.7.4** — Migrate a player's authoritative simulation state from one server process to
+   another — during zone transitions, load balancing, or server mesh rebalancing — with zero
+   downtime and no perceptible interruption. Migration transfers entity state, active buffs/debuffs,
+   cooldown timers, pending RPCs, and the client's prediction history. The client continues
+   rendering using extrapolation during the brief handoff window (target < 100 ms).
+   - **Deps:** F-8.7.3, F-8.4.4, F-8.1.2
+   - **Platform:** Mobile handoff may exceed 100 ms target on cellular due to connection
+     re-establishment latency; extrapolation window is extended accordingly.
 
 ## Persistence
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|--------------|--------------|----------------|
-| F-8.7.5 | Persistent World State and Database Integration | Store and retrieve persistent world state — player characters, inventories, guild rosters, auction house listings, housing, quest progress — through an async database access layer that never blocks the game simulation tick. Support transactional writes for operations requiring atomicity (trades, mail with attachments, auction settlements). The persistence layer must handle sustained write throughput of tens of thousands of transactions per second across the server fleet. | R-8.7.5 | F-8.7.1 | Database access uses platform-native async I/O (IOCP on Windows, GCD on macOS, io_uring on Linux) per project guidelines. |
-| F-8.7.6 | Load Balancing and Auto-Scaling | Monitor server process CPU, memory, network utilization, and player count in real time, and automatically provision or deprovision server processes to match demand. Load balancing distributes new player connections and zone assignments to the least-loaded eligible servers. Auto-scaling must react within seconds to population surges (world boss spawns, siege starts, login queues after maintenance) and scale down gracefully by draining players from underutilized servers before terminating them. | R-8.7.6 | F-8.5.4, F-8.7.3 | Designed for container orchestration (Kubernetes) with cloud provider auto-scaling APIs. Bare-metal deployments use a custom scaler. |
-| F-8.7.7 | Cross-Shard Services | Provide shared services that operate across all shards: global auction house, cross-shard mail, cross-shard group finder, global chat channels, friends list, and guild management. These services run as independent microservices with their own persistence, communicating with zone servers via internal RPC. Must maintain consistency under high concurrency — an auction bid and a buyout arriving simultaneously must resolve deterministically. | R-8.7.7 | F-8.7.1, F-8.7.5 | Server-side microservices; platform-agnostic. Mobile clients access the same cross-shard APIs through the game client's networking layer. |
+| ID      | Feature                                         | Requirements |
+|---------|-------------------------------------------------|--------------|
+| F-8.7.5 | Persistent World State and Database Integration | R-8.7.5      |
+| F-8.7.6 | Load Balancing and Auto-Scaling                 | R-8.7.6      |
+| F-8.7.7 | Cross-Shard Services                            | R-8.7.7      |
+
+1. **F-8.7.5** — Store and retrieve persistent world state — player characters, inventories, guild
+   rosters, auction house listings, housing, quest progress — through an async database access layer
+   that never blocks the game simulation tick. Support transactional writes for operations requiring
+   atomicity (trades, mail with attachments, auction settlements). The persistence layer must handle
+   sustained write throughput of tens of thousands of transactions per second across the server
+   fleet.
+   - **Deps:** F-8.7.1
+   - **Platform:** Database access uses platform-native async I/O (IOCP on Windows, GCD on macOS,
+     io_uring on Linux) per project guidelines.
+2. **F-8.7.6** — Monitor server process CPU, memory, network utilization, and player count in real
+   time, and automatically provision or deprovision server processes to match demand. Load balancing
+   distributes new player connections and zone assignments to the least-loaded eligible servers.
+   Auto-scaling must react within seconds to population surges (world boss spawns, siege starts,
+   login queues after maintenance) and scale down gracefully by draining players from underutilized
+   servers before terminating them.
+   - **Deps:** F-8.5.4, F-8.7.3
+   - **Platform:** Designed for container orchestration (Kubernetes) with cloud provider
+     auto-scaling APIs. Bare-metal deployments use a custom scaler.
+3. **F-8.7.7** — Provide shared services that operate across all shards: global auction house,
+   cross-shard mail, cross-shard group finder, global chat channels, friends list, and guild
+   management. These services run as independent microservices with their own persistence,
+   communicating with zone servers via internal RPC. Must maintain consistency under high
+   concurrency — an auction bid and a buyout arriving simultaneously must resolve deterministically.
+   - **Deps:** F-8.7.1, F-8.7.5
+   - **Platform:** Server-side microservices; platform-agnostic. Mobile clients access the same
+     cross-shard APIs through the game client's networking layer.
 
 ## Inter-Server Communication
 
-| ID | Feature | Description | Requirements | Dependencies | Platform Notes |
-|----|---------|-------------|--------------|--------------|----------------|
-| F-8.7.8 | Inter-Server Communication Bus | A dedicated message bus for server-to-server communication within the server mesh. Servers exchange player migration requests, cross-shard events (world bosses, faction wars), shared economy state, and global chat messages through typed, serialized messages over persistent TCP connections with automatic reconnection. The bus supports publish-subscribe channels (all servers receive global events) and point-to-point routing (direct message to the server owning a specific shard). Message delivery guarantees are configurable per channel (at-most-once for telemetry, at-least-once for player migration, exactly-once for economy transactions). | R-8.7.8 | F-8.7.1 (World Sharding), F-8.1.5 (Encryption) | Server-to-server only; no client platform dependency. Runs on Linux datacenter infrastructure. |
+| ID      | Feature                        | Requirements |
+|---------|--------------------------------|--------------|
+| F-8.7.8 | Inter-Server Communication Bus | R-8.7.8      |
+
+1. **F-8.7.8** — A dedicated message bus for server-to-server communication within the server mesh.
+   Servers exchange player migration requests, cross-shard events (world bosses, faction wars),
+   shared economy state, and global chat messages through typed, serialized messages over persistent
+   TCP connections with automatic reconnection. The bus supports publish-subscribe channels (all
+   servers receive global events) and point-to-point routing (direct message to the server owning a
+   specific shard). Message delivery guarantees are configurable per channel (at-most-once for
+   telemetry, at-least-once for player migration, exactly-once for economy transactions).
+   - **Deps:** F-8.7.1 (World Sharding), F-8.1.5 (Encryption)
+   - **Platform:** Server-to-server only; no client platform dependency. Runs on Linux datacenter
+     infrastructure.

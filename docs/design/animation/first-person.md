@@ -8,12 +8,18 @@
 > [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | User Stories | Description |
-|---------|-------------|--------------|-------------|
-| F-9.6.1 | R-9.6.1 | US-9.6.1.1, US-9.6.1.2, US-9.6.1.3 | First-person camera with head-bob, landing impact, lean/peek, tilt, separate viewmodel FOV |
-| F-9.6.2 | R-9.6.2 | US-9.6.2.1, US-9.6.2.2, US-9.6.2.3 | Procedural weapon sway/bob with per-weapon spring physics |
-| F-9.6.3 | R-9.6.3 | US-9.6.3.1, US-9.6.3.2, US-9.6.3.3 | Procedural recoil from pattern data and ADS interpolation |
-| F-9.6.4 | R-9.6.4 | US-9.6.4.1, US-9.6.4.2, US-9.6.4.3, US-9.6.4.4 | Weapon equip/inspect/dual wield with independent per-hand spring systems |
+| Feature | Requirement | User Stories                                   |
+|---------|-------------|------------------------------------------------|
+| F-9.6.1 | R-9.6.1     | US-9.6.1.1, US-9.6.1.2, US-9.6.1.3             |
+| F-9.6.2 | R-9.6.2     | US-9.6.2.1, US-9.6.2.2, US-9.6.2.3             |
+| F-9.6.3 | R-9.6.3     | US-9.6.3.1, US-9.6.3.2, US-9.6.3.3             |
+| F-9.6.4 | R-9.6.4     | US-9.6.4.1, US-9.6.4.2, US-9.6.4.3, US-9.6.4.4 |
+
+1. **F-9.6.1** — First-person camera with head-bob, landing impact, lean/peek, tilt, separate
+   viewmodel FOV
+2. **F-9.6.2** — Procedural weapon sway/bob with per-weapon spring physics
+3. **F-9.6.3** — Procedural recoil from pattern data and ADS interpolation
+4. **F-9.6.4** — Weapon equip/inspect/dual wield with independent per-hand spring systems
 
 ### Cross-Cutting Dependencies
 
@@ -1077,43 +1083,103 @@ run identically on all platforms with no scaling or gating required.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_spring_damper_convergence` | -- | Apply step target. Verify spring converges to target within 2 seconds. Verify no overshoot for critically damped (damping=1.0). |
-| `test_spring_damper_impulse` | -- | Apply impulse to resting spring. Verify velocity spike, then recovery to zero. |
-| `test_spring_damper_3d` | -- | Apply 3D target. Verify each axis converges independently. |
-| `test_spring_damper_quat` | -- | Apply quaternion target. Verify rotation converges without gimbal lock. |
-| `test_head_bob_frequency` | R-9.6.1 | Walk at constant speed. Verify head-bob oscillation frequency matches bob_frequency within 1 frame. |
-| `test_landing_impact` | R-9.6.1 | Drop character from 3 m. Verify downward camera snap proportional to fall distance. Verify recovery to baseline. |
-| `test_lean_offset` | R-9.6.1 | Activate lean-right. Verify camera translates right by lean_max_offset. Deactivate lean. Verify return to center. |
-| `test_strafe_tilt` | R-9.6.1 | Strafe left at constant speed. Verify camera rolls by tilt_max_degrees. Stop strafing. Verify roll returns to zero. |
-| `test_viewmodel_fov` | R-9.6.1 | Set world_fov=110, viewmodel_fov=70. Verify viewmodel projection matrix uses 70 degrees. Verify world projection uses 110. |
-| `test_sway_opposite` | R-9.6.2 | Move mouse right. Verify weapon sway displaces left (opposite). |
-| `test_sway_mass_scaling` | R-9.6.2 | Compare mass=2.0 and mass=0.5 weapons. Verify heavy weapon has larger sway lag (more inertia). |
-| `test_bob_amplitude` | R-9.6.2 | Walk at constant speed. Verify vertical bob amplitude matches configured value within 5%. |
-| `test_sprint_tilt` | R-9.6.2 | Enter sprint. Verify weapon rotates to tilt_rotation when speed exceeds speed_threshold. |
-| `test_recoil_non_repetitive` | R-9.6.3 | Fire 10 shots. Verify each kick differs from previous by at least 10% in rotation or translation. |
-| `test_recoil_recovery` | R-9.6.3 | Fire single shot. Verify recoil spring recovers to rest within 1 second. |
-| `test_ads_transition` | R-9.6.3 | Press ADS. Verify blend_alpha goes 0.0 to 1.0 over transition_duration. Release ADS. Verify 1.0 to 0.0. |
-| `test_ads_sway_reduction` | R-9.6.3 | Enter ADS with sway_multiplier=0.3. Verify sway amplitude is 30% of hip-fire amplitude. |
-| `test_ads_sight_switch` | R-9.6.3 | While in ADS, switch sight. Verify active_sight_index changes and position updates. |
-| `test_equip_holster_sequence` | R-9.6.4 | Switch weapon. Verify Equipped to Holstering to Holstered to Drawing to Equipped. Verify no frame with no visible weapon. |
-| `test_inspect_rotation` | R-9.6.4 | Trigger inspect. Verify weapon rotates through inspection curve. Verify returns to rest. |
-| `test_dual_alternating` | R-9.6.4 | Fire 4 shots in alternating mode. Verify right-left-right-left pattern. |
-| `test_dual_simultaneous` | R-9.6.4 | Fire in simultaneous mode. Verify both hands fire on the same frame. |
-| `test_dual_independent` | R-9.6.4 | Map primary trigger to right, secondary to left. Verify independent fire. |
+| Test                             | Req     |
+|----------------------------------|---------|
+| `test_spring_damper_convergence` | --      |
+| `test_spring_damper_impulse`     | --      |
+| `test_spring_damper_3d`          | --      |
+| `test_spring_damper_quat`        | --      |
+| `test_head_bob_frequency`        | R-9.6.1 |
+| `test_landing_impact`            | R-9.6.1 |
+| `test_lean_offset`               | R-9.6.1 |
+| `test_strafe_tilt`               | R-9.6.1 |
+| `test_viewmodel_fov`             | R-9.6.1 |
+| `test_sway_opposite`             | R-9.6.2 |
+| `test_sway_mass_scaling`         | R-9.6.2 |
+| `test_bob_amplitude`             | R-9.6.2 |
+| `test_sprint_tilt`               | R-9.6.2 |
+| `test_recoil_non_repetitive`     | R-9.6.3 |
+| `test_recoil_recovery`           | R-9.6.3 |
+| `test_ads_transition`            | R-9.6.3 |
+| `test_ads_sway_reduction`        | R-9.6.3 |
+| `test_ads_sight_switch`          | R-9.6.3 |
+| `test_equip_holster_sequence`    | R-9.6.4 |
+| `test_inspect_rotation`          | R-9.6.4 |
+| `test_dual_alternating`          | R-9.6.4 |
+| `test_dual_simultaneous`         | R-9.6.4 |
+| `test_dual_independent`          | R-9.6.4 |
+
+1. **`test_spring_damper_convergence`** — Apply step target. Verify spring converges to target
+   within 2 seconds. Verify no overshoot for critically damped (damping=1.0).
+2. **`test_spring_damper_impulse`** — Apply impulse to resting spring. Verify velocity spike, then
+   recovery to zero.
+3. **`test_spring_damper_3d`** — Apply 3D target. Verify each axis converges independently.
+4. **`test_spring_damper_quat`** — Apply quaternion target. Verify rotation converges without gimbal
+   lock.
+5. **`test_head_bob_frequency`** — Walk at constant speed. Verify head-bob oscillation frequency
+   matches bob_frequency within 1 frame.
+6. **`test_landing_impact`** — Drop character from 3 m. Verify downward camera snap proportional to
+   fall distance. Verify recovery to baseline.
+7. **`test_lean_offset`** — Activate lean-right. Verify camera translates right by lean_max_offset.
+   Deactivate lean. Verify return to center.
+8. **`test_strafe_tilt`** — Strafe left at constant speed. Verify camera rolls by tilt_max_degrees.
+   Stop strafing. Verify roll returns to zero.
+9. **`test_viewmodel_fov`** — Set world_fov=110, viewmodel_fov=70. Verify viewmodel projection
+   matrix uses 70 degrees. Verify world projection uses 110.
+10. **`test_sway_opposite`** — Move mouse right. Verify weapon sway displaces left (opposite).
+11. **`test_sway_mass_scaling`** — Compare mass=2.0 and mass=0.5 weapons. Verify heavy weapon has
+    larger sway lag (more inertia).
+12. **`test_bob_amplitude`** — Walk at constant speed. Verify vertical bob amplitude matches
+    configured value within 5%.
+13. **`test_sprint_tilt`** — Enter sprint. Verify weapon rotates to tilt_rotation when speed exceeds
+    speed_threshold.
+14. **`test_recoil_non_repetitive`** — Fire 10 shots. Verify each kick differs from previous by at
+    least 10% in rotation or translation.
+15. **`test_recoil_recovery`** — Fire single shot. Verify recoil spring recovers to rest within 1
+    second.
+16. **`test_ads_transition`** — Press ADS. Verify blend_alpha goes 0.0 to 1.0 over
+    transition_duration. Release ADS. Verify 1.0 to 0.0.
+17. **`test_ads_sway_reduction`** — Enter ADS with sway_multiplier=0.3. Verify sway amplitude is 30%
+    of hip-fire amplitude.
+18. **`test_ads_sight_switch`** — While in ADS, switch sight. Verify active_sight_index changes and
+    position updates.
+19. **`test_equip_holster_sequence`** — Switch weapon. Verify Equipped to Holstering to Holstered to
+    Drawing to Equipped. Verify no frame with no visible weapon.
+20. **`test_inspect_rotation`** — Trigger inspect. Verify weapon rotates through inspection curve.
+    Verify returns to rest.
+21. **`test_dual_alternating`** — Fire 4 shots in alternating mode. Verify right-left-right-left
+    pattern.
+22. **`test_dual_simultaneous`** — Fire in simultaneous mode. Verify both hands fire on the same
+    frame.
+23. **`test_dual_independent`** — Map primary trigger to right, secondary to left. Verify
+    independent fire.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_camera_with_controller` | R-9.6.1 | Walk a character for 300 frames. Verify head-bob syncs with locomotion gait. Verify landing snap on step-off. |
-| `test_full_weapon_pipeline` | R-9.6.2, R-9.6.3 | Walk, aim, fire 10 shots, release ADS. Verify all springs compose correctly with no NaN or infinite values. |
-| `test_dual_wield_render` | R-9.6.4 | Enable dual wield. Verify two viewmodel draw calls submitted per frame. Verify both weapons have independent sway. |
-| `test_scope_rtt_mobile` | R-9.6.3 | On mobile config, enter ADS with magnified optic. Verify scope RTT at half-res. |
-| `test_scope_rtt_desktop` | R-9.6.3 | On desktop config, enter ADS with magnified optic. Verify scope RTT at full-res. |
-| `test_weapon_data_asset` | R-9.6.2 | Load weapon data asset with sway/bob/recoil params. Verify all springs initialized from asset values. |
-| `test_no_code_tuning` | R-9.6.2 | Modify sway stiffness in weapon data asset. Verify weapon feel changes without code recompilation. |
+| Test                          | Req              |
+|-------------------------------|------------------|
+| `test_camera_with_controller` | R-9.6.1          |
+| `test_full_weapon_pipeline`   | R-9.6.2, R-9.6.3 |
+| `test_dual_wield_render`      | R-9.6.4          |
+| `test_scope_rtt_mobile`       | R-9.6.3          |
+| `test_scope_rtt_desktop`      | R-9.6.3          |
+| `test_weapon_data_asset`      | R-9.6.2          |
+| `test_no_code_tuning`         | R-9.6.2          |
+
+1. **`test_camera_with_controller`** — Walk a character for 300 frames. Verify head-bob syncs with
+   locomotion gait. Verify landing snap on step-off.
+2. **`test_full_weapon_pipeline`** — Walk, aim, fire 10 shots, release ADS. Verify all springs
+   compose correctly with no NaN or infinite values.
+3. **`test_dual_wield_render`** — Enable dual wield. Verify two viewmodel draw calls submitted per
+   frame. Verify both weapons have independent sway.
+4. **`test_scope_rtt_mobile`** — On mobile config, enter ADS with magnified optic. Verify scope RTT
+   at half-res.
+5. **`test_scope_rtt_desktop`** — On desktop config, enter ADS with magnified optic. Verify scope
+   RTT at full-res.
+6. **`test_weapon_data_asset`** — Load weapon data asset with sway/bob/recoil params. Verify all
+   springs initialized from asset values.
+7. **`test_no_code_tuning`** — Modify sway stiffness in weapon data asset. Verify weapon feel
+   changes without code recompilation.
 
 ### Benchmarks
 

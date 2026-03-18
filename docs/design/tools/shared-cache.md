@@ -8,16 +8,25 @@
 > [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.11.1 | R-15.11.1 | Centralized compiled asset cache keyed by content hash |
-| F-15.11.2 | R-15.11.2 | Shader compilation cache per platform and permutation |
-| F-15.11.3 | R-15.11.3 | Logic graph compilation cache (bytecode + AOT) |
-| F-15.11.4 | R-15.11.4 | New developer onboarding acceleration |
-| F-15.11.5 | R-15.11.5 | Cache invalidation and garbage collection |
-| F-15.11.6 | R-15.11.6 | Cache transport and storage backends |
-| F-15.11.7 | R-15.11.7 | CI/CD cache population |
-| F-15.11.8 | R-15.11.8 | Cache hit metrics and monitoring |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-15.11.1 | R-15.11.1   |
+| F-15.11.2 | R-15.11.2   |
+| F-15.11.3 | R-15.11.3   |
+| F-15.11.4 | R-15.11.4   |
+| F-15.11.5 | R-15.11.5   |
+| F-15.11.6 | R-15.11.6   |
+| F-15.11.7 | R-15.11.7   |
+| F-15.11.8 | R-15.11.8   |
+
+1. **F-15.11.1** — Centralized compiled asset cache keyed by content hash
+2. **F-15.11.2** — Shader compilation cache per platform and permutation
+3. **F-15.11.3** — Logic graph compilation cache (bytecode + AOT)
+4. **F-15.11.4** — New developer onboarding acceleration
+5. **F-15.11.5** — Cache invalidation and garbage collection
+6. **F-15.11.6** — Cache transport and storage backends
+7. **F-15.11.7** — CI/CD cache population
+8. **F-15.11.8** — Cache hit metrics and monitoring
 
 ## Overview
 
@@ -1030,40 +1039,69 @@ Domain tags prevent collisions across entry types:
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_cache_key_deterministic` | R-15.11.1 | Same inputs produce identical BLAKE3 key |
-| `test_cache_key_changes_on_source` | R-15.11.1 | Different source produces different key |
-| `test_cache_key_changes_on_tool` | R-15.11.5 | Different tool version produces different key |
-| `test_cache_key_changes_on_settings` | R-15.11.1 | Different build settings produces different key |
-| `test_shader_key_per_platform` | R-15.11.2 | Same shader, different platform, different key |
-| `test_shader_key_per_permutation` | R-15.11.2 | Same shader, different flags, different key |
-| `test_graph_bytecode_platform_agnostic` | R-15.11.3 | Bytecode key same across platforms |
-| `test_graph_aot_per_platform` | R-15.11.3 | AOT key differs per architecture |
-| `test_local_cache_put_get` | R-15.11.1 | Store and retrieve entry from L1 |
-| `test_local_cache_lru_eviction` | R-15.11.5 | Oldest entry evicted when quota exceeded |
-| `test_zstd_roundtrip` | R-15.11.6 | Compress and decompress, data matches |
-| `test_domain_tag_separation` | R-15.11.1 | Asset and shader keys never collide |
-| `test_metrics_hit_miss_count` | R-15.11.8 | Hit and miss counters increment correctly |
-| `test_alert_below_threshold` | R-15.11.8 | Alert fires when hit rate drops below threshold |
-| `test_gc_removes_unreferenced` | R-15.11.5 | GC deletes entries not on any branch |
-| `test_gc_preserves_referenced` | R-15.11.5 | GC keeps entries referenced by active branches |
+| Test                                    | Req       |
+|-----------------------------------------|-----------|
+| `test_cache_key_deterministic`          | R-15.11.1 |
+| `test_cache_key_changes_on_source`      | R-15.11.1 |
+| `test_cache_key_changes_on_tool`        | R-15.11.5 |
+| `test_cache_key_changes_on_settings`    | R-15.11.1 |
+| `test_shader_key_per_platform`          | R-15.11.2 |
+| `test_shader_key_per_permutation`       | R-15.11.2 |
+| `test_graph_bytecode_platform_agnostic` | R-15.11.3 |
+| `test_graph_aot_per_platform`           | R-15.11.3 |
+| `test_local_cache_put_get`              | R-15.11.1 |
+| `test_local_cache_lru_eviction`         | R-15.11.5 |
+| `test_zstd_roundtrip`                   | R-15.11.6 |
+| `test_domain_tag_separation`            | R-15.11.1 |
+| `test_metrics_hit_miss_count`           | R-15.11.8 |
+| `test_alert_below_threshold`            | R-15.11.8 |
+| `test_gc_removes_unreferenced`          | R-15.11.5 |
+| `test_gc_preserves_referenced`          | R-15.11.5 |
+
+1. **`test_cache_key_deterministic`** — Same inputs produce identical BLAKE3 key
+2. **`test_cache_key_changes_on_source`** — Different source produces different key
+3. **`test_cache_key_changes_on_tool`** — Different tool version produces different key
+4. **`test_cache_key_changes_on_settings`** — Different build settings produces different key
+5. **`test_shader_key_per_platform`** — Same shader, different platform, different key
+6. **`test_shader_key_per_permutation`** — Same shader, different flags, different key
+7. **`test_graph_bytecode_platform_agnostic`** — Bytecode key same across platforms
+8. **`test_graph_aot_per_platform`** — AOT key differs per architecture
+9. **`test_local_cache_put_get`** — Store and retrieve entry from L1
+10. **`test_local_cache_lru_eviction`** — Oldest entry evicted when quota exceeded
+11. **`test_zstd_roundtrip`** — Compress and decompress, data matches
+12. **`test_domain_tag_separation`** — Asset and shader keys never collide
+13. **`test_metrics_hit_miss_count`** — Hit and miss counters increment correctly
+14. **`test_alert_below_threshold`** — Alert fires when hit rate drops below threshold
+15. **`test_gc_removes_unreferenced`** — GC deletes entries not on any branch
+16. **`test_gc_preserves_referenced`** — GC keeps entries referenced by active branches
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_l1_miss_l2_hit` | R-15.11.1 | L1 miss fetches from L2, populates L1 |
-| `test_l1_miss_l2_miss_build` | R-15.11.1 | Double miss triggers local build, stores both tiers |
-| `test_idempotent_upload` | R-15.11.7 | Uploading existing key returns success without overwrite |
-| `test_ci_population_all_platforms` | R-15.11.7 | CLI populates entries for Windows, macOS, Linux |
-| `test_prefetch_parallel` | R-15.11.4 | Prefetch downloads concurrently up to limit |
-| `test_bandwidth_limit_respected` | R-15.11.6 | Downloads do not exceed configured bandwidth |
-| `test_first_launch_under_10min` | R-15.11.4 | First launch with warm cache completes in under 10 min |
-| `test_integrity_check_on_download` | R-15.11.1 | Corrupted download detected via BLAKE3 mismatch |
-| `test_gc_scheduled_run` | R-15.11.5 | GC runs on schedule and frees expected storage |
-| `test_metrics_otel_export` | R-15.11.8 | Metrics export in valid OpenTelemetry format |
-| `test_platform_http_client` | R-15.11.6 | Transfers work with native HTTP stack per platform |
+| Test                               | Req       |
+|------------------------------------|-----------|
+| `test_l1_miss_l2_hit`              | R-15.11.1 |
+| `test_l1_miss_l2_miss_build`       | R-15.11.1 |
+| `test_idempotent_upload`           | R-15.11.7 |
+| `test_ci_population_all_platforms` | R-15.11.7 |
+| `test_prefetch_parallel`           | R-15.11.4 |
+| `test_bandwidth_limit_respected`   | R-15.11.6 |
+| `test_first_launch_under_10min`    | R-15.11.4 |
+| `test_integrity_check_on_download` | R-15.11.1 |
+| `test_gc_scheduled_run`            | R-15.11.5 |
+| `test_metrics_otel_export`         | R-15.11.8 |
+| `test_platform_http_client`        | R-15.11.6 |
+
+1. **`test_l1_miss_l2_hit`** — L1 miss fetches from L2, populates L1
+2. **`test_l1_miss_l2_miss_build`** — Double miss triggers local build, stores both tiers
+3. **`test_idempotent_upload`** — Uploading existing key returns success without overwrite
+4. **`test_ci_population_all_platforms`** — CLI populates entries for Windows, macOS, Linux
+5. **`test_prefetch_parallel`** — Prefetch downloads concurrently up to limit
+6. **`test_bandwidth_limit_respected`** — Downloads do not exceed configured bandwidth
+7. **`test_first_launch_under_10min`** — First launch with warm cache completes in under 10 min
+8. **`test_integrity_check_on_download`** — Corrupted download detected via BLAKE3 mismatch
+9. **`test_gc_scheduled_run`** — GC runs on schedule and frees expected storage
+10. **`test_metrics_otel_export`** — Metrics export in valid OpenTelemetry format
+11. **`test_platform_http_client`** — Transfers work with native HTTP stack per platform
 
 ### Benchmarks
 

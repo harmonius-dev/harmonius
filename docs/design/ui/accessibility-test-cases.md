@@ -6,213 +6,323 @@ Companion test cases for [accessibility.md](accessibility.md).
 
 ### TC-10.6.1.1 Accessible Node Creation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Widget with role=Button, label="Submit" | AccessibleNode has role=Button, label="Submit" | R-10.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.1    |
+
+1. **#1** — Widget with role=Button, label="Submit"
+   - **Expected:** AccessibleNode has role=Button, label="Submit"
 
 ### TC-10.6.1.2 Tree Sync Add Remove
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Add widget with AccessibleRole to widget tree | AccessibilityTree gains new node, marked dirty | R-10.6.1 |
-| 2 | Remove widget from widget tree | Node removed from accessibility tree, marked dirty | R-10.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.1    |
+| 2 | R-10.6.1    |
+
+1. **#1** — Add widget with AccessibleRole to widget tree
+   - **Expected:** AccessibilityTree gains new node, marked dirty
+2. **#2** — Remove widget from widget tree
+   - **Expected:** Node removed from accessibility tree, marked dirty
 
 ### TC-10.6.1.3 Live Region Announce
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `announce(entity, "HP low!", Assertive)` | Node marked dirty with LiveRegionMode::Assertive | R-10.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.1    |
+
+1. **#1** — `announce(entity, "HP low!", Assertive)`
+   - **Expected:** Node marked dirty with LiveRegionMode::Assertive
 
 ### TC-10.6.1.4 Focus Tab Order
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 5 interactive widgets, press Tab 5 times | Focus visits all 5 widgets in order | R-10.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.1    |
+
+1. **#1** — 5 interactive widgets, press Tab 5 times
+   - **Expected:** Focus visits all 5 widgets in order
 
 ### TC-10.6.2.1 Subtitle Timing
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | SubtitleEntry start=1.0, end=3.0, advance to t=2.0 | Subtitle visible | R-10.6.2 |
-| 2 | Advance to t=3.5 | Subtitle removed from visible list | R-10.6.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.2    |
+| 2 | R-10.6.2    |
+
+1. **#1** — SubtitleEntry start=1.0, end=3.0, advance to t=2.0
+   - **Expected:** Subtitle visible
+2. **#2** — Advance to t=3.5
+   - **Expected:** Subtitle removed from visible list
 
 ### TC-10.6.2.2 Caption Direction
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | CaptionEntry with direction=Left | Caption displays left directional indicator | R-10.6.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.2    |
+
+1. **#1** — CaptionEntry with direction=Left
+   - **Expected:** Caption displays left directional indicator
 
 ### TC-10.6.2.3 Subtitle Settings
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Change font_size from 16 to 24 | Visible subtitles render at font_size=24 | R-10.6.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.2    |
+
+1. **#1** — Change font_size from 16 to 24
+   - **Expected:** Visible subtitles render at font_size=24
 
 ### TC-10.6.3.1 Protan Matrix
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pure red (1.0, 0.0, 0.0) through protanopia matrix | Output is distinguishable non-red hue | R-10.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.3    |
+
+1. **#1** — Pure red (1.0, 0.0, 0.0) through protanopia matrix
+   - **Expected:** Output is distinguishable non-red hue
 
 ### TC-10.6.3.2 Deutan Matrix
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pure green (0.0, 1.0, 0.0) through deuteranopia matrix | Output is distinguishable non-green hue | R-10.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.3    |
+
+1. **#1** — Pure green (0.0, 1.0, 0.0) through deuteranopia matrix
+   - **Expected:** Output is distinguishable non-green hue
 
 ### TC-10.6.3.3 Tritan Matrix
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pure blue (0.0, 0.0, 1.0) through tritanopia matrix | Output is distinguishable non-blue hue | R-10.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.3    |
+
+1. **#1** — Pure blue (0.0, 0.0, 1.0) through tritanopia matrix
+   - **Expected:** Output is distinguishable non-blue hue
 
 ### TC-10.6.3.4 Alternative Cues
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Color-coded element with AlternativeCue attached | Non-color cue (pattern or shape_icon) present | R-10.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.3    |
+
+1. **#1** — Color-coded element with AlternativeCue attached
+   - **Expected:** Non-color cue (pattern or shape_icon) present
 
 ### TC-10.6.7.1 Contrast Ratio AA
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `ContrastChecker::check(WHITE, BLACK)` | ratio=21.0, passes_aa_normal=true, passes_aaa_normal=true | R-10.6.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.7    |
+
+1. **#1** — `ContrastChecker::check(WHITE, BLACK)`
+   - **Expected:** ratio=21.0, passes_aa_normal=true, passes_aaa_normal=true
 
 ### TC-10.6.7.2 Contrast Ratio Fail
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `ContrastChecker::check(Color(0.7,0.7,0.7), WHITE)` | ratio < 4.5, passes_aa_normal=false | R-10.6.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.7    |
+
+1. **#1** — `ContrastChecker::check(Color(0.7,0.7,0.7), WHITE)`
+   - **Expected:** ratio < 4.5, passes_aa_normal=false
 
 ### TC-10.6.4.1 High Contrast Borders
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enable HighContrastSettings, border_width=3.0 | All interactive widget borders >= 3.0 px | R-10.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.4    |
+
+1. **#1** — Enable HighContrastSettings, border_width=3.0
+   - **Expected:** All interactive widget borders >= 3.0 px
 
 ### TC-10.6.4.2 High Contrast No Transparency
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enable HighContrastSettings with remove_decorative=true | All decorative transparency replaced with solid fills | R-10.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.4    |
+
+1. **#1** — Enable HighContrastSettings with remove_decorative=true
+   - **Expected:** All decorative transparency replaced with solid fills
 
 ### TC-10.6.4.3 UI Scale 80
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Set user_scale=0.8 | All widgets scale to 80%, no layout overflow | R-10.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.4    |
+
+1. **#1** — Set user_scale=0.8
+   - **Expected:** All widgets scale to 80%, no layout overflow
 
 ### TC-10.6.4.4 UI Scale 250
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Set user_scale=2.5 | All widgets scale to 250%, no content overflow | R-10.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.4    |
+
+1. **#1** — Set user_scale=2.5
+   - **Expected:** All widgets scale to 250%, no content overflow
 
 ### TC-10.6.5.1 Rebind All Actions
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Rebind "Jump" from Space to Enter | "Jump" triggers on Enter press, not Space | R-10.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.5    |
+
+1. **#1** — Rebind "Jump" from Space to Enter
+   - **Expected:** "Jump" triggers on Enter press, not Space
 
 ### TC-10.6.5.2 Hold Toggle
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enable hold_toggle for "Sprint", press once | Sprint activates and stays active | R-10.6.5 |
-| 2 | Press again | Sprint deactivates | R-10.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.5    |
+| 2 | R-10.6.5    |
+
+1. **#1** — Enable hold_toggle for "Sprint", press once
+   - **Expected:** Sprint activates and stays active
+2. **#2** — Press again
+   - **Expected:** Sprint deactivates
 
 ### TC-10.6.5.3 Scanning Navigation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enable scanning with interval=500ms, 5 widgets | Scan visits all 5 interactive elements in sequence | R-10.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.5    |
+
+1. **#1** — Enable scanning with interval=500ms, 5 widgets
+   - **Expected:** Scan visits all 5 interactive elements in sequence
 
 ### TC-10.6.5.4 Per Character Profile
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Save profile for character_id=1 with custom bindings, load for character_id=2 | Each profile loads correct independent bindings | R-10.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.5    |
+
+1. **#1** — Save profile for character_id=1 with custom bindings, load for character_id=2
+   - **Expected:** Each profile loads correct independent bindings
 
 ### TC-10.6.6.1 TTS Channel Filter
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | TTS enabled for Party channel only, Guild message arrives | No speech output for Guild message | R-10.6.6 |
-| 2 | Party message arrives | Speech output generated | R-10.6.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.6    |
+| 2 | R-10.6.6    |
+
+1. **#1** — TTS enabled for Party channel only, Guild message arrives
+   - **Expected:** No speech output for Guild message
+2. **#2** — Party message arrives
+   - **Expected:** Speech output generated
 
 ### TC-10.6.6.2 TTS Volume Control
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Set Party channel volume=0.5, speak message | TTS output at 50% volume | R-10.6.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.6    |
+
+1. **#1** — Set Party channel volume=0.5, speak message
+   - **Expected:** TTS output at 50% volume
 
 ### TC-10.6.7.3 Reduced Motion No Shake
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enable ReducedMotionSettings, trigger camera shake | CameraShakeOffset remains zero | R-10.6.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.7    |
+
+1. **#1** — Enable ReducedMotionSettings, trigger camera shake
+   - **Expected:** CameraShakeOffset remains zero
 
 ### TC-10.6.7.4 Focus Indicator Visible
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Tab to each focusable widget | Focus indicator renders on every focused widget | R-10.6.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.7    |
+
+1. **#1** — Tab to each focusable widget
+   - **Expected:** Focus indicator renders on every focused widget
 
 ## Integration Tests
 
 ### TC-10.6.1.I1 VoiceOver macOS
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Navigate all widget types with VoiceOver on macOS | All roles announced correctly | R-10.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.1    |
+
+1. **#1** — Navigate all widget types with VoiceOver on macOS
+   - **Expected:** All roles announced correctly
 
 ### TC-10.6.1.I2 Narrator Windows
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Navigate all widget types with Narrator on Windows | All roles announced correctly | R-10.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.1    |
+
+1. **#1** — Navigate all widget types with Narrator on Windows
+   - **Expected:** All roles announced correctly
 
 ### TC-10.6.1.I3 Orca Linux
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Navigate all widget types with Orca on Linux | All roles announced correctly | R-10.6.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.1    |
+
+1. **#1** — Navigate all widget types with Orca on Linux
+   - **Expected:** All roles announced correctly
 
 ### TC-10.6.2.I1 Subtitle Audio Sync
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Play audio clip with subtitle track | Subtitles sync within 100 ms of audio playback | R-10.6.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.2    |
+
+1. **#1** — Play audio clip with subtitle track
+   - **Expected:** Subtitles sync within 100 ms of audio playback
 
 ### TC-10.6.3.I1 Colorblind Preview
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Toggle CVD mode in settings | Real-time preview updates immediately | R-10.6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.3    |
+
+1. **#1** — Toggle CVD mode in settings
+   - **Expected:** Real-time preview updates immediately
 
 ### TC-10.6.4.I1 DPI Detection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Query DPI on each platform | Correct system DPI scale returned | R-10.6.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.4    |
+
+1. **#1** — Query DPI on each platform
+   - **Expected:** Correct system DPI scale returned
 
 ### TC-10.6.5.I1 Switch Device Full UI
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Single-button scanning device | Reaches every UI element | R-10.6.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.5    |
+
+1. **#1** — Single-button scanning device
+   - **Expected:** Reaches every UI element
 
 ### TC-10.6.6.I1 TTS Platform Voices
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Enumerate TTS voices on each platform | Returns non-empty list of native voices | R-10.6.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.6    |
+
+1. **#1** — Enumerate TTS voices on each platform
+   - **Expected:** Returns non-empty list of native voices
 
 ### TC-10.6.7.I1 WCAG All Screens
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Automated WCAG AA audit on all menu/settings screens | All screens pass contrast and keyboard operability checks | R-10.6.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-10.6.7    |
+
+1. **#1** — Automated WCAG AA audit on all menu/settings screens
+   - **Expected:** All screens pass contrast and keyboard operability checks
 
 ## Benchmarks
 

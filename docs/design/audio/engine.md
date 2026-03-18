@@ -7,22 +7,41 @@
 > [user-stories/audio/](../../user-stories/audio/). The table below traces design elements to those
 > definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-5.1.1 | R-5.1.1 | Sound source component (point, line, area emitters with gain, pitch, looping, attenuation) |
-| F-5.1.2 | R-5.1.2 | Listener component (position, orientation, velocity, Doppler, split-screen) |
-| F-5.1.3 | R-5.1.3 | Hierarchical mixer bus DAG (master, music, SFX, ambient, voice, UI; gain inheritance, mute, solo, inserts) |
-| F-5.1.4 | R-5.1.4 | Voice management (priority classes, audibility scoring, virtualization, stealing, restoration) |
-| F-5.1.5 | R-5.1.5 | Streaming playback via platform-native async I/O with ring-buffer chunks and prefetch |
-| F-5.1.6 | R-5.1.6 | Sample-accurate scheduling (command queue from game thread to audio thread) |
-| F-5.1.7 | R-5.1.7 | Codec support (PCM, Vorbis, Opus, FLAC) with extensible plugin registry |
-| F-5.2.1 | R-5.2.1 | 3D sound positioning with Doppler and transform interpolation |
-| F-5.2.2 | R-5.2.2 | Distance attenuation curves (inverse, inverse-squared, linear, logarithmic, custom) |
-| F-5.2.3 | R-5.2.3 | HRTF binaural rendering (SOFA profiles, frequency-domain convolution) |
-| F-5.2.4 | R-5.2.4 | Ambisonics encoding/decoding (first- to third-order, multi-format output) |
-| F-5.2.5 | R-5.2.5 | Occlusion/obstruction filtering via shared BVH with material transmission loss |
-| F-5.2.6 | R-5.2.6 | Sound propagation via hybrid ray-portal solver (async, feeds per-voice taps) |
-| F-5.2.7 | R-5.2.7 | Reverb zones with early reflections, smooth blending, priority ordering |
+| Feature | Requirement |
+|---------|-------------|
+| F-5.1.1 | R-5.1.1     |
+| F-5.1.2 | R-5.1.2     |
+| F-5.1.3 | R-5.1.3     |
+| F-5.1.4 | R-5.1.4     |
+| F-5.1.5 | R-5.1.5     |
+| F-5.1.6 | R-5.1.6     |
+| F-5.1.7 | R-5.1.7     |
+| F-5.2.1 | R-5.2.1     |
+| F-5.2.2 | R-5.2.2     |
+| F-5.2.3 | R-5.2.3     |
+| F-5.2.4 | R-5.2.4     |
+| F-5.2.5 | R-5.2.5     |
+| F-5.2.6 | R-5.2.6     |
+| F-5.2.7 | R-5.2.7     |
+
+1. **F-5.1.1** — Sound source component (point, line, area emitters with gain, pitch, looping,
+   attenuation)
+2. **F-5.1.2** — Listener component (position, orientation, velocity, Doppler, split-screen)
+3. **F-5.1.3** — Hierarchical mixer bus DAG (master, music, SFX, ambient, voice, UI; gain
+   inheritance, mute, solo, inserts)
+4. **F-5.1.4** — Voice management (priority classes, audibility scoring, virtualization, stealing,
+   restoration)
+5. **F-5.1.5** — Streaming playback via platform-native async I/O with ring-buffer chunks and
+   prefetch
+6. **F-5.1.6** — Sample-accurate scheduling (command queue from game thread to audio thread)
+7. **F-5.1.7** — Codec support (PCM, Vorbis, Opus, FLAC) with extensible plugin registry
+8. **F-5.2.1** — 3D sound positioning with Doppler and transform interpolation
+9. **F-5.2.2** — Distance attenuation curves (inverse, inverse-squared, linear, logarithmic, custom)
+10. **F-5.2.3** — HRTF binaural rendering (SOFA profiles, frequency-domain convolution)
+11. **F-5.2.4** — Ambisonics encoding/decoding (first- to third-order, multi-format output)
+12. **F-5.2.5** — Occlusion/obstruction filtering via shared BVH with material transmission loss
+13. **F-5.2.6** — Sound propagation via hybrid ray-portal solver (async, feeds per-voice taps)
+14. **F-5.2.7** — Reverb zones with early reflections, smooth blending, priority ordering
 
 ### Non-Functional Requirements
 
@@ -1938,17 +1957,29 @@ seeks, OS scheduling, and contention with asset loading can delay individual rea
 jitter and I/O latency spikes. Audio streaming requests receive the highest `IoReactor` priority
 class.
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| Minimum prefetch depth | 3 buffers | ~32 ms lookahead at 48 kHz / 512 samples; covers 2 frame boundaries plus I/O jitter |
-| Maximum prefetch depth | 8 buffers | Bounds memory at 8 x 512 x 4 bytes x `max_voices`; ~16 KiB per mono voice |
-| Refill trigger | Available < 4 buffers | Submit next async read when below midpoint |
-| Sample rate | 48,000 Hz | Engine default (R-5.1.NF1) |
-| Block size | 512 samples | ~10.67 ms per callback |
-| Priority 0 (highest) | Audio streaming | Real-time deadline |
-| Priority 1 | Texture/mesh streaming | Frame-budget deadline |
-| Priority 2 | Asset loading | Background |
-| Priority 3 | Save/load | User-initiated |
+| Parameter              | Value                  |
+|------------------------|------------------------|
+| Minimum prefetch depth | 3 buffers              |
+| Maximum prefetch depth | 8 buffers              |
+| Refill trigger         | Available < 4 buffers  |
+| Sample rate            | 48,000 Hz              |
+| Block size             | 512 samples            |
+| Priority 0 (highest)   | Audio streaming        |
+| Priority 1             | Texture/mesh streaming |
+| Priority 2             | Asset loading          |
+| Priority 3             | Save/load              |
+
+1. **Minimum prefetch depth** — ~32 ms lookahead at 48 kHz / 512 samples; covers 2 frame boundaries
+   plus I/O jitter
+2. **Maximum prefetch depth** — Bounds memory at 8 x 512 x 4 bytes x `max_voices`; ~16 KiB per mono
+   voice
+3. **Refill trigger** — Submit next async read when below midpoint
+4. **Sample rate** — Engine default (R-5.1.NF1)
+5. **Block size** — ~10.67 ms per callback
+6. **Priority 0 (highest)** — Real-time deadline
+7. **Priority 1** — Frame-budget deadline
+8. **Priority 2** — Background
+9. **Priority 3** — User-initiated
 
 Memory budget per stream at maximum depth:
 
@@ -1958,12 +1989,16 @@ Memory budget per stream at maximum depth:
 
 **Fallback cascade.**
 
-| Condition | Action | Duration | Logging |
-|-----------|--------|----------|---------|
-| Single miss | Play last-known buffer (repeat) | 1 callback | None |
-| 2 consecutive misses | Continue repeating | 2 callbacks | Debug-level message |
-| 3 consecutive misses | Fade to silence | 480 samples (~10 ms) | Warning with stream handle and miss count |
-| Recovery (prefetch >= 3) | Resume from correct position | 240-sample fade-in (~5 ms) | Info-level restore |
+| Condition                | Action                          | Duration                   |
+|--------------------------|---------------------------------|----------------------------|
+| Single miss              | Play last-known buffer (repeat) | 1 callback                 |
+| 2 consecutive misses     | Continue repeating              | 2 callbacks                |
+| 3 consecutive misses     | Fade to silence                 | 480 samples (~10 ms)       |
+| Recovery (prefetch >= 3) | Resume from correct position    | 240-sample fade-in (~5 ms) |
+
+2. **2 consecutive misses** — Debug-level message
+3. **3 consecutive misses** — Warning with stream handle and miss count
+4. **Recovery (prefetch >= 3)** — Info-level restore
 
 The `StreamManager` tracks per-stream miss counters and exposes them via `stream_diagnostics()` for
 profiling.
@@ -2004,11 +2039,15 @@ sequenceDiagram
 
 ### Audio Backends
 
-| Platform | Backend | API | Notes |
-|----------|---------|-----|-------|
-| Windows | WASAPI | `IAudioClient`, `IAudioRenderClient` | Exclusive mode for low latency; shared mode fallback. Via `windows-sys`. |
-| macOS | CoreAudio | `AudioUnit` (RemoteIO / HAL) | Callback on CoreAudio's real-time thread. C++ wrapper via `cxx.rs`. |
-| Linux | ALSA / PipeWire | `snd_pcm_*` / PipeWire native | ALSA via bindgen; PipeWire preferred when available. |
+| Platform | Backend         | API                                  |
+|----------|-----------------|--------------------------------------|
+| Windows  | WASAPI          | `IAudioClient`, `IAudioRenderClient` |
+| macOS    | CoreAudio       | `AudioUnit` (RemoteIO / HAL)         |
+| Linux    | ALSA / PipeWire | `snd_pcm_*` / PipeWire native        |
+
+1. **Windows** — Exclusive mode for low latency; shared mode fallback. Via `windows-sys`.
+2. **macOS** — Callback on CoreAudio's real-time thread. C++ wrapper via `cxx.rs`.
+3. **Linux** — ALSA via bindgen; PipeWire preferred when available.
 
 ### Streaming I/O Backends
 
@@ -2090,62 +2129,139 @@ critical commands.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_voice_alloc_and_release` | R-5.1.4 | Allocate max voices, release all, verify pool is empty. |
-| `test_voice_priority_stealing` | R-5.1.4 | Fill pool with low-priority voices, allocate critical voice, assert lowest-score voice is virtualized. |
-| `test_voice_virtualize_restore` | R-5.1.4 | Virtualize a voice, verify playback offset retained. Restore and verify seamless resume. |
-| `test_mixer_gain_inheritance` | R-5.1.3 | Set master gain to 0.5, verify child bus effective gains are halved. |
-| `test_mixer_mute_propagation` | R-5.1.3 | Mute a mid-level bus, verify all descendant outputs are zero. |
-| `test_mixer_solo` | R-5.1.3 | Solo one bus, verify only it and its children produce output. |
-| `test_mixer_dag_topological_order` | R-5.1.3 | Build a complex bus DAG, verify mix processes leaves before parents. |
-| `test_bus_runtime_rewire` | R-5.1.3 | Reparent a bus at runtime, verify gain inheritance updates. |
-| `test_command_queue_spsc` | R-5.1.6 | Push 10,000 commands from producer, drain from consumer, verify ordering and completeness. |
-| `test_sample_accurate_scheduling` | R-5.1.6 | Schedule two sounds at the same sample offset, verify phase alignment is +/- 0 samples. |
-| `test_scheduling_jitter` | R-5.1.6 | Measure jitter over 1,000 scheduled commands, assert zero-sample deviation. |
-| `test_codec_pcm_decode` | R-5.1.7 | Decode a PCM WAV file, compare output to reference waveform. |
-| `test_codec_vorbis_decode` | R-5.1.7 | Decode a Vorbis file, compare to reference. |
-| `test_codec_opus_decode` | R-5.1.7 | Decode an Opus file, compare to reference. |
-| `test_codec_flac_decode` | R-5.1.7 | Decode a FLAC file, compare to reference. |
-| `test_codec_registry_plugin` | R-5.1.7 | Register a custom codec, create a decoder, verify it decodes. |
-| `test_metadata_extraction` | R-5.1.7 | Verify sample rate, channel count, and loop points for each format. |
-| `test_attenuation_inverse` | R-5.2.2 | Verify inverse attenuation gain at min, mid, and max distances within 0.1%. |
-| `test_attenuation_inverse_squared` | R-5.2.2 | Verify inverse-squared model accuracy. |
-| `test_attenuation_linear` | R-5.2.2 | Verify linear model accuracy. |
-| `test_attenuation_logarithmic` | R-5.2.2 | Verify logarithmic model accuracy. |
-| `test_attenuation_custom_curve` | R-5.2.2 | Verify custom control-point curve interpolation. |
-| `test_doppler_pitch_accuracy` | R-5.2.1 | Move source at constant velocity, verify Doppler ratio within 1%. |
-| `test_panning_edge_cases` | R-5.2.1 | Verify panning at 0, 90, 180, 270 degrees and directly above/below. |
-| `test_occlusion_single_ray` | R-5.2.5 | Ray-cast through a known wall, verify attenuation matches material coefficient within 1 dB. |
-| `test_occlusion_shared_bvh` | R-5.2.5 | Verify occlusion queries use the shared spatial index, not a separate structure. |
-| `test_hrtf_load_sofa` | R-5.2.3 | Load a SOFA file, verify azimuth/elevation lookup returns valid indices. |
-| `test_hrtf_swap_runtime` | R-5.2.3 | Swap HRTF dataset, verify new profile active within one buffer. |
-| `test_ambisonics_encode_accuracy` | R-5.2.4 | Encode mono source at known azimuth, verify W/X/Y/Z coefficients within 0.1%. |
-| `test_ambisonics_rotation` | R-5.2.4 | Rotate field 90 degrees, verify coefficients shift correctly. |
-| `test_ambisonics_decode_stereo` | R-5.2.4 | Decode first-order Ambisonics to stereo, verify output. |
-| `test_ambisonics_decode_surround` | R-5.2.4 | Decode to 5.1 and 7.1, verify channel mapping. |
-| `test_reverb_zone_blending` | R-5.2.7 | Move listener between zones with decay 1.0s and 3.0s, verify smooth crossfade. |
-| `test_reverb_nested_priority` | R-5.2.7 | Nest a high-priority zone inside a low-priority one, verify inner overrides. |
-| `test_stream_ring_buffer` | R-5.1.5 | Write/read cycle on ring buffer, verify no data loss or overrun. |
-| `test_component_size` | R-5.1.1 | Assert `AudioSource` component is <= 128 bytes. |
-| `test_listener_default_camera` | R-5.1.2 | Remove all listeners, verify active camera entity used as fallback. |
+| Test                               | Req     |
+|------------------------------------|---------|
+| `test_voice_alloc_and_release`     | R-5.1.4 |
+| `test_voice_priority_stealing`     | R-5.1.4 |
+| `test_voice_virtualize_restore`    | R-5.1.4 |
+| `test_mixer_gain_inheritance`      | R-5.1.3 |
+| `test_mixer_mute_propagation`      | R-5.1.3 |
+| `test_mixer_solo`                  | R-5.1.3 |
+| `test_mixer_dag_topological_order` | R-5.1.3 |
+| `test_bus_runtime_rewire`          | R-5.1.3 |
+| `test_command_queue_spsc`          | R-5.1.6 |
+| `test_sample_accurate_scheduling`  | R-5.1.6 |
+| `test_scheduling_jitter`           | R-5.1.6 |
+| `test_codec_pcm_decode`            | R-5.1.7 |
+| `test_codec_vorbis_decode`         | R-5.1.7 |
+| `test_codec_opus_decode`           | R-5.1.7 |
+| `test_codec_flac_decode`           | R-5.1.7 |
+| `test_codec_registry_plugin`       | R-5.1.7 |
+| `test_metadata_extraction`         | R-5.1.7 |
+| `test_attenuation_inverse`         | R-5.2.2 |
+| `test_attenuation_inverse_squared` | R-5.2.2 |
+| `test_attenuation_linear`          | R-5.2.2 |
+| `test_attenuation_logarithmic`     | R-5.2.2 |
+| `test_attenuation_custom_curve`    | R-5.2.2 |
+| `test_doppler_pitch_accuracy`      | R-5.2.1 |
+| `test_panning_edge_cases`          | R-5.2.1 |
+| `test_occlusion_single_ray`        | R-5.2.5 |
+| `test_occlusion_shared_bvh`        | R-5.2.5 |
+| `test_hrtf_load_sofa`              | R-5.2.3 |
+| `test_hrtf_swap_runtime`           | R-5.2.3 |
+| `test_ambisonics_encode_accuracy`  | R-5.2.4 |
+| `test_ambisonics_rotation`         | R-5.2.4 |
+| `test_ambisonics_decode_stereo`    | R-5.2.4 |
+| `test_ambisonics_decode_surround`  | R-5.2.4 |
+| `test_reverb_zone_blending`        | R-5.2.7 |
+| `test_reverb_nested_priority`      | R-5.2.7 |
+| `test_stream_ring_buffer`          | R-5.1.5 |
+| `test_component_size`              | R-5.1.1 |
+| `test_listener_default_camera`     | R-5.1.2 |
+
+1. **`test_voice_alloc_and_release`** — Allocate max voices, release all, verify pool is empty.
+2. **`test_voice_priority_stealing`** — Fill pool with low-priority voices, allocate critical voice,
+   assert lowest-score voice is virtualized.
+3. **`test_voice_virtualize_restore`** — Virtualize a voice, verify playback offset retained.
+   Restore and verify seamless resume.
+4. **`test_mixer_gain_inheritance`** — Set master gain to 0.5, verify child bus effective gains are
+   halved.
+5. **`test_mixer_mute_propagation`** — Mute a mid-level bus, verify all descendant outputs are zero.
+6. **`test_mixer_solo`** — Solo one bus, verify only it and its children produce output.
+7. **`test_mixer_dag_topological_order`** — Build a complex bus DAG, verify mix processes leaves
+   before parents.
+8. **`test_bus_runtime_rewire`** — Reparent a bus at runtime, verify gain inheritance updates.
+9. **`test_command_queue_spsc`** — Push 10,000 commands from producer, drain from consumer, verify
+   ordering and completeness.
+10. **`test_sample_accurate_scheduling`** — Schedule two sounds at the same sample offset, verify
+    phase alignment is +/- 0 samples.
+11. **`test_scheduling_jitter`** — Measure jitter over 1,000 scheduled commands, assert zero-sample
+    deviation.
+12. **`test_codec_pcm_decode`** — Decode a PCM WAV file, compare output to reference waveform.
+13. **`test_codec_vorbis_decode`** — Decode a Vorbis file, compare to reference.
+14. **`test_codec_opus_decode`** — Decode an Opus file, compare to reference.
+15. **`test_codec_flac_decode`** — Decode a FLAC file, compare to reference.
+16. **`test_codec_registry_plugin`** — Register a custom codec, create a decoder, verify it decodes.
+17. **`test_metadata_extraction`** — Verify sample rate, channel count, and loop points for each
+    format.
+18. **`test_attenuation_inverse`** — Verify inverse attenuation gain at min, mid, and max distances
+    within 0.1%.
+19. **`test_attenuation_inverse_squared`** — Verify inverse-squared model accuracy.
+20. **`test_attenuation_linear`** — Verify linear model accuracy.
+21. **`test_attenuation_logarithmic`** — Verify logarithmic model accuracy.
+22. **`test_attenuation_custom_curve`** — Verify custom control-point curve interpolation.
+23. **`test_doppler_pitch_accuracy`** — Move source at constant velocity, verify Doppler ratio
+    within 1%.
+24. **`test_panning_edge_cases`** — Verify panning at 0, 90, 180, 270 degrees and directly
+    above/below.
+25. **`test_occlusion_single_ray`** — Ray-cast through a known wall, verify attenuation matches
+    material coefficient within 1 dB.
+26. **`test_occlusion_shared_bvh`** — Verify occlusion queries use the shared spatial index, not a
+    separate structure.
+27. **`test_hrtf_load_sofa`** — Load a SOFA file, verify azimuth/elevation lookup returns valid
+    indices.
+28. **`test_hrtf_swap_runtime`** — Swap HRTF dataset, verify new profile active within one buffer.
+29. **`test_ambisonics_encode_accuracy`** — Encode mono source at known azimuth, verify W/X/Y/Z
+    coefficients within 0.1%.
+30. **`test_ambisonics_rotation`** — Rotate field 90 degrees, verify coefficients shift correctly.
+31. **`test_ambisonics_decode_stereo`** — Decode first-order Ambisonics to stereo, verify output.
+32. **`test_ambisonics_decode_surround`** — Decode to 5.1 and 7.1, verify channel mapping.
+33. **`test_reverb_zone_blending`** — Move listener between zones with decay 1.0s and 3.0s, verify
+    smooth crossfade.
+34. **`test_reverb_nested_priority`** — Nest a high-priority zone inside a low-priority one, verify
+    inner overrides.
+35. **`test_stream_ring_buffer`** — Write/read cycle on ring buffer, verify no data loss or overrun.
+36. **`test_component_size`** — Assert `AudioSource` component is <= 128 bytes.
+37. **`test_listener_default_camera`** — Remove all listeners, verify active camera entity used as
+    fallback.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_end_to_end_latency` | R-5.1.NF4 | Trigger a sound, measure time to first non-zero output sample. Assert < 20 ms. |
-| `test_streaming_platform_io` | R-5.1.5 | Stream audio on each platform, verify IOCP/GCD/io_uring is used (not stdlib). |
-| `test_streaming_memory_cap` | R-5.1.5 | Stream a 5-minute file, assert peak memory < 256 KiB per stream. |
-| `test_prefetch_latency` | R-5.1.5 | Prefetch 500 ms ahead, assert startup latency < 10 ms. |
-| `test_streaming_under_contention` | R-5.1.5 | Stream audio during heavy asset loading, verify no underruns. |
-| `test_full_mix_no_underrun` | R-5.1.NF2 | Allocate 256 voices with spatialization and 2-insert DSP. Assert no underruns over 60 s. |
-| `test_propagation_async` | R-5.2.6 | Verify solver runs on worker thread, does not block audio thread. |
-| `test_portal_propagation` | R-5.2.6 | Source in room A, listener in room B via portal. Verify delayed attenuated indirect path. Close portal, verify path removed. |
-| `test_occlusion_per_platform_rays` | R-5.2.5 | Verify mobile uses 1 ray, Switch 2, desktop 4. |
-| `test_cross_thread_command` | R-5.1.6 | Verify commands arrive on audio thread within one buffer latency. |
-| `test_multi_listener_split_screen` | R-5.1.2 | Run two listeners, verify each produces independent spatial audio. |
-| `test_attenuation_cross_platform` | R-5.2.2 | Verify identical attenuation results on all platforms. |
+| Test                               | Req       |
+|------------------------------------|-----------|
+| `test_end_to_end_latency`          | R-5.1.NF4 |
+| `test_streaming_platform_io`       | R-5.1.5   |
+| `test_streaming_memory_cap`        | R-5.1.5   |
+| `test_prefetch_latency`            | R-5.1.5   |
+| `test_streaming_under_contention`  | R-5.1.5   |
+| `test_full_mix_no_underrun`        | R-5.1.NF2 |
+| `test_propagation_async`           | R-5.2.6   |
+| `test_portal_propagation`          | R-5.2.6   |
+| `test_occlusion_per_platform_rays` | R-5.2.5   |
+| `test_cross_thread_command`        | R-5.1.6   |
+| `test_multi_listener_split_screen` | R-5.1.2   |
+| `test_attenuation_cross_platform`  | R-5.2.2   |
+
+1. **`test_end_to_end_latency`** — Trigger a sound, measure time to first non-zero output sample.
+   Assert < 20 ms.
+2. **`test_streaming_platform_io`** — Stream audio on each platform, verify IOCP/GCD/io_uring is
+   used (not stdlib).
+3. **`test_streaming_memory_cap`** — Stream a 5-minute file, assert peak memory < 256 KiB per
+   stream.
+4. **`test_prefetch_latency`** — Prefetch 500 ms ahead, assert startup latency < 10 ms.
+5. **`test_streaming_under_contention`** — Stream audio during heavy asset loading, verify no
+   underruns.
+6. **`test_full_mix_no_underrun`** — Allocate 256 voices with spatialization and 2-insert DSP.
+   Assert no underruns over 60 s.
+7. **`test_propagation_async`** — Verify solver runs on worker thread, does not block audio thread.
+8. **`test_portal_propagation`** — Source in room A, listener in room B via portal. Verify delayed
+   attenuated indirect path. Close portal, verify path removed.
+9. **`test_occlusion_per_platform_rays`** — Verify mobile uses 1 ray, Switch 2, desktop 4.
+10. **`test_cross_thread_command`** — Verify commands arrive on audio thread within one buffer
+    latency.
+11. **`test_multi_listener_split_screen`** — Run two listeners, verify each produces independent
+    spatial audio.
+12. **`test_attenuation_cross_platform`** — Verify identical attenuation results on all platforms.
 
 ### Benchmarks
 

@@ -8,21 +8,35 @@
 > [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-2.2.1 | RG-1.1, RG-1.2, RG-1.3 | Declarative pass registration with typed resource I/O |
-| F-2.2.2 | RG-6.1 .. RG-6.7 | Capability gating and fallback chains |
-| F-2.2.3 | RG-2.1, RG-2.5, RG-2.6 | Transient resource declaration |
-| F-2.2.4 | RG-8.1 .. RG-8.6 | Resource aliasing for memory reuse |
-| F-2.2.5 | RG-3.1 .. RG-3.6 | Automatic barrier insertion |
-| F-2.2.6 | RG-4.1 .. RG-4.6 | Multi-queue scheduling |
-| F-2.2.7 | RG-5.1, RG-5.6, RG-5.7 | Topological sort and deterministic ordering |
-| F-2.2.8 | RG-7.1 .. RG-7.6 | Budget culling |
-| F-2.2.9 | RG-9.1 .. RG-9.5 | Multi-view execution |
-| F-2.2.10 | RG-10.1 .. RG-10.7 | Parallel command encoding |
-| F-2.2.11 | RG-11.1 .. RG-11.7 | Streaming integration |
-| F-2.2.12 | RG-13.1 .. RG-13.8 | Graph compilation and caching |
-| F-2.2.13 | RG-12.1 .. RG-12.7 | Render graph diagnostics |
+| Feature  | Requirement            |
+|----------|------------------------|
+| F-2.2.1  | RG-1.1, RG-1.2, RG-1.3 |
+| F-2.2.2  | RG-6.1 .. RG-6.7       |
+| F-2.2.3  | RG-2.1, RG-2.5, RG-2.6 |
+| F-2.2.4  | RG-8.1 .. RG-8.6       |
+| F-2.2.5  | RG-3.1 .. RG-3.6       |
+| F-2.2.6  | RG-4.1 .. RG-4.6       |
+| F-2.2.7  | RG-5.1, RG-5.6, RG-5.7 |
+| F-2.2.8  | RG-7.1 .. RG-7.6       |
+| F-2.2.9  | RG-9.1 .. RG-9.5       |
+| F-2.2.10 | RG-10.1 .. RG-10.7     |
+| F-2.2.11 | RG-11.1 .. RG-11.7     |
+| F-2.2.12 | RG-13.1 .. RG-13.8     |
+| F-2.2.13 | RG-12.1 .. RG-12.7     |
+
+1. **F-2.2.1** — Declarative pass registration with typed resource I/O
+2. **F-2.2.2** — Capability gating and fallback chains
+3. **F-2.2.3** — Transient resource declaration
+4. **F-2.2.4** — Resource aliasing for memory reuse
+5. **F-2.2.5** — Automatic barrier insertion
+6. **F-2.2.6** — Multi-queue scheduling
+7. **F-2.2.7** — Topological sort and deterministic ordering
+8. **F-2.2.8** — Budget culling
+9. **F-2.2.9** — Multi-view execution
+10. **F-2.2.10** — Parallel command encoding
+11. **F-2.2.11** — Streaming integration
+12. **F-2.2.12** — Graph compilation and caching
+13. **F-2.2.13** — Render graph diagnostics
 
 ## Overview
 
@@ -1796,12 +1810,21 @@ previous frame and drops passes that would push the frame over target; (2) mid-c
 after each pass is culled, the estimated total is recalculated and if still over budget, the next
 lowest-priority pass is culled.
 
-| Priority | Action | Trigger | Effect |
-|----------|--------|---------|--------|
-| 1 | Drop lowest-priority render passes | Budget exceeded | Optional passes (SSAO, motion blur, bloom) are culled first based on `PassPriority` assigned at registration |
-| 2 | Increase culling aggressiveness | Budget exceeded | Tighten frustum culling threshold to reduce draw call count by shrinking effective draw distance |
-| 3 | Skip optional compute passes | Budget exceeded | Async compute work (GPU particle updates, screen-space reflections) is deferred to next frame |
-| 4 | Cascade-cull dependents | Pass culled | All passes that exclusively depend on culled pass outputs are also removed from the execution plan |
+| Priority | Action                             | Trigger         |
+|----------|------------------------------------|-----------------|
+| 1        | Drop lowest-priority render passes | Budget exceeded |
+| 2        | Increase culling aggressiveness    | Budget exceeded |
+| 3        | Skip optional compute passes       | Budget exceeded |
+| 4        | Cascade-cull dependents            | Pass culled     |
+
+1. **1** — Optional passes (SSAO, motion blur, bloom) are culled first based on `PassPriority`
+   assigned at registration
+2. **2** — Tighten frustum culling threshold to reduce draw call count by shrinking effective draw
+   distance
+3. **3** — Async compute work (GPU particle updates, screen-space reflections) is deferred to next
+   frame
+4. **4** — All passes that exclusively depend on culled pass outputs are also removed from the
+   execution plan
 
 The following flowchart shows the render graph budget check loop.
 
@@ -1887,35 +1910,69 @@ pub fn execute(
 
 ### Backend-Specific Barrier Strategy
 
-| Backend | Barrier Mechanism | Split Barriers | Notes |
-|---------|-------------------|----------------|-------|
-| D3D12 | `ResourceBarrier` | Yes (`D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY` / `END_ONLY`) | Enhanced barriers on FL 12.2+ reduce barrier count |
-| Vulkan | `vkCmdPipelineBarrier2` | Yes (`VK_DEPENDENCY_BY_REGION_BIT`) | Memory barriers preferred over image layout transitions where possible |
-| Metal | Driver hazard tracking | N/A | Fences only at queue boundaries; no explicit barriers within a queue |
+| Backend | Barrier Mechanism       |
+|---------|-------------------------|
+| D3D12   | `ResourceBarrier`       |
+| Vulkan  | `vkCmdPipelineBarrier2` |
+| Metal   | Driver hazard tracking  |
+
+1. **D3D12** — Yes (`D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY` / `END_ONLY`)
+   - **Notes:** Enhanced barriers on FL 12.2+ reduce barrier count
+2. **Vulkan** — Yes (`VK_DEPENDENCY_BY_REGION_BIT`)
+   - **Notes:** Memory barriers preferred over image layout transitions where possible
+3. **Metal**
+   - **Notes:** Fences only at queue boundaries; no explicit barriers within a queue
 
 ### Backend-Specific Resource Aliasing
 
-| Backend | Aliasing Mechanism | Transient Optimization |
-|---------|-------------------|------------------------|
-| D3D12 | Placed resources in `ID3D12Heap` | Committed + placed mixing |
-| Vulkan | `VkDeviceMemory` aliasing with `VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT` | Memoryless on mobile (tile-local) |
-| Metal | `MTLHeap` with `makeAliasable()` | `MTLStorageModeMemoryless` for tile-local attachments |
+| Backend |
+|---------|
+| D3D12   |
+| Vulkan  |
+| Metal   |
+
+1. **D3D12** — Placed resources in `ID3D12Heap`
+   - **Transient Optimization:** Committed + placed mixing
+2. **Vulkan** — `VkDeviceMemory` aliasing with `VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT`
+   - **Transient Optimization:** Memoryless on mobile (tile-local)
+3. **Metal** — `MTLHeap` with `makeAliasable()`
+   - **Transient Optimization:** `MTLStorageModeMemoryless` for tile-local attachments
 
 ### Backend-Specific Queue Model
 
-| Backend | Graphics | Async Compute | Transfer | Fences |
-|---------|----------|---------------|----------|--------|
-| D3D12 | Direct queue | Compute queue | Copy queue | `ID3D12Fence` timeline values |
-| Vulkan | Graphics queue family | Compute queue family | Transfer queue family | `VkSemaphore` timeline mode |
-| Metal | `MTLCommandQueue` (shared) | `MTLCommandQueue` (private) | Shared queue | `MTLEvent` / `MTLSharedEvent` |
+| Backend |
+|---------|
+| D3D12   |
+| Vulkan  |
+| Metal   |
+
+1. **D3D12** — Direct queue
+   - **Async Compute:** Compute queue
+   - **Transfer:** Copy queue
+   - **Fences:** `ID3D12Fence` timeline values
+2. **Vulkan** — Graphics queue family
+   - **Async Compute:** Compute queue family
+   - **Transfer:** Transfer queue family
+   - **Fences:** `VkSemaphore` timeline mode
+3. **Metal** — `MTLCommandQueue` (shared)
+   - **Async Compute:** `MTLCommandQueue` (private)
+   - **Transfer:** Shared queue
+   - **Fences:** `MTLEvent` / `MTLSharedEvent`
 
 ### Backend-Specific Parallel Encoding
 
-| Backend | Mechanism | Notes |
-|---------|-----------|-------|
-| D3D12 | `ID3D12GraphicsCommandList` per thread, `ExecuteCommandLists` batch submit | Command allocator per thread per frame |
-| Vulkan | Secondary `VkCommandBuffer` per thread, `vkCmdExecuteCommands` | `VkCommandPool` per thread |
-| Metal | `MTLParallelRenderCommandEncoder` | Encodes render passes in parallel within a single command buffer |
+| Backend |
+|---------|
+| D3D12   |
+| Vulkan  |
+| Metal   |
+
+1. **D3D12** — `ID3D12GraphicsCommandList` per thread, `ExecuteCommandLists` batch submit
+   - **Notes:** Command allocator per thread per frame
+2. **Vulkan** — Secondary `VkCommandBuffer` per thread, `vkCmdExecuteCommands`
+   - **Notes:** `VkCommandPool` per thread
+3. **Metal** — `MTLParallelRenderCommandEncoder`
+   - **Notes:** Encodes render passes in parallel within a single command buffer
 
 ### Platform Budget Targets
 
@@ -1928,10 +1985,15 @@ pub fn execute(
 
 ### Proposed Dependencies
 
-| Crate | Purpose | Justification |
-|-------|---------|---------------|
-| `smallvec` | Inline-allocated small vectors for pass dependency lists | Avoids heap allocation for common case (< 8 deps) |
-| `bitflags` | Usage flag bitfields | Ergonomic bitflag operations |
+| Crate      |
+|------------|
+| `smallvec` |
+| `bitflags` |
+
+1. **`smallvec`** — Inline-allocated small vectors for pass dependency lists
+   - **Justification:** Avoids heap allocation for common case (< 8 deps)
+2. **`bitflags`** — Usage flag bitfields
+   - **Justification:** Ergonomic bitflag operations
 
 All GPU backend interaction goes through `harmonius_gpu` and `harmonius_gpu_runtime`. No direct
 backend API calls from the render graph crate.
@@ -1940,63 +2002,134 @@ backend API calls from the render graph crate.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_empty_graph_error` | RG-13.4 | Empty graph produces `EmptyGraph` error. |
-| `test_cycle_detection` | RG-5.7 | A -> B -> C -> A cycle produces `CycleDetected` error with all three handles. |
-| `test_single_writer_violation` | RG-3.5 | Two passes writing the same resource in overlapping window produces `SingleWriterViolation`. |
-| `test_undeclared_resource` | RG-13.4 | Reading a resource not declared in any pass produces `UndeclaredResource`. |
-| `test_topological_sort_stability` | RG-5.6 | Same graph compiled twice produces identical pass ordering. |
-| `test_topological_sort_correctness` | RG-5.1 | Every pass executes after all its dependencies. |
-| `test_dead_pass_elimination` | RG-13.2 | Pass whose outputs are unused is eliminated from the plan. |
-| `test_transitive_dead_pass` | RG-13.3 | Cascading elimination of orphaned producer chains. |
-| `test_capability_gate_soft` | RG-6.2 | Soft-gated pass pruned when capability absent; no error. |
-| `test_capability_gate_hard` | RG-6.2 | Hard-gated pass with missing capability produces `CapabilityNotMet`. |
-| `test_fallback_chain` | RG-6.3 | Fallback chain selects first capable variant. |
-| `test_variant_selection` | RG-13.7 | Exactly one variant active per slot; zero or two produces error. |
-| `test_conditional_enable` | RG-1.6 | Disabled pass excluded from execution without recompilation. |
-| `test_conditional_cascade` | RG-1.6 | Disabling a pass cascades to its exclusive dependents. |
-| `test_barrier_raw` | RG-3.1 | Read-after-write produces exactly one barrier. |
-| `test_barrier_waw` | RG-3.2 | Write-after-write produces execution barrier. |
-| `test_barrier_merge` | RG-3.6 | Compatible barriers at the same point merge into one. |
-| `test_split_barrier` | RG-3.6 | Split barrier begin/end placed at optimal points. |
-| `test_cross_queue_barrier` | RG-3.4 | Cross-queue resource transfer emits release+acquire barrier pair. |
-| `test_aliasing_non_overlapping` | RG-8.2 | Two non-overlapping transient resources share the same heap offset. |
-| `test_aliasing_overlapping` | RG-8.2 | Overlapping resources get distinct heap offsets. |
-| `test_aliasing_efficiency` | RG-8.6 | Aliased heap < sum of all transient resource sizes. |
-| `test_queue_affinity_graphics` | RG-4.1 | Graphics-affinity pass assigned to graphics queue. |
-| `test_queue_affinity_compute` | RG-4.2 | Async-compute pass on dedicated compute queue. |
-| `test_queue_fallback` | RG-4.5 | Compute pass falls back to graphics when no compute queue. |
-| `test_encoding_groups` | RG-10.4 | Independent passes in same group; dependent passes in separate groups. |
-| `test_sub_graph_instances` | RG-9.5 | 4-instance sub-graph produces 4 exclusive resource sets. |
-| `test_sub_graph_shared` | RG-9.3 | Shared resource across instances has single allocation. |
-| `test_sub_graph_array_layer` | RG-9.4 | Each instance writes correct array layer. |
-| `test_instance_count_mismatch` | RG-13.8 | Instance count > array layers produces error. |
-| `test_history_resource` | RG-2.4 | History resource current/previous handles resolve correctly. |
-| `test_resolution_scaled` | RG-2.5 | Scaled resource dimensions update with resolution_scale. |
-| `test_budget_cull_lowest` | RG-7.2 | Over-budget culls lowest-priority pass first. |
-| `test_budget_cascade` | RG-7.3 | Culled pass cascades to its exclusive consumers. |
-| `test_budget_never_cull_required` | RG-7.2 | Required-priority passes never culled. |
-| `test_render_area_constraint` | RG-1.9 | Render area propagates to aliasing write coverage. |
-| `test_pass_chain_order` | RG-1.3 | Chain steps execute in declaration order. |
-| `test_host_callback_no_gpu` | RG-1.7 | Host callback pass submits zero GPU commands. |
-| `test_diagnostics_pass_timing` | RG-12.1 | Timestamp query pairs emitted per pass when diagnostics enabled. |
-| `test_diagnostics_stripped` | RG-12.7 | No timestamp queries when diagnostics disabled. |
+| Test                                | Req     |
+|-------------------------------------|---------|
+| `test_empty_graph_error`            | RG-13.4 |
+| `test_cycle_detection`              | RG-5.7  |
+| `test_single_writer_violation`      | RG-3.5  |
+| `test_undeclared_resource`          | RG-13.4 |
+| `test_topological_sort_stability`   | RG-5.6  |
+| `test_topological_sort_correctness` | RG-5.1  |
+| `test_dead_pass_elimination`        | RG-13.2 |
+| `test_transitive_dead_pass`         | RG-13.3 |
+| `test_capability_gate_soft`         | RG-6.2  |
+| `test_capability_gate_hard`         | RG-6.2  |
+| `test_fallback_chain`               | RG-6.3  |
+| `test_variant_selection`            | RG-13.7 |
+| `test_conditional_enable`           | RG-1.6  |
+| `test_conditional_cascade`          | RG-1.6  |
+| `test_barrier_raw`                  | RG-3.1  |
+| `test_barrier_waw`                  | RG-3.2  |
+| `test_barrier_merge`                | RG-3.6  |
+| `test_split_barrier`                | RG-3.6  |
+| `test_cross_queue_barrier`          | RG-3.4  |
+| `test_aliasing_non_overlapping`     | RG-8.2  |
+| `test_aliasing_overlapping`         | RG-8.2  |
+| `test_aliasing_efficiency`          | RG-8.6  |
+| `test_queue_affinity_graphics`      | RG-4.1  |
+| `test_queue_affinity_compute`       | RG-4.2  |
+| `test_queue_fallback`               | RG-4.5  |
+| `test_encoding_groups`              | RG-10.4 |
+| `test_sub_graph_instances`          | RG-9.5  |
+| `test_sub_graph_shared`             | RG-9.3  |
+| `test_sub_graph_array_layer`        | RG-9.4  |
+| `test_instance_count_mismatch`      | RG-13.8 |
+| `test_history_resource`             | RG-2.4  |
+| `test_resolution_scaled`            | RG-2.5  |
+| `test_budget_cull_lowest`           | RG-7.2  |
+| `test_budget_cascade`               | RG-7.3  |
+| `test_budget_never_cull_required`   | RG-7.2  |
+| `test_render_area_constraint`       | RG-1.9  |
+| `test_pass_chain_order`             | RG-1.3  |
+| `test_host_callback_no_gpu`         | RG-1.7  |
+| `test_diagnostics_pass_timing`      | RG-12.1 |
+| `test_diagnostics_stripped`         | RG-12.7 |
+
+1. **`test_empty_graph_error`** — Empty graph produces `EmptyGraph` error.
+2. **`test_cycle_detection`** — A -> B -> C -> A cycle produces `CycleDetected` error with all three
+   handles.
+3. **`test_single_writer_violation`** — Two passes writing the same resource in overlapping window
+   produces `SingleWriterViolation`.
+4. **`test_undeclared_resource`** — Reading a resource not declared in any pass produces
+   `UndeclaredResource`.
+5. **`test_topological_sort_stability`** — Same graph compiled twice produces identical pass
+   ordering.
+6. **`test_topological_sort_correctness`** — Every pass executes after all its dependencies.
+7. **`test_dead_pass_elimination`** — Pass whose outputs are unused is eliminated from the plan.
+8. **`test_transitive_dead_pass`** — Cascading elimination of orphaned producer chains.
+9. **`test_capability_gate_soft`** — Soft-gated pass pruned when capability absent; no error.
+10. **`test_capability_gate_hard`** — Hard-gated pass with missing capability produces
+    `CapabilityNotMet`.
+11. **`test_fallback_chain`** — Fallback chain selects first capable variant.
+12. **`test_variant_selection`** — Exactly one variant active per slot; zero or two produces error.
+13. **`test_conditional_enable`** — Disabled pass excluded from execution without recompilation.
+14. **`test_conditional_cascade`** — Disabling a pass cascades to its exclusive dependents.
+15. **`test_barrier_raw`** — Read-after-write produces exactly one barrier.
+16. **`test_barrier_waw`** — Write-after-write produces execution barrier.
+17. **`test_barrier_merge`** — Compatible barriers at the same point merge into one.
+18. **`test_split_barrier`** — Split barrier begin/end placed at optimal points.
+19. **`test_cross_queue_barrier`** — Cross-queue resource transfer emits release+acquire barrier
+    pair.
+20. **`test_aliasing_non_overlapping`** — Two non-overlapping transient resources share the same
+    heap offset.
+21. **`test_aliasing_overlapping`** — Overlapping resources get distinct heap offsets.
+22. **`test_aliasing_efficiency`** — Aliased heap < sum of all transient resource sizes.
+23. **`test_queue_affinity_graphics`** — Graphics-affinity pass assigned to graphics queue.
+24. **`test_queue_affinity_compute`** — Async-compute pass on dedicated compute queue.
+25. **`test_queue_fallback`** — Compute pass falls back to graphics when no compute queue.
+26. **`test_encoding_groups`** — Independent passes in same group; dependent passes in separate
+    groups.
+27. **`test_sub_graph_instances`** — 4-instance sub-graph produces 4 exclusive resource sets.
+28. **`test_sub_graph_shared`** — Shared resource across instances has single allocation.
+29. **`test_sub_graph_array_layer`** — Each instance writes correct array layer.
+30. **`test_instance_count_mismatch`** — Instance count > array layers produces error.
+31. **`test_history_resource`** — History resource current/previous handles resolve correctly.
+32. **`test_resolution_scaled`** — Scaled resource dimensions update with resolution_scale.
+33. **`test_budget_cull_lowest`** — Over-budget culls lowest-priority pass first.
+34. **`test_budget_cascade`** — Culled pass cascades to its exclusive consumers.
+35. **`test_budget_never_cull_required`** — Required-priority passes never culled.
+36. **`test_render_area_constraint`** — Render area propagates to aliasing write coverage.
+37. **`test_pass_chain_order`** — Chain steps execute in declaration order.
+38. **`test_host_callback_no_gpu`** — Host callback pass submits zero GPU commands.
+39. **`test_diagnostics_pass_timing`** — Timestamp query pairs emitted per pass when diagnostics
+    enabled.
+40. **`test_diagnostics_stripped`** — No timestamp queries when diagnostics disabled.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_full_frame_graph` | RG-13.1 | Build a realistic frame graph (shadow, GBuffer, lighting, post, present), compile, and verify correct barrier placement, queue assignment, and aliasing. |
-| `test_multi_view_shadow_cascades` | RG-9.1 | 4 shadow cascade views with shared scene data, per-instance matrices, and array layer output. Verify 4 instances, 1 shared allocation, 4 layer writes. |
-| `test_vr_stereo_graph` | RG-9.1 | VR stereo graph with 2 eye views sharing culling pass. Verify shared passes execute once. |
-| `test_parallel_encoding_correctness` | RG-10.1 | Encode a 20-pass graph on 4 threads. Verify command buffer contents match sequential encoding. |
-| `test_streaming_fallback` | RG-11.1 | Pass depends on streamed resource. Before arrival, placeholder bound. After arrival, real resource bound. |
-| `test_recompilation_trigger` | RG-13.5 | Parameter changes do not trigger recompilation. Adding a pass does trigger recompilation. |
-| `test_incremental_recompile` | RG-13.6 | Residency change recompiles only affected barriers. |
-| `test_d3d12_barrier_mapping` | RG-3.1 | On D3D12 backend, verify barriers emit `ResourceBarrier` calls with correct state transitions. |
-| `test_vulkan_barrier_mapping` | RG-3.1 | On Vulkan backend, verify barriers emit `vkCmdPipelineBarrier2` with correct access masks. |
-| `test_metal_no_intra_queue_barriers` | RG-3.1 | On Metal backend, verify no barriers emitted within a single queue (driver hazard tracking). |
+| Test                                 | Req     |
+|--------------------------------------|---------|
+| `test_full_frame_graph`              | RG-13.1 |
+| `test_multi_view_shadow_cascades`    | RG-9.1  |
+| `test_vr_stereo_graph`               | RG-9.1  |
+| `test_parallel_encoding_correctness` | RG-10.1 |
+| `test_streaming_fallback`            | RG-11.1 |
+| `test_recompilation_trigger`         | RG-13.5 |
+| `test_incremental_recompile`         | RG-13.6 |
+| `test_d3d12_barrier_mapping`         | RG-3.1  |
+| `test_vulkan_barrier_mapping`        | RG-3.1  |
+| `test_metal_no_intra_queue_barriers` | RG-3.1  |
+
+1. **`test_full_frame_graph`** — Build a realistic frame graph (shadow, GBuffer, lighting, post,
+   present), compile, and verify correct barrier placement, queue assignment, and aliasing.
+2. **`test_multi_view_shadow_cascades`** — 4 shadow cascade views with shared scene data,
+   per-instance matrices, and array layer output. Verify 4 instances, 1 shared allocation, 4 layer
+   writes.
+3. **`test_vr_stereo_graph`** — VR stereo graph with 2 eye views sharing culling pass. Verify shared
+   passes execute once.
+4. **`test_parallel_encoding_correctness`** — Encode a 20-pass graph on 4 threads. Verify command
+   buffer contents match sequential encoding.
+5. **`test_streaming_fallback`** — Pass depends on streamed resource. Before arrival, placeholder
+   bound. After arrival, real resource bound.
+6. **`test_recompilation_trigger`** — Parameter changes do not trigger recompilation. Adding a pass
+   does trigger recompilation.
+7. **`test_incremental_recompile`** — Residency change recompiles only affected barriers.
+8. **`test_d3d12_barrier_mapping`** — On D3D12 backend, verify barriers emit `ResourceBarrier` calls
+   with correct state transitions.
+9. **`test_vulkan_barrier_mapping`** — On Vulkan backend, verify barriers emit
+   `vkCmdPipelineBarrier2` with correct access masks.
+10. **`test_metal_no_intra_queue_barriers`** — On Metal backend, verify no barriers emitted within a
+    single queue (driver hazard tracking).
 
 ### Benchmarks
 
@@ -2074,13 +2207,29 @@ the DAG, but this means work graph internal scheduling is invisible to the rende
 All render graph APIs are safe Rust. Internal `unsafe` is confined to platform FFI wrappers and is
 audited with documented invariants.
 
-| Guarantee | Mechanism |
-|-----------|-----------|
-| **No unsafe in public API.** | All user-facing types (`GraphBuilder`, `PassBuilder`, `ExecutionPlan`, `RenderGraphPhase`) and functions are safe Rust. No `unsafe` in any public signature. |
-| **Compile-time validation.** | Graph compilation catches resource conflicts, missing dependencies, cycle detection, single-writer violations, and invalid access patterns before any GPU work is submitted. |
-| **Scoped borrows.** | All GPU command encoding uses scoped borrows. `PassEncoder<'a>` borrows the command buffer for the encoding scope only -- command buffers cannot outlive their encoding scope. |
-| **Type-safe resource handles.** | GPU resources use generational handles (`Handle<T>` / `ResourceHandle` with version field). No raw pointers. Dangling references are impossible -- stale handles fail validation at lookup time. |
-| **Internal unsafe encapsulation.** | Platform FFI (Metal, D3D12, Vulkan) is encapsulated behind safe wrapper types in `harmonius_gpu`. Unsafe blocks document safety invariants inline. No unsafe propagates to render graph consumers. |
+| Guarantee                          |
+|------------------------------------|
+| **No unsafe in public API.**       |
+| **Compile-time validation.**       |
+| **Scoped borrows.**                |
+| **Type-safe resource handles.**    |
+| **Internal unsafe encapsulation.** |
+
+1. ****No unsafe in public API.**** — All user-facing types (`GraphBuilder`, `PassBuilder`,
+   `ExecutionPlan`, `RenderGraphPhase`) and functions are safe Rust. No `unsafe` in any public
+   signature.
+2. ****Compile-time validation.**** — Graph compilation catches resource conflicts, missing
+   dependencies, cycle detection, single-writer violations, and invalid access patterns before any
+   GPU work is submitted.
+3. ****Scoped borrows.**** — All GPU command encoding uses scoped borrows. `PassEncoder<'a>` borrows
+   the command buffer for the encoding scope only -- command buffers cannot outlive their encoding
+   scope.
+4. ****Type-safe resource handles.**** — GPU resources use generational handles (`Handle<T>` /
+   `ResourceHandle` with version field). No raw pointers. Dangling references are impossible --
+   stale handles fail validation at lookup time.
+5. ****Internal unsafe encapsulation.**** — Platform FFI (Metal, D3D12, Vulkan) is encapsulated
+   behind safe wrapper types in `harmonius_gpu`. Unsafe blocks document safety invariants inline. No
+   unsafe propagates to render graph consumers.
 
 ### Scoped Borrow Model
 

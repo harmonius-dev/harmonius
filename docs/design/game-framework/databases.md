@@ -8,22 +8,37 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.7.1 | R-13.7.1 | Typed table schemas with constraints and defaults |
-| F-13.7.2 | R-13.7.2 | Row-based tables as ECS resources with foreign keys |
-| F-13.7.3 | R-13.7.3 | Numeric curves with interpolation modes |
-| F-13.7.4 | R-13.7.4 | Visual formula nodes compiling to logic graph bytecode |
-| F-13.7.5 | R-13.7.5 | Row inheritance with prototype chains |
-| F-13.7.6 | R-13.7.6 | Currency types with caps and multi-currency transactions |
-| F-13.7.7 | R-13.7.7 | Crafting recipes with catalysts and skill gates |
-| F-13.7.8 | R-13.7.8 | Loot tables with weighted random and pity counters |
-| F-13.7.9 | R-13.7.9 | Stat tables with configurable modifier stacking |
-| F-13.7.10 | R-13.7.10 | Asset list tables with platform/locale overrides |
-| F-13.7.11 | R-13.7.11 | Secondary indices for O(1) lookup and O(log n) range |
-| F-13.7.12 | R-13.7.12 | ECS component binding from database rows |
-| F-13.7.13 | R-13.7.13 | Hot reload with versioned rollback |
-| F-13.7.14 | R-13.7.14 | Schema validation and constraint checking |
+| Feature   | Requirement |
+|-----------|-------------|
+| F-13.7.1  | R-13.7.1    |
+| F-13.7.2  | R-13.7.2    |
+| F-13.7.3  | R-13.7.3    |
+| F-13.7.4  | R-13.7.4    |
+| F-13.7.5  | R-13.7.5    |
+| F-13.7.6  | R-13.7.6    |
+| F-13.7.7  | R-13.7.7    |
+| F-13.7.8  | R-13.7.8    |
+| F-13.7.9  | R-13.7.9    |
+| F-13.7.10 | R-13.7.10   |
+| F-13.7.11 | R-13.7.11   |
+| F-13.7.12 | R-13.7.12   |
+| F-13.7.13 | R-13.7.13   |
+| F-13.7.14 | R-13.7.14   |
+
+1. **F-13.7.1** — Typed table schemas with constraints and defaults
+2. **F-13.7.2** — Row-based tables as ECS resources with foreign keys
+3. **F-13.7.3** — Numeric curves with interpolation modes
+4. **F-13.7.4** — Visual formula nodes compiling to logic graph bytecode
+5. **F-13.7.5** — Row inheritance with prototype chains
+6. **F-13.7.6** — Currency types with caps and multi-currency transactions
+7. **F-13.7.7** — Crafting recipes with catalysts and skill gates
+8. **F-13.7.8** — Loot tables with weighted random and pity counters
+9. **F-13.7.9** — Stat tables with configurable modifier stacking
+10. **F-13.7.10** — Asset list tables with platform/locale overrides
+11. **F-13.7.11** — Secondary indices for O(1) lookup and O(log n) range
+12. **F-13.7.12** — ECS component binding from database rows
+13. **F-13.7.13** — Hot reload with versioned rollback
+14. **F-13.7.14** — Schema validation and constraint checking
 
 ## Overview
 
@@ -1373,83 +1388,181 @@ fn roll_loot(
 
 ## Platform Considerations
 
-| Aspect | Detail |
-|--------|--------|
-| Serialization | RON for human-readable authoring, binary for shipping. JSON and CSV for import only. |
-| Async I/O | All table file reads use the async I/O reactor. No blocking file I/O. |
-| Reflection | All table types derive `Reflect` for editor property panels and ECS binding. |
-| Memory | Tables use dense `Vec` storage for rows and `HashMap` for primary key index. Secondary BTree indices use `BTreeMap`. |
-| Hot reload | Copy-on-write semantics. New version is built in parallel, then swapped atomically. Old version stashed for rollback. |
-| Formula bytecode | Visual formulas compile to the same bytecode as gameplay logic graphs, using the shared logic graph VM. |
-| No-code | All authoring through visual editors. Schema definition, row editing, curve editing, and formula authoring are all visual. |
-| Platform overrides | Asset list tables resolve per-platform and per-locale at runtime via `cfg`-gated resolution. |
+| Aspect             |
+|--------------------|
+| Serialization      |
+| Async I/O          |
+| Reflection         |
+| Memory             |
+| Hot reload         |
+| Formula bytecode   |
+| No-code            |
+| Platform overrides |
+
+1. **Serialization** — RON for human-readable authoring, binary for shipping. JSON and CSV for
+   import only.
+2. **Async I/O** — All table file reads use the async I/O reactor. No blocking file I/O.
+3. **Reflection** — All table types derive `Reflect` for editor property panels and ECS binding.
+4. **Memory** — Tables use dense `Vec` storage for rows and `HashMap` for primary key index.
+   Secondary BTree indices use `BTreeMap`.
+5. **Hot reload** — Copy-on-write semantics. New version is built in parallel, then swapped
+   atomically. Old version stashed for rollback.
+6. **Formula bytecode** — Visual formulas compile to the same bytecode as gameplay logic graphs,
+   using the shared logic graph VM.
+7. **No-code** — All authoring through visual editors. Schema definition, row editing, curve
+   editing, and formula authoring are all visual.
+8. **Platform overrides** — Asset list tables resolve per-platform and per-locale at runtime via
+   `cfg`-gated resolution.
 
 ## Test Plan
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_schema_type_validation` | R-13.7.1 | Define schema with each column type. Load conforming data — pass. Load mismatched data — error. |
-| `test_schema_constraint_range` | R-13.7.1 | Range constraint [0, 100]. Insert 50 — pass. Insert 200 — error naming the column. |
-| `test_row_unique_key` | R-13.7.2 | Insert two rows with the same key. Assert duplicate rejected. |
-| `test_row_foreign_key_valid` | R-13.7.2 | Two tables with a valid FK reference. Assert resolution returns the referenced row. |
-| `test_row_foreign_key_broken` | R-13.7.2 | FK referencing a nonexistent row. Assert validation error with table, row, and column. |
-| `test_load_ron` | R-13.7.2 | Load a table from RON format. Assert all rows present and typed correctly. |
-| `test_load_json` | R-13.7.2 | Load a table from JSON format. Assert identical data to RON. |
-| `test_load_csv` | R-13.7.2 | Load a table from CSV format. Assert correct type coercion. |
-| `test_curve_linear` | R-13.7.3 | Linear curve with keys at 0 and 100. Sample at 50. Assert output = 50. |
-| `test_curve_step` | R-13.7.3 | Step curve. Sample between keys. Assert output = previous key value. |
-| `test_curve_bezier` | R-13.7.3 | Cubic Bezier curve. Sample at midpoint. Assert output within tolerance. |
-| `test_formula_add_multiply` | R-13.7.4 | Visual formula: (col_a + col_b) * 2. Evaluate. Assert correct result. |
-| `test_formula_curve_lookup` | R-13.7.4 | Formula with CurveLookup node. Assert output matches direct curve sample. |
-| `test_formula_bytecode_compat` | R-13.7.4 | Compile visual formula. Verify bytecode matches equivalent logic graph. |
-| `test_inheritance_single` | R-13.7.5 | Child inherits all parent values. Override one column. Assert mixed resolution. |
-| `test_inheritance_chain_3` | R-13.7.5 | 3-level chain. Leaf inherits from both ancestors. Assert correct values. |
-| `test_inheritance_circular` | R-13.7.5 | Circular chain. Assert validation detects the cycle with a path. |
-| `test_inheritance_slot_filter` | R-13.7.5 | Row descends from "Headgear". Assert `is_descendant_of` returns true. |
-| `test_currency_deduct` | R-13.7.6 | Deduct 100 gold from a wallet with 150. Assert balance = 50. |
-| `test_currency_multi_deduct` | R-13.7.6 | Deduct 100 gold AND 5 gems atomically. Assert both deducted. |
-| `test_currency_insufficient` | R-13.7.6 | Deduct more than balance. Assert `InsufficientFunds` error. |
-| `test_currency_cap` | R-13.7.6 | Credit above max cap. Assert balance clamped to cap. |
-| `test_currency_conversion` | R-13.7.6 | Convert 100 gold to gems at rate 10:1. Assert 10 gems credited. |
-| `test_recipe_basic` | R-13.7.7 | Recipe: 3 iron -> 1 sword. Execute. Assert inputs consumed, output granted. |
-| `test_recipe_catalyst` | R-13.7.7 | Recipe with catalyst (hammer). Assert hammer not consumed. |
-| `test_recipe_skill_gate` | R-13.7.7 | Recipe requires smithing 5. Player has 3. Assert `SkillTooLow`. |
-| `test_recipe_broken_ref` | R-13.7.7 | Recipe references nonexistent item. Assert validation error. |
-| `test_recipe_dismantle` | R-13.7.7 | Dismantle recipe reverses a craft. Assert correct output. |
-| `test_loot_weighted` | R-13.7.8 | Loot table: item A weight 3, B weight 1. Roll 10k times. Assert ~75/25 distribution within 5%. |
-| `test_loot_guaranteed` | R-13.7.8 | Guaranteed entry always appears in every roll. |
-| `test_loot_pity` | R-13.7.8 | Pity threshold 10. Miss 10 times. Assert pity item on roll 11. |
-| `test_loot_deterministic` | R-13.7.8 | Same seed produces identical drops. |
-| `test_loot_conditional` | R-13.7.8 | Entry conditioned on level >= 50. Roll at level 30 — absent. Roll at 50 — eligible. |
-| `test_stat_flat_mod` | R-13.7.9 | Base 100, flat +20. Assert final = 120. |
-| `test_stat_pct_mod` | R-13.7.9 | Base 100, pct +0.5. Assert final = 150. |
-| `test_stat_standard_stack` | R-13.7.9 | Base 100, flat +20, pct +0.5, mult 1.1. Assert (100+20) * 1.5 * 1.1 = 198. |
-| `test_stat_highest_only` | R-13.7.9 | HighestOnly rule. Two flat mods +10, +20. Assert final = base + 20. |
-| `test_stat_clamp` | R-13.7.9 | Result exceeds max_value. Assert clamped. |
-| `test_asset_list_resolve` | R-13.7.10 | Resolve on two platforms. Assert distinct handles. |
-| `test_asset_list_locale` | R-13.7.10 | Resolve with locale override. Assert locale-specific handle. |
-| `test_index_hash_lookup` | R-13.7.11 | Hash index O(1) lookup. Insert 10k rows, lookup by key. Assert found. |
-| `test_index_btree_range` | R-13.7.11 | BTree index range query [50, 100]. Assert correct row subset. |
-| `test_filter_and_or_not` | R-13.7.11 | Compound filter. Assert result matches brute-force scan. |
-| `test_binding_spawn` | R-13.7.12 | Spawn entity with `DatabaseRow`. Assert components populated from row. |
-| `test_binding_partial` | R-13.7.12 | Bind only 2 of 5 columns. Assert only those 2 are set. |
-| `test_binding_override` | R-13.7.12 | Override one column. Assert override value used, not DB value. |
-| `test_hot_reload_valid` | R-13.7.13 | Modify table file, hot-reload. Assert new values and `TableReloaded` event. |
-| `test_hot_reload_invalid` | R-13.7.13 | Hot-reload with broken data. Assert `ValidationFailed` event, old table unchanged. |
-| `test_hot_reload_rollback` | R-13.7.13 | Hot-reload, then rollback. Assert previous version restored. |
-| `test_validation_full` | R-13.7.14 | Load tables with type errors, broken FKs, range violations. Assert each error includes table, row, column. |
+| Test                           | Req       |
+|--------------------------------|-----------|
+| `test_schema_type_validation`  | R-13.7.1  |
+| `test_schema_constraint_range` | R-13.7.1  |
+| `test_row_unique_key`          | R-13.7.2  |
+| `test_row_foreign_key_valid`   | R-13.7.2  |
+| `test_row_foreign_key_broken`  | R-13.7.2  |
+| `test_load_ron`                | R-13.7.2  |
+| `test_load_json`               | R-13.7.2  |
+| `test_load_csv`                | R-13.7.2  |
+| `test_curve_linear`            | R-13.7.3  |
+| `test_curve_step`              | R-13.7.3  |
+| `test_curve_bezier`            | R-13.7.3  |
+| `test_formula_add_multiply`    | R-13.7.4  |
+| `test_formula_curve_lookup`    | R-13.7.4  |
+| `test_formula_bytecode_compat` | R-13.7.4  |
+| `test_inheritance_single`      | R-13.7.5  |
+| `test_inheritance_chain_3`     | R-13.7.5  |
+| `test_inheritance_circular`    | R-13.7.5  |
+| `test_inheritance_slot_filter` | R-13.7.5  |
+| `test_currency_deduct`         | R-13.7.6  |
+| `test_currency_multi_deduct`   | R-13.7.6  |
+| `test_currency_insufficient`   | R-13.7.6  |
+| `test_currency_cap`            | R-13.7.6  |
+| `test_currency_conversion`     | R-13.7.6  |
+| `test_recipe_basic`            | R-13.7.7  |
+| `test_recipe_catalyst`         | R-13.7.7  |
+| `test_recipe_skill_gate`       | R-13.7.7  |
+| `test_recipe_broken_ref`       | R-13.7.7  |
+| `test_recipe_dismantle`        | R-13.7.7  |
+| `test_loot_weighted`           | R-13.7.8  |
+| `test_loot_guaranteed`         | R-13.7.8  |
+| `test_loot_pity`               | R-13.7.8  |
+| `test_loot_deterministic`      | R-13.7.8  |
+| `test_loot_conditional`        | R-13.7.8  |
+| `test_stat_flat_mod`           | R-13.7.9  |
+| `test_stat_pct_mod`            | R-13.7.9  |
+| `test_stat_standard_stack`     | R-13.7.9  |
+| `test_stat_highest_only`       | R-13.7.9  |
+| `test_stat_clamp`              | R-13.7.9  |
+| `test_asset_list_resolve`      | R-13.7.10 |
+| `test_asset_list_locale`       | R-13.7.10 |
+| `test_index_hash_lookup`       | R-13.7.11 |
+| `test_index_btree_range`       | R-13.7.11 |
+| `test_filter_and_or_not`       | R-13.7.11 |
+| `test_binding_spawn`           | R-13.7.12 |
+| `test_binding_partial`         | R-13.7.12 |
+| `test_binding_override`        | R-13.7.12 |
+| `test_hot_reload_valid`        | R-13.7.13 |
+| `test_hot_reload_invalid`      | R-13.7.13 |
+| `test_hot_reload_rollback`     | R-13.7.13 |
+| `test_validation_full`         | R-13.7.14 |
+
+1. **`test_schema_type_validation`** — Define schema with each column type. Load conforming data —
+   pass. Load mismatched data — error.
+2. **`test_schema_constraint_range`** — Range constraint [0, 100]. Insert 50 — pass. Insert 200 —
+   error naming the column.
+3. **`test_row_unique_key`** — Insert two rows with the same key. Assert duplicate rejected.
+4. **`test_row_foreign_key_valid`** — Two tables with a valid FK reference. Assert resolution
+   returns the referenced row.
+5. **`test_row_foreign_key_broken`** — FK referencing a nonexistent row. Assert validation error
+   with table, row, and column.
+6. **`test_load_ron`** — Load a table from RON format. Assert all rows present and typed correctly.
+7. **`test_load_json`** — Load a table from JSON format. Assert identical data to RON.
+8. **`test_load_csv`** — Load a table from CSV format. Assert correct type coercion.
+9. **`test_curve_linear`** — Linear curve with keys at 0 and 100. Sample at 50. Assert output = 50.
+10. **`test_curve_step`** — Step curve. Sample between keys. Assert output = previous key value.
+11. **`test_curve_bezier`** — Cubic Bezier curve. Sample at midpoint. Assert output within
+    tolerance.
+12. **`test_formula_add_multiply`** — Visual formula: (col_a + col_b) * 2. Evaluate. Assert correct
+    result.
+13. **`test_formula_curve_lookup`** — Formula with CurveLookup node. Assert output matches direct
+    curve sample.
+14. **`test_formula_bytecode_compat`** — Compile visual formula. Verify bytecode matches equivalent
+    logic graph.
+15. **`test_inheritance_single`** — Child inherits all parent values. Override one column. Assert
+    mixed resolution.
+16. **`test_inheritance_chain_3`** — 3-level chain. Leaf inherits from both ancestors. Assert
+    correct values.
+17. **`test_inheritance_circular`** — Circular chain. Assert validation detects the cycle with a
+    path.
+18. **`test_inheritance_slot_filter`** — Row descends from "Headgear". Assert `is_descendant_of`
+    returns true.
+19. **`test_currency_deduct`** — Deduct 100 gold from a wallet with 150. Assert balance = 50.
+20. **`test_currency_multi_deduct`** — Deduct 100 gold AND 5 gems atomically. Assert both deducted.
+21. **`test_currency_insufficient`** — Deduct more than balance. Assert `InsufficientFunds` error.
+22. **`test_currency_cap`** — Credit above max cap. Assert balance clamped to cap.
+23. **`test_currency_conversion`** — Convert 100 gold to gems at rate 10:1. Assert 10 gems credited.
+24. **`test_recipe_basic`** — Recipe: 3 iron -> 1 sword. Execute. Assert inputs consumed, output
+    granted.
+25. **`test_recipe_catalyst`** — Recipe with catalyst (hammer). Assert hammer not consumed.
+26. **`test_recipe_skill_gate`** — Recipe requires smithing 5. Player has 3. Assert `SkillTooLow`.
+27. **`test_recipe_broken_ref`** — Recipe references nonexistent item. Assert validation error.
+28. **`test_recipe_dismantle`** — Dismantle recipe reverses a craft. Assert correct output.
+29. **`test_loot_weighted`** — Loot table: item A weight 3, B weight 1. Roll 10k times. Assert
+    ~75/25 distribution within 5%.
+30. **`test_loot_guaranteed`** — Guaranteed entry always appears in every roll.
+31. **`test_loot_pity`** — Pity threshold 10. Miss 10 times. Assert pity item on roll 11.
+32. **`test_loot_deterministic`** — Same seed produces identical drops.
+33. **`test_loot_conditional`** — Entry conditioned on level >= 50. Roll at level 30 — absent. Roll
+    at 50 — eligible.
+34. **`test_stat_flat_mod`** — Base 100, flat +20. Assert final = 120.
+35. **`test_stat_pct_mod`** — Base 100, pct +0.5. Assert final = 150.
+36. **`test_stat_standard_stack`** — Base 100, flat +20, pct +0.5, mult 1.1. Assert (100+20) * 1.5 *
+    1.1 = 198.
+37. **`test_stat_highest_only`** — HighestOnly rule. Two flat mods +10, +20. Assert final = base +
+    20.
+38. **`test_stat_clamp`** — Result exceeds max_value. Assert clamped.
+39. **`test_asset_list_resolve`** — Resolve on two platforms. Assert distinct handles.
+40. **`test_asset_list_locale`** — Resolve with locale override. Assert locale-specific handle.
+41. **`test_index_hash_lookup`** — Hash index O(1) lookup. Insert 10k rows, lookup by key. Assert
+    found.
+42. **`test_index_btree_range`** — BTree index range query [50, 100]. Assert correct row subset.
+43. **`test_filter_and_or_not`** — Compound filter. Assert result matches brute-force scan.
+44. **`test_binding_spawn`** — Spawn entity with `DatabaseRow`. Assert components populated from
+    row.
+45. **`test_binding_partial`** — Bind only 2 of 5 columns. Assert only those 2 are set.
+46. **`test_binding_override`** — Override one column. Assert override value used, not DB value.
+47. **`test_hot_reload_valid`** — Modify table file, hot-reload. Assert new values and
+    `TableReloaded` event.
+48. **`test_hot_reload_invalid`** — Hot-reload with broken data. Assert `ValidationFailed` event,
+    old table unchanged.
+49. **`test_hot_reload_rollback`** — Hot-reload, then rollback. Assert previous version restored.
+50. **`test_validation_full`** — Load tables with type errors, broken FKs, range violations. Assert
+    each error includes table, row, column.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_load_50_tables` | R-13.7.NF2 | Load 50 tables totaling 1M rows. Assert total load + validate < 2 sec. |
-| `test_hot_reload_bindings` | R-13.7.13 | Hot-reload a table. Assert all entities with `DatabaseRow` refs are updated within one frame. |
-| `test_binding_two_way_sync` | R-13.7.12 | Modify a component in the editor. Assert the database row reflects the change. |
-| `test_loot_server_authority` | R-13.7.8 | Roll loot on server with seed. Client verifies identical result with same seed. |
-| `test_formula_eval_throughput` | R-13.7.4 | Evaluate 10k formula rows. Assert > 1M evaluations/sec. |
+| Test                           | Req        |
+|--------------------------------|------------|
+| `test_load_50_tables`          | R-13.7.NF2 |
+| `test_hot_reload_bindings`     | R-13.7.13  |
+| `test_binding_two_way_sync`    | R-13.7.12  |
+| `test_loot_server_authority`   | R-13.7.8   |
+| `test_formula_eval_throughput` | R-13.7.4   |
+
+1. **`test_load_50_tables`** — Load 50 tables totaling 1M rows. Assert total load + validate < 2
+   sec.
+2. **`test_hot_reload_bindings`** — Hot-reload a table. Assert all entities with `DatabaseRow` refs
+   are updated within one frame.
+3. **`test_binding_two_way_sync`** — Modify a component in the editor. Assert the database row
+   reflects the change.
+4. **`test_loot_server_authority`** — Roll loot on server with seed. Client verifies identical
+   result with same seed.
+5. **`test_formula_eval_throughput`** — Evaluate 10k formula rows. Assert > 1M evaluations/sec.
 
 ### Benchmarks
 

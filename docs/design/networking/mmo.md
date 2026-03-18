@@ -8,16 +8,25 @@
 > [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
 > to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-8.7.1 | R-8.7.1 | World sharding and instancing |
-| F-8.7.2 | R-8.7.2 | Seamless zone transitions |
-| F-8.7.3 | R-8.7.3 | Dynamic server mesh |
-| F-8.7.4 | R-8.7.4 | Player migration between servers (< 100 ms) |
-| F-8.7.5 | R-8.7.5 | Persistent world state and database integration |
-| F-8.7.6 | R-8.7.6 | Load balancing and auto-scaling |
-| F-8.7.7 | R-8.7.7 | Cross-shard services (auction, mail, chat) |
-| F-8.7.8 | R-8.7.8 | Inter-server communication bus |
+| Feature | Requirement |
+|---------|-------------|
+| F-8.7.1 | R-8.7.1     |
+| F-8.7.2 | R-8.7.2     |
+| F-8.7.3 | R-8.7.3     |
+| F-8.7.4 | R-8.7.4     |
+| F-8.7.5 | R-8.7.5     |
+| F-8.7.6 | R-8.7.6     |
+| F-8.7.7 | R-8.7.7     |
+| F-8.7.8 | R-8.7.8     |
+
+1. **F-8.7.1** — World sharding and instancing
+2. **F-8.7.2** — Seamless zone transitions
+3. **F-8.7.3** — Dynamic server mesh
+4. **F-8.7.4** — Player migration between servers (< 100 ms)
+5. **F-8.7.5** — Persistent world state and database integration
+6. **F-8.7.6** — Load balancing and auto-scaling
+7. **F-8.7.7** — Cross-shard services (auction, mail, chat)
+8. **F-8.7.8** — Inter-server communication bus
 
 ## Overview
 
@@ -1286,44 +1295,80 @@ operations.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_shard_assignment_least_pop` | R-8.7.1 | Assign to shard with fewest players. |
-| `test_shard_assignment_specific` | R-8.7.1 | Assign to a friend's shard. |
-| `test_shard_merge` | R-8.7.1 | Merge two shards; verify all players and state in target. |
-| `test_instance_lockout` | R-8.7.1 | Create instance, complete, attempt re-entry; verify lockout. |
-| `test_spatial_region_contains` | R-8.7.3 | Point-in-region test for various positions. |
-| `test_spatial_region_split` | R-8.7.3 | Split region; verify two halves cover original. |
-| `test_mesh_route_player` | R-8.7.3 | Route player to correct server by position. |
-| `test_migration_payload_roundtrip` | R-8.7.4 | Serialize and deserialize a payload; verify all fields. |
-| `test_migration_payload_buffs` | R-8.7.4 | Migrate with active buffs; verify remaining ticks preserved. |
-| `test_transaction_commit` | R-8.7.5 | Execute multi-statement transaction; verify atomicity. |
-| `test_transaction_rollback` | R-8.7.5 | Simulate crash mid-transaction; verify rollback. |
-| `test_bus_pubsub_delivery` | R-8.7.8 | Publish to channel; verify all subscribers receive. |
-| `test_bus_point_to_point` | R-8.7.8 | Send direct message; verify only target receives. |
-| `test_bus_exactly_once_dedup` | R-8.7.8 | Retransmit economy message; verify deduplicated. |
-| `test_bus_auto_reconnect` | R-8.7.8 | Disconnect peer; verify reconnection within 5 s. |
-| `test_overlap_sync` | R-8.7.2 | Sync entities in overlap zone; verify ghost entities appear. |
-| `test_auction_concurrent_bid_buyout` | R-8.7.7 | Concurrent bid + buyout; verify one succeeds, one fails. |
+| Test                                 | Req     |
+|--------------------------------------|---------|
+| `test_shard_assignment_least_pop`    | R-8.7.1 |
+| `test_shard_assignment_specific`     | R-8.7.1 |
+| `test_shard_merge`                   | R-8.7.1 |
+| `test_instance_lockout`              | R-8.7.1 |
+| `test_spatial_region_contains`       | R-8.7.3 |
+| `test_spatial_region_split`          | R-8.7.3 |
+| `test_mesh_route_player`             | R-8.7.3 |
+| `test_migration_payload_roundtrip`   | R-8.7.4 |
+| `test_migration_payload_buffs`       | R-8.7.4 |
+| `test_transaction_commit`            | R-8.7.5 |
+| `test_transaction_rollback`          | R-8.7.5 |
+| `test_bus_pubsub_delivery`           | R-8.7.8 |
+| `test_bus_point_to_point`            | R-8.7.8 |
+| `test_bus_exactly_once_dedup`        | R-8.7.8 |
+| `test_bus_auto_reconnect`            | R-8.7.8 |
+| `test_overlap_sync`                  | R-8.7.2 |
+| `test_auction_concurrent_bid_buyout` | R-8.7.7 |
+
+1. **`test_shard_assignment_least_pop`** — Assign to shard with fewest players.
+2. **`test_shard_assignment_specific`** — Assign to a friend's shard.
+3. **`test_shard_merge`** — Merge two shards; verify all players and state in target.
+4. **`test_instance_lockout`** — Create instance, complete, attempt re-entry; verify lockout.
+5. **`test_spatial_region_contains`** — Point-in-region test for various positions.
+6. **`test_spatial_region_split`** — Split region; verify two halves cover original.
+7. **`test_mesh_route_player`** — Route player to correct server by position.
+8. **`test_migration_payload_roundtrip`** — Serialize and deserialize a payload; verify all fields.
+9. **`test_migration_payload_buffs`** — Migrate with active buffs; verify remaining ticks preserved.
+10. **`test_transaction_commit`** — Execute multi-statement transaction; verify atomicity.
+11. **`test_transaction_rollback`** — Simulate crash mid-transaction; verify rollback.
+12. **`test_bus_pubsub_delivery`** — Publish to channel; verify all subscribers receive.
+13. **`test_bus_point_to_point`** — Send direct message; verify only target receives.
+14. **`test_bus_exactly_once_dedup`** — Retransmit economy message; verify deduplicated.
+15. **`test_bus_auto_reconnect`** — Disconnect peer; verify reconnection within 5 s.
+16. **`test_overlap_sync`** — Sync entities in overlap zone; verify ghost entities appear.
+17. **`test_auction_concurrent_bid_buyout`** — Concurrent bid + buyout; verify one succeeds, one
+    fails.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_seamless_zone_transition` | R-8.7.2 | Move player across boundary; verify no loading screen, no disconnect, state preserved. |
-| `test_overlap_no_popin` | R-8.7.2 | Entities near boundary visible from both zones. |
-| `test_mesh_split_500_players` | R-8.7.3 | Concentrate 500 players; verify split within 10 s. |
-| `test_mesh_merge_after_disperse` | R-8.7.3 | Disperse players; verify merge within 30 s. |
-| `test_migration_mid_combat` | R-8.7.4 | Migrate during combat; verify buffs, cooldowns, RPCs preserved. |
-| `test_migration_under_100ms` | R-8.7.4 | Measure handoff; verify < 100 ms. |
-| `test_db_10k_concurrent_saves` | R-8.7.5 | 10,000 character saves; verify none block simulation. |
-| `test_db_trade_atomicity` | R-8.7.5 | Execute trade, crash mid-transaction; verify rollback. |
-| `test_db_sustained_10k_tps` | R-8.7.5 | Benchmark write throughput; verify > 10,000 TPS. |
-| `test_autoscale_surge` | R-8.7.6 | Simulate 5,000 player surge; verify new servers within 30 s. |
-| `test_autoscale_drain` | R-8.7.6 | Simulate population decline; verify drain before termination. |
-| `test_cross_shard_auction` | R-8.7.7 | List on shard A, buy from shard B; verify delivery. |
-| `test_cross_shard_mail` | R-8.7.7 | Send mail with attachment across shards; verify delivery. |
-| `test_cross_shard_concurrent_auction` | R-8.7.7 | Concurrent bid + buyout from different shards; verify deterministic resolution. |
+| Test                                  | Req     |
+|---------------------------------------|---------|
+| `test_seamless_zone_transition`       | R-8.7.2 |
+| `test_overlap_no_popin`               | R-8.7.2 |
+| `test_mesh_split_500_players`         | R-8.7.3 |
+| `test_mesh_merge_after_disperse`      | R-8.7.3 |
+| `test_migration_mid_combat`           | R-8.7.4 |
+| `test_migration_under_100ms`          | R-8.7.4 |
+| `test_db_10k_concurrent_saves`        | R-8.7.5 |
+| `test_db_trade_atomicity`             | R-8.7.5 |
+| `test_db_sustained_10k_tps`           | R-8.7.5 |
+| `test_autoscale_surge`                | R-8.7.6 |
+| `test_autoscale_drain`                | R-8.7.6 |
+| `test_cross_shard_auction`            | R-8.7.7 |
+| `test_cross_shard_mail`               | R-8.7.7 |
+| `test_cross_shard_concurrent_auction` | R-8.7.7 |
+
+1. **`test_seamless_zone_transition`** — Move player across boundary; verify no loading screen, no
+   disconnect, state preserved.
+2. **`test_overlap_no_popin`** — Entities near boundary visible from both zones.
+3. **`test_mesh_split_500_players`** — Concentrate 500 players; verify split within 10 s.
+4. **`test_mesh_merge_after_disperse`** — Disperse players; verify merge within 30 s.
+5. **`test_migration_mid_combat`** — Migrate during combat; verify buffs, cooldowns, RPCs preserved.
+6. **`test_migration_under_100ms`** — Measure handoff; verify < 100 ms.
+7. **`test_db_10k_concurrent_saves`** — 10,000 character saves; verify none block simulation.
+8. **`test_db_trade_atomicity`** — Execute trade, crash mid-transaction; verify rollback.
+9. **`test_db_sustained_10k_tps`** — Benchmark write throughput; verify > 10,000 TPS.
+10. **`test_autoscale_surge`** — Simulate 5,000 player surge; verify new servers within 30 s.
+11. **`test_autoscale_drain`** — Simulate population decline; verify drain before termination.
+12. **`test_cross_shard_auction`** — List on shard A, buy from shard B; verify delivery.
+13. **`test_cross_shard_mail`** — Send mail with attachment across shards; verify delivery.
+14. **`test_cross_shard_concurrent_auction`** — Concurrent bid + buyout from different shards;
+    verify deterministic resolution.
 
 ### Benchmarks
 

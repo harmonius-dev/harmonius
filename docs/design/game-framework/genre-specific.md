@@ -8,61 +8,115 @@
 > [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
 > elements to those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-13.20.1 | R-13.20.1 | Fog of war grid with 3-state visibility and GPU fog texture |
-| F-13.20.2 | R-13.20.2 | Vision sources with sight radius, shape, and LOS blocking |
-| F-13.20.3 | R-13.20.3 | Vision modifier volumes (stealth zones, smoke, high ground) |
-| F-13.20.4 | R-13.20.4 | Fog memory with last-seen snapshots in shrouded areas |
-| F-13.21.1 | R-13.21.1 | Tactical grid (square/hex) with cover, elevation, occupancy |
-| F-13.21.2 | R-13.21.2 | Turn manager with initiative, team-based, and phase modes |
-| F-13.21.3 | R-13.21.3 | Action point movement and abilities per turn |
-| F-13.21.4 | R-13.21.4 | Grid cover, flanking, and overwatch stance |
-| F-13.21.5 | R-13.21.5 | Hit probability computation and combat resolution |
-| F-13.26.1 | R-13.26.1 | Minigame session with isolated ECS world partition |
-| F-13.26.2 | R-13.26.2 | Minigame presentation modes (world-space, fullscreen, split, diegetic) |
-| F-13.26.3 | R-13.26.3 | Minigame lifecycle with typed result contract |
-| F-13.26.4 | R-13.26.4 | Timing/rhythm minigame template |
-| F-13.26.5a | R-13.26.5a | Grid/board engine for card/board/match-3 games |
-| F-13.26.5b | R-13.26.5b | Match detection algorithms |
-| F-13.26.5c | R-13.26.5c | Board minigame AI with difficulty tiers |
-| F-13.26.5d | R-13.26.5d | Board piece animation and cascading |
-| F-13.26.6 | R-13.26.6 | Physics toy minigame template |
-| F-13.26.7 | R-13.26.7 | Multiplayer minigame sessions |
-| F-13.26.8 | R-13.26.8 | Minigame library and discovery registry |
-| F-13.22.1 | R-13.22.1 | Track and checkpoint system with lap timing |
-| F-13.22.2 | R-13.22.2 | Data-driven race mode framework |
-| F-13.22.3a | R-13.22.3a | Racing AI navigation via waypoint splines |
-| F-13.22.3b | R-13.22.3b | Rubber-banding difficulty adjustment |
-| F-13.22.3c | R-13.22.3c | AI racing behavior and personality profiles |
-| F-13.22.4 | R-13.22.4 | Drift scoring and boost system |
-| F-13.22.5 | R-13.22.5 | Ghost replay recording and leaderboards |
-| F-13.27.1 | R-13.27.1 | Block type registry with O(1) lookup |
-| F-13.27.2 | R-13.27.2 | Block placement and destruction via raycast |
-| F-13.27.3 | R-13.27.3 | Chunk-based storage with palette compression |
-| F-13.27.4 | R-13.27.4 | Greedy meshing with face culling and AO |
-| F-13.27.5 | R-13.27.5 | Flood-fill lighting (sunlight + block light) |
-| F-13.27.6a | R-13.27.6a | Gravity-affected block physics |
-| F-13.27.6b | R-13.27.6b | Fluid flow simulation (water, lava) |
-| F-13.27.6c | R-13.27.6c | Fluid-block interactions (ignition, extinguish) |
-| F-13.27.7a | R-13.27.7a | Signal source and wire blocks |
-| F-13.27.7b | R-13.27.7b | Logic gate blocks (repeaters, comparators) |
-| F-13.27.7c | R-13.27.7c | Mechanism blocks (pistons, doors, hoppers) |
-| F-13.27.7d | R-13.27.7d | Deterministic circuit evaluation with budget |
-| F-13.27.8a | R-13.27.8a | Seed-deterministic block terrain generation |
-| F-13.27.8b | R-13.27.8b | Biome system with smooth transitions |
-| F-13.27.8c | R-13.27.8c | Ore vein placement via 3D noise |
-| F-13.27.8d | R-13.27.8d | Structure generation (trees, villages, dungeons) |
-| F-13.15.1 | R-13.15.1 | Companion AI with commands and pathfinding |
-| F-13.15.2 | R-13.15.2 | Pet needs and mood system |
-| F-13.15.3a | R-13.15.3a | Mount summoning and dismissal |
-| F-13.15.3b | R-13.15.3b | Mounted locomotion with physics swap |
-| F-13.15.3c | R-13.15.3c | Mounted combat with ability restrictions |
-| F-13.15.3d | R-13.15.3d | Ground, flying, and aquatic mount types |
-| F-13.15.4 | R-13.15.4 | Creature taming with progress and probability |
-| F-13.15.5a | R-13.15.5a | Pet life stages (baby to elder) |
-| F-13.15.5b | R-13.15.5b | Evolution branching via diet/training |
-| F-13.15.5c | R-13.15.5c | Breeding with trait inheritance |
+| Feature    | Requirement |
+|------------|-------------|
+| F-13.20.1  | R-13.20.1   |
+| F-13.20.2  | R-13.20.2   |
+| F-13.20.3  | R-13.20.3   |
+| F-13.20.4  | R-13.20.4   |
+| F-13.21.1  | R-13.21.1   |
+| F-13.21.2  | R-13.21.2   |
+| F-13.21.3  | R-13.21.3   |
+| F-13.21.4  | R-13.21.4   |
+| F-13.21.5  | R-13.21.5   |
+| F-13.26.1  | R-13.26.1   |
+| F-13.26.2  | R-13.26.2   |
+| F-13.26.3  | R-13.26.3   |
+| F-13.26.4  | R-13.26.4   |
+| F-13.26.5a | R-13.26.5a  |
+| F-13.26.5b | R-13.26.5b  |
+| F-13.26.5c | R-13.26.5c  |
+| F-13.26.5d | R-13.26.5d  |
+| F-13.26.6  | R-13.26.6   |
+| F-13.26.7  | R-13.26.7   |
+| F-13.26.8  | R-13.26.8   |
+| F-13.22.1  | R-13.22.1   |
+| F-13.22.2  | R-13.22.2   |
+| F-13.22.3a | R-13.22.3a  |
+| F-13.22.3b | R-13.22.3b  |
+| F-13.22.3c | R-13.22.3c  |
+| F-13.22.4  | R-13.22.4   |
+| F-13.22.5  | R-13.22.5   |
+| F-13.27.1  | R-13.27.1   |
+| F-13.27.2  | R-13.27.2   |
+| F-13.27.3  | R-13.27.3   |
+| F-13.27.4  | R-13.27.4   |
+| F-13.27.5  | R-13.27.5   |
+| F-13.27.6a | R-13.27.6a  |
+| F-13.27.6b | R-13.27.6b  |
+| F-13.27.6c | R-13.27.6c  |
+| F-13.27.7a | R-13.27.7a  |
+| F-13.27.7b | R-13.27.7b  |
+| F-13.27.7c | R-13.27.7c  |
+| F-13.27.7d | R-13.27.7d  |
+| F-13.27.8a | R-13.27.8a  |
+| F-13.27.8b | R-13.27.8b  |
+| F-13.27.8c | R-13.27.8c  |
+| F-13.27.8d | R-13.27.8d  |
+| F-13.15.1  | R-13.15.1   |
+| F-13.15.2  | R-13.15.2   |
+| F-13.15.3a | R-13.15.3a  |
+| F-13.15.3b | R-13.15.3b  |
+| F-13.15.3c | R-13.15.3c  |
+| F-13.15.3d | R-13.15.3d  |
+| F-13.15.4  | R-13.15.4   |
+| F-13.15.5a | R-13.15.5a  |
+| F-13.15.5b | R-13.15.5b  |
+| F-13.15.5c | R-13.15.5c  |
+
+1. **F-13.20.1** — Fog of war grid with 3-state visibility and GPU fog texture
+2. **F-13.20.2** — Vision sources with sight radius, shape, and LOS blocking
+3. **F-13.20.3** — Vision modifier volumes (stealth zones, smoke, high ground)
+4. **F-13.20.4** — Fog memory with last-seen snapshots in shrouded areas
+5. **F-13.21.1** — Tactical grid (square/hex) with cover, elevation, occupancy
+6. **F-13.21.2** — Turn manager with initiative, team-based, and phase modes
+7. **F-13.21.3** — Action point movement and abilities per turn
+8. **F-13.21.4** — Grid cover, flanking, and overwatch stance
+9. **F-13.21.5** — Hit probability computation and combat resolution
+10. **F-13.26.1** — Minigame session with isolated ECS world partition
+11. **F-13.26.2** — Minigame presentation modes (world-space, fullscreen, split, diegetic)
+12. **F-13.26.3** — Minigame lifecycle with typed result contract
+13. **F-13.26.4** — Timing/rhythm minigame template
+14. **F-13.26.5a** — Grid/board engine for card/board/match-3 games
+15. **F-13.26.5b** — Match detection algorithms
+16. **F-13.26.5c** — Board minigame AI with difficulty tiers
+17. **F-13.26.5d** — Board piece animation and cascading
+18. **F-13.26.6** — Physics toy minigame template
+19. **F-13.26.7** — Multiplayer minigame sessions
+20. **F-13.26.8** — Minigame library and discovery registry
+21. **F-13.22.1** — Track and checkpoint system with lap timing
+22. **F-13.22.2** — Data-driven race mode framework
+23. **F-13.22.3a** — Racing AI navigation via waypoint splines
+24. **F-13.22.3b** — Rubber-banding difficulty adjustment
+25. **F-13.22.3c** — AI racing behavior and personality profiles
+26. **F-13.22.4** — Drift scoring and boost system
+27. **F-13.22.5** — Ghost replay recording and leaderboards
+28. **F-13.27.1** — Block type registry with O(1) lookup
+29. **F-13.27.2** — Block placement and destruction via raycast
+30. **F-13.27.3** — Chunk-based storage with palette compression
+31. **F-13.27.4** — Greedy meshing with face culling and AO
+32. **F-13.27.5** — Flood-fill lighting (sunlight + block light)
+33. **F-13.27.6a** — Gravity-affected block physics
+34. **F-13.27.6b** — Fluid flow simulation (water, lava)
+35. **F-13.27.6c** — Fluid-block interactions (ignition, extinguish)
+36. **F-13.27.7a** — Signal source and wire blocks
+37. **F-13.27.7b** — Logic gate blocks (repeaters, comparators)
+38. **F-13.27.7c** — Mechanism blocks (pistons, doors, hoppers)
+39. **F-13.27.7d** — Deterministic circuit evaluation with budget
+40. **F-13.27.8a** — Seed-deterministic block terrain generation
+41. **F-13.27.8b** — Biome system with smooth transitions
+42. **F-13.27.8c** — Ore vein placement via 3D noise
+43. **F-13.27.8d** — Structure generation (trees, villages, dungeons)
+44. **F-13.15.1** — Companion AI with commands and pathfinding
+45. **F-13.15.2** — Pet needs and mood system
+46. **F-13.15.3a** — Mount summoning and dismissal
+47. **F-13.15.3b** — Mounted locomotion with physics swap
+48. **F-13.15.3c** — Mounted combat with ability restrictions
+49. **F-13.15.3d** — Ground, flying, and aquatic mount types
+50. **F-13.15.4** — Creature taming with progress and probability
+51. **F-13.15.5a** — Pet life stages (baby to elder)
+52. **F-13.15.5b** — Evolution branching via diet/training
+53. **F-13.15.5c** — Breeding with trait inheritance
 
 ## Overview
 
@@ -1604,91 +1658,171 @@ queries and resource access, enabling the ECS scheduler to parallelize independe
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_fog_three_states` | R-13.20.1 | Set cell states, verify get returns correct state |
-| `test_fog_2bit_encoding` | R-13.20.1 | 256x256 grid serializes to 16,384 bytes per faction |
-| `test_fog_delta_90pct` | NFR-13.20.2 | 5% cell change yields >= 90% smaller delta |
-| `test_vision_circle` | R-13.20.2 | Radius-10 source reveals correct cells |
-| `test_vision_los_blocked` | R-13.20.2 | Wall occluder blocks visibility |
-| `test_vision_elevation` | R-13.20.2 | +3 elevation bonus increases radius to 13 |
-| `test_vision_modifier_stealth` | R-13.20.3 | Entity in stealth zone invisible to outsiders |
-| `test_fog_memory_persist` | R-13.20.4 | Ghost building persists in shroud, updates on reveal |
-| `test_grid_reachable_cells` | R-13.21.1 | BFS reachable cells match expected set |
-| `test_grid_hex_adjacency` | R-13.21.1 | Hex grid adjacency correct for odd/even rows |
-| `test_initiative_order` | R-13.21.2 | Speed stats 10,20,15,5 -> order 20,15,10,5 |
-| `test_team_turn_order` | R-13.21.2 | Team A acts fully before team B |
-| `test_ap_movement` | R-13.21.3 | 3 flat cells cost 3 AP, difficult costs 6 AP |
-| `test_ap_interleave` | R-13.21.3 | Move, attack, move again within budget |
-| `test_cover_directional` | R-13.21.4 | Half cover from north, none from east flank |
-| `test_overwatch_triggers` | R-13.21.4 | Enemy moving through LOS triggers overwatch shot |
-| `test_hit_probability` | R-13.21.5 | 80% base - 10% range - 20% cover = 50% |
-| `test_combat_outcomes` | R-13.21.5 | 1000 rolls at 50% within 95% CI |
-| `test_minigame_isolation` | R-13.26.1 | Cannot access outer world components |
-| `test_minigame_contract` | R-13.26.3 | Results applied atomically; crash = no partial |
-| `test_minigame_quit_policy` | R-13.26.3 | Quit with Loss/Refund/NoEffect policies |
-| `test_timing_windows` | R-13.26.4 | Perfect +/-30ms, great +/-60ms detection |
-| `test_match_3_detection` | R-13.26.5b | 3-in-a-row detected (H, V, diagonal) |
-| `test_cascade_recursive` | R-13.26.5d | Cascade triggers recursive match checks |
-| `test_board_ai_difficulty` | R-13.26.5c | Easy <30%, hard >70% vs random baseline |
-| `test_physics_determinism` | R-13.26.6 | Identical inputs produce identical physics |
-| `test_checkpoint_order` | R-13.22.1 | Skipped checkpoint invalidates lap |
-| `test_lap_counting` | R-13.22.1 | Lap increments on start/finish with all CPs |
-| `test_split_times` | R-13.22.1 | Split time = current - best at each CP |
-| `test_race_modes` | R-13.22.2 | Circuit, elimination, time trial end correctly |
-| `test_rubber_banding` | R-13.22.3b | Trailing AI speeds up, leading AI slows |
-| `test_drift_detection` | R-13.22.4 | Slip angle above threshold activates drift |
-| `test_drift_combo` | R-13.22.4 | 3s drift increases combo multiplier |
-| `test_boost_fill` | R-13.22.4 | Drift score fills boost meter proportionally |
-| `test_ghost_record_replay` | R-13.22.5 | Recorded ghost replays at correct positions |
-| `test_ghost_storage_10kb` | NFR-13.22.2 | 1 min ghost <= 10 KB compressed |
-| `test_block_registry_o1` | R-13.27.1 | 1024 types with O(1) lookup |
-| `test_block_placement` | R-13.27.2 | Raycast face targeting, validation rules |
-| `test_palette_compression` | R-13.27.3 | 8 unique types -> 4-bit palette (2048 bytes) |
-| `test_uniform_chunk` | R-13.27.3 | All-air chunk stores as single value |
-| `test_greedy_meshing` | R-13.27.4 | 16x16 flat surface -> single quad per face |
-| `test_interior_culling` | R-13.27.4 | Enclosed block generates zero mesh faces |
-| `test_light_propagation` | R-13.27.5 | Torch light attenuates over 15 blocks |
-| `test_sunlight_flood` | R-13.27.5 | Sunlight propagates down at full intensity |
-| `test_gravity_block` | R-13.27.6a | Sand falls to nearest solid surface |
-| `test_fluid_flow_levels` | R-13.27.6b | Water flows with 7 decreasing levels |
-| `test_fluid_interaction` | R-13.27.6c | Lava + water -> cobblestone |
-| `test_signal_attenuation` | R-13.27.7a | Signal reaches 15 blocks, not 16 |
-| `test_not_gate` | R-13.27.7b | Torch on powered block inverts signal |
-| `test_piston_push` | R-13.27.7c | Piston pushes adjacent block on power |
-| `test_circuit_determinism` | R-13.27.7d | Same circuit = identical on 2 clients |
-| `test_circuit_budget` | R-13.27.7d | Exceed budget -> warning + depower |
-| `test_terrain_seed` | R-13.27.8a | Same seed -> identical terrain cross-platform |
-| `test_biome_composition` | R-13.27.8b | Plains = grass/dirt, desert = sand |
-| `test_companion_follow` | R-13.15.1 | Companion maintains follow distance |
-| `test_companion_teleport` | R-13.15.1 | Teleports when distance exceeded |
-| `test_pet_needs_decay` | R-13.15.2 | Needs drain to zero -> command refusal |
-| `test_mount_locomotion` | R-13.15.3b | Mount physics replaces player physics |
-| `test_mounted_combat` | R-13.15.3c | Only allowed abilities available |
-| `test_flying_mount_alt` | R-13.15.3d | Flying mount respects altitude limit |
-| `test_taming_progress` | R-13.15.4 | Multiple feedings advance progress bar |
-| `test_taming_probability` | R-13.15.4 | Level deficit reduces success rate |
-| `test_life_stages` | R-13.15.5a | Baby -> juvenile -> adult stat changes |
-| `test_evolution_branch` | R-13.15.5b | Meat diet -> combat wolf specialization |
-| `test_breeding_inheritance` | R-13.15.5c | Offspring inherits parental traits |
+| Test                           | Req         |
+|--------------------------------|-------------|
+| `test_fog_three_states`        | R-13.20.1   |
+| `test_fog_2bit_encoding`       | R-13.20.1   |
+| `test_fog_delta_90pct`         | NFR-13.20.2 |
+| `test_vision_circle`           | R-13.20.2   |
+| `test_vision_los_blocked`      | R-13.20.2   |
+| `test_vision_elevation`        | R-13.20.2   |
+| `test_vision_modifier_stealth` | R-13.20.3   |
+| `test_fog_memory_persist`      | R-13.20.4   |
+| `test_grid_reachable_cells`    | R-13.21.1   |
+| `test_grid_hex_adjacency`      | R-13.21.1   |
+| `test_initiative_order`        | R-13.21.2   |
+| `test_team_turn_order`         | R-13.21.2   |
+| `test_ap_movement`             | R-13.21.3   |
+| `test_ap_interleave`           | R-13.21.3   |
+| `test_cover_directional`       | R-13.21.4   |
+| `test_overwatch_triggers`      | R-13.21.4   |
+| `test_hit_probability`         | R-13.21.5   |
+| `test_combat_outcomes`         | R-13.21.5   |
+| `test_minigame_isolation`      | R-13.26.1   |
+| `test_minigame_contract`       | R-13.26.3   |
+| `test_minigame_quit_policy`    | R-13.26.3   |
+| `test_timing_windows`          | R-13.26.4   |
+| `test_match_3_detection`       | R-13.26.5b  |
+| `test_cascade_recursive`       | R-13.26.5d  |
+| `test_board_ai_difficulty`     | R-13.26.5c  |
+| `test_physics_determinism`     | R-13.26.6   |
+| `test_checkpoint_order`        | R-13.22.1   |
+| `test_lap_counting`            | R-13.22.1   |
+| `test_split_times`             | R-13.22.1   |
+| `test_race_modes`              | R-13.22.2   |
+| `test_rubber_banding`          | R-13.22.3b  |
+| `test_drift_detection`         | R-13.22.4   |
+| `test_drift_combo`             | R-13.22.4   |
+| `test_boost_fill`              | R-13.22.4   |
+| `test_ghost_record_replay`     | R-13.22.5   |
+| `test_ghost_storage_10kb`      | NFR-13.22.2 |
+| `test_block_registry_o1`       | R-13.27.1   |
+| `test_block_placement`         | R-13.27.2   |
+| `test_palette_compression`     | R-13.27.3   |
+| `test_uniform_chunk`           | R-13.27.3   |
+| `test_greedy_meshing`          | R-13.27.4   |
+| `test_interior_culling`        | R-13.27.4   |
+| `test_light_propagation`       | R-13.27.5   |
+| `test_sunlight_flood`          | R-13.27.5   |
+| `test_gravity_block`           | R-13.27.6a  |
+| `test_fluid_flow_levels`       | R-13.27.6b  |
+| `test_fluid_interaction`       | R-13.27.6c  |
+| `test_signal_attenuation`      | R-13.27.7a  |
+| `test_not_gate`                | R-13.27.7b  |
+| `test_piston_push`             | R-13.27.7c  |
+| `test_circuit_determinism`     | R-13.27.7d  |
+| `test_circuit_budget`          | R-13.27.7d  |
+| `test_terrain_seed`            | R-13.27.8a  |
+| `test_biome_composition`       | R-13.27.8b  |
+| `test_companion_follow`        | R-13.15.1   |
+| `test_companion_teleport`      | R-13.15.1   |
+| `test_pet_needs_decay`         | R-13.15.2   |
+| `test_mount_locomotion`        | R-13.15.3b  |
+| `test_mounted_combat`          | R-13.15.3c  |
+| `test_flying_mount_alt`        | R-13.15.3d  |
+| `test_taming_progress`         | R-13.15.4   |
+| `test_taming_probability`      | R-13.15.4   |
+| `test_life_stages`             | R-13.15.5a  |
+| `test_evolution_branch`        | R-13.15.5b  |
+| `test_breeding_inheritance`    | R-13.15.5c  |
+
+1. **`test_fog_three_states`** — Set cell states, verify get returns correct state
+2. **`test_fog_2bit_encoding`** — 256x256 grid serializes to 16,384 bytes per faction
+3. **`test_fog_delta_90pct`** — 5% cell change yields >= 90% smaller delta
+4. **`test_vision_circle`** — Radius-10 source reveals correct cells
+5. **`test_vision_los_blocked`** — Wall occluder blocks visibility
+6. **`test_vision_elevation`** — +3 elevation bonus increases radius to 13
+7. **`test_vision_modifier_stealth`** — Entity in stealth zone invisible to outsiders
+8. **`test_fog_memory_persist`** — Ghost building persists in shroud, updates on reveal
+9. **`test_grid_reachable_cells`** — BFS reachable cells match expected set
+10. **`test_grid_hex_adjacency`** — Hex grid adjacency correct for odd/even rows
+11. **`test_initiative_order`** — Speed stats 10,20,15,5 -> order 20,15,10,5
+12. **`test_team_turn_order`** — Team A acts fully before team B
+13. **`test_ap_movement`** — 3 flat cells cost 3 AP, difficult costs 6 AP
+14. **`test_ap_interleave`** — Move, attack, move again within budget
+15. **`test_cover_directional`** — Half cover from north, none from east flank
+16. **`test_overwatch_triggers`** — Enemy moving through LOS triggers overwatch shot
+17. **`test_hit_probability`** — 80% base - 10% range - 20% cover = 50%
+18. **`test_combat_outcomes`** — 1000 rolls at 50% within 95% CI
+19. **`test_minigame_isolation`** — Cannot access outer world components
+20. **`test_minigame_contract`** — Results applied atomically; crash = no partial
+21. **`test_minigame_quit_policy`** — Quit with Loss/Refund/NoEffect policies
+22. **`test_timing_windows`** — Perfect +/-30ms, great +/-60ms detection
+23. **`test_match_3_detection`** — 3-in-a-row detected (H, V, diagonal)
+24. **`test_cascade_recursive`** — Cascade triggers recursive match checks
+25. **`test_board_ai_difficulty`** — Easy <30%, hard >70% vs random baseline
+26. **`test_physics_determinism`** — Identical inputs produce identical physics
+27. **`test_checkpoint_order`** — Skipped checkpoint invalidates lap
+28. **`test_lap_counting`** — Lap increments on start/finish with all CPs
+29. **`test_split_times`** — Split time = current - best at each CP
+30. **`test_race_modes`** — Circuit, elimination, time trial end correctly
+31. **`test_rubber_banding`** — Trailing AI speeds up, leading AI slows
+32. **`test_drift_detection`** — Slip angle above threshold activates drift
+33. **`test_drift_combo`** — 3s drift increases combo multiplier
+34. **`test_boost_fill`** — Drift score fills boost meter proportionally
+35. **`test_ghost_record_replay`** — Recorded ghost replays at correct positions
+36. **`test_ghost_storage_10kb`** — 1 min ghost <= 10 KB compressed
+37. **`test_block_registry_o1`** — 1024 types with O(1) lookup
+38. **`test_block_placement`** — Raycast face targeting, validation rules
+39. **`test_palette_compression`** — 8 unique types -> 4-bit palette (2048 bytes)
+40. **`test_uniform_chunk`** — All-air chunk stores as single value
+41. **`test_greedy_meshing`** — 16x16 flat surface -> single quad per face
+42. **`test_interior_culling`** — Enclosed block generates zero mesh faces
+43. **`test_light_propagation`** — Torch light attenuates over 15 blocks
+44. **`test_sunlight_flood`** — Sunlight propagates down at full intensity
+45. **`test_gravity_block`** — Sand falls to nearest solid surface
+46. **`test_fluid_flow_levels`** — Water flows with 7 decreasing levels
+47. **`test_fluid_interaction`** — Lava + water -> cobblestone
+48. **`test_signal_attenuation`** — Signal reaches 15 blocks, not 16
+49. **`test_not_gate`** — Torch on powered block inverts signal
+50. **`test_piston_push`** — Piston pushes adjacent block on power
+51. **`test_circuit_determinism`** — Same circuit = identical on 2 clients
+52. **`test_circuit_budget`** — Exceed budget -> warning + depower
+53. **`test_terrain_seed`** — Same seed -> identical terrain cross-platform
+54. **`test_biome_composition`** — Plains = grass/dirt, desert = sand
+55. **`test_companion_follow`** — Companion maintains follow distance
+56. **`test_companion_teleport`** — Teleports when distance exceeded
+57. **`test_pet_needs_decay`** — Needs drain to zero -> command refusal
+58. **`test_mount_locomotion`** — Mount physics replaces player physics
+59. **`test_mounted_combat`** — Only allowed abilities available
+60. **`test_flying_mount_alt`** — Flying mount respects altitude limit
+61. **`test_taming_progress`** — Multiple feedings advance progress bar
+62. **`test_taming_probability`** — Level deficit reduces success rate
+63. **`test_life_stages`** — Baby -> juvenile -> adult stat changes
+64. **`test_evolution_branch`** — Meat diet -> combat wolf specialization
+65. **`test_breeding_inheritance`** — Offspring inherits parental traits
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_fog_gpu_texture` | NFR-13.20.1 | 512x512 grid, 128 sources: GPU < 0.5ms |
-| `test_fog_cpu_fallback` | NFR-13.20.1 | Same config: CPU < 2ms |
-| `test_grid_pathfind_perf` | NFR-13.21.1 | 100x100 grid pathfinding < 2ms |
-| `test_turn_transition` | NFR-13.21.2 | Camera focus + UI update < 500ms |
-| `test_minigame_create_teardown` | NFR-13.26.1 | Create < 500ms, teardown < 200ms, zero leak |
-| `test_minigame_100_cycles` | NFR-13.26.1 | 100 create/destroy cycles: zero net alloc |
-| `test_rhythm_input_latency` | NFR-13.26.2 | Audio-to-detection < 16ms |
-| `test_racing_tick_precision` | NFR-13.22.1 | 10 identical laps: variance < 1ms |
-| `test_chunk_mesh_perf` | NFR-13.27.1 | 1000 chunks avg < 2ms per mesh |
-| `test_block_modify_latency` | NFR-13.27.1 | Input to visual update < 16ms |
-| `test_32k_chunks_60fps` | NFR-13.27.1 | 32,768 chunks sustained 60 fps |
-| `test_companion_8_budget` | NFR-13.15.1 | 8 companions total AI < 4ms/frame |
-| `test_mount_swap_latency` | NFR-13.15.2 | Locomotion transition < 100ms |
+| Test                            | Req         |
+|---------------------------------|-------------|
+| `test_fog_gpu_texture`          | NFR-13.20.1 |
+| `test_fog_cpu_fallback`         | NFR-13.20.1 |
+| `test_grid_pathfind_perf`       | NFR-13.21.1 |
+| `test_turn_transition`          | NFR-13.21.2 |
+| `test_minigame_create_teardown` | NFR-13.26.1 |
+| `test_minigame_100_cycles`      | NFR-13.26.1 |
+| `test_rhythm_input_latency`     | NFR-13.26.2 |
+| `test_racing_tick_precision`    | NFR-13.22.1 |
+| `test_chunk_mesh_perf`          | NFR-13.27.1 |
+| `test_block_modify_latency`     | NFR-13.27.1 |
+| `test_32k_chunks_60fps`         | NFR-13.27.1 |
+| `test_companion_8_budget`       | NFR-13.15.1 |
+| `test_mount_swap_latency`       | NFR-13.15.2 |
+
+1. **`test_fog_gpu_texture`** — 512x512 grid, 128 sources: GPU < 0.5ms
+2. **`test_fog_cpu_fallback`** — Same config: CPU < 2ms
+3. **`test_grid_pathfind_perf`** — 100x100 grid pathfinding < 2ms
+4. **`test_turn_transition`** — Camera focus + UI update < 500ms
+5. **`test_minigame_create_teardown`** — Create < 500ms, teardown < 200ms, zero leak
+6. **`test_minigame_100_cycles`** — 100 create/destroy cycles: zero net alloc
+7. **`test_rhythm_input_latency`** — Audio-to-detection < 16ms
+8. **`test_racing_tick_precision`** — 10 identical laps: variance < 1ms
+9. **`test_chunk_mesh_perf`** — 1000 chunks avg < 2ms per mesh
+10. **`test_block_modify_latency`** — Input to visual update < 16ms
+11. **`test_32k_chunks_60fps`** — 32,768 chunks sustained 60 fps
+12. **`test_companion_8_budget`** — 8 companions total AI < 4ms/frame
+13. **`test_mount_swap_latency`** — Locomotion transition < 100ms
 
 ### Benchmarks
 

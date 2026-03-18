@@ -8,13 +8,19 @@
 > [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
 > those definitions.
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-14.3.1 | R-14.3.1 | Work-stealing thread pool sized to performance cores |
-| F-14.3.2 | R-14.3.2 | Thread affinity and OS-level priority classes |
-| F-14.3.3 | R-14.3.3 | DAG-based task graph with fan-out, fan-in, continuations, nested sub-graphs |
-| F-14.3.4 | R-14.3.4 | Lightweight fibers with 64 KiB stacks and guard pages |
-| F-14.3.5 | R-14.3.5 | Platform async I/O bridge dispatching completions as task graph continuations |
+| Feature  | Requirement |
+|----------|-------------|
+| F-14.3.1 | R-14.3.1    |
+| F-14.3.2 | R-14.3.2    |
+| F-14.3.3 | R-14.3.3    |
+| F-14.3.4 | R-14.3.4    |
+| F-14.3.5 | R-14.3.5    |
+
+1. **F-14.3.1** — Work-stealing thread pool sized to performance cores
+2. **F-14.3.2** — Thread affinity and OS-level priority classes
+3. **F-14.3.3** — DAG-based task graph with fan-out, fan-in, continuations, nested sub-graphs
+4. **F-14.3.4** — Lightweight fibers with 64 KiB stacks and guard pages
+5. **F-14.3.5** — Platform async I/O bridge dispatching completions as task graph continuations
 
 ## Overview
 
@@ -1163,33 +1169,54 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 
 ### macOS
 
-| Component | API | Notes |
-|-----------|-----|-------|
-| Threads | `pthread_create` | Via libc crate |
-| Affinity | QoS classes | `pthread_set_qos_class_self_np` (no direct core pinning) |
-| Priority | QoS: `USER_INTERACTIVE` / `UTILITY` | macOS schedules P/E via QoS |
-| Hybrid detect | `sysctl hw.nperflevels` | Apple Silicon P/E core counts |
-| Fibers | GCD dispatch queues | `dispatch_async` submits blocks to queues; `dispatch_group` tracks completion. No custom assembly. |
-| I/O reactor | GCD controlled drain | Dispatch IO accessed through C++ wrappers via `cxx.rs`. Callbacks routed to a serial dispatch queue; drained synchronously at poll point via `dispatch_sync`. |
+| Component     | API                                 |
+|---------------|-------------------------------------|
+| Threads       | `pthread_create`                    |
+| Affinity      | QoS classes                         |
+| Priority      | QoS: `USER_INTERACTIVE` / `UTILITY` |
+| Hybrid detect | `sysctl hw.nperflevels`             |
+| Fibers        | GCD dispatch queues                 |
+| I/O reactor   | GCD controlled drain                |
+
+1. **Threads** — Via libc crate
+2. **Affinity** — `pthread_set_qos_class_self_np` (no direct core pinning)
+3. **Priority** — macOS schedules P/E via QoS
+4. **Hybrid detect** — Apple Silicon P/E core counts
+5. **Fibers** — `dispatch_async` submits blocks to queues; `dispatch_group` tracks completion. No
+   custom assembly.
+6. **I/O reactor** — Dispatch IO accessed through C++ wrappers via `cxx.rs`. Callbacks routed to a
+   serial dispatch queue; drained synchronously at poll point via `dispatch_sync`.
 
 ### Linux
 
-| Component | API | Notes |
-|-----------|-----|-------|
-| Threads | `pthread_create` | Via libc crate |
-| Affinity | `pthread_setaffinity_np` | CPU set bitmask |
-| Priority | `sched_setscheduler` | `SCHED_OTHER` + nice |
-| Hybrid detect | `/sys/devices/system/cpu/` | `cpuid` 0x1A or sysfs |
-| Fibers | Custom assembly context switch | `setjmp`/`longjmp` with explicit stack |
-| I/O reactor | io_uring | `io_uring_peek_cqe` / batch CQE drain at poll point. Requires kernel 5.1+. fd readiness polling via `IORING_OP_POLL_ADD`. |
+| Component     | API                            |
+|---------------|--------------------------------|
+| Threads       | `pthread_create`               |
+| Affinity      | `pthread_setaffinity_np`       |
+| Priority      | `sched_setscheduler`           |
+| Hybrid detect | `/sys/devices/system/cpu/`     |
+| Fibers        | Custom assembly context switch |
+| I/O reactor   | io_uring                       |
+
+1. **Threads** — Via libc crate
+2. **Affinity** — CPU set bitmask
+3. **Priority** — `SCHED_OTHER` + nice
+4. **Hybrid detect** — `cpuid` 0x1A or sysfs
+5. **Fibers** — `setjmp`/`longjmp` with explicit stack
+6. **I/O reactor** — `io_uring_peek_cqe` / batch CQE drain at poll point. Requires kernel 5.1+. fd
+   readiness polling via `IORING_OP_POLL_ADD`.
 
 ### Mobile and Console Platforms
 
-| Platform | Thread Pool | I/O Backend | Notes |
-|----------|------------|-------------|-------|
-| iOS | GCD (shared with macOS) | Dispatch IO | Same C++ wrappers via cxx.rs. QoS classes for thermal throttling. |
-| Android | std thread pool | io_uring (API 26+) / epoll fallback | Thread affinity respects big.LITTLE core topology. |
-| Consoles | Platform thread API | Platform async I/O | Vendor-specific thread affinity and priority. NDA APIs. |
+| Platform | Thread Pool             | I/O Backend                         |
+|----------|-------------------------|-------------------------------------|
+| iOS      | GCD (shared with macOS) | Dispatch IO                         |
+| Android  | std thread pool         | io_uring (API 26+) / epoll fallback |
+| Consoles | Platform thread API     | Platform async I/O                  |
+
+1. **iOS** — Same C++ wrappers via cxx.rs. QoS classes for thermal throttling.
+2. **Android** — Thread affinity respects big.LITTLE core topology.
+3. **Consoles** — Vendor-specific thread affinity and priority. NDA APIs.
 
 Thread pool sizing adapts to core count: mobile devices typically have 4-8 cores with heterogeneous
 performance. The `ThreadPool` constructor queries `std::thread::available_parallelism()` and applies
@@ -1265,28 +1292,47 @@ for async tasks that involve I/O. This matches Rayon's scope model.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_work_stealing_10k_jobs` | R-14.3.1 | Enqueue 10,000 jobs, verify all complete. Run under ThreadSanitizer. |
-| `test_worker_count_matches_perf_cores` | R-14.3.1 | On hybrid CPU, assert workers = perf core count. |
-| `test_graph_fan_out_fan_in` | R-14.3.3 | 1 root -> 4 parallel -> 1 join. Verify correct result. |
-| `test_graph_nested_subgraph` | R-14.3.3 | Sub-graph completes before parent continuation. |
-| `test_graph_cycle_detection` | R-14.3.3 | Cycle in graph -> `CycleDetected` error. |
-| `test_fiber_suspend_resume` | R-14.3.4 | Fiber suspends, resumes on different worker. |
-| `test_fiber_guard_page` | R-14.3.4 | 64 KiB fiber stack overflow -> guard page fault. |
-| `test_async_task_io` | R-14.3.5 | Async task `.await`s I/O read; verify data, no worker blocks. |
-| `test_reactor_poll_drains` | R-14.3.5 | Submit I/O, verify nothing wakes until poll() called. |
-| `test_async_mutex_no_block` | R-14.3.5 | Contended async mutex yields worker, does not block. |
+| Test                                   | Req      |
+|----------------------------------------|----------|
+| `test_work_stealing_10k_jobs`          | R-14.3.1 |
+| `test_worker_count_matches_perf_cores` | R-14.3.1 |
+| `test_graph_fan_out_fan_in`            | R-14.3.3 |
+| `test_graph_nested_subgraph`           | R-14.3.3 |
+| `test_graph_cycle_detection`           | R-14.3.3 |
+| `test_fiber_suspend_resume`            | R-14.3.4 |
+| `test_fiber_guard_page`                | R-14.3.4 |
+| `test_async_task_io`                   | R-14.3.5 |
+| `test_reactor_poll_drains`             | R-14.3.5 |
+| `test_async_mutex_no_block`            | R-14.3.5 |
+
+1. **`test_work_stealing_10k_jobs`** — Enqueue 10,000 jobs, verify all complete. Run under
+   ThreadSanitizer.
+2. **`test_worker_count_matches_perf_cores`** — On hybrid CPU, assert workers = perf core count.
+3. **`test_graph_fan_out_fan_in`** — 1 root -> 4 parallel -> 1 join. Verify correct result.
+4. **`test_graph_nested_subgraph`** — Sub-graph completes before parent continuation.
+5. **`test_graph_cycle_detection`** — Cycle in graph -> `CycleDetected` error.
+6. **`test_fiber_suspend_resume`** — Fiber suspends, resumes on different worker.
+7. **`test_fiber_guard_page`** — 64 KiB fiber stack overflow -> guard page fault.
+8. **`test_async_task_io`** — Async task `.await`s I/O read; verify data, no worker blocks.
+9. **`test_reactor_poll_drains`** — Submit I/O, verify nothing wakes until poll() called.
+10. **`test_async_mutex_no_block`** — Contended async mutex yields worker, does not block.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_affinity_per_platform` | R-14.3.2 | Verify main thread on perf core, background on efficiency core. |
-| `test_async_read_10mb` | R-14.3.5 | 10 MB async read, no worker blocks, data integrity check. |
-| `test_utilization_imbalance` | R-14.3.1 | Imbalanced graph, assert >= 80% utilization. |
-| `test_fiber_cross_thread` | R-14.3.4 | Fiber suspended on worker N resumes on worker M. |
-| `test_gcd_controlled_drain` | R-14.3.5 | macOS: verify GCD callbacks only fire during poll(). |
+| Test                         | Req      |
+|------------------------------|----------|
+| `test_affinity_per_platform` | R-14.3.2 |
+| `test_async_read_10mb`       | R-14.3.5 |
+| `test_utilization_imbalance` | R-14.3.1 |
+| `test_fiber_cross_thread`    | R-14.3.4 |
+| `test_gcd_controlled_drain`  | R-14.3.5 |
+
+1. **`test_affinity_per_platform`** — Verify main thread on perf core, background on efficiency
+   core.
+2. **`test_async_read_10mb`** — 10 MB async read, no worker blocks, data integrity check.
+3. **`test_utilization_imbalance`** — Imbalanced graph, assert >= 80% utilization.
+4. **`test_fiber_cross_thread`** — Fiber suspended on worker N resumes on worker M.
+5. **`test_gcd_controlled_drain`** — macOS: verify GCD callbacks only fire during poll().
 
 ### Benchmarks
 

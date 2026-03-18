@@ -10,27 +10,43 @@
 
 ### Heightfield Terrain (F-3.2.1–8 / R-3.2.1–8)
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-3.2.1 | R-3.2.1 | US-3.2.1 | Tile-based heightfield with 16/32-bit grids, async streaming, low-LOD fallbacks |
-| F-3.2.2 | R-3.2.2 | US-3.2.2 | Virtual texture clipmap with GPU feedback-driven page loading |
-| F-3.2.3 | R-3.2.3 | US-3.2.3 | CDLOD geometry clipmap with vertex morphing at ring boundaries |
-| F-3.2.4 | R-3.2.4 | US-3.2.4 | Per-tile 1-bit hole masks mirrored in collision |
-| F-3.2.5 | R-3.2.5 | US-3.2.5 | Splatmap blending of up to 16 PBR layers with height-weighted transitions |
-| F-3.2.6 | R-3.2.6 | US-3.2.6 | Heightfield collision with LOD independent of visual LOD |
-| F-3.2.7 | R-3.2.7 | US-3.2.7 | 64-bit world coordinates with camera-relative f32 rendering |
-| F-3.2.8 | R-3.2.8 | US-3.2.8a, US-3.2.8b | Portal-based indoor visibility with per-room lighting |
+| Feature | Requirement | User Story           |
+|---------|-------------|----------------------|
+| F-3.2.1 | R-3.2.1     | US-3.2.1             |
+| F-3.2.2 | R-3.2.2     | US-3.2.2             |
+| F-3.2.3 | R-3.2.3     | US-3.2.3             |
+| F-3.2.4 | R-3.2.4     | US-3.2.4             |
+| F-3.2.5 | R-3.2.5     | US-3.2.5             |
+| F-3.2.6 | R-3.2.6     | US-3.2.6             |
+| F-3.2.7 | R-3.2.7     | US-3.2.7             |
+| F-3.2.8 | R-3.2.8     | US-3.2.8a, US-3.2.8b |
+
+1. **F-3.2.1** — Tile-based heightfield with 16/32-bit grids, async streaming, low-LOD fallbacks
+2. **F-3.2.2** — Virtual texture clipmap with GPU feedback-driven page loading
+3. **F-3.2.3** — CDLOD geometry clipmap with vertex morphing at ring boundaries
+4. **F-3.2.4** — Per-tile 1-bit hole masks mirrored in collision
+5. **F-3.2.5** — Splatmap blending of up to 16 PBR layers with height-weighted transitions
+6. **F-3.2.6** — Heightfield collision with LOD independent of visual LOD
+7. **F-3.2.7** — 64-bit world coordinates with camera-relative f32 rendering
+8. **F-3.2.8** — Portal-based indoor visibility with per-room lighting
 
 ### Voxel Terrain (F-3.2.9–14 / R-3.2.9–14)
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-3.2.9 | R-3.2.9 | US-3.2.9 | Sparse octree SDF volume with material IDs and metadata |
-| F-3.2.10 | R-3.2.10 | US-3.2.10 | Hybrid heightmap-voxel with automatic representation selection |
-| F-3.2.11 | R-3.2.11 | US-3.2.11 | Planetary-scale voxel sphere with radial gravity |
-| F-3.2.12 | R-3.2.12 | US-3.2.12 | Meshing pipeline: Marching Cubes, Dual Contouring, Surface Nets, Transvoxel |
-| F-3.2.13 | R-3.2.13 | US-3.2.13 | Runtime voxel editing with incremental re-mesh, collision, NavMesh update |
-| F-3.2.14 | R-3.2.14 | US-3.2.14 | Voxel LOD streaming with RLE compression and memory budget enforcement |
+| Feature  | Requirement | User Story |
+|----------|-------------|------------|
+| F-3.2.9  | R-3.2.9     | US-3.2.9   |
+| F-3.2.10 | R-3.2.10    | US-3.2.10  |
+| F-3.2.11 | R-3.2.11    | US-3.2.11  |
+| F-3.2.12 | R-3.2.12    | US-3.2.12  |
+| F-3.2.13 | R-3.2.13    | US-3.2.13  |
+| F-3.2.14 | R-3.2.14    | US-3.2.14  |
+
+1. **F-3.2.9** — Sparse octree SDF volume with material IDs and metadata
+2. **F-3.2.10** — Hybrid heightmap-voxel with automatic representation selection
+3. **F-3.2.11** — Planetary-scale voxel sphere with radial gravity
+4. **F-3.2.12** — Meshing pipeline: Marching Cubes, Dual Contouring, Surface Nets, Transvoxel
+5. **F-3.2.13** — Runtime voxel editing with incremental re-mesh, collision, NavMesh update
+6. **F-3.2.14** — Voxel LOD streaming with RLE compression and memory budget enforcement
 
 ### Cross-Cutting Dependencies
 
@@ -1743,11 +1759,18 @@ Voxel data uses two-stage compression to achieve the 10:1 target ratio (R-3.2.14
 All terrain streaming uses platform-native async I/O through the `AsyncIo` / `VirtualFileSystem`
 layer. No `std::fs` calls.
 
-| Platform | I/O Backend | Terrain Notes |
-|----------|-------------|---------------|
-| Windows | IOCP | `ReadFile` + `OVERLAPPED` for tile reads. Large tiles use scatter-gather for header + data separation. |
-| macOS | GCD / Dispatch IO | `dispatch_io_read` via cxx.rs. Tile reads routed to controlled dispatch queue, drained at reactor poll point. |
-| Linux | io_uring | `io_uring_prep_read` for tile data. Registered buffers for frequently-loaded tile sizes. |
+| Platform | I/O Backend       |
+|----------|-------------------|
+| Windows  | IOCP              |
+| macOS    | GCD / Dispatch IO |
+| Linux    | io_uring          |
+
+1. **Windows** — `ReadFile` + `OVERLAPPED` for tile reads. Large tiles use scatter-gather for header
+   + data separation.
+2. **macOS** — `dispatch_io_read` via cxx.rs. Tile reads routed to controlled dispatch queue,
+   drained at reactor poll point.
+3. **Linux** — `io_uring_prep_read` for tile data. Registered buffers for frequently-loaded tile
+   sizes.
 
 ### GPU Compute Availability
 
@@ -1811,66 +1834,163 @@ separated from cold data (height arrays, splatmaps).
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_tile_height_sample_bilinear` | R-3.2.1 | Sample height at UV (0.5, 0.5) with known grid. Verify bilinear interpolation matches expected value. |
-| `test_tile_height_at_world` | R-3.2.1 | Convert world XZ to tile UV. Verify correct height. Verify None for out-of-bounds. |
-| `test_tile_normal_flat` | R-3.2.1 | Flat tile (all heights equal). Verify normal = (0, 1, 0). |
-| `test_tile_normal_slope` | R-3.2.1 | 45-degree slope tile. Verify normal is correct and normalized. |
-| `test_clipmap_ring_spacing` | R-3.2.3 | 8 rings with base 1.0m. Verify ring N spacing = 2^N meters. |
-| `test_clipmap_morph_boundaries` | R-3.2.3 | Vertex at ring boundary. Verify morph_factor = 1.0. Vertex at ring center: morph_factor = 0.0. |
-| `test_clipmap_screen_error` | R-3.2.3 | 1m spacing at 100m distance with 90-degree FOV, 1080p. Verify screen error < threshold. |
-| `test_hole_mask_bit_ops` | R-3.2.4 | Set hole at (5,7), verify is_hole(5,7) = true. Clear it, verify false. Adjacent vertices unaffected. |
-| `test_hole_mask_round_trip` | R-3.2.4 | Set 100 random holes. Verify all 100 read back correctly. Verify all others are not holes. |
-| `test_splatmap_weight_sum` | R-3.2.5 | 4 layers with random weights. Verify per-vertex weights sum to 255. |
-| `test_splatmap_16_layers` | R-3.2.5 | Tile with 16 active layers. Verify all layer indices valid. Verify weight lookup for each layer. |
-| `test_heightfield_collider_ray_hit` | R-3.2.6 | Ray from (50, 100, 50) downward. Verify hit at terrain surface. Verify normal is upward-ish. |
-| `test_heightfield_collider_ray_miss` | R-3.2.6 | Ray parallel to terrain surface. Verify no hit. |
-| `test_heightfield_collider_hole_passthrough` | R-3.2.6 | Ray through a hole region. Verify ray passes through (no hit in hole). |
-| `test_world_position_camera_relative` | R-3.2.7 | Position at (100000.5, 0, 100000.5). Camera at (100000, 0, 100000). Verify relative = (0.5, 0, 0.5). |
-| `test_world_position_no_jitter` | R-3.2.7 | 10 positions at 50 km from origin. Convert to camera-relative f32. Verify sub-millimeter precision. |
-| `test_voxel_sdf_sample` | R-3.2.9 | Known SDF grid. Sample at cell centers. Verify values match. |
-| `test_voxel_homogeneous_zero_memory` | R-3.2.9 | Create 1000 homogeneous air nodes. Verify total memory = node metadata only, no per-cell arrays. |
-| `test_hybrid_representation_selection` | R-3.2.10 | Flat region -> Heightfield. Region with cave -> Voxel. Verify RepresentationTag. |
-| `test_marching_cubes_sphere` | R-3.2.12 | SDF sphere of radius 5. Verify mesh is closed, vertex count > 0, all normals point outward. |
-| `test_dual_contouring_cube` | R-3.2.12 | SDF axis-aligned cube. Verify sharp edges preserved (angle between adjacent face normals ~90 degrees). |
-| `test_transvoxel_no_cracks` | R-3.2.12 | Two adjacent chunks at different LODs. Verify shared edge vertices match exactly (no T-junctions). |
-| `test_meshing_incremental` | R-3.2.12 | Modify 1 cell. Verify only containing chunk is re-meshed, not neighbors. |
-| `test_sdf_edit_add` | R-3.2.13 | Apply Add brush at center. Verify SDF values decreased within radius. Verify outside radius unchanged. |
-| `test_sdf_edit_subtract` | R-3.2.13 | Apply Subtract brush. Verify SDF values increased (material removed). |
-| `test_sdf_edit_smooth` | R-3.2.13 | Apply Smooth brush to noisy SDF. Verify variance decreased. |
-| `test_sdf_edit_flatten` | R-3.2.13 | Apply Flatten brush with target height. Verify surface converges to target. |
-| `test_edit_delta_size` | R-3.2.13 | Single-cell edit. Serialize EditDelta. Verify size < 1 KB. |
-| `test_edit_log_undo` | R-3.2.13 | Apply 5 edits, undo 3. Verify volume matches state after edit 2. |
-| `test_edit_log_round_trip` | R-3.2.13 | Apply edits, serialize log, deserialize, replay on fresh volume. Verify identical result. |
-| `test_edit_throttle` | R-3.2.13 | Queue 100 edits with max 10/frame. Verify flush returns exactly 10. |
-| `test_voxel_rle_compression` | R-3.2.14 | Homogeneous air chunk. RLE compress. Verify ratio > 100:1. |
-| `test_voxel_lz4_round_trip` | R-3.2.14 | Compress surface chunk with RLE+LZ4. Decompress. Verify bit-exact match. |
-| `test_voxel_compression_ratio` | R-3.2.14 | Mixed terrain chunk. Verify overall ratio >= 10:1. |
-| `test_residency_load_nearest_first` | R-3.2.1 | Camera at (0,0). Verify to_load is sorted by distance ascending. |
-| `test_residency_evict_farthest` | R-3.2.1 | Move camera 10 tiles. Verify old distant tiles appear in to_evict. |
-| `test_residency_budget_enforcement` | R-3.2.14 | Set budget to 10 tiles. Load 15. Verify eviction kicks in at 10. |
-| `test_virtual_page_allocate_release` | R-3.2.2 | Allocate 100 pages. Release 50. Allocate 50 more. Verify no leak. |
-| `test_virtual_indirection_resolve` | R-3.2.2 | Allocate page. Resolve its VirtualPageId. Verify correct PhysicalSlot. |
-| `test_planet_spherical_round_trip` | R-3.2.11 | Convert world pos to spherical and back. Verify sub-meter precision. |
-| `test_planet_gravity_toward_center` | R-3.2.11 | Position on surface. Verify gravity vector points toward (0,0,0). |
-| `test_planet_cube_face_projection` | R-3.2.11 | 6 axis-aligned positions. Verify each maps to the correct CubeFace. |
+| Test                                         | Req      |
+|----------------------------------------------|----------|
+| `test_tile_height_sample_bilinear`           | R-3.2.1  |
+| `test_tile_height_at_world`                  | R-3.2.1  |
+| `test_tile_normal_flat`                      | R-3.2.1  |
+| `test_tile_normal_slope`                     | R-3.2.1  |
+| `test_clipmap_ring_spacing`                  | R-3.2.3  |
+| `test_clipmap_morph_boundaries`              | R-3.2.3  |
+| `test_clipmap_screen_error`                  | R-3.2.3  |
+| `test_hole_mask_bit_ops`                     | R-3.2.4  |
+| `test_hole_mask_round_trip`                  | R-3.2.4  |
+| `test_splatmap_weight_sum`                   | R-3.2.5  |
+| `test_splatmap_16_layers`                    | R-3.2.5  |
+| `test_heightfield_collider_ray_hit`          | R-3.2.6  |
+| `test_heightfield_collider_ray_miss`         | R-3.2.6  |
+| `test_heightfield_collider_hole_passthrough` | R-3.2.6  |
+| `test_world_position_camera_relative`        | R-3.2.7  |
+| `test_world_position_no_jitter`              | R-3.2.7  |
+| `test_voxel_sdf_sample`                      | R-3.2.9  |
+| `test_voxel_homogeneous_zero_memory`         | R-3.2.9  |
+| `test_hybrid_representation_selection`       | R-3.2.10 |
+| `test_marching_cubes_sphere`                 | R-3.2.12 |
+| `test_dual_contouring_cube`                  | R-3.2.12 |
+| `test_transvoxel_no_cracks`                  | R-3.2.12 |
+| `test_meshing_incremental`                   | R-3.2.12 |
+| `test_sdf_edit_add`                          | R-3.2.13 |
+| `test_sdf_edit_subtract`                     | R-3.2.13 |
+| `test_sdf_edit_smooth`                       | R-3.2.13 |
+| `test_sdf_edit_flatten`                      | R-3.2.13 |
+| `test_edit_delta_size`                       | R-3.2.13 |
+| `test_edit_log_undo`                         | R-3.2.13 |
+| `test_edit_log_round_trip`                   | R-3.2.13 |
+| `test_edit_throttle`                         | R-3.2.13 |
+| `test_voxel_rle_compression`                 | R-3.2.14 |
+| `test_voxel_lz4_round_trip`                  | R-3.2.14 |
+| `test_voxel_compression_ratio`               | R-3.2.14 |
+| `test_residency_load_nearest_first`          | R-3.2.1  |
+| `test_residency_evict_farthest`              | R-3.2.1  |
+| `test_residency_budget_enforcement`          | R-3.2.14 |
+| `test_virtual_page_allocate_release`         | R-3.2.2  |
+| `test_virtual_indirection_resolve`           | R-3.2.2  |
+| `test_planet_spherical_round_trip`           | R-3.2.11 |
+| `test_planet_gravity_toward_center`          | R-3.2.11 |
+| `test_planet_cube_face_projection`           | R-3.2.11 |
+
+1. **`test_tile_height_sample_bilinear`** — Sample height at UV (0.5, 0.5) with known grid. Verify
+   bilinear interpolation matches expected value.
+2. **`test_tile_height_at_world`** — Convert world XZ to tile UV. Verify correct height. Verify None
+   for out-of-bounds.
+3. **`test_tile_normal_flat`** — Flat tile (all heights equal). Verify normal = (0, 1, 0).
+4. **`test_tile_normal_slope`** — 45-degree slope tile. Verify normal is correct and normalized.
+5. **`test_clipmap_ring_spacing`** — 8 rings with base 1.0m. Verify ring N spacing = 2^N meters.
+6. **`test_clipmap_morph_boundaries`** — Vertex at ring boundary. Verify morph_factor = 1.0. Vertex
+   at ring center: morph_factor = 0.0.
+7. **`test_clipmap_screen_error`** — 1m spacing at 100m distance with 90-degree FOV, 1080p. Verify
+   screen error < threshold.
+8. **`test_hole_mask_bit_ops`** — Set hole at (5,7), verify is_hole(5,7) = true. Clear it, verify
+   false. Adjacent vertices unaffected.
+9. **`test_hole_mask_round_trip`** — Set 100 random holes. Verify all 100 read back correctly.
+   Verify all others are not holes.
+10. **`test_splatmap_weight_sum`** — 4 layers with random weights. Verify per-vertex weights sum to
+    255.
+11. **`test_splatmap_16_layers`** — Tile with 16 active layers. Verify all layer indices valid.
+    Verify weight lookup for each layer.
+12. **`test_heightfield_collider_ray_hit`** — Ray from (50, 100, 50) downward. Verify hit at terrain
+    surface. Verify normal is upward-ish.
+13. **`test_heightfield_collider_ray_miss`** — Ray parallel to terrain surface. Verify no hit.
+14. **`test_heightfield_collider_hole_passthrough`** — Ray through a hole region. Verify ray passes
+    through (no hit in hole).
+15. **`test_world_position_camera_relative`** — Position at (100000.5, 0, 100000.5). Camera at
+    (100000, 0, 100000). Verify relative = (0.5, 0, 0.5).
+16. **`test_world_position_no_jitter`** — 10 positions at 50 km from origin. Convert to
+    camera-relative f32. Verify sub-millimeter precision.
+17. **`test_voxel_sdf_sample`** — Known SDF grid. Sample at cell centers. Verify values match.
+18. **`test_voxel_homogeneous_zero_memory`** — Create 1000 homogeneous air nodes. Verify total
+    memory = node metadata only, no per-cell arrays.
+19. **`test_hybrid_representation_selection`** — Flat region -> Heightfield. Region with cave ->
+    Voxel. Verify RepresentationTag.
+20. **`test_marching_cubes_sphere`** — SDF sphere of radius 5. Verify mesh is closed, vertex count >
+    0, all normals point outward.
+21. **`test_dual_contouring_cube`** — SDF axis-aligned cube. Verify sharp edges preserved (angle
+    between adjacent face normals ~90 degrees).
+22. **`test_transvoxel_no_cracks`** — Two adjacent chunks at different LODs. Verify shared edge
+    vertices match exactly (no T-junctions).
+23. **`test_meshing_incremental`** — Modify 1 cell. Verify only containing chunk is re-meshed, not
+    neighbors.
+24. **`test_sdf_edit_add`** — Apply Add brush at center. Verify SDF values decreased within radius.
+    Verify outside radius unchanged.
+25. **`test_sdf_edit_subtract`** — Apply Subtract brush. Verify SDF values increased (material
+    removed).
+26. **`test_sdf_edit_smooth`** — Apply Smooth brush to noisy SDF. Verify variance decreased.
+27. **`test_sdf_edit_flatten`** — Apply Flatten brush with target height. Verify surface converges
+    to target.
+28. **`test_edit_delta_size`** — Single-cell edit. Serialize EditDelta. Verify size < 1 KB.
+29. **`test_edit_log_undo`** — Apply 5 edits, undo 3. Verify volume matches state after edit 2.
+30. **`test_edit_log_round_trip`** — Apply edits, serialize log, deserialize, replay on fresh
+    volume. Verify identical result.
+31. **`test_edit_throttle`** — Queue 100 edits with max 10/frame. Verify flush returns exactly 10.
+32. **`test_voxel_rle_compression`** — Homogeneous air chunk. RLE compress. Verify ratio > 100:1.
+33. **`test_voxel_lz4_round_trip`** — Compress surface chunk with RLE+LZ4. Decompress. Verify
+    bit-exact match.
+34. **`test_voxel_compression_ratio`** — Mixed terrain chunk. Verify overall ratio >= 10:1.
+35. **`test_residency_load_nearest_first`** — Camera at (0,0). Verify to_load is sorted by distance
+    ascending.
+36. **`test_residency_evict_farthest`** — Move camera 10 tiles. Verify old distant tiles appear in
+    to_evict.
+37. **`test_residency_budget_enforcement`** — Set budget to 10 tiles. Load 15. Verify eviction kicks
+    in at 10.
+38. **`test_virtual_page_allocate_release`** — Allocate 100 pages. Release 50. Allocate 50 more.
+    Verify no leak.
+39. **`test_virtual_indirection_resolve`** — Allocate page. Resolve its VirtualPageId. Verify
+    correct PhysicalSlot.
+40. **`test_planet_spherical_round_trip`** — Convert world pos to spherical and back. Verify
+    sub-meter precision.
+41. **`test_planet_gravity_toward_center`** — Position on surface. Verify gravity vector points
+    toward (0,0,0).
+42. **`test_planet_cube_face_projection`** — 6 axis-aligned positions. Verify each maps to the
+    correct CubeFace.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_stream_100_tiles_no_holes` | R-3.2.1 | Stream 100 tiles via async I/O. Verify all load, no placeholder tiles remain after settling. |
-| `test_stream_teleport_cancel` | R-3.2.1 | Start loading 50 tiles. Teleport camera 1 km away. Verify old loads cancelled, new loads issued. |
-| `test_stream_budget_eviction` | R-3.2.1 | Stream 200 tiles with budget for 100. Verify 100 resident, 100 evicted, no memory leak. |
-| `test_clipmap_visual_no_seams` | R-3.2.3 | Render 8-ring clipmap. Verify adjacent ring vertex heights match within epsilon at morph boundaries. |
-| `test_collision_matches_visual` | R-3.2.4, R-3.2.6 | Paint holes. Verify visual mesh discards same triangles as collision rejects. |
-| `test_hybrid_boundary_stitch` | R-3.2.10 | Heightfield tile adjacent to voxel chunk. Verify shared edge vertices produce watertight mesh. |
-| `test_voxel_edit_mesh_collision_sync` | R-3.2.13 | Dig tunnel. Verify mesh has hole, collision allows passage, NavMesh path exists through tunnel. |
-| `test_multiplayer_edit_replication` | R-3.2.13 | Client applies edit. Server validates and replicates. Second client receives edit. Verify identical terrain. |
-| `test_multiplayer_restricted_zone` | R-3.2.13 | Client attempts edit in restricted zone. Verify EditRejected error. Verify terrain unchanged. |
-| `test_virtual_texture_feedback_loop` | R-3.2.2 | Render terrain, read feedback, load pages, render again. Verify requested pages are now resident. |
-| `test_platform_async_io_per_platform` | R-3.2.1 | Same streaming test on Windows, macOS, Linux CI. Verify identical tile data loaded on all platforms. |
+| Test                                  | Req              |
+|---------------------------------------|------------------|
+| `test_stream_100_tiles_no_holes`      | R-3.2.1          |
+| `test_stream_teleport_cancel`         | R-3.2.1          |
+| `test_stream_budget_eviction`         | R-3.2.1          |
+| `test_clipmap_visual_no_seams`        | R-3.2.3          |
+| `test_collision_matches_visual`       | R-3.2.4, R-3.2.6 |
+| `test_hybrid_boundary_stitch`         | R-3.2.10         |
+| `test_voxel_edit_mesh_collision_sync` | R-3.2.13         |
+| `test_multiplayer_edit_replication`   | R-3.2.13         |
+| `test_multiplayer_restricted_zone`    | R-3.2.13         |
+| `test_virtual_texture_feedback_loop`  | R-3.2.2          |
+| `test_platform_async_io_per_platform` | R-3.2.1          |
+
+1. **`test_stream_100_tiles_no_holes`** — Stream 100 tiles via async I/O. Verify all load, no
+   placeholder tiles remain after settling.
+2. **`test_stream_teleport_cancel`** — Start loading 50 tiles. Teleport camera 1 km away. Verify old
+   loads cancelled, new loads issued.
+3. **`test_stream_budget_eviction`** — Stream 200 tiles with budget for 100. Verify 100 resident,
+   100 evicted, no memory leak.
+4. **`test_clipmap_visual_no_seams`** — Render 8-ring clipmap. Verify adjacent ring vertex heights
+   match within epsilon at morph boundaries.
+5. **`test_collision_matches_visual`** — Paint holes. Verify visual mesh discards same triangles as
+   collision rejects.
+6. **`test_hybrid_boundary_stitch`** — Heightfield tile adjacent to voxel chunk. Verify shared edge
+   vertices produce watertight mesh.
+7. **`test_voxel_edit_mesh_collision_sync`** — Dig tunnel. Verify mesh has hole, collision allows
+   passage, NavMesh path exists through tunnel.
+8. **`test_multiplayer_edit_replication`** — Client applies edit. Server validates and replicates.
+   Second client receives edit. Verify identical terrain.
+9. **`test_multiplayer_restricted_zone`** — Client attempts edit in restricted zone. Verify
+   EditRejected error. Verify terrain unchanged.
+10. **`test_virtual_texture_feedback_loop`** — Render terrain, read feedback, load pages, render
+    again. Verify requested pages are now resident.
+11. **`test_platform_async_io_per_platform`** — Same streaming test on Windows, macOS, Linux CI.
+    Verify identical tile data loaded on all platforms.
 
 ### Benchmarks
 
@@ -1892,12 +2012,17 @@ separated from cold data (height arrays, splatmaps).
 
 ### GPU Compute Availability
 
-| Backend | Compute Shaders | Mesh Shaders | Notes |
-|---------|----------------|-------------|-------|
-| D3D12 | Yes (SM 5.0+) | Yes (SM 6.5+, optional) | Full terrain compute support. |
-| Vulkan | Yes (1.0+) | Yes (task/mesh, optional) | Subgroup operations for reduction. |
-| Metal | Yes (MSL 2.0+) | Object/mesh (Apple GPU family 7+) | Threadgroup memory for local sort. |
-| Mobile | Limited dispatch size | No mesh shaders | Reduced terrain detail (PlatformTier::Mobile). |
+| Backend | Compute Shaders       | Mesh Shaders                      |
+|---------|-----------------------|-----------------------------------|
+| D3D12   | Yes (SM 5.0+)         | Yes (SM 6.5+, optional)           |
+| Vulkan  | Yes (1.0+)            | Yes (task/mesh, optional)         |
+| Metal   | Yes (MSL 2.0+)        | Object/mesh (Apple GPU family 7+) |
+| Mobile  | Limited dispatch size | No mesh shaders                   |
+
+1. **D3D12** — Full terrain compute support.
+2. **Vulkan** — Subgroup operations for reduction.
+3. **Metal** — Threadgroup memory for local sort.
+4. **Mobile** — Reduced terrain detail (PlatformTier::Mobile).
 
 Virtual texture streaming uses the shared `VirtualResourceStreamer` framework (see
 [shared-primitives.md](../core-runtime/shared-primitives.md)).

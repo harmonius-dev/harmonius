@@ -6,263 +6,448 @@ Companion test cases for [ai-governance.md](ai-governance.md).
 
 ### TC-15.7.1.1 Provenance Tag Attach and Query
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `tag_asset(asset_42, TextureGenerator, "sd-xl-1.0", prompt_hash)` | `ProvenanceTag { asset_id: 42, ai_system: TextureGenerator, model_version: "sd-xl-1.0" }` stored | R-15.7.1 |
-| 2 | `get_provenance(asset_42)` | Returns tag matching fields from step 1 | R-15.7.1 |
-| 3 | `get_provenance(asset_99)` (untagged) | Returns `None` | R-15.7.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.1    |
+| 2 | R-15.7.1    |
+| 3 | R-15.7.1    |
+
+1. **#1** — `tag_asset(asset_42, TextureGenerator, "sd-xl-1.0", prompt_hash)`
+   - **Expected:**
+     `ProvenanceTag { asset_id: 42, ai_system: TextureGenerator, model_version: "sd-xl-1.0" }`
+     stored
+2. **#2** — `get_provenance(asset_42)`
+   - **Expected:** Returns tag matching fields from step 1
+3. **#3** — `get_provenance(asset_99)` (untagged)
+   - **Expected:** Returns `None`
 
 ### TC-15.7.1.2 Provenance Survives Serialization
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Tag asset, serialize to bytes, deserialize | Deserialized tag matches original fields | R-15.7.1 |
-| 2 | Tag asset, save to disk, reload | Reloaded tag matches original fields | R-15.7.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.1    |
+| 2 | R-15.7.1    |
+
+1. **#1** — Tag asset, serialize to bytes, deserialize
+   - **Expected:** Deserialized tag matches original fields
+2. **#2** — Tag asset, save to disk, reload
+   - **Expected:** Reloaded tag matches original fields
 
 ### TC-15.7.1.3 Provenance Removal on Full Replace
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Tag asset with 100 regions, mark all 100 modified | `get_provenance(asset)` returns `None` | R-15.7.1, R-15.7.2 |
-| 2 | Tag asset with 100 regions, mark 99 modified | `get_provenance(asset)` returns `Some(tag)` | R-15.7.1, R-15.7.2 |
+| # | Requirement        |
+|---|--------------------|
+| 1 | R-15.7.1, R-15.7.2 |
+| 2 | R-15.7.1, R-15.7.2 |
+
+1. **#1** — Tag asset with 100 regions, mark all 100 modified
+   - **Expected:** `get_provenance(asset)` returns `None`
+2. **#2** — Tag asset with 100 regions, mark 99 modified
+   - **Expected:** `get_provenance(asset)` returns `Some(tag)`
 
 ### TC-15.7.2.1 Modification Bitmask Granularity
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `start_tracking(asset, VertexGroup)`, mark region 0 | `bitmask.regions[0] == true`, rest false | R-15.7.2 |
-| 2 | `start_tracking(asset, TextureTile(256))`, mark tile 5 | `bitmask.regions[5] == true`, rest false | R-15.7.2 |
-| 3 | `start_tracking(asset, DataTableRow)`, mark row 10 | `bitmask.regions[10] == true`, rest false | R-15.7.2 |
-| 4 | `start_tracking(asset, LogicGraphNode)`, mark node 3 | `bitmask.regions[3] == true`, rest false | R-15.7.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.2    |
+| 2 | R-15.7.2    |
+| 3 | R-15.7.2    |
+| 4 | R-15.7.2    |
+
+1. **#1** — `start_tracking(asset, VertexGroup)`, mark region 0
+   - **Expected:** `bitmask.regions[0] == true`, rest false
+2. **#2** — `start_tracking(asset, TextureTile(256))`, mark tile 5
+   - **Expected:** `bitmask.regions[5] == true`, rest false
+3. **#3** — `start_tracking(asset, DataTableRow)`, mark row 10
+   - **Expected:** `bitmask.regions[10] == true`, rest false
+4. **#4** — `start_tracking(asset, LogicGraphNode)`, mark node 3
+   - **Expected:** `bitmask.regions[3] == true`, rest false
 
 ### TC-15.7.2.2 Bitmask Size Under 1 KB
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Bitmask with 1000 regions | `size_of(bitmask) < 1024` bytes | R-15.7.2 |
-| 2 | Bitmask with 8000 regions | `size_of(bitmask) < 1024` bytes | R-15.7.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.2    |
+| 2 | R-15.7.2    |
+
+1. **#1** — Bitmask with 1000 regions
+   - **Expected:** `size_of(bitmask) < 1024` bytes
+2. **#2** — Bitmask with 8000 regions
+   - **Expected:** `size_of(bitmask) < 1024` bytes
 
 ### TC-15.7.2.3 Modification Percentage Calculation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 100 regions, 50 marked modified | `modification_percentage() == 0.50` | R-15.7.2 |
-| 2 | 100 regions, 0 marked modified | `modification_percentage() == 0.0` | R-15.7.2 |
-| 3 | 100 regions, 100 marked modified | `modification_percentage() == 1.0` | R-15.7.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.2    |
+| 2 | R-15.7.2    |
+| 3 | R-15.7.2    |
+
+1. **#1** — 100 regions, 50 marked modified
+   - **Expected:** `modification_percentage() == 0.50`
+2. **#2** — 100 regions, 0 marked modified
+   - **Expected:** `modification_percentage() == 0.0`
+3. **#3** — 100 regions, 100 marked modified
+   - **Expected:** `modification_percentage() == 1.0`
 
 ### TC-15.7.3.1 Generative Toggle Disables LLM
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `generative_ai_enabled = false`, call LLM generation | Returns `Err(FeatureDisabled)` | R-15.7.3 |
-| 2 | `generative_ai_enabled = true`, call LLM generation | Returns `Ok(...)` | R-15.7.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.3    |
+| 2 | R-15.7.3    |
+
+1. **#1** — `generative_ai_enabled = false`, call LLM generation
+   - **Expected:** Returns `Err(FeatureDisabled)`
+2. **#2** — `generative_ai_enabled = true`, call LLM generation
+   - **Expected:** Returns `Ok(...)`
 
 ### TC-15.7.3.2 Deterministic AI Unaffected
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `generative_ai_enabled = false`, run pathfinding | Pathfinding returns valid path | R-15.7.3 |
-| 2 | `generative_ai_enabled = false`, run behavior tree | BT executes normally | R-15.7.3 |
-| 3 | `generative_ai_enabled = false`, run GOAP planner | GOAP returns valid plan | R-15.7.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.3    |
+| 2 | R-15.7.3    |
+| 3 | R-15.7.3    |
+
+1. **#1** — `generative_ai_enabled = false`, run pathfinding
+   - **Expected:** Pathfinding returns valid path
+2. **#2** — `generative_ai_enabled = false`, run behavior tree
+   - **Expected:** BT executes normally
+3. **#3** — `generative_ai_enabled = false`, run GOAP planner
+   - **Expected:** GOAP returns valid plan
 
 ### TC-15.7.4.1 Toggle Independence
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | `generative=true, assistance=true` | Both LLM generation and assistant available | R-15.7.4 |
-| 2 | `generative=true, assistance=false` | LLM generation available, assistant disabled | R-15.7.4 |
-| 3 | `generative=false, assistance=true` | Assistant available, LLM generation disabled | R-15.7.4 |
-| 4 | `generative=false, assistance=false` | Both disabled | R-15.7.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.4    |
+| 2 | R-15.7.4    |
+| 3 | R-15.7.4    |
+| 4 | R-15.7.4    |
+
+1. **#1** — `generative=true, assistance=true`
+   - **Expected:** Both LLM generation and assistant available
+2. **#2** — `generative=true, assistance=false`
+   - **Expected:** LLM generation available, assistant disabled
+3. **#3** — `generative=false, assistance=true`
+   - **Expected:** Assistant available, LLM generation disabled
+4. **#4** — `generative=false, assistance=false`
+   - **Expected:** Both disabled
 
 ### TC-15.7.4.2 Toggle Persistence
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Set toggles `(true, false, true, false)`, save, reload | Reloaded toggles match `(true, false, true, false)` | R-15.7.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.4    |
+
+1. **#1** — Set toggles `(true, false, true, false)`, save, reload
+   - **Expected:** Reloaded toggles match `(true, false, true, false)`
 
 ### TC-15.7.5.1 Ed25519 Signature Verification
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Sign policy with key A, verify with key A | Verification succeeds | R-15.7.5 |
-| 2 | Sign policy with key A, tamper 1 byte, verify with key A | Verification fails with `InvalidSignature` | R-15.7.5 |
-| 3 | Sign policy with key A, verify with key B | Verification fails with `UntrustedKey` | R-15.7.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.5    |
+| 2 | R-15.7.5    |
+| 3 | R-15.7.5    |
+
+1. **#1** — Sign policy with key A, verify with key A
+   - **Expected:** Verification succeeds
+2. **#2** — Sign policy with key A, tamper 1 byte, verify with key A
+   - **Expected:** Verification fails with `InvalidSignature`
+3. **#3** — Sign policy with key A, verify with key B
+   - **Expected:** Verification fails with `UntrustedKey`
 
 ### TC-15.7.5.2 Stale Policy Rejected
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Current policy version 5, receive version 4 | `Err(StaleVersion { current: 5, received: 4 })` | R-15.7.5 |
-| 2 | Current policy version 5, receive version 5 | `Err(StaleVersion { current: 5, received: 5 })` | R-15.7.5 |
-| 3 | Current policy version 5, receive version 6 | Policy applied successfully | R-15.7.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.5    |
+| 2 | R-15.7.5    |
+| 3 | R-15.7.5    |
+
+1. **#1** — Current policy version 5, receive version 4
+   - **Expected:** `Err(StaleVersion { current: 5, received: 4 })`
+2. **#2** — Current policy version 5, receive version 5
+   - **Expected:** `Err(StaleVersion { current: 5, received: 5 })`
+3. **#3** — Current policy version 5, receive version 6
+   - **Expected:** Policy applied successfully
 
 ### TC-15.7.6.1 Audit Hash Chain
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Append 100 entries, `validate_chain()` | Returns `Ok(true)` | R-15.7.6 |
-| 2 | Append 100 entries, tamper entry 50, `validate_chain()` | Returns `Ok(false)`, chain breaks at entry 50 | R-15.7.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.6    |
+| 2 | R-15.7.6    |
+
+1. **#1** — Append 100 entries, `validate_chain()`
+   - **Expected:** Returns `Ok(true)`
+2. **#2** — Append 100 entries, tamper entry 50, `validate_chain()`
+   - **Expected:** Returns `Ok(false)`, chain breaks at entry 50
 
 ### TC-15.7.6.2 Audit Rotation Preserves Chain
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Append 1000 entries, rotate at 500, `validate_chain()` | Returns `Ok(true)` across both segments | R-15.7.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.6    |
+
+1. **#1** — Append 1000 entries, rotate at 500, `validate_chain()`
+   - **Expected:** Returns `Ok(true)` across both segments
 
 ### TC-15.7.7.1 Review Auto-Approve Threshold
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Threshold 80%, mark 80% modified | Asset status changes to approved | R-15.7.7 |
-| 2 | Threshold 80%, mark 79% modified | Asset status remains pending | R-15.7.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.7    |
+| 2 | R-15.7.7    |
+
+1. **#1** — Threshold 80%, mark 80% modified
+   - **Expected:** Asset status changes to approved
+2. **#2** — Threshold 80%, mark 79% modified
+   - **Expected:** Asset status remains pending
 
 ### TC-15.7.7.2 Review Blocks Unapproved
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | AI asset with `require_review = true`, not reviewed | Asset not in production database | R-15.7.7 |
-| 2 | AI asset with `require_review = true`, approved | Asset in production database | R-15.7.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.7    |
+| 2 | R-15.7.7    |
+
+1. **#1** — AI asset with `require_review = true`, not reviewed
+   - **Expected:** Asset not in production database
+2. **#2** — AI asset with `require_review = true`, approved
+   - **Expected:** Asset in production database
 
 ### TC-15.7.8.1 Packaged Provenance Minimal
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Package asset with full provenance tag | Packaged output contains only `ai_system` and `is_ai_generated` flag | R-15.7.8 |
-| 2 | Package asset without provenance | Packaged output has no provenance metadata | R-15.7.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.8    |
+| 2 | R-15.7.8    |
+
+1. **#1** — Package asset with full provenance tag
+   - **Expected:** Packaged output contains only `ai_system` and `is_ai_generated` flag
+2. **#2** — Package asset without provenance
+   - **Expected:** Packaged output has no provenance metadata
 
 ### TC-15.9.10.1 Rate Limiter Token Bucket
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Bucket with 10 tokens, acquire 10 permits | All succeed | R-15.9.10 |
-| 2 | Bucket with 10 tokens, acquire 11th permit | Returns `Err(RateLimited { ... })` | R-15.9.10 |
-| 3 | Wait for refill period, acquire permit | Succeeds | R-15.9.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.10   |
+| 2 | R-15.9.10   |
+| 3 | R-15.9.10   |
+
+1. **#1** — Bucket with 10 tokens, acquire 10 permits
+   - **Expected:** All succeed
+2. **#2** — Bucket with 10 tokens, acquire 11th permit
+   - **Expected:** Returns `Err(RateLimited { ... })`
+3. **#3** — Wait for refill period, acquire permit
+   - **Expected:** Succeeds
 
 ### TC-15.9.10.2 Quota Requests Per Hour
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Quota `requests_per_hour = 100`, use 100 requests | 100th succeeds | R-15.9.10 |
-| 2 | Quota `requests_per_hour = 100`, use 101st request | Returns `Err(QuotaExceeded { limit: "requests_per_hour" })` | R-15.9.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.10   |
+| 2 | R-15.9.10   |
+
+1. **#1** — Quota `requests_per_hour = 100`, use 100 requests
+   - **Expected:** 100th succeeds
+2. **#2** — Quota `requests_per_hour = 100`, use 101st request
+   - **Expected:** Returns `Err(QuotaExceeded { limit: "requests_per_hour" })`
 
 ### TC-15.9.10.3 Quota Tokens Per Day
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Quota `tokens_per_day = 50000`, record 50000 tokens | Succeeds | R-15.9.10 |
-| 2 | Quota `tokens_per_day = 50000`, record 50001 tokens | Returns `Err(QuotaExceeded { limit: "tokens_per_day" })` | R-15.9.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.10   |
+| 2 | R-15.9.10   |
+
+1. **#1** — Quota `tokens_per_day = 50000`, record 50000 tokens
+   - **Expected:** Succeeds
+2. **#2** — Quota `tokens_per_day = 50000`, record 50001 tokens
+   - **Expected:** Returns `Err(QuotaExceeded { limit: "tokens_per_day" })`
 
 ### TC-15.9.10.4 Tool Allowlist
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Allowlist `{tool_A, tool_B}`, check `tool_A` | `is_allowed` returns `true` | R-15.9.10 |
-| 2 | Allowlist `{tool_A, tool_B}`, check `tool_C` | `is_allowed` returns `false` | R-15.9.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.10   |
+| 2 | R-15.9.10   |
+
+1. **#1** — Allowlist `{tool_A, tool_B}`, check `tool_A`
+   - **Expected:** `is_allowed` returns `true`
+2. **#2** — Allowlist `{tool_A, tool_B}`, check `tool_C`
+   - **Expected:** `is_allowed` returns `false`
 
 ### TC-15.9.10.5 Tool Blocklist
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Blocklist `{tool_X}`, check `tool_X` | `is_allowed` returns `false` | R-15.9.10 |
-| 2 | Blocklist `{tool_X}`, check `tool_Y` | `is_allowed` returns `true` | R-15.9.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.10   |
+| 2 | R-15.9.10   |
+
+1. **#1** — Blocklist `{tool_X}`, check `tool_X`
+   - **Expected:** `is_allowed` returns `false`
+2. **#2** — Blocklist `{tool_X}`, check `tool_Y`
+   - **Expected:** `is_allowed` returns `true`
 
 ### TC-15.9.2.1 Tool Validation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Tool expects `Range { min: 0, max: 100 }`, pass value 50 | Validation passes | R-15.9.2 |
-| 2 | Tool expects `Range { min: 0, max: 100 }`, pass value 150 | Validation fails with error message | R-15.9.2 |
-| 3 | Tool expects `Required { field: "name" }`, omit `name` | Validation fails with error message | R-15.9.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.2    |
+| 2 | R-15.9.2    |
+| 3 | R-15.9.2    |
+
+1. **#1** — Tool expects `Range { min: 0, max: 100 }`, pass value 50
+   - **Expected:** Validation passes
+2. **#2** — Tool expects `Range { min: 0, max: 100 }`, pass value 150
+   - **Expected:** Validation fails with error message
+3. **#3** — Tool expects `Required { field: "name" }`, omit `name`
+   - **Expected:** Validation fails with error message
 
 ### TC-15.9.2.2 Tool Undo Integration
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Execute tool with `supports_undo = true` | `ToolResult::Success { undo_command: Some(...) }` | R-15.9.2 |
-| 2 | Execute tool with `supports_undo = false` | `ToolResult::Success { undo_command: None }` | R-15.9.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.2    |
+| 2 | R-15.9.2    |
+
+1. **#1** — Execute tool with `supports_undo = true`
+   - **Expected:** `ToolResult::Success { undo_command: Some(...) }`
+2. **#2** — Execute tool with `supports_undo = false`
+   - **Expected:** `ToolResult::Success { undo_command: None }`
 
 ### TC-15.9.6b.1 Agent Isolation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Create agent A and B, select entity 1 in A | Agent B selection is empty | R-15.9.6b |
-| 2 | Create agent A and B, modify undo stack in A | Agent B undo stack unchanged | R-15.9.6b |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.6b   |
+| 2 | R-15.9.6b   |
+
+1. **#1** — Create agent A and B, select entity 1 in A
+   - **Expected:** Agent B selection is empty
+2. **#2** — Create agent A and B, modify undo stack in A
+   - **Expected:** Agent B undo stack unchanged
 
 ### TC-15.9.6b.2 Agent Independent Undo
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Agent A executes tool, agent B executes tool, undo in A | Agent A reverted, agent B unchanged | R-15.9.6b |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.6b   |
+
+1. **#1** — Agent A executes tool, agent B executes tool, undo in A
+   - **Expected:** Agent A reverted, agent B unchanged
 
 ### TC-15.9.9.1 Context Build Precedence
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Context with both accessibility snapshot and screenshot | Prompt contains structured data before pixel data | R-15.9.9 |
-| 2 | Context with only text input | Prompt contains text, no image tokens | R-15.9.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.9    |
+| 2 | R-15.9.9    |
+
+1. **#1** — Context with both accessibility snapshot and screenshot
+   - **Expected:** Prompt contains structured data before pixel data
+2. **#2** — Context with only text input
+   - **Expected:** Prompt contains text, no image tokens
 
 ## Integration Tests
 
 ### TC-15.7.1.I1 Provenance Pipeline Survival
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Tag asset, run import/cook/package pipeline | Packaged output contains provenance metadata | R-15.7.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.1    |
+
+1. **#1** — Tag asset, run import/cook/package pipeline
+   - **Expected:** Packaged output contains provenance metadata
 
 ### TC-15.7.5.I1 Policy Push via WebSocket
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Mock admin server pushes signed policy via WebSocket | Editor applies new toggle state within 5 seconds | R-15.7.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.5    |
+
+1. **#1** — Mock admin server pushes signed policy via WebSocket
+   - **Expected:** Editor applies new toggle state within 5 seconds
 
 ### TC-15.7.5.I2 Policy Pull via HTTPS
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Mock admin server hosts signed policy, editor polls | Editor applies new toggle state on next poll cycle | R-15.7.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.5    |
+
+1. **#1** — Mock admin server hosts signed policy, editor polls
+   - **Expected:** Editor applies new toggle state on next poll cycle
 
 ### TC-15.7.6.I1 Audit Replication
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Append 500 entries locally, `replicate_to(mock_server)` | All 500 entries received by mock server | R-15.7.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.6    |
+
+1. **#1** — Append 500 entries locally, `replicate_to(mock_server)`
+   - **Expected:** All 500 entries received by mock server
 
 ### TC-15.7.7.I1 Review Workflow End to End
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Generate AI asset, route to review, approve | Asset present in production database | R-15.7.7 |
-| 2 | Generate AI asset, route to review, reject | Asset not in production database, reason recorded | R-15.7.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.7.7    |
+| 2 | R-15.7.7    |
+
+1. **#1** — Generate AI asset, route to review, approve
+   - **Expected:** Asset present in production database
+2. **#2** — Generate AI asset, route to review, reject
+   - **Expected:** Asset not in production database, reason recorded
 
 ### TC-15.9.2.I1 LLM Request Async
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Send request to mock LLM API via IoReactor | Response parsed, tool calls extracted correctly | R-15.9.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.2    |
+
+1. **#1** — Send request to mock LLM API via IoReactor
+   - **Expected:** Response parsed, tool calls extracted correctly
 
 ### TC-15.9.1b.I1 Voice Command Roundtrip
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Transcript "select the red cube", mock LLM returns `select_entity` tool call | Entity selection tool invoked with correct parameters | R-15.9.1b |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.1b   |
+
+1. **#1** — Transcript "select the red cube", mock LLM returns `select_entity` tool call
+   - **Expected:** Entity selection tool invoked with correct parameters
 
 ### TC-15.9.6a.I1 Headless Tool Execution
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Execute `set_property` tool via headless API | Property value matches interactive execution result | R-15.9.6a |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.6a   |
+
+1. **#1** — Execute `set_property` tool via headless API
+   - **Expected:** Property value matches interactive execution result
 
 ### TC-15.9.6c.I1 CI Agent Artifact Production
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Run agent in headless mode with build task | Build artifact produced at expected path | R-15.9.6c |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.6c   |
+
+1. **#1** — Run agent in headless mode with build task
+   - **Expected:** Build artifact produced at expected path
 
 ### TC-15.9.10.I1 Offline Then Reconnect
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Operate offline for 10 interactions, reconnect | All 10 local audit entries replicated to server | R-15.9.10 |
+| # | Requirement |
+|---|-------------|
+| 1 | R-15.9.10   |
+
+1. **#1** — Operate offline for 10 interactions, reconnect
+   - **Expected:** All 10 local audit entries replicated to server
 
 ## Benchmarks
 

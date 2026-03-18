@@ -26,11 +26,15 @@ domain or complexity level.
 
 ### 1. Platform (Domain 14)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **Platform.Windowing** | F-14.1.1–F-14.1.6 | Window creation, display modes, DPI, multi-monitor |
-| **Platform.Threading** | F-14.3.1–F-14.3.5 | Work-stealing thread pool, task graph, async I/O integration |
-| **Platform.OS** | F-14.2.x, F-14.4.x, F-14.5.x | OS integration, crash reporting, platform services, filesystem |
+| Group                  | Features                     |
+|------------------------|------------------------------|
+| **Platform.Windowing** | F-14.1.1–F-14.1.6            |
+| **Platform.Threading** | F-14.3.1–F-14.3.5            |
+| **Platform.OS**        | F-14.2.x, F-14.4.x, F-14.5.x |
+
+1. ****Platform.Windowing**** — Window creation, display modes, DPI, multi-monitor
+2. ****Platform.Threading**** — Work-stealing thread pool, task graph, async I/O integration
+3. ****Platform.OS**** — OS integration, crash reporting, platform services, filesystem
 
 **Outbound edges (what these unblock):**
 
@@ -50,34 +54,61 @@ domain or complexity level.
 
 ### 2. Core Runtime (Domain 1)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **CoreRuntime.ECS** | F-1.1.1–F-1.1.33 | Archetype storage, entities, queries, systems, commands, parallel iteration |
-| **CoreRuntime.SceneTransforms** | F-1.2.1–F-1.2.8 | Entity hierarchy, transform propagation, spatial partitioning delegation |
-| **CoreRuntime.ReflectionSerialization** | F-1.3.x, F-1.4.x | Type registry, structured descriptors, binary/text serialization |
-| **CoreRuntime.EventsPlugins** | F-1.5.x, F-1.6.x | Event channels, plugin system, dependency declaration |
-| **CoreRuntime.MemoryAsyncIO** | F-1.7.x, F-1.8.x | Arena allocator, memory budgets, async file I/O abstraction |
-| **CoreRuntime.SpatialIndex** | F-1.9.x | Shared BVH/octree — single acceleration structure for all domains |
+| Group                                   | Features         |
+|-----------------------------------------|------------------|
+| **CoreRuntime.ECS**                     | F-1.1.1–F-1.1.33 |
+| **CoreRuntime.SceneTransforms**         | F-1.2.1–F-1.2.8  |
+| **CoreRuntime.ReflectionSerialization** | F-1.3.x, F-1.4.x |
+| **CoreRuntime.EventsPlugins**           | F-1.5.x, F-1.6.x |
+| **CoreRuntime.MemoryAsyncIO**           | F-1.7.x, F-1.8.x |
+| **CoreRuntime.SpatialIndex**            | F-1.9.x          |
+
+1. ****CoreRuntime.ECS**** — Archetype storage, entities, queries, systems, commands, parallel
+   iteration
+2. ****CoreRuntime.SceneTransforms**** — Entity hierarchy, transform propagation, spatial
+   partitioning delegation
+3. ****CoreRuntime.ReflectionSerialization**** — Type registry, structured descriptors, binary/text
+   serialization
+4. ****CoreRuntime.EventsPlugins**** — Event channels, plugin system, dependency declaration
+5. ****CoreRuntime.MemoryAsyncIO**** — Arena allocator, memory budgets, async file I/O abstraction
+6. ****CoreRuntime.SpatialIndex**** — Shared BVH/octree — single acceleration structure for all
+   domains
 
 **Outbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| CoreRuntime.ECS | *All simulation domains* | Every domain stores data as components and runs logic as systems |
-| CoreRuntime.SpatialIndex | Physics.RigidBody | Broadphase collision detection |
-| CoreRuntime.SpatialIndex | Rendering.CoreRendering | Frustum/occlusion culling |
-| CoreRuntime.SpatialIndex | Networking.Replication | Area-of-interest filtering |
-| CoreRuntime.SpatialIndex | AI.Navigation | Perception queries, crowd spatial queries |
-| CoreRuntime.SpatialIndex | Audio.Spatial | Occlusion ray-casts for spatial audio |
-| CoreRuntime.SpatialIndex | GameFramework.GameplayPrimitives | Spatial queries for selection, AOE |
-| CoreRuntime.ReflectionSerialization | Networking.Replication | Component serialization for replication |
-| CoreRuntime.ReflectionSerialization | ContentPipeline.AssetDatabase | Asset metadata serialization |
-| CoreRuntime.ReflectionSerialization | GameFramework.SaveSystem | World state serialization |
-| CoreRuntime.EventsPlugins | *All domains* | Inter-system communication via typed events |
-| CoreRuntime.MemoryAsyncIO | ContentPipeline.Streaming | File I/O for asset loading |
-| CoreRuntime.SceneTransforms | Rendering.CoreRendering | World-space transforms for draw calls |
-| CoreRuntime.SceneTransforms | Physics.RigidBody | Transform sync between physics and scene |
-| CoreRuntime.SceneTransforms | Animation.Skeletal | Bone hierarchy as scene entities |
+| From                                | To                               |
+|-------------------------------------|----------------------------------|
+| CoreRuntime.ECS                     | *All simulation domains*         |
+| CoreRuntime.SpatialIndex            | Physics.RigidBody                |
+| CoreRuntime.SpatialIndex            | Rendering.CoreRendering          |
+| CoreRuntime.SpatialIndex            | Networking.Replication           |
+| CoreRuntime.SpatialIndex            | AI.Navigation                    |
+| CoreRuntime.SpatialIndex            | Audio.Spatial                    |
+| CoreRuntime.SpatialIndex            | GameFramework.GameplayPrimitives |
+| CoreRuntime.ReflectionSerialization | Networking.Replication           |
+| CoreRuntime.ReflectionSerialization | ContentPipeline.AssetDatabase    |
+| CoreRuntime.ReflectionSerialization | GameFramework.SaveSystem         |
+| CoreRuntime.EventsPlugins           | *All domains*                    |
+| CoreRuntime.MemoryAsyncIO           | ContentPipeline.Streaming        |
+| CoreRuntime.SceneTransforms         | Rendering.CoreRendering          |
+| CoreRuntime.SceneTransforms         | Physics.RigidBody                |
+| CoreRuntime.SceneTransforms         | Animation.Skeletal               |
+
+1. **CoreRuntime.ECS** — Every domain stores data as components and runs logic as systems
+2. **CoreRuntime.SpatialIndex** — Broadphase collision detection
+3. **CoreRuntime.SpatialIndex** — Frustum/occlusion culling
+4. **CoreRuntime.SpatialIndex** — Area-of-interest filtering
+5. **CoreRuntime.SpatialIndex** — Perception queries, crowd spatial queries
+6. **CoreRuntime.SpatialIndex** — Occlusion ray-casts for spatial audio
+7. **CoreRuntime.SpatialIndex** — Spatial queries for selection, AOE
+8. **CoreRuntime.ReflectionSerialization** — Component serialization for replication
+9. **CoreRuntime.ReflectionSerialization** — Asset metadata serialization
+10. **CoreRuntime.ReflectionSerialization** — World state serialization
+11. **CoreRuntime.EventsPlugins** — Inter-system communication via typed events
+12. **CoreRuntime.MemoryAsyncIO** — File I/O for asset loading
+13. **CoreRuntime.SceneTransforms** — World-space transforms for draw calls
+14. **CoreRuntime.SceneTransforms** — Transform sync between physics and scene
+15. **CoreRuntime.SceneTransforms** — Bone hierarchy as scene entities
 
 **Inbound edges:**
 
@@ -90,29 +121,50 @@ domain or complexity level.
 
 ### 3. Rendering (Domain 2)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **Rendering.GPUAbstraction** | F-2.1.1–F-2.1.12 | Backend trait, device, command buffers, memory, pipelines (Metal first, then Vulkan) |
-| **Rendering.RenderGraph** | F-2.2.1–F-2.2.5 | Pass declaration, resource management, barrier insertion |
-| **Rendering.CoreRendering** | F-2.3.x, F-2.10.x | Culling, instancing, draw submission, ECS extraction, scene rendering pipeline |
-| **Rendering.Lighting** | F-2.4.x | Forward+, PBR, shadows, global illumination |
-| **Rendering.AdvancedRendering** | F-2.5.x–F-2.9.x | Ray tracing, advanced materials, character rendering, environment, post-processing, AA/upscaling |
+| Group                           | Features          |
+|---------------------------------|-------------------|
+| **Rendering.GPUAbstraction**    | F-2.1.1–F-2.1.12  |
+| **Rendering.RenderGraph**       | F-2.2.1–F-2.2.5   |
+| **Rendering.CoreRendering**     | F-2.3.x, F-2.10.x |
+| **Rendering.Lighting**          | F-2.4.x           |
+| **Rendering.AdvancedRendering** | F-2.5.x–F-2.9.x   |
+
+1. ****Rendering.GPUAbstraction**** — Backend trait, device, command buffers, memory, pipelines
+   (Metal first, then Vulkan)
+2. ****Rendering.RenderGraph**** — Pass declaration, resource management, barrier insertion
+3. ****Rendering.CoreRendering**** — Culling, instancing, draw submission, ECS extraction, scene
+   rendering pipeline
+4. ****Rendering.Lighting**** — Forward+, PBR, shadows, global illumination
+5. ****Rendering.AdvancedRendering**** — Ray tracing, advanced materials, character rendering,
+   environment, post-processing, AA/upscaling
 
 **Outbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| Rendering.GPUAbstraction | Rendering.RenderGraph | Render graph submits GPU commands via the abstraction |
-| Rendering.GPUAbstraction | ContentPipeline.AssetProcessing | Shader compilation needs GPU pipeline layout |
-| Rendering.RenderGraph | Rendering.CoreRendering | Core rendering inserts passes into the render graph |
-| Rendering.RenderGraph | VFX.Particles | Particle rendering inserts passes into the render graph |
-| Rendering.RenderGraph | UI2D.UIRendering | UI rendering inserts a pass into the render graph |
-| Rendering.CoreRendering | Rendering.Lighting | Lighting is a pass within the core rendering pipeline |
-| Rendering.CoreRendering | GeometryWorld.Terrain | Terrain renders through the core pipeline |
-| Rendering.CoreRendering | GeometryWorld.Water | Water renders through the core pipeline |
-| Rendering.Lighting | Rendering.AdvancedRendering | Advanced rendering builds on the lighting pipeline |
-| Rendering.AdvancedRendering | GeometryWorld.ProceduralGeneration | Planet-scale rendering needs advanced LOD and streaming |
-| Rendering.AdvancedRendering | Animation.ClothHair | Hair/cloth rendering (strand rendering, translucency) |
+| From                        | To                                 |
+|-----------------------------|------------------------------------|
+| Rendering.GPUAbstraction    | Rendering.RenderGraph              |
+| Rendering.GPUAbstraction    | ContentPipeline.AssetProcessing    |
+| Rendering.RenderGraph       | Rendering.CoreRendering            |
+| Rendering.RenderGraph       | VFX.Particles                      |
+| Rendering.RenderGraph       | UI2D.UIRendering                   |
+| Rendering.CoreRendering     | Rendering.Lighting                 |
+| Rendering.CoreRendering     | GeometryWorld.Terrain              |
+| Rendering.CoreRendering     | GeometryWorld.Water                |
+| Rendering.Lighting          | Rendering.AdvancedRendering        |
+| Rendering.AdvancedRendering | GeometryWorld.ProceduralGeneration |
+| Rendering.AdvancedRendering | Animation.ClothHair                |
+
+1. **Rendering.GPUAbstraction** — Render graph submits GPU commands via the abstraction
+2. **Rendering.GPUAbstraction** — Shader compilation needs GPU pipeline layout
+3. **Rendering.RenderGraph** — Core rendering inserts passes into the render graph
+4. **Rendering.RenderGraph** — Particle rendering inserts passes into the render graph
+5. **Rendering.RenderGraph** — UI rendering inserts a pass into the render graph
+6. **Rendering.CoreRendering** — Lighting is a pass within the core rendering pipeline
+7. **Rendering.CoreRendering** — Terrain renders through the core pipeline
+8. **Rendering.CoreRendering** — Water renders through the core pipeline
+9. **Rendering.Lighting** — Advanced rendering builds on the lighting pipeline
+10. **Rendering.AdvancedRendering** — Planet-scale rendering needs advanced LOD and streaming
+11. **Rendering.AdvancedRendering** — Hair/cloth rendering (strand rendering, translucency)
 
 **Inbound edges:**
 
@@ -130,70 +182,120 @@ domain or complexity level.
 
 ### 4. Content Pipeline (Domain 12)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **ContentPipeline.AssetImport** | F-12.1.x | Native format ingestion, texture/mesh/audio import, validation |
-| **ContentPipeline.AssetProcessing** | F-12.2.x | Shader compilation (DXC + Metal Shader Converter), texture compression, mesh optimization |
-| **ContentPipeline.AssetDatabase** | F-12.3.x | Content-addressable storage, metadata, dependency graph, incremental builds |
-| **ContentPipeline.HotReload** | F-12.4.x | File watcher, asset/shader/logic graph hot reload |
-| **ContentPipeline.Streaming** | F-12.5.x | Platform-native async I/O streaming, GPU direct storage, memory pressure |
-| **ContentPipeline.DCCPlugins** | F-12.6.x | Native Blender, Maya, Houdini plugins for direct export |
+| Group                               | Features |
+|-------------------------------------|----------|
+| **ContentPipeline.AssetImport**     | F-12.1.x |
+| **ContentPipeline.AssetProcessing** | F-12.2.x |
+| **ContentPipeline.AssetDatabase**   | F-12.3.x |
+| **ContentPipeline.HotReload**       | F-12.4.x |
+| **ContentPipeline.Streaming**       | F-12.5.x |
+| **ContentPipeline.DCCPlugins**      | F-12.6.x |
+
+1. ****ContentPipeline.AssetImport**** — Native format ingestion, texture/mesh/audio import,
+   validation
+2. ****ContentPipeline.AssetProcessing**** — Shader compilation (DXC + Metal Shader Converter),
+   texture compression, mesh optimization
+3. ****ContentPipeline.AssetDatabase**** — Content-addressable storage, metadata, dependency graph,
+   incremental builds
+4. ****ContentPipeline.HotReload**** — File watcher, asset/shader/logic graph hot reload
+5. ****ContentPipeline.Streaming**** — Platform-native async I/O streaming, GPU direct storage,
+   memory pressure
+6. ****ContentPipeline.DCCPlugins**** — Native Blender, Maya, Houdini plugins for direct export
 
 **Outbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| ContentPipeline.AssetImport | ContentPipeline.AssetProcessing | Imported assets need processing |
-| ContentPipeline.AssetProcessing | Rendering.GPUAbstraction | Compiled shaders for pipeline creation |
-| ContentPipeline.AssetProcessing | ContentPipeline.AssetDatabase | Processed assets stored in CAS |
-| ContentPipeline.AssetDatabase | ContentPipeline.HotReload | Hot reload queries the asset database |
-| ContentPipeline.AssetDatabase | ContentPipeline.Streaming | Streaming loads from the asset database |
-| ContentPipeline.HotReload | ToolsEditor.EditorFramework | Editor needs hot reload for live iteration |
-| ContentPipeline.HotReload | ToolsEditor.LogicGraph | Logic graph hot reload |
-| ContentPipeline.Streaming | GeometryWorld.Terrain | Terrain LOD streaming |
-| ContentPipeline.Streaming | GeometryWorld.Foliage | Foliage instance streaming |
-| ContentPipeline.Streaming | Audio.Engine | Audio streaming playback |
+| From                            | To                              |
+|---------------------------------|---------------------------------|
+| ContentPipeline.AssetImport     | ContentPipeline.AssetProcessing |
+| ContentPipeline.AssetProcessing | Rendering.GPUAbstraction        |
+| ContentPipeline.AssetProcessing | ContentPipeline.AssetDatabase   |
+| ContentPipeline.AssetDatabase   | ContentPipeline.HotReload       |
+| ContentPipeline.AssetDatabase   | ContentPipeline.Streaming       |
+| ContentPipeline.HotReload       | ToolsEditor.EditorFramework     |
+| ContentPipeline.HotReload       | ToolsEditor.LogicGraph          |
+| ContentPipeline.Streaming       | GeometryWorld.Terrain           |
+| ContentPipeline.Streaming       | GeometryWorld.Foliage           |
+| ContentPipeline.Streaming       | Audio.Engine                    |
+
+1. **ContentPipeline.AssetImport** — Imported assets need processing
+2. **ContentPipeline.AssetProcessing** — Compiled shaders for pipeline creation
+3. **ContentPipeline.AssetProcessing** — Processed assets stored in CAS
+4. **ContentPipeline.AssetDatabase** — Hot reload queries the asset database
+5. **ContentPipeline.AssetDatabase** — Streaming loads from the asset database
+6. **ContentPipeline.HotReload** — Editor needs hot reload for live iteration
+7. **ContentPipeline.HotReload** — Logic graph hot reload
+8. **ContentPipeline.Streaming** — Terrain LOD streaming
+9. **ContentPipeline.Streaming** — Foliage instance streaming
+10. **ContentPipeline.Streaming** — Audio streaming playback
 
 **Inbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| Platform.Threading | ContentPipeline.AssetImport | Import jobs on thread pool |
-| Platform.OS | ContentPipeline.Streaming | Filesystem abstraction |
-| CoreRuntime.ReflectionSerialization | ContentPipeline.AssetDatabase | Asset metadata serialization |
-| CoreRuntime.MemoryAsyncIO | ContentPipeline.Streaming | Async file I/O |
-| Rendering.GPUAbstraction | ContentPipeline.AssetProcessing | GPU pipeline layout for shader compilation |
+| From                                | To                              |
+|-------------------------------------|---------------------------------|
+| Platform.Threading                  | ContentPipeline.AssetImport     |
+| Platform.OS                         | ContentPipeline.Streaming       |
+| CoreRuntime.ReflectionSerialization | ContentPipeline.AssetDatabase   |
+| CoreRuntime.MemoryAsyncIO           | ContentPipeline.Streaming       |
+| Rendering.GPUAbstraction            | ContentPipeline.AssetProcessing |
+
+1. **Platform.Threading** — Import jobs on thread pool
+2. **Platform.OS** — Filesystem abstraction
+3. **CoreRuntime.ReflectionSerialization** — Asset metadata serialization
+4. **CoreRuntime.MemoryAsyncIO** — Async file I/O
+5. **Rendering.GPUAbstraction** — GPU pipeline layout for shader compilation
 
 ---
 
 ### 5. Physics (Domain 4)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **Physics.RigidBody** | F-4.1.x, F-4.2.x | Rigid body dynamics, collision detection, character controller, ECS-based |
-| **Physics.Constraints** | F-4.3.x | Joints, ragdoll, motor constraints |
-| **Physics.SpatialQueries** | F-4.4.x | Ray-cast, shape-cast, overlap queries via shared BVH |
-| **Physics.SoftBodyCloth** | F-4.7.x | XPBD cloth simulation, soft body deformation |
-| **Physics.Destruction** | F-4.5.x | Fracture, destruction, debris |
-| **Physics.Fluid** | F-4.6.x | Fluid simulation, buoyancy |
+| Group                      | Features         |
+|----------------------------|------------------|
+| **Physics.RigidBody**      | F-4.1.x, F-4.2.x |
+| **Physics.Constraints**    | F-4.3.x          |
+| **Physics.SpatialQueries** | F-4.4.x          |
+| **Physics.SoftBodyCloth**  | F-4.7.x          |
+| **Physics.Destruction**    | F-4.5.x          |
+| **Physics.Fluid**          | F-4.6.x          |
+
+1. ****Physics.RigidBody**** — Rigid body dynamics, collision detection, character controller,
+   ECS-based
+2. ****Physics.Constraints**** — Joints, ragdoll, motor constraints
+3. ****Physics.SpatialQueries**** — Ray-cast, shape-cast, overlap queries via shared BVH
+4. ****Physics.SoftBodyCloth**** — XPBD cloth simulation, soft body deformation
+5. ****Physics.Destruction**** — Fracture, destruction, debris
+6. ****Physics.Fluid**** — Fluid simulation, buoyancy
 
 **Outbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| Physics.RigidBody | GameFramework.GameplayPrimitives | Character controller, movement, collision response |
-| Physics.RigidBody | Animation.Procedural | Root motion integration with physics |
-| Physics.RigidBody | Networking.PredictionRollback | Deterministic physics for client prediction |
-| Physics.Constraints | Animation.Skeletal | Ragdoll constraints on bone chains |
-| Physics.Constraints | Physics.Destruction | Destruction uses breakable constraints |
-| Physics.SpatialQueries | AI.Navigation | Obstacle detection for steering |
-| Physics.SpatialQueries | GameFramework.GameplayPrimitives | Ability targeting, line-of-sight |
-| Physics.SoftBodyCloth | Animation.ClothHair | Cloth simulation drives cloth/hair vertex output |
-| Physics.SoftBodyCloth | Rendering.AdvancedRendering | Cloth/hair rendering data |
-| Physics.Destruction | VFX.Destruction | Fracture events trigger destruction VFX |
-| Physics.Destruction | GeometryWorld.TerrainVoxel | Terrain voxel destruction |
-| Physics.Destruction | AI.Navigation | NavMesh regeneration on destruction |
-| Physics.Fluid | GeometryWorld.Water | Buoyancy, fluid surface interaction |
+| From                   | To                               |
+|------------------------|----------------------------------|
+| Physics.RigidBody      | GameFramework.GameplayPrimitives |
+| Physics.RigidBody      | Animation.Procedural             |
+| Physics.RigidBody      | Networking.PredictionRollback    |
+| Physics.Constraints    | Animation.Skeletal               |
+| Physics.Constraints    | Physics.Destruction              |
+| Physics.SpatialQueries | AI.Navigation                    |
+| Physics.SpatialQueries | GameFramework.GameplayPrimitives |
+| Physics.SoftBodyCloth  | Animation.ClothHair              |
+| Physics.SoftBodyCloth  | Rendering.AdvancedRendering      |
+| Physics.Destruction    | VFX.Destruction                  |
+| Physics.Destruction    | GeometryWorld.TerrainVoxel       |
+| Physics.Destruction    | AI.Navigation                    |
+| Physics.Fluid          | GeometryWorld.Water              |
+
+1. **Physics.RigidBody** — Character controller, movement, collision response
+2. **Physics.RigidBody** — Root motion integration with physics
+3. **Physics.RigidBody** — Deterministic physics for client prediction
+4. **Physics.Constraints** — Ragdoll constraints on bone chains
+5. **Physics.Constraints** — Destruction uses breakable constraints
+6. **Physics.SpatialQueries** — Obstacle detection for steering
+7. **Physics.SpatialQueries** — Ability targeting, line-of-sight
+8. **Physics.SoftBodyCloth** — Cloth simulation drives cloth/hair vertex output
+9. **Physics.SoftBodyCloth** — Cloth/hair rendering data
+10. **Physics.Destruction** — Fracture events trigger destruction VFX
+11. **Physics.Destruction** — Terrain voxel destruction
+12. **Physics.Destruction** — NavMesh regeneration on destruction
+13. **Physics.Fluid** — Buoyancy, fluid surface interaction
 
 **Inbound edges:**
 
@@ -219,15 +321,23 @@ domain or complexity level.
 
 **Outbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| Input.DeviceAbstraction | Input.ActionsMapping | Actions map physical inputs to logical actions |
-| Input.ActionsMapping | GameFramework.GameplayPrimitives | Ability activation, movement, interaction |
-| Input.ActionsMapping | UI2D.WidgetFramework | UI navigation and interaction |
-| Input.ActionsMapping | ToolsEditor.EditorFramework | Editor input handling |
-| Input.Gestures | UI2D.WidgetFramework | Touch-based UI interaction |
-| Input.VRInput | Rendering.AdvancedRendering | Stereo rendering, tracked controller visualization |
-| Input.VRInput | GameFramework.GameplayPrimitives | VR-specific gameplay interactions |
+| From                    | To                               |
+|-------------------------|----------------------------------|
+| Input.DeviceAbstraction | Input.ActionsMapping             |
+| Input.ActionsMapping    | GameFramework.GameplayPrimitives |
+| Input.ActionsMapping    | UI2D.WidgetFramework             |
+| Input.ActionsMapping    | ToolsEditor.EditorFramework      |
+| Input.Gestures          | UI2D.WidgetFramework             |
+| Input.VRInput           | Rendering.AdvancedRendering      |
+| Input.VRInput           | GameFramework.GameplayPrimitives |
+
+1. **Input.DeviceAbstraction** — Actions map physical inputs to logical actions
+2. **Input.ActionsMapping** — Ability activation, movement, interaction
+3. **Input.ActionsMapping** — UI navigation and interaction
+4. **Input.ActionsMapping** — Editor input handling
+5. **Input.Gestures** — Touch-based UI interaction
+6. **Input.VRInput** — Stereo rendering, tracked controller visualization
+7. **Input.VRInput** — VR-specific gameplay interactions
 
 **Inbound edges:**
 
@@ -272,25 +382,39 @@ domain or complexity level.
 
 ### 8. Animation (Domain 9)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **Animation.Skeletal** | F-9.1.x | Skeletal evaluation, blending, GPU skinning, LOD |
-| **Animation.StateMachine** | F-9.4.x | Blend trees, state transitions, animation events |
-| **Animation.Procedural** | F-9.3.x | IK, ragdoll blend, locomotion matching, root motion |
-| **Animation.ClothHair** | F-9.5.x | Cloth skinning integration, strand-based hair, LOD for cloth/hair |
-| **Animation.FirstPerson** | F-9.6.x | First-person arm animation, weapon sway, ADS transitions |
+| Group                      | Features |
+|----------------------------|----------|
+| **Animation.Skeletal**     | F-9.1.x  |
+| **Animation.StateMachine** | F-9.4.x  |
+| **Animation.Procedural**   | F-9.3.x  |
+| **Animation.ClothHair**    | F-9.5.x  |
+| **Animation.FirstPerson**  | F-9.6.x  |
+
+1. ****Animation.Skeletal**** — Skeletal evaluation, blending, GPU skinning, LOD
+2. ****Animation.StateMachine**** — Blend trees, state transitions, animation events
+3. ****Animation.Procedural**** — IK, ragdoll blend, locomotion matching, root motion
+4. ****Animation.ClothHair**** — Cloth skinning integration, strand-based hair, LOD for cloth/hair
+5. ****Animation.FirstPerson**** — First-person arm animation, weapon sway, ADS transitions
 
 **Outbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| Animation.Skeletal | Rendering.CoreRendering | GPU skinning matrices for character rendering |
-| Animation.Skeletal | Physics.Constraints | Bone chains for ragdoll setup |
-| Animation.StateMachine | GameFramework.GameplayPrimitives | Animation events trigger gameplay logic |
-| Animation.StateMachine | AI.BehaviorDecision | AI selects animation states |
-| Animation.Procedural | Physics.RigidBody | Root motion integration, IK foot placement on physics surfaces |
-| Animation.ClothHair | Rendering.AdvancedRendering | Strand rendering, cloth vertex data |
-| Animation.FirstPerson | GameFramework.WeaponSystem | First-person weapon animations |
+| From                   | To                               |
+|------------------------|----------------------------------|
+| Animation.Skeletal     | Rendering.CoreRendering          |
+| Animation.Skeletal     | Physics.Constraints              |
+| Animation.StateMachine | GameFramework.GameplayPrimitives |
+| Animation.StateMachine | AI.BehaviorDecision              |
+| Animation.Procedural   | Physics.RigidBody                |
+| Animation.ClothHair    | Rendering.AdvancedRendering      |
+| Animation.FirstPerson  | GameFramework.WeaponSystem       |
+
+1. **Animation.Skeletal** — GPU skinning matrices for character rendering
+2. **Animation.Skeletal** — Bone chains for ragdoll setup
+3. **Animation.StateMachine** — Animation events trigger gameplay logic
+4. **Animation.StateMachine** — AI selects animation states
+5. **Animation.Procedural** — Root motion integration, IK foot placement on physics surfaces
+6. **Animation.ClothHair** — Strand rendering, cloth vertex data
+7. **Animation.FirstPerson** — First-person weapon animations
 
 **Inbound edges:**
 
@@ -308,13 +432,19 @@ domain or complexity level.
 
 ### 9. AI (Domain 7)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **AI.Navigation** | F-7.1.x | NavMesh generation, pathfinding, dynamic obstacles, streaming tiles |
-| **AI.Steering** | F-7.2.x | Steering behaviors, local avoidance, formation movement |
-| **AI.BehaviorDecision** | F-7.3.x, F-7.4.x, F-7.5.x | Behavior trees, utility AI, GOAP planning |
-| **AI.Perception** | F-7.6.x | Sight, hearing, smell senses, perception queries via shared BVH |
-| **AI.CrowdTactical** | F-7.7.x, F-7.8.x | Crowd simulation, tactical combat, LOD for AI |
+| Group                   | Features                  |
+|-------------------------|---------------------------|
+| **AI.Navigation**       | F-7.1.x                   |
+| **AI.Steering**         | F-7.2.x                   |
+| **AI.BehaviorDecision** | F-7.3.x, F-7.4.x, F-7.5.x |
+| **AI.Perception**       | F-7.6.x                   |
+| **AI.CrowdTactical**    | F-7.7.x, F-7.8.x          |
+
+1. ****AI.Navigation**** — NavMesh generation, pathfinding, dynamic obstacles, streaming tiles
+2. ****AI.Steering**** — Steering behaviors, local avoidance, formation movement
+3. ****AI.BehaviorDecision**** — Behavior trees, utility AI, GOAP planning
+4. ****AI.Perception**** — Sight, hearing, smell senses, perception queries via shared BVH
+5. ****AI.CrowdTactical**** — Crowd simulation, tactical combat, LOD for AI
 
 **Outbound edges:**
 
@@ -343,14 +473,23 @@ domain or complexity level.
 
 ### 10. Networking (Domain 8)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **Networking.Transport** | F-8.1.x | Connection management, reliable/unreliable channels, encryption |
-| **Networking.Replication** | F-8.2.x | Component replication, authority, interest management via shared BVH |
-| **Networking.PredictionRollback** | F-8.4.x | Client-side prediction, server reconciliation, rollback, jitter buffer |
-| **Networking.Session** | F-8.5.x | Lobby, matchmaking, host migration |
-| **Networking.MMO** | F-8.7.x | World sharding, dynamic server mesh, persistent world state |
-| **Networking.AntiCheat** | F-8.8.x | Server authority validation, anomaly detection |
+| Group                             | Features |
+|-----------------------------------|----------|
+| **Networking.Transport**          | F-8.1.x  |
+| **Networking.Replication**        | F-8.2.x  |
+| **Networking.PredictionRollback** | F-8.4.x  |
+| **Networking.Session**            | F-8.5.x  |
+| **Networking.MMO**                | F-8.7.x  |
+| **Networking.AntiCheat**          | F-8.8.x  |
+
+1. ****Networking.Transport**** — Connection management, reliable/unreliable channels, encryption
+2. ****Networking.Replication**** — Component replication, authority, interest management via shared
+   BVH
+3. ****Networking.PredictionRollback**** — Client-side prediction, server reconciliation, rollback,
+   jitter buffer
+4. ****Networking.Session**** — Lobby, matchmaking, host migration
+5. ****Networking.MMO**** — World sharding, dynamic server mesh, persistent world state
+6. ****Networking.AntiCheat**** — Server authority validation, anomaly detection
 
 **Outbound edges:**
 
@@ -379,13 +518,19 @@ domain or complexity level.
 
 ### 11. UI & 2D (Domain 10)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **UI2D.WidgetFramework** | F-10.1.x, F-10.2.x | Widget tree, layout, text rendering, common widgets |
-| **UI2D.UIRendering** | F-10.4.x | Batched quad rendering, SDF text, atlas management |
-| **UI2D.GameUI** | F-10.3.x | Health bars, nameplates, minimap, HUD elements |
-| **UI2D.2DGames** | F-10.5.x | Sprite rendering, 2D physics, tilemaps, 2D camera, rollback netcode |
-| **UI2D.Accessibility** | F-10.6.x | Screen reader, colorblind modes, input remapping |
+| Group                    | Features           |
+|--------------------------|--------------------|
+| **UI2D.WidgetFramework** | F-10.1.x, F-10.2.x |
+| **UI2D.UIRendering**     | F-10.4.x           |
+| **UI2D.GameUI**          | F-10.3.x           |
+| **UI2D.2DGames**         | F-10.5.x           |
+| **UI2D.Accessibility**   | F-10.6.x           |
+
+1. ****UI2D.WidgetFramework**** — Widget tree, layout, text rendering, common widgets
+2. ****UI2D.UIRendering**** — Batched quad rendering, SDF text, atlas management
+3. ****UI2D.GameUI**** — Health bars, nameplates, minimap, HUD elements
+4. ****UI2D.2DGames**** — Sprite rendering, 2D physics, tilemaps, 2D camera, rollback netcode
+5. ****UI2D.Accessibility**** — Screen reader, colorblind modes, input remapping
 
 **Outbound edges:**
 
@@ -398,44 +543,82 @@ domain or complexity level.
 
 **Inbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| CoreRuntime.ECS | UI2D.WidgetFramework | Widget tree as ECS entities |
-| Rendering.RenderGraph | UI2D.UIRendering | UI render pass in the render graph |
-| Rendering.GPUAbstraction | UI2D.UIRendering | GPU draw calls for UI |
-| Input.ActionsMapping | UI2D.WidgetFramework | UI input handling |
-| Input.Gestures | UI2D.WidgetFramework | Touch gestures for UI |
-| ContentPipeline.HotReload | UI2D.WidgetFramework | UI asset hot reload |
-| Physics.RigidBody | UI2D.2DGames | 2D physics uses the physics system |
-| Networking.PredictionRollback | UI2D.2DGames | Rollback requires deterministic physics (R-X.12.2) |
+| From                          | To                   |
+|-------------------------------|----------------------|
+| CoreRuntime.ECS               | UI2D.WidgetFramework |
+| Rendering.RenderGraph         | UI2D.UIRendering     |
+| Rendering.GPUAbstraction      | UI2D.UIRendering     |
+| Input.ActionsMapping          | UI2D.WidgetFramework |
+| Input.Gestures                | UI2D.WidgetFramework |
+| ContentPipeline.HotReload     | UI2D.WidgetFramework |
+| Physics.RigidBody             | UI2D.2DGames         |
+| Networking.PredictionRollback | UI2D.2DGames         |
+
+1. **CoreRuntime.ECS** — Widget tree as ECS entities
+2. **Rendering.RenderGraph** — UI render pass in the render graph
+3. **Rendering.GPUAbstraction** — GPU draw calls for UI
+4. **Input.ActionsMapping** — UI input handling
+5. **Input.Gestures** — Touch gestures for UI
+6. **ContentPipeline.HotReload** — UI asset hot reload
+7. **Physics.RigidBody** — 2D physics uses the physics system
+8. **Networking.PredictionRollback** — Rollback requires deterministic physics (R-X.12.2)
 
 ---
 
 ### 12. Geometry & World (Domain 3)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **GeometryWorld.MeshletPipeline** | F-3.1.x | Meshlet generation, GPU-driven rendering, cluster culling |
-| **GeometryWorld.Terrain** | F-3.2.1–F-3.2.8 | Heightmap terrain, LOD, streaming, collision |
-| **GeometryWorld.TerrainVoxel** | F-3.2.9–F-3.2.14 | Voxel terrain, real-time destruction, caves |
-| **GeometryWorld.Foliage** | F-3.3.x | Foliage instancing, LOD, wind, density painting |
-| **GeometryWorld.Water** | F-3.4.x | Ocean simulation, rivers, buoyancy interaction |
-| **GeometryWorld.ProceduralGeneration** | F-3.6.x | Planet-scale generation, universe pipeline, biome blending |
+| Group                                  | Features         |
+|----------------------------------------|------------------|
+| **GeometryWorld.MeshletPipeline**      | F-3.1.x          |
+| **GeometryWorld.Terrain**              | F-3.2.1–F-3.2.8  |
+| **GeometryWorld.TerrainVoxel**         | F-3.2.9–F-3.2.14 |
+| **GeometryWorld.Foliage**              | F-3.3.x          |
+| **GeometryWorld.Water**                | F-3.4.x          |
+| **GeometryWorld.ProceduralGeneration** | F-3.6.x          |
+
+1. ****GeometryWorld.MeshletPipeline**** — Meshlet generation, GPU-driven rendering, cluster culling
+2. ****GeometryWorld.Terrain**** — Heightmap terrain, LOD, streaming, collision
+3. ****GeometryWorld.TerrainVoxel**** — Voxel terrain, real-time destruction, caves
+4. ****GeometryWorld.Foliage**** — Foliage instancing, LOD, wind, density painting
+5. ****GeometryWorld.Water**** — Ocean simulation, rivers, buoyancy interaction
+6. ****GeometryWorld.ProceduralGeneration**** — Planet-scale generation, universe pipeline, biome
+   blending
 
 **Outbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| GeometryWorld.MeshletPipeline | Rendering.CoreRendering | Meshlet GPU-driven rendering pipeline |
-| GeometryWorld.Terrain | Physics.RigidBody | Terrain collision geometry |
-| GeometryWorld.Terrain | AI.Navigation | NavMesh generation on terrain |
-| GeometryWorld.Terrain | Animation.Procedural | Surface data for foot IK |
-| GeometryWorld.TerrainVoxel | Physics.Destruction | Voxel destruction integration |
-| GeometryWorld.TerrainVoxel | AI.Navigation | NavMesh regen on voxel changes |
-| GeometryWorld.Water | Physics.Fluid | Buoyancy volume interaction |
-| GeometryWorld.Foliage | Rendering.CoreRendering | Foliage instanced rendering |
-| GeometryWorld.ProceduralGeneration | Networking.MMO | World streaming across server boundaries |
-| GeometryWorld.ProceduralGeneration | GameFramework.WorldManagement | Procedural world integration |
+| From                               |
+|------------------------------------|
+| GeometryWorld.MeshletPipeline      |
+| GeometryWorld.Terrain              |
+| GeometryWorld.Terrain              |
+| GeometryWorld.Terrain              |
+| GeometryWorld.TerrainVoxel         |
+| GeometryWorld.TerrainVoxel         |
+| GeometryWorld.Water                |
+| GeometryWorld.Foliage              |
+| GeometryWorld.ProceduralGeneration |
+| GeometryWorld.ProceduralGeneration |
+
+1. **GeometryWorld.MeshletPipeline** — Rendering.CoreRendering
+   - **Reason:** Meshlet GPU-driven rendering pipeline
+2. **GeometryWorld.Terrain** — Physics.RigidBody
+   - **Reason:** Terrain collision geometry
+3. **GeometryWorld.Terrain** — AI.Navigation
+   - **Reason:** NavMesh generation on terrain
+4. **GeometryWorld.Terrain** — Animation.Procedural
+   - **Reason:** Surface data for foot IK
+5. **GeometryWorld.TerrainVoxel** — Physics.Destruction
+   - **Reason:** Voxel destruction integration
+6. **GeometryWorld.TerrainVoxel** — AI.Navigation
+   - **Reason:** NavMesh regen on voxel changes
+7. **GeometryWorld.Water** — Physics.Fluid
+   - **Reason:** Buoyancy volume interaction
+8. **GeometryWorld.Foliage** — Rendering.CoreRendering
+   - **Reason:** Foliage instanced rendering
+9. **GeometryWorld.ProceduralGeneration** — Networking.MMO
+   - **Reason:** World streaming across server boundaries
+10. **GeometryWorld.ProceduralGeneration** — GameFramework.WorldManagement
+    - **Reason:** Procedural world integration
 
 **Inbound edges:**
 
@@ -488,20 +671,35 @@ domain or complexity level.
 
 ### 14. Game Framework (Domain 13)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **GameFramework.GameplayPrimitives** | F-13.1.x | Gameplay entity types, modular system registration, data-driven configuration |
-| **GameFramework.Camera** | F-13.25.x | Third-person, first-person, RTS camera, collision avoidance |
-| **GameFramework.SaveSystem** | F-13.3.x | Save/load serialization, checkpoints, migration |
-| **GameFramework.Abilities** | F-13.10.x | Data-driven ability composition, cooldowns, targeting |
-| **GameFramework.WeaponSystem** | F-13.23.x | Melee, ranged, projectile, hit detection |
-| **GameFramework.Progression** | F-13.7.x | XP, leveling, skill trees, loot tables |
-| **GameFramework.NPCSimulation** | F-13.16.x | NPC schedules, relationships, factions |
-| **GameFramework.WorldManagement** | F-13.2.x | Multi-world, level streaming, instancing |
-| **GameFramework.Social** | F-13.19.x | Guilds, chat, friends, trading |
-| **GameFramework.GameModes** | F-13.22.x | Game mode lifecycle, scoring, match flow |
-| **GameFramework.StealthCover** | F-13.20.x | Stealth detection, cover system, noise propagation |
-| **GameFramework.GenreSpecific** | F-13.11–F-13.21 (misc) | Building, racing, stealth, turn-based, survival, fog of war, minigames, pets/mounts |
+| Group                                | Features               |
+|--------------------------------------|------------------------|
+| **GameFramework.GameplayPrimitives** | F-13.1.x               |
+| **GameFramework.Camera**             | F-13.25.x              |
+| **GameFramework.SaveSystem**         | F-13.3.x               |
+| **GameFramework.Abilities**          | F-13.10.x              |
+| **GameFramework.WeaponSystem**       | F-13.23.x              |
+| **GameFramework.Progression**        | F-13.7.x               |
+| **GameFramework.NPCSimulation**      | F-13.16.x              |
+| **GameFramework.WorldManagement**    | F-13.2.x               |
+| **GameFramework.Social**             | F-13.19.x              |
+| **GameFramework.GameModes**          | F-13.22.x              |
+| **GameFramework.StealthCover**       | F-13.20.x              |
+| **GameFramework.GenreSpecific**      | F-13.11–F-13.21 (misc) |
+
+1. ****GameFramework.GameplayPrimitives**** — Gameplay entity types, modular system registration,
+   data-driven configuration
+2. ****GameFramework.Camera**** — Third-person, first-person, RTS camera, collision avoidance
+3. ****GameFramework.SaveSystem**** — Save/load serialization, checkpoints, migration
+4. ****GameFramework.Abilities**** — Data-driven ability composition, cooldowns, targeting
+5. ****GameFramework.WeaponSystem**** — Melee, ranged, projectile, hit detection
+6. ****GameFramework.Progression**** — XP, leveling, skill trees, loot tables
+7. ****GameFramework.NPCSimulation**** — NPC schedules, relationships, factions
+8. ****GameFramework.WorldManagement**** — Multi-world, level streaming, instancing
+9. ****GameFramework.Social**** — Guilds, chat, friends, trading
+10. ****GameFramework.GameModes**** — Game mode lifecycle, scoring, match flow
+11. ****GameFramework.StealthCover**** — Stealth detection, cover system, noise propagation
+12. ****GameFramework.GenreSpecific**** — Building, racing, stealth, turn-based, survival, fog of
+    war, minigames, pets/mounts
 
 **Outbound edges:**
 
@@ -536,38 +734,76 @@ domain or complexity level.
 
 ### 15. Tools & Editor (Domain 15)
 
-| Group | Features | Description |
-|-------|----------|-------------|
-| **ToolsEditor.EditorFramework** | F-15.1.x | Editor shell, viewport, entity list, property inspector, play mode |
-| **ToolsEditor.LogicGraph** | F-15.8.x | No-code visual logic graph runtime and editor |
-| **ToolsEditor.MaterialEditor** | F-15.3.x | Visual material/shader graph editor |
-| **ToolsEditor.AnimationEditor** | F-15.2.x | Timeline, curve editor, state machine editor |
-| **ToolsEditor.WorldBuilding** | F-15.4.x | Terrain painting, foliage placement, level tools |
-| **ToolsEditor.Profiling** | F-15.5.x | CPU/GPU profiler, stat overlays, memory tracker |
-| **ToolsEditor.AdvancedTools** | F-15.6–F-15.16 | Version control, remote editing, AI assistant, deployment, launcher, mod support, localization, CRDT collaboration |
+| Group                           | Features       |
+|---------------------------------|----------------|
+| **ToolsEditor.EditorFramework** | F-15.1.x       |
+| **ToolsEditor.LogicGraph**      | F-15.8.x       |
+| **ToolsEditor.MaterialEditor**  | F-15.3.x       |
+| **ToolsEditor.AnimationEditor** | F-15.2.x       |
+| **ToolsEditor.WorldBuilding**   | F-15.4.x       |
+| **ToolsEditor.Profiling**       | F-15.5.x       |
+| **ToolsEditor.AdvancedTools**   | F-15.6–F-15.16 |
+
+1. ****ToolsEditor.EditorFramework**** — Editor shell, viewport, entity list, property inspector,
+   play mode
+2. ****ToolsEditor.LogicGraph**** — No-code visual logic graph runtime and editor
+3. ****ToolsEditor.MaterialEditor**** — Visual material/shader graph editor
+4. ****ToolsEditor.AnimationEditor**** — Timeline, curve editor, state machine editor
+5. ****ToolsEditor.WorldBuilding**** — Terrain painting, foliage placement, level tools
+6. ****ToolsEditor.Profiling**** — CPU/GPU profiler, stat overlays, memory tracker
+7. ****ToolsEditor.AdvancedTools**** — Version control, remote editing, AI assistant, deployment,
+   launcher, mod support, localization, CRDT collaboration
 
 **Outbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| ToolsEditor.LogicGraph | GameFramework.GameplayPrimitives | Logic graphs define gameplay behavior |
-| ToolsEditor.LogicGraph | VFX.EffectGraph | Shared visual graph runtime |
-| ToolsEditor.LogicGraph | AI.BehaviorDecision | Visual behavior tree editing |
-| ToolsEditor.MaterialEditor | Rendering.Lighting | Material editing affects shading |
-| ToolsEditor.WorldBuilding | GeometryWorld.Terrain | Terrain painting tools |
-| ToolsEditor.WorldBuilding | GeometryWorld.Foliage | Foliage placement tools |
+| From                       |
+|----------------------------|
+| ToolsEditor.LogicGraph     |
+| ToolsEditor.LogicGraph     |
+| ToolsEditor.LogicGraph     |
+| ToolsEditor.MaterialEditor |
+| ToolsEditor.WorldBuilding  |
+| ToolsEditor.WorldBuilding  |
+
+1. **ToolsEditor.LogicGraph** — GameFramework.GameplayPrimitives
+   - **Reason:** Logic graphs define gameplay behavior
+2. **ToolsEditor.LogicGraph** — VFX.EffectGraph
+   - **Reason:** Shared visual graph runtime
+3. **ToolsEditor.LogicGraph** — AI.BehaviorDecision
+   - **Reason:** Visual behavior tree editing
+4. **ToolsEditor.MaterialEditor** — Rendering.Lighting
+   - **Reason:** Material editing affects shading
+5. **ToolsEditor.WorldBuilding** — GeometryWorld.Terrain
+   - **Reason:** Terrain painting tools
+6. **ToolsEditor.WorldBuilding** — GeometryWorld.Foliage
+   - **Reason:** Foliage placement tools
 
 **Inbound edges:**
 
-| From | To | Reason |
-|------|-----|--------|
-| CoreRuntime.ECS | ToolsEditor.EditorFramework | World editing via ECS |
-| CoreRuntime.ReflectionSerialization | ToolsEditor.EditorFramework | Property inspector via reflection |
-| UI2D.WidgetFramework | ToolsEditor.EditorFramework | Editor UI built on widget framework |
-| ContentPipeline.HotReload | ToolsEditor.EditorFramework | Live asset reload in editor |
-| Input.ActionsMapping | ToolsEditor.EditorFramework | Editor input handling |
-| Rendering.CoreRendering | ToolsEditor.EditorFramework | Viewport rendering |
-| ContentPipeline.HotReload | ToolsEditor.LogicGraph | Logic graph hot reload |
+| From                                |
+|-------------------------------------|
+| CoreRuntime.ECS                     |
+| CoreRuntime.ReflectionSerialization |
+| UI2D.WidgetFramework                |
+| ContentPipeline.HotReload           |
+| Input.ActionsMapping                |
+| Rendering.CoreRendering             |
+| ContentPipeline.HotReload           |
+
+1. **CoreRuntime.ECS** — ToolsEditor.EditorFramework
+   - **Reason:** World editing via ECS
+2. **CoreRuntime.ReflectionSerialization** — ToolsEditor.EditorFramework
+   - **Reason:** Property inspector via reflection
+3. **UI2D.WidgetFramework** — ToolsEditor.EditorFramework
+   - **Reason:** Editor UI built on widget framework
+4. **ContentPipeline.HotReload** — ToolsEditor.EditorFramework
+   - **Reason:** Live asset reload in editor
+5. **Input.ActionsMapping** — ToolsEditor.EditorFramework
+   - **Reason:** Editor input handling
+6. **Rendering.CoreRendering** — ToolsEditor.EditorFramework
+   - **Reason:** Viewport rendering
+7. **ContentPipeline.HotReload** — ToolsEditor.LogicGraph
+   - **Reason:** Logic graph hot reload
 
 ---
 
@@ -628,20 +864,33 @@ ECS.
 
 ### Wave 3 — Intermediate Systems (requires specific Wave 2 nodes)
 
-| # | Feature-Group | ~Features | Key Prerequisite |
-|---|---------------|-----------|------------------|
-| 19 | Rendering.RenderGraph | 5 | Rendering.GPUAbstraction |
-| 20 | ContentPipeline.AssetProcessing | 12 | ContentPipeline.AssetImport, Rendering.GPUAbstraction |
-| 21 | ContentPipeline.Streaming | 8 | ContentPipeline.AssetDatabase, CoreRuntime.MemoryAsyncIO |
-| 22 | Input.ActionsMapping | 10 | Input.DeviceAbstraction |
-| 23 | Audio.Spatial | 8 | Audio.Engine, CoreRuntime.SpatialIndex |
-| 24 | Animation.StateMachine | 8 | Animation.Skeletal |
-| 25 | Physics.Constraints | 8 | Physics.RigidBody |
-| 26 | AI.Navigation | 10 | CoreRuntime.SpatialIndex, Physics.SpatialQueries |
-| 27 | Networking.Replication | 10 | Networking.Transport, CoreRuntime.ReflectionSerialization, CoreRuntime.SpatialIndex |
-| 28 | GeometryWorld.MeshletPipeline | 8 | Rendering.GPUAbstraction, CoreRuntime.ECS |
-| 29 | UI2D.WidgetFramework | 12 | CoreRuntime.ECS, Input.DeviceAbstraction |
-| 30 | VFX.Particles | 10 | Rendering.GPUAbstraction, CoreRuntime.ECS |
+| #  | Feature-Group                   | ~Features |
+|----|---------------------------------|-----------|
+| 19 | Rendering.RenderGraph           | 5         |
+| 20 | ContentPipeline.AssetProcessing | 12        |
+| 21 | ContentPipeline.Streaming       | 8         |
+| 22 | Input.ActionsMapping            | 10        |
+| 23 | Audio.Spatial                   | 8         |
+| 24 | Animation.StateMachine          | 8         |
+| 25 | Physics.Constraints             | 8         |
+| 26 | AI.Navigation                   | 10        |
+| 27 | Networking.Replication          | 10        |
+| 28 | GeometryWorld.MeshletPipeline   | 8         |
+| 29 | UI2D.WidgetFramework            | 12        |
+| 30 | VFX.Particles                   | 10        |
+
+1. **19** — Rendering.GPUAbstraction
+2. **20** — ContentPipeline.AssetImport, Rendering.GPUAbstraction
+3. **21** — ContentPipeline.AssetDatabase, CoreRuntime.MemoryAsyncIO
+4. **22** — Input.DeviceAbstraction
+5. **23** — Audio.Engine, CoreRuntime.SpatialIndex
+6. **24** — Animation.Skeletal
+7. **25** — Physics.RigidBody
+8. **26** — CoreRuntime.SpatialIndex, Physics.SpatialQueries
+9. **27** — Networking.Transport, CoreRuntime.ReflectionSerialization, CoreRuntime.SpatialIndex
+10. **28** — Rendering.GPUAbstraction, CoreRuntime.ECS
+11. **29** — CoreRuntime.ECS, Input.DeviceAbstraction
+12. **30** — Rendering.GPUAbstraction, CoreRuntime.ECS
 
 #### Max parallelism: 12 agents
 
@@ -649,27 +898,49 @@ ECS.
 
 ### Wave 4 — Integration Layer (requires specific Wave 3 nodes)
 
-| # | Feature-Group | ~Features | Key Prerequisite |
-|---|---------------|-----------|------------------|
-| 31 | Rendering.CoreRendering | 15 | Rendering.RenderGraph, CoreRuntime.SpatialIndex, CoreRuntime.SceneTransforms, Animation.Skeletal |
-| 32 | Rendering.Lighting | 12 | Rendering.CoreRendering |
-| 33 | ContentPipeline.HotReload | 8 | ContentPipeline.AssetDatabase, ContentPipeline.AssetProcessing |
-| 34 | AI.Steering | 8 | AI.Navigation |
-| 35 | AI.Perception | 8 | CoreRuntime.SpatialIndex, AI.Navigation |
-| 36 | AI.BehaviorDecision | 15 | AI.Perception |
-| 37 | Animation.Procedural | 10 | Animation.Skeletal, Physics.RigidBody, Physics.Constraints |
-| 38 | Audio.DSP | 8 | Audio.Engine |
-| 39 | Networking.PredictionRollback | 10 | Networking.Replication, Physics.RigidBody |
-| 40 | Networking.Session | 8 | Networking.Transport |
-| 41 | GameFramework.GameplayPrimitives | 15 | CoreRuntime.ECS, CoreRuntime.SpatialIndex, Physics.RigidBody, Physics.SpatialQueries, Input.ActionsMapping |
-| 42 | GameFramework.Camera | 8 | CoreRuntime.SceneTransforms, Physics.SpatialQueries |
-| 43 | UI2D.UIRendering | 8 | UI2D.WidgetFramework, Rendering.RenderGraph, Rendering.GPUAbstraction |
-| 44 | UI2D.GameUI | 8 | UI2D.WidgetFramework, UI2D.UIRendering |
-| 45 | VFX.Decals | 6 | Rendering.RenderGraph |
-| 46 | VFX.ScreenEffects | 6 | Rendering.CoreRendering |
-| 47 | GeometryWorld.Terrain | 12 | Rendering.CoreRendering, ContentPipeline.Streaming, Physics.RigidBody |
-| 48 | GeometryWorld.Foliage | 8 | Rendering.CoreRendering, CoreRuntime.SpatialIndex, ContentPipeline.Streaming |
-| 49 | Input.Gestures | 6 | Input.DeviceAbstraction |
+| #  | Feature-Group                    | ~Features |
+|----|----------------------------------|-----------|
+| 31 | Rendering.CoreRendering          | 15        |
+| 32 | Rendering.Lighting               | 12        |
+| 33 | ContentPipeline.HotReload        | 8         |
+| 34 | AI.Steering                      | 8         |
+| 35 | AI.Perception                    | 8         |
+| 36 | AI.BehaviorDecision              | 15        |
+| 37 | Animation.Procedural             | 10        |
+| 38 | Audio.DSP                        | 8         |
+| 39 | Networking.PredictionRollback    | 10        |
+| 40 | Networking.Session               | 8         |
+| 41 | GameFramework.GameplayPrimitives | 15        |
+| 42 | GameFramework.Camera             | 8         |
+| 43 | UI2D.UIRendering                 | 8         |
+| 44 | UI2D.GameUI                      | 8         |
+| 45 | VFX.Decals                       | 6         |
+| 46 | VFX.ScreenEffects                | 6         |
+| 47 | GeometryWorld.Terrain            | 12        |
+| 48 | GeometryWorld.Foliage            | 8         |
+| 49 | Input.Gestures                   | 6         |
+
+1. **31** — Rendering.RenderGraph, CoreRuntime.SpatialIndex, CoreRuntime.SceneTransforms,
+   Animation.Skeletal
+2. **32** — Rendering.CoreRendering
+3. **33** — ContentPipeline.AssetDatabase, ContentPipeline.AssetProcessing
+4. **34** — AI.Navigation
+5. **35** — CoreRuntime.SpatialIndex, AI.Navigation
+6. **36** — AI.Perception
+7. **37** — Animation.Skeletal, Physics.RigidBody, Physics.Constraints
+8. **38** — Audio.Engine
+9. **39** — Networking.Replication, Physics.RigidBody
+10. **40** — Networking.Transport
+11. **41** — CoreRuntime.ECS, CoreRuntime.SpatialIndex, Physics.RigidBody, Physics.SpatialQueries,
+    Input.ActionsMapping
+12. **42** — CoreRuntime.SceneTransforms, Physics.SpatialQueries
+13. **43** — UI2D.WidgetFramework, Rendering.RenderGraph, Rendering.GPUAbstraction
+14. **44** — UI2D.WidgetFramework, UI2D.UIRendering
+15. **45** — Rendering.RenderGraph
+16. **46** — Rendering.CoreRendering
+17. **47** — Rendering.CoreRendering, ContentPipeline.Streaming, Physics.RigidBody
+18. **48** — Rendering.CoreRendering, CoreRuntime.SpatialIndex, ContentPipeline.Streaming
+19. **49** — Input.DeviceAbstraction
 
 #### Max parallelism: 19 agents
 
@@ -677,28 +948,50 @@ ECS.
 
 ### Wave 5 — Advanced Systems (requires specific Wave 4 nodes)
 
-| # | Feature-Group | ~Features | Key Prerequisite |
-|---|---------------|-----------|------------------|
-| 50 | Rendering.AdvancedRendering | 40 | Rendering.Lighting, Rendering.CoreRendering |
-| 51 | ToolsEditor.EditorFramework | 15 | UI2D.WidgetFramework, CoreRuntime.ReflectionSerialization, ContentPipeline.HotReload, Rendering.CoreRendering, Input.ActionsMapping |
-| 52 | ToolsEditor.LogicGraph | 14 | CoreRuntime.ECS, CoreRuntime.EventsPlugins, ContentPipeline.HotReload |
-| 53 | ToolsEditor.MaterialEditor | 8 | Rendering.Lighting, ContentPipeline.HotReload |
-| 54 | ToolsEditor.Profiling | 8 | CoreRuntime.ECS, Platform.Threading |
-| 55 | GameFramework.SaveSystem | 10 | CoreRuntime.ReflectionSerialization, GameFramework.GameplayPrimitives |
-| 56 | GameFramework.Abilities | 12 | GameFramework.GameplayPrimitives, Animation.StateMachine, Physics.SpatialQueries |
-| 57 | GameFramework.WeaponSystem | 10 | GameFramework.GameplayPrimitives, Physics.SpatialQueries, Animation.StateMachine |
-| 58 | GameFramework.Progression | 10 | GameFramework.GameplayPrimitives |
-| 59 | GameFramework.WorldManagement | 10 | CoreRuntime.ECS, ContentPipeline.Streaming |
-| 60 | Physics.SoftBodyCloth | 10 | Physics.RigidBody, Animation.Skeletal |
-| 61 | Physics.Destruction | 10 | Physics.RigidBody, Physics.Constraints |
-| 62 | GeometryWorld.Water | 10 | Rendering.CoreRendering, Physics.RigidBody |
-| 63 | Audio.MusicSystem | 8 | Audio.Engine, Audio.DSP |
-| 64 | Audio.VoiceSpeech | 10 | Audio.Engine, Networking.Transport |
-| 65 | AI.CrowdTactical | 10 | AI.BehaviorDecision, AI.Steering |
-| 66 | VFX.Weather | 8 | VFX.Particles, Audio.Spatial |
-| 67 | VFX.EffectGraph | 8 | VFX.Particles, ToolsEditor.LogicGraph |
-| 68 | UI2D.2DGames | 15 | UI2D.WidgetFramework, Physics.RigidBody, Rendering.CoreRendering |
-| 69 | Networking.AntiCheat | 6 | Networking.Replication, GameFramework.GameplayPrimitives |
+| #  | Feature-Group                 | ~Features |
+|----|-------------------------------|-----------|
+| 50 | Rendering.AdvancedRendering   | 40        |
+| 51 | ToolsEditor.EditorFramework   | 15        |
+| 52 | ToolsEditor.LogicGraph        | 14        |
+| 53 | ToolsEditor.MaterialEditor    | 8         |
+| 54 | ToolsEditor.Profiling         | 8         |
+| 55 | GameFramework.SaveSystem      | 10        |
+| 56 | GameFramework.Abilities       | 12        |
+| 57 | GameFramework.WeaponSystem    | 10        |
+| 58 | GameFramework.Progression     | 10        |
+| 59 | GameFramework.WorldManagement | 10        |
+| 60 | Physics.SoftBodyCloth         | 10        |
+| 61 | Physics.Destruction           | 10        |
+| 62 | GeometryWorld.Water           | 10        |
+| 63 | Audio.MusicSystem             | 8         |
+| 64 | Audio.VoiceSpeech             | 10        |
+| 65 | AI.CrowdTactical              | 10        |
+| 66 | VFX.Weather                   | 8         |
+| 67 | VFX.EffectGraph               | 8         |
+| 68 | UI2D.2DGames                  | 15        |
+| 69 | Networking.AntiCheat          | 6         |
+
+1. **50** — Rendering.Lighting, Rendering.CoreRendering
+2. **51** — UI2D.WidgetFramework, CoreRuntime.ReflectionSerialization, ContentPipeline.HotReload,
+   Rendering.CoreRendering, Input.ActionsMapping
+3. **52** — CoreRuntime.ECS, CoreRuntime.EventsPlugins, ContentPipeline.HotReload
+4. **53** — Rendering.Lighting, ContentPipeline.HotReload
+5. **54** — CoreRuntime.ECS, Platform.Threading
+6. **55** — CoreRuntime.ReflectionSerialization, GameFramework.GameplayPrimitives
+7. **56** — GameFramework.GameplayPrimitives, Animation.StateMachine, Physics.SpatialQueries
+8. **57** — GameFramework.GameplayPrimitives, Physics.SpatialQueries, Animation.StateMachine
+9. **58** — GameFramework.GameplayPrimitives
+10. **59** — CoreRuntime.ECS, ContentPipeline.Streaming
+11. **60** — Physics.RigidBody, Animation.Skeletal
+12. **61** — Physics.RigidBody, Physics.Constraints
+13. **62** — Rendering.CoreRendering, Physics.RigidBody
+14. **63** — Audio.Engine, Audio.DSP
+15. **64** — Audio.Engine, Networking.Transport
+16. **65** — AI.BehaviorDecision, AI.Steering
+17. **66** — VFX.Particles, Audio.Spatial
+18. **67** — VFX.Particles, ToolsEditor.LogicGraph
+19. **68** — UI2D.WidgetFramework, Physics.RigidBody, Rendering.CoreRendering
+20. **69** — Networking.Replication, GameFramework.GameplayPrimitives
 
 #### Max parallelism: 20 agents
 
@@ -706,26 +999,46 @@ ECS.
 
 ### Wave 6 — Capstone Systems (requires specific Wave 5 nodes)
 
-| # | Feature-Group | ~Features | Key Prerequisite |
-|---|---------------|-----------|------------------|
-| 70 | ToolsEditor.AnimationEditor | 8 | ToolsEditor.EditorFramework, Animation.StateMachine |
-| 71 | ToolsEditor.WorldBuilding | 10 | ToolsEditor.EditorFramework, GeometryWorld.Terrain, GeometryWorld.Foliage |
-| 72 | ToolsEditor.AdvancedTools | 35 | ToolsEditor.EditorFramework, Networking.Replication |
-| 73 | ContentPipeline.DCCPlugins | 10 | ContentPipeline.AssetImport, ContentPipeline.AssetProcessing |
-| 74 | Animation.ClothHair | 8 | Physics.SoftBodyCloth, Audio.VoiceSpeech, Rendering.AdvancedRendering |
-| 75 | Animation.FirstPerson | 6 | Animation.Skeletal, GameFramework.WeaponSystem |
-| 76 | VFX.Destruction | 8 | Physics.Destruction, VFX.Particles |
-| 77 | GameFramework.NPCSimulation | 10 | AI.BehaviorDecision, GameFramework.GameplayPrimitives |
-| 78 | GameFramework.Social | 8 | Networking.Session, GameFramework.GameplayPrimitives |
-| 79 | GameFramework.GameModes | 8 | Networking.Session, GameFramework.GameplayPrimitives |
-| 80 | GameFramework.StealthCover | 8 | AI.Perception, GameFramework.GameplayPrimitives |
-| 81 | GameFramework.GenreSpecific | 40 | GameFramework.GameplayPrimitives, GameFramework.Abilities, Physics.RigidBody, AI.Navigation |
-| 82 | GeometryWorld.TerrainVoxel | 10 | GeometryWorld.Terrain, Physics.Destruction |
-| 83 | GeometryWorld.ProceduralGeneration | 30 | GeometryWorld.Terrain, Rendering.AdvancedRendering, ContentPipeline.Streaming |
-| 84 | Physics.Fluid | 8 | Physics.RigidBody, GeometryWorld.Water |
-| 85 | Networking.MMO | 10 | Networking.Replication, GameFramework.WorldManagement, GameFramework.SaveSystem |
-| 86 | UI2D.Accessibility | 8 | UI2D.WidgetFramework, Audio.Engine, Input.ActionsMapping |
-| 87 | Input.VRInput | 6 | Input.DeviceAbstraction, Rendering.AdvancedRendering |
+| #  | Feature-Group                      | ~Features |
+|----|------------------------------------|-----------|
+| 70 | ToolsEditor.AnimationEditor        | 8         |
+| 71 | ToolsEditor.WorldBuilding          | 10        |
+| 72 | ToolsEditor.AdvancedTools          | 35        |
+| 73 | ContentPipeline.DCCPlugins         | 10        |
+| 74 | Animation.ClothHair                | 8         |
+| 75 | Animation.FirstPerson              | 6         |
+| 76 | VFX.Destruction                    | 8         |
+| 77 | GameFramework.NPCSimulation        | 10        |
+| 78 | GameFramework.Social               | 8         |
+| 79 | GameFramework.GameModes            | 8         |
+| 80 | GameFramework.StealthCover         | 8         |
+| 81 | GameFramework.GenreSpecific        | 40        |
+| 82 | GeometryWorld.TerrainVoxel         | 10        |
+| 83 | GeometryWorld.ProceduralGeneration | 30        |
+| 84 | Physics.Fluid                      | 8         |
+| 85 | Networking.MMO                     | 10        |
+| 86 | UI2D.Accessibility                 | 8         |
+| 87 | Input.VRInput                      | 6         |
+
+1. **70** — ToolsEditor.EditorFramework, Animation.StateMachine
+2. **71** — ToolsEditor.EditorFramework, GeometryWorld.Terrain, GeometryWorld.Foliage
+3. **72** — ToolsEditor.EditorFramework, Networking.Replication
+4. **73** — ContentPipeline.AssetImport, ContentPipeline.AssetProcessing
+5. **74** — Physics.SoftBodyCloth, Audio.VoiceSpeech, Rendering.AdvancedRendering
+6. **75** — Animation.Skeletal, GameFramework.WeaponSystem
+7. **76** — Physics.Destruction, VFX.Particles
+8. **77** — AI.BehaviorDecision, GameFramework.GameplayPrimitives
+9. **78** — Networking.Session, GameFramework.GameplayPrimitives
+10. **79** — Networking.Session, GameFramework.GameplayPrimitives
+11. **80** — AI.Perception, GameFramework.GameplayPrimitives
+12. **81** — GameFramework.GameplayPrimitives, GameFramework.Abilities, Physics.RigidBody,
+    AI.Navigation
+13. **82** — GeometryWorld.Terrain, Physics.Destruction
+14. **83** — GeometryWorld.Terrain, Rendering.AdvancedRendering, ContentPipeline.Streaming
+15. **84** — Physics.RigidBody, GeometryWorld.Water
+16. **85** — Networking.Replication, GameFramework.WorldManagement, GameFramework.SaveSystem
+17. **86** — UI2D.WidgetFramework, Audio.Engine, Input.ActionsMapping
+18. **87** — Input.DeviceAbstraction, Rendering.AdvancedRendering
 
 #### Max parallelism: 18 agents
 
@@ -776,16 +1089,39 @@ Total feature-groups: **87**
 The following contracts must be defined and locked before Wave 2 begins, as they are consumed by
 multiple concurrent development pipelines:
 
-| Contract | Defined By | Consumed By | Scope |
-|----------|-----------|-------------|-------|
-| Component trait + archetype API | CoreRuntime.ECS | All domains | How to define, register, query, and mutate components |
-| Entity handle type | CoreRuntime.ECS | All domains | Generational index format, validity checking |
-| System trait + scheduling API | CoreRuntime.ECS | All domains | How to declare systems, dependencies, and access patterns |
-| Event channel API | CoreRuntime.EventsPlugins | All domains | How to send and receive typed events |
-| Spatial index query API | CoreRuntime.SpatialIndex | Physics, Rendering, Networking, AI, Audio, GameFramework | Ray-cast, shape-cast, overlap, frustum, k-nearest |
-| Serialization trait | CoreRuntime.ReflectionSerialization | Networking, ContentPipeline, GameFramework | Binary/text encode/decode for components and assets |
-| Async I/O trait | CoreRuntime.MemoryAsyncIO | ContentPipeline, Platform | Read/write/cancel operations, completion callbacks |
-| Transform component schema | CoreRuntime.SceneTransforms | Rendering, Physics, Animation, Audio | Position, rotation, scale, parent, world matrix |
-| GPU backend trait | Rendering.GPUAbstraction | ContentPipeline.AssetProcessing, VFX, UI2D | Device, command buffer, pipeline, buffer, texture APIs |
-| Asset handle type | ContentPipeline.AssetDatabase | All domains | Typed handle, load state, reference counting |
-| Render graph pass API | Rendering.RenderGraph | VFX, UI2D, Rendering.* | How to declare passes, read/write resources, submit commands |
+| Contract                        | Defined By                          |
+|---------------------------------|-------------------------------------|
+| Component trait + archetype API | CoreRuntime.ECS                     |
+| Entity handle type              | CoreRuntime.ECS                     |
+| System trait + scheduling API   | CoreRuntime.ECS                     |
+| Event channel API               | CoreRuntime.EventsPlugins           |
+| Spatial index query API         | CoreRuntime.SpatialIndex            |
+| Serialization trait             | CoreRuntime.ReflectionSerialization |
+| Async I/O trait                 | CoreRuntime.MemoryAsyncIO           |
+| Transform component schema      | CoreRuntime.SceneTransforms         |
+| GPU backend trait               | Rendering.GPUAbstraction            |
+| Asset handle type               | ContentPipeline.AssetDatabase       |
+| Render graph pass API           | Rendering.RenderGraph               |
+
+1. **Component trait + archetype API** — All domains
+   - **Scope:** How to define, register, query, and mutate components
+2. **Entity handle type** — All domains
+   - **Scope:** Generational index format, validity checking
+3. **System trait + scheduling API** — All domains
+   - **Scope:** How to declare systems, dependencies, and access patterns
+4. **Event channel API** — All domains
+   - **Scope:** How to send and receive typed events
+5. **Spatial index query API** — Physics, Rendering, Networking, AI, Audio, GameFramework
+   - **Scope:** Ray-cast, shape-cast, overlap, frustum, k-nearest
+6. **Serialization trait** — Networking, ContentPipeline, GameFramework
+   - **Scope:** Binary/text encode/decode for components and assets
+7. **Async I/O trait** — ContentPipeline, Platform
+   - **Scope:** Read/write/cancel operations, completion callbacks
+8. **Transform component schema** — Rendering, Physics, Animation, Audio
+   - **Scope:** Position, rotation, scale, parent, world matrix
+9. **GPU backend trait** — ContentPipeline.AssetProcessing, VFX, UI2D
+   - **Scope:** Device, command buffer, pipeline, buffer, texture APIs
+10. **Asset handle type** — All domains
+    - **Scope:** Typed handle, load state, reference counting
+11. **Render graph pass API** — VFX, UI2D, Rendering.*
+    - **Scope:** How to declare passes, read/write resources, submit commands

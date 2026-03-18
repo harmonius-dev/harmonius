@@ -6,310 +6,470 @@ Companion test cases for [render-graph.md](render-graph.md).
 
 ### TC-RG.13.4.1 Empty Graph Error
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Empty graph (zero passes) | `EmptyGraph` error | RG-13.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-13.4     |
+
+1. **#1** — Empty graph (zero passes)
+   - **Expected:** `EmptyGraph` error
 
 ### TC-RG.5.7.1 Cycle Detection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Passes A -> B -> C -> A | `CycleDetected` error with handles {A, B, C} | RG-5.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-5.7      |
+
+1. **#1** — Passes A -> B -> C -> A
+   - **Expected:** `CycleDetected` error with handles {A, B, C}
 
 ### TC-RG.3.5.1 Single Writer Violation
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Two passes writing same resource in overlapping window | `SingleWriterViolation` error | RG-3.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-3.5      |
+
+1. **#1** — Two passes writing same resource in overlapping window
+   - **Expected:** `SingleWriterViolation` error
 
 ### TC-RG.13.4.2 Undeclared Resource
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pass reads resource not declared in any pass | `UndeclaredResource` error | RG-13.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-13.4     |
+
+1. **#1** — Pass reads resource not declared in any pass
+   - **Expected:** `UndeclaredResource` error
 
 ### TC-RG.5.6.1 Topological Sort Stability
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Same graph compiled twice | Identical pass ordering both times | RG-5.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-5.6      |
+
+1. **#1** — Same graph compiled twice
+   - **Expected:** Identical pass ordering both times
 
 ### TC-RG.5.1.1 Topological Sort Correctness
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Graph with known dependency chain | Every pass executes after all its dependencies | RG-5.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-5.1      |
+
+1. **#1** — Graph with known dependency chain
+   - **Expected:** Every pass executes after all its dependencies
 
 ### TC-RG.13.2.1 Dead Pass Elimination
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pass whose outputs are unused | Pass eliminated from compiled plan | RG-13.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-13.2     |
+
+1. **#1** — Pass whose outputs are unused
+   - **Expected:** Pass eliminated from compiled plan
 
 ### TC-RG.13.3.1 Transitive Dead Pass
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Chain of passes leading to unused output | Entire orphaned chain eliminated | RG-13.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-13.3     |
+
+1. **#1** — Chain of passes leading to unused output
+   - **Expected:** Entire orphaned chain eliminated
 
 ### TC-RG.6.2.1 Capability Gate Soft
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Soft-gated pass, capability absent | Pass pruned, no error | RG-6.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-6.2      |
+
+1. **#1** — Soft-gated pass, capability absent
+   - **Expected:** Pass pruned, no error
 
 ### TC-RG.6.2.2 Capability Gate Hard
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Hard-gated pass, capability absent | `CapabilityNotMet` error | RG-6.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-6.2      |
+
+1. **#1** — Hard-gated pass, capability absent
+   - **Expected:** `CapabilityNotMet` error
 
 ### TC-RG.6.3.1 Fallback Chain
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Fallback chain with 3 variants, first two incapable | Third variant selected | RG-6.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-6.3      |
+
+1. **#1** — Fallback chain with 3 variants, first two incapable
+   - **Expected:** Third variant selected
 
 ### TC-RG.13.7.1 Variant Selection
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Exactly one variant active per slot | No error | RG-13.7 |
-| 2 | Zero variants active for a slot | Error produced | RG-13.7 |
-| 3 | Two variants active for same slot | Error produced | RG-13.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-13.7     |
+| 2 | RG-13.7     |
+| 3 | RG-13.7     |
+
+1. **#1** — Exactly one variant active per slot
+   - **Expected:** No error
+2. **#2** — Zero variants active for a slot
+   - **Expected:** Error produced
+3. **#3** — Two variants active for same slot
+   - **Expected:** Error produced
 
 ### TC-RG.1.6.1 Conditional Enable
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pass disabled at runtime | Excluded from execution without recompilation | RG-1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-1.6      |
+
+1. **#1** — Pass disabled at runtime
+   - **Expected:** Excluded from execution without recompilation
 
 ### TC-RG.1.6.2 Conditional Cascade
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pass disabled, has exclusive dependents | Exclusive dependents also disabled | RG-1.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-1.6      |
+
+1. **#1** — Pass disabled, has exclusive dependents
+   - **Expected:** Exclusive dependents also disabled
 
 ### TC-RG.3.1.1 Barrier RAW
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Read-after-write on resource | Exactly one barrier emitted | RG-3.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-3.1      |
+
+1. **#1** — Read-after-write on resource
+   - **Expected:** Exactly one barrier emitted
 
 ### TC-RG.3.2.1 Barrier WAW
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Write-after-write on resource | Execution barrier emitted | RG-3.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-3.2      |
+
+1. **#1** — Write-after-write on resource
+   - **Expected:** Execution barrier emitted
 
 ### TC-RG.3.6.1 Barrier Merge
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Compatible barriers at same point | Merged into single barrier | RG-3.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-3.6      |
+
+1. **#1** — Compatible barriers at same point
+   - **Expected:** Merged into single barrier
 
 ### TC-RG.3.6.2 Split Barrier
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Split barrier scenario | Begin/end placed at optimal points | RG-3.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-3.6      |
+
+1. **#1** — Split barrier scenario
+   - **Expected:** Begin/end placed at optimal points
 
 ### TC-RG.3.4.1 Cross Queue Barrier
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Resource transferred across queues | Release + acquire barrier pair emitted | RG-3.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-3.4      |
+
+1. **#1** — Resource transferred across queues
+   - **Expected:** Release + acquire barrier pair emitted
 
 ### TC-RG.8.2.1 Aliasing Non-Overlapping
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Two non-overlapping transient resources | Same heap offset assigned | RG-8.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-8.2      |
+
+1. **#1** — Two non-overlapping transient resources
+   - **Expected:** Same heap offset assigned
 
 ### TC-RG.8.2.2 Aliasing Overlapping
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Two overlapping transient resources | Distinct heap offsets assigned | RG-8.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-8.2      |
+
+1. **#1** — Two overlapping transient resources
+   - **Expected:** Distinct heap offsets assigned
 
 ### TC-RG.8.6.1 Aliasing Efficiency
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Multiple transient resources with aliasing | Aliased heap < sum of all resource sizes | RG-8.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-8.6      |
+
+1. **#1** — Multiple transient resources with aliasing
+   - **Expected:** Aliased heap < sum of all resource sizes
 
 ### TC-RG.4.1.1 Queue Affinity Graphics
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pass with graphics affinity | Assigned to graphics queue | RG-4.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-4.1      |
+
+1. **#1** — Pass with graphics affinity
+   - **Expected:** Assigned to graphics queue
 
 ### TC-RG.4.2.1 Queue Affinity Compute
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Async-compute pass | Assigned to dedicated compute queue | RG-4.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-4.2      |
+
+1. **#1** — Async-compute pass
+   - **Expected:** Assigned to dedicated compute queue
 
 ### TC-RG.4.5.1 Queue Fallback
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Compute pass, no dedicated compute queue | Falls back to graphics queue | RG-4.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-4.5      |
+
+1. **#1** — Compute pass, no dedicated compute queue
+   - **Expected:** Falls back to graphics queue
 
 ### TC-RG.10.4.1 Encoding Groups
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Independent passes | Same encoding group | RG-10.4 |
-| 2 | Dependent passes | Separate encoding groups | RG-10.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-10.4     |
+| 2 | RG-10.4     |
+
+1. **#1** — Independent passes
+   - **Expected:** Same encoding group
+2. **#2** — Dependent passes
+   - **Expected:** Separate encoding groups
 
 ### TC-RG.9.5.1 Sub Graph Instances
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 4-instance sub-graph | 4 exclusive resource sets | RG-9.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-9.5      |
+
+1. **#1** — 4-instance sub-graph
+   - **Expected:** 4 exclusive resource sets
 
 ### TC-RG.9.3.1 Sub Graph Shared
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Shared resource across instances | Single allocation | RG-9.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-9.3      |
+
+1. **#1** — Shared resource across instances
+   - **Expected:** Single allocation
 
 ### TC-RG.9.4.1 Sub Graph Array Layer
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 4-instance sub-graph | Each instance writes correct array layer (0-3) | RG-9.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-9.4      |
+
+1. **#1** — 4-instance sub-graph
+   - **Expected:** Each instance writes correct array layer (0-3)
 
 ### TC-RG.13.8.1 Instance Count Mismatch
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Instance count > array layers | Error produced | RG-13.8 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-13.8     |
+
+1. **#1** — Instance count > array layers
+   - **Expected:** Error produced
 
 ### TC-RG.2.4.1 History Resource
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | History resource with current/previous handles | Both resolve to correct textures | RG-2.4 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-2.4      |
+
+1. **#1** — History resource with current/previous handles
+   - **Expected:** Both resolve to correct textures
 
 ### TC-RG.2.5.1 Resolution Scaled
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | resolution_scale=0.5, base=1920x1080 | Resource dimensions = 960x540 | RG-2.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-2.5      |
+
+1. **#1** — resolution_scale=0.5, base=1920x1080
+   - **Expected:** Resource dimensions = 960x540
 
 ### TC-RG.7.2.1 Budget Cull Lowest
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Over-budget scenario | Lowest-priority pass culled first | RG-7.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-7.2      |
+
+1. **#1** — Over-budget scenario
+   - **Expected:** Lowest-priority pass culled first
 
 ### TC-RG.7.3.1 Budget Cascade
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Culled pass with exclusive consumers | Consumers also culled | RG-7.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-7.3      |
+
+1. **#1** — Culled pass with exclusive consumers
+   - **Expected:** Consumers also culled
 
 ### TC-RG.7.2.2 Budget Never Cull Required
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Required-priority pass, over budget | Pass not culled | RG-7.2 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-7.2      |
+
+1. **#1** — Required-priority pass, over budget
+   - **Expected:** Pass not culled
 
 ### TC-RG.1.9.1 Render Area Constraint
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Render area set on pass | Propagates to aliasing write coverage | RG-1.9 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-1.9      |
+
+1. **#1** — Render area set on pass
+   - **Expected:** Propagates to aliasing write coverage
 
 ### TC-RG.1.3.1 Pass Chain Order
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Chain with 3 steps | Steps execute in declaration order | RG-1.3 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-1.3      |
+
+1. **#1** — Chain with 3 steps
+   - **Expected:** Steps execute in declaration order
 
 ### TC-RG.1.7.1 Host Callback No GPU
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Host callback pass | Zero GPU commands submitted | RG-1.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-1.7      |
+
+1. **#1** — Host callback pass
+   - **Expected:** Zero GPU commands submitted
 
 ### TC-RG.12.1.1 Diagnostics Pass Timing
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Diagnostics enabled | Timestamp query pairs emitted per pass | RG-12.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-12.1     |
+
+1. **#1** — Diagnostics enabled
+   - **Expected:** Timestamp query pairs emitted per pass
 
 ### TC-RG.12.7.1 Diagnostics Stripped
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Diagnostics disabled | No timestamp queries emitted | RG-12.7 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-12.7     |
+
+1. **#1** — Diagnostics disabled
+   - **Expected:** No timestamp queries emitted
 
 ## Integration Tests
 
 ### TC-RG.13.1.I1 Full Frame Graph
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Realistic frame graph (shadow, GBuffer, lighting, post, present) | Correct barriers, queue assignment, aliasing | RG-13.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-13.1     |
+
+1. **#1** — Realistic frame graph (shadow, GBuffer, lighting, post, present)
+   - **Expected:** Correct barriers, queue assignment, aliasing
 
 ### TC-RG.9.1.I1 Multi-View Shadow Cascades
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 4 shadow cascades, shared scene data | 4 instances, 1 shared allocation, 4 layer writes | RG-9.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-9.1      |
+
+1. **#1** — 4 shadow cascades, shared scene data
+   - **Expected:** 4 instances, 1 shared allocation, 4 layer writes
 
 ### TC-RG.9.1.I2 VR Stereo Graph
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | VR stereo, 2 eye views sharing culling | Shared passes execute once | RG-9.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-9.1      |
+
+1. **#1** — VR stereo, 2 eye views sharing culling
+   - **Expected:** Shared passes execute once
 
 ### TC-RG.10.1.I1 Parallel Encoding Correctness
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | 20-pass graph, 4 threads | Command buffer contents match sequential encoding | RG-10.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-10.1     |
+
+1. **#1** — 20-pass graph, 4 threads
+   - **Expected:** Command buffer contents match sequential encoding
 
 ### TC-RG.11.1.I1 Streaming Fallback
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Pass depends on streamed resource, before arrival | Placeholder bound | RG-11.1 |
-| 2 | Pass depends on streamed resource, after arrival | Real resource bound | RG-11.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-11.1     |
+| 2 | RG-11.1     |
+
+1. **#1** — Pass depends on streamed resource, before arrival
+   - **Expected:** Placeholder bound
+2. **#2** — Pass depends on streamed resource, after arrival
+   - **Expected:** Real resource bound
 
 ### TC-RG.13.5.I1 Recompilation Trigger
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Parameter change only | No recompilation | RG-13.5 |
-| 2 | New pass added | Recompilation triggered | RG-13.5 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-13.5     |
+| 2 | RG-13.5     |
+
+1. **#1** — Parameter change only
+   - **Expected:** No recompilation
+2. **#2** — New pass added
+   - **Expected:** Recompilation triggered
 
 ### TC-RG.13.6.I1 Incremental Recompile
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Residency change | Only affected barriers recompiled | RG-13.6 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-13.6     |
+
+1. **#1** — Residency change
+   - **Expected:** Only affected barriers recompiled
 
 ### TC-RG.3.1.I1 D3D12 Barrier Mapping
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | D3D12 backend barriers | `ResourceBarrier` calls with correct state transitions | RG-3.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-3.1      |
+
+1. **#1** — D3D12 backend barriers
+   - **Expected:** `ResourceBarrier` calls with correct state transitions
 
 ### TC-RG.3.1.I2 Vulkan Barrier Mapping
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Vulkan backend barriers | `vkCmdPipelineBarrier2` with correct access masks | RG-3.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-3.1      |
+
+1. **#1** — Vulkan backend barriers
+   - **Expected:** `vkCmdPipelineBarrier2` with correct access masks
 
 ### TC-RG.3.1.I3 Metal No Intra-Queue Barriers
 
-| # | Input | Expected Output | Requirement |
-|---|-------|-----------------|-------------|
-| 1 | Metal backend, single queue | No barriers emitted (driver hazard tracking) | RG-3.1 |
+| # | Requirement |
+|---|-------------|
+| 1 | RG-3.1      |
+
+1. **#1** — Metal backend, single queue
+   - **Expected:** No barriers emitted (driver hazard tracking)
 
 ## Benchmarks
 

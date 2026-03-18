@@ -2,42 +2,113 @@
 
 ## Instanced Foliage Rendering
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-3.3.1 | The engine **SHALL** render all foliage via GPU-driven hardware instancing with a compute-shader culling pass that performs frustum, distance, and occlusion tests on instance clusters and compacts survivors into indirect draw arguments. | [F-3.3.1](../../features/geometry-world/foliage.md) | GPU-driven instancing with cluster culling supports millions of vegetation instances across MMO-scale forests with minimal CPU overhead. | Render a scene with one million foliage instances and confirm all culling occurs on the GPU, CPU draw-call count stays constant regardless of instance count, and occluded clusters produce zero rasterizer invocations. |
+| ID      | Derived From                                        |
+|---------|-----------------------------------------------------|
+| R-3.3.1 | [F-3.3.1](../../features/geometry-world/foliage.md) |
+
+1. **R-3.3.1** — The engine **SHALL** render all foliage via GPU-driven hardware instancing with a
+   compute-shader culling pass that performs frustum, distance, and occlusion tests on instance
+   clusters and compacts survivors into indirect draw arguments.
+   - **Rationale:** GPU-driven instancing with cluster culling supports millions of vegetation
+     instances across MMO-scale forests with minimal CPU overhead.
+   - **Verification:** Render a scene with one million foliage instances and confirm all culling
+     occurs on the GPU, CPU draw-call count stays constant regardless of instance count, and
+     occluded clusters produce zero rasterizer invocations.
 
 ## Procedural Placement
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-3.3.2 | The engine **SHALL** procedurally place foliage instances at runtime via a compute shader driven by density maps, biome classification, slope/altitude constraints, and artist-defined rule graphs, feeding results directly into the instanced rendering pipeline. | [F-3.3.2](../../features/geometry-world/foliage.md) | Runtime procedural placement eliminates the need to store per-instance data on disk for vast open worlds while giving artists full control over distribution rules. | Configure density maps and placement rules on a terrain tile and confirm instances appear respecting all constraints, no per-instance data is stored on disk, and output feeds directly into the GPU instancing pipeline. |
+| ID      | Derived From                                        |
+|---------|-----------------------------------------------------|
+| R-3.3.2 | [F-3.3.2](../../features/geometry-world/foliage.md) |
+
+1. **R-3.3.2** — The engine **SHALL** procedurally place foliage instances at runtime via a compute
+   shader driven by density maps, biome classification, slope/altitude constraints, and
+   artist-defined rule graphs, feeding results directly into the instanced rendering pipeline.
+   - **Rationale:** Runtime procedural placement eliminates the need to store per-instance data on
+     disk for vast open worlds while giving artists full control over distribution rules.
+   - **Verification:** Configure density maps and placement rules on a terrain tile and confirm
+     instances appear respecting all constraints, no per-instance data is stored on disk, and output
+     feeds directly into the GPU instancing pipeline.
 
 ## Foliage LOD
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-3.3.3 | The engine **SHALL** transition distant foliage through discrete LOD levels (full mesh, simplified mesh, billboard/impostor) using pre-rendered PBR sprite sheets with crossfade dithering over a configurable screen-space range. | [F-3.3.3](../../features/geometry-world/foliage.md) | Impostor LOD reduces per-instance triangle count by orders of magnitude at distance, and crossfade dithering eliminates visible LOD pop artifacts. | Dolly the camera away from foliage and confirm LOD transitions occur at correct screen-space thresholds, crossfade dithering is visible during transitions, and impostors render with correct PBR attributes from all viewing angles. |
+| ID      | Derived From                                        |
+|---------|-----------------------------------------------------|
+| R-3.3.3 | [F-3.3.3](../../features/geometry-world/foliage.md) |
+
+1. **R-3.3.3** — The engine **SHALL** transition distant foliage through discrete LOD levels (full
+   mesh, simplified mesh, billboard/impostor) using pre-rendered PBR sprite sheets with crossfade
+   dithering over a configurable screen-space range.
+   - **Rationale:** Impostor LOD reduces per-instance triangle count by orders of magnitude at
+     distance, and crossfade dithering eliminates visible LOD pop artifacts.
+   - **Verification:** Dolly the camera away from foliage and confirm LOD transitions occur at
+     correct screen-space thresholds, crossfade dithering is visible during transitions, and
+     impostors render with correct PBR attributes from all viewing angles.
 
 ## Wind Animation
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-3.3.4 | The engine **SHALL** animate foliage by sampling the shared wind field texture generated from `WindSource` ECS entities (R-4.7.5). Foliage vertex shaders **SHALL** read wind velocity from the shared texture and apply procedural oscillation with hierarchical deformation (trunk sway, branch oscillation, leaf flutter), per-instance phase offsets, and spatially propagating gust wave fronts. | [F-3.3.4](../../features/geometry-world/foliage.md) | Sampling the shared wind field texture ensures foliage, cloth, hair, and particles respond to the same wind data generated from WindSource ECS entities, and GPU-side hierarchical animation provides realistic multi-frequency vegetation motion without CPU overhead. | Enable wind on a forest scene and confirm three-layer animation frequencies are visually distinct, gusts propagate spatially as wave fronts, and per-species wind response curves produce different motion characteristics. Verify that foliage reads wind from the shared wind field texture generated by WindSource entities (R-4.7.5). |
+| ID      | Derived From                                        |
+|---------|-----------------------------------------------------|
+| R-3.3.4 | [F-3.3.4](../../features/geometry-world/foliage.md) |
+
+1. **R-3.3.4** — The engine **SHALL** animate foliage by sampling the shared wind field texture
+   generated from `WindSource` ECS entities (R-4.7.5). Foliage vertex shaders **SHALL** read wind
+   velocity from the shared texture and apply procedural oscillation with hierarchical deformation
+   (trunk sway, branch oscillation, leaf flutter), per-instance phase offsets, and spatially
+   propagating gust wave fronts.
+   - **Rationale:** Sampling the shared wind field texture ensures foliage, cloth, hair, and
+     particles respond to the same wind data generated from WindSource ECS entities, and GPU-side
+     hierarchical animation provides realistic multi-frequency vegetation motion without CPU
+     overhead.
+   - **Verification:** Enable wind on a forest scene and confirm three-layer animation frequencies
+     are visually distinct, gusts propagate spatially as wave fronts, and per-species wind response
+     curves produce different motion characteristics. Verify that foliage reads wind from the shared
+     wind field texture generated by WindSource entities (R-4.7.5).
 
 ## Foliage Interaction
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-3.3.5 | The engine **SHALL** displace foliage in response to character movement, projectiles, and environmental forces by writing interaction impulses to a screen-space or world-space buffer, applying persistent displacement with configurable time-constant decay in the vertex shader. | [F-3.3.5](../../features/geometry-world/foliage.md) | Reactive vegetation increases environmental immersion, and buffer-based interaction scales to MMO scenarios by limiting evaluation to nearby players. | Walk a character through grass and bushes and confirm displacement follows the character path, displacement decays over the configured time constant, and interaction cost is bounded when multiple players are present. |
+| ID      | Derived From                                        |
+|---------|-----------------------------------------------------|
+| R-3.3.5 | [F-3.3.5](../../features/geometry-world/foliage.md) |
+
+1. **R-3.3.5** — The engine **SHALL** displace foliage in response to character movement,
+   projectiles, and environmental forces by writing interaction impulses to a screen-space or
+   world-space buffer, applying persistent displacement with configurable time-constant decay in the
+   vertex shader.
+   - **Rationale:** Reactive vegetation increases environmental immersion, and buffer-based
+     interaction scales to MMO scenarios by limiting evaluation to nearby players.
+   - **Verification:** Walk a character through grass and bushes and confirm displacement follows
+     the character path, displacement decays over the configured time constant, and interaction cost
+     is bounded when multiple players are present.
 
 ## Grass Rendering
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-3.3.6 | The engine **SHALL** render dense grass fields as procedurally generated blade geometry in a compute or mesh shader, with shape, height, curvature, and color variation driven by terrain material layers and noise functions, scaling density with distance. | [F-3.3.6](../../features/geometry-world/foliage.md) | Procedural grass blade generation enables hundreds of thousands of visible blades per frame for lush environments without storing per-blade instance data. | Render a meadow scene and confirm grass blade density decreases with distance, blades transition to ground-cover texture at far range, and blade variation reflects underlying terrain material layers. |
+| ID      | Derived From                                        |
+|---------|-----------------------------------------------------|
+| R-3.3.6 | [F-3.3.6](../../features/geometry-world/foliage.md) |
+
+1. **R-3.3.6** — The engine **SHALL** render dense grass fields as procedurally generated blade
+   geometry in a compute or mesh shader, with shape, height, curvature, and color variation driven
+   by terrain material layers and noise functions, scaling density with distance.
+   - **Rationale:** Procedural grass blade generation enables hundreds of thousands of visible
+     blades per frame for lush environments without storing per-blade instance data.
+   - **Verification:** Render a meadow scene and confirm grass blade density decreases with
+     distance, blades transition to ground-cover texture at far range, and blade variation reflects
+     underlying terrain material layers.
 
 ## Tree Rendering
 
-| ID | Requirement | Derived From | Rationale | Verification |
-|----|-------------|--------------|-----------|--------------|
-| R-3.3.7 | The engine **SHALL** render trees with separate trunk/branch and leaf-canopy submeshes using distinct shading models (standard PBR for bark, two-sided foliage shading with subsurface transmission for leaves), with per-species wind skeletons and seamless LOD integration. | [F-3.3.7](../../features/geometry-world/foliage.md) | Dedicated tree rendering with subsurface leaf transmission and species-specific wind skeletons produces visually convincing forests that integrate with the foliage LOD and wind systems. | Render multiple tree species and confirm bark uses standard PBR, leaves exhibit subsurface light transmission when backlit, wind skeletons produce species-specific sway, and LOD transitions are seamless. |
+| ID      | Derived From                                        |
+|---------|-----------------------------------------------------|
+| R-3.3.7 | [F-3.3.7](../../features/geometry-world/foliage.md) |
+
+1. **R-3.3.7** — The engine **SHALL** render trees with separate trunk/branch and leaf-canopy
+   submeshes using distinct shading models (standard PBR for bark, two-sided foliage shading with
+   subsurface transmission for leaves), with per-species wind skeletons and seamless LOD
+   integration.
+   - **Rationale:** Dedicated tree rendering with subsurface leaf transmission and species-specific
+     wind skeletons produces visually convincing forests that integrate with the foliage LOD and
+     wind systems.
+   - **Verification:** Render multiple tree species and confirm bark uses standard PBR, leaves
+     exhibit subsurface light transmission when backlit, wind skeletons produce species-specific
+     sway, and LOD transitions are seamless.

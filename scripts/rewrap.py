@@ -1,58 +1,68 @@
 #!/usr/bin/env python3
 """Rewrap markdown files to 100 character line length.
 
+DEPRECATED: Use `rumdl fmt .` instead. rumdl handles prose
+rewrapping natively and also enforces table line lengths.
+
 Preserves tables, code blocks, headings, horizontal rules,
 mermaid blocks, and other structural elements. Only rewraps
 prose paragraphs and list items, paragraph by paragraph.
 Always fills lines to 100 characters.
 """
+
 import re
 import sys
 import textwrap
 
+from hooks import run_hook
 
-def is_table_line(line):
+
+def is_table_line(line: str) -> bool:
     stripped = line.strip()
-    return stripped.startswith('|') and stripped.endswith('|')
+    return stripped.startswith("|") and stripped.endswith("|")
 
 
-def is_heading(line):
-    return line.lstrip().startswith('#')
+def is_heading(line: str) -> bool:
+    return line.lstrip().startswith("#")
 
 
-def is_hr(line):
+def is_hr(line: str) -> bool:
     stripped = line.strip()
-    return bool(re.match(r'^[-*_]{3,}\s*$', stripped))
+    return bool(re.match(r"^[-*_]{3,}\s*$", stripped))
 
 
-def is_code_fence(line):
+def is_code_fence(line: str) -> bool:
     stripped = line.strip()
-    return stripped.startswith('```') or stripped.startswith('~~~')
+    return stripped.startswith(("```", "~~~"))
 
 
-def is_list_item(line):
-    return bool(re.match(r'^(\s*)([-*+]|\d+\.)\s', line))
+def is_list_item(line: str) -> bool:
+    return bool(re.match(r"^(\s*)([-*+]|\d+\.)\s", line))
 
 
-def is_blockquote(line):
-    return line.lstrip().startswith('>')
+def is_blockquote(line: str) -> bool:
+    return line.lstrip().startswith(">")
 
 
-def is_blank(line):
-    return line.strip() == ''
+def is_blank(line: str) -> bool:
+    return line.strip() == ""
 
 
-def is_html_tag(line):
+def is_html_tag(line: str) -> bool:
     stripped = line.strip()
-    return stripped.startswith('<') and not stripped.startswith('<http')
+    return stripped.startswith("<") and not stripped.startswith("<http")
 
 
-def is_link_definition(line):
-    return bool(re.match(r'^\[.+\]:\s', line.strip()))
+def is_link_definition(line: str) -> bool:
+    return bool(re.match(r"^\[.+\]:\s", line.strip()))
 
 
-def wrap_text(text, width=100, initial_indent='',
-              subsequent_indent=''):
+def wrap_text(
+    text: str,
+    width: int = 100,
+    initial_indent: str = "",
+    subsequent_indent: str = "",
+) -> str:
     """Wrap a single paragraph of text to fill to width."""
     wrapper = textwrap.TextWrapper(
         width=width,
@@ -64,20 +74,19 @@ def wrap_text(text, width=100, initial_indent='',
     return wrapper.fill(text)
 
 
-def rewrap_file(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
+def rewrap_file(filepath: str) -> None:
+    """Rewrap a single markdown file in place."""
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
 
-    # Preserve original line ending
-    lines = content.split('\n')
-    # Remove trailing empty string from split if file ends with \n
-    if lines and lines[-1] == '':
+    lines = content.split("\n")
+    if lines and lines[-1] == "":
         lines = lines[:-1]
         had_trailing_newline = True
     else:
         had_trailing_newline = False
 
-    result = []
+    result: list[str] = []
     i = 0
     in_code_block = False
     in_frontmatter = False
@@ -87,14 +96,14 @@ def rewrap_file(filepath):
         line = lines[i]
 
         # Handle YAML frontmatter (--- ... ---)
-        if (line.strip() == '---' and not in_code_block):
+        if line.strip() == "---" and not in_code_block:
             if not seen_frontmatter_start and i == 0:
                 seen_frontmatter_start = True
                 in_frontmatter = True
                 result.append(line)
                 i += 1
                 continue
-            elif in_frontmatter:
+            if in_frontmatter:
                 in_frontmatter = False
                 result.append(line)
                 i += 1
@@ -105,7 +114,6 @@ def rewrap_file(filepath):
             i += 1
             continue
 
-        # Handle code blocks
         if is_code_fence(line):
             in_code_block = not in_code_block
             result.append(line)
@@ -117,74 +125,66 @@ def rewrap_file(filepath):
             i += 1
             continue
 
-        # Preserve tables
         if is_table_line(line):
             result.append(line)
             i += 1
             continue
 
-        # Preserve headings
         if is_heading(line):
             result.append(line)
             i += 1
             continue
 
-        # Preserve horizontal rules
         if is_hr(line):
             result.append(line)
             i += 1
             continue
 
-        # Preserve blank lines
         if is_blank(line):
             result.append(line)
             i += 1
             continue
 
-        # Preserve HTML tags
         if is_html_tag(line):
             result.append(line)
             i += 1
             continue
 
-        # Preserve link definitions
         if is_link_definition(line):
             result.append(line)
             i += 1
             continue
 
-        # Handle blockquotes - preserve as-is
         if is_blockquote(line):
             result.append(line)
             i += 1
             continue
 
-        # Handle list items - rewrap each item to 100
+        # Handle list items
         if is_list_item(line):
-            m = re.match(r'^(\s*)([-*+]|\d+\.)\s', line)
-            marker_prefix = line[:m.end()]
-            cont_indent = ' ' * len(marker_prefix)
-            # Collect continuation lines of this list item
-            full_text = line[m.end():].strip()
+            m = re.match(r"^(\s*)([-*+]|\d+\.)\s", line)
+            assert m is not None
+            marker_prefix = line[: m.end()]
+            cont_indent = " " * len(marker_prefix)
+            full_text = line[m.end() :].strip()
             i += 1
             while i < len(lines):
                 next_line = lines[i]
-                # Continuation line: not blank, not new list item,
-                # not heading, not table, not code fence, not HR,
-                # not blockquote, and is indented past the marker
-                # OR is a plain continuation line
-                if (not is_blank(next_line)
-                        and not is_list_item(next_line)
-                        and not is_heading(next_line)
-                        and not is_table_line(next_line)
-                        and not is_code_fence(next_line)
-                        and not is_blockquote(next_line)
-                        and not is_hr(next_line)
-                        and not is_html_tag(next_line)
-                        and (next_line.startswith(cont_indent)
-                             or (next_line[0:1] == ' '
-                                 and not is_list_item(next_line)))):
-                    full_text += ' ' + next_line.strip()
+                if (
+                    not is_blank(next_line)
+                    and not is_list_item(next_line)
+                    and not is_heading(next_line)
+                    and not is_table_line(next_line)
+                    and not is_code_fence(next_line)
+                    and not is_blockquote(next_line)
+                    and not is_hr(next_line)
+                    and not is_html_tag(next_line)
+                    and (
+                        next_line.startswith(cont_indent)
+                        or (next_line[0:1] == " " and not is_list_item(next_line))
+                    )
+                ):
+                    full_text += " " + next_line.strip()
                     i += 1
                 else:
                     break
@@ -198,26 +198,30 @@ def rewrap_file(filepath):
             result.append(wrapped)
             continue
 
-        # Regular prose paragraph - collect consecutive lines
-        leading = re.match(r'^(\s*)', line).group(1)
+        # Regular prose paragraph
+        m = re.match(r"^(\s*)", line)
+        assert m is not None
+        leading = m.group(1)
         para_lines = [line.strip()]
         i += 1
         while i < len(lines):
             next_line = lines[i]
-            if (is_blank(next_line)
-                    or is_heading(next_line)
-                    or is_table_line(next_line)
-                    or is_code_fence(next_line)
-                    or is_list_item(next_line)
-                    or is_blockquote(next_line)
-                    or is_hr(next_line)
-                    or is_html_tag(next_line)
-                    or is_link_definition(next_line)):
+            if (
+                is_blank(next_line)
+                or is_heading(next_line)
+                or is_table_line(next_line)
+                or is_code_fence(next_line)
+                or is_list_item(next_line)
+                or is_blockquote(next_line)
+                or is_hr(next_line)
+                or is_html_tag(next_line)
+                or is_link_definition(next_line)
+            ):
                 break
             para_lines.append(next_line.strip())
             i += 1
 
-        full_para = ' '.join(para_lines)
+        full_para = " ".join(para_lines)
         wrapped = wrap_text(
             full_para,
             width=100,
@@ -226,26 +230,26 @@ def rewrap_file(filepath):
         )
         result.append(wrapped)
 
-    output = '\n'.join(result)
+    output = "\n".join(result)
     if had_trailing_newline:
-        output += '\n'
+        output += "\n"
 
-    with open(filepath, 'w', encoding='utf-8') as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(output)
+    run_hook(filepath)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     changed = 0
     for path in sys.argv[1:]:
         try:
-            with open(path, 'r') as f:
+            with open(path) as f:
                 before = f.read()
             rewrap_file(path)
-            with open(path, 'r') as f:
+            with open(path) as f:
                 after = f.read()
             if before != after:
                 changed += 1
         except Exception as e:
-            print(f"Error processing {path}: {e}",
-                  file=sys.stderr)
-    print(f"Changed {changed} of {len(sys.argv)-1} files")
+            print(f"Error processing {path}: {e}", file=sys.stderr)
+    print(f"Changed {changed} of {len(sys.argv) - 1} files")

@@ -12,39 +12,63 @@
 
 #### Foliage (F-3.3.1-7 / R-3.3.1-7)
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-3.3.1 | R-3.3.1 | US-3.3.1 | GPU-driven instanced foliage with compute culling |
-| F-3.3.2 | R-3.3.2 | US-3.3.2 | Density map and rule-based procedural placement |
-| F-3.3.3 | R-3.3.3 | US-3.3.3 | Billboard and impostor LOD with crossfade dithering |
-| F-3.3.4 | R-3.3.4 | US-3.3.4 | GPU vertex shader wind animation from shared wind field |
-| F-3.3.5 | R-3.3.5 | US-3.3.5 | Character-vegetation interaction via displacement buffer |
-| F-3.3.6 | R-3.3.6 | US-3.3.6 | Procedural grass blade rendering via mesh shader |
-| F-3.3.7 | R-3.3.7 | US-3.3.7 | Tree rendering with subsurface leaf transmission |
+| Feature | Requirement | User Story |
+|---------|-------------|------------|
+| F-3.3.1 | R-3.3.1     | US-3.3.1   |
+| F-3.3.2 | R-3.3.2     | US-3.3.2   |
+| F-3.3.3 | R-3.3.3     | US-3.3.3   |
+| F-3.3.4 | R-3.3.4     | US-3.3.4   |
+| F-3.3.5 | R-3.3.5     | US-3.3.5   |
+| F-3.3.6 | R-3.3.6     | US-3.3.6   |
+| F-3.3.7 | R-3.3.7     | US-3.3.7   |
+
+1. **F-3.3.1** — GPU-driven instanced foliage with compute culling
+2. **F-3.3.2** — Density map and rule-based procedural placement
+3. **F-3.3.3** — Billboard and impostor LOD with crossfade dithering
+4. **F-3.3.4** — GPU vertex shader wind animation from shared wind field
+5. **F-3.3.5** — Character-vegetation interaction via displacement buffer
+6. **F-3.3.6** — Procedural grass blade rendering via mesh shader
+7. **F-3.3.7** — Tree rendering with subsurface leaf transmission
 
 #### Water (F-3.4.1-7 / R-3.4.1-7)
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-3.4.1 | R-3.4.1 | US-3.4.1 | FFT ocean wave simulation with multiple cascades |
-| F-3.4.2 | R-3.4.2 | US-3.4.2 | Shoreline and depth-based blending with foam |
-| F-3.4.3 | R-3.4.3 | US-3.4.3 | Underwater rendering with volume effects |
-| F-3.4.4 | R-3.4.4 | US-3.4.4 | Water caustics projection onto seabed |
-| F-3.4.5 | R-3.4.5 | US-3.4.5 | Fresnel-weighted reflection and refraction |
-| F-3.4.6 | R-3.4.6 | US-3.4.6 | Flow map river simulation |
-| F-3.4.7 | R-3.4.7 | US-3.4.7 | Dynamic foam from waves, shore, flow, wakes |
+| Feature | Requirement | User Story |
+|---------|-------------|------------|
+| F-3.4.1 | R-3.4.1     | US-3.4.1   |
+| F-3.4.2 | R-3.4.2     | US-3.4.2   |
+| F-3.4.3 | R-3.4.3     | US-3.4.3   |
+| F-3.4.4 | R-3.4.4     | US-3.4.4   |
+| F-3.4.5 | R-3.4.5     | US-3.4.5   |
+| F-3.4.6 | R-3.4.6     | US-3.4.6   |
+| F-3.4.7 | R-3.4.7     | US-3.4.7   |
+
+1. **F-3.4.1** — FFT ocean wave simulation with multiple cascades
+2. **F-3.4.2** — Shoreline and depth-based blending with foam
+3. **F-3.4.3** — Underwater rendering with volume effects
+4. **F-3.4.4** — Water caustics projection onto seabed
+5. **F-3.4.5** — Fresnel-weighted reflection and refraction
+6. **F-3.4.6** — Flow map river simulation
+7. **F-3.4.7** — Dynamic foam from waves, shore, flow, wakes
 
 #### Sky/Atmosphere (F-3.5.1-7 / R-3.5.1-7)
 
-| Feature | Requirement | User Story | Description |
-|---------|-------------|------------|-------------|
-| F-3.5.1 | R-3.5.1 | US-3.5.1 | Procedural sky model (Preetham/Hosek-Wilkie) |
-| F-3.5.2 | R-3.5.2 | US-3.5.2 | Multi-scattering atmosphere with aerial perspective |
-| F-3.5.3 | R-3.5.3 | US-3.5.3 | Ray-marched volumetric clouds |
-| F-3.5.4 | R-3.5.4 | US-3.5.4 | Cloud shadow map on terrain/foliage/water |
-| F-3.5.5 | R-3.5.5 | US-3.5.5 | Dynamic time-of-day with astronomical arcs |
-| F-3.5.6 | R-3.5.6 | US-3.5.6 | Celestial body rendering (sun, moon, stars) |
-| F-3.5.7 | R-3.5.7 | US-3.5.7 | Environment cubemap capture for IBL |
+| Feature | Requirement | User Story |
+|---------|-------------|------------|
+| F-3.5.1 | R-3.5.1     | US-3.5.1   |
+| F-3.5.2 | R-3.5.2     | US-3.5.2   |
+| F-3.5.3 | R-3.5.3     | US-3.5.3   |
+| F-3.5.4 | R-3.5.4     | US-3.5.4   |
+| F-3.5.5 | R-3.5.5     | US-3.5.5   |
+| F-3.5.6 | R-3.5.6     | US-3.5.6   |
+| F-3.5.7 | R-3.5.7     | US-3.5.7   |
+
+1. **F-3.5.1** — Procedural sky model (Preetham/Hosek-Wilkie)
+2. **F-3.5.2** — Multi-scattering atmosphere with aerial perspective
+3. **F-3.5.3** — Ray-marched volumetric clouds
+4. **F-3.5.4** — Cloud shadow map on terrain/foliage/water
+5. **F-3.5.5** — Dynamic time-of-day with astronomical arcs
+6. **F-3.5.6** — Celestial body rendering (sun, moon, stars)
+7. **F-3.5.7** — Environment cubemap capture for IBL
 
 #### Cross-Cutting Dependencies
 
@@ -1476,70 +1500,155 @@ optionally to MSL via Metal Shader Converter for macOS. No platform-specific sha
 
 #### Unit Tests — Foliage
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_placement_respects_slope` | R-3.3.2 | Configure slope range [0, 30]. Verify no instances placed on terrain > 30 degrees. |
-| `test_placement_respects_altitude` | R-3.3.2 | Configure altitude range [100, 500]. Verify no instances outside range. |
-| `test_placement_density_correlation` | R-3.3.2 | Density map at 100%. Verify instance count matches expected density * area. |
-| `test_lod_distance_thresholds` | R-3.3.3 | Dolly camera. Verify LOD indices match configured distance thresholds. |
-| `test_crossfade_active_in_range` | R-3.3.3 | Camera at LOD boundary. Verify crossfade dithering is active within configured width. |
-| `test_wind_three_layers` | R-3.3.4 | Enable all wind layers. Verify vertex displacement has three distinct frequency components. |
-| `test_wind_reads_shared_field` | R-3.3.4 | Verify foliage wind system reads from the shared wind field texture (F-4.7.5). |
-| `test_interaction_decay` | R-3.3.5 | Write impulse to interaction buffer. Verify magnitude decays to near zero over configured time. |
-| `test_grass_density_scales` | R-3.3.6 | Verify grass blade count decreases with camera distance. |
-| `test_tree_subsurface` | R-3.3.7 | Render backlit tree. Verify leaf pixels have subsurface transmission contribution > 0. |
+| Test                                 | Req     |
+|--------------------------------------|---------|
+| `test_placement_respects_slope`      | R-3.3.2 |
+| `test_placement_respects_altitude`   | R-3.3.2 |
+| `test_placement_density_correlation` | R-3.3.2 |
+| `test_lod_distance_thresholds`       | R-3.3.3 |
+| `test_crossfade_active_in_range`     | R-3.3.3 |
+| `test_wind_three_layers`             | R-3.3.4 |
+| `test_wind_reads_shared_field`       | R-3.3.4 |
+| `test_interaction_decay`             | R-3.3.5 |
+| `test_grass_density_scales`          | R-3.3.6 |
+| `test_tree_subsurface`               | R-3.3.7 |
+
+1. **`test_placement_respects_slope`** — Configure slope range [0, 30]. Verify no instances placed
+   on terrain > 30 degrees.
+2. **`test_placement_respects_altitude`** — Configure altitude range [100, 500]. Verify no instances
+   outside range.
+3. **`test_placement_density_correlation`** — Density map at 100%. Verify instance count matches
+   expected density * area.
+4. **`test_lod_distance_thresholds`** — Dolly camera. Verify LOD indices match configured distance
+   thresholds.
+5. **`test_crossfade_active_in_range`** — Camera at LOD boundary. Verify crossfade dithering is
+   active within configured width.
+6. **`test_wind_three_layers`** — Enable all wind layers. Verify vertex displacement has three
+   distinct frequency components.
+7. **`test_wind_reads_shared_field`** — Verify foliage wind system reads from the shared wind field
+   texture (F-4.7.5).
+8. **`test_interaction_decay`** — Write impulse to interaction buffer. Verify magnitude decays to
+   near zero over configured time.
+9. **`test_grass_density_scales`** — Verify grass blade count decreases with camera distance.
+10. **`test_tree_subsurface`** — Render backlit tree. Verify leaf pixels have subsurface
+    transmission contribution > 0.
 
 #### Unit Tests — Water
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_fft_tile_continuity` | R-3.4.1 | Sample displacement at tile boundary. Assert delta < 0.001m across 60 frames. |
-| `test_fft_cascade_count` | R-3.4.1 | Configure 3 cascades. Verify 3 IFFT dispatches with distinct resolution. |
-| `test_spectrum_types` | R-3.4.1 | Init Phillips, JONSWAP, TMA spectra. Verify each produces distinct frequency distribution. |
-| `test_shoreline_opacity_fade` | R-3.4.2 | Render water at terrain intersection. Verify opacity fades from 1.0 at depth > 2m to 0.0 at depth 0. |
-| `test_shoreline_foam_mask` | R-3.4.2 | Verify foam mask is non-zero within configured shoreline band. |
-| `test_underwater_fog_density` | R-3.4.3 | Camera at 5m depth. Assert fog increases with depth via Beer-Lambert. |
-| `test_underwater_absorption` | R-3.4.3 | Verify scene color shifts toward configured absorption spectrum underwater. |
-| `test_caustics_depth_scaling` | R-3.4.4 | Verify caustic intensity scales with water depth and wave amplitude. |
-| `test_fresnel_grazing_angle` | R-3.4.5 | Render water at grazing angle. Assert reflection > refraction per Fresnel. |
-| `test_flow_map_uv_advance` | R-3.4.6 | Uniform rightward flow. Assert normal UV offset advances rightward each frame. |
-| `test_foam_coverage_decay` | R-3.4.7 | Enable all foam sources. Assert coverage decays to zero over configured lifetime. |
-| `test_foam_jacobian_whitecaps` | R-3.4.7 | Verify foam appears where Jacobian < whitecap threshold. |
+| Test                           | Req     |
+|--------------------------------|---------|
+| `test_fft_tile_continuity`     | R-3.4.1 |
+| `test_fft_cascade_count`       | R-3.4.1 |
+| `test_spectrum_types`          | R-3.4.1 |
+| `test_shoreline_opacity_fade`  | R-3.4.2 |
+| `test_shoreline_foam_mask`     | R-3.4.2 |
+| `test_underwater_fog_density`  | R-3.4.3 |
+| `test_underwater_absorption`   | R-3.4.3 |
+| `test_caustics_depth_scaling`  | R-3.4.4 |
+| `test_fresnel_grazing_angle`   | R-3.4.5 |
+| `test_flow_map_uv_advance`     | R-3.4.6 |
+| `test_foam_coverage_decay`     | R-3.4.7 |
+| `test_foam_jacobian_whitecaps` | R-3.4.7 |
+
+1. **`test_fft_tile_continuity`** — Sample displacement at tile boundary. Assert delta < 0.001m
+   across 60 frames.
+2. **`test_fft_cascade_count`** — Configure 3 cascades. Verify 3 IFFT dispatches with distinct
+   resolution.
+3. **`test_spectrum_types`** — Init Phillips, JONSWAP, TMA spectra. Verify each produces distinct
+   frequency distribution.
+4. **`test_shoreline_opacity_fade`** — Render water at terrain intersection. Verify opacity fades
+   from 1.0 at depth > 2m to 0.0 at depth 0.
+5. **`test_shoreline_foam_mask`** — Verify foam mask is non-zero within configured shoreline band.
+6. **`test_underwater_fog_density`** — Camera at 5m depth. Assert fog increases with depth via
+   Beer-Lambert.
+7. **`test_underwater_absorption`** — Verify scene color shifts toward configured absorption
+   spectrum underwater.
+8. **`test_caustics_depth_scaling`** — Verify caustic intensity scales with water depth and wave
+   amplitude.
+9. **`test_fresnel_grazing_angle`** — Render water at grazing angle. Assert reflection > refraction
+   per Fresnel.
+10. **`test_flow_map_uv_advance`** — Uniform rightward flow. Assert normal UV offset advances
+    rightward each frame.
+11. **`test_foam_coverage_decay`** — Enable all foam sources. Assert coverage decays to zero over
+    configured lifetime.
+12. **`test_foam_jacobian_whitecaps`** — Verify foam appears where Jacobian < whitecap threshold.
 
 #### Unit Tests — Sky/Atmosphere
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_sky_luminance_monotonic` | R-3.5.1 | Evaluate sky for zenith 0-90 deg. Assert luminance decreases monotonically opposite sun. |
-| `test_sky_warm_at_sunset` | R-3.5.1 | Evaluate at low sun angle. Assert chromaticity shifts warm. |
-| `test_aerial_perspective_depth` | R-3.5.2 | Render at 1km, 10km, 50km. Assert 50km pixel color closer to horizon. |
-| `test_lut_recompute_on_change` | R-3.5.2 | Change AtmosphereConfig. Verify LUTs are recomputed. |
-| `test_mie_sun_halo` | R-3.5.2 | Verify bright halo around sun direction from Mie scattering. |
-| `test_cloud_coverage_correlation` | R-3.5.3 | Weather map at 50% coverage. Assert cloud pixels non-transparent where coverage > 0. |
-| `test_cloud_temporal_savings` | R-3.5.3 | Verify temporal reprojection reduces per-frame sample count by >= 50%. |
-| `test_cloud_shadow_modulation` | R-3.5.4 | Render terrain under clouds. Assert shadowed pixels receive less direct light. |
-| `test_cloud_shadow_moves` | R-3.5.4 | Animate cloud coverage. Verify shadow pattern moves. |
-| `test_tod_sun_arc` | R-3.5.5 | Advance dawn to night in 60s. Assert sun follows smooth arc. |
-| `test_tod_time_scale` | R-3.5.5 | Set time_scale = 2.0. Verify cycle completes in half the time. |
-| `test_star_magnitude_brightness` | R-3.5.6 | Assert star brightness is proportional to catalog magnitude. |
-| `test_star_horizon_extinction` | R-3.5.6 | Assert star visibility decreases near horizon. |
-| `test_moon_phase_illumination` | R-3.5.6 | First quarter phase. Assert half the moon disc is illuminated. |
-| `test_cubemap_ambient_shift` | R-3.5.7 | Change sky from clear to overcast. Assert cubemap ambient color shifts within update period. |
+| Test                              | Req     |
+|-----------------------------------|---------|
+| `test_sky_luminance_monotonic`    | R-3.5.1 |
+| `test_sky_warm_at_sunset`         | R-3.5.1 |
+| `test_aerial_perspective_depth`   | R-3.5.2 |
+| `test_lut_recompute_on_change`    | R-3.5.2 |
+| `test_mie_sun_halo`               | R-3.5.2 |
+| `test_cloud_coverage_correlation` | R-3.5.3 |
+| `test_cloud_temporal_savings`     | R-3.5.3 |
+| `test_cloud_shadow_modulation`    | R-3.5.4 |
+| `test_cloud_shadow_moves`         | R-3.5.4 |
+| `test_tod_sun_arc`                | R-3.5.5 |
+| `test_tod_time_scale`             | R-3.5.5 |
+| `test_star_magnitude_brightness`  | R-3.5.6 |
+| `test_star_horizon_extinction`    | R-3.5.6 |
+| `test_moon_phase_illumination`    | R-3.5.6 |
+| `test_cubemap_ambient_shift`      | R-3.5.7 |
+
+1. **`test_sky_luminance_monotonic`** — Evaluate sky for zenith 0-90 deg. Assert luminance decreases
+   monotonically opposite sun.
+2. **`test_sky_warm_at_sunset`** — Evaluate at low sun angle. Assert chromaticity shifts warm.
+3. **`test_aerial_perspective_depth`** — Render at 1km, 10km, 50km. Assert 50km pixel color closer
+   to horizon.
+4. **`test_lut_recompute_on_change`** — Change AtmosphereConfig. Verify LUTs are recomputed.
+5. **`test_mie_sun_halo`** — Verify bright halo around sun direction from Mie scattering.
+6. **`test_cloud_coverage_correlation`** — Weather map at 50% coverage. Assert cloud pixels
+   non-transparent where coverage > 0.
+7. **`test_cloud_temporal_savings`** — Verify temporal reprojection reduces per-frame sample count
+   by >= 50%.
+8. **`test_cloud_shadow_modulation`** — Render terrain under clouds. Assert shadowed pixels receive
+   less direct light.
+9. **`test_cloud_shadow_moves`** — Animate cloud coverage. Verify shadow pattern moves.
+10. **`test_tod_sun_arc`** — Advance dawn to night in 60s. Assert sun follows smooth arc.
+11. **`test_tod_time_scale`** — Set time_scale = 2.0. Verify cycle completes in half the time.
+12. **`test_star_magnitude_brightness`** — Assert star brightness is proportional to catalog
+    magnitude.
+13. **`test_star_horizon_extinction`** — Assert star visibility decreases near horizon.
+14. **`test_moon_phase_illumination`** — First quarter phase. Assert half the moon disc is
+    illuminated.
+15. **`test_cubemap_ambient_shift`** — Change sky from clear to overcast. Assert cubemap ambient
+    color shifts within update period.
 
 #### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_foliage_1m_instances` | R-3.3.1 | Render 1M instances. Verify GPU culling, constant CPU draw call count. |
-| `test_foliage_no_disk_data` | R-3.3.2 | Procedural placement only. Verify zero per-instance data on disk. |
-| `test_ocean_physics_coupling` | R-3.4.1 | Drop rigid body onto ocean. Verify buoyancy force from WaterSurface displacement. |
-| `test_river_ocean_seamless` | R-3.4.6 | Place river at ocean estuary. Verify seamless mesh and flow transition. |
-| `test_full_day_cycle` | R-3.5.5 | Run 24h cycle. Verify all transitions (dawn, day, dusk, night) are smooth. |
-| `test_cubemap_reflects_sky` | R-3.5.7 | Place reflective sphere. Verify reflections match current atmosphere. |
-| `test_cloud_shadow_on_foliage` | R-3.5.4 | Render forest under clouds. Verify foliage receives cloud shadow. |
-| `test_cloud_shadow_on_water` | R-3.5.4 | Render ocean under clouds. Verify water receives cloud shadow. |
-| `test_tier_mobile_budget` | All | Run mobile tier. Verify frame time < 16 ms on target hardware. |
-| `test_tier_desktop_quality` | All | Run desktop tier. Verify all features enabled and correct. |
+| Test                           | Req     |
+|--------------------------------|---------|
+| `test_foliage_1m_instances`    | R-3.3.1 |
+| `test_foliage_no_disk_data`    | R-3.3.2 |
+| `test_ocean_physics_coupling`  | R-3.4.1 |
+| `test_river_ocean_seamless`    | R-3.4.6 |
+| `test_full_day_cycle`          | R-3.5.5 |
+| `test_cubemap_reflects_sky`    | R-3.5.7 |
+| `test_cloud_shadow_on_foliage` | R-3.5.4 |
+| `test_cloud_shadow_on_water`   | R-3.5.4 |
+| `test_tier_mobile_budget`      | All     |
+| `test_tier_desktop_quality`    | All     |
+
+1. **`test_foliage_1m_instances`** — Render 1M instances. Verify GPU culling, constant CPU draw call
+   count.
+2. **`test_foliage_no_disk_data`** — Procedural placement only. Verify zero per-instance data on
+   disk.
+3. **`test_ocean_physics_coupling`** — Drop rigid body onto ocean. Verify buoyancy force from
+   WaterSurface displacement.
+4. **`test_river_ocean_seamless`** — Place river at ocean estuary. Verify seamless mesh and flow
+   transition.
+5. **`test_full_day_cycle`** — Run 24h cycle. Verify all transitions (dawn, day, dusk, night) are
+   smooth.
+6. **`test_cubemap_reflects_sky`** — Place reflective sphere. Verify reflections match current
+   atmosphere.
+7. **`test_cloud_shadow_on_foliage`** — Render forest under clouds. Verify foliage receives cloud
+   shadow.
+8. **`test_cloud_shadow_on_water`** — Render ocean under clouds. Verify water receives cloud shadow.
+9. **`test_tier_mobile_budget`** — Run mobile tier. Verify frame time < 16 ms on target hardware.
+10. **`test_tier_desktop_quality`** — Run desktop tier. Verify all features enabled and correct.
 
 #### Benchmarks
 

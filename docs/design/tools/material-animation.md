@@ -10,26 +10,41 @@
 
 ### Material Editor (15.3)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.3.1 | R-15.3.1 | Node-based material graph with type-safe pins |
-| F-15.3.2 | R-15.3.2 | Material functions and reusable subgraphs |
-| F-15.3.3 | R-15.3.3 | Live 3D material preview with split-view |
-| F-15.3.4 | R-15.3.4 | Shader parameter tweaking without recompilation |
-| F-15.3.5 | R-15.3.5 | Material instances sharing compiled shaders |
-| F-15.3.6 | R-15.3.6 | Material library with search, tags, thumbnails |
+| Feature  | Requirement |
+|----------|-------------|
+| F-15.3.1 | R-15.3.1    |
+| F-15.3.2 | R-15.3.2    |
+| F-15.3.3 | R-15.3.3    |
+| F-15.3.4 | R-15.3.4    |
+| F-15.3.5 | R-15.3.5    |
+| F-15.3.6 | R-15.3.6    |
+
+1. **F-15.3.1** — Node-based material graph with type-safe pins
+2. **F-15.3.2** — Material functions and reusable subgraphs
+3. **F-15.3.3** — Live 3D material preview with split-view
+4. **F-15.3.4** — Shader parameter tweaking without recompilation
+5. **F-15.3.5** — Material instances sharing compiled shaders
+6. **F-15.3.6** — Material library with search, tags, thumbnails
 
 ### Animation Editor (15.4)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-15.4.1 | R-15.4.1 | Multi-track animation timeline with keyframes |
-| F-15.4.2 | R-15.4.2 | Curve editor with Bezier/Hermite tangent modes |
-| F-15.4.3 | R-15.4.3 | Skeleton viewer with bone selection and display modes |
-| F-15.4.4 | R-15.4.4 | Animation preview with debug overlays |
-| F-15.4.5 | R-15.4.5 | 1D/2D blend space editor with real-time preview |
-| F-15.4.6 | R-15.4.6 | State machine editor with transition debugging |
-| F-15.4.7 | R-15.4.7 | Retargeting setup with side-by-side preview |
+| Feature  | Requirement |
+|----------|-------------|
+| F-15.4.1 | R-15.4.1    |
+| F-15.4.2 | R-15.4.2    |
+| F-15.4.3 | R-15.4.3    |
+| F-15.4.4 | R-15.4.4    |
+| F-15.4.5 | R-15.4.5    |
+| F-15.4.6 | R-15.4.6    |
+| F-15.4.7 | R-15.4.7    |
+
+1. **F-15.4.1** — Multi-track animation timeline with keyframes
+2. **F-15.4.2** — Curve editor with Bezier/Hermite tangent modes
+3. **F-15.4.3** — Skeleton viewer with bone selection and display modes
+4. **F-15.4.4** — Animation preview with debug overlays
+5. **F-15.4.5** — 1D/2D blend space editor with real-time preview
+6. **F-15.4.6** — State machine editor with transition debugging
+7. **F-15.4.7** — Retargeting setup with side-by-side preview
 
 ## Overview
 
@@ -1408,43 +1423,76 @@ platform-agnostic; only the final bytecode format varies by target.
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_pin_type_validation` | R-15.3.1 | Connect color to scalar, verify PinTypeError returned. |
-| `test_graph_cycle_detection` | R-15.3.1 | Create cycle in graph, verify compile returns CycleDetected. |
-| `test_graph_compile_simple` | R-15.3.1 | Compile texture sample to output, verify valid HLSL. |
-| `test_dead_code_elimination` | R-15.3.1 | Add unused nodes, verify not present in HLSL output. |
-| `test_function_inline` | R-15.3.2 | Inline triplanar function, verify output matches manual graph. |
-| `test_function_propagation` | R-15.3.2 | Update function, verify all referencing materials recompile. |
-| `test_preview_update_one_frame` | R-15.3.3 | Change parameter, verify preview updates within 16 ms. |
-| `test_param_no_recompile` | R-15.3.4 | Change scalar param, verify no DXC invocation. |
-| `test_instance_shader_sharing` | R-15.3.5 | Create 100 instances, verify all share one ShaderHandle. |
-| `test_instance_override` | R-15.3.5 | Override color on instance, verify parent unchanged. |
-| `test_library_search_by_tag` | R-15.3.6 | Add tag, search by tag, verify only matching results. |
-| `test_library_usage_tracking` | R-15.3.6 | Assign material, verify usage list includes referencing asset. |
-| `test_timeline_keyframe_snap` | R-15.4.1 | Move keyframe, verify snaps to frame boundary. |
-| `test_timeline_scrub_300bones` | R-15.4.1 | Scrub 300-bone clip, verify above 30 FPS. |
-| `test_curve_bezier_continuity` | R-15.4.2 | Create Bezier curve, verify C1 continuity at tangent joins. |
-| `test_curve_preset_accuracy` | R-15.4.2 | Apply ease-in preset, verify matches reference curve. |
-| `test_skeleton_child_chain` | R-15.4.3 | Select bone, verify correct children highlighted. |
-| `test_preview_root_motion` | R-15.4.4 | Play root motion clip, verify trajectory distance. |
-| `test_blend_space_center` | R-15.4.5 | Crosshair at center of 2D space, verify equal corner weights. |
-| `test_blend_space_1d` | R-15.4.5 | 1D blend at 0.5, verify 50/50 blend of neighbors. |
-| `test_state_machine_reachability` | R-15.4.6 | Add unreachable state, verify validation error. |
-| `test_state_machine_transition` | R-15.4.6 | Set parameter above threshold, verify transition fires. |
-| `test_retarget_bone_mapping` | R-15.4.7 | Map source to target bones, verify pose preserved. |
-| `test_retarget_foot_contact` | R-15.4.7 | Retarget walk, verify foot contacts within tolerance. |
+| Test                              | Req      |
+|-----------------------------------|----------|
+| `test_pin_type_validation`        | R-15.3.1 |
+| `test_graph_cycle_detection`      | R-15.3.1 |
+| `test_graph_compile_simple`       | R-15.3.1 |
+| `test_dead_code_elimination`      | R-15.3.1 |
+| `test_function_inline`            | R-15.3.2 |
+| `test_function_propagation`       | R-15.3.2 |
+| `test_preview_update_one_frame`   | R-15.3.3 |
+| `test_param_no_recompile`         | R-15.3.4 |
+| `test_instance_shader_sharing`    | R-15.3.5 |
+| `test_instance_override`          | R-15.3.5 |
+| `test_library_search_by_tag`      | R-15.3.6 |
+| `test_library_usage_tracking`     | R-15.3.6 |
+| `test_timeline_keyframe_snap`     | R-15.4.1 |
+| `test_timeline_scrub_300bones`    | R-15.4.1 |
+| `test_curve_bezier_continuity`    | R-15.4.2 |
+| `test_curve_preset_accuracy`      | R-15.4.2 |
+| `test_skeleton_child_chain`       | R-15.4.3 |
+| `test_preview_root_motion`        | R-15.4.4 |
+| `test_blend_space_center`         | R-15.4.5 |
+| `test_blend_space_1d`             | R-15.4.5 |
+| `test_state_machine_reachability` | R-15.4.6 |
+| `test_state_machine_transition`   | R-15.4.6 |
+| `test_retarget_bone_mapping`      | R-15.4.7 |
+| `test_retarget_foot_contact`      | R-15.4.7 |
+
+1. **`test_pin_type_validation`** — Connect color to scalar, verify PinTypeError returned.
+2. **`test_graph_cycle_detection`** — Create cycle in graph, verify compile returns CycleDetected.
+3. **`test_graph_compile_simple`** — Compile texture sample to output, verify valid HLSL.
+4. **`test_dead_code_elimination`** — Add unused nodes, verify not present in HLSL output.
+5. **`test_function_inline`** — Inline triplanar function, verify output matches manual graph.
+6. **`test_function_propagation`** — Update function, verify all referencing materials recompile.
+7. **`test_preview_update_one_frame`** — Change parameter, verify preview updates within 16 ms.
+8. **`test_param_no_recompile`** — Change scalar param, verify no DXC invocation.
+9. **`test_instance_shader_sharing`** — Create 100 instances, verify all share one ShaderHandle.
+10. **`test_instance_override`** — Override color on instance, verify parent unchanged.
+11. **`test_library_search_by_tag`** — Add tag, search by tag, verify only matching results.
+12. **`test_library_usage_tracking`** — Assign material, verify usage list includes referencing
+    asset.
+13. **`test_timeline_keyframe_snap`** — Move keyframe, verify snaps to frame boundary.
+14. **`test_timeline_scrub_300bones`** — Scrub 300-bone clip, verify above 30 FPS.
+15. **`test_curve_bezier_continuity`** — Create Bezier curve, verify C1 continuity at tangent joins.
+16. **`test_curve_preset_accuracy`** — Apply ease-in preset, verify matches reference curve.
+17. **`test_skeleton_child_chain`** — Select bone, verify correct children highlighted.
+18. **`test_preview_root_motion`** — Play root motion clip, verify trajectory distance.
+19. **`test_blend_space_center`** — Crosshair at center of 2D space, verify equal corner weights.
+20. **`test_blend_space_1d`** — 1D blend at 0.5, verify 50/50 blend of neighbors.
+21. **`test_state_machine_reachability`** — Add unreachable state, verify validation error.
+22. **`test_state_machine_transition`** — Set parameter above threshold, verify transition fires.
+23. **`test_retarget_bone_mapping`** — Map source to target bones, verify pose preserved.
+24. **`test_retarget_foot_contact`** — Retarget walk, verify foot contacts within tolerance.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_material_compile_d3d12` | R-15.3.1 | Full pipeline: graph to HLSL to DXIL, render on D3D12. |
-| `test_material_compile_vulkan` | R-15.3.1 | Full pipeline: graph to HLSL to SPIR-V, render on Vulkan. |
-| `test_material_compile_metal` | R-15.3.1 | Full pipeline: graph to HLSL to DXIL to MSL, render on Metal. |
-| `test_material_hot_reload` | R-15.3.3 | Change graph, verify viewport updates without restart. |
-| `test_anim_state_machine_play` | R-15.4.6 | Play state machine, verify correct state transitions. |
-| `test_retarget_cross_rig` | R-15.4.7 | Retarget humanoid anim to creature rig, verify no self-intersect. |
+| Test                           | Req      |
+|--------------------------------|----------|
+| `test_material_compile_d3d12`  | R-15.3.1 |
+| `test_material_compile_vulkan` | R-15.3.1 |
+| `test_material_compile_metal`  | R-15.3.1 |
+| `test_material_hot_reload`     | R-15.3.3 |
+| `test_anim_state_machine_play` | R-15.4.6 |
+| `test_retarget_cross_rig`      | R-15.4.7 |
+
+1. **`test_material_compile_d3d12`** — Full pipeline: graph to HLSL to DXIL, render on D3D12.
+2. **`test_material_compile_vulkan`** — Full pipeline: graph to HLSL to SPIR-V, render on Vulkan.
+3. **`test_material_compile_metal`** — Full pipeline: graph to HLSL to DXIL to MSL, render on Metal.
+4. **`test_material_hot_reload`** — Change graph, verify viewport updates without restart.
+5. **`test_anim_state_machine_play`** — Play state machine, verify correct state transitions.
+6. **`test_retarget_cross_rig`** — Retarget humanoid anim to creature rig, verify no self-intersect.
 
 ### Benchmarks
 

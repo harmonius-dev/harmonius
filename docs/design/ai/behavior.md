@@ -9,36 +9,57 @@
 
 ### Behavior Trees (7.3)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-7.3.1 | R-7.3.1 | Sequence, Selector, Parallel, Leaf composite and leaf nodes |
-| F-7.3.2 | R-7.3.2 | Inverter, Repeater, Succeeder, Rate Limiter, Cooldown decorators |
-| F-7.3.3 | R-7.3.3 | Self-abort, lower-priority abort, and combined abort modes |
-| F-7.3.4 | R-7.3.4 | Typed key-value blackboard with self/group/global scopes |
-| F-7.3.5 | R-7.3.5 | Declarative BT assets (RON/JSON) with hot-reload |
-| F-7.3.6 | R-7.3.6 | Subtree references with inline expansion or nested scope |
-| F-7.3.7 | R-7.3.7 | Trace log and editor overlay for debugging |
+| Feature | Requirement |
+|---------|-------------|
+| F-7.3.1 | R-7.3.1     |
+| F-7.3.2 | R-7.3.2     |
+| F-7.3.3 | R-7.3.3     |
+| F-7.3.4 | R-7.3.4     |
+| F-7.3.5 | R-7.3.5     |
+| F-7.3.6 | R-7.3.6     |
+| F-7.3.7 | R-7.3.7     |
+
+1. **F-7.3.1** — Sequence, Selector, Parallel, Leaf composite and leaf nodes
+2. **F-7.3.2** — Inverter, Repeater, Succeeder, Rate Limiter, Cooldown decorators
+3. **F-7.3.3** — Self-abort, lower-priority abort, and combined abort modes
+4. **F-7.3.4** — Typed key-value blackboard with self/group/global scopes
+5. **F-7.3.5** — Declarative BT assets (RON/JSON) with hot-reload
+6. **F-7.3.6** — Subtree references with inline expansion or nested scope
+7. **F-7.3.7** — Trace log and editor overlay for debugging
 
 ### Utility AI (7.4)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-7.4.1 | R-7.4.1 | Response curves (linear, quadratic, logistic, step, piecewise) |
-| F-7.4.2 | R-7.4.2 | Score multiplication, compensation, selection strategies |
-| F-7.4.3 | R-7.4.3 | Built-in and custom considerations via trait interface |
-| F-7.4.4 | R-7.4.4 | Dual-axis category + action scoring |
-| F-7.4.5 | R-7.4.5 | Context sets with hysteresis transitions |
+| Feature | Requirement |
+|---------|-------------|
+| F-7.4.1 | R-7.4.1     |
+| F-7.4.2 | R-7.4.2     |
+| F-7.4.3 | R-7.4.3     |
+| F-7.4.4 | R-7.4.4     |
+| F-7.4.5 | R-7.4.5     |
+
+1. **F-7.4.1** — Response curves (linear, quadratic, logistic, step, piecewise)
+2. **F-7.4.2** — Score multiplication, compensation, selection strategies
+3. **F-7.4.3** — Built-in and custom considerations via trait interface
+4. **F-7.4.4** — Dual-axis category + action scoring
+5. **F-7.4.5** — Context sets with hysteresis transitions
 
 ### Goal-Oriented Action Planning (7.5)
 
-| Feature | Requirement | Description |
-|---------|-------------|-------------|
-| F-7.5.1 | R-7.5.1 | Fixed-size bitset world state representation |
-| F-7.5.2 | R-7.5.2 | A* forward-search planner over action space |
-| F-7.5.3 | R-7.5.3 | Action preconditions, effects, and costs |
-| F-7.5.4 | R-7.5.4 | Plan caching keyed by (goal, state-hash) |
-| F-7.5.5 | R-7.5.5 | Replanning triggers with cooldown throttling |
-| F-7.5.6 | R-7.5.6 | Scored goal list with dynamic priority |
+| Feature | Requirement |
+|---------|-------------|
+| F-7.5.1 | R-7.5.1     |
+| F-7.5.2 | R-7.5.2     |
+| F-7.5.3 | R-7.5.3     |
+| F-7.5.4 | R-7.5.4     |
+| F-7.5.5 | R-7.5.5     |
+| F-7.5.6 | R-7.5.6     |
+
+1. **F-7.5.1** — Fixed-size bitset world state representation
+2. **F-7.5.2** — A* forward-search planner over action space
+3. **F-7.5.3** — Action preconditions, effects, and costs
+4. **F-7.5.4** — Plan caching keyed by (goal, state-hash)
+5. **F-7.5.5** — Replanning triggers with cooldown throttling
+6. **F-7.5.6** — Scored goal list with dynamic priority
 
 ## Overview
 
@@ -2499,58 +2520,111 @@ pool.scope(|scope| {
 
 ### Unit Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_sequence_fail_fast` | R-7.3.1 | Sequence returns Failure on first child failure. |
-| `test_selector_succeed_fast` | R-7.3.1 | Selector returns Success on first child success. |
-| `test_parallel_require_all` | R-7.3.1 | Parallel RequireAll succeeds only when all children succeed. |
-| `test_parallel_require_one` | R-7.3.1 | Parallel RequireOne succeeds when any child succeeds. |
-| `test_inverter` | R-7.3.2 | Inverter negates child result (Success to Failure and vice versa). |
-| `test_repeater_count` | R-7.3.2 | Repeater runs child N times then returns Success. |
-| `test_cooldown_blocks_reentry` | R-7.3.2 | Cooldown blocks child tick for configured duration. |
-| `test_rate_limiter_hz` | R-7.3.2 | Rate Limiter throttles child to configured frequency. |
-| `test_self_abort` | R-7.3.3 | Self-abort interrupts running child when condition fails. |
-| `test_lower_priority_abort` | R-7.3.3 | Higher-priority branch aborts running lower-priority sibling. |
-| `test_abort_no_state_leak` | R-7.3.3 | Aborting resets node states and does not leak blackboard values. |
-| `test_blackboard_self_scope` | R-7.3.4 | Self-scoped keys are invisible to other agents. |
-| `test_blackboard_group_scope` | R-7.3.4 | Group-scoped keys are visible within group only. |
-| `test_blackboard_observer` | R-7.3.4 | Observer fires exactly once per key change, not on redundant writes. |
-| `test_bt_serialization_roundtrip` | R-7.3.5 | Save and reload BT asset produces identical tree. |
-| `test_subtree_circular_ref` | R-7.3.6 | Circular subtree references detected at load time. |
-| `test_trace_log_accuracy` | R-7.3.7 | Trace log records every node visit with correct status. |
-| `test_curve_linear` | R-7.4.1 | Linear curve produces correct output for known inputs. |
-| `test_curve_logistic` | R-7.4.1 | Logistic curve produces correct output for known inputs. |
-| `test_curve_clamp` | R-7.4.1 | All curve types clamp output to [0.0, 1.0]. |
-| `test_compensation_fairness` | R-7.4.2 | 2-consideration and 5-consideration actions produce comparable scores. |
-| `test_highest_selection` | R-7.4.2 | Highest strategy always picks the top-scoring action. |
-| `test_weighted_random_distribution` | R-7.4.2 | Weighted random produces expected probability distribution over N runs. |
-| `test_context_hysteresis` | R-7.4.5 | Context does not switch when score oscillates between thresholds. |
-| `test_dual_axis_category_priority` | R-7.4.4 | Survival category outranks social even when social scores higher. |
-| `test_world_state_satisfies` | R-7.5.1 | satisfies() correctly checks all masked bits and ints. |
-| `test_world_state_apply` | R-7.5.1 | apply() correctly sets masked bits and ints. |
-| `test_world_state_heuristic` | R-7.5.1 | Heuristic returns correct count of unsatisfied properties. |
-| `test_planner_finds_optimal` | R-7.5.2 | Planner finds lowest-cost plan for a reference scenario. |
-| `test_planner_unsolvable_goal` | R-7.5.2 | Planner returns None for unreachable goals without panic. |
-| `test_preconditions_gate` | R-7.5.3 | Action with unmet preconditions is never included in plan. |
-| `test_plan_cost_sum` | R-7.5.3 | Plan total_cost equals sum of action costs. |
-| `test_cache_hit_identical` | R-7.5.4 | Cache hit returns plan identical to fresh search. |
-| `test_cache_invalidation` | R-7.5.4 | Registry version change clears cache. |
-| `test_replan_on_precondition_fail` | R-7.5.5 | Replan triggered when current step preconditions fail. |
-| `test_replan_cooldown` | R-7.5.5 | Replan cooldown prevents multiple replans within window. |
-| `test_goal_priority_ordering` | R-7.5.6 | Planner always plans for highest-priority unsatisfied goal. |
-| `test_goal_satisfaction_stops_replan` | R-7.5.6 | Satisfied goal does not trigger further planning. |
+| Test                                  | Req     |
+|---------------------------------------|---------|
+| `test_sequence_fail_fast`             | R-7.3.1 |
+| `test_selector_succeed_fast`          | R-7.3.1 |
+| `test_parallel_require_all`           | R-7.3.1 |
+| `test_parallel_require_one`           | R-7.3.1 |
+| `test_inverter`                       | R-7.3.2 |
+| `test_repeater_count`                 | R-7.3.2 |
+| `test_cooldown_blocks_reentry`        | R-7.3.2 |
+| `test_rate_limiter_hz`                | R-7.3.2 |
+| `test_self_abort`                     | R-7.3.3 |
+| `test_lower_priority_abort`           | R-7.3.3 |
+| `test_abort_no_state_leak`            | R-7.3.3 |
+| `test_blackboard_self_scope`          | R-7.3.4 |
+| `test_blackboard_group_scope`         | R-7.3.4 |
+| `test_blackboard_observer`            | R-7.3.4 |
+| `test_bt_serialization_roundtrip`     | R-7.3.5 |
+| `test_subtree_circular_ref`           | R-7.3.6 |
+| `test_trace_log_accuracy`             | R-7.3.7 |
+| `test_curve_linear`                   | R-7.4.1 |
+| `test_curve_logistic`                 | R-7.4.1 |
+| `test_curve_clamp`                    | R-7.4.1 |
+| `test_compensation_fairness`          | R-7.4.2 |
+| `test_highest_selection`              | R-7.4.2 |
+| `test_weighted_random_distribution`   | R-7.4.2 |
+| `test_context_hysteresis`             | R-7.4.5 |
+| `test_dual_axis_category_priority`    | R-7.4.4 |
+| `test_world_state_satisfies`          | R-7.5.1 |
+| `test_world_state_apply`              | R-7.5.1 |
+| `test_world_state_heuristic`          | R-7.5.1 |
+| `test_planner_finds_optimal`          | R-7.5.2 |
+| `test_planner_unsolvable_goal`        | R-7.5.2 |
+| `test_preconditions_gate`             | R-7.5.3 |
+| `test_plan_cost_sum`                  | R-7.5.3 |
+| `test_cache_hit_identical`            | R-7.5.4 |
+| `test_cache_invalidation`             | R-7.5.4 |
+| `test_replan_on_precondition_fail`    | R-7.5.5 |
+| `test_replan_cooldown`                | R-7.5.5 |
+| `test_goal_priority_ordering`         | R-7.5.6 |
+| `test_goal_satisfaction_stops_replan` | R-7.5.6 |
+
+1. **`test_sequence_fail_fast`** — Sequence returns Failure on first child failure.
+2. **`test_selector_succeed_fast`** — Selector returns Success on first child success.
+3. **`test_parallel_require_all`** — Parallel RequireAll succeeds only when all children succeed.
+4. **`test_parallel_require_one`** — Parallel RequireOne succeeds when any child succeeds.
+5. **`test_inverter`** — Inverter negates child result (Success to Failure and vice versa).
+6. **`test_repeater_count`** — Repeater runs child N times then returns Success.
+7. **`test_cooldown_blocks_reentry`** — Cooldown blocks child tick for configured duration.
+8. **`test_rate_limiter_hz`** — Rate Limiter throttles child to configured frequency.
+9. **`test_self_abort`** — Self-abort interrupts running child when condition fails.
+10. **`test_lower_priority_abort`** — Higher-priority branch aborts running lower-priority sibling.
+11. **`test_abort_no_state_leak`** — Aborting resets node states and does not leak blackboard
+    values.
+12. **`test_blackboard_self_scope`** — Self-scoped keys are invisible to other agents.
+13. **`test_blackboard_group_scope`** — Group-scoped keys are visible within group only.
+14. **`test_blackboard_observer`** — Observer fires exactly once per key change, not on redundant
+    writes.
+15. **`test_bt_serialization_roundtrip`** — Save and reload BT asset produces identical tree.
+16. **`test_subtree_circular_ref`** — Circular subtree references detected at load time.
+17. **`test_trace_log_accuracy`** — Trace log records every node visit with correct status.
+18. **`test_curve_linear`** — Linear curve produces correct output for known inputs.
+19. **`test_curve_logistic`** — Logistic curve produces correct output for known inputs.
+20. **`test_curve_clamp`** — All curve types clamp output to [0.0, 1.0].
+21. **`test_compensation_fairness`** — 2-consideration and 5-consideration actions produce
+    comparable scores.
+22. **`test_highest_selection`** — Highest strategy always picks the top-scoring action.
+23. **`test_weighted_random_distribution`** — Weighted random produces expected probability
+    distribution over N runs.
+24. **`test_context_hysteresis`** — Context does not switch when score oscillates between
+    thresholds.
+25. **`test_dual_axis_category_priority`** — Survival category outranks social even when social
+    scores higher.
+26. **`test_world_state_satisfies`** — satisfies() correctly checks all masked bits and ints.
+27. **`test_world_state_apply`** — apply() correctly sets masked bits and ints.
+28. **`test_world_state_heuristic`** — Heuristic returns correct count of unsatisfied properties.
+29. **`test_planner_finds_optimal`** — Planner finds lowest-cost plan for a reference scenario.
+30. **`test_planner_unsolvable_goal`** — Planner returns None for unreachable goals without panic.
+31. **`test_preconditions_gate`** — Action with unmet preconditions is never included in plan.
+32. **`test_plan_cost_sum`** — Plan total_cost equals sum of action costs.
+33. **`test_cache_hit_identical`** — Cache hit returns plan identical to fresh search.
+34. **`test_cache_invalidation`** — Registry version change clears cache.
+35. **`test_replan_on_precondition_fail`** — Replan triggered when current step preconditions fail.
+36. **`test_replan_cooldown`** — Replan cooldown prevents multiple replans within window.
+37. **`test_goal_priority_ordering`** — Planner always plans for highest-priority unsatisfied goal.
+38. **`test_goal_satisfaction_stops_replan`** — Satisfied goal does not trigger further planning.
 
 ### Integration Tests
 
-| Test | Req | Description |
-|------|-----|-------------|
-| `test_bt_hot_reload_safe` | R-7.3.5 | Hot-reload during agent execution causes no crash or corruption. |
-| `test_subtree_propagation` | R-7.3.6 | Modifying shared subtree updates all referencing trees. |
-| `test_1000_agents_bt` | R-7.3.1 | 1000 agents tick without exceeding 2 ms budget. |
-| `test_goap_cache_10_identical` | R-7.5.4 | 10 identical planning requests produce only one A* search. |
-| `test_utility_mobile_limits` | R-7.4.2 | Mobile config limits action pool to 8. |
-| `test_budget_carry_over` | - | Agents deferred this frame are ticked first next frame. |
-| `test_parallel_agent_eval` | - | Parallel agent evaluation produces identical results to serial. |
+| Test                           | Req     |
+|--------------------------------|---------|
+| `test_bt_hot_reload_safe`      | R-7.3.5 |
+| `test_subtree_propagation`     | R-7.3.6 |
+| `test_1000_agents_bt`          | R-7.3.1 |
+| `test_goap_cache_10_identical` | R-7.5.4 |
+| `test_utility_mobile_limits`   | R-7.4.2 |
+| `test_budget_carry_over`       | -       |
+| `test_parallel_agent_eval`     | -       |
+
+1. **`test_bt_hot_reload_safe`** — Hot-reload during agent execution causes no crash or corruption.
+2. **`test_subtree_propagation`** — Modifying shared subtree updates all referencing trees.
+3. **`test_1000_agents_bt`** — 1000 agents tick without exceeding 2 ms budget.
+4. **`test_goap_cache_10_identical`** — 10 identical planning requests produce only one A* search.
+5. **`test_utility_mobile_limits`** — Mobile config limits action pool to 8.
+6. **`test_budget_carry_over`** — Agents deferred this frame are ticked first next frame.
+7. **`test_parallel_agent_eval`** — Parallel agent evaluation produces identical results to serial.
 
 ### Benchmarks
 
