@@ -10,19 +10,21 @@ jobs:
   macos-metal:
     name: macOS (Metal)
     runs-on: macos-latest
-    env:
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Install LLVM and Ninja
         run: brew install llvm ninja
 
       - name: Install CMake
-        run: pip install cmake cmake-format --break-system-packages
+        run: >
+          pip install cmake cmake-format
+          --break-system-packages
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
+      - name: Bootstrap vcpkg
+        run: ./vendor/vcpkg/bootstrap-vcpkg.sh
 
       - name: Configure
         run: cmake --preset macos-release
@@ -33,37 +35,47 @@ jobs:
   linux-vulkan:
     name: Linux (Vulkan)
     runs-on: ubuntu-latest
-    env:
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Install LLVM 22
         run: |
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
-            | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
+          wget -qO- \
+            https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo tee \
+            /etc/apt/trusted.gpg.d/apt.llvm.org.asc \
+            > /dev/null
           sudo add-apt-repository -y \
-            "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-22 main"
+            "deb http://apt.llvm.org/noble/ \
+            llvm-toolchain-noble-22 main"
           sudo apt-get update
           sudo apt-get install -y \
-            clang-22 libc++-22-dev libc++abi-22-dev lld-22 ninja-build
+            clang-22 libc++-22-dev \
+            libc++abi-22-dev lld-22 ninja-build
 
       - name: Install Vulkan SDK
         run: |
           wget -qO /tmp/lunarg-signing-key-pub.asc \
             https://packages.lunarg.com/lunarg-signing-key-pub.asc
           cat /tmp/lunarg-signing-key-pub.asc \
-            | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc > /dev/null
-          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-noble.list \
+            | sudo tee \
+            /etc/apt/trusted.gpg.d/lunarg.asc \
+            > /dev/null
+          sudo wget -qO \
+            /etc/apt/sources.list.d/lunarg-vulkan-noble.list \
             https://packages.lunarg.com/vulkan/lunarg-vulkan-noble.list
           sudo apt-get update
           sudo apt-get install -y vulkan-sdk
 
       - name: Install CMake
-        run: pip install cmake cmake-format --break-system-packages
+        run: >
+          pip install cmake cmake-format
+          --break-system-packages
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
+      - name: Bootstrap vcpkg
+        run: ./vendor/vcpkg/bootstrap-vcpkg.sh
 
       - name: Configure
         run: |
@@ -80,43 +92,45 @@ jobs:
   windows-d3d12:
     name: Windows (D3D12)
     runs-on: windows-latest
-    env:
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install CMake and Ninja
         run: pip install cmake cmake-format ninja
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
+      - name: Bootstrap vcpkg
+        run: vendor\vcpkg\bootstrap-vcpkg.bat
 
       - name: Configure
         run: cmake --preset windows-release-d3d12
 
       - name: Build
-        run: cmake --build --preset windows-release-d3d12
+        run: >
+          cmake --build --preset windows-release-d3d12
 
   windows-vulkan:
     name: Windows (Vulkan)
     runs-on: windows-latest
-    env:
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install CMake and Ninja
         run: pip install cmake cmake-format ninja
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
+      - name: Bootstrap vcpkg
+        run: vendor\vcpkg\bootstrap-vcpkg.bat
 
       - name: Configure
         run: cmake --preset windows-release-vulkan
 
       - name: Build
-        run: cmake --build --preset windows-release-vulkan
+        run: >
+          cmake --build --preset windows-release-vulkan

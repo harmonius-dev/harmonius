@@ -49,6 +49,9 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_MAKE_PROGRAM": "ninja"
       },
+      "environment": {
+        "VCPKG_FEATURE_FLAGS": "-registries"
+      },
       "generator": "Ninja",
       "hidden": true,
       "name": "base",
