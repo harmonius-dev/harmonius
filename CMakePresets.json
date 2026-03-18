@@ -52,7 +52,7 @@
       "generator": "Ninja",
       "hidden": true,
       "name": "base",
-      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      "toolchainFile": "${sourceDir}/vendor/vcpkg/scripts/buildsystems/vcpkg.cmake"
     },
     {
       "cacheVariables": {

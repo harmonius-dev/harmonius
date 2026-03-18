@@ -8,8 +8,8 @@ CHANGED=$(cd "$CWD" && \
   git diff --name-only HEAD 2>/dev/null | \
   grep -E '\.(rs|cpp|swift|h|ts|tsx)$' | head -5)
 if [ -n "$CHANGED" ]; then
-  cat <<EOFMSG
-{"decision":"block","reason":"Source files modified: $CHANGED. Verify tests are up to date before stopping."}
+  cat >&2 <<EOFMSG
+Source files modified: $CHANGED. Verify tests are up to date before stopping.
 EOFMSG
   exit 2
 fi
