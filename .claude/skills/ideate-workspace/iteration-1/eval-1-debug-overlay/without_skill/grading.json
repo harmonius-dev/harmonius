@@ -1,0 +1,79 @@
+{
+  "expectations": [
+    {
+      "text": "correct_feature_ids — All feature IDs match F-X.Y.Z format",
+      "passed": true,
+      "evidence": "All feature IDs follow F-X.Y.Z format: F-15.5.8 through F-15.5.15"
+    },
+    {
+      "text": "correct_requirement_ids — All requirement IDs match R-X.Y.Z or R-X.Y.Za/b/c format",
+      "passed": false,
+      "evidence": "Most requirement IDs follow R-X.Y.Z format (R-15.5.8 through R-15.5.15), but there are also NFR-15.5.8 and NFR-15.5.9 which use 'NFR-' prefix instead of R-X.Y.Za/b/c suffix format"
+    },
+    {
+      "text": "correct_story_ids — All user story IDs match US-X.Y.Z format",
+      "passed": false,
+      "evidence": "User story IDs use US-X.Y.Z.W format (4-level) instead of US-X.Y.Z: e.g., US-15.5.8.1, US-15.5.8.2, US-15.5.9.1, etc. This is a 4-segment format, not the expected 3-segment US-X.Y.Z"
+    },
+    {
+      "text": "correct_domain — IDs use an appropriate module number for the topic",
+      "passed": true,
+      "evidence": "All IDs use domain 15.5 (Profiling Tools), appropriate for debug overlay functionality"
+    },
+    {
+      "text": "one_to_many_requirements — At least some features have 2+ requirements",
+      "passed": false,
+      "evidence": "Each feature has exactly 1 functional requirement (R-15.5.8 through R-15.5.15). NFRs are separate and not per-feature. No feature has 2+ requirements mapped to it"
+    },
+    {
+      "text": "nfr_suffixes — Non-functional requirements use letter suffixes (a, b, c)",
+      "passed": false,
+      "evidence": "Non-functional requirements use a separate 'NFR-' prefix (NFR-15.5.8, NFR-15.5.9) instead of letter suffixes on the base requirement ID (e.g., R-15.5.8a)"
+    },
+    {
+      "text": "one_to_many_stories — At least some features have 2+ user stories from different personas",
+      "passed": true,
+      "evidence": "Multiple features have 3+ stories from different personas: F-15.5.8 has 5 stories (game designer, tech artist, developer, engine tester, QA lead), F-15.5.9 has 4 stories"
+    },
+    {
+      "text": "varied_personas — User stories reference at least 3 distinct personas",
+      "passed": true,
+      "evidence": "8 distinct personas: game designer (P-5), tech artist (P-13), developer (P-15), engine tester (P-27), QA lead (P-20), engine developer (P-26), effects artist (P-12), env artist (P-8), game tester (P-19)"
+    },
+    {
+      "text": "shall_in_requirements — Requirements use SHALL or SHOULD language",
+      "passed": true,
+      "evidence": "All requirements use SHALL: e.g., R-15.5.8 'The engine SHALL render a compact overlay panel', NFR-15.5.8 'The combined rendering overhead... SHALL NOT exceed 0.5ms'"
+    },
+    {
+      "text": "no_shall_in_features — Feature file does not contain SHALL",
+      "passed": true,
+      "evidence": "features.md contains no instances of SHALL. Uses descriptive language: 'Renders', 'Displays', 'Supports', 'Provides'"
+    },
+    {
+      "text": "rationale_and_verification — Requirements include Rationale and Verification sections",
+      "passed": true,
+      "evidence": "All 10 requirements (R-15.5.8 through R-15.5.15, NFR-15.5.8, NFR-15.5.9) include Rationale and Verification subsections"
+    },
+    {
+      "text": "acceptance_criteria — User stories include Acceptance criteria",
+      "passed": true,
+      "evidence": "All user stories include Acceptance criteria, e.g., US-15.5.8.1: 'I can immediately notice when a gameplay area causes performance drops without leaving play mode'"
+    },
+    {
+      "text": "feature_expansions — Output includes features beyond the literal idea (suggested additions)",
+      "passed": true,
+      "evidence": "Features go beyond basic debug overlay to include: Overlay Preset Profiles (F-15.5.13), Hotkey Toggle and Layout Control (F-15.5.14), Budget Threshold Configuration (F-15.5.15) — configuration and interaction features extending the core overlay idea"
+    },
+    {
+      "text": "cross_domain_deps — Features reference dependencies on existing features from other domains",
+      "passed": true,
+      "evidence": "Cross-domain deps include: F-15.5.8 depends on F-15.5.1, F-15.5.2, F-15.5.6; F-15.5.9 depends on F-2.2.1 (Render Graph); F-15.5.10 depends on F-2.3.7; F-15.5.11 depends on F-2.1.1"
+    },
+    {
+      "text": "user_interaction_planned — (with_skill only) user-questions.md exists with review questions",
+      "passed": true,
+      "evidence": "N/A - baseline run"
+    }
+  ]
+}

@@ -31,13 +31,13 @@ system scripts, and development tools.
 
 - 100-character line limit
 - 2-space indentation
-- Biome for formatting and import sorting
+- Prettier for formatting and import sorting
 - Trailing commas in multi-line expressions
 - Semicolons required
 
 ## Linting Rules
 
-- Biome for all linting
+- `tsc --noEmit` for all type checking
 - Strict TypeScript mode (`strict: true`)
 - No `any` — use `unknown` and narrow
 - No `@ts-ignore` — use `@ts-expect-error` with explanation
@@ -52,15 +52,15 @@ system scripts, and development tools.
 
 | Validation | Check command | Fix command |
 |------------|--------------|-------------|
-| Format | `biome check --formatter-enabled=true` | `biome check --fix` |
-| Lint | `biome check --linter-enabled=true` | `biome check --fix` |
+| Format | `prettier --check .` | `prettier --write .` |
+| Lint | `tsc --noEmit` | (manual) |
 | Type-check | `tsc --noEmit` | (manual) |
-| Test | `biome check` + test runner | (manual) |
+| Test | `bun test` | (manual) |
 
 ## Project-Specific Rules
 
 1. **No-code editor** — the editor is visual; users never write TypeScript
-2. **Biome only** — no ESLint, no Prettier; Biome handles format + lint + imports
+2. **Prettier only** — no ESLint, no Biome; Prettier handles formatting exclusively
 3. **Interfaces for contracts** — define interfaces at module boundaries
 
 ## Cache-Friendly Patterns

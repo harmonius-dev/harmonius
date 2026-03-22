@@ -1,0 +1,79 @@
+{
+  "expectations": [
+    {
+      "text": "correct_feature_ids — All feature IDs match F-X.Y.Z format",
+      "passed": true,
+      "evidence": "All feature IDs follow F-X.Y.Z format: F-15.5.8, F-15.5.9, F-15.5.10, F-15.5.11, F-15.5.12, F-15.5.13"
+    },
+    {
+      "text": "correct_requirement_ids — All requirement IDs match R-X.Y.Z or R-X.Y.Za/b/c format",
+      "passed": true,
+      "evidence": "All requirement IDs follow R-X.Y.Z or R-X.Y.Za format: R-15.5.8, R-15.5.8a, R-15.5.9, R-15.5.9a, R-15.5.10, R-15.5.10a, R-15.5.11, R-15.5.11a, R-15.5.12, R-15.5.12a, R-15.5.13, R-15.5.13a"
+    },
+    {
+      "text": "correct_story_ids — All user story IDs match US-X.Y.Z format",
+      "passed": true,
+      "evidence": "All user story IDs follow US-X.Y.Z format: US-15.5.8 through US-15.5.25"
+    },
+    {
+      "text": "correct_domain — IDs use an appropriate module number for the topic",
+      "passed": true,
+      "evidence": "All IDs use domain 15.5 (Profiling Tools), which is appropriate for debug overlay functionality"
+    },
+    {
+      "text": "one_to_many_requirements — At least some features have 2+ requirements",
+      "passed": true,
+      "evidence": "All 6 features have 2 requirements each (functional + NFR): F-15.5.8 has R-15.5.8 and R-15.5.8a, F-15.5.9 has R-15.5.9 and R-15.5.9a, etc."
+    },
+    {
+      "text": "nfr_suffixes — Non-functional requirements use letter suffixes (a, b, c)",
+      "passed": true,
+      "evidence": "NFRs use 'a' suffix consistently: R-15.5.8a (CPU overhead), R-15.5.9a (update frequency), R-15.5.10a (GPU time), R-15.5.11a (frame latency), R-15.5.12a (CPU overhead), R-15.5.13a (GPU time)"
+    },
+    {
+      "text": "one_to_many_stories — At least some features have 2+ user stories from different personas",
+      "passed": true,
+      "evidence": "Every feature has 3 user stories from different personas. E.g., F-15.5.8 has US-15.5.8 (technical artist), US-15.5.9 (game designer), US-15.5.10 (engine tester)"
+    },
+    {
+      "text": "varied_personas — User stories reference at least 3 distinct personas",
+      "passed": true,
+      "evidence": "9 distinct personas: technical artist (P-13), game designer (P-5), engine tester (P-27), environment artist (P-8), engine developer (P-26), gameplay director (P-3), QA lead (P-20), DevOps engineer (P-16), effects artist (P-12)"
+    },
+    {
+      "text": "shall_in_requirements — Requirements use SHALL or SHOULD language",
+      "passed": true,
+      "evidence": "All 12 requirements use SHALL: e.g., 'The engine SHALL display a draw call breakdown overlay', 'The draw call breakdown overlay SHALL introduce less than 0.1 ms'"
+    },
+    {
+      "text": "no_shall_in_features — Feature file does not contain SHALL",
+      "passed": true,
+      "evidence": "features.md contains no instances of 'SHALL' or 'SHOULD'. Features use descriptive language like 'Displays', 'Visualizes', 'Renders', 'Allows', 'Records'"
+    },
+    {
+      "text": "rationale_and_verification — Requirements include Rationale and Verification sections",
+      "passed": true,
+      "evidence": "All 12 requirements include both Rationale and Verification subsections with specific test procedures"
+    },
+    {
+      "text": "acceptance_criteria — User stories include Acceptance criteria",
+      "passed": true,
+      "evidence": "All 18 user stories include Acceptance criteria, e.g., US-15.5.8: 'Overlay shows per-pass draw call counts, Passes exceeding threshold are highlighted, Overlay updates every frame'"
+    },
+    {
+      "text": "feature_expansions — Output includes features beyond the literal idea (suggested additions)",
+      "passed": true,
+      "evidence": "features.md has a 'Suggested Additional Features' section containing F-15.5.13 (Render Pass Heatmap Overlay), explicitly noted as beyond the original request"
+    },
+    {
+      "text": "cross_domain_deps — Features reference dependencies on existing features from other domains",
+      "passed": true,
+      "evidence": "Multiple cross-domain deps: F-15.5.8 depends on F-2.2.1 (Render Graph), F-15.5.9 depends on F-15.5.3 (Memory Profiler), F-15.5.12 depends on F-1.8.1 (Async I/O), F-15.5.13 depends on F-2.2.1 (Render Graph)"
+    },
+    {
+      "text": "user_interaction_planned — (with_skill only) user-questions.md exists with review questions for both feature confirmation and requirements/stories review",
+      "passed": true,
+      "evidence": "user-questions.md exists with two phases: 'Phase 2 Review: Proposed Features' (6 questions about feature selection, scope, VR, heatmap, additional stats, presets) and 'Phase 4 Review: Requirements and User Stories' (5 questions about performance budgets, fallbacks, personas, NFRs, schema versioning)"
+    }
+  ]
+}

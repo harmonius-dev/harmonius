@@ -665,8 +665,6 @@ def main() -> None:
             continue
         if f.name == "CLAUDE.md":
             continue
-        if f.name == "AGENTS.md":
-            continue
 
         if process_file(f):
             total_modified += 1

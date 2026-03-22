@@ -123,13 +123,22 @@
     },
     {
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "HARMONIUS_GPU_BACKEND": "d3d12",
-        "VCPKG_MANIFEST_FEATURES": "d3d12",
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static"
       },
-      "displayName": "Windows Debug (D3D12)",
+      "hidden": true,
       "inherits": "base",
+      "name": "windows-base"
+    },
+    {
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "HARMONIUS_GPU_BACKEND": "d3d12",
+        "VCPKG_MANIFEST_FEATURES": "d3d12"
+      },
+      "displayName": "Windows Debug (D3D12)",
+      "inherits": "windows-base",
       "name": "windows-debug-d3d12"
     },
     {
@@ -137,22 +146,20 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "HARMONIUS_GPU_BACKEND": "d3d12",
-        "VCPKG_MANIFEST_FEATURES": "d3d12",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+        "VCPKG_MANIFEST_FEATURES": "d3d12"
       },
       "displayName": "Windows Release (D3D12)",
-      "inherits": "base",
+      "inherits": "windows-base",
       "name": "windows-release-d3d12"
     },
     {
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "HARMONIUS_GPU_BACKEND": "vulkan",
-        "VCPKG_MANIFEST_FEATURES": "vulkan",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+        "VCPKG_MANIFEST_FEATURES": "vulkan"
       },
       "displayName": "Windows Debug (Vulkan)",
-      "inherits": "base",
+      "inherits": "windows-base",
       "name": "windows-debug-vulkan"
     },
     {
@@ -160,11 +167,10 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "HARMONIUS_GPU_BACKEND": "vulkan",
-        "VCPKG_MANIFEST_FEATURES": "vulkan",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+        "VCPKG_MANIFEST_FEATURES": "vulkan"
       },
       "displayName": "Windows Release (Vulkan)",
-      "inherits": "base",
+      "inherits": "windows-base",
       "name": "windows-release-vulkan"
     }
   ],

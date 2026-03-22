@@ -7,12 +7,12 @@ GFM (GitHub Flavored Markdown) flavor.
 
 ## Naming Conventions
 
-| Element | Convention | Example |
-|---------|-----------|---------|
-| File name | `kebab-case.md` | `core-rendering.md` |
-| Heading | Sentence case | `## API design` |
-| ID reference | `X-N.N.N` format | `R-1.2.3`, `F-4.5.6` |
-| Test case ID | `TC-X.Y.Z.N` format | `TC-1.2.3.1` |
+| Element      | Convention          | Example              |
+| ------------ | ------------------- | -------------------- |
+| File name    | `kebab-case.md`     | `core-rendering.md`  |
+| Heading      | Sentence case       | `## API design`      |
+| ID reference | `X-N.N.N` format    | `R-1.2.3`, `F-4.5.6` |
+| Test case ID | `TC-X.Y.Z.N` format | `TC-1.2.3.1`         |
 
 ## File Organization
 
@@ -43,8 +43,8 @@ Not applicable for Markdown.
 
 ## How to Check and Fix
 
-| Validation | Check command | Fix command |
-|------------|--------------|-------------|
+| Validation | Check command                | Fix command                  |
+| ---------- | ---------------------------- | ---------------------------- |
 | Lint + Format | `rumdl check .` | `rumdl fmt .` |
 
 ## Project-Specific Rules
