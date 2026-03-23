@@ -1036,7 +1036,7 @@ fn distribute_rewards_impl(
 3. **Server authority** — Quest state transitions and reward grants are validated server-side.
    Client sends requests; server evaluates and responds.
 4. **Async I/O** — Dialogue tree and quest graph assets are loaded via the async I/O reactor.
-   Loading does not block the main thread.
+   Loading does not block the game loop thread.
 5. **Localization** — `LocalizedString` references a key in the localization database. Text and
    audio resolve per-locale at display time.
 6. **Save/load** — `QuestJournal`, `QuestState`, and `ConversationInterrupted` components are

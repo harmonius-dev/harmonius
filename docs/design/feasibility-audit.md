@@ -567,10 +567,10 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 - **File:** `rendering/core-rendering.md`
 - **Design element:** Extract phase copies changed ECS data into renderer-owned ProxyStore. Target:
   < 2.0 ms for 100K entities (full extraction), < 0.5 ms for 1% dirty.
-- **Risk:** The extraction phase runs on the main thread and blocks simulation from advancing. At
-  100K entities with 100% dirty (scene load), the 2.0 ms budget is tight. The design says extraction
-  uses "immutable ECS queries" on a "dedicated thread," but the simulation cannot advance while
-  extraction borrows the ECS world immutably.
+- **Risk:** The extraction phase runs on the game loop thread and blocks simulation from advancing.
+  At 100K entities with 100% dirty (scene load), the 2.0 ms budget is tight. The design says
+  extraction uses "immutable ECS queries" on a "dedicated thread," but the simulation cannot advance
+  while extraction borrows the ECS world immutably.
 - **Likelihood:** Medium
 - **Impact:** Medium
 - **Mitigation:** Use double-buffered ECS worlds or copy-on-write snapshots to allow simulation and

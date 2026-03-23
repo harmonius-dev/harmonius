@@ -1064,9 +1064,14 @@ graph LR
 ```
 
 The platform backend runs a single event poller (driven by direct OS event loops: Win32 message
-pump, `NSRunLoop`, xcb event queue, or Wayland dispatch) that receives all OS events — window,
-input, and display — in a unified stream. The event translator converts platform-native event types
-into engine event types and routes them to the appropriate bounded channel.
+pump, `NSRunLoop`, xcb event queue, Wayland dispatch, or UIKit `CFRunLoop`) that receives all OS
+events — window, input, and display — in a unified stream. The event translator converts
+platform-native event types into engine event types and routes them to the appropriate bounded
+channel.
+
+On platforms where the OS owns the main thread (iOS, Android), the event poller runs on the OS main
+thread and forwards translated events to the game loop thread via a lock-free SPSC queue. On desktop
+platforms, the event poller runs on the game loop thread directly.
 
 Window events flow through the following path:
 
@@ -1122,16 +1127,22 @@ The windowing subsystem is responsible for:
 |---------------|--------------------------------|
 | Windows       | `CreateWindowEx`               |
 | macOS         | `NSWindow` via Swift / cxx     |
+| iOS           | `UIWindow` via Swift / cxx     |
 | Linux X11     | `xcb_create_window`            |
 | Linux Wayland | `wl_compositor_create_surface` |
 
 1. **Windows** — COM initialized via `CoInitializeEx`. Window class registered with
    `RegisterClassExW`. Uses `windows-sys` for FFI.
-2. **macOS** — `NSApplication` must be initialized on the main thread. `NSWindow` created with
+2. **macOS** — `NSApplication` must be initialized on the OS main thread. `NSWindow` created with
    `initWithContentRect:styleMask:`. Swift wrappers accessed through `cxx`.
-3. **Linux X11** — Connection opened via `xcb_connect`. Window attributes set via
+3. **iOS** — `UIApplicationMain` owns the OS main thread. `UIWindow` and `UIViewController` created
+   on the OS main thread via Swift wrappers through `cxx`. Input events (touch, accelerometer,
+   keyboard) arrive on the OS main thread via UIKit and are forwarded to the game loop thread
+   through a lock-free SPSC queue. The game loop runs on a dedicated thread, not the UIKit main
+   thread.
+4. **Linux X11** — Connection opened via `xcb_connect`. Window attributes set via
    `xcb_change_window_attributes`.
-4. **Linux Wayland** — `wl_display_connect` + `wl_registry_bind` for compositor. `xdg_wm_base` for
+5. **Linux Wayland** — `wl_display_connect` + `wl_registry_bind` for compositor. `xdg_wm_base` for
    shell surface.
 
 ### Fullscreen Transitions

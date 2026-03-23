@@ -1560,7 +1560,7 @@ impl ResourceMap {
     );
 
     /// Insert a non-send resource. Must only be
-    /// accessed from the main thread.
+    /// accessed from the game loop thread.
     pub fn insert_non_send<T: Resource>(
         &mut self,
         value: T,
@@ -2669,8 +2669,8 @@ schedule's topological ordering and access-set analysis are preserved within eac
 | Render | `PhaseNode::RenderGraph` | Render pass ordering |
 | Custom(n) | `PhaseNode::Systems` | User-defined |
 
-**Non-send systems** are pinned to the main thread by the scheduler. They run at designated points
-in the phase, never dispatched to worker threads.
+**Non-send systems** are pinned to the game loop thread by the scheduler. They run at designated
+points in the phase, never dispatched to worker threads.
 
 **Parallel query iteration** (`par_iter`) still uses `ThreadPool::scope` internally. The outer
 scheduling is driven by the compiled game loop graph, but within a system, `par_iter` splits work
@@ -2890,7 +2890,8 @@ lookups. This avoids hash overhead in the inner loop.
     per chunk.
 35. **`test_resource_res_resmut`** — Insert resource. Read via Res, write via ResMut. Verify
     scheduler orders correctly.
-36. **`test_non_send_main_thread`** — Register non-send resource. Verify system runs on main thread.
+36. **`test_non_send_game_loop_thread`** — Register non-send resource. Verify system runs on game
+    loop thread.
 37. **`test_schedule_dependency_resolution`** — Register systems with known deps. Build schedule.
     Verify topological order respects deps.
 38. **`test_schedule_cycle_detection`** — Register cyclic systems. Verify error at build time.

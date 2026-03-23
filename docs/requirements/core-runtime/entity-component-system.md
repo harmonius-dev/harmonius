@@ -331,13 +331,13 @@
      it via `ResMut<T>` from another. Verify the scheduler orders them correctly. Verify
      `Changed<T>` detects resource mutations.
 2. **R-1.1.24** — The engine **SHALL** ensure resources marked as non-send are only accessed from
-   the main thread, and **SHALL** automatically pin systems that access non-send resources to the
-   main thread.
+   the game loop thread, and **SHALL** automatically pin systems that access non-send resources to
+   the game loop thread.
    - **Rationale:** GPU device handles and windowing handles are not thread-safe and must never be
      moved to worker threads.
    - **Verification:** Unit test: register a non-send resource and a system that accesses it. Verify
-     the system executes on the main thread. Attempt to access the resource from a worker thread and
-     verify the scheduler prevents it (compile-time or runtime error).
+     the system executes on the game loop thread. Attempt to access the resource from a worker
+     thread and verify the scheduler prevents it (compile-time or runtime error).
 3. **R-1.1.22a** — Per-chunk change tracking metadata **SHALL NOT** exceed 8 bytes per component
    type per chunk (one tick counter). False-positive change detection rate **SHALL** be bounded by
    chunk granularity — at most chunk_capacity entities are falsely reported as changed when only one

@@ -68,7 +68,7 @@
    a separate draw call for correct ordering. Per-vertex ambient occlusion **SHALL** be computed
    from neighboring block occupancy. Meshing **SHALL** be incremental — modifying one block
    re-meshes only the affected chunk and adjacent boundary chunks. Meshing **SHALL** run on worker
-   threads without blocking the main thread.
+   threads without blocking the game loop thread.
    - **Rationale:** Greedy meshing dramatically reduces polygon count (up to 90% for large flat
      surfaces), and incremental re-meshing keeps block modifications responsive. Worker-thread
      meshing prevents frame drops during world modification.
@@ -76,7 +76,7 @@
      meshing produces a single quad per face direction. Verify a fully enclosed block generates zero
      mesh faces. Place a glass block adjacent to an opaque block and verify separate draw calls.
      Modify a single block and verify only the affected chunk and its neighbors are re-meshed.
-     Profile meshing and verify it does not stall the main thread.
+     Profile meshing and verify it does not stall the game loop thread.
 5. **R-13.27.5** — The engine **SHALL** implement a flood-fill lighting system with two channels:
    sunlight (full intensity downward, attenuated horizontally) and block light (emitted by
    light-emitting blocks, attenuated in all directions). Light values **SHALL** be stored per-block

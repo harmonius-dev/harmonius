@@ -241,10 +241,11 @@
    is type-safe and participates in dependency analysis
    - **Acceptance:** One instance per type per world<br>Res<T> (shared) and ResMut<T> (exclusive)
      access<br>Resources participate in change detection
-2. **US-1.1.33** — resources marked non-send to be automatically pinned to the main thread by the
-   scheduler, so that GPU device handles and window handles are never accessed from worker threads
-   - **Acceptance:** Non-send resources pinned to main thread<br>Systems accessing non-send
-     resources run on main thread<br>Scheduler never moves non-send access to workers
+2. **US-1.1.33** — resources marked non-send to be automatically pinned to the game loop thread by
+   the scheduler, so that GPU device handles and window handles are never accessed from worker
+   threads
+   - **Acceptance:** Non-send resources pinned to game loop thread<br>Systems accessing non-send
+     resources run on game loop thread<br>Scheduler never moves non-send access to workers
 
 ## System Scheduling
 

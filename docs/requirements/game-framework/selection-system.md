@@ -10,7 +10,7 @@
 1. **R-13.11.1** — The engine **SHALL** cast rays from the camera through screen-space coordinates
    into the 3D world using the shared spatial index for broadphase and per-entity collision shapes
    for precise hit testing, returning entity, world position, surface normal, and hit bone, filtered
-   by the `Selectable` component, with sub-millisecond latency on the main thread.
+   by the `Selectable` component, with sub-millisecond latency on the game loop thread.
    - **Rationale:** Responsive 3D picking is fundamental to every interactive 3D game genre;
      spatial-index-accelerated ray casts ensure consistent sub-millisecond performance regardless of
      entity count.

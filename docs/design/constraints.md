@@ -29,6 +29,11 @@ engine.
   frame-boundary yields) use Rust's `async`/`await`. No callbacks.
 - **No Rust stdlib file I/O.** All file operations use platform-native async I/O: IOCP on Windows,
   Dispatch IO (GCD) on macOS, io_uring on Linux.
+- **Dedicated game loop thread.** The game loop runs on a dedicated thread that owns the
+  `IoReactor`. On desktop (macOS, Windows, Linux) this is typically thread 0. On mobile (iOS,
+  Android) and consoles, the game loop thread is separate from the OS main thread. Platform UI
+  events (UIKit, Activity lifecycle) arrive on the OS main thread and are forwarded to the game loop
+  thread via a lock-free SPSC queue.
 - **Controlled reactor poll point.** The game loop owns an `IoReactor`. I/O completions are
   processed only when explicitly polled — the OS never fires callbacks asynchronously.
 - **Synchronous blocking only for sub-microsecond critical sections.** Even 1 ms of blocking has
@@ -47,23 +52,32 @@ engine.
 |----------|-------------------|
 | Windows  | IOCP              |
 | macOS    | GCD / Dispatch IO |
+| iOS      | GCD / Dispatch IO |
 | Linux    | io_uring          |
+| Android  | io_uring / epoll  |
 
 1. **Windows** — `CreateIoCompletionPort`, `GetQueuedCompletionStatusEx` via `windows-sys`
-2. **macOS** — Accessed through C++ wrappers via cxx.rs. We control when dispatch callbacks fire
+2. **macOS** — Accessed through Swift wrappers via cxx.rs. We control when dispatch callbacks fire
    (controlled drain at poll point).
-3. **Linux** — Minimum kernel 5.1+. `IORING_OP_POLL_ADD` for fd readiness. No epoll.
+3. **iOS** — Same Swift wrappers and GCD backend as macOS. Game loop runs on a dedicated thread, not
+   the UIKit main thread.
+4. **Linux** — Minimum kernel 5.1+. `IORING_OP_POLL_ADD` for fd readiness. No epoll.
+5. **Android** — io_uring (API 26+) with epoll fallback on older kernels.
 
 ## macOS and Apple Platforms
 
-- **GCD is the concurrency primitive on macOS.** Fibers, async I/O, and cooperative scheduling all
-  use GCD dispatch queues and blocks.
+- **GCD is the concurrency primitive on Apple platforms.** Fibers, async I/O, and cooperative
+  scheduling all use GCD dispatch queues and blocks. Shared across macOS and iOS.
 - **Metal uses Dispatch.** Command buffer completion handlers are dispatch blocks. GCD integration
   is a hard requirement for GPU synchronization.
 - **All GCD/Dispatch IO accessed through Swift wrappers via cxx.rs.** Swift uses C++ interop to
   implement the cxx.rs bridge interface, exposing GCD to Rust.
 - **Metal via metal-cpp.** Metal is accessed through metal-cpp (Apple's C++ wrapper) exposed to Rust
   via cxx.rs. No objc2-metal.
+- **iOS: UIKit owns the OS main thread.** `UIApplicationMain` runs the `CFRunLoop` on thread 0. The
+  game loop runs on a dedicated thread. UIKit input events (touch, accelerometer, keyboard) are
+  forwarded to the game loop thread via a lock-free SPSC queue. The render thread presents
+  independently via Metal when frames are ready.
 
 ## Architecture
 

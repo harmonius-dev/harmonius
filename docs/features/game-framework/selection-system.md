@@ -13,7 +13,7 @@
    (nearest entity under cursor), priority-based pick (interactive objects take precedence over
    scenery), and multi-layer pick (return all entities along the ray, sorted by distance, for
    pick-through scenarios). Pick results include the hit entity, world-space position, surface
-   normal, and hit bone/socket for skeletal meshes. The system operates on the main thread with
+   normal, and hit bone/socket for skeletal meshes. The system operates on the game loop thread with
    sub-millisecond latency for responsive interaction. Pick filtering uses component-based queries —
    only entities with a `Selectable` component are eligible for picking. All picking rules and
    priority configurations are data-driven and authored in the visual editor.

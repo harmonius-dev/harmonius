@@ -106,11 +106,11 @@
 2. **R-7.1.9** — The engine **SHALL** run NavMesh tile generation and rebuild on background worker
    threads, never blocking the main simulation tick. Agents with corridors through tiles under
    construction **SHALL** receive a temporary fallback path.
-   - **Rationale:** Blocking the main thread during NavMesh generation causes frame-time spikes that
-     are unacceptable in a live game.
-   - **Verification:** Trigger a tile rebuild and verify main-thread frame time does not increase by
-     more than 5% during generation. Verify an agent navigating through a pending tile receives a
-     fallback path and continues moving without stopping.
+   - **Rationale:** Blocking the game loop thread during NavMesh generation causes frame-time spikes
+     that are unacceptable in a live game.
+   - **Verification:** Trigger a tile rebuild and verify game-loop-thread frame time does not
+     increase by more than 5% during generation. Verify an agent navigating through a pending tile
+     receives a fallback path and continues moving without stopping.
 3. **R-7.1.10** — The engine **SHALL** emit a `NavMeshInvalidation` event when a destructible entity
    fractures, enqueuing incremental tile rebuilds for the affected bounding region with priority
    scaled by active agent count in the area.

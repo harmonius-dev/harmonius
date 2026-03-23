@@ -30,11 +30,19 @@ and async-aware synchronization primitives. All asynchronous abstractions — I/
 synchronization, long waits, and frame-boundary yields — use Rust's `async`/`await`. No callbacks.
 Synchronous blocking is only permitted for sub-microsecond critical sections.
 
-The game loop owns a **reactor** — the single point where I/O completions are harvested from the OS.
-Each frame, the loop calls `reactor.poll()` at a defined point, draining platform completion queues
-(IOCP on Windows, controlled GCD dispatch drain on macOS, io_uring on Linux). This wakes any async
-tasks whose I/O has finished, which are then resumed on worker threads. The engine controls exactly
-when callbacks fire — never the OS asynchronously.
+The game loop runs on a **dedicated game loop thread** and owns a **reactor** — the single point
+where I/O completions are harvested from the OS. Each frame, the loop calls `reactor.poll()` at a
+defined point, draining platform completion queues (IOCP on Windows, controlled GCD dispatch drain
+on macOS/iOS, io_uring on Linux). This wakes any async tasks whose I/O has finished, which are then
+resumed on worker threads. The engine controls exactly when callbacks fire — never the OS
+asynchronously.
+
+On platforms where the OS owns thread 0 (iOS, Android), the game loop thread is a dedicated thread
+separate from the OS main thread. The OS main thread handles platform UI events (UIKit, Activity
+lifecycle) and forwards them to the game loop thread via a lock-free SPSC queue. On desktop
+platforms (macOS, Windows, Linux), the game loop thread is typically thread 0. This distinction is
+transparent to engine code — the `IoReactor` enforces single-caller access on whichever thread runs
+the game loop, regardless of whether it is the OS main thread.
 
 The thread pool supports scoped execution (like `std::thread::scope`) so tasks can borrow from the
 calling frame without `'static` or `Arc` overhead. Fibers remain available for deep-call-stack
@@ -140,7 +148,7 @@ harmonius_platform/
 
 ```mermaid
 sequenceDiagram
-    participant ML as Main Loop
+    participant ML as Game Loop Thread
     participant RE as IoReactor
     participant ECS as ECS Scheduler
     participant TP as ThreadPool
@@ -798,20 +806,23 @@ processes events only when explicitly polled. The engine decides when completion
 never the OS asynchronously.
 
 ```rust
-/// The I/O reactor. Owned by the main game loop.
+/// The I/O reactor. Owned by the game loop thread.
 /// All I/O completions flow through this single
 /// controlled drain point.
 pub struct IoReactor { /* ... */ }
 
 impl IoReactor {
+    /// Create a new IoReactor. Records the current
+    /// thread as the game loop thread for
+    /// single-caller enforcement.
     pub fn new() -> Self;
 
     /// Poll for completed I/O events
     /// (non-blocking). Drains the platform
     /// completion queue and wakes all Futures
-    /// whose operations finished. Call at the
-    /// frame's defined poll point. Returns the
-    /// number of completions processed.
+    /// whose operations finished. Must be called
+    /// from the game loop thread (debug-asserted).
+    /// Returns the number of completions processed.
     pub fn poll(&self) -> u32;
 
     /// Submit an async read. The returned Future
@@ -1079,12 +1090,17 @@ pub enum FiberError {
 
 ### Frame Lifecycle with Reactor
 
-The game loop owns the `IoReactor` and calls `poll()` at defined points. This is the only path
-through which I/O completions enter the engine. The OS never fires callbacks asynchronously — we
-control exactly when completions are processed.
+The game loop runs on the dedicated game loop thread and owns the `IoReactor`. It calls `poll()` at
+defined points. This is the only path through which I/O completions enter the engine. The OS never
+fires callbacks asynchronously — we control exactly when completions are processed.
+
+On desktop (macOS, Windows, Linux), the game loop thread is typically thread 0. On mobile (iOS,
+Android), the game loop thread is a dedicated thread separate from the OS main thread — the OS main
+thread runs the platform UI event loop (UIKit `CFRunLoop`, Android `Looper`) and forwards input
+events to the game loop thread via a lock-free SPSC queue.
 
 ```rust
-// Simplified game loop
+// Simplified game loop (runs on game loop thread)
 loop {
     // ---- Frame poll point: harvest I/O ----
     reactor.poll();
@@ -1214,9 +1230,19 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 | Android  | std thread pool         | io_uring (API 26+) / epoll fallback |
 | Consoles | Platform thread API     | Platform async I/O                  |
 
-1. **iOS** — Same C++ wrappers via cxx.rs. QoS classes for thermal throttling.
-2. **Android** — Thread affinity respects big.LITTLE core topology.
+1. **iOS** — Same Swift wrappers via cxx.rs as macOS. QoS classes for thermal throttling. UIKit owns
+   the OS main thread (`UIApplicationMain` / `CFRunLoop`), so the game loop runs on a dedicated game
+   loop thread. Input events (touch, accelerometer, keyboard) arrive on the OS main thread via UIKit
+   and are forwarded to the game loop thread through a lock-free SPSC queue. The render thread
+   presents independently via Metal when frames are ready. This is the standard pattern used by
+   Unreal, Unity, and Godot on iOS.
+2. **Android** — Thread affinity respects big.LITTLE core topology. The game loop runs on a
+   dedicated thread, separate from the `NativeActivity` main thread. Input events are forwarded via
+   the same SPSC queue pattern as iOS.
 3. **Consoles** — Vendor-specific thread affinity and priority. NDA APIs.
+
+On all mobile and console platforms, the game loop thread is distinct from the OS main thread.
+Desktop platforms (macOS, Windows, Linux) may run the game loop on thread 0.
 
 Thread pool sizing adapts to core count: mobile devices typically have 4-8 cores with heterogeneous
 performance. The `ThreadPool` constructor queries `std::thread::available_parallelism()` and applies
@@ -1254,15 +1280,17 @@ avoid holding I/O in flight at scope exit.
 ### GCD Controlled Drain Latency (Medium)
 
 `dispatch_sync` on the serial drain queue blocks the calling thread. If a Metal command buffer
-completion handler takes > 1 ms, this blocks the main thread. Use a manual drain loop with
+completion handler takes > 1 ms, this blocks the game loop thread. Use a manual drain loop with
 `dispatch_semaphore_wait` (zero timeout) for non-blocking drain. Document that completion handlers
 must be lightweight (< 100 us).
 
 ### IoReactor Single-Threaded Access (Medium)
 
 `IoReactor::poll(&self)` mutates internal waker maps via interior mutability. Enforce single-caller
-via `debug_assert!` that the calling thread is the main thread. Consider `poll(&mut self)` to make
-this statically enforced.
+via `debug_assert!` that the calling thread is the game loop thread (not necessarily the OS main
+thread — on iOS and Android, the game loop thread is a dedicated thread separate from thread 0).
+Consider `poll(&mut self)` to make this statically enforced. Store the game loop thread ID at
+`IoReactor::new()` time and assert against it.
 
 ## Feasibility Notes
 
@@ -1327,7 +1355,7 @@ for async tasks that involve I/O. This matches Rayon's scope model.
 | `test_fiber_cross_thread`    | R-14.3.4 |
 | `test_gcd_controlled_drain`  | R-14.3.5 |
 
-1. **`test_affinity_per_platform`** — Verify main thread on perf core, background on efficiency
+1. **`test_affinity_per_platform`** — Verify game loop thread on perf core, background on efficiency
    core.
 2. **`test_async_read_10mb`** — 10 MB async read, no worker blocks, data integrity check.
 3. **`test_utilization_imbalance`** — Imbalanced graph, assert >= 80% utilization.

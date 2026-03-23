@@ -118,7 +118,7 @@ Companion test cases for [threading.md](threading.md).
 | 1 | R-14.3.2    |
 | 2 | R-14.3.2    |
 
-1. **#1** — Query main thread affinity
+1. **#1** — Query game loop thread affinity
    - **Expected:** Pinned to performance core
 2. **#2** — Spawn Low-priority task, query affinity
    - **Expected:** Pinned to efficiency core (if available)

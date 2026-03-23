@@ -200,9 +200,9 @@
    dependency graph and change detection. Used for global state like `Time`, `PhysicsConfig`,
    `Broadphase`, `NavMeshTileMap`, and `InputState`.
    - **Deps:** F-1.1.4
-2. **F-1.1.24** — Resources that must only be accessed from the main thread (e.g., GPU device
+2. **F-1.1.24** — Resources that must only be accessed from the game loop thread (e.g., GPU device
    handles, windowing handles). The scheduler never moves non-send resource access to worker
-   threads. Systems that access non-send resources are automatically pinned to the main thread.
+   threads. Systems that access non-send resources are automatically pinned to the game loop thread.
    - **Deps:** F-1.1.23
 
 ## System Scheduling

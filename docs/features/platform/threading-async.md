@@ -16,9 +16,9 @@
      `QOS_CLASS_UTILITY` for background work); Linux uses `pthread_create` with
      `pthread_setaffinity_np`. Hybrid core detection uses `cpuid` (x86) or IOKit/sysctl (Apple
      Silicon).
-2. **F-14.3.2** — Pin threads to specific cores and set OS-level priority classes. The main thread
-   and render submission thread run at elevated priority on performance cores. Background I/O and
-   telemetry threads run at low priority on efficiency cores to avoid contention during MMO raid
+2. **F-14.3.2** — Pin threads to specific cores and set OS-level priority classes. The game loop
+   thread and render submission thread run at elevated priority on performance cores. Background I/O
+   and telemetry threads run at low priority on efficiency cores to avoid contention during MMO raid
    encounters with hundreds of entities.
    - **Deps:** F-14.3.1
    - **Platform:** Windows uses `SetThreadAffinityMask` and `SetThreadPriority`; macOS uses

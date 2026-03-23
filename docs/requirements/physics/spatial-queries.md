@@ -25,7 +25,7 @@
 3. **R-4.4.1b** — Single Ray Cast Latency: A single ray cast against 50,000 collider entities
    **SHALL** complete within 5 microseconds on minimum-spec hardware, including BVH traversal and
    narrowphase intersection.
-   - **Rationale:** Gameplay code issues ray casts on the main thread; they must be
+   - **Rationale:** Gameplay code issues ray casts on the game loop thread; they must be
      near-instantaneous to avoid blocking frame completion.
    - **Verification:** Benchmark: populate 50,000 collider entities. Issue a single ray cast. Assert
      completion within 5 microseconds.
@@ -134,8 +134,8 @@
 1. **R-4.4.NF1** — Single Ray Cast Latency: A single ray cast against a scene of 50,000 collider
    entities **SHALL** complete within 0.005 ms (5 microseconds) on minimum-spec hardware, including
    BVH traversal and narrowphase intersection.
-   - **Rationale:** Individual ray casts are issued by gameplay code on the main thread; they must
-     be near-instantaneous to avoid blocking frame completion.
+   - **Rationale:** Individual ray casts are issued by gameplay code on the game loop thread; they
+     must be near-instantaneous to avoid blocking frame completion.
    - **Verification:** Benchmark -- populate 50,000 collider entities; issue a single ray cast;
      measure wall-clock time; assert it completes within 5 microseconds.
 2. **R-4.4.NF2** — Batch Query Scalability: Batch query throughput **SHALL** scale linearly with

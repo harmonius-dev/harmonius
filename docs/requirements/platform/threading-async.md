@@ -18,15 +18,15 @@
      achieves at least 80% CPU utilization across worker threads. On a hybrid-architecture CPU,
      assert the default worker count equals the performance core count, not the total core count.
 2. **R-14.3.2** — The engine **SHALL** pin threads to specific cores and set OS-level priority
-   classes, running the main thread and render submission thread at elevated priority on performance
-   cores and background threads at low priority on efficiency cores.
+   classes, running the game loop thread and render submission thread at elevated priority on
+   performance cores and background threads at low priority on efficiency cores.
    - **Rationale:** Pinning latency-sensitive threads to performance cores and relegating background
      work to efficiency cores prevents contention during frame-critical work such as physics and
      rendering.
    - **Verification:** Integration test: on each platform, start the engine and query the OS for the
-     main thread's affinity mask and priority. Assert the main thread is pinned to a performance
-     core and runs at elevated priority. Start a background I/O thread and assert it is pinned to an
-     efficiency core (on hybrid architectures) with low priority.
+     game loop thread's affinity mask and priority. Assert the game loop thread is pinned to a
+     performance core and runs at elevated priority. Start a background I/O thread and assert it is
+     pinned to an efficiency core (on hybrid architectures) with low priority.
 
 ## Job System
 

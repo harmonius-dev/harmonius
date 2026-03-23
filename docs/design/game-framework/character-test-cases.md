@@ -382,7 +382,7 @@ Companion test cases for [character.md](character.md).
 | 1 | R-13.8.14   |
 
 1. **#1** — Merge 6 mesh parts
-   - **Expected:** Async; no main thread block; 1 draw call
+   - **Expected:** Async; no game loop thread block; 1 draw call
 
 ### TC-13.8.14.I2 Merge Cache Hit
 

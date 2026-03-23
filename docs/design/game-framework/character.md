@@ -2156,8 +2156,8 @@ fn equip_system(
    same frame.
 4. **`test_500_characters_frame_budget`** — Render 500 unique characters at 1080p; verify frame time
    < 16 ms.
-5. **`test_mesh_merge_async`** — Merge 6 parts; verify async, no main thread block, correct vertex
-   data, 1 draw call.
+5. **`test_mesh_merge_async`** — Merge 6 parts; verify async, no game loop thread block, correct
+   vertex data, 1 draw call.
 6. **`test_merge_cache_hit`** — Repeat same part combination; verify cache hit.
 7. **`test_lod_transition_smooth`** — Walk toward distant character; verify LOD transitions are not
    jarring.

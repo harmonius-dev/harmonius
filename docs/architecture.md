@@ -1263,7 +1263,11 @@ store, and localization/docs.
 
 ## Frame Data Flow
 
-A single frame follows this pipeline from input poll through GPU present:
+A single frame follows this pipeline from input poll through GPU present. All phases run on the
+dedicated game loop thread (which owns the `IoReactor`) and the work-stealing thread pool. On
+desktop (macOS, Windows, Linux) the game loop thread is typically thread 0. On mobile (iOS, Android)
+it is a dedicated thread separate from the OS main thread — platform UI events are forwarded via a
+lock-free SPSC queue. The render thread presents independently.
 
 ```mermaid
 flowchart LR
@@ -1490,6 +1494,10 @@ graph TB
 | iOS | GCD / Dispatch IO | UIWindow (Swift via cxx.rs) | Metal 4 | cxx.rs → Swift |
 | Android | io_uring | NativeActivity (bindgen) | Vulkan 1.4 | bindgen |
 | Consoles | Platform SDK | Platform SDK | Platform SDK | Platform SDK |
+
+On iOS, Android, and consoles the game loop runs on a dedicated thread — not the OS main thread. The
+OS main thread handles platform UI events (UIKit, Activity lifecycle) and forwards them to the game
+loop thread via a lock-free SPSC queue.
 
 ## Design Wave Structure
 

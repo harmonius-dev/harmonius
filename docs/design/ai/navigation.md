@@ -70,8 +70,8 @@ The design follows four principles:
 2. **Shared spatial index.** Obstacle queries, tile lookups, and agent proximity checks all go
    through the shared BVH (F-1.9.1).
 3. **Async and non-blocking.** Pathfinding queries batch across frames using scoped parallel tasks.
-   Tile generation runs on background workers. Tile streaming uses async I/O. The main thread never
-   blocks.
+   Tile generation runs on background workers. Tile streaming uses async I/O. The game loop thread
+   never blocks.
 4. **Hierarchical for scale.** Long-distance paths plan on a coarse cluster graph (HPA*), refining
    to full NavMesh only for the agent's current tile. This bounds cost regardless of world size.
 
@@ -1775,13 +1775,13 @@ tasks cannot perform I/O (per constraints.md).
 **Q2. How can this design be improved?**
 
 The tile versioning and stale fallback mechanism forces a synchronous completion after 3 frames of
-staleness, which contradicts the "never block the main thread" goal of R-7.1.9. A better approach
-would be exponential backoff with progressively coarser fallback meshes rather than a hard sync. The
-HPA* cluster granularity (one cluster per tile) may produce suboptimal paths for very large tiles,
-as noted in Open Question 3. The off-mesh link auto-detection heuristic for player-built stairs and
-ladders (F-7.1.11) is undefined, which is a significant gap for the building gameplay loop. The
-design also lacks a memory pressure callback to proactively evict tiles before hitting the 256 MB
-hard cap (R-7.NFR.7).
+staleness, which contradicts the "never block the game loop thread" goal of R-7.1.9. A better
+approach would be exponential backoff with progressively coarser fallback meshes rather than a hard
+sync. The HPA* cluster granularity (one cluster per tile) may produce suboptimal paths for very
+large tiles, as noted in Open Question 3. The off-mesh link auto-detection heuristic for
+player-built stairs and ladders (F-7.1.11) is undefined, which is a significant gap for the building
+gameplay loop. The design also lacks a memory pressure callback to proactively evict tiles before
+hitting the 256 MB hard cap (R-7.NFR.7).
 
 **Q3. Is there a better approach?**
 

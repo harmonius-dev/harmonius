@@ -65,8 +65,8 @@ across 15 domains.
 | R-X.2.3 |
 
 1. **R-X.2.1** — The engine **SHALL** assign each subsystem's main loop to a designated thread or
-   thread pool: main thread (ECS system scheduling, game framework logic, input processing), render
-   thread (render graph execution, GPU command encoding), audio thread (mixer callback, DSP
+   thread pool: game loop thread (ECS system scheduling, game framework logic, input processing),
+   render thread (render graph execution, GPU command encoding), audio thread (mixer callback, DSP
    processing), network thread (packet I/O, serialization), and worker pool (physics substeps, AI
    pathfinding, animation evaluation, asset processing, procedural generation). No subsystem
    **SHALL** execute its primary workload on a thread owned by another subsystem without explicit
@@ -80,9 +80,9 @@ across 15 domains.
 2. **R-X.2.2** — The engine **SHALL** support pipelined frame execution where simulation frame N+1
    overlaps with rendering of frame N. The pipeline **SHALL** use double-buffered ECS extraction:
    the render thread reads from a snapshot of the previous frame's render-relevant components while
-   the main thread advances simulation. GPU frames in flight **SHALL** be configurable (1-3) with
-   default of 2. The frame pipeline **SHALL** guarantee that no simulation write races with a render
-   read — extraction produces an immutable snapshot consumed by the render thread.
+   the game loop thread advances simulation. GPU frames in flight **SHALL** be configurable (1-3)
+   with default of 2. The frame pipeline **SHALL** guarantee that no simulation write races with a
+   render read — extraction produces an immutable snapshot consumed by the render thread.
    - **Derived From:** F-2.10.1 (Render Proxy Extraction), F-2.10.4 (View Setup), F-1.1.20
      (Automatic Parallel Iteration)
    - **Rationale:** Overlapping simulation and rendering is essential for hitting 60fps+ on complex

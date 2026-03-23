@@ -453,9 +453,9 @@ Companion test cases for [ecs.md](ecs.md).
 | 2 | R-1.1.24    |
 
 1. **#1** — Register non-send resource
-   - **Expected:** System using it runs on main thread
+   - **Expected:** System using it runs on game loop thread
 2. **#2** — Verify thread ID
-   - **Expected:** Matches main thread ID
+   - **Expected:** Matches game loop thread ID
 
 ### TC-1.1.25.1 Schedule Dependency Resolution
 
