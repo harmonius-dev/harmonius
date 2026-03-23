@@ -100,7 +100,9 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install LLVM
-        run: choco install llvm --yes
+        run: |
+          choco install llvm --yes
+          echo "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
 
       - name: Install CMake and Ninja
         run: pip install cmake cmake-format ninja
@@ -126,7 +128,9 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install LLVM
-        run: choco install llvm --yes
+        run: |
+          choco install llvm --yes
+          echo "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
 
       - name: Install CMake and Ninja
         run: pip install cmake cmake-format ninja
