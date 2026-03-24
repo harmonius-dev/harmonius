@@ -1694,7 +1694,7 @@ Each physics tick, vehicle systems execute in order:
 **macOS:**
 
 - GPU compute via Metal compute shaders (HLSL compiled by DXC, converted by Metal Shader Converter
-  via cxx.rs).
+  via C ABI).
 - Command buffer completion handlers are GCD dispatch blocks. Controlled drain at poll point.
 
 **Linux:**

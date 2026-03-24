@@ -1633,7 +1633,7 @@ is used anywhere in the import or database subsystems.
 | Platform | I/O Backend | Import Usage |
 |----------|-------------|--------------|
 | Windows | IOCP | Overlapped reads for source files, CAS blob writes |
-| macOS | GCD Dispatch IO | `dispatch_io_read` / `dispatch_io_write` via C++ wrappers and cxx.rs |
+| macOS | GCD Dispatch IO | `dispatch_io_read` / `dispatch_io_write` via C++ wrappers and C ABI |
 | Linux | io_uring | `IORING_OP_READ` / `IORING_OP_WRITE` SQEs for all file operations |
 
 ### CAS Storage
@@ -1689,7 +1689,7 @@ BLAKE3 is chosen for content hashing because it is:
 | `hound` | WAV decoding | Lightweight WAV parser |
 | `claxon` | FLAC decoding | Pure Rust FLAC decoder |
 | `lewton` | Ogg Vorbis decoding | Pure Rust Vorbis decoder |
-| `cxx` | C++ interop for DCC plugin SDK and GCD I/O | Safe Rust-C++ bridge |
+| `bindgen` | C ABI bindings for DCC plugin SDK and GCD | Consumes extern "C" wrappers |
 
 ## Test Plan
 

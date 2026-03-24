@@ -85,7 +85,7 @@
    platform-native bytecode using DXC for HLSL-to-DXIL and HLSL-to-SPIR-V, and Metal Shader
    Converter for DXIL-to-MSL. DXC **SHALL** perform validation, optimization (dead code elimination,
    constant folding), and reflection (binding layouts, push constant ranges, workgroup sizes). Both
-   DXC and Metal Shader Converter are C++ libraries accessed via cxx.rs FFI. Compiled bytecode
+   DXC and Metal Shader Converter are C++ libraries accessed via C ABI FFI. Compiled bytecode
    **SHALL** be cached by HLSL source hash in the shared build cache (F-15.11.2). Compilation errors
    **SHALL** report the original HLSL line number AND the graph node that generated it, enabling
    click-to-navigate from compiler errors to the visual graph node in the editor.

@@ -2,9 +2,9 @@
 
 ## Scope
 
-Apple platform wrappers only. Swift wraps macOS/iOS APIs (NSWindow, GCD) and uses C++ interop to
-implement cxx.rs bridge interfaces, exposing Apple APIs to Rust. Built with CMake. No SwiftUI, no
-Combine, no Objective-C, no Objective-C++.
+Apple platform wrappers only. Swift wraps macOS/iOS APIs (Metal, NSWindow, GCD) and exposes them to
+Rust as C ABI functions via `@_cdecl`. Rust consumes the generated C headers through bindgen. Built
+with CMake. No SwiftUI, no Combine, no Objective-C, no Objective-C++, no cxx.rs, no metal-cpp.
 
 ## Naming Conventions
 
@@ -59,12 +59,14 @@ Combine, no Objective-C, no Objective-C++.
 1. **Apple platform wrappers only** — no application logic in Swift
 2. **No SwiftUI** — use AppKit/UIKit directly
 3. **No Combine** — use GCD and completion handlers at the Swift layer
-4. **C++ interop via cxx.rs** — Swift uses C++ interop to implement cxx.rs bridge interfaces
+4. **C ABI via `@_cdecl`** — all Swift functions exposed to Rust use `@_cdecl` for C linkage
 5. **CMake for libraries** — Swift libraries built with CMake, not SwiftPM
 6. **XcodeGen for apps** — macOS/iOS app packaging uses XcodeGen + xcodebuild
 7. **GCD for concurrency** — dispatch queues, not Swift concurrency (`async`/`await` in Swift)
 8. **No Objective-C** — no `@objc`, no Objective-C bridging headers, no Objective-C++
-9. **Metal via metal-cpp** — Metal accessed through metal-cpp (C++), not directly from Swift
+9. **Metal directly from Swift** — Metal accessed directly via Swift APIs, exposed to Rust via C ABI
+10. **No cxx.rs** — no C++ interop; all FFI through C ABI
+11. **No metal-cpp** — no C++ Metal wrappers
 
 ## Cache-Friendly Patterns
 

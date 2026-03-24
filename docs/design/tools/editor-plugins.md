@@ -41,13 +41,13 @@
 ## Overview
 
 The editor plugin architecture enables extensibility through a stable C ABI boundary exposed via
-cxx.rs. Plugins register custom component editors, panels, gizmos, menu actions, and toolbar
+C ABI. Plugins register custom component editors, panels, gizmos, menu actions, and toolbar
 buttons. The system supports hot-reload with state preservation and isolates plugins so a crash in
 one does not bring down the editor.
 
 Key principles:
 
-- **Stable C ABI.** Plugin functions are exported as `extern "C"` symbols through cxx.rs bridges. No
+- **Stable C ABI.** Plugin functions are exported as `extern "C"` symbols through C ABI bridges. No
   Rust ABI dependency between plugin and host.
 - **Plugin-first.** Every built-in editor panel and component editor uses the same registration API
   available to third-party plugins.
@@ -307,7 +307,7 @@ harmonius_editor/
 │   │                       # surface for plugins
 │   ├── widget_registry.rs  # EditorWidgetRegistry —
 │   │                       # custom component editors
-│   └── ffi.rs              # C ABI bridge via cxx.rs
+│   └── ffi.rs              # C ABI bridge via C ABI
 └── builtin/
     └── builtin_plugin.rs   # Engine built-in registrations
                             # using the same plugin API
@@ -356,7 +356,7 @@ pub struct PluginMetadata {
 }
 
 /// Trait for editor plugins. Exported through the
-/// C ABI via cxx.rs wrapper functions.
+/// C ABI via C ABI wrapper functions.
 pub trait EditorPlugin: Send {
     /// Return plugin metadata for discovery and
     /// dependency resolution.
@@ -397,37 +397,33 @@ pub trait EditorPlugin: Send {
 ///
 /// The host wraps the returned pointer in an
 /// IsolationScope and calls EditorPlugin methods
-/// through cxx.rs-generated C++ bridge functions.
+/// through C ABI-generated C++ bridge functions.
 
-// cxx.rs bridge definition
-#[cxx::bridge(namespace = "harmonius::plugin")]
-mod ffi {
-    extern "Rust" {
-        type PluginMetadataFfi;
+// C ABI plugin entry points (extern "C")
+extern "C" {
+    /// Create the plugin instance. The host
+    /// calls this once after dlopen.
+    fn harmonius_plugin_create()
+        -> *mut c_void;
 
-        fn name(&self) -> &str;
-        fn version_major(&self) -> u32;
-        fn version_minor(&self) -> u32;
-        fn version_patch(&self) -> u32;
-    }
+    /// Destroy the plugin instance. Called
+    /// during unload after on_unload.
+    fn harmonius_plugin_destroy(
+        ptr: *mut c_void,
+    );
 
-    unsafe extern "C++" {
-        /// Create the plugin instance. The host
-        /// calls this once after dlopen.
-        fn harmonius_plugin_create()
-            -> *mut c_void;
-
-        /// Destroy the plugin instance. Called
-        /// during unload after on_unload.
-        fn harmonius_plugin_destroy(
-            ptr: *mut c_void,
-        );
-
-        /// Get plugin metadata without full init.
-        fn harmonius_plugin_metadata(
-            ptr: *const c_void,
-        ) -> UniquePtr<PluginMetadataFfi>;
-    }
+    /// Get plugin metadata without full init.
+    /// Returns 0 on success, fills out_name
+    /// and version fields.
+    fn harmonius_plugin_metadata(
+        ptr: *const c_void,
+        out_name: *mut u8,
+        out_name_cap: usize,
+        out_name_len: *mut usize,
+        out_version_major: *mut u32,
+        out_version_minor: *mut u32,
+        out_version_patch: *mut u32,
+    ) -> i32;
 }
 ```
 
@@ -897,11 +893,11 @@ plugins.
 |-----------|---------|-------|-------|
 | Dynamic library | `.dll` via `LoadLibraryW` | `.dylib` via `dlopen` | `.so` via `dlopen` |
 | Symbol lookup | `GetProcAddress` | `dlsym` | `dlsym` |
-| File watching | `ReadDirectoryChangesW` | `FSEvents` via Swift/cxx | `inotify` |
-| C ABI bridge | cxx.rs MSVC ABI | cxx.rs Clang ABI | cxx.rs GCC/Clang ABI |
+| File watching | `ReadDirectoryChangesW` | `FSEvents` via Swift C ABI | `inotify` |
+| C ABI bridge | C ABI MSVC ABI | C ABI Clang ABI | C ABI GCC/Clang ABI |
 | Isolation | SEH for panic catch | `setjmp`/`longjmp` | `setjmp`/`longjmp` |
 
-All platforms use cxx.rs to generate the C++ bridge code. The bridge ensures a stable C ABI
+All platforms use C ABI to generate the C++ bridge code. The bridge ensures a stable C ABI
 regardless of Rust compiler version changes.
 
 ## Test Plan

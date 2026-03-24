@@ -203,7 +203,7 @@ discipline.
   comprehensive test coverage, clear API boundaries between subsystems, documentation that stays in
   sync with code
 - **Pain points:** Cross-platform debugging (Metal vs Vulkan vs D3D12), unsafe FFI boundaries
-  (cxx.rs, bindgen), ECS scheduling complexity, performance regressions from seemingly small
+  (C ABI, bindgen), ECS scheduling complexity, performance regressions from seemingly small
   changes, maintaining backward compatibility for plugins
 - **Engine touchpoints:** All source code, GPU backend implementations, ECS internals, render graph
   compiler, physics solver, asset pipeline, platform abstraction layers, CI/CD pipeline, profiler,

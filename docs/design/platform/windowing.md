@@ -36,8 +36,8 @@ windowing code behind `cfg`-gated backend modules, ensuring that gameplay, UI, a
 never branch on platform.
 
 The subsystem uses direct platform-native APIs for window creation and event polling on each target:
-Win32 `CreateWindowEx` via `windows-sys` on Windows, `NSWindow` via Swift wrappers through `cxx` on
-macOS, and `xcb` (X11) / Wayland protocol via C FFI on Linux. This gives us full control over HDR
+Win32 `CreateWindowEx` via `windows-sys` on Windows, `NSWindow` via Swift `@_cdecl` C ABI wrappers
+on macOS, and `xcb` (X11) / Wayland protocol via C FFI on Linux. This gives us full control over HDR
 metadata negotiation, advanced VSync control, and auxiliary window management without third-party
 abstraction layers. All asynchronous abstractions use `async`/`await` — no callbacks. Window events
 are delivered through a bounded channel that consumers poll or `.await`.
@@ -77,7 +77,7 @@ graph TD
     end
 
     subgraph "platform::macos"
-        NS[NSWindow via Swift/cxx]
+        NS[NSWindow via Swift C ABI]
         CG[CGDisplayCopyDisplayMode]
         ML[CAMetalLayer]
     end
@@ -131,7 +131,7 @@ harmonius_platform/
     ├── windows/
     │   └── window.rs    # Win32 CreateWindowEx, DXGI swapchain, WM_DPICHANGED
     ├── macos/
-    │   └── window.rs    # NSWindow via Swift/cxx, CAMetalLayer, backingScaleFactor
+    │   └── window.rs    # NSWindow via Swift C ABI, CAMetalLayer, backingScaleFactor
     └── linux/
         └── window.rs    # xcb/Wayland via C FFI, xrandr, wl_output, wp_fractional_scale_v1
 ```
@@ -1126,20 +1126,19 @@ The windowing subsystem is responsible for:
 | Platform      | API                            |
 |---------------|--------------------------------|
 | Windows       | `CreateWindowEx`               |
-| macOS         | `NSWindow` via Swift / cxx     |
-| iOS           | `UIWindow` via Swift / cxx     |
+| macOS         | `NSWindow` via Swift C ABI     |
+| iOS           | `UIWindow` via Swift C ABI     |
 | Linux X11     | `xcb_create_window`            |
 | Linux Wayland | `wl_compositor_create_surface` |
 
 1. **Windows** — COM initialized via `CoInitializeEx`. Window class registered with
    `RegisterClassExW`. Uses `windows-sys` for FFI.
 2. **macOS** — `NSApplication` must be initialized on the OS main thread. `NSWindow` created with
-   `initWithContentRect:styleMask:`. Swift wrappers accessed through `cxx`.
+   `initWithContentRect:styleMask:`. Swift wrappers expose C ABI via `@_cdecl`.
 3. **iOS** — `UIApplicationMain` owns the OS main thread. `UIWindow` and `UIViewController` created
-   on the OS main thread via Swift wrappers through `cxx`. Input events (touch, accelerometer,
-   keyboard) arrive on the OS main thread via UIKit and are forwarded to the game loop thread
-   through a lock-free SPSC queue. The game loop runs on a dedicated thread, not the UIKit main
-   thread.
+   on the OS main thread via Swift C ABI wrappers. Input events (touch, accelerometer, keyboard)
+   arrive on the OS main thread via UIKit and are forwarded to the game loop thread through a
+   lock-free SPSC queue. The game loop runs on a dedicated thread, not the UIKit main thread.
 4. **Linux X11** — Connection opened via `xcb_connect`. Window attributes set via
    `xcb_change_window_attributes`.
 5. **Linux Wayland** — `wl_display_connect` + `wl_registry_bind` for compositor. `xdg_wm_base` for
@@ -1222,7 +1221,7 @@ The windowing subsystem is responsible for:
 
 | Platform | Window API                      |
 |----------|---------------------------------|
-| iOS      | `UIWindow` via Swift/cxx.rs     |
+| iOS      | `UIWindow` via Swift C ABI      |
 | Android  | `ANativeWindow` via NDK/bindgen |
 | Consoles | Platform SDK                    |
 
@@ -1409,7 +1408,7 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
    platform-native implementations provide full control over HDR metadata, advanced DXGI swapchain
    flags, `wp_fractional_scale_v1` on Wayland, and all presentation modes without fighting a
    third-party abstraction layer. Platform backends: Win32 `CreateWindowEx` via `windows-sys`,
-   `NSWindow` via Swift wrappers through `cxx`, `xcb` (X11) and Wayland protocol via C FFI /
+   `NSWindow` via Swift `@_cdecl` C ABI wrappers, `xcb` (X11) and Wayland protocol via C FFI /
    bindgen.
 
 2. **Auxiliary window management** — The API supports creating multiple windows (primary + auxiliary
@@ -1444,15 +1443,15 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
 |---------------------|---------|--------------------------------|
 | `raw-window-handle` | latest  | Platform-native handle interop |
 | `windows-sys`       | latest  | Win32 API bindings (Windows)   |
-| `cxx`               | latest  | Swift/C++ FFI bridge (macOS)   |
-| `bindgen`           | latest  | C FFI bindings (Linux, build)  |
+| `bindgen`           | latest  | C FFI bindings (all platforms) |
+| `cbindgen`          | latest  | C header generation from Rust  |
 
 1. **`raw-window-handle`** — De facto standard trait for passing native window handles to GPU
-   backends (wgpu, ash, metal-rs). Zero-cost abstraction — trait implementations on our
-   `RawWindowHandle` enum. Independent of any windowing library.
+   backends. Zero-cost abstraction — trait implementations on our `RawWindowHandle` enum.
+   Independent of any windowing library.
 2. **`windows-sys`** — Zero-cost FFI for `CreateWindowEx`, `SetWindowPos`, DXGI output enumeration,
    `SetProcessDpiAwarenessContext`, HDR metadata APIs. Used only via `cfg(target_os = "windows")`.
-3. **`cxx`** — Enables calling Swift wrappers for `NSWindow`, `NSScreen`, `CAMetalLayer`, and
-   `NSApplication` from Rust. Used only via `cfg(target_os = "macos")`.
-4. **`bindgen`** — Generates Rust bindings for xcb (X11) and Wayland client libraries at build time.
-   Used only via `cfg(target_os = "linux")`.
+3. **`bindgen`** — Generates Rust bindings from C headers exposed by Swift `@_cdecl` wrappers
+   (macOS/iOS) and xcb/Wayland client libraries (Linux) at build time.
+4. **`cbindgen`** — Generates C headers from Rust `extern "C"` declarations that backends implement
+   against.

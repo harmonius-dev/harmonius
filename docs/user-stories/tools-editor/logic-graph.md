@@ -119,7 +119,7 @@
 1. **US-15.8.5b.1** — my shader graph to compile to HLSL, then to DXIL, SPIR-V, or MSL per target
    platform with errors mapped back to the originating node
    - **Acceptance:** I can target all platforms from a single visual graph
-2. **US-15.8.5b.2** — DXC and Metal Shader Converter accessed via cxx.rs FFI bindings
+2. **US-15.8.5b.2** — DXC and Metal Shader Converter accessed via C ABI FFI bindings
    - **Acceptance:** the shader compilation pipeline integrates safely with the Rust codebase
 3. **US-15.8.5b.3** — compiled shader variants cached by platform in the shared build cache
    - **Acceptance:** developers download pre-compiled shaders instead of recompiling locally

@@ -2181,7 +2181,7 @@ sequenceDiagram
 | Platform | API | Notes |
 |----------|-----|-------|
 | Windows | IMM32 / TSF | Via `windows-sys` crate |
-| macOS | Text Services Manager | Via Swift wrappers through cxx.rs |
+| macOS | Text Services Manager | Via Swift wrappers through C ABI |
 | Linux | IBus / Fcitx | Via C FFI / bindgen |
 
 ### Text Shaping
@@ -2399,7 +2399,7 @@ text trajectories.
 
 ## Open Questions
 
-1. **Text shaping crate** -- `rustybuzz` vs bundling a C HarfBuzz build via cxx.rs. `rustybuzz` is
+1. **Text shaping crate** -- `rustybuzz` vs bundling a C HarfBuzz build via C ABI. `rustybuzz` is
    pure Rust but lags upstream HarfBuzz by a few releases. Need to verify complex script coverage
    (Khmer, Myanmar, Tibetan) against HarfBuzz reference.
 2. **Atlas packing algorithm** -- Shelf packing vs Skyline vs MaxRects. Shelf is simplest and

@@ -36,7 +36,7 @@
    cook-on-parameter-change for interactive procedural workflows. a Houdini Engine license at edit
    time; baked output requires no runtime license.
    - **Deps:** F-12.6.1
-   - **Platform:** Houdini Engine is a C/C++ API; wrapped via cxx.rs on the engine side. Requires
+   - **Platform:** Houdini Engine is a C/C++ API; wrapped via C ABI on the engine side. Requires
 2. **F-12.6.4** — Export meshes with vertex attributes (position, normal, UV sets, color, custom
    attributes), skeleton hierarchies, skin weights, morph targets, and scene hierarchy directly from
    Houdini to the engine's native binary format (F-12.7.1) via the plugin SDK. Supports Houdini

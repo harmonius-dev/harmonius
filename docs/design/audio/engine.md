@@ -2046,7 +2046,7 @@ sequenceDiagram
 | Linux    | ALSA / PipeWire | `snd_pcm_*` / PipeWire native        |
 
 1. **Windows** — Exclusive mode for low latency; shared mode fallback. Via `windows-sys`.
-2. **macOS** — Callback on CoreAudio's real-time thread. C++ wrapper via `cxx.rs`.
+2. **macOS** — Callback on CoreAudio's real-time thread. C ABI wrapper.
 3. **Linux** — ALSA via bindgen; PipeWire preferred when available.
 
 ### Streaming I/O Backends
@@ -2101,7 +2101,7 @@ sequenceDiagram
 | `crossbeam-utils` | CachePadded, Backoff | Lock-free primitives |
 | `smallvec` | Inline bus child lists | Avoids heap for small arrays |
 | `windows-sys` | WASAPI bindings | Zero-cost Win32 FFI |
-| `cxx` | CoreAudio C++ bridge | Safe bridge to macOS audio APIs |
+| `bindgen` | CoreAudio C ABI bridge | Consumes Swift @_cdecl C ABI headers |
 
 ## Safety Invariants
 

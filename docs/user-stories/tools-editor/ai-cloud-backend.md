@@ -50,7 +50,7 @@
    - **Acceptance:** API keys do not persist in swap files, crash dumps, or core dumps
 4. **US-15.23.2.4** — to use my own API key for AI features in the mod SDK
    - **Acceptance:** AI costs are billed to my account and not to the game developer
-5. **US-15.23.2.5** — platform-native keychain access via cxx.rs bridges (Security.framework on
+5. **US-15.23.2.5** — platform-native keychain access via C ABIs (Security.framework on
    macOS, wincred on Windows, D-Bus for libsecret on Linux)
    - **Acceptance:** credential storage integrates with each OS's security model
 

@@ -8,20 +8,36 @@ engine.
 | Constraint | Detail |
 |------------|--------|
 | Primary language | Rust (stable only — no nightly features) |
-| C++ FFI | cxx.rs for C++ library interop (DXC, Metal Shader Converter) |
-| Swift FFI | Swift with C++ interop exposes Apple APIs via cxx.rs to Rust |
+| FFI strategy | All backends expose a C ABI interface; Rust consumes via bindgen |
+| C header generation | cbindgen generates C headers from Rust-side `extern "C"` declarations |
+| Backend languages | Each backend uses the best language for its platform (see below) |
 | Swift build | CMake builds Swift libraries; XcodeGen + xcodebuild packages macOS/iOS apps |
-| C FFI | bindgen for C header interop (xcb, Wayland, Linux syscalls) |
-| No Obj-C/Obj-C++ | No Objective-C or Objective-C++ source. Use Swift with C++ interop instead. |
-| No objc2-metal | Use metal-cpp (Apple's C++ Metal wrapper) for Metal FFI, not objc2-metal. |
+| No cxx.rs | cxx.rs is not used anywhere in the project |
+| No Ash | The Ash Vulkan bindings crate is not used; bindgen from vulkan.h instead |
+| No Obj-C/Obj-C++ | No Objective-C or Objective-C++ source anywhere |
+| No metal-cpp | Metal is accessed directly from Swift, not through metal-cpp |
+
+### Backend Language Matrix
+
+| Backend | Language | FFI Surface |
+|---------|----------|-------------|
+| Metal | Swift | `@_cdecl` functions exposing C ABI |
+| Direct3D 12 | C++ | `extern "C"` functions exposing C ABI |
+| Vulkan | C | Direct C API via bindgen from vulkan.h |
+| DXC shader compiler | C++ | `extern "C"` wrapper exposing C ABI |
+| Metal Shader Converter | C++ | `extern "C"` wrapper exposing C ABI |
+| GCD / Dispatch IO | Swift | `@_cdecl` functions exposing C ABI |
+| NSWindow / AppKit | Swift | `@_cdecl` functions exposing C ABI |
+| Win32 | C | Direct C API via windows-sys |
+| xcb / Wayland | C | Direct C API via bindgen |
 
 ## Shader Pipeline
 
 | Constraint | Detail |
 |------------|--------|
 | Shader IL | HLSL is the sole shader intermediate language |
-| HLSL → DXIL/SPIR-V | DXC (C++ via cxx.rs) compiles HLSL |
-| DXIL → MSL | Metal Shader Converter (C++ via cxx.rs) |
+| HLSL → DXIL/SPIR-V | DXC (C++ wrapper exposing C ABI, consumed by Rust via bindgen) |
+| DXIL → MSL | Metal Shader Converter (C++ wrapper exposing C ABI) |
 
 ## Async and Concurrency
 
@@ -57,10 +73,10 @@ engine.
 | Android  | io_uring / epoll  |
 
 1. **Windows** — `CreateIoCompletionPort`, `GetQueuedCompletionStatusEx` via `windows-sys`
-2. **macOS** — Accessed through Swift wrappers via cxx.rs. We control when dispatch callbacks fire
-   (controlled drain at poll point).
-3. **iOS** — Same Swift wrappers and GCD backend as macOS. Game loop runs on a dedicated thread, not
-   the UIKit main thread.
+2. **macOS** — Accessed through Swift wrappers exposing C ABI via `@_cdecl`. We control when
+   dispatch callbacks fire (controlled drain at poll point).
+3. **iOS** — Same Swift C ABI wrappers and GCD backend as macOS. Game loop runs on a dedicated
+   thread, not the UIKit main thread.
 4. **Linux** — Minimum kernel 5.1+. `IORING_OP_POLL_ADD` for fd readiness. No epoll.
 5. **Android** — io_uring (API 26+) with epoll fallback on older kernels.
 
@@ -70,10 +86,10 @@ engine.
   scheduling all use GCD dispatch queues and blocks. Shared across macOS and iOS.
 - **Metal uses Dispatch.** Command buffer completion handlers are dispatch blocks. GCD integration
   is a hard requirement for GPU synchronization.
-- **All GCD/Dispatch IO accessed through Swift wrappers via cxx.rs.** Swift uses C++ interop to
-  implement the cxx.rs bridge interface, exposing GCD to Rust.
-- **Metal via metal-cpp.** Metal is accessed through metal-cpp (Apple's C++ wrapper) exposed to Rust
-  via cxx.rs. No objc2-metal.
+- **All GCD/Dispatch IO accessed through Swift wrappers exposing C ABI.** Swift uses `@_cdecl`
+  functions to expose GCD operations as C-compatible symbols consumed by Rust via bindgen.
+- **Metal via Swift.** Metal is accessed directly from Swift, which exposes a C ABI via `@_cdecl`
+  functions consumed by Rust via bindgen. No metal-cpp, no objc2-metal.
 - **iOS: UIKit owns the OS main thread.** `UIApplicationMain` runs the `CFRunLoop` on thread 0. The
   game loop runs on a dedicated thread. UIKit input events (touch, accelerometer, keyboard) are
   forwarded to the game loop thread via a lock-free SPSC queue. The render thread presents
@@ -108,7 +124,7 @@ engine.
 
 - **Custom windowing system.** No winit. Platform-native windowing implemented directly:
   - Windows: Win32 `CreateWindowEx` via `windows-sys`
-  - macOS: `NSWindow` via Swift wrappers through cxx.rs
+  - macOS: `NSWindow` via Swift `@_cdecl` C ABI wrappers
   - Linux: xcb (X11) and Wayland via C FFI / bindgen
 
 ## Reflection and Serialization

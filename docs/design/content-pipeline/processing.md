@@ -96,7 +96,7 @@ graph TD
         LM[LightmapUvProcessor]
     end
 
-    subgraph "External Libraries via cxx.rs"
+    subgraph "External Libraries via C ABI"
         DXC[DXC — HLSL Compiler]
         MSC[Metal Shader Converter]
         MOP[meshoptimizer]
@@ -125,9 +125,9 @@ graph TD
     PR --> AU
     PR --> LM
 
-    SC -.->|"cxx.rs FFI"| DXC
-    SC -.->|"cxx.rs FFI"| MSC
-    MO -.->|"cxx.rs FFI"| MOP
+    SC -.->|"C ABI FFI"| DXC
+    SC -.->|"C ABI FFI"| MSC
+    MO -.->|"C ABI FFI"| MOP
 
     PM --> TP
     PM --> RE
@@ -170,10 +170,10 @@ harmonius_content/
 flowchart LR
     SG["Shader Graph\n(Visual Nodes)"]
     HLSL["HLSL Source\n(.hlsl)"]
-    DXC_D["DXC\n(cxx.rs)"]
+    DXC_D["DXC\n(C ABI)"]
     DXIL["DXIL\n(D3D12)"]
     SPIRV["SPIR-V\n(Vulkan)"]
-    MSC["Metal Shader\nConverter\n(cxx.rs)"]
+    MSC["Metal Shader\nConverter\n(C ABI)"]
     MSL["MSL\n(Metal)"]
     CACHE["CAS Cache\n(BLAKE3 key)"]
 
@@ -1041,7 +1041,7 @@ impl AssetProcessor for MeshProcessor {
     ) -> Result<ProcessResult, ProcessingError> {
         // 1. Decode source mesh (from DCC plugin)
         // 2. Generate LOD chain (edge-collapse)
-        //    via meshoptimizer (cxx.rs FFI)
+        //    via meshoptimizer (C ABI FFI)
         // 3. For each LOD level:
         //    a. Build meshlets (64v / 124t)
         //    b. Optimize vertex cache order
@@ -1140,7 +1140,7 @@ impl AssetProcessor for ShaderGraphProcessor {
 /// Compiles HLSL source to platform-native
 /// bytecode via DXC and Metal Shader Converter.
 /// Both are C++ libraries accessed through
-/// cxx.rs FFI.
+/// C ABI FFI.
 pub struct ShaderCompileProcessor;
 
 /// Reflection data extracted by DXC after
@@ -1264,7 +1264,7 @@ impl AssetProcessor for ShaderCompileProcessor {
         // For each backend in profile.shader.backends:
         //
         // DXIL:
-        //   1. Call DXC via cxx.rs FFI
+        //   1. Call DXC via C ABI FFI
         //   2. Compile HLSL → DXIL (SM 6.0+)
         //   3. Run validation pass
         //   4. Run optimization (DCE, const fold)
@@ -1272,7 +1272,7 @@ impl AssetProcessor for ShaderCompileProcessor {
         //   6. Write DXIL bytecode to CAS
         //
         // SPIR-V:
-        //   1. Call DXC via cxx.rs FFI
+        //   1. Call DXC via C ABI FFI
         //   2. Compile HLSL → SPIR-V (Vulkan 1.2+)
         //   3. Run validation pass
         //   4. Extract reflection data
@@ -1282,7 +1282,7 @@ impl AssetProcessor for ShaderCompileProcessor {
         //   1. Compile HLSL → DXIL first (if not
         //      already produced above)
         //   2. Call Metal Shader Converter via
-        //      cxx.rs FFI
+        //      C ABI FFI
         //   3. Translate DXIL → MSL (Metal 2.0+)
         //   4. Write MSL bytecode to CAS
         //
@@ -1518,8 +1518,8 @@ pub async fn process(
 sequenceDiagram
     participant SG as ShaderGraphProcessor
     participant SC as ShaderCompileProcessor
-    participant DXC as DXC (cxx.rs)
-    participant MSC as MetalShaderConverter (cxx.rs)
+    participant DXC as DXC (C ABI)
+    participant MSC as MetalShaderConverter (C ABI)
     participant CAS as CAS Store
 
     SG->>SG: Parse visual graph
@@ -1591,9 +1591,9 @@ flowchart TD
 
 | Library                | Language | FFI Bridge   |
 |------------------------|----------|--------------|
-| DXC                    | C++      | cxx.rs       |
-| Metal Shader Converter | C++      | cxx.rs       |
-| meshoptimizer          | C/C++    | cxx.rs       |
+| DXC                    | C++      | C ABI       |
+| Metal Shader Converter | C++      | C ABI       |
+| meshoptimizer          | C/C++    | C ABI       |
 | blake3                 | Rust     | Native crate |
 
 1. **DXC** — HLSL → DXIL, HLSL → SPIR-V
@@ -1615,7 +1615,7 @@ processor ever blocks a worker thread on I/O.
 
 **Windows:**
 
-- DXC and Metal Shader Converter are available as native C++ libraries. Both accessed via cxx.rs.
+- DXC and Metal Shader Converter are available as native C++ libraries. Both accessed via C ABI.
 - BC compression uses ISPC Texture Compressor or equivalent Rust crate.
 
 **macOS:**
@@ -1635,7 +1635,7 @@ processor ever blocks a worker thread on I/O.
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
 | `blake3` | Content hashing | Fast, SIMD-accelerated, Rust-native |
-| `cxx` | C++ FFI bridge | Safe interop with DXC, MSC, meshoptimizer |
+| `bindgen` | C ABI FFI bindings | Consumes extern "C" wrappers for DXC, MSC, meshoptimizer |
 | `smallvec` | Inline-allocated vectors | Processing node dependent lists |
 | `intel-tex-2` | BC texture compression | ISPC-based, fastest BC7 encoder |
 | `astc-encoder` | ASTC texture compression | ARM reference encoder via FFI |
@@ -1776,7 +1776,7 @@ processor ever blocks a worker thread on I/O.
 **Q1. What is the biggest constraint limiting this design?**
 
 The shader pipeline constraint -- HLSL as the sole shader IL compiled through DXC and Metal Shader
-Converter via cxx.rs (constraints.md) -- forces all shader processing through two C++ FFI bridges.
+Converter via C ABI (constraints.md) -- forces all shader processing through two C++ FFI bridges.
 This limits shader compilation parallelism to what these external tools support and makes error
 reporting harder since errors must be mapped back through the FFI boundary to the originating graph
 node (R-12.2.9). If lifted, a pure-Rust shader compiler would simplify the build and enable tighter
@@ -1830,7 +1830,7 @@ between audio import presets and audio runtime requirements would reduce misconf
    intrinsics, but requires an ISPC runtime dependency. A pure-Rust crate would simplify the build.
    Need to benchmark both options.
 
-2. **meshoptimizer FFI granularity.** Should we wrap meshoptimizer at the function level (one cxx.rs
+2. **meshoptimizer FFI granularity.** Should we wrap meshoptimizer at the function level (one C ABI
    call per operation) or batch operations into a single C++ helper that runs the full LOD → meshlet
    → optimize pipeline?
 

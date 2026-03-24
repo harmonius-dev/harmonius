@@ -2072,7 +2072,7 @@ fn compose_layers(
 | Platform | I/O Backend | API |
 |----------|-------------|-----|
 | Windows | IOCP | `CreateIoCompletionPort` via `windows-sys` |
-| macOS | GCD Dispatch IO | C++ wrappers via `cxx.rs` |
+| macOS | GCD Dispatch IO | C ABI wrappers |
 | Linux | io_uring | `io_uring` crate |
 
 ### Per-Tier Scaling

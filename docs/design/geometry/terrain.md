@@ -1767,7 +1767,7 @@ layer. No `std::fs` calls.
 
 1. **Windows** — `ReadFile` + `OVERLAPPED` for tile reads. Large tiles use scatter-gather for header
    + data separation.
-2. **macOS** — `dispatch_io_read` via cxx.rs. Tile reads routed to controlled dispatch queue,
+2. **macOS** — `dispatch_io_read` via C ABI. Tile reads routed to controlled dispatch queue,
    drained at reactor poll point.
 3. **Linux** — `io_uring_prep_read` for tile data. Registered buffers for frequently-loaded tile
    sizes.

@@ -2,9 +2,10 @@
 
 ## Engine Overview
 
-Harmonius is a cross-platform game engine written in Rust (stable) with cxx.rs FFI to C++ and Swift.
-It targets Metal 4, Direct3D 12, and Vulkan 1.4 with mesh shaders and ray tracing as minimum
-requirements. All simulation runs through a 100% ECS architecture with no separate data stores.
+Harmonius is a cross-platform game engine written in Rust (stable) with C ABI FFI to platform
+backends. It targets Metal 4, Direct3D 12, and Vulkan 1.4 with mesh shaders and ray tracing as
+minimum requirements. All simulation runs through a 100% ECS architecture with no separate data
+stores.
 
 See [design/constraints.md](design/constraints.md) for the full constraint set.
 
@@ -1488,10 +1489,10 @@ graph TB
 
 | Platform | Async I/O | Windowing | Graphics | FFI |
 |----------|-----------|-----------|----------|-----|
-| macOS | GCD / Dispatch IO | NSWindow (Swift via cxx.rs) | Metal 4 | cxx.rs → Swift |
+| macOS | GCD / Dispatch IO | NSWindow (Swift via C ABI) | Metal 4 | C ABI → Swift |
 | Windows | IOCP | Win32 (windows-sys) | Direct3D 12 | windows-sys |
 | Linux | io_uring (kernel 5.1+) | xcb / Wayland (bindgen) | Vulkan 1.4 | bindgen |
-| iOS | GCD / Dispatch IO | UIWindow (Swift via cxx.rs) | Metal 4 | cxx.rs → Swift |
+| iOS | GCD / Dispatch IO | UIWindow (Swift via C ABI) | Metal 4 | C ABI → Swift |
 | Android | io_uring | NativeActivity (bindgen) | Vulkan 1.4 | bindgen |
 | Consoles | Platform SDK | Platform SDK | Platform SDK | Platform SDK |
 

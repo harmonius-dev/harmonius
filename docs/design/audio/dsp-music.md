@@ -2208,7 +2208,7 @@ simultaneously control:
 | Platform | API | Notes |
 |----------|-----|-------|
 | Windows | WASAPI | `IAudioCaptureClient` via `windows-sys` |
-| macOS | CoreAudio / AVAudioEngine | Via Swift wrappers through cxx.rs |
+| macOS | CoreAudio / AVAudioEngine | Via Swift wrappers through C ABI |
 | Linux | PipeWire / ALSA | PipeWire preferred; ALSA fallback |
 | iOS | AVAudioSession | Platform-native; uses system AEC |
 | Android | AAudio / OpenSL ES | Platform-native; uses system AEC |
@@ -2254,7 +2254,7 @@ the engine's Opus transport.
 | `rustfft`         |
 | `smallvec`        |
 | `crossbeam-queue` |
-| `cxx`             |
+| `bindgen`          |
 | `windows-sys`     |
 
 1. **`opus`** — Opus codec encode/decode
@@ -2265,7 +2265,7 @@ the engine's Opus transport.
    - **Justification:** Avoid heap allocation in hot DSP paths
 4. **`crossbeam-queue`** — Lock-free SPSC/MPSC ring buffers
    - **Justification:** Proven lock-free data structures
-5. **`cxx`** — C++ interop for macOS CoreAudio
+5. **`bindgen`** — C ABI bindings for macOS CoreAudio
    - **Justification:** Safe bridge to platform audio APIs
 6. **`windows-sys`** — Win32 WASAPI bindings
    - **Justification:** Zero-cost FFI to Windows audio capture

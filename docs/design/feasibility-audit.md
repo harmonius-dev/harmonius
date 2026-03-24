@@ -37,11 +37,11 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
   version policy for io_uring. Consider a phased approach: IOCP first (best documented), then
   io_uring, then GCD.
 
-### T-2. GCD Fibers via cxx.rs
+### T-2. GCD Fibers via C ABI
 
 - **File:** `platform/threading.md`, `constraints.md`
 - **Design element:** macOS fibers implemented via GCD dispatch queues and blocks, accessed through
-  C++ wrappers via cxx.rs
+  C ABI wrappers
 - **Risk:** GCD dispatch blocks are not true cooperative fibers. They are fire-and-forget work items
   that cannot be suspended mid-execution and resumed on a different thread. The design's
   `FiberYielder::yield_now()` semantics require saving and restoring execution context, which GCD
@@ -57,7 +57,7 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 ### T-3. Custom Windowing System (No Winit)
 
 - **File:** `platform/windowing.md`, `constraints.md`
-- **Design element:** Platform-native windowing via Win32, NSWindow (Swift/cxx.rs), xcb, and Wayland
+- **Design element:** Platform-native windowing via Win32, NSWindow (Swift C ABI), xcb, and Wayland
 - **Risk:** The windowing design requires implementing: window lifecycle, fullscreen modes, DPI
   scaling, HDR output, VSync/presentation modes, display enumeration, and multi-monitor support on
   four backends (Win32, Cocoa, X11, Wayland). Wayland is particularly complex due to its compositor
@@ -73,9 +73,9 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 ### T-4. Metal Backend via Swift-to-C-to-Bindgen
 
 - **File:** `rendering/gpu-abstraction.md`
-- **Design element:** Metal backend accessed via Swift wrappers through cxx.rs (F-2.1.4)
-- **Risk:** The FFI chain is: Rust -> cxx.rs -> C++ -> Swift. cxx.rs does not natively support
-  Swift; the C++ layer must bridge between cxx.rs and Swift. Swift interop with C++ (Swift/C++
+- **Design element:** Metal backend accessed via Swift wrappers through C ABI (F-2.1.4)
+- **Risk:** The FFI chain is: Rust -> C ABI -> C++ -> Swift. C ABI does not natively support
+  Swift; the C++ layer must bridge between C ABI and Swift. Swift interop with C++ (Swift/C++
   interoperability) was stabilized in Swift 5.9 but has limitations: no support for Swift generics
   in C++, limited enum bridging, and no async/await bridging. Every Metal API call traverses three
   language boundaries.
@@ -264,20 +264,20 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
   - **QUIC:** `quinn` with `AsyncUdpSocket` trait implemented on the IoReactor.
   - **REST server:** Custom HTTP server on IoReactor using raw TCP with HTTP/1.1 parsing.
 
-### R-2. cxx.rs Limitations for GCD Callbacks
+### R-2. C ABI Limitations for GCD Callbacks
 
 - **File:** `platform/threading.md`, all macOS platform paths
-- **Design element:** GCD Dispatch IO and dispatch blocks accessed through C++ wrappers via cxx.rs
-- **Risk:** cxx.rs does not support C++ lambdas, std::function, or function pointers as callback
+- **Design element:** GCD Dispatch IO and dispatch blocks accessed through C ABI wrappers
+- **Risk:** C ABI does not support C++ lambdas, std::function, or function pointers as callback
   parameters. GCD's core API pattern is `dispatch_async(queue, block)` where `block` is an
   Objective-C block (not a C++ lambda). The C++ wrappers must capture Rust state in dispatch blocks,
   which requires converting Rust function pointers to C-compatible callbacks. This is feasible but
-  complex and error-prone. cxx.rs also does not support Objective-C blocks directly.
+  complex and error-prone. C ABI also does not support Objective-C blocks directly.
 - **Likelihood:** High
 - **Impact:** High
 - **Mitigation:** Use the `block2` crate for creating Objective-C blocks from Rust closures,
   bypassing the C++ layer entirely. Alternatively, define a C callback interface (function pointer +
-  void* context) in the C++ wrapper that cxx.rs can bridge, and use `dispatch_async_f` (the
+  void* context) in the C++ wrapper that C ABI can bridge, and use `dispatch_async_f` (the
   function-pointer variant of dispatch_async) instead of block-based dispatch.
 
 ### R-3. bevy_reflect-Style Reflection from Scratch
@@ -376,10 +376,10 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 ### R-9. HLSL Shader Pipeline via DXC + MSC
 
 - **File:** `constraints.md`, `rendering/gpu-abstraction.md`
-- **Design element:** HLSL compiled by DXC (C++ via cxx.rs) to DXIL/SPIR-V, then Metal Shader
-  Converter (C++ via cxx.rs) for MSL
+- **Design element:** HLSL compiled by DXC (C++ via C ABI) to DXIL/SPIR-V, then Metal Shader
+  Converter (C++ via C ABI) for MSL
 - **Risk:** DXC's C++ API is complex (COM-based on Windows, dxcompiler shared library on other
-  platforms). Wrapping DXC's COM interfaces through cxx.rs requires careful handling of reference
+  platforms). Wrapping DXC's COM interfaces through C ABI requires careful handling of reference
   counting and memory management. Metal Shader Converter is an Apple tool with limited documentation
   for programmatic use.
 - **Likelihood:** Medium
@@ -676,7 +676,7 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 - **File:** `rendering/advanced.md`
 - **Design element:** NRD as the default denoiser for ray-traced effects
 - **Risk:** NRD is proprietary NVIDIA software with license restrictions. It is not available on
-  crates.io and requires direct integration of the NRD SDK (C++ library). Integration via cxx.rs
+  crates.io and requires direct integration of the NRD SDK (C++ library). Integration via C ABI
   adds FFI complexity. NRD only runs on NVIDIA GPUs; AMD and Intel GPUs need a different denoiser.
 - **Likelihood:** High
 - **Impact:** High
@@ -703,7 +703,7 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 - **File:** `rendering/environment-character.md`
 - **Design element:** Heterogeneous volumes via OpenVDB with volumetric BSDF (F-2.7.7)
 - **Risk:** OpenVDB is a large C++ library (700K+ lines) with dependencies on Boost, TBB, blosc, and
-  zlib. Integrating it via cxx.rs would require wrapping a significant API surface. The design
+  zlib. Integrating it via C ABI would require wrapping a significant API surface. The design
   notes: "OpenVDB is a large C++ library" and suggests a minimal reader. Even a minimal VDB reader
   must handle the sparse grid traversal and compression formats.
 - **Likelihood:** Medium

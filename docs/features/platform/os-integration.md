@@ -12,7 +12,7 @@
    guild recruitment text. Image clipboard support enables screenshot sharing without saving to
    disk.
    - **Platform:** Windows uses `OpenClipboard`/`SetClipboardData` with COM wrappers; macOS uses
-     `NSPasteboard` via Objective-C++ cxx wrappers; Linux uses X11 selections (`XCB_ATOM_CLIPBOARD`)
+     `NSPasteboard` via Swift C ABI wrappers; Linux uses X11 selections (`XCB_ATOM_CLIPBOARD`)
      or the `wl_data_device` protocol on Wayland. Clipboard operations must run asynchronously on
      Wayland since the compositor mediates data transfer.
 2. **F-14.2.2** — Open file-picker and folder-picker dialogs for importing add-ons, selecting

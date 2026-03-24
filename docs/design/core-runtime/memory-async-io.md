@@ -1253,8 +1253,8 @@ platform backend is selected at compile time via `cfg` attributes with zero dyna
 
 | Operation | Windows (IOCP) | macOS (GCD) | Linux (io_uring) |
 |-----------|---------------|-------------|-----------------|
-| File read | `ReadFile` + `OVERLAPPED` | `dispatch_io_read` via cxx.rs | `io_uring_prep_read` |
-| File write | `WriteFile` + `OVERLAPPED` | `dispatch_io_write` via cxx.rs | `io_uring_prep_write` |
+| File read | `ReadFile` + `OVERLAPPED` | `dispatch_io_read` via C ABI | `io_uring_prep_read` |
+| File write | `WriteFile` + `OVERLAPPED` | `dispatch_io_write` via C ABI | `io_uring_prep_write` |
 | Vectored read | `ReadFileScatter` | `dispatch_data` composites | `io_uring_prep_readv` |
 | Vectored write | `WriteFileGather` | `dispatch_data` composites | `io_uring_prep_writev` |
 | TCP accept | `AcceptEx` | `dispatch_source` READ | `io_uring_prep_accept` |
@@ -1292,7 +1292,7 @@ platform backend is selected at compile time via `cfg` attributes with zero dyna
 | `blake3` | BLAKE3 content hashing for VFS metadata | Fast, SIMD-optimized, pure Rust |
 | `windows-sys` | Win32 `VirtualAlloc`, IOCP, `CancelIoEx` | Zero-cost FFI to Win32 APIs |
 | `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
-| `cxx` | C++ interop for macOS GCD / Dispatch IO | Safe bridge to Dispatch C++ wrappers |
+| `bindgen` | C header bindings for macOS GCD | Consumes Swift @_cdecl C ABI headers |
 
 Note: `crossbeam-deque`, `crossbeam-utils`, and `smallvec` are already approved in
 [platform/threading.md](../platform/threading.md).

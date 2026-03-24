@@ -960,7 +960,7 @@ alpha-blended transparency.
 ### Platform-Specific Notes
 
 - **Windows:** D3D12 compute shaders. DXIL compiled from HLSL via DXC.
-- **macOS:** Metal compute shaders. MSL compiled from DXIL via Metal Shader Converter through cxx.rs
+- **macOS:** Metal compute shaders. MSL compiled from DXIL via Metal Shader Converter through C ABI
   C++ bridge.
 - **Linux:** Vulkan compute shaders. SPIR-V compiled from HLSL via DXC.
 - **OIT on mobile:** Weighted blended OIT (no per-pixel linked lists). Mobile primarily uses

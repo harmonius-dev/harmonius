@@ -89,9 +89,9 @@ semaphores (Vulkan, D3D12) and `MTLEvent` (Metal) are polled at the reactor's fr
 the GPU never fires callbacks asynchronously. GPU resources used by the ECS are represented as
 components (e.g., `GpuMesh`, `GpuTexture`, `GpuMaterial`) managed by systems.
 
-HLSL is the sole shader language. DXC (via cxx.rs) compiles HLSL to DXIL and SPIR-V. Metal Shader
-Converter (via cxx.rs) translates DXIL to metallib. No runtime shader compilation occurs in shipping
-builds.
+HLSL is the sole shader language. DXC (C++ wrapper exposing C ABI) compiles HLSL to DXIL and SPIR-V.
+Metal Shader Converter (C++ wrapper exposing C ABI) translates DXIL to metallib. No runtime shader
+compilation occurs in shipping builds.
 
 ## Architecture
 
@@ -178,8 +178,8 @@ harmonius_gpu/
 │       ├── memory.rs  # VulkanMemory
 │       └── swap.rs    # VulkanSwapchain
 └── ffi/
-    ├── dxc.rs         # DXC C++ bridge (cxx.rs)
-    └── msc.rs         # Metal Shader Converter (cxx.rs)
+    ├── dxc.rs         # DXC C++ bridge (C ABI via bindgen)
+    └── msc.rs         # Metal Shader Converter (C ABI via bindgen)
 
 harmonius_gpu_runtime/
 ├── lib.rs
@@ -197,11 +197,11 @@ harmonius_gpu_runtime/
 
 ```mermaid
 flowchart LR
-    HLSL["HLSL Source"] --> DXC["DXC\n(cxx.rs)"]
+    HLSL["HLSL Source"] --> DXC["DXC\n(C ABI)"]
     DXC -->|"--target dxil"| DXIL["DXIL Bytecode"]
     DXC -->|"--target spirv"| SPIRV["SPIR-V"]
 
-    DXIL --> MSC["Metal Shader\nConverter\n(cxx.rs)"]
+    DXIL --> MSC["Metal Shader\nConverter\n(C ABI)"]
     MSC --> METALLIB["metallib"]
 
     DXIL -->|D3D12| D3D12["D3D12 Pipeline"]
@@ -1364,7 +1364,7 @@ pub enum BindingType {
 ```rust
 /// Shader compilation from HLSL via DXC and
 /// Metal Shader Converter. All C++ interop via
-/// cxx.rs.
+/// C ABI (extern "C") consumed through bindgen.
 pub struct ShaderCompiler { /* ... */ }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1433,7 +1433,7 @@ pub struct ReflectedBinding {
 
 impl ShaderCompiler {
     /// Create the compiler. Initializes DXC and
-    /// (on macOS) Metal Shader Converter via cxx.rs.
+    /// (on macOS) Metal Shader Converter via C ABI.
     pub fn new() -> Result<Self, GpuError>;
 
     /// Compile HLSL to the target bytecode format.
@@ -2304,23 +2304,20 @@ on the hot path:
 
 ### Proposed Dependencies
 
-| Crate / Library   |
-|-------------------|
-| `cxx`             |
-| `windows-sys`     |
-| `ash`             |
-| `bindgen` (build) |
-| `smallvec`        |
+| Crate / Library      |
+|----------------------|
+| `windows-sys`        |
+| `bindgen` (build)    |
+| `cbindgen` (build)   |
+| `smallvec`           |
 
-1. **`cxx`** — C++ interop for DXC and Metal Shader Converter
-   - **Justification:** Safe bridge to C++ compilation libraries
-2. **`windows-sys`** — Win32/COM/DXGI raw bindings
+1. **`windows-sys`** — Win32/COM/DXGI raw bindings
    - **Justification:** Zero-cost D3D12 FFI, no C++
-3. **`ash`** — Vulkan function loader (thin)
-   - **Justification:** Minimal safe wrapper over vulkan.h; no framework
-4. **`bindgen` (build)** — Generate FFI from C/COM headers
-   - **Justification:** D3D12 COM headers, Metal C bridge
-5. **`smallvec`** — Inline-allocated small vectors
+2. **`bindgen` (build)** — Generate Rust FFI from C headers
+   - **Justification:** Consumes C ABI headers from all backends (D3D12, DXC, Metal, Vulkan)
+3. **`cbindgen` (build)** — Generate C headers from Rust declarations
+   - **Justification:** Produces C headers that backends implement against
+4. **`smallvec`** — Inline-allocated small vectors
    - **Justification:** Barrier lists, bind group entries
 
 ## Test Plan
@@ -2544,7 +2541,7 @@ All GPU abstraction APIs are safe Rust. Internal `unsafe` is confined to platfor
    with phantom type markers. No raw pointers. Stale handles (use-after-free) are caught by
    generation checks at every access.
 5. ****Internal unsafe encapsulation.**** — Platform FFI (Metal via Swift @_cdecl, D3D12 via COM
-   bindgen, Vulkan via ash) is encapsulated in `harmonius_gpu::platform::*` modules. Each `unsafe`
+   bindgen, Vulkan via bindgen) is encapsulated in `harmonius_gpu::platform::*` modules. Each `unsafe`
    block documents its safety invariants. No unsafe propagates to consumers.
 
 ### Handle Safety Model
@@ -2588,9 +2585,9 @@ impl ReadbackRing {
 
 ## Open Questions
 
-1. **ash vs raw bindgen for Vulkan** -- `ash` provides a thin function loader with zero overhead.
-   Raw bindgen from vulkan.h gives maximum control but requires manual function pointer loading.
-   Recommend ash for faster iteration; switch to raw bindgen only if ash proves limiting.
+1. **~~ash vs raw bindgen for Vulkan~~** -- **Resolved: raw bindgen from vulkan.h.** No ash. Manual
+   function pointer loading via `vkGetInstanceProcAddr` / `vkGetDeviceProcAddr` with safe Rust RAII
+   wrappers. This avoids an external dependency and gives maximum control.
 
 2. **Descriptor heap management on D3D12** -- Single monolithic shader-visible descriptor heap vs
    ring-allocated regions. Monolithic is simpler but wastes memory. Ring allocation matches the

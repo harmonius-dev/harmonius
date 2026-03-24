@@ -1272,7 +1272,7 @@ operations.
 | Platform | Async Backend | Notes |
 |----------|---------------|-------|
 | Windows | IOCP | `GetQueuedCompletionStatusEx` for socket I/O |
-| macOS | GCD Dispatch IO | C++ wrappers via `cxx.rs` |
+| macOS | GCD Dispatch IO | C ABI wrappers |
 | Linux | io_uring | `IORING_OP_SEND` / `IORING_OP_RECV` for DB sockets |
 
 ### Scaling Tiers

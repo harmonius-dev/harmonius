@@ -1388,7 +1388,7 @@ uploaded to the GPU each frame. Changes propagate within one frame.
 | macOS (Metal) | HLSL | DXIL | MSL (via Metal Shader Converter) |
 | iOS (Metal) | HLSL | DXIL | MSL (via Metal Shader Converter) |
 
-All shader compilation uses DXC (C++ via cxx.rs) and Metal Shader Converter (C++ via cxx.rs). HLSL
+All shader compilation uses DXC (C++ via C ABI) and Metal Shader Converter (C++ via C ABI). HLSL
 is the sole shader intermediate language.
 
 ### Platform Compute Capabilities
@@ -1425,7 +1425,7 @@ Effects compiled for mobile use smaller thread group sizes (256 vs desktop 1024)
 Effect graph assets (compiled kernels + metadata) are loaded via the platform async I/O system:
 
 - **Windows:** IOCP
-- **macOS:** GCD / Dispatch IO (C++ wrappers via cxx.rs)
+- **macOS:** GCD / Dispatch IO (C ABI wrappers)
 - **Linux:** io_uring
 
 Loading is non-blocking. The `IoReactor` poll point wakes the loading future when the OS completes

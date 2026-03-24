@@ -1728,7 +1728,7 @@ History is fully reset on:
 6. **Opacity micromaps** — `D3D12_RAYTRACING_GEOMETRY_DESC` with OMM attached
 7. **SER** — `D3D12_STATE_OBJECT_FLAG_ALLOW_INVOCATION_REORDERING`
 8. **Compaction** — Read-back via readback buffer
-9. **Neural denoise** — Via NVIDIA NGX SDK, C++ wrapper via cxx.rs
+9. **Neural denoise** — Via NVIDIA NGX SDK, C ABI wrapper
 
 ### Metal (macOS)
 

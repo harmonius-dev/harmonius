@@ -1412,7 +1412,7 @@ Animation events follow this path:
 ### Compute Shader Dispatch
 
 All three compute stages (keyframe eval, blend, skinning) use HLSL compiled via DXC. On macOS, DXIL
-is translated to MSL via Metal Shader Converter (both accessed through C++ wrappers via cxx.rs per
+is translated to MSL via Metal Shader Converter (both accessed through C ABI wrappers per
 project constraints).
 
 Thread group sizes:

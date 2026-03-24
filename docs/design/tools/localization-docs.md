@@ -1564,7 +1564,7 @@ pub enum DocError {
 | Platform | API | Access Method |
 |----------|-----|---------------|
 | Windows | DirectWrite | `windows-sys` crate |
-| macOS | CoreText | Swift wrappers via `cxx.rs` |
+| macOS | CoreText | Swift wrappers via C ABI |
 | Linux | HarfBuzz | C FFI via `bindgen` |
 
 ### Proposed Dependencies

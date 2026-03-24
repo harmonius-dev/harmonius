@@ -1200,8 +1200,8 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 4. **Hybrid detect** — Apple Silicon P/E core counts
 5. **Fibers** — `dispatch_async` submits blocks to queues; `dispatch_group` tracks completion. No
    custom assembly.
-6. **I/O reactor** — Dispatch IO accessed through C++ wrappers via `cxx.rs`. Callbacks routed to a
-   serial dispatch queue; drained synchronously at poll point via `dispatch_sync`.
+6. **I/O reactor** — Dispatch IO accessed through Swift `@_cdecl` C ABI wrappers. Callbacks routed
+   to a serial dispatch queue; drained synchronously at poll point via `dispatch_sync`.
 
 ### Linux
 
@@ -1230,8 +1230,8 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 | Android  | std thread pool         | io_uring (API 26+) / epoll fallback |
 | Consoles | Platform thread API     | Platform async I/O                  |
 
-1. **iOS** — Same Swift wrappers via cxx.rs as macOS. QoS classes for thermal throttling. UIKit owns
-   the OS main thread (`UIApplicationMain` / `CFRunLoop`), so the game loop runs on a dedicated game
+1. **iOS** — Same Swift C ABI wrappers as macOS. QoS classes for thermal throttling. UIKit owns the
+   OS main thread (`UIApplicationMain` / `CFRunLoop`), so the game loop runs on a dedicated game
    loop thread. Input events (touch, accelerometer, keyboard) arrive on the OS main thread via UIKit
    and are forwarded to the game loop thread through a lock-free SPSC queue. The render thread
    presents independently via Metal when frames are ready. This is the standard pattern used by
@@ -1264,7 +1264,7 @@ a platform-specific scaling factor.
 | `crossbeam-utils` | `CachePadded`, `Backoff` | Prevents false sharing on atomics |
 | `windows-sys` | Win32 API bindings | Zero-cost FFI to IOCP, threads, fibers |
 | `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
-| `cxx` | C++ interop for macOS GCD/Dispatch IO | Safe bridge to Dispatch C++ wrappers |
+| `bindgen` | C header bindings (macOS GCD) | Consumes Swift `@_cdecl` C ABI headers |
 | `smallvec` | Inline-allocated small vectors | Task node dependent lists |
 
 ## Safety Invariants
@@ -1422,7 +1422,7 @@ execution matches the physics and rendering designs' parallel iteration patterns
 `AsyncMutex`/`AsyncRwLock` primitives replace `std::sync` locks engine-wide, enforcing the
 sub-microsecond blocking constraint. Platform selection via `cfg` attributes (IOCP/GCD/io_uring) is
 the same pattern used in windowing and transport. All proposed dependencies (`crossbeam-deque`,
-`io-uring`, `windows-sys`, `cxx`) are low-level libraries consistent with the no-frameworks
+`io-uring`, `windows-sys`, `bindgen`) are low-level libraries consistent with the no-frameworks
 guideline.
 
 ## Open Questions

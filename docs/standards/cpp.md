@@ -3,7 +3,8 @@
 ## Scope
 
 Thin FFI bridges only. C++ is used exclusively for wrapping C++ libraries (DXC, Metal Shader
-Converter) via cxx.rs. We do not author C++ application logic.
+Converter, Direct3D 12) and exposing them to Rust as C ABI functions via `extern "C"`. Rust consumes
+the generated C headers through bindgen. No cxx.rs. We do not author C++ application logic.
 
 ## Naming Conventions
 
@@ -22,7 +23,7 @@ Converter) via cxx.rs. We do not author C++ application logic.
 - Header: `.h` extension; source: `.cpp` extension
 - `#pragma once` for include guards
 - One class per file pair (`.h` + `.cpp`)
-- cxx.rs bridge declarations in dedicated header
+- C ABI (`extern "C"`) declarations in dedicated header
 
 ## Formatting Rules
 
@@ -58,10 +59,11 @@ Converter) via cxx.rs. We do not author C++ application logic.
 1. **Thin bridges only** — no application logic in C++
 2. **No STL file I/O** — all I/O through Rust via `IoReactor`
 3. **No exceptions across FFI** — catch and convert to error codes at the bridge boundary
-4. **No RTTI** — use cxx.rs enum mapping instead
-5. **cxx.rs conventions** — follow cxx.rs naming for shared types and extern blocks
-6. **Minimal headers** — include only what you use; forward-declare where possible
-7. **No `new`/`delete`** — use `std::unique_ptr` or Rust-side allocation
+4. **No RTTI** — use C enums and integer codes instead
+5. **`extern "C"` ABI** — all functions exposed to Rust use `extern "C"` linkage
+6. **No cxx.rs** — all FFI through C ABI, not cxx.rs
+7. **Minimal headers** — include only what you use; forward-declare where possible
+8. **No `new`/`delete`** — use `std::unique_ptr` or Rust-side allocation
 
 ## Cache-Friendly Patterns
 
@@ -71,31 +73,38 @@ Converter) via cxx.rs. We do not author C++ application logic.
 - **No `std::map`/`std::unordered_map`** in hot paths — use sorted vectors or Rust-side containers
 - **Batch FFI calls** — minimize Rust-C++ boundary crossings by batching operations
 
-## cxx.rs Memory Safety Patterns
+## C ABI Memory Safety Patterns
 
 | Category | Rule | Example |
 |----------|------|---------|
 | Ownership | Rust owns all heap allocations by default | Rust-side `Box<T>` |
-| Ownership | C++ receives borrowed references | `const &` maps to `&T` |
-| Ownership | Opaque C++ types wrapped in `UniquePtr<T>` on Rust side | `UniquePtr<DxcCompiler>` |
-| Ownership | Never return raw pointers across FFI | Use `Box<T>` or `UniquePtr<T>` |
-| Lifetime | C++ objects passed to Rust must outlive the Rust reference | Caller holds `UniquePtr` |
-| Lifetime | Use `Pin<&mut T>` for mutable C++ references | `Pin<&mut DxcResult>` |
+| Ownership | C++ receives borrowed pointers | `const T*` for read-only |
+| Ownership | Opaque C++ types use handle/ID pattern | `uint64_t` handle |
+| Ownership | Never return owning raw pointers across FFI | Return handle or error code |
+| Lifetime | C++ objects outlive Rust references | C++ side manages lifetime |
 | Lifetime | COM objects: prevent `Release()` on Rust side | C++ retains ownership |
-| Exceptions | C++ exceptions must not propagate across FFI boundary | Wrap in `try_catch` |
-| Exceptions | All `extern "C++"` functions in cxx.rs bridge must be `noexcept` | Bridge decl |
-| Exceptions | Convert C++ exceptions to `Result<T, E>` via try/catch wrapper | See below [^1] |
-| Buffers | Use `rust::Slice<const uint8_t>` for Rust-to-C++ buffer views | Read-only slice |
-| Buffers | Use `rust::Vec<uint8_t>` for C++-to-Rust owned buffers | Owned transfer |
-| Buffers | Never pass `std::vector` across FFI | Convert to slice or `Vec` |
+| Exceptions | C++ exceptions must not propagate across FFI | Wrap in try/catch |
+| Exceptions | All `extern "C"` functions are `noexcept` | Bridge decl |
+| Exceptions | Convert C++ exceptions to error codes | Return `int32_t` status |
+| Buffers | Use `const uint8_t*` + `size_t` for buffer views | Read-only slice |
+| Buffers | Use caller-allocated buffers for output | Pass `uint8_t*` + capacity |
+| Buffers | Never pass `std::vector` across FFI | Copy into C buffer |
 
-[^1]: Exception-handling pattern:
+Exception-handling pattern:
 
 ```cpp
-auto result = try_catch([&] {
-    // C++ code that may throw
-    return compile_shader(source);
-});
+extern "C" int32_t compile_shader(
+    const char* source, size_t source_len,
+    uint8_t* out_buf, size_t out_cap, size_t* out_len
+) {
+    try {
+        auto result = do_compile(source, source_len);
+        // copy result to out_buf...
+        return 0; // success
+    } catch (...) {
+        return -1; // error
+    }
+}
 ```
 
 ## Testing
@@ -128,7 +137,7 @@ auto result = try_catch([&] {
 1. **Application logic in C++** — all logic belongs in Rust
 2. **Raw `new`/`delete`** — use smart pointers or Rust allocation
 3. **Exceptions across FFI** — undefined behavior; always catch at boundary
-4. **`void*` parameters** — use typed pointers or cxx.rs shared types
+4. **`void*` parameters** — use typed pointers or C-compatible shared types
 5. **Global state** — no global or static mutable state
 6. **Deep inheritance hierarchies** — use composition
 7. **`#define` for constants** — use `constexpr`

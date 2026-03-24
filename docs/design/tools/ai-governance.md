@@ -1798,7 +1798,7 @@ When the editor lacks connectivity to the admin policy server:
 | Platform | Transport | Notes |
 |----------|-----------|-------|
 | Windows | IOCP | HTTPS via async I/O through `IoReactor`. TLS 1.3 via `rustls`. |
-| macOS | GCD | Dispatch IO for async HTTPS. TLS 1.3 via `rustls`. C++ wrappers via `cxx.rs`. |
+| macOS | GCD | Dispatch IO for async HTTPS. TLS 1.3 via `rustls`. C ABI wrappers. |
 | Linux | io_uring | Async HTTPS through `IoReactor`. TLS 1.3 via `rustls`. Kernel 5.1+. |
 
 **Note:** Text-to-speech uses the shared platform TTS service also used by the accessibility system
@@ -1865,7 +1865,7 @@ Linux).
 | `blake3` | Fast hashing (provenance, audit chain) | Fastest general-purpose hash |
 | `aes-gcm` | API key encryption at rest | AEAD for secrets storage |
 | `serde_json` | JSON serialization for LLM API | Standard ecosystem crate |
-| `cxx` | C++ interop for macOS APIs | Safe bridge for GCD wrappers |
+| `bindgen` | C header bindings for macOS | Consumes Swift @_cdecl C ABI headers |
 | `smallvec` | Inline-allocated small vectors | Tool call argument lists |
 
 ## Test Plan
@@ -2357,7 +2357,7 @@ impl KeychainReader {
 | Windows  | wincred            |
 | Linux    | libsecret          |
 
-1. **macOS** — cxx.rs bridge to `SecItemCopyMatching`, `SecItemAdd`, `SecItemDelete`
+1. **macOS** — C ABI bridge to `SecItemCopyMatching`, `SecItemAdd`, `SecItemDelete`
    - **Notes:** Keychain items tagged with `kSecAttrService = "com.harmonius.ai"`
 2. **Windows** — `CredReadW`, `CredWriteW`, `CredDeleteW` via FFI
    - **Notes:** Credentials stored under `harmonius/ai/{provider_id}` target

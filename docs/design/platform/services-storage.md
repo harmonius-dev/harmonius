@@ -1649,7 +1649,7 @@ pub enum TempError {
 | `blake3` | Content-addressed cache keys | Fast, parallel, SIMD-accelerated hash |
 | `toml` | Preferences serialization | Standard TOML parser/writer |
 | `windows-sys` | Win32 path APIs, file ops | Zero-cost FFI for Windows APIs |
-| `cxx` | C++ interop for console SDKs | Safe bridge for PlayStation/Xbox C++ SDKs |
+| `bindgen` | C ABI bindings for console SDKs | Consumes extern "C" wrappers for console SDKs |
 
 ## Test Plan
 

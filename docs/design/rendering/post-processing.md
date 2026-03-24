@@ -1659,8 +1659,8 @@ This avoids three separate texture read/write round-trips on bandwidth-constrain
 All post-processing shaders are authored in HLSL and compiled through the standard pipeline:
 
 1. **HLSL source** authored per effect
-2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via cxx.rs
-3. **Metal Shader Converter** translates DXIL to MSL (Metal) via cxx.rs
+2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via C ABI
+3. **Metal Shader Converter** translates DXIL to MSL (Metal) via C ABI
 4. Platform-specific shader objects cached on disk
 
 Shader variants are generated for quality tiers via `#define` preprocessor guards (e.g.,

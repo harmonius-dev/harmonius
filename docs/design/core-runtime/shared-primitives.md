@@ -1742,8 +1742,8 @@ Shared primitives are consumed at different points in the frame lifecycle:
    - **macOS:** Metal feedback, GCD I/O
    - **Linux:** Vulkan feedback, io_uring
 5. **`GraphCompiler`** — DXC native
-   - **macOS:** DXC + MSC via cxx.rs
-   - **Linux:** DXC via cxx.rs
+   - **macOS:** DXC + MSC via C ABI
+   - **Linux:** DXC via C ABI
 6. **`LiveOpsResource<T>`** — IOCP sockets
    - **macOS:** GCD sockets
    - **Linux:** io_uring sockets

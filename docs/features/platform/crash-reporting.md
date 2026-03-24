@@ -15,7 +15,7 @@
    anything.
    - **Platform:** Windows uses `SetUnhandledExceptionFilter` and `MiniDumpWriteDump` via COM
      wrappers; macOS uses a Mach exception handler (`mach_port_allocate`, `mach_msg_server`) via
-     Objective-C++ cxx wrappers; Linux uses a `SIGSEGV`/`SIGABRT` signal handler with
+     Swift C ABI wrappers; Linux uses a `SIGSEGV`/`SIGABRT` signal handler with
      `/proc/self/maps` parsing and `ptrace`-based stack capture. Out-of-process crash capture is
      preferred on all platforms to avoid corruption in the faulting process.
 2. **F-14.4.2** — Upload debug symbols (PDB on Windows, dSYM on macOS, DWARF on Linux) to a crash

@@ -29,7 +29,7 @@ and parses responses. No intermediary server, no proxy, no reselling.
    the session. Credentials are never transmitted to any server other than the customer's chosen AI
    provider endpoint. No engine telemetry or analytics includes credential material.
    - **Deps:** F-15.23.1
-   - **Platform:** Keychain on macOS via Security.framework (cxx.rs bridge). Credential Manager on
+   - **Platform:** Keychain on macOS via Security.framework (C ABI bridge). Credential Manager on
      Windows via wincred. libsecret on Linux via D-Bus.
 
 ## AI Code Assistant

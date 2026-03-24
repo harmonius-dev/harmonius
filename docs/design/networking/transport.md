@@ -1502,7 +1502,7 @@ pub enum DtlsContext {
     /// Windows: Schannel via windows-sys.
     #[cfg(target_os = "windows")]
     Schannel(SchannelContext),
-    /// macOS: Security.framework via cxx.rs.
+    /// macOS: Security.framework via C ABI.
     #[cfg(target_os = "macos")]
     SecureTransport(SecureTransportContext),
     /// Linux: rustls (pure Rust, no OpenSSL
@@ -1874,7 +1874,7 @@ for id in expired {
 | Linux    | rustls             |
 
 1. **Windows** — Via `windows-sys`. Hardware AES-NI. FIPS-compliant.
-2. **macOS** — Via cxx.rs C++ wrappers. Hardware AES acceleration on Apple Silicon.
+2. **macOS** — Via C ABI C++ wrappers. Hardware AES acceleration on Apple Silicon.
 3. **Linux** — Pure Rust. Uses `ring` crate for AES-GCM. Hardware AES-NI on x86_64.
 
 ### Platform Defaults
@@ -1897,7 +1897,7 @@ for id in expired {
 | `rustls` | DTLS on Linux | Pure Rust TLS, no C dependencies, actively maintained |
 | `ring` | AES-GCM, HMAC-SHA256 | Used by rustls; hardware AES-NI support |
 | `windows-sys` | Schannel, Winsock2 overlapped I/O | Zero-cost FFI to Windows APIs |
-| `cxx` | macOS Security.framework interop | Safe bridge to C++ wrappers |
+| `bindgen` | macOS Security.framework C ABI | Consumes Swift @_cdecl C ABI headers |
 | `smallvec` | Inline-allocated small vectors | Fragment lists, timeout batches |
 
 ## Safety Invariants
@@ -2099,7 +2099,7 @@ threading design's controlled-poll architecture. The DTLS backend uses platform-
 (Schannel, Security.framework, rustls) selected via `cfg`, consistent with the platform abstraction
 pattern used in windowing and threading. The `NetStatsResource` is an ECS resource read by gameplay
 systems, following the same resource pattern as other subsystems. Proposed dependencies (`rustls`,
-`ring`, `windows-sys`, `cxx`, `smallvec`) are all low-level libraries already used or approved in
+`ring`, `windows-sys`, `bindgen`, `smallvec`) are all low-level libraries already used or approved in
 other designs.
 
 ## Open Questions

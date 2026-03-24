@@ -1752,7 +1752,7 @@ flowchart LR
     A[Shader Graph] --> B[Validate Stage]
     B --> C[HLSL Emitter]
     C --> D[HLSL Source]
-    D --> E[DXC via cxx.rs]
+    D --> E[DXC via C ABI]
     E --> F[DXIL]
     E --> G[SPIR-V]
     F --> H[Metal Shader Converter]
@@ -1867,12 +1867,12 @@ components, benefiting from the same cache-friendly iteration.
 | `uuid`     | Standard UUID v4 for asset identity      |
 | `petgraph` | Well-maintained, zero-cost graph library |
 | `smallvec` | Avoids heap for nodes with few pins      |
-| `cxx`      | Required for shader compilation pipeline |
+| `bindgen`  | Required for shader compilation pipeline |
 
 1. **`uuid`** — GraphId generation
 2. **`petgraph`** — Graph algorithms (topo sort, cycle detect)
 3. **`smallvec`** — Inline pin/edge storage
-4. **`cxx`** — DXC and Metal Shader Converter FFI
+4. **`bindgen`** — DXC and Metal Shader Converter C ABI FFI
 
 ## Test Plan
 

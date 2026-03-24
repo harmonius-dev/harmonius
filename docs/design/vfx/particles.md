@@ -1822,8 +1822,8 @@ All particle shaders are authored in HLSL (the project's sole shader IL). The bu
 compiles them:
 
 1. **HLSL source** authored per-module.
-2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via cxx.rs bridge.
-3. **Metal Shader Converter** transpiles DXIL to MSL (Metal) via cxx.rs bridge.
+2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via C ABI.
+3. **Metal Shader Converter** transpiles DXIL to MSL (Metal) via C ABI.
 4. Effect graph compiler generates specialized HLSL by concatenating selected module functions into
    a single entry point.
 

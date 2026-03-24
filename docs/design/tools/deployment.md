@@ -1685,7 +1685,7 @@ The packaging pipeline integrates into a CI/CD workflow. Each stage is a discret
 
 | Platform | Keychain API | Notes |
 |----------|-------------|-------|
-| macOS | Security.framework Keychain | Accessed via Swift wrappers through cxx.rs |
+| macOS | Security.framework Keychain | Accessed via Swift wrappers through C ABI |
 | Windows | Credential Manager | `CredRead`/`CredWrite` via `windows-sys` |
 | Linux | libsecret / Secret Service API | D-Bus interface via C FFI |
 | CI | Environment variables | AWS Secrets Manager for production |
@@ -1839,11 +1839,11 @@ the cloud build service for cross-platform targets and do not need these toolcha
 | Platform Work | Required Tools | Host OS |
 |---------------|----------------|---------|
 | Rust engine code | Rust toolchain, LLVM | Any |
-| Metal GPU backend | Xcode, Metal SDK, metal-cpp | macOS |
+| Metal GPU backend | Xcode, Metal SDK, Swift Metal API | macOS |
 | Vulkan GPU backend | Vulkan SDK, LLVM | Any |
 | D3D12 GPU backend | Windows SDK, MSVC or Clang | Windows |
 | Swift platform layer | Swift toolchain, Xcode | macOS |
-| C++ FFI bridges | LLVM/Clang, cxx.rs | Any |
+| C++ FFI bridges | LLVM/Clang, C ABI | Any |
 | HLSL shaders | DXC | Any |
 | Metal shaders | DXC + Metal Shader Converter | macOS |
 | TypeScript editor | Node.js, Biome | Any |
@@ -2002,7 +2002,7 @@ packaging, which is excellent cohesion. The mod sandbox's budget enforcement int
 profiler's `MemAllocTracker` (F-15.5.3) and `EcsSystemTracker` (F-15.5.1). However, the signing
 pipeline (F-15.14.4) uses platform-specific tools (codesign, signtool) invoked as external
 processes, which is inconsistent with the engine's preference for library-level integration.
-Wrapping signing in platform-native APIs via cxx.rs would be more cohesive.
+Wrapping signing in platform-native APIs via C ABI would be more cohesive.
 
 ## Open Questions
 

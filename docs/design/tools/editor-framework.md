@@ -2161,7 +2161,7 @@ if recovery_file_exists(&recovery_path) {
 
 | Component       | API                           |
 |-----------------|-------------------------------|
-| Floating panels | `NSWindow` via Swift/cxx      |
+| Floating panels | `NSWindow` via Swift C ABI      |
 | Spaces          | `NSWindow.collectionBehavior` |
 | DPI             | `NSScreen.backingScaleFactor` |
 | Clipboard       | `NSPasteboard`                |
@@ -2172,7 +2172,7 @@ if recovery_file_exists(&recovery_path) {
    integration (US-15.1.1.11).
 2. **Spaces** — `.moveToActiveSpace` ensures panels follow the user.
 3. **DPI** — Retina scaling applied per floating window.
-4. **Clipboard** — Via Swift wrappers through cxx.
+4. **Clipboard** — Via Swift wrappers through C ABI.
 5. **File dialogs** — Native file chooser sheets.
 6. **Cmd key** — Hotkey system maps Cmd to `meta` field.
 

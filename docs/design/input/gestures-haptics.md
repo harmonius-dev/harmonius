@@ -1789,7 +1789,7 @@ pub fn vr_tracking_system(
 | `hidapi` | HID device communication | DualSense adaptive trigger control via USB/BT |
 | `bitflags` | Button bitmask types | Standard pattern for VR controller buttons |
 | `windows-sys` | Win32 API bindings | XInput, GameInput, `WM_POINTER` touch |
-| `cxx` | C++ interop for macOS | CoreHaptics, NSEvent, GCController wrappers |
+| `bindgen` | C ABI bindings for macOS | CoreHaptics, NSEvent, GCController via Swift C ABI |
 
 ## Test Plan
 

@@ -57,7 +57,7 @@
      corruption. On macOS, verify that fibers use GCD dispatch queues and blocks for suspension and
      resumption: assert that `dispatch_suspend` and `dispatch_resume` are invoked on the fiber's
      serial queue, and that no `ucontext` or custom assembly context switching is used. Verify GCD
-     dispatch queue access through C++ wrappers via `cxx.rs` functions correctly under
+     dispatch queue access through C ABI wrappers functions correctly under
      ThreadSanitizer.
 
 ## Async Runtime

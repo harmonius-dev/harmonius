@@ -61,7 +61,7 @@
    - **Verification:** Unit test: create a vertex shader graph missing position output and verify
      edit-time rejection.
 2. **R-15.8.5b** — Shader graphs **SHALL** compile to HLSL, with DXC producing DXIL and SPIR-V and
-   Metal Shader Converter producing MSL via cxx.rs FFI, with compilation errors mapped to graph
+   Metal Shader Converter producing MSL via C ABI FFI, with compilation errors mapped to graph
    nodes.
    - **Rationale:** HLSL as sole intermediate language with platform-specific backends ensures
      cross-platform shader support.

@@ -96,7 +96,7 @@
 1. **F-12.2.9** — Compile the generated HLSL source files (F-12.2.7) into platform-native shader
    bytecode. DXC (Direct3D Shader Compiler) compiles HLSL to DXIL for D3D12 and HLSL to SPIR-V for
    Vulkan. Metal Shader Converter translates DXIL to MSL for Metal. Both DXC and Metal Shader
-   Converter are C++ libraries accessed via cxx.rs FFI bindings. DXC performs validation,
+   Converter are C++ libraries accessed via C ABI FFI bindings. DXC performs validation,
    optimization passes (dead code elimination, constant folding), and reflection (extracting binding
    layouts, push constant ranges, workgroup sizes). Compiled bytecode is cached in the shared build
    cache (F-15.11.2) keyed by the HLSL source hash. Compilation errors report the original HLSL line

@@ -874,7 +874,7 @@ impl ShaderPermutationCache {
 
     /// Retrieve a cached permutation or compile on
     /// cache miss. Async because compilation may
-    /// invoke DXC/MSC via cxx.rs FFI.
+    /// invoke DXC/MSC via C ABI FFI.
     pub async fn get_or_compile(
         &self,
         key: ShaderPermutationKey,
@@ -1657,8 +1657,8 @@ Multi-layer materials are evaluated bottom-to-top. Each layer produces a full su
 | Vulkan | HLSL -> DXC -> SPIR-V | DXC `-spirv` flag |
 | Metal | HLSL -> DXC -> DXIL -> MSC -> MSL | Two-step via Metal Shader Converter |
 
-All compilation uses DXC accessed through cxx.rs. Metal Shader Converter is also accessed through
-cxx.rs. No runtime shader compilation in shipping builds -- all permutations are pre-compiled during
+All compilation uses DXC accessed through C ABI. Metal Shader Converter is also accessed through
+C ABI. No runtime shader compilation in shipping builds -- all permutations are pre-compiled during
 asset processing (F-12.3.1).
 
 ### Proposed Dependencies
@@ -1666,12 +1666,12 @@ asset processing (F-12.3.1).
 | Crate       |
 |-------------|
 | `smallvec`  |
-| `cxx`       |
+| `bindgen`    |
 | `hashbrown` |
 
 1. **`smallvec`** — Inline small vectors for layers, bands
    - **Justification:** Avoids heap allocation for small layer stacks
-2. **`cxx`** — C++ interop for DXC and Metal Shader Converter
+2. **`bindgen`** — C ABI bindings for DXC and Metal Shader Converter
    - **Justification:** Required by design constraints for shader compilation
 3. **`hashbrown`** — Fast hash map for permutation cache
    - **Justification:** Industry-standard; used widely in Rust ecosystem

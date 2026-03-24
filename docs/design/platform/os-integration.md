@@ -1856,7 +1856,7 @@ pub enum FsError {
 8. **Path quirks** — UNC paths, `\\?\` long-path prefix, NTFS junctions
    - **macOS:** Case-insensitive HFS+/APFS
    - **Linux:** Case-sensitive ext4/btrfs
-9. **iOS** — App sandbox directories. `NSFileManager` via Swift/cxx.rs. No symlinks in app bundle.
+9. **iOS** — App sandbox directories. `NSFileManager` via Swift C ABI. No symlinks in app bundle.
 10. **Android** — Internal/external storage via JNI. Scoped storage (API 30+). `ContentResolver` for
     shared files.
 

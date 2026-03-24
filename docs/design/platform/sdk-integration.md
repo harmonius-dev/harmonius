@@ -54,13 +54,13 @@
 
 The platform SDK integration subsystem provides a unified abstraction over platform-specific SDKs
 (Steam, Apple, Google Play, Xbox, PlayStation, Nintendo, Epic Online Services). Gameplay code calls
-a single API; `cfg`-gated backends route to the correct platform SDK via cxx.rs FFI bridges. All
+a single API; `cfg`-gated backends route to the correct platform SDK via C ABI FFI bridges. All
 calls are async via the `IoReactor`.
 
 Key design principles:
 
 - **Static dispatch** -- platform selection at compile time via `cfg`
-- **cxx.rs FFI** -- all platform SDK calls go through cxx.rs bridges
+- **C ABI FFI** -- all platform SDK calls go through C ABI bridges (bindgen)
 - **Deferred queues** -- no data lost during transient failures
 - **Server-authoritative** -- receipts, entitlements, and currency are validated server-side
 
@@ -1284,15 +1284,15 @@ currency is granted:
 
 ### FFI Bridge Pattern
 
-All platform SDK calls use cxx.rs FFI bridges per [constraints.md](../constraints.md). Each backend
-has a thin C++ wrapper that exposes the platform SDK API as cxx.rs-compatible functions.
+All platform SDK calls use C ABI FFI bridges per [constraints.md](../constraints.md). Each backend
+exposes `extern "C"` functions that Rust consumes via bindgen.
 
 ```text
-Rust API → cxx.rs bridge → C++ wrapper → Platform SDK
+Rust API → bindgen FFI → C ABI wrapper → Platform SDK
 ```
 
-**Apple** additionally uses Swift wrappers for StoreKit 2 and GameCenter, accessed through cxx.rs as
-specified in constraints.md.
+**Apple** uses Swift wrappers with `@_cdecl` for StoreKit 2 and GameCenter, exposing a C ABI as
+specified in constraints.md. **Windows/Xbox** uses C++ wrappers with `extern "C"` linkage.
 
 ### Offline Graceful Degradation
 
@@ -1512,7 +1512,7 @@ Stats, Xbox PlayFab, PSN telemetry).
 **Q5. Is this design cohesive with the overall engine?**
 
 The SDK integration aligns with engine constraints: all I/O uses the `IoReactor`, all state is ECS
-resources, all FFI uses cxx.rs. The deferred queue pattern matches `services-storage.md`. The
+resources, all FFI uses C ABI bridges. The deferred queue pattern matches `services-storage.md`. The
 receipt validation pipeline integrates with `monetization.md`. The anti-cheat integration
 complements `anti-cheat.md`. One gap: the matchmaking bridge needs tighter coupling with
 `sessions-replay.md` to ensure platform lobby state is always consistent with the engine session

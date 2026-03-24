@@ -1796,8 +1796,8 @@ time.
 
 | Operation     | macOS (GCD)                    |
 |---------------|--------------------------------|
-| Save write    | `dispatch_io_write` via cxx.rs |
-| Save read     | `dispatch_io_read` via cxx.rs  |
+| Save write    | `dispatch_io_write` via C ABI |
+| Save read     | `dispatch_io_read` via C ABI  |
 | Atomic rename | `renameat2` / `rename`         |
 | Temp file     | `mkstemp`                      |
 
@@ -1830,7 +1830,7 @@ time.
 | Steam | ISteamRemoteStorage | Callback-wrapped as Future |
 | PlayStation | Save Data Library | NP async calls wrapped |
 | Xbox | Connected Storage | XAsync wrapped |
-| iCloud | NSFileManager + NSUbiquitousKeyValueStore | GCD via cxx.rs |
+| iCloud | NSFileManager + NSUbiquitousKeyValueStore | GCD via C ABI |
 | Epic | EOS Player Data Storage | Callback-wrapped as Future |
 
 ### Cinematic Camera -- Platform Adaptation

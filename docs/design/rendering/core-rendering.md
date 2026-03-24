@@ -2995,9 +2995,9 @@ Depth comparison uses `GREATER` instead of `LESS`.
 | Stage | Tool | Input | Output |
 |-------|------|-------|--------|
 | Author | HLSL source | `.hlsl` files | N/A |
-| Compile (D3D12) | DXC via cxx.rs | HLSL | DXIL bytecode |
-| Compile (Vulkan) | DXC via cxx.rs | HLSL | SPIR-V bytecode |
-| Compile (Metal) | Metal Shader Converter via cxx.rs | DXIL | MSL / metallib |
+| Compile (D3D12) | DXC via C ABI | HLSL | DXIL bytecode |
+| Compile (Vulkan) | DXC via C ABI | HLSL | SPIR-V bytecode |
+| Compile (Metal) | Metal Shader Converter via C ABI | DXIL | MSL / metallib |
 
 ### Proposed Dependencies
 

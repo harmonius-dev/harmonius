@@ -626,7 +626,7 @@ impl ScreenReaderBridge {
 // via cfg:
 //
 // #[cfg(target_os = "macos")]
-//   -> NSAccessibility via Swift wrappers / cxx.rs
+//   -> NSAccessibility via Swift wrappers / C ABI
 //
 // #[cfg(target_os = "windows")]
 //   -> UI Automation via windows-sys
@@ -1129,7 +1129,7 @@ impl TextToSpeech {
 // Platform backends:
 //
 // #[cfg(target_os = "macos")]
-//   -> AVSpeechSynthesizer via Swift / cxx.rs
+//   -> AVSpeechSynthesizer via Swift / C ABI
 //
 // #[cfg(target_os = "windows")]
 //   -> SAPI / OneCore via windows-sys
@@ -1388,7 +1388,7 @@ When `HighContrastSettings.enabled` is true:
 | Platform | API | Access Method |
 |----------|-----|---------------|
 | Windows | `GetDpiForWindow` | windows-sys |
-| macOS | `NSWindow.backingScaleFactor` | Swift / cxx.rs |
+| macOS | `NSWindow.backingScaleFactor` | Swift / C ABI |
 | Linux (X11) | `Xft.dpi` resource | xcb / bindgen |
 | Linux (Wayland) | `wl_output.scale` | wayland-client / bindgen |
 
@@ -1398,7 +1398,7 @@ When `HighContrastSettings.enabled` is true:
 
 | Platform | API             | Access                  |
 |----------|-----------------|-------------------------|
-| macOS    | NSAccessibility | Swift wrappers / cxx.rs |
+| macOS    | NSAccessibility | Swift wrappers / C ABI |
 | Windows  | UI Automation   | windows-sys             |
 | Linux    | AT-SPI          | D-Bus via zbus crate    |
 
@@ -1410,7 +1410,7 @@ When `HighContrastSettings.enabled` is true:
 
 | Platform | API | Access | Notes |
 |----------|-----|--------|-------|
-| macOS | AVSpeechSynthesizer | Swift wrappers / cxx.rs | AVFoundation; async speech callbacks |
+| macOS | AVSpeechSynthesizer | Swift wrappers / C ABI | AVFoundation; async speech callbacks |
 | Windows | SAPI / OneCore | windows-sys | COM-based; OneCore for modern voices |
 | Linux | Speech Dispatcher | C FFI / bindgen | spd_say / spd_set_voice |
 
@@ -1435,7 +1435,7 @@ When `HighContrastSettings.enabled` is true:
 |-------|---------|---------------|
 | `zbus` | D-Bus IPC for AT-SPI on Linux | Pure Rust async D-Bus client |
 | `windows-sys` | UI Automation, SAPI COM | Zero-cost Win32 FFI |
-| `cxx` | macOS NSAccessibility, AVSpeechSynthesizer | Safe bridge to Swift wrappers |
+| `bindgen` | macOS NSAccessibility, AVSpeechSynthesizer | Consumes Swift @_cdecl C ABI |
 
 ## Test Plan
 
