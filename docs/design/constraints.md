@@ -73,7 +73,7 @@ engine.
 | macOS    | GCD / Dispatch IO |
 | iOS      | GCD / Dispatch IO |
 | Linux    | io_uring          |
-| Android  | io_uring / epoll  |
+| Android  | io_uring          |
 
 1. **Windows** — `CreateIoCompletionPort`, `GetQueuedCompletionStatusEx` via `windows-rs`
 2. **macOS** — Accessed through Swift wrappers exposing C ABI via `@_cdecl`. We control when
@@ -81,7 +81,7 @@ engine.
 3. **iOS** — Same Swift C ABI wrappers and GCD backend as macOS. Game loop runs on a dedicated
    thread, not the UIKit main thread.
 4. **Linux** — Minimum kernel 5.1+. `IORING_OP_POLL_ADD` for fd readiness. No epoll.
-5. **Android** — io_uring (API 26+) with epoll fallback on older kernels.
+5. **Android** — io_uring. No epoll fallback.
 
 ## macOS and Apple Platforms
 

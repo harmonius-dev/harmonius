@@ -1227,7 +1227,7 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 | Platform | Thread Pool             | I/O Backend                         |
 |----------|-------------------------|-------------------------------------|
 | iOS      | GCD (shared with macOS) | Dispatch IO                         |
-| Android  | std thread pool         | io_uring (API 26+) / epoll fallback |
+| Android  | std thread pool         | io_uring                            |
 | Consoles | Platform thread API     | Platform async I/O                  |
 
 1. **iOS** — Same Swift C ABI wrappers as macOS. QoS classes for thermal throttling. UIKit owns the
