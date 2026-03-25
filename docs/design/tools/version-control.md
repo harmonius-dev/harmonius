@@ -904,7 +904,7 @@ pub enum VcError {
 | Platform | API | Notes |
 |----------|-----|-------|
 | macOS | Security.framework / Keychain | SSH keys, API tokens, passphrases |
-| Windows | Credential Manager | `CredRead` / `CredWrite` via `windows-sys` |
+| Windows | Credential Manager | `CredRead` / `CredWrite` via `windows-rs` |
 | Linux | libsecret (Secret Service API) | Falls back to `ssh-agent` if libsecret unavailable |
 
 ### TLS Stack for LFS Transfers

@@ -22,7 +22,7 @@
 3. **US-1.8.3** — a macOS I/O backend wrapping dispatch_io_create, dispatch_io_read, and
    dispatch_io_write via Swift @_cdecl C ABI wrappers, so that macOS I/O uses native Grand Central
    Dispatch
-   - **Acceptance:** dispatch_io APIs wrapped via C ABI<br>Objective-C++ wrappers for GCD
+   - **Acceptance:** dispatch_io APIs wrapped via C ABI<br>Objective-C ABI wrappers for GCD
      integration<br>All file and socket operations use GCD
 4. **US-1.8.4** — to run the same I/O test suite against IOCP, GCD, and io_uring backends, so that I
    can verify behavioral equivalence across all platforms

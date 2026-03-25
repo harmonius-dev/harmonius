@@ -998,7 +998,7 @@ Domain tags prevent collisions across entry types:
 | Platform | HTTP Stack | Notes |
 |----------|------------|-------|
 | macOS | NSURLSession | Via Swift wrapper through C ABI |
-| Windows | WinHTTP | Via `windows-sys` crate |
+| Windows | WinHTTP | Via `windows-rs` crate |
 | Linux | libcurl | Via `curl` crate |
 
 ### Compression

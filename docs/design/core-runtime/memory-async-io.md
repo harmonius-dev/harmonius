@@ -1290,7 +1290,7 @@ platform backend is selected at compile time via `cfg` attributes with zero dyna
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
 | `blake3` | BLAKE3 content hashing for VFS metadata | Fast, SIMD-optimized, pure Rust |
-| `windows-sys` | Win32 `VirtualAlloc`, IOCP, `CancelIoEx` | Zero-cost FFI to Win32 APIs |
+| `windows-rs` | Win32 `VirtualAlloc`, IOCP, `CancelIoEx` | Zero-cost FFI to Win32 APIs |
 | `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
 | `bindgen` | C header bindings for macOS GCD | Consumes Swift @_cdecl C ABI headers |
 

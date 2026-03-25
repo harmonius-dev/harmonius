@@ -1625,7 +1625,7 @@ fn compute_priority_score(
 
 | Platform | Async I/O                     | GPU Direct Storage     |
 |----------|-------------------------------|------------------------|
-| Windows  | IOCP via `windows-sys`        | DirectStorage 1.2+     |
+| Windows  | IOCP via `windows-rs`        | DirectStorage 1.2+     |
 | macOS    | GCD Dispatch IO via C ABI    | Metal IO Command Queue |
 | Linux    | io_uring via `io-uring` crate | CPU staging fallback   |
 | iOS      | GCD Dispatch IO via C ABI    | Metal IO Command Queue |
@@ -1763,7 +1763,7 @@ impl DirectStorageBackend {
 | `lz4_flex` | LZ4 compression/decompression | Pure Rust, no C dependency, SIMD-accelerated |
 | `zstd` | Zstd compression/decompression | Wraps libzstd via C FFI; industry standard |
 | `blake3` | Content hashing | SIMD-accelerated, consistent with asset database |
-| `windows-sys` | DirectStorage API bindings | Zero-cost FFI, already a project dependency |
+| `direct_storage` | DirectStorage Rust crate | Safe Rust wrapper for Windows DirectStorage API |
 | `bindgen` | Metal IO C ABI bindings | Consumes Swift @_cdecl C ABI headers |
 | `io-uring` | Linux io_uring bindings | Already a project dependency for IoReactor |
 | `smallvec` | Inline-allocated small vectors | Already a project dependency |

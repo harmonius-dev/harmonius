@@ -629,7 +629,7 @@ impl ScreenReaderBridge {
 //   -> NSAccessibility via Swift wrappers / C ABI
 //
 // #[cfg(target_os = "windows")]
-//   -> UI Automation via windows-sys
+//   -> UI Automation via windows-rs
 //
 // #[cfg(target_os = "linux")]
 //   -> AT-SPI via D-Bus / zbus crate
@@ -1132,7 +1132,7 @@ impl TextToSpeech {
 //   -> AVSpeechSynthesizer via Swift / C ABI
 //
 // #[cfg(target_os = "windows")]
-//   -> SAPI / OneCore via windows-sys
+//   -> SAPI / OneCore via windows-rs
 //
 // #[cfg(target_os = "linux")]
 //   -> Speech Dispatcher via C FFI / bindgen
@@ -1387,7 +1387,7 @@ When `HighContrastSettings.enabled` is true:
 
 | Platform | API | Access Method |
 |----------|-----|---------------|
-| Windows | `GetDpiForWindow` | windows-sys |
+| Windows | `GetDpiForWindow` | windows-rs |
 | macOS | `NSWindow.backingScaleFactor` | Swift / C ABI |
 | Linux (X11) | `Xft.dpi` resource | xcb / bindgen |
 | Linux (Wayland) | `wl_output.scale` | wayland-client / bindgen |
@@ -1399,7 +1399,7 @@ When `HighContrastSettings.enabled` is true:
 | Platform | API             | Access                  |
 |----------|-----------------|-------------------------|
 | macOS    | NSAccessibility | Swift wrappers / C ABI |
-| Windows  | UI Automation   | windows-sys             |
+| Windows  | UI Automation   | windows-rs             |
 | Linux    | AT-SPI          | D-Bus via zbus crate    |
 
 1. **macOS** — VoiceOver; uses NSAccessibilityElement protocol
@@ -1411,7 +1411,7 @@ When `HighContrastSettings.enabled` is true:
 | Platform | API | Access | Notes |
 |----------|-----|--------|-------|
 | macOS | AVSpeechSynthesizer | Swift wrappers / C ABI | AVFoundation; async speech callbacks |
-| Windows | SAPI / OneCore | windows-sys | COM-based; OneCore for modern voices |
+| Windows | SAPI / OneCore | windows-rs | COM-based; OneCore for modern voices |
 | Linux | Speech Dispatcher | C FFI / bindgen | spd_say / spd_set_voice |
 
 ### DPI and System Preferences
@@ -1434,7 +1434,7 @@ When `HighContrastSettings.enabled` is true:
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
 | `zbus` | D-Bus IPC for AT-SPI on Linux | Pure Rust async D-Bus client |
-| `windows-sys` | UI Automation, SAPI COM | Zero-cost Win32 FFI |
+| `windows-rs` | UI Automation, SAPI COM | Zero-cost Win32 FFI |
 | `bindgen` | macOS NSAccessibility, AVSpeechSynthesizer | Consumes Swift @_cdecl C ABI |
 
 ## Test Plan

@@ -19,7 +19,7 @@
    screenshot export paths, and loading user-provided assets. Dialogs run on a separate thread to
    avoid blocking the game loop and support file-type filters.
    - **Platform:** Windows uses `IFileOpenDialog`/`IFileSaveDialog` COM interfaces; macOS uses
-     `NSOpenPanel`/`NSSavePanel` via Objective-C++ wrappers; Linux uses the portal D-Bus interface
+     `NSOpenPanel`/`NSSavePanel` via Objective-C ABI wrappers; Linux uses the portal D-Bus interface
      (`org.freedesktop.portal.FileChooser`) for Flatpak/Snap compatibility, falling back to `zenity`
      or `kdialog`.
 
@@ -35,7 +35,7 @@
    system tray icon with a context menu for quick status checks.
    - **Deps:** F-14.1.1
    - **Platform:** Windows uses `Shell_NotifyIcon` and `ToastNotificationManager` (WinRT); macOS
-     uses `NSUserNotificationCenter` or `UNUserNotificationCenter` via Objective-C++ wrappers; Linux
+     uses `NSUserNotificationCenter` or `UNUserNotificationCenter` via Objective-C ABI wrappers; Linux
      uses `org.freedesktop.Notifications` D-Bus interface. Console platforms do not support OS-level
      notifications — use in-game UI instead.
 2. **F-14.2.4** — Accept files and data dragged from the OS desktop onto the game window. Useful for
@@ -43,7 +43,7 @@
    engine validates MIME types and file extensions before accepting the drop.
    - **Deps:** F-14.1.1
    - **Platform:** Windows uses `IDropTarget` COM interface registered via `RegisterDragDrop`; macOS
-     uses `NSDraggingDestination` protocol on `NSWindow` via Objective-C++ wrappers; Linux X11 uses
+     uses `NSDraggingDestination` protocol on `NSWindow` via Objective-C ABI wrappers; Linux X11 uses
      XDND protocol, Wayland uses `wl_data_device` drag-and-drop events.
 
 ## Text Input
@@ -65,7 +65,7 @@
    hint and handles composition, commit, and candidate-list events.
    - **Deps:** F-14.2.5, F-14.1.1
    - **Platform:** Windows uses `ImmGetContext` / TSF (`ITfThreadMgr`); macOS uses
-     `NSTextInputClient` protocol via Objective-C++ wrappers; Linux uses `IBus` or `Fcitx` via their
+     `NSTextInputClient` protocol via Objective-C ABI wrappers; Linux uses `IBus` or `Fcitx` via their
      respective D-Bus or direct C APIs. The candidate window must track the text cursor position in
      screen coordinates, updating as the game window moves or resizes.
 

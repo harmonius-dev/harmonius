@@ -30,7 +30,6 @@ standard before writing or reviewing code in any language.
 | Standard | Scope |
 |----------|-------|
 | [Rust](docs/standards/rust.md) | Primary engine language |
-| [C++](docs/standards/cpp.md) | FFI bridges (C ABI) |
 | [Swift](docs/standards/swift.md) | macOS platform (C ABI) |
 | [TypeScript](docs/standards/typescript.md) | Tooling, editor, build |
 | [Python](docs/standards/python.md) | Scripts and tools (ruff) |

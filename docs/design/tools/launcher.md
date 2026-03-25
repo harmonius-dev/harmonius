@@ -1051,7 +1051,7 @@ tampering.
 1. **macOS** — Set `CFBundleDocumentTypes` in Info.plist, register with `LSRegisterURL` via
    Swift C ABI
 2. **Windows** — Create `.harmonius` key, `shell\open\command` pointing to launcher, via
-   `windows-sys`
+   `windows-rs`
 3. **Linux** — Create `application/x-harmonius.xml` MIME type, install `.desktop` file, run
    `update-mime-database`
 
@@ -1064,7 +1064,7 @@ tampering.
 | Linux    | libsecret (Secret Service API) |
 
 1. **macOS** — `SecItemAdd`/`SecItemCopyMatching` via Swift wrappers through C ABI
-2. **Windows** — `CredRead`/`CredWrite` via `windows-sys` crate
+2. **Windows** — `CredRead`/`CredWrite` via `windows-rs` crate
 3. **Linux** — D-Bus org.freedesktop.secrets via C FFI / bindgen
 
 ### Version Install Directories
@@ -1084,7 +1084,7 @@ are fully isolated -- no shared state between versions.
 |-------|---------|---------------|
 | `toml` | TOML parsing for `.harmonius` files | Standard TOML library, widely used |
 | `blake3` | Content hash verification | Fast, parallelizable hash for integrity |
-| `windows-sys` | Win32 registry, Credential Manager | Zero-cost FFI to Windows APIs |
+| `windows-rs` | Win32 registry, Credential Manager | Zero-cost FFI to Windows APIs |
 | `bindgen` | macOS Keychain, Launch Services C ABI | Consumes Swift @_cdecl wrappers |
 | `serde` | Serialization for configs and API responses | Standard Rust serialization |
 

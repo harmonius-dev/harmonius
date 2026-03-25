@@ -126,7 +126,7 @@
    - **Deps:** F-14.3.5, F-14.3.6, F-14.3.4
    - **Platform:** macOS only. Uses `dispatch_queue_create` for the serial queue,
      `dispatch_io_create` and `dispatch_io_read` for async I/O, and `dispatch_sync` on the serial
-     queue at the poll point to drain completions. GCD/Dispatch IO is accessed through C++ wrappers
+     queue at the poll point to drain completions. GCD/Dispatch IO is accessed through C ABI wrappers
      via C ABI. No direct core pinning; thread scheduling is delegated to macOS via QoS classes.
 8. **F-14.3.13** — Coroutines and async tasks that need to spread work across multiple frames call
    `reactor.next_frame().await`. This yields the task; the reactor resumes it at the next frame's

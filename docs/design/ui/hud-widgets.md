@@ -2180,7 +2180,7 @@ sequenceDiagram
 
 | Platform | API | Notes |
 |----------|-----|-------|
-| Windows | IMM32 / TSF | Via `windows-sys` crate |
+| Windows | IMM32 / TSF | Via `windows-rs` crate |
 | macOS | Text Services Manager | Via Swift wrappers through C ABI |
 | Linux | IBus / Fcitx | Via C FFI / bindgen |
 

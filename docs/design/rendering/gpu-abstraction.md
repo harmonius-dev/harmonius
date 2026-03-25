@@ -23,7 +23,7 @@
 2. **F-2.1.2** — Command buffer abstraction for graphics, compute, copy
 3. **F-2.1.3** — Unified pipeline state objects pre-validated at creation
 4. **F-2.1.4** — Metal backend via Swift-to-C-to-bindgen
-5. **F-2.1.5** — D3D12 backend via COM-to-bindgen
+5. **F-2.1.5** — D3D12 backend via windows-rs COM
 6. **F-2.1.6** — Vulkan backend via C-to-bindgen
 
 ### GPU Runtime
@@ -89,9 +89,9 @@ semaphores (Vulkan, D3D12) and `MTLEvent` (Metal) are polled at the reactor's fr
 the GPU never fires callbacks asynchronously. GPU resources used by the ECS are represented as
 components (e.g., `GpuMesh`, `GpuTexture`, `GpuMaterial`) managed by systems.
 
-HLSL is the sole shader language. DXC (C++ wrapper exposing C ABI) compiles HLSL to DXIL and SPIR-V.
-Metal Shader Converter (C++ wrapper exposing C ABI) translates DXIL to metallib. No runtime shader
-compilation occurs in shipping builds.
+HLSL is the sole shader language. DXC compiles HLSL to DXIL and SPIR-V (via `windows-rs` COM on
+Windows, C API on Linux). Metal Shader Converter (Swift `@_cdecl` wrapper) translates DXIL to
+metallib. No runtime shader compilation occurs in shipping builds.
 
 ## Architecture
 
@@ -168,7 +168,7 @@ harmonius_gpu/
 │   │   ├── heap.rs    # MetalHeap
 │   │   └── swap.rs    # MetalSwapchain (CAMetalLayer)
 │   ├── d3d12/
-│   │   ├── device.rs  # D3D12Device (COM bindgen)
+│   │   ├── device.rs  # D3D12Device (windows-rs COM)
 │   │   ├── command.rs # D3D12CommandList
 │   │   ├── heap.rs    # D3D12Heap
 │   │   └── swap.rs    # D3D12Swapchain (IDXGISwapChain4)
@@ -178,8 +178,8 @@ harmonius_gpu/
 │       ├── memory.rs  # VulkanMemory
 │       └── swap.rs    # VulkanSwapchain
 └── ffi/
-    ├── dxc.rs         # DXC C++ bridge (C ABI via bindgen)
-    └── msc.rs         # Metal Shader Converter (C ABI via bindgen)
+    ├── dxc.rs         # DXC (windows-rs COM on Win, bindgen on Linux)
+    └── msc.rs         # Metal Shader Converter (Swift @_cdecl C ABI)
 
 harmonius_gpu_runtime/
 ├── lib.rs
@@ -1363,8 +1363,8 @@ pub enum BindingType {
 
 ```rust
 /// Shader compilation from HLSL via DXC and
-/// Metal Shader Converter. All C++ interop via
-/// C ABI (extern "C") consumed through bindgen.
+/// Metal Shader Converter. DXC via windows-rs
+/// COM on Windows, C API on Linux. MSC via Swift.
 pub struct ShaderCompiler { /* ... */ }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -2255,7 +2255,7 @@ on the hot path:
 
 | Component | API | Notes |
 |-----------|-----|-------|
-| Device | ID3D12Device | Via COM bindgen |
+| Device | ID3D12Device | Via windows-rs COM |
 | Command buffer | ID3D12GraphicsCommandList | Command allocator pool |
 | Pipeline | ID3D12PipelineState | Root signature + PSO |
 | Heap | ID3D12Heap | 256 B alignment for CBVs |
@@ -2306,17 +2306,17 @@ on the hot path:
 
 | Crate / Library      |
 |----------------------|
-| `windows-sys`        |
+| `windows`            |
 | `bindgen` (build)    |
 | `cbindgen` (build)   |
 | `smallvec`           |
 
-1. **`windows-sys`** — Win32/COM/DXGI raw bindings
-   - **Justification:** Zero-cost D3D12 FFI, no C++
+1. **`windows`** — Windows API bindings (COM, D3D12, DXGI, DXC)
+   - **Justification:** Safe Rust COM bindings for D3D12 and DXC; no C++ needed
 2. **`bindgen` (build)** — Generate Rust FFI from C headers
-   - **Justification:** Consumes C ABI headers from all backends (D3D12, DXC, Metal, Vulkan)
+   - **Justification:** Consumes C ABI headers (Swift Metal backend, Vulkan, DXC on Linux)
 3. **`cbindgen` (build)** — Generate C headers from Rust declarations
-   - **Justification:** Produces C headers that backends implement against
+   - **Justification:** Produces C headers that Swift/C backends implement against
 4. **`smallvec`** — Inline-allocated small vectors
    - **Justification:** Barrier lists, bind group entries
 
@@ -2374,7 +2374,7 @@ on the hot path:
    branches vs raw backend.
 8. **`test_metal_ffi_no_objc`** — Verify Metal FFI boundary contains only C-compatible signatures.
    No Objective-C selectors.
-9. **`test_d3d12_no_cpp_no_windows_rs`** — Verify D3D12 dep graph contains no C++ TUs or windows-rs.
+9. **`test_d3d12_no_cpp`** — Verify D3D12 dep graph contains no C++ translation units.
 10. **`test_vulkan_validation_zero_errors`** — Run conformance suite with VK validation layers. Zero
     validation errors.
 11. **`test_vulkan_loader_runtime`** — Verify Vulkan loader is runtime-discovered, not statically
@@ -2541,8 +2541,8 @@ All GPU abstraction APIs are safe Rust. Internal `unsafe` is confined to platfor
    with phantom type markers. No raw pointers. Stale handles (use-after-free) are caught by
    generation checks at every access.
 5. ****Internal unsafe encapsulation.**** — Platform FFI (Metal via Swift @_cdecl, D3D12 via COM
-   bindgen, Vulkan via bindgen) is encapsulated in `harmonius_gpu::platform::*` modules. Each `unsafe`
-   block documents its safety invariants. No unsafe propagates to consumers.
+   windows-rs, Vulkan via bindgen) is encapsulated in `harmonius_gpu::platform::*` modules. Each
+   `unsafe` block documents its safety invariants. No unsafe propagates to consumers.
 
 ### Handle Safety Model
 

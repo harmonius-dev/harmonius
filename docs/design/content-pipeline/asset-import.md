@@ -1633,7 +1633,7 @@ is used anywhere in the import or database subsystems.
 | Platform | I/O Backend | Import Usage |
 |----------|-------------|--------------|
 | Windows | IOCP | Overlapped reads for source files, CAS blob writes |
-| macOS | GCD Dispatch IO | `dispatch_io_read` / `dispatch_io_write` via C++ wrappers and C ABI |
+| macOS | GCD Dispatch IO | `dispatch_io_read` / `dispatch_io_write` via C ABI wrappers and C ABI |
 | Linux | io_uring | `IORING_OP_READ` / `IORING_OP_WRITE` SQEs for all file operations |
 
 ### CAS Storage

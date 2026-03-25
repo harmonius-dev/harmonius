@@ -2071,7 +2071,7 @@ fn compose_layers(
 
 | Platform | I/O Backend | API |
 |----------|-------------|-----|
-| Windows | IOCP | `CreateIoCompletionPort` via `windows-sys` |
+| Windows | IOCP | `CreateIoCompletionPort` via `windows-rs` |
 | macOS | GCD Dispatch IO | C ABI wrappers |
 | Linux | io_uring | `io_uring` crate |
 

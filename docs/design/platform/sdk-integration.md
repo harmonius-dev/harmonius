@@ -1292,7 +1292,7 @@ Rust API → bindgen FFI → C ABI wrapper → Platform SDK
 ```
 
 **Apple** uses Swift wrappers with `@_cdecl` for StoreKit 2 and GameCenter, exposing a C ABI as
-specified in constraints.md. **Windows/Xbox** uses C++ wrappers with `extern "C"` linkage.
+specified in constraints.md. **Windows/Xbox** uses C ABI wrappers with `extern "C"` linkage.
 
 ### Offline Graceful Degradation
 

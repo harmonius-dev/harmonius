@@ -1686,7 +1686,7 @@ The packaging pipeline integrates into a CI/CD workflow. Each stage is a discret
 | Platform | Keychain API | Notes |
 |----------|-------------|-------|
 | macOS | Security.framework Keychain | Accessed via Swift wrappers through C ABI |
-| Windows | Credential Manager | `CredRead`/`CredWrite` via `windows-sys` |
+| Windows | Credential Manager | `CredRead`/`CredWrite` via `windows-rs` |
 | Linux | libsecret / Secret Service API | D-Bus interface via C FFI |
 | CI | Environment variables | AWS Secrets Manager for production |
 

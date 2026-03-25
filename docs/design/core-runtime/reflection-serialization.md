@@ -2041,7 +2041,7 @@ R-1.4.1.
 
 | Platform | API | Notes |
 |----------|-----|-------|
-| Windows | `CreateFileMappingW` / `MapViewOfFile` | Via `windows-sys` |
+| Windows | `CreateFileMappingW` / `MapViewOfFile` | Via `windows-rs` |
 | macOS | `mmap` | Via libc crate |
 | Linux | `mmap` | Via libc crate |
 | Mobile | `mmap` | Streaming deserialization with 1 MB staging buffer on iOS/Android (R-1.4.7) |

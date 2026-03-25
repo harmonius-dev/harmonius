@@ -338,8 +338,8 @@ across 15 domains.
    Converter translates DXIL to MSL. HLSL is the sole shader intermediate language. WGSL
    **SHALL NOT** be generated as web is not a target platform. All shader compilation paths in the
    engine **SHALL** use DXC and Metal Shader Converter as the shader compilation backend, with no
-   SPIRV-Cross dependencies. DXC and Metal Shader Converter are C++ libraries accessed via C ABI
-   FFI bindings.
+   SPIRV-Cross dependencies. DXC is accessed via `windows-rs` COM on Windows and C API on Linux.
+   Metal Shader Converter is accessed via Swift `@_cdecl` wrappers.
    - **Rationale:** HLSL is the universal shader intermediate representation. DXC provides
      industry-standard compilation to DXIL and SPIR-V, and Metal Shader Converter provides Apple's
      official DXIL-to-MSL translation. This ensures consistent shader output across all platforms.

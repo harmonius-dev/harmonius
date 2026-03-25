@@ -36,7 +36,7 @@ windowing code behind `cfg`-gated backend modules, ensuring that gameplay, UI, a
 never branch on platform.
 
 The subsystem uses direct platform-native APIs for window creation and event polling on each target:
-Win32 `CreateWindowEx` via `windows-sys` on Windows, `NSWindow` via Swift `@_cdecl` C ABI wrappers
+Win32 `CreateWindowEx` via `windows-rs` on Windows, `NSWindow` via Swift `@_cdecl` C ABI wrappers
 on macOS, and `xcb` (X11) / Wayland protocol via C FFI on Linux. This gives us full control over HDR
 metadata negotiation, advanced VSync control, and auxiliary window management without third-party
 abstraction layers. All asynchronous abstractions use `async`/`await` — no callbacks. Window events
@@ -1132,7 +1132,7 @@ The windowing subsystem is responsible for:
 | Linux Wayland | `wl_compositor_create_surface` |
 
 1. **Windows** — COM initialized via `CoInitializeEx`. Window class registered with
-   `RegisterClassExW`. Uses `windows-sys` for FFI.
+   `RegisterClassExW`. Uses `windows-rs` for FFI.
 2. **macOS** — `NSApplication` must be initialized on the OS main thread. `NSWindow` created with
    `initWithContentRect:styleMask:`. Swift wrappers expose C ABI via `@_cdecl`.
 3. **iOS** — `UIApplicationMain` owns the OS main thread. `UIWindow` and `UIViewController` created
@@ -1407,7 +1407,7 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
 1. **~~winit vs custom windowing~~** — **Resolved: custom windowing, no winit.** Direct
    platform-native implementations provide full control over HDR metadata, advanced DXGI swapchain
    flags, `wp_fractional_scale_v1` on Wayland, and all presentation modes without fighting a
-   third-party abstraction layer. Platform backends: Win32 `CreateWindowEx` via `windows-sys`,
+   third-party abstraction layer. Platform backends: Win32 `CreateWindowEx` via `windows-rs`,
    `NSWindow` via Swift `@_cdecl` C ABI wrappers, `xcb` (X11) and Wayland protocol via C FFI /
    bindgen.
 
@@ -1442,14 +1442,14 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
 | Crate               | Version | Purpose                        |
 |---------------------|---------|--------------------------------|
 | `raw-window-handle` | latest  | Platform-native handle interop |
-| `windows-sys`       | latest  | Win32 API bindings (Windows)   |
+| `windows-rs`       | latest  | Win32 API bindings (Windows)   |
 | `bindgen`           | latest  | C FFI bindings (all platforms) |
 | `cbindgen`          | latest  | C header generation from Rust  |
 
 1. **`raw-window-handle`** — De facto standard trait for passing native window handles to GPU
    backends. Zero-cost abstraction — trait implementations on our `RawWindowHandle` enum.
    Independent of any windowing library.
-2. **`windows-sys`** — Zero-cost FFI for `CreateWindowEx`, `SetWindowPos`, DXGI output enumeration,
+2. **`windows-rs`** — Zero-cost FFI for `CreateWindowEx`, `SetWindowPos`, DXGI output enumeration,
    `SetProcessDpiAwarenessContext`, HDR metadata APIs. Used only via `cfg(target_os = "windows")`.
 3. **`bindgen`** — Generates Rust bindings from C headers exposed by Swift `@_cdecl` wrappers
    (macOS/iOS) and xcb/Wayland client libraries (Linux) at build time.

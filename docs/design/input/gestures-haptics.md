@@ -1788,7 +1788,7 @@ pub fn vr_tracking_system(
 | `openxr` | OpenXR bindings | Safe Rust wrapper for VR runtime interaction |
 | `hidapi` | HID device communication | DualSense adaptive trigger control via USB/BT |
 | `bitflags` | Button bitmask types | Standard pattern for VR controller buttons |
-| `windows-sys` | Win32 API bindings | XInput, GameInput, `WM_POINTER` touch |
+| `windows-rs` | Win32 API bindings | XInput, GameInput, `WM_POINTER` touch |
 | `bindgen` | C ABI bindings for macOS | CoreHaptics, NSEvent, GCController via Swift C ABI |
 
 ## Test Plan

@@ -258,7 +258,7 @@ harmonius_dcc_plugins/
 │   ├── bake.rs           # Normal/displ baking
 │   └── lod.rs            # Decimation + LOD
 ├── motionbuilder/
-│   ├── orsdk.rs          # ORSDK C++ bridge
+│   ├── orsdk.rs          # ORSDK C ABI bridge
 │   ├── export.rs         # Batch take export
 │   └── mocap.rs          # Live streaming
 └── shared/

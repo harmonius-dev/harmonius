@@ -2045,7 +2045,7 @@ sequenceDiagram
 | macOS    | CoreAudio       | `AudioUnit` (RemoteIO / HAL)         |
 | Linux    | ALSA / PipeWire | `snd_pcm_*` / PipeWire native        |
 
-1. **Windows** — Exclusive mode for low latency; shared mode fallback. Via `windows-sys`.
+1. **Windows** — Exclusive mode for low latency; shared mode fallback. Via `windows-rs`.
 2. **macOS** — Callback on CoreAudio's real-time thread. C ABI wrapper.
 3. **Linux** — ALSA via bindgen; PipeWire preferred when available.
 
@@ -2100,7 +2100,7 @@ sequenceDiagram
 | `sofar` | SOFA HRTF file loading | SOFA format parser (or custom) |
 | `crossbeam-utils` | CachePadded, Backoff | Lock-free primitives |
 | `smallvec` | Inline bus child lists | Avoids heap for small arrays |
-| `windows-sys` | WASAPI bindings | Zero-cost Win32 FFI |
+| `windows-rs` | WASAPI bindings | Zero-cost Win32 FFI |
 | `bindgen` | CoreAudio C ABI bridge | Consumes Swift @_cdecl C ABI headers |
 
 ## Safety Invariants

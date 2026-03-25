@@ -8,36 +8,39 @@ engine.
 | Constraint | Detail |
 |------------|--------|
 | Primary language | Rust (stable only — no nightly features) |
-| FFI strategy | All backends expose a C ABI interface; Rust consumes via bindgen |
-| C header generation | cbindgen generates C headers from Rust-side `extern "C"` declarations |
-| Backend languages | Each backend uses the best language for its platform (see below) |
-| Swift build | CMake builds Swift libraries; XcodeGen + xcodebuild packages macOS/iOS apps |
+| Windows APIs | `windows-rs` for all Windows APIs (Win32, COM, D3D12, DXC) |
+| Apple APIs | Swift with `@_cdecl` C ABI; Rust consumes via bindgen |
+| Linux APIs | bindgen from C headers (vulkan.h, xcb, Wayland, io_uring) |
+| C header generation | cbindgen generates C headers from Rust `extern "C"` declarations |
+| Swift build | CMake builds Swift libs; XcodeGen + xcodebuild packages apps |
+| No C++ | No C++ source anywhere in the project |
 | No cxx.rs | cxx.rs is not used anywhere in the project |
-| No Ash | The Ash Vulkan bindings crate is not used; bindgen from vulkan.h instead |
+| No Ash | The Ash Vulkan bindings crate is not used |
 | No Obj-C/Obj-C++ | No Objective-C or Objective-C++ source anywhere |
-| No metal-cpp | Metal is accessed directly from Swift, not through metal-cpp |
+| No metal-cpp | Metal is accessed directly from Swift |
 
 ### Backend Language Matrix
 
 | Backend | Language | FFI Surface |
 |---------|----------|-------------|
+| Direct3D 12 | Rust | `windows-rs` COM bindings |
 | Metal | Swift | `@_cdecl` functions exposing C ABI |
-| Direct3D 12 | C++ | `extern "C"` functions exposing C ABI |
-| Vulkan | C | Direct C API via bindgen from vulkan.h |
-| DXC shader compiler | C++ | `extern "C"` wrapper exposing C ABI |
-| Metal Shader Converter | C++ | `extern "C"` wrapper exposing C ABI |
+| Vulkan | C | bindgen from vulkan.h |
+| DXC (Windows) | Rust | `windows-rs` COM (`IDxcCompiler3`) |
+| DXC (Linux) | C | bindgen from dxcapi.h |
+| Metal Shader Converter | Swift | `@_cdecl` wrapper exposing C ABI |
+| Win32 / IOCP | Rust | `windows-rs` |
 | GCD / Dispatch IO | Swift | `@_cdecl` functions exposing C ABI |
 | NSWindow / AppKit | Swift | `@_cdecl` functions exposing C ABI |
-| Win32 | C | Direct C API via windows-sys |
-| xcb / Wayland | C | Direct C API via bindgen |
+| xcb / Wayland | C | bindgen from C headers |
 
 ## Shader Pipeline
 
 | Constraint | Detail |
 |------------|--------|
 | Shader IL | HLSL is the sole shader intermediate language |
-| HLSL → DXIL/SPIR-V | DXC (C++ wrapper exposing C ABI, consumed by Rust via bindgen) |
-| DXIL → MSL | Metal Shader Converter (C++ wrapper exposing C ABI) |
+| HLSL → DXIL/SPIR-V | DXC via `windows-rs` COM on Windows, bindgen on Linux |
+| DXIL → MSL | Metal Shader Converter via Swift `@_cdecl` C ABI |
 
 ## Async and Concurrency
 
@@ -72,7 +75,7 @@ engine.
 | Linux    | io_uring          |
 | Android  | io_uring / epoll  |
 
-1. **Windows** — `CreateIoCompletionPort`, `GetQueuedCompletionStatusEx` via `windows-sys`
+1. **Windows** — `CreateIoCompletionPort`, `GetQueuedCompletionStatusEx` via `windows-rs`
 2. **macOS** — Accessed through Swift wrappers exposing C ABI via `@_cdecl`. We control when
    dispatch callbacks fire (controlled drain at poll point).
 3. **iOS** — Same Swift C ABI wrappers and GCD backend as macOS. Game loop runs on a dedicated
@@ -123,7 +126,7 @@ engine.
 ## Windowing
 
 - **Custom windowing system.** No winit. Platform-native windowing implemented directly:
-  - Windows: Win32 `CreateWindowEx` via `windows-sys`
+  - Windows: Win32 `CreateWindowEx` via `windows-rs`
   - macOS: `NSWindow` via Swift `@_cdecl` C ABI wrappers
   - Linux: xcb (X11) and Wayland via C FFI / bindgen
 

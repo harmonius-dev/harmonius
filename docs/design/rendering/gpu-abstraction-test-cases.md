@@ -79,14 +79,14 @@ Companion test cases for [gpu-abstraction.md](gpu-abstraction.md).
 1. **#1** — Metal FFI boundary signatures
    - **Expected:** Only C-compatible signatures, no Objective-C selectors
 
-### TC-2.1.5.1 D3D12 No C++ No Windows-rs
+### TC-2.1.5.1 D3D12 No C++
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-2.1.5     |
 
 1. **#1** — D3D12 dependency graph
-   - **Expected:** No C++ translation units, no windows-rs
+   - **Expected:** No C++ translation units; pure Rust via `windows-rs`
 
 ### TC-2.1.6.1 Vulkan Validation Zero Errors
 

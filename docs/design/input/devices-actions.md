@@ -1878,7 +1878,7 @@ Each trigger type follows a state machine:
 
 | Platform | Crate / FFI                          |
 |----------|--------------------------------------|
-| Windows  | `windows-sys`                        |
+| Windows  | `windows-rs`                        |
 | macOS    | C ABI wrapper                |
 | Linux    | `evdev` crate or C FFI via `bindgen` |
 
@@ -1893,7 +1893,7 @@ Each trigger type follows a state machine:
 
 | Platform | Crate / FFI                |
 |----------|----------------------------|
-| Windows  | `windows-sys`              |
+| Windows  | `windows-rs`              |
 | macOS    | C ABI wrapper      |
 | Linux    | `evdev` crate or `bindgen` |
 
@@ -1908,7 +1908,7 @@ Each trigger type follows a state machine:
 
 | Platform | Crate / FFI                |
 |----------|----------------------------|
-| Windows  | `windows-sys`              |
+| Windows  | `windows-rs`              |
 | macOS    | Swift C ABI wrapper    |
 | Linux    | `evdev` crate or `bindgen` |
 
@@ -1923,7 +1923,7 @@ Each trigger type follows a state machine:
 
 | Platform | Crate / FFI             |
 |----------|-------------------------|
-| Windows  | `windows-sys`           |
+| Windows  | `windows-rs`           |
 | macOS    | Swift C ABI wrapper |
 | Linux    | C FFI via `bindgen`     |
 
@@ -1938,7 +1938,7 @@ Each trigger type follows a state machine:
 
 | Platform | Crate / FFI           |
 |----------|-----------------------|
-| Windows  | `windows-sys`         |
+| Windows  | `windows-rs`         |
 | macOS    | C ABI wrapper |
 | Linux    | C FFI via `bindgen`   |
 
@@ -1984,7 +1984,7 @@ All platforms normalize to USB HID usage codes:
 
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
-| `windows-sys` | Win32 API bindings | Zero-cost FFI for raw input, XInput, WM_POINTER |
+| `windows-rs` | Win32 API bindings | Zero-cost FFI for raw input, XInput, WM_POINTER |
 | `bindgen` | C header bindings for macOS | Consumes Swift @_cdecl C ABI headers |
 | `smallvec` | Inline-allocated small vectors | Modifier chains, combo children, chord inputs |
 

@@ -1648,7 +1648,7 @@ pub enum TempError {
 | `steamworks` | Steamworks SDK bindings | Maintained Rust wrapper for Steam API |
 | `blake3` | Content-addressed cache keys | Fast, parallel, SIMD-accelerated hash |
 | `toml` | Preferences serialization | Standard TOML parser/writer |
-| `windows-sys` | Win32 path APIs, file ops | Zero-cost FFI for Windows APIs |
+| `windows-rs` | Win32 path APIs, file ops | Zero-cost FFI for Windows APIs |
 | `bindgen` | C ABI bindings for console SDKs | Consumes extern "C" wrappers for console SDKs |
 
 ## Test Plan

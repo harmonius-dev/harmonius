@@ -1363,7 +1363,7 @@ pub enum QueueError {
 
 | Platform | Async I/O | Notes |
 |----------|-----------|-------|
-| Windows | IOCP | Overlapped file writes via `windows-sys` |
+| Windows | IOCP | Overlapped file writes via `windows-rs` |
 | macOS | GCD Dispatch IO | C ABI wrappers |
 | Linux | io_uring | `IORING_OP_WRITE` for replay flush |
 

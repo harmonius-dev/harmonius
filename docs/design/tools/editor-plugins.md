@@ -397,7 +397,7 @@ pub trait EditorPlugin: Send {
 ///
 /// The host wraps the returned pointer in an
 /// IsolationScope and calls EditorPlugin methods
-/// through C ABI-generated C++ bridge functions.
+/// through C ABI bridge functions.
 
 // C ABI plugin entry points (extern "C")
 extern "C" {
@@ -897,8 +897,8 @@ plugins.
 | C ABI bridge | C ABI MSVC ABI | C ABI Clang ABI | C ABI GCC/Clang ABI |
 | Isolation | SEH for panic catch | `setjmp`/`longjmp` | `setjmp`/`longjmp` |
 
-All platforms use C ABI to generate the C++ bridge code. The bridge ensures a stable C ABI
-regardless of Rust compiler version changes.
+All platforms use `extern "C"` linkage for plugin entry points. The C ABI ensures a stable binary
+interface regardless of Rust compiler version changes.
 
 ## Test Plan
 

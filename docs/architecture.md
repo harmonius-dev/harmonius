@@ -1490,7 +1490,7 @@ graph TB
 | Platform | Async I/O | Windowing | Graphics | FFI |
 |----------|-----------|-----------|----------|-----|
 | macOS | GCD / Dispatch IO | NSWindow (Swift via C ABI) | Metal 4 | C ABI → Swift |
-| Windows | IOCP | Win32 (windows-sys) | Direct3D 12 | windows-sys |
+| Windows | IOCP | Win32 (windows-rs) | Direct3D 12 | windows-rs |
 | Linux | io_uring (kernel 5.1+) | xcb / Wayland (bindgen) | Vulkan 1.4 | bindgen |
 | iOS | GCD / Dispatch IO | UIWindow (Swift via C ABI) | Metal 4 | C ABI → Swift |
 | Android | io_uring | NativeActivity (bindgen) | Vulkan 1.4 | bindgen |

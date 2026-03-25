@@ -1388,8 +1388,8 @@ uploaded to the GPU each frame. Changes propagate within one frame.
 | macOS (Metal) | HLSL | DXIL | MSL (via Metal Shader Converter) |
 | iOS (Metal) | HLSL | DXIL | MSL (via Metal Shader Converter) |
 
-All shader compilation uses DXC (C++ via C ABI) and Metal Shader Converter (C++ via C ABI). HLSL
-is the sole shader intermediate language.
+All shader compilation uses DXC (via `windows-rs` COM on Windows, C API on Linux) and Metal Shader
+Converter (via Swift `@_cdecl`). HLSL is the sole shader intermediate language.
 
 ### Platform Compute Capabilities
 

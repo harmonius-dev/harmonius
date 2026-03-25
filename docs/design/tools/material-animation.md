@@ -1416,7 +1416,7 @@ pub enum StateMachineError {
 | Preview viewport | Render graph compute | Render graph compute | Render graph compute |
 | Asset I/O | IOCP via IoReactor | GCD Dispatch IO | io_uring |
 
-All shader compilation uses DXC accessed through C ABI C++ interop. The material compiler is
+All shader compilation uses DXC accessed through C ABI. The material compiler is
 platform-agnostic; only the final bytecode format varies by target.
 
 ## Test Plan
@@ -1519,10 +1519,10 @@ shared framework.
 **Q1. What is the biggest constraint limiting this design?**
 
 The HLSL-only shader IL constraint means all material graphs must compile through DXC and Metal
-Shader Converter via C ABI C++ FFI. This creates a hard dependency on two external C++ tools for
+Shader Converter via C ABI FFI. This creates a hard dependency on two external tools for
 every shader change. Lifting this would allow direct SPIR-V emission or native Metal shader
 generation. The best solution would be a custom IR that targets SPIR-V, DXIL, and MSL directly
-without DXC. The impact is removing the C++ FFI chain for shader compilation, but building a
+without DXC. The impact is removing the FFI chain for shader compilation, but building a
 production-quality shader compiler is a massive undertaking.
 
 **Q2. How can this design be improved?**

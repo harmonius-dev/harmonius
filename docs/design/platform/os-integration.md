@@ -2144,14 +2144,14 @@ for a startup-configured sink list.
 | Crate         |
 |---------------|
 | `blake3`      |
-| `windows-sys` |
+| `windows-rs` |
 | `libc`        |
 | `io-uring`    |
 | `xkbcommon`   |
 
 1. **`blake3`** — BLAKE3 content hashing for file change detection
    - **Justification:** Canonical implementation with SIMD (AVX-512, AVX2, NEON). Used for R-14.6.6.
-2. **`windows-sys`** — Win32 / COM / WinRT API bindings
+2. **`windows-rs`** — Win32 / COM / WinRT API bindings
    - **Justification:** Zero-cost FFI for clipboard, file dialogs, notifications, crash handling,
      IOCP filesystem ops. Already used in threading design.
 3. **`libc`** — POSIX / macOS / Linux syscall bindings

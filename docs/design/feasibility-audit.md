@@ -270,7 +270,7 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 - **Design element:** GCD Dispatch IO and dispatch blocks accessed through C ABI wrappers
 - **Risk:** C ABI does not support C++ lambdas, std::function, or function pointers as callback
   parameters. GCD's core API pattern is `dispatch_async(queue, block)` where `block` is an
-  Objective-C block (not a C++ lambda). The C++ wrappers must capture Rust state in dispatch blocks,
+  Objective-C block (not a C++ lambda). The C ABI wrappers must capture Rust state in dispatch blocks,
   which requires converting Rust function pointers to C-compatible callbacks. This is feasible but
   complex and error-prone. C ABI also does not support Objective-C blocks directly.
 - **Likelihood:** High

@@ -2151,7 +2151,7 @@ if recovery_file_exists(&recovery_path) {
 | Clipboard        | `OpenClipboard` / `SetClipboardData` |
 | File dialogs     | `IFileOpenDialog`                    |
 
-1. **Floating panels** — Via `windows-sys`. Child window with `WS_POPUP` style for borderless float.
+1. **Floating panels** — Via `windows-rs`. Child window with `WS_POPUP` style for borderless float.
 2. **Virtual desktops** — Track floating panels across virtual desktops (US-15.1.1.12).
 3. **DPI** — Floating panels respond to per-monitor DPI changes independently.
 4. **Clipboard** — Copy/paste for property values and entities.

@@ -1139,8 +1139,8 @@ impl AssetProcessor for ShaderGraphProcessor {
 ```rust
 /// Compiles HLSL source to platform-native
 /// bytecode via DXC and Metal Shader Converter.
-/// Both are C++ libraries accessed through
-/// C ABI FFI.
+/// DXC via windows-rs COM on Windows (C API on
+/// Linux). MSC via Swift @_cdecl on macOS.
 pub struct ShaderCompileProcessor;
 
 /// Reflection data extracted by DXC after
@@ -1589,12 +1589,12 @@ flowchart TD
 
 ### FFI Dependencies
 
-| Library                | Language | FFI Bridge   |
-|------------------------|----------|--------------|
-| DXC                    | C++      | C ABI       |
-| Metal Shader Converter | C++      | C ABI       |
-| meshoptimizer          | C/C++    | C ABI       |
-| blake3                 | Rust     | Native crate |
+| Library                | FFI Bridge                           |
+|------------------------|--------------------------------------|
+| DXC                    | `windows-rs` COM (Win), C API (Linux) |
+| Metal Shader Converter | Swift `@_cdecl` C ABI (macOS)        |
+| meshoptimizer          | C ABI via bindgen                    |
+| blake3                 | Native Rust crate                    |
 
 1. **DXC** — HLSL → DXIL, HLSL → SPIR-V
 2. **Metal Shader Converter** — DXIL → MSL
@@ -1615,7 +1615,7 @@ processor ever blocks a worker thread on I/O.
 
 **Windows:**
 
-- DXC and Metal Shader Converter are available as native C++ libraries. Both accessed via C ABI.
+- DXC accessed via `windows-rs` COM (`IDxcCompiler3`). No C++ source needed.
 - BC compression uses ISPC Texture Compressor or equivalent Rust crate.
 
 **macOS:**
@@ -1776,7 +1776,7 @@ processor ever blocks a worker thread on I/O.
 **Q1. What is the biggest constraint limiting this design?**
 
 The shader pipeline constraint -- HLSL as the sole shader IL compiled through DXC and Metal Shader
-Converter via C ABI (constraints.md) -- forces all shader processing through two C++ FFI bridges.
+Converter (constraints.md) -- forces all shader processing through two external FFI bridges.
 This limits shader compilation parallelism to what these external tools support and makes error
 reporting harder since errors must be mapped back through the FFI boundary to the originating graph
 node (R-12.2.9). If lifted, a pure-Rust shader compiler would simplify the build and enable tighter
@@ -1831,8 +1831,8 @@ between audio import presets and audio runtime requirements would reduce misconf
    Need to benchmark both options.
 
 2. **meshoptimizer FFI granularity.** Should we wrap meshoptimizer at the function level (one C ABI
-   call per operation) or batch operations into a single C++ helper that runs the full LOD → meshlet
-   → optimize pipeline?
+   call per operation) or batch operations into a single C helper that runs the full LOD → meshlet →
+   optimize pipeline?
 
 3. **Shader variant explosion mitigation.** Static analysis prunes unreachable variants, but complex
    material graphs may still produce hundreds of variants. Should we support on-demand compilation

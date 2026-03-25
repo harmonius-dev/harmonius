@@ -1176,7 +1176,7 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 
 | Component | API | Notes |
 |-----------|-----|-------|
-| Threads | `CreateThread` | Via `windows-sys` crate |
+| Threads | `CreateThread` | Via `windows-rs` crate |
 | Affinity | `SetThreadAffinityMask` | Bitmask per logical core |
 | Priority | `SetThreadPriority` | `THREAD_PRIORITY_HIGHEST` / `_LOWEST` |
 | Hybrid detect | `cpuid` leaf 0x1A | Intel Thread Director (Alder Lake+) |
@@ -1262,7 +1262,7 @@ a platform-specific scaling factor.
 |-------|---------|---------------|
 | `crossbeam-deque` | Chase-Lev work-stealing deque | Industry-standard; used by rayon and others |
 | `crossbeam-utils` | `CachePadded`, `Backoff` | Prevents false sharing on atomics |
-| `windows-sys` | Win32 API bindings | Zero-cost FFI to IOCP, threads, fibers |
+| `windows-rs` | Win32 API bindings | Zero-cost FFI to IOCP, threads, fibers |
 | `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
 | `bindgen` | C header bindings (macOS GCD) | Consumes Swift `@_cdecl` C ABI headers |
 | `smallvec` | Inline-allocated small vectors | Task node dependent lists |
@@ -1422,7 +1422,7 @@ execution matches the physics and rendering designs' parallel iteration patterns
 `AsyncMutex`/`AsyncRwLock` primitives replace `std::sync` locks engine-wide, enforcing the
 sub-microsecond blocking constraint. Platform selection via `cfg` attributes (IOCP/GCD/io_uring) is
 the same pattern used in windowing and transport. All proposed dependencies (`crossbeam-deque`,
-`io-uring`, `windows-sys`, `bindgen`) are low-level libraries consistent with the no-frameworks
+`io-uring`, `windows-rs`, `bindgen`) are low-level libraries consistent with the no-frameworks
 guideline.
 
 ## Open Questions
