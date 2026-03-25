@@ -36,11 +36,11 @@ windowing code behind `cfg`-gated backend modules, ensuring that gameplay, UI, a
 never branch on platform.
 
 The subsystem uses direct platform-native APIs for window creation and event polling on each target:
-Win32 `CreateWindowEx` via `windows-rs` on Windows, `NSWindow` via Swift `@_cdecl` C ABI wrappers
-on macOS, and `xcb` (X11) / Wayland protocol via C FFI on Linux. This gives us full control over HDR
-metadata negotiation, advanced VSync control, and auxiliary window management without third-party
-abstraction layers. All asynchronous abstractions use `async`/`await` — no callbacks. Window events
-are delivered through a bounded channel that consumers poll or `.await`.
+Win32 `CreateWindowEx` via `windows-rs` on Windows, `NSWindow` via Swift `@_cdecl` C ABI wrappers on
+macOS, and X11 via `x11rb` / Wayland via `wayland-client` on Linux. This gives us full control over
+HDR metadata negotiation, advanced VSync control, and auxiliary window management without
+third-party abstraction layers. All asynchronous abstractions use `async`/`await` — no callbacks.
+Window events are delivered through a bounded channel that consumers poll or `.await`.
 
 Key design decisions: (1) borderless fullscreen is the default mode, matching the expectations of
 players who alt-tab frequently; (2) DPI policy is configured per-window, not globally, because
@@ -83,7 +83,7 @@ graph TD
     end
 
     subgraph "platform::linux"
-        XCB[xcb / Wayland Surface]
+        XCB[x11rb / wayland-client]
         XR[xrandr / wl_output]
         WP[wp_fractional_scale_v1]
     end
@@ -133,7 +133,7 @@ harmonius_platform/
     ├── macos/
     │   └── window.rs    # NSWindow via Swift C ABI, CAMetalLayer, backingScaleFactor
     └── linux/
-        └── window.rs    # xcb/Wayland via C FFI, xrandr, wl_output, wp_fractional_scale_v1
+        └── window.rs    # x11rb / wayland-client, xrandr, wl_output, wp_fractional_scale_v1
 ```
 
 ### Window Lifecycle
@@ -1128,8 +1128,8 @@ The windowing subsystem is responsible for:
 | Windows       | `CreateWindowEx`               |
 | macOS         | `NSWindow` via Swift C ABI     |
 | iOS           | `UIWindow` via Swift C ABI     |
-| Linux X11     | `xcb_create_window`            |
-| Linux Wayland | `wl_compositor_create_surface` |
+| Linux X11     | `x11rb` (`CreateWindowAux`)    |
+| Linux Wayland | `wayland-client`               |
 
 1. **Windows** — COM initialized via `CoInitializeEx`. Window class registered with
    `RegisterClassExW`. Uses `windows-rs` for FFI.
@@ -1139,10 +1139,10 @@ The windowing subsystem is responsible for:
    on the OS main thread via Swift C ABI wrappers. Input events (touch, accelerometer, keyboard)
    arrive on the OS main thread via UIKit and are forwarded to the game loop thread through a
    lock-free SPSC queue. The game loop runs on a dedicated thread, not the UIKit main thread.
-4. **Linux X11** — Connection opened via `xcb_connect`. Window attributes set via
-   `xcb_change_window_attributes`.
-5. **Linux Wayland** — `wl_display_connect` + `wl_registry_bind` for compositor. `xdg_wm_base` for
-   shell surface.
+4. **Linux X11** — Connection opened via `x11rb::connect`. Window created via `CreateWindowAux`.
+   Uses `x11rb` Rust crate (pure Rust xcb implementation).
+5. **Linux Wayland** — `wayland-client` Rust crate for compositor binding. `xdg_wm_base` for shell
+   surface.
 
 ### Fullscreen Transitions
 
@@ -1222,7 +1222,7 @@ The windowing subsystem is responsible for:
 | Platform | Window API                      |
 |----------|---------------------------------|
 | iOS      | `UIWindow` via Swift C ABI      |
-| Android  | `ANativeWindow` via NDK/bindgen |
+| Android  | `ANativeWindow` via `ndk` crate |
 | Consoles | Platform SDK                    |
 
 1. **iOS** — Single fullscreen window. `UIScreen` for display info. No resize.
@@ -1408,8 +1408,7 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
    platform-native implementations provide full control over HDR metadata, advanced DXGI swapchain
    flags, `wp_fractional_scale_v1` on Wayland, and all presentation modes without fighting a
    third-party abstraction layer. Platform backends: Win32 `CreateWindowEx` via `windows-rs`,
-   `NSWindow` via Swift `@_cdecl` C ABI wrappers, `xcb` (X11) and Wayland protocol via C FFI /
-   bindgen.
+   `NSWindow` via Swift `@_cdecl` C ABI wrappers, X11 via `x11rb` and Wayland via `wayland-client`.
 
 2. **Auxiliary window management** — The API supports creating multiple windows (primary + auxiliary
    for debug overlays, chat pop-outs, streaming dashboards). Open questions:
@@ -1443,15 +1442,12 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
 |---------------------|---------|--------------------------------|
 | `raw-window-handle` | latest  | Platform-native handle interop |
 | `windows-rs`       | latest  | Win32 API bindings (Windows)   |
-| `bindgen`           | latest  | C FFI bindings (all platforms) |
-| `cbindgen`          | latest  | C header generation from Rust  |
+| `x11rb`             | latest  | X11 windowing (Linux)          |
+| `wayland-client`    | latest  | Wayland windowing (Linux)      |
 
 1. **`raw-window-handle`** — De facto standard trait for passing native window handles to GPU
    backends. Zero-cost abstraction — trait implementations on our `RawWindowHandle` enum.
-   Independent of any windowing library.
-2. **`windows-rs`** — Zero-cost FFI for `CreateWindowEx`, `SetWindowPos`, DXGI output enumeration,
-   `SetProcessDpiAwarenessContext`, HDR metadata APIs. Used only via `cfg(target_os = "windows")`.
-3. **`bindgen`** — Generates Rust bindings from C headers exposed by Swift `@_cdecl` wrappers
-   (macOS/iOS) and xcb/Wayland client libraries (Linux) at build time.
-4. **`cbindgen`** — Generates C headers from Rust `extern "C"` declarations that backends implement
-   against.
+2. **`windows-rs`** — Win32 API bindings. Used only via `cfg(target_os = "windows")`.
+3. **`x11rb`** — Pure Rust X11/xcb protocol implementation. Used only via
+   `cfg(target_os = "linux")`.
+4. **`wayland-client`** — Rust Wayland client library. Used only via `cfg(target_os = "linux")`.

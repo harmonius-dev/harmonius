@@ -1818,7 +1818,7 @@ well-bounded problem with clear data flow boundaries.
 ## Open Questions
 
 1. **Voxelization library.** Should we implement Recast-style voxelization from scratch in Rust, or
-   wrap an existing C library (e.g., Recast/Detour) via bindgen? Pure Rust gives us memory safety
+   wrap an existing C library (e.g., Recast/Detour) via Rust crate? Pure Rust gives us memory safety
    and no FFI overhead but requires significant implementation effort.
 
 2. **Tile size vs. world chunk size.** The tile size must match or subdivide the world streaming

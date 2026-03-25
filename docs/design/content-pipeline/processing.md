@@ -1593,7 +1593,7 @@ flowchart TD
 |------------------------|--------------------------------------|
 | DXC                    | `windows-rs` COM (Win), C API (Linux) |
 | Metal Shader Converter | Swift `@_cdecl` C ABI (macOS)        |
-| meshoptimizer          | C ABI via bindgen                    |
+| meshoptimizer          | C ABI via Rust crate                    |
 | blake3                 | Native Rust crate                    |
 
 1. **DXC** — HLSL → DXIL, HLSL → SPIR-V
@@ -1635,7 +1635,7 @@ processor ever blocks a worker thread on I/O.
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
 | `blake3` | Content hashing | Fast, SIMD-accelerated, Rust-native |
-| `bindgen` | C ABI FFI bindings | Consumes extern "C" wrappers for DXC, MSC, meshoptimizer |
+| `libloading` | Dynamic library loading | Loads DXC, meshoptimizer at runtime |
 | `smallvec` | Inline-allocated vectors | Processing node dependent lists |
 | `intel-tex-2` | BC texture compression | ISPC-based, fastest BC7 encoder |
 | `astc-encoder` | ASTC texture compression | ARM reference encoder via FFI |

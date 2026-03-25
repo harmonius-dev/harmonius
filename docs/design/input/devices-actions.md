@@ -1880,7 +1880,7 @@ Each trigger type follows a state machine:
 |----------|--------------------------------------|
 | Windows  | `windows-rs`                        |
 | macOS    | C ABI wrapper                |
-| Linux    | `evdev` crate or C FFI via `bindgen` |
+| Linux    | `evdev` crate or C FFI via Rust crate |
 
 1. **Windows** — `WM_KEYDOWN`, `WM_KEYUP`, `MapVirtualKey`
    - **Notes:** Scancodes from `lParam` bits 16-23
@@ -1895,7 +1895,7 @@ Each trigger type follows a state machine:
 |----------|----------------------------|
 | Windows  | `windows-rs`              |
 | macOS    | C ABI wrapper      |
-| Linux    | `evdev` crate or `bindgen` |
+| Linux    | `evdev` crate |
 
 1. **Windows** — `WM_INPUT` (raw input), `RAWINPUTDEVICE`
    - **Notes:** Sub-pixel deltas; must register for raw input at init
@@ -1910,7 +1910,7 @@ Each trigger type follows a state machine:
 |----------|----------------------------|
 | Windows  | `windows-rs`              |
 | macOS    | Swift C ABI wrapper    |
-| Linux    | `evdev` crate or `bindgen` |
+| Linux    | `evdev` crate |
 
 1. **Windows** — XInput (`XInputGetState`), Windows.Gaming.Input
    - **Notes:** XInput for Xbox; WGI for DualSense/Switch via HID
@@ -1925,7 +1925,7 @@ Each trigger type follows a state machine:
 |----------|-------------------------|
 | Windows  | `windows-rs`           |
 | macOS    | Swift C ABI wrapper |
-| Linux    | C FFI via `bindgen`     |
+| Linux    | C FFI via Rust crate     |
 
 1. **Windows** — `WM_POINTER` (Windows Ink)
    - **Notes:** Unified touch and pen; pressure via `pointerInfo`
@@ -1940,7 +1940,7 @@ Each trigger type follows a state machine:
 |----------|-----------------------|
 | Windows  | `windows-rs`         |
 | macOS    | C ABI wrapper |
-| Linux    | C FFI via `bindgen`   |
+| Linux    | C FFI via Rust crate   |
 
 1. **Windows** — `WM_DEVICECHANGE`, `RegisterDeviceNotification`
    - **Notes:** Runs on window message pump thread
@@ -1953,7 +1953,7 @@ Each trigger type follows a state machine:
 
 | Device | iOS | Android |
 |--------|-----|---------|
-| Touch | `UITouch` via Swift C ABI | `MotionEvent` via NDK/bindgen |
+| Touch | `UITouch` via Swift C ABI | `MotionEvent` via `ndk` crate |
 | Gamepad | `GCController` via Swift C ABI | `InputDevice` via NDK |
 | Keyboard | `UIKey` (iPad) | `KeyEvent` via NDK |
 | Mouse | `UIHoverGestureRecognizer` (iPadOS) | `MotionEvent` with `SOURCE_MOUSE` |
@@ -1985,7 +1985,7 @@ All platforms normalize to USB HID usage codes:
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
 | `windows-rs` | Win32 API bindings | Zero-cost FFI for raw input, XInput, WM_POINTER |
-| `bindgen` | C header bindings for macOS | Consumes Swift @_cdecl C ABI headers |
+| (hand-written `extern "C"`) | Swift @_cdecl function declarations | Matches Swift C ABI |
 | `smallvec` | Inline-allocated small vectors | Modifier chains, combo children, chord inputs |
 
 ## Test Plan

@@ -3,8 +3,8 @@
 ## Scope
 
 Apple platform wrappers only. Swift wraps macOS/iOS APIs (Metal, NSWindow, GCD) and exposes them to
-Rust as C ABI functions via `@_cdecl`. Rust consumes the generated C headers through bindgen. Built
-with CMake. No SwiftUI, no Combine, no Objective-C, no Objective-C++, no cxx.rs, no metal-cpp.
+Rust as C ABI functions via `@_cdecl`. Rust declares matching `extern "C"` signatures. Built
+with SwiftPM. No SwiftUI, no Combine, no Objective-C, no Objective-C++, no cxx.rs, no metal-cpp.
 
 ## Naming Conventions
 
@@ -51,8 +51,8 @@ with CMake. No SwiftUI, no Combine, no Objective-C, no Objective-C++, no cxx.rs,
 | Format | `swift-format lint` | `swift-format format -i` |
 | Lint | `swiftlint` | `swiftlint --fix` |
 | Type-check | `swiftc -typecheck` | (manual) |
-| Test | `ctest` (via CMake) | (manual) |
-| Build | `cmake --build` | (manual) |
+| Test | `swift test` | (manual) |
+| Build | `swift build` | (manual) |
 
 ## Project-Specific Rules
 
@@ -60,7 +60,7 @@ with CMake. No SwiftUI, no Combine, no Objective-C, no Objective-C++, no cxx.rs,
 2. **No SwiftUI** — use AppKit/UIKit directly
 3. **No Combine** — use GCD and completion handlers at the Swift layer
 4. **C ABI via `@_cdecl`** — all Swift functions exposed to Rust use `@_cdecl` for C linkage
-5. **CMake for libraries** — Swift libraries built with CMake, not SwiftPM
+5. **SwiftPM for libraries** — Swift libraries built with SwiftPM
 6. **XcodeGen for apps** — macOS/iOS app packaging uses XcodeGen + xcodebuild
 7. **GCD for concurrency** — dispatch queues, not Swift concurrency (`async`/`await` in Swift)
 8. **No Objective-C** — no `@objc`, no Objective-C bridging headers, no Objective-C++

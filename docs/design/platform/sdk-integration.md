@@ -60,7 +60,7 @@ calls are async via the `IoReactor`.
 Key design principles:
 
 - **Static dispatch** -- platform selection at compile time via `cfg`
-- **C ABI FFI** -- all platform SDK calls go through C ABI bridges (bindgen)
+- **C ABI FFI** -- all platform SDK calls go through C ABI bridges
 - **Deferred queues** -- no data lost during transient failures
 - **Server-authoritative** -- receipts, entitlements, and currency are validated server-side
 
@@ -1285,10 +1285,10 @@ currency is granted:
 ### FFI Bridge Pattern
 
 All platform SDK calls use C ABI FFI bridges per [constraints.md](../constraints.md). Each backend
-exposes `extern "C"` functions that Rust consumes via bindgen.
+exposes `extern "C"` functions that Rust consumes via Rust crate.
 
 ```text
-Rust API → bindgen FFI → C ABI wrapper → Platform SDK
+Rust API → extern "C" FFI → Platform SDK
 ```
 
 **Apple** uses Swift wrappers with `@_cdecl` for StoreKit 2 and GameCenter, exposing a C ABI as

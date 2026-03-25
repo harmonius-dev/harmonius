@@ -47,11 +47,11 @@
 | R-2.1.6 | [F-2.1.6](../../features/rendering/gpu-abstraction-layer.md) |
 
 1. **R-2.1.4** — The engine **SHALL** implement the Metal GPU backend as a Swift library exposing a
-   C-compatible API surface via `@_cdecl` functions, consumed by Rust through bindgen-generated
+   C-compatible API surface via `@_cdecl` functions, consumed by Rust through matching `extern "C"`
    bindings wrapped in safe Rust types that implement the backend trait, with no Objective-C or C++
    in the FFI boundary.
    - **Rationale:** Swift provides first-class Metal API access while `@_cdecl` produces a stable C
-     ABI that bindgen can consume directly, avoiding fragile Objective-C bridging.
+     ABI that Rust can consume directly via `extern "C"`, avoiding fragile Objective-C bridging.
    - **Verification:** Build the Metal backend on macOS and iOS. Verify the FFI boundary contains
      only C-compatible function signatures (no Objective-C selectors, no C++ mangled symbols). Run
      the full GPU backend conformance suite and confirm all tests pass.
@@ -64,12 +64,11 @@
    - **Verification:** Build the D3D12 backend on Windows. Verify no C++ translation units appear in
      the dependency graph. Run the GPU backend conformance suite. Verify COM reference counts reach
      zero on shutdown with no leaks reported by the debug layer.
-3. **R-2.1.6** — The engine **SHALL** implement the Vulkan backend by generating Rust bindings from
-   vulkan.h via bindgen, with safe Rust wrappers encapsulating instance, device, and queue lifetime
+3. **R-2.1.6** — The engine **SHALL** implement the Vulkan backend using the `ash` crate (thin
+   Vulkan bindings), with safe Rust wrappers encapsulating instance, device, and queue lifetime
    management using RAII semantics, and validation layer integration enabled in debug builds.
-   - **Rationale:** Bindgen from the canonical vulkan.h ensures bindings stay current with the
-     Vulkan spec. RAII wrappers prevent resource leaks. Validation layers catch errors during
-     development.
+   - **Rationale:** `ash` provides zero-overhead Rust bindings that track the Vulkan spec. RAII
+     wrappers prevent resource leaks. Validation layers catch errors during development.
    - **Verification:** Build the Vulkan backend on Windows and Linux. Confirm the Vulkan loader is
      discovered at runtime (no static linking). Run the GPU backend conformance suite with
      validation layers enabled and verify zero validation errors. Confirm all Vulkan handles are

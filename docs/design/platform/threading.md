@@ -1264,7 +1264,7 @@ a platform-specific scaling factor.
 | `crossbeam-utils` | `CachePadded`, `Backoff` | Prevents false sharing on atomics |
 | `windows-rs` | Win32 API bindings | Zero-cost FFI to IOCP, threads, fibers |
 | `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
-| `bindgen` | C header bindings (macOS GCD) | Consumes Swift `@_cdecl` C ABI headers |
+| (hand-written `extern "C"`) | C header bindings (macOS GCD) | Consumes Swift `@_cdecl` C ABI headers |
 | `smallvec` | Inline-allocated small vectors | Task node dependent lists |
 
 ## Safety Invariants
@@ -1422,7 +1422,7 @@ execution matches the physics and rendering designs' parallel iteration patterns
 `AsyncMutex`/`AsyncRwLock` primitives replace `std::sync` locks engine-wide, enforcing the
 sub-microsecond blocking constraint. Platform selection via `cfg` attributes (IOCP/GCD/io_uring) is
 the same pattern used in windowing and transport. All proposed dependencies (`crossbeam-deque`,
-`io-uring`, `windows-rs`, `bindgen`) are low-level libraries consistent with the no-frameworks
+`io-uring`, `windows-rs`, `libloading`) are low-level libraries consistent with the no-frameworks
 guideline.
 
 ## Open Questions

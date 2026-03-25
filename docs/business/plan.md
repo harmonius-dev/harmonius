@@ -5,7 +5,7 @@ Work plan for the Harmonius game engine. Maps every feature-group from the
 implementation status. Organized by wave to show what can proceed in parallel at each stage.
 
 **Current state:** Requirements and features are fully specified (1,501 requirements, 1,204 features
-across 15 domains). Build system is configured (Rust stable, CMake for Swift, Metal/Vulkan/D3D12
+across 15 domains). Build system is configured (Rust stable, SwiftPM for Swift, Metal/Vulkan/D3D12
 backend selection). No source code exists. No designs exist.
 
 ---

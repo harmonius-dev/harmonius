@@ -1689,7 +1689,7 @@ BLAKE3 is chosen for content hashing because it is:
 | `hound` | WAV decoding | Lightweight WAV parser |
 | `claxon` | FLAC decoding | Pure Rust FLAC decoder |
 | `lewton` | Ogg Vorbis decoding | Pure Rust Vorbis decoder |
-| `bindgen` | C ABI bindings for DCC plugin SDK and GCD | Consumes extern "C" wrappers |
+| (hand-written `extern "C"`) | DCC plugin SDK declarations | Matches C ABI |
 
 ## Test Plan
 

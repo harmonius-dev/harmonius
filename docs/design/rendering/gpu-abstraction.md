@@ -22,9 +22,9 @@
 1. **F-2.1.1** — GPU backend trait with associated types, static dispatch via generics
 2. **F-2.1.2** — Command buffer abstraction for graphics, compute, copy
 3. **F-2.1.3** — Unified pipeline state objects pre-validated at creation
-4. **F-2.1.4** — Metal backend via Swift-to-C-to-bindgen
+4. **F-2.1.4** — Metal backend via Swift @_cdecl
 5. **F-2.1.5** — D3D12 backend via windows-rs COM
-6. **F-2.1.6** — Vulkan backend via C-to-bindgen
+6. **F-2.1.6** — Vulkan backend via ash
 
 ### GPU Runtime
 
@@ -173,13 +173,13 @@ harmonius_gpu/
 │   │   ├── heap.rs    # D3D12Heap
 │   │   └── swap.rs    # D3D12Swapchain (IDXGISwapChain4)
 │   └── vulkan/
-│       ├── device.rs  # VulkanDevice (vulkan.h bindgen)
+│       ├── device.rs  # VulkanDevice (ash)
 │       ├── command.rs # VulkanCommandBuffer
 │       ├── memory.rs  # VulkanMemory
 │       └── swap.rs    # VulkanSwapchain
 └── ffi/
-    ├── dxc.rs         # DXC (windows-rs COM on Win, bindgen on Linux)
-    └── msc.rs         # Metal Shader Converter (Swift @_cdecl C ABI)
+    ├── dxc.rs         # DXC (windows-rs COM on Win, libloading on Linux)
+    └── msc.rs         # Metal Shader Converter (Swift @_cdecl)
 
 harmonius_gpu_runtime/
 ├── lib.rs
@@ -2240,7 +2240,7 @@ on the hot path:
 
 | Component | API | Notes |
 |-----------|-----|-------|
-| Device | MTLDevice | Via Swift @_cdecl -> bindgen |
+| Device | MTLDevice | Via Swift @_cdecl |
 | Command buffer | MTLCommandBuffer | From MTLCommandQueue |
 | Pipeline | MTLRenderPipelineState | Pre-validated at creation |
 | Heap | MTLHeap | Page-aligned (4096 B) |
@@ -2270,7 +2270,7 @@ on the hot path:
 
 | Component | API | Notes |
 |-----------|-----|-------|
-| Device | VkDevice | Via vulkan.h bindgen |
+| Device | VkDevice | Via `ash` |
 | Command buffer | VkCommandBuffer | From VkCommandPool |
 | Pipeline | VkPipeline | VkPipelineCache for warm start |
 | Memory | VkDeviceMemory | Variable alignment, queried via vkGetMemoryRequirements |
@@ -2304,19 +2304,19 @@ on the hot path:
 
 ### Proposed Dependencies
 
-| Crate / Library      |
-|----------------------|
-| `windows`            |
-| `bindgen` (build)    |
-| `cbindgen` (build)   |
-| `smallvec`           |
+| Crate / Library |
+|-----------------|
+| `windows`       |
+| `ash`           |
+| `libloading`    |
+| `smallvec`      |
 
 1. **`windows`** — Windows API bindings (COM, D3D12, DXGI, DXC)
-   - **Justification:** Safe Rust COM bindings for D3D12 and DXC; no C++ needed
-2. **`bindgen` (build)** — Generate Rust FFI from C headers
-   - **Justification:** Consumes C ABI headers (Swift Metal backend, Vulkan, DXC on Linux)
-3. **`cbindgen` (build)** — Generate C headers from Rust declarations
-   - **Justification:** Produces C headers that Swift/C backends implement against
+   - **Justification:** Safe Rust COM bindings for D3D12 and DXC
+2. **`ash`** — Thin Vulkan bindings
+   - **Justification:** Zero-overhead Vulkan function loader tracking the Vulkan spec
+3. **`libloading`** — Dynamic library loading
+   - **Justification:** Load dxcompiler.so on Linux for DXC shader compilation
 4. **`smallvec`** — Inline-allocated small vectors
    - **Justification:** Barrier lists, bind group entries
 
@@ -2509,7 +2509,7 @@ to the render graph's budget culling (F-2.2.8) would enable proactive quality re
 The GPU abstraction is the foundation layer that all rendering subsystems depend on, and its
 trait-based design with associated types aligns well with the engine's static dispatch preference.
 The shader pipeline (HLSL -> DXC -> DXIL/SPIR-V -> MSL via Metal Shader Converter) follows the
-constraints exactly. One cohesion concern is that the Swift-to-C-to-bindgen FFI path for Metal
+constraints exactly. One cohesion concern is that the Swift @_cdecl FFI path for Metal
 (F-2.1.4) is unique in the engine -- no other subsystem uses Swift. The constraints.md mentions
 `objc2-metal` as a simpler alternative that would eliminate the Swift layer entirely. Evaluating
 this during the prototype phase (as noted in constraints.md) could simplify the FFI boundary and
@@ -2541,7 +2541,7 @@ All GPU abstraction APIs are safe Rust. Internal `unsafe` is confined to platfor
    with phantom type markers. No raw pointers. Stale handles (use-after-free) are caught by
    generation checks at every access.
 5. ****Internal unsafe encapsulation.**** — Platform FFI (Metal via Swift @_cdecl, D3D12 via COM
-   windows-rs, Vulkan via bindgen) is encapsulated in `harmonius_gpu::platform::*` modules. Each
+   windows-rs, Vulkan via ash) is encapsulated in `harmonius_gpu::platform::*` modules. Each
    `unsafe` block documents its safety invariants. No unsafe propagates to consumers.
 
 ### Handle Safety Model
@@ -2585,9 +2585,8 @@ impl ReadbackRing {
 
 ## Open Questions
 
-1. **~~ash vs raw bindgen for Vulkan~~** -- **Resolved: raw bindgen from vulkan.h.** No ash. Manual
-   function pointer loading via `vkGetInstanceProcAddr` / `vkGetDeviceProcAddr` with safe Rust RAII
-   wrappers. This avoids an external dependency and gives maximum control.
+1. **~~Vulkan bindings strategy~~** -- **Resolved: `ash`.** Thin Vulkan bindings with zero
+   overhead. Tracks the Vulkan spec. Safe Rust RAII wrappers built on top.
 
 2. **Descriptor heap management on D3D12** -- Single monolithic shader-visible descriptor heap vs
    ring-allocated regions. Monolithic is simpler but wastes memory. Ring allocation matches the

@@ -1764,7 +1764,7 @@ impl DirectStorageBackend {
 | `zstd` | Zstd compression/decompression | Wraps libzstd via C FFI; industry standard |
 | `blake3` | Content hashing | SIMD-accelerated, consistent with asset database |
 | `direct_storage` | DirectStorage Rust crate | Safe Rust wrapper for Windows DirectStorage API |
-| `bindgen` | Metal IO C ABI bindings | Consumes Swift @_cdecl C ABI headers |
+| (hand-written `extern "C"`) | Metal IO Swift declarations | Matches Swift C ABI |
 | `io-uring` | Linux io_uring bindings | Already a project dependency for IoReactor |
 | `smallvec` | Inline-allocated small vectors | Already a project dependency |
 

@@ -1865,7 +1865,7 @@ Linux).
 | `blake3` | Fast hashing (provenance, audit chain) | Fastest general-purpose hash |
 | `aes-gcm` | API key encryption at rest | AEAD for secrets storage |
 | `serde_json` | JSON serialization for LLM API | Standard ecosystem crate |
-| `bindgen` | C header bindings for macOS | Consumes Swift @_cdecl C ABI headers |
+| (hand-written `extern "C"`) | Swift @_cdecl function declarations | Matches Swift C ABI |
 | `smallvec` | Inline-allocated small vectors | Tool call argument lists |
 
 ## Test Plan

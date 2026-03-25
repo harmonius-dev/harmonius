@@ -59,19 +59,19 @@
    tile-based mobile GPUs to avoid hitching during gameplay
    - **Acceptance:** PSO creation does not cause frame drops on mobile
 7. **US-2.1.4.1** — I want the Metal GPU backend exposed as a Swift library with @_cdecl
-   C-compatible functions consumed by Rust through bindgen
+   C-compatible functions consumed by Rust through `extern "C"` declarations
    - **Acceptance:** Metal functionality is available without Objective-C or C++ in the FFI boundary
 8. **US-2.1.4.2** — I want to confirm that the Metal backend compiles only on macOS and iOS targets
    and is excluded from Windows and Linux builds
    - **Acceptance:** platform gating is correct
-9. **US-2.1.5.1** — I want the D3D12 backend generated from C-compatible COM headers via bindgen
-   with safe Rust wrappers managing COM reference counting
-   - **Acceptance:** D3D12 is accessed without C++ or windows-rs dependencies
+9. **US-2.1.5.1** — I want the D3D12 backend implemented in pure Rust using `windows-rs` COM
+   bindings with safe wrappers managing COM reference counting
+   - **Acceptance:** D3D12 is accessed without C++ dependencies
 10. **US-2.1.5.2** — I want to confirm that the D3D12 backend compiles only on Windows targets and
     is excluded from macOS and Linux builds
     - **Acceptance:** platform gating is correct
-11. **US-2.1.6.1** — I want a Vulkan backend generated from vulkan.h via bindgen with RAII lifetime
-    management and validation layers enabled in debug builds
+11. **US-2.1.6.1** — I want a Vulkan backend using `ash` with RAII lifetime management and
+    validation layers enabled in debug builds
     - **Acceptance:** runtime Vulkan errors are caught during development
 12. **US-2.1.6.2** — I want to confirm that the Vulkan loader is discovered at runtime on Windows
     and Linux, and that MoltenVK is never used on macOS

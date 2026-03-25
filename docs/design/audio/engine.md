@@ -2047,7 +2047,7 @@ sequenceDiagram
 
 1. **Windows** — Exclusive mode for low latency; shared mode fallback. Via `windows-rs`.
 2. **macOS** — Callback on CoreAudio's real-time thread. C ABI wrapper.
-3. **Linux** — ALSA via bindgen; PipeWire preferred when available.
+3. **Linux** — ALSA via Rust crate; PipeWire preferred when available.
 
 ### Streaming I/O Backends
 
@@ -2094,14 +2094,14 @@ sequenceDiagram
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
 | `lewton` | Vorbis decoding | Pure Rust, no C deps |
-| `opus` | Opus decoding | Wraps libopus via bindgen |
+| `opus` | Opus decoding | Wraps libopus via Rust crate |
 | `claxon` | FLAC decoding | Pure Rust, no C deps |
 | `hound` | WAV/PCM reading | Pure Rust, lightweight |
 | `sofar` | SOFA HRTF file loading | SOFA format parser (or custom) |
 | `crossbeam-utils` | CachePadded, Backoff | Lock-free primitives |
 | `smallvec` | Inline bus child lists | Avoids heap for small arrays |
 | `windows-rs` | WASAPI bindings | Zero-cost Win32 FFI |
-| `bindgen` | CoreAudio C ABI bridge | Consumes Swift @_cdecl C ABI headers |
+| (hand-written `extern "C"`) | Swift @_cdecl CoreAudio declarations | Matches Swift C ABI |
 
 ## Safety Invariants
 

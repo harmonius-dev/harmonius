@@ -115,7 +115,6 @@ not manually rewrap prose — let rumdl handle it.
 | Markdown fix | `rumdl fmt .` |
 | Build Rust | `cargo build --manifest-path src/rust/Cargo.toml` |
 | Test Rust | `cargo test --manifest-path src/rust/Cargo.toml` |
-| Build C++ (macOS) | `cmake --preset macos-debug && cmake --build --preset macos-debug` |
 | Build Swift | `swift build --package-path src/swift` |
 | Test Swift | `swift test --package-path src/swift` |
 | Type-check TS | `bun run tsc --noEmit` |
@@ -126,8 +125,6 @@ not manually rewrap prose — let rumdl handle it.
 | Tool | Version |
 |------|---------|
 | Rust | stable (1.80+) |
-| CMake | 3.30+ |
-| Ninja | latest |
 | Python | 3.13+ |
 | Bun | latest |
 | rumdl | latest |
@@ -140,7 +137,7 @@ not manually rewrap prose — let rumdl handle it.
 |------|---------|
 | `docs/architecture.md` | Engine architecture overview |
 | `docs/design/constraints.md` | Design constraints |
-| `CMakePresets.json` | CMake build presets |
+| `src/swift/Package.swift` | Swift package definition |
 | `pyproject.toml` | Python/ruff/mypy config |
 | `.rumdl.toml` | Markdown lint config |
 | `scripts/hooks.py` | Pre-commit lint orchestrator |

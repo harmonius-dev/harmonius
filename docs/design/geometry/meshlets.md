@@ -1315,9 +1315,9 @@ All I/O uses the engine's controlled reactor poll point. No callbacks fire async
 | `zstd`     | Zstd compression/decompression |
 
 1. **`meshopt`** — Industry-standard meshlet partitioning, vertex cache optimization, and mesh
-   simplification. C library via bindgen.
+   simplification. C library via Rust crate.
 2. **`lz4_flex`** — Fast decompression for latency-sensitive page loads. Pure Rust.
-3. **`zstd`** — High-ratio compression for archived meshlet pages. C library via bindgen.
+3. **`zstd`** — High-ratio compression for archived meshlet pages. C library via Rust crate.
 
 ## Test Plan
 

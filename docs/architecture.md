@@ -1491,9 +1491,9 @@ graph TB
 |----------|-----------|-----------|----------|-----|
 | macOS | GCD / Dispatch IO | NSWindow (Swift via C ABI) | Metal 4 | C ABI → Swift |
 | Windows | IOCP | Win32 (windows-rs) | Direct3D 12 | windows-rs |
-| Linux | io_uring (kernel 5.1+) | xcb / Wayland (bindgen) | Vulkan 1.4 | bindgen |
+| Linux | io_uring | x11rb / wayland-client | Vulkan 1.4 (ash) | Rust crates |
 | iOS | GCD / Dispatch IO | UIWindow (Swift via C ABI) | Metal 4 | C ABI → Swift |
-| Android | io_uring | NativeActivity (bindgen) | Vulkan 1.4 | bindgen |
+| Android | io_uring | ndk crate | Vulkan 1.4 (ash) | Rust crates |
 | Consoles | Platform SDK | Platform SDK | Platform SDK | Platform SDK |
 
 On iOS, Android, and consoles the game loop runs on a dedicated thread — not the OS main thread. The

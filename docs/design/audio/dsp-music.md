@@ -2254,7 +2254,7 @@ the engine's Opus transport.
 | `rustfft`         |
 | `smallvec`        |
 | `crossbeam-queue` |
-| `bindgen`          |
+| `libloading`       |
 | `windows-rs`     |
 
 1. **`opus`** — Opus codec encode/decode
@@ -2265,7 +2265,7 @@ the engine's Opus transport.
    - **Justification:** Avoid heap allocation in hot DSP paths
 4. **`crossbeam-queue`** — Lock-free SPSC/MPSC ring buffers
    - **Justification:** Proven lock-free data structures
-5. **`bindgen`** — C ABI bindings for macOS CoreAudio
+5. **`libloading`** — dynamic library loading for CoreAudio
    - **Justification:** Safe bridge to platform audio APIs
 6. **`windows-rs`** — Win32 WASAPI bindings
    - **Justification:** Zero-cost FFI to Windows audio capture
@@ -2481,7 +2481,7 @@ learn.
    reverb and pitch shifting performance?
 
 2. **Opus crate selection** -- The `opus` crate wraps libopus via C FFI. Should we use `audiopus`
-   (higher-level Rust wrapper) or bind libopus directly via `bindgen` for finer control over
+   (higher-level Rust wrapper) or bind libopus directly via Rust crate for finer control over
    encoder/decoder options?
 
 3. **Voice chat network protocol** -- Voice packets need sequence numbers, timestamps, and speaker

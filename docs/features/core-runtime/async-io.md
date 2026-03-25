@@ -13,10 +13,10 @@
    I/O operation in the engine routes through this abstraction, ensuring no subsystem bypasses the
    unified I/O layer.
    - **Platform:** Windows backend wraps `CreateIoCompletionPort` and `GetQueuedCompletionStatusEx`
-     via C COM wrappers through bindgen. macOS backend wraps `dispatch_io_create`,
+     via `windows-rs` COM. macOS backend wraps `dispatch_io_create`,
      `dispatch_io_read`, and `dispatch_io_write` via Swift @_cdecl C ABI wrappers. Linux
      backend wraps liburing (`io_uring_prep_*`, `io_uring_submit`, `io_uring_wait_cqe_nr`) via
-     bindgen.
+     `extern "C"` declarations.
 
 ## Completion Model
 

@@ -1565,7 +1565,7 @@ pub enum DocError {
 |----------|-----|---------------|
 | Windows | DirectWrite | `windows-rs` crate |
 | macOS | CoreText | Swift wrappers via C ABI |
-| Linux | HarfBuzz | C FFI via `bindgen` |
+| Linux | HarfBuzz | C FFI via Rust crate |
 
 ### Proposed Dependencies
 

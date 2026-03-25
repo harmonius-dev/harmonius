@@ -9,13 +9,13 @@ engine.
 |------------|--------|
 | Primary language | Rust (stable only — no nightly features) |
 | Windows APIs | `windows-rs` for all Windows APIs (Win32, COM, D3D12, DXC) |
-| Apple APIs | Swift with `@_cdecl` C ABI; Rust consumes via bindgen |
-| Linux APIs | bindgen from C headers (vulkan.h, xcb, Wayland, io_uring) |
-| C header generation | cbindgen generates C headers from Rust `extern "C"` declarations |
-| Swift build | CMake builds Swift libs; XcodeGen + xcodebuild packages apps |
-| No C++ | No C++ source anywhere in the project |
+| Apple APIs | Swift `@_cdecl`; Rust declares matching `extern "C"` signatures |
+| Linux APIs | Rust crates (`ash`, `x11rb`, `wayland-client`, `io-uring`) |
+| Swift build | SwiftPM for libraries; XcodeGen + xcodebuild for app packaging |
+| No C/C++ source | No `.c`, `.cpp`, `.h` files anywhere in the project |
+| No CMake | SwiftPM replaces CMake for all Swift builds |
+| No bindgen/cbindgen | No C header generation or consumption tools |
 | No cxx.rs | cxx.rs is not used anywhere in the project |
-| No Ash | The Ash Vulkan bindings crate is not used |
 | No Obj-C/Obj-C++ | No Objective-C or Objective-C++ source anywhere |
 | No metal-cpp | Metal is accessed directly from Swift |
 
@@ -25,21 +25,23 @@ engine.
 |---------|----------|-------------|
 | Direct3D 12 | Rust | `windows-rs` COM bindings |
 | Metal | Swift | `@_cdecl` functions exposing C ABI |
-| Vulkan | C | bindgen from vulkan.h |
+| Vulkan | Rust | `ash` (thin Vulkan bindings) |
 | DXC (Windows) | Rust | `windows-rs` COM (`IDxcCompiler3`) |
-| DXC (Linux) | C | bindgen from dxcapi.h |
+| DXC (Linux) | Rust | `ash` / `libloading` for dxcompiler.so |
 | Metal Shader Converter | Swift | `@_cdecl` wrapper exposing C ABI |
 | Win32 / IOCP | Rust | `windows-rs` |
 | GCD / Dispatch IO | Swift | `@_cdecl` functions exposing C ABI |
 | NSWindow / AppKit | Swift | `@_cdecl` functions exposing C ABI |
-| xcb / Wayland | C | bindgen from C headers |
+| X11 | Rust | `x11rb` |
+| Wayland | Rust | `wayland-client` |
+| io_uring | Rust | `io-uring` |
 
 ## Shader Pipeline
 
 | Constraint | Detail |
 |------------|--------|
 | Shader IL | HLSL is the sole shader intermediate language |
-| HLSL → DXIL/SPIR-V | DXC via `windows-rs` COM on Windows, bindgen on Linux |
+| HLSL → DXIL/SPIR-V | DXC via `windows-rs` COM (Windows) or `libloading` (Linux) |
 | DXIL → MSL | Metal Shader Converter via Swift `@_cdecl` C ABI |
 
 ## Async and Concurrency
@@ -90,9 +92,9 @@ engine.
 - **Metal uses Dispatch.** Command buffer completion handlers are dispatch blocks. GCD integration
   is a hard requirement for GPU synchronization.
 - **All GCD/Dispatch IO accessed through Swift wrappers exposing C ABI.** Swift uses `@_cdecl`
-  functions to expose GCD operations as C-compatible symbols consumed by Rust via bindgen.
+  functions to expose GCD operations as C-compatible symbols consumed by Rust via `extern "C"` declarations.
 - **Metal via Swift.** Metal is accessed directly from Swift, which exposes a C ABI via `@_cdecl`
-  functions consumed by Rust via bindgen. No metal-cpp, no objc2-metal.
+  functions consumed by Rust via `extern "C"` declarations. No metal-cpp, no objc2-metal.
 - **iOS: UIKit owns the OS main thread.** `UIApplicationMain` runs the `CFRunLoop` on thread 0. The
   game loop runs on a dedicated thread. UIKit input events (touch, accelerometer, keyboard) are
   forwarded to the game loop thread via a lock-free SPSC queue. The render thread presents
@@ -128,7 +130,7 @@ engine.
 - **Custom windowing system.** No winit. Platform-native windowing implemented directly:
   - Windows: Win32 `CreateWindowEx` via `windows-rs`
   - macOS: `NSWindow` via Swift `@_cdecl` C ABI wrappers
-  - Linux: xcb (X11) and Wayland via C FFI / bindgen
+  - Linux: X11 via `x11rb`, Wayland via `wayland-client`
 
 ## Reflection and Serialization
 

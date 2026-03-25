@@ -1747,7 +1747,7 @@ History is fully reset on:
 1. **RT pipeline** — Metal RT (M3+/A17+)
    - **Notes:** `MTLAccelerationStructure`, `MTLIntersectionFunctionTable`
 2. **BLAS build** — `MTLPrimitiveAccelerationStructureDescriptor`
-   - **Notes:** Swift wrapper via `@_cdecl` + bindgen
+   - **Notes:** Swift wrapper via `@_cdecl` + `extern "C"`
 3. **TLAS build** — `MTLInstanceAccelerationStructureDescriptor`
    - **Notes:** Instance buffer as MTLBuffer
 4. **Dispatch rays** — `useResource:usage:stages:` + intersection

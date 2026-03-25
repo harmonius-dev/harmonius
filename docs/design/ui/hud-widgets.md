@@ -2182,7 +2182,7 @@ sequenceDiagram
 |----------|-----|-------|
 | Windows | IMM32 / TSF | Via `windows-rs` crate |
 | macOS | Text Services Manager | Via Swift wrappers through C ABI |
-| Linux | IBus / Fcitx | Via C FFI / bindgen |
+| Linux | IBus / Fcitx | Via Rust crate |
 
 ### Text Shaping
 

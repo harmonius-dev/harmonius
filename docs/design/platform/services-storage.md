@@ -1572,7 +1572,7 @@ pub enum TempError {
 | Cloud Storage | `sceNpSaveData`                  | iCloud Key-Value             |
 | Entitlements  | `sceNpEntitlementAccess`         | `SKPaymentQueue`             |
 | Auth          | PSN SSO                          | `GKLocalPlayer.authenticate` |
-| Android       | `play-services` via JNI/bindgen  |                              |
+| Android       | `play-services` via JNI  |                              |
 
 1. **Achievements** — `ISteamUserStats::SetAchievement`, `StoreStats`
    - **Xbox:** `XblAchievementsUpdateAchievementAsync`
@@ -1649,7 +1649,7 @@ pub enum TempError {
 | `blake3` | Content-addressed cache keys | Fast, parallel, SIMD-accelerated hash |
 | `toml` | Preferences serialization | Standard TOML parser/writer |
 | `windows-rs` | Win32 path APIs, file ops | Zero-cost FFI for Windows APIs |
-| `bindgen` | C ABI bindings for console SDKs | Consumes extern "C" wrappers for console SDKs |
+| (hand-written `extern "C"`) | Console SDK function declarations | Matches platform C ABI |
 
 ## Test Plan
 

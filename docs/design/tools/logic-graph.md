@@ -1867,12 +1867,12 @@ components, benefiting from the same cache-friendly iteration.
 | `uuid`     | Standard UUID v4 for asset identity      |
 | `petgraph` | Well-maintained, zero-cost graph library |
 | `smallvec` | Avoids heap for nodes with few pins      |
-| `bindgen`  | Required for shader compilation pipeline |
+| `libloading`  | Required for shader compilation pipeline |
 
 1. **`uuid`** — GraphId generation
 2. **`petgraph`** — Graph algorithms (topo sort, cycle detect)
 3. **`smallvec`** — Inline pin/edge storage
-4. **`bindgen`** — DXC and Metal Shader Converter C ABI FFI
+4. **`libloading`** — DXC and Metal Shader Converter C ABI FFI
 
 ## Test Plan
 

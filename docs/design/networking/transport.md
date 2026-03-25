@@ -1897,7 +1897,7 @@ for id in expired {
 | `rustls` | DTLS on Linux | Pure Rust TLS, no C dependencies, actively maintained |
 | `ring` | AES-GCM, HMAC-SHA256 | Used by rustls; hardware AES-NI support |
 | `windows-rs` | Schannel, Winsock2 overlapped I/O | Zero-cost FFI to Windows APIs |
-| `bindgen` | macOS Security.framework C ABI | Consumes Swift @_cdecl C ABI headers |
+| (hand-written `extern "C"`) | Security.framework Swift declarations | Matches Swift C ABI |
 | `smallvec` | Inline-allocated small vectors | Fragment lists, timeout batches |
 
 ## Safety Invariants
@@ -2099,7 +2099,7 @@ threading design's controlled-poll architecture. The DTLS backend uses platform-
 (Schannel, Security.framework, rustls) selected via `cfg`, consistent with the platform abstraction
 pattern used in windowing and threading. The `NetStatsResource` is an ECS resource read by gameplay
 systems, following the same resource pattern as other subsystems. Proposed dependencies (`rustls`,
-`ring`, `windows-rs`, `bindgen`, `smallvec`) are all low-level libraries already used or approved in
+`ring`, `windows-rs`, `libloading`, `smallvec`) are all low-level libraries already used or approved in
 other designs.
 
 ## Open Questions

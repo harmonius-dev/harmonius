@@ -759,7 +759,7 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 ### D-7. meshoptimizer FFI
 
 - **File:** `geometry/meshlets.md`
-- **Design element:** meshoptimizer C library via bindgen for meshlet partitioning, vertex cache
+- **Design element:** meshoptimizer C library via Rust crate for meshlet partitioning, vertex cache
   optimization, and mesh simplification
 - **Risk:** meshoptimizer is well-maintained and widely used. The `meshopt` Rust crate provides safe
   bindings. Low risk.

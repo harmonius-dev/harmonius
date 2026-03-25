@@ -1135,7 +1135,7 @@ impl TextToSpeech {
 //   -> SAPI / OneCore via windows-rs
 //
 // #[cfg(target_os = "linux")]
-//   -> Speech Dispatcher via C FFI / bindgen
+//   -> Speech Dispatcher via Rust crate
 ```
 
 ### Subtitle and Caption System
@@ -1389,8 +1389,8 @@ When `HighContrastSettings.enabled` is true:
 |----------|-----|---------------|
 | Windows | `GetDpiForWindow` | windows-rs |
 | macOS | `NSWindow.backingScaleFactor` | Swift / C ABI |
-| Linux (X11) | `Xft.dpi` resource | xcb / bindgen |
-| Linux (Wayland) | `wl_output.scale` | wayland-client / bindgen |
+| Linux (X11) | `Xft.dpi` resource | x11rb |
+| Linux (Wayland) | `wl_output.scale` | wayland-client |
 
 ## Platform Considerations
 
@@ -1412,7 +1412,7 @@ When `HighContrastSettings.enabled` is true:
 |----------|-----|--------|-------|
 | macOS | AVSpeechSynthesizer | Swift wrappers / C ABI | AVFoundation; async speech callbacks |
 | Windows | SAPI / OneCore | windows-rs | COM-based; OneCore for modern voices |
-| Linux | Speech Dispatcher | C FFI / bindgen | spd_say / spd_set_voice |
+| Linux | Speech Dispatcher | Rust crate | spd_say / spd_set_voice |
 
 ### DPI and System Preferences
 
@@ -1435,7 +1435,7 @@ When `HighContrastSettings.enabled` is true:
 |-------|---------|---------------|
 | `zbus` | D-Bus IPC for AT-SPI on Linux | Pure Rust async D-Bus client |
 | `windows-rs` | UI Automation, SAPI COM | Zero-cost Win32 FFI |
-| `bindgen` | macOS NSAccessibility, AVSpeechSynthesizer | Consumes Swift @_cdecl C ABI |
+| (hand-written `extern "C"`) | macOS NSAccessibility, AVSpeechSynthesizer | Consumes Swift @_cdecl C ABI |
 
 ## Test Plan
 
@@ -1578,7 +1578,7 @@ panels into the screen-space accessibility tree would improve cohesion.
 ## Open Questions
 
 1. **AT-SPI D-Bus transport** -- Should the AT-SPI bridge use `zbus` (pure Rust, async) or the C
-   `libatspi` library via bindgen? `zbus` avoids a C dependency but requires D-Bus protocol
+   `libatspi` library via Rust crate? `zbus` avoids a C dependency but requires D-Bus protocol
    handling.
 2. **Screen reader detection** -- How to detect whether a screen reader is active at launch? Windows
    has `SystemParametersInfoW(SPI_GETSCREENREADER)`. macOS has `NSWorkspace.isVoiceOverEnabled`.

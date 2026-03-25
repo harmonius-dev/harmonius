@@ -15,10 +15,10 @@
    - **Acceptance:** Compile-time backend selection via conditional compilation<br>Zero dynamic
      dispatch, no trait objects<br>All I/O routes through this abstraction
 2. **US-1.8.2** — a Windows I/O backend wrapping CreateIoCompletionPort and
-   GetQueuedCompletionStatusEx via bindgen, so that Windows I/O uses native IOCP for maximum async
+   GetQueuedCompletionStatusEx via Rust crate, so that Windows I/O uses native IOCP for maximum async
    performance
    - **Acceptance:** CreateIoCompletionPort and GetQueuedCompletionStatusEx wrapped<br>C COM
-     wrappers through bindgen<br>All file and socket operations use IOCP
+     wrappers through `extern "C"` declarations<br>All file and socket operations use IOCP
 3. **US-1.8.3** — a macOS I/O backend wrapping dispatch_io_create, dispatch_io_read, and
    dispatch_io_write via Swift @_cdecl C ABI wrappers, so that macOS I/O uses native Grand Central
    Dispatch

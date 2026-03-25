@@ -1666,12 +1666,12 @@ asset processing (F-12.3.1).
 | Crate       |
 |-------------|
 | `smallvec`  |
-| `bindgen`    |
+| `libloading` |
 | `hashbrown` |
 
 1. **`smallvec`** — Inline small vectors for layers, bands
    - **Justification:** Avoids heap allocation for small layer stacks
-2. **`bindgen`** — C ABI bindings for DXC and Metal Shader Converter
+2. **`libloading`** — dynamic library loading for DXC
    - **Justification:** Required by design constraints for shader compilation
 3. **`hashbrown`** — Fast hash map for permutation cache
    - **Justification:** Industry-standard; used widely in Rust ecosystem
