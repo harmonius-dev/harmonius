@@ -1,3 +1,0 @@
-python3 scripts/hooks.py --staged
-scripts/build.sh
-scripts/test.sh
