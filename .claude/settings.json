@@ -19,6 +19,16 @@
             "type": "command"
           },
           {
+            "command": ".claude/hooks/check-swift.sh",
+            "timeout": 60,
+            "type": "command"
+          },
+          {
+            "command": ".claude/hooks/check-config.sh",
+            "timeout": 30,
+            "type": "command"
+          },
+          {
             "command": ".claude/hooks/run-xcodegen.sh",
             "timeout": 30,
             "type": "command"

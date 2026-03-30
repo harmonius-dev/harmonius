@@ -30,11 +30,13 @@ standard before writing or reviewing code in any language.
 | Standard | Scope |
 |----------|-------|
 | [Rust](docs/standards/rust.md) | Primary engine language |
+| [Swift](docs/standards/swift.md) | macOS platform (C ABI) |
 | [Python](docs/standards/python.md) | Scripts and tools (ruff) |
 | [HLSL](docs/standards/hlsl.md) | Shader IL (DXC pipeline) |
 | [Markdown](docs/standards/markdown.md) | Documentation (rumdl) |
 | [JSON](docs/standards/json.md) | Configuration files |
 | [TOML](docs/standards/toml.md) | Cargo.toml, .rumdl.toml |
+| [YAML](docs/standards/yaml.md) | Configuration files |
 
 ## Testing policy
 
@@ -120,9 +122,12 @@ not manually rewrap prose — let rumdl handle it.
 |------|---------|
 | Rust | stable (1.80+) |
 | Python | 3.13+ |
+| jq | latest |
+| mypy | latest |
 | rumdl | latest |
 | ruff | latest |
-| mypy | latest |
+| taplo | latest |
+| yamlfmt | latest |
 
 ## Key files
 

@@ -26,9 +26,14 @@ from pathlib import Path
 
 # Map file extensions to hook scripts (relative to repo root)
 HOOK_MAP: dict[str, str] = {
+    ".json": ".claude/hooks/check-config.sh",
     ".md": ".claude/hooks/fmt-markdown.sh",
     ".py": ".claude/hooks/check-python.sh",
     ".rs": ".claude/hooks/check-rust.sh",
+    ".swift": ".claude/hooks/check-swift.sh",
+    ".toml": ".claude/hooks/check-config.sh",
+    ".yaml": ".claude/hooks/check-config.sh",
+    ".yml": ".claude/hooks/check-config.sh",
 }
 
 

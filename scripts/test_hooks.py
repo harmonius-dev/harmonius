@@ -204,3 +204,99 @@ class TestRunXcodegen:
                 make_tool_input(str(p)),
             )
         assert result.returncode == 0
+
+
+# -----------------------------------------------------------
+# check-swift.sh
+# -----------------------------------------------------------
+class TestCheckSwift:
+    """Tests for the Swift build/typecheck hook."""
+
+    HOOK = "check-swift.sh"
+
+    def test_skip_non_swift_file(self) -> None:
+        result = run_hook(
+            self.HOOK,
+            make_tool_input("/tmp/foo.py"),
+        )
+        assert result.returncode == 0
+        assert result.stdout == ""
+
+    def test_skip_empty_file_path(self) -> None:
+        result = run_hook(
+            self.HOOK,
+            json.dumps({"tool_input": {}}),
+        )
+        assert result.returncode == 0
+
+
+# -----------------------------------------------------------
+# check-config.sh
+# -----------------------------------------------------------
+class TestCheckConfig:
+    """Tests for the JSON/TOML/YAML config hook."""
+
+    HOOK = "check-config.sh"
+
+    def test_skip_non_config_file(self) -> None:
+        result = run_hook(
+            self.HOOK,
+            make_tool_input("/tmp/foo.py"),
+        )
+        assert result.returncode == 0
+        assert result.stdout == ""
+
+    def test_skip_empty_file_path(self) -> None:
+        result = run_hook(
+            self.HOOK,
+            json.dumps({"tool_input": {}}),
+        )
+        assert result.returncode == 0
+
+    def test_formats_json(self) -> None:
+        with tempfile.NamedTemporaryFile(
+            suffix=".json",
+            mode="w",
+            delete=False,
+        ) as f:
+            f.write('{"b":1,"a":2}\n')
+            f.flush()
+            result = run_hook(
+                self.HOOK,
+                make_tool_input(f.name),
+            )
+        content = Path(f.name).read_text()
+        os.unlink(f.name)
+        assert result.returncode == 0
+        # jq sorts keys — "a" should come before "b"
+        assert content.index('"a"') < content.index('"b"')
+
+    def test_accepts_toml(self) -> None:
+        with tempfile.NamedTemporaryFile(
+            suffix=".toml",
+            mode="w",
+            delete=False,
+        ) as f:
+            f.write('key = "value"\n')
+            f.flush()
+            result = run_hook(
+                self.HOOK,
+                make_tool_input(f.name),
+            )
+        os.unlink(f.name)
+        assert result.returncode == 0
+
+    def test_accepts_yaml(self) -> None:
+        with tempfile.NamedTemporaryFile(
+            suffix=".yaml",
+            mode="w",
+            delete=False,
+        ) as f:
+            f.write("key: value\n")
+            f.flush()
+            result = run_hook(
+                self.HOOK,
+                make_tool_input(f.name),
+            )
+        os.unlink(f.name)
+        assert result.returncode == 0
