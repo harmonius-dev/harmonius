@@ -30,14 +30,11 @@ standard before writing or reviewing code in any language.
 | Standard | Scope |
 |----------|-------|
 | [Rust](docs/standards/rust.md) | Primary engine language |
-| [Swift](docs/standards/swift.md) | macOS platform (C ABI) |
-| [TypeScript](docs/standards/typescript.md) | Tooling, editor, build |
 | [Python](docs/standards/python.md) | Scripts and tools (ruff) |
 | [HLSL](docs/standards/hlsl.md) | Shader IL (DXC pipeline) |
 | [Markdown](docs/standards/markdown.md) | Documentation (rumdl) |
 | [JSON](docs/standards/json.md) | Configuration files |
 | [TOML](docs/standards/toml.md) | Cargo.toml, .rumdl.toml |
-| [YAML](docs/standards/yaml.md) | GitHub Actions workflows |
 
 ## Testing policy
 
@@ -113,11 +110,8 @@ not manually rewrap prose — let rumdl handle it.
 | Lint staged | `python3 scripts/hooks.py --staged` |
 | Markdown check | `rumdl check .` |
 | Markdown fix | `rumdl fmt .` |
-| Build Rust | `cargo build --manifest-path src/rust/Cargo.toml` |
-| Test Rust | `cargo test --manifest-path src/rust/Cargo.toml` |
-| Build Swift | `swift build --package-path src/swift` |
-| Test Swift | `swift test --package-path src/swift` |
-| Type-check TS | `bun run tsc --noEmit` |
+| Build Rust | `cargo build` |
+| Test Rust | `cargo test` |
 | Lint Python | `ruff check scripts/ && mypy --strict scripts/` |
 
 ## Prerequisites
@@ -126,7 +120,6 @@ not manually rewrap prose — let rumdl handle it.
 |------|---------|
 | Rust | stable (1.80+) |
 | Python | 3.13+ |
-| Bun | latest |
 | rumdl | latest |
 | ruff | latest |
 | mypy | latest |
@@ -137,8 +130,7 @@ not manually rewrap prose — let rumdl handle it.
 |------|---------|
 | `docs/architecture.md` | Engine architecture overview |
 | `docs/design/constraints.md` | Design constraints |
-| `src/swift/Package.swift` | Swift package definition |
+| `Cargo.toml` | Rust workspace definition |
 | `pyproject.toml` | Python/ruff/mypy config |
 | `.rumdl.toml` | Markdown lint config |
 | `scripts/hooks.py` | Pre-commit lint orchestrator |
-| `src/rust/Cargo.toml` | Rust package definition |
