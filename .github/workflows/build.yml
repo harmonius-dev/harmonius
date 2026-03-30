@@ -45,3 +45,26 @@ jobs:
       - name: Test
         if: steps.members.outputs.count > 0
         run: cargo test
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install mypy pytest ruff
+
+      - name: Lint (ruff)
+        run: ruff check scripts/
+
+      - name: Type check (mypy)
+        run: mypy --strict scripts/
+
+      - name: Test (pytest)
+        run: pytest scripts/ -q
