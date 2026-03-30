@@ -195,117 +195,6 @@ class TestCheckRust:
 
 
 # -----------------------------------------------------------
-# check-swift.sh
-# -----------------------------------------------------------
-class TestCheckSwift:
-    """Tests for the Swift build/typecheck hook."""
-
-    HOOK = "check-swift.sh"
-
-    def test_skip_non_swift_file(self) -> None:
-        result = run_hook(self.HOOK, make_tool_input("/tmp/foo.py"))
-        assert result.returncode == 0
-        assert result.stdout == ""
-
-    def test_skip_empty_file_path(self) -> None:
-        result = run_hook(self.HOOK, json.dumps({"tool_input": {}}))
-        assert result.returncode == 0
-
-    def test_runs_on_real_swift_file(self) -> None:
-        swift_file = ROOT / "src" / "swift" / "Sources" / "Harmonius" / "Harmonius.swift"
-        if not swift_file.exists():
-            pytest.skip("Swift source not found")
-        result = run_hook(
-            self.HOOK,
-            make_tool_input(str(swift_file)),
-            timeout=60,
-        )
-        assert result.returncode == 0
-
-    def test_no_package_swift_falls_back(self) -> None:
-        with tempfile.NamedTemporaryFile(
-            suffix=".swift",
-            mode="w",
-            delete=False,
-            dir="/tmp",
-        ) as f:
-            f.write("let x = 1\n")
-            f.flush()
-            result = run_hook(self.HOOK, make_tool_input(f.name))
-        os.unlink(f.name)
-        # No Package.swift → falls back to swiftc typecheck
-        assert result.returncode == 0
-
-
-# -----------------------------------------------------------
-# check-cpp.sh
-# -----------------------------------------------------------
-class TestCheckCpp:
-    """Tests for the C++ formatting/tidy hook."""
-
-    HOOK = "check-cpp.sh"
-
-    def test_skip_non_cpp_file(self) -> None:
-        result = run_hook(self.HOOK, make_tool_input("/tmp/foo.py"))
-        assert result.returncode == 0
-        assert result.stdout == ""
-
-    def test_skip_empty_file_path(self) -> None:
-        result = run_hook(self.HOOK, json.dumps({"tool_input": {}}))
-        assert result.returncode == 0
-
-    def test_accepts_cpp_extensions(self) -> None:
-        for ext in [".cpp", ".h", ".hpp", ".cc", ".cxx"]:
-            with tempfile.NamedTemporaryFile(
-                suffix=ext,
-                mode="w",
-                delete=False,
-            ) as f:
-                f.write("int main() { return 0; }\n")
-                f.flush()
-                result = run_hook(
-                    self.HOOK,
-                    make_tool_input(f.name),
-                )
-            os.unlink(f.name)
-            assert result.returncode == 0
-
-
-# -----------------------------------------------------------
-# check-typescript.sh
-# -----------------------------------------------------------
-class TestCheckTypescript:
-    """Tests for the TypeScript linting hook."""
-
-    HOOK = "check-typescript.sh"
-
-    def test_skip_non_ts_file(self) -> None:
-        result = run_hook(self.HOOK, make_tool_input("/tmp/foo.py"))
-        assert result.returncode == 0
-        assert result.stdout == ""
-
-    def test_skip_empty_file_path(self) -> None:
-        result = run_hook(self.HOOK, json.dumps({"tool_input": {}}))
-        assert result.returncode == 0
-
-    def test_accepts_ts_and_tsx(self) -> None:
-        for ext in [".ts", ".tsx"]:
-            with tempfile.NamedTemporaryFile(
-                suffix=ext,
-                mode="w",
-                delete=False,
-            ) as f:
-                f.write("const x: number = 1;\n")
-                f.flush()
-                result = run_hook(
-                    self.HOOK,
-                    make_tool_input(f.name),
-                )
-            os.unlink(f.name)
-            assert result.returncode == 0
-
-
-# -----------------------------------------------------------
 # run-xcodegen.sh
 # -----------------------------------------------------------
 class TestRunXcodegen:
@@ -322,12 +211,15 @@ class TestRunXcodegen:
         assert result.stdout == ""
 
     def test_skip_empty_file_path(self) -> None:
-        result = run_hook(self.HOOK, json.dumps({"tool_input": {}}))
+        result = run_hook(
+            self.HOOK,
+            json.dumps({"tool_input": {}}),
+        )
         assert result.returncode == 0
 
     def test_triggers_on_project_yml(self) -> None:
-        # xcodegen may not be installed; hook should still
-        # exit 0 gracefully
+        # xcodegen may not be installed; hook should
+        # still exit 0 gracefully
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "project.yml"
             p.write_text("name: test\n")

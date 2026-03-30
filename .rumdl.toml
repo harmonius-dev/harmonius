@@ -7,7 +7,6 @@ exclude = [
   "**/CLAUDE.md",
   "build",
   "node_modules",
-  "vcpkg_installed",
   "vendor",
 ]
 flavor = "gfm"

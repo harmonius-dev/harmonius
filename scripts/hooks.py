@@ -26,17 +26,9 @@ from pathlib import Path
 
 # Map file extensions to hook scripts (relative to repo root)
 HOOK_MAP: dict[str, str] = {
-    ".cc": ".claude/hooks/check-cpp.sh",
-    ".cpp": ".claude/hooks/check-cpp.sh",
-    ".cxx": ".claude/hooks/check-cpp.sh",
-    ".h": ".claude/hooks/check-cpp.sh",
-    ".hpp": ".claude/hooks/check-cpp.sh",
     ".md": ".claude/hooks/fmt-markdown.sh",
     ".py": ".claude/hooks/check-python.sh",
     ".rs": ".claude/hooks/check-rust.sh",
-    ".swift": ".claude/hooks/check-swift.sh",
-    ".ts": ".claude/hooks/check-typescript.sh",
-    ".tsx": ".claude/hooks/check-typescript.sh",
 }
 
 

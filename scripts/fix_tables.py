@@ -654,7 +654,6 @@ def main() -> None:
         "CLAUDE.md",
         "build",
         "node_modules",
-        "vcpkg_installed",
         "vendor",
     }
 
