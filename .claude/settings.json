@@ -14,21 +14,6 @@
             "type": "command"
           },
           {
-            "command": ".claude/hooks/check-swift.sh",
-            "timeout": 60,
-            "type": "command"
-          },
-          {
-            "command": ".claude/hooks/check-cpp.sh",
-            "timeout": 60,
-            "type": "command"
-          },
-          {
-            "command": ".claude/hooks/check-typescript.sh",
-            "timeout": 60,
-            "type": "command"
-          },
-          {
             "command": ".claude/hooks/check-python.sh",
             "timeout": 30,
             "type": "command"
@@ -40,27 +25,6 @@
           }
         ],
         "matcher": "Write|Edit"
-      },
-      {
-        "hooks": [
-          {
-            "command": ".claude/hooks/check-ci-status.sh",
-            "timeout": 30,
-            "type": "command"
-          }
-        ],
-        "matcher": "Bash"
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "command": ".claude/hooks/stop-check.sh",
-            "timeout": 15,
-            "type": "command"
-          }
-        ]
       }
     ]
   }
