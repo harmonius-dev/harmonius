@@ -9,8 +9,14 @@ cd "$ROOT"
 FAILED=0
 
 echo "=== Rust tests ==="
-if [ -f src/rust/Cargo.toml ]; then
-  cargo test --manifest-path src/rust/Cargo.toml 2>&1 || FAILED=1
+if [ -f Cargo.toml ]; then
+  MEMBERS=$(cargo metadata --no-deps --format-version 1 \
+    2>/dev/null | jq '.packages | length')
+  if [ "${MEMBERS:-0}" -gt 0 ]; then
+    cargo test 2>&1 || FAILED=1
+  else
+    echo "  (skipped — no workspace members)"
+  fi
 else
   echo "  (skipped — no Cargo.toml)"
 fi

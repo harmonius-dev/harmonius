@@ -23,19 +23,25 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            src/rust/target
+            target
           key: >-
             ${{ runner.os }}-cargo-
-            ${{ hashFiles('src/rust/Cargo.lock') }}
+            ${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      - name: Check workspace members
+        id: members
+        run: |
+          N=$(cargo metadata --no-deps \
+            --format-version 1 \
+            | jq '.packages | length')
+          echo "count=$N" >> "$GITHUB_OUTPUT"
+
       - name: Build
-        run: >
-          cargo build
-          --manifest-path src/rust/Cargo.toml
+        if: steps.members.outputs.count > 0
+        run: cargo build
 
       - name: Test
-        run: >
-          cargo test
-          --manifest-path src/rust/Cargo.toml
+        if: steps.members.outputs.count > 0
+        run: cargo test
