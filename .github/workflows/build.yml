@@ -9,18 +9,8 @@ on:
 
 jobs:
   rust:
-    name: Rust (${{ matrix.name }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-latest
-            name: macOS
-          - os: ubuntu-latest
-            name: Linux
-          - os: windows-latest
-            name: Windows
-    runs-on: ${{ matrix.os }}
+    name: Rust
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
