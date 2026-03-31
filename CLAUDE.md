@@ -127,7 +127,7 @@ not manually rewrap prose — let rumdl handle it.
 | rumdl | latest |
 | ruff | latest |
 | taplo | latest |
-| yamlfmt | latest |
+| yq | latest |
 
 ## Key files
 

@@ -20,8 +20,8 @@ case "$EXT" in
     fi
     ;;
   yaml|yml)
-    command -v yamlfmt >/dev/null 2>&1 || exit 0
-    yamlfmt "$FILE" 2>/dev/null
+    command -v yq >/dev/null 2>&1 || exit 0
+    yq --inplace '.' "$FILE" 2>/dev/null
     ;;
 esac
 exit 0

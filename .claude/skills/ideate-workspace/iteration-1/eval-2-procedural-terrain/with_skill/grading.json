@@ -1,79 +1,79 @@
 {
   "expectations": [
     {
-      "text": "correct_feature_ids — All feature IDs match F-X.Y.Z format",
+      "evidence": "All feature IDs follow F-X.Y.Z format: F-3.6.65 through F-3.6.74",
       "passed": true,
-      "evidence": "All feature IDs follow F-X.Y.Z format: F-3.6.65 through F-3.6.74"
+      "text": "correct_feature_ids — All feature IDs match F-X.Y.Z format"
     },
     {
-      "text": "correct_requirement_ids — All requirement IDs match R-X.Y.Z or R-X.Y.Za/b/c format",
+      "evidence": "All requirement IDs follow R-X.Y.Z or R-X.Y.Za format: R-3.6.65, R-3.6.65a, R-3.6.66, R-3.6.67, R-3.6.67a, R-3.6.68, R-3.6.68a, R-3.6.69, R-3.6.70, R-3.6.70a, R-3.6.71, R-3.6.71a, R-3.6.72, R-3.6.73, R-3.6.74",
       "passed": true,
-      "evidence": "All requirement IDs follow R-X.Y.Z or R-X.Y.Za format: R-3.6.65, R-3.6.65a, R-3.6.66, R-3.6.67, R-3.6.67a, R-3.6.68, R-3.6.68a, R-3.6.69, R-3.6.70, R-3.6.70a, R-3.6.71, R-3.6.71a, R-3.6.72, R-3.6.73, R-3.6.74"
+      "text": "correct_requirement_ids — All requirement IDs match R-X.Y.Z or R-X.Y.Za/b/c format"
     },
     {
-      "text": "correct_story_ids — All user story IDs match US-X.Y.Z format",
+      "evidence": "All user story IDs follow US-X.Y.Z format: US-3.6.65 through US-3.6.81",
       "passed": true,
-      "evidence": "All user story IDs follow US-X.Y.Z format: US-3.6.65 through US-3.6.81"
+      "text": "correct_story_ids — All user story IDs match US-X.Y.Z format"
     },
     {
-      "text": "correct_domain — IDs use an appropriate module number for the topic",
+      "evidence": "All IDs use domain 3.6 (Procedural Generation), appropriate for biome-driven terrain generation",
       "passed": true,
-      "evidence": "All IDs use domain 3.6 (Procedural Generation), appropriate for biome-driven terrain generation"
+      "text": "correct_domain — IDs use an appropriate module number for the topic"
     },
     {
-      "text": "one_to_many_requirements — At least some features have 2+ requirements",
+      "evidence": "Multiple features have 2 requirements: F-3.6.65 has R-3.6.65 and R-3.6.65a, F-3.6.67 has R-3.6.67 and R-3.6.67a, F-3.6.68 has R-3.6.68 and R-3.6.68a, F-3.6.70 has R-3.6.70 and R-3.6.70a, F-3.6.71 has R-3.6.71 and R-3.6.71a",
       "passed": true,
-      "evidence": "Multiple features have 2 requirements: F-3.6.65 has R-3.6.65 and R-3.6.65a, F-3.6.67 has R-3.6.67 and R-3.6.67a, F-3.6.68 has R-3.6.68 and R-3.6.68a, F-3.6.70 has R-3.6.70 and R-3.6.70a, F-3.6.71 has R-3.6.71 and R-3.6.71a"
+      "text": "one_to_many_requirements — At least some features have 2+ requirements"
     },
     {
-      "text": "nfr_suffixes — Non-functional requirements use letter suffixes (a, b, c)",
+      "evidence": "NFRs use 'a' suffix: R-3.6.65a (preview update time), R-3.6.67a (blending performance), R-3.6.68a (generation time), R-3.6.70a (scattering performance), R-3.6.71a (weather transition time)",
       "passed": true,
-      "evidence": "NFRs use 'a' suffix: R-3.6.65a (preview update time), R-3.6.67a (blending performance), R-3.6.68a (generation time), R-3.6.70a (scattering performance), R-3.6.71a (weather transition time)"
+      "text": "nfr_suffixes — Non-functional requirements use letter suffixes (a, b, c)"
     },
     {
-      "text": "one_to_many_stories — At least some features have 2+ user stories from different personas",
+      "evidence": "Multiple features have 2+ stories from different personas: F-3.6.65 has stories from game designer (P-5), env artist (P-8), and engine tester (P-27); F-3.6.71 has stories from game designer (P-5), player (P-23)",
       "passed": true,
-      "evidence": "Multiple features have 2+ stories from different personas: F-3.6.65 has stories from game designer (P-5), env artist (P-8), and engine tester (P-27); F-3.6.71 has stories from game designer (P-5), player (P-23)"
+      "text": "one_to_many_stories — At least some features have 2+ user stories from different personas"
     },
     {
-      "text": "varied_personas — User stories reference at least 3 distinct personas",
+      "evidence": "7 distinct personas: game designer (P-5), environment artist (P-8), level designer (P-6), technical artist (P-13), engine tester (P-27), player (P-23), audio designer (P-14)",
       "passed": true,
-      "evidence": "7 distinct personas: game designer (P-5), environment artist (P-8), level designer (P-6), technical artist (P-13), engine tester (P-27), player (P-23), audio designer (P-14)"
+      "text": "varied_personas — User stories reference at least 3 distinct personas"
     },
     {
-      "text": "shall_in_requirements — Requirements use SHALL or SHOULD language",
+      "evidence": "All 15 requirements use SHALL: e.g., R-3.6.65 'The engine SHALL provide a brush-based editor tool', R-3.6.67a 'Biome boundary blending SHALL complete within 2ms'",
       "passed": true,
-      "evidence": "All 15 requirements use SHALL: e.g., R-3.6.65 'The engine SHALL provide a brush-based editor tool', R-3.6.67a 'Biome boundary blending SHALL complete within 2ms'"
+      "text": "shall_in_requirements — Requirements use SHALL or SHOULD language"
     },
     {
-      "text": "no_shall_in_features — Feature file does not contain SHALL",
+      "evidence": "features.md contains no instances of SHALL. Uses descriptive language: 'An editor brush tool for painting', 'A data-driven biome template system', 'Automatic blending at biome region boundaries'",
       "passed": true,
-      "evidence": "features.md contains no instances of SHALL. Uses descriptive language: 'An editor brush tool for painting', 'A data-driven biome template system', 'Automatic blending at biome region boundaries'"
+      "text": "no_shall_in_features — Feature file does not contain SHALL"
     },
     {
-      "text": "rationale_and_verification — Requirements include Rationale and Verification sections",
+      "evidence": "All 15 requirements include Rationale and Verification subsections with specific test procedures",
       "passed": true,
-      "evidence": "All 15 requirements include Rationale and Verification subsections with specific test procedures"
+      "text": "rationale_and_verification — Requirements include Rationale and Verification sections"
     },
     {
-      "text": "acceptance_criteria — User stories include Acceptance criteria",
+      "evidence": "All 17 user stories include Acceptance criteria, e.g., US-3.6.65: 'Select a biome type, paint a region with a brush, and see the terrain update with appropriate materials and vegetation within 500ms'",
       "passed": true,
-      "evidence": "All 17 user stories include Acceptance criteria, e.g., US-3.6.65: 'Select a biome type, paint a region with a brush, and see the terrain update with appropriate materials and vegetation within 500ms'"
+      "text": "acceptance_criteria — User stories include Acceptance criteria"
     },
     {
-      "text": "feature_expansions — Output includes features beyond the literal idea (suggested additions)",
+      "evidence": "features.md has 'Additional Suggested Features' section with F-3.6.73 (Biome-Driven Ambient Audio Zones) and F-3.6.74 (Biome Minimap and Debug Visualization) — extending beyond the core terrain/vegetation/weather request",
       "passed": true,
-      "evidence": "features.md has 'Additional Suggested Features' section with F-3.6.73 (Biome-Driven Ambient Audio Zones) and F-3.6.74 (Biome Minimap and Debug Visualization) — extending beyond the core terrain/vegetation/weather request"
+      "text": "feature_expansions — Output includes features beyond the literal idea (suggested additions)"
     },
     {
-      "text": "cross_domain_deps — Features reference dependencies on existing features from other domains",
+      "evidence": "Cross-domain deps: F-3.6.65 depends on F-15.1.1 (Editor Framework), F-3.6.71 depends on F-2.7.10 (Weather System), F-3.6.73 depends on F-5.1.3 (Mixer Bus), F-3.6.70 depends on F-3.3.1 (Instanced Foliage)",
       "passed": true,
-      "evidence": "Cross-domain deps: F-3.6.65 depends on F-15.1.1 (Editor Framework), F-3.6.71 depends on F-2.7.10 (Weather System), F-3.6.73 depends on F-5.1.3 (Mixer Bus), F-3.6.70 depends on F-3.3.1 (Instanced Foliage)"
+      "text": "cross_domain_deps — Features reference dependencies on existing features from other domains"
     },
     {
-      "text": "user_interaction_planned — (with_skill only) user-questions.md exists with review questions for both feature confirmation and requirements/stories review",
+      "evidence": "user-questions.md exists with 'Phase 2 Questions — Feature Confirmation' (9 questions about feature selection, brush tool, seasons, expansions, lighting, NPC spawning, overlap, influence mode, physics) and 'Phase 4 Questions — Requirements and Stories Review' (8 questions about performance targets, personas, acceptance criteria)",
       "passed": true,
-      "evidence": "user-questions.md exists with 'Phase 2 Questions — Feature Confirmation' (9 questions about feature selection, brush tool, seasons, expansions, lighting, NPC spawning, overlap, influence mode, physics) and 'Phase 4 Questions — Requirements and Stories Review' (8 questions about performance targets, personas, acceptance criteria)"
+      "text": "user_interaction_planned — (with_skill only) user-questions.md exists with review questions for both feature confirmation and requirements/stories review"
     }
   ]
 }
