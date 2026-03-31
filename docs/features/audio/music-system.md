@@ -2,10 +2,10 @@
 
 ## Adaptive Layers
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-5.4.1 | Vertical Re-Mixing (Layered Stems) | R-5.4.1      |
-| F-5.4.2 | Horizontal Re-Sequencing           | R-5.4.2      |
+| ID      | Feature                            |
+|---------|------------------------------------|
+| F-5.4.1 | Vertical Re-Mixing (Layered Stems) |
+| F-5.4.2 | Horizontal Re-Sequencing           |
 
 1. **F-5.4.1** — Play multiple synchronized stems (e.g., percussion, strings, brass, choir) for a
    single music cue and crossfade individual stem volumes in response to gameplay state. Vertical
@@ -24,9 +24,9 @@
 
 ## Transitions
 
-| ID      | Feature                                    | Requirements |
-|---------|--------------------------------------------|--------------|
-| F-5.4.3 | Transition Rules (Crossfade and Beat-Sync) | R-5.4.3      |
+| ID      | Feature                                    |
+|---------|--------------------------------------------|
+| F-5.4.3 | Transition Rules (Crossfade and Beat-Sync) |
 
 1. **F-5.4.3** — Define per-edge transition behaviors in the music graph: immediate cut, timed
    crossfade, beat-synced crossfade, next-bar switch, and custom fade curves. Transition rules
@@ -38,9 +38,9 @@
 
 ## Tempo and Beat Tracking
 
-| ID      | Feature              | Requirements |
-|---------|----------------------|--------------|
-| F-5.4.4 | Tempo and Beat Clock | R-5.4.4      |
+| ID      | Feature              |
+|---------|----------------------|
+| F-5.4.4 | Tempo and Beat Clock |
 
 1. **F-5.4.4** — Maintain a global music clock that tracks tempo (BPM), time signature, and current
    beat/bar position derived from the playing music segment's metadata. The beat clock publishes
@@ -52,9 +52,9 @@
 
 ## Stingers and One-Shots
 
-| ID      | Feature          | Requirements |
-|---------|------------------|--------------|
-| F-5.4.5 | Stinger Playback | R-5.4.5      |
+| ID      | Feature          |
+|---------|------------------|
+| F-5.4.5 | Stinger Playback |
 
 1. **F-5.4.5** — Trigger short musical phrases (stingers) on gameplay events -- level-up fanfares,
    boss aggro hits, loot drops -- that layer on top of or momentarily duck the current score.
@@ -66,10 +66,10 @@
 
 ## Playlists and Randomization
 
-| ID      | Feature                              | Requirements |
-|---------|--------------------------------------|--------------|
-| F-5.4.6 | Playlists and Weighted Randomization | R-5.4.6      |
-| F-5.4.7 | Dynamic Intensity Parameter          | R-5.4.7      |
+| ID      | Feature                              |
+|---------|--------------------------------------|
+| F-5.4.6 | Playlists and Weighted Randomization |
+| F-5.4.7 | Dynamic Intensity Parameter          |
 
 1. **F-5.4.6** — Organize music cues into playlists with sequential, shuffle, and weighted-random
    playback modes. Weighting parameters include time-since-last-play, player location, and gameplay

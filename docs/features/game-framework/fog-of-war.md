@@ -1,11 +1,11 @@
 # 13.20 — Fog of War
 
-| ID        | Feature                        | Requirements |
-|-----------|--------------------------------|--------------|
-| F-13.20.1 | Fog of War Grid System         | R-13.20.1    |
-| F-13.20.2 | Vision Source and Sight Radius | R-13.20.2    |
-| F-13.20.3 | Vision Modifier Volumes        | R-13.20.3    |
-| F-13.20.4 | Fog of War Memory              | R-13.20.4    |
+| ID        | Feature                        |
+|-----------|--------------------------------|
+| F-13.20.1 | Fog of War Grid System         |
+| F-13.20.2 | Vision Source and Sight Radius |
+| F-13.20.3 | Vision Modifier Volumes        |
+| F-13.20.4 | Fog of War Memory              |
 
 1. **F-13.20.1** — Grid-based visibility tracking with three states per cell per player/faction:
    unexplored (fully hidden), shrouded (previously seen, shows terrain but not entities), and

@@ -2,9 +2,9 @@
 
 ## Level Streaming
 
-| ID       | Feature         | Requirements |
-|----------|-----------------|--------------|
-| F-13.2.1 | Level Streaming | R-13.2.1     |
+| ID       | Feature         |
+|----------|-----------------|
+| F-13.2.1 | Level Streaming |
 
 1. **F-13.2.1** — Loads and unloads sub-levels asynchronously based on player proximity, quest
    phase, or server commands. Streaming uses configurable load radii with hysteresis to prevent
@@ -17,10 +17,10 @@
 
 ## World Partitioning
 
-| ID       | Feature                           | Requirements |
-|----------|-----------------------------------|--------------|
-| F-13.2.2 | Grid-Based World Partitioning     | R-13.2.2     |
-| F-13.2.3 | Hierarchical Spatial Partitioning | R-13.2.3     |
+| ID       | Feature                           |
+|----------|-----------------------------------|
+| F-13.2.2 | Grid-Based World Partitioning     |
+| F-13.2.3 | Hierarchical Spatial Partitioning |
 
 1. **F-13.2.2** — Divides the open world into a regular grid of cells, each independently streamable
    and assignable to a server process in the server mesh. Cell size is configurable per world (e.g.,
@@ -36,10 +36,10 @@
 
 ## Sub-Levels and Composition
 
-| ID       | Feature                         | Requirements |
-|----------|---------------------------------|--------------|
-| F-13.2.4 | Sub-Level Composition           | R-13.2.4     |
-| F-13.2.5 | Persistent and Transient Actors | R-13.2.5     |
+| ID       | Feature                         |
+|----------|---------------------------------|
+| F-13.2.4 | Sub-Level Composition           |
+| F-13.2.5 | Persistent and Transient Actors |
 
 1. **F-13.2.4** — Organizes world content into composable sub-levels (e.g., terrain, buildings,
    interiors, quest objects, seasonal decorations) that are authored independently and layered at
@@ -57,10 +57,10 @@
 
 ## Time of Day and Weather
 
-| ID       | Feature                    | Requirements |
-|----------|----------------------------|--------------|
-| F-13.2.6 | Day/Night Cycle            | R-13.2.6     |
-| F-13.2.7 | Weather System Integration | R-13.2.7     |
+| ID       | Feature                    |
+|----------|----------------------------|
+| F-13.2.6 | Day/Night Cycle            |
+| F-13.2.7 | Weather System Integration |
 
 1. **F-13.2.6** — Drives a configurable time-of-day system with sun/moon position, sky color
    gradients, ambient light intensity, and shadow direction. Game time runs at an accelerated ratio

@@ -610,28 +610,28 @@ Companion test cases for [ecs.md](ecs.md).
 1. **#1** — Migrate entity with unregistered component type
    - **Expected:** `MigrationError` with type name in message
 
-### TC-1.1.36.1 Prefab Inheritance
+### TC-1.1.36.1 Entity Template Inheritance
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-1.1.36    |
 | 2 | R-1.1.36    |
 
-1. **#1** — Prefab with (A=1, B=2, C=3), instantiate 100
-   - **Expected:** All 100 share prefab data
+1. **#1** — Entity template with (A=1, B=2, C=3), instantiate 100
+   - **Expected:** All 100 share entity template data
 2. **#2** — Override A=99 on instance 0
    - **Expected:** Instance 0 has A=99, others have A=1
 
-### TC-1.1.37.1 Nested Prefab
+### TC-1.1.37.1 Nested Entity Template
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-1.1.37    |
 | 2 | R-1.1.37    |
 
-1. **#1** — Outer prefab contains inner prefab, instantiate 10
+1. **#1** — Outer entity template contains inner entity template, instantiate 10
    - **Expected:** 10 outer + 10 inner instances
-2. **#2** — Modify inner prefab value
+2. **#2** — Modify inner entity template value
    - **Expected:** Change propagates to all inner instances
 
 ### TC-1.1.38.1 State Transition Observers

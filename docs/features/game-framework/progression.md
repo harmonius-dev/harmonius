@@ -2,12 +2,12 @@
 
 ## Race and Class
 
-| ID         | Feature                     | Requirements |
-|------------|-----------------------------|--------------|
-| F-13.12.1a | Race Definition             | R-13.12.1a   |
-| F-13.12.1b | Class Definition            | R-13.12.1b   |
-| F-13.12.1c | Multi-Class and Job Change  | R-13.12.1c   |
-| F-13.12.1d | Prestige and Rebirth System | R-13.12.1d   |
+| ID         | Feature                     |
+|------------|-----------------------------|
+| F-13.12.1a | Race Definition             |
+| F-13.12.1b | Class Definition            |
+| F-13.12.1c | Multi-Class and Job Change  |
+| F-13.12.1d | Prestige and Rebirth System |
 
 1. **F-13.12.1a** — Data-driven race assets specifying stat modifiers (e.g., +10 strength, -5
    intelligence), racial abilities, cosmetic constraints (available body types, skin tones), and
@@ -30,11 +30,11 @@
 
 ## Talent Trees
 
-| ID         | Feature                      | Requirements |
-|------------|------------------------------|--------------|
-| F-13.12.2a | Talent Tree Data Model       | R-13.12.2a   |
-| F-13.12.2b | Talent Allocation and Respec | R-13.12.2b   |
-| F-13.12.2c | Talent Tree Visual Editor    | R-13.12.2c   |
+| ID         | Feature                      |
+|------------|------------------------------|
+| F-13.12.2a | Talent Tree Data Model       |
+| F-13.12.2b | Talent Allocation and Respec |
+| F-13.12.2c | Talent Tree Visual Editor    |
 
 1. **F-13.12.2a** — Talent trees are defined as directed acyclic graphs of talent nodes. Node types
    include passive bonuses (stat increases, proc effects), active abilities (F-13.10.1), and ability
@@ -53,12 +53,12 @@
 
 ## Professions
 
-| ID         | Feature                          | Requirements |
-|------------|----------------------------------|--------------|
-| F-13.12.3a | Profession Data Model            | R-13.12.3a   |
-| F-13.12.3b | Gathering Profession Integration | R-13.12.3b   |
-| F-13.12.3c | Crafting Profession Integration  | R-13.12.3c   |
-| F-13.12.4  | Crafting Station Interaction     | R-13.12.4    |
+| ID         | Feature                          |
+|------------|----------------------------------|
+| F-13.12.3a | Profession Data Model            |
+| F-13.12.3b | Gathering Profession Integration |
+| F-13.12.3c | Crafting Profession Integration  |
+| F-13.12.4  | Crafting Station Interaction     |
 
 1. **F-13.12.3a** — Each profession defines a skill level, XP curve, and recipe thresholds — recipes
    unlock as the profession levels up. Profession limits constrain how many professions a character
@@ -84,9 +84,9 @@
 
 ## Reputation
 
-| ID        | Feature                         | Requirements |
-|-----------|---------------------------------|--------------|
-| F-13.12.5 | Reputation and Faction Standing | R-13.12.5    |
+| ID        | Feature                         |
+|-----------|---------------------------------|
+| F-13.12.5 | Reputation and Faction Standing |
 
 1. **F-13.12.5** — Per-faction reputation meters with tiered standings: hostile, unfriendly,
    neutral, friendly, honored, revered, exalted (tiers are data-driven and configurable). Reputation
@@ -100,11 +100,11 @@
 
 ## Achievements
 
-| ID         | Feature                             | Requirements |
-|------------|-------------------------------------|--------------|
-| F-13.12.6a | Achievement Definition and Tracking | R-13.12.6a   |
-| F-13.12.6b | Achievement Rewards and Display     | R-13.12.6b   |
-| F-13.12.6c | Platform Achievement Sync           | R-13.12.6c   |
+| ID         | Feature                             |
+|------------|-------------------------------------|
+| F-13.12.6a | Achievement Definition and Tracking |
+| F-13.12.6b | Achievement Rewards and Display     |
+| F-13.12.6c | Platform Achievement Sync           |
 
 1. **F-13.12.6a** — Data-driven achievement definitions specify: trigger conditions (kill N enemies,
    craft Y items, reach gear score Z, explore all zones, complete quest chain), progress tracking
@@ -125,14 +125,14 @@
 
 ## Item Enhancement
 
-| ID         | Feature                         | Requirements |
-|------------|---------------------------------|--------------|
-| F-13.12.7  | Item Enhancement and Enchanting | R-13.12.7    |
-| F-13.12.8a | Item Rarity Tier System         | R-13.12.8a   |
-| F-13.12.8b | Affix System                    | R-13.12.8b   |
-| F-13.12.8c | Stat Re-Rolling Mechanics       | R-13.12.8c   |
-| F-13.12.9  | Item Set Bonuses                | R-13.12.9    |
-| F-13.12.10 | Item Durability and Repair      | R-13.12.10   |
+| ID         | Feature                         |
+|------------|---------------------------------|
+| F-13.12.7  | Item Enhancement and Enchanting |
+| F-13.12.8a | Item Rarity Tier System         |
+| F-13.12.8b | Affix System                    |
+| F-13.12.8c | Stat Re-Rolling Mechanics       |
+| F-13.12.9  | Item Set Bonuses                |
+| F-13.12.10 | Item Durability and Repair      |
 
 1. **F-13.12.7** — Level up equipment through an enchanting system with configurable success/failure
    probability. Enhancement profiles define: enhancement levels (0 through +15), stat bonuses per

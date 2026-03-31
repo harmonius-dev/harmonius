@@ -2,14 +2,14 @@
 
 ## Immersive Editing
 
-| ID        | Feature             | Requirements |
-|-----------|---------------------|--------------|
-| F-15.22.1 | VR Editor Mode      | R-15.22.1    |
-| F-15.22.2 | VR Spatial Editing  | R-15.22.2    |
-| F-15.22.3 | VR Hand Tracking    | R-15.22.3    |
-| F-15.22.4 | VR Editor UI        | R-15.22.4    |
-| F-15.22.5 | VR Collaboration    | R-15.22.5    |
-| F-15.22.6 | VR User/AI Tracking | R-15.22.6    |
+| ID | Feature |
+| ----------- | --------------------- |
+| F-15.22.1 | VR Editor Mode |
+| F-15.22.2 | VR Spatial Editing |
+| F-15.22.3 | VR Hand Tracking |
+| F-15.22.4 | VR Editor UI |
+| F-15.22.5 | VR Collaboration |
+| F-15.22.6 | VR User/AI Tracking |
 
 1. **F-15.22.1** — A full editor experience rendered inside a VR headset with stereoscopic
    rendering, head tracking, and 6-DoF motion controller input. The VR editor shares the same world

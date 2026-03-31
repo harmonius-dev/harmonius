@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/rendering/](../../features/rendering/),
-> [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
-> to those definitions.
+> [features/rendering/](../../features/), [requirements/rendering/](../../requirements/), and
+> [user-stories/rendering/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement |
 |----------|-------------|
@@ -1660,7 +1659,7 @@ All post-processing shaders are authored in HLSL and compiled through the standa
 
 1. **HLSL source** authored per effect
 2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via C ABI
-3. **Metal Shader Converter** translates DXIL to MSL (Metal) via C ABI
+3. **Metal Shader Converter** translates DXIL to MSL (Metal) via swift-bridge
 4. Platform-specific shader objects cached on disk
 
 Shader variants are generated for quality tiers via `#define` preprocessor guards (e.g.,

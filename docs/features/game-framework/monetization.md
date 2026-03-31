@@ -1,27 +1,27 @@
 # 13.23 — Monetization and Live Operations
 
-| ID         | Feature                              | Requirements |
-|------------|--------------------------------------|--------------|
-| F-13.23.1  | Battle Pass and Season System        | R-13.23.1    |
-| F-13.23.2  | Daily and Weekly Challenge System    | R-13.23.2    |
-| F-13.23.3a | Platform Purchase Abstraction        | R-13.23.3a   |
-| F-13.23.3b | Server-Side Receipt Validation       | R-13.23.3b   |
-| F-13.23.3c | Premium Currency System              | R-13.23.3c   |
-| F-13.23.3d | Purchase History and Refund Tracking | R-13.23.3d   |
-| F-13.23.4  | Daily Login Reward Calendar          | R-13.23.4    |
-| F-13.23.5a | Subscription State Verification      | R-13.23.5a   |
-| F-13.23.5b | Subscription Benefit Application     | R-13.23.5b   |
-| F-13.23.5c | Subscription Management UI           | R-13.23.5c   |
-| F-13.23.5d | Subscription Gifting                 | R-13.23.5d   |
-| F-13.23.6a | Timed Game Trial                     | R-13.23.6a   |
-| F-13.23.6b | Free Weekend Events                  | R-13.23.6b   |
-| F-13.23.6c | Content Trial                        | R-13.23.6c   |
-| F-13.23.7  | DLC and Expansion Purchasing         | R-13.23.7    |
-| F-13.23.8  | Cosmetic Store and Virtual Currency  | R-13.23.8    |
-| F-13.23.9a | Deceptive UI Prevention              | R-13.23.9a   |
-| F-13.23.9b | Minor-Targeted Ad Blocking           | R-13.23.9b   |
-| F-13.23.9c | Dark Pattern Prevention              | R-13.23.9c   |
-| F-13.23.9d | Frequency Cap Enforcement            | R-13.23.9d   |
+| ID         | Feature                              |
+|------------|--------------------------------------|
+| F-13.23.1  | Battle Pass and Season System        |
+| F-13.23.2  | Daily and Weekly Challenge System    |
+| F-13.23.3a | Platform Purchase Abstraction        |
+| F-13.23.3b | Server-Side Receipt Validation       |
+| F-13.23.3c | Premium Currency System              |
+| F-13.23.3d | Purchase History and Refund Tracking |
+| F-13.23.4  | Daily Login Reward Calendar          |
+| F-13.23.5a | Subscription State Verification      |
+| F-13.23.5b | Subscription Benefit Application     |
+| F-13.23.5c | Subscription Management UI           |
+| F-13.23.5d | Subscription Gifting                 |
+| F-13.23.6a | Timed Game Trial                     |
+| F-13.23.6b | Free Weekend Events                  |
+| F-13.23.6c | Content Trial                        |
+| F-13.23.7  | DLC and Expansion Purchasing         |
+| F-13.23.8  | Cosmetic Store and Virtual Currency  |
+| F-13.23.9a | Deceptive UI Prevention              |
+| F-13.23.9b | Minor-Targeted Ad Blocking           |
+| F-13.23.9c | Dark Pattern Prevention              |
+| F-13.23.9d | Frequency Cap Enforcement            |
 
 1. **F-13.23.1** — Tiered reward track with free and premium tiers, time-limited to seasons
    (configurable duration, typically 60-90 days). Players earn pass XP from gameplay activities
@@ -163,33 +163,3 @@
       Mesh Parts), F-15.7.3 (AI Toggle)
     - **Platform:** Console certification requires that purchased cosmetics are never lost due to
       server issues.
-17. **F-13.23.9a** — Engine-enforced rules preventing deceptive ad UI. Ad close buttons SHALL be
-    minimum 44x44 points, clearly visible, and functional immediately upon display — no delayed
-    activation, no fake close buttons, no invisible tap regions. The ad mediation layer (F-13.28.4)
-    rejects ad creatives that mimic game UI elements, fake system notifications, or simulate
-    interactive game content. These rules are compiled into the engine binary and cannot be
-    overridden by game configuration.
-    - **Deps:** F-13.28.1 (Rewarded Ads), F-13.28.2 (Interstitial), F-13.28.3 (Banner)
-    - **Platform:** Complies with platform certification requirements for ad display.
-18. **F-13.23.9b** — If the player's age is under 16 (as reported by platform parental controls), no
-    personalized or behaviorally-targeted advertising is served. Only contextual ads are permitted
-    for minors. Age detection integrates with platform parental control APIs (Apple Screen Time,
-    Google Family Link, console parental settings). The age check is performed on session start and
-    cached for the session duration.
-    - **Deps:** F-14.5.1 (Platform Services), F-10.6.1 (Accessibility)
-    - **Platform:** Complies with COPPA (US), GDPR Article 8 (EU), and Apple's SKAdNetwork privacy
-      requirements.
-19. **F-13.23.9c** — Engine-enforced rules preventing dark pattern advertising. Ads SHALL NOT:
-    auto-play audio without user initiation, vibrate the device to attract attention, launch
-    external apps without explicit consent, or obscure the "Ad" label. The ad mediation layer
-    validates each ad creative against these rules before display. Violations are logged and the
-    offending ad is suppressed. A global "disable all ads" setting in accessibility preferences
-    disables all ad formats entirely. These rules are compiled into the engine binary.
-    - **Deps:** F-13.28.1 (Rewarded Ads), F-13.28.2 (Interstitial), F-13.28.3 (Banner), F-10.6.1
-      (Accessibility)
-20. **F-13.23.9d** — Engine-enforced hard caps on ad frequency: maximum 1 interstitial per 10
-    minutes and 3 rewarded videos per hour. Caps are enforced engine-side regardless of game
-    developer configuration or ad mediation settings. Cap timers reset on a rolling window (not
-    calendar boundaries). Attempts to display ads exceeding the cap are silently blocked and logged.
-    The cap values are compiled into the engine binary and cannot be changed at runtime.
-    - **Deps:** F-13.28.1 (Rewarded Ads), F-13.28.2 (Interstitial)

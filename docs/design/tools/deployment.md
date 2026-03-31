@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Build and Deployment (F-15.14)
 
@@ -1685,7 +1684,7 @@ The packaging pipeline integrates into a CI/CD workflow. Each stage is a discret
 
 | Platform | Keychain API | Notes |
 |----------|-------------|-------|
-| macOS | Security.framework Keychain | Accessed via Swift wrappers through C ABI |
+| macOS | Security.framework Keychain | Accessed via Swift wrappers through swift-bridge |
 | Windows | Credential Manager | `CredRead`/`CredWrite` via `windows-rs` |
 | Linux | libsecret / Secret Service API | D-Bus interface via C FFI |
 | CI | Environment variables | AWS Secrets Manager for production |
@@ -1710,8 +1709,8 @@ cloud build service handles cross-platform builds.
 
 > **Cross-references:** Cloud build service features are defined in
 > [F-15.24](../../features/tools-editor/cloud-build.md). Shader compilation pipeline is defined in
-> [F-12.2.9](../../features/content-pipeline/asset-processing.md). Platform SDK integration is
-> defined in [F-14.8](../../features/platform/sdk-integration.md).
+> [F-12.2.9](../../features/content-pipeline/asset-processing.md). Platform SDK integration is defined in
+> [F-14.8](../../features/platform/sdk-integration.md).
 
 ### Local Build Matrix
 
@@ -2002,7 +2001,7 @@ packaging, which is excellent cohesion. The mod sandbox's budget enforcement int
 profiler's `MemAllocTracker` (F-15.5.3) and `EcsSystemTracker` (F-15.5.1). However, the signing
 pipeline (F-15.14.4) uses platform-specific tools (codesign, signtool) invoked as external
 processes, which is inconsistent with the engine's preference for library-level integration.
-Wrapping signing in platform-native APIs via C ABI would be more cohesive.
+Wrapping signing in platform-native APIs via FFI (swift-bridge on macOS) would be more cohesive.
 
 ## Open Questions
 

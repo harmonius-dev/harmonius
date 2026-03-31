@@ -10,7 +10,6 @@ metadata defining frame boundaries, pivot points, and trim rects. The sprite ren
 sprites by atlas page and blend mode, sorting by z-order within each batch, to minimize draw calls
 for scenes with thousands of sprites.
 
-- **Requirements:** R-10.5.1
 - **Dependencies:** F-10.4.1
 - **Platform notes:** None
 
@@ -21,7 +20,6 @@ one-shot, reverse), and animation events (trigger callbacks at specific frames f
 hit detection). Supports animation blending and transition graphs for smooth state changes.
 Animation clips reference frame ranges within a sprite sheet atlas.
 
-- **Requirements:** R-10.5.2
 - **Dependencies:** F-10.5.1
 - **Platform notes:** None
 
@@ -33,7 +31,6 @@ vertices are skinned to bones with blend weights. Supports IK constraints (two-b
 sprite swapping (change weapon sprite based on equipment), and runtime bone manipulation for
 procedural effects (look-at, recoil). Compatible with Spine and DragonBones import formats.
 
-- **Requirements:** R-10.5.3
 - **Dependencies:** F-10.5.1, F-9.1.1 (Skeletal Animation)
 - **Platform notes:** None
 
@@ -47,7 +44,6 @@ clipping masks. Vector shapes are tessellated to GPU triangles at render time or
 Used for resolution-independent UI, clean-line art games, map overlays, and scalable game elements
 that work across mobile and desktop resolutions.
 
-- **Requirements:** R-10.5.4
 - **Dependencies:** F-10.4.3 (Vector Graphics)
 - **Platform notes:** None
 
@@ -59,7 +55,6 @@ while animating smoothly. Supports the same bone hierarchy, IK, and animation gr
 raster skeletal animation (F-10.5.3). Ideal for stylized 2D games with zoom mechanics (strategy,
 puzzle, narrative).
 
-- **Requirements:** R-10.5.5
 - **Dependencies:** F-10.5.4, F-10.5.3
 - **Platform notes:** None
 
@@ -73,7 +68,6 @@ collision overlay), auto-tiling rules for terrain transitions, animated tiles, a
 flip/rotation flags. Tilemap chunks are streamed and culled to the camera viewport, enabling worlds
 with millions of tiles.
 
-- **Requirements:** R-10.5.6
 - **Dependencies:** F-10.5.1
 - **Platform notes:** Mobile limits visible tile layers (3 vs 8 on desktop) and uses smaller tile
   atlas pages to reduce GPU memory pressure.
@@ -85,7 +79,6 @@ coordinate conversion between screen space and tile space for each grid type, co
 by tile row and column, and height-stacked tiles for multi-level isometric maps. Supports isometric
 wall occlusion and z-fighting resolution for overlapping tile layers.
 
-- **Requirements:** R-10.5.7
 - **Dependencies:** F-10.5.6
 - **Platform notes:** None
 
@@ -97,7 +90,6 @@ are authored as tileset assets with adjacency constraints. Runtime generation pr
 roguelike dungeons, infinite side-scrollers, and procedural overworlds. Deterministic seeding
 (F-3.6.5) ensures reproducible worlds for multiplayer.
 
-- **Requirements:** R-10.5.8
 - **Dependencies:** F-10.5.6, F-3.6.20 (2D WFC), F-3.6.5 (Seeding)
 - **Platform notes:** None
 
@@ -111,7 +103,6 @@ for depth illusion. Camera smoothing: lerp follow, look-ahead based on player ve
 snap-to-grid, screen-edge push zones. Split-screen mode for local co-op — multiple 2D cameras render
 to separate viewports within the same window.
 
-- **Requirements:** R-10.5.9
 - **Dependencies:** F-10.5.1
 - **Platform notes:** None
 
@@ -125,7 +116,6 @@ run as ECS systems in the physics schedule. Supports continuous collision detect
 projectiles, one-way platforms (pass through from below), and conveyor belt surface velocity.
 Deterministic for server-authoritative 2D games.
 
-- **Requirements:** R-10.5.10
 - **Dependencies:** F-1.1.1 (ECS), F-4.1.1 (Integration)
 - **Platform notes:** Mobile budgets fewer active rigid bodies (200 vs 500+ on desktop) to maintain
   60fps on lower-core-count devices.
@@ -137,7 +127,6 @@ Tilemap collision layers auto-generate optimized edge chain colliders from tile 
 merged edges reduce collider count from thousands of tiles to dozens of edge segments. Per-tile
 collision properties (friction, bounciness, one-way) are supported.
 
-- **Requirements:** R-10.5.11
 - **Dependencies:** F-10.5.10, F-10.5.6
 - **Platform notes:** None
 
@@ -148,7 +137,6 @@ collision properties (friction, bounciness, one-way) are supported.
 ragdolls, swinging platforms, grappling hooks, destructible chains, and vehicle suspension in 2D
 games.
 
-- **Requirements:** R-10.5.12
 - **Dependencies:** F-10.5.10
 - **Platform notes:** None
 
@@ -159,7 +147,6 @@ Ray casts, shape casts, and overlap tests in 2D space. Queries operate on the sh
 queries for AI line-of-sight, area-of-effect, and projectile trajectory checks. Essential for
 top-down shooters, platformer ground detection, and 2D RTS selection.
 
-- **Requirements:** R-10.5.13
 - **Dependencies:** F-10.5.10, F-1.9.4 (Unified Spatial Query)
 - **Platform notes:** None
 
@@ -172,7 +159,6 @@ occluders (sprite edges, tilemap walls) using shadow map or ray-marched approach
 into a compositable light map texture. Supports colored lights, falloff curves, normal-mapped
 sprites for pseudo-3D lighting, and emissive sprites that glow independently.
 
-- **Requirements:** R-10.5.14
 - **Dependencies:** F-10.5.1
 - **Platform notes:** Mobile caps dynamic 2D lights (8 vs 32 on desktop) and uses lower-resolution
   light maps (half res) to stay within fill rate budget.
@@ -184,7 +170,6 @@ quads sorted into the 2D z-order. Supports all 3D particle modules (velocity, gr
 over life, collision) projected onto the 2D plane. Trail/ribbon particles for sword slashes, magic
 effects, and projectile trails. Performance-optimized for mobile.
 
-- **Requirements:** R-10.5.15
 - **Dependencies:** F-10.5.1, F-11.1.1 (Particle System)
 - **Platform notes:** Mobile caps active particles per emitter (256 vs 1024 on desktop) and total
   on-screen particles (2K vs 10K). Trail particles use fewer segments on mobile.
@@ -199,7 +184,6 @@ input mapping. Virtual joystick output feeds into the input action system (F-6.2
 physical gamepad. Layout adapts to screen size and orientation. Opacity and position are
 user-configurable at runtime.
 
-- **Requirements:** R-10.5.16
 - **Dependencies:** F-6.1.4 (Touch Input), F-6.2.1 (Input Actions)
 - **Platform notes:** iOS and Android touch input. Haptic feedback on button press where supported
   (F-6.4.1).
@@ -212,7 +196,6 @@ performs context actions. Gesture recognition (F-6.3) integrates with the input 
 gesture-to-action mappings are rebindable. Supports simultaneous gestures (pan + zoom) and gesture
 priority resolution.
 
-- **Requirements:** R-10.5.17
 - **Dependencies:** F-6.3.1 (Gestures), F-10.5.9 (2D Camera)
 - **Platform notes:** None
 
@@ -226,7 +209,6 @@ chunk replication, and 2D physics state (velocity, angular velocity). Bandwidth-
 MMOs with hundreds of visible entities. Relevancy filtering uses 2D distance (no vertical axis) for
 tighter area-of-interest culling.
 
-- **Requirements:** R-10.5.18
 - **Dependencies:** F-8.2.1 (State Replication), F-8.2.2 (Relevancy)
 - **Platform notes:** None
 
@@ -237,7 +219,6 @@ Client-side prediction for 2D movement and abilities with server reconciliation.
 confirmed input on misprediction. Input delay and rollback frames are configurable. Supports both
 lockstep (fighting games, RTS) and server-authoritative (MMO, co-op) models.
 
-- **Requirements:** R-10.5.19
 - **Dependencies:** F-10.5.18, F-8.4.1 (Prediction), F-10.5.10 (2D Physics)
 - **Platform notes:** None
 
@@ -251,7 +232,6 @@ The PCG graph system (F-3.6.1) operates in 2D mode with point generation on a pl
 surface. Chunk-based streaming (F-3.6.31) loads/unloads 2D world regions as the player explores.
 Used for open-world 2D RPGs, survival games, and 2D MMOs.
 
-- **Requirements:** R-10.5.20
 - **Dependencies:** F-3.6.1 (PCG Graph), F-3.6.5 (Seeding), F-10.5.6 (Tilemaps)
 - **Platform notes:** None
 
@@ -263,7 +243,6 @@ cave shapes. Generators output tilemap data (F-10.5.6) with collision, decoratio
 layers. Lock-and-key analysis ensures generated dungeons are traversable with required items found
 before locked doors.
 
-- **Requirements:** R-10.5.21
 - **Dependencies:** F-10.5.8, F-3.6.30 (Constraint Solver)
 - **Platform notes:** None
 
@@ -278,7 +257,6 @@ physics) while displaying full 3D models with lighting and shadows. Multiple 3D 
 interleaved with 2D sprite and parallax layers for depth effects. Used for side-scrollers and
 top-down games with 3D characters on 2D backgrounds.
 
-- **Requirements:** R-10.5.22
 - **Dependencies:** F-10.5.1, F-10.5.9 (2D Camera), F-2.10.1 (Render Proxy)
 - **Platform notes:** Mobile limits simultaneous 3D layers (2 vs 4+ on desktop) and renders them at
   reduced resolution to control GPU fill rate.
@@ -292,7 +270,6 @@ sprite assets (billboards, particle cards, painted backdrops) layer into the 3D 
 depth-correct sorting. 3D parallax backgrounds scroll at varying rates based on depth. This is the
 HD-2D rendering model (Octopath Traveler, Triangle Strategy).
 
-- **Requirements:** R-10.5.23
 - **Dependencies:** F-10.5.10 (2D Physics), F-10.5.14 (2D Lighting), F-2.10.4 (View Setup)
 - **Platform notes:** None
 
@@ -304,6 +281,5 @@ between layers using depth testing or painter's algorithm as configured. 2D UI e
 characters, 2D foreground foliage, and 3D environmental effects coexist in a single frame with
 correct occlusion. Layer visibility and blend modes are configurable per layer and per camera.
 
-- **Requirements:** R-10.5.24
 - **Dependencies:** F-10.5.1, F-10.5.4, F-2.10.1 (Render Proxy)
 - **Platform notes:** None

@@ -2,10 +2,10 @@
 
 ## Text
 
-| ID       | Feature                    | Requirements |
-|----------|----------------------------|--------------|
-| F-10.2.1 | Rich Text and Text Shaping | R-10.2.1     |
-| F-10.2.2 | Text Input and Editing     | R-10.2.2     |
+| ID       | Feature                   |
+|----------|---------------------------- |
+| F-10.2.1 | Rich Text and Text Shaping|
+| F-10.2.2 | Text Input and Editing    |
 
 1. **F-10.2.1** — Render rich text with inline formatting (bold, italic, color, size, font face),
    embedded icons, and hyperlinks. Text shaping uses HarfBuzz-compatible shaping for complex scripts
@@ -25,10 +25,10 @@
 
 ## Buttons and Controls
 
-| ID       | Feature                               | Requirements |
-|----------|---------------------------------------|--------------|
-| F-10.2.3 | Buttons, Sliders, and Toggle Controls | R-10.2.3     |
-| F-10.2.4 | Combo Boxes and Dropdown Menus        | R-10.2.4     |
+| ID       | Feature                              |
+|----------|--------------------------------------- |
+| F-10.2.3 | Buttons, Sliders, and Toggle Controls|
+| F-10.2.4 | Combo Boxes and Dropdown Menus       |
 
 1. **F-10.2.3** — Standard interactive controls: push buttons (with icon + label variants), toggle
    buttons, checkboxes, radio buttons, horizontal/vertical sliders (continuous and discrete), and
@@ -44,9 +44,9 @@
 
 ## Scrolling and Lists
 
-| ID       | Feature                                 | Requirements |
-|----------|-----------------------------------------|--------------|
-| F-10.2.5 | Scroll Views and Virtualized List Views | R-10.2.5     |
+| ID       | Feature                                |
+|----------|----------------------------------------- |
+| F-10.2.5 | Scroll Views and Virtualized List Views|
 
 1. **F-10.2.5** — Scrollable container widget with inertial scrolling, scroll bars, and overscroll
    feedback. Virtualized list views render only the visible subset of items plus a small buffer,
@@ -59,10 +59,10 @@
 
 ## Overlays and Popups
 
-| ID       | Feature                                    | Requirements |
-|----------|--------------------------------------------|--------------|
-| F-10.2.6 | Tooltips, Context Menus, and Modal Dialogs | R-10.2.6     |
-| F-10.2.7 | Drag and Drop                              | R-10.2.7     |
+| ID       | Feature                                   |
+|----------|-------------------------------------------- |
+| F-10.2.6 | Tooltips, Context Menus, and Modal Dialogs|
+| F-10.2.7 | Drag and Drop                             |
 
 1. **F-10.2.6** — Overlay widgets that appear above the normal widget tree: tooltips
    (hover-triggered, with rich content including item stats and comparisons), context menus
@@ -79,9 +79,9 @@
 
 ## Progress and Status
 
-| ID       | Feature                              | Requirements |
-|----------|--------------------------------------|--------------|
-| F-10.2.8 | Progress Bars and Loading Indicators | R-10.2.8     |
+| ID       | Feature                             |
+|----------|-------------------------------------- |
+| F-10.2.8 | Progress Bars and Loading Indicators|
 
 1. **F-10.2.8** — Determinate progress bars (linear and circular), indeterminate loading spinners,
    and segmented progress indicators. Support animated fill, color gradients, and label overlays

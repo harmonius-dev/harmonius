@@ -2,17 +2,17 @@
 
 ## Features
 
-| ID      | Feature                              | Requirements |
-|---------|--------------------------------------|--------------|
-| F-2.8.1 | Strand-Based Hair Rendering          | R-2.8.1      |
-| F-2.8.2 | Card-Based Hair Rendering            | R-2.8.2      |
-| F-2.8.3 | Hair LOD System                      | R-2.8.3      |
-| F-2.8.4 | Eye Rendering                        | R-2.8.4      |
-| F-2.8.5 | Cloth Rendering                      | R-2.8.5      |
-| F-2.8.6 | Skin Rendering (Subsurface Profiles) | R-2.8.6      |
-| F-2.8.7 | Compute Software Rasterized Hair     | R-2.8.7      |
-| F-2.8.8 | Peach Fuzz (Vellus Hair)             | R-2.8.8      |
-| F-2.8.9 | Biometric Skin Model                 | R-2.8.9      |
+| ID      | Feature                              |
+|---------|--------------------------------------|
+| F-2.8.1 | Strand-Based Hair Rendering          |
+| F-2.8.2 | Card-Based Hair Rendering            |
+| F-2.8.3 | Hair LOD System                      |
+| F-2.8.4 | Eye Rendering                        |
+| F-2.8.5 | Cloth Rendering                      |
+| F-2.8.6 | Skin Rendering (Subsurface Profiles) |
+| F-2.8.7 | Compute Software Rasterized Hair     |
+| F-2.8.8 | Peach Fuzz (Vellus Hair)             |
+| F-2.8.9 | Biometric Skin Model                 |
 
 1. **F-2.8.1** — Individual hair strand rendering using curve geometry rasterized via the mesh
    shader pipeline. Each strand is shaded with the Marschner anisotropic hair BSDF providing R

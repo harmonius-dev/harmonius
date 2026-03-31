@@ -2,10 +2,10 @@
 
 ## API Reference
 
-| ID        | Feature                        | Requirements |
-|-----------|--------------------------------|--------------|
-| F-15.19.1 | Auto-Generated API Reference   | R-15.19.1    |
-| F-15.19.2 | Logic Graph Node Documentation | R-15.19.2    |
+| ID | Feature |
+| ----------- | -------------------------------- |
+| F-15.19.1 | Auto-Generated API Reference |
+| F-15.19.2 | Logic Graph Node Documentation |
 
 1. **F-15.19.1** — Automatically generate comprehensive API reference documentation from Rust doc
    comments across all public engine crates. The reference covers: every public type, trait,
@@ -26,11 +26,11 @@
 
 ## In-Editor Tutorials
 
-| ID        | Feature                            | Requirements |
-|-----------|------------------------------------|--------------|
-| F-15.19.3 | Interactive In-Editor Tutorials    | R-15.19.3    |
-| F-15.19.4 | Video Tutorial Integration         | R-15.19.4    |
-| F-15.19.5 | Contextual Help and Tooltip System | R-15.19.5    |
+| ID | Feature |
+| ----------- | ------------------------------------ |
+| F-15.19.3 | Interactive In-Editor Tutorials |
+| F-15.19.4 | Video Tutorial Integration |
+| F-15.19.5 | Contextual Help and Tooltip System |
 
 1. **F-15.19.3** — Step-by-step guided tutorials that run inside the editor, teaching users how to
    use engine features through hands-on exercises. Each tutorial: highlights UI elements with
@@ -65,10 +65,10 @@
 
 ## Sample Projects
 
-| ID        | Feature                               | Requirements |
-|-----------|---------------------------------------|--------------|
-| F-15.19.6 | Sample Projects and Template Library  | R-15.19.6    |
-| F-15.19.7 | Inline Code Examples in Documentation | R-15.19.7    |
+| ID | Feature |
+| ----------- | --------------------------------------- |
+| F-15.19.6 | Sample Projects and Template Library |
+| F-15.19.7 | Inline Code Examples in Documentation |
 
 1. **F-15.19.6** — A library of complete sample projects demonstrating engine capabilities across
    genres: 3D action/adventure (combat, AI, level streaming), 2D platformer (sprites, tilemaps, 2D

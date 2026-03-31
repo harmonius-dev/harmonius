@@ -2,12 +2,12 @@
 
 ## Stealth
 
-| ID        | Feature                              | Requirements |
-|-----------|--------------------------------------|--------------|
-| F-13.18.1 | Player Visibility and Stealth System | R-13.18.1    |
-| F-13.18.2 | AI Alert State Machine               | R-13.18.2    |
-| F-13.18.3 | Noise Generation and Distraction     | R-13.18.3    |
-| F-13.18.4 | Stealth Takedown System              | R-13.18.4    |
+| ID        | Feature                              |
+|-----------|--------------------------------------|
+| F-13.18.1 | Player Visibility and Stealth System |
+| F-13.18.2 | AI Alert State Machine               |
+| F-13.18.3 | Noise Generation and Distraction     |
+| F-13.18.4 | Stealth Takedown System              |
 
 1. **F-13.18.1** — Compute a per-frame visibility score for the player character based on: ambient
    light level at the player's position, shadow/light state (using the lighting system's shadow
@@ -45,9 +45,9 @@
 
 ## Cover
 
-| ID        | Feature                         | Requirements |
-|-----------|---------------------------------|--------------|
-| F-13.18.5 | Cover Point Detection and Usage | R-13.18.5    |
+| ID        | Feature                         |
+|-----------|---------------------------------|
+| F-13.18.5 | Cover Point Detection and Usage |
 
 1. **F-13.18.5** — Automatic identification of valid cover positions from world geometry using
    spatial analysis. Cover points are classified by type: half cover (crouch height, provides torso

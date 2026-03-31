@@ -2,11 +2,11 @@
 
 ## String Management
 
-| ID        | Feature                             | Requirements |
-|-----------|-------------------------------------|--------------|
-| F-15.13.1 | String Table Editor                 | R-15.13.1    |
-| F-15.13.2 | Localization Preview and Validation | R-15.13.2    |
-| F-15.13.3 | Translation Workflow Integration    | R-15.13.3    |
+| ID | Feature |
+| ----------- | ------------------------------------- |
+| F-15.13.1 | String Table Editor |
+| F-15.13.2 | Localization Preview and Validation |
+| F-15.13.3 | Translation Workflow Integration |
 
 1. **F-15.13.1** — A visual spreadsheet editor for managing all localizable strings in the project.
    Displays string keys, source language text, and translations for each target locale in a

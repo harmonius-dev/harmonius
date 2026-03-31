@@ -2,10 +2,10 @@
 
 ## Remote Rendering
 
-| ID        | Feature                            | Requirements |
-|-----------|------------------------------------|--------------|
-| F-15.12.1 | Remote Desktop Optimized Rendering | R-15.12.1    |
-| F-15.12.2 | Remote Editor Protocol             | R-15.12.2    |
+| ID | Feature |
+| ----------- | ------------------------------------ |
+| F-15.12.1 | Remote Desktop Optimized Rendering |
+| F-15.12.2 | Remote Editor Protocol |
 
 1. **F-15.12.1** — The editor renders its viewport to a compressed video stream (H.264 or H.265) for
    remote desktop scenarios, with adaptive bitrate based on measured network bandwidth. Input events
@@ -26,9 +26,9 @@
 
 ## Multi-User Collaboration
 
-| ID        | Feature                                    | Requirements |
-|-----------|--------------------------------------------|--------------|
-| F-15.12.3 | CRDT-Based Real-Time Collaborative Editing | R-15.12.3    |
+| ID | Feature |
+| ----------- | -------------------------------------------- |
+| F-15.12.3 | CRDT-Based Real-Time Collaborative Editing |
 
 1. **F-15.12.3** — Multiple users connect to the same shared world simultaneously, each with their
    own viewport and selection state. All edits synchronize in real time via Conflict-free Replicated
@@ -43,9 +43,9 @@
 
 ## Server Infrastructure
 
-| ID        | Feature                   | Requirements |
-|-----------|---------------------------|--------------|
-| F-15.12.4 | Remote GPU Server Support | R-15.12.4    |
+| ID | Feature |
+| ----------- | --------------------------- |
+| F-15.12.4 | Remote GPU Server Support |
 
 1. **F-15.12.4** — The editor runs headless on a remote GPU server (Linux or Windows), streaming the
    viewport and UI to thin clients via the remote editor protocol (F-15.12.2). Input events are
@@ -59,10 +59,10 @@
 
 ## Session Management
 
-| ID        | Feature                                | Requirements |
-|-----------|----------------------------------------|--------------|
-| F-15.12.5 | Session Handoff and Persistence        | R-15.12.5    |
-| F-15.12.6 | Bandwidth Adaptation and Quality Tiers | R-15.12.6    |
+| ID | Feature |
+| ----------- | ---------------------------------------- |
+| F-15.12.5 | Session Handoff and Persistence |
+| F-15.12.6 | Bandwidth Adaptation and Quality Tiers |
 
 1. **F-15.12.5** — A remote editing session can be suspended and resumed later without losing state.
    Session state — open panels, viewport camera positions, selection, undo history, and unsaved
@@ -84,11 +84,11 @@
 
 ## Cloud Service
 
-| ID        | Feature                                      | Requirements |
-|-----------|----------------------------------------------|--------------|
-| F-15.12.7 | Collaboration Cloud Service                  | R-15.12.7    |
-| F-15.12.8 | CRDT Document Model for Engine Assets        | R-15.12.8    |
-| F-15.12.9 | Collaboration Access Control and Permissions | R-15.12.9    |
+| ID | Feature |
+| ----------- | ---------------------------------------------- |
+| F-15.12.7 | Collaboration Cloud Service |
+| F-15.12.8 | CRDT Document Model for Engine Assets |
+| F-15.12.9 | Collaboration Access Control and Permissions |
 
 1. **F-15.12.7** — A centralized cloud service written in Rust that manages real-time CRDT
    synchronization, session state, presence, and collaboration metadata. The service uses PostgreSQL
@@ -119,11 +119,11 @@
 
 ## Communication
 
-| ID         | Feature                             | Requirements |
-|------------|-------------------------------------|--------------|
-| F-15.12.10 | Integrated Voice and Text Chat      | R-15.12.10   |
-| F-15.12.11 | Work Groups and Isolated Workspaces | R-15.12.11   |
-| F-15.12.12 | AI Agent Collaboration              | R-15.12.12   |
+| ID | Feature |
+| ------------ | ------------------------------------- |
+| F-15.12.10 | Integrated Voice and Text Chat |
+| F-15.12.11 | Work Groups and Isolated Workspaces |
+| F-15.12.12 | AI Agent Collaboration |
 
 1. **F-15.12.10** — Built-in voice chat (spatial and non-spatial modes) and text chat within
    collaborative sessions. Users join voice channels per work group. Text chat supports threads,
@@ -151,10 +151,10 @@
 
 ## Review and Comments
 
-| ID         | Feature                       | Requirements |
-|------------|-------------------------------|--------------|
-| F-15.12.13 | Asset and Scene Comments      | R-15.12.13   |
-| F-15.12.14 | Pull Request Review in Editor | R-15.12.14   |
+| ID | Feature |
+| ------------ | ------------------------------- |
+| F-15.12.13 | Asset and Scene Comments |
+| F-15.12.14 | Pull Request Review in Editor |
 
 1. **F-15.12.13** — Attach comments to any asset, entity, node, property, or spatial location in the
    world. Comments are threaded (reply chains), support mentions (@user), and display as

@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/rendering/](../../features/rendering/),
-> [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
-> to those definitions.
+> [features/rendering/](../../features/), [requirements/rendering/](../../requirements/), and
+> [user-stories/rendering/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement        | User Stories             |
 |----------|--------------------|--------------------------|
@@ -1909,11 +1908,11 @@ reduce complexity.
 
 A visibility buffer (V-buffer) rendering approach would replace both Forward+ and Deferred with a
 single pipeline that stores triangle IDs and barycentric coordinates per pixel, then evaluates
-materials and lighting in a single compute pass. This approach (used by id Tech 7 and Nanite)
-handles both mobile and desktop efficiently and eliminates G-buffer bandwidth. We chose the
-dual-path approach because V-buffer requires mesh shader support for efficient triangle ID storage,
-and the emulation path (F-2.1.11) for mesh shaders on older hardware adds latency. Once mesh shaders
-are ubiquitous, migrating to V-buffer would unify the lighting paths.
+materials and lighting in a single compute pass. This approach (used by id Tech 7 and Mesh
+Streaming) handles both mobile and desktop efficiently and eliminates G-buffer bandwidth. We chose
+the dual-path approach because V-buffer requires mesh shader support for efficient triangle ID
+storage, and the emulation path (F-2.1.11) for mesh shaders on older hardware adds latency. Once
+mesh shaders are ubiquitous, migrating to V-buffer would unify the lighting paths.
 
 **Q4. Does this design solve all customer problems?**
 

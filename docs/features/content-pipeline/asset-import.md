@@ -2,9 +2,9 @@
 
 ## Native Format Ingestion
 
-| ID       | Feature                | Requirements |
-|----------|------------------------|--------------|
-| F-12.1.1 | Native Asset Ingestion | R-12.1.1     |
+| ID       | Feature                |
+|----------|------------------------|
+| F-12.1.1 | Native Asset Ingestion |
 
 1. **F-12.1.1** — Accept asset exports from DCC tool plugins (F-12.6) in the engine's native binary
    format (F-12.7.1). The ingestion pipeline validates the format version and magic bytes, verifies
@@ -15,9 +15,9 @@
 
 ## Texture Source Import
 
-| ID       | Feature               | Requirements |
-|----------|-----------------------|--------------|
-| F-12.1.2 | Texture Source Import | R-12.1.2     |
+| ID       | Feature               |
+|----------|-----------------------|
+| F-12.1.2 | Texture Source Import |
 
 1. **F-12.1.2** — Import raw texture source files (PNG, JPEG, EXR, HDR, TIFF) as a convenience
    fallback for textures not exported from DCC plugins. PNG and JPEG are decoded for sRGB color
@@ -27,9 +27,9 @@
 
 ## Audio Source Import
 
-| ID       | Feature             | Requirements |
-|----------|---------------------|--------------|
-| F-12.1.3 | Audio Source Import | R-12.1.3     |
+| ID       | Feature             |
+|----------|---------------------|
+| F-12.1.3 | Audio Source Import |
 
 1. **F-12.1.3** — Import raw audio source files in lossless (WAV, FLAC) and compressed (Ogg Vorbis)
    formats for processing into the engine's runtime audio format. Metadata such as sample rate,
@@ -39,9 +39,9 @@
 
 ## Validation
 
-| ID       | Feature                               | Requirements |
-|----------|---------------------------------------|--------------|
-| F-12.1.4 | Import Validation and Error Reporting | R-12.1.4     |
+| ID       | Feature                               |
+|----------|---------------------------------------|
+| F-12.1.4 | Import Validation and Error Reporting |
 
 1. **F-12.1.4** — Validate all imported assets against schema definitions, format version
    constraints, and content integrity checks. Errors are reported with source file path and byte
@@ -52,9 +52,9 @@
 
 ## Batch Import
 
-| ID       | Feature                             | Requirements |
-|----------|-------------------------------------|--------------|
-| F-12.1.5 | Batch Import with Progress Tracking | R-12.1.5     |
+| ID       | Feature                             |
+|----------|-------------------------------------|
+| F-12.1.5 | Batch Import with Progress Tracking |
 
 1. **F-12.1.5** — Import multiple assets in a single operation with a progress bar, estimated time
    remaining, and per-asset status indicators. Processing is parallelized across available CPU cores

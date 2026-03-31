@@ -1,135 +1,65 @@
 # R-15.21 -- Specialized Editor Requirements
 
-## Entity Editing
+## Requirements
 
-| ID        | Derived From                                                    |
-|-----------|-----------------------------------------------------------------|
-| R-15.21.1 | [F-15.21.1](../../features/tools-editor/specialized-editors.md) |
+1. **R-15.21.1** — The engine **SHALL** provide an entity inspector with component display,
+   searchable palette, hierarchy navigation, and undo/redo integration.
+   - **Rationale:** Entity inspection is the most common editing operation.
+   - **Verification:** Add a component, undo, and verify it is removed.
 
-1. **R-15.21.1** — The editor **SHALL** provide an inspector panel that displays all components on
-   the selected entity with type-appropriate property widgets, supports adding and removing
-   components via a searchable palette, and integrates with undo/redo (F-15.1.3) and collaborative
-   editing (F-15.12.3).
-   - **Rationale:** Entity inspection is the primary editing interface for all ECS-based content.
-   - **Verification:** Integration test: select an entity, add a component via the palette, undo the
-     addition, and verify the component is removed.
+2. **R-15.21.2** — The engine **SHALL** provide a visual animation graph editor with
+   blend/transition nodes, real-time preview, and scrubbing.
+   - **Rationale:** Visual animation authoring is required for the no-code workflow.
+   - **Verification:** Create a blend node and verify the preview shows interpolated output.
 
-## Graph Editors
+3. **R-15.21.3** — The engine **SHALL** provide a behavior tree editor with execution state overlays
+   and subtree references.
+   - **Rationale:** AI behavior authoring requires visual debugging during play mode.
+   - **Verification:** Run a behavior tree and verify active node highlighting.
 
-| ID        | Derived From                                                    |
-|-----------|-----------------------------------------------------------------|
-| R-15.21.2 | [F-15.21.2](../../features/tools-editor/specialized-editors.md) |
-| R-15.21.3 | [F-15.21.3](../../features/tools-editor/specialized-editors.md) |
-| R-15.21.4 | [F-15.21.4](../../features/tools-editor/specialized-editors.md) |
+4. **R-15.21.4** — The engine **SHALL** provide a general-purpose state machine editor with
+   hierarchical states, parallel regions, and execution visualization.
+   - **Rationale:** State machines are used across animation, AI, gameplay, and UI systems.
+   - **Verification:** Create a hierarchical state machine and verify sub-state entry.
 
-1. **R-15.21.2** — The editor **SHALL** provide a visual graph editor for animation blending,
-   transitions, and state machines with real-time preview on a character model, scrubbing, slow
-   motion, and frame stepping. The graph editor **SHALL** use animation-specific node types built on
-   the logic graph runtime (F-15.8.1).
-   - **Rationale:** Animation state machines are too complex for text-based editing; visual graphs
-     with live preview accelerate iteration.
-   - **Verification:** Integration test: create a blend between two animation clips and verify the
-     preview renders the blended result.
-2. **R-15.21.3** — The editor **SHALL** provide a visual tree editor for AI behavior trees with
-   execution state overlays (active, succeeded, failed), subtree references for reusable patterns,
-   and team-shared behavior libraries.
-   - **Rationale:** AI behavior trees require visual debugging to understand decision flow at
-     runtime.
-   - **Verification:** Integration test: create a behavior tree, run it in play mode, and verify
-     active node highlighting.
-3. **R-15.21.4** — The editor **SHALL** provide a general-purpose visual state machine editor with
-   hierarchical states, parallel regions, history states, and execution visualization during play
-   mode. The editor **SHALL** be reusable across animation, AI, gameplay, and UI systems.
-   - **Rationale:** A shared state machine editor avoids duplicating visual editing infrastructure
-     across subsystems.
-   - **Verification:** Integration test: create a hierarchical state machine with a sub-machine and
-     verify execution visualization shows the current state during play mode.
+5. **R-15.21.5** — The engine **SHALL** provide a quest graph editor with objectives, prerequisites,
+   branching, rewards, and graph validation.
+   - **Rationale:** Quest authoring requires visual graph tools with connectivity validation.
+   - **Verification:** Create a disconnected quest and verify the validator flags it.
 
-## Data Table Editors
+6. **R-15.21.6** — The engine **SHALL** provide a loot table editor with probability weights, nested
+   sub-tables, and distribution simulation.
+   - **Rationale:** Loot balance requires statistical simulation.
+   - **Verification:** Simulate 10,000 drops and verify the histogram matches configured weights.
 
-| ID        | Derived From                                                    |
-|-----------|-----------------------------------------------------------------|
-| R-15.21.5 | [F-15.21.5](../../features/tools-editor/specialized-editors.md) |
-| R-15.21.6 | [F-15.21.6](../../features/tools-editor/specialized-editors.md) |
-| R-15.21.7 | [F-15.21.7](../../features/tools-editor/specialized-editors.md) |
-| R-15.21.8 | [F-15.21.8](../../features/tools-editor/specialized-editors.md) |
-| R-15.21.9 | [F-15.21.9](../../features/tools-editor/specialized-editors.md) |
+7. **R-15.21.7** — The engine **SHALL** provide an ability definition editor with cooldowns, costs,
+   targeting, effects, combos, and comparison views.
+   - **Rationale:** Ability authoring and balance review must be visual and data-driven.
+   - **Verification:** Compare two abilities and verify the comparison view shows correct stat
+     differences.
 
-1. **R-15.21.5** — The editor **SHALL** provide a visual quest graph editor with quest nodes showing
-   objectives, completion conditions, and rewards. The editor **SHALL** validate graph connectivity,
-   flag unreachable quests, and simulate quest progression for testing. The editor **SHALL**
-   integrate with dialogue (F-13.6.4) and localization (F-15.13.1).
-   - **Rationale:** Quest chains require graph visualization for dependency tracking and
-     completeness validation.
-   - **Verification:** Integration test: create a quest graph with an unreachable quest and verify
-     the editor flags it.
-2. **R-15.21.6** — The editor **SHALL** provide a loot table editor with probability-weighted item
-   pools, quantity ranges, conditional modifiers (player level, difficulty, luck), nested
-   sub-tables, and a simulation mode that rolls thousands of times and displays distribution
-   histograms.
-   - **Rationale:** Loot balance requires statistical simulation to verify probability distributions
-     before playtesting.
-   - **Verification:** Integration test: create a loot table, run 10,000 simulations, and verify the
-     histogram matches the configured weights within a 5% tolerance.
-3. **R-15.21.7** — The editor **SHALL** provide an ability definition editor with cooldowns,
-   resource costs, targeting rules, effects, combo chains, summary cards, category filtering, and
-   comparison views for balance review. The editor **SHALL** link to VFX (F-11.6.1) and animation
-   (F-9.4.1) assets per ability.
-   - **Rationale:** Ability definitions span multiple subsystems; a unified editor accelerates
-     balance iteration.
-   - **Verification:** Integration test: create two abilities with different costs and verify
-     comparison view displays both side by side.
-4. **R-15.21.8** — The editor **SHALL** provide an equipment statistics editor with stat columns,
-   slot assignments, set bonuses, level requirements, rarity tiers, comparison views, balance
-   heatmaps, and CSV export. The editor **SHALL** support formula references (F-13.7.5) for computed
-   stats.
-   - **Rationale:** Equipment balance requires tabular views with outlier detection across hundreds
-     of items.
-   - **Verification:** Integration test: create equipment entries with outlier stats and verify the
-     balance heatmap highlights them.
-5. **R-15.21.9** — The editor **SHALL** provide an economy balancing editor with currency
-   definitions, vendor price tables, exchange rates, price-over-progression curves, sink/faucet
-   analysis, and time simulation. The editor **SHALL** support multiple currency types and
-   conversion rate matrices.
-   - **Rationale:** Game economies require simulation to prevent inflation and balance currency
-     flows.
-   - **Verification:** Integration test: define two currencies with an exchange rate and verify the
-     simulation detects an unsustainable faucet.
+8. **R-15.21.8** — The engine **SHALL** provide an equipment stat editor with balance heatmaps and
+   CSV export.
+   - **Rationale:** Equipment balance across tiers requires visual outlier detection.
+   - **Verification:** Import a stat table and verify the heatmap highlights outlier values.
 
-## Visual Graph Editors
+9. **R-15.21.9** — The engine **SHALL** provide an economy editor with price curves, inflation
+   modeling, and unsustainable flow detection.
+   - **Rationale:** Economic balance must be modeled before live deployment.
+   - **Verification:** Create a faucet exceeding sinks and verify the editor flags the imbalance.
 
-| ID         | Derived From                                                     |
-|------------|------------------------------------------------------------------|
-| R-15.21.10 | [F-15.21.10](../../features/tools-editor/specialized-editors.md) |
-| R-15.21.11 | [F-15.21.11](../../features/tools-editor/specialized-editors.md) |
-| R-15.21.12 | [F-15.21.12](../../features/tools-editor/specialized-editors.md) |
+10. **R-15.21.10** — The engine **SHALL** provide a node-based Effect Graph editor with real-time
+    preview and event trigger nodes.
+    - **Rationale:** VFX authoring is visual; real-time preview enables fast iteration.
+    - **Verification:** Create a particle emitter node and verify the preview renders particles.
 
-1. **R-15.21.10** — The editor **SHALL** provide a node-based VFX authoring editor wrapping the
-   effect graph system (F-11.6.1) with real-time preview alongside the graph. The editor **SHALL**
-   provide VFX-specific nodes for particle emission, force fields, collision, rendering, and event
-   triggers.
-   - **Rationale:** VFX authoring requires immediate visual feedback while editing graph parameters.
-   - **Verification:** Integration test: add a particle emission node and verify the preview renders
-     particles in real time.
-2. **R-15.21.11** — The editor **SHALL** provide a node-based material authoring editor wrapping the
-   material graph system (F-15.3.1) with live material preview on a configurable mesh. The editor
-   **SHALL** provide nodes for texture sampling, math operations, UV manipulation, and PBR parameter
-   outputs.
-   - **Rationale:** Material creation requires real-time preview to evaluate PBR parameter changes.
-   - **Verification:** Integration test: connect a texture sample node to the base color output and
-     verify the preview mesh updates in real time.
-3. **R-15.21.12** — The plugin API **SHALL** support defining custom logic graph node types with
-   inputs, outputs, parameter schemas, execution logic, node categories, documentation strings, and
-   custom thumbnail icons. Custom nodes **SHALL** appear in the graph node palette alongside
-   built-in nodes and participate in graph compilation (F-15.8.12) and debugging (F-15.8.11).
-   - **Rationale:** Studios need domain-specific graph nodes without modifying the engine.
-   - **Verification:** Integration test: register a custom node via plugin, add it to a graph,
-     compile the graph, and verify execution produces the expected output.
+11. **R-15.21.11** — The engine **SHALL** provide a node-based material graph editor with PBR
+    outputs and live viewport preview on configurable meshes.
+    - **Rationale:** Material authoring is a primary visual workflow.
+    - **Verification:** Connect an albedo output and verify the preview updates.
 
----
-
-## User Story Traceability
-
-User stories for this domain are maintained in
-[user-stories/tools-editor/specialized-editors.md](../../user-stories/tools-editor/specialized-editors.md).
-Requirements in this document are derived from those user stories.
+12. **R-15.21.12** — The engine **SHALL** provide a plugin API for custom logic graph node types
+    that participate in compilation and debugging.
+    - **Rationale:** Extensible node types enable project-specific logic.
+    - **Verification:** Register a custom node, use it in a graph, compile, and verify it executes
+      correctly.

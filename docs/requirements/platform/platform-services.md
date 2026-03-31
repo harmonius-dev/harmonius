@@ -2,161 +2,118 @@
 
 ## Achievements and Progression
 
-| ID       | Derived From                                             |
-|----------|----------------------------------------------------------|
-| R-14.5.1 | [F-14.5.1](../../features/platform/platform-services.md) |
-| R-14.5.2 | [F-14.5.2](../../features/platform/platform-services.md) |
-
 1. **R-14.5.1** — The engine **SHALL** unlock achievements through a unified abstraction over Steam,
    PlayStation Network, and Xbox Live APIs, mapping internal achievement IDs to platform-specific
-   identifiers and deferring unlock attempts when the platform service is temporarily unavailable,
-   retrying automatically on reconnection.
-   - **Rationale:** A unified abstraction prevents gameplay code from branching on platform, and
-     deferred unlocks ensure players never lose achievement progress during transient network or
-     service outages.
-   - **Verification:** Integration test per platform: unlock an achievement while online and verify
-     it appears in the platform's achievement list. Disconnect the network, unlock a second
-     achievement, reconnect, and verify the deferred unlock completes automatically. Verify the
-     internal-to-platform ID mapping resolves correctly for all configured achievements.
+   identifiers and deferring unlock attempts when the service is temporarily unavailable, retrying
+   on reconnection.
+   - **Rationale:** A unified abstraction prevents gameplay branching on platform. Deferred unlocks
+     ensure no achievement is lost during transient outages.
+   - **Verification:** Integration test per platform: unlock while online, verify on platform list.
+     Disconnect, unlock, reconnect, verify deferred unlock completes. Verify ID mapping resolves.
+
 2. **R-14.5.2** — The engine **SHALL** submit and query ranked scores through platform leaderboard
-   APIs, supporting global, friends-only, and around-player queries, with score submissions batched
-   and retried on transient failures, and query results cached to respect platform rate limits.
-   - **Rationale:** Batching and retry ensure score submissions are not lost during network hiccups,
-     while caching prevents rate-limit violations that would block leaderboard access for all
-     players.
-   - **Verification:** Integration test: submit 10 scores, query global and friends-only
-     leaderboards, and verify correct ranking order. Simulate a transient network failure during
-     submission and verify scores are retried and eventually recorded. Verify cached results are
-     served for repeated queries within the cache TTL.
+   APIs, supporting global, friends-only, and around-player queries, with submissions batched and
+   retried on transient failures and query results cached to respect platform rate limits.
+   - **Rationale:** Batching and retry prevent score loss during network issues. Caching prevents
+     rate-limit violations.
+   - **Verification:** Integration test: submit 10 scores, query global and friends-only, verify
+     ranking. Simulate transient failure, verify retry. Query twice within cache TTL, verify second
+     uses cache.
 
 ## Social
 
-| ID       | Derived From                                             |
-|----------|----------------------------------------------------------|
-| R-14.5.3 | [F-14.5.3](../../features/platform/platform-services.md) |
-| R-14.5.4 | [F-14.5.4](../../features/platform/platform-services.md) |
-
-1. **R-14.5.3** — The engine **SHALL** update the player's platform rich presence with contextual
-   game information (current zone, party size, activity type) visible to friends on the platform's
-   social UI, throttled to at most one update per 15 seconds to stay within platform API rate
+3. **R-14.5.3** — The engine **SHALL** update rich presence with contextual game information (zone,
+   party size, activity), throttled to at most one update per 15 seconds to stay within API rate
    limits.
-   - **Rationale:** Rich presence drives organic discovery by showing friends what content a player
-     is engaged with, while throttling prevents API rate-limit violations that would silently drop
-     updates.
-   - **Verification:** Integration test: set rich presence with zone and activity fields and verify
-     the platform API receives the correct values. Issue 10 rapid updates within 5 seconds and
-     verify only one API call is made, with the most recent state. Verify presence clears on session
-     disconnect.
-2. **R-14.5.4** — The engine **SHALL** bridge the engine's voice chat with platform party and voice
-   systems so that players in a platform party hear each other in-game without manual channel setup,
-   supporting mute, per-player volume control, and voice activity indicators sourced from the
-   platform voice stream.
-   - **Rationale:** Automatic platform party bridging eliminates friction for players who expect
-     their platform party voice to work seamlessly in-game without manual configuration.
-   - **Verification:** Integration test: create a platform party of 3 players, launch the game, and
-     verify all players hear each other without manual setup. Mute one player and verify their audio
-     is silenced for other participants. Verify voice activity indicators reflect actual speech from
-     the platform voice stream.
+   - **Rationale:** Rich presence drives organic discovery. Throttling prevents rate-limit
+     violations.
+   - **Verification:** Integration test: set rich presence, verify platform API receives correct
+     values. Issue 10 rapid updates within 5 seconds, verify only one API call. Verify presence
+     clears on disconnect.
+
+4. **R-14.5.4** — The engine **SHALL** bridge voice chat with platform party systems so players hear
+   each other in-game without manual channel setup, supporting mute, per-player volume, and voice
+   activity indicators.
+   - **Rationale:** Automatic bridging eliminates friction for players expecting platform party
+     voice to work seamlessly.
+   - **Verification:** Integration test: create a party of 3 players, launch game, verify all hear
+     each other. Mute one player, verify silenced. Verify voice activity indicators reflect speech.
 
 ## Cloud and Entitlements
 
-| ID        | Derived From                                              |
-|-----------|-----------------------------------------------------------|
-| R-14.5.5  | [F-14.5.5](../../features/platform/platform-services.md)  |
-| R-14.5.6  | [F-14.5.6](../../features/platform/platform-services.md)  |
-| R-14.5.8  | [F-14.5.8](../../features/platform/platform-services.md)  |
-| R-14.5.9  | [F-14.5.9](../../features/platform/platform-services.md)  |
-| R-14.5.10 | [F-14.5.10](../../features/platform/platform-services.md) |
-| R-14.5.11 | [F-14.5.11](../../features/platform/platform-services.md) |
-| R-14.5.12 | [F-14.5.12](../../features/platform/platform-services.md) |
-| R-14.5.7  | [F-14.5.7](../../features/platform/platform-services.md)  |
+5. **R-14.5.5** — The engine **SHALL** save and load player settings, key bindings, and UI layouts
+   to platform cloud storage, using last-write-wins with timestamp comparison for conflict
+   resolution, and respecting platform quota limits.
+   - **Rationale:** Cloud sync ensures preferences roam across devices. Respecting quotas prevents
+     certification failures.
+   - **Verification:** Integration test: save settings, read from second device, verify integrity.
+     Simulate conflict, verify last-write-wins. Exceed quota, verify graceful rejection.
 
-1. **R-14.5.5** — The engine **SHALL** save and load player settings, key bindings, UI layouts, and
-   add-on configurations to platform-managed cloud storage, using last-write-wins with timestamp
-   comparison for conflict resolution, and respecting platform-specific file size and quota limits.
-   - **Rationale:** Cloud-synced preferences ensure players retain their settings when switching
-     machines, while respecting quota limits prevents certification failures on consoles.
-   - **Verification:** Integration test: save settings to cloud storage, read them back from a
-     second device, and verify data integrity. Simulate a conflict by writing from two devices and
-     verify last-write-wins resolves correctly via timestamp. Verify writes exceeding the platform
-     quota are rejected gracefully with an error rather than silent truncation.
-2. **R-14.5.6** — The engine **SHALL** query the platform for owned entitlements (base game,
-   expansions, cosmetic DLC, subscription tiers) at login and periodically during play, gating
-   content access based on entitlement state and detecting subscription lapses or new purchases
-   without requiring a restart.
-   - **Rationale:** Periodic entitlement checks ensure content gating remains accurate during long
-     play sessions where a subscription may lapse or a player may purchase DLC from an external
-     storefront.
-   - **Verification:** Integration test: verify a player with base-game-only entitlement cannot
-     access expansion content. Purchase DLC externally during a session and verify the periodic
-     check detects the new entitlement within the configured polling interval. Verify unavailable
-     content is hidden or marked as locked per platform certification requirements.
-3. **R-14.5.8** — The engine **SHALL** persist player preferences to platform-appropriate local
-   directories (`%LOCALAPPDATA%` on Windows, `~/Library/Application Support/` on macOS,
-   `$XDG_DATA_HOME` on Linux) as human-readable TOML files. Preferences **SHALL** sync to platform
-   cloud storage (R-14.5.5) when available. Conflict between local and cloud **SHALL** present a
-   choice dialog with timestamps rather than silently overwriting. Write **SHALL** use atomic
-   write-to-temp- then-rename to prevent corruption. Writes **SHALL** complete within 1 second of
-   modification. A reset-to-defaults option **SHALL** restore all preferences to shipping defaults.
-   - **Rationale:** Player preferences must survive crashes (atomic write), roam across devices
-     (cloud sync), and be recoverable from corruption (human-readable TOML, reset option).
-   - **Verification:** Set a preference, kill the process mid-write; verify the file is not
-     corrupted. Modify preferences on two machines offline; reconnect and verify conflict dialog
-     appears. Verify reset-to-defaults restores all values.
-4. **R-14.5.9** — The engine **SHALL** manage a local cache directory for downloaded content (asset
-   bundles, DLC, mods, streaming data, generation output) in platform-appropriate cache locations
-   (`%LOCALAPPDATA%\...\Cache\` on Windows, `~/Library/Caches/` on macOS, `$XDG_CACHE_HOME` on
-   Linux). Cache size **SHALL** be capped at a configurable maximum (default 10 GB) with LRU
-   eviction by category priority. Players **SHALL** be able to view cache usage and clear categories
-   from the settings UI. The OS **SHALL** be able to reclaim cache space on mobile without losing
-   player progress.
-   - **Rationale:** Unmanaged caches grow unbounded; managed LRU eviction prevents disk-full errors.
-     Platform-appropriate directories ensure OS storage management works correctly.
-   - **Verification:** Fill cache to 10 GB; download a new asset; verify LRU eviction frees space
-     and the download succeeds. Clear a specific category; verify only that category is removed. On
-     iOS, trigger system storage pressure; verify cache is purged.
-5. **R-14.5.10** — The engine **SHALL** maintain a developer build artifact cache in
-   `.harmonius/cache/` within the project directory (git-ignored) storing compiled assets, shader
-   bytecode, logic graph bytecode, and thumbnails. Cache lookup **SHALL** follow a three-tier chain:
-   local cache first, shared network cache (R-15.11.1) second, full rebuild last. Cache keys
-   **SHALL** be content hashes (BLAKE3) so changed source assets automatically invalidate stale
-   outputs. A CLI command **SHALL** allow clearing the cache by category. Cache size **SHALL** be
-   displayed in the editor status bar.
-   - **Rationale:** Local caching reduces incremental build times from minutes to seconds.
-     Three-tier lookup ensures cache hits from team members via the shared network cache.
-   - **Verification:** Build an asset; verify cached output exists. Modify the source; verify the
-     stale cached output is evicted. Clear the local cache; verify the shared network cache provides
-     the asset without a full rebuild.
-6. **R-14.5.11** — The engine **SHALL** serialize compiled GPU pipeline state objects to disk keyed
-   by hash of shader bytecode, render state, vertex layout, and render target formats. Cached PSOs
-   **SHALL** be loaded during a warmup phase to eliminate shader compilation stutter. Cache entries
-   **SHALL** be invalidated when GPU model or driver version changes. Shipped games **SHALL**
-   include a pre-built PSO cache generated from a reference playthrough during the cook process.
-   Loading a cached PSO **SHALL** take less than 1ms (vs 100+ms for first-time compilation).
-   - **Rationale:** Shader compilation stutter is the most visible performance issue in modern
-     games. PSO caching eliminates it for all previously-encountered pipeline states.
-   - **Verification:** Play a scene; quit and relaunch; verify zero compilation stutter on the
-     second run. Update the GPU driver; verify stale cache entries are invalidated and recompiled.
-     Measure PSO load time from cache; verify under 1ms per state.
-7. **R-14.5.12** — The engine **SHALL** provide a managed temporary directory at the
-   platform-appropriate path with automatic cleanup of orphaned files from crashed sessions (files
-   older than 24 hours) on startup. A `TempFileHandle` RAII type **SHALL** guarantee deletion when
-   dropped. Temp directory size **SHALL** be capped at a configurable maximum (default 1 GB) with
-   oldest-first eviction. Temp files **SHALL NOT** contain player-important data — all temp data
-   **SHALL** be recreatable from non-temp sources.
-   - **Rationale:** Unmanaged temp files accumulate across sessions and crashes, wasting disk space.
-     RAII handles prevent leaks; orphan cleanup handles crash scenarios.
-   - **Verification:** Allocate a temp file via the API; drop the handle; verify the file is
-     deleted. Kill the process with temp files open; relaunch; verify orphaned files are cleaned up.
-     Fill temp to 1 GB; allocate another; verify oldest file is evicted.
-8. **R-14.5.7** — The engine **SHALL** enforce platform-specific certification requirements
-   including proper suspend/resume handling, mandatory system UI overlays, controller disconnection
-   prompts, content rating gates, accessibility mandates, and safe-area rendering, on all supported
-   console platforms.
-   - **Rationale:** Non-compliance with any mandatory certification requirement blocks release on
-     console storefronts, making compliance a hard prerequisite for shipping.
-   - **Verification:** Integration test per console: trigger a suspend event and verify the engine
-     saves state and releases non-essential resources within the platform-mandated timeframe.
-     Trigger a controller disconnection and verify the engine displays a prompt. Verify system UI
-     overlay rendering is not obstructed. Run the platform's automated certification test suite and
-     verify all mandatory checks pass.
+6. **R-14.5.6** — The engine **SHALL** query the platform for owned entitlements at login and
+   periodically during play, gating content access and detecting subscription lapses or new
+   purchases without requiring a restart.
+   - **Rationale:** Periodic checks ensure content gating remains accurate during long sessions.
+   - **Verification:** Integration test: verify base-game-only entitlement blocks expansion content.
+     Purchase DLC mid-session, verify periodic check detects new entitlement. Verify locked content
+     is hidden or marked per certification.
+
+## User Preferences
+
+7. **R-14.5.8** — The engine **SHALL** persist preferences to platform-appropriate local directories
+   as human-readable TOML files. Preferences **SHALL** sync to cloud (R-14.5.5) when available.
+   Conflict between local and cloud **SHALL** present a choice dialog. Writes **SHALL** use atomic
+   write-to-temp- then-rename. Writes **SHALL** complete within 1 second. A reset-to-defaults
+   **SHALL** be available.
+   - **Rationale:** Preferences must survive crashes (atomic write), roam across devices (cloud
+     sync), and be recoverable (human-readable TOML, reset).
+   - **Verification:** Set preference, kill mid-write; verify no corruption. Modify on two machines
+     offline; reconnect, verify conflict dialog. Verify reset restores all defaults.
+
+## Local Caching
+
+8. **R-14.5.9** — The engine **SHALL** manage a local cache directory for downloaded content (asset
+   bundles, DLC, mods, streaming data) in platform-appropriate cache locations. Cache size **SHALL**
+   be capped at a configurable maximum (default 10 GB) with LRU eviction by category priority.
+   Players **SHALL** view usage and clear categories from settings.
+   - **Rationale:** Unmanaged caches grow unbounded. Managed LRU eviction prevents disk-full errors.
+   - **Verification:** Fill to 10 GB; download new asset; verify LRU eviction. Clear a category;
+     verify only it is removed. On iOS, trigger storage pressure; verify cache is purged.
+
+9. **R-14.5.10** — The engine **SHALL** maintain a developer build cache in `.harmonius/cache/`
+   (git-ignored) with a three-tier lookup: local cache, shared network cache, full rebuild. Cache
+   keys **SHALL** be BLAKE3 content hashes. A CLI command **SHALL** allow clearing by category.
+   - **Rationale:** Local caching reduces incremental build times. Three-tier lookup shares results
+     across team members.
+   - **Verification:** Build an asset, verify cached output. Modify source, verify stale output
+     evicted. Clear local, verify shared cache provides asset.
+
+10. **R-14.5.11** — The engine **SHALL** serialize compiled GPU pipeline state objects to disk keyed
+    by hash of shader bytecode, render state, vertex layout, and render target formats. Cache
+    **SHALL** be invalidated on GPU model or driver change. Shipped games **SHALL** include a
+    pre-built PSO cache. Loading a cached PSO **SHALL** take under 1 ms.
+    - **Rationale:** Shader compilation stutter is the most visible performance issue. PSO caching
+      eliminates it for previously-seen states.
+    - **Verification:** Play a scene, quit, relaunch; verify zero stutter on second run. Update
+      driver; verify stale entries invalidated. Measure PSO load time; verify under 1 ms.
+
+## Temporary Files
+
+11. **R-14.5.12** — The engine **SHALL** provide a managed temp directory with automatic cleanup of
+    orphaned files (older than 24 hours) on startup. A `TempFileHandle` RAII type **SHALL** delete
+    on drop. Temp size **SHALL** be capped (default 1 GB) with oldest-first eviction. Temp data
+    **SHALL** be recreatable from non-temp sources.
+    - **Rationale:** Unmanaged temp files accumulate. RAII handles prevent leaks; orphan cleanup
+      handles crash scenarios.
+    - **Verification:** Allocate temp file, drop handle, verify deleted. Kill process with open
+      temps, relaunch, verify cleanup. Fill to 1 GB, allocate another, verify oldest evicted.
+
+## Console Certification
+
+12. **R-14.5.7** — The engine **SHALL** enforce platform certification requirements including
+    suspend/resume, system UI overlays, controller disconnection prompts, content rating gates,
+    accessibility mandates, and safe-area rendering on all supported console platforms.
+    - **Rationale:** Non-compliance blocks console store release. Engine-level enforcement
+      eliminates per-title certification work.
+    - **Verification:** Integration test per console: trigger suspend, verify state save and
+      resource release within platform deadline. Trigger controller disconnect, verify prompt. Run
+      platform's automated certification suite.

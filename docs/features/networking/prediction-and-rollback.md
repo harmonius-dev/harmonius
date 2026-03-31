@@ -1,16 +1,16 @@
-# 8.4 — Prediction and Rollback
+# 8.4 -- Prediction and Rollback
 
 ## Client-Side Prediction
 
-| ID      | Feature                                    | Requirements |
-|---------|--------------------------------------------|--------------|
-| F-8.4.1 | Input Prediction and Server Reconciliation | R-8.4.1      |
-| F-8.4.2 | Input Buffering and Redundant Transmission | R-8.4.2      |
+| ID      | Feature                                    |
+|---------|--------------------------------------------|
+| F-8.4.1 | Input Prediction and Server Reconciliation |
+| F-8.4.2 | Input Buffering and Redundant Transmission |
 
 1. **F-8.4.1** — Execute player movement and ability inputs immediately on the client using the same
    simulation logic as the server, then reconcile when the server's authoritative result arrives. On
    mismatch, replay all unacknowledged inputs atop the corrected server state within a single frame.
-   This eliminates perceived input latency for the local player while preserving server authority —
+   This eliminates perceived input latency for the local player while preserving server authority --
    essential for responsive combat in an MMO where round-trip times commonly reach 80-150 ms.
    - **Deps:** F-8.2.1, F-8.1.3
    - **Platform:** Mobile limits rollback replay to 4 frames (vs. 8+ on desktop) to bound per-frame
@@ -25,10 +25,10 @@
 
 ## Interpolation
 
-| ID      | Feature                                    | Requirements |
-|---------|--------------------------------------------|--------------|
-| F-8.4.3 | Snapshot Interpolation                     | R-8.4.3      |
-| F-8.4.4 | Entity Extrapolation with Error Correction | R-8.4.4      |
+| ID      | Feature                                    |
+|---------|--------------------------------------------|
+| F-8.4.3 | Snapshot Interpolation                     |
+| F-8.4.4 | Entity Extrapolation with Error Correction |
 
 1. **F-8.4.3** — Interpolate remote entity state between two buffered server snapshots to produce
    smooth visual motion at the client's render frame rate, independent of the server tick rate. The
@@ -49,10 +49,10 @@
 
 ## Lag Compensation
 
-| ID      | Feature                                         | Requirements |
-|---------|-------------------------------------------------|--------------|
-| F-8.4.5 | Server-Side Lag Compensation (Hitbox Rewinding) | R-8.4.5      |
-| F-8.4.6 | Jitter Buffer and Adaptive Tick Alignment       | R-8.4.6      |
+| ID      | Feature                                         |
+|---------|-------------------------------------------------|
+| F-8.4.5 | Server-Side Lag Compensation (Hitbox Rewinding) |
+| F-8.4.6 | Jitter Buffer and Adaptive Tick Alignment       |
 
 1. **F-8.4.5** — Rewind authoritative hitbox positions on the server to match what the attacking
    client saw at the time of input, accounting for the client's round-trip latency and interpolation
@@ -62,8 +62,8 @@
    - **Deps:** F-8.4.1, F-8.4.3
 2. **F-8.4.6** — Maintain a jitter buffer on both client and server to absorb network timing
    variance and deliver packets at a steady cadence to the simulation. The buffer depth adapts
-   dynamically based on measured jitter — expanding during instability and contracting when the
-   connection is stable — to minimize added latency while preventing stutter. Critical for
+   dynamically based on measured jitter -- expanding during instability and contracting when the
+   connection is stable -- to minimize added latency while preventing stutter. Critical for
    maintaining smooth gameplay over consumer internet connections.
    - **Deps:** F-8.1.7
    - **Platform:** Mobile defaults to a deeper jitter buffer (3-5 ticks vs. 1-3 on desktop) to

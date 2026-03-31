@@ -1,180 +1,70 @@
-# R-4.6 — Destruction & Fracture Requirements
+# R-4.6 -- Destruction & Fracture Requirements
 
-## F-4.6.1 Voronoi Fracture Generation
+1. **R-4.6.1** -- The engine **SHALL** generate Voronoi fracture patterns at build time with convex
+   hull fragments, connectivity graphs, and per-platform fragment count caps.
+   - **Rationale:** Pre-computed fracture avoids runtime mesh generation while capping per-platform
+     cost.
+   - **Verification:** Build a fracture asset. Assert fragment count matches the platform cap.
+     Assert connectivity graph is valid.
 
-| ID       | Derived From                                                  |
-|----------|---------------------------------------------------------------|
-| R-4.6.1  | [F-4.6.1](../../features/physics/destruction-and-fracture.md) |
-| R-4.6.1a | [F-4.6.1](../../features/physics/destruction-and-fracture.md) |
+2. **R-4.6.2** -- The engine **SHALL** load pre-fractured meshes from DCC tools as fracture assets
+   with fragment geometry and break thresholds.
+   - **Rationale:** Art-directed fracture enables hero destruction for castle walls and bridges.
+   - **Verification:** Load a pre-fractured mesh. Assert fragments, connectivity, and thresholds
+     load correctly.
 
-1. **R-4.6.1** — Build-Time Voronoi Decomposition: The engine **SHALL** generate 3D Voronoi fracture
-   assets at build time, producing convex hull fragments, connectivity graphs, and joint
-   configurations. Fracture point seeding **SHALL** support random, impact-directed, and
-   artist-guided modes.
-   - **Rationale:** Pre-computed fracture avoids runtime mesh generation cost; multiple seeding
-     modes enable both procedural and art-directed destruction.
-   - **Verification:** Fracture a unit cube into 20 Voronoi fragments. Assert total fragment volume
-     is within 1% of the original.
-2. **R-4.6.1a** — Platform-Specific Fragment Counts: Fragment counts **SHALL** be configurable per
-   platform (default 8 mobile, 64 desktop) in the build pipeline.
-   - **Rationale:** Fragment count directly impacts simulation and rendering cost; platforms have
-     different budgets.
-   - **Verification:** Build fracture assets for mobile and desktop targets. Assert fragment counts
-     match configured values.
+3. **R-4.6.3** -- The engine **SHALL** trigger fracture when cumulative damage exceeds the
+   Destructible threshold, spawning fragment entities with physics, budgeted per frame to avoid
+   hitches.
+   - **Rationale:** Runtime fracture activates destruction while frame-budgeting prevents spikes.
+   - **Verification:** Damage an object past threshold. Assert fragments spawn. Assert spawning is
+     distributed across frames on mobile.
 
-## F-4.6.2 Pre-Fractured Mesh Authoring
+4. **R-4.6.4** -- The engine **SHALL** track progressive damage via DamageHealth with visual
+   cracking stages before full fracture.
+   - **Rationale:** Progressive damage gives players feedback before objects break.
+   - **Verification:** Apply damage incrementally. Assert cracking stages display at configured
+     thresholds.
 
-| ID      | Derived From                                                  |
-|---------|---------------------------------------------------------------|
-| R-4.6.2 | [F-4.6.2](../../features/physics/destruction-and-fracture.md) |
+5. **R-4.6.5** -- The engine **SHALL** propagate stress through fragment connectivity graphs,
+   causing cascading collapse when load-bearing fragments are destroyed.
+   - **Rationale:** Structural analysis produces emergent building collapse from graph connectivity.
+   - **Verification:** Destroy a load-bearing fragment. Assert unsupported fragments fall under
+     gravity.
 
-1. **R-4.6.2** — Pre-Fractured Asset Import: The engine **SHALL** support importing pre-fractured
-   meshes authored in DCC tools, storing fragment geometry, connectivity graph, and joint break
-   thresholds in a fracture asset. An entity with a `Destructible` component **SHALL** reference
-   this asset by handle.
-   - **Rationale:** Hero objects like castle walls and bridges require art-directed fracture
-     patterns that cannot be generated procedurally.
-   - **Verification:** Load a pre-fractured asset with 15 fragments. Trigger fracture. Assert all
-     fragment and joint entities spawn within one frame.
-
-## F-4.6.3 Runtime Fracture and Activation
-
-| ID       | Derived From                                                  |
-|----------|---------------------------------------------------------------|
-| R-4.6.3  | [F-4.6.3](../../features/physics/destruction-and-fracture.md) |
-| R-4.6.3a | [F-4.6.3](../../features/physics/destruction-and-fracture.md) |
-| R-4.6.3b | [F-4.6.3](../../features/physics/destruction-and-fracture.md) |
-
-1. **R-4.6.3** — Damage-Triggered Fracture Activation: The `FractureActivationSystem` **SHALL**
-   trigger fracture when cumulative damage on a `DamageHealth` component exceeds the threshold in
-   the `Destructible` component. The intact entity **SHALL** be despawned and all fragment entities
-   spawned with `RigidBody`, `Collider`, `DebrisLifetime`, and `Transform` components within the
-   same frame.
-   - **Rationale:** Fracture must be responsive to feel impactful; same-frame activation prevents
-     visible delay between impact and destruction.
-   - **Verification:** Apply damage exceeding the threshold. Assert the intact entity is despawned
-     and all fragment entities spawn within the same frame.
-2. **R-4.6.3a** — Fracture Activation Budget: Fracture activation **SHALL** complete within 2 ms for
-   objects with up to 50 fragments.
-   - **Rationale:** Destruction during gameplay must not cause frame hitches; the 2 ms budget keeps
-     fracture within a small fraction of the frame.
-   - **Verification:** Trigger fracture on a 50-fragment object. Measure wall-clock time. Assert
-     completion within 2 ms.
-3. **R-4.6.3b** — Fragment Position Accuracy: Fragment `Transform` positions **SHALL** match the
-   fracture asset layout on spawn, preserving the original object's visual appearance at the moment
-   of fracture.
-   - **Rationale:** Misaligned fragments create visible gaps or overlaps at the moment of
+6. **R-4.6.6** -- The engine **SHALL** manage debris lifecycle with configurable TTL, max count
+   caps, and entity pooling to eliminate allocation churn.
+   - **Rationale:** Debris cleanup prevents entity count from growing unbounded during sustained
      destruction.
-   - **Verification:** Trigger fracture. Assert all fragment positions match the fracture asset
-     layout within 0.1 mm.
+   - **Verification:** Fracture multiple objects. Assert debris count stays within cap. Assert
+     TTL-expired debris despawns.
 
-## F-4.6.4 Progressive Damage Model
+7. **R-4.6.7** -- The engine **SHALL** reduce distant debris to visual-only particles with no
+   simulation cost and simplify collision shapes for mid-range debris.
+   - **Rationale:** Debris LOD bounds simulation cost for distant fragments.
+   - **Verification:** Observe debris at distance. Assert particle fallback activates. Assert no
+     physics cost for distant debris.
 
-| ID       | Derived From                                                  |
-|----------|---------------------------------------------------------------|
-| R-4.6.4  | [F-4.6.4](../../features/physics/destruction-and-fracture.md) |
-| R-4.6.4a | [F-4.6.4](../../features/physics/destruction-and-fracture.md) |
+8. **R-4.6.8** -- The engine **SHALL** auto-generate colliders from voxel SDF meshes with
+   incremental updates on terrain modification.
+   - **Rationale:** Voxel terrain edits must produce correct physics collision immediately.
+   - **Verification:** Edit voxel terrain. Assert collider regenerates for modified chunks only.
 
-1. **R-4.6.4** — Impulse-Based Damage Accumulation: The `DamageAccumulationSystem` **SHALL** process
-   contact events and subtract damage from `DamageHealth` based on impact impulse magnitude. Visual
-   damage stages **SHALL** be driven by configurable thresholds in the `DamageHealth` component.
-   - **Rationale:** Progressive visual damage (cracks before fracture) provides gameplay feedback
-     and heightens the destruction experience.
-   - **Verification:** Apply incremental impulses to a 3-stage `DamageHealth` entity. Assert each
-     stage triggers in order with integrity decreasing proportionally within 5%.
-2. **R-4.6.4a** — Server-Authoritative Damage State: `DamageHealth` state **SHALL** replicate via
-   the ECS state replication system to prevent client-side cheating.
-   - **Rationale:** Damage values must be authoritative on the server to prevent clients from
-     bypassing destruction.
-   - **Verification:** Modify `DamageHealth` on the client. Assert the server rejects the
-     modification and re-synchronizes the authoritative value.
+9. **R-4.6.9** -- The engine **SHALL** distribute fragment mass proportionally to volume and inherit
+   parent velocity with impact-directed impulse.
+   - **Rationale:** Mass distribution and directed impulse produce realistic debris trajectories.
+   - **Verification:** Fracture an object with impact. Assert fragments fly from the impact point.
+     Assert heavier fragments move slower.
 
-## F-4.6.5 Stress Propagation and Structural Collapse
+10. **R-4.6.10** -- The engine **SHALL** support SDF sphere-tracing for raycasts against voxel
+    volumes as fast pre-checks before mesh narrowphase.
+    - **Rationale:** SDF pre-checks skip expensive mesh collision when no hit exists.
+    - **Verification:** Raycast into empty voxel space. Assert SDF reports no hit. Assert mesh
+      narrowphase is skipped.
 
-| ID       | Derived From                                                  |
-|----------|---------------------------------------------------------------|
-| R-4.6.5  | [F-4.6.5](../../features/physics/destruction-and-fracture.md) |
-| R-4.6.5a | [F-4.6.5](../../features/physics/destruction-and-fracture.md) |
-
-1. **R-4.6.5** — Connectivity Graph Traversal: The `StructuralAnalysisSystem` **SHALL** traverse the
-   joint connectivity graph to identify fragments without a path to a grounded anchor. Unsupported
-   fragments **SHALL** have their joint entities despawned and fall as independent rigid bodies
-   under gravity.
-   - **Rationale:** Cascading structural collapse emerges from connectivity analysis; removing key
-     supports must trigger chain-reaction failure.
-   - **Verification:** Build a 3-column arch. Break the keystone joint. Assert unsupported fragments
-     have joints despawned within one frame and fall under gravity.
-2. **R-4.6.5a** — Structural Analysis Scalability: Graph traversal **SHALL** complete within 0.5 ms
-   for connectivity graphs containing up to 200 fragment nodes.
-   - **Rationale:** Structural analysis runs every frame a load-bearing joint breaks; it must avoid
-     frame spikes during cascade events.
-   - **Verification:** Benchmark: build a 200-node fragment graph. Break a central node. Assert
-     traversal completes within 0.5 ms.
-
-## F-4.6.6 Debris Simulation and Lifecycle
-
-| ID      | Derived From                                                  |
-|---------|---------------------------------------------------------------|
-| R-4.6.6 | [F-4.6.6](../../features/physics/destruction-and-fracture.md) |
-
-1. **R-4.6.6** — Debris Lifetime and Cap Enforcement: The engine **SHALL** manage debris via
-   `DebrisLifetime` components with configurable time-to-live values. The `DebrisLifetimeSystem`
-   **SHALL** despawn expired debris and enforce a configurable global debris count cap by despawning
-   the oldest entities first when the cap is exceeded.
-   - **Rationale:** Unbounded debris accumulation degrades performance over time; automatic cleanup
-     prevents resource exhaustion.
-   - **Verification:** Spawn 500 debris with a cap of 200. Assert active count never exceeds 200
-     with oldest despawned first. Verify all debris despawns within 1 frame of lifetime expiration.
-
-## F-4.6.7 Debris Pooling and LOD
-
-| ID       | Derived From                                                  |
-|----------|---------------------------------------------------------------|
-| R-4.6.7  | [F-4.6.7](../../features/physics/destruction-and-fracture.md) |
-| R-4.6.7a | [F-4.6.7](../../features/physics/destruction-and-fracture.md) |
-
-1. **R-4.6.7** — Debris Entity Pooling: The engine **SHALL** recycle despawned debris entities from
-   a pool by resetting their components with new fragment data, reducing allocation churn during
-   destruction events by at least 80% compared to unpooled spawning.
-   - **Rationale:** Frequent entity creation and destruction during sustained battles causes
-     allocation pressure; pooling eliminates this overhead.
-   - **Verification:** Trigger 10 destruction events with pooling enabled vs disabled. Assert
-     pooling reduces allocation count by at least 80%.
-2. **R-4.6.7a** — Distance-Based Debris LOD: The `DebrisLodSystem` **SHALL** reduce collision shape
-   complexity for distant debris and remove `RigidBody` and `Collider` components entirely beyond a
-   configurable maximum LOD distance, resulting in zero simulation cost.
-   - **Rationale:** Distant debris is not visually important enough to justify simulation cost;
-     removing physics components eliminates their CPU impact.
-   - **Verification:** Place debris beyond the max LOD distance. Assert no `RigidBody` or `Collider`
-     components are present. Assert zero solver invocations for that entity.
-
-## Non-Functional Requirements
-
-| ID        | Derived From     |
-|-----------|------------------|
-| R-4.6.NF1 | R-4.6.3, R-4.6.2 |
-| R-4.6.NF2 | R-4.6.6, R-4.6.7 |
-| R-4.6.NF3 | R-4.6.5          |
-
-1. **R-4.6.NF1** — Fracture Activation Frame Budget: Fracture activation (despawning the intact
-   entity and spawning all fragment entities with physics components) **SHALL** complete within 2 ms
-   for objects with up to 50 fragments, and budget spawning across frames for objects exceeding 50
-   fragments.
-   - **Rationale:** Destruction events during gameplay must not cause visible frame hitches; large
-     fractures must be amortized across frames to stay within budget.
-   - **Verification:** Benchmark -- trigger fracture on an object with 50 fragments; measure
-     wall-clock time for the activation frame; assert it completes within 2 ms.
-2. **R-4.6.NF2** — Maximum Active Debris Count: The engine **SHALL** enforce a configurable global
-   debris cap (default 500) and maintain stable frame rates when the cap is reached during sustained
-   destruction sequences.
-   - **Rationale:** Sustained battles can generate thousands of fragments; an enforced cap prevents
-     unbounded memory and simulation cost growth.
-   - **Verification:** Stress test -- trigger continuous destruction generating 2,000 fragments with
-     a cap of 500; assert the active debris count never exceeds 500; measure frame time and assert
-     it remains within the physics budget.
-3. **R-4.6.NF3** — Structural Analysis Scalability: Stress propagation graph traversal **SHALL**
-   complete within 0.5 ms for connectivity graphs containing up to 200 fragment nodes.
-   - **Rationale:** Structural collapse analysis runs every frame a load-bearing joint breaks; it
-     must be fast enough to avoid frame spikes during cascade events.
-   - **Verification:** Benchmark -- build a 200-node fragment connectivity graph; break a central
-     load-bearing node; measure graph traversal time; assert it completes within 0.5 ms.
+11. **R-4.6.11** -- The engine **SHALL** trigger voxel SDF subtraction from physics damage events
+    with structural integrity checks on disconnected islands.
+    - **Rationale:** Explosions carving terrain and floating islands falling are core destruction
+      features.
+    - **Verification:** Detonate an explosion on voxel terrain. Assert a crater forms. Assert
+      disconnected islands fall.

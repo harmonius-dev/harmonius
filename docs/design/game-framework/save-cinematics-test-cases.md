@@ -450,7 +450,7 @@ Companion test cases for [save-cinematics.md](save-cinematics.md).
 1. **#1** — Upload during gameplay
    - **Expected:** Game thread never blocks > 1 ms
 
-### TC-13.5.NF1.I1 Sequencer 32 Tracks
+### TC-13.5.NF1.I1 Cinematics Editor 32 Tracks
 
 | # | Requirement |
 |---|-------------|
@@ -509,7 +509,7 @@ Companion test cases for [save-cinematics.md](save-cinematics.md).
 |---|----------|--------|--------|-------------|
 | 1 | Max character compressed | File size | < 10 MB | R-13.3.NF2 |
 
-### TC-13.5.NF1.B1 Sequencer Eval 32 Tracks
+### TC-13.5.NF1.B1 Cinematics Editor Eval 32 Tracks
 
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|

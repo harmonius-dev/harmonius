@@ -1,112 +1,61 @@
-# R-3.4 — Water Requirements
+# R-3.4 -- Water Requirements
 
-## Ocean Simulation
+## FFT Ocean
 
-| ID      | Derived From                                      |
-|---------|---------------------------------------------------|
-| R-3.4.1 | [F-3.4.1](../../features/geometry-world/water.md) |
-
-1. **R-3.4.1** — The engine **SHALL** compute open-ocean surface displacement via inverse FFT on a
-   GPU compute shader using multiple spectral cascades, producing tiled displacement, normal, and
-   fold maps that seamlessly repeat across an infinite ocean grid.
-   - **Rationale:** FFT-based ocean simulation is required to produce physically plausible wave
-     motion across large draw distances with artist-controllable swell parameters.
-   - **Verification:** Integration test — initialize a Phillips spectrum with three cascades;
-     dispatch the FFT compute shader for 60 frames at a fixed timestep; sample displacement at tile
-     boundaries and assert continuity (delta < 0.001m); verify fold map Jacobian values correlate
-     with wave steepness.
+1. **R-3.4.1** -- The engine **SHALL** compute open-ocean surface displacement via inverse FFT on
+   GPU compute with multiple spectral cascades, seamlessly tiling across an infinite grid, with
+   resolution scaling per platform tier.
+   - **Rationale:** FFT ocean with multiple cascades captures wave scales from swells to capillary
+     ripples.
+   - **Verification:** Render the ocean. Assert seamless tiling with no visible seams. Assert mobile
+     uses fewer cascades or Gerstner fallback.
 
 ## Shoreline Blending
 
-| ID      | Derived From                                      |
-|---------|---------------------------------------------------|
-| R-3.4.2 | [F-3.4.2](../../features/geometry-world/water.md) |
-
-1. **R-3.4.2** — The engine **SHALL** blend water surfaces with terrain at shorelines by fading
-   opacity and wave amplitude based on scene depth, and generate an animated shoreline foam mask
-   from the depth gradient.
-   - **Rationale:** Hard intersections between water and terrain break visual immersion; smooth
-     depth-based blending and foam produce natural beach and rocky shore effects.
-   - **Verification:** Visual test — render water meeting terrain at varying slopes; verify opacity
-     fades smoothly from full at depth > 2m to zero at depth 0m; verify foam mask is non-zero within
-     the configured shoreline band and animates over time.
+2. **R-3.4.2** -- The engine **SHALL** blend water surfaces with terrain at shorelines using
+   depth-based opacity, wave amplitude adjustment, and an animated shoreline foam mask.
+   - **Rationale:** Depth-based shoreline blending produces natural beach and shore effects.
+   - **Verification:** View a shoreline. Assert soft intersection with terrain. Assert foam mask
+     animates with scrolling noise.
 
 ## Underwater Rendering
 
-| ID      | Derived From                                      |
-|---------|---------------------------------------------------|
-| R-3.4.3 | [F-3.4.3](../../features/geometry-world/water.md) |
+3. **R-3.4.3** -- The engine **SHALL** switch to underwater mode when the camera submerges, applying
+   depth fog, Beer-Lambert absorption, color shift, and optional volumetric god rays.
+   - **Rationale:** Underwater mode is essential for immersive aquatic zones.
+   - **Verification:** Submerge the camera. Assert fog and color shift activate. Assert god rays
+     render on desktop. Assert mobile uses screen-space approximation.
 
-1. **R-3.4.3** — The engine **SHALL** switch to an underwater rendering mode when the camera
-   submerges, applying depth-based fog with Beer-Lambert absorption, color shift toward the water
-   body's absorption spectrum, refracted surface view from below, and volumetric god-ray light
-   shafts.
-   - **Rationale:** Underwater environments require distinct rendering to convey submersion through
-     light attenuation, color shift, and volumetric effects.
-   - **Verification:** Integration test — place camera 5m below the water surface; assert fog
-     density increases with depth, scene color shifts toward the configured absorption spectrum, a
-     distorted above-surface refraction is visible, and light shaft intensity decreases with depth.
+## Water Caustics
 
-## Caustics
+4. **R-3.4.4** -- The engine **SHALL** project caustic light patterns onto underwater surfaces,
+   using real-time refracted caustics on desktop and pre-baked tiling maps on mobile.
+   - **Rationale:** Caustics add visual richness to shallow water environments.
+   - **Verification:** View the seabed under shallow water. Assert caustic patterns are visible and
+     animate with wave motion.
 
-| ID      | Derived From                                      |
-|---------|---------------------------------------------------|
-| R-3.4.4 | [F-3.4.4](../../features/geometry-world/water.md) |
+## Reflection and Refraction
 
-1. **R-3.4.4** — The engine **SHALL** project caustic light patterns onto underwater surfaces and
-   the seabed, computed from the ocean normal map or approximated via animated tiling caustics maps,
-   modulating lighting contribution on receiving surfaces.
-   - **Rationale:** Caustics add critical visual richness to shallow water and underwater scenes,
-     reinforcing the sense of light refracting through a water surface.
-   - **Verification:** Visual test — render a lit seabed 3m below the water surface; verify caustic
-     patterns are visible, animate over time, and intensity scales with water depth and surface wave
-     amplitude.
+5. **R-3.4.5** -- The engine **SHALL** combine reflection and refraction on water surfaces using
+   Fresnel blending, with hierarchical reflection quality (SSR, cubemap, optional planar) scaling
+   per platform tier.
+   - **Rationale:** Fresnel-weighted blending produces physically correct water appearance.
+   - **Verification:** View water at varying angles. Assert reflection dominates at grazing angles.
+     Assert refraction distorts the below-surface scene.
 
-## Water Reflection and Refraction
+## Flow Map Rivers
 
-| ID      | Derived From                                      |
-|---------|---------------------------------------------------|
-| R-3.4.5 | [F-3.4.5](../../features/geometry-world/water.md) |
+6. **R-3.4.6** -- The engine **SHALL** support flow-map- driven rivers with directional UV
+   animation, flow-speed- modulated foam, and seamless connection to the ocean at estuary points.
+   - **Rationale:** Flow maps produce convincing directional water movement along river channels.
+   - **Verification:** Paint a flow map on a river. Assert normals animate in the flow direction.
+     Assert the river connects to the ocean without visible seams.
 
-1. **R-3.4.5** — The engine **SHALL** render water surfaces with Fresnel-weighted blending of
-   reflection (screen-space reflections for nearby objects, environment cubemap for distant sky,
-   optional planar reflection) and refraction (normal-map-driven distortion of the below-surface
-   scene).
-   - **Rationale:** Physically motivated reflection and refraction blending is essential for
-     visually convincing water across all viewing angles.
-   - **Verification:** Integration test — render water at grazing and steep view angles; assert
-     reflection contribution increases at grazing angles per Fresnel equations; assert refraction
-     distortion magnitude correlates with normal map amplitude; verify SSR, cubemap, and planar
-     reflection sources activate under their respective conditions.
+## Dynamic Foam
 
-## River Flow
-
-| ID      | Derived From                                      |
-|---------|---------------------------------------------------|
-| R-3.4.6 | [F-3.4.6](../../features/geometry-world/water.md) |
-
-1. **R-3.4.6** — The engine **SHALL** animate river and stream surfaces using artist-painted flow
-   maps that define per-texel velocity direction and magnitude, driving UV animation of normal and
-   foam textures with flow-speed-modulated wave amplitude.
-   - **Rationale:** Rivers require directional flow distinct from ocean waves; flow maps provide
-     artist-controllable per-channel velocity without runtime fluid simulation.
-   - **Verification:** Integration test — apply a flow map with a uniform rightward velocity; assert
-     normal texture UV offset advances rightward each frame at the configured speed; verify foam
-     intensity increases with flow speed; verify river splines connect seamlessly with the ocean
-     system at estuary points.
-
-## Foam Generation
-
-| ID      | Derived From                                      |
-|---------|---------------------------------------------------|
-| R-3.4.7 | [F-3.4.7](../../features/geometry-world/water.md) |
-
-1. **R-3.4.7** — The engine **SHALL** generate a foam coverage map accumulated from wave folding
-   Jacobian, shoreline depth, flow map turbulence, and object wake interactions, decaying over time
-   and modulating surface albedo, roughness, and opacity in the water material.
-   - **Rationale:** Unified foam generation from multiple sources produces consistent whitecap,
-     surf, and wake foam across all water body types.
-   - **Verification:** Integration test — enable all foam sources (FFT folds, shoreline, flow,
-     wake); assert foam coverage map is non-zero at each source location, decays toward zero over
-     the configured lifetime, and visibly modulates surface albedo and roughness in the final
-     render.
+7. **R-3.4.7** -- The engine **SHALL** generate foam dynamically from wave folding, shoreline depth,
+   flow turbulence, and object wakes, modulating surface albedo and roughness via a foam coverage
+   map.
+   - **Rationale:** Dynamic foam produces realistic whitecaps and surf without manual placement.
+   - **Verification:** Observe whitecaps in rough seas. Assert foam intensity correlates with wave
+     folding. Assert foam coverage map resolution scales per tier.

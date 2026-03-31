@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/game-framework/](../../features/game-framework/),
-> [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
-> elements to those definitions.
+> [features/game-framework/](../../features/), [requirements/game-framework/](../../requirements/),
+> and [user-stories/game-framework/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 ### Virtual Camera Framework
 
@@ -86,7 +85,7 @@
 2. **F-13.25.19** — Impulse system (event-driven shake)
 3. **F-13.25.20** — Wave oscillation shake
 4. **F-13.25.21** — Composite shake patterns
-5. **F-13.25.22** — Sequencer-driven camera shake
+5. **F-13.25.22** — Cinematics-Editor-driven camera shake
 
 ### Camera Intelligence
 

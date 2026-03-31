@@ -1,180 +1,97 @@
 # R-2.3 -- Core Rendering Requirements
 
-## Culling and Visibility
-
-| ID      | Derived From                                          |
-|---------|-------------------------------------------------------|
-| R-2.3.1 | [F-2.3.1](../../features/rendering/core-rendering.md) |
-| R-2.3.2 | [F-2.3.2](../../features/rendering/core-rendering.md) |
-| R-2.3.3 | [F-2.3.3](../../features/rendering/core-rendering.md) |
-| R-2.3.4 | [F-2.3.4](../../features/rendering/core-rendering.md) |
+## Lighting and Culling
 
 1. **R-2.3.1** — The engine **SHALL** evaluate point, spot, and directional lights with
-   physically-based attenuation, writing all light types into a single unified light buffer consumed
-   by both forward and deferred rendering paths.
-   - **Rationale:** A unified light buffer eliminates duplicate light management across rendering
-     paths and ensures consistent lighting regardless of the active pipeline.
-   - **Verification:** Render a scene containing one point light, one spot light, and one
-     directional light using both forward and deferred paths. Verify pixel-identical output (within
-     floating-point tolerance) between paths. Confirm all three light types read from the same GPU
-     buffer via GPU capture inspection.
-2. **R-2.3.2** — The engine **SHALL** perform meshlet-level frustum culling on the GPU via a compute
-   pass that tests each meshlet AABB against the six camera frustum planes and excludes meshlets
-   outside the frustum from the indirect draw buffer.
-   - **Rationale:** GPU-side frustum culling avoids CPU-GPU round-trips for culling decisions and
-     scales to millions of meshlets without CPU bottlenecks.
-   - **Verification:** Render a scene with the camera positioned so that at least 50% of meshlets
-     are outside the frustum. Verify the indirect draw buffer contains zero entries for off-screen
-     meshlets. Compare against a CPU reference culler and confirm identical accept/reject decisions
-     for all meshlets.
-3. **R-2.3.3** — The engine **SHALL** perform meshlet-level normal cone culling on the GPU,
-   rejecting meshlets whose triangles all face away from the camera as determined by the meshlet
-   normal cone test against the camera position.
-   - **Rationale:** Normal cone culling eliminates fully back-facing meshlets before rasterization,
-     reducing vertex processing and overdraw.
-   - **Verification:** Render a closed convex mesh (e.g., sphere) and verify that approximately 50%
-     of meshlets are culled. Rotate the camera 180 degrees and verify the culled set inverts.
-     Confirm no visible popping or missing geometry in the final image.
-4. **R-2.3.4** — The engine **SHALL** implement two-phase hierarchical Z-buffer occlusion culling
-   where phase 1 tests meshlets against the previous frame's HZB (conservative) and phase 2 re-tests
-   phase-1 rejects against the current frame's HZB to avoid missing newly-revealed geometry. The
-   two-phase HZB algorithm is shared with the meshlet pipeline (R-3.1.2); this requirement covers
-   the integration into the scene rendering pipeline.
-   - **Rationale:** Two-phase HZB prevents temporal disocclusion artifacts that single-phase
-     occlusion culling produces when objects move or the camera translates.
-   - **Verification:** Place a large occluder in front of 100 meshlets. Verify phase 1 rejects the
-     occluded meshlets. Move the camera to reveal the occluded geometry and verify phase 2 recovers
-     them in the same frame with no one-frame pop-in. Measure that occlusion culling reduces draw
-     calls by at least 30% in a dense urban scene.
+   physically-based attenuation, writing all types into a unified light buffer consumed by both
+   forward and deferred rendering paths.
+   - **Rationale:** A unified light buffer ensures consistent lighting regardless of the active
+     pipeline.
+   - **Verification:** Render a scene with all three light types using both paths. Verify
+     pixel-identical output within floating-point tolerance.
+
+2. **R-2.3.2** — The engine **SHALL** perform meshlet-level GPU frustum culling via a compute pass
+   testing each AABB against the six camera frustum planes, excluding off- screen meshlets from the
+   indirect draw buffer.
+   - **Rationale:** GPU-side culling avoids CPU-GPU round- trips and scales to millions of meshlets.
+   - **Verification:** Position the camera so 50% of meshlets are off-screen. Verify the indirect
+     draw buffer excludes them. Compare against a CPU reference culler.
+
+3. **R-2.3.3** — The engine **SHALL** perform meshlet-level normal cone culling rejecting fully
+   backfacing meshlets before rasterization.
+   - **Rationale:** Normal cone culling eliminates backfacing meshlets, reducing vertex processing
+     and overdraw.
+   - **Verification:** Render a sphere. Verify approximately 50% of meshlets are culled. Rotate 180
+     degrees and verify the culled set inverts.
+
+4. **R-2.3.4** — The engine **SHALL** implement two-phase HZB occlusion culling where phase 1 tests
+   against the previous frame's HZB and phase 2 re-tests rejects against the current frame's HZB.
+   - **Rationale:** Two-phase HZB prevents disocclusion artifacts when objects move or the camera
+     translates.
+   - **Verification:** Occlude 100 meshlets behind a wall. Move the camera to reveal them. Verify
+     phase 2 recovers them in the same frame with no pop-in.
 
 ## Projection and Instancing
 
-| ID      | Derived From                                          |
-|---------|-------------------------------------------------------|
-| R-2.3.5 | [F-2.3.5](../../features/rendering/core-rendering.md) |
-| R-2.3.6 | [F-2.3.6](../../features/rendering/core-rendering.md) |
-| R-2.3.7 | [F-2.3.7](../../features/rendering/core-rendering.md) |
+5. **R-2.3.5** — The engine **SHALL** support orthographic projection for top-down views, 2D
+   rendering, and shadow map generation.
+   - **Rationale:** Orthographic projection is required for 2D games, isometric views, and shadow
+     cascades.
+   - **Verification:** Render a scene with orthographic and perspective cameras. Verify orthographic
+     output has no foreshortening. Verify shadow maps use orthographic.
 
-1. **R-2.3.5** — The engine **SHALL** support orthographic camera projection producing correct
-   rendering for top-down views, 2D game rendering, and shadow map generation.
-   - **Rationale:** Orthographic projection is required for 2D games, isometric views, and
-     directional light shadow map rendering.
-   - **Verification:** Render two identical cubes at different distances from an orthographic
-     camera. Verify both cubes have identical screen-space size (within 1 pixel). Verify shadow map
-     depth values are linear.
-2. **R-2.3.6** — The engine **SHALL** support perspective camera projection with reverse-Z depth
-   mapping and an optional infinite far plane for maximum depth precision at distance.
-   - **Rationale:** Reverse-Z distributes floating-point precision evenly across the depth range,
-     eliminating z-fighting at far distances that plagues standard depth mappings.
-   - **Verification:** Render two coplanar surfaces at 10,000 units from the camera. Verify no
-     z-fighting artifacts with reverse-Z enabled. Enable infinite far plane and verify objects at
-     extreme distance (1,000,000 units) remain depth-resolvable. Confirm the depth buffer stores 1.0
-     at the near plane and 0.0 at the far plane.
-3. **R-2.3.7** — The engine **SHALL** compact surviving opaque meshlet instances after culling into
-   contiguous draw buffers batched by shared material and material instance, dispatching each
-   material batch via a single indirect draw call, while rendering transparent objects individually
-   in back-to-front sorted order without batching.
-   - **Rationale:** GPU-side instance compaction minimizes draw call count for opaque geometry while
-     preserving correct depth ordering for transparent objects.
-   - **Verification:** Render a scene with 5,000 opaque instances sharing 10 materials. Verify the
-     indirect draw buffer contains exactly 10 draw calls (one per material batch). Add 50
-     transparent objects and verify each produces an individual draw call in back-to-front order.
-     Confirm no visual artifacts from incorrect draw ordering.
+6. **R-2.3.6** — The engine **SHALL** support reverse-Z perspective projection with optional
+   infinite far plane for maximum depth precision at distance.
+   - **Rationale:** Reverse-Z with infinite far plane maximizes depth precision for distant
+     geometry.
+   - **Verification:** Render objects at 1 m and 10 km. Verify no z-fighting. Verify depth clears to
+     0 on all backends.
 
-## Render Targets and Capture
+7. **R-2.3.7** — The engine **SHALL** compact surviving opaque meshlet instances by material into
+   contiguous indirect draw buffers, dispatching via indirect calls.
+   - **Rationale:** GPU-driven instancing eliminates per-draw CPU dispatch overhead at high draw
+     counts.
+   - **Verification:** Render 10,000 material instances. Verify fewer than 100 draw calls. Verify
+     transparent objects render individually in sorted order.
 
-| ID       | Derived From                                           |
-|----------|--------------------------------------------------------|
-| R-2.3.8  | [F-2.3.8](../../features/rendering/core-rendering.md)  |
-| R-2.3.9  | [F-2.3.9](../../features/rendering/core-rendering.md)  |
-| R-2.3.10 | [F-2.3.10](../../features/rendering/core-rendering.md) |
+## Render Targets and Dynamic Resolution
 
-1. **R-2.3.8** — The engine **SHALL** support rendering any pass to an off-screen texture for
-   consumption by subsequent passes, with the render graph compiler automatically inserting barriers
-   between write and read operations.
-   - **Rationale:** Render-to-texture enables multi-pass rendering techniques including shadow maps,
-     reflection probes, and post-processing chains.
-   - **Verification:** Render a scene to an off-screen texture, then sample that texture in a
-     subsequent fullscreen pass. Verify the final output matches a reference image. Inspect the
-     compiled render graph and verify barrier insertion between the write and read passes.
-2. **R-2.3.9** — The engine **SHALL** support static and dynamic cubemap rendering for environment
-   maps, reflection probes, and IBL prefiltering, with dynamic cubemaps re-rendering specified faces
-   per frame.
-   - **Rationale:** Cubemaps are the foundation for environment reflections, sky lighting, and
-     image-based lighting precomputation.
-   - **Verification:** Render a dynamic cubemap and verify all six faces contain correct scene
-     geometry from the probe position. Update only two faces per frame and verify the remaining four
-     retain their previous content. Verify seamless edge filtering across face boundaries.
-3. **R-2.3.10** — The engine **SHALL** render the scene from an arbitrary camera into a texture
-   target supporting both 2D planar capture and omnidirectional cubemap capture for use cases
-   including security cameras, mirrors, portals, and minimap rendering.
-   - **Rationale:** Scene capture enables gameplay features that require rendering the scene from
-     viewpoints other than the main camera.
-   - **Verification:** Configure a planar scene capture rendering a mirror. Verify the reflected
-     image matches a reference rendering from the mirror's virtual camera position. Configure a
-     cubemap capture and verify all six faces contain correct geometry. Verify the capture texture
-     is usable as a material input in the same frame.
+8. **R-2.3.8** — The engine **SHALL** support render-to- texture with automatic barrier insertion
+   between write and read passes in the render graph.
+   - **Rationale:** Automatic barriers prevent manual sync errors in multi-pass effect chains.
+   - **Verification:** Chain two passes sharing a texture. Verify a barrier is inserted. Verify no
+     rendering artifacts from missing synchronization.
 
-## Dynamic Rendering Features
+9. **R-2.3.9** — The engine **SHALL** render static and dynamic cubemaps for environment maps,
+   reflection probes, and IBL prefiltering with seamless edge stitching.
+   - **Rationale:** Cubemaps provide environment reflections and image-based lighting data.
+   - **Verification:** Render all six faces. Verify no visible seams at face edges. Verify dynamic
+     face updates reflect scene changes.
 
-| ID       | Derived From                                           |
-|----------|--------------------------------------------------------|
-| R-2.3.11 | [F-2.3.11](../../features/rendering/core-rendering.md) |
-| R-2.3.12 | [F-2.3.12](../../features/rendering/core-rendering.md) |
-| R-2.3.13 | [F-2.3.13](../../features/rendering/core-rendering.md) |
+10. **R-2.3.10** — The engine **SHALL** render the scene from arbitrary cameras into texture targets
+    for mirrors, portals, and minimap rendering, respecting per-platform resolution limits.
+    - **Rationale:** Scene capture enables gameplay elements like security cameras and portals.
+    - **Verification:** Capture at quarter-res on mobile. Verify output matches the full scene at
+      reduced resolution. Verify platform limits are enforced.
 
-1. **R-2.3.11** — The engine **SHALL** adjust the internal render resolution at runtime to maintain
-   a target frame budget, driven by a GPU timing feedback loop that scales the screen percentage
-   between configurable minimum and maximum bounds.
-   - **Rationale:** Dynamic resolution maintains frame rate targets under variable GPU load without
-     visible quality loss when paired with temporal upscaling.
-   - **Verification:** Render a scene that exceeds the frame budget at native resolution. Verify the
-     resolution scale decreases within 5 frames. Reduce scene complexity below budget and verify the
-     resolution scale increases back toward 100%. Verify the scale never exceeds the configured
-     maximum or falls below the configured minimum.
-2. **R-2.3.12** — The engine **SHALL** provide screen-space and ray-traced subsurface scattering
-   driven by per-material SSS profiles defining scatter radius and extinction coefficients,
-   applicable to skin, wax, marble, and other translucent materials.
-   - **Rationale:** Subsurface scattering is essential for realistic rendering of organic and
-     translucent materials where light penetrates and diffuses beneath the surface.
-   - **Verification:** Render a sphere with a skin SSS profile lit by a directional light. Verify
-     visible light transmission on the shadow terminator (red/orange hue shift). Compare
-     screen-space and ray-traced paths against a reference and verify both produce scatter radii
-     within 10% of the profile specification.
-3. **R-2.3.13** — The engine **SHALL** support alpha-tested geometry with a configurable
-   per-material alpha test threshold, where cutout geometry participates in shadow map rendering.
-   - **Rationale:** Alpha mask cutouts enable efficient rendering of vegetation, fences, and decals
-     without the cost of transparency sorting.
-   - **Verification:** Render a quad with an alpha mask texture (checkerboard pattern). Verify
-     pixels below the threshold are discarded (not drawn). Adjust the threshold and verify the
-     visible area changes accordingly. Verify the cutout geometry casts correct shadows in the
-     shadow map matching the alpha mask shape.
+11. **R-2.3.11** — The engine **SHALL** dynamically scale internal render resolution between
+    configurable min/max bounds using a GPU timing feedback loop to maintain a target frame budget.
+    - **Rationale:** Dynamic resolution maintains frame rate during performance-intensive scenes.
+    - **Verification:** Run a stress test. Verify resolution converges to a stable percentage
+      without oscillation. Verify resolution stays within configured bounds.
 
-## Non-Functional Requirements
+## Material Effects
 
-| ID        |
-|-----------|
-| NFR-2.3.1 |
-| NFR-2.3.2 |
-| NFR-2.3.3 |
+12. **R-2.3.12** — The engine **SHALL** provide screen-space and ray-traced subsurface scattering
+    driven by per- material profiles with scatter radius and extinction.
+    - **Rationale:** SSS is required for realistic skin, wax, marble, and other translucent
+      materials.
+    - **Verification:** Render skin with SSS on desktop. Compare against preintegrated LUT on
+      mobile. Verify both produce acceptable translucency.
 
-1. **NFR-2.3.1** — The combined GPU culling pipeline (frustum + backface + HZB occlusion) **SHALL**
-   complete in under 1.0 ms at 1080p for a scene with 1,000,000 meshlets on target hardware.
-   - **Rationale:** The culling pipeline runs every frame before draw submission; exceeding 1 ms
-     would consume a significant portion of the frame budget.
-   - **Verification:** Profile the culling pipeline on a scene with 1,000,000 meshlets and verify
-     total GPU time is below 1.0 ms.
-2. **NFR-2.3.2** — The dynamic resolution system **SHALL** converge to a stable resolution scale
-   within 5 frames of a sustained GPU load change, with no oscillation exceeding 5% of the target
-   scale once converged.
-   - **Rationale:** Slow convergence causes visible judder; oscillation causes distracting
-     resolution flicker.
-   - **Verification:** Introduce a step change in GPU load and measure convergence time and
-     post-convergence oscillation amplitude.
-3. **NFR-2.3.3** — GPU-driven instancing **SHALL** reduce the number of draw calls to at most one
-   per unique material batch for opaque geometry, achieving at least a 100x reduction compared to
-   per-instance draw calls in scenes with 10,000+ instances sharing 10 materials.
-   - **Rationale:** Draw call count is a primary CPU bottleneck; GPU-driven batching must compress
-     draws to the theoretical minimum (one per material).
-   - **Verification:** Render 10,000 instances across 10 materials and verify the indirect draw
-     buffer contains exactly 10 entries.
+13. **R-2.3.13** — The engine **SHALL** support alpha-tested geometry with configurable threshold
+    for vegetation, fences, and decals, including shadow map participation.
+    - **Rationale:** Alpha cutouts enable detailed vegetation and fence silhouettes without dense
+      geometry.
+    - **Verification:** Render alpha-tested foliage in shadow maps. Verify shadows match the cutout
+      silhouette. Verify distant vegetation uses opaque proxies on mobile.

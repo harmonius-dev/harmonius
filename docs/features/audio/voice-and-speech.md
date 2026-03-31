@@ -2,11 +2,11 @@
 
 ## Voice Chat
 
-| ID      | Feature                                        | Requirements |
-|---------|------------------------------------------------|--------------|
-| F-5.5.1 | Voice Chat Codec and Transport                 | R-5.5.1      |
-| F-5.5.2 | Jitter Buffer and Packet Loss Concealment      | R-5.5.2      |
-| F-5.5.3 | Voice Activity Detection and Noise Suppression | R-5.5.3      |
+| ID      | Feature                                        |
+|---------|------------------------------------------------|
+| F-5.5.1 | Voice Chat Codec and Transport                 |
+| F-5.5.2 | Jitter Buffer and Packet Loss Concealment      |
+| F-5.5.3 | Voice Activity Detection and Noise Suppression |
 
 1. **F-5.5.1** — Capture microphone input, encode with Opus at configurable bitrates (6-64 kbps),
    and transmit voice packets over the engine's networking layer with minimal added latency. Decode
@@ -33,9 +33,9 @@
 
 ## Text-to-Speech
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-5.5.4 | Text-to-Speech Integration | R-5.5.4      |
+| ID      | Feature                    |
+|---------|----------------------------|
+| F-5.5.4 | Text-to-Speech Integration |
 
 1. **F-5.5.4** — Generate speech audio from text strings using platform TTS services, feeding the
    result into the mixer as a standard sound source. TTS serves accessibility needs (reading UI
@@ -47,9 +47,9 @@
 
 ## Lip Sync
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-5.5.5 | Viseme Generation for Lip Sync | R-5.5.5      |
+| ID      | Feature                        |
+|---------|--------------------------------|
+| F-5.5.5 | Viseme Generation for Lip Sync |
 
 1. **F-5.5.5** — Analyze audio streams in real time to extract phoneme-to-viseme mappings that drive
    character facial animation blend shapes. The viseme generator operates on both pre-recorded
@@ -62,10 +62,10 @@
 
 ## Dialogue System
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-5.5.6 | Dialogue Playback and Queuing | R-5.5.6      |
-| F-5.5.7 | Branching Dialogue Graph      | R-5.5.7      |
+| ID      | Feature                       |
+|---------|-------------------------------|
+| F-5.5.6 | Dialogue Playback and Queuing |
+| F-5.5.7 | Branching Dialogue Graph      |
 
 1. **F-5.5.6** — Play authored voice-over lines with subtitle synchronization, managing a priority
    queue that prevents overlapping dialogue. Lines declare priority (critical narrative, bark,
@@ -84,9 +84,9 @@
 
 ## Voice Chat Channels
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-5.5.8 | Voice Chat Channel Management | R-5.5.8      |
+| ID      | Feature                       |
+|---------|-------------------------------|
+| F-5.5.8 | Voice Chat Channel Management |
 
 1. **F-5.5.8** — Manage multiple concurrent voice chat channels with per-channel permissions and
    routing. Channel types: proximity, party, guild, raid, broadcast, and custom. Each channel
@@ -101,9 +101,9 @@
 
 ## Acoustic Echo Cancellation
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-5.5.9 | Acoustic Echo Cancellation | R-5.5.9      |
+| ID      | Feature                    |
+|---------|----------------------------|
+| F-5.5.9 | Acoustic Echo Cancellation |
 
 1. **F-5.5.9** — Real-time acoustic echo cancellation (AEC) for players using speakers instead of
    headphones. The AEC module subtracts the known speaker output signal from the microphone input.

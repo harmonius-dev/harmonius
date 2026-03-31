@@ -2,282 +2,238 @@
 
 ## Steam (Steamworks)
 
-| ID        | Persona                     | Features | Requirements |
-|-----------|-----------------------------|----------|--------------|
-| US-14.7.1 | designer (P-5)              |          |              |
-| US-14.7.2 | game developer (P-15)       |          |              |
-| US-14.7.3 | modder (P-24)               |          |              |
-| US-14.7.4 | player (P-23)               |          |              |
-| US-14.7.5 | player (P-23)               |          |              |
-| US-14.7.6 | player (P-23)               |          |              |
-| US-14.7.7 | DevOps engineer (P-16)      |          |              |
-| US-14.7.8 | server administrator (P-22) |          |              |
+| ID        | Persona                     |
+|-----------|-----------------------------|
+| US-14.7.1 | designer (P-5)              |
+| US-14.7.2 | game developer (P-15)       |
+| US-14.7.3 | modder (P-24)               |
+| US-14.7.4 | player (P-23)               |
+| US-14.7.5 | player (P-23)               |
+| US-14.7.6 | player (P-23)               |
+| US-14.7.7 | DevOps engineer (P-16)      |
+| US-14.7.8 | server administrator (P-22) |
 
-1. **US-14.7.1** — to map internal achievement IDs to Steam-specific identifiers in the editor's
-   achievement configuration panel, so that achievements unlock on Steam without requiring code
-   changes or Steamworks portal edits
-2. **US-14.7.2** — to integrate Steam Workshop upload, download, and subscription through the
-   engine's mod pipeline, so that modders can publish and players can install mods through a
-   familiar storefront-native experience
-3. **US-14.7.3** — to package and upload my mod to Steam Workshop with a title, description, tags,
-   and preview images, so that other players can discover, subscribe, and download my content
-   directly through Steam
-4. **US-14.7.4** — subscribed Steam Workshop mods to auto-download and activate when I launch the
-   game, so that I can browse and install mods through the Steam client without manual file
-   management
-5. **US-14.7.5** — achievements to unlock on my Steam profile when I reach milestones in-game, so
-   that my accomplishments are visible to my Steam friends and tracked on my profile
-6. **US-14.7.6** — to create and join multiplayer lobbies through Steam matchmaking with filters for
-   game mode and region, so that I can find games with friends or suitable strangers without leaving
-   the Steam ecosystem
-7. **US-14.7.7** — to configure Steam-specific build packaging (depots, branches, launch options)
-   through the engine's build pipeline, so that Steam builds are automated and consistent without
-   manual Steamworks portal intervention
-8. **US-14.7.8** — to enable and monitor VAC enforcement on dedicated game servers, so that
-   VAC-banned players are automatically rejected and server integrity is maintained
+1. **US-14.7.1** — **As a** designer (P-5), **I want** to map internal achievement IDs to Steam
+   identifiers in the editor, **so that** achievements unlock on Steam without code changes or
+   portal edits.
+2. **US-14.7.2** — **As a** game developer (P-15), **I want** to integrate Steam Workshop upload,
+   download, and subscription through the mod pipeline, **so that** modders can publish and players
+   can install mods through Steam.
+3. **US-14.7.3** — **As a** modder (P-24), **I want** to package and upload my mod to Steam Workshop
+   with a title, description, tags, and preview images, **so that** other players can discover and
+   download my content.
+4. **US-14.7.4** — **As a** player (P-23), **I want** subscribed Steam Workshop mods to
+   auto-download and activate on launch, **so that** I can install mods through the Steam client
+   without manual file management.
+5. **US-14.7.5** — **As a** player (P-23), **I want** achievements to unlock on my Steam profile
+   when I reach milestones, **so that** my accomplishments are visible to friends.
+6. **US-14.7.6** — **As a** player (P-23), **I want** to create and join lobbies through Steam
+   matchmaking with filters for game mode and region, **so that** I can find games without leaving
+   the Steam ecosystem.
+7. **US-14.7.7** — **As a** DevOps engineer (P-16), **I want** Steam-specific build packaging
+   automated through the build pipeline, **so that** Steam builds are consistent without manual
+   portal intervention.
+8. **US-14.7.8** — **As a** server administrator (P-22), **I want** to enable and monitor VAC
+   enforcement on game servers, **so that** VAC-banned players are rejected automatically.
 
 ## Apple (iOS/macOS)
 
-| ID         | Persona               | Features | Requirements |
-|------------|-----------------------|----------|--------------|
-| US-14.7.9  | game developer (P-15) |          |              |
-| US-14.7.10 | player (P-23)         |          |              |
-| US-14.7.11 | player (P-23)         |          |              |
-| US-14.7.12 | QA tester (P-19)      |          |              |
+| ID         | Persona               |
+|------------|-----------------------|
+| US-14.7.9  | game developer (P-15) |
+| US-14.7.10 | player (P-23)         |
+| US-14.7.11 | player (P-23)         |
+| US-14.7.12 | QA tester (P-19)      |
 
-1. **US-14.7.9** — to configure StoreKit 2 product definitions (consumables, non-consumables,
-   subscriptions) in the engine's IAP configuration, so that purchases work on iOS and macOS through
-   the unified purchase abstraction without platform-specific code
-2. **US-14.7.10** — to purchase premium currency through the App Store with a single tap and have it
-   credited to my account immediately after validation, so that I can buy cosmetic items without
-   leaving the game
-3. **US-14.7.11** — achievements to unlock in Game Center when I complete objectives, so that my
-   accomplishments appear on my Apple gaming profile and are visible to friends
-4. **US-14.7.12** — to verify that the ATT prompt appears before any IDFA access and that denying
-   tracking disables all behavioral advertising, so that the app passes App Review without rejection
-   for tracking violations
+1. **US-14.7.9** — **As a** game developer (P-15), **I want** to configure StoreKit 2 product
+   definitions in the engine's IAP configuration, **so that** purchases work on iOS and macOS
+   through the unified purchase abstraction.
+2. **US-14.7.10** — **As a** player (P-23), **I want** to purchase premium currency through the App
+   Store with a single tap and have it credited immediately after validation, **so that** I can buy
+   items without leaving the game.
+3. **US-14.7.11** — **As a** player (P-23), **I want** achievements to unlock in Game Center when I
+   complete objectives, **so that** my accomplishments appear on my Apple gaming profile.
+4. **US-14.7.12** — **As a** QA tester (P-19), **I want** to verify that the ATT prompt appears
+   before any IDFA access and that denying tracking disables all IDFA-dependent analytics,
+   **so that** the app passes App Review.
 
 ## Google Play
 
-| ID         | Persona                     | Features | Requirements |
-|------------|-----------------------------|----------|--------------|
-| US-14.7.13 | game developer (P-15)       |          |              |
-| US-14.7.14 | player (P-23)               |          |              |
-| US-14.7.15 | player (P-23)               |          |              |
-| US-14.7.16 | server administrator (P-22) |          |              |
+| ID         | Persona                     |
+|------------|-----------------------------|
+| US-14.7.13 | game developer (P-15)       |
+| US-14.7.14 | player (P-23)               |
+| US-14.7.15 | player (P-23)               |
+| US-14.7.16 | server administrator (P-22) |
 
-1. **US-14.7.13** — to configure Google Play Billing Library 7 product definitions in the engine's
-   IAP configuration, so that consumable and subscription purchases work on Android through the
-   unified purchase abstraction
-2. **US-14.7.14** — to purchase in-game items and subscriptions through the Google Play Store with
-   my linked payment method, so that I can buy content seamlessly on my Android device
-3. **US-14.7.15** — achievements to unlock in Google Play Games Services when I reach milestones, so
-   that my progress is tracked and visible in the GPGS overlay and player profile
-4. **US-14.7.16** — to receive and validate Play Integrity tokens from Android clients on the game
-   server, so that rooted devices and modified APKs are detected and handled according to our
-   anti-cheat policy
+1. **US-14.7.13** — **As a** game developer (P-15), **I want** to configure Play Billing Library 7
+   products in the engine's IAP configuration, **so that** purchases work on Android through the
+   unified purchase abstraction.
+2. **US-14.7.14** — **As a** player (P-23), **I want** to purchase items and subscriptions through
+   the Google Play Store with my linked payment method, **so that** I can buy content on my Android
+   device.
+3. **US-14.7.15** — **As a** player (P-23), **I want** achievements to unlock in Google Play Games
+   Services when I reach milestones, **so that** my progress is visible in the GPGS overlay.
+4. **US-14.7.16** — **As a** server administrator (P-22), **I want** to receive and validate Play
+   Integrity tokens from Android clients, **so that** modified APKs are detected per our anti-cheat
+   policy.
 
 ## Microsoft (Xbox/Windows)
 
-| ID         | Persona                | Features | Requirements |
-|------------|------------------------|----------|--------------|
-| US-14.7.17 | designer (P-5)         |          |              |
-| US-14.7.18 | player (P-23)          |          |              |
-| US-14.7.19 | player (P-23)          |          |              |
-| US-14.7.20 | DevOps engineer (P-16) |          |              |
-| US-14.7.21 | player (P-23)          |          |              |
+| ID         | Persona                |
+|------------|------------------------|
+| US-14.7.17 | designer (P-5)         |
+| US-14.7.18 | player (P-23)          |
+| US-14.7.19 | player (P-23)          |
+| US-14.7.20 | player (P-23)          |
+| US-14.7.21 | DevOps engineer (P-16) |
 
-1. **US-14.7.17** — to define Xbox achievement unlock rules based on stat events in Partner Center,
-   with the engine automatically writing the correct events, so that achievements unlock through
-   Xbox Live's server-side evaluation without client-side logic
-2. **US-14.7.18** — to see my ranking on Xbox Live leaderboards among friends and globally, so that
-   I can compare my performance with other players on the Xbox ecosystem
-3. **US-14.7.19** — to access the game through my Xbox Game Pass subscription with Game
-   Pass-specific benefits, so that I can play without a separate purchase and enjoy member perks
-4. **US-14.7.20** — the build pipeline to produce Xbox-ready packages that meet XR certification
-   requirements, so that builds pass certification without manual intervention or last-minute fixes
-5. **US-14.7.21** — voice chat to work automatically with my Xbox party through Game Chat 2 with
-   accessibility features (text-to-speech, speech-to-text), so that I can communicate with teammates
-   regardless of hearing ability
+1. **US-14.7.17** — **As a** designer (P-5), **I want** to define Xbox achievement unlock rules
+   based on stat events, **so that** achievements unlock through Xbox Live server-side evaluation.
+2. **US-14.7.18** — **As a** player (P-23), **I want** to see my ranking on Xbox Live leaderboards
+   among friends and globally, **so that** I can compare performance with other Xbox players.
+3. **US-14.7.19** — **As a** player (P-23), **I want** to access the game through my Xbox Game Pass
+   subscription with member benefits, **so that** I can play without a separate purchase.
+4. **US-14.7.20** — **As a** player (P-23), **I want** voice chat to work with my Xbox party through
+   Game Chat 2 with text-to-speech and speech-to-text, **so that** I can communicate regardless of
+   hearing ability.
+5. **US-14.7.21** — **As a** DevOps engineer (P-16), **I want** the build pipeline to produce
+   Xbox-ready packages meeting XR certification, **so that** builds pass certification without
+   manual fixes.
 
 ## PlayStation
 
-| ID         | Persona          | Features | Requirements |
-|------------|------------------|----------|--------------|
-| US-14.7.22 | player (P-23)    |          |              |
-| US-14.7.23 | player (P-23)    |          |              |
-| US-14.7.24 | designer (P-5)   |          |              |
-| US-14.7.25 | QA tester (P-19) |          |              |
-| US-14.7.26 | player (P-23)    |          |              |
+| ID         | Persona          |
+|------------|------------------|
+| US-14.7.22 | player (P-23)    |
+| US-14.7.23 | player (P-23)    |
+| US-14.7.24 | player (P-23)    |
+| US-14.7.25 | designer (P-5)   |
+| US-14.7.26 | QA tester (P-19) |
 
-1. **US-14.7.22** — trophies to unlock on my PSN profile when I achieve milestones, including
-   automatic platinum trophy when all base-game trophies are earned, so that my accomplishments are
-   recognized on PlayStation
-2. **US-14.7.23** — to buy DLC and virtual currency through the PlayStation Store overlay with
-   wallet funding support, so that I can purchase content without leaving the game
-3. **US-14.7.24** — to define trophy configurations (bronze, silver, gold, platinum mapping) that
-   the engine maps to internal achievement IDs, so that trophy packs meet TRC R4060 without manual
-   trophy tool edits
-4. **US-14.7.25** — automated certification pre-checks that verify TRC compliance (trophies, save
-   data metadata, activities, age rating), so that certification-blocking issues are caught before
-   Sony submission
-5. **US-14.7.26** — to launch directly into a specific quest or multiplayer session from a
-   PlayStation Activity card on the PS5 home screen, so that I can resume playing without navigating
-   through menus
+1. **US-14.7.22** — **As a** player (P-23), **I want** trophies to unlock on my PSN profile when I
+   achieve milestones including automatic platinum, **so that** my accomplishments are recognized on
+   PlayStation.
+2. **US-14.7.23** — **As a** player (P-23), **I want** to buy DLC and virtual currency through the
+   PlayStation Store overlay, **so that** I can purchase content without leaving the game.
+3. **US-14.7.24** — **As a** player (P-23), **I want** to launch directly into a quest or
+   multiplayer session from a PlayStation Activity card, **so that** I resume playing without
+   navigating menus.
+4. **US-14.7.25** — **As a** designer (P-5), **I want** to define trophy configurations that the
+   engine maps to internal achievement IDs, **so that** trophy packs meet TRC R4060 without manual
+   edits.
+5. **US-14.7.26** — **As a** QA tester (P-19), **I want** automated certification pre-checks for TRC
+   compliance, **so that** certification-blocking issues are caught before Sony submission.
 
 ## Nintendo Switch
 
-| ID         | Persona          | Features | Requirements |
-|------------|------------------|----------|--------------|
-| US-14.7.27 | player (P-23)    |          |              |
-| US-14.7.28 | player (P-23)    |          |              |
-| US-14.7.29 | QA tester (P-19) |          |              |
+| ID         | Persona          |
+|------------|------------------|
+| US-14.7.27 | player (P-23)    |
+| US-14.7.28 | player (P-23)    |
+| US-14.7.29 | QA tester (P-19) |
 
-1. **US-14.7.27** — the game to verify my Nintendo Switch Online membership and allow online play
-   when active, so that I can participate in multiplayer with a clear prompt if my membership has
-   expired
-2. **US-14.7.28** — to buy in-game items through the Nintendo eShop overlay, so that I can purchase
-   content on my Switch using my Nintendo account funds
-3. **US-14.7.29** — automated pre-checks that verify Lotcheck requirements (NSO gating, purchase
-   flow UX, save data compliance), so that certification issues are caught before Nintendo
-   submission
+1. **US-14.7.27** — **As a** player (P-23), **I want** the game to verify my NSO membership and
+   allow online play when active, **so that** I get a clear prompt if my membership has expired.
+2. **US-14.7.28** — **As a** player (P-23), **I want** to buy in-game items through the eShop
+   overlay, **so that** I can purchase on Switch using my Nintendo account funds.
+3. **US-14.7.29** — **As a** QA tester (P-19), **I want** automated pre-checks for Lotcheck
+   requirements, **so that** certification issues are caught before Nintendo submission.
 
 ## Epic Online Services (EOS)
 
-| ID         | Persona                     | Features | Requirements |
-|------------|-----------------------------|----------|--------------|
-| US-14.7.30 | game developer (P-15)       |          |              |
-| US-14.7.31 | player (P-23)               |          |              |
-| US-14.7.32 | server administrator (P-22) |          |              |
-| US-14.7.33 | modder (P-24)               |          |              |
+| ID         | Persona                     |
+|------------|-----------------------------|
+| US-14.7.30 | game developer (P-15)       |
+| US-14.7.31 | player (P-23)               |
+| US-14.7.32 | server administrator (P-22) |
 
-1. **US-14.7.30** — to configure EOS achievement definitions in the Epic Developer Portal and have
-   the engine sync them through the platform abstraction layer, so that achievements work
-   cross-platform on all EOS-supported storefronts
-2. **US-14.7.31** — voice chat to work seamlessly in cross-platform lobbies through EOS Voice with
-   mute and volume controls, so that I can communicate with players on other platforms without extra
-   setup
-3. **US-14.7.32** — to monitor Easy Anti-Cheat status on game servers and receive notifications when
-   EAC kicks or bans a player, so that I have visibility into anti-cheat enforcement across the
-   player base
-4. **US-14.7.33** — to browse, upload, and download mods through the EOS ecosystem when the game is
-   distributed on the Epic Games Store, so that I have the same modding experience regardless of
-   storefront
+1. **US-14.7.30** — **As a** game developer (P-15), **I want** to configure EOS achievement
+   definitions and have the engine sync them through the platform abstraction layer, **so that**
+   achievements work cross-platform on EOS storefronts.
+2. **US-14.7.31** — **As a** player (P-23), **I want** voice chat to work in cross-platform lobbies
+   through EOS Voice with mute and volume controls, **so that** I can communicate with players on
+   other platforms.
+3. **US-14.7.32** — **As a** server administrator (P-22), **I want** to monitor Easy Anti-Cheat
+   status and receive notifications on kicks or bans, **so that** I have visibility into anti-cheat
+   enforcement.
 
 ## Cross-Platform
 
-| ID         | Persona                     | Features | Requirements |
-|------------|-----------------------------|----------|--------------|
-| US-14.7.34 | game developer (P-15)       |          |              |
-| US-14.7.35 | player (P-23)               |          |              |
-| US-14.7.36 | DevOps engineer (P-16)      |          |              |
-| US-14.7.37 | player (P-23)               |          |              |
-| US-14.7.38 | server administrator (P-22) |          |              |
-| US-14.7.39 | server administrator (P-22) |          |              |
-| US-14.7.40 | QA tester (P-19)            |          |              |
-| US-14.7.41 | player (P-23)               |          |              |
-| US-14.7.42 | player (P-23)               |          |              |
+| ID         | Persona                     |
+|------------|-----------------------------|
+| US-14.7.33 | game developer (P-15)       |
+| US-14.7.34 | player (P-23)               |
+| US-14.7.35 | player (P-23)               |
+| US-14.7.36 | player (P-23)               |
+| US-14.7.37 | DevOps engineer (P-16)      |
+| US-14.7.38 | server administrator (P-22) |
+| US-14.7.39 | QA tester (P-19)            |
 
-1. **US-14.7.34** — a unified Rust trait API for achievements, leaderboards, IAP, matchmaking, cloud
-   save, and voice that dispatches to the correct platform SDK backend automatically, so that I
-   write game logic once without per-platform branches
-2. **US-14.7.35** — my achievements, save data, and purchases to sync across all platforms where I
-   have linked accounts, so that switching from Steam to Xbox does not lose my progress
-3. **US-14.7.36** — the engine to detect the active storefront (Steam, Epic, Microsoft Store) at
-   runtime and load the correct SDK backend, so that I ship a single PC binary instead of
-   maintaining separate builds per storefront
-4. **US-14.7.37** — the game to queue my achievements, scores, and save data when the platform
-   service is offline and sync them automatically when it reconnects, so that I never lose progress
-   due to a service outage
-5. **US-14.7.38** — a dashboard showing the health and status of all platform SDK integrations
-   (Steam, PSN, Xbox Live, Apple, Google Play, Nintendo, EOS), so that I can detect and respond to
-   platform service outages affecting players
-6. **US-14.7.39** — the server-side receipt validation pipeline to handle all platform receipt
-   formats (Apple JWS, Google token, Steam MicroTxn, Microsoft collections, PSN, eShop, EOS), so
-   that purchase fraud is prevented uniformly regardless of storefront
-7. **US-14.7.40** — automated test suites that exercise each platform SDK integration (achievement
-   unlock, leaderboard submit, purchase flow, cloud save) on every target platform, so that platform
-   regressions are caught before certification submission
-8. **US-14.7.41** — to purchase premium currency and cosmetic items through my platform's native
-   store (Steam, App Store, Play Store, Microsoft Store, PlayStation Store, eShop), so that I use my
-   preferred payment method on every device
-9. **US-14.7.42** — matchmaking to work through my platform's native system (Steam lobbies, Xbox
-   SmartMatch, PSN matchmaking, Game Center, GPGS, EOS lobbies, NSO), so that I find games using the
-   matchmaking experience native to my platform
+1. **US-14.7.33** — **As a** game developer (P-15), **I want** a unified Rust trait API for
+   achievements, leaderboards, IAP, matchmaking, cloud save, and voice that dispatches to the
+   correct backend, **so that** I write game logic once without per-platform branches.
+2. **US-14.7.34** — **As a** player (P-23), **I want** my achievements, save data, and purchases to
+   sync across platforms where I have linked accounts, **so that** switching platforms does not lose
+   my progress.
+3. **US-14.7.35** — **As a** player (P-23), **I want** the game to queue achievements, scores, and
+   saves when the platform is offline and sync automatically on reconnect, **so that** I never lose
+   progress due to a service outage.
+4. **US-14.7.36** — **As a** player (P-23), **I want** to purchase premium currency through my
+   platform's native store, **so that** I use my preferred payment method on every device.
+5. **US-14.7.37** — **As a** DevOps engineer (P-16), **I want** the engine to detect the active
+   storefront at runtime and load the correct SDK backend, **so that** I ship a single PC binary
+   instead of maintaining separate builds per storefront.
+6. **US-14.7.38** — **As a** server administrator (P-22), **I want** server-side receipt validation
+   handling all platform receipt formats, **so that** purchase fraud is prevented uniformly.
+7. **US-14.7.39** — **As a** QA tester (P-19), **I want** automated test suites exercising each
+   platform SDK integration on every target platform, **so that** regressions are caught before
+   certification submission.
 
 ## Server-Side Proprietary SDK Isolation
 
-| ID         | Persona                     | Features           | Requirements                  |
-|------------|-----------------------------|--------------------|-------------------------------|
-| US-14.8.1  | game developer (P-15)       | F-14.8.1, F-14.8.2 | R-14.8.1, R-14.8.2, R-14.8.4  |
-| US-14.8.2  | game developer (P-15)       | F-14.8.1, F-14.8.2 | R-14.8.1, R-14.8.2, R-14.8.4  |
-| US-14.8.3  | game developer (P-15)       | F-14.8.1, F-14.8.2 | R-14.8.1, R-14.8.2, R-14.8.4  |
-| US-14.8.4  | DevOps engineer (P-16)      | F-14.8.3           | R-14.8.5, R-14.8.6            |
-| US-14.8.5  | DevOps engineer (P-16)      | F-14.8.3           | R-14.8.5                      |
-| US-14.8.6  | server administrator (P-22) | F-14.8.3           | R-14.8.6                      |
-| US-14.8.7  | server administrator (P-22) | F-14.8.3           | R-14.8.6                      |
-| US-14.8.8  | executive (P-1)             | F-14.8.2, F-14.8.3 | R-14.8.4                      |
-| US-14.8.9  | engine developer (P-26)     | F-14.8.2           | R-14.8.1, R-14.8.3            |
-| US-14.8.10 | QA tester (P-19)            | F-14.8.4, F-14.8.5 | R-14.8.7, R-14.8.8, R-14.8.10 |
-| US-14.8.11 | QA tester (P-19)            | F-14.8.4           | R-14.8.8                      |
-| US-14.8.12 | engine developer (P-26)     | F-14.8.2           | R-14.8.1                      |
+| ID         | Persona                     |
+|------------|-----------------------------|
+| US-14.8.1  | game developer (P-15)       |
+| US-14.8.2  | game developer (P-15)       |
+| US-14.8.3  | game developer (P-15)       |
+| US-14.8.4  | DevOps engineer (P-16)      |
+| US-14.8.5  | DevOps engineer (P-16)      |
+| US-14.8.6  | server administrator (P-22) |
+| US-14.8.7  | executive (P-1)             |
+| US-14.8.8  | engine developer (P-26)     |
+| US-14.8.9  | engine developer (P-26)     |
+| US-14.8.10 | QA tester (P-19)            |
+| US-14.8.11 | QA tester (P-19)            |
 
-1. **US-14.8.1** — As a game developer, I want to trigger a PS5 build from the editor without owning
-   a PlayStation SDK license, so that I can develop and test console builds using only the shared
-   studio build server
-   - **Acceptance:** Editor shows "Build for PS5" button; clicking it submits a REST API request to
-     the build server; the build completes and a download link appears; no PlayStation SDK is
-     installed on my machine
-2. **US-14.8.2** — As a game developer, I want to trigger an Xbox build from the editor without
-   owning an Xbox GDK license, so that I can iterate on console features without per-developer
-   licensing
-   - **Acceptance:** Editor shows "Build for Xbox" button; clicking it submits a REST API request;
-     the build completes server-side; no GDK headers or libraries exist on my machine
-3. **US-14.8.3** — As a game developer, I want to trigger a Nintendo Switch build from the editor
-   without a local Nintendo SDK, so that I can test Switch builds through the shared build server
-   - **Acceptance:** Editor shows "Build for Switch" button; build is compiled server-side; I
-     download the .nsp artifact without any Nintendo SDK installed locally
-4. **US-14.8.4** — As a DevOps engineer, I want to set up a shared console build server for the
-   studio with a single set of console SDK licenses, so that all teams build for PS5, Xbox, and
-   Switch without per-developer licenses
-   - **Acceptance:** CDK stack provisions a build server with console SDKs; multiple teams submit
-     builds concurrently; only one license per console platform is required
-5. **US-14.8.5** — As a DevOps engineer, I want per-project isolation on the shared build server, so
-   that one team's source code and artifacts are not accessible to another team's builds
-   - **Acceptance:** Submit builds from two projects; verify project A cannot access project B's
-     files or artifacts; each project has isolated working directories
-6. **US-14.8.6** — As a server administrator, I want to manage a priority-based build queue for
-   multiple teams, so that urgent certification builds take precedence over routine builds
-   - **Acceptance:** Set project A to high priority and project B to low priority; submit jobs from
-     both; verify project A's job is dequeued first; monitoring API shows queue depth
-7. **US-14.8.7** — As a server administrator, I want to monitor build queue depth and wait times via
-   a dashboard, so that I can plan server capacity and detect bottlenecks
-   - **Acceptance:** Monitoring API exposes queue depth, active builds, and average wait time;
-     dashboard displays real-time metrics; alerts fire when queue depth exceeds threshold
-8. **US-14.8.8** — As a studio executive, I want the entire studio to share one console SDK license
-   per platform on the build server, so that console development costs are minimized and licensing
-   is centralized
-   - **Acceptance:** One PS5 SDK license, one Xbox GDK license, and one Nintendo SDK license on the
-     build server serve all teams; no individual developer licenses are purchased
-9. **US-14.8.9** — As an engine developer, I want to implement abstract platform traits for console
-   features without needing console SDK access on my machine, so that I can contribute to the engine
-   as an open-source developer
-   - **Acceptance:** Abstract trait definitions compile on any machine; console-specific
-     implementations exist only on the build server; I write and test trait interfaces without
-     NDA-protected code
-10. **US-14.8.10** — As a QA tester, I want to download a console build from the build server and
-    deploy it to a connected dev kit from the editor, so that I can test on console hardware without
-    proprietary SDK tools on my workstation
-    - **Acceptance:** Build server stores signed console package in S3; I click "Download" in the
-      editor; the editor deploys the package to my connected dev kit via the build server relay;
-      console output streams to my editor
-11. **US-14.8.11** — As a QA tester, I want console output to stream from the dev kit to my editor
-    in real time via the build server, so that I can debug console-specific issues without console
-    SDK debugging tools
-    - **Acceptance:** Launch game on dev kit via build server; console output appears in editor
-      console panel within 500 ms; I can filter and search output as with local builds
-12. **US-14.8.12** — As an engine developer, I want the engine to compile with zero proprietary
-    references when built from the open-source repository, so that anyone can build and contribute
-    without NDA-encumbered dependencies
-    - **Acceptance:** Clone the repository on a clean machine; run cargo build; verify it completes
-      with no errors; scan source for proprietary headers and find none
+1. **US-14.8.1** — **As a** game developer (P-15), **I want** to trigger a PS5 build from the editor
+   without owning a PlayStation SDK license, **so that** I can develop and test console builds using
+   only the shared build server.
+2. **US-14.8.2** — **As a** game developer (P-15), **I want** to trigger an Xbox build from the
+   editor without owning an Xbox GDK license, **so that** I can iterate on console features without
+   per-developer licensing.
+3. **US-14.8.3** — **As a** game developer (P-15), **I want** to trigger a Nintendo Switch build
+   from the editor without a local Nintendo SDK, **so that** I can test Switch builds through the
+   shared server.
+4. **US-14.8.4** — **As a** DevOps engineer (P-16), **I want** to set up a shared console build
+   server with a single set of SDK licenses, **so that** all teams build for PS5, Xbox, and Switch
+   without per-developer licenses.
+5. **US-14.8.5** — **As a** DevOps engineer (P-16), **I want** per-project isolation on the shared
+   build server, **so that** one team's source code and artifacts are not accessible to another
+   team.
+6. **US-14.8.6** — **As a** server administrator (P-22), **I want** a priority-based build queue for
+   multiple teams, **so that** urgent certification builds take precedence over routine builds.
+7. **US-14.8.7** — **As an** executive (P-1), **I want** the entire studio to share one console SDK
+   license per platform on the build server, **so that** console development costs are minimized.
+8. **US-14.8.8** — **As an** engine developer (P-26), **I want** to implement abstract platform
+   traits without needing console SDK access on my machine, **so that** I can contribute as an
+   open-source developer.
+9. **US-14.8.9** — **As an** engine developer (P-26), **I want** the engine to compile with zero
+   proprietary references from the open-source repository, **so that** anyone can build and
+   contribute without NDA dependencies.
+10. **US-14.8.10** — **As a** QA tester (P-19), **I want** to download a console build and deploy it
+    to a connected dev kit from the editor, **so that** I can test on console hardware without
+    proprietary SDK tools on my workstation.
+11. **US-14.8.11** — **As a** QA tester (P-19), **I want** console output to stream from the dev kit
+    to my editor in real time via the build server, **so that** I can debug console issues without
+    console SDK debugging tools.

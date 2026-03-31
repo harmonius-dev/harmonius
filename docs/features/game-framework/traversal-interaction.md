@@ -2,11 +2,11 @@
 
 ## Environmental Interaction
 
-| ID        | Feature                         | Requirements |
-|-----------|---------------------------------|--------------|
-| F-13.17.1 | World Object Interaction System | R-13.17.1    |
-| F-13.17.2 | Door and Lock System            | R-13.17.2    |
-| F-13.17.3 | Physics Object Pickup and Throw | R-13.17.3    |
+| ID        | Feature                         |
+|-----------|---------------------------------|
+| F-13.17.1 | World Object Interaction System |
+| F-13.17.2 | Door and Lock System            |
+| F-13.17.3 | Physics Object Pickup and Throw |
 
 1. **F-13.17.1** — Detect and interact with world objects via look-at raycast or proximity trigger.
    When the player faces an interactable object within range, a UI prompt displays the interaction
@@ -35,18 +35,18 @@
 
 ## Traversal
 
-| ID         | Feature                    | Requirements |
-|------------|----------------------------|--------------|
-| F-13.17.4a | Traversal Detection System | R-13.17.4a   |
-| F-13.17.4b | Vault and Mantle Actions   | R-13.17.4b   |
-| F-13.17.4c | Wall Run                   | R-13.17.4c   |
-| F-13.17.4d | Crouch Slide               | R-13.17.4d   |
-| F-13.17.4  | e Balance Beam             | R-13.17.4e   |
-| F-13.17.5a | Free-Climb System          | R-13.17.5a   |
-| F-13.17.5b | Ladder System              | R-13.17.5b   |
-| F-13.17.5c | Ledge Grab and Shimmy      | R-13.17.5c   |
-| F-13.17.6  | Swimming and Diving        | R-13.17.6    |
-| F-13.17.7  | Grappling Hook and Zipline | R-13.17.7    |
+| ID         | Feature                    |
+|------------|----------------------------|
+| F-13.17.4a | Traversal Detection System |
+| F-13.17.4b | Vault and Mantle Actions   |
+| F-13.17.4c | Wall Run                   |
+| F-13.17.4d | Crouch Slide               |
+| F-13.17.4  | e Balance Beam             |
+| F-13.17.5a | Free-Climb System          |
+| F-13.17.5b | Ladder System              |
+| F-13.17.5c | Ledge Grab and Shimmy      |
+| F-13.17.6  | Swimming and Diving        |
+| F-13.17.7  | Grappling Hook and Zipline |
 
 1. **F-13.17.4a** — Geometry analysis system that identifies traversal opportunities near the player
    character. Shape casts (box, sphere, capsule) project forward and downward from the character to
@@ -126,3 +126,100 @@
     (ledge edges, beams). Grapple range, pull speed, and swing parameters are configurable per
     equipment item.
     - **Deps:** F-4.3.4 (Spring and Rope Joints), F-13.10.5 (Ranged Combat - projectile as hook)
+
+## Generic Interaction Framework
+
+| ID         | Feature                          |
+|------------|----------------------------------|
+| F-13.17.8  | Interaction Priority Resolution  |
+| F-13.17.9  | Interaction Chains               |
+| F-13.17.10 | Cooperative Interaction          |
+| F-13.17.11 | Interaction State Persistence    |
+| F-13.17.12 | Context-Sensitive Interaction    |
+
+1. **F-13.17.8** — When multiple interactable objects are within range simultaneously, a scoring
+   system resolves which object receives input focus. Score factors: distance to reticle center,
+   view-alignment dot product, explicit designer priority value, and recency penalty
+   (recently-interacted objects score lower). The winning object displays the interaction prompt;
+   runners-up are dimmed or hidden. Scoring weights are configurable per game. Designers can
+   override priority per entity to force specific objects to always win (e.g., quest-critical
+   items).
+   - **Deps:** F-13.17.1 (World Object Interaction)
+2. **F-13.17.9** — Multi-step interaction sequences where completing one step unlocks or triggers
+   the next. Steps are defined as an ordered list on the Interactable component, each referencing
+   its own logic graph (F-15.8.4), animation, duration, and required items. Steps can branch
+   conditionally (e.g., "insert key" leads to "turn key," but "force open" leads to "pry lid").
+   Partial completion is tracked — interrupted chains resume from the last completed step. Chains
+   fire per-step events for UI, audio, and quest triggers.
+   - **Deps:** F-13.17.1, F-15.8.4 (Logic Graphs)
+3. **F-13.17.10** — Interactions requiring multiple characters (players or NPCs) to perform
+   simultaneously. A cooperative interactable specifies required participant count, role assignments
+   (e.g., "lifter" and "climber"), synchronized animations per role, and a countdown/ready-check
+   before execution. All participants must remain in range and confirm input. If any participant
+   leaves, the interaction cancels gracefully with abort animations. Cooperative interactions
+   integrate with the networking system (F-8.2.1) for cross-client synchronization.
+   - **Deps:** F-13.17.1, F-9.4.1 (Animation State Machine), F-8.2.1 (State Replication)
+4. **F-13.17.11** — Interaction states persist across save/load cycles and session boundaries. Each
+   interactable entity serializes its current state: completed interactions, remaining uses,
+   cooldown timers, chain progress, and custom data from logic graphs. The save system (F-13.3.1)
+   captures this data per entity. On load, interactable entities restore their exact pre-save state
+   — a half-completed chain resumes at the correct step, a depleted resource node remains empty
+   until its respawn timer expires.
+   - **Deps:** F-13.17.1, F-13.3.1 (Save System), F-1.4.1 (Serialization)
+5. **F-13.17.12** — The same interactable entity presents different interaction options based on
+   runtime context. Context sources: character state (health, class, faction), equipped items (has
+   lockpick → "pick lock" appears), quest progress (quest stage gates an interaction), time of day,
+   and environmental conditions. Context rules are defined as logic graph predicates on the
+   Interactable component. The interaction prompt updates dynamically as context changes — equipping
+   a key mid-approach reveals the "unlock" option.
+   - **Deps:** F-13.17.1, F-15.8.4 (Logic Graphs), F-13.9.1 (Inventory)
+
+## Interaction Feedback and Networking
+
+| ID         | Feature                          |
+|------------|----------------------------------|
+| F-13.17.13 | Interaction Feedback             |
+| F-13.17.14 | Remote and Area Interactions     |
+| F-13.17.15 | Interaction Networking           |
+| F-13.17.16 | NPC Interaction AI               |
+| F-13.17.17 | Interaction Animation Binding    |
+
+1. **F-13.17.13** — Multi-sensory feedback when near or interacting with objects. Visual:
+   configurable outline shader (F-2.11.3), highlight tint, or particle effect on focused
+   interactables. Audio: proximity ambient sound (humming chest, crackling fire) and interaction SFX
+   (click, creak, chime) per interaction type. Haptic: controller vibration patterns per interaction
+   type (F-6.4.1). Feedback intensity scales with distance to the object. All feedback channels are
+   optional and designer configurable per interactable.
+   - **Deps:** F-13.17.1, F-2.11.3 (Outline Rendering), F-5.1.1 (Audio Playback), F-6.4.1 (Haptic
+     Feedback)
+2. **F-13.17.14** — Interactions triggered at a distance or by area presence rather than direct
+   input. Remote: shoot a switch with a projectile (F-13.10.5), hit it with a thrown object
+   (F-13.17.3), or target it with an ability (F-13.10.1). Area: pressure plates activate when an
+   entity with sufficient weight stands on them, trigger volumes fire when any entity enters/exits,
+   and proximity sensors detect entities within a radius. Remote and area triggers feed into the
+   same interaction execution pipeline as direct interactions. Combinable: a pressure plate can
+   require a specific carried object's weight.
+   - **Deps:** F-13.17.1, F-4.4.1 (Spatial Queries), F-1.5.1 (Events)
+3. **F-13.17.15** — In networked games, interaction state and animations replicate across clients.
+   The server is authoritative for interaction execution: a client requests an interaction, the
+   server validates (range, requirements, cooldown), executes the logic graph, and broadcasts the
+   result. Clients predict interaction start (play animation immediately) and reconcile on server
+   confirmation or rejection. Cooperative interactions (F-13.17.10) use the server as
+   synchronization coordinator. Interaction state changes replicate via the state replication system
+   (F-8.2.1).
+   - **Deps:** F-13.17.1, F-8.2.1 (State Replication), F-8.4.1 (Prediction and Rollback)
+4. **F-13.17.16** — AI agents evaluate and execute interactions using the same interaction system as
+   players. NPCs query nearby interactables, score them against their current goals (behavior tree
+   or utility AI), navigate to the chosen object, and execute the interaction with appropriate
+   animations. NPCs respect requirements (keys, faction access), cooldowns, and cooperative roles.
+   Interaction requests from AI feed through the same priority resolution (F-13.17.8) and networking
+   (F-13.17.15) as player interactions.
+   - **Deps:** F-13.17.1, F-13.17.8, F-7.3.1 (Behavior Trees), F-7.4.1 (Utility AI)
+5. **F-13.17.17** — Bind interaction types to animation montages with IK targets. Each interactable
+   can specify: hand placement positions (IK targets for left/right hand), body orientation (face
+   the object), approach animation (walk-to), interaction animation (turn crank, pull lever, sit
+   down), and exit animation (stand up, step back). IK targets are defined as socket positions on
+   the interactable mesh. The system blends from the character's current pose into the interaction
+   pose via the animation state machine (F-9.4.1). Generic enough that any new interactable type can
+   specify its own animation bindings without code.
+   - **Deps:** F-13.17.1, F-9.3.1 (IK Solvers), F-9.4.1 (Animation State Machine)

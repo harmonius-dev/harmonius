@@ -2,10 +2,10 @@
 
 ## Wave and Tower Defense
 
-| ID        | Feature                            | Requirements |
-|-----------|------------------------------------|--------------|
-| F-13.24.1 | Wave Spawning System               | R-13.24.1    |
-| F-13.24.2 | Tower Targeting and Upgrade System | R-13.24.2    |
+| ID        | Feature                            |
+|-----------|------------------------------------|
+| F-13.24.1 | Wave Spawning System               |
+| F-13.24.2 | Tower Targeting and Upgrade System |
 
 1. **F-13.24.1** — Configurable enemy wave spawner for tower defense, survival, and arena game
    modes. Wave definitions specify: enemy composition (entity types and counts), spawn points
@@ -26,12 +26,12 @@
 
 ## Score and Feedback
 
-| ID         | Feature                             | Requirements |
-|------------|-------------------------------------|--------------|
-| F-13.24.3  | Score and Combo System              | R-13.24.3    |
-| F-13.24.4a | Feedback Stack Asset and Triggering | R-13.24.4a   |
-| F-13.24.4b | Hit-Stop and Time Scale Effects     | R-13.24.4b   |
-| F-13.24.4c | Feedback Entry Types Library        | R-13.24.4c   |
+| ID         | Feature                             |
+|------------|-------------------------------------|
+| F-13.24.3  | Score and Combo System              |
+| F-13.24.4a | Feedback Stack Asset and Triggering |
+| F-13.24.4b | Hit-Stop and Time Scale Effects     |
+| F-13.24.4c | Feedback Entry Types Library        |
 
 1. **F-13.24.3** — Reusable scoring framework with per-event point values, multipliers, and combo
    chains. Base points are awarded for game events (enemy kill, objective capture, trick
@@ -67,16 +67,16 @@
 
 ## Exploration
 
-| ID         | Feature                      | Requirements |
-|------------|------------------------------|--------------|
-| F-13.24.5  | Fast Travel Network          | R-13.24.5    |
-| F-13.24.6  | Respawn and Graveyard System | R-13.24.6    |
-| F-13.24.7a | Tutorial Step System         | R-13.24.7a   |
-| F-13.24.7b | Tutorial Visual Overlays     | R-13.24.7b   |
-| F-13.24.7c | Toast Notification System    | R-13.24.7c   |
-| F-13.24.8a | Free Camera Controller       | R-13.24.8a   |
-| F-13.24.8b | Photo Mode Visual Controls   | R-13.24.8b   |
-| F-13.24.8c | Photo Capture and Gallery    | R-13.24.8c   |
+| ID         | Feature                      |
+|------------|------------------------------|
+| F-13.24.5  | Fast Travel Network          |
+| F-13.24.6  | Respawn and Graveyard System |
+| F-13.24.7a | Tutorial Step System         |
+| F-13.24.7b | Tutorial Visual Overlays     |
+| F-13.24.7c | Toast Notification System    |
+| F-13.24.8a | Free Camera Controller       |
+| F-13.24.8b | Photo Mode Visual Controls   |
+| F-13.24.8c | Photo Capture and Gallery    |
 
 1. **F-13.24.5** — Named waypoints (shrines, teleporters, campfires) that players discover through
    world exploration. Discovered waypoints are unlocked for fast travel — selecting a destination

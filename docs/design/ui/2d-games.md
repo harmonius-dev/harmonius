@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/ui-2d/](../../features/ui-2d/), [requirements/ui-2d/](../../requirements/ui-2d/), and
-> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table below traces design elements to those
+> [features/ui-2d/](../../features/), [requirements/ui-2d/](../../requirements/), and
+> [user-stories/ui-2d/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 | Feature   | Requirement | User Story             |

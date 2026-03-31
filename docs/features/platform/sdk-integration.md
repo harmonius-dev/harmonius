@@ -148,9 +148,9 @@
 6. **F-14.7.15** — Enforce Apple's App Tracking Transparency (ATT) framework on iOS 14.5+. The
    engine requests tracking authorization via `ATTrackingManager.requestTrackingAuthorization()`
    before any IDFA access or cross-app tracking. If the user denies tracking, the engine disables
-   all behavioral advertising, analytics SDKs that use IDFA, and cross-app attribution. Tracking
-   status is cached and re-checked on each app launch. The ATT prompt is displayed at a contextually
-   appropriate moment (not on first launch).
+   all analytics SDKs that use IDFA and cross-app attribution. Tracking status is cached and
+   re-checked on each app launch. The ATT prompt is displayed at a contextually appropriate moment
+   (not on first launch).
    - **Deps:** F-14.7.44 (Platform Abstraction Layer)
    - **Platform:** ATT is mandatory for App Store submission on iOS 14.5+. Apps that access IDFA
      without the ATT prompt are rejected during App Review. SKAdNetwork is used for

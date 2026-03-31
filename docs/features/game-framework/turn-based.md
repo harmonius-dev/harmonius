@@ -1,12 +1,12 @@
 # 13.21 — Turn-Based and Tactical Systems
 
-| ID        | Feature                               | Requirements |
-|-----------|---------------------------------------|--------------|
-| F-13.21.1 | Tactical Grid System                  | R-13.21.1    |
-| F-13.21.2 | Turn Manager and Initiative           | R-13.21.2    |
-| F-13.21.3 | Action Point Movement and Abilities   | R-13.21.3    |
-| F-13.21.4 | Grid Cover and Overwatch              | R-13.21.4    |
-| F-13.21.5 | Hit Probability and Combat Resolution | R-13.21.5    |
+| ID        | Feature                               |
+|-----------|---------------------------------------|
+| F-13.21.1 | Tactical Grid System                  |
+| F-13.21.2 | Turn Manager and Initiative           |
+| F-13.21.3 | Action Point Movement and Abilities   |
+| F-13.21.4 | Grid Cover and Overwatch              |
+| F-13.21.5 | Hit Probability and Combat Resolution |
 
 1. **F-13.21.1** — Square or hexagonal grid overlay on the game world with per-cell data:
    traversability (walkable, blocked, difficult terrain), elevation tier, cover values (none, half,

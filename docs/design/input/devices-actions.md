@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/input/](../../features/input/), [requirements/input/](../../requirements/input/), and
-> [user-stories/input/](../../user-stories/input/). The table below traces design elements to those
+> [features/input/](../../features/), [requirements/input/](../../requirements/), and
+> [user-stories/input/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 ### Device Abstraction (R-6.1)
@@ -1879,7 +1879,7 @@ Each trigger type follows a state machine:
 | Platform | Crate / FFI                          |
 |----------|--------------------------------------|
 | Windows  | `windows-rs`                        |
-| macOS    | C ABI wrapper                |
+| macOS    | swift-bridge wrapper                |
 | Linux    | `evdev` crate or C FFI via Rust crate |
 
 1. **Windows** — `WM_KEYDOWN`, `WM_KEYUP`, `MapVirtualKey`
@@ -1894,7 +1894,7 @@ Each trigger type follows a state machine:
 | Platform | Crate / FFI                |
 |----------|----------------------------|
 | Windows  | `windows-rs`              |
-| macOS    | C ABI wrapper      |
+| macOS    | swift-bridge wrapper      |
 | Linux    | `evdev` crate |
 
 1. **Windows** — `WM_INPUT` (raw input), `RAWINPUTDEVICE`
@@ -1909,7 +1909,7 @@ Each trigger type follows a state machine:
 | Platform | Crate / FFI                |
 |----------|----------------------------|
 | Windows  | `windows-rs`              |
-| macOS    | Swift C ABI wrapper    |
+| macOS    | swift-bridge wrapper    |
 | Linux    | `evdev` crate |
 
 1. **Windows** — XInput (`XInputGetState`), Windows.Gaming.Input
@@ -1924,7 +1924,7 @@ Each trigger type follows a state machine:
 | Platform | Crate / FFI             |
 |----------|-------------------------|
 | Windows  | `windows-rs`           |
-| macOS    | Swift C ABI wrapper |
+| macOS    | swift-bridge wrapper |
 | Linux    | C FFI via Rust crate     |
 
 1. **Windows** — `WM_POINTER` (Windows Ink)
@@ -1939,7 +1939,7 @@ Each trigger type follows a state machine:
 | Platform | Crate / FFI           |
 |----------|-----------------------|
 | Windows  | `windows-rs`         |
-| macOS    | C ABI wrapper |
+| macOS    | swift-bridge wrapper |
 | Linux    | C FFI via Rust crate   |
 
 1. **Windows** — `WM_DEVICECHANGE`, `RegisterDeviceNotification`
@@ -1953,8 +1953,8 @@ Each trigger type follows a state machine:
 
 | Device | iOS | Android |
 |--------|-----|---------|
-| Touch | `UITouch` via Swift C ABI | `MotionEvent` via `ndk` crate |
-| Gamepad | `GCController` via Swift C ABI | `InputDevice` via NDK |
+| Touch | `UITouch` via swift-bridge | `MotionEvent` via `ndk` crate |
+| Gamepad | `GCController` via swift-bridge | `InputDevice` via NDK |
 | Keyboard | `UIKey` (iPad) | `KeyEvent` via NDK |
 | Mouse | `UIHoverGestureRecognizer` (iPadOS) | `MotionEvent` with `SOURCE_MOUSE` |
 | Hot-plug | `GCController.didConnectNotification` | `InputManager` callback |
@@ -1985,7 +1985,7 @@ All platforms normalize to USB HID usage codes:
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
 | `windows-rs` | Win32 API bindings | Zero-cost FFI for raw input, XInput, WM_POINTER |
-| (hand-written `extern "C"`) | Swift @_cdecl function declarations | Matches Swift C ABI |
+| `swift-bridge` | Swift function bindings | Direct Rust-Swift FFI |
 | `smallvec` | Inline-allocated small vectors | Modifier chains, combo children, chord inputs |
 
 ## Test Plan

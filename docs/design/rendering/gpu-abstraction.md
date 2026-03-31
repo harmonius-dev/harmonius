@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/rendering/](../../features/rendering/),
-> [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
-> to those definitions.
+> [features/rendering/](../../features/), [requirements/rendering/](../../requirements/), and
+> [user-stories/rendering/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Backend Trait and Interface
 
@@ -22,7 +21,7 @@
 1. **F-2.1.1** — GPU backend trait with associated types, static dispatch via generics
 2. **F-2.1.2** — Command buffer abstraction for graphics, compute, copy
 3. **F-2.1.3** — Unified pipeline state objects pre-validated at creation
-4. **F-2.1.4** — Metal backend via Swift @_cdecl
+4. **F-2.1.4** — Metal backend via Swift through swift-bridge
 5. **F-2.1.5** — D3D12 backend via windows-rs COM
 6. **F-2.1.6** — Vulkan backend via ash
 
@@ -90,8 +89,8 @@ the GPU never fires callbacks asynchronously. GPU resources used by the ECS are 
 components (e.g., `GpuMesh`, `GpuTexture`, `GpuMaterial`) managed by systems.
 
 HLSL is the sole shader language. DXC compiles HLSL to DXIL and SPIR-V (via `windows-rs` COM on
-Windows, C API on Linux). Metal Shader Converter (Swift `@_cdecl` wrapper) translates DXIL to
-metallib. No runtime shader compilation occurs in shipping builds.
+Windows, C API on Linux). Metal Shader Converter (via swift-bridge) translates DXIL to metallib. No
+runtime shader compilation occurs in shipping builds.
 
 ## Architecture
 
@@ -163,7 +162,7 @@ harmonius_gpu/
 ├── sync.rs            # Fence, async GPU sync
 ├── platform/
 │   ├── metal/
-│   │   ├── device.rs  # MetalDevice (@_cdecl FFI)
+│   │   ├── device.rs  # MetalDevice (swift-bridge FFI)
 │   │   ├── command.rs # MetalCommandBuffer
 │   │   ├── heap.rs    # MetalHeap
 │   │   └── swap.rs    # MetalSwapchain (CAMetalLayer)
@@ -179,7 +178,7 @@ harmonius_gpu/
 │       └── swap.rs    # VulkanSwapchain
 └── ffi/
     ├── dxc.rs         # DXC (windows-rs COM on Win, libloading on Linux)
-    └── msc.rs         # Metal Shader Converter (Swift @_cdecl)
+    └── msc.rs         # Metal Shader Converter (swift-bridge)
 
 harmonius_gpu_runtime/
 ├── lib.rs
@@ -201,7 +200,7 @@ flowchart LR
     DXC -->|"--target dxil"| DXIL["DXIL Bytecode"]
     DXC -->|"--target spirv"| SPIRV["SPIR-V"]
 
-    DXIL --> MSC["Metal Shader\nConverter\n(C ABI)"]
+    DXIL --> MSC["Metal Shader\nConverter\n(swift-bridge)"]
     MSC --> METALLIB["metallib"]
 
     DXIL -->|D3D12| D3D12["D3D12 Pipeline"]
@@ -1433,7 +1432,7 @@ pub struct ReflectedBinding {
 
 impl ShaderCompiler {
     /// Create the compiler. Initializes DXC and
-    /// (on macOS) Metal Shader Converter via C ABI.
+    /// (on macOS) Metal Shader Converter via swift-bridge.
     pub fn new() -> Result<Self, GpuError>;
 
     /// Compile HLSL to the target bytecode format.
@@ -2240,7 +2239,7 @@ on the hot path:
 
 | Component | API | Notes |
 |-----------|-----|-------|
-| Device | MTLDevice | Via Swift @_cdecl |
+| Device | MTLDevice | Via swift-bridge |
 | Command buffer | MTLCommandBuffer | From MTLCommandQueue |
 | Pipeline | MTLRenderPipelineState | Pre-validated at creation |
 | Heap | MTLHeap | Page-aligned (4096 B) |
@@ -2372,8 +2371,8 @@ on the hot path:
    structured error at creation, not at encoding.
 7. **`test_pso_zero_cost_encoding`** — Measure PSO bind during encoding adds zero conditional
    branches vs raw backend.
-8. **`test_metal_ffi_no_objc`** — Verify Metal FFI boundary contains only C-compatible signatures.
-   No Objective-C selectors.
+8. **`test_metal_ffi_swift_bridge`** — Verify Metal FFI boundary uses only swift-bridge generated
+   bindings. No manual C signatures or Objective-C selectors.
 9. **`test_d3d12_no_cpp`** — Verify D3D12 dep graph contains no C++ translation units.
 10. **`test_vulkan_validation_zero_errors`** — Run conformance suite with VK validation layers. Zero
     validation errors.
@@ -2509,11 +2508,9 @@ to the render graph's budget culling (F-2.2.8) would enable proactive quality re
 The GPU abstraction is the foundation layer that all rendering subsystems depend on, and its
 trait-based design with associated types aligns well with the engine's static dispatch preference.
 The shader pipeline (HLSL -> DXC -> DXIL/SPIR-V -> MSL via Metal Shader Converter) follows the
-constraints exactly. One cohesion concern is that the Swift @_cdecl FFI path for Metal
-(F-2.1.4) is unique in the engine -- no other subsystem uses Swift. The constraints.md mentions
-`objc2-metal` as a simpler alternative that would eliminate the Swift layer entirely. Evaluating
-this during the prototype phase (as noted in constraints.md) could simplify the FFI boundary and
-make the Metal backend more consistent with the C-based Vulkan and D3D12 backends.
+constraints exactly. The swift-bridge FFI path for Metal (F-2.1.4) provides direct Rust-Swift
+bindings without a C intermediate layer, consistent with how all Apple platform APIs are accessed
+across the engine.
 
 ## Safety Guarantees
 
@@ -2540,7 +2537,7 @@ All GPU abstraction APIs are safe Rust. Internal `unsafe` is confined to platfor
 4. ****Type-safe resource handles.**** — GPU resources use generational handles (`GpuHandle<T>`)
    with phantom type markers. No raw pointers. Stale handles (use-after-free) are caught by
    generation checks at every access.
-5. ****Internal unsafe encapsulation.**** — Platform FFI (Metal via Swift @_cdecl, D3D12 via COM
+5. ****Internal unsafe encapsulation.**** — Platform FFI (Metal via swift-bridge, D3D12 via COM
    windows-rs, Vulkan via ash) is encapsulated in `harmonius_gpu::platform::*` modules. Each
    `unsafe` block documents its safety invariants. No unsafe propagates to consumers.
 
@@ -2585,8 +2582,8 @@ impl ReadbackRing {
 
 ## Open Questions
 
-1. **~~Vulkan bindings strategy~~** -- **Resolved: `ash`.** Thin Vulkan bindings with zero
-   overhead. Tracks the Vulkan spec. Safe Rust RAII wrappers built on top.
+1. **~~Vulkan bindings strategy~~** -- **Resolved: `ash`.** Thin Vulkan bindings with zero overhead.
+   Tracks the Vulkan spec. Safe Rust RAII wrappers built on top.
 
 2. **Descriptor heap management on D3D12** -- Single monolithic shader-visible descriptor heap vs
    ring-allocated regions. Monolithic is simpler but wastes memory. Ring allocation matches the

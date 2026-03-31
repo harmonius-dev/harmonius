@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/vfx/](../../features/vfx/), [requirements/vfx/](../../requirements/vfx/), and
-> [user-stories/vfx/](../../user-stories/vfx/). The table below traces design elements to those
+> [features/vfx/](../../features/), [requirements/vfx/](../../requirements/), and
+> [user-stories/vfx/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 | Feature   | Requirement |
@@ -1389,7 +1389,7 @@ uploaded to the GPU each frame. Changes propagate within one frame.
 | iOS (Metal) | HLSL | DXIL | MSL (via Metal Shader Converter) |
 
 All shader compilation uses DXC (via `windows-rs` COM on Windows, C API on Linux) and Metal Shader
-Converter (via Swift `@_cdecl`). HLSL is the sole shader intermediate language.
+Converter (via swift-bridge). HLSL is the sole shader intermediate language.
 
 ### Platform Compute Capabilities
 
@@ -1425,7 +1425,7 @@ Effects compiled for mobile use smaller thread group sizes (256 vs desktop 1024)
 Effect graph assets (compiled kernels + metadata) are loaded via the platform async I/O system:
 
 - **Windows:** IOCP
-- **macOS:** GCD / Dispatch IO (C ABI wrappers)
+- **macOS:** GCD / Dispatch IO (swift-bridge)
 - **Linux:** io_uring
 
 Loading is non-blocking. The `IoReactor` poll point wakes the loading future when the OS completes

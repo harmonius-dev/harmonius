@@ -2,11 +2,11 @@
 
 ## ECS-to-Renderer Bridge
 
-| ID       | Feature                                 | Requirements |
-|----------|-----------------------------------------|--------------|
-| F-2.10.1 | Render Proxy Extraction                 | R-2.10.1     |
-| F-2.10.2 | Render Component System                 | R-2.10.2     |
-| F-2.10.3 | Change Detection and Incremental Update | R-2.10.3     |
+| ID       | Feature                                 |
+|----------|-----------------------------------------|
+| F-2.10.1 | Render Proxy Extraction                 |
+| F-2.10.2 | Render Component System                 |
+| F-2.10.3 | Change Detection and Incremental Update |
 
 1. **F-2.10.1** — Each frame, visible ECS entities with renderable components are extracted into a
    renderer-owned snapshot decoupled from the ECS world. Extraction runs on a dedicated thread,
@@ -29,10 +29,10 @@
 
 ## View Setup and Camera
 
-| ID       | Feature               | Requirements |
-|----------|-----------------------|--------------|
-| F-2.10.4 | View and Camera Setup | R-2.10.4     |
-| F-2.10.5 | Multi-View Rendering  | R-2.10.5     |
+| ID       | Feature               |
+|----------|-----------------------|
+| F-2.10.4 | View and Camera Setup |
+| F-2.10.5 | Multi-View Rendering  |
 
 1. **F-2.10.4** — Each active view (main camera, shadow cascades, reflection probes, split-screen
    players, VR eyes) is registered with its projection matrix, view matrix, viewport rect, and
@@ -48,10 +48,10 @@
 
 ## Draw List Construction and Batching
 
-| ID       | Feature                     | Requirements |
-|----------|-----------------------------|--------------|
-| F-2.10.6 | Draw List Construction      | R-2.10.6     |
-| F-2.10.7 | GPU-Driven Batch Compaction | R-2.10.7     |
+| ID       | Feature                     |
+|----------|-----------------------------|
+| F-2.10.6 | Draw List Construction      |
+| F-2.10.7 | GPU-Driven Batch Compaction |
 
 1. **F-2.10.6** — Per-view draw lists are assembled by iterating extracted proxies and emitting draw
    commands keyed by material, mesh, and render state. Sort keys encode pipeline state, material ID,
@@ -70,9 +70,9 @@
 
 ## Material Parameter Binding
 
-| ID       | Feature                    | Requirements |
-|----------|----------------------------|--------------|
-| F-2.10.8 | Material Parameter Binding | R-2.10.8     |
+| ID       | Feature                    |
+|----------|----------------------------|
+| F-2.10.8 | Material Parameter Binding |
 
 1. **F-2.10.8** — Per-draw material parameters (textures, constants, samplers) are bound via
    bindless descriptor indices written into a per-instance data buffer. The shader reads parameters
@@ -84,10 +84,10 @@
 
 ## Debug Visualization
 
-| ID        | Feature                        | Requirements |
-|-----------|--------------------------------|--------------|
-| F-2.10.9  | Debug Visualization and Gizmos | R-2.10.9     |
-| F-2.10.10 | Buffer Visualization Modes     | R-2.10.10    |
+| ID        | Feature                        |
+|-----------|--------------------------------|
+| F-2.10.9  | Debug Visualization and Gizmos |
+| F-2.10.10 | Buffer Visualization Modes     |
 
 1. **F-2.10.9** — Immediate-mode debug drawing API for lines, wireframe shapes, text labels, and
    custom gizmos rendered as an overlay pass. Debug primitives are batched into a single vertex

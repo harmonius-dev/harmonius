@@ -258,13 +258,13 @@ Companion test cases for [hot-reload.md](hot-reload.md).
 1. **#1** — Write 10,000 files rapidly to trigger buffer overflow
    - **Expected:** Watcher recovers via full scan; no changes missed
 
-### TC-12.4.2.I4 DCC Live Link Reload
+### TC-12.4.2.I4 DCC Bridge Reload
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-12.4.2    |
 
-1. **#1** — Push change through DCC plugin live link
+1. **#1** — Push change through DCC plugin DCC Bridge
    - **Expected:** Engine hot reloads the asset correctly
 
 ### TC-12.4.1.I2 Platform Watcher Latency

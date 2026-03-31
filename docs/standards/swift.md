@@ -2,9 +2,9 @@
 
 ## Scope
 
-Apple platform wrappers only. Swift wraps macOS/iOS APIs (Metal, NSWindow, GCD) and exposes them to
-Rust as C ABI functions via `@_cdecl`. Rust declares matching `extern "C"` signatures. Built
-with SwiftPM. No SwiftUI, no Combine, no Objective-C, no Objective-C++, no cxx.rs, no metal-cpp.
+Apple platform wrappers only (macOS/iOS). Swift wraps platform APIs (Metal, NSWindow, GCD) and
+exposes them to Rust via `swift-bridge`. Built with SwiftPM. No SwiftUI, no Combine, no Objective-C,
+no Objective-C++, no manual C ABI, no metal-cpp.
 
 ## Naming Conventions
 
@@ -58,19 +58,21 @@ with SwiftPM. No SwiftUI, no Combine, no Objective-C, no Objective-C++, no cxx.r
 
 1. **Apple platform wrappers only** — no application logic in Swift
 2. **No SwiftUI** — use AppKit/UIKit directly
-3. **No Combine** — use GCD and completion handlers at the Swift layer
-4. **C ABI via `@_cdecl`** — all Swift functions exposed to Rust use `@_cdecl` for C linkage
+3. **`swift-bridge` for all FFI** — all Rust ↔ Swift interop via `swift-bridge`; no manual `@_cdecl`
+   or `extern "C"`
+4. **Swift async/await** — use Swift concurrency (`async`/`await`) for all asynchronous operations;
+   GCD used internally by runtime
 5. **SwiftPM for libraries** — Swift libraries built with SwiftPM
 6. **XcodeGen for apps** — macOS/iOS app packaging uses XcodeGen + xcodebuild
-7. **GCD for concurrency** — dispatch queues, not Swift concurrency (`async`/`await` in Swift)
-8. **No Objective-C** — no `@objc`, no Objective-C bridging headers, no Objective-C++
-9. **Metal directly from Swift** — Metal accessed directly via Swift APIs, exposed to Rust via C ABI
-10. **No cxx.rs** — no C++ interop; all FFI through C ABI
-11. **No metal-cpp** — no C++ Metal wrappers
+7. **No Objective-C** — no `@objc`, no Objective-C bridging headers, no Objective-C++
+8. **Metal directly from Swift** — Metal accessed directly via Swift APIs, exposed to Rust via
+   `swift-bridge`
+9. **No metal-cpp** — no C++ Metal wrappers
+10. **No manual C ABI** — no `@_cdecl` or `extern "C"` declarations
 
 ## Cache-Friendly Patterns
 
-- **Value types** — prefer `struct` over `class` for data passed across FFI boundaries
+- **Value types** — prefer `struct` over `class` for data passed across `swift-bridge` boundaries
 - **Contiguous arrays** — use `Array` and `UnsafeBufferPointer` for bulk data
 - **Avoid ARC overhead** — minimize reference counting by using value types and `unowned`/`weak`
   sparingly
@@ -111,6 +113,6 @@ with SwiftPM. No SwiftUI, no Combine, no Objective-C, no Objective-C++, no cxx.r
 5. **Global state** — no singletons or global mutable variables
 6. **Deep class hierarchies** — use protocols and composition
 7. **Stringly-typed APIs** — use enums and typed IDs
-8. **Unstructured concurrency** — use GCD dispatch queues, not `Task` or `TaskGroup`
+8. **Callbacks and completion handlers** — use `async`/`await`
 9. **Large files** — split into extensions by protocol conformance
 10. **Ignoring errors** — handle all errors explicitly

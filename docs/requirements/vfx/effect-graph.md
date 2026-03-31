@@ -1,63 +1,52 @@
-# R-11.6 — Effect Graph Requirements
+# R-11.6 -- Effect Graph Requirements
 
-## R-11.6.1–R-11.6.5 Effect Graph
+## Authoring
 
-| ID       | Derived From                                   |
-|----------|------------------------------------------------|
-| R-11.6.1 | [F-11.6.1](../../features/vfx/effect-graph.md) |
-| R-11.6.2 | [F-11.6.2](../../features/vfx/effect-graph.md) |
-| R-11.6.3 | [F-11.6.3](../../features/vfx/effect-graph.md) |
-| R-11.6.4 | [F-11.6.4](../../features/vfx/effect-graph.md) |
-| R-11.6.5 | [F-11.6.5](../../features/vfx/effect-graph.md) |
+1. **R-11.6.1** — The engine **SHALL** provide a visual node-graph editor composing spawn, update,
+   and render modules as typed-edge-connected nodes, compiling to GPU compute dispatches, with
+   real-time preview, scrubbing, looping, and performance statistics.
+   - **Rationale:** A no-code visual editor lets designers author VFX without programming; GPU
+     compilation ensures runtime performance matches preview.
+   - **Verification:** Create a graph with spawn, update (gravity), and render (sprite) nodes.
+     Compile and verify valid GPU dispatch. Open preview and verify particles render. Scrub timeline
+     and verify state update.
 
-1. **R-11.6.1** — The engine **SHALL** provide a visual node-graph editor that composes spawn,
-   update, and render modules as typed-edge-connected nodes, compiles the graph to GPU compute
-   dispatches, and displays real-time preview with scrubbing, looping, and performance statistics.
-   - **Rationale:** A no-code visual editor lets designers author VFX systems without programming,
-     while GPU compilation ensures runtime performance matches preview.
-   - **Verification:** Integration test — create an effect graph with a spawn node (burst emitter),
-     an update node (gravity force), and a render node (sprite); compile the graph; assert a valid
-     GPU compute dispatch is produced; open the preview and assert particles render in the viewport;
-     scrub the timeline and assert particle state updates to the scrubbed time.
-2. **R-11.6.2** — The engine **SHALL** allow custom effect graph nodes authored via the logic graph
-   system, with typed inputs and outputs, executing per-particle or per-emitter, and appearing in
-   the node palette as reusable library assets alongside built-in nodes.
-   - **Rationale:** Custom nodes let designers extend the VFX system with game-specific behavior
-     (attractors, game-state sampling) without engine code changes.
-   - **Verification:** Integration test — author a custom node with a float input and vector output
-     via the logic graph system; package it as a library asset; open the effect graph editor and
-     assert the custom node appears in the node palette; connect it to a particle update chain;
-     compile and run the effect; assert the custom node executes per-particle and produces the
-     expected output values.
+2. **R-11.6.2** — The engine **SHALL** allow custom effect graph nodes authored via the Logic Graph
+   system with typed inputs and outputs, executing per-particle or per-emitter, appearing as
+   reusable library assets in the node palette.
+   - **Rationale:** Custom nodes extend the VFX system with game-specific behavior without engine
+     code changes.
+   - **Verification:** Author a custom node with float input and vector output. Package as library
+     asset. Verify it appears in the palette. Connect, compile, and run. Verify expected output
+     values.
+
 3. **R-11.6.3** — The engine **SHALL** expose typed parameter slots (float, vector, color, curve,
-   gradient, texture) on effect graphs that accept per-instance overrides, bind to game state via
-   reactive data binding, and animate through the sequencer.
-   - **Rationale:** Externalized parameters enable a single effect template to serve many gameplay
-     contexts through instance-level tuning, data binding, and cinematic animation.
-   - **Verification:** Integration test — create an effect graph with a color parameter defaulting
-     to red; spawn two instances, overriding one to blue; assert each instance renders with its
-     respective color; bind a float parameter to a game-state value; change the value and assert the
-     effect updates within one frame; animate a parameter via the sequencer and assert it
-     interpolates across keyframes.
-4. **R-11.6.4** — The engine **SHALL** spawn VFX in response to ECS observer events (animation
-   notifies, physics collisions, destruction events, and custom logic graph events), parameterizing
-   the spawned effect with event context data including position, normal, velocity, and surface
-   material.
-   - **Rationale:** Event-driven spawning couples VFX to gameplay actions automatically, ensuring
-     visual feedback is immediate and context-appropriate without manual scripting.
-   - **Verification:** Integration test — register an observer for a physics collision event;
-     trigger a collision; assert a VFX instance spawns at the collision position with the correct
-     surface normal and contact velocity; trigger an animation notify event; assert the
-     corresponding VFX spawns at the notified bone position; verify context data (position, normal,
-     velocity, material) is passed to the effect parameters.
-5. **R-11.6.5** — The engine **SHALL** apply distance-based and screen-coverage-based LOD tiers that
-   reduce particle count and simulation fidelity for distant effects, and enforce a global VFX
-   performance budget that scales down lower-priority effects when total particle count, GPU compute
-   time, or overdraw exceeds configured limits.
-   - **Rationale:** Automatic LOD and budgeting maintain frame rate targets during particle-heavy
-     scenes by gracefully degrading lower-priority effects before impacting hero visuals.
-   - **Verification:** Integration test — spawn an effect at near and far distances; assert the far
-     instance uses fewer particles than the near instance; spawn effects until total particle count
-     exceeds the global budget; assert lower-priority effects are scaled down while higher-priority
-     effects retain full fidelity; verify GPU compute time stays within the configured budget
-     ceiling.
+   gradient, texture) that accept per-instance overrides, bind to game state via reactive data
+   binding, and animate through the sequencer.
+   - **Rationale:** Externalized parameters let one template serve many contexts through instance
+     tuning, data binding, and cinematic animation.
+   - **Verification:** Create a graph with a color parameter defaulting to red. Spawn two instances,
+     override one to blue. Verify distinct colors. Bind a float to game state, change it, and verify
+     update within one frame. Animate via sequencer and verify interpolation.
+
+## Event-Driven Spawning
+
+4. **R-11.6.4** — The engine **SHALL** spawn VFX from ECS observer events (animation notifies,
+   physics collisions, destruction events, custom Logic Graph events), parameterizing with position,
+   normal, velocity, and surface material.
+   - **Rationale:** Event-driven spawning couples VFX to gameplay automatically, ensuring immediate
+     context-appropriate feedback.
+   - **Verification:** Register an observer for physics collision. Trigger a collision and verify
+     VFX at the correct position with surface normal and velocity. Trigger an animation notify and
+     verify VFX at bone position.
+
+## LOD and Performance Budget
+
+5. **R-11.6.5** — The engine **SHALL** apply distance- and coverage-based LOD tiers reducing
+   particle count and simulation fidelity, enforcing a global VFX budget that scales down
+   lower-priority effects when total count, GPU time, or overdraw exceeds limits.
+   - **Rationale:** Automatic LOD and budgeting maintain frame rate by gracefully degrading
+     lower-priority effects.
+   - **Verification:** Spawn at near and far distances and verify far uses fewer particles. Exceed
+     the budget and verify lower-priority scaled down while higher-priority retained. Confirm GPU
+     time stays within ceiling.

@@ -2,10 +2,10 @@
 
 ## Ray and Shape Casts
 
-| ID      | Feature                     | Requirements |
-|---------|-----------------------------|--------------|
-| F-4.4.1 | Ray Casting                 | R-4.4.1      |
-| F-4.4.2 | Shape Casting (Sweep Tests) | R-4.4.2      |
+| ID      | Feature |
+|---------|----------------------------- |
+| F-4.4.1 | Ray Casting |
+| F-4.4.2 | Shape Casting (Sweep Tests) |
 
 1. **F-4.4.1** — `RayCast` is a system parameter that accepts a ray origin, direction, maximum
    distance, and `QueryFilter`, then queries the shared spatial index (F-1.9.1) against ECS entities
@@ -24,10 +24,10 @@
 
 ## Overlap and Proximity
 
-| ID      | Feature               | Requirements |
-|---------|-----------------------|--------------|
-| F-4.4.3 | Overlap Tests         | R-4.4.3      |
-| F-4.4.4 | Closest Point Queries | R-4.4.4      |
+| ID      | Feature |
+|---------|----------------------- |
+| F-4.4.3 | Overlap Tests |
+| F-4.4.4 | Closest Point Queries |
 
 1. **F-4.4.3** — `OverlapQuery` is a system parameter that tests whether a given shape placed at a
    position overlaps any ECS entities carrying `Collider` components. It traverses the broadphase
@@ -44,10 +44,10 @@
 
 ## Batching and Performance
 
-| ID      | Feature                               | Requirements |
-|---------|---------------------------------------|--------------|
-| F-4.4.5 | Batch Query Execution                 | R-4.4.5      |
-| F-4.4.6 | Query Filtering and Custom Predicates | R-4.4.6      |
+| ID      | Feature |
+|---------|--------------------------------------- |
+| F-4.4.5 | Batch Query Execution |
+| F-4.4.6 | Query Filtering and Custom Predicates |
 
 1. **F-4.4.5** — `BatchSpatialQuery` accepts a slice of query descriptors (ray casts, shape casts,
    overlaps) and submits them to the ECS job system for parallel execution across worker threads.

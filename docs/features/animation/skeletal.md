@@ -2,9 +2,9 @@
 
 ## GPU Skinning
 
-| ID      | Feature              | Requirements |
-|---------|----------------------|--------------|
-| F-9.1.1 | GPU Compute Skinning | R-9.1.1      |
+| ID      | Feature              |
+|---------|----------------------|
+| F-9.1.1 | GPU Compute Skinning |
 
 1. **F-9.1.1** — Transforms vertices by weighted bone matrices on the GPU using compute shaders.
    Supports both linear blend skinning and dual-quaternion skinning to eliminate candy-wrapping
@@ -14,9 +14,9 @@
 
 ## Animation Clips (GPU Keyframe Evaluation)
 
-| ID      | Feature                 | Requirements |
-|---------|-------------------------|--------------|
-| F-9.1.2 | GPU Keyframe Evaluation | R-9.1.2      |
+| ID      | Feature                 |
+|---------|-------------------------|
+| F-9.1.2 | GPU Keyframe Evaluation |
 
 1. **F-9.1.2** — Evaluates animation curves entirely on the GPU using Hermite interpolation.
    Per-joint translation, rotation, and scale tracks are sampled at arbitrary time offsets in a
@@ -27,9 +27,9 @@
 
 ## Animation Blending
 
-| ID      | Feature                               | Requirements |
-|---------|---------------------------------------|--------------|
-| F-9.1.3 | Animation Blending (Linear and Cubic) | R-9.1.3      |
+| ID      | Feature                               |
+|---------|---------------------------------------|
+| F-9.1.3 | Animation Blending (Linear and Cubic) |
 
 1. **F-9.1.3** — Blends multiple animation clips using linear interpolation or cubic Hermite curves
    to produce smooth transitions between poses. Blend weights are computed CPU-side by the state
@@ -41,9 +41,9 @@
 
 ## Animation Layers
 
-| ID      | Feature                                | Requirements |
-|---------|----------------------------------------|--------------|
-| F-9.1.4 | Animation Layers and Additive Blending | R-9.1.4      |
+| ID      | Feature                                |
+|---------|----------------------------------------|
+| F-9.1.4 | Animation Layers and Additive Blending |
 
 1. **F-9.1.4** — Applies animations on separate layers with per-bone masks, enabling upper-body
    combat overlaid on lower-body locomotion. Additive layers encode pose deltas relative to a
@@ -55,9 +55,9 @@
 
 ## Instanced Skeletal Animation
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-9.1.5 | Instanced Skeletal Animation | R-9.1.5      |
+| ID      | Feature                      |
+|---------|------------------------------|
+| F-9.1.5 | Instanced Skeletal Animation |
 
 1. **F-9.1.5** — Batch-evaluates animation for thousands of skeleton instances in a single compute
    dispatch using an arena buffer. Enables MMO-scale crowds, armies, and city NPCs without
@@ -68,9 +68,9 @@
 
 ## Root Motion
 
-| ID      | Feature                | Requirements |
-|---------|------------------------|--------------|
-| F-9.1.6 | Root Motion Extraction | R-9.1.6      |
+| ID      | Feature                |
+|---------|------------------------|
+| F-9.1.6 | Root Motion Extraction |
 
 1. **F-9.1.6** — Extracts translation and rotation deltas from the root bone of animation clips and
    applies them to the character's world transform via the physics system. Separates authored
@@ -81,9 +81,9 @@
 
 ## Animation Compression
 
-| ID      | Feature               | Requirements |
-|---------|-----------------------|--------------|
-| F-9.1.7 | Animation Compression | R-9.1.7      |
+| ID      | Feature               |
+|---------|-----------------------|
+| F-9.1.7 | Animation Compression |
 
 1. **F-9.1.7** — Compresses animation clip data using variable-rate quantization per track: rotation
    tracks use smallest-three quaternion encoding, translation and scale tracks use range-reduced
@@ -94,9 +94,9 @@
 
 ## Animation Retargeting
 
-| ID      | Feature               | Requirements |
-|---------|-----------------------|--------------|
-| F-9.1.8 | Animation Retargeting | R-9.1.8      |
+| ID      | Feature               |
+|---------|-----------------------|
+| F-9.1.8 | Animation Retargeting |
 
 1. **F-9.1.8** — Play animation clips authored on one skeleton on a different skeleton with
    different bone counts, proportions, and naming conventions. Uses a shared canonical pose (T-pose
@@ -108,9 +108,9 @@
 
 ## Animation Events
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-9.1.9 | Animation Events and Notifies | R-9.1.9      |
+| ID      | Feature                       |
+|---------|-------------------------------|
+| F-9.1.9 | Animation Events and Notifies |
 
 1. **F-9.1.9** — Named events embedded at specific frames within animation clips that fire callbacks
    during playback. Events flow through the ECS observer system (F-1.1.30) as typed event
@@ -122,9 +122,9 @@
 
 ## Animation Level of Detail
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-9.1.10 | Animation Level of Detail | R-9.1.10     |
+| ID       | Feature                   |
+|----------|---------------------------|
+| F-9.1.10 | Animation Level of Detail |
 
 1. **F-9.1.10** — Reduces animation cost for distant or occluded entities. LOD tiers: full skeletal
    evaluation (close), reduced bone set (medium), bone-count-halved with lower update rate (far),

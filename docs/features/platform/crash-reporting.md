@@ -15,9 +15,9 @@
    anything.
    - **Platform:** Windows uses `SetUnhandledExceptionFilter` and `MiniDumpWriteDump` via COM
      wrappers; macOS uses a Mach exception handler (`mach_port_allocate`, `mach_msg_server`) via
-     Swift C ABI wrappers; Linux uses a `SIGSEGV`/`SIGABRT` signal handler with
-     `/proc/self/maps` parsing and `ptrace`-based stack capture. Out-of-process crash capture is
-     preferred on all platforms to avoid corruption in the faulting process.
+     Swift via swift-bridge; Linux uses a `SIGSEGV`/`SIGABRT` signal handler with `/proc/self/maps`
+     parsing and `ptrace`-based stack capture. Out-of-process crash capture is preferred on all
+     platforms to avoid corruption in the faulting process.
 2. **F-14.4.2** — Upload debug symbols (PDB on Windows, dSYM on macOS, DWARF on Linux) to a crash
    aggregation service during the build pipeline. Crash reports reference a build ID that the
    backend uses to symbolicate stack traces into function names, file paths, and line numbers.

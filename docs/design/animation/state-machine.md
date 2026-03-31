@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/animation/](../../features/animation/),
-> [requirements/animation/](../../requirements/animation/), and
-> [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
-> to those definitions.
+> [features/animation/](../../features/), [requirements/animation/](../../requirements/), and
+> [user-stories/animation/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### State Machine
 
@@ -2072,7 +2071,7 @@ fn compose_layers(
 | Platform | I/O Backend | API |
 |----------|-------------|-----|
 | Windows | IOCP | `CreateIoCompletionPort` via `windows-rs` |
-| macOS | GCD Dispatch IO | C ABI wrappers |
+| macOS | GCD Dispatch IO | swift-bridge wrappers |
 | Linux | io_uring | `io_uring` crate |
 
 ### Per-Tier Scaling

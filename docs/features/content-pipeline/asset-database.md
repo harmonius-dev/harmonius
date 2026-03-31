@@ -2,10 +2,10 @@
 
 ## Storage
 
-| ID       | Feature                     | Requirements |
-|----------|-----------------------------|--------------|
-| F-12.3.1 | Content-Addressable Storage | R-12.3.1     |
-| F-12.3.2 | Asset Metadata Store        | R-12.3.2     |
+| ID       | Feature                     |
+|----------|-----------------------------|
+| F-12.3.1 | Content-Addressable Storage |
+| F-12.3.2 | Asset Metadata Store        |
 
 1. **F-12.3.1** — All processed assets are stored in a content-addressable store keyed by the
    cryptographic hash (BLAKE3) of their contents. Identical assets are deduplicated automatically,
@@ -20,10 +20,10 @@
 
 ## Caching and Builds
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-12.3.3 | Hash-Based Import Caching | R-12.3.3     |
-| F-12.3.4 | Incremental Builds        | R-12.3.4     |
+| ID       | Feature                   |
+|----------|---------------------------|
+| F-12.3.3 | Hash-Based Import Caching |
+| F-12.3.4 | Incremental Builds        |
 
 1. **F-12.3.3** — Cache processed asset outputs keyed by the hash of (source content + import
    settings + tool version). A cache hit skips all import and processing stages, returning the
@@ -32,16 +32,16 @@
    - **Deps:** F-12.3.1, F-12.2.8
 2. **F-12.3.4** — Rebuild only the assets whose source files, import settings, or transitive
    dependencies have changed since the last build. The dependency graph is walked bottom-up to
-   propagate invalidation: changing a shared texture reprocesses only the materials and prefabs that
-   reference it, not the entire asset library.
+   propagate invalidation: changing a shared texture reprocesses only the materials and entity
+   templates that reference it, not the entire asset library.
    - **Deps:** F-12.3.3, F-12.2.8
 
 ## Search, Tagging, and Thumbnails
 
-| ID       | Feature                    | Requirements |
-|----------|----------------------------|--------------|
-| F-12.3.5 | Asset Search and Tagging   | R-12.3.5     |
-| F-12.3.6 | Asset Thumbnail Generation | R-12.3.6     |
+| ID       | Feature                    |
+|----------|----------------------------|
+| F-12.3.5 | Asset Search and Tagging   |
+| F-12.3.6 | Asset Thumbnail Generation |
 
 1. **F-12.3.5** — Full-text and tag-based search across the asset database. Assets can be tagged
    manually or automatically (e.g., by import type, directory, resolution tier). Faceted search by
@@ -56,11 +56,11 @@
 
 ## AI-Assisted Asset Management
 
-| ID       | Feature                               | Requirements |
-|----------|---------------------------------------|--------------|
-| F-12.3.7 | AI-Driven Auto-Categorization         | R-12.3.7     |
-| F-12.3.8 | LLM-Based Semantic Asset Search       | R-12.3.8     |
-| F-12.3.9 | Smart Collections and Recommendations | R-12.3.9     |
+| ID       | Feature                               |
+|----------|---------------------------------------|
+| F-12.3.7 | AI-Driven Auto-Categorization         |
+| F-12.3.8 | LLM-Based Semantic Asset Search       |
+| F-12.3.9 | Smart Collections and Recommendations |
 
 1. **F-12.3.7** — An LLM-based classifier that automatically assigns categories, tags, and quality
    ratings to imported assets based on visual content, naming conventions, and metadata. Meshes are
@@ -82,9 +82,9 @@
 
 ## Versioning
 
-| ID        | Feature          | Requirements |
-|-----------|------------------|--------------|
-| F-12.3.10 | Asset Versioning | R-12.3.10    |
+| ID        | Feature          |
+|-----------|------------------|
+| F-12.3.10 | Asset Versioning |
 
 1. **F-12.3.10** — Track the full revision history of each asset, including source file changes,
    import setting modifications, and processing outputs. Any previous version can be restored by its

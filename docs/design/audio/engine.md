@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/audio/](../../features/audio/), [requirements/audio/](../../requirements/audio/), and
-> [user-stories/audio/](../../user-stories/audio/). The table below traces design elements to those
+> [features/audio/](../../features/), [requirements/audio/](../../requirements/), and
+> [user-stories/audio/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 | Feature | Requirement |
@@ -2046,7 +2046,7 @@ sequenceDiagram
 | Linux    | ALSA / PipeWire | `snd_pcm_*` / PipeWire native        |
 
 1. **Windows** — Exclusive mode for low latency; shared mode fallback. Via `windows-rs`.
-2. **macOS** — Callback on CoreAudio's real-time thread. C ABI wrapper.
+2. **macOS** — Callback on CoreAudio's real-time thread. Via swift-bridge.
 3. **Linux** — ALSA via Rust crate; PipeWire preferred when available.
 
 ### Streaming I/O Backends
@@ -2101,7 +2101,7 @@ sequenceDiagram
 | `crossbeam-utils` | CachePadded, Backoff | Lock-free primitives |
 | `smallvec` | Inline bus child lists | Avoids heap for small arrays |
 | `windows-rs` | WASAPI bindings | Zero-cost Win32 FFI |
-| (hand-written `extern "C"`) | Swift @_cdecl CoreAudio declarations | Matches Swift C ABI |
+| `swift-bridge` | Swift CoreAudio bindings | Direct Rust-Swift FFI |
 
 ## Safety Invariants
 

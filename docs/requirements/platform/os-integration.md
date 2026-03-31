@@ -2,101 +2,93 @@
 
 ## Clipboard and Dialogs
 
-| ID       | Derived From                                          |
-|----------|-------------------------------------------------------|
-| R-14.2.1 | [F-14.2.1](../../features/platform/os-integration.md) |
-| R-14.2.2 | [F-14.2.2](../../features/platform/os-integration.md) |
-
 1. **R-14.2.1** — The engine **SHALL** read and write plain text and image data to the system
-   clipboard on Windows, macOS, and Linux (X11 and Wayland), with clipboard operations executing
+   clipboard on Windows, macOS, and Linux (X11 and Wayland), with operations executing
    asynchronously so they never block the game loop.
    - **Rationale:** Players rely on the clipboard for pasting chat messages, sharing coordinates,
-     and exchanging screenshots; blocking clipboard operations would cause frame hitches during
-     gameplay.
-   - **Verification:** Integration test: on each platform, write a known UTF-8 string to the
-     clipboard via the engine API and read it back; assert the round-tripped string is identical.
-     Write an RGBA image to the clipboard, read it back, and assert pixel data matches. Measure the
-     game loop frame time during clipboard operations and assert no frame exceeds the target frame
-     budget.
-2. **R-14.2.2** — The engine **SHALL** open native file-picker and folder-picker dialogs that
-   support file-type filters, executing on a separate thread so the game loop continues rendering
-   while the dialog is open.
-   - **Rationale:** File dialogs must not freeze the game window; the render loop and network
-     processing must continue while the player browses the filesystem.
-   - **Verification:** Integration test: on each platform, open a file dialog with a filter for
-     ".png" files; assert only .png files are shown. While the dialog is open, assert the game loop
-     continues to render frames at the target frame rate (within 10% tolerance). Select a file and
-     assert the returned path is valid and accessible.
+     and exchanging screenshots; blocking operations would cause frame hitches.
+   - **Verification:** Integration test per platform: write a UTF-8 string, read it back, assert
+     round-trip equality. Write an RGBA image, read back, assert pixel match. Measure frame time
+     during operations and assert no frame exceeds the target budget.
+
+2. **R-14.2.2** — The engine **SHALL** open native file-picker and folder-picker dialogs with
+   file-type filters, executing on a separate thread so the game loop continues rendering while the
+   dialog is open.
+   - **Rationale:** File dialogs must not freeze the game window; rendering and networking must
+     continue while the player browses the filesystem.
+   - **Verification:** Integration test per platform: open a file dialog filtered to ".png". Assert
+     only .png files shown. Assert game loop continues rendering during dialog (within 10 %
+     tolerance).
 
 ## System Interaction
 
-| ID       | Derived From                                          |
-|----------|-------------------------------------------------------|
-| R-14.2.3 | [F-14.2.3](../../features/platform/os-integration.md) |
-| R-14.2.4 | [F-14.2.4](../../features/platform/os-integration.md) |
+3. **R-14.2.3** — The engine **SHALL** display OS toast notifications for background events when the
+   game is minimized or unfocused, and **SHALL** optionally provide a system tray icon with a
+   context menu on supported platforms.
+   - **Rationale:** Players tabbed out need alerts for time-sensitive events without the game window
+     being visible.
+   - **Verification:** Integration test: minimize game, trigger notification, assert OS notification
+     API invoked with correct title and body. Create tray icon with context menu; assert menu
+     selection emits the correct engine event.
 
-1. **R-14.2.3** — The engine **SHALL** display OS toast notifications for background events when the
-   game window is minimized or unfocused, and **SHALL** optionally provide a system tray icon with a
-   context menu, on platforms that support these features.
-   - **Rationale:** Players tabbed out of the game need to be alerted to time-sensitive events such
-     as queue pops or auction results without requiring the game window to be visible.
-   - **Verification:** Integration test: minimize the game window, trigger a notification, and
-     assert the OS notification API was invoked with the correct title and body text. On Windows,
-     macOS, and Linux, verify the notification is visible in the system notification center. Create
-     a tray icon with a context menu and assert menu item selection emits the correct engine event.
-2. **R-14.2.4** — The engine **SHALL** accept files and data dragged from the OS desktop onto the
+4. **R-14.2.4** — The engine **SHALL** accept files and data dragged from the OS desktop onto the
    game window, validating MIME types and file extensions before accepting the drop, on Windows,
    macOS, and Linux (X11 and Wayland).
-   - **Rationale:** Drag-and-drop provides a natural workflow for importing add-ons and assets
-     without navigating a file dialog, reducing friction for common content operations.
-   - **Verification:** Integration test: on each platform, drag a file with an accepted extension
-     onto the game window and assert the drop event contains the correct file path. Drag a file with
-     a rejected extension and assert the drop is rejected. Assert no frame time spike exceeds 2 ms
-     during drag hover and drop handling.
+   - **Rationale:** Drag-and-drop provides a natural workflow for importing add-ons and assets.
+   - **Verification:** Integration test per platform: drag an accepted file type onto the window and
+     assert the drop event contains the correct path. Drag a rejected type and assert rejection.
+     Assert no frame spike exceeds 2 ms during drop handling.
 
 ## Text Input
 
-| ID       | Derived From                                          |
-|----------|-------------------------------------------------------|
-| R-14.2.5 | [F-14.2.5](../../features/platform/os-integration.md) |
-| R-14.2.6 | [F-14.2.6](../../features/platform/os-integration.md) |
-
-1. **R-14.2.5** — The engine **SHALL** query the active keyboard layout, correctly interpret
+5. **R-14.2.5** — The engine **SHALL** query the active keyboard layout, correctly interpret
    dead-key sequences for accented and composed characters, and update the key-to-character mapping
    within one frame of a layout-change event.
-   - **Rationale:** Players using non-US keyboard layouts must be able to type correctly in chat and
-     search fields without switching layouts; dead-key sequences are essential for Latin-extended
-     and Cyrillic scripts.
-   - **Verification:** Integration test: on each platform, set the layout to French AZERTY and type
-     a dead-key sequence (e.g., `^` then `e` to produce `ê`); assert the engine emits `ê` as the
-     composed character. Switch the layout at runtime and assert the key-to-character mapping
-     updates within one frame.
-2. **R-14.2.6** — The engine **SHALL** integrate with the OS input method editor for Chinese,
-   Japanese, and Korean text entry, providing a candidate window position hint in screen coordinates
-   and handling composition, commit, and candidate-list events.
+   - **Rationale:** Players using non-US layouts must type correctly without switching layouts; dead
+     keys are essential for Latin-extended and Cyrillic.
+   - **Verification:** Integration test per platform: set French AZERTY layout, type `^` then `e`,
+     assert engine emits `e-hat`. Switch layout at runtime and assert mapping updates within one
+     frame.
+
+6. **R-14.2.6** — The engine **SHALL** integrate with the OS input method editor for CJK text entry,
+   providing a candidate window position hint in screen coordinates and handling composition,
+   commit, and candidate-list events.
    - **Rationale:** CJK text entry requires IME integration; without it, players cannot type in
-     their native language in chat, naming, or search fields.
-   - **Verification:** Integration test: on each platform with a CJK IME active, type a composition
-     sequence and assert the engine receives composition update events with the correct intermediate
-     text. Commit the composition and assert the final text matches the expected character. Move and
-     resize the game window and assert the candidate window position updates to track the text
-     cursor.
+     their native language.
+   - **Verification:** Integration test per platform with CJK IME active: type a composition
+     sequence, assert engine receives composition events. Commit and assert final text matches. Move
+     window and assert candidate window tracks the text cursor.
 
 ## Async API Surface
 
-| ID       | Derived From                                          |
-|----------|-------------------------------------------------------|
-| R-14.2.7 | [F-14.2.7](../../features/platform/os-integration.md) |
-
-1. **R-14.2.7** — The engine **SHALL** expose all clipboard read/write and file dialog operations as
-   `async fn` methods that return `Future`s, providing a uniform calling convention across all
-   platforms so that callers always use `.await` regardless of whether the underlying platform API
-   is synchronous or asynchronous.
-   - **Rationale:** A uniform async API eliminates platform-conditional calling conventions in
-     gameplay and editor code. Callers should not need to know whether Wayland requires true async
-     or Windows wraps a sync call.
+7. **R-14.2.7** — The engine **SHALL** expose all clipboard read/write and file dialog operations as
+   `async fn` methods returning `Future`s, providing a uniform calling convention across all
+   platforms so callers always use `.await`.
+   - **Rationale:** A uniform async API eliminates platform-conditional calling conventions. Callers
+     need not know whether the underlying OS call is synchronous or asynchronous.
    - **Verification:** Unit test: call `Clipboard::read_text()` and `FileDialog::open_file()` from
-     an async context on each platform and verify they compile and resolve without blocking the
-     calling thread. Integration test: invoke clipboard write followed by clipboard read using
-     `.await` on all three platforms and verify round-trip correctness. Static analysis: verify no
-     synchronous clipboard or dialog call sites exist outside platform backend modules.
+     an async context on each platform; verify they compile and resolve without blocking.
+     Integration test: invoke clipboard write followed by read using `.await` on all platforms and
+     verify round-trip correctness.
+
+## Error Handling
+
+8. **R-14.2.8** — The engine **SHALL** return structured errors from clipboard, dialog,
+   notification, and drag-and-drop operations, including platform-specific error codes mapped to
+   engine error types, so callers can distinguish transient failures (clipboard locked) from
+   permanent failures (unsupported operation).
+   - **Rationale:** Structured errors enable callers to implement retry logic for transient failures
+     and graceful degradation for unsupported operations.
+   - **Verification:** Unit test: simulate a clipboard lock and assert the returned error is
+     `ClipboardError::Locked`. Call an unsupported operation on a platform that lacks it and assert
+     `ClipboardError::Unsupported`.
+
+## Console Fallback
+
+9. **R-14.2.9** — On platforms that lack OS-level notification or clipboard APIs (consoles), the
+   engine **SHALL** fall back to in-game UI equivalents, so that gameplay code does not need
+   platform-specific branching.
+   - **Rationale:** Console platforms do not expose system-level clipboard or notification APIs. A
+     unified fallback keeps gameplay code portable.
+   - **Verification:** Integration test on console: trigger a notification and assert the in-game UI
+     displays it. Call clipboard read and assert the in-game clipboard provides the data.

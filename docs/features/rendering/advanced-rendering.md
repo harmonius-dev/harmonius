@@ -2,24 +2,24 @@
 
 ## Features
 
-| ID       | Feature                                       | Requirements |
-|----------|-----------------------------------------------|--------------|
-| F-2.5.1  | Acceleration Structure Management (BLAS/TLAS) | R-2.5.1      |
-| F-2.5.2  | Ray Traced Reflections (Hybrid SSR + RT)      | R-2.5.2      |
-| F-2.5.3  | Ray Traced Indirect Lighting                  | R-2.5.3      |
-| F-2.5.4  | Real-Time Global Illumination (DDGI)          | R-2.5.4      |
-| F-2.5.5  | Path Tracing (Reference Renderer)             | R-2.5.5      |
-| F-2.5.6  | Ray Traced Subsurface Transmission            | R-2.5.6      |
-| F-2.5.7  | Surfel-Based Global Illumination              | R-2.5.7      |
-| F-2.5.8  | ReSTIR Sampling Framework                     | R-2.5.8      |
-| F-2.5.9  | Real-Time Production Path Tracing             | R-2.5.9      |
-| F-2.5.10 | Opacity Micromaps                             | R-2.5.10     |
-| F-2.5.11 | Shader Execution Reordering                   | R-2.5.11     |
-| F-2.5.12 | Neural Denoising (Ray Reconstruction)         | R-2.5.12     |
-| F-2.5.13 | RT Lens Flare                                 | R-2.5.13     |
-| F-2.5.14 | Voxel-Based Global Illumination               | R-2.5.14     |
-| F-2.5.15 | Neural Radiance Cache                         | R-2.5.15     |
-| F-2.5.16 | Stochastic Screen-Space Reflections           | R-2.5.16     |
+| ID       | Feature                                       |
+|----------|-----------------------------------------------|
+| F-2.5.1  | Acceleration Structure Management (BLAS/TLAS) |
+| F-2.5.2  | Ray Traced Reflections (Hybrid SSR + RT)      |
+| F-2.5.3  | Ray Traced Indirect Lighting                  |
+| F-2.5.4  | Real-Time Global Illumination (DDGI)          |
+| F-2.5.5  | Path Tracing (Reference Renderer)             |
+| F-2.5.6  | Ray Traced Subsurface Transmission            |
+| F-2.5.7  | Surfel-Based Global Illumination              |
+| F-2.5.8  | ReSTIR Sampling Framework                     |
+| F-2.5.9  | Real-Time Production Path Tracing             |
+| F-2.5.10 | Opacity Micromaps                             |
+| F-2.5.11 | Shader Execution Reordering                   |
+| F-2.5.12 | Neural Denoising (Ray Reconstruction)         |
+| F-2.5.13 | RT Lens Flare                                 |
+| F-2.5.14 | Voxel-Based Global Illumination               |
+| F-2.5.15 | Neural Radiance Cache                         |
+| F-2.5.16 | Stochastic Screen-Space Reflections           |
 
 1. **F-2.5.1** — Bottom-level acceleration structure (BLAS) building from meshlet geometry with
    post-build compaction to reduce memory. Top-level acceleration structure (TLAS) rebuilt or refit

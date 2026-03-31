@@ -1,258 +1,209 @@
 # R-12.6 DCC Tool Plugins
 
-| ID        | Derived From                                                |
-|-----------|-------------------------------------------------------------|
-| R-12.6.1  | [F-12.6.1](../../features/content-pipeline/dcc-plugins.md)  |
-| R-12.6.2  | [F-12.6.2](../../features/content-pipeline/dcc-plugins.md)  |
-| R-12.6.3  | [F-12.6.3](../../features/content-pipeline/dcc-plugins.md)  |
-| R-12.6.4  | [F-12.6.4](../../features/content-pipeline/dcc-plugins.md)  |
-| R-12.6.5  | [F-12.6.5](../../features/content-pipeline/dcc-plugins.md)  |
-| R-12.6.6  | [F-12.6.6](../../features/content-pipeline/dcc-plugins.md)  |
-| R-12.6.7  | [F-12.6.7](../../features/content-pipeline/dcc-plugins.md)  |
-| R-12.6.8  | [F-12.6.8](../../features/content-pipeline/dcc-plugins.md)  |
-| R-12.6.9  | [F-12.6.9](../../features/content-pipeline/dcc-plugins.md)  |
-| R-12.6.10 | [F-12.6.10](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.11 | [F-12.6.11](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.12 | [F-12.6.12](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.13 | [F-12.6.13](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.14 | [F-12.6.14](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.15 | [F-12.6.15](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.16 | [F-12.6.16](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.17 | [F-12.6.17](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.18 | [F-12.6.18](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.19 | [F-12.6.19](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.20 | [F-12.6.20](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.21 | [F-12.6.21](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.22 | [F-12.6.22](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.23 | [F-12.6.23](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.24 | [F-12.6.24](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.25 | [F-12.6.25](../../features/content-pipeline/dcc-plugins.md) |
-| R-12.6.26 | [F-12.6.26](../../features/content-pipeline/dcc-plugins.md) |
+## Plugin SDK
 
 1. **R-12.6.1** — The engine **SHALL** provide a C API plugin SDK with Python and C++ language
    bindings that DCC tool plugins use to export meshes, skeletons, animations, materials, textures,
-   and scene hierarchies to the engine's native binary format (R-12.7.1), with versioning,
-   compression, and transport over a local socket or shared-memory channel.
+   and scene hierarchies to the engine's native binary format, with versioning, compression, and
+   transport over a local socket or shared-memory channel.
    - **Rationale:** A single SDK with a stable C ABI allows every supported DCC tool to export
-     directly to the native binary format without intermediate file conversions.
+     directly to the native binary format without intermediate conversions.
    - **Verification:** Load the SDK shared library in a minimal C host, call the mesh-submit API
-     with a triangle, and confirm a valid native binary asset is produced with correct header,
-     version, and content hash.
+     with a triangle, and confirm a valid native binary asset is produced.
 2. **R-12.6.2** — The engine **SHALL** maintain a real-time bidirectional TCP connection between a
-   DCC tool plugin and the running engine editor that transmits asset deltas (mesh, material,
-   animation changes) from the DCC tool and camera/selection state from the engine, with viewport
-   updates completing within 2 seconds of a push.
+   DCC tool plugin and the running engine editor that transmits asset deltas from the DCC tool and
+   camera/selection state from the engine, with viewport updates completing within 2 seconds.
    - **Rationale:** Sub-second feedback between DCC tools and the engine viewport eliminates the
      full re-export cycle and accelerates artist iteration.
-   - **Verification:** Modify a mesh in a connected DCC tool, push via live link, and confirm the
-     engine viewport reflects the change within 2 seconds; disconnect the DCC tool and confirm the
-     engine handles the dropped connection gracefully.
-3. **R-12.6.3** — The engine **SHALL** host Houdini Digital Assets (HDAs) via the Houdini Engine
-   C/C++ API, execute procedural graphs in-process or out-of-process, expose HDA parameters in the
-   engine inspector, convert output geometry/instances/curves/attributes to engine entities, and
-   re-cook on parameter change.
-   - **Rationale:** Hosting Houdini Engine enables procedural content authored in Houdini to execute
-     directly inside the engine editor without manual export.
-   - **Verification:** Load an HDA that generates a grid mesh, change a parameter (grid size), and
-     confirm the engine entity updates with the re-cooked geometry; confirm no Houdini Engine
-     license is required for baked output at runtime.
-4. **R-12.6.4** — The engine **SHALL** accept Houdini mesh exports containing vertex attributes
-   (position, normal, UV sets, color, custom attributes), skeleton hierarchies, skin weights, morph
-   targets, packed primitives as instanced meshes, curve primitives as engine splines, and volume
-   primitives as 3D textures, all in the engine's native binary format (R-12.7.1).
-   - **Rationale:** Full-fidelity export from Houdini preserves all geometry data types that artists
-     rely on, avoiding lossy intermediate format conversions.
-   - **Verification:** Export a Houdini scene containing a skinned mesh, packed primitives, a curve,
-     and a volume; import into the engine and confirm each primitive type maps to its corresponding
-     engine representation with correct attribute values.
+   - **Verification:** Modify a mesh in a connected DCC tool, push via DCC bridge, and confirm the
+     engine viewport reflects the change within 2 seconds; disconnect and confirm graceful handling.
+
+## Houdini
+
+3. **R-12.6.3** — The engine **SHALL** host Houdini Digital Assets via the Houdini Engine C API,
+   execute procedural graphs in-process or out-of-process, expose HDA parameters in the engine
+   inspector, convert output geometry to engine entities, and re-cook on parameter change.
+   - **Rationale:** Hosting Houdini Engine enables procedural content to execute inside the engine
+     editor without manual export.
+   - **Verification:** Load an HDA, change a parameter, and confirm the engine entity updates with
+     re-cooked geometry; confirm no Houdini license is required for baked runtime output.
+4. **R-12.6.4** — The engine **SHALL** accept Houdini exports containing vertex attributes, skeleton
+   hierarchies, skin weights, morph targets, packed primitives as instanced meshes, curve primitives
+   as splines, and volume primitives as 3D textures.
+   - **Rationale:** Full-fidelity export from Houdini preserves all geometry data types, avoiding
+     lossy intermediate conversions.
+   - **Verification:** Export a Houdini scene with a skinned mesh, packed primitives, a curve, and a
+     volume; confirm each type maps to its engine representation correctly.
 5. **R-12.6.5** — The engine **SHALL** accept Houdini scatter/placement point clouds with instance
-   attributes (mesh ID, rotation, scale, custom tags) and convert them into ECS entities via the PCG
-   spawning pipeline (R-3.6).
-   - **Rationale:** Connecting Houdini's procedural placement tools to the engine's ECS spawning
-     pipeline enables art-directed vegetation and prop scattering without manual placement.
-   - **Verification:** Export a Houdini scatter node's point cloud with 1000 instances, import into
-     the engine, and confirm 1000 ECS entities are spawned with correct transforms and mesh
-     references.
+   attributes and convert them into ECS entities via the PCG spawning pipeline (F-3.6.4).
+   - **Rationale:** Connecting Houdini's procedural placement to the engine's ECS spawning enables
+     art-directed vegetation and prop scattering.
+   - **Verification:** Export 1000 scatter instances; confirm 1000 ECS entities are spawned with
+     correct transforms.
+
+## Maya
+
 6. **R-12.6.6** — The engine **SHALL** accept Maya plugin exports of meshes, skeletons, animations,
-   blend shapes, materials, cameras, and lights in the engine's native binary format (R-12.7.1),
-   with support for incremental export of only changed DAG nodes.
-   - **Rationale:** Direct export from Maya via the plugin SDK avoids intermediate formats and
-     enables incremental workflows that export only what changed.
-   - **Verification:** Export a Maya scene with a skinned character and a light; modify only the
-     light and re-export incrementally; confirm only the light asset is updated in the engine.
-7. **R-12.6.7** — The engine **SHALL** accept Maya animation exports containing full curve data
-   (Bezier tangents, step/linear/cubic interpolation) rather than baked per-frame samples, skin
-   cluster weights, IK handle metadata, constraint setups, and character rig bundles (skeleton +
-   bind pose + morph target set as a single asset).
-   - **Rationale:** Exporting animation curves with tangent data instead of baked samples preserves
-     artistic intent and reduces asset size.
-   - **Verification:** Export a Maya animation clip with Bezier interpolation, import into the
-     engine, and confirm curve tangents match the source; export a character rig and confirm
-     skeleton, bind pose, and morph targets are bundled as a single asset.
+   blend shapes, materials, cameras, and lights with incremental export of only changed DAG nodes.
+   - **Rationale:** Incremental export avoids full scene re-export and speeds up artist iteration.
+   - **Verification:** Export a Maya scene; modify only a light and re-export incrementally; confirm
+     only the light asset is updated.
+7. **R-12.6.7** — The engine **SHALL** accept Maya animation exports with full curve data (Bezier
+   tangents, step/linear/cubic interpolation), skin weights, IK metadata, and character rig bundles.
+   - **Rationale:** Curve-based animation export preserves artistic intent and reduces asset size
+     compared to baked per-frame samples.
+   - **Verification:** Export a Maya animation clip with Bezier interpolation; confirm curve
+     tangents match the source; export a character rig and confirm skeleton, bind pose, and morph
+     targets are bundled.
+
+## Blender
+
 8. **R-12.6.8** — The engine **SHALL** accept Blender addon exports of meshes, armatures, shape
-   keys, animations, materials (node-tree-to-engine-material mapping), and scene hierarchies in the
-   engine's native binary format (R-12.7.1), with collections mapped to prefab hierarchies and
-   optional pre-modifier data export.
-   - **Rationale:** A pure-Python Blender addon communicating via the SDK socket protocol provides
-     direct export without requiring compiled extensions.
-   - **Verification:** Export a Blender scene with two collections containing meshes with modifiers;
-     confirm the engine imports them as prefab hierarchies; export with modifiers applied and with
-     pre-modifier data and confirm both modes produce valid assets.
-9. **R-12.6.9** — The engine **SHALL** map Blender Principled BSDF node-tree inputs (base color,
-   metallic, roughness, normal, emission) to the engine's PBR material model, re-link texture inputs
-   as engine texture assets, and emit warnings with fallback defaults for non-mappable nodes.
-   - **Rationale:** Automatic material translation from Blender's shader graph to the engine's PBR
-     model eliminates manual material recreation.
-   - **Verification:** Export a Blender material with Principled BSDF inputs; confirm engine
-     material has correct texture bindings; add a non-mappable custom node and confirm a warning is
-     emitted with a fallback default applied.
+   keys, animations, materials (node-tree-to-engine-material mapping), and scene hierarchies with
+   collections mapped to entity template hierarchies.
+   - **Rationale:** A pure-Python Blender addon provides direct export without compiled extensions.
+   - **Verification:** Export a Blender scene with two collections; confirm the engine imports them
+     as entity template hierarchies.
+9. **R-12.6.9** — The engine **SHALL** map Blender Principled BSDF inputs to the engine PBR material
+   model, re-link texture inputs as engine assets, and emit warnings with fallback defaults for
+   non-mappable nodes.
+   - **Rationale:** Automatic material translation eliminates manual material recreation.
+   - **Verification:** Export a Principled BSDF material; confirm correct texture bindings; add a
+     non-mappable node and confirm a warning with fallback default.
+
+## Marvelous Designer
+
 10. **R-12.6.10** — The engine **SHALL** accept Marvelous Designer exports of garment meshes, UV
-    layouts, seam data, and fabric material properties (thickness, stretch, bend stiffness) in the
-    engine's native binary format (R-12.7.1), bind garment meshes to character skeletons via the
-    skinning pipeline, and map fabric properties to the cloth simulation system (R-4.7).
+    layouts, seam data, and fabric properties, bind garments to character skeletons, and map fabric
+    properties to the cloth simulation system (F-4.7.2).
     - **Rationale:** Direct garment export with fabric physics parameters enables runtime cloth
-      simulation of designer-authored clothing without manual property setup.
-    - **Verification:** Export a Marvelous Designer garment, import into the engine, confirm
-      skinning to a character skeleton succeeds, and confirm fabric properties drive the cloth
-      simulation with correct stiffness and stretch values.
+      simulation without manual property setup.
+    - **Verification:** Export a garment; confirm skinning to a skeleton succeeds; confirm fabric
+      properties drive cloth simulation correctly.
 11. **R-12.6.11** — The engine **SHALL** automatically fit imported garments to character bodies by
-    computing cloth attachment constraints and skin weight transfers from the garment rest shape and
-    target body mesh, propagate body morph changes to garment deformation, and auto-generate
-    collision bodies from the character mesh for cloth simulation.
-    - **Rationale:** Automatic fitting eliminates manual per-character garment adjustment and
-      ensures garments deform correctly across body variations.
-    - **Verification:** Fit a garment to two characters with different body proportions; confirm
-      attachment constraints are computed for both; apply a body morph and confirm the garment
-      deforms accordingly; confirm collision bodies are generated.
+    computing cloth constraints and skin weight transfers, propagate body morph changes, and
+    auto-generate collision bodies.
+    - **Rationale:** Automatic fitting eliminates per-character garment adjustment.
+    - **Verification:** Fit a garment to two characters with different proportions; confirm
+      constraints are computed; apply a body morph and confirm deformation; confirm collision bodies
+      are generated.
+
+## Substance
+
 12. **R-12.6.12** — The engine **SHALL** import Substance Designer .sbsar archives, evaluate them at
-    build time to produce engine-ready texture sets (base color, normal, metallic, roughness, AO,
-    height, emissive), and store exposed parameters (color tints, pattern scale, wear, dirt) in the
-    material asset for adjustment in the engine's material editor without re-export.
-    - **Rationale:** Build-time evaluation of parametric Substance materials produces optimized
-      texture sets while preserving parameter tweakability in the engine editor.
-    - **Verification:** Import a .sbsar with exposed parameters, build, and confirm all texture
-      channels are produced; change a parameter in the material editor and confirm textures
-      regenerate without re-exporting from Substance Designer.
-13. **R-12.6.13** — The engine **SHALL** import Substance Painter .spp projects, extract baked
-    texture maps with channel packing matching the engine's material conventions, support UDIM tile
-    sets for multi-UV-tile assets, and allow configurable texture resolution at import time.
-    - **Rationale:** Direct .spp import with correct channel packing removes the manual export and
-      re-mapping step from the texture artist workflow.
-    - **Verification:** Import a .spp project with UDIM tiles; confirm channel packing matches
-      engine conventions; re-import at a different resolution and confirm output resolution changes
-      independently of the painter project resolution.
+    build time to produce engine-ready texture sets, and store exposed parameters in the material
+    asset for in-engine adjustment.
+    - **Rationale:** Build-time evaluation produces optimized textures while preserving parameter
+      tweakability.
+    - **Verification:** Import a .sbsar with exposed parameters; confirm all texture channels are
+      produced; change a parameter and confirm textures regenerate.
+13. **R-12.6.13** — The engine **SHALL** import Substance Painter .spp projects, extract
+    channel-packed texture maps matching engine conventions, support UDIM tile sets, and allow
+    configurable resolution at import time.
+    - **Rationale:** Direct .spp import with correct packing removes the manual export and
+      re-mapping step.
+    - **Verification:** Import a .spp with UDIM tiles; confirm channel packing matches; re-import at
+      a different resolution and confirm output changes.
 14. **R-12.6.14** — The engine **SHALL** optionally evaluate .sbsar materials at runtime on a
-    background thread with asynchronous GPU texture upload, gated by a per-material opt-in flag and
-    a configurable evaluation budget to prevent frame spikes.
-    - **Rationale:** Runtime parametric material evaluation enables dynamic visual variation
-      (weathering, damage) without pre-baking every permutation.
-    - **Verification:** Enable runtime evaluation on a material, vary a parameter at runtime, and
-      confirm the texture updates without exceeding the configured budget or causing frame drops;
-      confirm evaluation does not run when the opt-in flag is disabled.
+    background thread with async GPU upload, gated by a per-material opt-in flag and a configurable
+    evaluation budget.
+    - **Rationale:** Runtime parametric evaluation enables dynamic visual variation without
+      pre-baking every permutation.
+    - **Verification:** Enable runtime evaluation; vary a parameter and confirm the texture updates
+      within budget; confirm evaluation does not run when opt-in is disabled.
+
+## Photoshop
+
 15. **R-12.6.15** — The engine **SHALL** accept Photoshop plugin exports of textures, UI sprites,
-    and layered compositions in the engine's native binary format (R-12.7.1) with configurable
-    channel packing, PSD round-trip via source file references, and live-link real-time texture
-    push.
-    - **Rationale:** Direct Photoshop export with channel packing and live-link push keeps texture
-      artists in their primary tool without manual reimport.
+    and layered compositions with configurable channel packing, PSD round-trip via source file
+    references, and DCC bridge real-time texture push.
+    - **Rationale:** Direct Photoshop export with channel packing and DCC bridge push keeps texture
+      artists in their primary tool.
     - **Verification:** Export a PSD with channel-packed layers; confirm the engine asset matches
-      the packing configuration; modify the PSD and re-export; confirm the engine asset updates via
-      the stored source reference without manual reimport.
+      packing; modify and re-export; confirm the update via stored source reference.
 16. **R-12.6.16** — The engine **SHALL** convert Photoshop layer groups into engine UI widget
-    hierarchies, map text layers to text components (preserving font, size, color), shape layers to
-    nine-slice or vector elements, and layer visibility to widget visibility states.
-    - **Rationale:** Automatic conversion of Photoshop mockups to engine widget trees eliminates
-      manual widget recreation and keeps designers iterating in Photoshop.
-    - **Verification:** Export a PSD with text layers, shape layers, and nested groups; confirm the
-      engine produces a matching widget hierarchy with correct font properties, nine-slice regions,
-      and visibility states.
-17. **R-12.6.17** — The engine **SHALL** accept Illustrator vector artwork exports as vector
-    graphics assets (for resolution-independent UI rendering via R-10.4) or rasterized texture
-    atlases, map artboards to individual assets, symbols to shared instances, and color swatches to
-    engine color palette assets.
-    - **Rationale:** Vector export preserves resolution independence for UI elements while atlas
-      rasterization provides a fallback for complex artwork.
-    - **Verification:** Export an Illustrator file with multiple artboards, symbols, and color
-      swatches; confirm each artboard produces a separate asset, symbols produce shared instances,
-      and swatches map to engine color palettes.
-18. **R-12.6.18** — The engine **SHALL** accept ZBrush sculpt exports via GoZ bridge or file-based
-    export, extract the highest-subdivision mesh, generate normal/displacement/cavity maps by
-    projecting onto a lower subdivision level, export polypaint as vertex colors or baked texture,
-    and preserve SubTool hierarchy as separate mesh assets.
-    - **Rationale:** Automated detail-map baking from high-poly sculpts eliminates the manual bake
-      step and delivers game-ready meshes directly from ZBrush.
-    - **Verification:** Export a multi-SubTool ZBrush sculpt with polypaint; confirm the engine
-      receives a low-poly mesh with baked normal/displacement/cavity maps and vertex colors; confirm
-      SubTools map to separate engine mesh assets.
+    hierarchies, mapping text layers to text components, shape layers to nine-slice or vector
+    elements, and visibility to widget states.
+    - **Rationale:** Automatic mockup conversion eliminates manual widget recreation.
+    - **Verification:** Export a PSD with text, shape, and nested groups; confirm the widget
+      hierarchy with correct properties.
+
+## Illustrator
+
+17. **R-12.6.17** — The engine **SHALL** accept Illustrator vector artwork as vector graphics assets
+    or rasterized atlases, map artboards to individual assets, symbols to shared instances, and
+    color swatches to engine palettes.
+    - **Rationale:** Vector export preserves resolution independence while atlas rasterization
+      handles complex artwork.
+    - **Verification:** Export an Illustrator file with artboards, symbols, and swatches; confirm
+      each produces the correct engine asset type.
+
+## ZBrush
+
+18. **R-12.6.18** — The engine **SHALL** accept ZBrush sculpt exports via GoZ bridge, extract the
+    highest-subdivision mesh, generate baked normal/displacement/cavity maps, export polypaint as
+    vertex colors or texture, and preserve SubTool hierarchy.
+    - **Rationale:** Automated detail-map baking delivers game-ready meshes directly from ZBrush.
+    - **Verification:** Export a multi-SubTool sculpt with polypaint; confirm baked maps and vertex
+      colors; confirm SubTools map to separate mesh assets.
 19. **R-12.6.19** — The engine **SHALL** decimate ZBrush high-poly sculpts to engine-ready poly
-    counts using plugin-configured ZRemesher or Decimation Master settings, generate multiple LOD
-    levels with per-LOD normal map bakes, and export the LOD chain as a single mesh asset with
-    automatic LOD transition configuration.
-    - **Rationale:** Generating the full LOD chain from a single sculpt at export time ensures
-      consistent detail reduction and eliminates manual LOD authoring.
-    - **Verification:** Export a ZBrush sculpt with 3 LOD levels configured; confirm each LOD has
-      the expected poly count and a corresponding normal map; confirm LOD transitions are configured
-      in the resulting mesh asset.
+    counts, generate multiple LOD levels with per-LOD normal map bakes, and export the LOD chain as
+    a single mesh asset.
+    - **Rationale:** Generating the full LOD chain from a single sculpt ensures consistent detail
+      reduction.
+    - **Verification:** Export a sculpt with 3 LOD levels; confirm each LOD has expected poly count
+      and normal map; confirm LOD transitions are configured.
+
+## MotionBuilder
+
 20. **R-12.6.20** — The engine **SHALL** accept MotionBuilder exports of skeleton hierarchies,
-    animation takes with full curve data (not baked samples), and character definitions in the
-    engine's native binary format (R-12.7.1), with support for batch export of multiple takes from a
-    single session.
-    - **Rationale:** Curve-based animation export from MotionBuilder preserves mocap cleanup edits
-      and avoids data bloat from per-frame baking.
-    - **Verification:** Export 5 animation takes in a single batch from MotionBuilder; confirm all 5
-      are imported with correct curve data; confirm skeleton hierarchies match the source character
-      definition.
+    animation takes with full curve data, and character definitions, with batch export support.
+    - **Rationale:** Curve-based animation export from MotionBuilder preserves mocap cleanup edits.
+    - **Verification:** Batch-export 5 takes; confirm all are imported with correct curve data;
+      confirm skeletons match the source.
 21. **R-12.6.21** — The engine **SHALL** receive real-time skeleton pose data from MotionBuilder
-    over the live link connection at capture frame rate and apply incoming poses to character
-    entities in the engine viewport during capture sessions.
-    - **Rationale:** Live mocap preview on final characters with full materials and lighting enables
-      directors to evaluate performance during capture.
-    - **Verification:** Stream mocap data from MotionBuilder at 60 fps; confirm the engine character
-      entity reflects the incoming poses in real time with no more than 2 frames of latency.
+    over the DCC bridge at capture frame rate and apply poses to character entities in the viewport.
+    - **Rationale:** Live mocap preview on final characters enables directors to evaluate
+      performance during capture.
+    - **Verification:** Stream mocap at 60 fps; confirm the character reflects poses with no more
+      than 2 frames of latency.
+
+## Git Integration
+
 22. **R-12.6.22** — The engine **SHALL** integrate Git LFS locking into every DCC plugin so that
-    opening a source file acquires a lock, a status indicator shows lock state (locked by you,
-    locked by another user, unlocked), and saving and closing commits, pushes, and releases the
-    lock, with lock conflict notification identifying the current holder.
+    opening a source file acquires a lock, a status indicator shows lock state, and saving/closing
+    commits, pushes, and releases the lock.
     - **Rationale:** Automatic lock-on-open prevents concurrent edits to binary source files that
-      cannot be merged, reducing lost work.
-    - **Verification:** Open a source file in a DCC plugin and confirm a Git LFS lock is acquired;
-      attempt to open the same file from a second user and confirm the lock holder is displayed;
-      save, close, and confirm the lock is released after push.
-23. **R-12.6.23** — The engine **SHALL** display asset review comments from the engine editor, pull
-    request reviews, and collaborator feedback in a dedicated panel within each DCC plugin,
-    supporting thread viewing, replying, and marking comments as resolved, synchronized via the
-    collaboration cloud service.
-    - **Rationale:** Surfacing review feedback inside the DCC tool eliminates context-switching to
-      the engine editor or a web browser during art iteration.
-    - **Verification:** Post a review comment on an asset in the engine editor; open the asset in a
-      DCC plugin and confirm the comment appears; reply from the DCC plugin and confirm the reply
-      appears in the engine editor.
+      cannot be merged.
+    - **Verification:** Open a source file in a DCC plugin and confirm a lock is acquired; attempt
+      from a second user and confirm the lock holder is displayed; save and close and confirm the
+      lock is released.
+23. **R-12.6.23** — The engine **SHALL** display asset review comments in a dedicated panel within
+    each DCC plugin, supporting thread viewing, replying, and marking resolved, synchronized via the
+    collaboration cloud service (F-15.12.7).
+    - **Rationale:** Surfacing review feedback inside the DCC tool eliminates context-switching.
+    - **Verification:** Post a comment in the engine editor; open the asset in a DCC plugin and
+      confirm the comment appears; reply from the DCC plugin and confirm it syncs.
 24. **R-12.6.24** — The engine **SHALL** provide a consistent UI panel across all DCC plugins
-    displaying current Git branch, file lock status, last commit info, pending changes, review
-    comment count, and build cache status, with one-click actions for commit, push, pull, lock,
-    unlock, and open PR.
-    - **Rationale:** A unified version control dashboard across all DCC tools gives artists a
-      consistent experience regardless of which tool they are working in.
-    - **Verification:** Open the dashboard in Maya, Blender, and Photoshop plugins; confirm all
-      three display the same branch, lock status, and commit info for the same asset; perform a
-      commit from each and confirm success.
-25. **R-12.6.25** — The engine **SHALL** translate each DCC tool's material system to the engine's
-    PBR material model via a configurable mapping table that converts texture semantics
-    (diffuse/albedo, specular/metallic, glossiness/roughness) between conventions, falls back to
-    defaults for missing textures, and is extensible for custom DCC shaders and engine material
-    types.
+    displaying branch, lock status, last commit, pending changes, review comment count, and build
+    cache status, with one-click version control actions.
+    - **Rationale:** A unified dashboard gives artists the same experience regardless of which tool
+      they use.
+    - **Verification:** Open the dashboard in Maya, Blender, and Photoshop; confirm identical
+      information for the same asset; perform a commit from each and confirm success.
+
+## Shared Features
+
+25. **R-12.6.25** — The engine **SHALL** translate each DCC tool's material system to the engine PBR
+    model via a configurable mapping table, convert texture semantics, fall back to defaults for
+    missing textures, and support extensibility for custom shaders.
     - **Rationale:** A shared material translation layer ensures consistent PBR results across all
-      DCC tools without per-tool special-case logic.
-    - **Verification:** Export a material with identical PBR properties from Maya, Blender, and
-      Houdini; confirm all three produce equivalent engine materials; add a custom mapping entry and
-      confirm it is applied on the next export.
+      DCC tools.
+    - **Verification:** Export a material from Maya, Blender, and Houdini; confirm equivalent engine
+      materials; add a custom mapping and confirm it applies.
 26. **R-12.6.26** — The engine **SHALL** support headless batch export via command-line invocation
-    of all supported DCC tools (hython, mayapy, blender --background, photoshop --headless),
-    enabling CI pipelines to re-export modified source files, process them through the asset
-    pipeline, and validate results using build manifests that track
-    source-file-to-DCC-tool-and-preset mappings.
-    - **Rationale:** Headless batch export in CI ensures every committed source file is re-exported
-      and validated automatically, catching broken assets before they reach artists.
-    - **Verification:** Run a CI job that batch-exports 10 source files across 3 DCC tools; confirm
-      all assets are produced and pass validation; modify one source file and confirm only that file
-      is re-exported on the next incremental build.
+    of all supported DCC tools, enabling CI pipelines to re-export modified source files and
+    validate results using build manifests.
+    - **Rationale:** Headless batch export in CI catches broken assets before they reach artists.
+    - **Verification:** Batch-export 10 source files across 3 DCC tools; confirm all pass
+      validation; modify one and confirm only it is re-exported on the next build.

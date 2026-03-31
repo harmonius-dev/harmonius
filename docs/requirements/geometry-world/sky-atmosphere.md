@@ -1,106 +1,63 @@
-# R-3.5 — Sky & Atmosphere Requirements
+# R-3.5 -- Sky & Atmosphere Requirements
 
 ## Procedural Sky
 
-| ID      | Derived From                                               |
-|---------|------------------------------------------------------------|
-| R-3.5.1 | [F-3.5.1](../../features/geometry-world/sky-atmosphere.md) |
+1. **R-3.5.1** -- The engine **SHALL** provide a physically-motivated analytical sky model computing
+   sky luminance and chromaticity as a function of view angle, sun zenith, and atmospheric
+   turbidity.
+   - **Rationale:** An analytical sky serves as fallback when volumetric atmosphere exceeds budget.
+   - **Verification:** Render the sky at various sun positions. Assert sky color matches reference
+     (Preetham/Hosek-Wilkie) within perceptual threshold.
 
-1. **R-3.5.1** — The engine **SHALL** evaluate sky luminance and chromaticity analytically as a
-   function of view angle, sun zenith, and atmospheric turbidity using a physically-motivated model
-   (Preetham or Hosek-Wilkie), serving as a fallback when volumetric scattering is budget-limited.
-   - **Rationale:** An analytical sky model provides a fast, low-cost sky representation for
-     performance-constrained platforms and as a reference for baking sky lookup tables.
-   - **Verification:** Unit test — evaluate sky color for sun zenith angles 0 to 90 degrees at
-     10-degree increments; assert luminance decreases monotonically toward the horizon opposite the
-     sun; assert chromaticity shifts toward warm tones at low sun angles.
+## Multi-Scattering Atmosphere
 
-## Physically-Based Atmosphere
-
-| ID      | Derived From                                               |
-|---------|------------------------------------------------------------|
-| R-3.5.2 | [F-3.5.2](../../features/geometry-world/sky-atmosphere.md) |
-
-1. **R-3.5.2** — The engine **SHALL** compute atmospheric scattering using precomputed
-   transmittance, single-scattering, and multi-scattering lookup tables incorporating Rayleigh, Mie,
-   and ozone absorption, and apply aerial perspective to all scene geometry via a froxel-based
-   volume.
-   - **Rationale:** Physically-based atmosphere scattering with aerial perspective is critical for
-     convincing long-range views spanning tens of kilometers.
-   - **Verification:** Integration test — render terrain at distances of 1km, 10km, and 50km; assert
-     pixel color at 50km is closer to the sky horizon color than at 1km; verify LUTs recompute when
-     atmosphere parameters change; verify Mie scattering produces a visible sun halo.
+2. **R-3.5.2** -- The engine **SHALL** implement precomputed multi-scattering atmosphere LUTs
+   (Rayleigh, Mie, ozone) with froxel-based aerial perspective applied to all scene geometry. LUTs
+   **SHALL** recompute when atmosphere parameters change.
+   - **Rationale:** Physically-based scattering with aerial perspective is critical for large draw
+     distances.
+   - **Verification:** Change atmosphere parameters. Assert LUTs rebuild. Assert distant terrain
+     fades into haze matching the current atmosphere.
 
 ## Volumetric Clouds
 
-| ID      | Derived From                                               |
-|---------|------------------------------------------------------------|
-| R-3.5.3 | [F-3.5.3](../../features/geometry-world/sky-atmosphere.md) |
-| R-3.5.4 | [F-3.5.4](../../features/geometry-world/sky-atmosphere.md) |
+3. **R-3.5.3** -- The engine **SHALL** render clouds by ray marching through noise-based volumes
+   with temporal reprojection, configurable step count per platform tier, and weather-map-driven
+   coverage.
+   - **Rationale:** Ray-marched volumetric clouds provide depth and lighting not achievable with
+     skybox textures.
+   - **Verification:** Render clouds with temporal reprojection. Assert no visible ghosting. Assert
+     step count matches the platform tier setting.
 
-1. **R-3.5.3** — The engine **SHALL** render volumetric clouds by ray marching through a cloud
-   volume defined by layered noise fields, with density, coverage, and type controlled by a weather
-   map texture, lit via cone-sampled in-scattering, and amortized across frames via temporal
-   reprojection.
-   - **Rationale:** Volumetric clouds are essential for dynamic sky visuals and weather systems, and
-     temporal reprojection makes ray marching viable at real-time frame rates.
-   - **Verification:** Integration test — render clouds with a test weather map defining 50%
-     coverage; assert cloud pixels are non-transparent where coverage > 0; verify temporal
-     reprojection reduces per-frame ray-march sample count by at least 50% compared to single-frame
-     rendering; verify lighting responds to sun direction changes.
-2. **R-3.5.4** — The engine **SHALL** generate a shadow map by rendering cloud density from the
-   sun's perspective and use it to modulate direct lighting on terrain, foliage, and water surfaces.
-   - **Rationale:** Cloud shadows provide large-scale moving shadow patterns that reinforce dynamic
-     weather and world scale.
-   - **Verification:** Integration test — render terrain with a cloud layer at 50% coverage; assert
-     terrain pixels under dense cloud regions receive measurably less direct light than pixels under
-     clear sky; verify shadow pattern moves when cloud coverage animates.
+4. **R-3.5.4** -- The engine **SHALL** project cloud shadows onto terrain and scene geometry via a
+   shadow map rendered from the sun's perspective.
+   - **Rationale:** Cloud shadows reinforce dynamic weather and world scale at minimal cost.
+   - **Verification:** Enable cloud shadows. Assert shadow patterns move with cloud coverage. Assert
+     shadow map resolution matches the platform tier.
 
 ## Dynamic Time of Day
 
-| ID      | Derived From                                               |
-|---------|------------------------------------------------------------|
-| R-3.5.5 | [F-3.5.5](../../features/geometry-world/sky-atmosphere.md) |
-
-1. **R-3.5.5** — The engine **SHALL** drive sun and moon positions along astronomically-derived
-   arcs, continuously updating sky colors, atmosphere LUTs, ambient light, shadow direction, and fog
-   parameters, with a configurable time scale parameter for gameplay-controlled day/night cycle
-   speed.
-   - **Rationale:** Smooth day/night transitions driven by astronomical sun/moon positions are
-     fundamental to open-world immersion and time-gated gameplay mechanics.
-   - **Verification:** Integration test — advance the time-of-day from dawn through night over 60
-     seconds (accelerated); assert sun altitude follows a smooth arc, sky color transitions through
-     warm dawn, neutral midday, warm dusk, and dark night; assert shadow direction rotates
-     continuously; verify time scale parameter of 2x doubles the cycle speed.
+5. **R-3.5.5** -- The engine **SHALL** drive sun and moon positions along astronomically-derived
+   arcs, continuously updating sky colors, atmosphere LUTs, ambient light, and shadow direction with
+   a configurable time scale.
+   - **Rationale:** Smooth time-of-day transitions are essential for day/night cycles in open-world
+     games.
+   - **Verification:** Accelerate time. Assert dawn through night transitions are smooth. Assert all
+     dependent systems (sky, light, shadow) update in sync.
 
 ## Celestial Bodies
 
-| ID      | Derived From                                               |
-|---------|------------------------------------------------------------|
-| R-3.5.6 | [F-3.5.6](../../features/geometry-world/sky-atmosphere.md) |
+6. **R-3.5.6** -- The engine **SHALL** render sun, moon, stars, and planetary bodies as part of the
+   sky dome with astronomically computed or artist-overridden positions.
+   - **Rationale:** Celestial bodies complete the sky presentation at all times of day.
+   - **Verification:** Render a night sky. Assert stars display with magnitude-based brightness.
+     Assert moon phase matches the time-of-day state.
 
-1. **R-3.5.6** — The engine **SHALL** render sun, moon, stars, and planetary bodies on the sky dome
-   with configurable sun limb darkening, phase-accurate moon illumination, magnitude-based star
-   brightness with twinkling and atmospheric extinction, and astronomically computed or
-   artist-overridden positions.
-   - **Rationale:** Celestial bodies complete the sky presentation and must match the time-of-day
-     system for visual consistency across day/night transitions.
-   - **Verification:** Visual test — render the sky at midnight; assert stars are visible with
-     brightness proportional to catalog magnitude; assert star visibility decreases near the horizon
-     (atmospheric extinction); render at first quarter moon phase and assert exactly half the moon
-     disc is illuminated.
+## Environment Cubemap Capture
 
-## Sky Capture
-
-| ID      | Derived From                                               |
-|---------|------------------------------------------------------------|
-| R-3.5.7 | [F-3.5.7](../../features/geometry-world/sky-atmosphere.md) |
-
-1. **R-3.5.7** — The engine **SHALL** capture the sky, atmosphere, and cloud systems into a
-   low-resolution environment cubemap on a round-robin schedule across faces, providing ambient
-   diffuse and specular lighting via image-based lighting that matches the current sky state.
-   - **Rationale:** Scene-wide ambient and specular lighting must reflect the current sky and
-     weather conditions; round-robin capture amortizes the cost across frames.
-   - **Verification:** Integration test — change sky from clear midday to overcast; assert the
-     captured cubemap ambient color shifts within the configured update period; verify a reflective
-     sphere in the scene shows sky reflections matching the current atmosphere.
+7. **R-3.5.7** -- The engine **SHALL** capture sky, atmosphere, and clouds into a low-resolution
+   cubemap on a round-robin schedule, providing ambient IBL for the scene.
+   - **Rationale:** IBL from sky capture ensures reflections and ambient lighting match the current
+     sky state.
+   - **Verification:** Change the sky. Assert cubemap updates within the configured frame interval.
+     Assert IBL reflections match the new sky.

@@ -2,9 +2,9 @@
 
 ## File Watching
 
-| ID       | Feature      | Requirements |
-|----------|--------------|--------------|
-| F-12.4.1 | File Watcher | R-12.4.1     |
+| ID       | Feature      |
+|----------|--------------|
+| F-12.4.1 | File Watcher |
 
 1. **F-12.4.1** — A background daemon monitors source asset directories for file creation,
    modification, deletion, and rename events using platform-native file system notification APIs.
@@ -15,12 +15,12 @@
 
 ## Asset Hot Reload
 
-| ID       | Feature                | Requirements |
-|----------|------------------------|--------------|
-| F-12.4.2 | Asset Hot Reload       | R-12.4.2     |
-| F-12.4.3 | Shader Hot Reload      | R-12.4.3     |
-| F-12.4.4 | Logic Graph Hot Reload | R-12.4.4     |
-| F-12.4.5 | UI Hot Reload          | R-12.4.5     |
+| ID       | Feature                |
+|----------|------------------------|
+| F-12.4.2 | Asset Hot Reload       |
+| F-12.4.3 | Shader Hot Reload      |
+| F-12.4.4 | Logic Graph Hot Reload |
+| F-12.4.5 | UI Hot Reload          |
 
 1. **F-12.4.2** — When a source asset changes, the pipeline re-imports and reprocesses only the
    affected asset and its dependents, then patches the in-memory runtime representation without
@@ -45,10 +45,10 @@
 
 ## Partial Re-Import and Sync
 
-| ID       | Feature                        | Requirements |
-|----------|--------------------------------|--------------|
-| F-12.4.6 | Partial Re-Import              | R-12.4.6     |
-| F-12.4.7 | Editor-Runtime Synchronization | R-12.4.7     |
+| ID       | Feature                        |
+|----------|--------------------------------|
+| F-12.4.6 | Partial Re-Import              |
+| F-12.4.7 | Editor-Runtime Synchronization |
 
 1. **F-12.4.6** — When a source file changes, re-import only the modified sub-assets rather than the
    entire file. For example, modifying a single animation clip in a multi-asset DCC export

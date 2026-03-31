@@ -2,192 +2,67 @@
 
 ## Picking
 
-| ID        | Derived From                                                   |
-|-----------|----------------------------------------------------------------|
-| R-13.11.1 | [F-13.11.1](../../features/game-framework/selection-system.md) |
-| R-13.11.2 | [F-13.11.2](../../features/game-framework/selection-system.md) |
-
 1. **R-13.11.1** — The engine **SHALL** cast rays from the camera through screen-space coordinates
-   into the 3D world using the shared spatial index for broadphase and per-entity collision shapes
-   for precise hit testing, returning entity, world position, surface normal, and hit bone, filtered
-   by the `Selectable` component, with sub-millisecond latency on the game loop thread.
-   - **Rationale:** Responsive 3D picking is fundamental to every interactive 3D game genre;
-     spatial-index-accelerated ray casts ensure consistent sub-millisecond performance regardless of
-     entity count.
-   - **Verification:** Spawn 10,000 entities with `Selectable` components. Click on an entity and
-     verify the pick result includes the correct entity ID, world position, and surface normal
-     within 1ms. Click on a skeletal mesh and verify the hit bone is reported. Click on an entity
-     without `Selectable` and verify it is excluded from results. Verify priority picking returns
-     the interactive object over background scenery at the same screen position.
-2. **R-13.11.2** — The engine **SHALL** pick UI widgets by reverse-render-order traversal with
-   support for non-rectangular hit areas, and 2D game entities by sprite bounding box and optional
-   per-pixel alpha testing, with configurable touch slop expansion on touch devices.
-   - **Rationale:** Accurate 2D picking with touch slop ensures usability on both mouse and touch
-     devices, and per-pixel alpha testing prevents clicks on transparent sprite regions from
-     registering false hits.
-   - **Verification:** Place overlapping UI widgets and click the topmost; verify the front-most
-     widget receives the pick. Define a circular button hit area; click inside and outside the
-     circle and verify correct hit/miss. Place a sprite with transparent regions; click on a
-     transparent pixel and verify no hit. On a touch device, tap near but not on a small button and
-     verify the touch slop radius expands the hit area.
+   using the spatial index for broadphase and per-entity collision shapes for precise hit testing,
+   supporting single-click, priority-based, and multi-layer pick modes, with results including hit
+   entity, world position, surface normal, and hit bone.
+   - **Rationale:** Spatial-index-accelerated picking ensures sub-millisecond latency for responsive
+     interaction.
+   - **Verification:** Click on an entity and verify the correct entity, position, and normal are
+     returned. Click where two entities overlap and verify priority-based picks the interactive one.
+     Verify multi-layer returns all entities sorted by distance.
+
+2. **R-13.11.2** — The engine **SHALL** support screen-space 2D picking for UI widgets and sprites
+   with configurable touch slop radius, z-order respect, and UI-over-world priority.
+   - **Rationale:** Touch slop improves finger targeting on mobile; UI priority prevents accidental
+     world interaction.
+   - **Verification:** Tap a UI button overlapping a world entity and verify the UI button is
+     picked. On a touch device, tap near a small button and verify touch slop expands the hit area.
 
 ## Selection State
 
-| ID         | Derived From                                                    |
-|------------|-----------------------------------------------------------------|
-| R-13.11.3  | [F-13.11.3](../../features/game-framework/selection-system.md)  |
-| R-13.11.4a | [F-13.11.4a](../../features/game-framework/selection-system.md) |
-| R-13.11.4b | [F-13.11.4b](../../features/game-framework/selection-system.md) |
-| R-13.11.4c | [F-13.11.4c](../../features/game-framework/selection-system.md) |
-| R-13.11.4d | [F-13.11.4d](../../features/game-framework/selection-system.md) |
+3. **R-13.11.3** — The engine **SHALL** provide a centralized selection system as ECS resources and
+   components with selection modes (single, additive, subtractive, toggle, exclusive), change events
+   through the observer system, and data-driven genre presets (RTS, RPG, action, builder).
+   - **Rationale:** ECS-integrated selection enables efficient queries on selected entities.
+   - **Verification:** Select an entity and verify the Selected component is added. Shift-click
+     another and verify additive selection. Change to exclusive mode and verify only one entity is
+     selectable. Activate the RTS preset and verify box select and control groups are enabled.
 
-1. **R-13.11.3** — The engine **SHALL** maintain a per-player `SelectionSet` resource and per-entity
-   `Selected` component, supporting single, additive, subtractive, toggle, and exclusive selection
-   modes, with selection change events fired through the observer system and multiplayer replication
-   for spectator visibility.
-   - **Rationale:** ECS-integrated selection enables efficient system queries over selected entities
-     (e.g., all selected with `Health`), and observer-driven events decouple selection logic from
-     consuming systems like UI and audio.
-   - **Verification:** Click entity A; verify `Selected` component is added and `SelectionSet`
-     contains A. Shift+click entity B; verify both A and B are selected (additive). Ctrl+click A;
-     verify A is removed (subtractive). Switch to exclusive mode, click A, then click B; verify only
-     B is selected. Register an observer on selection change; verify the callback fires with correct
-     added/removed entity lists. In multiplayer, verify a spectator client sees the observed
-     player's selection state.
-2. **R-13.11.4a** — The engine **SHALL** provide a pre-configured RTS selection preset with box
-   select, control groups (Ctrl+1-9 assign, 1-9 recall), double-click select-all-of-type, select all
-   idle, and select all military, customizable in the visual editor without code.
-   - **Rationale:** RTS selection requires specialized multi-unit management patterns that are
-     standardized across the genre.
-   - **Verification:** Activate the RTS preset; verify box select, double-click select-all, and
-     control groups (Ctrl+1 assign, 1 recall) all function correctly.
-3. **R-13.11.4b** — The engine **SHALL** provide a pre-configured RPG selection preset with
-   tab-cycling through nearby enemies, friendly/hostile filtering, and target-of-target display,
-   customizable in the visual editor without code.
-   - **Rationale:** RPG target selection requires enemy/friendly differentiation and sequential
-     cycling that differs fundamentally from area-based RTS selection.
-   - **Verification:** Activate the RPG preset; press Tab and verify cycling through nearby enemies
-     with hostile filtering. Verify target-of-target display shows the selected enemy's current
-     target.
-4. **R-13.11.4c** — The engine **SHALL** provide a pre-configured action game selection preset with
-   auto-target nearest enemy, lock-on toggle with camera focus, and right-stick target switching,
-   customizable in the visual editor without code.
-   - **Rationale:** Action games require immediate, low-friction targeting that keeps the player
-     focused on combat rather than selection management.
-   - **Verification:** Activate the action preset; verify auto-target selects the nearest enemy.
-     Toggle lock-on and verify the camera focuses on the target. Flick the right stick and verify
-     target switching within the configured arc.
-5. **R-13.11.4d** — The engine **SHALL** provide a pre-configured builder/sandbox selection preset
-   with multi-select and transform gizmos, group/ungroup operations, and hierarchy selection (select
-   parent selects children), customizable in the visual editor without code.
-   - **Rationale:** Builder games require precise multi-object manipulation with grouping and
-     hierarchy awareness for complex constructions.
-   - **Verification:** Activate the builder preset; select a parent entity and verify children are
-     included. Group entities, select the group, and verify all members are selected. Verify
-     transform gizmos appear on multi-selection.
+4. **R-13.11.4** — The engine **SHALL** provide genre selection presets: RTS (box select, control
+   groups, select-all-of-type), RPG (tab-cycling, friendly/hostile filtering), action (auto-target,
+   lock-on toggle), and builder (multi-select, gizmos, hierarchy).
+   - **Rationale:** Genre presets give projects working selection out of the box.
+   - **Verification:** Activate each preset and verify its input bindings and behaviors work. In RTS
+     preset, verify box select selects all entities in the rectangle. In RPG preset, verify tab
+     cycles through nearby enemies.
 
-## Selection Groups
+## Selection Groups and Commands
 
-| ID         | Derived From                                                    |
-|------------|-----------------------------------------------------------------|
-| R-13.11.5  | [F-13.11.5](../../features/game-framework/selection-system.md)  |
-| R-13.11.6a | [F-13.11.6a](../../features/game-framework/selection-system.md) |
-| R-13.11.6b | [F-13.11.6b](../../features/game-framework/selection-system.md) |
-| R-13.11.6c | [F-13.11.6c](../../features/game-framework/selection-system.md) |
-| R-13.11.6d | [F-13.11.6d](../../features/game-framework/selection-system.md) |
+5. **R-13.11.5** — The engine **SHALL** support named persistent selection groups with hotkey
+   bindings, set operations (union, intersection, difference), and persistence across save/load.
+   - **Rationale:** Persistent groups enable tactical unit management in RTS and strategy games.
+   - **Verification:** Create group 1 with 5 entities. Save, load, and verify the group persists.
+     Create group 2 and verify union of groups 1 and 2 produces the correct set.
 
-1. **R-13.11.5** — The engine **SHALL** support named, hotkey-bound entity groups stored as ECS
-   resources with set operations (union, intersection, difference), per-entity `GroupMembership`
-   components for efficient queries, persistence across save/load, and player-local scope in
-   multiplayer.
-   - **Rationale:** Named groups with set operations and persistence give players persistent
-     organizational tools essential for RTS control groups and other multi-entity management
-     patterns.
-   - **Verification:** Assign 5 entities to group 1 via Ctrl+1; press 1 and verify those 5 entities
-     are recalled. Assign 3 overlapping entities to group 2; perform union and verify the combined
-     set. Perform intersection and verify only the overlapping entities remain. Save the game,
-     reload, and verify groups persist. In multiplayer, verify groups are local to each player and
-     not replicated.
-2. **R-13.11.6a** — The engine **SHALL** dispatch commands (move, attack, ability, stop, patrol) to
-   selection groups through the ability system, filtering by entity capability so invalid commands
-   are not sent to incapable entities.
-   - **Rationale:** Routing group commands through the ability system ensures consistent execution
-     semantics and prevents invalid commands (e.g., move to a building).
-   - **Verification:** Select a mixed group of mobile units and a stationary building; issue a move
-     command and verify only mobile units move.
-3. **R-13.11.6b** — The engine **SHALL** support formation movement where entities maintain relative
-   positions during group moves using data-driven formation templates (line, box, wedge, circle).
-   - **Rationale:** Formation movement is essential for RTS gameplay where unit positioning affects
-     combat effectiveness.
-   - **Verification:** Issue a move command to a formation group and verify units maintain relative
-     positions. Switch formation template and verify the new shape applies.
-4. **R-13.11.6c** — The engine **SHALL** support split commands that divide the current selection
-   into subgroups and send each to a different target, with even, type-based, and manual split
-   modes.
-   - **Rationale:** Split commands enable tactical multi-pronged maneuvers without requiring players
-     to manually create separate control groups.
-   - **Verification:** Select a group and issue a split command; verify the selection divides and
-     each subgroup moves to its assigned target.
-5. **R-13.11.6d** — The engine **SHALL** track per-player command history and support single-level
-   undo (Ctrl+Z) within a configurable timeout window that restores entities to their pre-command
-   state.
-   - **Rationale:** Command undo provides a safety net for misclicks in fast-paced RTS gameplay
-     without enabling full replay manipulation.
-   - **Verification:** Issue a move command and press Ctrl+Z within the timeout; verify units return
-     to their pre-command positions. Press Ctrl+Z after the timeout; verify undo is rejected.
+6. **R-13.11.6** — The engine **SHALL** dispatch commands (move, attack, stop, patrol) to all
+   entities in the current selection, with formation templates for group movement, split commands
+   for multi-target dispatch, and a configurable-timeout command undo.
+   - **Rationale:** Unified command dispatch with formations enables RTS-style group control.
+   - **Verification:** Select 10 entities and issue a move command. Verify all entities move. Issue
+     a formation move and verify entities maintain relative positions. Issue a split command and
+     verify subgroups go to different targets. Ctrl+Z within timeout and verify undo.
 
 ## Selection Visuals
 
-| ID        | Derived From                                                   |
-|-----------|----------------------------------------------------------------|
-| R-13.11.7 | [F-13.11.7](../../features/game-framework/selection-system.md) |
-| R-13.11.8 | [F-13.11.8](../../features/game-framework/selection-system.md) |
+7. **R-13.11.7** — The engine **SHALL** render a screen-space marquee selection box with modifier
+   key support, preview highlighting during drag, and configurable appearance.
+   - **Rationale:** Visual box selection provides immediate feedback for multi-entity selection.
+   - **Verification:** Click and drag a box. Verify entities within are highlighted during drag.
+     Release and verify they become selected. Shift+drag and verify additive behavior.
 
-1. **R-13.11.7** — The engine **SHALL** render a click-and-drag selection rectangle in screen space,
-   preview intersecting entities during drag, commit the selection on release, and support modifier
-   keys for additive (Shift) and subtractive (Ctrl) modes, optimized for hundreds of simultaneous
-   selections.
-   - **Rationale:** Marquee selection is the primary multi-selection mechanism for RTS and strategy
-     games, and must handle hundreds of entities without frame drops to support large-scale
-     gameplay.
-   - **Verification:** Drag a selection box over 200 entities; verify all intersecting entities are
-     selected with no frame rate drop below target. Hold Shift and drag a second box; verify the new
-     entities are added to the existing selection. Hold Ctrl and drag over previously selected
-     entities; verify they are removed. On a touch device, verify long-press-and-drag activates box
-     selection.
-2. **R-13.11.8** — The engine **SHALL** display colored outlines on selected entities, thinner
-   preview outlines on hovered entities, ground-projected selection circles for RTS, and 2D sprite
-   outline effects, all configurable per genre preset and per entity type, updating in real-time on
-   selection changes.
-   - **Rationale:** Clear, immediate visual feedback confirms selection state to the player and
-     distinguishes selected, hovered, and unselected entities, which is critical for precise
-     interaction in all game genres.
-   - **Verification:** Select an entity and verify a colored outline appears. Hover over another
-     entity and verify a thinner outline appears without selecting it. In an RTS scene, verify
-     team-colored ground circles render under selected units. Select a 2D sprite and verify a
-     pixel-perfect outline effect appears. Change the genre preset and verify the indicator style
-     updates accordingly. Assign a hero entity a distinct indicator and verify it differs from
-     standard units.
-
-## Non-Functional Requirements
-
-| ID          | Derived From         |
-|-------------|----------------------|
-| R-13.11.NF1 | F-13.11.3, F-13.11.6 |
-| R-13.11.NF2 | F-13.11.7            |
-
-1. **R-13.11.NF1** — The engine **SHALL** support selection sets of at least 500 entities without
-   degrading selection change event dispatch, visual feedback updates, or command dispatch below 1
-   ms per frame.
-   - **Rationale:** RTS games routinely select hundreds of units; the selection system must scale to
-     large selections without causing frame drops during selection changes or command dispatch.
-   - **Verification:** Select 500 entities via marquee select. Measure selection change event
-     dispatch time and verify it completes within 1 ms. Issue a group move command to all 500 and
-     verify dispatch completes within 1 ms.
-2. **R-13.11.NF2** — The engine **SHALL** complete marquee (box) selection of 500 entities with
-   visual preview updates at 60 fps without frame drops below target, including per-frame
-   intersection testing and preview highlight updates.
-   - **Rationale:** Smooth real-time preview during marquee drag is essential for precise selection
-     in RTS games with large unit counts.
-   - **Verification:** Place 500 entities in the viewport. Drag a marquee box over all of them while
-     measuring frame time. Verify no frame exceeds 16.67 ms during the drag operation.
+8. **R-13.11.8** — The engine **SHALL** render selection indicators (outlines, ground decals, health
+   bars) configurable per genre preset and entity type, with hover preview using a thinner outline.
+   - **Rationale:** Visual feedback ensures players always know what is selected or hovered.
+   - **Verification:** Select an entity and verify outline renders. Hover over another and verify
+     thinner preview outline. Change genre preset and verify indicator style changes.

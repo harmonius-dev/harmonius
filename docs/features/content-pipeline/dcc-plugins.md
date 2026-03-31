@@ -2,10 +2,10 @@
 
 ## Plugin SDK
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-12.6.1 | Asset Pipeline Plugin SDK | R-12.6.1     |
-| F-12.6.2 | Live Link Connection      | R-12.6.2     |
+| ID       | Feature |
+|----------|---------|
+| F-12.6.1 | Asset Pipeline Plugin SDK |
+| F-12.6.2 | DCC Bridge Connection |
 
 1. **F-12.6.1** — A C API with language bindings (Python, C++) that DCC tool plugins use to export
    assets directly to the engine's native binary format (F-12.7.1). The SDK provides functions to
@@ -23,11 +23,11 @@
 
 ## Houdini Plugin
 
-| ID       | Feature                               | Requirements |
-|----------|---------------------------------------|--------------|
-| F-12.6.3 | Houdini Engine Integration            | R-12.6.3     |
-| F-12.6.4 | Houdini Mesh and Scene Export         | R-12.6.4     |
-| F-12.6.5 | Houdini Procedural Placement Pipeline | R-12.6.5     |
+| ID       | Feature |
+|----------|---------|
+| F-12.6.3 | Houdini Engine Integration |
+| F-12.6.4 | Houdini Mesh and Scene Export |
+| F-12.6.5 | Houdini Procedural Placement Pipeline |
 
 1. **F-12.6.3** — A Houdini Digital Asset (HDA) host that runs Houdini Engine in-process or
    out-of-process, enabling Houdini procedural graphs to execute within the engine editor. Artists
@@ -36,7 +36,7 @@
    cook-on-parameter-change for interactive procedural workflows. a Houdini Engine license at edit
    time; baked output requires no runtime license.
    - **Deps:** F-12.6.1
-   - **Platform:** Houdini Engine is a C/C++ API; wrapped via C ABI on the engine side. Requires
+   - **Platform:** Houdini Engine is a C API; wrapped via C FFI on the engine side. Requires
 2. **F-12.6.4** — Export meshes with vertex attributes (position, normal, UV sets, color, custom
    attributes), skeleton hierarchies, skin weights, morph targets, and scene hierarchy directly from
    Houdini to the engine's native binary format (F-12.7.1) via the plugin SDK. Supports Houdini
@@ -52,17 +52,17 @@
 
 ## Maya Plugin
 
-| ID       | Feature                           | Requirements |
-|----------|-----------------------------------|--------------|
-| F-12.6.6 | Maya Direct Export Plugin         | R-12.6.6     |
-| F-12.6.7 | Maya Animation and Rigging Export | R-12.6.7     |
+| ID       | Feature |
+|----------|---------|
+| F-12.6.6 | Maya Direct Export Plugin |
+| F-12.6.7 | Maya Animation and Rigging Export |
 
 1. **F-12.6.6** — A Maya plugin (Python + C++ Maya API) that exports meshes, skeletons, animations,
    blend shapes, materials, cameras, and lights directly to the engine's native binary format
    (F-12.7.1) via the plugin SDK. The plugin reads Maya's internal DAG hierarchy and component data,
-   converts to the engine's native format, and pushes over the live link or writes to an asset file.
-   Supports incremental export of only changed nodes. Python layer exposes export commands in Maya's
-   menu/shelf.
+   converts to the engine's native format, and pushes over the DCC bridge or writes to an asset
+   file. Supports incremental export of only changed nodes. Python layer exposes export commands in
+   Maya's menu/shelf.
    - **Deps:** F-12.6.1
    - **Platform:** Uses Maya's C++ API (MFnMesh, MFnSkinCluster, etc.) wrapped in the plugin DLL.
 2. **F-12.6.7** — Export animation clips (skeletal, blendshape, camera) to the engine's native
@@ -74,31 +74,31 @@
 
 ## Blender Plugin
 
-| ID       | Feature                                        | Requirements |
-|----------|------------------------------------------------|--------------|
-| F-12.6.8 | Blender Direct Export Addon                    | R-12.6.8     |
-| F-12.6.9 | Blender Material to Engine Material Conversion | R-12.6.9     |
+| ID       | Feature |
+|----------|---------|
+| F-12.6.8 | Blender Direct Export Addon |
+| F-12.6.9 | Blender Material to Engine Material Conversion |
 
 1. **F-12.6.8** — A Blender addon (Python, using bpy API) that exports meshes, armatures, shape
    keys, animations, materials (node tree to engine material mapping), and scene hierarchy directly
-   to the engine's native binary format (F-12.7.1). Supports Blender's collections as engine prefab
-   hierarchies. Addon registers as an export operator and a live-link panel in Blender's sidebar.
-   Blender's modifier stack is applied at export time with an option to export pre-modifier data for
-   engine-side processing. the plugin SDK's socket protocol.
+   to the engine's native binary format (F-12.7.1). Supports Blender's collections as engine entity
+   template hierarchies. Addon registers as an export operator and a DCC bridge panel in Blender's
+   sidebar. Blender's modifier stack is applied at export time with an option to export pre-modifier
+   data for engine-side processing. the plugin SDK's socket protocol.
    - **Deps:** F-12.6.1
    - **Platform:** Pure Python addon; no compiled extensions needed. Communicates with engine via
 2. **F-12.6.9** — Map Blender's Principled BSDF node tree to the engine's PBR material model.
    Texture inputs (base color, metallic, roughness, normal, emission) are extracted and re-linked as
    engine texture assets. Non-mappable nodes (custom Blender shaders) emit warnings with fallback
-   defaults. Material conversion runs automatically on export and on live-link push.
+   defaults. Material conversion runs automatically on export and on DCC bridge push.
    - **Deps:** F-12.6.8
 
 ## Marvelous Designer
 
-| ID        | Feature                            | Requirements |
-|-----------|------------------------------------|--------------|
-| F-12.6.10 | Marvelous Designer Clothing Export | R-12.6.10    |
-| F-12.6.11 | Garment-to-Character Fitting       | R-12.6.11    |
+| ID        | Feature |
+|-----------|---------|
+| F-12.6.10 | Marvelous Designer Clothing Export |
+| F-12.6.11 | Garment-to-Character Fitting |
 
 1. **F-12.6.10** — Export clothing and fabric assets from Marvelous Designer directly to the
    engine's native binary format (F-12.7.1) via the plugin SDK. The plugin extracts garment meshes,
@@ -116,11 +116,11 @@
 
 ## Adobe Substance
 
-| ID        | Feature                               | Requirements |
-|-----------|---------------------------------------|--------------|
-| F-12.6.12 | Substance Material Import             | R-12.6.12    |
-| F-12.6.13 | Substance Painter Project Import      | R-12.6.13    |
-| F-12.6.14 | Runtime Substance Material Evaluation | R-12.6.14    |
+| ID        | Feature |
+|-----------|---------|
+| F-12.6.12 | Substance Material Import |
+| F-12.6.13 | Substance Painter Project Import |
+| F-12.6.14 | Runtime Substance Material Evaluation |
 
 1. **F-12.6.12** — Import Substance Designer .sbsar (Substance Archive) materials and evaluate them
    at build time to produce engine-ready texture sets (base color, normal, metallic, roughness, AO,
@@ -145,19 +145,19 @@
 
 ## Adobe Photoshop
 
-| ID        | Feature                              | Requirements |
-|-----------|--------------------------------------|--------------|
-| F-12.6.15 | Photoshop Direct Export Plugin       | R-12.6.15    |
-| F-12.6.16 | Photoshop Layer-to-UI Asset Pipeline | R-12.6.16    |
+| ID        | Feature |
+|-----------|---------|
+| F-12.6.15 | Photoshop Direct Export Plugin |
+| F-12.6.16 | Photoshop Layer-to-UI Asset Pipeline |
 
 1. **F-12.6.15** — A Photoshop plugin (UXP/CEP JavaScript + C++ native module) that exports
    textures, UI sprites, and layered compositions directly to the engine's native binary format
    (F-12.7.1). Exports individual layers or flattened output with channel packing (e.g., metallic in
    R, roughness in G, AO in B) matching the engine's material conventions. Supports PSD round-trip —
    the engine stores a reference to the source PSD so re-export updates the engine asset without
-   manual reimport. Live link pushes texture changes to the engine viewport in real time. versions.
+   manual reimport. DCC Bridge pushes texture changes to the engine viewport in real time. versions.
    Native C++ module handles binary asset serialization.
-   - **Deps:** F-12.6.1, F-12.6.2 (Live Link)
+   - **Deps:** F-12.6.1, F-12.6.2 (DCC Bridge)
    - **Platform:** Uses Adobe UXP plugin API (Photoshop 2022+). Legacy CEP fallback for older
 2. **F-12.6.16** — Export Photoshop layer groups as engine UI widget hierarchies. Text layers become
    UI text components with font, size, and color preserved. Shape layers become nine-slice or vector
@@ -167,9 +167,9 @@
 
 ## Adobe Illustrator
 
-| ID        | Feature                         | Requirements |
-|-----------|---------------------------------|--------------|
-| F-12.6.17 | Illustrator Vector Asset Export | R-12.6.17    |
+| ID        | Feature |
+|-----------|---------|
+| F-12.6.17 | Illustrator Vector Asset Export |
 
 1. **F-12.6.17** — Export Illustrator vector artwork (icons, HUD elements, decals, signage) to the
    engine's native binary format (F-12.7.1) as vector graphics assets or rasterized texture atlases.
@@ -182,10 +182,10 @@
 
 ## ZBrush
 
-| ID        | Feature                              | Requirements |
-|-----------|--------------------------------------|--------------|
-| F-12.6.18 | ZBrush High-Poly to Engine Pipeline  | R-12.6.18    |
-| F-12.6.19 | ZBrush Decimation and LOD Generation | R-12.6.19    |
+| ID        | Feature |
+|-----------|---------|
+| F-12.6.18 | ZBrush High-Poly to Engine Pipeline |
+| F-12.6.19 | ZBrush Decimation and LOD Generation |
 
 1. **F-12.6.18** — Export ZBrush sculpts (ZTL/ZPR) to the engine's native binary format (F-12.7.1)
    via GoZ bridge or file-based export. The plugin extracts the highest subdivision mesh, generates
@@ -203,32 +203,33 @@
 
 ## MotionBuilder
 
-| ID        | Feature                            | Requirements |
-|-----------|------------------------------------|--------------|
-| F-12.6.20 | MotionBuilder Animation Export     | R-12.6.20    |
-| F-12.6.21 | MotionBuilder Live Mocap Streaming | R-12.6.21    |
+| ID        | Feature |
+|-----------|---------|
+| F-12.6.20 | MotionBuilder Animation Export |
+| F-12.6.21 | MotionBuilder Live Mocap Streaming |
 
 1. **F-12.6.20** — Export motion capture data, cleaned animations, and character rigs from
    MotionBuilder directly to the engine's native binary format (F-12.7.1) via the plugin SDK. The
    plugin reads MotionBuilder's internal scene representation, extracts skeleton hierarchies,
    animation takes with full curve data (not baked samples), and character definitions. Supports
-   batch export of multiple takes from a single session. custom device for live-link streaming of
+   batch export of multiple takes from a single session. custom device for DCC bridge streaming of
    real-time mocap data.
    - **Deps:** F-12.6.1
    - **Platform:** Uses MotionBuilder's Open Reality SDK (C++ ORSDK). Plugin registers as a
 2. **F-12.6.21** — Stream motion capture data from MotionBuilder to the engine in real time for live
-   preview. The plugin sends skeleton pose data at capture frame rate over the live link connection.
-   The engine applies incoming poses to character entities in the viewport, enabling directors to
-   see mocap results on final characters with full materials and lighting during capture sessions.
-   - **Deps:** F-12.6.20, F-12.6.2 (Live Link)
+   preview. The plugin sends skeleton pose data at capture frame rate over the DCC bridge
+   connection. The engine applies incoming poses to character entities in the viewport, enabling
+   directors to see mocap results on final characters with full materials and lighting during
+   capture sessions.
+   - **Deps:** F-12.6.20, F-12.6.2 (DCC Bridge)
 
 ## Git Integration for DCC Plugins
 
-| ID        | Feature                           | Requirements |
-|-----------|-----------------------------------|--------------|
-| F-12.6.22 | DCC Plugin Git LFS Lock Workflow  | R-12.6.22    |
-| F-12.6.23 | DCC Plugin Review Comment Viewer  | R-12.6.23    |
-| F-12.6.24 | DCC Plugin Asset Status Dashboard | R-12.6.24    |
+| ID        | Feature |
+|-----------|---------|
+| F-12.6.22 | DCC Plugin Git LFS Lock Workflow |
+| F-12.6.23 | DCC Plugin Review Comment Viewer |
+| F-12.6.24 | DCC Plugin Asset Status Dashboard |
 
 1. **F-12.6.22** — Every DCC plugin integrates with Git LFS locking. When an artist opens a source
    file (PSD, .ma, .blend, .ztl, .zprj, .hip, .spp, .ai) from the engine's asset browser or from
@@ -256,10 +257,10 @@
 
 ## Shared Features
 
-| ID        | Feature                         | Requirements |
-|-----------|---------------------------------|--------------|
-| F-12.6.25 | DCC-Agnostic Material Mapping   | R-12.6.25    |
-| F-12.6.26 | Batch Export and CI Integration | R-12.6.26    |
+| ID        | Feature |
+|-----------|---------|
+| F-12.6.25 | DCC-Agnostic Material Mapping |
+| F-12.6.26 | Batch Export and CI Integration |
 
 1. **F-12.6.25** — A material translation layer that maps each DCC tool's material system to the
    engine's PBR material model via a configurable mapping table. Texture semantics (diffuse/albedo,

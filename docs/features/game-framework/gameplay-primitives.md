@@ -2,10 +2,10 @@
 
 ## Game Modes
 
-| ID       | Feature                 | Requirements |
-|----------|-------------------------|--------------|
-| F-13.1.1 | Game Mode State Machine | R-13.1.1     |
-| F-13.1.2 | Game State Manager      | R-13.1.2     |
+| ID       | Feature                 |
+|----------|-------------------------|
+| F-13.1.1 | Game Mode State Machine |
+| F-13.1.2 | Game State Manager      |
 
 1. **F-13.1.1** — Defines a hierarchical state machine that governs the rules, scoring, win/loss
    conditions, and phase transitions for a game session. Each mode (open world, dungeon, raid,
@@ -22,10 +22,10 @@
 
 ## Player Control
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-13.1.3 | Player Controller         | R-13.1.3     |
-| F-13.1.4 | Pawn and Character System | R-13.1.4     |
+| ID       | Feature                   |
+|----------|---------------------------|
+| F-13.1.3 | Player Controller         |
+| F-13.1.4 | Pawn and Character System |
 
 1. **F-13.1.3** — Routes player input into gameplay actions by mediating between the input action
    system and the controlled pawn entity. Handles input context switching (exploration, combat,
@@ -42,10 +42,10 @@
 
 ## Ability System
 
-| ID       | Feature                 | Requirements |
-|----------|-------------------------|--------------|
-| F-13.1.5 | Gameplay Ability System | R-13.1.5     |
-| F-13.1.6 | Gameplay Effect System  | R-13.1.6     |
+| ID       | Feature                 |
+|----------|-------------------------|
+| F-13.1.5 | Ability Framework |
+| F-13.1.6 | Gameplay Effect System  |
 
 1. **F-13.1.5** — A data-driven ability framework where each ability is an asset defining activation
    conditions, costs (mana, energy, rage, cooldowns), targeting rules (self, single target, AoE
@@ -63,10 +63,10 @@
 
 ## Damage and Death
 
-| ID       | Feature                             | Requirements |
-|----------|-------------------------------------|--------------|
-| F-13.1.7 | Damage Model                        | R-13.1.7     |
-| F-13.1.8 | Death, Respawn, and Encounter Reset | R-13.1.8     |
+| ID       | Feature                             |
+|----------|-------------------------------------|
+| F-13.1.7 | Damage Model                        |
+| F-13.1.8 | Death, Respawn, and Encounter Reset |
 
 1. **F-13.1.7** — Computes final damage from base values through a configurable pipeline of
    modifiers: attack power scaling, armor/resistance mitigation, critical strike, block, parry,
@@ -83,9 +83,9 @@
 
 ## Modular Systems
 
-| ID       | Feature                     | Requirements |
-|----------|-----------------------------|--------------|
-| F-13.1.9 | Modular System Registration | R-13.1.9     |
+| ID       | Feature                     |
+|----------|-----------------------------|
+| F-13.1.9 | Modular System Registration |
 
 1. **F-13.1.9** — Every gameplay system (physics, audio, AI, networking, animation, UI, VFX, combat,
    inventory, quests) registers through the plugin system (F-1.6.1) with declared dependencies and
@@ -99,9 +99,9 @@
 
 ## Developer Extensibility
 
-| ID        | Feature                        | Requirements |
-|-----------|--------------------------------|--------------|
-| F-13.1.10 | Rust Plugin API for Developers | R-13.1.10    |
+| ID        | Feature                        |
+|-----------|--------------------------------|
+| F-13.1.10 | Rust Plugin API for Developers |
 
 1. **F-13.1.10** — A stable Rust API for third-party developers to extend the engine with custom
    systems, components, and editor tools. Plugins are Rust crates that depend on the engine's public

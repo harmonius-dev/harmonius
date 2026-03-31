@@ -1,313 +1,281 @@
-# User Stories — 3.6 Procedural Generation
+# User Stories -- 3.6 Procedural Generation
 
 ## PCG Graph System
 
-| ID       | Persona        | Features | Requirements |
-|----------|----------------|----------|--------------|
-| US-3.6.1 | level designer |          |              |
-| US-3.6.2 | level designer |          |              |
-| US-3.6.3 | level designer |          |              |
-| US-3.6.4 | level designer |          |              |
-| US-3.6.5 | level designer |          |              |
-| US-3.6.6 | level designer |          |              |
-| US-3.6.7 | level designer |          |              |
-| US-3.6.8 | level designer |          |              |
+| ID         | Persona                  |
+|------------|--------------------------|
+| US-3.6.1.1 | level designer (P-6)     |
+| US-3.6.1.2 | technical artist (P-13)  |
+| US-3.6.1.3 | environment artist (P-8) |
+| US-3.6.2.1 | level designer (P-6)     |
+| US-3.6.3.1 | environment artist (P-8) |
+| US-3.6.4.1 | level designer (P-6)     |
+| US-3.6.5.1 | engine developer (P-26)  |
+| US-3.6.6.1 | technical artist (P-13)  |
+| US-3.6.7.1 | level designer (P-6)     |
+| US-3.6.8.1 | technical artist (P-13)  |
 
-1. **US-3.6.1** — I want a visual node graph for authoring procedural generation rules with typed
-   data streams
-   - **Acceptance:** I can build and iterate on generation logic without writing code
-2. **US-3.6.2** — I want point generation nodes for surface sampling, volume sampling, grid layouts,
-   spline following, and noise density maps
-   - **Acceptance:** I can create varied spatial distributions as input to downstream PCG nodes
-3. **US-3.6.3** — I want to filter points by height, slope, distance, biome, and custom tags, and
-   transform position, rotation, and scale
-   - **Acceptance:** I can refine procedural placement to match design intent
-4. **US-3.6.4** — I want points to spawn ECS entities with mesh, collision, and LOD components using
-   rule-based asset selection
-   - **Acceptance:** point distributions become visible scene content
-5. **US-3.6.5** — I want all procedural generation to be deterministic from a seed
-   - **Acceptance:** I can reproduce, share, and debug generated worlds reliably
-6. **US-3.6.6** — I want points to carry arbitrary typed key-value attributes that downstream nodes
-   can read and modify
-   - **Acceptance:** I can propagate metadata through the PCG graph
-7. **US-3.6.7** — I want merge, subtract, and intersect operations on point sets
-   - **Acceptance:** I can compose complex distributions from simpler building blocks
-8. **US-3.6.8** — I want conditional branches, for-each loops, and reusable subgraphs in the PCG
-   graph
-   - **Acceptance:** I can build iterative and conditional generation logic
+1. **US-3.6.1.1** -- **As a** level designer (P-6), **I want** a visual node graph for authoring
+   procedural rules, **so that** I create generation logic without code.
+2. **US-3.6.1.2** -- **As a** technical artist (P-13), **I want** graphs to execute in editor for
+   interactive preview and at runtime for on-demand generation, **so that** I iterate quickly on
+   procedural content.
+3. **US-3.6.1.3** -- **As a** environment artist (P-8), **I want** data to flow between nodes as
+   typed streams, **so that** I connect points, meshes, and splines safely.
+4. **US-3.6.2.1** -- **As a** level designer (P-6), **I want** point generation via surface
+   sampling, grid, Poisson disk, and noise density, **so that** I create varied distribution
+   patterns.
+5. **US-3.6.3.1** -- **As a** environment artist (P-8), **I want** to filter points by height,
+   slope, distance, and biome with non-destructive toggling, **so that** I refine placement rules
+   iteratively.
+6. **US-3.6.4.1** -- **As a** level designer (P-6), **I want** filtered points converted to mesh
+   instances or ECS entities, **so that** generated content appears in the world.
+7. **US-3.6.5.1** -- **As a** engine developer (P-26), **I want** deterministic seeding from a
+   global seed plus spatial coordinates, **so that** identical seeds produce identical output across
+   platforms.
+8. **US-3.6.6.1** -- **As a** technical artist (P-13), **I want** typed attributes on every
+   generated point, **so that** downstream nodes use per-point metadata for mesh selection and
+   material assignment.
+9. **US-3.6.7.1** -- **As a** level designer (P-6), **I want** boolean set operations on point
+   collections, **so that** I subtract building footprints from foliage.
+10. **US-3.6.8.1** -- **As a** technical artist (P-13), **I want** subgraphs, loops, and branches in
+    graph control flow, **so that** I build recursive patterns like L-systems.
 
-## Terrain Integration
+## Terrain Stamps and Biomes
 
-| ID        | Persona        | Features | Requirements |
-|-----------|----------------|----------|--------------|
-| US-3.6.9  | level designer |          |              |
-| US-3.6.10 | world artist   |          |              |
-| US-3.6.11 | level designer |          |              |
-| US-3.6.12 | world artist   |          |              |
-| US-3.6.13 | level designer |          |              |
+| ID          | Persona                  |
+|-------------|--------------------------|
+| US-3.6.9.1  | level designer (P-6)     |
+| US-3.6.10.1 | environment artist (P-8) |
+| US-3.6.11.1 | level designer (P-6)     |
 
-1. **US-3.6.9** — I want to place terrain stamps (heightmap patches) that blend additively or
-   replace terrain height
-   - **Acceptance:** I can sculpt specific landforms within procedurally generated terrain
-2. **US-3.6.10** — I want texture stamps that paint splatmap weights onto terrain
-   - **Acceptance:** I can define material transitions around roads, rivers, and points of interest
-3. **US-3.6.11** — I want a biome distribution system driven by noise and climate data that assigns
-   biome IDs to terrain regions
-   - **Acceptance:** vegetation, materials, and creatures vary spatially across the world
-4. **US-3.6.12** — I want rule-based vegetation placement driven by biome, slope, altitude, and
-   moisture
-   - **Acceptance:** forests, grasslands, and deserts populate automatically with appropriate plant
-     species
-5. **US-3.6.13** — I want vegetation to be automatically cleared along road and river splines with
-   configurable width and falloff
-   - **Acceptance:** roads and waterways are not blocked by foliage
+1. **US-3.6.9.1** -- **As a** level designer (P-6), **I want** non-destructive terrain stamps with
+   reorderable blend modes, **so that** I compose terrain modifications as a layer stack.
+2. **US-3.6.10.1** -- **As a** environment artist (P-8), **I want** procedural texturing from
+   terrain analysis (height, slope, curvature), **so that** snow, sand, and rock appear
+   automatically.
+3. **US-3.6.11.1** -- **As a** level designer (P-6), **I want** biome definitions as bundles of
+   stamps driven by temperature and moisture, **so that** biome placement follows climate logic.
 
-## Roads and Infrastructure
+## Vegetation and Roads
 
-| ID        | Persona          | Features | Requirements |
-|-----------|------------------|----------|--------------|
-| US-3.6.14 | level designer   |          |              |
-| US-3.6.15 | level designer   |          |              |
-| US-3.6.16 | technical artist |          |              |
-| US-3.6.17 | level designer   |          |              |
+| ID          | Persona                  |
+|-------------|--------------------------|
+| US-3.6.12.1 | environment artist (P-8) |
+| US-3.6.13.1 | level designer (P-6)     |
+| US-3.6.14.1 | level designer (P-6)     |
+| US-3.6.15.1 | level designer (P-6)     |
+| US-3.6.16.1 | engine developer (P-26)  |
+| US-3.6.17.1 | level designer (P-6)     |
 
-1. **US-3.6.14** — I want spline-based roads that deform terrain, apply surface materials, and
-   generate collision and navmesh
-   - **Acceptance:** I can create road networks by placing spline control points
-2. **US-3.6.15** — I want automatic road network generation connecting settlements with
-   terrain-aware pathfinding
-   - **Acceptance:** the world has a navigable transportation network
-3. **US-3.6.16** — I want spline distance queries accelerated via SDF textures
-   - **Acceptance:** vegetation clearing and terrain deformation along splines is fast enough for
-     interactive editing
-4. **US-3.6.17** — I want automatic intersection and junction generation where roads meet
-   - **Acceptance:** road networks have correct T-junctions, crossroads, and roundabouts
+1. **US-3.6.12.1** -- **As a** environment artist (P-8), **I want** rule-based vegetation scatter
+   per species with GPU compute evaluation, **so that** hundreds of thousands of instances populate
+   terrain tiles.
+2. **US-3.6.13.1** -- **As a** level designer (P-6), **I want** vegetation automatically cleared
+   along road and river splines, **so that** paths stay free without manual editing.
+3. **US-3.6.14.1** -- **As a** level designer (P-6), **I want** spline-based road generation with
+   terrain deformation and procedural decorations, **so that** roads integrate with the landscape.
+4. **US-3.6.15.1** -- **As a** level designer (P-6), **I want** connected road networks generated
+   from density maps and terrain analysis, **so that** settlements link naturally.
+5. **US-3.6.16.1** -- **As a** engine developer (P-26), **I want** splines converted to a per-tile
+   SDF texture, **so that** distance queries sample one texture instead of evaluating spline
+   polynomials.
+6. **US-3.6.17.1** -- **As a** level designer (P-6), **I want** road intersections auto-detected and
+   resolved with junction geometry, **so that** crossroads and roundabouts generate correctly.
 
-## Buildings and Structures
+## Building Generation and WFC
 
-| ID        | Persona          | Features | Requirements |
-|-----------|------------------|----------|--------------|
-| US-3.6.18 | level designer   |          |              |
-| US-3.6.19 | level designer   |          |              |
-| US-3.6.20 | level designer   |          |              |
-| US-3.6.21 | level designer   |          |              |
-| US-3.6.22 | level designer   |          |              |
-| US-3.6.23 | level designer   |          |              |
-| US-3.6.24 | level designer   |          |              |
-| US-3.6.25 | technical artist |          |              |
-| US-3.6.26 | level designer   |          |              |
+| ID          | Persona                  |
+|-------------|--------------------------|
+| US-3.6.18.1 | environment artist (P-8) |
+| US-3.6.19.1 | level designer (P-6)     |
+| US-3.6.20.1 | level designer (P-6)     |
+| US-3.6.21.1 | level designer (P-6)     |
+| US-3.6.22.1 | level designer (P-6)     |
 
-1. **US-3.6.18** — I want shape grammar rules that generate building structures from footprints
-   - **Acceptance:** I can create architectural variety without hand-modeling every building
-2. **US-3.6.19** — I want modular building assembly from prefab walls, floors, roofs, and details
-   using socket connections
-   - **Acceptance:** generated buildings use artist-authored modules
-3. **US-3.6.20** — I want 2D tile-based Wave Function Collapse for floor plans, dungeon layouts, and
-   terrain patterns
-   - **Acceptance:** I can generate spatially coherent 2D content from example tiles
-4. **US-3.6.21** — I want 3D voxel WFC for multi-story building interiors and cave systems
-   - **Acceptance:** I can generate spatially coherent 3D content from example modules
-5. **US-3.6.22** — I want to paint constraint regions that pin specific tiles in WFC generation
-   - **Acceptance:** I can guide procedural output around hand-placed landmarks
-6. **US-3.6.23** — I want a socket-based modular assembly engine where modules snap together at
-   typed connection points
-   - **Acceptance:** I can build complex structures from a library of compatible parts
-7. **US-3.6.24** — I want procedural object generation rules that create props, furniture, and
-   decorations from component parts
-   - **Acceptance:** interior spaces are automatically furnished
-8. **US-3.6.25** — I want Houdini Engine integration for procedural object generation
-   - **Acceptance:** I can leverage Houdini Digital Assets in the generation pipeline
-9. **US-3.6.26** — I want hierarchical module composition where buildings contain rooms, rooms
-   contain furniture, furniture contains props
-   - **Acceptance:** generation cascades through nested detail levels
+1. **US-3.6.18.1** -- **As a** environment artist (P-8), **I want** buildings generated via
+   hierarchical split grammars with parameterized style, **so that** varied facades emerge from
+   data-driven rules.
+2. **US-3.6.19.1** -- **As a** level designer (P-6), **I want** buildings assembled from modular
+   asset packs with socket-based connections, **so that** walls, roofs, and interiors compose
+   validly.
+3. **US-3.6.20.1** -- **As a** level designer (P-6), **I want** 2D WFC tile generation for dungeons
+   and floor plans, **so that** layouts satisfy adjacency constraints automatically.
+4. **US-3.6.21.1** -- **As a** level designer (P-6), **I want** 3D voxel WFC for multi-story
+   interiors and cave systems, **so that** complex 3D structures generate from tile sets.
+5. **US-3.6.22.1** -- **As a** level designer (P-6), **I want** to pin specific tiles before running
+   WFC, **so that** key rooms are placed exactly where I choose.
 
-## Authoring and AI
+## Modular Assembly and Authoring
 
-| ID        | Persona        | Features | Requirements |
-|-----------|----------------|----------|--------------|
-| US-3.6.27 | level designer |          |              |
-| US-3.6.28 | level designer |          |              |
-| US-3.6.29 | level designer |          |              |
-| US-3.6.30 | level designer |          |              |
+| ID          | Persona                  |
+|-------------|--------------------------|
+| US-3.6.23.1 | level designer (P-6)     |
+| US-3.6.24.1 | environment artist (P-8) |
+| US-3.6.25.1 | technical artist (P-13)  |
+| US-3.6.26.1 | level designer (P-6)     |
+| US-3.6.27.1 | environment artist (P-8) |
+| US-3.6.28.1 | level designer (P-6)     |
 
-1. **US-3.6.27** — I want interactive PCG authoring tools with real-time preview in the editor
-   - **Acceptance:** I can see generation results instantly as I adjust parameters
-2. **US-3.6.28** — I want to paint constraint zones, exclusion areas, and density overrides on the
-   world map
-   - **Acceptance:** procedural generation respects hand-authored design intent
-3. **US-3.6.29** — I want AI-driven content generation that learns from artist-placed examples
-   - **Acceptance:** procedural output matches the quality and style of hand-authored content
-4. **US-3.6.30** — I want a constraint satisfaction solver for spatial placement problems
-   - **Acceptance:** generated content respects distance, adjacency, and connectivity rules
+1. **US-3.6.23.1** -- **As a** level designer (P-6), **I want** a socket-based assembly engine for
+   ships, weapons, and modular objects, **so that** complex assets compose from reusable pieces.
+2. **US-3.6.24.1** -- **As a** environment artist (P-8), **I want** procedural assembly rules as PCG
+   graph nodes, **so that** unique variants generate from a shared part library.
+3. **US-3.6.25.1** -- **As a** technical artist (P-13), **I want** Houdini Digital Assets connected
+   to the assembly engine, **so that** HDA-authored rules drive procedural geometry.
+4. **US-3.6.26.1** -- **As a** level designer (P-6), **I want** hierarchical composition where
+   assembled objects become modules at the next level, **so that** rooms compose into buildings and
+   buildings into blocks.
+5. **US-3.6.27.1** -- **As a** environment artist (P-8), **I want** interactive PCG tools for spline
+   drawing, point painting, and socket wiring, **so that** I drive generation visually in the
+   editor.
+6. **US-3.6.28.1** -- **As a** level designer (P-6), **I want** to place high-level constraints and
+   have PCG fill in the rest, **so that** hand-crafted landmarks coexist with procedural population.
 
-## Runtime Generation
+## AI and Runtime Generation
 
-| ID        | Persona          | Features | Requirements |
-|-----------|------------------|----------|--------------|
-| US-3.6.31 | player           |          |              |
-| US-3.6.32 | technical artist |          |              |
-| US-3.6.33 | level designer   |          |              |
+| ID          | Persona                  |
+|-------------|--------------------------|
+| US-3.6.29.1 | technical artist (P-13)  |
+| US-3.6.30.1 | level designer (P-6)     |
+| US-3.6.31.1 | engine developer (P-26)  |
+| US-3.6.32.1 | engine developer (P-26)  |
+| US-3.6.33.1 | technical artist (P-13)  |
 
-1. **US-3.6.31** — I want terrain and content to generate on-demand in chunks as I explore
-   - **Acceptance:** the world extends seamlessly beyond pre-authored boundaries
-2. **US-3.6.32** — I want PCG operations to run on GPU compute shaders
-   - **Acceptance:** terrain and content generation is fast enough for runtime use
-3. **US-3.6.33** — I want Perlin, simplex, Worley, fractal, domain warp, and ridged noise functions
-   that produce identical results on CPU and GPU
-   - **Acceptance:** I can author deterministic procedural patterns
+1. **US-3.6.29.1** -- **As a** technical artist (P-13), **I want** an AI agent interface that drives
+   PCG graphs programmatically, **so that** trained models generate and evaluate content
+   iteratively.
+2. **US-3.6.30.1** -- **As a** level designer (P-6), **I want** a constraint satisfaction solver for
+   spatial placement, **so that** buildings, roads, and rivers obey spatial rules simultaneously.
+3. **US-3.6.31.1** -- **As a** engine developer (P-26), **I want** runtime chunk-based generation on
+   background threads with deterministic seeding, **so that** content generates ahead of the player.
+4. **US-3.6.32.1** -- **As a** engine developer (P-26), **I want** GPU compute generation of
+   heightmaps, noise fields, and vegetation scatter, **so that** generation completes in a single
+   frame.
+5. **US-3.6.33.1** -- **As a** technical artist (P-13), **I want** a comprehensive noise library
+   (Perlin, simplex, Worley, fBm, domain warping), **so that** I have building blocks for all
+   procedural patterns.
 
 ## Planet-Scale Generation
 
-| ID        | Persona        | Features | Requirements |
-|-----------|----------------|----------|--------------|
-| US-3.6.34 | level designer |          |              |
-| US-3.6.35 | level designer |          |              |
-| US-3.6.36 | level designer |          |              |
-| US-3.6.37 | level designer |          |              |
-| US-3.6.38 | level designer |          |              |
-| US-3.6.39 | level designer |          |              |
-| US-3.6.40 | level designer |          |              |
-| US-3.6.41 | level designer |          |              |
+| ID          | Persona                  |
+|-------------|--------------------------|
+| US-3.6.34.1 | level designer (P-6)     |
+| US-3.6.35.1 | level designer (P-6)     |
+| US-3.6.36.1 | level designer (P-6)     |
+| US-3.6.37.1 | level designer (P-6)     |
+| US-3.6.38.1 | level designer (P-6)     |
+| US-3.6.39.1 | level designer (P-6)     |
+| US-3.6.40.1 | level designer (P-6)     |
+| US-3.6.41.1 | level designer (P-6)     |
+| US-3.6.42.1 | technical artist (P-13)  |
+| US-3.6.43.1 | technical artist (P-13)  |
+| US-3.6.44.1 | environment artist (P-8) |
+| US-3.6.45.1 | environment artist (P-8) |
+| US-3.6.46.1 | environment artist (P-8) |
+| US-3.6.47.1 | level designer (P-6)     |
+| US-3.6.48.1 | level designer (P-6)     |
 
-1. **US-3.6.34** — I want to generate planet surfaces with continents, oceans, mountains, rivers,
-   and climate zones from a seed
-   - **Acceptance:** I can create whole worlds for exploration
-2. **US-3.6.35** — I want procedural city generation with road networks, building lots, zoning, and
-   population-scaled density
-   - **Acceptance:** the world is populated with settlements
-3. **US-3.6.36** — I want generated factions with territories, diplomacy, cultural traits, and
-   settlement ownership
-   - **Acceptance:** the world has geopolitical context
-4. **US-3.6.37** — I want quest generation from narrative templates parameterized by world state
-   - **Acceptance:** players always have contextually appropriate objectives
-5. **US-3.6.38** — I want dynamic wildlife populations with predator-prey dynamics and migration
-   patterns
-   - **Acceptance:** the world feels ecologically alive
-6. **US-3.6.39** — I want a history simulation that runs epochs of faction rise, war, and collapse
-   before the player enters
-   - **Acceptance:** the world has ruins, lore, and geopolitical context
-7. **US-3.6.40** — I want creatures placed by zone danger, biome, faction, and ecosystem state with
-   boss placement at key POIs
-   - **Acceptance:** the world is populated with appropriate encounters
-8. **US-3.6.41** — I want loot and resource distribution scaled by zone difficulty, faction wealth,
-   and geological rules
-   - **Acceptance:** the economy is balanced across the generated world
+1. **US-3.6.34.1** -- **As a** level designer (P-6), **I want** entire planet surfaces generated
+   with continents, mountains, rivers, and climate zones, **so that** I get a plausible world from a
+   single seed.
+2. **US-3.6.35.1** -- **As a** level designer (P-6), **I want** cities and settlements generated
+   with road networks and zoning, **so that** populated areas emerge from population density data.
+3. **US-3.6.36.1** -- **As a** level designer (P-6), **I want** factions generated with territories
+   and diplomatic relationships, **so that** the world has geopolitical context.
+4. **US-3.6.37.1** -- **As a** level designer (P-6), **I want** quests generated from narrative
+   templates parameterized by world state, **so that** content scales with the generated world.
+5. **US-3.6.38.1** -- **As a** level designer (P-6), **I want** dynamic ecosystem simulation with
+   predator-prey dynamics, **so that** wildlife populations respond to player actions.
+6. **US-3.6.39.1** -- **As a** level designer (P-6), **I want** the world simulated through
+   historical epochs before the player enters, **so that** the world has ruins, lore, and history.
+7. **US-3.6.40.1** -- **As a** level designer (P-6), **I want** enemies and NPCs placed based on
+   zone danger, biome, and faction control, **so that** encounters match the environment.
+8. **US-3.6.41.1** -- **As a** level designer (P-6), **I want** loot and resources distributed based
+   on zone difficulty and geological rules, **so that** economy balances naturally.
+9. **US-3.6.42.1** -- **As a** technical artist (P-13), **I want** plate tectonic simulation driving
+   continent shapes and mountain formation, **so that** geology is physically plausible.
+10. **US-3.6.43.1** -- **As a** technical artist (P-13), **I want** climate simulation considering
+    latitude, altitude, and ocean currents, **so that** biome distribution follows physical
+    constraints.
+11. **US-3.6.44.1** -- **As a** environment artist (P-8), **I want** terrain classified into biomes
+    with gradient ecotone transitions, **so that** biome boundaries look natural.
+12. **US-3.6.45.1** -- **As a** environment artist (P-8), **I want** hydrological simulation
+    producing rivers, lakes, and watersheds, **so that** water bodies follow terrain drainage.
+13. **US-3.6.46.1** -- **As a** environment artist (P-8), **I want** geological landforms (canyons,
+    fjords, dunes) placed by formation process, **so that** terrain features match their geological
+    context.
+14. **US-3.6.47.1** -- **As a** level designer (P-6), **I want** real-world GIS data imported to
+    generate Earth-accurate terrain, **so that** real locations can seed procedural worlds.
+15. **US-3.6.48.1** -- **As a** level designer (P-6), **I want** a unified planet configuration
+    asset with presets (Earth-like, desert, ocean, ice), **so that** I configure planet generation
+    visually.
 
-## Geological and Climate Simulation
+## Stellar and Cosmological Generation
 
-| ID        | Persona        | Features | Requirements |
-|-----------|----------------|----------|--------------|
-| US-3.6.42 | level designer |          |              |
-| US-3.6.43 | level designer |          |              |
-| US-3.6.44 | level designer |          |              |
-| US-3.6.45 | level designer |          |              |
-| US-3.6.46 | level designer |          |              |
-| US-3.6.47 | level designer |          |              |
-| US-3.6.48 | level designer |          |              |
+| ID          | Persona                  |
+|-------------|--------------------------|
+| US-3.6.49.1 | level designer (P-6)     |
+| US-3.6.50.1 | technical artist (P-13)  |
+| US-3.6.51.1 | engine developer (P-26)  |
+| US-3.6.52.1 | environment artist (P-8) |
+| US-3.6.53.1 | environment artist (P-8) |
+| US-3.6.54.1 | technical artist (P-13)  |
+| US-3.6.55.1 | level designer (P-6)     |
+| US-3.6.56.1 | technical artist (P-13)  |
+| US-3.6.57.1 | engine developer (P-26)  |
+| US-3.6.58.1 | engine developer (P-26)  |
+| US-3.6.59.1 | engine developer (P-26)  |
+| US-3.6.60.1 | level designer (P-6)     |
+| US-3.6.61.1 | level designer (P-6)     |
 
-1. **US-3.6.42** — I want tectonic plate simulation driving continent shapes, mountain ranges,
-   volcanic arcs, and fault lines
-   - **Acceptance:** planet geology is physically plausible
-2. **US-3.6.43** — I want climate simulation modeling latitude, altitude, ocean currents, winds, and
-   rain shadows
-   - **Acceptance:** biome distribution is physically motivated
-3. **US-3.6.44** — I want terrain cells classified into 16+ biome types based on climate output with
-   gradient ecotone transitions
-   - **Acceptance:** biome boundaries look natural
-4. **US-3.6.45** — I want hydrological simulation producing rivers, lakes, watersheds, waterfalls,
-   and coastal features
-   - **Acceptance:** the world has physically plausible water networks
-5. **US-3.6.46** — I want detailed landforms (canyons, fjords, dunes, sea cliffs, calderas, karst)
-   placed by geological context
-   - **Acceptance:** terrain has recognizable geographic features
-6. **US-3.6.47** — I want to import SRTM heightmaps, OpenStreetMap data, and climate datasets to
-   generate Earth-accurate terrain
-   - **Acceptance:** I can create realistic settings or use real geography as a generation seed
-7. **US-3.6.48** — I want a unified planet configuration with presets (Earth-like, Mars-like, ocean
-   world, ice world, desert world)
-   - **Acceptance:** I can quickly set up diverse planetary environments
-
-## Stellar and Planetary Formation
-
-| ID        | Persona        | Features | Requirements |
-|-----------|----------------|----------|--------------|
-| US-3.6.49 | level designer |          |              |
-| US-3.6.50 | level designer |          |              |
-| US-3.6.51 | level designer |          |              |
-| US-3.6.52 | level designer |          |              |
-| US-3.6.53 | level designer |          |              |
-| US-3.6.54 | level designer |          |              |
-
-1. **US-3.6.49** — I want star system generation with spectral classification, stellar evolution,
-   and binary/trinary orbital mechanics
-   - **Acceptance:** each star system is astrophysically consistent
-2. **US-3.6.50** — I want protoplanetary disk simulation producing planet count, orbits, masses, and
-   compositions
-   - **Acceptance:** planetary systems form from physical processes rather than random placement
-3. **US-3.6.51** — I want planetary collision simulation determining moon formation, axial tilt, and
-   surface state
-   - **Acceptance:** planets have formation histories that explain their properties
-4. **US-3.6.52** — I want dedicated generators for gas giants, ice giants, airless bodies, frozen
-   worlds, and tidally locked planets
-   - **Acceptance:** the universe contains diverse planet types
-5. **US-3.6.53** — I want moon and ring system generation with tidal effects, orbital resonances,
-   and Roche limit breakup
-   - **Acceptance:** planets have physically consistent satellite systems
-6. **US-3.6.54** — I want automatic planet type classification based on orbital position, mass, and
-   stellar flux
-   - **Acceptance:** planets get appropriate surface, atmosphere, and habitability without manual
-     selection
-
-## Cosmological and Galactic Simulation
-
-| ID        | Persona        | Features | Requirements |
-|-----------|----------------|----------|--------------|
-| US-3.6.55 | level designer |          |              |
-| US-3.6.56 | player         |          |              |
-| US-3.6.57 | level designer |          |              |
-| US-3.6.58 | level designer |          |              |
-| US-3.6.59 | level designer |          |              |
-| US-3.6.60 | level designer |          |              |
-
-1. **US-3.6.55** — I want galaxy generation with spiral arms, elliptical forms, and sectorized LOD
-   streaming
-   - **Acceptance:** players can explore galaxy-scale environments
-2. **US-3.6.56** — I want galactic core black holes with gravitational lensing, accretion disks, and
-   relativistic jets
-   - **Acceptance:** galactic centers are visually dramatic
-3. **US-3.6.57** — I want dark matter halos shaping galaxy rotation curves and cosmic web structure
-   - **Acceptance:** galaxy placement follows large-scale structure
-4. **US-3.6.58** — I want stellar collision and merger events that modify the star catalog
-   - **Acceptance:** the universe has dynamic stellar evolution events
-5. **US-3.6.59** — I want black hole formation from massive star deaths and merger simulation with
-   gravitational wave events
-   - **Acceptance:** the universe has a complete compact object lifecycle
-6. **US-3.6.60** — I want a top-down universe generation pipeline from Big Bang to present with
-   configurable scope
-   - **Acceptance:** I can generate anything from a single planet to an observable universe
-
-## Planetary Composition and Resources
-
-| ID        | Persona        | Features | Requirements |
-|-----------|----------------|----------|--------------|
-| US-3.6.61 | level designer |          |              |
-
-1. **US-3.6.61** — I want per-planet mineral and resource compositions based on formation history
-   and stellar metallicity
-   - **Acceptance:** mining yields geologically appropriate resources that enable inter-world trade
+1. **US-3.6.49.1** -- **As a** level designer (P-6), **I want** star systems generated with spectral
+   types and habitable zones, **so that** stellar neighborhoods are astrophysically motivated.
+2. **US-3.6.50.1** -- **As a** technical artist (P-13), **I want** planetary systems formed from
+   protoplanetary disk accretion, **so that** planet count, orbits, and compositions follow physical
+   models.
+3. **US-3.6.51.1** -- **As a** engine developer (P-26), **I want** giant impact simulation
+   determining planet mass, moons, and axial tilt, **so that** collision history shapes planetary
+   properties.
+4. **US-3.6.52.1** -- **As a** environment artist (P-8), **I want** non-terrestrial planet types
+   (gas giant, ice world, volcanic hellscape) with dedicated terrain generators, **so that** diverse
+   planets are visually distinct.
+5. **US-3.6.53.1** -- **As a** environment artist (P-8), **I want** moon and ring systems generated
+   from formation history, **so that** each planet has a unique satellite configuration.
+6. **US-3.6.54.1** -- **As a** technical artist (P-13), **I want** automatic planet type
+   classification from physical constraints, **so that** planet features are self-consistent without
+   manual setup.
+7. **US-3.6.55.1** -- **As a** level designer (P-6), **I want** galaxies generated with spiral,
+   elliptical, and irregular structures, **so that** star density varies realistically across
+   galactic space.
+8. **US-3.6.56.1** -- **As a** technical artist (P-13), **I want** supermassive black holes with
+   gravitational lensing and accretion disks, **so that** galactic cores are visually dramatic.
+9. **US-3.6.57.1** -- **As a** engine developer (P-26), **I want** dark matter halos shaping
+   galactic rotation and cosmic web structure, **so that** galaxy placement follows large-scale
+   structure.
+10. **US-3.6.58.1** -- **As a** engine developer (P-26), **I want** stellar collision simulation
+    modifying the star catalog, **so that** mergers and supernovae affect the generated universe.
+11. **US-3.6.59.1** -- **As a** engine developer (P-26), **I want** black hole formation and merger
+    simulation, **so that** compact objects appear from massive star deaths.
+12. **US-3.6.60.1** -- **As a** level designer (P-6), **I want** a top-down universe pipeline from
+    Big Bang to present with configurable scope, **so that** I generate anything from a single
+    planet to a full universe.
+13. **US-3.6.61.1** -- **As a** level designer (P-6), **I want** per-planet mineral compositions
+    derived from formation history, **so that** resource distribution is geologically motivated.
 
 ## Universe Infrastructure
 
-| ID        | Persona          | Features | Requirements |
-|-----------|------------------|----------|--------------|
-| US-3.6.62 | level designer   |          |              |
-| US-3.6.63 | technical artist |          |              |
-| US-3.6.64 | player           |          |              |
+| ID          | Persona                  |
+|-------------|--------------------------|
+| US-3.6.62.1 | engine developer (P-26)  |
+| US-3.6.63.1 | engine developer (P-26)  |
+| US-3.6.64.1 | engine developer (P-26)  |
 
-1. **US-3.6.62** — I want universe generation to run on server clusters with shard-aligned caching
-   - **Acceptance:** game servers fetch pre-generated data rather than regenerating it
-2. **US-3.6.63** — I want sparse hierarchical octree storage with 128-bit position keys and
-   compressed star catalogs
-   - **Acceptance:** universe-scale data fits in memory with sub-meter precision
-3. **US-3.6.64** — I want universe detail resolved across 6+ LOD tiers on demand with prefetching
-   - **Acceptance:** I can seamlessly zoom from cosmic web scale down to planet surface
+1. **US-3.6.62.1** -- **As a** engine developer (P-26), **I want** universe generation on a server
+   cluster with shard-aligned caching, **so that** game servers fetch pre-generated data instead of
+   regenerating.
+2. **US-3.6.63.1** -- **As a** engine developer (P-26), **I want** sparse hierarchical octree
+   storage with 128-bit position keys, **so that** cosmic-scale data uses memory proportional to
+   occupied space.
+3. **US-3.6.64.1** -- **As a** engine developer (P-26), **I want** on-demand detail resolution
+   across 6+ LOD tiers with prefetching, **so that** only the local region is loaded at full detail.

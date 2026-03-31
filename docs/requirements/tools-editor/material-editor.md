@@ -1,80 +1,44 @@
 # R-15.3 -- Material Editor Requirements
 
-## Node-Based Material Graph
+## Requirements
 
-| ID       | Derived From                                               |
-|----------|------------------------------------------------------------|
-| R-15.3.1 | [F-15.3.1](../../features/tools-editor/material-editor.md) |
-| R-15.3.2 | [F-15.3.2](../../features/tools-editor/material-editor.md) |
+1. **R-15.3.1** — The engine **SHALL** provide a node-based material graph editor with type-safe
+   pins, copy/paste, node grouping, comments, and minimap navigation that compiles to optimized GPU
+   shader code.
+   - **Rationale:** Visual material authoring is the primary workflow for all material creation in a
+     no-code engine.
+   - **Verification:** Create a material graph with 20+ nodes, verify type errors on mismatched
+     connections, and confirm the compiled shader renders correctly.
 
-1. **R-15.3.1** — The editor **SHALL** provide a visual node graph for material authoring with
-   type-safe pin connections (scalar, vector, color, texture), copy/paste, node grouping, comments,
-   minimap navigation, and compilation to optimized GPU shader code, built on the universal logic
-   graph runtime (F-15.8.1).
-   - **Rationale:** No-code material authoring requires a visual graph with type safety to prevent
-     invalid shader combinations.
-   - **Verification:** Unit test: connect incompatible pin types and verify rejection at edit time.
-     Build a valid graph and verify compiled shader runs on GPU.
-2. **R-15.3.2** — The editor **SHALL** support reusable material functions saved as assets with
-   input/output parameter pins, where modifying a shared function updates all referencing materials.
-   - **Rationale:** Common patterns (triplanar mapping, detail blending) must be authored once and
-     reused across all materials.
-   - **Verification:** Unit test: modify a shared function and verify all referencing materials
-     reflect the update.
+2. **R-15.3.2** — The engine **SHALL** support reusable material function subgraphs saved as assets
+   with input/output parameter pins and default values.
+   - **Rationale:** Shared functions eliminate duplication of common patterns like triplanar
+     mapping.
+   - **Verification:** Create a function, reference it from two materials, modify the function, and
+     verify both materials update.
 
-## Live Preview
+3. **R-15.3.3** — The engine **SHALL** render a real-time 3D material preview on configurable meshes
+   with adjustable lighting and split-view comparison of two variants.
+   - **Rationale:** Immediate visual feedback reduces material iteration time from minutes to
+     seconds.
+   - **Verification:** Change a material parameter and verify the preview updates within one frame.
 
-| ID       | Derived From                                               |
-|----------|------------------------------------------------------------|
-| R-15.3.3 | [F-15.3.3](../../features/tools-editor/material-editor.md) |
-| R-15.3.4 | [F-15.3.4](../../features/tools-editor/material-editor.md) |
+4. **R-15.3.4** — The engine **SHALL** expose all material parameters in an inspector panel with
+   instant application to viewports without recompilation.
+   - **Rationale:** Parameter tweaking must be fast enough for real-time artistic iteration.
+   - **Verification:** Adjust a color parameter via slider and verify the viewport reflects the
+     change immediately.
 
-1. **R-15.3.3** — The editor **SHALL** render a real-time 3D material preview on configurable meshes
-   with adjustable lighting, updating within one frame (16 ms) after parameter changes, and
-   supporting split-view comparison of two variants.
-   - **Rationale:** Immediate visual feedback is essential for iterative material authoring.
-   - **Verification:** Benchmark: change a parameter and measure frames until the preview updates.
-     Verify update occurs within one frame.
-2. **R-15.3.4** — The editor **SHALL** expose material parameters (colors, scalars, textures) in an
-   inspector with sliders, color pickers, and curve editors, applying changes instantly without
-   shader recompilation.
-   - **Rationale:** Parameter iteration must not be gated by compile time; uniform-only updates
-     enable real-time tweaking.
-   - **Verification:** Unit test: change a scalar parameter and verify no shader recompilation
-     occurs. Verify the viewport reflects the new value.
+5. **R-15.3.5** — The engine **SHALL** support lightweight material instances that override specific
+   parent parameters while sharing the compiled shader program.
+   - **Rationale:** Instances enable thousands of visual variations without duplicating shader
+     permutations.
+   - **Verification:** Create 100 instances with different tint colors and verify they all reference
+     the same compiled shader.
 
-## Material Instances
-
-| ID       | Derived From                                               |
-|----------|------------------------------------------------------------|
-| R-15.3.5 | [F-15.3.5](../../features/tools-editor/material-editor.md) |
-
-1. **R-15.3.5** — The editor **SHALL** support lightweight material instances that override parent
-   parameters without duplicating the compiled shader, sharing one shader program across all
-   instances.
-   - **Rationale:** Thousands of visual variations from a single base material keep GPU memory
-     proportional to uniform buffers, not shader count.
-   - **Verification:** Unit test: create 100 instances from one parent and verify all share a single
-     compiled shader.
-
-## Material Library
-
-| ID       | Derived From                                               |
-|----------|------------------------------------------------------------|
-| R-15.3.6 | [F-15.3.6](../../features/tools-editor/material-editor.md) |
-
-1. **R-15.3.6** — The editor **SHALL** provide a searchable, taggable material library with
-   thumbnail previews, drag-and-drop application to meshes, favorites, and usage tracking showing
-   which assets reference a material.
-   - **Rationale:** A searchable library prevents duplicate material creation and accelerates asset
-     discovery.
-   - **Verification:** Unit test: tag a material, search by tag, and verify only matching materials
-     are returned.
-
----
-
-## User Story Traceability
-
-User stories for this domain are maintained in
-[user-stories/tools-editor/material-editor.md](../../user-stories/tools-editor/material-editor.md).
-Requirements in this document are derived from those user stories.
+6. **R-15.3.6** — The engine **SHALL** provide a searchable, filterable material library with
+   thumbnail previews, tags, usage tracking, and drag-and-drop assignment.
+   - **Rationale:** Discoverability and quick assignment reduce time spent searching for existing
+     materials.
+   - **Verification:** Tag a material, search by tag, and verify drag-and-drop onto a mesh applies
+     the material.

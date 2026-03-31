@@ -1,84 +1,55 @@
-# R-10.4 -- UI Rendering Requirements
+# R-10.4 — UI Rendering Requirements
 
-## R-10.4.1–R-10.4.7 UI Rendering
+## Batching and Geometry
 
-| ID       | Derived From                                     |
-|----------|--------------------------------------------------|
-| R-10.4.1 | [F-10.4.1](../../features/ui-2d/ui-rendering.md) |
-| R-10.4.2 | [F-10.4.2](../../features/ui-2d/ui-rendering.md) |
-| R-10.4.3 | [F-10.4.3](../../features/ui-2d/ui-rendering.md) |
-| R-10.4.4 | [F-10.4.4](../../features/ui-2d/ui-rendering.md) |
-| R-10.4.5 | [F-10.4.5](../../features/ui-2d/ui-rendering.md) |
-| R-10.4.6 | [F-10.4.6](../../features/ui-2d/ui-rendering.md) |
-| R-10.4.7 | [F-10.4.7](../../features/ui-2d/ui-rendering.md) |
+1. **R-10.4.1** — The engine **SHALL** batch UI textured quads sharing the same atlas page and blend
+   state into indirect draw calls, packing per-quad instance data into a GPU buffer.
+   - **Rationale:** Merging same-atlas, same-blend quads minimizes draw call overhead for complex
+     UIs.
+   - **Verification:** Render 500 widgets across 4 atlas pages and 2 blend states. Assert draw calls
+     equal the number of distinct (page, state) combinations.
 
-1. **R-10.4.1** — The engine **SHALL** batch UI textured quads that share the same texture atlas
-   page and blend state into single indirect draw calls, packing per-quad instance data (position,
-   size, UV rect, tint, corner radius, clip rect) into a GPU buffer dispatched through the mesh
-   shader pipeline.
-   - **Rationale:** Merging same-atlas, same-blend-state quads into indirect dispatches minimizes
-     draw call overhead, which is critical for complex UIs containing hundreds of visible widgets.
-   - **Verification:** Render a UI scene with 500 visible widgets spanning four atlas pages and two
-     blend states. Verify that total draw calls equal the number of distinct (atlas page, blend
-     state) combinations. Confirm per-quad instance data is readable in a GPU capture and that all
-     quads render with correct position, tint, and UV mapping.
-2. **R-10.4.2** — The engine **SHALL** render text glyphs using multi-channel signed distance field
-   (MSDF) textures generated at asset build time, supporting subpixel positioning, configurable
-   hinting, and per-glyph outline and shadow effects while sustaining at least 5 000 visible glyphs
+2. **R-10.4.2** — The engine **SHALL** render text glyphs using MSDF textures with subpixel
+   positioning, configurable hinting, and per-glyph outline/shadow, sustaining 5000+ visible glyphs
    per frame.
-   - **Rationale:** MSDF text remains sharp at arbitrary scale and rotation without regenerating
-     glyph bitmaps, and avoids dependence on platform-specific subpixel layouts.
-   - **Verification:** Render a scrollable chat panel containing 5 000 MSDF glyphs at 100%, 200%,
-     and 300% UI scale. Verify glyph edges remain sharp (no blurring or rasterization artifacts) at
-     every scale via image comparison against a reference render. Confirm outline and shadow effects
-     appear correctly on a subset of glyphs. Measure frame time stays below 4 ms for the text pass
-     alone.
-3. **R-10.4.3** — The engine **SHALL** provide GPU-accelerated vector path rendering supporting
-   filled and stroked paths with Bezier curves, arcs, and linear, radial, and conical gradients,
-   tessellated via a compute pipeline into coverage masks or signed distance fields.
-   - **Rationale:** Resolution-independent vector paths eliminate bitmap assets for shapes such as
-     minimap overlays, cooldown sweeps, radial menus, and custom health bars.
-   - **Verification:** Render a radial cooldown sweep, a stroked Bezier path, and a conical gradient
-     fill at 100% and 300% UI scale. Verify all paths render without aliasing or tessellation
-     artifacts at both scales. Confirm the compute tessellation pass produces identical visual
-     output to a CPU reference rasterizer within a per-pixel tolerance of 1/255.
-4. **R-10.4.4** — The engine **SHALL** pack UI textures into runtime-managed atlases and support
-   nine-slice rendering that stretches panel backgrounds and borders without distorting corners or
-   edges, rebuilding atlas pages incrementally when new assets stream in without causing full-repack
-   stalls.
-   - **Rationale:** Atlas packing maximizes batching by reducing texture binds, and incremental
-     rebuilds prevent frame hitches when assets arrive asynchronously during gameplay.
-   - **Verification:** Stream in 20 new UI textures during gameplay and verify atlas pages update
-     incrementally with no frame exceeding a 2 ms repack cost. Render a nine-slice panel at three
-     different sizes and verify corner regions remain undistorted via pixel comparison against a
-     reference image.
-5. **R-10.4.5** — The engine **SHALL** render 3D scenes into offscreen render targets composited
-   into UI panels as texture quads, supporting camera orbit, zoom, and animation playback, and
-   rendering multiple simultaneous 3D previews at reduced resolution with upscaling.
-   - **Rationale:** Offscreen 3D renders at reduced resolution enable character portraits and item
-     previews without burdening the main scene's GPU budget.
-   - **Verification:** Open two side-by-side 3D item preview panels each rendering an animated
-     character model. Verify both panels display correct geometry, lighting, and animation playback.
-     Confirm each preview renders at half the panel's native resolution and is upscaled. Measure
-     combined GPU cost of both previews stays below 1 ms on target hardware.
-6. **R-10.4.6** — The engine **SHALL** render UI elements as textured quads in 3D world space
-   subject to perspective projection, lighting, and depth testing, supporting both diegetic UI
-   (in-world screens, signs) and semi-diegetic UI (camera-facing nameplates) through the batched
-   quad pipeline injected into the 3D render pass.
+   - **Rationale:** MSDF text remains sharp at arbitrary scale without regenerating bitmaps.
+   - **Verification:** Render 5000 glyphs at 100%, 200%, 300% scale. Assert sharp edges via image
+     comparison. Assert text pass under 4 ms.
+
+3. **R-10.4.3** — The engine **SHALL** provide GPU-accelerated vector path rendering with filled and
+   stroked Bezier curves, arcs, and gradients, via compute tessellation into coverage masks or SDFs.
+   - **Rationale:** Resolution-independent vector paths eliminate bitmap assets for shapes.
+   - **Verification:** Render cooldown sweep, stroked Bezier, and conical gradient at 100% and 300%.
+     Assert no aliasing or tessellation artifacts.
+
+## Atlas and Texture
+
+4. **R-10.4.4** — The engine **SHALL** pack UI textures into runtime-managed atlases with nine-slice
+   rendering and incremental atlas page rebuilds without full-repack stalls.
+   - **Rationale:** Atlas packing maximizes batching; incremental rebuilds prevent frame hitches.
+   - **Verification:** Stream 20 new textures. Assert incremental repack under 2 ms. Assert
+     nine-slice corners undistorted.
+
+5. **R-10.4.5** — The engine **SHALL** render 3D scenes into offscreen targets composited into UI
+   panels, supporting orbit, zoom, animation, and multiple simultaneous previews at reduced
+   resolution.
+   - **Rationale:** Reduced-resolution 3D renders enable character and item previews without GPU
+     burden.
+   - **Verification:** Open two 3D preview panels. Assert correct geometry and animation. Assert
+     combined GPU cost under 1 ms.
+
+## Compositing
+
+6. **R-10.4.6** — The engine **SHALL** render UI elements as textured quads in 3D world space with
+   perspective, lighting, and depth testing, for both diegetic and semi-diegetic UI.
    - **Rationale:** Sharing the batched quad pipeline for world-space UI avoids a separate rendering
-     path and ensures consistent batching, while depth testing integrates UI naturally into the 3D
-     scene.
-   - **Verification:** Place a diegetic in-world screen and a semi-diegetic nameplate in a 3D scene.
-     Verify the screen is occluded by geometry in front of it and the nameplate billboard-faces the
-     camera. Confirm both elements appear in the 3D render pass (not the screen-space overlay) via
-     GPU capture inspection. Verify lighting affects the diegetic surface correctly.
-7. **R-10.4.7** — The engine **SHALL** apply SDF-based alpha-blended anti-aliasing to UI element
-   edges (rounded rectangles, circles, vector paths) and provide hardware clip rect or stencil-based
-   clipping that confines child widgets to parent bounds, maintaining sharp edges at UI scale
-   factors from 100% through 300%.
-   - **Rationale:** SDF-based edge anti-aliasing remains resolution-independent across all scale
-     factors, and parent-bounds clipping is essential for scroll views and masked containers.
-   - **Verification:** Render a rounded rectangle, a circle, and a vector path at 100%, 200%, and
-     300% UI scale. Verify edges show smooth anti-aliasing with no staircasing at any scale via
-     image comparison. Place a child widget partially outside a scroll-view parent and verify
-     clipped pixels are not visible. Confirm no blurring of adjacent elements.
+     path.
+   - **Verification:** Place diegetic screen and nameplate. Assert screen occluded by geometry.
+     Assert nameplate billboard-faces camera. Verify both in 3D render pass via GPU capture.
+
+7. **R-10.4.7** — The engine **SHALL** apply SDF-based anti-aliasing to UI edges and provide
+   stencil-based clipping confining children to parent bounds, sharp at 100%-300% scale.
+   - **Rationale:** SDF edges remain resolution-independent across scales; clipping is essential for
+     scroll views.
+   - **Verification:** Render rounded rect, circle, and vector path at 100%, 200%, 300%. Assert
+     smooth edges. Assert child partially outside scroll view is clipped.

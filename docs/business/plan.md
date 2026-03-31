@@ -570,15 +570,14 @@ above. They should be folded into existing groups or promoted to new groups.
 | 12 | game-framework/cinematics | (see below) |
 | 13 | game-framework/scripting | (see below) |
 | 14 | game-framework/gameplay-databases | (see below) |
-| 15 | game-framework/advertising | (see below) |
-| 16 | game-framework/block-voxel | (see below) |
-| 17 | tools-editor/level-editor | (see below) |
-| 18 | tools-editor/asset-store | (see below) |
-| 19 | tools-editor/server-infrastructure | (see below) |
-| 20 | ui-2d/common-widgets | (see below) |
-| 21 | ai/non-functional | (see below) |
-| 22 | networking/non-functional | (see below) |
-| 23 | rendering/gpu-abstraction | (see below) |
+| 15 | game-framework/block-voxel | (see below) |
+| 16 | tools-editor/level-editor | (see below) |
+| 17 | tools-editor/asset-store | (see below) |
+| 18 | tools-editor/server-infrastructure | (see below) |
+| 19 | ui-2d/common-widgets | (see below) |
+| 20 | ai/non-functional | (see below) |
+| 21 | networking/non-functional | (see below) |
+| 22 | rendering/gpu-abstraction | (see below) |
 
 Candidate feature-group mappings:
 
@@ -609,22 +608,18 @@ Candidate feature-group mappings:
     (scripting = logic graph in no-code engine).
 14. [game-framework/gameplay-databases](../requirements/game-framework/gameplay-databases.md) —
     GameFramework.GameplayPrimitives.
-15. [game-framework/advertising](../requirements/game-framework/advertising.md) —
-    GameFramework.GenreSpecific.
-16. [game-framework/block-voxel](../requirements/game-framework/block-voxel.md) —
+15. [game-framework/block-voxel](../requirements/game-framework/block-voxel.md) —
     GeometryWorld.TerrainVoxel or GameFramework.GenreSpecific.
-17. [tools-editor/level-editor](../requirements/tools-editor/level-editor.md) —
+16. [tools-editor/level-editor](../requirements/tools-editor/level-editor.md) —
     ToolsEditor.EditorFramework or ToolsEditor.WorldBuilding.
-18. [tools-editor/asset-store](../requirements/tools-editor/asset-store.md) —
+17. [tools-editor/asset-store](../requirements/tools-editor/asset-store.md) —
     ToolsEditor.AdvancedTools.
-19. [tools-editor/server-infrastructure](../requirements/tools-editor/server-infrastructure.md) —
+18. [tools-editor/server-infrastructure](../requirements/tools-editor/server-infrastructure.md) —
     ToolsEditor.AdvancedTools.
-20. [ui-2d/common-widgets](../requirements/ui-2d/common-widgets.md) — UI2D.WidgetFramework.
-21. [ai/non-functional](../requirements/ai/non-functional.md) — Spans AI groups; performance
-    constraints.
-22. [networking/non-functional](../requirements/networking/non-functional.md) — Spans Networking
-    groups; performance constraints.
-23. [rendering/gpu-abstraction](../requirements/rendering/gpu-abstraction.md) —
+19. [ui-2d/common-widgets](../requirements/ui-2d/common-widgets.md) — UI2D.WidgetFramework.
+20. AI non-functional requirements — integrated into individual AI topic files.
+21. Networking non-functional requirements — integrated into individual Networking topic files.
+22. [rendering/gpu-abstraction](../requirements/rendering/gpu-abstraction.md) —
     Rendering.GPUAbstraction (possibly duplicate of gpu-abstraction-layer).
 
 ### Unmapped Features
@@ -644,7 +639,6 @@ Candidate feature-group mappings:
 | GameFramework.GenreSpecific      |
 | ToolsEditor.LogicGraph           |
 | GameFramework.GameplayPrimitives |
-| GameFramework.GenreSpecific      |
 | GeometryWorld.TerrainVoxel       |
 | ToolsEditor.WorldBuilding        |
 | ToolsEditor.AdvancedTools        |
@@ -683,25 +677,23 @@ Candidate feature-group mappings:
     [game-framework/scripting](../features/game-framework/scripting.md)
 13. **[game-framework/gameplay-databases](../features/game-framework/gameplay-databases.md)** —
     [game-framework/gameplay-databases](../features/game-framework/gameplay-databases.md)
-14. **[game-framework/advertising](../features/game-framework/advertising.md)** —
-    [game-framework/advertising](../features/game-framework/advertising.md)
-15. **[game-framework/block-voxel](../features/game-framework/block-voxel.md)** —
+14. **[game-framework/block-voxel](../features/game-framework/block-voxel.md)** —
     [game-framework/block-voxel](../features/game-framework/block-voxel.md)
-16. **[tools-editor/level-editor](../features/tools-editor/level-editor.md)** —
+15. **[tools-editor/level-editor](../features/tools-editor/level-editor.md)** —
     [tools-editor/level-editor](../features/tools-editor/level-editor.md)
-17. **[tools-editor/asset-store](../features/tools-editor/asset-store.md)** —
+16. **[tools-editor/asset-store](../features/tools-editor/asset-store.md)** —
     [tools-editor/asset-store](../features/tools-editor/asset-store.md)
-18. **[tools-editor/server-infrastructure](../features/tools-editor/server-infrastructure.md)** —
+17. **[tools-editor/server-infrastructure](../features/tools-editor/server-infrastructure.md)** —
     [tools-editor/server-infrastructure](../features/tools-editor/server-infrastructure.md)
-19. **[tools-editor/ai-assistant](../features/tools-editor/ai-assistant.md)** —
+18. **[tools-editor/ai-assistant](../features/tools-editor/ai-assistant.md)** —
     [tools-editor/ai-assistant](../features/tools-editor/ai-assistant.md)
-20. **[tools-editor/ai-governance](../features/tools-editor/ai-governance.md)** —
+19. **[tools-editor/ai-governance](../features/tools-editor/ai-governance.md)** —
     [tools-editor/ai-governance](../features/tools-editor/ai-governance.md)
-21. **[tools-editor/shared-cache](../features/tools-editor/shared-cache.md)** —
+20. **[tools-editor/shared-cache](../features/tools-editor/shared-cache.md)** —
     [tools-editor/shared-cache](../features/tools-editor/shared-cache.md)
-22. **[ui-2d/common-widgets](../features/ui-2d/common-widgets.md)** —
+21. **[ui-2d/common-widgets](../features/ui-2d/common-widgets.md)** —
     [ui-2d/common-widgets](../features/ui-2d/common-widgets.md)
-23. **[audio/dsp-and-effects](../features/audio/dsp-and-effects.md)** —
+22. **[audio/dsp-and-effects](../features/audio/dsp-and-effects.md)** —
     [audio/dsp-and-effects](../features/audio/dsp-and-effects.md)
-24. **[audio/music-system](../features/audio/music-system.md)** —
+23. **[audio/music-system](../features/audio/music-system.md)** —
     [audio/music-system](../features/audio/music-system.md)

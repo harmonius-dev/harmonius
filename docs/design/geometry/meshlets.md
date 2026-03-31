@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/geometry-world/](../../features/geometry-world/),
-> [requirements/geometry-world/](../../requirements/geometry-world/), and
-> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table below traces design
-> elements to those definitions.
+> [features/geometry-world/](../../features/), [requirements/geometry-world/](../../requirements/),
+> and [user-stories/geometry-world/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 | Feature | Requirement | User Stories |
 |---------|-------------|--------------|
@@ -1450,12 +1449,12 @@ reduce false occlusion in fast camera movement scenarios.
 
 **Q3. Is there a better approach?**
 
-Nanite-style virtualized geometry uses a persistent streaming mesh that renders directly from a page
-cache without traditional draw calls. This eliminates the indirect draw fallback and simplifies the
-pipeline. We do not take this approach because Nanite is tightly coupled to Unreal's renderer and
-difficult to replicate without their proprietary rasterizer. Our meshlet DAG approach is more
-modular, works with standard rasterization, and integrates cleanly with the visibility buffer. The
-trade-off is more explicit pipeline stages versus Nanite's monolithic simplicity.
+Mesh-streaming-style virtualized geometry uses a persistent streaming mesh that renders directly
+from a page cache without traditional draw calls. This eliminates the indirect draw fallback and
+simplifies the pipeline. We do not take this approach because Unreal's Mesh Streaming is tightly
+coupled to their renderer and difficult to replicate without their proprietary rasterizer. Our
+meshlet DAG approach is more modular, works with standard rasterization, and integrates cleanly with
+the visibility buffer. The trade-off is more explicit pipeline stages versus monolithic simplicity.
 
 **Q4. Does this design solve all customer problems?**
 

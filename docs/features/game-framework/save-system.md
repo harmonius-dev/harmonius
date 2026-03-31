@@ -2,10 +2,10 @@
 
 ## Serialization
 
-| ID       | Feature                            | Requirements |
-|----------|------------------------------------|--------------|
-| F-13.3.1 | Save Game Serialization            | R-13.3.1     |
-| F-13.3.2 | Save Data Migration and Versioning | R-13.3.2     |
+| ID       | Feature                            |
+|----------|------------------------------------|
+| F-13.3.1 | Save Game Serialization            |
+| F-13.3.2 | Save Data Migration and Versioning |
 
 1. **F-13.3.1** — Serializes the player's game state (character data, inventory, quest progress,
    ability loadout, map exploration, achievement progress) into a versioned binary format. Uses the
@@ -23,10 +23,10 @@
 
 ## Save Triggers
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-13.3.3 | Checkpoint and Autosave   | R-13.3.3     |
-| F-13.3.4 | Save Slots and Management | R-13.3.4     |
+| ID       | Feature                   |
+|----------|---------------------------|
+| F-13.3.3 | Checkpoint and Autosave   |
+| F-13.3.4 | Save Slots and Management |
 
 1. **F-13.3.3** — Triggers automatic saves at designer-placed checkpoints (zone transitions, quest
    milestones, boss kills) and at configurable time intervals. Autosave writes to a rotating slot to
@@ -43,10 +43,10 @@
 
 ## Cloud and Platform Integration
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-13.3.5 | Cloud Save with Platform APIs | R-13.3.5     |
-| F-13.3.6 | Async Save I/O Pipeline       | R-13.3.6     |
+| ID       | Feature                       |
+|----------|-------------------------------|
+| F-13.3.5 | Cloud Save with Platform APIs |
+| F-13.3.6 | Async Save I/O Pipeline       |
 
 1. **F-13.3.5** — Synchronizes save data with platform cloud storage (Steam Cloud, PlayStation Plus
    Cloud, Xbox Cloud Saves, iCloud, Epic Online Services) using each platform's native API. Handles

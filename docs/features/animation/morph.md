@@ -2,9 +2,9 @@
 
 ## Blend Shapes
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-9.2.1 | GPU Blend Shape Accumulation | R-9.2.1      |
+| ID      | Feature                      |
+|---------|------------------------------|
+| F-9.2.1 | GPU Blend Shape Accumulation |
 
 1. **F-9.2.1** — Accumulates weighted morph target deltas (position and normal offsets) on the GPU
    via compute shaders, applied before skeletal skinning in the deformation pipeline. Supports an
@@ -16,9 +16,9 @@
 
 ## Corrective Blend Shapes
 
-| ID      | Feature                 | Requirements |
-|---------|-------------------------|--------------|
-| F-9.2.2 | Corrective Blend Shapes | R-9.2.2      |
+| ID      | Feature                 |
+|---------|-------------------------|
+| F-9.2.2 | Corrective Blend Shapes |
 
 1. **F-9.2.2** — Automatically activates corrective morph targets driven by joint angles to fix
    deformation artifacts caused by extreme poses. Corrective shapes are authored as
@@ -30,9 +30,9 @@
 
 ## Facial Animation
 
-| ID      | Feature                 | Requirements |
-|---------|-------------------------|--------------|
-| F-9.2.3 | Facial Animation System | R-9.2.3      |
+| ID      | Feature                 |
+|---------|-------------------------|
+| F-9.2.3 | Facial Animation System |
 
 1. **F-9.2.3** — Drives facial blend shapes through a standardized set of face action units
    compatible with performance capture data. Supports both curve-driven keyframe animation and
@@ -44,9 +44,9 @@
 
 ## Per-Vertex Animation
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-9.2.4 | Per-Vertex Animation Textures | R-9.2.4      |
+| ID      | Feature                       |
+|---------|-------------------------------|
+| F-9.2.4 | Per-Vertex Animation Textures |
 
 1. **F-9.2.4** — Bakes complex deformations (fluid surfaces, tentacles, foliage sway) into vertex
    animation textures (VATs) sampled in the vertex shader. Each frame of the animation is stored as
@@ -56,9 +56,9 @@
 
 ## Morph Target Streaming
 
-| ID      | Feature                | Requirements |
-|---------|------------------------|--------------|
-| F-9.2.5 | Morph Target Streaming | R-9.2.5      |
+| ID      | Feature                |
+|---------|------------------------|
+| F-9.2.5 | Morph Target Streaming |
 
 1. **F-9.2.5** — Streams morph target delta buffers from disk on demand using async I/O, loading
    only the targets needed for currently visible characters. Evicts unused targets under memory

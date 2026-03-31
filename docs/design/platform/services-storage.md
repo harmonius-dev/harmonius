@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/platform/](../../features/platform/),
-> [requirements/platform/](../../requirements/platform/), and
-> [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
-> those definitions.
+> [features/platform/](../../features/), [requirements/platform/](../../requirements/), and
+> [user-stories/platform/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Platform Services
 
@@ -1649,7 +1648,7 @@ pub enum TempError {
 | `blake3` | Content-addressed cache keys | Fast, parallel, SIMD-accelerated hash |
 | `toml` | Preferences serialization | Standard TOML parser/writer |
 | `windows-rs` | Win32 path APIs, file ops | Zero-cost FFI for Windows APIs |
-| (hand-written `extern "C"`) | Console SDK function declarations | Matches platform C ABI |
+| `swift-bridge` | Apple platform SDK bindings | Direct Rust-Swift FFI |
 
 ## Test Plan
 

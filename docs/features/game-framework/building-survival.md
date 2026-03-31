@@ -2,15 +2,15 @@
 
 ## Building Placement
 
-| ID         | Feature                           | Requirements |
-|------------|-----------------------------------|--------------|
-| F-13.14.1  | Modular Building Placement System | R-13.14.1    |
-| F-13.14.2  | Construction Phase and Progress   | R-13.14.2    |
-| F-13.14.3  | Structural Integrity              | R-13.14.3    |
-| F-13.14.4  | Building Upgrade and Repair       | R-13.14.4    |
-| F-13.14.5a | Housing Plot and Instance System  | R-13.14.5a   |
-| F-13.14.5b | Furniture Placement               | R-13.14.5b   |
-| F-13.14.5c | Functional Furniture Effects      | R-13.14.5c   |
+| ID         | Feature                           |
+|------------|-----------------------------------|
+| F-13.14.1  | Modular Building Placement System |
+| F-13.14.2  | Construction Phase and Progress   |
+| F-13.14.3  | Structural Integrity              |
+| F-13.14.4  | Building Upgrade and Repair       |
+| F-13.14.5a | Housing Plot and Instance System  |
+| F-13.14.5b | Furniture Placement               |
+| F-13.14.5c | Functional Furniture Effects      |
 
 1. **F-13.14.1** — Snap-based placement of modular building pieces (walls, floors, roofs, doors,
    stairs, ramps, foundations, pillars) using a socket/anchor system. Each piece defines attachment
@@ -61,19 +61,19 @@
 
 ## Survival Systems
 
-| ID         | Feature                               | Requirements |
-|------------|---------------------------------------|--------------|
-| F-13.14.6a | Hunger and Thirst System              | R-13.14.6a   |
-| F-13.14.6b | Temperature and Warmth System         | R-13.14.6b   |
-| F-13.14.6c | Stamina and Fatigue System            | R-13.14.6c   |
-| F-13.14.6d | Vital Debuff System                   | R-13.14.6d   |
-| F-13.14.7a | Resource Node Definition              | R-13.14.7a   |
-| F-13.14.7b | Gathering Interaction Loop            | R-13.14.7b   |
-| F-13.14.7c | Resource Node Procedural Distribution | R-13.14.7c   |
-| F-13.14.8  | Farming and Crop System               | R-13.14.8    |
-| F-13.14.9a | Animal Needs and Happiness            | R-13.14.9a   |
-| F-13.14.9b | Animal Housing                        | R-13.14.9b   |
-| F-13.14.9c | Animal Breeding                       | R-13.14.9c   |
+| ID         | Feature                               |
+|------------|---------------------------------------|
+| F-13.14.6a | Hunger and Thirst System              |
+| F-13.14.6b | Temperature and Warmth System         |
+| F-13.14.6c | Stamina and Fatigue System            |
+| F-13.14.6d | Vital Debuff System                   |
+| F-13.14.7a | Resource Node Definition              |
+| F-13.14.7b | Gathering Interaction Loop            |
+| F-13.14.7c | Resource Node Procedural Distribution |
+| F-13.14.8  | Farming and Crop System               |
+| F-13.14.9a | Animal Needs and Happiness            |
+| F-13.14.9b | Animal Housing                        |
+| F-13.14.9c | Animal Breeding                       |
 
 1. **F-13.14.6a** — Hunger drains at a base rate accelerated by physical activity; eating restores
    hunger and may provide temporary stat buffs. Thirst drains faster in hot biomes; drinking

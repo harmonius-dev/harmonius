@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/platform/](../../features/platform/),
-> [requirements/platform/](../../requirements/platform/), and
-> [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
-> those definitions.
+> [features/platform/](../../features/), [requirements/platform/](../../requirements/), and
+> [user-stories/platform/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### OS Integration (F-14.2 / R-14.2)
 
@@ -1856,7 +1855,7 @@ pub enum FsError {
 8. **Path quirks** — UNC paths, `\\?\` long-path prefix, NTFS junctions
    - **macOS:** Case-insensitive HFS+/APFS
    - **Linux:** Case-sensitive ext4/btrfs
-9. **iOS** — App sandbox directories. `NSFileManager` via Swift C ABI. No symlinks in app bundle.
+9. **iOS** — App sandbox directories. `NSFileManager` via swift-bridge. No symlinks in app bundle.
 10. **Android** — Internal/external storage via JNI. Scoped storage (API 30+). `ContentResolver` for
     shared files.
 
@@ -2167,4 +2166,4 @@ for a startup-configured sink list.
 No separate crate is proposed for the file watcher (open question 4). The `notify` crate is a
 candidate but has not been approved. macOS AppKit/Cocoa APIs (`NSPasteboard`, `NSOpenPanel`,
 `UNUserNotificationCenter`, `NSTextInputClient`, `NSDraggingDestination`, FSEvents) are accessible
-via Objective-C runtime FFI without an additional crate.
+via swift-bridge without an additional crate.

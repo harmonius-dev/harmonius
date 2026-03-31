@@ -2,10 +2,10 @@
 
 ## Native Git
 
-| ID        | Feature                | Requirements |
-|-----------|------------------------|--------------|
-| F-15.10.1 | Native Git Integration | R-15.10.1    |
-| F-15.10.2 | Git LFS Management     | R-15.10.2    |
+| ID | Feature |
+| ----------- | ------------------------ |
+| F-15.10.1 | Native Git Integration |
+| F-15.10.2 | Git LFS Management |
 
 1. **F-15.10.1** — A fully integrated Git client embedded in the editor, providing stage, commit,
    push, pull, branch, merge, rebase, and stash operations through the editor UI without requiring a
@@ -26,9 +26,9 @@
 
 ## Merge and Diff
 
-| ID        | Feature                  | Requirements |
-|-----------|--------------------------|--------------|
-| F-15.10.3 | Asset-Aware Merge Driver | R-15.10.3    |
+| ID | Feature |
+| ----------- | -------------------------- |
+| F-15.10.3 | Asset-Aware Merge Driver |
 
 1. **F-15.10.3** — A custom Git merge driver registered automatically on project clone that invokes
    the engine's structural merge system (F-12.7.4) for binary and structured asset formats instead
@@ -41,9 +41,9 @@
 
 ## Branch Workflow
 
-| ID        | Feature                     | Requirements |
-|-----------|-----------------------------|--------------|
-| F-15.10.4 | Branch-Per-Feature Workflow | R-15.10.4    |
+| ID | Feature |
+| ----------- | ----------------------------- |
+| F-15.10.4 | Branch-Per-Feature Workflow |
 
 1. **F-15.10.4** — The editor supports creating feature branches, switching branches with asset
    cache preservation, and creating pull/merge requests directly from the editor UI. Branch
@@ -56,9 +56,9 @@
 
 ## Collaboration
 
-| ID        | Feature                | Requirements |
-|-----------|------------------------|--------------|
-| F-15.10.5 | Collaborative Presence | R-15.10.5    |
+| ID | Feature |
+| ----------- | ------------------------ |
+| F-15.10.5 | Collaborative Presence |
 
 1. **F-15.10.5** — Real-time presence indicators show which team members are currently editing which
    assets. The asset browser displays a colored avatar badge on each asset that is open in another
@@ -71,9 +71,9 @@
 
 ## Repository Optimization
 
-| ID        | Feature                           | Requirements |
-|-----------|-----------------------------------|--------------|
-| F-15.10.6 | Partial Clone and Sparse Checkout | R-15.10.6    |
+| ID | Feature |
+| ----------- | ----------------------------------- |
+| F-15.10.6 | Partial Clone and Sparse Checkout |
 
 1. **F-15.10.6** — For massive repositories, the editor supports Git partial clone (blobless and
    treeless modes) and sparse checkout so developers only download the assets they need. Sparse
@@ -87,9 +87,9 @@
 
 ## Local Work-in-Progress
 
-| ID        | Feature                  | Requirements |
-|-----------|--------------------------|--------------|
-| F-15.10.7 | Shelving and Local Stash | R-15.10.7    |
+| ID | Feature |
+| ----------- | -------------------------- |
+| F-15.10.7 | Shelving and Local Stash |
 
 1. **F-15.10.7** — Save work-in-progress changes locally without committing to the repository. Named
    shelves store all modified assets along with their structural diffs, providing a richer view than
@@ -102,9 +102,9 @@
 
 ## Multi-Provider
 
-| ID        | Feature                            | Requirements |
-|-----------|------------------------------------|--------------|
-| F-15.10.8 | Multi-Provider Git Hosting Support | R-15.10.8    |
+| ID | Feature |
+| ----------- | ------------------------------------ |
+| F-15.10.8 | Multi-Provider Git Hosting Support |
 
 1. **F-15.10.8** — First-class support for GitHub, GitLab, Bitbucket, and self-hosted Git servers.
    All hosting- provider-specific features (pull requests, merge requests, code review, issue

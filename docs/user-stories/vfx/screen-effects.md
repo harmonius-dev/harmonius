@@ -1,103 +1,93 @@
 # User Stories -- 11.3 Screen Effects
 
-## Camera Effects
+## Stories
 
-| ID          | Persona               | Features | Requirements |
-|-------------|-----------------------|----------|--------------|
-| US-11.3.1.1 | Player (P-23)         | F-11.3.1 | R-11.3.1     |
-| US-11.3.1.2 | Effects artist (P-12) | F-11.3.1 | R-11.3.1     |
-| US-11.3.1.3 | Engine tester (P-27)  | F-11.3.1 | R-11.3.1     |
-| US-11.3.2.1 | Player (P-23)         | F-11.3.2 | R-11.3.2     |
-| US-11.3.2.2 | Engine tester (P-27)  | F-11.3.2 | R-11.3.2     |
-| US-11.3.3.1 | Player (P-23)         | F-11.3.3 | R-11.3.3     |
-| US-11.3.3.2 | Effects artist (P-12) | F-11.3.3 | R-11.3.3     |
-| US-11.3.3.3 | Engine tester (P-27)  | F-11.3.3 | R-11.3.3     |
+| ID          | Persona                 |
+|-------------|-------------------------|
+| US-11.3.1.1 | effects artist (P-12)   |
+| US-11.3.1.2 | effects artist (P-12)   |
+| US-11.3.1.3 | game designer (P-5)     |
+| US-11.3.2.1 | effects artist (P-12)   |
+| US-11.3.2.2 | technical artist (P-13) |
+| US-11.3.2.3 | engine developer (P-26) |
+| US-11.3.3.1 | effects artist (P-12)   |
+| US-11.3.3.2 | effects artist (P-12)   |
+| US-11.3.3.3 | engine developer (P-26) |
+| US-11.3.4.1 | effects artist (P-12)   |
+| US-11.3.4.2 | effects artist (P-12)   |
+| US-11.3.4.3 | engine developer (P-26) |
+| US-11.3.5.1 | effects artist (P-12)   |
+| US-11.3.5.2 | technical artist (P-13) |
+| US-11.3.5.3 | engine developer (P-26) |
+| US-11.3.6.1 | effects artist (P-12)   |
+| US-11.3.6.2 | effects artist (P-12)   |
+| US-11.3.6.3 | game designer (P-5)     |
 
-1. **US-11.3.1.1** — I want procedural camera shake driven by Perlin noise with configurable
-   frequency, amplitude, and decay from nearby explosions, so that impacts feel powerful and
-   visceral.
-   - **Acceptance:** Camera displacement follows noise-based pattern with visible decay; shake
-     intensity corresponds to distance from source
-2. **US-11.3.1.2** — I want additive shake from multiple sources (explosions, impacts, spells) with
-   total amplitude clamping, so that overlapping shake events do not accumulate to nausea-inducing
-   levels.
-   - **Acceptance:** Multiple simultaneous shakes layer additively; total amplitude clamped to
-     configured maximum
-3. **US-11.3.1.3** — I want to enable the reduced-motion accessibility setting and verify that
-   screen shake amplitude is significantly reduced or disabled, so that players sensitive to motion
-   sickness can play comfortably.
-   - **Acceptance:** Reduced-motion setting attenuates or disables shake; no shake visible when
-     fully disabled
-4. **US-11.3.2.1** — I want per-object and camera motion blur computed from velocity buffers, so
-   that fast sword swings and dodge rolls blur naturally with consistent blur width regardless of
-   frame rate.
-   - **Acceptance:** Per-object blur along motion vector; camera blur directional; stationary
-     objects remain sharp; blur width scales with frame rate
-5. **US-11.3.2.2** — I want to verify that mobile disables motion blur entirely, Switch uses
-   camera-only at half-res, and desktop runs full per-pixel blur, so that motion blur cost is
-   appropriate per platform.
-   - **Acceptance:** Mobile: disabled; Switch: camera-only half-res; desktop: full per-pixel blur
-6. **US-11.3.3.1** — I want screen-space lens flare with ghosts, halos, and starbursts from bright
-   sources that smooth on partial occlusion, so that looking toward bright lights produces
-   convincing optical artifacts.
-   - **Acceptance:** Ghosts, halos, and starbursts at correct screen positions; temporal smoothing
-     on partial occlusion prevents popping
-7. **US-11.3.3.2** — I want artist-authored flare element templates controlling shape, color shift,
-   and radial falloff per light, so that different light types (sun, lantern, muzzle flash) produce
-   distinct flare styles.
-   - **Acceptance:** Custom templates control shape, color, and falloff; distinct flare styles per
-     light type
-8. **US-11.3.3.3** — I want to verify that mobile limits flare elements to 2 ghosts with no
-   starburst and disables flares entirely on low-end mobile GPUs, so that flare cost scales per
-   device capability.
-   - **Acceptance:** Mobile: 2 ghosts, no starburst; disabled on low-end mobile GPUs
+1. **US-11.3.1.1** — **As a** effects artist (P-12), **I want** procedural camera shake driven by
+   Perlin noise with configurable frequency, amplitude, and decay, **so that** explosions and
+   impacts feel visceral.
 
-## Post-Process Distortions
+2. **US-11.3.1.2** — **As a** effects artist (P-12), **I want** additive shake from multiple sources
+   with total amplitude clamping, **so that** overlapping events do not accumulate to
+   nausea-inducing levels.
 
-| ID          | Persona               | Features | Requirements |
-|-------------|-----------------------|----------|--------------|
-| US-11.3.4.1 | Effects artist (P-12) | F-11.3.4 | R-11.3.4     |
-| US-11.3.4.2 | Engine tester (P-27)  | F-11.3.4 | R-11.3.4     |
-| US-11.3.5.1 | Effects artist (P-12) | F-11.3.5 | R-11.3.5     |
-| US-11.3.5.2 | Engine tester (P-27)  | F-11.3.5 | R-11.3.5     |
+3. **US-11.3.1.3** — **As a** game designer (P-5), **I want** a reduced-motion accessibility setting
+   that attenuates or disables screen shake, **so that** players sensitive to motion sickness can
+   play comfortably.
 
-1. **US-11.3.4.1** — I want chromatic aberration with radial and event-driven pulse modes combined
-   with animated blue-noise film grain and vignette, so that the final image has cinematic lens
-   character.
-   - **Acceptance:** Visible RGB separation increasing toward edges; event-driven pulse at impact
-     point; animated noise overlay; radial vignette darkening
-2. **US-11.3.4.2** — I want to verify that chromatic aberration and film grain are disabled by
-   default on mobile to save fill rate, with vignette retained as a cheap overlay, so that
-   post-process cost is minimal on mobile.
-   - **Acceptance:** Mobile: CA and grain disabled by default; vignette retained
-3. **US-11.3.5.1** — I want screen-space distortion driven by scrolling normal maps for heat haze
-   above fire, magical portals, and shockwave ripples, so that thermal and magical effects distort
-   the view convincingly.
-   - **Acceptance:** Visible screen-space distortion from normal maps; smooth continuous animation
-     without tearing
-4. **US-11.3.5.2** — I want to verify that mobile uses quarter-resolution distortion buffer, Switch
-   and desktop use half-resolution, and the effect is disabled entirely on low-end mobile GPUs, so
-   that distortion cost scales per platform.
-   - **Acceptance:** Mobile: quarter-res; Switch/desktop: half-res; disabled on low-end mobile
+4. **US-11.3.2.1** — **As a** effects artist (P-12), **I want** per-object and camera motion blur
+   from velocity buffers with tile-based reconstruction, **so that** fast sword swings and dodge
+   rolls blur naturally.
 
-## Gameplay Overlays
+5. **US-11.3.2.2** — **As a** technical artist (P-13), **I want** blur intensity scaling with frame
+   rate, **so that** consistent blur width is maintained regardless of performance.
 
-| ID          | Persona               | Features | Requirements |
-|-------------|-----------------------|----------|--------------|
-| US-11.3.6.1 | Player (P-23)         | F-11.3.6 | R-11.3.6     |
-| US-11.3.6.2 | Effects artist (P-12) | F-11.3.6 | R-11.3.6     |
-| US-11.3.6.3 | Engine tester (P-27)  | F-11.3.6 | R-11.3.6     |
+6. **US-11.3.2.3** — **As a** engine developer (P-26), **I want** mobile to disable motion blur,
+   Switch to use camera-only at half-res, and desktop to run full per-pixel, **so that** blur cost
+   is appropriate per platform.
 
-1. **US-11.3.6.1** — I want directional color flash and textured damage overlays (blood spatter,
-   frost, cracked glass) triggered by gameplay events with configurable color, intensity, and decay,
-   so that taking damage provides immediate visual feedback.
-   - **Acceptance:** Directional flash with correct color, intensity, and decay; distinct response
-     per damage type
-2. **US-11.3.6.2** — I want artist-authored screen-space overlay textures with dissolve masks that
-   composite additively with independent lifecycle timers, so that each damage type (fire, ice,
-   poison) has a distinct screen effect.
-   - **Acceptance:** Dissolve masks animate correctly; each damage type produces distinct overlay;
-     independent lifecycle timers per overlay
-3. **US-11.3.6.3** — I want to verify that mobile limits concurrent overlays to 2 and desktop to 4
-   with clamped total opacity, so that overlay overdraw is controlled per platform.
-   - **Acceptance:** Mobile: 2 concurrent overlays; desktop: 4; composite opacity clamped
+7. **US-11.3.3.1** — **As a** effects artist (P-12), **I want** screen-space lens flare with
+   procedural ghosts, halos, and starbursts from bright sources with temporal smoothing on partial
+   occlusion, **so that** bright lights produce convincing optical artifacts.
+
+8. **US-11.3.3.2** — **As a** effects artist (P-12), **I want** artist-authored flare element
+   templates controlling shape, color shift, and radial falloff, **so that** different light types
+   produce distinct flare styles.
+
+9. **US-11.3.3.3** — **As a** engine developer (P-26), **I want** mobile limited to 2 flare ghosts
+   with no starburst and flares disabled on low-end GPUs, **so that** flare cost scales per device
+   capability.
+
+10. **US-11.3.4.1** — **As a** effects artist (P-12), **I want** chromatic aberration with radial
+    and event-driven pulse modes, **so that** impacts and cinematic moments have lens character.
+
+11. **US-11.3.4.2** — **As a** effects artist (P-12), **I want** animated blue-noise film grain and
+    radial vignette as a final-pass overlay with gameplay-driven intensity, **so that** the image
+    has cinematic texture.
+
+12. **US-11.3.4.3** — **As a** engine developer (P-26), **I want** chromatic aberration and film
+    grain disabled by default on mobile with vignette retained, **so that** post-process cost is
+    minimal on mobile.
+
+13. **US-11.3.5.1** — **As a** effects artist (P-12), **I want** screen-space distortion driven by
+    scrolling normal maps for heat haze, magical portals, and shockwave ripples, **so that** thermal
+    and magical effects distort the view.
+
+14. **US-11.3.5.2** — **As a** technical artist (P-13), **I want** distortion vectors accumulated
+    into a half-resolution buffer, **so that** cost is bounded when many refraction sources overlap.
+
+15. **US-11.3.5.3** — **As a** engine developer (P-26), **I want** mobile to use quarter-resolution
+    distortion and the effect disabled on low-end GPUs, **so that** distortion cost scales per
+    platform.
+
+16. **US-11.3.6.1** — **As a** effects artist (P-12), **I want** full-screen and directional color
+    flashes triggered by gameplay events with parameterized color, intensity, and decay, **so that**
+    damage provides immediate visual feedback.
+
+17. **US-11.3.6.2** — **As a** effects artist (P-12), **I want** textured screen-space overlays with
+    dissolve masks and independent lifecycle timers per damage type, **so that** fire, ice, and
+    poison each have distinct effects.
+
+18. **US-11.3.6.3** — **As a** game designer (P-5), **I want** concurrent overlays limited (2 on
+    mobile, 4 on desktop) with clamped total opacity, **so that** overlay overdraw is controlled per
+    platform.

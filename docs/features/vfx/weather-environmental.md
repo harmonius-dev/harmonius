@@ -2,11 +2,11 @@
 
 ## Precipitation
 
-| ID       | Feature                                  | Requirements |
-|----------|------------------------------------------|--------------|
-| F-11.4.1 | Rain Particle System and Screen Droplets | R-11.4.1     |
-| F-11.4.2 | Rain Puddles and Wet Surfaces            | R-11.4.2     |
-| F-11.4.3 | Snow Accumulation and Interaction        | R-11.4.3     |
+| ID       | Feature                                  |
+|----------|------------------------------------------|
+| F-11.4.1 | Rain Particle System and Screen Droplets |
+| F-11.4.2 | Rain Puddles and Wet Surfaces            |
+| F-11.4.3 | Snow Accumulation and Interaction        |
 
 1. **F-11.4.1** — Multi-layered rain rendering combining GPU particle streaks for world-space
    rainfall, screen-space droplet simulation for camera-near effects, and ripple normal maps on wet
@@ -31,11 +31,11 @@
 
 ## Atmospheric Effects
 
-| ID       | Feature                            | Requirements |
-|----------|------------------------------------|--------------|
-| F-11.4.4 | Fog Volumes                        | R-11.4.4     |
-| F-11.4.5 | Lightning                          | R-11.4.5     |
-| F-11.4.6 | Wind Visualization and Dust Storms | R-11.4.6     |
+| ID       | Feature                            |
+|----------|------------------------------------|
+| F-11.4.4 | Fog Volumes                        |
+| F-11.4.5 | Lightning                          |
+| F-11.4.6 | Wind Visualization and Dust Storms |
 
 1. **F-11.4.4** — Localized volumetric fog regions defined by oriented boxes or convex hulls with
    per-volume density, color, height falloff, and animation parameters. Fog volumes inject density
@@ -64,9 +64,9 @@
 
 ## Underwater Effects
 
-| ID       | Feature                           | Requirements |
-|----------|-----------------------------------|--------------|
-| F-11.4.7 | Underwater Caustics and Depth Fog | R-11.4.7     |
+| ID       | Feature                           |
+|----------|-----------------------------------|
+| F-11.4.7 | Underwater Caustics and Depth Fog |
 
 1. **F-11.4.7** — Underwater rendering pass applying animated caustic light patterns projected onto
    submerged geometry, exponential depth fog with wavelength-dependent absorption (reds fade before

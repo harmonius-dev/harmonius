@@ -2,16 +2,16 @@
 
 ## Packaging
 
-| ID        | Feature                                        | Requirements |
-|-----------|------------------------------------------------|--------------|
-| F-15.14.1 | Platform Build Packaging                       | R-15.14.1    |
-| F-15.14.2 | Deploy-to-Device Workflow                      | R-15.14.2    |
-| F-15.14.3 | Certification Compliance Checker               | R-15.14.3    |
-| F-15.14.4 | Code Signing Pipeline                          | R-15.14.4    |
-| F-15.14.5 | Platform-Specific Installers and Distributions | R-15.14.5    |
-| F-15.14.6 | Asset Bundle and DLC Packaging                 | R-15.14.6    |
-| F-15.14.7 | Delta Patching System                          | R-15.14.7    |
-| F-15.14.8 | Store Distribution Pipeline                    | R-15.14.8    |
+| ID | Feature |
+| ----------- | ------------------------------------------------ |
+| F-15.14.1 | Platform Build Packaging |
+| F-15.14.2 | Deploy-to-Device Workflow |
+| F-15.14.3 | Certification Compliance Checker |
+| F-15.14.4 | Code Signing Pipeline |
+| F-15.14.5 | Platform-Specific Installers and Distributions |
+| F-15.14.6 | Asset Bundle and DLC Packaging |
+| F-15.14.7 | Delta Patching System |
+| F-15.14.8 | Store Distribution Pipeline |
 
 1. **F-15.14.1** — Package the game project into platform-native distributable formats: macOS app
    bundle (.app), Windows executable (.exe with installer), Linux AppImage, iOS IPA, Android
@@ -101,9 +101,9 @@
 
 ## Build Matrix
 
-| ID        | Feature                                | Requirements |
-|-----------|----------------------------------------|--------------|
-| F-15.14.9 | Host-Target Build Matrix Documentation | R-15.14.9    |
+| ID | Feature |
+| ----------- | ---------------------------------------- |
+| F-15.14.9 | Host-Target Build Matrix Documentation |
 
 1. **F-15.14.9** — Document which host OS can build for which target platforms locally and via the
    cloud build service. Includes local build matrix (host-to-target compatibility), cloud build

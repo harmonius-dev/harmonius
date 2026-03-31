@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature   | Requirement |
 |-----------|-------------|
@@ -1049,7 +1048,7 @@ tampering.
 | Linux    | XDG MIME                           |
 
 1. **macOS** — Set `CFBundleDocumentTypes` in Info.plist, register with `LSRegisterURL` via
-   Swift C ABI
+   swift-bridge
 2. **Windows** — Create `.harmonius` key, `shell\open\command` pointing to launcher, via
    `windows-rs`
 3. **Linux** — Create `application/x-harmonius.xml` MIME type, install `.desktop` file, run
@@ -1063,7 +1062,7 @@ tampering.
 | Windows  | Credential Manager             |
 | Linux    | libsecret (Secret Service API) |
 
-1. **macOS** — `SecItemAdd`/`SecItemCopyMatching` via Swift wrappers through C ABI
+1. **macOS** — `SecItemAdd`/`SecItemCopyMatching` via Swift wrappers through swift-bridge
 2. **Windows** — `CredRead`/`CredWrite` via `windows-rs` crate
 3. **Linux** — D-Bus org.freedesktop.secrets via Rust crate
 
@@ -1085,7 +1084,7 @@ are fully isolated -- no shared state between versions.
 | `toml` | TOML parsing for `.harmonius` files | Standard TOML library, widely used |
 | `blake3` | Content hash verification | Fast, parallelizable hash for integrity |
 | `windows-rs` | Win32 registry, Credential Manager | Zero-cost FFI to Windows APIs |
-| (hand-written `extern "C"`) | Keychain, Launch Services declarations | Matches Swift C ABI |
+| `swift-bridge` | Keychain, Launch Services bindings | Direct Rust-Swift FFI |
 | `serde` | Serialization for configs and API responses | Standard Rust serialization |
 
 **HTTP client:** Uses platform-native HTTP clients (NSURLSession on macOS, WinHTTP on Windows,

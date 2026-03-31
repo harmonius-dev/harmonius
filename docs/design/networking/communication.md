@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/networking/](../../features/networking/),
-> [requirements/networking/](../../requirements/networking/), and
-> [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
-> to those definitions.
+> [features/networking/](../../features/), [requirements/networking/](../../requirements/), and
+> [user-stories/networking/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | User Stories             |
 |---------|-------------|--------------------------|

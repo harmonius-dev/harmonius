@@ -2,9 +2,9 @@
 
 ## Procedural Sky
 
-| ID      | Feature              | Requirements |
-|---------|----------------------|--------------|
-| F-3.5.1 | Procedural Sky Model | R-3.5.1      |
+| ID      | Feature |
+|---------|---------------------- |
+| F-3.5.1 | Procedural Sky Model |
 
 1. **F-3.5.1** — A physically-motivated analytical sky model (Preetham/Hosek-Wilkie) provides fast
    sky color evaluation for any sun position. The model computes sky luminance and chromaticity as a
@@ -16,9 +16,9 @@
 
 ## Physically-Based Atmosphere Scattering
 
-| ID      | Feature                                             | Requirements |
-|---------|-----------------------------------------------------|--------------|
-| F-3.5.2 | Multi-Scattering Atmosphere with Aerial Perspective | R-3.5.2      |
+| ID      | Feature |
+|---------|----------------------------------------------------- |
+| F-3.5.2 | Multi-Scattering Atmosphere with Aerial Perspective |
 
 1. **F-3.5.2** — A precomputed atmosphere scattering model based on Bruneton's improved method.
    Rayleigh scattering, Mie scattering, and ozone absorption are integrated along view rays using
@@ -31,10 +31,10 @@
 
 ## Volumetric Clouds
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-3.5.3 | Ray-Marched Volumetric Clouds | R-3.5.3      |
-| F-3.5.4 | Cloud Shadow Map              | R-3.5.4      |
+| ID      | Feature |
+|---------|------------------------------- |
+| F-3.5.3 | Ray-Marched Volumetric Clouds |
+| F-3.5.4 | Cloud Shadow Map |
 
 1. **F-3.5.3** — Clouds are rendered by ray marching through a cloud volume defined by layered noise
    fields (Perlin-Worley for shape, Worley for detail erosion). Cloud density, coverage, and type
@@ -56,9 +56,9 @@
 
 ## Dynamic Time of Day
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-3.5.5 | Dynamic Time-of-Day System | R-3.5.5      |
+| ID      | Feature |
+|---------|---------------------------- |
+| F-3.5.5 | Dynamic Time-of-Day System |
 
 1. **F-3.5.5** — A time-of-day controller drives sun and moon positions along astronomically-derived
    arcs, continuously updating sky colors, atmosphere LUTs, ambient light intensity, shadow
@@ -71,9 +71,9 @@
 
 ## Celestial Bodies
 
-| ID      | Feature                  | Requirements |
-|---------|--------------------------|--------------|
-| F-3.5.6 | Celestial Body Rendering | R-3.5.6      |
+| ID      | Feature |
+|---------|-------------------------- |
+| F-3.5.6 | Celestial Body Rendering |
 
 1. **F-3.5.6** — Sun, moon, stars, and planetary bodies are rendered as part of the sky dome. The
    sun is a bright disc with configurable limb darkening. The moon uses a textured disc with
@@ -86,9 +86,9 @@
 
 ## Sky Capture
 
-| ID      | Feature                     | Requirements |
-|---------|-----------------------------|--------------|
-| F-3.5.7 | Environment Cubemap Capture | R-3.5.7      |
+| ID      | Feature |
+|---------|----------------------------- |
+| F-3.5.7 | Environment Cubemap Capture |
 
 1. **F-3.5.7** — The sky, atmosphere, and cloud systems are captured into a low-resolution
    environment cubemap each frame or at reduced update rates. This cubemap provides ambient diffuse

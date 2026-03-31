@@ -2,9 +2,9 @@
 
 ## Instanced Foliage Rendering
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-3.3.1 | GPU-Driven Instanced Foliage | R-3.3.1      |
+| ID      | Feature |
+|---------|------------------------------ |
+| F-3.3.1 | GPU-Driven Instanced Foliage |
 
 1. **F-3.3.1** — All foliage is rendered via GPU-driven hardware instancing. Instance transforms,
    per-instance random seeds, and LOD indices are stored in a large GPU buffer managed by a
@@ -17,9 +17,9 @@
 
 ## Procedural Placement
 
-| ID      | Feature                                         | Requirements |
-|---------|-------------------------------------------------|--------------|
-| F-3.3.2 | Density Map and Rule-Based Procedural Placement | R-3.3.2      |
+| ID      | Feature |
+|---------|------------------------------------------------- |
+| F-3.3.2 | Density Map and Rule-Based Procedural Placement |
 
 1. **F-3.3.2** — A compute-shader-based procedural placement system populates terrain tiles with
    foliage instances at runtime. Placement is driven by density maps, biome classification,
@@ -32,9 +32,9 @@
 
 ## Foliage LOD
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-3.3.3 | Billboard and Impostor LOD | R-3.3.3      |
+| ID      | Feature |
+|---------|---------------------------- |
+| F-3.3.3 | Billboard and Impostor LOD |
 
 1. **F-3.3.3** — Distant foliage transitions through discrete LOD levels: full 3D mesh, simplified
    mesh, and finally a camera-facing billboard or impostor card. Impostors are pre-rendered sprite
@@ -47,9 +47,9 @@
 
 ## Wind Animation
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-3.3.4 | GPU Vertex Shader Wind Animation | R-3.3.4      |
+| ID      | Feature |
+|---------|---------------------------------- |
+| F-3.3.4 | GPU Vertex Shader Wind Animation |
 
 1. **F-3.3.4** — Hierarchical wind deformation computed entirely in the vertex or mesh shader.
    Foliage vertex shaders sample wind velocity from the shared wind field texture generated from
@@ -64,9 +64,9 @@
 
 ## Foliage Collision / Interaction
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-3.3.5 | Character-Vegetation Interaction | R-3.3.5      |
+| ID      | Feature |
+|---------|---------------------------------- |
+| F-3.3.5 | Character-Vegetation Interaction |
 
 1. **F-3.3.5** — Plants react to character movement, projectiles, and environmental forces.
    Interaction impulses are written to a screen-space or world-space interaction buffer by gameplay
@@ -80,9 +80,9 @@
 
 ## Grass Rendering
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-3.3.6 | Procedural Grass Blade Rendering | R-3.3.6      |
+| ID      | Feature |
+|---------|---------------------------------- |
+| F-3.3.6 | Procedural Grass Blade Rendering |
 
 1. **F-3.3.6** — Dense grass fields are rendered as procedurally generated blade geometry in a
    compute or mesh shader. Blade shape, height, curvature, and color variation are driven by terrain
@@ -96,9 +96,9 @@
 
 ## Tree Systems
 
-| ID      | Feature               | Requirements |
-|---------|-----------------------|--------------|
-| F-3.3.7 | Tree Rendering System | R-3.3.7      |
+| ID      | Feature |
+|---------|----------------------- |
+| F-3.3.7 | Tree Rendering System |
 
 1. **F-3.3.7** — A dedicated tree rendering pipeline handling trunk, branch, and leaf canopy as
    separate submeshes with distinct shading models. Trunks and branches use standard PBR with bark

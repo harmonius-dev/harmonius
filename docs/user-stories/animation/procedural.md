@@ -1,180 +1,101 @@
 # User Stories -- 9.3 Procedural Animation
 
-## F-9.3.1
+## IK Solvers
 
-| ID         | Persona                   | Features | Requirements |
-|------------|---------------------------|----------|--------------|
-| US-9.3.1.1 | character animator (P-11) | F-9.3.1  | R-9.3.1      |
-| US-9.3.1.2 | engine developer (P-26)   | F-9.3.1  | R-9.3.1      |
-| US-9.3.1.3 | engine tester (P-27)      | F-9.3.1  | R-9.3.1      |
+| ID          | Persona                    |
+|-------------|----------------------------|
+| US-9.3.1.1  | engine developer (P-26)    |
+| US-9.3.1.2  | character animator (P-11)  |
+| US-9.3.2.1  | engine developer (P-26)    |
+| US-9.3.2.2  | character animator (P-11)  |
+| US-9.3.3.1  | engine developer (P-26)    |
 
-1. **US-9.3.1.1** — I want two-bone IK with pole vector targets to position hands on weapon grips,
-   ledges, and mount handles
-   - **Acceptance:** characters interact physically with objects without authoring per-object
-     hand-placement clips
-2. **US-9.3.1.2** — I want two-bone IK running as a GPU post-process pass over skinned skeletons
-   - **Acceptance:** 500+ simultaneous IK chains (desktop) evaluate without CPU overhead
-3. **US-9.3.1.3** — I want verify that mobile supports 20-40 active IK chains per frame, Switch
-   supports 80, and desktop supports 500+
-   - **Acceptance:** IK budget is enforced per platform
+1. **US-9.3.1.1** -- **As an** engine developer (P-26), **I want** an analytical two-bone IK solver
+   with pole vector support running as a GPU post-process pass, **so that** limb targeting is fast
+   and predictable.
 
-## F-9.3.2
+2. **US-9.3.1.2** -- **As a** character animator (P-11), **I want** to set pole vector targets to
+   control elbow and knee orientation, **so that** IK solutions look natural for the character's
+   body type.
 
-| ID         | Persona                   | Features | Requirements |
-|------------|---------------------------|----------|--------------|
-| US-9.3.2.1 | character animator (P-11) | F-9.3.2  | R-9.3.2      |
-| US-9.3.2.2 | engine tester (P-27)      | F-9.3.2  | R-9.3.2      |
+3. **US-9.3.2.1** -- **As an** engine developer (P-26), **I want** a CCD solver for medium-length
+   chains with configurable iteration limits and angular constraints, **so that** tails, spines, and
+   tentacles animate procedurally.
 
-1. **US-9.3.2.1** — I want CCD IK for medium-length chains (3-8 bones) with configurable iteration
-   limits and angular constraints per joint
-   - **Acceptance:** tails, spines, and tentacles track targets smoothly
-2. **US-9.3.2.2** — I want verify that mobile uses 2-4 CCD iterations, Switch uses 6, and desktop
-   uses 8-12
-   - **Acceptance:** CCD accuracy trades correctly against per-platform compute budgets
+4. **US-9.3.2.2** -- **As a** character animator (P-11), **I want** to set per-joint angular
+   constraints on CCD chains, **so that** procedural motion stays within the character's anatomical
+   limits.
 
-## F-9.3.3
+5. **US-9.3.3.1** -- **As an** engine developer (P-26), **I want** a FABRIK solver for long chains
+   and multi-end-effector problems, **so that** complex IK setups like multi-limbed creatures are
+   solvable.
 
-| ID         | Persona                   | Features | Requirements |
-|------------|---------------------------|----------|--------------|
-| US-9.3.3.1 | character animator (P-11) | F-9.3.3  | R-9.3.3      |
-| US-9.3.3.2 | engine tester (P-27)      | F-9.3.3  | R-9.3.3      |
+## Ragdoll and Look-At
 
-1. **US-9.3.3.1** — I want FABRIK IK for long chains with multiple end- effector targets and joint
-   constraints
-   - **Acceptance:** spider legs and branching skeletal structures solve correctly with
-     position-space efficiency
-2. **US-9.3.3.2** — I want verify that mobile uses 2-3 FABRIK iterations with fewer targets while
-   desktop uses 6-8
-   - **Acceptance:** multi-end-effector problems are simplified appropriately on mobile
+| ID          | Persona                    |
+|-------------|----------------------------|
+| US-9.3.4.1  | character animator (P-11)  |
+| US-9.3.4.2  | engine developer (P-26)    |
+| US-9.3.5.1  | character animator (P-11)  |
+| US-9.3.5.2  | engine developer (P-26)    |
 
-## F-9.3.4
+1. **US-9.3.4.1** -- **As a** character animator (P-11), **I want** partial ragdoll with per-bone
+   blend weights, **so that** I can blend between animation and physics on specific body parts for
+   hit reactions and death.
 
-| ID         | Persona                   | Features | Requirements |
-|------------|---------------------------|----------|--------------|
-| US-9.3.4.1 | character animator (P-11) | F-9.3.4  | R-9.3.4      |
-| US-9.3.4.2 | game developer (P-15)     | F-9.3.4  | R-9.3.4      |
-| US-9.3.4.3 | engine tester (P-27)      | F-9.3.4  | R-9.3.4      |
+2. **US-9.3.4.2** -- **As an** engine developer (P-26), **I want** ragdoll simulation running on
+   async compute with recovery transitions back to animation, **so that** ragdoll does not block the
+   main animation pipeline.
 
-1. **US-9.3.4.1** — I want per-bone blend weights between animation and ragdoll physics
-   - **Acceptance:** partial ragdoll (upper body ragdolls on hit while legs animate) produces smooth
-     transitions
-2. **US-9.3.4.2** — I want ragdoll-to-animated recovery transitions that blend from physics pose
-   back to animation over a configurable duration
-   - **Acceptance:** characters regain composure naturally after knockback rather than snapping to
-     idle
-3. **US-9.3.4.3** — I want verify that mobile supports 4-8 ragdoll capsules, Switch supports 12, and
-   desktop supports 16-20
-   - **Acceptance:** ragdoll complexity scales per platform
+3. **US-9.3.5.1** -- **As a** character animator (P-11), **I want** procedural look-at and aim
+   constraints that rotate head and spine bones toward a target, **so that** NPCs track objects of
+   interest naturally.
 
-## F-9.3.5
+4. **US-9.3.5.2** -- **As an** engine developer (P-26), **I want** look-at and aim constraints to
+   blend smoothly with underlying animation and respect joint limits, **so that** procedural
+   adjustments do not produce unnatural poses.
 
-| ID         | Persona                   | Features | Requirements |
-|------------|---------------------------|----------|--------------|
-| US-9.3.5.1 | game designer (P-5)       | F-9.3.5  | R-9.3.5      |
-| US-9.3.5.2 | character animator (P-11) | F-9.3.5  | R-9.3.5      |
+## Foot Placement and Locomotion
 
-1. **US-9.3.5.1** — I want look-at constraints that procedurally rotate head and spine bones to
-   track a world-space target with angle limits
-   - **Acceptance:** NPCs visually respond to players walking past without authored look animations
-2. **US-9.3.5.2** — I want aim constraints that orient weapon-holding arms toward a target with
-   smooth blending and joint limits
-   - **Acceptance:** aiming poses look natural on top of any locomotion state
+| ID           | Persona                    |
+|--------------|----------------------------|
+| US-9.3.7.1   | character animator (P-11)  |
+| US-9.3.7.2   | engine developer (P-26)    |
+| US-9.3.8.1   | rigger (P-10)              |
+| US-9.3.8.2   | engine developer (P-26)    |
+| US-9.3.9.1   | engine developer (P-26)    |
+| US-9.3.10.1  | character animator (P-11)  |
+| US-9.3.10.2  | engine developer (P-26)    |
+| US-9.3.11.1  | engine developer (P-26)    |
 
-## F-9.3.6
+1. **US-9.3.7.1** -- **As a** character animator (P-11), **I want** foot placement IK that plants
+   feet on uneven terrain, stairs, and slopes, **so that** characters look grounded regardless of
+   surface geometry.
 
-| ID         | Persona                   | Features | Requirements |
-|------------|---------------------------|----------|--------------|
-| US-9.3.6.1 | character animator (P-11) | F-9.3.6  | R-9.3.6      |
-| US-9.3.6.2 | engine developer (P-26)   | F-9.3.6  | R-9.3.6      |
+2. **US-9.3.7.2** -- **As an** engine developer (P-26), **I want** pelvis height adjustment and
+   procedural stride adaptation, **so that** leg extension and step timing respond to movement speed
+   and terrain gradient.
 
-1. **US-9.3.6.1** — I want motion matching that searches a pose database for the best continuation
-   given the current pose and desired trajectory
-   - **Acceptance:** character movement feels responsive and natural without hand-authored state
-     machine locomotion
-2. **US-9.3.6.2** — I want benchmark pose database search at varying database sizes (small on
-   mobile, full mocap library on desktop)
-   - **Acceptance:** I can set per- platform database size limits that fit within CPU budgets
+3. **US-9.3.8.1** -- **As a** rigger (P-10), **I want** to define locomotion profiles specifying leg
+   groups, phase offsets, and gait patterns for arbitrary skeleton topologies, **so that** bipeds,
+   quadrupeds, hexapods, and custom creatures all have procedural locomotion.
 
-## F-9.3.7
+4. **US-9.3.8.2** -- **As an** engine developer (P-26), **I want** multi-skeleton procedural
+   locomotion driven by ECS components, **so that** any skeleton topology animates with data-driven
+   gait configuration.
 
-| ID         | Persona              | Features | Requirements |
-|------------|----------------------|----------|--------------|
-| US-9.3.7.1 | player (P-23)        | F-9.3.7  | R-9.3.7      |
-| US-9.3.7.2 | engine tester (P-27) | F-9.3.7  | R-9.3.7      |
+5. **US-9.3.9.1** -- **As an** engine developer (P-26), **I want** physics-based locomotion driven
+   by limb torques and ground reaction forces, **so that** characters interact physically with the
+   environment during movement.
 
-1. **US-9.3.7.1** — I want characters' feet to plant correctly on stairs, slopes, and uneven ground
-   with IK-adjusted pelvis height
-   - **Acceptance:** locomotion looks grounded and believable on any surface
-2. **US-9.3.7.2** — I want verify that mobile uses 2 raycasts (feet only) and desktop uses 4 (feet +
-   pelvis + slope probe), and that foot placement is disabled for distant characters on mobile
-   - **Acceptance:** raycast cost scales per platform
+6. **US-9.3.10.1** -- **As a** character animator (P-11), **I want** socket-based attachment points
+   for runtime attachment and removal of skeletal sub-hierarchies, **so that** equipment, weapons,
+   and dismembered parts are handled dynamically.
 
-## F-9.3.8
+7. **US-9.3.10.2** -- **As an** engine developer (P-26), **I want** dismemberment to sever a bone
+   chain and spawn the detached sub-mesh as a physics entity, **so that** the remaining skeleton
+   adapts locomotion to compensate.
 
-| ID         | Persona                   | Features | Requirements |
-|------------|---------------------------|----------|--------------|
-| US-9.3.8.1 | character animator (P-11) | F-9.3.8  | R-9.3.8      |
-| US-9.3.8.2 | game developer (P-15)     | F-9.3.8  | R-9.3.8      |
-| US-9.3.8.3 | engine tester (P-27)      | F-9.3.8  | R-9.3.8      |
-
-1. **US-9.3.8.1** — I want procedural locomotion that adapts to arbitrary skeleton topologies with
-   configurable gait patterns (walk, trot, canter, gallop)
-   - **Acceptance:** bipeds, quadrupeds, hexapods, and serpentine creatures locomote correctly from
-     a single system
-2. **US-9.3.8.2** — I want locomotion profiles defined as ECS components (LocomotionProfile,
-   GaitState, FootGroup) specifying leg groups, phase offsets, and stride curves
-   - **Acceptance:** creature locomotion is data-driven and configurable per entity
-3. **US-9.3.8.3** — I want verify that hexapod+ topologies use simplified gait patterns on mobile
-   with reduced IK iterations
-   - **Acceptance:** complex creatures remain animatable on lower-tier hardware
-
-## F-9.3.9
-
-| ID         | Persona                 | Features | Requirements |
-|------------|-------------------------|----------|--------------|
-| US-9.3.9.1 | player (P-23)           | F-9.3.9  | R-9.3.9      |
-| US-9.3.9.2 | engine developer (P-26) | F-9.3.9  | R-9.3.9      |
-
-1. **US-9.3.9.1** — I want characters to stumble when hit by impacts and recover balance using
-   physical forces
-   - **Acceptance:** combat feels physically grounded with emergent reactions rather than canned hit
-     animations
-2. **US-9.3.9.2** — I want measure per-limb force computation cost for physics-based locomotion
-   - **Acceptance:** I can confirm it is limited to hero/player characters on mobile and scales to
-     multiple characters on desktop
-
-## F-9.3.10
-
-| ID          | Persona               | Features | Requirements |
-|-------------|-----------------------|----------|--------------|
-| US-9.3.10.1 | player (P-23)         | F-9.3.10 | R-9.3.10     |
-| US-9.3.10.2 | game developer (P-15) | F-9.3.10 | R-9.3.10     |
-| US-9.3.10.3 | engine tester (P-27)  | F-9.3.10 | R-9.3.10     |
-
-1. **US-9.3.10.1** — I want dismemberment to sever a bone chain from a skeleton, spawning the
-   detached sub-mesh as a physics-simulated entity while the remaining skeleton adapts locomotion
-   - **Acceptance:** combat dismemberment feels visceral and consequential
-2. **US-9.3.10.2** — I want runtime attachment and removal of skeletal sub-hierarchies (weapons,
-   armor plates, holsters) via ECS command buffers
-   - **Acceptance:** equipment changes are immediate and data-driven
-3. **US-9.3.10.3** — I want verify that mobile caps active dismembered parts at 2-4 with simplified
-   ragdoll and desktop supports 8-16
-   - **Acceptance:** physics entity count from dismemberment stays within platform budgets
-
-## F-9.3.11
-
-| ID          | Persona                   | Features | Requirements |
-|-------------|---------------------------|----------|--------------|
-| US-9.3.11.1 | character animator (P-11) | F-9.3.11 | R-9.3.11     |
-| US-9.3.11.2 | engine developer (P-26)   | F-9.3.11 | R-9.3.11     |
-| US-9.3.11.3 | engine tester (P-27)      | F-9.3.11 | R-9.3.11     |
-
-1. **US-9.3.11.1** — I want debug overlays showing foot placement targets, IK chain states, ground
-   normals, gait phase diagrams, and balance center-of-mass
-   - **Acceptance:** I can diagnose foot sliding and IK solve failures in the animation preview
-2. **US-9.3.11.2** — I want a locomotion profiler panel showing IK iterations, foot plant errors,
-   and physics force magnitudes per frame
-   - **Acceptance:** I can identify animation performance regressions and solve quality issues
-3. **US-9.3.11.3** — I want confirm that locomotion debug visualization is compiled out of shipping
-   builds on all platforms
-   - **Acceptance:** debug rendering has zero cost in production
+8. **US-9.3.11.1** -- **As an** engine developer (P-26), **I want** debug visualization for foot
+   placement targets, IK chain states, gait phase diagrams, and balance indicators, **so that**
+   procedural locomotion issues are diagnosable in the editor.

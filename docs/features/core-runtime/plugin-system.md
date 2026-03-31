@@ -2,10 +2,10 @@
 
 ## Module Registration
 
-| ID      | Feature                         | Requirements |
-|---------|---------------------------------|--------------|
-| F-1.6.1 | Declarative Plugin Registration | R-1.6.1      |
-| F-1.6.2 | Plugin Groups and Presets       | R-1.6.2      |
+| ID      | Feature                        |
+|---------|---------------------------------|
+| F-1.6.1 | Declarative Plugin Registration|
+| F-1.6.2 | Plugin Groups and Presets      |
 
 1. **F-1.6.1** — Provide a plugin trait that declares the systems, components, resources, and events
    a module contributes to the engine. Plugins are registered at application startup through a
@@ -21,10 +21,10 @@
 
 ## Dependency Declaration
 
-| ID      | Feature                                | Requirements |
-|---------|----------------------------------------|--------------|
-| F-1.6.3 | Explicit Plugin Dependency Declaration | R-1.6.3      |
-| F-1.6.4 | Plugin Load Order Resolution           | R-1.6.4      |
+| ID      | Feature                               |
+|---------|----------------------------------------|
+| F-1.6.3 | Explicit Plugin Dependency Declaration|
+| F-1.6.4 | Plugin Load Order Resolution          |
 
 1. **F-1.6.3** — Each plugin declares which other plugins it requires and which it conflicts with.
    The plugin loader validates the dependency graph at startup, reporting missing dependencies and
@@ -39,9 +39,9 @@
 
 ## Hot Reload Support
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-1.6.5 | Hot Reload of Gameplay Plugins | R-1.6.5      |
+| ID      | Feature                       |
+|---------|--------------------------------|
+| F-1.6.5 | Hot Reload of Gameplay Plugins|
 
 1. **F-1.6.5** — Support unloading and reloading gameplay plugins at runtime during development. On
    reload, the engine preserves ECS world state, tears down systems from the old plugin, loads the
@@ -52,10 +52,10 @@
 
 ## API Stability Contracts
 
-| ID      | Feature                                        | Requirements |
-|---------|------------------------------------------------|--------------|
-| F-1.6.6 | Semantic Versioning and ABI Stability Metadata | R-1.6.6      |
-| F-1.6.7 | Capability Negotiation for Optional Features   | R-1.6.7      |
+| ID      | Feature                                       |
+|---------|------------------------------------------------|
+| F-1.6.6 | Semantic Versioning and ABI Stability Metadata|
+| F-1.6.7 | Capability Negotiation for Optional Features  |
 
 1. **F-1.6.6** — Embed semantic version metadata in each plugin's registration descriptor. The
    engine checks plugin versions against declared compatibility ranges at load time. For dynamically

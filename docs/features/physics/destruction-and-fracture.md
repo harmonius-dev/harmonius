@@ -2,10 +2,10 @@
 
 ## Fracture Generation
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-4.6.1 | Voronoi Fracture Generation  | R-4.6.1      |
-| F-4.6.2 | Pre-Fractured Mesh Authoring | R-4.6.2      |
+| ID      | Feature |
+|---------|------------------------------ |
+| F-4.6.1 | Voronoi Fracture Generation |
+| F-4.6.2 | Pre-Fractured Mesh Authoring |
 
 1. **F-4.6.1** — Generate fracture patterns using 3D Voronoi decomposition at build time. Fracture
    point placement supports random, impact-directed, and artist-guided seeding. The output is a
@@ -28,10 +28,10 @@
 
 ## Runtime Destruction
 
-| ID      | Feature                         | Requirements |
-|---------|---------------------------------|--------------|
-| F-4.6.3 | Runtime Fracture and Activation | R-4.6.3      |
-| F-4.6.4 | Progressive Damage Model        | R-4.6.4      |
+| ID      | Feature |
+|---------|--------------------------------- |
+| F-4.6.3 | Runtime Fracture and Activation |
+| F-4.6.4 | Progressive Damage Model |
 
 1. **F-4.6.3** — `FractureActivationSystem` queries all `(Destructible, DamageHealth)` entities and
    triggers fracture when cumulative damage exceeds the threshold stored in `Destructible`. On
@@ -55,9 +55,9 @@
 
 ## Structural Analysis
 
-| ID      | Feature                                    | Requirements |
-|---------|--------------------------------------------|--------------|
-| F-4.6.5 | Stress Propagation and Structural Collapse | R-4.6.5      |
+| ID      | Feature |
+|---------|-------------------------------------------- |
+| F-4.6.5 | Stress Propagation and Structural Collapse |
 
 1. **F-4.6.5** — `StructuralAnalysisSystem` queries all fragment entities connected by Joint
    entities and performs a graph traversal to identify fragments without a path to a grounded
@@ -73,10 +73,10 @@
 
 ## Debris Management
 
-| ID      | Feature                         | Requirements |
-|---------|---------------------------------|--------------|
-| F-4.6.6 | Debris Simulation and Lifecycle | R-4.6.6      |
-| F-4.6.7 | Debris Pooling and LOD          | R-4.6.7      |
+| ID      | Feature |
+|---------|--------------------------------- |
+| F-4.6.6 | Debris Simulation and Lifecycle |
+| F-4.6.7 | Debris Pooling and LOD |
 
 1. **F-4.6.6** — Fragment entities spawned during fracture carry a `DebrisLifetime` component with a
    configurable time-to-live value. `DebrisLifetimeSystem` queries all `(DebrisLifetime, Transform)`
@@ -102,12 +102,12 @@
 
 ## Voxel and SDF Integration
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-4.6.8  | Voxel Collision Generation    | R-4.6.8      |
-| F-4.6.9  | Destruction Fragment Physics  | R-4.6.9      |
-| F-4.6.10 | SDF Collision Queries         | R-4.6.10     |
-| F-4.6.11 | Voxel Destruction Integration | R-4.6.11     |
+| ID       | Feature |
+|----------|------------------------------- |
+| F-4.6.8  | Voxel Collision Generation |
+| F-4.6.9  | Destruction Fragment Physics |
+| F-4.6.10 | SDF Collision Queries |
+| F-4.6.11 | Voxel Destruction Integration |
 
 1. **F-4.6.8** — Auto-generate convex hull or trimesh colliders from voxel SDF meshes produced by
    the meshing pipeline (F-3.2.12). When voxel terrain is edited at runtime (F-3.2.13), the

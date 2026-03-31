@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Graph Runtime (F-15.8.1, R-15.8.1)
 
@@ -1872,7 +1871,7 @@ components, benefiting from the same cache-friendly iteration.
 1. **`uuid`** — GraphId generation
 2. **`petgraph`** — Graph algorithms (topo sort, cycle detect)
 3. **`smallvec`** — Inline pin/edge storage
-4. **`libloading`** — DXC and Metal Shader Converter C ABI FFI
+4. **`libloading`** — DXC C API and MSC via swift-bridge
 
 ## Test Plan
 

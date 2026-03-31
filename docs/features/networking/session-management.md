@@ -1,10 +1,10 @@
-# 8.5 — Session Management
+# 8.5 -- Session Management
 
 ## Authentication and Login
 
-| ID      | Feature                           | Requirements |
-|---------|-----------------------------------|--------------|
-| F-8.5.1 | Login and Authentication Services | R-8.5.1      |
+| ID      | Feature                           |
+|---------|-----------------------------------|
+| F-8.5.1 | Login and Authentication Services |
 
 1. **F-8.5.1** — Provide a login flow that authenticates players against an external identity
    provider (OAuth 2.0, platform accounts) and issues short-lived session tokens used by the
@@ -12,16 +12,15 @@
    logins during peak hours and game launches, support multi-factor authentication, and integrate
    with platform-specific identity systems (Steam, PlayStation Network, Xbox Live, Apple Game
    Center).
-   - **Deps:** F-8.1.1
    - **Platform:** Each platform requires its own identity provider integration. Console platforms
      mandate use of their first-party authentication SDKs.
 
 ## Matchmaking
 
-| ID      | Feature                                  | Requirements |
-|---------|------------------------------------------|--------------|
-| F-8.5.2 | Skill-Based and Region-Based Matchmaking | R-8.5.2      |
-| F-8.5.3 | Lobby and Party System                   | R-8.5.3      |
+| ID      | Feature                                  |
+|---------|------------------------------------------|
+| F-8.5.2 | Skill-Based and Region-Based Matchmaking |
+| F-8.5.3 | Lobby and Party System                   |
 
 1. **F-8.5.2** — Match players into instanced content (dungeons, raids, battlegrounds, arenas) based
    on skill rating, latency to available servers, group composition requirements, and queue
@@ -42,10 +41,10 @@
 
 ## Server Infrastructure
 
-| ID      | Feature                             | Requirements |
-|---------|-------------------------------------|--------------|
-| F-8.5.4 | Dedicated Server Cluster Management | R-8.5.4      |
-| F-8.5.5 | Session Discovery and Reconnection  | R-8.5.5      |
+| ID      | Feature                             |
+|---------|-------------------------------------|
+| F-8.5.4 | Dedicated Server Cluster Management |
+| F-8.5.5 | Session Discovery and Reconnection  |
 
 1. **F-8.5.4** — Manage a fleet of dedicated server processes that host game world zones and
    instanced content. The cluster manager provisions, monitors, and recycles server processes;
@@ -56,18 +55,18 @@
      servers supported for development.
 2. **F-8.5.5** — Allow clients to discover available sessions (character selection, world server,
    instance) via a directory service, and seamlessly reconnect to an active session after a
-   transient disconnect. Reconnection must restore the player to their exact prior state — position,
-   combat status, group membership — within a configurable grace window (e.g., 120 seconds).
-   Critical for retaining players during ISP hiccups and Wi-Fi handoffs.
+   transient disconnect. Reconnection must restore the player to their exact prior state --
+   position, combat status, group membership -- within a configurable grace window (e.g., 120
+   seconds). Critical for retaining players during ISP hiccups and Wi-Fi handoffs.
    - **Deps:** F-8.5.4, F-8.1.1
    - **Platform:** Mobile uses a longer reconnection grace window (180 s) to handle cellular
      dropouts, app backgrounding, and Wi-Fi/cellular handoffs.
 
 ## Cross-Platform
 
-| ID      | Feature                                    | Requirements |
-|---------|--------------------------------------------|--------------|
-| F-8.5.6 | Cross-Play Matchmaking and Account Linking | R-8.5.6      |
+| ID      | Feature                                    |
+|---------|--------------------------------------------|
+| F-8.5.6 | Cross-Play Matchmaking and Account Linking |
 
 1. **F-8.5.6** — Match players across different platforms (PC, PlayStation, Xbox, Switch, mobile)
    into shared game sessions. Platform-specific matchmaking APIs are unified behind the session
@@ -76,15 +75,15 @@
    platform-specific requirements (console certification rules, input-type filtering) and provides
    opt-out for players who prefer same-platform matches. Leaderboards display platform badges
    alongside player names.
-   - **Deps:** F-8.5.1 (Lobby System), F-14.5.1 (Achievements and Platform Identity)
+   - **Deps:** F-8.5.1, F-14.5.1 (Achievements and Platform Identity)
    - **Platform:** PlayStation uses PSN APIs, Xbox uses Xbox Live APIs, Switch uses NEX/NPLN. Each
      platform requires separate certification for cross-play features.
 
 ## Capacity Management
 
-| ID      | Feature                             | Requirements |
-|---------|-------------------------------------|--------------|
-| F-8.5.7 | Login Queue and Capacity Management | R-8.5.7      |
+| ID      | Feature                             |
+|---------|-------------------------------------|
+| F-8.5.7 | Login Queue and Capacity Management |
 
 1. **F-8.5.7** — When a server or shard reaches player capacity, incoming connections enter a
    managed queue with position display, estimated wait time, and priority tiers (subscribers,
@@ -99,9 +98,9 @@
 
 ## Headless Server
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-8.5.8 | Headless Dedicated Game Server | R-8.5.8      |
+| ID      | Feature                        |
+|---------|--------------------------------|
+| F-8.5.8 | Headless Dedicated Game Server |
 
 1. **F-8.5.8** — Run the game engine as a headless process without GPU, window, or audio output for
    dedicated server deployment. The headless server executes the full ECS simulation (physics, AI,
@@ -119,9 +118,9 @@
 
 ## Advanced Matchmaking
 
-| ID      | Feature                         | Requirements |
-|---------|---------------------------------|--------------|
-| F-8.5.9 | Skill-Based Matchmaking Service | R-8.5.9      |
+| ID      | Feature                         |
+|---------|---------------------------------|
+| F-8.5.9 | Skill-Based Matchmaking Service |
 
 1. **F-8.5.9** — A self-hosted matchmaking service that groups players by skill rating, region, and
    game mode preferences. The service maintains per-player skill ratings using Glicko-2 (rating,
@@ -132,5 +131,5 @@
    matchmaking service runs as a standalone microservice with a REST/gRPC API, deployable via the
    AWS CDK stack (F-15.18.1). Queue status, estimated wait time, and match quality metrics are
    exposed to the client for UI display.
-   - **Deps:** F-8.5.1 (Lobby System), F-8.5.6 (Cross-Play), F-8.5.8 (Headless Server)
+   - **Deps:** F-8.5.1, F-8.5.6 (Cross-Play), F-8.5.8 (Headless Server)
    - **Platform:** Deployed as an AWS Lambda function or ECS Fargate container.

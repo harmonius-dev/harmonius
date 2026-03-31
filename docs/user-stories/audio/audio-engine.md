@@ -1,308 +1,168 @@
-# User Stories — 5.1 Audio Engine
+# User Stories -- 5.1 Audio Engine
 
-## F-5.1.1
+## Stories
 
-| ID          | Persona                 | Features | Requirements |
-|-------------|-------------------------|----------|--------------|
-| US-5.1.1.1  | audio designer (P-14)   | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.2  | audio designer (P-14)   | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.3  | audio designer (P-14)   | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.4  | engine developer (P-26) | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.5  | player (P-23)           | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.6  | engine tester (P-27)    | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.7  | audio designer (P-14)   | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.8  | designer (P-5)          | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.9  | engine tester (P-27)    | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.10 | player (P-23)           | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.11 | audio designer (P-14)   | F-5.1.1  | R-5.1.1      |
-| US-5.1.1.12 | designer (P-5)          | F-5.1.1  | R-5.1.1      |
+| ID          | Persona                 |
+|-------------|-------------------------|
+| US-5.1.1.1  | audio designer (P-14)   |
+| US-5.1.1.2  | audio designer (P-14)   |
+| US-5.1.1.3  | game designer (P-5)     |
+| US-5.1.1.4  | engine developer (P-26) |
+| US-5.1.1.5  | player (P-23)           |
+| US-5.1.2.1  | audio designer (P-14)   |
+| US-5.1.2.2  | audio designer (P-14)   |
+| US-5.1.2.3  | game designer (P-5)     |
+| US-5.1.2.4  | engine developer (P-26) |
+| US-5.1.2.5  | player (P-23)           |
+| US-5.1.3.1  | audio designer (P-14)   |
+| US-5.1.3.2  | audio designer (P-14)   |
+| US-5.1.3.3  | game designer (P-5)     |
+| US-5.1.3.4  | engine developer (P-26) |
+| US-5.1.3.5  | player (P-23)           |
+| US-5.1.4.1  | audio designer (P-14)   |
+| US-5.1.4.2  | engine developer (P-26) |
+| US-5.1.4.3  | engine developer (P-26) |
+| US-5.1.4.4  | game designer (P-5)     |
+| US-5.1.4.5  | player (P-23)           |
+| US-5.1.5.1  | audio designer (P-14)   |
+| US-5.1.5.2  | audio designer (P-14)   |
+| US-5.1.5.3  | engine developer (P-26) |
+| US-5.1.5.4  | game designer (P-5)     |
+| US-5.1.5.5  | player (P-23)           |
+| US-5.1.6.1  | audio designer (P-14)   |
+| US-5.1.6.2  | audio designer (P-14)   |
+| US-5.1.6.3  | engine developer (P-26) |
+| US-5.1.6.4  | game designer (P-5)     |
+| US-5.1.6.5  | player (P-23)           |
+| US-5.1.7.1  | audio designer (P-14)   |
+| US-5.1.7.2  | audio designer (P-14)   |
+| US-5.1.7.3  | engine developer (P-26) |
+| US-5.1.7.4  | engine developer (P-26) |
+| US-5.1.7.5  | game designer (P-5)     |
 
-1. **US-5.1.1.1** — I want to attach a point sound emitter to any entity via a lightweight ECS
-   component
-   - **Acceptance:** campfires, torches, and NPCs emit sounds
-2. **US-5.1.1.2** — I want to attach line-shaped emitters along rivers and streams
-   - **Acceptance:** running water sounds natural along its length
-3. **US-5.1.1.3** — I want to attach area emitters for ambient zones (forests, markets)
-   - **Acceptance:** ambient sound fills a region
-4. **US-5.1.1.4** — I want to implement a SoundSource component carrying gain, pitch, looping, and
-   attenuation
-   - **Acceptance:** emitters are lightweight ECS data
-5. **US-5.1.1.5** — I want to hear campfires crackle and waterfalls roar when near them
-   - **Acceptance:** the world sounds alive
-6. **US-5.1.1.6** — I want to verify SoundSource component overhead is negligible per entity
-   - **Acceptance:** hundreds of emitters are feasible
-7. **US-5.1.1.7** — I want to set gain and pitch per sound source
-   - **Acceptance:** individual emitters are tunable without code
-8. **US-5.1.1.8** — I want to enable looping on ambient sound sources
-   - **Acceptance:** continuous environmental sounds play indefinitely
-9. **US-5.1.1.9** — I want to test 200+ simultaneous emitters
-   - **Acceptance:** dense open-world scenes are validated
-10. **US-5.1.1.10** — I want to hear distinct sounds from different nearby objects
-    - **Acceptance:** I can identify sources by ear
-11. **US-5.1.1.11** — I want to set attenuation curve references per source
-    - **Acceptance:** each emitter has appropriate distance rolloff
-12. **US-5.1.1.12** — I want to assign sound source components in the visual editor
-    - **Acceptance:** audio is set up without code
+1. **US-5.1.1.1** — **As a** audio designer (P-14), **I want** to attach point, line, and area sound
+   emitters to entities via ECS components, **so that** I can place ambient sounds throughout a
+   scene without writing code.
 
-## F-5.1.2
+2. **US-5.1.1.2** — **As a** audio designer (P-14), **I want** to set gain, pitch, looping, and
+   attenuation curve per sound source component, **so that** each emitter has individually tuned
+   playback behavior.
 
-| ID          | Persona                 | Features | Requirements |
-|-------------|-------------------------|----------|--------------|
-| US-5.1.2.1  | audio designer (P-14)   | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.2  | engine developer (P-26) | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.3  | engine developer (P-26) | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.4  | player (P-23)           | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.5  | designer (P-5)          | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.6  | engine tester (P-27)    | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.7  | engine tester (P-27)    | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.8  | audio designer (P-14)   | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.9  | designer (P-5)          | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.10 | engine tester (P-27)    | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.11 | player (P-23)           | F-5.1.2  | R-5.1.2      |
-| US-5.1.2.12 | designer (P-5)          | F-5.1.2  | R-5.1.2      |
+3. **US-5.1.1.3** — **As a** game designer (P-5), **I want** to assign sound source components to
+   entities in the visual editor, **so that** audio placement is part of the level design workflow
+   without code.
 
-1. **US-5.1.2.1** — I want to designate one or more listener entities
-   - **Acceptance:** the player's auditory perspective is defined
-2. **US-5.1.2.2** — I want to implement a Listener component with position, orientation, and
-   velocity
-   - **Acceptance:** spatial audio has a reference point
-3. **US-5.1.2.3** — I want multiple listeners for split-screen and spectator modes
-   - **Acceptance:** each view has its own audio perspective
-4. **US-5.1.2.4** — I want audio positioned relative to my camera
-   - **Acceptance:** sounds come from the correct direction
-5. **US-5.1.2.5** — I want the default listener assigned to the active camera
-   - **Acceptance:** audio perspective matches visual perspective automatically
-6. **US-5.1.2.6** — I want to verify listener velocity is used for Doppler calculations
-   - **Acceptance:** moving listener produces correct pitch shifts
-7. **US-5.1.2.7** — I want to test multiple listeners in split-screen mode
-   - **Acceptance:** each listener has independent spatial audio
-8. **US-5.1.2.8** — I want each player in split-screen to have an independent listener
-   - **Acceptance:** audio perspective matches each player's view
-9. **US-5.1.2.9** — I want spectator cameras to have their own listener
-   - **Acceptance:** spectators hear from their perspective
-10. **US-5.1.2.10** — I want to verify listener position updates every frame
-    - **Acceptance:** spatial audio stays synchronized with visuals
-11. **US-5.1.2.11** — I want sound panning to update as I move and rotate the camera
-    - **Acceptance:** audio tracking is smooth
-12. **US-5.1.2.12** — I want to assign listener components in the visual editor
-    - **Acceptance:** listener configuration is code-free
+4. **US-5.1.1.4** — **As a** engine developer (P-26), **I want** the sound source component to store
+   all data in 128 bytes or fewer, **so that** hundreds of simultaneous emitters do not degrade
+   frame time.
 
-## F-5.1.3
+5. **US-5.1.1.5** — **As a** player (P-23), **I want** to hear distinct ambient sounds from nearby
+   campfires, waterfalls, and NPCs, **so that** the world feels alive and spatially believable.
 
-| ID          | Persona                 | Features | Requirements |
-|-------------|-------------------------|----------|--------------|
-| US-5.1.3.1  | audio designer (P-14)   | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.2  | engine developer (P-26) | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.3  | audio designer (P-14)   | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.4  | player (P-23)           | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.5  | engine developer (P-26) | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.6  | audio designer (P-14)   | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.7  | designer (P-5)          | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.8  | engine tester (P-27)    | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.9  | audio designer (P-14)   | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.10 | engine tester (P-27)    | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.11 | player (P-23)           | F-5.1.3  | R-5.1.3      |
-| US-5.1.3.12 | engine developer (P-26) | F-5.1.3  | R-5.1.3      |
+6. **US-5.1.2.1** — **As a** audio designer (P-14), **I want** to designate one or more entities as
+   audio listeners with position, orientation, and velocity, **so that** the player's auditory
+   perspective is well-defined.
 
-1. **US-5.1.3.1** — I want to define a hierarchy of mixer buses (master, music, SFX, ambient, voice,
-   UI)
-   - **Acceptance:** audio is organized by category
-2. **US-5.1.3.2** — I want child buses to inherit parent gain
-   - **Acceptance:** global volume control works hierarchically
-3. **US-5.1.3.3** — I want to insert effect chains on any bus
-   - **Acceptance:** per-category processing is possible
-4. **US-5.1.3.4** — I want to mute the music bus independently
-   - **Acceptance:** I can play with only sound effects
-5. **US-5.1.3.5** — I want buses added and rewired at runtime
-   - **Acceptance:** dynamic mix states (underwater, pause menu) are supported
-6. **US-5.1.3.6** — I want mute and solo controls per bus
-   - **Acceptance:** I can isolate categories during mixing
-7. **US-5.1.3.7** — I want to configure the mixer bus graph in the visual editor
-   - **Acceptance:** audio routing is visual
-8. **US-5.1.3.8** — I want to verify mixer bus hierarchy depth is uniform across platforms
-   - **Acceptance:** audio structure is consistent
-9. **US-5.1.3.9** — I want to duck the SFX bus when dialogue plays
-   - **Acceptance:** speech is always intelligible
-10. **US-5.1.3.10** — I want to verify insert effect chain length scales per tier (mobile limited)
-    - **Acceptance:** DSP budget is controlled
-11. **US-5.1.3.11** — I want separate volume sliders for music, SFX, voice, and ambient
-    - **Acceptance:** I can customize my audio mix
-12. **US-5.1.3.12** — I want buses wired as a DAG
-    - **Acceptance:** complex routing (send buses, sub-mixes) is possible without cycles
+7. **US-5.1.2.2** — **As a** audio designer (P-14), **I want** each split-screen player to have an
+   independent listener, **so that** spatial audio is correct for every viewport.
 
-## F-5.1.4
+8. **US-5.1.2.3** — **As a** game designer (P-5), **I want** the default listener to attach to the
+   active camera automatically, **so that** audio perspective matches the visual perspective without
+   manual setup.
 
-| ID          | Persona                 | Features | Requirements |
-|-------------|-------------------------|----------|--------------|
-| US-5.1.4.1  | engine developer (P-26) | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.2  | audio designer (P-14)   | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.3  | engine developer (P-26) | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.4  | player (P-23)           | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.5  | engine developer (P-26) | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.6  | engine tester (P-27)    | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.7  | engine developer (P-26) | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.8  | audio designer (P-14)   | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.9  | engine tester (P-27)    | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.10 | player (P-23)           | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.11 | designer (P-5)          | F-5.1.4  | R-5.1.4      |
-| US-5.1.4.12 | engine tester (P-27)    | F-5.1.4  | R-5.1.4      |
+9. **US-5.1.2.4** — **As a** engine developer (P-26), **I want** listener velocity to feed into
+   Doppler calculations, **so that** moving listeners produce correct pitch shifts on nearby
+   sources.
 
-1. **US-5.1.4.1** — I want to manage a fixed pool of voices with priority-based allocation
-   - **Acceptance:** critical sounds always play
-2. **US-5.1.4.2** — I want to declare a priority class (critical, high, medium, low) per sound
-   source
-   - **Acceptance:** importance is ranked
-3. **US-5.1.4.3** — I want lowest-scoring voices virtualized (tracked but silent) when the pool is
-   exceeded
-   - **Acceptance:** sounds resume when headroom returns
-4. **US-5.1.4.4** — I want critical sounds (alerts, dialogue) to always play even in noisy combat
-   - **Acceptance:** important audio is never missed
-5. **US-5.1.4.5** — I want audibility scores derived from distance and occlusion
-   - **Acceptance:** voice stealing prioritizes audible sounds
-6. **US-5.1.4.6** — I want to confirm voice pool scales per tier (mobile 16-32, Switch 32-64,
-   desktop 128-256)
-   - **Acceptance:** platform limits are enforced
-7. **US-5.1.4.7** — I want virtualized voices restored seamlessly when headroom returns
-   - **Acceptance:** the player hears no audible gaps
-8. **US-5.1.4.8** — I want to configure the virtualization threshold
-   - **Acceptance:** the audibility cutoff is tunable
-9. **US-5.1.4.9** — I want to test voice stealing with all pool slots filled
-   - **Acceptance:** priority ordering works correctly under pressure
-10. **US-5.1.4.10** — I want critical alert sounds to play over ambient noise
-    - **Acceptance:** I am always warned of important events
-11. **US-5.1.4.11** — I want virtualization thresholds adjusted per platform tier
-    - **Acceptance:** more sounds play on capable hardware
-12. **US-5.1.4.12** — I want to test voice devirtualization and confirm seamless restoration
-    - **Acceptance:** returning sounds have no audible pop
+10. **US-5.1.2.5** — **As a** player (P-23), **I want** sound panning and distance to update as I
+    move and rotate the camera, **so that** audio tracking is smooth and consistent with visuals.
 
-## F-5.1.5
+11. **US-5.1.3.1** — **As a** audio designer (P-14), **I want** a DAG of mixer buses (master, music,
+    SFX, ambient, voice, UI) with gain, mute, and solo controls, **so that** I can organize and
+    balance the audio mix by category.
 
-| ID          | Persona                 | Features | Requirements |
-|-------------|-------------------------|----------|--------------|
-| US-5.1.5.1  | engine developer (P-26) | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.2  | audio designer (P-14)   | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.3  | player (P-23)           | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.4  | engine developer (P-26) | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.5  | engine tester (P-27)    | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.6  | audio designer (P-14)   | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.7  | designer (P-5)          | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.8  | engine tester (P-27)    | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.9  | player (P-23)           | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.10 | engine developer (P-26) | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.11 | designer (P-5)          | F-5.1.5  | R-5.1.5      |
-| US-5.1.5.12 | engine tester (P-27)    | F-5.1.5  | R-5.1.5      |
+12. **US-5.1.3.2** — **As a** audio designer (P-14), **I want** to insert effect chains on any mixer
+    bus and rewire buses at runtime, **so that** dynamic mix states like underwater ducking work
+    without code changes.
 
-1. **US-5.1.5.1** — I want to stream long-duration audio in ring-buffer chunks using platform-native
-   async I/O
-   - **Acceptance:** large files need not load fully
-2. **US-5.1.5.2** — I want prefetch hinting so streaming begins before playback triggers
-   - **Acceptance:** startup latency is eliminated for cinematic cues
-3. **US-5.1.5.3** — I want music and ambience to start instantly without audible loading gaps
-   - **Acceptance:** audio transitions are seamless
-4. **US-5.1.5.4** — I want streaming to use IOCP on Windows, GCD async I/O on macOS, and io_uring on
-   Linux
-   - **Acceptance:** I/O is platform-optimal
-5. **US-5.1.5.5** — I want to verify ring-buffer chunk sizes prevent underruns during playback
-   - **Acceptance:** streaming is gap-free
-6. **US-5.1.5.6** — I want dialogue lines streamed on demand without preloading
-   - **Acceptance:** memory is conserved for large VO databases
-7. **US-5.1.5.7** — I want to configure prefetch timing per audio asset
-   - **Acceptance:** important cues start streaming early
-8. **US-5.1.5.8** — I want to test audio streaming under heavy I/O load
-   - **Acceptance:** streaming remains glitch-free during asset loading
-9. **US-5.1.5.9** — I want ambient loops to stream continuously without gaps
-   - **Acceptance:** background atmosphere is unbroken
-10. **US-5.1.5.10** — I want the streaming system to support multiple concurrent streams within the
-    voice budget
-    - **Acceptance:** music and dialogue stream together
-11. **US-5.1.5.11** — I want to set ring buffer sizes per platform
-    - **Acceptance:** memory usage matches device capability
-12. **US-5.1.5.12** — I want to verify streaming does not underrun during zone transitions
-    - **Acceptance:** audio remains continuous during loading
+13. **US-5.1.3.3** — **As a** game designer (P-5), **I want** to configure the mixer bus graph in
+    the visual editor, **so that** audio routing is designed alongside level layout.
 
-## F-5.1.6
+14. **US-5.1.3.4** — **As a** engine developer (P-26), **I want** child buses to inherit parent gain
+    and the hierarchy to be rewirable without audio discontinuity, **so that** global volume control
+    propagates correctly.
 
-| ID          | Persona                 | Features | Requirements |
-|-------------|-------------------------|----------|--------------|
-| US-5.1.6.1  | audio designer (P-14)   | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.2  | engine developer (P-26) | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.3  | engine developer (P-26) | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.4  | player (P-23)           | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.5  | audio designer (P-14)   | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.6  | engine tester (P-27)    | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.7  | designer (P-5)          | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.8  | audio designer (P-14)   | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.9  | engine tester (P-27)    | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.10 | designer (P-5)          | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.11 | player (P-23)           | F-5.1.6  | R-5.1.6      |
-| US-5.1.6.12 | engine tester (P-27)    | F-5.1.6  | R-5.1.6      |
+15. **US-5.1.3.5** — **As a** player (P-23), **I want** separate volume sliders for music, SFX,
+    voice, and ambient, **so that** I can customize the audio mix to my preference.
 
-1. **US-5.1.6.1** — I want to schedule sound start at a precise sample offset
-   - **Acceptance:** layered loops sync perfectly
-2. **US-5.1.6.2** — I want parameter changes scheduled at sample-accurate offsets
-   - **Acceptance:** gain, pitch, and filter changes are click-free
-3. **US-5.1.6.3** — I want audio commands queued on the game thread and executed on the audio thread
-   at the precise sample
-   - **Acceptance:** timing is exact
-4. **US-5.1.6.4** — I want layered music stems to be perfectly in sync
-   - **Acceptance:** music sounds cohesive
-5. **US-5.1.6.5** — I want gameplay events to trigger sounds at exact timing
-   - **Acceptance:** audio-visual sync is tight
-6. **US-5.1.6.6** — I want to verify scheduled events fire at the exact sample offset
-   - **Acceptance:** timing accuracy is validated
-7. **US-5.1.6.7** — I want audio buffer size configurable per platform
-   - **Acceptance:** latency-battery tradeoffs are tunable
-8. **US-5.1.6.8** — I want sound stops scheduled at precise samples
-   - **Acceptance:** loops end cleanly without artifacts
-9. **US-5.1.6.9** — I want to test scheduling accuracy under heavy audio load
-   - **Acceptance:** timing remains precise even with many voices
-10. **US-5.1.6.10** — I want musical cues to trigger at exact gameplay moments
-    - **Acceptance:** cinematic moments have perfectly timed audio
-11. **US-5.1.6.11** — I want sound effects to match visual events exactly
-    - **Acceptance:** impacts, footsteps, and abilities feel connected
-12. **US-5.1.6.12** — I want to verify game-thread commands arrive on the audio thread within one
-    buffer latency
-    - **Acceptance:** cross-thread timing is reliable
+16. **US-5.1.4.1** — **As a** audio designer (P-14), **I want** to declare a priority class per
+    sound source (critical, high, medium, low), **so that** important sounds always play even in
+    dense scenes.
 
-## F-5.1.7
+17. **US-5.1.4.2** — **As a** engine developer (P-26), **I want** a fixed voice pool with
+    priority-based allocation and virtualization, **so that** the lowest-audibility voices are
+    silenced and restored seamlessly.
 
-| ID          | Persona                 | Features | Requirements |
-|-------------|-------------------------|----------|--------------|
-| US-5.1.7.1  | engine developer (P-26) | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.2  | engine developer (P-26) | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.3  | engine developer (P-26) | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.4  | audio designer (P-14)   | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.5  | engine developer (P-26) | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.6  | player (P-23)           | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.7  | engine developer (P-26) | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.8  | engine developer (P-26) | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.9  | engine tester (P-27)    | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.10 | audio designer (P-14)   | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.11 | designer (P-5)          | F-5.1.7  | R-5.1.7      |
-| US-5.1.7.12 | engine tester (P-27)    | F-5.1.7  | R-5.1.7      |
+18. **US-5.1.4.3** — **As a** engine developer (P-26), **I want** configurable voice pool sizes per
+    platform tier (mobile 16-32, Switch 32-64, desktop 128-256), **so that** audio budgets match
+    hardware capability.
 
-1. **US-5.1.7.1** — I want to decode PCM WAV files at load time
-   - **Acceptance:** uncompressed reference audio is supported
-2. **US-5.1.7.2** — I want to decode Opus streams in real time
-   - **Acceptance:** voice chat and bandwidth-constrained streaming work
-3. **US-5.1.7.3** — I want to decode Vorbis for legacy assets
-   - **Acceptance:** existing content libraries are supported
-4. **US-5.1.7.4** — I want FLAC support for lossless reference audio
-   - **Acceptance:** high-fidelity recordings are available
-5. **US-5.1.7.5** — I want the codec registry to be extensible via plugins
-   - **Acceptance:** custom or proprietary codecs can be added
-6. **US-5.1.7.6** — I want all audio to play at high quality
-   - **Acceptance:** the underlying format is transparent to me
-7. **US-5.1.7.7** — I want sample rate, channel count, and loop points extracted during asset import
-   - **Acceptance:** playback setup is fast
-8. **US-5.1.7.8** — I want platform-supplied hardware decoders used opportunistically (Apple Audio
-   Toolbox)
-   - **Acceptance:** CPU is saved where available
-9. **US-5.1.7.9** — I want to verify all codecs decode correctly on all platforms
-   - **Acceptance:** format support is cross-platform
-10. **US-5.1.7.10** — I want to import audio in WAV, Vorbis, Opus, and FLAC formats
-    - **Acceptance:** I can use whichever format suits the asset
-11. **US-5.1.7.11** — I want to configure preferred codec per asset type
-    - **Acceptance:** each category uses optimal encoding
-12. **US-5.1.7.12** — I want to verify loop points decode correctly in each format
-    - **Acceptance:** seamless looping works regardless of codec
+19. **US-5.1.4.4** — **As a** game designer (P-5), **I want** to configure virtualization thresholds
+    per platform in the editor, **so that** more sounds play on capable hardware without manual
+    tuning.
+
+20. **US-5.1.4.5** — **As a** player (P-23), **I want** critical alerts and dialogue to always play
+    over ambient noise, **so that** I never miss important gameplay audio.
+
+21. **US-5.1.5.1** — **As a** audio designer (P-14), **I want** long-duration audio (music,
+    ambience, dialogue) streamed from disk in ring-buffer chunks, **so that** large files need not
+    load fully into memory.
+
+22. **US-5.1.5.2** — **As a** audio designer (P-14), **I want** prefetch hints that begin streaming
+    before playback triggers, **so that** cinematic cues and zone transitions start with zero
+    audible latency.
+
+23. **US-5.1.5.3** — **As a** engine developer (P-26), **I want** streaming to use platform-native
+    async I/O (IOCP, GCD, io_uring) with peak memory under 256 KiB per stream, **so that** I/O is
+    optimal and memory-bounded.
+
+24. **US-5.1.5.4** — **As a** game designer (P-5), **I want** to configure prefetch timing and ring
+    buffer sizes per platform in the editor, **so that** streaming behavior adapts to device
+    capability.
+
+25. **US-5.1.5.5** — **As a** player (P-23), **I want** music and ambience to start instantly
+    without audible loading gaps, **so that** audio transitions feel seamless during exploration.
+
+26. **US-5.1.6.1** — **As a** audio designer (P-14), **I want** to schedule sound start, stop, and
+    parameter changes at precise sample offsets, **so that** layered loops and musical cues sync
+    perfectly.
+
+27. **US-5.1.6.2** — **As a** audio designer (P-14), **I want** gameplay events to trigger sounds at
+    exact timing relative to the audio buffer, **so that** audio-visual synchronization is tight.
+
+28. **US-5.1.6.3** — **As a** engine developer (P-26), **I want** a lock-free SPSC command queue
+    between the game thread and audio thread, **so that** scheduling never blocks the real-time
+    audio callback.
+
+29. **US-5.1.6.4** — **As a** game designer (P-5), **I want** audio buffer size configurable per
+    platform, **so that** I can balance latency and battery usage per device.
+
+30. **US-5.1.6.5** — **As a** player (P-23), **I want** sound effects to match visual events exactly
+    (impacts, footsteps, abilities), **so that** actions feel connected and responsive.
+
+31. **US-5.1.7.1** — **As a** audio designer (P-14), **I want** to import audio in WAV, Vorbis,
+    Opus, and FLAC formats, **so that** I can use whichever format suits each asset type.
+
+32. **US-5.1.7.2** — **As a** audio designer (P-14), **I want** format metadata (sample rate,
+    channel count, loop points) extracted and cached at import time, **so that** playback setup is
+    fast and reliable.
+
+33. **US-5.1.7.3** — **As a** engine developer (P-26), **I want** the codec registry to support
+    runtime plugin registration, **so that** custom or proprietary codecs can be added without
+    engine recompilation.
+
+34. **US-5.1.7.4** — **As a** engine developer (P-26), **I want** platform hardware decoders (e.g.,
+    Apple Audio Toolbox) used opportunistically, **so that** CPU is saved where available.
+
+35. **US-5.1.7.5** — **As a** game designer (P-5), **I want** to configure preferred codec per asset
+    type in the editor, **so that** each audio category uses optimal encoding.

@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/platform/](../../features/platform/),
-> [requirements/platform/](../../requirements/platform/), and
-> [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
-> those definitions.
+> [features/platform/](../../features/), [requirements/platform/](../../requirements/), and
+> [user-stories/platform/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement         | User Story          |
 |----------|---------------------|---------------------|
@@ -54,13 +53,13 @@
 
 The platform SDK integration subsystem provides a unified abstraction over platform-specific SDKs
 (Steam, Apple, Google Play, Xbox, PlayStation, Nintendo, Epic Online Services). Gameplay code calls
-a single API; `cfg`-gated backends route to the correct platform SDK via C ABI FFI bridges. All
-calls are async via the `IoReactor`.
+a single API; `cfg`-gated backends route to the correct platform SDK via FFI bridges. All calls are
+async via the `IoReactor`.
 
 Key design principles:
 
 - **Static dispatch** -- platform selection at compile time via `cfg`
-- **C ABI FFI** -- all platform SDK calls go through C ABI bridges
+- **FFI bridges** -- Apple via swift-bridge, Windows via windows-rs
 - **Deferred queues** -- no data lost during transient failures
 - **Server-authoritative** -- receipts, entitlements, and currency are validated server-side
 
@@ -1284,15 +1283,14 @@ currency is granted:
 
 ### FFI Bridge Pattern
 
-All platform SDK calls use C ABI FFI bridges per [constraints.md](../constraints.md). Each backend
-exposes `extern "C"` functions that Rust consumes via Rust crate.
+All platform SDK calls use FFI bridges per [constraints.md](../constraints.md).
 
 ```text
-Rust API → extern "C" FFI → Platform SDK
+Rust API → FFI → Platform SDK
 ```
 
-**Apple** uses Swift wrappers with `@_cdecl` for StoreKit 2 and GameCenter, exposing a C ABI as
-specified in constraints.md. **Windows/Xbox** uses C ABI wrappers with `extern "C"` linkage.
+**Apple** uses Swift wrappers via swift-bridge for StoreKit 2 and GameCenter. **Windows/Xbox** uses
+`windows-rs` with COM bindings.
 
 ### Offline Graceful Degradation
 
@@ -1513,8 +1511,8 @@ Stats, Xbox PlayFab, PSN telemetry).
 
 The SDK integration aligns with engine constraints: all I/O uses the `IoReactor`, all state is ECS
 resources, all FFI uses C ABI bridges. The deferred queue pattern matches `services-storage.md`. The
-receipt validation pipeline integrates with `monetization.md`. The anti-cheat integration
-complements `anti-cheat.md`. One gap: the matchmaking bridge needs tighter coupling with
+receipt validation pipeline integrates with `progression.md` (live-ops rewards). The anti-cheat
+integration complements `anti-cheat.md`. One gap: the matchmaking bridge needs tighter coupling with
 `sessions-replay.md` to ensure platform lobby state is always consistent with the engine session
 directory.
 

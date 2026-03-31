@@ -3,10 +3,10 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/content-pipeline/](../../features/content-pipeline/),
-> [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
-> design elements to those definitions.
+> [features/content-pipeline/](../../features/),
+> [requirements/content-pipeline/](../../requirements/), and
+> [user-stories/content-pipeline/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 | Feature   | Requirement | User Stories                      |
 |-----------|-------------|-----------------------------------|
@@ -1626,9 +1626,9 @@ fn compute_priority_score(
 | Platform | Async I/O                     | GPU Direct Storage     |
 |----------|-------------------------------|------------------------|
 | Windows  | IOCP via `windows-rs`        | DirectStorage 1.2+     |
-| macOS    | GCD Dispatch IO via C ABI    | Metal IO Command Queue |
+| macOS    | GCD Dispatch IO via swift-bridge | Metal IO Command Queue |
 | Linux    | io_uring via `io-uring` crate | CPU staging fallback   |
-| iOS      | GCD Dispatch IO via C ABI    | Metal IO Command Queue |
+| iOS      | GCD Dispatch IO via swift-bridge | Metal IO Command Queue |
 | Android  | io_uring (kernel 5.1+)        | CPU staging fallback   |
 
 1. **Windows** — `IDStorageFactory`, `IDStorageQueue`
@@ -1764,7 +1764,7 @@ impl DirectStorageBackend {
 | `zstd` | Zstd compression/decompression | Wraps libzstd via C FFI; industry standard |
 | `blake3` | Content hashing | SIMD-accelerated, consistent with asset database |
 | `direct_storage` | DirectStorage Rust crate | Safe Rust wrapper for Windows DirectStorage API |
-| (hand-written `extern "C"`) | Metal IO Swift declarations | Matches Swift C ABI |
+| `swift-bridge` | Metal IO Swift bindings | Direct Rust-Swift FFI |
 | `io-uring` | Linux io_uring bindings | Already a project dependency for IoReactor |
 | `smallvec` | Inline-allocated small vectors | Already a project dependency |
 

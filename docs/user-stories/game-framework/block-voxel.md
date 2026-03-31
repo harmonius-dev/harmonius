@@ -1,356 +1,190 @@
 # User Stories -- Block-Based Voxel Games (13.27)
 
-## Block Type Registry (F-13.27.1)
+## Block Registry
 
-| ID           | Persona              | Features  | Requirements |
-|--------------|----------------------|-----------|--------------|
-| US-13.27.1.1 | player (P-23)        | F-13.27.1 | R-13.27.1    |
-| US-13.27.1.2 | designer (P-5)       | F-13.27.1 | R-13.27.1    |
-| US-13.27.1.3 | designer (P-5)       | F-13.27.1 | R-13.27.1    |
-| US-13.27.1.4 | level designer (P-6) | F-13.27.1 | R-13.27.1    |
-| US-13.27.1.5 | modder (P-24)        | F-13.27.1 | R-13.27.1    |
-| US-13.27.1.6 | tester (P-27)        | F-13.27.1 | R-13.27.1    |
+| ID            | Persona                 |
+|---------------|-------------------------|
+| US-13.27.1.1  | game designer (P-5)     |
+| US-13.27.1.2  | game designer (P-5)     |
+| US-13.27.1.3  | game developer (P-15)   |
+| US-13.27.1.4  | player (P-23)           |
+| US-13.27.1.5  | player (P-23)           |
+| US-13.27.1.6  | modder (P-24)           |
+| US-13.27.2.1  | game designer (P-5)     |
+| US-13.27.2.2  | game developer (P-15)   |
+| US-13.27.2.3  | player (P-23)           |
+| US-13.27.2.4  | player (P-23)           |
+| US-13.27.2.5  | level designer (P-6)    |
 
-1. **US-13.27.1.1** — **As a** player (P-23), **I want** each block type to have a distinct visual
-   texture and properties, **so that** I can identify blocks at a glance.
-2. **US-13.27.1.2** — **As a** designer (P-5), **I want** to define block types with ID, texture,
-   collision mode, hardness, tool requirement, drop table, and custom properties as data assets,
-   **so that** block creation requires no code.
-3. **US-13.27.1.3** — **As a** designer (P-5), **I want** to wire logic graph behaviors to block
-   types (furnaces smelt, doors toggle, note blocks play sounds), **so that** interactive blocks
-   have complex functionality.
-4. **US-13.27.1.4** — **As a** level designer (P-6), **I want** O(1) lookup by block ID in the
-   registry, **so that** large worlds with many block types perform well.
-5. **US-13.27.1.5** — **As a** modder (P-24), **I want** to register new block types with custom
+1. **US-13.27.1.1** -- **As a** game designer (P-5), **I want** to define block types with ID,
+   texture, collision mode, hardness, tool requirement, and drop table as data assets, **so that**
+   block creation requires no code.
+
+2. **US-13.27.1.2** -- **As a** game designer (P-5), **I want** to wire logic graph behaviors to
+   block types for custom interactions, **so that** interactive blocks have complex functionality.
+
+3. **US-13.27.1.3** -- **As a** game developer (P-15), **I want** the block registry to support O(1)
+   lookup by ID across hundreds of types, **so that** large voxel worlds perform well at scale.
+
+4. **US-13.27.1.4** -- [game-specific] **As a** player (P-23), **I want** each block type to have a
+   distinct visual texture and properties, **so that** I can identify blocks at a glance.
+
+5. **US-13.27.1.5** -- [game-specific] **As a** player (P-23), **I want** block tools like furnaces
+   and note blocks to perform their actions when interacted with, **so that** blocks feel
+   functional.
+
+6. **US-13.27.1.6** -- **As a** modder (P-24), **I want** to register new block types with custom
    textures, properties, and logic via the mod SDK, **so that** community-created blocks integrate
    seamlessly.
-6. **US-13.27.1.6** — **As a** tester (P-27), **I want** to verify that a block with a pickaxe tool
-   requirement cannot be mined by an axe, **so that** tool requirements are enforced.
 
-## Block Placement and Destruction (F-13.27.2)
+7. **US-13.27.2.1** -- **As a** game designer (P-5), **I want** placement rules to validate
+   collision, slope, and adjacency before confirming a block, **so that** placement constraints are
+   data-driven.
 
-| ID           | Persona              | Features  | Requirements |
-|--------------|----------------------|-----------|--------------|
-| US-13.27.2.1 | player (P-23)        | F-13.27.2 | R-13.27.2    |
-| US-13.27.2.2 | player (P-23)        | F-13.27.2 | R-13.27.2    |
-| US-13.27.2.3 | player (P-23)        | F-13.27.2 | R-13.27.2    |
-| US-13.27.2.4 | designer (P-5)       | F-13.27.2 | R-13.27.2    |
-| US-13.27.2.5 | level designer (P-6) | F-13.27.2 | R-13.27.2    |
-| US-13.27.2.6 | modder (P-24)        | F-13.27.2 | R-13.27.2    |
-| US-13.27.2.7 | tester (P-27)        | F-13.27.2 | R-13.27.2    |
-| US-13.27.2.8 | tester (P-27)        | F-13.27.2 | R-13.27.2    |
+8. **US-13.27.2.2** -- **As a** game developer (P-15), **I want** block modifications in multiplayer
+   to be server-authoritative, **so that** cheating through client-side edits is prevented.
 
-1. **US-13.27.2.1** — **As a** player (P-23), **I want** to raycast from my view to identify the
-   target block face and place a new block there, **so that** placement is precise.
-2. **US-13.27.2.2** — **As a** player (P-23), **I want** to hold the interact action to mine a block
-   with a cracking overlay showing progress, **so that** mining feedback is clear.
-3. **US-13.27.2.3** — **As a** player (P-23), **I want** destroyed blocks to drop items at the block
-   position, **so that** mining yields resources.
-4. **US-13.27.2.4** — **As a** designer (P-5), **I want** to configure mining time proportional to
-   hardness and tool tier, **so that** progression creates meaningful mining speed differences.
-5. **US-13.27.2.5** — **As a** level designer (P-6), **I want** placement restriction zones and
-   custom adjacency rules, **so that** I can design puzzle environments with block constraints.
-6. **US-13.27.2.6** — **As a** modder (P-24), **I want** custom placement rules definable for modded
-   blocks, **so that** mod blocks can have unique placement behavior.
-7. **US-13.27.2.7** — **As a** tester (P-27), **I want** to verify that block placement inside the
-   player's collision volume is rejected, **so that** self-entombment is prevented.
-8. **US-13.27.2.8** — **As a** tester (P-27), **I want** to verify that block modifications in
-   multiplayer are server-authoritative, **so that** cheating is prevented.
+9. **US-13.27.2.3** -- [game-specific] **As a** player (P-23), **I want** to raycast from my view to
+   identify the target block face and place a new block there, **so that** placement is precise and
+   intuitive.
 
-## Chunk-Based Block Storage (F-13.27.3)
+10. **US-13.27.2.4** -- [game-specific] **As a** player (P-23), **I want** to hold the interact
+    action to mine a block with a cracking overlay showing progress, **so that** mining feedback is
+    clear.
 
-| ID           | Persona              | Features  | Requirements |
-|--------------|----------------------|-----------|--------------|
-| US-13.27.3.1 | player (P-23)        | F-13.27.3 | R-13.27.3    |
-| US-13.27.3.2 | player (P-23)        | F-13.27.3 | R-13.27.3    |
-| US-13.27.3.3 | designer (P-5)       | F-13.27.3 | R-13.27.3    |
-| US-13.27.3.4 | level designer (P-6) | F-13.27.3 | R-13.27.3    |
-| US-13.27.3.5 | tester (P-27)        | F-13.27.3 | R-13.27.3    |
+11. **US-13.27.2.5** -- **As a** level designer (P-6), **I want** to define placement restriction
+    zones, **so that** players cannot build in quest-critical or performance-sensitive areas.
 
-1. **US-13.27.3.1** — **As a** player (P-23), **I want** the block world to stream chunks smoothly
-   as I move, **so that** I explore freely without stuttering.
-2. **US-13.27.3.2** — **As a** player (P-23), **I want** palette compression for diverse chunks and
-   single-value storage for uniform chunks, **so that** memory usage is efficient.
-3. **US-13.27.3.3** — **As a** designer (P-5), **I want** to configure render distance per platform
-   (8 chunks on mobile, 16-32 on desktop), **so that** performance scales per device.
-4. **US-13.27.3.4** — **As a** level designer (P-6), **I want** chunks to be the unit of streaming,
-   meshing, lighting, and network replication, **so that** all systems operate on the same spatial
-   unit.
-5. **US-13.27.3.5** — **As a** tester (P-27), **I want** to verify that chunks beyond render
-   distance are unloaded, **so that** memory is reclaimed for distant chunks.
+## Chunk System
 
-## Block Chunk Meshing (F-13.27.4)
+| ID            | Persona                 |
+|---------------|-------------------------|
+| US-13.27.3.1  | game designer (P-5)     |
+| US-13.27.3.2  | game developer (P-15)   |
+| US-13.27.3.3  | player (P-23)           |
+| US-13.27.4.1  | game designer (P-5)     |
+| US-13.27.4.2  | game developer (P-15)   |
+| US-13.27.4.3  | player (P-23)           |
 
-| ID           | Persona              | Features  | Requirements |
-|--------------|----------------------|-----------|--------------|
-| US-13.27.4.1 | player (P-23)        | F-13.27.4 | R-13.27.4    |
-| US-13.27.4.2 | player (P-23)        | F-13.27.4 | R-13.27.4    |
-| US-13.27.4.3 | player (P-23)        | F-13.27.4 | R-13.27.4    |
-| US-13.27.4.4 | designer (P-5)       | F-13.27.4 | R-13.27.4    |
-| US-13.27.4.5 | level designer (P-6) | F-13.27.4 | R-13.27.4    |
-| US-13.27.4.6 | modder (P-24)        | F-13.27.4 | R-13.27.4    |
-| US-13.27.4.7 | tester (P-27)        | F-13.27.4 | R-13.27.4    |
+1. **US-13.27.3.1** -- **As a** game designer (P-5), **I want** render distance configurable per
+   platform, **so that** performance scales appropriately across mobile and desktop.
 
-1. **US-13.27.4.1** — **As a** player (P-23), **I want** chunk meshes to update within one frame
-   when I place or break a block, **so that** modifications are immediately visible.
-2. **US-13.27.4.2** — **As a** player (P-23), **I want** smooth ambient occlusion on block edges
-   based on neighboring occupancy, **so that** the voxel world looks polished.
-3. **US-13.27.4.3** — **As a** player (P-23), **I want** transparent blocks like glass and water to
-   render with correct draw ordering, **so that** no flickering or sorting artifacts occur.
-4. **US-13.27.4.4** — **As a** designer (P-5), **I want** greedy meshing to merge coplanar faces of
-   the same type into larger quads, **so that** polygon count is minimized.
-5. **US-13.27.4.5** — **As a** level designer (P-6), **I want** only exposed faces meshed with
-   internal faces culled, **so that** rendering performance is optimal for large structures.
-6. **US-13.27.4.6** — **As a** modder (P-24), **I want** custom block meshes from modded blocks to
-   feed into the same meshing pipeline, **so that** mod visuals are consistent.
-7. **US-13.27.4.7** — **As a** tester (P-27), **I want** to verify that modifying one block
-   re-meshes only the affected chunk and neighbors, **so that** incremental meshing is correct.
+2. **US-13.27.3.2** -- **As a** game developer (P-15), **I want** chunks to use palette compression
+   for diverse blocks and single-value storage for uniform chunks, **so that** memory usage is
+   minimized.
 
-## Block Light Propagation (F-13.27.5)
+3. **US-13.27.3.3** -- [game-specific] **As a** player (P-23), **I want** the block world to stream
+   chunks smoothly as I move, **so that** I explore freely without stuttering.
 
-| ID           | Persona              | Features  | Requirements |
-|--------------|----------------------|-----------|--------------|
-| US-13.27.5.1 | player (P-23)        | F-13.27.5 | R-13.27.5    |
-| US-13.27.5.2 | player (P-23)        | F-13.27.5 | R-13.27.5    |
-| US-13.27.5.3 | designer (P-5)       | F-13.27.5 | R-13.27.5    |
-| US-13.27.5.4 | designer (P-5)       | F-13.27.5 | R-13.27.5    |
-| US-13.27.5.5 | level designer (P-6) | F-13.27.5 | R-13.27.5    |
-| US-13.27.5.6 | modder (P-24)        | F-13.27.5 | R-13.27.5    |
-| US-13.27.5.7 | tester (P-27)        | F-13.27.5 | R-13.27.5    |
+4. **US-13.27.4.1** -- **As a** game designer (P-5), **I want** greedy meshing to merge coplanar
+   faces of the same type into larger quads, **so that** polygon count is minimized.
 
-1. **US-13.27.5.1** — **As a** player (P-23), **I want** torches to cast warm light with smooth
-   gradients fading over distance, **so that** caves feel atmospheric.
-2. **US-13.27.5.2** — **As a** player (P-23), **I want** sunlight to propagate downward when I open
-   a ceiling, **so that** natural light enters underground spaces realistically.
-3. **US-13.27.5.3** — **As a** designer (P-5), **I want** per-block light emission levels (0-15) for
-   two channels (sun and block), **so that** lighting is data-driven.
-4. **US-13.27.5.4** — **As a** designer (P-5), **I want** light values exposed to gameplay logic for
-   mob spawning rules, **so that** lighting is a strategic gameplay element.
-5. **US-13.27.5.5** — **As a** level designer (P-6), **I want** light propagation using incremental
-   BFS that only recalculates affected blocks, **so that** placing lights does not stall.
-6. **US-13.27.5.6** — **As a** modder (P-24), **I want** to set light emission levels on custom
-   block types, **so that** modded blocks can glow or illuminate.
-7. **US-13.27.5.7** — **As a** tester (P-27), **I want** to verify that blocking all paths between a
-   light source and a block drops the block's light to zero, **so that** occlusion is correct.
+5. **US-13.27.4.2** -- **As a** game developer (P-15), **I want** meshing to be incremental so
+   modifying one block re-meshes only the affected chunk and neighbors, **so that** updates stay
+   fast.
 
-## Gravity Block Physics (F-13.27.6a)
+6. **US-13.27.4.3** -- [game-specific] **As a** player (P-23), **I want** transparent blocks like
+   glass and water to render with correct draw ordering, **so that** no flickering or sorting
+   artifacts occur.
 
-| ID         | Persona              | Features  | Requirements |
-|------------|----------------------|-----------|--------------|
-| US-13.27.6 | player (P-23)        | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | designer (P-5)       | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | level designer (P-6) | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | tester (P-27)        | F-13.27.6 | R-13.27.6    |
+## Block Lighting
 
-1. **US-13.27.6** — **As a** player (P-23), **I want** sand and gravel to fall smoothly when I break
-   the block beneath them, **so that** gravity creates dynamic cave-ins.
-2. **US-13.27.6** — **As a** designer (P-5), **I want** gravity block fall speed and tick rate
-   configurable, **so that** physics pace matches the game style.
-3. **US-13.27.6** — **As a** level designer (P-6), **I want** gravity-affected blocks to create
-   traps and puzzles, **so that** falling blocks are design elements.
-4. **US-13.27.6** — **As a** tester (P-27), **I want** to verify that gravity physics is
-   deterministic for multiplayer consistency, **so that** all clients see the same result.
+| ID            | Persona                 |
+|---------------|-------------------------|
+| US-13.27.5.1  | game designer (P-5)     |
+| US-13.27.5.2  | game developer (P-15)   |
+| US-13.27.5.3  | player (P-23)           |
+| US-13.27.5.4  | player (P-23)           |
 
-## Fluid Flow Simulation (F-13.27.6b)
+1. **US-13.27.5.1** -- **As a** game designer (P-5), **I want** per-block light emission levels for
+   two channels (sun and block), **so that** lighting is data-driven and tunable.
 
-| ID         | Persona        | Features  | Requirements |
-|------------|----------------|-----------|--------------|
-| US-13.27.6 | player (P-23)  | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | player (P-23)  | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | designer (P-5) | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | tester (P-27)  | F-13.27.6 | R-13.27.6    |
+2. **US-13.27.5.2** -- **As a** game developer (P-15), **I want** light propagation to use
+   incremental BFS that recalculates only affected blocks, **so that** placing lights does not stall
+   the frame.
 
-1. **US-13.27.6** — **As a** player (P-23), **I want** water to flow outward and downward from
-   source blocks with decreasing levels, **so that** I can build fountains and canals.
-2. **US-13.27.6** — **As a** player (P-23), **I want** fluids to apply current force to me when I
-   stand in them, **so that** flowing water pushes me.
-3. **US-13.27.6** — **As a** designer (P-5), **I want** to configure fluid flow speed, level count,
-   and propagation tick rate, **so that** fluid behavior is tunable.
-4. **US-13.27.6** — **As a** tester (P-27), **I want** to verify that fluid propagation is
-   deterministic for multiplayer, **so that** all clients see identical water flow.
+3. **US-13.27.5.3** -- [game-specific] **As a** player (P-23), **I want** torches to cast warm light
+   with smooth gradients fading over distance, **so that** caves feel atmospheric.
 
-## Fluid-Block Interactions (F-13.27.6c)
+4. **US-13.27.5.4** -- [game-specific] **As a** player (P-23), **I want** sunlight to propagate
+   downward when I open a ceiling, **so that** natural light enters underground spaces
+   realistically.
 
-| ID         | Persona              | Features  | Requirements |
-|------------|----------------------|-----------|--------------|
-| US-13.27.6 | player (P-23)        | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | player (P-23)        | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | designer (P-5)       | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | level designer (P-6) | F-13.27.6 | R-13.27.6    |
-| US-13.27.6 | tester (P-27)        | F-13.27.6 | R-13.27.6    |
+## Block Physics and Circuits
 
-1. **US-13.27.6** — **As a** player (P-23), **I want** lava to ignite nearby flammable blocks,
-   **so that** lava creates fire hazards.
-2. **US-13.27.6** — **As a** player (P-23), **I want** water flowing over lava to produce
-   cobblestone and covering a lava source to produce obsidian, **so that** fluid interactions create
-   new materials.
-3. **US-13.27.6** — **As a** designer (P-5), **I want** fluid-block interaction rules authored per
-   pair in gameplay databases, **so that** I can customize reactions without code.
-4. **US-13.27.6** — **As a** level designer (P-6), **I want** fluid interactions to create puzzle
-   elements, **so that** players use water and lava to solve environmental challenges.
-5. **US-13.27.6** — **As a** tester (P-27), **I want** to verify that water extinguishes fire blocks
-   on contact, **so that** the water-fire interaction rule works.
+| ID            | Persona                 |
+|---------------|-------------------------|
+| US-13.27.6.1  | game designer (P-5)     |
+| US-13.27.6.2  | game developer (P-15)   |
+| US-13.27.6.3  | player (P-23)           |
+| US-13.27.6.4  | player (P-23)           |
+| US-13.27.7.1  | game designer (P-5)     |
+| US-13.27.7.2  | game developer (P-15)   |
+| US-13.27.7.3  | player (P-23)           |
+| US-13.27.7.4  | player (P-23)           |
+| US-13.27.7.5  | modder (P-24)           |
 
-## Signal Source and Wire Blocks (F-13.27.7a)
+1. **US-13.27.6.1** -- **As a** game designer (P-5), **I want** fluid-block interaction rules
+   authored per pair in gameplay databases, **so that** I can customize reactions without code.
 
-| ID         | Persona              | Features  | Requirements |
-|------------|----------------------|-----------|--------------|
-| US-13.27.7 | player (P-23)        | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | player (P-23)        | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | designer (P-5)       | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | level designer (P-6) | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | modder (P-24)        | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | tester (P-27)        | F-13.27.7 | R-13.27.7    |
+2. **US-13.27.6.2** -- **As a** game developer (P-15), **I want** gravity and fluid physics to be
+   deterministic at a configurable tick rate, **so that** multiplayer clients always agree on block
+   state.
 
-1. **US-13.27.7** — **As a** player (P-23), **I want** to connect levers, buttons, and pressure
-   plates to doors and mechanisms using wire blocks, **so that** I can build contraptions.
-2. **US-13.27.7** — **As a** player (P-23), **I want** pressure plates that activate when I step on
-   them and daylight sensors that respond to time, **so that** automated triggers are available.
-3. **US-13.27.7** — **As a** designer (P-5), **I want** signal propagation to update incrementally
-   when a source changes, **so that** circuit updates are efficient.
-4. **US-13.27.7** — **As a** level designer (P-6), **I want** to design dungeon puzzles using signal
-   sources and wires, **so that** players solve wiring challenges to progress.
-5. **US-13.27.7** — **As a** modder (P-24), **I want** to create custom signal sources and wire
-   blocks via the mod SDK, **so that** community-created circuit components extend the system.
-6. **US-13.27.7** — **As a** tester (P-27), **I want** to verify that a signal attenuates over 15
-   wire blocks to zero, **so that** distance attenuation is correct.
+3. **US-13.27.6.3** -- [game-specific] **As a** player (P-23), **I want** sand and gravel to fall
+   when I break the block beneath them, **so that** gravity creates dynamic cave-ins.
 
-## Logic Gate Blocks (F-13.27.7b)
+4. **US-13.27.6.4** -- [game-specific] **As a** player (P-23), **I want** water to flow outward and
+   downward from source blocks with decreasing levels, **so that** I can build fountains and canals.
 
-| ID         | Persona        | Features  | Requirements |
-|------------|----------------|-----------|--------------|
-| US-13.27.7 | player (P-23)  | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | player (P-23)  | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | designer (P-5) | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | tester (P-27)  | F-13.27.7 | R-13.27.7    |
+5. **US-13.27.7.1** -- **As a** game designer (P-5), **I want** signal propagation to update
+   incrementally and circuit complexity to be budgeted per chunk, **so that** circuit updates are
+   efficient.
 
-1. **US-13.27.7** — **As a** player (P-23), **I want** repeaters to delay and boost signal strength,
-   **so that** I can build timed circuits.
-2. **US-13.27.7** — **As a** player (P-23), **I want** comparators to measure container contents and
-   output proportional signal, **so that** I can build item-counting circuits.
-3. **US-13.27.7** — **As a** designer (P-5), **I want** NOT, AND, and OR logic achievable via gate
-   combinations, **so that** full boolean logic is possible.
-4. **US-13.27.7** — **As a** tester (P-27), **I want** to verify that a NOT gate inverts its input
-   signal, **so that** logic inversion is correct.
+6. **US-13.27.7.2** -- **As a** game developer (P-15), **I want** circuit evaluation to be
+   deterministic with a defined update order, **so that** complex contraptions produce identical
+   results across clients.
 
-## Mechanism Blocks (F-13.27.7c)
+7. **US-13.27.7.3** -- [game-specific] **As a** player (P-23), **I want** to connect levers,
+   buttons, and pressure plates to doors and mechanisms using wire blocks, **so that** I can build
+   contraptions.
 
-| ID         | Persona        | Features  | Requirements |
-|------------|----------------|-----------|--------------|
-| US-13.27.7 | player (P-23)  | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | player (P-23)  | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | player (P-23)  | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | designer (P-5) | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | modder (P-24)  | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | tester (P-27)  | F-13.27.7 | R-13.27.7    |
+8. **US-13.27.7.4** -- [game-specific] **As a** player (P-23), **I want** pistons to push adjacent
+   blocks and hoppers to transfer items between containers, **so that** I can build automated
+   machines.
 
-1. **US-13.27.7** — **As a** player (P-23), **I want** pistons to push and pull adjacent blocks when
-   powered, **so that** I can build moving structures.
-2. **US-13.27.7** — **As a** player (P-23), **I want** hoppers to transfer items between containers,
-   **so that** I can build automated resource farms.
-3. **US-13.27.7** — **As a** player (P-23), **I want** dispensers to fire projectiles when powered,
-   **so that** I can build automated defenses.
-4. **US-13.27.7** — **As a** designer (P-5), **I want** mechanism activation behavior and power
-   consumption defined per block in the registry, **so that** mechanisms are data-driven.
-5. **US-13.27.7** — **As a** modder (P-24), **I want** to create custom mechanism blocks with unique
-   activation behaviors, **so that** community-created mechanisms extend gameplay.
-6. **US-13.27.7** — **As a** tester (P-27), **I want** to verify that a piston pushes exactly one
-   block per activation, **so that** piston displacement is correct.
+9. **US-13.27.7.5** -- **As a** modder (P-24), **I want** to create custom signal sources and
+   mechanism blocks via the mod SDK, **so that** community-created circuit components extend the
+   system.
 
-## Circuit Evaluation and Budget (F-13.27.7d)
+## Block World Generation
 
-| ID         | Persona        | Features  | Requirements |
-|------------|----------------|-----------|--------------|
-| US-13.27.7 | player (P-23)  | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | player (P-23)  | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | designer (P-5) | F-13.27.7 | R-13.27.7    |
-| US-13.27.7 | tester (P-27)  | F-13.27.7 | R-13.27.7    |
+| ID            | Persona                 |
+|---------------|-------------------------|
+| US-13.27.8.1  | game designer (P-5)     |
+| US-13.27.8.2  | game designer (P-5)     |
+| US-13.27.8.3  | game developer (P-15)   |
+| US-13.27.8.4  | player (P-23)           |
+| US-13.27.8.5  | player (P-23)           |
+| US-13.27.8.6  | modder (P-24)           |
 
-1. **US-13.27.7** — **As a** player (P-23), **I want** circuits to evaluate deterministically with
-   defined update order, **so that** complex contraptions produce the same result every time.
-2. **US-13.27.7** — **As a** player (P-23), **I want** per-chunk circuit budgets to prevent massive
-   circuits from causing lag, **so that** the server stays responsive.
-3. **US-13.27.7** — **As a** designer (P-5), **I want** to configure circuit complexity budgets per
-   chunk, **so that** I can balance between creative freedom and performance.
-4. **US-13.27.7** — **As a** tester (P-27), **I want** to verify that exceeding the budget depowers
-   excess components with a warning, **so that** budget enforcement works.
+1. **US-13.27.8.1** -- **As a** game designer (P-5), **I want** biome definitions as data assets
+   with per-biome block composition rules and smooth boundary blending, **so that** biome authoring
+   is visual.
 
-## Block Terrain Generation (F-13.27.8a)
+2. **US-13.27.8.2** -- **As a** game designer (P-5), **I want** structure templates with block
+   layouts, loot tables, and spawner placements, **so that** generated structures are content-rich.
 
-| ID         | Persona              | Features  | Requirements |
-|------------|----------------------|-----------|--------------|
-| US-13.27.8 | player (P-23)        | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | player (P-23)        | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | designer (P-5)       | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | level designer (P-6) | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | tester (P-27)        | F-13.27.8 | R-13.27.8    |
+3. **US-13.27.8.3** -- **As a** game developer (P-15), **I want** world generation to run on worker
+   threads prioritized by player distance with a configurable deterministic seed, **so that**
+   generation is fast and reproducible.
 
-1. **US-13.27.8** — **As a** player (P-23), **I want** to enter a world seed and generate a
-   deterministic world identical across all platforms, **so that** I can share seeds with friends.
-2. **US-13.27.8** — **As a** player (P-23), **I want** 3D noise to carve caves and overhangs into
-   the terrain, **so that** exploration is three-dimensional.
-3. **US-13.27.8** — **As a** designer (P-5), **I want** generation to run on worker threads
-   prioritized by player distance, **so that** nearby terrain generates first.
-4. **US-13.27.8** — **As a** level designer (P-6), **I want** heightmap and cave noise configurable
-   per world, **so that** I can create diverse terrain profiles.
-5. **US-13.27.8** — **As a** tester (P-27), **I want** to verify that the same seed produces
-   identical terrain across platforms, **so that** cross-platform determinism works.
+4. **US-13.27.8.4** -- [game-specific] **As a** player (P-23), **I want** to enter a world seed and
+   generate a world identical across all platforms, **so that** I can share seeds with friends.
 
-## Block Biome System (F-13.27.8b)
+5. **US-13.27.8.5** -- [game-specific] **As a** player (P-23), **I want** generated worlds to
+   contain trees, villages, temples, and dungeons, **so that** exploration reveals interesting
+   landmarks.
 
-| ID         | Persona        | Features  | Requirements |
-|------------|----------------|-----------|--------------|
-| US-13.27.8 | player (P-23)  | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | designer (P-5) | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | modder (P-24)  | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | tester (P-27)  | F-13.27.8 | R-13.27.8    |
-
-1. **US-13.27.8** — **As a** player (P-23), **I want** diverse biomes (plains, desert, forest,
-   ocean, mountains, tundra) with distinct block compositions, **so that** exploration reveals
-   varied landscapes.
-2. **US-13.27.8** — **As a** designer (P-5), **I want** to define biome types with per-biome block
-   composition rules and smooth boundary blending, **so that** biome authoring is visual.
-3. **US-13.27.8** — **As a** modder (P-24), **I want** to create custom biome types with unique
-   block compositions, **so that** mods can add entirely new world themes.
-4. **US-13.27.8** — **As a** tester (P-27), **I want** to verify that biome boundaries blend
-   smoothly over the configured transition width, **so that** no hard edges appear.
-
-## Block Ore Placement (F-13.27.8c)
-
-| ID         | Persona              | Features  | Requirements |
-|------------|----------------------|-----------|--------------|
-| US-13.27.8 | player (P-23)        | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | designer (P-5)       | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | level designer (P-6) | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | tester (P-27)        | F-13.27.8 | R-13.27.8    |
-
-1. **US-13.27.8** — **As a** player (P-23), **I want** ore veins placed at varying depths with
-   configurable frequency, **so that** mining deeper reveals rarer ores.
-2. **US-13.27.8** — **As a** designer (P-5), **I want** to configure per-ore cluster size, spawn
-   depth range, and density in gameplay databases, **so that** ore progression is data-driven.
-3. **US-13.27.8** — **As a** level designer (P-6), **I want** ore placement as a post-processing
-   pass after terrain generation, **so that** ores embed naturally in generated terrain.
-4. **US-13.27.8** — **As a** tester (P-27), **I want** to verify that an ore configured for depth
-   32-64 does not appear above depth 32, **so that** depth constraints are enforced.
-
-## Block Structure Generation (F-13.27.8d)
-
-| ID         | Persona              | Features  | Requirements |
-|------------|----------------------|-----------|--------------|
-| US-13.27.8 | player (P-23)        | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | designer (P-5)       | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | level designer (P-6) | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | modder (P-24)        | F-13.27.8 | R-13.27.8    |
-| US-13.27.8 | tester (P-27)        | F-13.27.8 | R-13.27.8    |
-
-1. **US-13.27.8** — **As a** player (P-23), **I want** generated worlds to contain trees, villages,
-   temples, and dungeons, **so that** exploration reveals interesting landmarks.
-2. **US-13.27.8** — **As a** designer (P-5), **I want** structure templates with block layouts, loot
-   tables, and spawner placements, **so that** generated structures are content-rich.
-3. **US-13.27.8** — **As a** level designer (P-6), **I want** structure placement configurable by
-   frequency and biome constraints, **so that** I control where structures appear.
-4. **US-13.27.8** — **As a** modder (P-24), **I want** to create custom structure templates for the
-   world generator, **so that** mod structures appear naturally in generated worlds.
-5. **US-13.27.8** — **As a** tester (P-27), **I want** to verify that structures generate after
-   terrain and biome passes to ensure correct ground placement, **so that** structures do not float
-   or bury.
+6. **US-13.27.8.6** -- **As a** modder (P-24), **I want** to create custom biome types and structure
+   templates for the world generator, **so that** mods can add entirely new world themes.

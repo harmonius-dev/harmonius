@@ -2,11 +2,11 @@
 
 ## Camera Effects
 
-| ID       | Feature      | Requirements |
-|----------|--------------|--------------|
-| F-11.3.1 | Screen Shake | R-11.3.1     |
-| F-11.3.2 | Motion Blur  | R-11.3.2     |
-| F-11.3.3 | Lens Flare   | R-11.3.3     |
+| ID       | Feature      |
+|----------|--------------|
+| F-11.3.1 | Screen Shake |
+| F-11.3.2 | Motion Blur  |
+| F-11.3.3 | Lens Flare   |
 
 1. **F-11.3.1** — Procedural camera shake system driven by Perlin noise with configurable frequency,
    amplitude, decay, and directional bias. Shake events are additive and layer from multiple sources
@@ -30,10 +30,10 @@
 
 ## Post-Process Distortions
 
-| ID       | Feature                             | Requirements |
-|----------|-------------------------------------|--------------|
-| F-11.3.4 | Chromatic Aberration and Film Grain | R-11.3.4     |
-| F-11.3.5 | Heat Haze and Refraction            | R-11.3.5     |
+| ID       | Feature                             |
+|----------|-------------------------------------|
+| F-11.3.4 | Chromatic Aberration and Film Grain |
+| F-11.3.5 | Heat Haze and Refraction            |
 
 1. **F-11.3.4** — Color-channel-offset post-process simulating lens dispersion, with radial
    aberration increasing toward screen edges and event-driven pulses from impact points. Uses
@@ -51,9 +51,9 @@
 
 ## Gameplay Overlays
 
-| ID       | Feature                          | Requirements |
-|----------|----------------------------------|--------------|
-| F-11.3.6 | Damage Overlays and Screen Flash | R-11.3.6     |
+| ID       | Feature                          |
+|----------|----------------------------------|
+| F-11.3.6 | Damage Overlays and Screen Flash |
 
 1. **F-11.3.6** — Full-screen or directional color flash triggered by gameplay events — damage
    taken, healing received, status effects — with parameterized color, intensity, and decay curve

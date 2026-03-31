@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/animation/](../../features/animation/),
-> [requirements/animation/](../../requirements/animation/), and
-> [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
-> to those definitions.
+> [features/animation/](../../features/), [requirements/animation/](../../requirements/), and
+> [user-stories/animation/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement |
 |----------|-------------|
@@ -1412,8 +1411,8 @@ Animation events follow this path:
 ### Compute Shader Dispatch
 
 All three compute stages (keyframe eval, blend, skinning) use HLSL compiled via DXC. On macOS, DXIL
-is translated to MSL via Metal Shader Converter (both accessed through C ABI wrappers per
-project constraints).
+is translated to MSL via Metal Shader Converter (DXC via C API, MSC via swift-bridge per project
+constraints).
 
 Thread group sizes:
 

@@ -2,11 +2,11 @@
 
 ## Mod Authoring
 
-| ID        | Feature                               | Requirements |
-|-----------|---------------------------------------|--------------|
-| F-15.16.1 | Mod SDK and Authoring Tools           | R-15.16.1    |
-| F-15.16.2 | Developer-Defined Mod Constraints     | R-15.16.2    |
-| F-15.16.3 | Mod Packaging and Distribution Format | R-15.16.3    |
+| ID | Feature |
+| ----------- | --------------------------------------- |
+| F-15.16.1 | Mod SDK and Authoring Tools |
+| F-15.16.2 | Developer-Defined Mod Constraints |
+| F-15.16.3 | Mod Packaging and Distribution Format |
 
 1. **F-15.16.1** — A subset of the game engine editor packaged as a standalone mod authoring
    toolkit. The mod SDK includes: the level editor with placement and terrain tools, the material
@@ -41,11 +41,11 @@
 
 ## Mod Runtime
 
-| ID        | Feature                    | Requirements |
-|-----------|----------------------------|--------------|
-| F-15.16.4 | Mod Loading and Sandboxing | R-15.16.4    |
-| F-15.16.5 | Mod Workshop Integration   | R-15.16.5    |
-| F-15.16.6 | Mod Moderation and Review  | R-15.16.6    |
+| ID | Feature |
+| ----------- | ---------------------------- |
+| F-15.16.4 | Mod Loading and Sandboxing |
+| F-15.16.5 | Mod Workshop Integration |
+| F-15.16.6 | Mod Moderation and Review |
 
 1. **F-15.16.4** — Load mod packages at runtime into an isolated ECS world partition that prevents
    mods from accessing or modifying the base game's core systems. Mod-spawned entities are tagged

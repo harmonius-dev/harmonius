@@ -1,137 +1,60 @@
-# R-2.8 — Character Rendering Requirements
+# R-2.8 -- Character Rendering Requirements
 
-## Hair Rendering
+## Hair
 
-| ID      | Derived From                                               |
-|---------|------------------------------------------------------------|
-| R-2.8.1 | [F-2.8.1](../../features/rendering/character-rendering.md) |
-| R-2.8.2 | [F-2.8.2](../../features/rendering/character-rendering.md) |
-| R-2.8.3 | [F-2.8.3](../../features/rendering/character-rendering.md) |
-| R-2.8.7 | [F-2.8.7](../../features/rendering/character-rendering.md) |
-| R-2.8.8 | [F-2.8.8](../../features/rendering/character-rendering.md) |
+1. **R-2.8.1** — The engine **SHALL** render individual hair strands with the Marschner BSDF (R, TT,
+   TRT lobes) and self-shadowing via deep opacity maps, supporting hundreds of thousands of strands.
+   - **Rationale:** Strand rendering with Marschner shading produces photorealistic hair for hero
+     characters.
+   - **Verification:** Render 500k strands. Verify R, TT, and TRT lobes match reference images.
+     Verify deep opacity shadows with no light leaking.
 
-1. **R-2.8.1** — The engine **SHALL** render individual hair strands as curve geometry rasterized
-   via the mesh shader pipeline, shaded with the Marschner anisotropic hair BSDF (R, TT, TRT lobes),
-   supporting at least 100,000 strands per character with self-shadowing via deep opacity maps. Hair
-   simulation and LOD management are owned by the animation domain (R-9.5.2, R-9.5.3, R-9.5.4). This
-   requirement covers the GPU rendering pipeline only.
-   - **Rationale:** Strand-based hair with physically-based shading is required for close-range
-     character rendering quality in cinematics and gameplay.
-   - **Verification:** Render a character with 100,000+ hair strands and verify all three Marschner
-     lobes (R, TT, TRT) produce distinct light response; verify self-shadowing from deep opacity
-     maps is visible and shadow-free areas do not leak light.
-2. **R-2.8.2** — The engine **SHALL** render card-based hair using textured polygon strips with
-   alpha-tested or alpha-blended rendering, arranged in layers to approximate hair volume and
-   directionality, at lower rendering cost than strand-based hair. Hair simulation and LOD
-   management are owned by the animation domain (R-9.5.2, R-9.5.3, R-9.5.4). This requirement covers
-   the GPU rendering pipeline only.
-   - **Rationale:** Card-based hair provides an efficient alternative for mid-distance characters
-     and performance-constrained scenarios.
-   - **Verification:** Render a card-based hair asset and verify layered volume and directionality
-     are visually apparent; measure GPU time and confirm it is less than the equivalent strand-based
-     rendering.
-3. **R-2.8.3** — The engine **SHALL** provide a multi-tier hair level-of-detail system transitioning
-   between strand rendering at close range, card-based rendering at mid range, and a simplified mesh
-   proxy at far distance, with screen-size-driven LOD selection and cross-fade dithering transitions
-   that produce no visible popping. Hair simulation and LOD management are owned by the animation
-   domain (R-9.5.2, R-9.5.3, R-9.5.4). This requirement covers the GPU rendering pipeline only.
-   - **Rationale:** Hair LOD is essential for maintaining performance when rendering many characters
-     at varying distances.
-   - **Verification:** Move a camera from close to far distance past a hair-rendered character and
-     verify three LOD tiers activate at expected screen-size thresholds; confirm cross-fade
-     dithering produces smooth transitions with no visible popping between tiers.
-4. **R-2.8.7** — The engine **SHALL** provide a compute shader software rasterizer for sub-pixel
-   hair strands that classifies strands by projected pixel area, routes large segments to hardware
-   rasterization and thin strands to froxel-based line segment registration with anti-aliased 2D
-   line drawing, using front-to-back froxel rasterization with early termination when tiles are
-   sufficiently opaque.
-   - **Rationale:** Sub-pixel hair strands are poorly handled by hardware rasterization; compute
-     software rasterization provides correct transparency ordering and anti-aliasing for thin
-     strands.
-   - **Verification:** Render a hair asset with many sub-pixel strands and compare visual quality
-     against hardware-only rasterization; verify anti-aliased line drawing produces smooth thin
-     strands; confirm early termination reduces computation for dense hair regions by measuring
-     compute dispatch time.
-5. **R-2.8.8** — The engine **SHALL** render vellus hair on character skin surfaces as a
-   screen-space effect driven by a fuzz direction map, producing visible peach fuzz light-catching
-   in close-up rendering without requiring individual strand geometry.
-   - **Rationale:** Peach fuzz adds subtle realism to close-up skin rendering, enhancing perceived
-     surface detail at low rendering cost.
-   - **Verification:** Render a character face at close range with peach fuzz enabled and disabled;
-     verify the fuzz effect is visible as directional light-catching on skin surfaces; confirm no
-     individual strand geometry is generated.
+2. **R-2.8.2** — The engine **SHALL** provide card-based hair rendering as a fallback with
+   alpha-blended layered cards, and a multi-tier LOD system transitioning from strands to cards to
+   mesh proxy with cross-fade dithering.
+   - **Rationale:** Card hair and LOD ensure hair is represented at all distances and platforms.
+   - **Verification:** Verify strand-to-card transition at configured distance. Verify mesh proxy at
+     far distance. Verify cross-fade dithering with no popping.
 
-## Face and Body Rendering
+3. **R-2.8.3** — The engine **SHALL** provide a compute software rasterizer for sub-pixel hair
+   strands with froxel-based anti-aliased line drawing.
+   - **Rationale:** Sub-pixel strands bypass hardware rasterization; compute rasterization ensures
+     they are visible with anti-aliasing.
+   - **Verification:** Render thin strands at distance. Verify compute-rasterized strands blend with
+     hardware- rasterized strands with no visible transition.
 
-| ID      | Derived From                                               |
-|---------|------------------------------------------------------------|
-| R-2.8.4 | [F-2.8.4](../../features/rendering/character-rendering.md) |
-| R-2.8.5 | [F-2.8.5](../../features/rendering/character-rendering.md) |
-| R-2.8.6 | [F-2.8.6](../../features/rendering/character-rendering.md) |
-| R-2.8.9 | [F-2.8.9](../../features/rendering/character-rendering.md) |
+## Eyes and Skin
 
-1. **R-2.8.4** — The engine **SHALL** render character eyes with layered cornea refraction, iris
-   parallax depth, sclera subsurface scattering, limbal ring darkening, and analytically
-   approximated caustic highlights, using a separate transparent cornea layer that refracts the view
-   into iris detail.
-   - **Rationale:** Eyes are the primary focus in character close-ups; layered physically-based eye
-     rendering is required for believable characters.
-   - **Verification:** Render a character eye at close range and verify corneal refraction distorts
-     the iris when viewed at oblique angles; confirm sclera SSS, limbal darkening, and caustic
-     highlights are all independently visible and respond to light direction.
-2. **R-2.8.5** — The engine **SHALL** render fabric surfaces with a cloth shading model that
-   simulates a fuzz layer using an energy-conserving fabric-specific specular lobe replacing
-   standard specular, driven by per-material cloth parameters (fuzz color, scatter width).
-   - **Rationale:** Cloth requires a distinct shading model because fabric microstructure produces
-     fundamentally different light interaction than smooth or metallic surfaces.
-   - **Verification:** Render a cloth material and a standard PBR material side by side under
-     identical lighting; verify the cloth material exhibits a soft wrap highlight distinct from the
-     PBR specular lobe; vary fuzz color and scatter width and confirm the shading responds to
-     parameter changes.
-3. **R-2.8.6** — The engine **SHALL** render skin with screen-space subsurface scattering using the
-   Burley normalized diffusion model, with per-material scatter radius, scatter color, and
-   transmission distance controlling light diffusion beneath the surface.
-   - **Rationale:** Physically accurate skin SSS is essential for believable character rendering,
-     especially in close-up and cinematic contexts.
-   - **Verification:** Render a skin-shaded character under a strong directional light and verify
-     visible subsurface scattering in thin regions (ears, nostrils, fingertips); modify scatter
-     radius and color and confirm the diffusion profile changes accordingly; verify transmission
-     through thin geometry.
-4. **R-2.8.9** — The engine **SHALL** provide a physically-based skin shading model parameterized by
-   melanin concentration and blood distribution maps rather than explicit subsurface color,
-   accurately rendering any skin tone with correct subsurface scattering and natural variation
-   across body regions.
-   - **Rationale:** Biometric parameterization produces physically correct skin appearance across
-     all skin tones from a small set of biological parameters, avoiding per-tone manual tuning.
-   - **Verification:** Render the same character mesh with varying melanin concentration values
-     spanning light to dark skin tones; verify each tone produces physically plausible subsurface
-     scattering; confirm blood distribution maps produce visible variation (e.g., blush, pallor)
-     across body regions.
+4. **R-2.8.4** — The engine **SHALL** render eyes with layered cornea refraction, iris parallax
+   depth, sclera SSS, and limbal ring darkening with analytical caustics.
+   - **Rationale:** Layered eye shading produces photorealistic character eyes.
+   - **Verification:** Render a close-up eye. Verify iris parallax. Verify cornea refraction. Verify
+     sclera SSS. Verify flat iris fallback on mobile.
 
-## Non-Functional Requirements
+5. **R-2.8.5** — The engine **SHALL** provide screen-space SSS for skin using Burley normalized
+   diffusion profiles, with preintegrated LUT fallback on mobile.
+   - **Rationale:** Burley diffusion produces physically accurate skin translucency.
+   - **Verification:** Render skin on desktop and mobile. Compare results. Verify LUT fallback is
+     visually acceptable.
 
-| ID        |
-|-----------|
-| NFR-2.8.1 |
-| NFR-2.8.2 |
-| NFR-2.8.3 |
+6. **R-2.8.6** — The engine **SHALL** render peach fuzz vellus hair as a screen-space effect driven
+   by fuzz direction maps on character faces.
+   - **Rationale:** Peach fuzz adds subtle realism to close- up character rendering without strand
+     geometry.
+   - **Verification:** Render a face close-up. Verify visible fuzz catching light at grazing angles.
+     Verify disabled on mobile.
 
-1. **NFR-2.8.1** — Strand-based hair rendering **SHALL** complete in under 2.0 ms per character at
-   1080p for 100,000 strands, and card-based hair **SHALL** complete in under 0.5 ms per character.
-   - **Rationale:** Multiple characters may be on screen simultaneously; per-character hair cost
-     must be bounded for consistent frame rates.
-   - **Verification:** Profile strand-based hair for a single character with 100,000 strands and
-     verify GPU time is below 2.0 ms. Profile card-based hair and verify it is below 0.5 ms.
-2. **NFR-2.8.2** — Screen-space subsurface scattering for skin **SHALL** complete in under 1.0 ms at
-   1080p regardless of the number of on-screen skin-shaded characters.
-   - **Rationale:** SSS is a screen-space post-process; its cost scales with screen coverage, not
-     character count, and must be bounded.
-   - **Verification:** Profile the skin SSS pass with varying numbers of on-screen characters (1, 5,
-     10) and verify GPU time remains below 1.0 ms at 1080p.
-3. **NFR-2.8.3** — Hair LOD transitions **SHALL** produce no visible popping or abrupt quality
-   changes during continuous camera zoom in/out at 60 FPS, with cross-fade dithering completing
-   within 0.5 seconds.
-   - **Rationale:** LOD pop is one of the most noticeable visual artifacts in character rendering;
-     smooth transitions are essential for immersion.
-   - **Verification:** Record a 60 FPS video of a camera continuously zooming away from a
-     hair-rendered character. Verify no single frame shows abrupt quality change between LOD tiers.
+7. **R-2.8.7** — The engine **SHALL** provide biometric skin shading driven by melanin concentration
+   and blood distribution maps producing accurate scattering for any skin tone.
+   - **Rationale:** Biometric parameterization produces natural skin tone variation from biological
+     data.
+   - **Verification:** Render skin tones from light to dark using melanin maps. Verify correct
+     scattering. Verify baked-to-diffuse fallback on mobile.
+
+## Cloth
+
+8. **R-2.8.8** — The engine **SHALL** provide a cloth shading model with a fiber fuzz layer and
+   fabric-specific scatter, degrading to simplified wrap lighting on mobile.
+   - **Rationale:** Cloth shading distinguishes fabric surfaces from smooth materials.
+   - **Verification:** Render velvet fabric. Verify fuzz layer at grazing angles. Verify simplified
+     fallback on mobile.

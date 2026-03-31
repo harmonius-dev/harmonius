@@ -2,10 +2,10 @@
 
 ## Node Graph
 
-| ID       | Feature                          | Requirements |
-|----------|----------------------------------|--------------|
-| F-15.3.1 | Node-Based Material Graph        | R-15.3.1     |
-| F-15.3.2 | Material Functions and Subgraphs | R-15.3.2     |
+| ID | Feature |
+| ---------- | ---------------------------------- |
+| F-15.3.1 | Node-Based Material Graph |
+| F-15.3.2 | Material Functions and Subgraphs |
 
 1. **F-15.3.1** — Provides a visual node graph editor for authoring materials by connecting math,
    texture, and parameter nodes. The graph compiles to optimized GPU shader code and validates
@@ -22,10 +22,10 @@
 
 ## Preview and Iteration
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-15.3.3 | Live Material Preview     | R-15.3.3     |
-| F-15.3.4 | Shader Parameter Tweaking | R-15.3.4     |
+| ID | Feature |
+| ---------- | --------------------------- |
+| F-15.3.3 | Live Material Preview |
+| F-15.3.4 | Shader Parameter Tweaking |
 
 1. **F-15.3.3** — Renders a real-time 3D preview of the material on configurable meshes (sphere,
    cube, plane, custom asset) with adjustable lighting. The preview updates instantly as parameters
@@ -42,10 +42,10 @@
 
 ## Material Instancing and Library
 
-| ID       | Feature                      | Requirements |
-|----------|------------------------------|--------------|
-| F-15.3.5 | Material Instances           | R-15.3.5     |
-| F-15.3.6 | Material Library and Browser | R-15.3.6     |
+| ID | Feature |
+| ---------- | ------------------------------ |
+| F-15.3.5 | Material Instances |
+| F-15.3.6 | Material Library and Browser |
 
 1. **F-15.3.5** — Creates lightweight material instances that override specific parameters of a
    parent material without duplicating the shader. Instances share the compiled shader program and

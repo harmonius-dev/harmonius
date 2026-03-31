@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement | User Stories             |
 |----------|-------------|--------------------------|
@@ -40,10 +39,10 @@
 
 ## Overview
 
-The editor plugin architecture enables extensibility through a stable C ABI boundary exposed via
-C ABI. Plugins register custom component editors, panels, gizmos, menu actions, and toolbar
-buttons. The system supports hot-reload with state preservation and isolates plugins so a crash in
-one does not bring down the editor.
+The editor plugin architecture enables extensibility through a stable C ABI boundary exposed via C
+ABI. Plugins register custom component editors, panels, gizmos, menu actions, and toolbar buttons.
+The system supports hot-reload with state preservation and isolates plugins so a crash in one does
+not bring down the editor.
 
 Key principles:
 
@@ -893,7 +892,7 @@ plugins.
 |-----------|---------|-------|-------|
 | Dynamic library | `.dll` via `LoadLibraryW` | `.dylib` via `dlopen` | `.so` via `dlopen` |
 | Symbol lookup | `GetProcAddress` | `dlsym` | `dlsym` |
-| File watching | `ReadDirectoryChangesW` | `FSEvents` via Swift C ABI | `inotify` |
+| File watching | `ReadDirectoryChangesW` | `FSEvents` via swift-bridge | `inotify` |
 | C ABI bridge | C ABI MSVC ABI | C ABI Clang ABI | C ABI GCC/Clang ABI |
 | Isolation | SEH for panic catch | `setjmp`/`longjmp` | `setjmp`/`longjmp` |
 

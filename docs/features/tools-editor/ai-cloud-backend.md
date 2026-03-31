@@ -6,9 +6,9 @@ and parses responses. No intermediary server, no proxy, no reselling.
 
 ## Provider Abstraction
 
-| ID        | Feature                 | Requirements |
-|-----------|-------------------------|--------------|
-| F-15.23.1 | AI Provider Abstraction | R-15.23.1    |
+| ID | Feature |
+| ----------- | ------------------------- |
+| F-15.23.1 | AI Provider Abstraction |
 
 1. **F-15.23.1** — A pluggable backend trait for AI services. Ships with Claude (Anthropic), Copilot
    (GitHub), and Cursor adapters. Third-party developers can implement the trait via the plugin API
@@ -19,9 +19,9 @@ and parses responses. No intermediary server, no proxy, no reselling.
 
 ## Customer Authentication
 
-| ID        | Feature                 | Requirements |
-|-----------|-------------------------|--------------|
-| F-15.23.2 | Customer Authentication | R-15.23.2    |
+| ID | Feature |
+| ----------- | ------------------------- |
+| F-15.23.2 | Customer Authentication |
 
 1. **F-15.23.2** — All AI requests use the customer's own API key or OAuth token. Credentials are
    stored in the platform-native encrypted credential store: Keychain on macOS, Credential Manager
@@ -29,14 +29,14 @@ and parses responses. No intermediary server, no proxy, no reselling.
    the session. Credentials are never transmitted to any server other than the customer's chosen AI
    provider endpoint. No engine telemetry or analytics includes credential material.
    - **Deps:** F-15.23.1
-   - **Platform:** Keychain on macOS via Security.framework (C ABI bridge). Credential Manager on
+   - **Platform:** Keychain on macOS via Security.framework (swift-bridge). Credential Manager on
      Windows via wincred. libsecret on Linux via D-Bus.
 
 ## AI Code Assistant
 
-| ID        | Feature           | Requirements |
-|-----------|-------------------|--------------|
-| F-15.23.3 | AI Code Assistant | R-15.23.3    |
+| ID | Feature |
+| ----------- | ------------------- |
+| F-15.23.3 | AI Code Assistant |
 
 1. **F-15.23.3** — Context-aware suggestions in the editor that understand the project structure,
    ECS components, and visual graph nodes. Because the engine enforces the no-code constraint, the
@@ -48,9 +48,9 @@ and parses responses. No intermediary server, no proxy, no reselling.
 
 ## AI Content Assistant
 
-| ID        | Feature              | Requirements |
-|-----------|----------------------|--------------|
-| F-15.23.4 | AI Content Assistant | R-15.23.4    |
+| ID | Feature |
+| ----------- | ---------------------- |
+| F-15.23.4 | AI Content Assistant |
 
 1. **F-15.23.4** — AI-powered content creation for textures, meshes, levels, dialogue, and quests
    using cloud inference. Generated content is returned as standard asset data and imported through
@@ -61,9 +61,9 @@ and parses responses. No intermediary server, no proxy, no reselling.
 
 ## AI Chat Panel
 
-| ID        | Feature       | Requirements |
-|-----------|---------------|--------------|
-| F-15.23.5 | AI Chat Panel | R-15.23.5    |
+| ID | Feature |
+| ----------- | --------------- |
+| F-15.23.5 | AI Chat Panel |
 
 1. **F-15.23.5** — A persistent chat interface docked in the editor. Users ask questions about the
    engine, debug issues, and get suggestions. Conversation history is stored per-project in local
@@ -76,9 +76,9 @@ and parses responses. No intermediary server, no proxy, no reselling.
 
 ## AI Provider Settings
 
-| ID        | Feature              | Requirements |
-|-----------|----------------------|--------------|
-| F-15.23.6 | AI Provider Settings | R-15.23.6    |
+| ID | Feature |
+| ----------- | ---------------------- |
+| F-15.23.6 | AI Provider Settings |
 
 1. **F-15.23.6** — Per-project AI provider selection with configurable model, temperature, and token
    limits. A cost tracking dashboard displays token usage per session, per day, and cumulative per
@@ -89,9 +89,9 @@ and parses responses. No intermediary server, no proxy, no reselling.
 
 ## Offline / Local AI Fallback
 
-| ID        | Feature                   | Requirements |
-|-----------|---------------------------|--------------|
-| F-15.23.7 | Offline/Local AI Fallback | R-15.23.7    |
+| ID | Feature |
+| ----------- | --------------------------- |
+| F-15.23.7 | Offline/Local AI Fallback |
 
 1. **F-15.23.7** — When no cloud API key is configured or the provider is unreachable, the editor
    falls back to local inference models for basic assistance. Local models are smaller and lower
@@ -105,9 +105,9 @@ and parses responses. No intermediary server, no proxy, no reselling.
 
 ## AI Context Injection
 
-| ID        | Feature              | Requirements |
-|-----------|----------------------|--------------|
-| F-15.23.8 | AI Context Injection | R-15.23.8    |
+| ID | Feature |
+| ----------- | ---------------------- |
+| F-15.23.8 | AI Context Injection |
 
 1. **F-15.23.8** — Automatically provides relevant project context to AI prompts without manual
    copy-paste. Context sources include: selected entities and their components, the current graph

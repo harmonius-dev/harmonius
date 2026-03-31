@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/physics/](../../features/physics/),
-> [requirements/physics/](../../requirements/physics/), and
-> [user-stories/physics/](../../user-stories/physics/). The table below traces design elements to
-> those definitions.
+> [features/physics/](../../features/), [requirements/physics/](../../requirements/), and
+> [user-stories/physics/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Rigid Body Dynamics (R-4.1)
 

@@ -2,10 +2,10 @@
 
 ## Suspension and Tires
 
-| ID      | Feature                | Requirements |
-|---------|------------------------|--------------|
-| F-4.5.1 | Wheel Suspension Model | R-4.5.1      |
-| F-4.5.2 | Tire Friction Model    | R-4.5.2      |
+| ID      | Feature |
+|---------|------------------------ |
+| F-4.5.1 | Wheel Suspension Model |
+| F-4.5.2 | Tire Friction Model |
 
 1. **F-4.5.1** — Each wheel is a child entity of the chassis, carrying a `WheelSuspension` component
    with configurable rest length, spring stiffness, damping coefficient, and travel limits.
@@ -28,9 +28,9 @@
 
 ## Drivetrain
 
-| ID      | Feature               | Requirements |
-|---------|-----------------------|--------------|
-| F-4.5.3 | Drivetrain Simulation | R-4.5.3      |
+| ID      | Feature |
+|---------|----------------------- |
+| F-4.5.3 | Drivetrain Simulation |
 
 1. **F-4.5.3** — The chassis entity carries a `Drivetrain` component storing engine torque curve,
    gear ratios, current gear, differential type (open, limited-slip, locked), and drive layout
@@ -46,9 +46,9 @@
 
 ## Stability
 
-| ID      | Feature                              | Requirements |
-|---------|--------------------------------------|--------------|
-| F-4.5.4 | Anti-Roll Bars and Stability Control | R-4.5.4      |
+| ID      | Feature |
+|---------|-------------------------------------- |
+| F-4.5.4 | Anti-Roll Bars and Stability Control |
 
 1. **F-4.5.4** — The chassis entity carries `AntiRollBar` and `StabilityControl` components.
    `AntiRollBarSystem` queries `(AntiRollBar, Vehicle)`, iterates paired wheel entities via the
@@ -64,11 +64,11 @@
 
 ## Specialized Vehicles
 
-| ID      | Feature                                  | Requirements |
-|---------|------------------------------------------|--------------|
-| F-4.5.5 | Tracked Vehicle Simulation               | R-4.5.5      |
-| F-4.5.6 | Hover Vehicle Simulation                 | R-4.5.6      |
-| F-4.5.7 | Server-Authoritative Vehicle Replication | R-4.5.7      |
+| ID      | Feature |
+|---------|------------------------------------------ |
+| F-4.5.5 | Tracked Vehicle Simulation |
+| F-4.5.6 | Hover Vehicle Simulation |
+| F-4.5.7 | Server-Authoritative Vehicle Replication |
 
 1. **F-4.5.5** — Tracked vehicles use a `TrackedVehicle` component on the chassis entity instead of
    wheel child entities. The `TrackedVehicle` component stores track friction coefficients, track

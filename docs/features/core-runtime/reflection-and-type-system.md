@@ -2,9 +2,9 @@
 
 ## Type Registry
 
-| ID      | Feature              | Requirements |
-|---------|----------------------|--------------|
-| F-1.3.1 | Global Type Registry | R-1.3.1      |
+| ID      | Feature             |
+|---------|----------------------|
+| F-1.3.1 | Global Type Registry|
 
 1. **F-1.3.1** — Maintain a runtime registry that maps type identifiers to type metadata.
    Registration occurs at startup via inventory collection or explicit calls. The registry is
@@ -14,9 +14,9 @@
 
 ## Type Info
 
-| ID      | Feature                     | Requirements |
-|---------|-----------------------------|--------------|
-| F-1.3.2 | Structured Type Descriptors | R-1.3.2      |
+| ID      | Feature                    |
+|---------|-----------------------------|
+| F-1.3.2 | Structured Type Descriptors|
 
 1. **F-1.3.2** — Store rich type information including size, alignment, drop function, clone
    function, default constructor, field layout, and variant layout. Type descriptors are sufficient
@@ -26,10 +26,10 @@
 
 ## Property System
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-1.3.3 | Reflective Property Access | R-1.3.3      |
-| F-1.3.4 | Collection Reflection      | R-1.3.4      |
+| ID      | Feature                   |
+|---------|----------------------------|
+| F-1.3.3 | Reflective Property Access|
+| F-1.3.4 | Collection Reflection     |
 
 1. **F-1.3.3** — Expose struct fields and enum variants as named properties that can be read and
    written dynamically at runtime. Properties support path-based access (e.g.,
@@ -45,9 +45,9 @@
 
 ## Dynamic Access
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-1.3.5 | Type-Erased Dynamic Values | R-1.3.5      |
+| ID      | Feature                   |
+|---------|----------------------------|
+| F-1.3.5 | Type-Erased Dynamic Values|
 
 1. **F-1.3.5** — Provide a `DynamicValue` type that can hold any reflected value and supports the
    full property API. Dynamic values can be constructed from serialized data, diffed against typed
@@ -57,10 +57,10 @@
 
 ## Attribute / Metadata System
 
-| ID      | Feature                                | Requirements |
-|---------|----------------------------------------|--------------|
-| F-1.3.6 | Custom Type and Field Attributes       | R-1.3.6      |
-| F-1.3.7 | Trait Object Registration and Dispatch | R-1.3.7      |
+| ID      | Feature                               |
+|---------|----------------------------------------|
+| F-1.3.6 | Custom Type and Field Attributes      |
+| F-1.3.7 | Trait Object Registration and Dispatch|
 
 1. **F-1.3.6** — Allow user-defined key-value metadata to be attached to types and individual fields
    at registration time. Standard attributes include display names, tooltip text, numeric ranges,
@@ -76,11 +76,11 @@
 
 ## Reflect Trait
 
-| ID       | Feature                                | Requirements |
-|----------|----------------------------------------|--------------|
-| F-1.3.8  | Reflect Trait with Derive Macro        | R-1.3.8      |
-| F-1.3.9  | Reflect Sub-Traits for Type Categories | R-1.3.9      |
-| F-1.3.10 | FromReflect Conversion Trait           | R-1.3.10     |
+| ID       | Feature                               |
+|----------|----------------------------------------|
+| F-1.3.8  | Reflect Trait with Derive Macro       |
+| F-1.3.9  | Reflect Sub-Traits for Type Categories|
+| F-1.3.10 | FromReflect Conversion Trait          |
 
 1. **F-1.3.8** — Provide a `Reflect` trait modeled after bevy_reflect that serves as the unified
    entry point for runtime type introspection. The trait exposes methods for accessing type info,

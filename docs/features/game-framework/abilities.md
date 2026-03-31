@@ -2,11 +2,11 @@
 
 ## Ability System
 
-| ID        | Feature                                  | Requirements |
-|-----------|------------------------------------------|--------------|
-| F-13.10.1 | Ability Definition and Composition       | R-13.10.1    |
-| F-13.10.2 | Ability Activation and Input Integration | R-13.10.2    |
-| F-13.10.3 | Gameplay Effect System                   | R-13.10.3    |
+| ID        | Feature                                  |
+|-----------|------------------------------------------|
+| F-13.10.1 | Ability Definition and Composition       |
+| F-13.10.2 | Ability Activation and Input Integration |
+| F-13.10.3 | Gameplay Effect System                   |
 
 1. **F-13.10.1** — A data-driven ability system where each ability is composed from modular building
    blocks: activation conditions (input trigger, AI decision, item use), resource costs (mana,
@@ -34,18 +34,18 @@
    according to configurable rules: additive (multiple damage bonuses sum), multiplicative (multiple
    speed modifiers multiply), highest-wins (only the strongest buff applies), or non-stacking
    (refresh duration on reapply). Effects carry metadata: source entity, damage type (physical,
-   fire, ice, poison), and gameplay tags for conditional interactions (fire damage removes frozen
-   debuff). The effect system integrates with gameplay databases (F-13.7.9) for stat tables and
-   damage formulas.
+   fire, ice, poison), and hierarchical tags for conditional interactions (fire damage removes
+   frozen debuff). The effect system integrates with gameplay databases (F-13.7.9) for stat tables
+   and damage formulas.
    - **Deps:** F-13.10.1, F-13.7.9 (Stat Tables), F-13.7.5 (Formula DSL)
 
 ## Melee and Ranged Combat
 
-| ID        | Feature                             | Requirements |
-|-----------|-------------------------------------|--------------|
-| F-13.10.4 | Melee Combat System                 | R-13.10.4    |
-| F-13.10.5 | Ranged Combat and Projectile System | R-13.10.5    |
-| F-13.10.6 | Hitbox and Hurtbox System           | R-13.10.6    |
+| ID        | Feature                             |
+|-----------|-------------------------------------|
+| F-13.10.4 | Melee Combat System                 |
+| F-13.10.5 | Ranged Combat and Projectile System |
+| F-13.10.6 | Hitbox and Hurtbox System           |
 
 1. **F-13.10.4** — Close-range combat with hit detection driven by animation events (F-9.1.9) and
    physics shape casts (F-4.4.2). Weapon hitboxes are defined as collision shapes attached to
@@ -79,15 +79,15 @@
 
 ## Advanced Ability Systems
 
-| ID         | Feature                  | Requirements |
-|------------|--------------------------|--------------|
-| F-13.10.7  | Area-of-Effect Targeting | R-13.10.7    |
-| F-13.10.8  | Healing Over Time (HoT)  | R-13.10.8    |
-| F-13.10.9  | Damage Over Time (DoT)   | R-13.10.9    |
-| F-13.10.10 | Status Ailments          | R-13.10.10   |
-| F-13.10.11 | Usable Items             | R-13.10.11   |
-| F-13.10.12 | Ability Conditions       | R-13.10.12   |
-| F-13.10.13 | Combo System             | R-13.10.13   |
+| ID         | Feature                  |
+|------------|--------------------------|
+| F-13.10.7  | Area-of-Effect Targeting |
+| F-13.10.8  | Healing Over Time (HoT)  |
+| F-13.10.9  | Damage Over Time (DoT)   |
+| F-13.10.10 | Status Ailments          |
+| F-13.10.11 | Usable Items             |
+| F-13.10.12 | Ability Conditions       |
+| F-13.10.13 | Combo System             |
 
 1. **F-13.10.7** — Ground-targeted AoE placement with a reticle preview projected onto terrain and
    surfaces. Designers configure shape (cone, sphere, line, ring), radius/length/width, maximum

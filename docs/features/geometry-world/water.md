@@ -2,9 +2,9 @@
 
 ## Ocean Simulation
 
-| ID      | Feature                   | Requirements |
-|---------|---------------------------|--------------|
-| F-3.4.1 | FFT Ocean Wave Simulation | R-3.4.1      |
+| ID      | Feature |
+|---------|--------------------------- |
+| F-3.4.1 | FFT Ocean Wave Simulation |
 
 1. **F-3.4.1** — Open-ocean surface displacement computed via inverse FFT on a GPU compute shader.
    Multiple spectral cascades (Phillips, JONSWAP, or TMA spectrum) at different resolutions capture
@@ -20,9 +20,9 @@
 
 ## Shoreline Blending
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-3.4.2 | Shoreline and Depth-Based Blending | R-3.4.2      |
+| ID      | Feature |
+|---------|------------------------------------ |
+| F-3.4.2 | Shoreline and Depth-Based Blending |
 
 1. **F-3.4.2** — Water surfaces blend smoothly with terrain and objects at shorelines using scene
    depth comparisons. A soft intersection zone fades water opacity and adjusts wave amplitude based
@@ -35,9 +35,9 @@
 
 ## Underwater Rendering
 
-| ID      | Feature                                 | Requirements |
-|---------|-----------------------------------------|--------------|
-| F-3.4.3 | Underwater Rendering and Volume Effects | R-3.4.3      |
+| ID      | Feature |
+|---------|----------------------------------------- |
+| F-3.4.3 | Underwater Rendering and Volume Effects |
 
 1. **F-3.4.3** — When the camera submerges below the water surface, the renderer switches to an
    underwater mode with depth-based fog, light attenuation using Beer-Lambert absorption, and color
@@ -50,9 +50,9 @@
 
 ## Caustics
 
-| ID      | Feature                   | Requirements |
-|---------|---------------------------|--------------|
-| F-3.4.4 | Water Caustics Projection | R-3.4.4      |
+| ID      | Feature |
+|---------|--------------------------- |
+| F-3.4.4 | Water Caustics Projection |
 
 1. **F-3.4.4** — Caustic light patterns are projected onto underwater surfaces and the seabed.
    Caustics are computed from the ocean normal map by tracing refracted light paths into a caustics
@@ -65,9 +65,9 @@
 
 ## Water Refraction / Reflection
 
-| ID      | Feature                         | Requirements |
-|---------|---------------------------------|--------------|
-| F-3.4.5 | Water Reflection and Refraction | R-3.4.5      |
+| ID      | Feature |
+|---------|--------------------------------- |
+| F-3.4.5 | Water Reflection and Refraction |
 
 1. **F-3.4.5** — Water surfaces combine reflection and refraction using Fresnel-weighted blending.
    Reflections use a hierarchical approach: screen-space reflections (SSR) for nearby objects, a sky
@@ -81,9 +81,9 @@
 
 ## River Flow
 
-| ID      | Feature                   | Requirements |
-|---------|---------------------------|--------------|
-| F-3.4.6 | Flow Map River Simulation | R-3.4.6      |
+| ID      | Feature |
+|---------|--------------------------- |
+| F-3.4.6 | Flow Map River Simulation |
 
 1. **F-3.4.6** — Rivers and streams use artist-painted flow maps that define surface velocity
    direction and magnitude per texel. The flow map drives UV animation of normal and foam textures,
@@ -95,9 +95,9 @@
 
 ## Foam Generation
 
-| ID      | Feature                 | Requirements |
-|---------|-------------------------|--------------|
-| F-3.4.7 | Dynamic Foam Generation | R-3.4.7      |
+| ID      | Feature |
+|---------|------------------------- |
+| F-3.4.7 | Dynamic Foam Generation |
 
 1. **F-3.4.7** — Foam is generated dynamically from wave folding (Jacobian of the FFT displacement),
    shoreline depth, flow map turbulence, and object wake interactions. A foam coverage map

@@ -3,10 +3,10 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/content-pipeline/](../../features/content-pipeline/),
-> [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
-> design elements to those definitions.
+> [features/content-pipeline/](../../features/),
+> [requirements/content-pipeline/](../../requirements/), and
+> [user-stories/content-pipeline/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 | Feature  | Requirement | User Stories                                 |
 |----------|-------------|----------------------------------------------|
@@ -1435,7 +1435,7 @@ changes. On Linux, inotify emits `IN_Q_OVERFLOW`. Recovery strategy:
 | `test_multi_device_sync`               | R-12.4.7   |
 | `test_hot_reload_no_memory_leak`       | US-12.4.10 |
 | `test_buffer_overflow_recovery`        | R-12.4.1   |
-| `test_dcc_live_link_reload`            | US-12.4.14 |
+| `test_dcc_bridge_reload`               | US-12.4.14 |
 | `test_platform_watcher_latency`        | R-12.4.1   |
 
 1. **`test_texture_hot_reload_e2e`** — Load a scene with a textured mesh, modify the source texture,
@@ -1461,8 +1461,8 @@ changes. On Linux, inotify emits `IN_Q_OVERFLOW`. Recovery strategy:
     logic graphs 100 times. Verify CPU and GPU memory usage does not grow unboundedly.
 11. **`test_buffer_overflow_recovery`** — Trigger a ReadDirectoryChangesW buffer overflow by writing
     10,000 files rapidly. Verify the watcher recovers via full scan and no changes are missed.
-12. **`test_dcc_live_link_reload`** — Push a change through a DCC plugin live link, verify the
-    engine hot reloads the asset correctly.
+12. **`test_dcc_bridge_reload`** — Push a change through a DCC plugin DCC Bridge, verify the engine
+    hot reloads the asset correctly.
 13. **`test_platform_watcher_latency`** — Write a file and measure time to event dispatch. Verify
     under 500 ms on all platforms.
 

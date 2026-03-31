@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Localization Editor
 
@@ -1564,7 +1563,7 @@ pub enum DocError {
 | Platform | API | Access Method |
 |----------|-----|---------------|
 | Windows | DirectWrite | `windows-rs` crate |
-| macOS | CoreText | Swift wrappers via C ABI |
+| macOS | CoreText | Swift wrappers via swift-bridge |
 | Linux | HarfBuzz | C FFI via Rust crate |
 
 ### Proposed Dependencies

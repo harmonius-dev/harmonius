@@ -2,10 +2,10 @@
 
 ## Filter Effects
 
-| ID      | Feature              | Requirements |
-|---------|----------------------|--------------|
-| F-5.3.1 | Parametric Filters   | R-5.3.1      |
-| F-5.3.2 | Parametric Equalizer | R-5.3.2      |
+| ID      | Feature              |
+|---------|----------------------|
+| F-5.3.1 | Parametric Filters   |
+| F-5.3.2 | Parametric Equalizer |
 
 1. **F-5.3.1** — Provide low-pass, high-pass, band-pass, and notch biquad filters with configurable
    cutoff frequency, resonance (Q), and gain. Filters are the building blocks for occlusion
@@ -24,10 +24,10 @@
 
 ## Reverb
 
-| ID      | Feature            | Requirements |
-|---------|--------------------|--------------|
-| F-5.3.3 | Algorithmic Reverb | R-5.3.3      |
-| F-5.3.4 | Convolution Reverb | R-5.3.4      |
+| ID      | Feature            |
+|---------|--------------------|
+| F-5.3.3 | Algorithmic Reverb |
+| F-5.3.4 | Convolution Reverb |
 
 1. **F-5.3.3** — Implement a low-cost algorithmic reverb (feedback delay network) with controls for
    pre-delay, decay time, diffusion, damping, and wet/dry mix. Algorithmic reverb serves as the
@@ -47,9 +47,9 @@
 
 ## Dynamics
 
-| ID      | Feature                                      | Requirements |
-|---------|----------------------------------------------|--------------|
-| F-5.3.5 | Compressor, Limiter, and Dynamics Processing | R-5.3.5      |
+| ID      | Feature                                      |
+|---------|----------------------------------------------|
+| F-5.3.5 | Compressor, Limiter, and Dynamics Processing |
 
 1. **F-5.3.5** — Provide per-bus compressor and limiter inserts with configurable threshold, ratio,
    attack, release, knee, and makeup gain. A look-ahead limiter on the master bus prevents digital
@@ -61,10 +61,10 @@
 
 ## Modulation and Time Effects
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-5.3.6 | Delay, Chorus, and Flanger | R-5.3.6      |
-| F-5.3.7 | Pitch Shifting             | R-5.3.7      |
+| ID      | Feature                    |
+|---------|----------------------------|
+| F-5.3.6 | Delay, Chorus, and Flanger |
+| F-5.3.7 | Pitch Shifting             |
 
 1. **F-5.3.6** — Implement delay-line-based time effects -- simple delay with feedback, chorus
    (multi-tap modulated delay), and flanger (short modulated delay with feedback). These effects
@@ -83,9 +83,9 @@
 
 ## Extensibility
 
-| ID      | Feature                | Requirements |
-|---------|------------------------|--------------|
-| F-5.3.8 | Custom DSP Node Chains | R-5.3.8      |
+| ID      | Feature                |
+|---------|------------------------|
+| F-5.3.8 | Custom DSP Node Chains |
 
 1. **F-5.3.8** — Allow users and plugins to register custom DSP processing nodes that can be
    inserted into any point in the mixer bus graph. Each node implements a stateless process callback

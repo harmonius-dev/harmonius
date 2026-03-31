@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/game-framework/](../../features/game-framework/),
-> [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
-> elements to those definitions.
+> [features/game-framework/](../../features/), [requirements/game-framework/](../../requirements/),
+> and [user-stories/game-framework/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 ### Save System (F-13.3, R-13.3)
 
@@ -57,7 +56,7 @@
 | R-13.3.NF1 | Full save operation under 100 ms |
 | R-13.3.NF2 | Compressed save file under 10 MB |
 | R-13.3.NF3 | No data loss under crash at any point |
-| R-13.5.NF1 | Sequencer evaluation under 0.5 ms for 32 tracks |
+| R-13.5.NF1 | Cinematics Editor evaluation under 0.5 ms for 32 tracks |
 | R-13.5.NF2 | Skip side-effect application under 16.67 ms |
 
 ### Cross-Cutting Dependencies
@@ -110,7 +109,7 @@ graph TD
     end
 
     subgraph "harmonius_game::cinematics"
-        SQ[Sequencer]
+        SQ[CinematicsEditor]
         TL[Timeline]
         TK[TrackEvaluator]
         CC[CinematicCamera]
@@ -184,7 +183,7 @@ harmonius_game/
 │   │                     # DirtyMarker, etc.)
 │   └── error.rs          # SaveError, LoadError
 └── cinematics/
-    ├── sequencer.rs      # Sequencer system,
+    ├── sequencer.rs      # Cinematics Editor system,
     │                     # PlaybackState
     ├── timeline.rs       # Timeline, Track, Clip,
     │                     # Keyframe
@@ -271,7 +270,7 @@ classDiagram
     SaveSlotManager --> CloudSyncAdapter
 ```
 
-### Sequencer Data Structures
+### Cinematics Editor Data Structures
 
 ```mermaid
 classDiagram
@@ -1174,7 +1173,7 @@ pub enum AspectRatio {
 }
 ```
 
-### Sequencer and Timeline
+### Cinematics Editor and Timeline
 
 ```rust
 /// Unique track identifier within a timeline.
@@ -1508,10 +1507,10 @@ pub enum SequencerError {
 }
 ```
 
-### Sequencer System
+### Cinematics Editor System
 
 ```rust
-/// The sequencer ECS system. Runs each frame,
+/// The cinematics editor ECS system. Runs each frame,
 /// evaluates active timelines, and writes results
 /// to the world via command buffers.
 pub struct SequencerSystem;
@@ -1654,12 +1653,12 @@ sequenceDiagram
     SM-->>G: LoadComplete event
 ```
 
-### Sequencer Evaluation Flow
+### Cinematics Editor Evaluation Flow
 
 ```mermaid
 sequenceDiagram
     participant GL as Game Loop
-    participant SQ as Sequencer System
+    participant SQ as Cinematics Editor System
     participant TL as Timeline
     participant TK as Track Evaluator
     participant CB as Command Buffer
@@ -1727,7 +1726,7 @@ sequenceDiagram
 sequenceDiagram
     participant P as Player Input
     participant SC as SkipController
-    participant SQ as Sequencer
+    participant SQ as Cinematics Editor
     participant TL as Timeline
     participant CB as Command Buffer
     participant ECS as ECS World
@@ -1796,8 +1795,8 @@ time.
 
 | Operation     | macOS (GCD)                    |
 |---------------|--------------------------------|
-| Save write    | `dispatch_io_write` via C ABI |
-| Save read     | `dispatch_io_read` via C ABI  |
+| Save write    | `dispatch_io_write` via swift-bridge |
+| Save read     | `dispatch_io_read` via swift-bridge  |
 | Atomic rename | `renameat2` / `rename`         |
 | Temp file     | `mkstemp`                      |
 
@@ -1830,7 +1829,7 @@ time.
 | Steam | ISteamRemoteStorage | Callback-wrapped as Future |
 | PlayStation | Save Data Library | NP async calls wrapped |
 | Xbox | Connected Storage | XAsync wrapped |
-| iCloud | NSFileManager + NSUbiquitousKeyValueStore | GCD via C ABI |
+| iCloud | NSFileManager + NSUbiquitousKeyValueStore | GCD via swift-bridge |
 | Epic | EOS Player Data Storage | Callback-wrapped as Future |
 
 ### Cinematic Camera -- Platform Adaptation
@@ -2027,7 +2026,7 @@ Note: `blake3` (for content hashing) is already approved in
 | LZ4 compress 5 MB | < 5 ms | R-13.3.6 |
 | AES-256-GCM encrypt 5 MB | < 10 ms | R-13.3.6 |
 | Save file size (max char) | < 10 MB | R-13.3.NF2 |
-| Sequencer eval (32 tracks) | < 0.5 ms | R-13.5.NF1 |
+| Cinematics eval (32 tracks) | < 0.5 ms | R-13.5.NF1 |
 | Skip effect application (20) | < 16.67 ms | R-13.5.NF2 |
 | Keyframe interpolation (1000) | < 0.1 ms | R-13.5.1 |
 
@@ -2098,8 +2097,8 @@ maintainability.
    from every schema version for regression testing, or generate them on the fly from versioned test
    fixtures?
 
-4. **Sequencer sub-sequence ownership** -- Should sub-sequences be value-owned (cloned into the
-   parent timeline) or referenced by `Handle` (shared, potential lifetime issues)? Handle-based
+4. **Cinematics Editor sub-sequence ownership** -- Should sub-sequences be value-owned (cloned into
+   the parent timeline) or referenced by `Handle` (shared, potential lifetime issues)? Handle-based
    sharing reduces memory but complicates timeline editing.
 
 5. **Actor blend mask granularity** -- The current design uses a simple enum (`UpperBodyOnly`,

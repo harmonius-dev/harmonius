@@ -2,119 +2,76 @@
 
 ## Typed Event Channels
 
-| ID       | Derived From                                                   |
-|----------|----------------------------------------------------------------|
-| R-1.5.1  | [F-1.5.1](../../features/core-runtime/events-and-messaging.md) |
-| R-1.5.1a | [F-1.5.1](../../features/core-runtime/events-and-messaging.md) |
-| R-1.5.2  | [F-1.5.2](../../features/core-runtime/events-and-messaging.md) |
-
 1. **R-1.5.1** — The engine **SHALL** provide strongly-typed event channels with double buffering,
    where producers write to a back buffer and consumers read from a front buffer swapped at frame
-   boundaries, with each event type allocated its own channel to enable contention-free parallel
-   reads.
+   boundaries. Each event type **SHALL** get its own channel for contention-free parallel reads.
    - **Rationale:** Per-type channels with double buffering eliminate dynamic dispatch and allow
-     lock-free parallel event consumption across systems.
-   - **Verification:** Unit test: send 3 events of type A and 2 events of type B in frame N. In
-     frame N+1, verify readers of type A see exactly 3 events and readers of type B see exactly 2.
-     In frame N+2, verify both channels are empty. Stress test: 8 threads reading the same channel
-     concurrently with no data races (verify via ThreadSanitizer).
-2. **R-1.5.1a** — Each event channel **SHALL** support at least 100,000 events per frame with under
-   1 millisecond total write time. Per-channel memory **SHALL NOT** exceed 2x the peak frame event
-   payload size (double buffer overhead). The engine **SHALL** report a diagnostic warning if any
-   channel exceeds 50,000 events in a single frame, indicating potential event flooding.
-   - **Rationale:** Event channels are used for high-volume gameplay events; unbounded growth or
-     slow writes degrade frame times and memory budgets.
-   - **Verification:** Benchmark: write 100,000 events of 64 bytes each and verify total write time.
-     Verify memory usage matches expected double-buffer overhead. Verify the warning fires at 50,001
-     events.
-3. **R-1.5.2** — The engine **SHALL** support persistent event streams where events are retained
-   across frames and each reader maintains an independent cursor, consuming events at its own pace
-   without blocking writers.
-   - **Rationale:** Systems running at different tick rates (physics at 60 Hz, AI at 10 Hz) must
-     process events without loss despite tick-rate differences.
-   - **Verification:** Unit test: send 60 events across 6 frames. A reader consuming every 6th frame
-     reads all 60 events in a single batch. Verify no events are lost or duplicated. Verify two
-     readers with different cursor positions see independent views.
+     lock-free parallel consumption.
+   - **Verification:** Send 3 events of type A in frame N. In frame N+1, verify readers see exactly
+     3. In frame N+2, verify channel empty. Stress test: 8 threads reading concurrently, no data
+     races via ThreadSanitizer.
+2. **R-1.5.2** — Each event channel **SHALL** support at least 100,000 events per frame with under 1
+   ms total write time. Per-channel memory **SHALL NOT** exceed 2x the peak frame event payload
+   size.
+   - **Rationale:** High-volume gameplay events must not degrade frame times or memory budgets.
+   - **Verification:** Write 100,000 events of 64 bytes each; verify total write time under 1 ms.
+     Verify memory matches expected double-buffer overhead.
+3. **R-1.5.3** — The engine **SHALL** support persistent event streams where events are retained
+   across frames and each reader maintains an independent cursor, consuming at its own pace without
+   blocking writers.
+   - **Rationale:** Systems at different tick rates (physics 60 Hz, AI 10 Hz) must process events
+     without loss.
+   - **Verification:** Send 60 events across 6 frames. A reader consuming every 6th frame reads all
+     60 in one batch. Verify no events lost or duplicated. Verify two readers see independent views.
 
 ## Observer Pattern
 
-| ID      | Derived From                                                   |
-|---------|----------------------------------------------------------------|
-| R-1.5.3 | [F-1.5.3](../../features/core-runtime/events-and-messaging.md) |
-
-1. **R-1.5.3** — The engine **SHALL** invoke observer callbacks for component add, remove, and
+1. **R-1.5.4** — The engine **SHALL** invoke observer callbacks for component add, remove, and
    mutate events during command buffer application at sync points, preserving deterministic
-   execution order. This requirement extends R-1.1.30 (Event-Triggered Observers) with
-   component-specific lifecycle hooks.
-   - **Rationale:** Sync-point execution ensures observers can safely perform structural changes
-     without conflicting with parallel system iteration.
-   - **Verification:** Unit test: register an observer for component A add events. Spawn 100
-     entities with component A via command buffers from 4 parallel systems. Flush at a sync point
-     and verify the observer fires exactly 100 times in deterministic order across repeated runs.
+   execution order.
+   - **Rationale:** Sync-point execution ensures observers can safely perform structural changes.
+   - **Verification:** Register observer for component A add. Spawn 100 entities with A from 4
+     parallel systems. Flush; verify observer fires exactly 100 times in deterministic order across
+     repeated runs.
 
 ## Deferred Command Buffers
 
-| ID      | Derived From                                                   |
-|---------|----------------------------------------------------------------|
-| R-1.5.4 | [F-1.5.4](../../features/core-runtime/events-and-messaging.md) |
-
-1. **R-1.5.4** — The engine **SHALL** provide per-system command buffers recording world-mutating
+1. **R-1.5.5** — The engine **SHALL** provide per-system command buffers recording world-mutating
    operations (spawn, despawn, insert, remove, send event) for deferred execution at explicit sync
-   points in deterministic order matching system execution order. This requirement extends R-1.1.32
-   (Deferred Structural Changes via Command Buffers) with inter-system communication patterns.
-   - **Rationale:** Deferred execution eliminates exclusive world access requirements during
-     parallel system runs.
-   - **Verification:** Unit test: record spawn and despawn commands from 3 systems in known
-     execution order. Flush and verify operations apply in system execution order. Repeat 10 times
-     and verify identical final world state.
+   points in deterministic order matching system execution order.
+   - **Rationale:** Deferred execution eliminates exclusive world access during parallel system
+     runs.
+   - **Verification:** Record commands from 3 systems in known order; flush; verify operations apply
+     in system execution order. Repeat 10 times; verify identical final state.
 
 ## Reactive Queries
 
-| ID      | Derived From                                                   |
-|---------|----------------------------------------------------------------|
-| R-1.5.5 | [F-1.5.5](../../features/core-runtime/events-and-messaging.md) |
-
-1. **R-1.5.5** — The engine **SHALL** allow queries to subscribe to archetype-level change
-   notifications, automatically skipping system execution when no entities matching the query have
-   been modified since the last run.
+1. **R-1.5.6** — The engine **SHALL** allow queries to subscribe to archetype-level change
+   notifications, automatically skipping system execution when no matching entities have been
+   modified since the last run. The system **SHALL** produce zero false negatives.
    - **Rationale:** Skipping unchanged systems reduces per-tick overhead for conditionally-active
-     systems in server scenarios.
-   - **Verification:** Unit test: register a system with a reactive query on component A. Run 10
-     frames without modifying any A component. Verify the system body executes zero times. Modify
-     one entity's A component and verify the system executes on the next frame.
+     systems.
+   - **Verification:** Register reactive query on component A; run 10 frames without modifying A;
+     verify system body executes zero times. Modify one A; verify system runs next frame.
+2. **R-1.5.7** — Reactive query subscription overhead **SHALL NOT** exceed 1 us per query per frame
+   for the no-change case.
+   - **Rationale:** The check itself must not negate the savings from skipping idle systems.
+   - **Verification:** Register 200 reactive queries with no changes; verify total per-frame
+     overhead under 200 us.
 
 ## Inter-System Communication
 
-| ID       | Derived From                                                   |
-|----------|----------------------------------------------------------------|
-| R-1.5.6  | [F-1.5.6](../../features/core-runtime/events-and-messaging.md) |
-| R-1.5.5a | [F-1.5.5](../../features/core-runtime/events-and-messaging.md) |
-| R-1.5.7  | [F-1.5.7](../../features/core-runtime/events-and-messaging.md) |
-
-1. **R-1.5.6** — The engine **SHALL** expose typed singleton resources within each ECS world that
-   participate in the scheduler's dependency analysis, ensuring safe concurrent `Res<T>` (shared)
-   and `ResMut<T>` (exclusive) access across systems. This requirement extends R-1.1.23 (World
-   Resources) with inter-system shared state patterns.
-   - **Rationale:** Resources are the primary communication channel for cross-cutting state and must
-     be scheduler-aware to prevent data races.
-   - **Verification:** Unit test: create a resource, have one system write via `ResMut<T>` and
-     another read via `Res<T>`. Verify the scheduler orders them correctly (writer before reader or
-     vice versa). Verify concurrent `Res<T>` access from two read-only systems executes in parallel.
-2. **R-1.5.5a** — Reactive query change subscription overhead **SHALL NOT** exceed 1 microsecond per
-   query per frame for the no-change case (system skipped). The system **SHALL** produce zero false
-   negatives — if a matching entity was modified, the system must run.
-   - **Rationale:** Reactive queries are a latency optimization; if the check itself is expensive or
-     misses changes, the feature is counterproductive.
-   - **Verification:** Benchmark: register 200 reactive queries on a world with no changes. Verify
-     total per-frame overhead for all 200 queries is under 200 microseconds. Modify one entity and
-     verify the corresponding system runs on the next frame (no false negative).
-3. **R-1.5.7** — The engine **SHALL** enable event routing between independent ECS worlds via bridge
+1. **R-1.5.8** — The engine **SHALL** expose typed singleton resources within each ECS world,
+   participating in the scheduler's dependency analysis for safe concurrent Res (shared) and ResMut
+   (exclusive) access.
+   - **Rationale:** Resources are the primary channel for cross-cutting state and must be
+     scheduler-aware to prevent data races.
+   - **Verification:** Have one system write via ResMut and another read via Res; verify scheduler
+     orders them. Verify concurrent Res access from two read-only systems runs in parallel.
+2. **R-1.5.9** — The engine **SHALL** enable event routing between independent ECS worlds via bridge
    subscriptions that re-publish events from a source world into a target world, with optional
-   transformation and filtering in transit.
-   - **Rationale:** Instanced zones, lobbies, and the overworld running as separate ECS worlds must
-     exchange gameplay events without tight coupling.
-   - **Verification:** Integration test: create two worlds with a bridge from world A to world B for
-     event type `ChatMessage`. Send a `ChatMessage` in world A and verify it appears in world B's
-     event channel. Send an unsubscribed event type in world A and verify it does not appear in
-     world B. Configure a filter that drops messages with `is_private=true` and verify filtered
-     events are not bridged.
+   transformation and filtering.
+   - **Rationale:** Instanced zones and lobbies must exchange events without tight coupling.
+   - **Verification:** Create two worlds with bridge for ChatMessage. Send in world A; verify
+     appears in B. Send unsubscribed event; verify absent in B. Configure filter blocking private
+     messages; verify filtered.

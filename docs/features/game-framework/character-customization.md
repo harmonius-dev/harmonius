@@ -2,10 +2,10 @@
 
 ## Facial Morphing
 
-| ID       | Feature                          | Requirements |
-|----------|----------------------------------|--------------|
-| F-13.8.1 | Parametric Facial Feature System | R-13.8.1     |
-| F-13.8.2 | Preset Blending and Templates    | R-13.8.2     |
+| ID       | Feature                          |
+|----------|----------------------------------|
+| F-13.8.1 | Parametric Facial Feature System |
+| F-13.8.2 | Preset Blending and Templates    |
 
 1. **F-13.8.1** — Per-region morph target controls for eyes, nose, mouth, jaw, cheeks, ears, and
    forehead. Each region exposes 3D coordinate sliders (height, width, depth) plus rotation,
@@ -21,10 +21,10 @@
 
 ## Body Proportions
 
-| ID       | Feature                             | Requirements |
-|----------|-------------------------------------|--------------|
-| F-13.8.3 | Parametric Body Shape System        | R-13.8.3     |
-| F-13.8.4 | Body Morph Propagation to Equipment | R-13.8.4     |
+| ID       | Feature                             |
+|----------|-------------------------------------|
+| F-13.8.3 | Parametric Body Shape System        |
+| F-13.8.4 | Body Morph Propagation to Equipment |
 
 1. **F-13.8.3** — Continuous sliders for height, chest, waist, hips, shoulder width, arm length, leg
    length, musculature, and body fat. Body shapes are defined by blending between archetypal morph
@@ -39,11 +39,11 @@
 
 ## Skin and Appearance
 
-| ID       | Feature                            | Requirements |
-|----------|------------------------------------|--------------|
-| F-13.8.5 | Skin Material System               | R-13.8.5     |
-| F-13.8.6 | Makeup and Face Paint Layer System | R-13.8.6     |
-| F-13.8.7 | Eye Customization                  | R-13.8.7     |
+| ID       | Feature                            |
+|----------|------------------------------------|
+| F-13.8.5 | Skin Material System               |
+| F-13.8.6 | Makeup and Face Paint Layer System |
+| F-13.8.7 | Eye Customization                  |
 
 1. **F-13.8.5** — Full-spectrum skin tone selection with physically-based subsurface scattering
    adjusted per tone. Layered detail maps control wrinkles/aging, freckles (density, saturation),
@@ -64,9 +64,9 @@
 
 ## Hair
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-13.8.8 | Hair Customization System | R-13.8.8     |
+| ID       | Feature                   |
+|----------|---------------------------|
+| F-13.8.8 | Hair Customization System |
 
 1. **F-13.8.8** — Selectable hairstyles, facial hair, eyebrows, and eyelashes as swappable groom or
    mesh assets. Per-groom controls for color (primary, highlight, ombre gradient), length, curl
@@ -77,11 +77,11 @@
 
 ## Modular Equipment
 
-| ID        | Feature                                | Requirements |
-|-----------|----------------------------------------|--------------|
-| F-13.8.9  | Modular Mesh Part System               | R-13.8.9     |
-| F-13.8.10 | Equipment Attachment and Socket System | R-13.8.10    |
-| F-13.8.11 | Transmog and Appearance Override       | R-13.8.11    |
+| ID        | Feature                                |
+|-----------|----------------------------------------|
+| F-13.8.9  | Modular Mesh Part System               |
+| F-13.8.10 | Equipment Attachment and Socket System |
+| F-13.8.11 | Transmog and Appearance Override       |
 
 1. **F-13.8.9** — Characters assembled from interchangeable mesh parts: head, torso, arms, legs,
    feet, hands, and sub-parts (shoulder pads, knee guards, hip attachments). Each slot accepts any
@@ -102,9 +102,9 @@
 
 ## Race and Species
 
-| ID        | Feature                      | Requirements |
-|-----------|------------------------------|--------------|
-| F-13.8.12 | Multi-Race Base Mesh Support | R-13.8.12    |
+| ID        | Feature                      |
+|-----------|------------------------------|
+| F-13.8.12 | Multi-Race Base Mesh Support |
 
 1. **F-13.8.12** — Multiple base mesh sets for distinct races or species (humanoid, elven, bestial,
    mechanical). Each race defines its own skeleton, morph target set, and compatible equipment
@@ -115,10 +115,10 @@
 
 ## Performance
 
-| ID        | Feature                              | Requirements |
-|-----------|--------------------------------------|--------------|
-| F-13.8.13 | Character LOD and Crowd Optimization | R-13.8.13    |
-| F-13.8.14 | Mesh Merging and Draw Call Reduction | R-13.8.14    |
+| ID        | Feature                              |
+|-----------|--------------------------------------|
+| F-13.8.13 | Character LOD and Crowd Optimization |
+| F-13.8.14 | Mesh Merging and Draw Call Reduction |
 
 1. **F-13.8.13** — Multi-level LOD for customized characters: full morph targets and strand hair at
    close range, simplified mesh and card hair at medium range, instanced low-poly or impostor
@@ -137,9 +137,9 @@
 
 ## Serialization
 
-| ID        | Feature                            | Requirements |
-|-----------|------------------------------------|--------------|
-| F-13.8.15 | Character Appearance Serialization | R-13.8.15    |
+| ID        | Feature                            |
+|-----------|------------------------------------|
+| F-13.8.15 | Character Appearance Serialization |
 
 1. **F-13.8.15** — Serialize all customization parameters (morph weights, colors, part selections,
    layer settings, equipment) into a compact binary or JSON format. Version-tagged for forward

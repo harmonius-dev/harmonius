@@ -2,18 +2,18 @@
 
 ## Companions
 
-| ID         | Feature                       | Requirements |
-|------------|-------------------------------|--------------|
-| F-13.15.1  | Companion AI Framework        | R-13.15.1    |
-| F-13.15.2  | Pet Needs and Mood            | R-13.15.2    |
-| F-13.15.3a | Mount Summoning and Dismissal | R-13.15.3a   |
-| F-13.15.3b | Mounted Locomotion            | R-13.15.3b   |
-| F-13.15.3c | Mounted Combat                | R-13.15.3c   |
-| F-13.15.3d | Mount Type Variants           | R-13.15.3d   |
-| F-13.15.4  | Creature Taming               | R-13.15.4    |
-| F-13.15.5a | Pet Life Stages               | R-13.15.5a   |
-| F-13.15.5b | Pet Evolution Branching       | R-13.15.5b   |
-| F-13.15.5c | Pet Breeding System           | R-13.15.5c   |
+| ID         | Feature                       |
+|------------|-------------------------------|
+| F-13.15.1  | Companion AI Framework        |
+| F-13.15.2  | Pet Needs and Mood            |
+| F-13.15.3a | Mount Summoning and Dismissal |
+| F-13.15.3b | Mounted Locomotion            |
+| F-13.15.3c | Mounted Combat                |
+| F-13.15.3d | Mount Type Variants           |
+| F-13.15.4  | Creature Taming               |
+| F-13.15.5a | Pet Life Stages               |
+| F-13.15.5b | Pet Evolution Branching       |
+| F-13.15.5c | Pet Breeding System           |
 
 1. **F-13.15.1** — AI-controlled companion entities that follow the player and respond to commands:
    follow, guard position, assist in combat, stay, patrol route, and passive (non-combat). Companion

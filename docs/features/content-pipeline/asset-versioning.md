@@ -2,10 +2,10 @@
 
 ## Binary Asset Format
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-12.7.1 | Universal Binary Asset Format | R-12.7.1     |
-| F-12.7.2 | Compressed Asset Bundles      | R-12.7.2     |
+| ID       | Feature                       |
+|----------|-------------------------------|
+| F-12.7.1 | Universal Binary Asset Format |
+| F-12.7.2 | Compressed Asset Bundles      |
 
 1. **F-12.7.1** — All engine assets (meshes, textures, materials, logic graphs, data tables,
    animations, scenes) are stored in a single binary format with a common header (magic, version,
@@ -23,11 +23,11 @@
 
 ## Diffing and Merging
 
-| ID       | Feature                             | Requirements |
-|----------|-------------------------------------|--------------|
-| F-12.7.3 | Structural Asset Diffing            | R-12.7.3     |
-| F-12.7.4 | Three-Way Asset Merge               | R-12.7.4     |
-| F-12.7.5 | Automatic Merge Conflict Resolution | R-12.7.5     |
+| ID       | Feature                             |
+|----------|-------------------------------------|
+| F-12.7.3 | Structural Asset Diffing            |
+| F-12.7.4 | Three-Way Asset Merge               |
+| F-12.7.5 | Automatic Merge Conflict Resolution |
 
 1. **F-12.7.3** — Diff any two versions of an asset at the structural level — not byte-level. For
    logic graphs: show added/removed/modified nodes and connections. For meshes: show vertex count
@@ -50,10 +50,10 @@
 
 ## Visual Editors
 
-| ID       | Feature                             | Requirements |
-|----------|-------------------------------------|--------------|
-| F-12.7.6 | Spreadsheet-Style Data Table Editor | R-12.7.6     |
-| F-12.7.7 | Universal Asset Inspector           | R-12.7.7     |
+| ID       | Feature                             |
+|----------|-------------------------------------|
+| F-12.7.6 | Spreadsheet-Style Data Table Editor |
+| F-12.7.7 | Universal Asset Inspector           |
 
 1. **F-12.7.6** — Edit gameplay data tables (F-13.7) in a spreadsheet grid with column sorting,
    filtering, search, inline formula editing, row inheritance visualization, and bulk operations
@@ -69,9 +69,9 @@
 
 ## Version Control Integration
 
-| ID       | Feature                                     | Requirements |
-|----------|---------------------------------------------|--------------|
-| F-12.7.8 | Git LFS and Custom Merge Driver Integration | R-12.7.8     |
+| ID       | Feature                                     |
+|----------|---------------------------------------------|
+| F-12.7.8 | Git LFS and Custom Merge Driver Integration |
 
 1. **F-12.7.8** — Binary assets are tracked via Git LFS with a custom merge driver that invokes the
    engine's structural merge system (F-12.7.4) for three-way merges. Lock-before-edit is optional

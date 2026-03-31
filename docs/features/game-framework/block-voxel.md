@@ -2,10 +2,10 @@
 
 ## Block Registry
 
-| ID        | Feature                            | Requirements |
-|-----------|------------------------------------|--------------|
-| F-13.27.1 | Block Type Registry and Properties | R-13.27.1    |
-| F-13.27.2 | Block Placement and Destruction    | R-13.27.2    |
+| ID        | Feature                            |
+|-----------|---------------------------------------------|
+| F-13.27.1 | Block Type Registry and Properties |
+| F-13.27.2 | Block Placement and Destruction    |
 
 1. **F-13.27.1** — A data-driven registry of block types where each block defines: unique ID,
    display name, visual mesh or texture atlas UV, collision mode (solid, passable, liquid,
@@ -29,10 +29,10 @@
 
 ## Chunk System
 
-| ID        | Feature                   | Requirements |
-|-----------|---------------------------|--------------|
-| F-13.27.3 | Chunk-Based Block Storage | R-13.27.3    |
-| F-13.27.4 | Block Chunk Meshing       | R-13.27.4    |
+| ID        | Feature                   |
+|-----------|---------------------------|
+| F-13.27.3 | Chunk-Based Block Storage |
+| F-13.27.4 | Block Chunk Meshing       |
 
 1. **F-13.27.3** — The block world is divided into fixed-size chunks (16x16x16 blocks default,
    configurable). Each chunk stores block IDs in a compact array with palette compression: chunks
@@ -54,9 +54,9 @@
 
 ## Block Lighting
 
-| ID        | Feature                 | Requirements |
-|-----------|-------------------------|--------------|
-| F-13.27.5 | Block Light Propagation | R-13.27.5    |
+| ID        | Feature                 |
+|-----------|-------------------------|
+| F-13.27.5 | Block Light Propagation |
 
 1. **F-13.27.5** — Flood-fill lighting system for block worlds. Two light channels: sunlight
    (propagates downward from sky with full intensity, attenuates horizontally) and block light
@@ -70,15 +70,15 @@
 
 ## Block Physics
 
-| ID         | Feature                       | Requirements |
-|------------|-------------------------------|--------------|
-| F-13.27.6a | Gravity Block Physics         | R-13.27.6a   |
-| F-13.27.6b | Fluid Flow Simulation         | R-13.27.6b   |
-| F-13.27.6c | Fluid-Block Interactions      | R-13.27.6c   |
-| F-13.27.7a | Signal Source and Wire Blocks | R-13.27.7a   |
-| F-13.27.7b | Logic Gate Blocks             | R-13.27.7b   |
-| F-13.27.7c | Mechanism Blocks              | R-13.27.7c   |
-| F-13.27.7d | Circuit Evaluation and Budget | R-13.27.7d   |
+| ID         | Feature                       |
+|------------|-------------------------------|
+| F-13.27.6a | Gravity Block Physics         |
+| F-13.27.6b | Fluid Flow Simulation         |
+| F-13.27.6c | Fluid-Block Interactions      |
+| F-13.27.7a | Signal Source and Wire Blocks |
+| F-13.27.7b | Logic Gate Blocks             |
+| F-13.27.7c | Mechanism Blocks              |
+| F-13.27.7d | Circuit Evaluation and Budget |
 
 1. **F-13.27.6a** — Gravity-affected blocks (sand, gravel) fall when unsupported, checking the block
    below each tick and converting to a falling entity that moves down until it lands on a solid
@@ -124,12 +124,12 @@
 
 ## Block World Generation
 
-| ID         | Feature                    | Requirements |
-|------------|----------------------------|--------------|
-| F-13.27.8a | Block Terrain Generation   | R-13.27.8a   |
-| F-13.27.8b | Block Biome System         | R-13.27.8b   |
-| F-13.27.8c | Block Ore Placement        | R-13.27.8c   |
-| F-13.27.8d | Block Structure Generation | R-13.27.8d   |
+| ID         | Feature                    |
+|------------|----------------------------|
+| F-13.27.8a | Block Terrain Generation   |
+| F-13.27.8b | Block Biome System         |
+| F-13.27.8c | Block Ore Placement        |
+| F-13.27.8d | Block Structure Generation |
 
 1. **F-13.27.8a** — Generates chunk-sized block data using 2D heightmap noise for surface elevation
    and 3D noise for caves and overhangs. The generator runs on worker threads prioritized by

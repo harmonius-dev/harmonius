@@ -2,9 +2,9 @@
 
 ## CPU Profiling
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-15.5.1 | Frame Profiler (CPU Timeline) | R-15.5.1     |
+| ID | Feature |
+| ---------- | ------------------------------- |
+| F-15.5.1 | Frame Profiler (CPU Timeline) |
 
 1. **F-15.5.1** — Captures and displays a per-frame CPU timeline showing all job system tasks,
    engine subsystem ticks, and user script execution as color-coded bars on a swimlane chart.
@@ -17,9 +17,9 @@
 
 ## GPU Profiling
 
-| ID       | Feature                                  | Requirements |
-|----------|------------------------------------------|--------------|
-| F-15.5.2 | GPU Profiler (Pass Timing and Occupancy) | R-15.5.2     |
+| ID | Feature |
+| ---------- | ------------------------------------------ |
+| F-15.5.2 | GPU Profiler (Pass Timing and Occupancy) |
 
 1. **F-15.5.2** — Captures GPU timestamps per render graph pass and presents them on a timeline
    aligned with the CPU frame profiler. Reports per-pass duration, shader occupancy, wave
@@ -31,10 +31,10 @@
 
 ## Memory Profiling
 
-| ID       | Feature                               | Requirements |
-|----------|---------------------------------------|--------------|
-| F-15.5.3 | Memory Profiler (Allocation Tracking) | R-15.5.3     |
-| F-15.5.4 | Leak Detection                        | R-15.5.4     |
+| ID | Feature |
+| ---------- | --------------------------------------- |
+| F-15.5.3 | Memory Profiler (Allocation Tracking) |
+| F-15.5.4 | Leak Detection |
 
 1. **F-15.5.3** — Tracks all CPU and GPU memory allocations by subsystem, asset type, and allocation
    site. Displays a live treemap of memory consumption, historical allocation timeline, and
@@ -52,9 +52,9 @@
 
 ## Network Profiling
 
-| ID       | Feature                                           | Requirements |
-|----------|---------------------------------------------------|--------------|
-| F-15.5.5 | Network Profiler (Bandwidth and Packet Inspector) | R-15.5.5     |
+| ID | Feature |
+| ---------- | --------------------------------------------------- |
+| F-15.5.5 | Network Profiler (Bandwidth and Packet Inspector) |
 
 1. **F-15.5.5** — Monitors network bandwidth per replication channel, RPC category, and entity
    relevance set. Provides a packet inspector that decodes individual packets into structured fields
@@ -65,10 +65,10 @@
 
 ## Overlays and Remote Profiling
 
-| ID       | Feature          | Requirements |
-|----------|------------------|--------------|
-| F-15.5.6 | Stat Overlays    | R-15.5.6     |
-| F-15.5.7 | Remote Profiling | R-15.5.7     |
+| ID | Feature |
+| ---------- | ------------------ |
+| F-15.5.6 | Stat Overlays |
+| F-15.5.7 | Remote Profiling |
 
 1. **F-15.5.6** — Renders configurable HUD overlays on top of the game viewport showing real-time
    statistics: FPS, frame time, draw call count, triangle count, GPU memory, CPU thread utilization,

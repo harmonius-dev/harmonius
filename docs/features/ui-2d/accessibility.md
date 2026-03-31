@@ -2,10 +2,10 @@
 
 ## Screen Reader and Assistive Technology
 
-| ID       | Feature                     | Requirements |
-|----------|-----------------------------|--------------|
-| F-10.6.1 | Screen Reader Support       | R-10.6.1     |
-| F-10.6.2 | Subtitle and Caption System | R-10.6.2     |
+| ID       | Feature                     |
+|----------|-----------------------------|
+| F-10.6.1 | Screen Reader Support       |
+| F-10.6.2 | Subtitle and Caption System |
 
 1. **F-10.6.1** — Expose the widget tree to platform accessibility APIs so that screen readers can
    announce widget labels, roles, states, and values. Every interactive widget must have a
@@ -27,10 +27,10 @@
 
 ## Visual Accessibility
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-10.6.3 | Colorblind Modes              | R-10.6.3     |
-| F-10.6.4 | High Contrast and Scalable UI | R-10.6.4     |
+| ID       | Feature                       |
+|----------|-------------------------------|
+| F-10.6.3 | Colorblind Modes              |
+| F-10.6.4 | High Contrast and Scalable UI |
 
 1. **F-10.6.3** — Provide simulation and correction modes for the three major types of color vision
    deficiency: protanopia, deuteranopia, and tritanopia. Apply color remapping as a post-process
@@ -49,10 +49,10 @@
 
 ## Input Accessibility
 
-| ID       | Feature                           | Requirements |
-|----------|-----------------------------------|--------------|
-| F-10.6.5 | Input Remapping for Accessibility | R-10.6.5     |
-| F-10.6.6 | Text-to-Speech for Chat           | R-10.6.6     |
+| ID       | Feature                           |
+|----------|-----------------------------------|
+| F-10.6.5 | Input Remapping for Accessibility |
+| F-10.6.6 | Text-to-Speech for Chat           |
 
 1. **F-10.6.5** — Allow complete remapping of all keyboard, mouse, and gamepad bindings, including
    UI navigation controls. Support one-handed keyboard layouts, mouse-only play (click-to-move,
@@ -72,9 +72,9 @@
 
 ## Standards Compliance
 
-| ID       | Feature                 | Requirements |
-|----------|-------------------------|--------------|
-| F-10.6.7 | WCAG Compliance Targets | R-10.6.7     |
+| ID       | Feature                 |
+|----------|-------------------------|
+| F-10.6.7 | WCAG Compliance Targets |
 
 1. **F-10.6.7** — Target WCAG 2.1 AA compliance for all menu and settings UI, with AAA targets for
    critical gameplay information (health, objectives, chat). Compliance areas include minimum

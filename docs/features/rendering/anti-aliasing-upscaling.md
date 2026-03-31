@@ -2,16 +2,16 @@
 
 ## Features
 
-| ID      | Feature                               | Requirements |
-|---------|---------------------------------------|--------------|
-| F-2.6.1 | Temporal Anti-Aliasing (TAA)          | R-2.6.1      |
-| F-2.6.2 | Temporal Super Resolution (TSR)       | R-2.6.2      |
-| F-2.6.3 | FXAA (Fast Approximate Anti-Aliasing) | R-2.6.3      |
-| F-2.6.4 | MSAA (Multi-Sample Anti-Aliasing)     | R-2.6.4      |
-| F-2.6.5 | Checkerboard Rendering                | R-2.6.5      |
-| F-2.6.6 | Third-Party Upscaler Integration      | R-2.6.6      |
-| F-2.6.7 | Frame Generation                      | R-2.6.7      |
-| F-2.6.8 | Latency Reduction                     | R-2.6.8      |
+| ID      | Feature                               |
+|---------|---------------------------------------|
+| F-2.6.1 | Temporal Anti-Aliasing (TAA)          |
+| F-2.6.2 | Temporal Super Resolution (TSR)       |
+| F-2.6.3 | FXAA (Fast Approximate Anti-Aliasing) |
+| F-2.6.4 | MSAA (Multi-Sample Anti-Aliasing)     |
+| F-2.6.5 | Checkerboard Rendering                |
+| F-2.6.6 | Third-Party Upscaler Integration      |
+| F-2.6.7 | Frame Generation                      |
+| F-2.6.8 | Latency Reduction                     |
 
 1. **F-2.6.1** — Multi-frame jittered sample accumulation that blends the current frame with
    reprojected history using motion vectors. Reduces geometric aliasing and specular shimmer.

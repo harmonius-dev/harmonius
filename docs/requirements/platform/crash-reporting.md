@@ -2,136 +2,109 @@
 
 ## Crash Handling
 
-| ID       | Derived From                                           |
-|----------|--------------------------------------------------------|
-| R-14.4.1 | [F-14.4.1](../../features/platform/crash-reporting.md) |
-| R-14.4.2 | [F-14.4.2](../../features/platform/crash-reporting.md) |
-| R-14.4.3 | [F-14.4.3](../../features/platform/crash-reporting.md) |
-
 1. **R-14.4.1** — The engine **SHALL** install a process-wide crash handler that intercepts
    unhandled exceptions, segfaults, and aborts, then writes a platform-native crash dump (minidump
    on Windows, core dump on macOS/Linux) containing the faulting thread's stack, register state, and
-   a snapshot of key memory regions, without requiring any user interaction.
-   - **Rationale:** Every crash must produce an actionable artifact automatically so that players
-     never need to perform manual steps to report a crash, and developers receive complete
-     diagnostic data for every incident.
+   key memory regions, without requiring any user interaction.
+   - **Rationale:** Every crash must produce an actionable artifact automatically so players never
+     need to perform manual steps and developers receive complete diagnostic data.
    - **Verification:** Integration test per platform: trigger a null-pointer dereference in a child
-     process, verify the crash handler writes a valid dump file to disk. Verify the dump contains
-     the faulting thread's stack and register state by loading it in a platform debugger. Verify
-     out-of-process capture produces a valid dump even when the faulting process heap is corrupted.
+     process; verify a valid dump is written. Load the dump in a platform debugger and verify stack
+     and register state. Verify out-of-process capture works with a corrupted heap.
+
 2. **R-14.4.2** — The engine **SHALL** upload debug symbols (PDB on Windows, dSYM on macOS, DWARF on
-   Linux) to a crash aggregation service during the build pipeline, indexed by a build ID embedded
-   in the binary, enabling server-side symbolication of crash reports into function names, file
-   paths, and line numbers.
+   Linux) to a crash aggregation service during the build pipeline, indexed by build ID, enabling
+   server-side symbolication into function names, file paths, and line numbers.
    - **Rationale:** Server-side symbolication decouples crash analysis from local debug symbol
-     availability, allowing any team member to diagnose crashes from any build without access to the
-     original build machine.
-   - **Verification:** CI pipeline test: build a release binary, run the upload tool, trigger a
-     crash, and verify the aggregation service symbolicates the crash report with correct function
-     names and line numbers. Verify each platform's build ID format (PE GUID+age, LC_UUID, GNU
-     build-id) is correctly extracted and matched.
-3. **R-14.4.3** — The engine **SHALL** group incoming crash reports by symbolicated stack signature,
-   track crash frequency over time, and alert the development team when a new crash cluster appears
-   or an existing cluster's frequency exceeds a configurable threshold.
-   - **Rationale:** Crash clustering and alerting enables rapid triage by surfacing the
-     highest-impact crashes first and detecting regression spikes immediately after a patch ships.
-   - **Verification:** Integration test: submit 50 crash reports with 3 distinct stack signatures.
-     Verify the aggregation service groups them into 3 clusters. Inject a spike of 20 reports for
-     one cluster within 5 minutes and verify an alert fires. Verify cluster data is accessible from
-     the live-ops dashboard.
+     availability, allowing any team member to diagnose crashes from any build.
+   - **Verification:** CI test: build a release binary, upload symbols, trigger a crash, verify the
+     aggregation service symbolicates with correct function names and line numbers.
+
+3. **R-14.4.3** — The engine **SHALL** group crash reports by symbolicated stack signature, track
+   frequency over time, and alert when a new cluster appears or an existing cluster's frequency
+   exceeds a configurable threshold.
+   - **Rationale:** Clustering and alerting enables rapid triage by surfacing the highest-impact
+     crashes first and detecting regression spikes.
+   - **Verification:** Integration test: submit 50 reports with 3 distinct signatures; verify 3
+     clusters. Inject a spike of 20 reports within 5 minutes for one cluster; verify alert fires.
 
 ## Diagnostics
 
-| ID       | Derived From                                           |
-|----------|--------------------------------------------------------|
-| R-14.4.4 | [F-14.4.4](../../features/platform/crash-reporting.md) |
-| R-14.4.5 | [F-14.4.5](../../features/platform/crash-reporting.md) |
-| R-14.4.6 | [F-14.4.6](../../features/platform/crash-reporting.md) |
+4. **R-14.4.4** — The engine **SHALL** emit structured log records (timestamp, severity, channel,
+   key-value fields) written to an async ring buffer and flushed to disk and/or remote telemetry
+   without blocking the calling thread.
+   - **Rationale:** Structured logging with channel filtering isolates subsystem output. Async
+     flushing prevents logging from impacting frame time.
+   - **Verification:** Unit test: emit 10,000 records across 4 channels; verify all appear with
+     correct fields. Verify channel/severity filtering. Assert log emission takes under 1 us per
+     record.
 
-1. **R-14.4.4** — The engine **SHALL** emit structured log records containing timestamp, severity
-   level, channel name, and key-value fields, written to an async ring buffer and flushed to disk
-   and/or a remote telemetry endpoint without blocking the calling thread.
-   - **Rationale:** Structured logging with channel-based filtering allows developers and players to
-     isolate logs from specific subsystems (rendering, networking, gameplay) without noise, while
-     async flushing prevents logging from impacting frame time.
-   - **Verification:** Unit test: emit 10,000 log records across 4 channels at mixed severities.
-     Verify all records appear in the output with correct timestamps, severity, channel, and fields.
-     Verify filtering by channel and severity excludes non-matching records. Benchmark: verify log
-     emission does not block the calling thread for more than 1 microsecond per record.
-2. **R-14.4.5** — The engine **SHALL** expose named performance counters (frame time, draw calls,
-   entity count, network RTT) as lock-free per-thread accumulators merged at frame boundaries,
-   readable by the profiler, HUD, and telemetry systems, with periodic snapshots sent to the
-   live-ops backend.
-   - **Rationale:** Lock-free per-thread counters avoid contention on hot paths while providing
-     real-time performance visibility both locally (profiler, HUD) and remotely (live-ops
-     monitoring).
-   - **Verification:** Unit test: increment a counter from 8 threads concurrently for 1,000,000
-     iterations. Verify the merged value equals the expected total. Benchmark: verify counter
-     increment latency is under 50 nanoseconds. Integration test: verify telemetry snapshots arrive
-     at the backend endpoint at the configured interval with correct counter values.
-3. **R-14.4.6** — The engine **SHALL** write incrementing marker values into a GPU-visible buffer
-   before and after each significant render pass, such that when a GPU hang or device-lost event
-   occurs, the last completed marker identifies which pass caused the fault, and include this
-   breadcrumb data in the crash report alongside the CPU minidump.
+5. **R-14.4.5** — The engine **SHALL** expose named performance counters as lock-free per-thread
+   accumulators merged at frame boundaries, readable by the profiler, HUD, and telemetry systems.
+   - **Rationale:** Lock-free counters avoid contention on hot paths while providing real-time
+     performance visibility both locally and remotely.
+   - **Verification:** Unit test: increment a counter from 8 threads for 1,000,000 iterations;
+     verify merged total. Assert increment latency under 50 ns. Verify telemetry snapshots arrive at
+     configured intervals.
+
+6. **R-14.4.6** — The engine **SHALL** write incrementing marker values into a GPU-visible buffer
+   before and after each significant render pass. When a GPU hang occurs, the last completed marker
+   identifies the faulting pass. Breadcrumb data **SHALL** be included in the crash report.
    - **Rationale:** GPU hangs produce no CPU-side stack trace; breadcrumb markers are the primary
-     mechanism for identifying which render pass triggered a device-lost event.
-   - **Verification:** Integration test: inject a deliberate GPU hang (infinite loop shader) after a
-     known marker. Verify the breadcrumb buffer reports the last completed marker matching the pass
-     before the hang. Verify the crash report includes both the CPU minidump and the GPU breadcrumb
-     data.
+     mechanism for identifying the faulting pass.
+   - **Verification:** Integration test: inject a GPU hang after a known marker; verify breadcrumb
+     buffer reports the last completed marker. Verify the crash report includes CPU dump and GPU
+     breadcrumb data.
 
 ## Out-of-Process Crash Capture
 
-| ID       | Derived From                                           |
-|----------|--------------------------------------------------------|
-| R-14.4.7 | [F-14.4.7](../../features/platform/crash-reporting.md) |
-
-1. **R-14.4.7** — The engine **SHALL** capture crash dumps in a separate out-of-process monitoring
-   binary launched at engine startup, communicating with the faulting process via a pre-established
-   pipe or socket, so that dump capture succeeds even when the faulting process's heap, allocator,
-   or thread state is corrupted.
-   - **Rationale:** In-process crash handlers execute inside a process whose memory may be
-     corrupted, making heap allocation, file I/O, and stack walking unreliable. An out-of-process
-     handler operates in a clean address space and can safely attach to the faulting process to
-     capture a complete and valid dump.
-   - **Verification:** Integration test per platform: corrupt the heap of a child process (e.g.,
-     overwrite the allocator metadata), then trigger a crash. Verify the out-of-process handler
-     produces a valid dump file containing the correct faulting stack. Verify the monitor process
-     launches at engine startup and remains connected via pipe or socket throughout the session.
+7. **R-14.4.7** — The engine **SHALL** capture crash dumps in a separate out-of-process monitoring
+   binary launched at startup, communicating via pipe or socket, so that capture succeeds even when
+   the faulting process's heap or allocator is corrupted.
+   - **Rationale:** In-process crash handlers execute in a potentially corrupted address space. An
+     out-of-process handler operates cleanly.
+   - **Verification:** Integration test per platform: corrupt the heap of a child process, trigger a
+     crash, verify the out-of-process handler produces a valid dump. Verify the monitor launches at
+     startup and stays connected.
 
 ## Crash Dump Management
 
-| ID       | Derived From                                           |
-|----------|--------------------------------------------------------|
-| R-14.4.8 | [F-14.4.8](../../features/platform/crash-reporting.md) |
-
-1. **R-14.4.8** — The engine **SHALL** retain at most a configurable number of crash dumps in the
-   crash directory, rotating out the oldest dumps when the limit is reached, and **SHALL** attach
-   key-value metadata (build ID, GPU driver version, player ID, scene name) to each dump for
-   server-side filtering without symbolication.
-   - **Rationale:** Unbounded crash dump accumulation wastes disk space on player machines,
-     especially for frequent crashers. Metadata attachment enables the aggregation server to filter,
-     search, and correlate reports by contextual fields before performing expensive symbolication.
-   - **Verification:** Unit test: configure max retained dumps to 5, generate 8 crash dumps, and
-     verify only the 5 most recent remain. Integration test: attach metadata keys (build_id,
-     gpu_driver, scene_name) to a crash dump, upload it, and verify the aggregation server can
-     filter reports by each metadata field.
+8. **R-14.4.8** — The engine **SHALL** retain at most a configurable number of crash dumps, rotating
+   out the oldest, and **SHALL** attach key-value metadata (build ID, GPU driver, player ID, scene
+   name) for server-side filtering without symbolication.
+   - **Rationale:** Unbounded accumulation wastes disk space. Metadata enables filtering before
+     expensive symbolication.
+   - **Verification:** Unit test: configure max 5 dumps, generate 8, verify only 5 most recent
+     remain. Attach metadata and verify the aggregation server can filter by each field.
 
 ## Log Extensibility
 
-| ID       | Derived From                                           |
-|----------|--------------------------------------------------------|
-| R-14.4.9 | [F-14.4.9](../../features/platform/crash-reporting.md) |
-
-1. **R-14.4.9** — The engine **SHALL** support updating the log filter (minimum severity per
+9. **R-14.4.9** — The engine **SHALL** support updating the log filter (minimum severity per
    channel) at runtime without restarting, and **SHALL** accept pluggable log sinks via a `LogSink`
-   trait composed at construction time through dependency injection.
-   - **Rationale:** Runtime filter updates let developers increase verbosity for a specific
-     subsystem during live debugging without restarting the session. Pluggable sinks decouple log
-     output destinations from the logger core, enabling platform-native, file, and remote sinks to
-     be composed without modifying the logger itself.
-   - **Verification:** Integration test: set the default log level to Warn, emit a Debug record, and
-     verify it is filtered out. Update the filter at runtime to set the channel to Debug, re-emit,
-     and verify the record appears. Unit test: construct a logger with a mock `LogSink`, emit
-     records, and verify the mock receives all records that pass the filter. Verify at least three
-     sink implementations (file, platform-native, mock) can be composed simultaneously.
+   trait composed at construction time.
+   - **Rationale:** Runtime filter updates let developers increase verbosity during live debugging.
+     Pluggable sinks decouple output destinations from the logger core.
+   - **Verification:** Integration test: set default level to Warn, emit Debug, verify filtered out.
+     Update filter to Debug at runtime, re-emit, verify appears. Verify three sink types compose
+     simultaneously.
+
+## Platform-Native Log Integration
+
+10. **R-14.4.10** — The engine **SHALL** provide log sinks that emit to OutputDebugString on
+    Windows, `os_log` on macOS, and `sd_journal_sendv` on Linux, so that engine logs appear in
+    platform-native debugging tools.
+    - **Rationale:** Platform-native log sinks let developers view engine output in familiar tools
+      (Visual Studio debugger, Console.app, journalctl).
+    - **Verification:** Integration test per platform: emit a log record through the platform sink;
+      verify it appears in the platform-native log viewer with correct severity and message.
+
+## Platform-Native Profiling Integration
+
+11. **R-14.4.11** — The engine **SHALL** integrate with ETW on Windows, `os_signpost` on macOS, and
+    `perf_event_open` on Linux, so that performance counter data appears in platform-native
+    profiling tools.
+    - **Rationale:** Platform-native profiling tools provide hardware-level visibility that engine
+      tools cannot replicate.
+    - **Verification:** Integration test per platform: emit performance markers through the platform
+      tracing sink; verify they appear in the native profiler (Windows Performance Analyzer,
+      Instruments, perf).

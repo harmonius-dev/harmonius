@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/vfx/](../../features/vfx/), [requirements/vfx/](../../requirements/vfx/), and
-> [user-stories/vfx/](../../user-stories/vfx/). The table below traces design elements to those
+> [features/vfx/](../../features/), [requirements/vfx/](../../requirements/), and
+> [user-stories/vfx/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 ### Decals (11.2)

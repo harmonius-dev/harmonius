@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/core-runtime/](../../features/core-runtime/),
-> [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
-> elements to those definitions.
+> [features/core-runtime/](../../features/), [requirements/core-runtime/](../../requirements/), and
+> [user-stories/core-runtime/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement       | User Stories                  |
 |---------|-------------------|-------------------------------|
@@ -1345,7 +1344,7 @@ No custom SIMD code is needed; `glam` handles this transparently.
 | `test_propagation_same_frame`           | R-1.2.4a |
 | `test_hierarchy_during_parallel`        | R-1.2.1  |
 | `test_spatial_index_after_propagation`  | R-1.2.6  |
-| `test_scene_with_prefabs`               | R-1.2.1  |
+| `test_scene_with_entity_templates`      | R-1.2.1  |
 
 1. **`test_parallel_propagation_correctness`** — 100K entities, mixed depths 1-50: parallel results
    match serial reference.
@@ -1355,8 +1354,8 @@ No custom SIMD code is needed; `glam` handles this transparently.
    iteration: no data races (run under ThreadSanitizer).
 4. **`test_spatial_index_after_propagation`** — After propagation, spatial query returns entities at
    correct world positions.
-5. **`test_scene_with_prefabs`** — Scene containing prefab instances: verify hierarchy and overrides
-   preserved.
+5. **`test_scene_with_entity_templates`** — Scene containing entity template instances: verify
+   hierarchy and overrides preserved.
 
 ### Benchmarks
 
@@ -1401,7 +1400,7 @@ separate from the general frame arena would improve performance for deep and wid
 
 **Q3. Is there a better approach?** If we are not taking it, why not?
 
-A deferred, dependency-graph-based propagation model (like Unity DOTS' TransformSystemGroup)
+A deferred, dependency-graph-based propagation model (like Unity ECS's Transform Propagation)
 processes transforms in batches sorted by hierarchy depth, allowing full parallelism at each depth
 level. This avoids the fan-out problem of recursive top-down traversal. We are using the top-down
 subtree model instead because it integrates more naturally with the ECS relationship traversal

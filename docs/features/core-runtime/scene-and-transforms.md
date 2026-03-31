@@ -2,10 +2,10 @@
 
 ## Scene Hierarchy
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-1.2.1 | Entity-Based Scene Hierarchy  | R-1.2.1      |
-| F-1.2.2 | Hierarchy Traversal Iterators | R-1.2.2      |
+| ID      | Feature                      |
+|---------|-------------------------------|
+| F-1.2.1 | Entity-Based Scene Hierarchy |
+| F-1.2.2 | Hierarchy Traversal Iterators|
 
 1. **F-1.2.1** — Represent scene hierarchy as parent-child relationships stored directly in ECS
    components. Each entity may have at most one parent and an ordered list of children. Hierarchy
@@ -22,9 +22,9 @@
 
 ## Parent-Child Relationships
 
-| ID      | Feature                         | Requirements |
-|---------|---------------------------------|--------------|
-| F-1.2.3 | Cascading Lifecycle Propagation | R-1.2.3      |
+| ID      | Feature                        |
+|---------|---------------------------------|
+| F-1.2.3 | Cascading Lifecycle Propagation|
 
 1. **F-1.2.3** — When a parent entity is despawned, recursively despawn all descendants. Optionally
    allow orphan-on-delete semantics where children are reparented to the world root instead.
@@ -34,9 +34,9 @@
 
 ## Transform Propagation
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-1.2.4 | Hierarchical Transform Propagation | R-1.2.4      |
+| ID      | Feature                           |
+|---------|------------------------------------|
+| F-1.2.4 | Hierarchical Transform Propagation|
 
 1. **F-1.2.4** — Compute world-space transforms by composing local transforms along the parent
    chain. Propagation runs as a top-down parallel system that processes independent subtrees
@@ -49,9 +49,9 @@
 
 ## Dirty Tracking
 
-| ID      | Feature                  | Requirements |
-|---------|--------------------------|--------------|
-| F-1.2.5 | Transform Dirty Tracking | R-1.2.5      |
+| ID      | Feature                 |
+|---------|--------------------------|
+| F-1.2.5 | Transform Dirty Tracking|
 
 1. **F-1.2.5** — Use the ECS change detection system to mark transforms as dirty when their local
    transform is modified. Propagation only recomputes world-space transforms for dirty subtrees,
@@ -61,9 +61,9 @@
 
 ## Spatial Partitioning
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-1.2.6 | Spatial Partitioning Index | R-1.2.6      |
+| ID      | Feature                   |
+|---------|----------------------------|
+| F-1.2.6 | Spatial Partitioning Index|
 
 1. **F-1.2.6** — Maintain a spatial acceleration structure (e.g., BVH, grid, or R-tree) that indexes
    entity world-space positions and bounding volumes. The index is updated incrementally using dirty
@@ -77,9 +77,9 @@
 
 ## Scene Queries
 
-| ID      | Feature               | Requirements |
-|---------|-----------------------|--------------|
-| F-1.2.7 | Spatial Scene Queries | R-1.2.7      |
+| ID      | Feature              |
+|---------|-----------------------|
+| F-1.2.7 | Spatial Scene Queries|
 
 1. **F-1.2.7** — Provide a query API for spatial operations: point containment, ray intersection,
    sphere/box overlap, and k-nearest neighbors. Queries combine spatial filtering from the

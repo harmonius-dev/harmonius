@@ -2,21 +2,21 @@
 
 ## Features
 
-| ID       | Feature                            | Requirements |
-|----------|------------------------------------|--------------|
-| F-2.3.1  | Direct Lighting                    | R-2.3.1      |
-| F-2.3.2  | GPU Frustum Culling                | R-2.3.2      |
-| F-2.3.3  | Backface Culling                   | R-2.3.3      |
-| F-2.3.4  | Occlusion Culling (HZB Two-Phase)  | R-2.3.4      |
-| F-2.3.5  | Orthographic Projection            | R-2.3.5      |
-| F-2.3.6  | Perspective Projection (Reverse-Z) | R-2.3.6      |
-| F-2.3.7  | GPU-Driven Instancing              | R-2.3.7      |
-| F-2.3.8  | Render-to-Texture                  | R-2.3.8      |
-| F-2.3.9  | Cubemaps                           | R-2.3.9      |
-| F-2.3.10 | Scene Capture                      | R-2.3.10     |
-| F-2.3.11 | Dynamic Resolution                 | R-2.3.11     |
-| F-2.3.12 | Subsurface Scattering              | R-2.3.12     |
-| F-2.3.13 | Alpha Mask Cutouts                 | R-2.3.13     |
+| ID       | Feature                            |
+|----------|------------------------------------|
+| F-2.3.1  | Direct Lighting                    |
+| F-2.3.2  | GPU Frustum Culling                |
+| F-2.3.3  | Backface Culling                   |
+| F-2.3.4  | Occlusion Culling (HZB Two-Phase)  |
+| F-2.3.5  | Orthographic Projection            |
+| F-2.3.6  | Perspective Projection (Reverse-Z) |
+| F-2.3.7  | GPU-Driven Instancing              |
+| F-2.3.8  | Render-to-Texture                  |
+| F-2.3.9  | Cubemaps                           |
+| F-2.3.10 | Scene Capture                      |
+| F-2.3.11 | Dynamic Resolution                 |
+| F-2.3.12 | Subsurface Scattering              |
+| F-2.3.13 | Alpha Mask Cutouts                 |
 
 1. **F-2.3.1** — Point, spot, and directional light evaluation with physically-based attenuation.
    All light types contribute to the same unified light buffer consumed by both forward and deferred

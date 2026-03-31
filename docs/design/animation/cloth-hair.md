@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/animation/](../../features/animation/),
-> [requirements/animation/](../../requirements/animation/), and
-> [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
-> to those definitions.
+> [features/animation/](../../features/), [requirements/animation/](../../requirements/), and
+> [user-stories/animation/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | User Stories                       |
 |---------|-------------|------------------------------------|
@@ -960,8 +959,8 @@ alpha-blended transparency.
 ### Platform-Specific Notes
 
 - **Windows:** D3D12 compute shaders. DXIL compiled from HLSL via DXC.
-- **macOS:** Metal compute shaders. MSL compiled from DXIL via Metal Shader Converter through C ABI
-  C ABI bridge.
+- **macOS:** Metal compute shaders. MSL compiled from DXIL via Metal Shader Converter through
+  swift-bridge.
 - **Linux:** Vulkan compute shaders. SPIR-V compiled from HLSL via DXC.
 - **OIT on mobile:** Weighted blended OIT (no per-pixel linked lists). Mobile primarily uses
   card-based rendering so OIT is rarely needed.

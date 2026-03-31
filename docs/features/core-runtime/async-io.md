@@ -2,9 +2,9 @@
 
 ## Platform I/O Backends
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-1.8.1 | Platform I/O Backend Abstraction | R-1.8.1      |
+| ID      | Feature                         |
+|---------|----------------------------------|
+| F-1.8.1 | Platform I/O Backend Abstraction|
 
 1. **F-1.8.1** — Define a trait-based abstraction over platform-native async I/O primitives, with
    concrete implementations for Windows (IOCP), macOS/iOS (Grand Central Dispatch), and Linux
@@ -13,16 +13,15 @@
    I/O operation in the engine routes through this abstraction, ensuring no subsystem bypasses the
    unified I/O layer.
    - **Platform:** Windows backend wraps `CreateIoCompletionPort` and `GetQueuedCompletionStatusEx`
-     via `windows-rs` COM. macOS backend wraps `dispatch_io_create`,
-     `dispatch_io_read`, and `dispatch_io_write` via Swift @_cdecl C ABI wrappers. Linux
-     backend wraps liburing (`io_uring_prep_*`, `io_uring_submit`, `io_uring_wait_cqe_nr`) via
-     `extern "C"` declarations.
+     via `windows-rs` COM. macOS backend wraps `dispatch_io_create`, `dispatch_io_read`, and
+     `dispatch_io_write` via Swift swift-bridge bindings. Linux backend wraps liburing
+     (`io_uring_prep_*`, `io_uring_submit`, `io_uring_wait_cqe_nr`) via `extern "C"` declarations.
 
 ## Completion Model
 
-| ID      | Feature                                | Requirements |
-|---------|----------------------------------------|--------------|
-| F-1.8.2 | Completion-Based Async Execution Model | R-1.8.2      |
+| ID      | Feature                               |
+|---------|----------------------------------------|
+| F-1.8.2 | Completion-Based Async Execution Model|
 
 1. **F-1.8.2** — Implement a completion-based (proactor) async model where the application submits
    I/O requests and receives notifications when the OS kernel has finished the operation. All three
@@ -37,9 +36,9 @@
 
 ## File I/O
 
-| ID      | Feature                   | Requirements |
-|---------|---------------------------|--------------|
-| F-1.8.3 | Async File I/O Operations | R-1.8.3      |
+| ID      | Feature                  |
+|---------|---------------------------|
+| F-1.8.3 | Async File I/O Operations|
 
 1. **F-1.8.3** — Provide async file read, write, seek, and flush operations that execute entirely
    through the platform I/O backend without ever calling Rust standard library file I/O. Reads and
@@ -54,9 +53,9 @@
 
 ## Network Socket I/O
 
-| ID      | Feature                  | Requirements |
-|---------|--------------------------|--------------|
-| F-1.8.4 | Async Network Socket I/O | R-1.8.4      |
+| ID      | Feature                 |
+|---------|--------------------------|
+| F-1.8.4 | Async Network Socket I/O|
 
 1. **F-1.8.4** — Provide async TCP and UDP socket operations — accept, connect, send, receive, and
    sendto/recvfrom — through the platform I/O backend. Socket handles are registered with the
@@ -71,9 +70,9 @@
 
 ## Audio Stream I/O
 
-| ID      | Feature                | Requirements |
-|---------|------------------------|--------------|
-| F-1.8.5 | Async Audio Stream I/O | R-1.8.5      |
+| ID      | Feature               |
+|---------|------------------------|
+| F-1.8.5 | Async Audio Stream I/O|
 
 1. **F-1.8.5** — Provide low-latency async read and write operations for audio device buffers,
    enabling the audio engine to stream decoded samples to output devices and capture microphone
@@ -88,9 +87,9 @@
 
 ## Vectored I/O
 
-| ID      | Feature                         | Requirements |
-|---------|---------------------------------|--------------|
-| F-1.8.6 | Scatter-Gather and Vectored I/O | R-1.8.6      |
+| ID      | Feature                        |
+|---------|---------------------------------|
+| F-1.8.6 | Scatter-Gather and Vectored I/O|
 
 1. **F-1.8.6** — Support scatter-gather operations that read into or write from multiple
    non-contiguous memory buffers in a single system call, reducing per-operation overhead and kernel
@@ -105,9 +104,9 @@
 
 ## Priority and Scheduling
 
-| ID      | Feature                              | Requirements |
-|---------|--------------------------------------|--------------|
-| F-1.8.7 | I/O Priority and Deadline Scheduling | R-1.8.7      |
+| ID      | Feature                             |
+|---------|--------------------------------------|
+| F-1.8.7 | I/O Priority and Deadline Scheduling|
 
 1. **F-1.8.7** — Assign priority levels (critical, normal, background) and optional deadline hints
    to I/O submissions. The backend reorders its internal submission queue so that critical
@@ -123,9 +122,9 @@
 
 ## Cancellation
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-1.8.8 | Cooperative I/O Cancellation | R-1.8.8      |
+| ID      | Feature                     |
+|---------|------------------------------|
+| F-1.8.8 | Cooperative I/O Cancellation|
 
 1. **F-1.8.8** — Support cancellation of in-flight I/O operations via cancellation tokens that are
    passed at submission time. Cancelling a token requests the platform backend to abort the
@@ -140,9 +139,9 @@
 
 ## Buffer Management
 
-| ID      | Feature                                         | Requirements |
-|---------|-------------------------------------------------|--------------|
-| F-1.8.9 | Registered Buffer Pools and Zero-Copy Transfers | R-1.8.9      |
+| ID      | Feature                                        |
+|---------|-------------------------------------------------|
+| F-1.8.9 | Registered Buffer Pools and Zero-Copy Transfers|
 
 1. **F-1.8.9** — Manage pools of pre-allocated, page-aligned I/O buffers that are registered with
    the platform backend to eliminate per-operation buffer setup costs. Registered buffers enable the

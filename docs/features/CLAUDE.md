@@ -4,26 +4,30 @@ All rules from the root [CLAUDE.md](../../CLAUDE.md) apply here.
 
 ## Purpose
 
-Feature definitions for all engine subsystems. Features define WHAT the engine provides.
+Feature definitions for all engine subsystems. Features define
+WHAT the engine provides.
 
 ## Structure
 
 ```text
 docs/features/
   README.md                 — feature index
+  CLAUDE.md                 — this file
   {domain}/
     {topic}.md              — feature definitions
 ```
 
-Domains match the design directory structure.
+One file per domain topic in its domain subdirectory.
 
 ## Rules
 
-1. Feature IDs use `F-X.Y.Z` format where X is the domain number, Y is the group, Z is the feature
-2. Each feature has: ID, name, description, priority, and acceptance criteria
+1. Feature IDs use `F-X.Y.Z` format where X is the domain
+   number, Y is the group, Z is the feature
+2. Feature tables use `| ID | Feature |` columns only — no
+   Requirements column
 3. Features describe capability, not implementation
 4. Group related features under domain headings
-5. Cross-reference requirements with R-X.Y.Z IDs
+5. No cross-reference links to requirements or user stories
 
 ## What MUST NOT Be Included
 
@@ -33,15 +37,17 @@ Domains match the design directory structure.
 | User stories | `docs/user-stories/` |
 | Design details | `docs/design/` |
 | Implementation code | `src/` |
+| Links to requirements | `docs/requirements/` |
+| Links to user stories | `docs/user-stories/` |
 
 ## When to Create New Files
 
-- One file per domain topic (e.g., `ai/navigation.md`)
+- One file per domain topic in its domain subdirectory
+  (e.g., `ai/navigation.md`)
 - Split when a file exceeds 500 lines
-- New domains require a new subdirectory
 
 ## Formatting Reference
 
 - Headings: `## Domain` then `### F-X.Y.Z Feature Name`
-- Tables: for feature summary, priority, dependencies
-- Lists: for acceptance criteria
+- Tables: `| ID | Feature |` for feature summary
+- Lists: for feature details

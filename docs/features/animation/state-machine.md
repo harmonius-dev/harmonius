@@ -2,9 +2,9 @@
 
 ## State Graph
 
-| ID      | Feature               | Requirements |
-|---------|-----------------------|--------------|
-| F-9.4.1 | Animation State Graph | R-9.4.1      |
+| ID      | Feature               |
+|---------|-----------------------|
+| F-9.4.1 | Animation State Graph |
 
 1. **F-9.4.1** — CPU-side declarative state graph where each node represents a pose source (clip,
    blend tree, sub-state machine, or montage). Evaluated each frame to produce blend descriptors
@@ -16,9 +16,9 @@
 
 ## Transitions
 
-| ID      | Feature                                          | Requirements |
-|---------|--------------------------------------------------|--------------|
-| F-9.4.2 | Transitions with Blend Profiles and Sync Markers | R-9.4.2      |
+| ID      | Feature                                          |
+|---------|--------------------------------------------------|
+| F-9.4.2 | Transitions with Blend Profiles and Sync Markers |
 
 1. **F-9.4.2** — Transitions between states with configurable blend duration, blend curve (linear,
    ease-in/out, cubic), and per-bone blend profiles. Sync markers embedded in animation clips align
@@ -29,9 +29,9 @@
 
 ## Sub-State Machines
 
-| ID      | Feature            | Requirements |
-|---------|--------------------|--------------|
-| F-9.4.3 | Sub-State Machines | R-9.4.3      |
+| ID      | Feature            |
+|---------|--------------------|
+| F-9.4.3 | Sub-State Machines |
 
 1. **F-9.4.3** — Encapsulates related states into a reusable sub-graph with defined entry and exit
    points. Enables modular authoring of complex behaviors. Sub-state machines can be shared across
@@ -42,9 +42,9 @@
 
 ## Animation Layers and Blending
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-9.4.4 | State Machine Animation Layers | R-9.4.4      |
+| ID      | Feature                        |
+|---------|--------------------------------|
+| F-9.4.4 | State Machine Animation Layers |
 
 1. **F-9.4.4** — Runs multiple state machine instances in parallel on separate layers with per-bone
    masks and blend modes (override, additive). Enables independent upper-body and lower-body state
@@ -56,9 +56,9 @@
 
 ## State Variables and Conditions
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-9.4.5 | State Variables and Conditions | R-9.4.5      |
+| ID      | Feature                        |
+|---------|--------------------------------|
+| F-9.4.5 | State Variables and Conditions |
 
 1. **F-9.4.5** — Exposes named parameters (booleans, floats, integers, triggers) that gameplay code
    sets to drive state transitions via boolean expressions. Trigger parameters auto-reset after
@@ -68,9 +68,9 @@
 
 ## Sync Groups
 
-| ID      | Feature     | Requirements |
-|---------|-------------|--------------|
-| F-9.4.6 | Sync Groups | R-9.4.6      |
+| ID      | Feature     |
+|---------|-------------|
+| F-9.4.6 | Sync Groups |
 
 1. **F-9.4.6** — Groups multiple animation clips that must stay phase-synchronized regardless of
    playback rates. All clips in a sync group advance by normalized time, keeping sync markers
@@ -82,9 +82,9 @@
 
 ## Animation Montages
 
-| ID      | Feature            | Requirements |
-|---------|--------------------|--------------|
-| F-9.4.7 | Animation Montages | R-9.4.7      |
+| ID      | Feature            |
+|---------|--------------------|
+| F-9.4.7 | Animation Montages |
 
 1. **F-9.4.7** — One-shot or looping animation sequences that temporarily override state machine
    output on specific bone groups. Montages support branching sections, notify events, and
@@ -96,9 +96,9 @@
 
 ## Blend Spaces
 
-| ID      | Feature                | Requirements |
-|---------|------------------------|--------------|
-| F-9.4.8 | 1D and 2D Blend Spaces | R-9.4.8      |
+| ID      | Feature                |
+|---------|------------------------|
+| F-9.4.8 | 1D and 2D Blend Spaces |
 
 1. **F-9.4.8** — Parameterized blend nodes that interpolate between animation clips based on one or
    two continuous variables. Sample points are triangulated; the runtime evaluates barycentric
@@ -110,9 +110,9 @@
 
 ## Aim Offsets
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-9.4.9 | Aim Offset and Additive Aim Layers | R-9.4.9      |
+| ID      | Feature                            |
+|---------|------------------------------------|
+| F-9.4.9 | Aim Offset and Additive Aim Layers |
 
 1. **F-9.4.9** — Additive animation layers parameterized by pitch and yaw that produce additive bone
    rotations on top of locomotion. Supports smooth interpolation between aim poses, per-bone
@@ -123,9 +123,9 @@
 
 ## AI Animation Integration
 
-| ID       | Feature                  | Requirements |
-|----------|--------------------------|--------------|
-| F-9.4.10 | AI Animation Integration | R-9.4.10     |
+| ID       | Feature                  |
+|----------|--------------------------|
+| F-9.4.10 | AI Animation Integration |
 
 1. **F-9.4.10** — Behavior trees (F-7.3.1) and GOAP planners (F-7.5.1) trigger animation state
    transitions through the logic graph system (F-15.8.4). AI agents set blackboard variables that

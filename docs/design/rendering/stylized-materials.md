@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/rendering/](../../features/rendering/),
-> [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
-> to those definitions.
+> [features/rendering/](../../features/), [requirements/rendering/](../../requirements/), and
+> [user-stories/rendering/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Stylized Effects (F-2.11 / R-2.11)
 
@@ -874,7 +873,7 @@ impl ShaderPermutationCache {
 
     /// Retrieve a cached permutation or compile on
     /// cache miss. Async because compilation may
-    /// invoke DXC/MSC via C ABI FFI.
+    /// invoke DXC via C API / MSC via swift-bridge.
     pub async fn get_or_compile(
         &self,
         key: ShaderPermutationKey,
@@ -1657,9 +1656,9 @@ Multi-layer materials are evaluated bottom-to-top. Each layer produces a full su
 | Vulkan | HLSL -> DXC -> SPIR-V | DXC `-spirv` flag |
 | Metal | HLSL -> DXC -> DXIL -> MSC -> MSL | Two-step via Metal Shader Converter |
 
-All compilation uses DXC accessed through C ABI. Metal Shader Converter is also accessed through
-C ABI. No runtime shader compilation in shipping builds -- all permutations are pre-compiled during
-asset processing (F-12.3.1).
+All compilation uses DXC accessed through C API. Metal Shader Converter is accessed through
+swift-bridge. No runtime shader compilation in shipping builds -- all permutations are pre-compiled
+during asset processing (F-12.3.1).
 
 ### Proposed Dependencies
 

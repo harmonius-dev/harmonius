@@ -3,10 +3,10 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/content-pipeline/](../../features/content-pipeline/),
-> [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
-> design elements to those definitions.
+> [features/content-pipeline/](../../features/),
+> [requirements/content-pipeline/](../../requirements/), and
+> [user-stories/content-pipeline/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 ### DCC Tool Plugins (F-12.6 / R-12.6)
 
@@ -40,7 +40,7 @@
 | F-12.6.26 | R-12.6.26   |
 
 1. **F-12.6.1** — C API plugin SDK with Python/C++ bindings, native binary export
-2. **F-12.6.2** — Live link: bidirectional TCP, delta protocol, < 2 s latency
+2. **F-12.6.2** — DCC Bridge: bidirectional TCP, delta protocol, < 2 s latency
 3. **F-12.6.3** — Houdini Engine HDA hosting, in-process or out-of-process
 4. **F-12.6.4** — Houdini mesh/scene export with all primitive types
 5. **F-12.6.5** — Houdini procedural placement to ECS via PCG pipeline
@@ -127,7 +127,7 @@ harmonius_asset_version/
 graph TD
     subgraph harmonius_dcc_sdk
         SDK[Plugin SDK - C API]
-        LL[LiveLinkServer]
+        LL[DccBridgeServer]
         PROTO[Binary Delta Protocol]
         MATMAP[MaterialMapper]
     end
@@ -206,9 +206,9 @@ harmonius_dcc_sdk/
 │   ├── socket.rs         # TCP socket transport
 │   ├── shared_mem.rs     # Shared memory transport
 │   └── protocol.rs       # Binary delta protocol
-├── live_link/
-│   ├── server.rs         # LiveLinkServer
-│   ├── session.rs        # LiveLinkSession
+├── dcc_bridge/
+│   ├── server.rs         # DccBridgeServer
+│   ├── session.rs        # DccBridgeSession
 │   └── delta.rs          # DeltaEncoder/Decoder
 ├── material/
 │   ├── mapper.rs         # MaterialMapper
@@ -317,14 +317,14 @@ graph LR
     TOC --> S3
 ```
 
-### Live Link Sequence
+### DCC Bridge Sequence
 
 ```mermaid
 sequenceDiagram
     participant DCC as DCC Tool
     participant PLG as Plugin
     participant SDK as Plugin SDK
-    participant LL as LiveLinkServer
+    participant LL as DccBridgeServer
     participant ENG as Engine Editor
 
     DCC->>PLG: Artist edits mesh
@@ -381,7 +381,7 @@ graph TD
     MESH[Mesh v3.0.0]
     SKEL[Skeleton v1.1.0]
     ANIM[Animation v2.0.0]
-    PREFAB[Character Prefab v4.0.0]
+    PREFAB[Character Entity Template v4.0.0]
 
     PREFAB --> MESH
     PREFAB --> MAT
@@ -825,7 +825,7 @@ pub struct HarExportSession {
 }
 
 #[repr(C)]
-pub struct HarLiveLinkHandle {
+pub struct HarDccBridgeHandle {
     _opaque: [u8; 0],
 }
 
@@ -958,25 +958,25 @@ pub extern "C" fn har_export_cancel(
     // ...
 }
 
-// ---- Live link ----
+// ---- DCC Bridge ----
 
-/// Connect to the engine's live link server.
+/// Connect to the engine's DCC Bridge server.
 #[no_mangle]
-pub extern "C" fn har_live_link_connect(
+pub extern "C" fn har_dcc_bridge_connect(
     ctx: *mut HarSdkContext,
     host: *const u8,
     host_len: u32,
     port: u16,
-    out: *mut *mut HarLiveLinkHandle,
+    out: *mut *mut HarDccBridgeHandle,
 ) -> HarError {
     // ...
 }
 
 /// Push a delta (mesh/material/animation change)
-/// over the live link.
+/// over the DCC Bridge.
 #[no_mangle]
-pub extern "C" fn har_live_link_push_delta(
-    link: *mut HarLiveLinkHandle,
+pub extern "C" fn har_dcc_bridge_push_delta(
+    link: *mut HarDccBridgeHandle,
     delta: *const u8,
     delta_len: u32,
 ) -> HarError {
@@ -984,19 +984,19 @@ pub extern "C" fn har_live_link_push_delta(
 }
 
 /// Receive engine state (camera, selection)
-/// from the live link. Non-blocking.
+/// from the DCC Bridge. Non-blocking.
 #[no_mangle]
-pub extern "C" fn har_live_link_poll(
-    link: *mut HarLiveLinkHandle,
+pub extern "C" fn har_dcc_bridge_poll(
+    link: *mut HarDccBridgeHandle,
     out: *mut HarEngineState,
 ) -> HarError {
     // ...
 }
 
-/// Disconnect the live link.
+/// Disconnect the DCC Bridge.
 #[no_mangle]
-pub extern "C" fn har_live_link_disconnect(
-    link: *mut HarLiveLinkHandle,
+pub extern "C" fn har_dcc_bridge_disconnect(
+    link: *mut HarDccBridgeHandle,
 ) -> HarError {
     // ...
 }
@@ -1188,7 +1188,7 @@ pub struct HarSceneNode {
     pub material_ref_len: u32,
 }
 
-/// Engine state received from live link poll.
+/// Engine state received from DCC Bridge poll.
 #[repr(C)]
 pub struct HarEngineState {
     pub camera_position: [f32; 3],
@@ -1325,19 +1325,19 @@ pub enum DccMaterialValue {
 }
 ```
 
-### Live Link Server
+### DCC Bridge Server
 
 ```rust
-/// Engine-side live link server. Accepts
+/// Engine-side DCC Bridge server. Accepts
 /// connections from DCC tool plugins and
 /// dispatches deltas to the hot reload system.
-pub struct LiveLinkServer {
+pub struct DccBridgeServer {
     listener: TcpListener,
-    sessions: Vec<LiveLinkSession>,
+    sessions: Vec<DccBridgeSession>,
 }
 
 /// One connected DCC tool session.
-pub struct LiveLinkSession {
+pub struct DccBridgeSession {
     stream: TcpStream,
     tool: DccTool,
     state: SessionState,
@@ -1351,7 +1351,7 @@ pub enum SessionState {
     Disconnected,
 }
 
-impl LiveLinkServer {
+impl DccBridgeServer {
     /// Create a new server bound to the given
     /// port. Uses the IoReactor for async accept.
     pub async fn bind(
@@ -1366,7 +1366,7 @@ impl LiveLinkServer {
     pub async fn poll(
         &mut self,
         reactor: &IoReactor,
-    ) -> Vec<LiveLinkEvent> {
+    ) -> Vec<DccBridgeEvent> {
         // ...
     }
 
@@ -1385,7 +1385,7 @@ impl LiveLinkServer {
     }
 }
 
-pub enum LiveLinkEvent {
+pub enum DccBridgeEvent {
     Connected {
         session_id: u32,
         tool: DccTool,
@@ -1410,7 +1410,7 @@ pub struct EncodedDelta {
 ### Binary Delta Protocol
 
 ```rust
-/// Wire format for live link deltas. Compact
+/// Wire format for DCC Bridge deltas. Compact
 /// binary encoding optimized for mesh, material,
 /// and animation changes.
 #[repr(C)]
@@ -1447,7 +1447,7 @@ pub enum DeltaMessageType {
 }
 
 /// Encodes asset changes into compact binary
-/// deltas for live link transmission.
+/// deltas for DCC Bridge transmission.
 pub struct DeltaEncoder {
     sequence: u64,
 }
@@ -1485,7 +1485,7 @@ impl DeltaEncoder {
     }
 }
 
-/// Decodes binary deltas received over live link.
+/// Decodes binary deltas received over DCC Bridge.
 pub struct DeltaDecoder;
 
 impl DeltaDecoder {
@@ -2144,11 +2144,11 @@ against all Rust dependencies -- DCC hosts see only the C ABI.
 |-----------|---------|-------|
 | Asset file write | IoReactor | All writes go through platform async I/O |
 | Bundle compression | ThreadPool | LZ4/Zstd run on worker threads |
-| Live link TCP | IoReactor | Socket I/O via reactor poll point |
+| DCC Bridge TCP | IoReactor | Socket I/O via reactor poll point |
 | BLAKE3 hashing | ThreadPool | Parallel hashing for large assets |
 | DCC plugin socket | OS native | Plugin side uses blocking sockets (DCC thread) |
 
-The engine side of the live link uses async I/O via the `IoReactor`. The DCC plugin side uses
+The engine side of the DCC Bridge uses async I/O via the `IoReactor`. The DCC plugin side uses
 blocking sockets since DCC tools do not share the engine's async runtime. The SDK shared library
 manages its own I/O thread for the plugin-side socket.
 
@@ -2159,7 +2159,7 @@ manages its own I/O thread for the plugin-side socket.
 | Runtime bundles | LZ4 | ~2:1 | ~4 GB/s decode | Lowest decode latency for streaming |
 | Distribution | Zstd | ~3:1 | ~1.5 GB/s decode | Better ratio for downloads/patches |
 | Asset sections | LZ4 | ~2:1 | ~4 GB/s decode | Per-section compression in assets |
-| Live link deltas | None | 1:1 | Wire speed | Deltas are already small |
+| DCC Bridge deltas | None | 1:1 | Wire speed | Deltas are already small |
 
 ## Test Plan
 
@@ -2187,9 +2187,9 @@ manages its own I/O thread for the plugin-side socket.
 | `test_sdk_version_query`            | R-12.6.1  |
 | `test_sdk_session_lifecycle`        | R-12.6.1  |
 | `test_sdk_session_cancel`           | R-12.6.1  |
-| `test_live_link_connect_disconnect` | R-12.6.2  |
-| `test_live_link_delta_roundtrip`    | R-12.6.2  |
-| `test_live_link_camera_sync`        | R-12.6.2  |
+| `test_dcc_bridge_connect_disconnect` | R-12.6.2  |
+| `test_dcc_bridge_delta_roundtrip`    | R-12.6.2  |
+| `test_dcc_bridge_camera_sync`        | R-12.6.2  |
 | `test_material_mapper_blender_pbr`  | R-12.6.25 |
 | `test_material_mapper_maya_phong`   | R-12.6.25 |
 | `test_material_mapper_fallback`     | R-12.6.25 |
@@ -2231,11 +2231,12 @@ manages its own I/O thread for the plugin-side socket.
     config.
 19. **`test_sdk_session_lifecycle`** — Begin, submit, commit, verify session cleanup.
 20. **`test_sdk_session_cancel`** — Begin, submit, cancel; verify no file written.
-21. **`test_live_link_connect_disconnect`** — Connect a mock DCC client; verify session created;
+21. **`test_dcc_bridge_connect_disconnect`** — Connect a mock DCC client; verify session created;
     disconnect; verify cleanup.
-22. **`test_live_link_delta_roundtrip`** — Encode a mesh delta, send over live link, decode on
+22. **`test_dcc_bridge_delta_roundtrip`** — Encode a mesh delta, send over DCC Bridge, decode on
     engine side; verify data integrity.
-23. **`test_live_link_camera_sync`** — Broadcast engine camera state; verify DCC client receives it.
+23. **`test_dcc_bridge_camera_sync`** — Broadcast engine camera state; verify DCC client receives
+    it.
 24. **`test_material_mapper_blender_pbr`** — Map a Blender Principled BSDF material; verify correct
     engine PBR slots.
 25. **`test_material_mapper_maya_phong`** — Map a Maya Phong material; verify specular-to-metallic
@@ -2246,8 +2247,8 @@ manages its own I/O thread for the plugin-side socket.
     warning emitted.
 28. **`test_dep_graph_topological_sort`** — Build a graph with known topology; verify sort order.
 29. **`test_dep_graph_cycle_detection`** — Insert a cycle; verify error returned.
-30. **`test_dep_graph_invalidation`** — Mark a texture changed; verify material and prefab are
-    invalidated.
+30. **`test_dep_graph_invalidation`** — Mark a texture changed; verify material and entity template
+    are invalidated.
 31. **`test_binary_diff_copy_insert`** — Diff two similar files; verify patch uses Copy for
     unchanged and Insert for new.
 32. **`test_binary_diff_apply_roundtrip`** — Encode a diff, apply to source; verify target matches
@@ -2262,11 +2263,11 @@ manages its own I/O thread for the plugin-side socket.
 | `test_houdini_mesh_export`        | R-12.6.4  |
 | `test_maya_incremental_export`    | R-12.6.6  |
 | `test_maya_animation_curves`      | R-12.6.7  |
-| `test_blender_collection_prefab`  | R-12.6.8  |
+| `test_blender_collection_template`  | R-12.6.8  |
 | `test_blender_bsdf_conversion`    | R-12.6.9  |
 | `test_garment_fitting_two_bodies` | R-12.6.11 |
 | `test_substance_param_tweakable`  | R-12.6.12 |
-| `test_live_link_latency_under_2s` | R-12.6.2  |
+| `test_dcc_bridge_latency_under_2s` | R-12.6.2  |
 | `test_git_lfs_lock_multiuser`     | R-12.6.22 |
 | `test_headless_batch_identical`   | R-12.6.26 |
 | `test_bundle_stream_single_asset` | R-12.7.2  |
@@ -2281,15 +2282,15 @@ manages its own I/O thread for the plugin-side socket.
    the changed asset updates.
 4. **`test_maya_animation_curves`** — Export Bezier animation curves; verify tangent data matches
    source within tolerance.
-5. **`test_blender_collection_prefab`** — Export Blender collections; verify engine prefab hierarchy
-   matches.
+5. **`test_blender_collection_template`** — Export Blender collections; verify engine entity
+   template hierarchy matches.
 6. **`test_blender_bsdf_conversion`** — Export Principled BSDF materials; verify engine PBR material
    has correct texture bindings.
 7. **`test_garment_fitting_two_bodies`** — Fit a garment to two characters with different morphs;
    verify constraints computed for both.
 8. **`test_substance_param_tweakable`** — Import .sbsar, change a parameter in engine; verify
    textures regenerate.
-9. **`test_live_link_latency_under_2s`** — Modify a mesh in a mock DCC client, push via live link;
+9. **`test_dcc_bridge_latency_under_2s`** — Modify a mesh in a mock DCC client, push via DCC Bridge;
    verify engine viewport updates < 2 s.
 10. **`test_git_lfs_lock_multiuser`** — Simulate two users locking the same file; verify conflict
     notification.
@@ -2314,7 +2315,7 @@ manages its own I/O thread for the plugin-side socket.
 | Structural diff 1000-node graph | < 100 ms | R-12.7.3 |
 | Three-way merge non-conflicting | < 200 ms | R-12.7.4 |
 | Binary diff 10 MB asset | < 50 ms | R-12.7.2 (patching) |
-| Live link delta encode | < 1 ms | R-12.6.2 (< 2 s total) |
+| DCC Bridge delta encode | < 1 ms | R-12.6.2 (< 2 s total) |
 | SDK mesh submit 100k vertices | < 10 ms | R-12.6.1 |
 | Material mapping translation | < 1 ms | R-12.6.25 |
 | Dependency graph 10k assets sort | < 50 ms | R-12.7.1 |
@@ -2490,9 +2491,9 @@ justified for ecosystem reach.
 
 **Q2. How can this design be improved?**
 
-The live link connection (F-12.6.2) uses TCP with a binary delta protocol but the design does not
+The DCC Bridge connection (F-12.6.2) uses TCP with a binary delta protocol but the design does not
 specify reconnection behavior or session resumption after network interruption. Artists who put
-their machine to sleep mid-session would lose the live link state. The Git LFS lock workflow
+their machine to sleep mid-session would lose the DCC Bridge state. The Git LFS lock workflow
 (F-12.6.22) auto-locks on open, but this can cause lock contention when artists browse files without
 intending to edit them -- a "lock on first edit" semantic would reduce false locks. The material
 mapping table (F-12.6.25) is extensible but does not support conditional mappings (e.g., map
@@ -2521,7 +2522,7 @@ context, not just structural deltas.
 **Q5. Is this design cohesive with the overall engine?**
 
 The DCC plugin system connects well to the content pipeline through the native binary format
-(F-12.7.1) and the import pipeline (F-12.1.1). The live link (F-12.6.2) integrates with hot reload
+(F-12.7.1) and the import pipeline (F-12.1.1). The DCC Bridge (F-12.6.2) integrates with hot reload
 (F-12.4.2) for immediate viewport updates. The Git integration (F-12.6.22, F-12.6.24) aligns with
 the engine editor's version control features (F-15.10). However, the plugin SDK uses a C API while
 the engine itself is Rust-first -- this creates a translation layer that other subsystems do not
@@ -2531,7 +2532,7 @@ versioning.
 
 ## Open Questions
 
-1. **Live link transport** -- TCP localhost is simple and cross-platform but adds kernel overhead.
+1. **DCC Bridge transport** -- TCP localhost is simple and cross-platform but adds kernel overhead.
    Shared memory would be faster for same-machine DCC-to-engine communication. Should both
    transports be supported, with automatic fallback from shared memory to TCP?
 

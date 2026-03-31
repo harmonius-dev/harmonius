@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/input/](../../features/input/), [requirements/input/](../../requirements/input/), and
-> [user-stories/input/](../../user-stories/input/). The table below traces design elements to those
+> [features/input/](../../features/), [requirements/input/](../../requirements/), and
+> [user-stories/input/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 ### Gestures (6.3)
@@ -1789,7 +1789,7 @@ pub fn vr_tracking_system(
 | `hidapi` | HID device communication | DualSense adaptive trigger control via USB/BT |
 | `bitflags` | Button bitmask types | Standard pattern for VR controller buttons |
 | `windows-rs` | Win32 API bindings | XInput, GameInput, `WM_POINTER` touch |
-| (hand-written `extern "C"`) | C ABI bindings for macOS | CoreHaptics, NSEvent, GCController via Swift C ABI |
+| `swift-bridge` | Rust-Swift bindings for macOS | CoreHaptics, NSEvent, GCController via swift-bridge |
 
 ## Test Plan
 

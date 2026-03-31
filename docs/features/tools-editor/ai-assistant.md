@@ -2,11 +2,11 @@
 
 ## Voice Interaction
 
-| ID        | Feature                      | Requirements |
-|-----------|------------------------------|--------------|
-| F-15.9.1a | Speech-to-Text Pipeline      | R-15.9.1a    |
-| F-15.9.1b | Voice Command Interpretation | R-15.9.1b    |
-| F-15.9.1c | Voice Activation Modes       | R-15.9.1c    |
+| ID | Feature |
+| ----------- | ------------------------------ |
+| F-15.9.1a | Speech-to-Text Pipeline |
+| F-15.9.1b | Voice Command Interpretation |
+| F-15.9.1c | Voice Activation Modes |
 
 1. **F-15.9.1a** — Live voice input is captured by the system microphone and processed through a
    speech-to-text pipeline. On macOS, microphone access requires user permission via the TCC
@@ -30,10 +30,10 @@
 
 ## Tool Interface
 
-| ID       | Feature                          | Requirements |
-|----------|----------------------------------|--------------|
-| F-15.9.2 | AI Assistant Tool Interface      | R-15.9.2     |
-| F-15.9.3 | Visual and Graphical Tool Access | R-15.9.3     |
+| ID | Feature |
+| ---------- | ---------------------------------- |
+| F-15.9.2 | AI Assistant Tool Interface |
+| F-15.9.3 | Visual and Graphical Tool Access |
 
 1. **F-15.9.2** — The assistant has access to the full editor tool API, covering scene manipulation,
    asset management, PCG graph editing, logic graph editing, material parameter adjustment,
@@ -55,10 +55,10 @@
 
 ## Recommendations
 
-| ID       | Feature                           | Requirements |
-|----------|-----------------------------------|--------------|
-| F-15.9.4 | Keyboard Shortcut Recommendations | R-15.9.4     |
-| F-15.9.5 | Contextual Action Reminders       | R-15.9.5     |
+| ID | Feature |
+| ---------- | ----------------------------------- |
+| F-15.9.4 | Keyboard Shortcut Recommendations |
+| F-15.9.5 | Contextual Action Reminders |
 
 1. **F-15.9.4** — When the assistant observes the user performing an action through menus, toolbars,
    or multi-click sequences that has a keyboard shortcut, it displays a non-intrusive visual cue
@@ -80,12 +80,12 @@
 
 ## Automation
 
-| ID        | Feature                                 | Requirements |
-|-----------|-----------------------------------------|--------------|
-| F-15.9.6a | Headless Editor API Layer               | R-15.9.6a    |
-| F-15.9.6b | Agent Orchestration                     | R-15.9.6b    |
-| F-15.9.6c | CI/CD Agent Integration                 | R-15.9.6c    |
-| F-15.9.7  | Screenshot and Screen Recording Capture | R-15.9.7     |
+| ID | Feature |
+| ----------- | ----------------------------------------- |
+| F-15.9.6a | Headless Editor API Layer |
+| F-15.9.6b | Agent Orchestration |
+| F-15.9.6c | CI/CD Agent Integration |
+| F-15.9.7 | Screenshot and Screen Recording Capture |
 
 1. **F-15.9.6a** — A headless API layer that mirrors the UI interaction model without a visible
    display. The headless layer exposes the same tool interface as the interactive assistant
@@ -118,10 +118,10 @@
 
 ## Interface Understanding
 
-| ID       | Feature                        | Requirements |
-|----------|--------------------------------|--------------|
-| F-15.9.8 | UI Accessibility Tree Analysis | R-15.9.8     |
-| F-15.9.9 | Multi-Modal Understanding      | R-15.9.9     |
+| ID | Feature |
+| ---------- | -------------------------------- |
+| F-15.9.8 | UI Accessibility Tree Analysis |
+| F-15.9.9 | Multi-Modal Understanding |
 
 1. **F-15.9.8** — The assistant reads the editor's UI accessibility tree to obtain a fast,
    structured representation of all panels, widgets, menus, and tool modes without relying solely on
@@ -146,9 +146,9 @@
 
 ## Administration
 
-| ID        | Feature                      | Requirements |
-|-----------|------------------------------|--------------|
-| F-15.9.10 | AI Assistance Administration | R-15.9.10    |
+| ID | Feature |
+| ----------- | ------------------------------ |
+| F-15.9.10 | AI Assistance Administration |
 
 1. **F-15.9.10** — AI assistance is governed by a dedicated toggle (F-15.7.4) that operates
    independently from the generative AI content toggle (F-15.7.3). Administrators can enable or

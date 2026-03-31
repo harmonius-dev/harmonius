@@ -2,14 +2,13 @@
 
 ## NavMesh Generation
 
-### F-7.1.1 Recast-Style NavMesh Generation
+### F-7.1.1 NavMesh Generation
 
 Voxelizes static world geometry into a heightfield, then builds a compact polygonal navigation mesh
 via watershed partitioning and contour tracing. Supports configurable agent radius, height, step
 climb, and slope limits to produce meshes tailored to different entity archetypes (humanoid, mount,
 large creature).
 
-- **Requirements:** R-7.1.1
 - **Dependencies:** None
 - **Platform notes:** Generation runs on server; offline bake available as a content pipeline step
 
@@ -19,7 +18,6 @@ Divides the world NavMesh into fixed-size tiles that align with the world stream
 and unload asynchronously as the server simulation window moves, enabling navigation across a
 seamless open world without holding the full mesh in memory.
 
-- **Requirements:** R-7.1.2
 - **Dependencies:** F-7.1.1
 - **Platform notes:** Tile size must match or subdivide the world chunk size used by the streaming
   system
@@ -32,7 +30,6 @@ Hierarchical A* search over NavMesh polygons with configurable heuristics and co
 Supports area-type weights (road, swamp, lava) so AI agents prefer contextually appropriate routes.
 Queries are batched and spread across frames to stay within a per-tick CPU budget.
 
-- **Requirements:** R-7.1.3
 - **Dependencies:** F-7.1.1, F-7.1.2
 - **Platform notes:** Per-tick pathfinding budget scales by platform: mobile 0.5 ms, Switch 1 ms,
   desktop 2 ms. Mobile limits concurrent path queries to 16; desktop allows 128+.
@@ -43,7 +40,6 @@ Converts a corridor of NavMesh polygons into a minimal sequence of waypoints usi
 algorithm. Produces tight, corner-hugging paths that avoid unnecessary detours and serve as input to
 steering and path smoothing.
 
-- **Requirements:** R-7.1.4
 - **Dependencies:** F-7.1.3
 - **Platform notes:** Lightweight CPU cost; runs identically on all platforms.
 
@@ -53,7 +49,6 @@ Post-processes waypoint paths with short raycasts against the NavMesh to remove 
 produce natural-looking movement. Applies Catmull-Rom or cubic Bezier interpolation for curved
 trajectories where aesthetics matter (e.g., town patrol routes).
 
-- **Requirements:** R-7.1.5
 - **Dependencies:** F-7.1.4
 - **Platform notes:** Mobile skips Bezier interpolation and uses linear waypoint paths to reduce
   per-path CPU cost.
@@ -66,7 +61,6 @@ Marks NavMesh regions as temporarily blocked when dynamic obstacles (barricades,
 trees) appear or move. Uses tile-local re-carving to invalidate only affected polygons, triggering
 localized repath requests for agents whose corridors intersect the modified area.
 
-- **Requirements:** R-7.1.6
 - **Dependencies:** F-7.1.2
 - **Platform notes:** Mobile limits simultaneous carve operations to 4 per tick; desktop allows 16+.
   Repath storms are throttled more aggressively on mobile.
@@ -77,7 +71,6 @@ Defines traversal connections between disjoint NavMesh regions for actions like 
 climbing ladders, opening doors, or swimming transitions. Each link carries a cost, animation tag,
 and optional precondition (key required, ability unlocked) so the planner can evaluate feasibility.
 
-- **Requirements:** R-7.1.7
 - **Dependencies:** F-7.1.1
 - **Platform notes:** Link data is lightweight; runs identically on all platforms.
 
@@ -91,7 +84,6 @@ its immediate neighbors are revoxelized and recontoured; unaffected tiles remain
 `NavMeshDirtyRegion` ECS component marks spatial extents that require rebuild, and the
 `NavMeshRebuildSystem` processes them in priority order.
 
-- **Requirements:** R-7.1.8
 - **Dependencies:** F-7.1.2, F-1.1.7 (Change Detection)
 - **Platform notes:** Mobile caps concurrent tile rebuilds to 1; desktop allows 4+. Mobile uses
   coarser voxel resolution (cell size 2x desktop) to reduce rebuild cost.
@@ -104,7 +96,6 @@ never blocking the main simulation tick. Tiles under construction are marked as 
 fallback (last known good mesh or straight-line movement with collision avoidance). Completed tiles
 are swapped in atomically at the next sync point.
 
-- **Requirements:** R-7.1.9
 - **Dependencies:** F-7.1.8, F-14.3.3 (Job System)
 - **Platform notes:** Mobile devices have fewer worker threads (2-4 vs. 8+ on desktop); generation
   queue depth is capped lower to avoid starving gameplay threads.
@@ -117,7 +108,6 @@ observes these events and enqueues incremental tile rebuilds for the affected ar
 buildings open new pathways; rubble piles create new obstacles. Rebuild priority scales with the
 number of active agents whose paths intersect the region.
 
-- **Requirements:** R-7.1.10
 - **Dependencies:** F-7.1.8, F-4.6.3 (Runtime Fracture), F-1.5.1 (Events)
 - **Platform notes:** Mobile may defer or skip rebuilds for distant destruction events; agents fall
   back to obstacle avoidance until the tile is rebuilt.
@@ -130,7 +120,6 @@ or removed, the affected tiles are queued for incremental rebuild (F-7.1.8). Are
 designating player structures as impassable walls, walkable ramps, or elevated platforms with
 NavMesh links auto-generated for stairs and ladders.
 
-- **Requirements:** R-7.1.11
 - **Dependencies:** F-7.1.8, F-7.1.7
 - **Platform notes:** Mobile uses coarser NavMesh tile resolution (see F-7.1.8); auto-link
   generation for stairs/ladders may be deferred to reduce rebuild cost.
@@ -145,7 +134,6 @@ siege golem each navigate on their own mesh layer. Tiles for all layers share th
 so streaming loads all layers for a region together. Agent entities reference their layer via a
 `NavMeshAgent` ECS component.
 
-- **Requirements:** R-7.1.12
 - **Dependencies:** F-7.1.1, F-7.1.2
 - **Platform notes:** Mobile limits to 2 agent size layers (humanoid + large); desktop supports 4+.
   Fewer layers reduce NavMesh memory and streaming bandwidth.
@@ -157,7 +145,6 @@ water area cost; a battlefield applies danger-area weighting; a road buff reduce
 Cost modifications are stored in a `NavMeshAreaCosts` ECS resource and applied during A* expansion.
 Per-agent cost overrides allow faction-specific routing (friendly territory is cheaper).
 
-- **Requirements:** R-7.1.13
 - **Dependencies:** F-7.1.3
 - **Platform notes:** Lightweight data-only operation; runs identically on all platforms.
 
@@ -171,7 +158,6 @@ to full NavMesh resolution only for the tiles the agent is currently traversing.
 pathfinding cost bounded regardless of world size — critical for thousands of server- side NPCs with
 cross-continent travel goals.
 
-- **Requirements:** R-7.1.14
 - **Dependencies:** F-7.1.2, F-7.1.3
 - **Platform notes:** Primarily server-side. Mobile clients with local AI use HPA* exclusively for
   paths longer than 3 tiles to keep query cost minimal.
@@ -185,7 +171,6 @@ pending rebuild zones as debug overlays. Visualization is controlled by `NavMesh
 components and integrates with the editor gizmo system (F-15.1.4). Color-coded area types and
 agent-path trails help designers diagnose navigation failures in complex open-world geometry.
 
-- **Requirements:** R-7.1.15
 - **Dependencies:** F-7.1.1, F-15.1.4 (Gizmos)
 - **Platform notes:** Debug-only feature; stripped from shipping builds on all platforms. Editor
   visualization available on desktop only.

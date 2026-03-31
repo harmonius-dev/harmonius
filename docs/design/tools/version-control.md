@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature   | Requirement |
 |-----------|-------------|
@@ -39,8 +38,9 @@ Key capabilities:
 
 1. **Git LFS** — automatic tracking by extension and size threshold, lock/unlock from the asset
    browser, bulk operations, and storage quota monitoring.
-2. **Structural merge driver** — three-way semantic merge for binary assets (logic graphs, prefabs,
-   materials, data tables) registered via `.gitattributes` with visual conflict resolution fallback.
+2. **Structural merge driver** — three-way semantic merge for binary assets (logic graphs, entity
+   templates, materials, data tables) registered via `.gitattributes` with visual conflict
+   resolution fallback.
 3. **Branch workflow** — create, switch, and delete branches from the editor; asset cache
    preservation on switch; PR/MR creation against GitHub, GitLab, Bitbucket, and Azure DevOps.
 4. **Presence** — real-time indicators of who edits what, pessimistic locking for non-mergeable
@@ -1032,9 +1032,9 @@ libgit2 for operations like merge and rebase.
 The `HostingProvider` trait (F-15.10.8) uses `dyn` dispatch, which deviates from the static dispatch
 preference. Since there are only four providers (GitHub, GitLab, Bitbucket, Azure DevOps), an enum
 dispatch would be more efficient. The structural merge driver (F-15.10.3) operates on the entire
-asset blob -- for large prefabs with thousands of entities, this means deserializing and diffing the
-entire file even when only one property changed. Adding incremental structural diff and converting
-providers to enum dispatch would improve performance and alignment.
+asset blob -- for large entity templates with thousands of entities, this means deserializing and
+diffing the entire file even when only one property changed. Adding incremental structural diff and
+converting providers to enum dispatch would improve performance and alignment.
 
 **Q3. Is there a better approach?**
 
@@ -1047,10 +1047,10 @@ tooling, and integrates with all major hosting providers (F-15.10.8). The struct
 **Q4. Does this design solve all customer problems?**
 
 The design lacks support for asset dependency visualization -- when a user modifies a texture, they
-cannot see which materials, prefabs, and scenes reference it before committing. There is no user
-story for blame/annotation on binary assets (which entity in a scene was last modified by whom).
-Adding a dependency graph view in the VC panel and per-entity blame via the structural diff system
-would help teams working on large, interconnected game worlds.
+cannot see which materials, entity templates, and scenes reference it before committing. There is no
+user story for blame/annotation on binary assets (which entity in a scene was last modified by
+whom). Adding a dependency graph view in the VC panel and per-entity blame via the structural diff
+system would help teams working on large, interconnected game worlds.
 
 **Q5. Is this design cohesive with the overall engine?**
 

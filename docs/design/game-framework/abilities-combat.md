@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/game-framework/](../../features/game-framework/),
-> [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
-> elements to those definitions.
+> [features/game-framework/](../../features/), [requirements/game-framework/](../../requirements/),
+> and [user-stories/game-framework/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 | Feature   | Requirement | User Stories                 |
 |-----------|-------------|------------------------------|
@@ -32,10 +31,10 @@
 
 ## Overview
 
-The abilities and combat system is a GAS-style (Gameplay Ability System) framework where every
-ability is a data asset composed from reusable building blocks. Designers author abilities entirely
-in the visual editor -- no code. All runtime state lives as ECS components, all logic runs as ECS
-systems, and all hit detection flows through the shared spatial index.
+The abilities and combat system is an Ability-Framework-style framework where every ability is a
+data asset composed from reusable building blocks. Designers author abilities entirely in the visual
+editor -- no code. All runtime state lives as ECS components, all logic runs as ECS systems, and all
+hit detection flows through the shared spatial index.
 
 The system has two major domains:
 
@@ -59,7 +58,7 @@ graph TD
         AD[AbilityDefinition]
         AA[AbilityActivation]
         GE[GameplayEffects]
-        GT[GameplayTags]
+        GT[HierarchicalTags]
         CD[Cooldowns]
         CO[Combos]
     end
@@ -352,10 +351,10 @@ classDiagram
 
 ## API Design
 
-### Gameplay Tags
+### Hierarchical Tags
 
-Gameplay tags are the foundation for ability categorization, effect interactions, and conditional
-logic. Tags are stored as a 128-bit bitmask for O(1) set operations.
+Hierarchical tags are the foundation for ability categorization, effect interactions, and
+conditional logic. Tags are stored as a 128-bit bitmask for O(1) set operations.
 
 ```rust
 /// A set of gameplay tags stored as a bitmask.
@@ -950,7 +949,7 @@ Each step is a separate ability with its own hitbox timing, damage, and animatio
 | Component             | Platform Impact |
 |-----------------------|-----------------|
 | Shared spatial index  | All platforms   |
-| Gameplay tags         | All platforms   |
+| Hierarchical tags     | All platforms   |
 | Effect evaluation     | All platforms   |
 | Lag compensation      | Server only     |
 | Aim assist            | Gamepad only    |
@@ -958,7 +957,7 @@ Each step is a separate ability with its own hitbox timing, damage, and animatio
 
 1. **Shared spatial index** — Shape casts for hitboxes and projectile CCD use the same BVH/octree
    shared with physics, rendering, and networking
-2. **Gameplay tags** — 128-bit bitmask operations are 2 instructions on all targets (AND, CMP)
+2. **Hierarchical tags** — 128-bit bitmask operations are 2 instructions on all targets (AND, CMP)
 3. **Effect evaluation** — Tight loop over SmallVec; cache-friendly iteration
 4. **Lag compensation** — Historical snapshot ring buffer consumes memory proportional to max
    compensated latency
@@ -1101,12 +1100,12 @@ Each step is a separate ability with its own hitbox timing, damage, and animatio
 **Q1. What is the biggest constraint limiting this design?**
 
 The 128-bit tag bitmask (u128 GameplayTagSet) is the most significant constraint. It caps the entire
-game at 128 unique gameplay tags for all abilities, effects, statuses, and interactions. Lifting
+game at 128 unique hierarchical tags for all abilities, effects, statuses, and interactions. Lifting
 this would allow a HashSet or hierarchical tag tree, enabling thousands of tags with namespace
-support like GAS's `Ability.Fire.Damage.DoT`. The impact of the current limit is that large RPGs
-with hundreds of status effects and elemental interactions will exhaust tag slots. However, removing
-the bitmask sacrifices O(1) set intersection to O(n) hash lookups, so a tiered approach (fast-path
-bitmask + overflow set) would preserve hot-path performance.
+support like Ability Framework's `Ability.Fire.Damage.DoT`. The impact of the current limit is that
+large RPGs with hundreds of status effects and elemental interactions will exhaust tag slots.
+However, removing the bitmask sacrifices O(1) set intersection to O(n) hash lookups, so a tiered
+approach (fast-path bitmask + overflow set) would preserve hot-path performance.
 
 **Q2. How can this design be improved?**
 
@@ -1122,9 +1121,9 @@ critical gaps.
 **Q3. Is there a better approach?**
 
 An alternative would be to unify abilities and effects into a single entity archetype rather than
-separating `harmonius_abilities` and `harmonius_combat` into two modules. Unreal's GAS uses a single
-`GameplayAbility` that owns its effects. However, the split is justified because melee combat
-(hitbox/hurtbox, SwingTracker) and ranged combat (projectile physics, CCD) have fundamentally
+separating `harmonius_abilities` and `harmonius_combat` into two modules. Unreal's Ability Framework
+uses a single `GameplayAbility` that owns its effects. However, the split is justified because melee
+combat (hitbox/hurtbox, SwingTracker) and ranged combat (projectile physics, CCD) have fundamentally
 different data and system dependencies. Merging them would create a monolithic module with too many
 concerns. The current split keeps combat physics separate from ability logic, which aligns with the
 ECS principle of composing orthogonal systems.

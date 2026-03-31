@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/ai/](../../features/ai/), [requirements/ai/](../../requirements/ai/), and
-> [user-stories/ai/](../../user-stories/ai/). The table below traces design elements to those
+> [features/ai/](../../features/), [requirements/ai/](../../requirements/), and
+> [user-stories/ai/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 ### Steering & Avoidance (F-7.2 / R-7.2)
@@ -92,7 +92,7 @@ graph TD
         FL[FlockingSystem]
         FF[FlowFieldGenerator]
         FFC[FlowFieldCache]
-        ME[MassEntityPipeline]
+        ME[BatchProcessorPipeline]
         LOD[AiLodScheduler]
         DM[DensityManager]
     end
@@ -219,7 +219,7 @@ sequenceDiagram
     participant FL as FlockingSystem
     participant SI as Shared Spatial Index
     participant DM as DensitySystem
-    participant ME as MassEntitySystem
+    participant ME as BatchProcessorSystem
     participant IN as IntegrationSystem
 
     ECS->>LOD: assign LOD tiers
@@ -243,7 +243,7 @@ sequenceDiagram
     DM->>DM: enforce density caps
     Note over DM: redirect or despawn overflow
 
-    ECS->>ME: run MassEntitySystem
+    ECS->>ME: run BatchProcessorSystem
     ME->>FFC: sample flow field direction
     ME->>ME: blend flow + flocking forces
 
@@ -429,7 +429,7 @@ graph LR
     OA --> BL[SteeringBlendSystem]
     FFG --> FL[FlockingSystem]
     FL --> DM[DensitySystem]
-    DM --> ME[MassEntitySystem]
+    DM --> ME[BatchProcessorSystem]
     BL --> IN[IntegrationSystem]
     ME --> IN
 ```

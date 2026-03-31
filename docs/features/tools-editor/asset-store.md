@@ -2,11 +2,11 @@
 
 ## Browsing and Discovery
 
-| ID        | Feature                                        | Requirements |
-|-----------|------------------------------------------------|--------------|
-| F-15.17.1 | Integrated Asset Store Browser                 | R-15.17.1    |
-| F-15.17.2 | One-Click Asset Import and Project Integration | R-15.17.2    |
-| F-15.17.3 | Asset Ratings, Reviews, and Curation           | R-15.17.3    |
+| ID | Feature |
+| ----------- | ------------------------------------------------ |
+| F-15.17.1 | Integrated Asset Store Browser |
+| F-15.17.2 | One-Click Asset Import and Project Integration |
+| F-15.17.3 | Asset Ratings, Reviews, and Curation |
 
 1. **F-15.17.1** — An in-editor marketplace browser for discovering, previewing, and acquiring
    assets, plugins, and tools. The browser displays a searchable, filterable catalog with categories
@@ -36,11 +36,11 @@
 
 ## Publisher Tools
 
-| ID        | Feature                         | Requirements |
-|-----------|---------------------------------|--------------|
-| F-15.17.4 | Publisher Account and Dashboard | R-15.17.4    |
-| F-15.17.5 | Automated Compatibility Testing | R-15.17.5    |
-| F-15.17.6 | Revenue Sharing and Payout      | R-15.17.6    |
+| ID | Feature |
+| ----------- | --------------------------------- |
+| F-15.17.4 | Publisher Account and Dashboard |
+| F-15.17.5 | Automated Compatibility Testing |
+| F-15.17.6 | Revenue Sharing and Payout |
 
 1. **F-15.17.4** — Asset creators register publisher accounts with identity verification. The
    publisher dashboard displays: published assets, revenue analytics (sales, refunds, royalties),
@@ -68,10 +68,10 @@
 
 ## Asset Types and Licensing
 
-| ID        | Feature                    | Requirements |
-|-----------|----------------------------|--------------|
-| F-15.17.7 | Asset Type Support         | R-15.17.7    |
-| F-15.17.8 | License Management and DRM | R-15.17.8    |
+| ID | Feature |
+| ----------- | ---------------------------- |
+| F-15.17.7 | Asset Type Support |
+| F-15.17.8 | License Management and DRM |
 
 1. **F-15.17.7** — The marketplace supports all asset types producible by the engine: 3D meshes
    (with LODs, materials, collision), 2D sprites and sprite sheets, materials and material
@@ -92,13 +92,13 @@
 
 ## Open Source Asset Store
 
-| ID         | Feature                     | Requirements |
-|------------|-----------------------------|--------------|
-| F-15.17.9  | Open Source Asset Browser   | R-15.17.9    |
-| F-15.17.10 | Asset Upload and Publishing | R-15.17.10   |
-| F-15.17.11 | Asset Rating and Reviews    | R-15.17.11   |
-| F-15.17.12 | Asset Versioning            | R-15.17.12   |
-| F-15.17.13 | One-Click Import            | R-15.17.13   |
+| ID | Feature |
+| ------------ | ----------------------------- |
+| F-15.17.9 | Open Source Asset Browser |
+| F-15.17.10 | Asset Upload and Publishing |
+| F-15.17.11 | Asset Rating and Reviews |
+| F-15.17.12 | Asset Versioning |
+| F-15.17.13 | One-Click Import |
 
 1. **F-15.17.9** — Browse, search, and filter free and open-source assets hosted on the engine's
    community Git repository. The browser integrates into the same store UI as the paid marketplace
@@ -135,13 +135,13 @@
 
 ## External Store Integration
 
-| ID         | Feature                     | Requirements |
-|------------|-----------------------------|--------------|
-| F-15.17.14 | FAB (Epic) Integration      | R-15.17.14   |
-| F-15.17.15 | Synty Store Integration     | R-15.17.15   |
-| F-15.17.16 | TurboSquid Integration      | R-15.17.16   |
-| F-15.17.17 | Generic Store API           | R-15.17.17   |
-| F-15.17.18 | License Compliance Tracking | R-15.17.18   |
+| ID | Feature |
+| ------------ | ----------------------------- |
+| F-15.17.14 | FAB (Epic) Integration |
+| F-15.17.15 | Synty Store Integration |
+| F-15.17.16 | TurboSquid Integration |
+| F-15.17.17 | Generic Store API |
+| F-15.17.18 | License Compliance Tracking |
 
 1. **F-15.17.14** — Browse and purchase assets from Epic's FAB marketplace within the editor. OAuth
    2.0 login authenticates the user's Epic account. The integration displays FAB listings with
@@ -178,18 +178,18 @@
 
 ## AI Content Generation
 
-| ID         | Feature                 | Requirements |
-|------------|-------------------------|--------------|
-| F-15.17.19 | AI Texture Generation   | R-15.17.19   |
-| F-15.17.20 | AI Mesh Generation      | R-15.17.20   |
-| F-15.17.21 | AI Animation Generation | R-15.17.21   |
-| F-15.17.22 | AI Audio Generation     | R-15.17.22   |
-| F-15.17.23 | AI Level Layout         | R-15.17.23   |
-| F-15.17.24 | AI Material Generation  | R-15.17.24   |
-| F-15.17.25 | AI VFX Generation       | R-15.17.25   |
-| F-15.17.26 | AI Content Iteration    | R-15.17.26   |
-| F-15.17.27 | Local AI Inference      | R-15.17.27   |
-| F-15.17.28 | AI Content Governance   | R-15.17.28   |
+| ID | Feature |
+| ------------ | ------------------------- |
+| F-15.17.19 | AI Texture Generation |
+| F-15.17.20 | AI Mesh Generation |
+| F-15.17.21 | AI Animation Generation |
+| F-15.17.22 | AI Audio Generation |
+| F-15.17.23 | AI Level Layout |
+| F-15.17.24 | AI Material Generation |
+| F-15.17.25 | AI VFX Generation |
+| F-15.17.26 | AI Content Iteration |
+| F-15.17.27 | Local AI Inference |
+| F-15.17.28 | AI Content Governance |
 
 1. **F-15.17.19** — Generate textures from text prompts using diffusion-based models. Supports
    seamless tiling and PBR channel generation (albedo, normal, roughness, metallic, ambient
@@ -260,5 +260,5 @@
 
 ## Feature Summary
 
-| ID | Feature | Requirements |
-|----|---------|--------------|
+| ID | Feature |
+| ---- | --------- |

@@ -2,10 +2,10 @@
 
 ## Binary Serialization
 
-| ID      | Feature                                      | Requirements |
-|---------|----------------------------------------------|--------------|
-| F-1.4.1 | Compact Binary Serialization Format          | R-1.4.1      |
-| F-1.4.2 | Zero-Copy Deserialization for Read-Only Data | R-1.4.2      |
+| ID      | Feature                                     |
+|---------|----------------------------------------------|
+| F-1.4.1 | Compact Binary Serialization Format         |
+| F-1.4.2 | Zero-Copy Deserialization for Read-Only Data|
 
 1. **F-1.4.1** — Serialize and deserialize component data, resources, and scenes into a compact
    binary format optimized for read/write throughput and minimal allocation. The format uses
@@ -24,9 +24,9 @@
 
 ## Text Serialization
 
-| ID      | Feature                           | Requirements |
-|---------|-----------------------------------|--------------|
-| F-1.4.3 | Human-Readable Text Serialization | R-1.4.3      |
+| ID      | Feature                          |
+|---------|-----------------------------------|
+| F-1.4.3 | Human-Readable Text Serialization|
 
 1. **F-1.4.3** — Serialize and deserialize data in a human-readable text format (RON, JSON, or TOML)
    for configuration files, debug inspection, and hand-authored content. Text serialization is
@@ -37,9 +37,9 @@
 
 ## Schema Versioning
 
-| ID      | Feature                                      | Requirements |
-|---------|----------------------------------------------|--------------|
-| F-1.4.4 | Schema Versioning with Semantic Version Tags | R-1.4.4      |
+| ID      | Feature                                     |
+|---------|----------------------------------------------|
+| F-1.4.4 | Schema Versioning with Semantic Version Tags|
 
 1. **F-1.4.4** — Tag every serialized type with a semantic version. The version is embedded in
    serialized headers and checked during deserialization. Version mismatches trigger migration
@@ -49,9 +49,9 @@
 
 ## Migration
 
-| ID      | Feature                 | Requirements |
-|---------|-------------------------|--------------|
-| F-1.4.5 | Data Migration Pipeline | R-1.4.5      |
+| ID      | Feature                |
+|---------|-------------------------|
+| F-1.4.5 | Data Migration Pipeline|
 
 1. **F-1.4.5** — Provide a migration registry where version-to-version transform functions are
    registered for each type. During deserialization, if the stored version differs from the current
@@ -61,9 +61,9 @@
 
 ## Asset Serialization
 
-| ID      | Feature                                          | Requirements |
-|---------|--------------------------------------------------|--------------|
-| F-1.4.6 | Asset-Aware Serialization with Handle Resolution | R-1.4.6      |
+| ID      | Feature                                         |
+|---------|--------------------------------------------------|
+| F-1.4.6 | Asset-Aware Serialization with Handle Resolution|
 
 1. **F-1.4.6** — Serialize and deserialize asset handles as stable asset IDs (UUID or path-based)
    rather than raw pointers or indices. During deserialization, asset references are resolved
@@ -73,9 +73,9 @@
 
 ## Scene Serialization
 
-| ID      | Feature                                      | Requirements |
-|---------|----------------------------------------------|--------------|
-| F-1.4.7 | Full Scene Serialization and Deserialization | R-1.4.7      |
+| ID      | Feature                                     |
+|---------|----------------------------------------------|
+| F-1.4.7 | Full Scene Serialization and Deserialization|
 
 1. **F-1.4.7** — Serialize an entire ECS world — entities, components, hierarchy, and resources —
    into a portable scene format. Deserialization reconstructs the world state faithfully, including
@@ -88,11 +88,11 @@
 
 ## Mixed-Format Serialization
 
-| ID       | Feature                                           | Requirements |
-|----------|---------------------------------------------------|--------------|
-| F-1.4.8  | Mixed-Format Serialization with Binary Companions | R-1.4.8      |
-| F-1.4.9  | Binary Companion File Format                      | R-1.4.9      |
-| F-1.4.10 | Reflection-Driven Binary Reference Attributes     | R-1.4.10     |
+| ID       | Feature                                          |
+|----------|---------------------------------------------------|
+| F-1.4.8  | Mixed-Format Serialization with Binary Companions|
+| F-1.4.9  | Binary Companion File Format                     |
+| F-1.4.10 | Reflection-Driven Binary Reference Attributes    |
 
 1. **F-1.4.8** — Support a serialization mode where a human-readable text file (RON or TOML)
    contains structured data alongside references to binary companion files that store bulk data. The

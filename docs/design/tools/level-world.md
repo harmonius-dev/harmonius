@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Level Editor (15.2)
 
@@ -21,8 +20,8 @@
 | F-15.2.7 | R-15.2.7    |
 
 1. **F-15.2.1** — Entity placement with grid, surface, and vertex snapping
-2. **F-15.2.2** — Prefab system with nested prefab hierarchies
-3. **F-15.2.3** — Per-instance prefab property overrides
+2. **F-15.2.2** — Entity template system with nested entity template hierarchies
+3. **F-15.2.3** — Per-instance entity template property overrides
 4. **F-15.2.4** — CSG brush tools for blockout and boolean operations
 5. **F-15.2.5** — Spline editing with Bezier/Catmull-Rom curves
 6. **F-15.2.6** — Landscape material painting with auto-paint rules
@@ -79,8 +78,8 @@ graph TD
     subgraph "harmonius_editor::level"
         EP[EntityPlacer]
         SN[SnapEngine]
-        PF[PrefabManager]
-        PO[PrefabOverrides]
+        PF[TemplateManager]
+        PO[TemplateOverrides]
         CSG[CsgProcessor]
         SP[SplineEditor]
         LP[LandscapePainter]
@@ -141,9 +140,9 @@ harmonius_editor/
 │   │                      # placement
 │   ├── snap.rs            # SnapEngine: grid, surface,
 │   │                      # vertex snapping
-│   ├── prefab.rs          # PrefabManager, nested
-│   │                      # prefab loading
-│   ├── prefab_override.rs # OverrideMap, per-property
+│   ├── template.rs          # TemplateManager, nested
+│   │                      # entity template loading
+│   ├── template_override.rs # OverrideMap, per-property
 │   │                      # override tracking
 │   ├── csg.rs             # CsgProcessor, boolean ops,
 │   │                      # mesh conversion
@@ -204,20 +203,20 @@ sequenceDiagram
     Note over ECS,SI: Entity visible next frame
 ```
 
-### Prefab Propagation Flow
+### Entity Template Propagation Flow
 
 ```mermaid
 sequenceDiagram
     participant A as Artist
-    participant PM as PrefabManager
-    participant PA as PrefabAsset
-    participant PI as PrefabInstances
+    participant PM as TemplateManager
+    participant PA as TemplateAsset
+    participant PI as TemplateInstances
     participant OV as OverrideMap
     participant ECS as ECS World
 
-    A->>PM: modify source prefab
+    A->>PM: modify source entity template
     PM->>PA: update entity template
-    PM->>PI: find all instances of prefab
+    PM->>PI: find all instances of entity template
     loop Each Instance
         PI->>OV: check property overrides
         alt Property overridden
@@ -250,7 +249,7 @@ sequenceDiagram
     Note over IO: Incremental streaming
 ```
 
-### World Partition and Multi-User Flow
+### World Grid and Multi-User Flow
 
 ```mermaid
 sequenceDiagram
@@ -280,12 +279,12 @@ sequenceDiagram
 
 ```mermaid
 classDiagram
-    class PrefabAsset {
+    class TemplateAsset {
         +AssetId id
         +Vec~EntityTemplate~ entities
-        +Vec~PrefabRef~ nested_prefabs
+        +Vec~TemplateRef~ nested_templates
         +save() Future~()~
-        +load(id: AssetId) Future~PrefabAsset~
+        +load(id: AssetId) Future~TemplateAsset~
     }
 
     class EntityTemplate {
@@ -295,9 +294,9 @@ classDiagram
         +Vec~EntityTemplateId~ children
     }
 
-    class PrefabInstance {
+    class TemplateInstance {
         +Entity root_entity
-        +AssetId source_prefab
+        +AssetId source_template
         +OverrideMap overrides
         +apply_overrides(world: &mut World)
         +revert_property(path: PropertyPath)
@@ -335,10 +334,10 @@ classDiagram
         +u32 triangle_budget
     }
 
-    PrefabAsset *-- EntityTemplate
-    PrefabAsset o-- PrefabAsset : nested
-    PrefabInstance --> PrefabAsset : source
-    PrefabInstance *-- OverrideMap
+    TemplateAsset *-- EntityTemplate
+    TemplateAsset o-- TemplateAsset : nested
+    TemplateInstance --> TemplateAsset : source
+    TemplateInstance *-- OverrideMap
     OverrideMap *-- PropertyPath
 ```
 
@@ -440,10 +439,10 @@ impl EntityPlacer {
 }
 ```
 
-### Prefab System
+### Entity Template System
 
 ```rust
-/// Unique identifier for an entity within a prefab
+/// Unique identifier for an entity within an entity
 /// template.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash,
@@ -451,13 +450,13 @@ impl EntityPlacer {
 pub struct EntityTemplateId(pub u32);
 
 /// A reusable entity hierarchy stored as an asset.
-pub struct PrefabAsset {
+pub struct TemplateAsset {
     pub id: AssetId,
     pub entities: Vec<EntityTemplate>,
-    pub nested_prefabs: Vec<PrefabRef>,
+    pub nested_templates: Vec<TemplateRef>,
 }
 
-/// A single entity template within a prefab.
+/// A single entity definition within a template.
 pub struct EntityTemplate {
     pub id: EntityTemplateId,
     pub components: HashMap<
@@ -468,58 +467,58 @@ pub struct EntityTemplate {
     pub children: Vec<EntityTemplateId>,
 }
 
-/// Reference to a nested prefab with a local
+/// Reference to a nested entity template with a local
 /// transform offset.
-pub struct PrefabRef {
-    pub prefab_id: AssetId,
+pub struct TemplateRef {
+    pub template_id: AssetId,
     pub local_transform: Transform,
 }
 
-/// Manages prefab loading, instantiation, and
+/// Manages entity template loading, instantiation, and
 /// propagation.
-pub struct PrefabManager { /* ... */ }
+pub struct TemplateManager { /* ... */ }
 
-impl PrefabManager {
+impl TemplateManager {
     pub fn new() -> Self;
 
-    /// Load a prefab asset from disk.
+    /// Load an entity template asset from disk.
     pub async fn load(
         &self,
         id: AssetId,
         reactor: &IoReactor,
-    ) -> Result<PrefabAsset, AssetError>;
+    ) -> Result<TemplateAsset, AssetError>;
 
-    /// Instantiate a prefab into the ECS world.
+    /// Instantiate an entity template into the ECS world.
     /// Returns the root entity.
     pub fn instantiate(
         &self,
-        prefab: &PrefabAsset,
+        template: &TemplateAsset,
         transform: Transform,
         world: &mut World,
     ) -> Entity;
 
-    /// Create a prefab from a selection of entities.
+    /// Create an entity template from a selection of entities.
     pub fn create_from_selection(
         &self,
         entities: &[Entity],
         world: &World,
-    ) -> PrefabAsset;
+    ) -> TemplateAsset;
 
-    /// Propagate source prefab changes to all
+    /// Propagate source entity template changes to all
     /// instances, respecting per-instance overrides.
     pub fn propagate_changes(
         &self,
-        prefab_id: AssetId,
+        template_id: AssetId,
         world: &mut World,
     );
 }
 ```
 
-### Prefab Instance Overrides
+### Entity Template Instance Overrides
 
 ```rust
-/// Path to a specific property within a prefab
-/// instance, used for override tracking.
+/// Path to a specific property within an entity
+/// template instance, used for override tracking.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PropertyPath {
     pub entity: EntityTemplateId,
@@ -528,7 +527,7 @@ pub struct PropertyPath {
 }
 
 /// Per-instance override map. Tracks which
-/// properties differ from the source prefab.
+/// properties differ from the source entity template.
 pub struct OverrideMap {
     entries: HashMap<PropertyPath, OverrideValue>,
 }
@@ -552,16 +551,16 @@ impl OverrideMap {
     >;
 }
 
-/// Component attached to prefab instance root
+/// Component attached to entity template instance root
 /// entities to track their source and overrides.
-pub struct PrefabInstanceComponent {
-    pub source_prefab: AssetId,
+pub struct TemplateInstanceComponent {
+    pub source_template: AssetId,
     pub overrides: OverrideMap,
 }
 
-impl PrefabInstanceComponent {
+impl TemplateInstanceComponent {
     /// Revert a single property to the source
-    /// prefab value.
+    /// entity template value.
     pub fn revert_property(
         &mut self,
         path: &PropertyPath,
@@ -569,12 +568,12 @@ impl PrefabInstanceComponent {
         entity: Entity,
     );
 
-    /// Apply an override back to the source prefab,
+    /// Apply an override back to the source template,
     /// making it the new default.
     pub fn apply_to_source(
         &self,
         path: &PropertyPath,
-        prefab: &mut PrefabAsset,
+        template: &mut TemplateAsset,
     );
 }
 ```
@@ -1127,7 +1126,7 @@ impl NavmeshPreview {
 }
 ```
 
-### World Partition Visualization
+### World Grid Visualization
 
 ```rust
 /// Streaming state of a world cell.
@@ -1280,11 +1279,11 @@ impl UndoHistory {
    in the ECS world.
 5. The ECS inserts the entity into the shared spatial index. It becomes visible next frame.
 
-### Prefab Propagation
+### Entity Template Propagation
 
-1. An artist modifies a source prefab asset.
-2. `PrefabManager::propagate_changes()` queries all entities with a matching
-   `PrefabInstanceComponent`.
+1. An artist modifies a source entity template asset.
+2. `TemplateManager::propagate_changes()` queries all entities with a matching
+   `TemplateInstanceComponent`.
 3. For each instance, properties without overrides receive the updated source value.
 4. Overridden properties are left unchanged.
 5. The inspector shows overrides with bold labels via `OverrideMap::has_override()`.
@@ -1299,7 +1298,7 @@ impl UndoHistory {
 6. On brush release, dirty tiles are flushed to disk via `IoReactor::write()`.
 7. Peak memory is bounded by loading only the affected tile window.
 
-### World Partition Multi-User
+### World Grid Multi-User
 
 1. An artist requests a cell lock via `MultiUserSession::request_lock()`.
 2. The server checks ownership. If available, the lock is granted.
@@ -1328,8 +1327,8 @@ All platform I/O uses the `IoReactor` controlled drain at the frame poll point. 
 | `test_grid_snap_alignment`      | R-15.2.1 |
 | `test_surface_snap_terrain`     | R-15.2.1 |
 | `test_vertex_snap_precision`    | R-15.2.1 |
-| `test_prefab_instantiate`       | R-15.2.2 |
-| `test_prefab_propagation`       | R-15.2.2 |
+| `test_template_instantiate`       | R-15.2.2 |
+| `test_template_propagation`       | R-15.2.2 |
 | `test_override_set_revert`      | R-15.2.3 |
 | `test_override_apply_to_source` | R-15.2.3 |
 | `test_csg_boolean_additive`     | R-15.2.4 |
@@ -1358,8 +1357,10 @@ All platform I/O uses the `IoReactor` controlled drain at the frame poll point. 
    normal.
 3. **`test_vertex_snap_precision`** — Snap to a known vertex, verify position matches within
    epsilon.
-4. **`test_prefab_instantiate`** — Instantiate a 3-level nested prefab, verify all entities spawned.
-5. **`test_prefab_propagation`** — Modify source prefab, verify all non-overridden instances update.
+4. **`test_template_instantiate`** — Instantiate a 3-level nested entity template, verify all
+   entities spawned.
+5. **`test_template_propagation`** — Modify source entity template, verify all non-overridden
+   instances update.
 6. **`test_override_set_revert`** — Set override, verify value differs. Revert, verify matches
    source.
 7. **`test_override_apply_to_source`** — Apply override to source, verify all instances receive new
@@ -1393,7 +1394,7 @@ All platform I/O uses the `IoReactor` controlled drain at the frame poll point. 
 | Test                               | Req      |
 |------------------------------------|----------|
 | `test_place_undo_redo`             | R-15.2.1 |
-| `test_prefab_save_load_round_trip` | R-15.2.2 |
+| `test_template_save_load_round_trip` | R-15.2.2 |
 | `test_csg_render_collision`        | R-15.2.4 |
 | `test_terrain_sculpt_async_io`     | R-15.6.1 |
 | `test_erosion_gpu_15fps`           | R-15.6.2 |
@@ -1401,8 +1402,8 @@ All platform I/O uses the `IoReactor` controlled drain at the frame poll point. 
 | `test_partition_streaming`         | R-15.6.8 |
 
 1. **`test_place_undo_redo`** — Place entity, undo, verify removed. Redo, verify restored.
-2. **`test_prefab_save_load_round_trip`** — Create nested prefab, save, load, verify identical
-   structure.
+2. **`test_template_save_load_round_trip`** — Create nested entity template, save, load, verify
+   identical structure.
 3. **`test_csg_render_collision`** — CSG output renders correctly and collision mesh matches.
 4. **`test_terrain_sculpt_async_io`** — Sculpt with async I/O, verify no worker threads block.
 5. **`test_erosion_gpu_15fps`** — Run erosion on 2048x2048, verify preview stays above 15 FPS.
@@ -1414,7 +1415,7 @@ All platform I/O uses the `IoReactor` controlled drain at the frame poll point. 
 | Benchmark | Target | Source |
 |-----------|--------|--------|
 | Entity placement latency | < 1 ms from release to visible | US-15.2.1.1 |
-| Prefab propagation (1000 instances) | < 16 ms | US-15.2.2.3 |
+| Entity template propagation (1000 instances) | < 16 ms | US-15.2.2.3 |
 | CSG boolean operation | < 100 ms for 2 primitives | US-15.2.4.3 |
 | Terrain sculpt 16k heightmap peak memory | < 512 MB | US-15.6.1.6 |
 | Erosion preview 2048x2048 | > 15 FPS | US-15.6.2.5 |
@@ -1461,10 +1462,11 @@ would directly benefit RTS, RPG, and open-world genres.
 **Q5. Is this design cohesive with the overall engine?**
 
 The level editor is deeply cohesive with the engine -- placement uses the shared spatial index,
-terrain I/O uses `IoReactor`, prefabs use the reflection system, and all tools operate on the live
-ECS world. The `OverrideMap` for prefab instances (F-15.2.3) mirrors the material instance override
-pattern (F-15.3.5), creating a consistent authoring mental model. The multi-user session integrates
-with the collaboration subsystem (F-15.12) for CRDT sync. No significant cohesion gaps exist.
+terrain I/O uses `IoReactor`, entity templates use the reflection system, and all tools operate on
+the live ECS world. The `OverrideMap` for entity template instances (F-15.2.3) mirrors the material
+instance override pattern (F-15.3.5), creating a consistent authoring mental model. The multi-user
+session integrates with the collaboration subsystem (F-15.12) for CRDT sync. No significant cohesion
+gaps exist.
 
 ## Open Questions
 
@@ -1478,5 +1480,5 @@ with the collaboration subsystem (F-15.12) for CRDT sync. No significant cohesio
    data to determine optimal cell dimensions for typical foliage densities.
 5. **Erosion GPU backend** -- GPU compute erosion requires a render graph compute pass. Determine
    whether to run erosion as a standalone compute dispatch or integrate into the frame render graph.
-6. **Prefab serialization format** -- RON with binary companion files (per constraints) or a
-   dedicated prefab binary format for faster loading. Evaluate load-time impact.
+6. **Entity template serialization format** -- RON with binary companion files (per constraints) or
+   a dedicated entity template binary format for faster loading. Evaluate load-time impact.

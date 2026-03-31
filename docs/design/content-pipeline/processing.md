@@ -3,10 +3,10 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/content-pipeline/](../../features/content-pipeline/),
-> [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
-> design elements to those definitions.
+> [features/content-pipeline/](../../features/),
+> [requirements/content-pipeline/](../../requirements/), and
+> [user-stories/content-pipeline/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 | Feature  | Requirement | User Stories                      |
 |----------|-------------|-----------------------------------|
@@ -126,7 +126,7 @@ graph TD
     PR --> LM
 
     SC -.->|"C ABI FFI"| DXC
-    SC -.->|"C ABI FFI"| MSC
+    SC -.->|"swift-bridge"| MSC
     MO -.->|"C ABI FFI"| MOP
 
     PM --> TP
@@ -173,7 +173,7 @@ flowchart LR
     DXC_D["DXC\n(C ABI)"]
     DXIL["DXIL\n(D3D12)"]
     SPIRV["SPIR-V\n(Vulkan)"]
-    MSC["Metal Shader\nConverter\n(C ABI)"]
+    MSC["Metal Shader\nConverter\n(swift-bridge)"]
     MSL["MSL\n(Metal)"]
     CACHE["CAS Cache\n(BLAKE3 key)"]
 
@@ -1140,7 +1140,7 @@ impl AssetProcessor for ShaderGraphProcessor {
 /// Compiles HLSL source to platform-native
 /// bytecode via DXC and Metal Shader Converter.
 /// DXC via windows-rs COM on Windows (C API on
-/// Linux). MSC via Swift @_cdecl on macOS.
+/// Linux). MSC via swift-bridge on macOS.
 pub struct ShaderCompileProcessor;
 
 /// Reflection data extracted by DXC after
@@ -1282,7 +1282,7 @@ impl AssetProcessor for ShaderCompileProcessor {
         //   1. Compile HLSL → DXIL first (if not
         //      already produced above)
         //   2. Call Metal Shader Converter via
-        //      C ABI FFI
+        //      swift-bridge
         //   3. Translate DXIL → MSL (Metal 2.0+)
         //   4. Write MSL bytecode to CAS
         //
@@ -1519,7 +1519,7 @@ sequenceDiagram
     participant SG as ShaderGraphProcessor
     participant SC as ShaderCompileProcessor
     participant DXC as DXC (C ABI)
-    participant MSC as MetalShaderConverter (C ABI)
+    participant MSC as MetalShaderConverter (swift-bridge)
     participant CAS as CAS Store
 
     SG->>SG: Parse visual graph
@@ -1553,8 +1553,8 @@ flowchart TD
     TEX["Texture Changed\n(new content hash)"]
     MAT1["Material A\n(references texture)"]
     MAT2["Material B\n(references texture)"]
-    PRE1["Prefab X\n(references Material A)"]
-    PRE2["Prefab Y\n(references Material B)"]
+    PRE1["Entity Template X\n(references Material A)"]
+    PRE2["Entity Template Y\n(references Material B)"]
     INV["IncrementalCache\ninvalidate_dependents"]
 
     TEX --> INV
@@ -1592,7 +1592,7 @@ flowchart TD
 | Library                | FFI Bridge                           |
 |------------------------|--------------------------------------|
 | DXC                    | `windows-rs` COM (Win), C API (Linux) |
-| Metal Shader Converter | Swift `@_cdecl` C ABI (macOS)        |
+| Metal Shader Converter | swift-bridge (macOS)                 |
 | meshoptimizer          | C ABI via Rust crate                    |
 | blake3                 | Native Rust crate                    |
 
@@ -1776,10 +1776,10 @@ processor ever blocks a worker thread on I/O.
 **Q1. What is the biggest constraint limiting this design?**
 
 The shader pipeline constraint -- HLSL as the sole shader IL compiled through DXC and Metal Shader
-Converter (constraints.md) -- forces all shader processing through two external FFI bridges.
-This limits shader compilation parallelism to what these external tools support and makes error
-reporting harder since errors must be mapped back through the FFI boundary to the originating graph
-node (R-12.2.9). If lifted, a pure-Rust shader compiler would simplify the build and enable tighter
+Converter (constraints.md) -- forces all shader processing through two external FFI bridges. This
+limits shader compilation parallelism to what these external tools support and makes error reporting
+harder since errors must be mapped back through the FFI boundary to the originating graph node
+(R-12.2.9). If lifted, a pure-Rust shader compiler would simplify the build and enable tighter
 integration. However, DXC and Metal Shader Converter are industry-standard and produce
 vendor-optimized bytecode that a custom compiler could not match.
 
@@ -1799,9 +1799,9 @@ For shader compilation, an alternative is SPIR-V as the intermediate language in
 `spirv-cross` for Metal/HLSL output. This would avoid the DXIL detour for Metal targets. We chose
 HLSL because it produces clean, debuggable output that works with standard IDE tools (R-12.2.7
 requires HLSL Tools compatibility), and DXC's optimization passes are more mature than SPIR-V
-toolchain equivalents. For mesh processing, a Nanite-style virtualized geometry approach could
-replace the discrete LOD chain (F-12.2.2) with continuous LOD. This is a future consideration that
-would require significant rendering changes beyond the processing pipeline.
+toolchain equivalents. For mesh processing, a mesh-streaming-style virtualized geometry approach
+could replace the discrete LOD chain (F-12.2.2) with continuous LOD. This is a future consideration
+that would require significant rendering changes beyond the processing pipeline.
 
 **Q4. Does this design solve all customer problems?**
 

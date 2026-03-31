@@ -2,9 +2,9 @@
 
 ## Texture Compression
 
-| ID       | Feature                             | Requirements |
-|----------|-------------------------------------|--------------|
-| F-12.2.1 | Texture Compression (BC, ASTC, ETC) | R-12.2.1     |
+| ID       | Feature                             |
+|----------|-------------------------------------|
+| F-12.2.1 | Texture Compression (BC, ASTC, ETC) |
 
 1. **F-12.2.1** — Offline compression of imported textures into GPU-native block-compressed formats.
    BC7/BC6H targets desktop and console; ASTC targets mobile and Apple Silicon; ETC2 provides a
@@ -15,11 +15,11 @@
 
 ## Mesh Optimization
 
-| ID       | Feature                                | Requirements |
-|----------|----------------------------------------|--------------|
-| F-12.2.2 | LOD Generation                         | R-12.2.2     |
-| F-12.2.3 | Meshlet Building                       | R-12.2.3     |
-| F-12.2.4 | Vertex Cache and Overdraw Optimization | R-12.2.4     |
+| ID       | Feature                                |
+|----------|----------------------------------------|
+| F-12.2.2 | LOD Generation                         |
+| F-12.2.3 | Meshlet Building                       |
+| F-12.2.4 | Vertex Cache and Overdraw Optimization |
 
 1. **F-12.2.2** — Automatic discrete LOD chain generation using edge-collapse mesh simplification.
    Each LOD level targets a triangle-count ratio with configurable error thresholds to preserve
@@ -38,10 +38,10 @@
 
 ## Lightmap and Audio Processing
 
-| ID       | Feature                | Requirements |
-|----------|------------------------|--------------|
-| F-12.2.5 | Lightmap UV Generation | R-12.2.5     |
-| F-12.2.6 | Audio Encoding         | R-12.2.6     |
+| ID       | Feature                |
+|----------|------------------------|
+| F-12.2.5 | Lightmap UV Generation |
+| F-12.2.6 | Audio Encoding         |
 
 1. **F-12.2.5** — Automatic generation of non-overlapping lightmap UV atlases for static geometry.
    The UV unwrap minimizes chart stretching and maximizes texel density uniformity. Atlas packing
@@ -54,9 +54,9 @@
 
 ## Shader Compilation
 
-| ID       | Feature                              | Requirements |
-|----------|--------------------------------------|--------------|
-| F-12.2.7 | Shader Graph to HLSL Code Generation | R-12.2.7     |
+| ID       | Feature                              |
+|----------|--------------------------------------|
+| F-12.2.7 | Shader Graph to HLSL Code Generation |
 
 1. **F-12.2.7** — The shader graph compiler traverses the visual node graph (F-15.8.5) and emits
    clean, human-readable HLSL source files. Each graph node is an HLSL function — the compiler
@@ -76,30 +76,31 @@
 
 ## Dependency Tracking
 
-| ID       | Feature                 | Requirements |
-|----------|-------------------------|--------------|
-| F-12.2.8 | Asset Dependency Graphs | R-12.2.8     |
+| ID       | Feature                 |
+|----------|-------------------------|
+| F-12.2.8 | Asset Dependency Graphs |
 
 1. **F-12.2.8** — Track directed acyclic dependency graphs between all assets: meshes reference
-   materials, materials reference textures, prefabs reference meshes and scripts. The dependency
-   graph drives incremental rebuilds, ensures correct build ordering, detects circular references,
-   and enables impact analysis when a shared texture or material changes across thousands of
-   dependent assets.
+   materials, materials reference textures, entity templates reference meshes and scripts. The
+   dependency graph drives incremental rebuilds, ensures correct build ordering, detects circular
+   references, and enables impact analysis when a shared texture or material changes across
+   thousands of dependent assets.
    - **Deps:** F-12.3.2
 
 ## Shader Bytecode Compilation
 
-| ID       | Feature                                 | Requirements |
-|----------|-----------------------------------------|--------------|
-| F-12.2.9 | DXC and Metal Shader Converter Pipeline | R-12.2.9     |
+| ID       | Feature                                 |
+|----------|-----------------------------------------|
+| F-12.2.9 | DXC and Metal Shader Converter Pipeline |
 
 1. **F-12.2.9** — Compile the generated HLSL source files (F-12.2.7) into platform-native shader
    bytecode. DXC (Direct3D Shader Compiler) compiles HLSL to DXIL for D3D12 and HLSL to SPIR-V for
    Vulkan. Metal Shader Converter translates DXIL to MSL for Metal. Both DXC and Metal Shader
-   Converter are C++ libraries accessed via C ABI FFI bindings. DXC performs validation,
-   optimization passes (dead code elimination, constant folding), and reflection (extracting binding
-   layouts, push constant ranges, workgroup sizes). Compiled bytecode is cached in the shared build
-   cache (F-15.11.2) keyed by the HLSL source hash. Compilation errors report the original HLSL line
+   Converter are accessed via Rust FFI bindings (DXC via windows-rs on Windows, libloading on Linux;
+   Metal Shader Converter via swift-bridge on macOS). DXC performs validation, optimization passes
+   (dead code elimination, constant folding), and reflection (extracting binding layouts, push
+   constant ranges, workgroup sizes). Compiled bytecode is cached in the shared build cache
+   (F-15.11.2) keyed by the HLSL source hash. Compilation errors report the original HLSL line
    number and the graph node that generated it, enabling click-to-navigate from compiler errors to
    the visual graph node. F-15.11.2 (Shader Compilation Cache) 1.2+. Metal Shader Converter MSL
    output targets Metal 2.0+.

@@ -2,10 +2,10 @@
 
 ## Integration Methods
 
-| ID      | Feature                                  | Requirements |
-|---------|------------------------------------------|--------------|
-| F-4.1.1 | Deterministic Fixed-Timestep Integration | R-4.1.1      |
-| F-4.1.2 | Simulation Substeps                      | R-4.1.2      |
+| ID      | Feature |
+|---------|------------------------------------------ |
+| F-4.1.1 | Deterministic Fixed-Timestep Integration |
+| F-4.1.2 | Simulation Substeps |
 
 1. **F-4.1.1** — Integrate rigid body motion using symplectic Euler and Verlet methods with a
    fixed-timestep accumulator. The `IntegrationSystem` queries
@@ -29,10 +29,10 @@
 
 ## Collision Response
 
-| ID      | Feature                                          | Requirements |
-|---------|--------------------------------------------------|--------------|
-| F-4.1.3 | Contact Resolution with Restitution and Friction | R-4.1.3      |
-| F-4.1.4 | Continuous Collision Detection                   | R-4.1.4      |
+| ID      | Feature |
+|---------|-------------------------------------------------- |
+| F-4.1.3 | Contact Resolution with Restitution and Friction |
+| F-4.1.4 | Continuous Collision Detection |
 
 1. **F-4.1.3** — Resolve collisions using impulse-based contact resolution via a
    `ContactSolverSystem` that queries `ContactManifold` components and reads `PhysicsMaterial`
@@ -53,10 +53,10 @@
 
 ## Islands and Sleeping
 
-| ID      | Feature                   | Requirements |
-|---------|---------------------------|--------------|
-| F-4.1.5 | Simulation Islands        | R-4.1.5      |
-| F-4.1.6 | Body Sleeping and Wake-Up | R-4.1.6      |
+| ID      | Feature |
+|---------|--------------------------- |
+| F-4.1.5 | Simulation Islands |
+| F-4.1.6 | Body Sleeping and Wake-Up |
 
 1. **F-4.1.5** — Partition interacting bodies into disjoint islands computed from ECS entity
    connectivity. The `IslandComputeSystem` builds a union-find over entities linked by
@@ -80,9 +80,9 @@
 
 ## Streaming and Scale
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-4.1.7 | Cross-Zone Physics Continuity | R-4.1.7      |
+| ID      | Feature |
+|---------|------------------------------- |
+| F-4.1.7 | Cross-Zone Physics Continuity |
 
 1. **F-4.1.7** — Support seamless rigid body simulation across streaming zone boundaries using ECS
    entity migration between worlds. The `ZoneMigrationSystem` detects entities whose `Transform`
@@ -94,11 +94,11 @@
 
 ## Character Movement
 
-| ID       | Feature                                  | Requirements |
-|----------|------------------------------------------|--------------|
-| F-4.1.8  | Character Controller                     | R-4.1.8      |
-| F-4.1.9  | Moving Platform System                   | R-4.1.9      |
-| F-4.1.10 | Surface Smoothing and Ground Conformance | R-4.1.10     |
+| ID       | Feature |
+|----------|------------------------------------------ |
+| F-4.1.8  | Character Controller |
+| F-4.1.9  | Moving Platform System |
+| F-4.1.10 | Surface Smoothing and Ground Conformance |
 
 1. **F-4.1.8** — A kinematic-based character controller implemented as ECS components
    (`CharacterController`, `GroundState`, `StepHeight`, `SlopeLimit`) with a dedicated movement

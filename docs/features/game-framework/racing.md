@@ -1,14 +1,14 @@
 # 13.22 — Racing Systems
 
-| ID         | Feature                        | Requirements |
-|------------|--------------------------------|--------------|
-| F-13.22.1  | Track and Checkpoint System    | R-13.22.1    |
-| F-13.22.2  | Race Mode Framework            | R-13.22.2    |
-| F-13.22.3a | Racing AI Navigation           | R-13.22.3a   |
-| F-13.22.3b | Rubber-Banding Difficulty      | R-13.22.3b   |
-| F-13.22.3c | AI Racing Behavior             | R-13.22.3c   |
-| F-13.22.4  | Drift Scoring and Boost System | R-13.22.4    |
-| F-13.22.5  | Ghost Replay and Leaderboards  | R-13.22.5    |
+| ID         | Feature                        |
+|------------|--------------------------------|
+| F-13.22.1  | Track and Checkpoint System    |
+| F-13.22.2  | Race Mode Framework            |
+| F-13.22.3a | Racing AI Navigation           |
+| F-13.22.3b | Rubber-Banding Difficulty      |
+| F-13.22.3c | AI Racing Behavior             |
+| F-13.22.4  | Drift Scoring and Boost System |
+| F-13.22.5  | Ghost Replay and Leaderboards  |
 
 1. **F-13.22.1** — Define race tracks using ordered checkpoint volumes placed in the world.
    Checkpoints are trigger volumes (F-4.2.8) that record passage order and timestamps. The system

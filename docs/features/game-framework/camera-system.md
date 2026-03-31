@@ -2,10 +2,10 @@
 
 ## Virtual Camera Framework
 
-| ID        | Feature                                   | Requirements |
-|-----------|-------------------------------------------|--------------|
-| F-13.25.1 | Virtual Camera Entity and Priority System | R-13.25.1    |
-| F-13.25.2 | Camera Brain and Output Controller        | R-13.25.2    |
+| ID        | Feature                                   |
+|-----------|-------------------------------------------|
+| F-13.25.1 | Virtual Camera Entity and Priority System |
+| F-13.25.2 | Camera Brain and Output Controller        |
 
 1. **F-13.25.1** — A data-driven virtual camera framework where each camera behavior is an ECS
    entity with a `VirtualCamera` component. Multiple virtual cameras can exist simultaneously; the
@@ -23,19 +23,19 @@
    transitions between outgoing and incoming cameras using configurable blend curves (F-13.25.15).
    Multiple brains can coexist for split-screen (each brain reads from a different channel mask).
    Update timing is configurable: late update (default), fixed update (for physics sync), or manual
-   update (for replay/sequencer control).
+   update (for replay/cinematics editor control).
    - **Deps:** F-13.25.1, F-2.10.4 (View Setup)
 
 ## Position Control Behaviors
 
-| ID        | Feature                                  | Requirements |
-|-----------|------------------------------------------|--------------|
-| F-13.25.3 | Follow (Fixed Offset)                    | R-13.25.3    |
-| F-13.25.4 | Orbital Follow                           | R-13.25.4    |
-| F-13.25.5 | Third-Person Follow with Shoulder Offset | R-13.25.5    |
-| F-13.25.6 | Hard Lock to Target                      | R-13.25.6    |
-| F-13.25.7 | Position Composer (Adaptive Framing)     | R-13.25.7    |
-| F-13.25.8 | Spline Dolly                             | R-13.25.8    |
+| ID        | Feature                                  |
+|-----------|------------------------------------------|
+| F-13.25.3 | Follow (Fixed Offset)                    |
+| F-13.25.4 | Orbital Follow                           |
+| F-13.25.5 | Third-Person Follow with Shoulder Offset |
+| F-13.25.6 | Hard Lock to Target                      |
+| F-13.25.7 | Position Composer (Adaptive Framing)     |
+| F-13.25.8 | Spline Dolly                             |
 
 1. **F-13.25.3** — Position control behavior that maintains a fixed offset from a tracking target in
    a configurable coordinate space. Six binding modes control how the offset relates to target
@@ -84,16 +84,16 @@
    movement along the spline. Supports Catmull-Rom and Bezier splines.
    - **Deps:** F-13.25.1, F-13.5.3 (Camera Rails and Splines)
    - **Platform:** None (F-13.5.3) but lacks a gameplay-time spline dolly usable outside the
-     sequencer.
+     cinematics editor.
 
 ## Rotation Control Behaviors
 
-| ID         | Feature                              | Requirements |
-|------------|--------------------------------------|--------------|
-| F-13.25.9  | Rotation Composer (Adaptive Aim)     | R-13.25.9    |
-| F-13.25.10 | Hard Look At                         | R-13.25.10   |
-| F-13.25.11 | Pan and Tilt (Input-Driven Rotation) | R-13.25.11   |
-| F-13.25.12 | Rotate with Follow Target            | R-13.25.12   |
+| ID         | Feature                              |
+|------------|--------------------------------------|
+| F-13.25.9  | Rotation Composer (Adaptive Aim)     |
+| F-13.25.10 | Hard Look At                         |
+| F-13.25.11 | Pan and Tilt (Input-Driven Rotation) |
+| F-13.25.12 | Rotate with Follow Target            |
 
 1. **F-13.25.9** — Rotation control behavior that rotates the camera to face the look-at target with
    adaptive composition rules. Target offset adjusts the aim point in target-local space. Screen
@@ -120,11 +120,11 @@
 
 ## Spring Arm and Collision
 
-| ID         | Feature                                             | Requirements |
-|------------|-----------------------------------------------------|--------------|
-| F-13.25.13 | Spring Arm Component                                | R-13.25.13   |
-| F-13.25.14 | Camera Deoccluder (Line-of-Sight Preservation)      | R-13.25.14   |
-| F-13.25.15 | Camera Decollider (Geometry Penetration Prevention) | R-13.25.15   |
+| ID         | Feature                                             |
+|------------|-----------------------------------------------------|
+| F-13.25.13 | Spring Arm Component                                |
+| F-13.25.14 | Camera Deoccluder (Line-of-Sight Preservation)      |
+| F-13.25.15 | Camera Decollider (Geometry Penetration Prevention) |
 
 1. **F-13.25.13** — A positioning component that maintains child entities (typically a camera) at a
    fixed distance from a parent, retracting when collision is detected and extending back when
@@ -156,10 +156,10 @@
 
 ## Camera Blending and Transitions
 
-| ID         | Feature                                     | Requirements |
-|------------|---------------------------------------------|--------------|
-| F-13.25.16 | Camera Blend System                         | R-13.25.16   |
-| F-13.25.17 | Camera Mixing (Weighted Multi-Camera Blend) | R-13.25.17   |
+| ID         | Feature                                     |
+|------------|---------------------------------------------|
+| F-13.25.16 | Camera Blend System                         |
+| F-13.25.17 | Camera Mixing (Weighted Multi-Camera Blend) |
 
 1. **F-13.25.16** — Configurable blending between virtual cameras when the active camera changes.
    Eight blend curve types: cut (instant), ease-in-out (S-curve), ease-in, ease-out, hard-in,
@@ -172,19 +172,19 @@
 2. **F-13.25.17** — Simultaneous blending of up to eight child virtual cameras using weighted
    averaging. Each child contributes its position, rotation, FOV, and post-process settings
    proportionally to its weight divided by the total weight sum. Weights are animatable via the
-   sequencer timeline. Used for smooth multi-perspective shots and gradual camera transitions that
-   combine properties from several viewpoints.
-   - **Deps:** F-13.25.1, F-13.5.1 (Sequencer)
+   cinematics editor timeline. Used for smooth multi-perspective shots and gradual camera
+   transitions that combine properties from several viewpoints.
+   - **Deps:** F-13.25.1, F-13.5.1 (Cinematics Editor)
 
 ## Camera Shake and Noise
 
-| ID         | Feature                             | Requirements |
-|------------|-------------------------------------|--------------|
-| F-13.25.18 | Multi-Channel Perlin Noise Profiles | R-13.25.18   |
-| F-13.25.19 | Camera Impulse System               | R-13.25.19   |
-| F-13.25.20 | Wave Oscillation Shake              | R-13.25.20   |
-| F-13.25.21 | Composite Shake Patterns            | R-13.25.21   |
-| F-13.25.22 | Sequencer-Driven Camera Shake       | R-13.25.22   |
+| ID         | Feature                             |
+|------------|-------------------------------------|
+| F-13.25.18 | Multi-Channel Perlin Noise Profiles |
+| F-13.25.19 | Camera Impulse System               |
+| F-13.25.20 | Wave Oscillation Shake              |
+| F-13.25.21 | Composite Shake Patterns            |
+| F-13.25.22 | Cinematics Editor-Driven Camera Shake       |
 
 1. **F-13.25.18** — Procedural camera noise using multi-channel Perlin noise with artist-authored
    noise profile assets. Each profile defines noise behavior over time across multiple channels
@@ -215,26 +215,26 @@
    effects).
    - **Deps:** F-11.3.1 (Screen Shake)
 4. **F-13.25.21** — Shake pattern that layers multiple shake types (Perlin noise, wave oscillation,
-   sequencer-driven animation) into a single composite effect. Each layer runs independently with
-   its own parameters and contributes additively to the final shake. Allows creating varied, complex
-   shake effects that combine the organic feel of Perlin noise with the predictability of wave
-   oscillation and the precision of authored animation.
+   cinematics editor-driven animation) into a single composite effect. Each layer runs independently
+   with its own parameters and contributes additively to the final shake. Allows creating varied,
+   complex shake effects that combine the organic feel of Perlin noise with the predictability of
+   wave oscillation and the precision of authored animation.
    - **Deps:** F-13.25.18, F-13.25.20
 5. **F-13.25.22** — Camera shake pattern driven by a camera animation sequence asset authored in the
-   sequencer (F-13.5.1). Provides full artistic control over shake motion by keyframing position and
-   rotation offsets. Used for precisely choreographed shake effects (scripted explosions, cutscene
-   impacts) where procedural noise lacks the necessary precision. Animation sequences can be looped,
-   blended in/out, and layered with procedural shake.
-   - **Deps:** F-13.5.1 (Sequencer), F-11.3.1 (Screen Shake)
+   cinematics editor (F-13.5.1). Provides full artistic control over shake motion by keyframing
+   position and rotation offsets. Used for precisely choreographed shake effects (scripted
+   explosions, cutscene impacts) where procedural noise lacks the necessary precision. Animation
+   sequences can be looped, blended in/out, and layered with procedural shake.
+   - **Deps:** F-13.5.1 (Cinematics Editor), F-11.3.1 (Screen Shake)
 
 ## Camera Intelligence
 
-| ID         | Feature                                      | Requirements |
-|------------|----------------------------------------------|--------------|
-| F-13.25.23 | State-Driven Camera Switching                | R-13.25.23   |
-| F-13.25.24 | Clear Shot (Automatic Best-Camera Selection) | R-13.25.24   |
-| F-13.25.25 | Shot Quality Evaluator                       | R-13.25.25   |
-| F-13.25.26 | Camera Sequencer (Timed Camera Playlist)     | R-13.25.26   |
+| ID         | Feature                                      |
+|------------|----------------------------------------------|
+| F-13.25.23 | State-Driven Camera Switching                |
+| F-13.25.24 | Clear Shot (Automatic Best-Camera Selection) |
+| F-13.25.25 | Shot Quality Evaluator                       |
+| F-13.25.26 | Camera Cinematics Editor (Timed Camera Playlist)     |
 
 1. **F-13.25.23** — A camera manager that monitors an animation state machine on a target entity and
    automatically activates a mapped virtual camera when the animation state changes. State-to-camera
@@ -263,15 +263,15 @@
    with configurable hold duration per camera. Transitions between cameras use the blend system
    (F-13.25.16). Loop mode restarts the sequence from the beginning; non-loop mode holds the final
    camera indefinitely. Used for attract-mode flyovers, automated showcase sequences, and simple
-   timed camera progressions without requiring the full sequencer timeline.
+   timed camera progressions without requiring the full cinematics editor timeline.
    - **Deps:** F-13.25.1, F-13.25.16
 
 ## Group and Multi-Target
 
-| ID         | Feature                                 | Requirements |
-|------------|-----------------------------------------|--------------|
-| F-13.25.27 | Target Group (Multi-Target Aggregation) | R-13.25.27   |
-| F-13.25.28 | Group Framing Extension                 | R-13.25.28   |
+| ID         | Feature                                 |
+|------------|-----------------------------------------|
+| F-13.25.27 | Target Group (Multi-Target Aggregation) |
+| F-13.25.28 | Group Framing Extension                 |
 
 1. **F-13.25.27** — Aggregates multiple tracking targets into a single virtual target for camera
    tracking. Two position modes: group center (axis-aligned bounding box center) and group average
@@ -291,16 +291,16 @@
 
 ## Camera Extensions
 
-| ID         | Feature                                    | Requirements |
-|------------|--------------------------------------------|--------------|
-| F-13.25.29 | Camera Confiner 2D                         | R-13.25.29   |
-| F-13.25.30 | Camera Confiner 3D                         | R-13.25.30   |
-| F-13.25.31 | Follow Zoom (Constant Screen-Size Framing) | R-13.25.31   |
-| F-13.25.32 | Auto Focus                                 | R-13.25.32   |
-| F-13.25.33 | Third-Person Aim Extension                 | R-13.25.33   |
-| F-13.25.34 | FreeLook Modifier                          | R-13.25.34   |
-| F-13.25.35 | Recomposer (Timeline Composition Override) | R-13.25.35   |
-| F-13.25.36 | Camera Modifier Stack                      | R-13.25.36   |
+| ID         | Feature                                    |
+|------------|--------------------------------------------|
+| F-13.25.29 | Camera Confiner 2D                         |
+| F-13.25.30 | Camera Confiner 3D                         |
+| F-13.25.31 | Follow Zoom (Constant Screen-Size Framing) |
+| F-13.25.32 | Auto Focus                                 |
+| F-13.25.33 | Third-Person Aim Extension                 |
+| F-13.25.34 | FreeLook Modifier                          |
+| F-13.25.35 | Recomposer (Timeline Composition Override) |
+| F-13.25.36 | Camera Modifier Stack                      |
 
 1. **F-13.25.29** — Extension that constrains the camera position so screen edges stay within a 2D
    polygon boundary. Computes a secondary polygon based on camera view size and aspect ratio, then
@@ -343,12 +343,12 @@
    parameter controls blending smoothness across the center point (0 = linear, 1 = smooth curve).
    - **Deps:** F-13.25.4
 7. **F-13.25.35** — Extension that applies a final compositional tweak to the camera output,
-   particularly useful in sequencer workflows. Animatable properties: tilt (vertical rotation), pan
-   (horizontal rotation), dutch (Z-axis roll), zoom scale, follow attachment (damping override, 0 =
-   let go of follow target), and look-at attachment (damping override, 0 = let go of look-at
-   target). Processing stage configurable: after body, after aim, after noise, or final (default).
-   Enables hand-tuned adjustments on top of procedural or recorded camera motion.
-   - **Deps:** F-13.25.1, F-13.5.1 (Sequencer)
+   particularly useful in cinematics editor workflows. Animatable properties: tilt (vertical
+   rotation), pan (horizontal rotation), dutch (Z-axis roll), zoom scale, follow attachment (damping
+   override, 0 = let go of follow target), and look-at attachment (damping override, 0 = let go of
+   look-at target). Processing stage configurable: after body, after aim, after noise, or final
+   (default). Enables hand-tuned adjustments on top of procedural or recorded camera motion.
+   - **Deps:** F-13.25.1, F-13.5.1 (Cinematics Editor)
 8. **F-13.25.36** — Extensible modifier pipeline applied by the camera brain after computing the
    final view. Modifiers run in priority order and can adjust position, rotation, FOV, near/far clip
    planes, and post-process settings. Built-in modifiers include: FOV override (smooth FOV
@@ -359,9 +359,9 @@
 
 ## Input Integration
 
-| ID         | Feature                      | Requirements |
-|------------|------------------------------|--------------|
-| F-13.25.37 | Camera Input Axis Controller | R-13.25.37   |
+| ID         | Feature                      |
+|------------|------------------------------|
+| F-13.25.37 | Camera Input Axis Controller |
 
 1. **F-13.25.37** — Component that bridges player input to camera axis parameters (orbital position,
    pan/tilt, zoom). Compatible with the input action system (F-6.2.1) and supports both
@@ -375,26 +375,26 @@
 
 ## Cinematic Camera Features
 
-| ID         | Feature                                | Requirements |
-|------------|----------------------------------------|--------------|
-| F-13.25.38 | Cine Camera Properties                 | R-13.25.38   |
-| F-13.25.39 | Camera Rig Presets (Dolly, Crane, Jib) | R-13.25.39   |
-| F-13.25.40 | Picture-in-Picture                     | R-13.25.40   |
+| ID         | Feature                                |
+|------------|----------------------------------------|
+| F-13.25.38 | Cine Camera Properties                 |
+| F-13.25.39 | Camera Rig Presets (Dolly, Crane, Jib) |
+| F-13.25.40 | Picture-in-Picture                     |
 
 1. **F-13.25.38** — Physical camera simulation with real-world lens and body parameters for
    cinematic rendering. Properties: sensor size (Super 35, full frame, custom), focal length (lens
    zoom), aperture (f-stop for depth of field), focus distance (manual or auto-focus), and filmback
    settings. These properties drive the rendering pipeline's depth-of-field, exposure, and
-   perspective projection. Used by the sequencer for cinematographic workflows and available at
-   runtime for stylized game cameras. Supports lens distortion profiles for barrel/pincushion
+   perspective projection. Used by the cinematics editor for cinematographic workflows and available
+   at runtime for stylized game cameras. Supports lens distortion profiles for barrel/pincushion
    distortion simulation.
    - **Deps:** F-2.9.2 (Depth of Field), F-2.10.4 (View Setup)
 2. **F-13.25.39** — Pre-built camera rig entities that simulate physical camera equipment. Camera
    dolly: camera on a track with smooth lateral/forward movement. Camera crane/jib: camera on an arm
    with configurable arm length, pivot height, and sweep range. Each rig constrains camera movement
-   to physically plausible paths and integrates with the sequencer for animated operation. Rig
-   parameters (arm length, track speed, pivot angle) are keyframeable.
-   - **Deps:** F-13.25.8, F-13.5.1 (Sequencer)
+   to physically plausible paths and integrates with the cinematics editor for animated operation.
+   Rig parameters (arm length, track speed, pivot angle) are keyframeable.
+   - **Deps:** F-13.25.8, F-13.5.1 (Cinematics Editor)
 3. **F-13.25.40** — Renders a secondary camera view into a viewport inset within the main view. The
    PiP viewport has configurable position, size, border style, and opacity. The secondary camera can
    be any virtual camera (rear-view mirror, security camera feed, minimap camera, spectator view).

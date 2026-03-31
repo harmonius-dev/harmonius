@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/platform/](../../features/platform/),
-> [requirements/platform/](../../requirements/platform/), and
-> [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
-> those definitions.
+> [features/platform/](../../features/), [requirements/platform/](../../requirements/), and
+> [user-stories/platform/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement |
 |----------|-------------|
@@ -1200,8 +1199,8 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 4. **Hybrid detect** — Apple Silicon P/E core counts
 5. **Fibers** — `dispatch_async` submits blocks to queues; `dispatch_group` tracks completion. No
    custom assembly.
-6. **I/O reactor** — Dispatch IO accessed through Swift `@_cdecl` C ABI wrappers. Callbacks routed
-   to a serial dispatch queue; drained synchronously at poll point via `dispatch_sync`.
+6. **I/O reactor** — Dispatch IO accessed through swift-bridge. Async results routed to a serial
+   dispatch queue; drained synchronously at poll point via `dispatch_sync`.
 
 ### Linux
 
@@ -1230,7 +1229,7 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 | Android  | std thread pool         | io_uring                            |
 | Consoles | Platform thread API     | Platform async I/O                  |
 
-1. **iOS** — Same Swift C ABI wrappers as macOS. QoS classes for thermal throttling. UIKit owns the
+1. **iOS** — Same swift-bridge wrappers as macOS. QoS classes for thermal throttling. UIKit owns the
    OS main thread (`UIApplicationMain` / `CFRunLoop`), so the game loop runs on a dedicated game
    loop thread. Input events (touch, accelerometer, keyboard) arrive on the OS main thread via UIKit
    and are forwarded to the game loop thread through a lock-free SPSC queue. The render thread
@@ -1264,7 +1263,7 @@ a platform-specific scaling factor.
 | `crossbeam-utils` | `CachePadded`, `Backoff` | Prevents false sharing on atomics |
 | `windows-rs` | Win32 API bindings | Zero-cost FFI to IOCP, threads, fibers |
 | `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
-| (hand-written `extern "C"`) | C header bindings (macOS GCD) | Consumes Swift `@_cdecl` C ABI headers |
+| `swift-bridge` | Rust-Swift bindings (macOS GCD) | Direct Rust-Swift FFI without C layer |
 | `smallvec` | Inline-allocated small vectors | Task node dependent lists |
 
 ## Safety Invariants

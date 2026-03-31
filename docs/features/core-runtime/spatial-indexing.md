@@ -2,11 +2,11 @@
 
 ## Acceleration Structures
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-1.9.1 | Shared BVH Spatial Index         | R-1.9.1      |
-| F-1.9.2 | Incremental BVH Updates          | R-1.9.2      |
-| F-1.9.3 | Hierarchical Grid / Octree Index | R-1.9.3      |
+| ID      | Feature                         |
+|---------|----------------------------------|
+| F-1.9.1 | Shared BVH Spatial Index        |
+| F-1.9.2 | Incremental BVH Updates         |
+| F-1.9.3 | Hierarchical Grid / Octree Index|
 
 1. **F-1.9.1** — A single bounding volume hierarchy (BVH) maintained as an ECS resource, updated
    once per frame by a dedicated system that queries all entities with spatial components
@@ -36,10 +36,10 @@
 
 ## Query Interface
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-1.9.4 | Unified Spatial Query API          | R-1.9.4      |
-| F-1.9.5 | Batch and Parallel Spatial Queries | R-1.9.5      |
+| ID      | Feature                           |
+|---------|------------------------------------|
+| F-1.9.4 | Unified Spatial Query API         |
+| F-1.9.5 | Batch and Parallel Spatial Queries|
 
 1. **F-1.9.4** — A single query API that all subsystems use to perform ray casts, shape casts,
    overlap tests, nearest-neighbor searches, and frustum queries against the shared spatial index.
@@ -58,12 +58,12 @@
 
 ## Consumer Integration
 
-| ID      | Feature                                 | Requirements |
-|---------|-----------------------------------------|--------------|
-| F-1.9.6 | Physics Broadphase Integration          | R-1.9.6      |
-| F-1.9.7 | Rendering Culling Integration           | R-1.9.7      |
-| F-1.9.8 | Network Interest Management Integration | R-1.9.8      |
-| F-1.9.9 | AI Perception and Gameplay Integration  | R-1.9.9      |
+| ID      | Feature                                |
+|---------|-----------------------------------------|
+| F-1.9.6 | Physics Broadphase Integration         |
+| F-1.9.7 | Rendering Culling Integration          |
+| F-1.9.8 | Network Interest Management Integration|
+| F-1.9.9 | AI Perception and Gameplay Integration |
 
 1. **F-1.9.6** — The physics broadphase reads from the shared BVH rather than maintaining a separate
    sweep-and-prune or BVH. The collision detection system queries the shared index for overlapping

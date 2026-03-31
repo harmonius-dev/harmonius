@@ -2,10 +2,10 @@
 
 ## Particle-Based Methods
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-4.8.1 | SPH Fluid Simulation       | R-4.8.1      |
-| F-4.8.2 | FLIP/PIC Hybrid Simulation | R-4.8.2      |
+| ID      | Feature |
+|---------|---------------------------- |
+| F-4.8.1 | SPH Fluid Simulation |
+| F-4.8.2 | FLIP/PIC Hybrid Simulation |
 
 1. **F-4.8.1** — Each SPH fluid instance is an entity with a `FluidVolume` component (solver type
    set to SPH, domain bounds, viscosity, surface tension) and a `FluidParticleBuffer` component that
@@ -30,9 +30,9 @@
 
 ## Grid-Based Methods
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-4.8.3 | Eulerian Grid Fluid Solver | R-4.8.3      |
+| ID      | Feature |
+|---------|---------------------------- |
+| F-4.8.3 | Eulerian Grid Fluid Solver |
 
 1. **F-4.8.3** — Bounded water volumes (lakes, harbors, moats) are entities with a `FluidVolume`
    component (solver type set to Eulerian) and a `FluidGrid` component storing velocity, pressure,
@@ -47,10 +47,10 @@
 
 ## Surface and Rendering Integration
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-4.8.4 | Fluid Surface Reconstruction | R-4.8.4      |
-| F-4.8.5 | Water Surface Simulation     | R-4.8.5      |
+| ID      | Feature |
+|---------|------------------------------ |
+| F-4.8.4 | Fluid Surface Reconstruction |
+| F-4.8.5 | Water Surface Simulation |
 
 1. **F-4.8.4** — The `SurfaceReconstructionSystem` queries all entities with a `FluidParticleBuffer`
    component and reconstructs a renderable triangle mesh using marching cubes or a screen-space
@@ -76,10 +76,10 @@
 
 ## Rigid Body Interaction
 
-| ID      | Feature                           | Requirements |
-|---------|-----------------------------------|--------------|
-| F-4.8.6 | Buoyancy and Drag Forces          | R-4.8.6      |
-| F-4.8.7 | Two-Way Fluid-Rigid Body Coupling | R-4.8.7      |
+| ID      | Feature |
+|---------|----------------------------------- |
+| F-4.8.6 | Buoyancy and Drag Forces |
+| F-4.8.7 | Two-Way Fluid-Rigid Body Coupling |
 
 1. **F-4.8.6** — The `BuoyancySystem` queries all `(RigidBody, Collider, Transform)` entities and
    tests their bounding shapes against every `FluidVolume` entity's domain. For overlapping pairs,

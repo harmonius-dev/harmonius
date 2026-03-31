@@ -375,17 +375,17 @@ Companion test cases for [scene-transforms.md](scene-transforms.md).
 1. **#1** — Move entities, run propagation, then spatial query
    - **Expected:** Query returns entities at correct world positions
 
-### TC-1.2.1.I2 Scene With Prefabs
+### TC-1.2.1.I2 Scene With Entity Templates
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-1.2.1     |
 | 2 | R-1.2.1     |
 
-1. **#1** — Scene containing prefab instances
+1. **#1** — Scene containing entity template instances
    - **Expected:** Hierarchy preserved
 2. **#2** — Verify overrides
-   - **Expected:** Prefab overrides intact
+   - **Expected:** Entity template overrides intact
 
 ## Benchmarks
 

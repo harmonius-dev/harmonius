@@ -2,15 +2,15 @@
 
 ## Schema and Storage
 
-| ID       | Feature                              | Requirements |
-|----------|--------------------------------------|--------------|
-| F-13.7.1 | Typed Table Schema Definition        | R-13.7.1     |
-| F-13.7.2 | Row-Based Data Tables                | R-13.7.2     |
-| F-13.7.3 | Curve and Formula Definitions        | R-13.7.3     |
-| F-13.7.4 | Visual Formula Nodes                 | R-13.7.4     |
-| F-13.7.5 | Row Inheritance and Prototype Chains | R-13.7.5     |
-| F-13.7.6 | Currency and Resource Definitions    | R-13.7.6     |
-| F-13.7.7 | Crafting Recipe Tables               | R-13.7.7     |
+| ID       | Feature                              |
+|----------|--------------------------------------|
+| F-13.7.1 | Typed Table Schema Definition        |
+| F-13.7.2 | Row-Based Data Tables                |
+| F-13.7.3 | Curve and Formula Definitions        |
+| F-13.7.4 | Visual Formula Nodes                 |
+| F-13.7.5 | Row Inheritance and Prototype Chains |
+| F-13.7.6 | Currency and Resource Definitions    |
+| F-13.7.7 | Crafting Recipe Tables               |
 
 1. **F-13.7.1** — Define gameplay data tables with typed column schemas — each table declares its
    columns, types, constraints, and default values via a declarative API or data file. Schemas
@@ -55,11 +55,11 @@
 
 ## Content Types
 
-| ID        | Feature                          | Requirements |
-|-----------|----------------------------------|--------------|
-| F-13.7.8  | Loot Tables with Weighted Random | R-13.7.8     |
-| F-13.7.9  | Stat and Attribute Tables        | R-13.7.9     |
-| F-13.7.10 | Asset List Tables                | R-13.7.10    |
+| ID        | Feature                          |
+|-----------|----------------------------------|
+| F-13.7.8  | Loot Tables with Weighted Random |
+| F-13.7.9  | Stat and Attribute Tables        |
+| F-13.7.10 | Asset List Tables                |
 
 1. **F-13.7.8** — Hierarchical loot table definitions with weighted random selection, guaranteed
    drops, pity counters, and nested sub-tables. Each entry specifies an item ID, quantity range,
@@ -80,10 +80,10 @@
 
 ## Querying and Access
 
-| ID        | Feature                      | Requirements |
-|-----------|------------------------------|--------------|
-| F-13.7.11 | Indexed Lookup and Filtering | R-13.7.11    |
-| F-13.7.12 | ECS Component Binding        | R-13.7.12    |
+| ID        | Feature                      |
+|-----------|------------------------------|
+| F-13.7.11 | Indexed Lookup and Filtering |
+| F-13.7.12 | ECS Component Binding        |
 
 1. **F-13.7.11** — Build secondary indices on frequently queried columns for O(1) row lookup by key
    and O(log n) range queries on indexed columns. Filter expressions support AND/OR/NOT composition
@@ -98,10 +98,10 @@
 
 ## Live Operations
 
-| ID        | Feature                                 | Requirements |
-|-----------|-----------------------------------------|--------------|
-| F-13.7.13 | Hot Reload and Versioned Patching       | R-13.7.13    |
-| F-13.7.14 | Data Validation and Constraint Checking | R-13.7.14    |
+| ID        | Feature                                 |
+|-----------|-----------------------------------------|
+| F-13.7.13 | Hot Reload and Versioned Patching       |
+| F-13.7.14 | Data Validation and Constraint Checking |
 
 1. **F-13.7.13** — Reload data tables at runtime without restarting the server — designers edit a
    spreadsheet or data file, hot-reload pushes the changes to the running server, and all ECS

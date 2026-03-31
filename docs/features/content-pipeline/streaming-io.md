@@ -2,9 +2,9 @@
 
 ## Virtual File System
 
-| ID       | Feature             | Requirements |
-|----------|---------------------|--------------|
-| F-12.5.1 | Virtual File System | R-12.5.1     |
+| ID       | Feature             |
+|----------|---------------------|
+| F-12.5.1 | Virtual File System |
 
 1. **F-12.5.1** — An abstraction layer that presents a unified path namespace over multiple backing
    stores: loose files on disk during development, pak/archive files in shipping builds, and remote
@@ -13,10 +13,10 @@
 
 ## Async Asset Loading
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-12.5.2 | Platform-Native Async I/O | R-12.5.2     |
-| F-12.5.3 | GPU Direct Storage        | R-12.5.3     |
+| ID       | Feature                   |
+|----------|---------------------------|
+| F-12.5.2 | Platform-Native Async I/O |
+| F-12.5.3 | GPU Direct Storage        |
 
 1. **F-12.5.2** — Asynchronous file reads using each platform's highest-throughput I/O API: I/O
    completion ports on Windows, Grand Central Dispatch (dispatch_io) on macOS, and io_uring on
@@ -34,10 +34,10 @@
 
 ## Streaming LOD
 
-| ID       | Feature           | Requirements |
-|----------|-------------------|--------------|
-| F-12.5.4 | Texture Streaming | R-12.5.4     |
-| F-12.5.5 | Mesh Streaming    | R-12.5.5     |
+| ID       | Feature           |
+|----------|-------------------|
+| F-12.5.4 | Texture Streaming |
+| F-12.5.5 | Mesh Streaming    |
 
 1. **F-12.5.4** — Priority-based mip-level streaming that loads only the mip levels needed at the
    current screen-space texel density. A residency manager tracks which mips are resident, schedules
@@ -57,10 +57,10 @@
 
 ## Priority and Memory Management
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-12.5.6 | Streaming Priority Queues | R-12.5.6     |
-| F-12.5.7 | Memory Pressure Response  | R-12.5.7     |
+| ID       | Feature                   |
+|----------|---------------------------|
+| F-12.5.6 | Streaming Priority Queues |
+| F-12.5.7 | Memory Pressure Response  |
 
 1. **F-12.5.6** — A priority queue schedules all pending I/O requests by urgency: screen-space size,
    distance from camera, asset type weight, and frame deadline. The scheduler reorders and coalesces
@@ -77,10 +77,10 @@
 
 ## Archive and Compression
 
-| ID       | Feature                 | Requirements |
-|----------|-------------------------|--------------|
-| F-12.5.8 | Pak / Archive Files     | R-12.5.8     |
-| F-12.5.9 | Compression (LZ4, Zstd) | R-12.5.9     |
+| ID       | Feature                 |
+|----------|-------------------------|
+| F-12.5.8 | Pak / Archive Files     |
+| F-12.5.9 | Compression (LZ4, Zstd) |
 
 1. **F-12.5.8** — Pack processed assets into seekable archive files with a central directory for
    O(1) lookup by asset ID. Archives are organized by streaming region and priority tier so that
@@ -96,9 +96,9 @@
 
 ## Download-on-Demand
 
-| ID        | Feature                     | Requirements |
-|-----------|-----------------------------|--------------|
-| F-12.5.10 | Download-on-Demand Patching | R-12.5.10    |
+| ID        | Feature                     |
+|-----------|-----------------------------|
+| F-12.5.10 | Download-on-Demand Patching |
 
 1. **F-12.5.10** — Stream assets from a remote CDN on first access when they are not present in
    local archives. A manifest file maps asset IDs to CDN URLs and content hashes. Downloaded chunks

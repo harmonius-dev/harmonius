@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement | User Stories              |
 |----------|-------------|---------------------------|
@@ -2161,7 +2160,7 @@ if recovery_file_exists(&recovery_path) {
 
 | Component       | API                           |
 |-----------------|-------------------------------|
-| Floating panels | `NSWindow` via Swift C ABI      |
+| Floating panels | `NSWindow` via swift-bridge      |
 | Spaces          | `NSWindow.collectionBehavior` |
 | DPI             | `NSScreen.backingScaleFactor` |
 | Clipboard       | `NSPasteboard`                |
@@ -2172,7 +2171,7 @@ if recovery_file_exists(&recovery_path) {
    integration (US-15.1.1.11).
 2. **Spaces** — `.moveToActiveSpace` ensures panels follow the user.
 3. **DPI** — Retina scaling applied per floating window.
-4. **Clipboard** — Via Swift wrappers through C ABI.
+4. **Clipboard** — Via Swift wrappers through swift-bridge.
 5. **File dialogs** — Native file chooser sheets.
 6. **Cmd key** — Hotkey system maps Cmd to `meta` field.
 

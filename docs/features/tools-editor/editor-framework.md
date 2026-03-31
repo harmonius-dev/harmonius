@@ -2,10 +2,10 @@
 
 ## Panel System
 
-| ID       | Feature               | Requirements |
-|----------|-----------------------|--------------|
-| F-15.1.1 | Dockable Panel Layout | R-15.1.1     |
-| F-15.1.2 | Multi-Viewport        | R-15.1.2     |
+| ID | Feature |
+| ---------- | ----------------------- |
+| F-15.1.1 | Dockable Panel Layout |
+| F-15.1.2 | Multi-Viewport |
 
 1. **F-15.1.1** — Provides a fully dockable panel system where users can drag, drop, split, tab, and
    float panels to create custom workspace layouts. Persistent layout profiles allow team members to
@@ -24,10 +24,10 @@
 
 ## Undo and Selection
 
-| ID       | Feature                            | Requirements |
-|----------|------------------------------------|--------------|
-| F-15.1.3 | Undo/Redo System (Command Pattern) | R-15.1.3     |
-| F-15.1.4 | Selection System                   | R-15.1.4     |
+| ID | Feature |
+| ---------- | ------------------------------------ |
+| F-15.1.3 | Undo/Redo System (Command Pattern) |
+| F-15.1.4 | Selection System |
 
 1. **F-15.1.3** — Implements a full undo/redo stack using the command pattern where every editor
    action is captured as a serializable, reversible command. Supports transaction grouping to batch
@@ -44,10 +44,10 @@
 
 ## Gizmos
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-15.1.5 | Transform Gizmos              | R-15.1.5     |
-| F-15.1.6 | Bounds and Measurement Gizmos | R-15.1.6     |
+| ID | Feature |
+| ---------- | ------------------------------- |
+| F-15.1.5 | Transform Gizmos |
+| F-15.1.6 | Bounds and Measurement Gizmos |
 
 1. **F-15.1.5** — Interactive translate, rotate, and scale gizmos rendered as 3D overlays in the
    viewport. Gizmos operate in local, world, or custom reference frames and support axis
@@ -64,10 +64,10 @@
 
 ## Extensibility
 
-| ID       | Feature                              | Requirements |
-|----------|--------------------------------------|--------------|
-| F-15.1.7 | Editor Preferences and Configuration | R-15.1.7     |
-| F-15.1.8 | Editor Extensions and Plugin API     | R-15.1.8     |
+| ID | Feature |
+| ---------- | -------------------------------------- |
+| F-15.1.7 | Editor Preferences and Configuration |
+| F-15.1.8 | Editor Extensions and Plugin API |
 
 1. **F-15.1.7** — Centralized preference system covering input bindings, visual themes, viewport
    defaults, grid settings, auto-save intervals, and per-user overrides. Preferences are stored as
@@ -84,9 +84,9 @@
 
 ## VR Editing
 
-| ID       | Feature        | Requirements |
-|----------|----------------|--------------|
-| F-15.1.9 | VR Editor Mode | R-15.1.9     |
+| ID | Feature |
+| ---------- | ---------------- |
+| F-15.1.9 | VR Editor Mode |
 
 1. **F-15.1.9** — An immersive VR editing mode that renders the editor viewport in a VR headset,
    enabling spatial editing with motion controllers. Designers grab, place, rotate, and scale

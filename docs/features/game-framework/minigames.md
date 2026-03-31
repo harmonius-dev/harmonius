@@ -2,11 +2,11 @@
 
 ## Minigame Context
 
-| ID        | Feature                                | Requirements |
-|-----------|----------------------------------------|--------------|
-| F-13.26.1 | Minigame Session and Sandbox Context   | R-13.26.1    |
-| F-13.26.2 | Minigame World Presentation            | R-13.26.2    |
-| F-13.26.3 | Minigame Lifecycle and Result Contract | R-13.26.3    |
+| ID        | Feature                                |
+|-----------|----------------------------------------|
+| F-13.26.1 | Minigame Session and Sandbox Context   |
+| F-13.26.2 | Minigame World Presentation            |
+| F-13.26.3 | Minigame Lifecycle and Result Contract |
 
 1. **F-13.26.1** — A self-contained game context that runs within the outer game world as a "game
    within a game." When a player enters a minigame (interacting with an arcade cabinet, sitting at a
@@ -47,14 +47,14 @@
 
 ## Minigame Types
 
-| ID         | Feature                             | Requirements |
-|------------|-------------------------------------|--------------|
-| F-13.26.4  | Timing and Rhythm Minigames         | R-13.26.4    |
-| F-13.26.5a | Grid/Board Engine                   | R-13.26.5a   |
-| F-13.26.5b | Match Detection Algorithms          | R-13.26.5b   |
-| F-13.26.5c | Board Minigame AI                   | R-13.26.5c   |
-| F-13.26.5d | Board Piece Animation and Cascading | R-13.26.5d   |
-| F-13.26.6  | Physics Toy Minigames               | R-13.26.6    |
+| ID         | Feature                             |
+|------------|-------------------------------------|
+| F-13.26.4  | Timing and Rhythm Minigames         |
+| F-13.26.5a | Grid/Board Engine                   |
+| F-13.26.5b | Match Detection Algorithms          |
+| F-13.26.5c | Board Minigame AI                   |
+| F-13.26.5d | Board Piece Animation and Cascading |
+| F-13.26.6  | Physics Toy Minigames               |
 
 1. **F-13.26.4** — A reusable timing/rhythm minigame template for QTE sequences, rhythm-based
    activities (playing instruments, dancing), and precision-timing challenges (fishing bite
@@ -99,10 +99,10 @@
 
 ## Multiplayer and Integration
 
-| ID        | Feature                        | Requirements |
-|-----------|--------------------------------|--------------|
-| F-13.26.7 | Multiplayer Minigame Sessions  | R-13.26.7    |
-| F-13.26.8 | Minigame Library and Discovery | R-13.26.8    |
+| ID        | Feature                        |
+|-----------|--------------------------------|
+| F-13.26.7 | Multiplayer Minigame Sessions  |
+| F-13.26.8 | Minigame Library and Discovery |
 
 1. **F-13.26.7** — Minigame sessions support multiple players — both local (split-screen or
    shared-screen) and networked. Networked minigame sessions replicate minigame state through the

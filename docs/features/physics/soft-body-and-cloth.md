@@ -2,10 +2,10 @@
 
 ## Simulation Core
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-4.7.1 | Position-Based Dynamics Solver | R-4.7.1      |
-| F-4.7.2 | Cloth Simulation               | R-4.7.2      |
+| ID      | Feature |
+|---------|-------------------------------- |
+| F-4.7.1 | Position-Based Dynamics Solver |
+| F-4.7.2 | Cloth Simulation |
 
 1. **F-4.7.1** — The `XpbdSolverSystem` queries all entities with `(ClothSimulation, Transform)`
    components and runs Extended Position-Based Dynamics constraint resolution each physics tick. The
@@ -34,10 +34,10 @@
 
 ## Collision and Interaction
 
-| ID      | Feature                     | Requirements |
-|---------|-----------------------------|--------------|
-| F-4.7.3 | Cloth Self-Collision        | R-4.7.3      |
-| F-4.7.4 | Two-Way Rigid Body Coupling | R-4.7.4      |
+| ID      | Feature |
+|---------|----------------------------- |
+| F-4.7.3 | Cloth Self-Collision |
+| F-4.7.4 | Two-Way Rigid Body Coupling |
 
 1. **F-4.7.3** — Entities with both `ClothSimulation` and a `SelfCollisionEnabled` marker component
    participate in self-collision detection. The `ClothSelfCollisionSystem` queries all
@@ -57,10 +57,10 @@
 
 ## Environmental Effects
 
-| ID      | Feature          | Requirements |
-|---------|------------------|--------------|
-| F-4.7.5 | Wind Interaction | R-4.7.5      |
-| F-4.7.6 | Cloth Tearing    | R-4.7.6      |
+| ID      | Feature |
+|---------|------------------ |
+| F-4.7.5 | Wind Interaction |
+| F-4.7.6 | Cloth Tearing |
 
 1. **F-4.7.5** — Wind sources are entities with a `WindSource` component specifying type
    (directional, point, vortex), position, direction, strength, radius, and turbulence noise
@@ -87,9 +87,9 @@
 
 ## Performance
 
-| ID      | Feature               | Requirements |
-|---------|-----------------------|--------------|
-| F-4.7.7 | Cloth Level of Detail | R-4.7.7      |
+| ID      | Feature |
+|---------|----------------------- |
+| F-4.7.7 | Cloth Level of Detail |
 
 1. **F-4.7.7** — A `ClothLod` component on cloth entities controls simulation fidelity parameters:
    particle count, constraint iterations, and update frequency. The `ClothLodSystem` queries the

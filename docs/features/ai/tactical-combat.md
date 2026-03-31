@@ -1,13 +1,13 @@
 # 7.8 — Tactical Combat AI
 
-| ID      | Feature                           | Requirements |
-|---------|-----------------------------------|--------------|
-| F-7.8.1 | Cover Evaluation and Scoring      | R-7.8.1      |
-| F-7.8.2 | Flanking and Pincer Behavior      | R-7.8.2      |
-| F-7.8.3 | Squad Formation and Communication | R-7.8.3      |
-| F-7.8.4 | Suppressive Fire and Pinning      | R-7.8.4      |
-| F-7.8.5 | Search and Investigation Patterns | R-7.8.5      |
-| F-7.8.6 | Retreat and Fallback Behavior     | R-7.8.6      |
+| ID      | Feature                           |
+|---------|-----------------------------------|
+| F-7.8.1 | Cover Evaluation and Scoring      |
+| F-7.8.2 | Flanking and Pincer Behavior      |
+| F-7.8.3 | Squad Formation and Communication |
+| F-7.8.4 | Suppressive Fire and Pinning      |
+| F-7.8.5 | Search and Investigation Patterns |
+| F-7.8.6 | Retreat and Fallback Behavior     |
 
 1. **F-7.8.1** — AI agents evaluate cover positions by quality: protection angle, sight lines to
    targets, flanking exposure, distance to current target, and proximity to objectives. Cover

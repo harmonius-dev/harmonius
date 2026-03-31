@@ -2,9 +2,9 @@
 
 ## Meshlet Generation
 
-| ID      | Feature                             | Requirements |
-|---------|-------------------------------------|--------------|
-| F-3.1.1 | Meshlet Decomposition and Hierarchy | R-3.1.1      |
+| ID      | Feature |
+|---------|------------------------------------- |
+| F-3.1.1 | Meshlet Decomposition and Hierarchy |
 
 1. **F-3.1.1** — All imported geometry is decomposed into meshlets of ~64 vertices and ~124
    triangles with per-meshlet bounding sphere, normal cone, and screen-space error bounds. Meshlets
@@ -16,10 +16,10 @@
 
 ## GPU-Driven Culling
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-3.1.2 | Two-Phase Occlusion Culling  | R-3.1.2      |
-| F-3.1.3 | Cluster and Triangle Culling | R-3.1.3      |
+| ID      | Feature |
+|---------|------------------------------ |
+| F-3.1.2 | Two-Phase Occlusion Culling |
+| F-3.1.3 | Cluster and Triangle Culling |
 
 1. **F-3.1.2** — A two-phase GPU-driven culling pipeline. Phase one tests all instances against the
    previous frame's hierarchical depth buffer (HZB) to produce an initial visible set. Phase two
@@ -39,9 +39,9 @@
 
 ## Mesh Shaders / Indirect Draw Fallback
 
-| ID      | Feature                                          | Requirements |
-|---------|--------------------------------------------------|--------------|
-| F-3.1.4 | Mesh Shader Pipeline with Indirect Draw Fallback | R-3.1.4      |
+| ID      | Feature |
+|---------|-------------------------------------------------- |
+| F-3.1.4 | Mesh Shader Pipeline with Indirect Draw Fallback |
 
 1. **F-3.1.4** — Task (amplification) shaders perform per-meshlet culling and LOD selection, then
    dispatch surviving meshlets to mesh shaders that emit triangles directly to the rasterizer. On
@@ -54,9 +54,9 @@
 
 ## Meshlet LOD
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-3.1.5 | Screen-Space Error LOD Selection | R-3.1.5      |
+| ID      | Feature |
+|---------|---------------------------------- |
+| F-3.1.5 | Screen-Space Error LOD Selection |
 
 1. **F-3.1.5** — Runtime LOD selection driven by projected screen-space error of each meshlet
    hierarchy node. The task shader evaluates each node's error bound against the current camera,
@@ -69,9 +69,9 @@
 
 ## Meshlet Streaming
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-3.1.6 | On-Demand Meshlet Page Streaming | R-3.1.6      |
+| ID      | Feature |
+|---------|---------------------------------- |
+| F-3.1.6 | On-Demand Meshlet Page Streaming |
 
 1. **F-3.1.6** — Meshlet data is organized into fixed-size pages that stream from disk on demand. A
    GPU-driven feedback pass identifies which meshlet pages are needed for the current view. The
@@ -83,9 +83,9 @@
 
 ## Visibility Buffer
 
-| ID      | Feature                     | Requirements |
-|---------|-----------------------------|--------------|
-| F-3.1.7 | Visibility Buffer Rendering | R-3.1.7      |
+| ID      | Feature |
+|---------|----------------------------- |
+| F-3.1.7 | Visibility Buffer Rendering |
 
 1. **F-3.1.7** — A 64-bit visibility buffer stores triangle ID and instance ID per pixel via atomic
    writes during the meshlet rasterization pass. Material evaluation is fully deferred to a

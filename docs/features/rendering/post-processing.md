@@ -2,22 +2,22 @@
 
 ## Features
 
-| ID       | Feature                           | Requirements |
-|----------|-----------------------------------|--------------|
-| F-2.9.1  | Bloom                             | R-2.9.1      |
-| F-2.9.2  | Depth of Field (Cinematic)        | R-2.9.2      |
-| F-2.9.3  | Motion Blur                       | R-2.9.3      |
-| F-2.9.4  | Auto Exposure / Eye Adaptation    | R-2.9.4      |
-| F-2.9.5  | Tonemapping and Color Grading     | R-2.9.5      |
-| F-2.9.6  | Film Grain                        | R-2.9.6      |
-| F-2.9.7  | Chromatic Aberration              | R-2.9.7      |
-| F-2.9.8  | Lens Flare                        | R-2.9.8      |
-| F-2.9.9  | Vignette                          | R-2.9.9      |
-| F-2.9.10 | Post-Process Materials            | R-2.9.10     |
-| F-2.9.11 | Local Exposure                    | R-2.9.11     |
-| F-2.9.12 | Panini Projection                 | R-2.9.12     |
-| F-2.9.13 | Screen-Space Cavity and Curvature | R-2.9.13     |
-| F-2.9.14 | Post-Process Graph Editor         | Category \   |
+| ID       | Feature                           |
+|----------|-----------------------------------|
+| F-2.9.1  | Bloom                             |
+| F-2.9.2  | Depth of Field (Cinematic)        |
+| F-2.9.3  | Motion Blur                       |
+| F-2.9.4  | Auto Exposure / Eye Adaptation    |
+| F-2.9.5  | Tonemapping and Color Grading     |
+| F-2.9.6  | Film Grain                        |
+| F-2.9.7  | Chromatic Aberration              |
+| F-2.9.8  | Lens Flare                        |
+| F-2.9.9  | Vignette                          |
+| F-2.9.10 | Post-Process Materials            |
+| F-2.9.11 | Local Exposure                    |
+| F-2.9.12 | Panini Projection                 |
+| F-2.9.13 | Screen-Space Cavity and Curvature |
+| F-2.9.14 | Post-Process Graph Editor         |
 
 1. **F-2.9.1** — Bright-source glow simulating camera lens diffraction and scattering. A threshold
    pass extracts pixels above a luminance cutoff, followed by a multi-pass Gaussian or dual-kawase

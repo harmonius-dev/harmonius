@@ -2,11 +2,11 @@
 
 ## Visual Logic
 
-| ID       | Feature                            | Requirements |
-|----------|------------------------------------|--------------|
-| F-13.4.1 | Gameplay Logic Graph Integration   | R-13.4.1     |
-| F-13.4.2 | Logic Graph Debugging for Gameplay | R-13.4.2     |
-| F-13.4.3 | Logic Graph Hot Reload             | R-13.4.3     |
+| ID       | Feature                            |
+|----------|------------------------------------|
+| F-13.4.1 | Gameplay Logic Graph Integration   |
+| F-13.4.2 | Logic Graph Debugging for Gameplay |
+| F-13.4.3 | Logic Graph Hot Reload             |
 
 1. **F-13.4.1** — All gameplay scripting is authored through the universal logic graph system
    (F-15.8.4). This feature defines the gameplay-specific integration points: access to ECS world

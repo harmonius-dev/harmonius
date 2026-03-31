@@ -2,11 +2,11 @@
 
 ## Storage Model
 
-| ID       | Feature                        | Requirements |
-|----------|--------------------------------|--------------|
-| F-13.9.1 | ECS-Based Inventory Containers | R-13.9.1     |
-| F-13.9.2 | Grid-Based Inventory Layout    | R-13.9.2     |
-| F-13.9.3 | Item Stacking and Splitting    | R-13.9.3     |
+| ID       | Feature                        |
+|----------|--------------------------------|
+| F-13.9.1 | ECS-Based Inventory Containers |
+| F-13.9.2 | Grid-Based Inventory Layout    |
+| F-13.9.3 | Item Stacking and Splitting    |
 
 1. **F-13.9.1** — Each inventory is an ECS entity with an `Inventory` component defining slot count,
    weight capacity, and layout mode (list, grid with item width/height). Individual item stacks are
@@ -28,10 +28,10 @@
 
 ## Item Instances
 
-| ID       | Feature                             | Requirements |
-|----------|-------------------------------------|--------------|
-| F-13.9.4 | Per-Instance Item Properties        | R-13.9.4     |
-| F-13.9.5 | Item Socket and Augmentation System | R-13.9.5     |
+| ID       | Feature                             |
+|----------|-------------------------------------|
+| F-13.9.4 | Per-Instance Item Properties        |
+| F-13.9.5 | Item Socket and Augmentation System |
 
 1. **F-13.9.4** — Individual item instances carry mutable properties beyond the base definition:
    durability, enchantments, gem sockets (filled/empty), custom name, bind status (unbound,
@@ -48,11 +48,11 @@
 
 ## Operations
 
-| ID       | Feature                          | Requirements |
-|----------|----------------------------------|--------------|
-| F-13.9.6 | Inventory Transfer and Drag-Drop | R-13.9.6     |
-| F-13.9.7 | Loot Distribution                | R-13.9.7     |
-| F-13.9.8 | Merchant and Trading             | R-13.9.8     |
+| ID       | Feature                          |
+|----------|----------------------------------|
+| F-13.9.6 | Inventory Transfer and Drag-Drop |
+| F-13.9.7 | Loot Distribution                |
+| F-13.9.8 | Merchant and Trading             |
 
 1. **F-13.9.6** — Move items between inventories (player bag → bank, player → trade window, loot
    container → player) as ECS entity reparenting operations. Transfers validate capacity, weight,
@@ -74,9 +74,9 @@
 
 ## Equipment Integration
 
-| ID       | Feature                | Requirements |
-|----------|------------------------|--------------|
-| F-13.9.9 | Equipment Slot Binding | R-13.9.9     |
+| ID       | Feature                |
+|----------|------------------------|
+| F-13.9.9 | Equipment Slot Binding |
 
 1. **F-13.9.9** — Named equipment slots (head, chest, legs, feet, hands, weapon main/off, ring,
    necklace, trinket) are ECS components on the character entity. Equipping moves an item entity
@@ -87,9 +87,9 @@
 
 ## Persistence
 
-| ID        | Feature                                 | Requirements |
-|-----------|-----------------------------------------|--------------|
-| F-13.9.10 | Inventory Serialization and Persistence | R-13.9.10    |
+| ID        | Feature                                 |
+|-----------|-----------------------------------------|
+| F-13.9.10 | Inventory Serialization and Persistence |
 
 1. **F-13.9.10** — Serialize complete inventory state — container layout, all item entities with
    their per-instance properties, socket contents, and equipment bindings — to the save system

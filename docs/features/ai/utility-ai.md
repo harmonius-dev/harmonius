@@ -2,11 +2,11 @@
 
 ## Scoring & Selection
 
-| ID      | Feature                             | Requirements |
-|---------|-------------------------------------|--------------|
-| F-7.4.1 | Scoring Functions & Response Curves | R-7.4.1      |
-| F-7.4.2 | Action Selection & Compensation     | R-7.4.2      |
-| F-7.4.3 | Considerations & Input Axes         | R-7.4.3      |
+| ID      | Feature                             |
+|---------|-------------------------------------|
+| F-7.4.1 | Scoring Functions & Response Curves |
+| F-7.4.2 | Action Selection & Compensation     |
+| F-7.4.3 | Considerations & Input Axes         |
 
 1. **F-7.4.1** — Each candidate action exposes one or more considerations, each of which maps an
    input value (health percentage, distance to target, ammo count) to a 0-1 score via a configurable
@@ -31,10 +31,10 @@
 
 ## Advanced Reasoning
 
-| ID      | Feature                 | Requirements |
-|---------|-------------------------|--------------|
-| F-7.4.4 | Dual Utility System     | R-7.4.4      |
-| F-7.4.5 | Context-Based Reasoning | R-7.4.5      |
+| ID      | Feature                 |
+|---------|-------------------------|
+| F-7.4.4 | Dual Utility System     |
+| F-7.4.5 | Context-Based Reasoning |
 
 1. **F-7.4.4** — Extends single-score selection with a two-axis model: one axis ranks action
    categories (combat, social, survival) and a second axis ranks specific actions within the chosen

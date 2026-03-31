@@ -2,13 +2,13 @@
 
 ## Authoring
 
-| ID       | Feature                        | Requirements |
-|----------|--------------------------------|--------------|
-| F-11.6.1 | Node-Based Effect Graph Editor | R-11.6.1     |
-| F-11.6.2 | Custom Effect Graph Nodes      | R-11.6.2     |
-| F-11.6.3 | Effect Graph Parameter System  | R-11.6.3     |
-| F-11.6.4 | Event-Driven Effect Spawning   | R-11.6.4     |
-| F-11.6.5 | VFX LOD and Performance Budget | R-11.6.5     |
+| ID       | Feature                        |
+|----------|--------------------------------|
+| F-11.6.1 | Node-Based Effect Graph Editor |
+| F-11.6.2 | Custom Effect Graph Nodes      |
+| F-11.6.3 | Effect Graph Parameter System  |
+| F-11.6.4 | Event-Driven Effect Spawning   |
+| F-11.6.5 | VFX LOD and Performance Budget |
 
 1. **F-11.6.1** — A visual node-graph editor for authoring VFX systems without writing code. Effect
    graphs compose spawn, update, and render modules as nodes connected by typed data flow edges.
@@ -34,7 +34,7 @@
    level editor or bind to game state via reactive data binding (F-10.1.7). Parameters drive spawn
    rate multipliers, color tints, force magnitudes, and render modes. Effect templates define
    parameter defaults; instances override individual parameters. Parameters are animated via the
-   sequencer (F-13.5.1) for cinematic VFX choreography.
+   Cinematics Editor (F-13.5.1) for cinematic VFX choreography.
    - **Deps:** F-11.6.1, F-10.1.7 (Reactive Data Binding)
    - **Platform:** Lightweight parameter binding; runs identically on all platforms. Mobile uses
      platform-variant defaults (lower spawn rate multipliers).

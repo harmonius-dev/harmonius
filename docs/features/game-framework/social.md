@@ -2,17 +2,17 @@
 
 ## Guild
 
-| ID         | Feature                             | Requirements |
-|------------|-------------------------------------|--------------|
-| F-13.13.1a | Guild CRUD and Membership           | R-13.13.1a   |
-| F-13.13.1b | Guild Rank and Permission System    | R-13.13.1b   |
-| F-13.13.1c | Guild Leveling and Perks            | R-13.13.1c   |
-| F-13.13.1d | Guild Roster UI                     | R-13.13.1d   |
-| F-13.13.2  | Guild Storage and Bank              | R-13.13.2    |
-| F-13.13.3a | Territory Claim System              | R-13.13.3a   |
-| F-13.13.3b | Guild War Declaration and PvP Rules | R-13.13.3b   |
-| F-13.13.3c | Siege Mechanics                     | R-13.13.3c   |
-| F-13.13.3d | Guild Rankings and Leaderboards     | R-13.13.3d   |
+| ID         | Feature                             |
+|------------|-------------------------------------|
+| F-13.13.1a | Guild CRUD and Membership           |
+| F-13.13.1b | Guild Rank and Permission System    |
+| F-13.13.1c | Guild Leveling and Perks            |
+| F-13.13.1d | Guild Roster UI                     |
+| F-13.13.2  | Guild Storage and Bank              |
+| F-13.13.3a | Territory Claim System              |
+| F-13.13.3b | Guild War Declaration and PvP Rules |
+| F-13.13.3c | Siege Mechanics                     |
+| F-13.13.3d | Guild Rankings and Leaderboards     |
 
 1. **F-13.13.1a** — Create, join, and disband player guilds. Guild creation includes name and emblem
    selection. Invitation is by player name or proximity. Players may join via invitation acceptance
@@ -65,22 +65,22 @@
 
 ## Social Features
 
-| ID          | Feature                         | Requirements |
-|-------------|---------------------------------|--------------|
-| F-13.13.4   | Friends List and Social Graph   | R-13.13.4    |
-| F-13.13.5a  | Core Mail Send/Receive          | R-13.13.5a   |
-| F-13.13.5b  | Mail Attachments                | R-13.13.5b   |
-| F-13.13.5c  | System Mail                     | R-13.13.5c   |
-| F-13.13.6a  | Core Chat Infrastructure        | R-13.13.6a   |
-| F-13.13.6b  | Chat Content Features           | R-13.13.6b   |
-| F-13.13.6c  | Custom Player-Created Channels  | R-13.13.6c   |
-| F-13.13.7   | Emote and Social Action System  | R-13.13.7    |
-| F-13.13.8   | Player Inspection               | R-13.13.8    |
-| F-13.13.9   | Dungeon and Group Finder        | R-13.13.9    |
-| F-13.13.10a | Arena System                    | R-13.13.10a  |
-| F-13.13.10b | Battleground System             | R-13.13.10b  |
-| F-13.13.10c | PvP Rating and Seasonal Rewards | R-13.13.10c  |
-| F-13.13.10d | PvP Stat Normalization          | R-13.13.10d  |
+| ID          | Feature                         |
+|-------------|---------------------------------|
+| F-13.13.4   | Friends List and Social Graph   |
+| F-13.13.5a  | Core Mail Send/Receive          |
+| F-13.13.5b  | Mail Attachments                |
+| F-13.13.5c  | System Mail                     |
+| F-13.13.6a  | Core Chat Infrastructure        |
+| F-13.13.6b  | Chat Content Features           |
+| F-13.13.6c  | Custom Player-Created Channels  |
+| F-13.13.7   | Emote and Social Action System  |
+| F-13.13.8   | Player Inspection               |
+| F-13.13.9   | Dungeon and Group Finder        |
+| F-13.13.10a | Arena System                    |
+| F-13.13.10b | Battleground System             |
+| F-13.13.10c | PvP Rating and Seasonal Rewards |
+| F-13.13.10d | PvP Stat Normalization          |
 
 1. **F-13.13.4** — Persistent bi-directional friends list with online/offline status, current zone
    and activity display, and direct messaging. Friend requests are sent by player name and require

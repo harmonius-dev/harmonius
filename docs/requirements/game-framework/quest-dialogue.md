@@ -1,137 +1,64 @@
-# R-13.6 — Quest & Dialogue Requirements
+# R-13.6 — Quest and Dialogue Requirements
 
-## Quest Graph
+## Objective Graph
 
-| ID       | Derived From                                                |
-|----------|-------------------------------------------------------------|
-| R-13.6.1 | [F-13.6.1](../../features/game-framework/quest-dialogue.md) |
-| R-13.6.2 | [F-13.6.2](../../features/game-framework/quest-dialogue.md) |
-| R-13.6.3 | [F-13.6.3](../../features/game-framework/quest-dialogue.md) |
+1. **R-13.6.1** — The engine **SHALL** represent quests as directed acyclic graphs of objectives
+   with branching paths, multiple objective types (kill, collect, escort, interact, explore, defend,
+   craft), server-authoritative evaluation, and support for repeatables and event chains.
+   - **Rationale:** DAG representation with server authority prevents client-side completion
+     exploits.
+   - **Verification:** Define a quest with 3 branching objectives. Complete each path and verify
+     correct transitions. Attempt completing an objective client-side without server validation and
+     verify rejection.
 
-1. **R-13.6.1** — The engine **SHALL** represent quests as directed acyclic graphs of typed
-   objective nodes (kill, collect, escort, interact, explore, defend, craft) with conditional
-   transition edges, evaluating all quest state transitions server-authoritatively.
-   - **Rationale:** DAG-based quest modeling enables branching story paths and non-linear
-     progression while server-authoritative evaluation prevents client-side completion exploits.
-   - **Verification:** Unit test: construct a quest DAG with 5 branching paths and assert that
-     completing objectives in different orders produces the correct terminal states. Integration
-     test: verify that a tampered client completion message is rejected by the server.
-2. **R-13.6.2** — The engine **SHALL** evaluate prerequisite conditions (completed quests, character
-   level, faction reputation, item possession, achievement unlocks, time-of-day, calendar date) as
-   composable boolean expressions (AND/OR/NOT) before making a quest available to a player.
-   - **Rationale:** Prerequisite gating enforces narrative and progression ordering, and lazy
-     evaluation on interaction avoids per-frame cost for all quests.
-   - **Verification:** Unit test: define prerequisites using nested AND/OR/NOT expressions and
-     assert correct availability for players meeting and not meeting each condition. Test edge
-     cases: exactly-at-level threshold, reputation boundary values, and time-of-day wraparound.
-3. **R-13.6.3** — The engine **SHALL** maintain a per-player quest journal with categorized active,
-   completed, and failed/abandoned quests, emitting state-change events consumed by UI, map, and
-   minimap systems, and displaying objective progress counters and waypoint markers for active
-   quests.
-   - **Rationale:** A centralized journal with event-driven updates enables decoupled UI and map
-     systems to reactively display quest progress without polling.
-   - **Verification:** Integration test: accept a quest, advance objectives, and verify journal
-     state, progress counters, and emitted events at each step. Verify filtering by category (main
-     story, side, daily, weekly, event) returns correct subsets.
+2. **R-13.6.2** — The engine **SHALL** evaluate prerequisite conditions (completed quests, level,
+   reputation, items, achievements, time, calendar date) with AND/OR/NOT boolean composition before
+   making quests available.
+   - **Rationale:** Boolean composition enables complex gating without custom code per quest.
+   - **Verification:** Define a quest requiring level 10 AND quest-A complete. Verify unavailable at
+     level 5. Verify unavailable at level 10 without quest-A. Verify available when both conditions
+     met.
 
-## Dialogue System
+3. **R-13.6.3** — The engine **SHALL** maintain a per-player quest journal with active, completed,
+   and failed quests, displaying objectives with progress counters, waypoint markers, categories,
+   and search.
+   - **Rationale:** A structured journal helps players track complex quest states.
+   - **Verification:** Accept a quest and verify it appears in the journal. Complete objectives and
+     verify progress counters update. Filter by category and verify correct results.
 
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-13.6.4  | [F-13.6.4](../../features/game-framework/quest-dialogue.md)  |
-| R-13.6.5a | [F-13.6.5a](../../features/game-framework/quest-dialogue.md) |
-| R-13.6.5b | [F-13.6.5b](../../features/game-framework/quest-dialogue.md) |
-| R-13.6.5c | [F-13.6.5c](../../features/game-framework/quest-dialogue.md) |
+## Branching Dialogue
 
-1. **R-13.6.4** — The engine **SHALL** support branching dialogue trees with conditional branches
-   (checking quest state, faction reputation, inventory, character class, and prior choices) and
-   side-effect triggers (quest accept/complete, item grant/remove, reputation change, UI open,
-   cinematic playback) per dialogue node, with localized text and audio references.
-   - **Rationale:** Condition-driven branching and side effects enable dialogues that respond to
-     player state and drive game progression without hardcoded scripts.
-   - **Verification:** Unit test: traverse a dialogue tree with 3 conditional branches and assert
-     correct path selection for each condition state. Verify side effects (item grant, reputation
-     change) are applied exactly once upon node activation. Test localization by loading two locales
-     and asserting distinct text per node.
-2. **R-13.6.5a** — The engine **SHALL** control camera behavior during NPC conversations, including
-   over-the-shoulder and close-up shots, player character facing, NPC idle animations, and automatic
-   camera switching in multi-NPC conversations.
-   - **Rationale:** Cinematic camera framing during conversations creates immersive NPC interactions
-     that feel polished and narrative-driven.
-   - **Verification:** Start a conversation and verify camera framing activates with the configured
-     shot type. Start a multi-NPC conversation and verify the camera switches between speakers
-     automatically.
-3. **R-13.6.5b** — The engine **SHALL** suppress HUD elements, duck ambient audio, and suppress
-   gameplay inputs during active NPC conversations, restoring all state on conversation end, with
-   per-conversation configurability for which elements are suppressed.
-   - **Rationale:** Audio ducking and HUD suppression focus player attention on the dialogue without
-     distracting gameplay elements competing for attention.
-   - **Verification:** Start a conversation and verify HUD suppression, audio ducking, and input
-     suppression activate. End the conversation and verify all state restores. Configure a
-     conversation that retains minimap and verify selective suppression works.
-4. **R-13.6.5c** — The engine **SHALL** handle conversation interruptions (combat, disconnect, area
-   departure) by immediately restoring gameplay state and marking the conversation as incomplete
-   with a saved node index, enabling resumption from the last visited dialogue node.
-   - **Rationale:** Interruption handling prevents softlocks when external events occur during
-     dialogue, and resumption avoids forcing players to restart long conversations.
-   - **Verification:** Simulate a combat interruption mid-dialogue and verify gameplay state
-     restores and the conversation is marked incomplete. Re-engage the NPC and verify the
-     conversation resumes from the last visited node.
+4. **R-13.6.4** — The engine **SHALL** support branching dialogue trees with NPC lines, player
+   response options, conditional branches (quest state, reputation, inventory, class), and side
+   effect triggers (quest accept, item grant, reputation change, UI open).
+   - **Rationale:** Conditional branches enable dynamic conversations without custom scripting.
+   - **Verification:** Define a dialogue with a branch checking reputation. Set reputation below
+     threshold and verify the branch is hidden. Set above and verify the branch appears. Select a
+     side-effect branch and verify the item grant executes.
 
-## Rewards and Economy
+5. **R-13.6.5** — The engine **SHALL** manage conversation state including camera behavior
+   (over-the-shoulder, speaker switching), gameplay state changes (audio ducking, HUD/input
+   suppression), and interruption handling with resumption from the last visited node.
+   - **Rationale:** Conversation state management ensures consistent presentation and recovery from
+     interruption.
+   - **Verification:** Start a conversation and verify camera switches to over-the-shoulder. Verify
+     HUD suppresses. Interrupt (leave area) and verify state restores. Return and verify
+     conversation resumes at the last node.
 
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-13.6.6  | [F-13.6.6](../../features/game-framework/quest-dialogue.md)  |
-| R-13.6.7a | [F-13.6.7a](../../features/game-framework/quest-dialogue.md) |
-| R-13.6.7b | [F-13.6.7b](../../features/game-framework/quest-dialogue.md) |
+## Rewards and World Events
 
-1. **R-13.6.6** — The engine **SHALL** distribute quest rewards (XP, currency, items, reputation,
-   achievements, unlocks) from per-quest reward tables respecting group loot rules, with
-   level-scaling and seasonal multipliers, using server-authoritative transactional grants to
-   prevent duplication.
-   - **Rationale:** Server-authoritative transactional reward grants prevent duplication exploits,
-     and table-driven rewards enable designer tuning without code changes.
-   - **Verification:** Unit test: complete a quest and verify all reward types are granted with
-     correct level-scaled values. Simulate concurrent reward claims and assert no duplication. Test
-     group loot distribution modes (personal, need/greed, round-robin) with a 5-player group.
-2. **R-13.6.7a** — The engine **SHALL** support server-driven world events (invasions, world bosses,
-   territory shifts, seasonal festivals) that alter zone state for all connected players
-   simultaneously, triggered by server-side conditions.
-   - **Rationale:** Server-driven world events create a living, dynamic world that responds to
-     aggregate player actions and scheduled content.
-   - **Verification:** Trigger a world event and verify all connected players observe the zone state
-     change simultaneously. Verify event activation conditions (time, player count, quest completion
-     rate) are evaluated server-side.
-3. **R-13.6.7b** — The engine **SHALL** support per-player quest phasing that presents different
-   zone versions (geometry, NPCs, interactables) based on individual quest progress via sub-level
-   streaming, without affecting other players in the same zone.
-   - **Rationale:** Quest phasing enables personalized world states that reflect each player's story
-     progress without zone instancing overhead.
-   - **Verification:** Advance two players to different quest phases in the same zone and verify
-     each sees the correct geometry and NPC set. Verify phase transitions swap sub-levels without
-     affecting other players.
+6. **R-13.6.6** — The engine **SHALL** support per-quest reward tables (XP, currency, items,
+   reputation, achievement credit) with level-scaling, seasonal multipliers, and
+   server-authoritative transactional distribution.
+   - **Rationale:** Transactional rewards prevent duplication; scaling keeps rewards relevant.
+   - **Verification:** Complete a quest and verify all reward types granted. Attempt completing
+     twice and verify the server rejects the duplicate. Change player level and verify reward
+     scales.
 
-## Non-Functional Requirements
-
-| ID         | Derived From       |
-|------------|--------------------|
-| R-13.6.NF1 | F-13.6.3           |
-| R-13.6.NF2 | F-13.6.4, F-13.6.5 |
-
-1. **R-13.6.NF1** — The engine **SHALL** support at least 50 simultaneously active quests per player
-   without degrading objective tracking, event handling, or journal UI performance.
-   - **Rationale:** MMO players commonly track dozens of quests across multiple categories; the
-     system must scale without per-frame overhead growing linearly with active quest count.
-   - **Verification:** Activate 50 quests on a single player. Advance objectives on 10 quests
-     simultaneously and verify journal updates, waypoint markers, and event emissions all complete
-     within the frame budget. Measure per-frame quest tracking overhead and verify it stays under
-     0.5 ms.
-2. **R-13.6.NF2** — The engine **SHALL** evaluate dialogue tree branch conditions and present the
-   next dialogue node within 5 ms of player input, ensuring conversations feel responsive without
-   perceptible delay.
-   - **Rationale:** Perceptible pauses between dialogue selections and response display break
-     conversational immersion and frustrate players.
-   - **Verification:** Create a dialogue tree with 100 nodes and 20 conditional branches checking
-     quest state, faction reputation, and inventory. Select a response and measure time from input
-     to the next node display. Verify latency stays under 5 ms across all paths.
+7. **R-13.6.7** — The engine **SHALL** support server-driven world events altering zone state for
+   all players, and quest phasing showing different zone versions per player's quest progress using
+   sub-level composition.
+   - **Rationale:** World events create shared moments; phasing enables per-player story
+     visualization.
+   - **Verification:** Trigger a world event and verify all connected clients see the zone change.
+     Set two players to different quest phases and verify each sees the correct zone version.

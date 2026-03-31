@@ -2,10 +2,10 @@
 
 ## Engine Overview
 
-Harmonius is a cross-platform game engine written in Rust (stable) with C ABI FFI to platform
-backends. It targets Metal 4, Direct3D 12, and Vulkan 1.4 with mesh shaders and ray tracing as
-minimum requirements. All simulation runs through a 100% ECS architecture with no separate data
-stores.
+Harmonius is a cross-platform game engine written in Rust (stable) with `swift-bridge` FFI to Apple
+platform backends (macOS/iOS). It targets Metal 4, Direct3D 12, and Vulkan 1.4 with mesh shaders and
+ray tracing as minimum requirements. All simulation runs through a 100% ECS architecture with no
+separate data stores.
 
 See [design/constraints.md](design/constraints.md) for the full constraint set.
 
@@ -717,7 +717,6 @@ Navigation, behavior trees, utility AI, GOAP, perception, steering, and crowd si
 | [steering-avoidance.md](requirements/ai/steering-avoidance.md) |
 | [crowd-simulation.md](requirements/ai/crowd-simulation.md) |
 | [tactical-combat.md](requirements/ai/tactical-combat.md) |
-| [non-functional.md](requirements/ai/non-functional.md) |
 
 #### User Stories
 
@@ -731,7 +730,7 @@ Navigation, behavior trees, utility AI, GOAP, perception, steering, and crowd si
 | [steering-avoidance.md](user-stories/ai/steering-avoidance.md) |
 | [crowd-simulation.md](user-stories/ai/crowd-simulation.md) |
 | [tactical-combat.md](user-stories/ai/tactical-combat.md) |
-| [non-functional.md](user-stories/ai/non-functional.md) |
+| [non-functional.md](user-stories/networking/non-functional.md) |
 
 ---
 
@@ -785,7 +784,6 @@ anti-cheat.
 | [replay-system.md](requirements/networking/replay-system.md) |
 | [mmo-infrastructure.md](requirements/networking/mmo-infrastructure.md) |
 | [anti-cheat.md](requirements/networking/anti-cheat.md) |
-| [non-functional.md](requirements/networking/non-functional.md) |
 
 #### User Stories
 
@@ -973,30 +971,26 @@ GPU particles, decals, screen effects, weather, destruction VFX, and node-based 
 ### Game Framework
 
 Gameplay primitives, save/load, cinematics, scripting, quests, dialogue, databases, abilities,
-combat, weapons, characters, inventory, selection, NPC simulation, progression, building, survival,
-genre-specific systems, monetization, destruction, traversal, stealth, and camera.
+combat, containers, meters, selection, perception, progression, simulation, destruction, and camera.
 
 #### Design Documents
 
 | Design                                                               |
 |----------------------------------------------------------------------|
-| [primitives.md](design/game-framework/primitives.md)                 |
-| [save-cinematics.md](design/game-framework/save-cinematics.md)       |
-| [scripting.md](design/game-framework/scripting.md)                   |
-| [quest-dialogue.md](design/game-framework/quest-dialogue.md)         |
-| [databases.md](design/game-framework/databases.md)                   |
-| [abilities-combat.md](design/game-framework/abilities-combat.md)     |
-| [character.md](design/game-framework/character.md)                   |
-| [weapons.md](design/game-framework/weapons.md)                       |
-| [selection.md](design/game-framework/selection.md)                   |
-| [npc-simulation.md](design/game-framework/npc-simulation.md)         |
-| [progression-social.md](design/game-framework/progression-social.md) |
-| [building-survival.md](design/game-framework/building-survival.md)   |
-| [genre-specific.md](design/game-framework/genre-specific.md)         |
-| [monetization.md](design/game-framework/monetization.md)             |
-| [destruction.md](design/game-framework/destruction.md)               |
-| [traversal-stealth.md](design/game-framework/traversal-stealth.md)   |
-| [camera.md](design/game-framework/camera.md)                         |
+| [primitives.md](design/game-framework/primitives.md)                     |
+| [save-cinematics.md](design/game-framework/save-cinematics.md)           |
+| [scripting.md](design/game-framework/scripting.md)                       |
+| [quest-dialogue.md](design/game-framework/quest-dialogue.md)             |
+| [databases.md](design/game-framework/databases.md)                       |
+| [abilities-combat.md](design/game-framework/abilities-combat.md)         |
+| [containers-sockets.md](design/game-framework/containers-sockets.md)     |
+| [meters-resources.md](design/game-framework/meters-resources.md)         |
+| [selection.md](design/game-framework/selection.md)                       |
+| [perception.md](design/game-framework/perception.md)                     |
+| [progression.md](design/game-framework/progression.md)                   |
+| [simulation.md](design/game-framework/simulation.md)                     |
+| [destruction.md](design/game-framework/destruction.md)                   |
+| [camera.md](design/game-framework/camera.md)                             |
 
 1. **[primitives.md](design/game-framework/primitives.md)** —
    [primitives-test-cases.md](design/game-framework/primitives-test-cases.md)
@@ -1010,27 +1004,21 @@ genre-specific systems, monetization, destruction, traversal, stealth, and camer
    [databases-test-cases.md](design/game-framework/databases-test-cases.md)
 6. **[abilities-combat.md](design/game-framework/abilities-combat.md)** —
    [abilities-combat-test-cases.md](design/game-framework/abilities-combat-test-cases.md)
-7. **[character.md](design/game-framework/character.md)** —
-   [character-test-cases.md](design/game-framework/character-test-cases.md)
-8. **[weapons.md](design/game-framework/weapons.md)** —
-   [weapons-test-cases.md](design/game-framework/weapons-test-cases.md)
+7. **[containers-sockets.md](design/game-framework/containers-sockets.md)** — inventory, equipment,
+   and socket systems
+8. **[meters-resources.md](design/game-framework/meters-resources.md)** — meters, attributes, and
+   resource tracking
 9. **[selection.md](design/game-framework/selection.md)** —
    [selection-test-cases.md](design/game-framework/selection-test-cases.md)
-10. **[npc-simulation.md](design/game-framework/npc-simulation.md)** —
-    [npc-simulation-test-cases.md](design/game-framework/npc-simulation-test-cases.md)
-11. **[progression-social.md](design/game-framework/progression-social.md)** —
-    [progression-social-test-cases.md](design/game-framework/progression-social-test-cases.md)
-12. **[building-survival.md](design/game-framework/building-survival.md)** —
-    [building-survival-test-cases.md](design/game-framework/building-survival-test-cases.md)
-13. **[genre-specific.md](design/game-framework/genre-specific.md)** —
-    [genre-specific-test-cases.md](design/game-framework/genre-specific-test-cases.md)
-14. **[monetization.md](design/game-framework/monetization.md)** —
-    [monetization-test-cases.md](design/game-framework/monetization-test-cases.md)
-15. **[destruction.md](design/game-framework/destruction.md)** —
+10. **[perception.md](design/game-framework/perception.md)** — awareness, senses, and scored
+    evaluation
+11. **[progression.md](design/game-framework/progression.md)** — progression graphs and live-ops
+    rewards
+12. **[simulation.md](design/game-framework/simulation.md)** — schedules, routines, and world
+    simulation
+13. **[destruction.md](design/game-framework/destruction.md)** —
     [destruction-test-cases.md](design/game-framework/destruction-test-cases.md)
-16. **[traversal-stealth.md](design/game-framework/traversal-stealth.md)** —
-    [traversal-stealth-test-cases.md](design/game-framework/traversal-stealth-test-cases.md)
-17. **[camera.md](design/game-framework/camera.md)** —
+14. **[camera.md](design/game-framework/camera.md)** —
     [camera-test-cases.md](design/game-framework/camera-test-cases.md)
 
 #### Features
@@ -1059,7 +1047,6 @@ genre-specific systems, monetization, destruction, traversal, stealth, and camer
 | [block-voxel.md](features/game-framework/block-voxel.md) |
 | [pets-mounts.md](features/game-framework/pets-mounts.md) |
 | [monetization.md](features/game-framework/monetization.md) |
-| [advertising.md](features/game-framework/advertising.md) |
 | [camera-system.md](features/game-framework/camera-system.md) |
 | [traversal-interaction.md](features/game-framework/traversal-interaction.md) |
 | [stealth-cover.md](features/game-framework/stealth-cover.md) |
@@ -1092,7 +1079,6 @@ genre-specific systems, monetization, destruction, traversal, stealth, and camer
 | [block-voxel.md](requirements/game-framework/block-voxel.md) |
 | [pets-mounts.md](requirements/game-framework/pets-mounts.md) |
 | [monetization.md](requirements/game-framework/monetization.md) |
-| [advertising.md](requirements/game-framework/advertising.md) |
 | [camera-system.md](requirements/game-framework/camera-system.md) |
 | [traversal-interaction.md](requirements/game-framework/traversal-interaction.md) |
 | [stealth-cover.md](requirements/game-framework/stealth-cover.md) |
@@ -1125,7 +1111,6 @@ genre-specific systems, monetization, destruction, traversal, stealth, and camer
 | [block-voxel.md](user-stories/game-framework/block-voxel.md) |
 | [pets-mounts.md](user-stories/game-framework/pets-mounts.md) |
 | [monetization.md](user-stories/game-framework/monetization.md) |
-| [advertising.md](user-stories/game-framework/advertising.md) |
 | [camera-system.md](user-stories/game-framework/camera-system.md) |
 | [traversal-interaction.md](user-stories/game-framework/traversal-interaction.md) |
 | [stealth-cover.md](user-stories/game-framework/stealth-cover.md) |
@@ -1489,10 +1474,10 @@ graph TB
 
 | Platform | Async I/O | Windowing | Graphics | FFI |
 |----------|-----------|-----------|----------|-----|
-| macOS | GCD / Dispatch IO | NSWindow (Swift via C ABI) | Metal 4 | C ABI → Swift |
+| macOS | GCD / Dispatch IO | NSWindow (swift-bridge) | Metal 4 | swift-bridge |
 | Windows | IOCP | Win32 (windows-rs) | Direct3D 12 | windows-rs |
 | Linux | io_uring | x11rb / wayland-client | Vulkan 1.4 (ash) | Rust crates |
-| iOS | GCD / Dispatch IO | UIWindow (Swift via C ABI) | Metal 4 | C ABI → Swift |
+| iOS | GCD / Dispatch IO | UIWindow (swift-bridge) | Metal 4 | swift-bridge |
 | Android | io_uring | ndk crate | Vulkan 1.4 (ash) | Rust crates |
 | Consoles | Platform SDK | Platform SDK | Platform SDK | Platform SDK |
 

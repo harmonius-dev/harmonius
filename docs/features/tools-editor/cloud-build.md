@@ -2,15 +2,15 @@
 
 ## Cloud Build Pipeline
 
-| ID        | Feature                           | Requirements         |
-|-----------|-----------------------------------|----------------------|
-| F-15.24.1 | Cloud Build Service               | R-15.24.1            |
-| F-15.24.2 | Platform Toolchain Containers     | R-15.24.2            |
-| F-15.24.3 | Cross-Platform Shader Compilation | R-15.24.3, R-15.24.7 |
-| F-15.24.4 | Remote Code Signing               | R-15.24.4, R-15.24.8 |
-| F-15.24.5 | Build Artifact Distribution       | R-15.24.5            |
-| F-15.24.6 | Local Development Mode            | R-15.24.6            |
-| F-15.24.7 | Build Pipeline Visualization      | R-15.24.9            |
+| ID | Feature |
+| ----------- | ----------------------------------- |
+| F-15.24.1 | Cloud Build Service |
+| F-15.24.2 | Platform Toolchain Containers |
+| F-15.24.3 | Cross-Platform Shader Compilation |
+| F-15.24.4 | Remote Code Signing |
+| F-15.24.5 | Build Artifact Distribution |
+| F-15.24.6 | Local Development Mode |
+| F-15.24.7 | Build Pipeline Visualization |
 
 1. **F-15.24.1** — Remote build pipeline that compiles, signs, and packages for ALL target platforms
    from any developer machine. A developer on any OS submits a build request via the editor UI or

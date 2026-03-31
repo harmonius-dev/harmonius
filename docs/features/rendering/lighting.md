@@ -2,18 +2,18 @@
 
 ## Features
 
-| ID       | Feature                             | Requirements |
-|----------|-------------------------------------|--------------|
-| F-2.4.1  | Forward+ Lighting (Tiled/Clustered) | R-2.4.1      |
-| F-2.4.2  | Deferred Lighting (G-Buffer)        | R-2.4.2      |
-| F-2.4.3  | PBR Materials (Cook-Torrance BRDF)  | R-2.4.3      |
-| F-2.4.4  | Extended BSDF Materials             | R-2.4.4      |
-| F-2.4.5  | Transparent Objects                 | R-2.4.5      |
-| F-2.4.6  | Material Instances                  | R-2.4.6      |
-| F-2.4.7  | Material Layers and Blending        | R-2.4.7      |
-| F-2.4.8  | Decal Rendering                     | R-2.4.8      |
-| F-2.4.9  | Shading Model Variants              | R-2.4.9      |
-| F-2.4.10 | Stochastic Many-Light Sampling      | R-2.4.10     |
+| ID       | Feature                             |
+|----------|-------------------------------------|
+| F-2.4.1  | Forward+ Lighting (Tiled/Clustered) |
+| F-2.4.2  | Deferred Lighting (G-Buffer)        |
+| F-2.4.3  | PBR Materials (Cook-Torrance BRDF)  |
+| F-2.4.4  | Extended BSDF Materials             |
+| F-2.4.5  | Transparent Objects                 |
+| F-2.4.6  | Material Instances                  |
+| F-2.4.7  | Material Layers and Blending        |
+| F-2.4.8  | Decal Rendering                     |
+| F-2.4.9  | Shading Model Variants              |
+| F-2.4.10 | Stochastic Many-Light Sampling      |
 
 1. **F-2.4.1** — Tiled or clustered light culling via a compute pass that assigns visible lights to
    screen-space tiles. Fragment shading evaluates only the lights relevant to each tile, enabling
@@ -91,21 +91,21 @@
 
 ## Shadows
 
-| ID       | Feature                                 | Requirements |
-|----------|-----------------------------------------|--------------|
-| F-2.4.11 | Cascaded Shadow Maps                    | R-2.4.11     |
-| F-2.4.12 | Soft Shadows (PCF / PCSS / RT)          | R-2.4.12     |
-| F-2.4.13 | Ambient Occlusion (SSAO / GTAO / RT AO) | R-2.4.13     |
-| F-2.4.14 | Virtual Shadow Maps                     | R-2.4.14     |
-| F-2.4.15 | Contact Shadows                         | R-2.4.15     |
-| F-2.4.16 | Distance Field Shadows                  | R-2.4.16     |
-| F-2.4.17 | Capsule Shadows                         | R-2.4.17     |
-| F-2.4.18 | Order-Independent Transparency (OIT)    | R-2.4.18     |
-| F-2.4.19 | Volumetric Shadow Maps                  | R-2.4.19     |
-| F-2.4.20 | Area Lights (Rect/Sphere)               | R-2.4.20     |
-| F-2.4.21 | Sky Light (IBL)                         | R-2.4.21     |
-| F-2.4.22 | IES Light Profiles                      | R-2.4.22     |
-| F-2.4.23 | Light Functions                         | R-2.4.23     |
+| ID       | Feature                                 |
+|----------|-----------------------------------------|
+| F-2.4.11 | Cascaded Shadow Maps                    |
+| F-2.4.12 | Soft Shadows (PCF / PCSS / RT)          |
+| F-2.4.13 | Ambient Occlusion (SSAO / GTAO / RT AO) |
+| F-2.4.14 | Virtual Shadow Maps                     |
+| F-2.4.15 | Contact Shadows                         |
+| F-2.4.16 | Distance Field Shadows                  |
+| F-2.4.17 | Capsule Shadows                         |
+| F-2.4.18 | Order-Independent Transparency (OIT)    |
+| F-2.4.19 | Volumetric Shadow Maps                  |
+| F-2.4.20 | Area Lights (Rect/Sphere)               |
+| F-2.4.21 | Sky Light (IBL)                         |
+| F-2.4.22 | IES Light Profiles                      |
+| F-2.4.23 | Light Functions                         |
 
 1. **F-2.4.11** — Multi-cascade shadow mapping for directional lights with logarithmic/linear split
    blending. Supports 1-4 cascades with configurable resolution, depth bias, and temporal

@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/rendering/](../../features/rendering/),
-> [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
-> to those definitions.
+> [features/rendering/](../../features/), [requirements/rendering/](../../requirements/), and
+> [user-stories/rendering/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Functional Requirements
 
@@ -2997,7 +2996,7 @@ Depth comparison uses `GREATER` instead of `LESS`.
 | Author | HLSL source | `.hlsl` files | N/A |
 | Compile (D3D12) | DXC via C ABI | HLSL | DXIL bytecode |
 | Compile (Vulkan) | DXC via C ABI | HLSL | SPIR-V bytecode |
-| Compile (Metal) | Metal Shader Converter via C ABI | DXIL | MSL / metallib |
+| Compile (Metal) | Metal Shader Converter via swift-bridge | DXIL | MSL / metallib |
 
 ### Proposed Dependencies
 
@@ -3163,12 +3162,12 @@ ms for 1% dirty entities, but worst-case 100% dirty (level load, teleport) has n
 **Q3. Is there a better approach?**
 
 An alternative is GPU-driven extraction where the ECS component arrays are mapped directly to
-GPU-visible memory and the GPU reads them without a CPU-side proxy copy. Nanite in Unreal Engine 5
-uses this approach for transforms. We chose CPU-side extraction because the ECS uses archetype
-storage (F-1.1.1) where components are scattered across archetypes, making direct GPU mapping
-impractical without a contiguous SoA mirror. The proxy store provides that contiguous layout. The
-CPU extraction cost is bounded by change detection, making it acceptable for all but the most
-extreme entity counts.
+GPU-visible memory and the GPU reads them without a CPU-side proxy copy. Mesh Streaming in Unreal
+Engine 5 uses this approach for transforms. We chose CPU-side extraction because the ECS uses
+archetype storage (F-1.1.1) where components are scattered across archetypes, making direct GPU
+mapping impractical without a contiguous SoA mirror. The proxy store provides that contiguous
+layout. The CPU extraction cost is bounded by change detection, making it acceptable for all but the
+most extreme entity counts.
 
 **Q4. Does this design solve all customer problems?**
 

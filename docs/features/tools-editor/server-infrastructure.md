@@ -2,18 +2,18 @@
 
 ## AWS CDK Deployment
 
-| ID         | Feature                              | Requirements |
-|------------|--------------------------------------|--------------|
-| F-15.18.1  | AWS CDK Deployment Stacks            | R-15.18.1    |
-| F-15.18.2  | Live Collaboration Server            | R-15.18.2    |
-| F-15.18.3  | Git and Git LFS Hosting with Locking | R-15.18.3    |
-| F-15.18.4  | Asset and Shader Compilation Server  | R-15.18.4    |
-| F-15.18.5  | Signing and Distribution Server      | R-15.18.5    |
-| F-15.18.6  | Continuous Deployment Pipeline       | R-15.18.6    |
-| F-15.18.7  | Test Runner Infrastructure           | R-15.18.7    |
-| F-15.18.8  | Shared Cache and Database Services   | R-15.18.8    |
-| F-15.18.9  | Backup and Disaster Recovery         | R-15.18.9    |
-| F-15.18.10 | Enterprise Security Configuration    | R-15.18.10   |
+| ID | Feature |
+| ------------ | -------------------------------------- |
+| F-15.18.1 | AWS CDK Deployment Stacks |
+| F-15.18.2 | Live Collaboration Server |
+| F-15.18.3 | Git and Git LFS Hosting with Locking |
+| F-15.18.4 | Asset and Shader Compilation Server |
+| F-15.18.5 | Signing and Distribution Server |
+| F-15.18.6 | Continuous Deployment Pipeline |
+| F-15.18.7 | Test Runner Infrastructure |
+| F-15.18.8 | Shared Cache and Database Services |
+| F-15.18.9 | Backup and Disaster Recovery |
+| F-15.18.10 | Enterprise Security Configuration |
 
 1. **F-15.18.1** — Open-source AWS CDK (Cloud Development Kit) stacks in TypeScript/Rust that deploy
    all Harmonius server components to a developer's own AWS account. Stacks are modular — deploy
@@ -131,18 +131,18 @@ the standard object storage API (MinIO-compatible for local dev).
 | Git hosting | Forgejo | Self-hosted on ECS/EC2 | No CodeCommit |
 | CI/CD | Forgejo Actions | Self-hosted runners | No CodePipeline, no CodeBuild |
 
-| ID         | Feature                            | Requirements |
-|------------|------------------------------------|--------------|
-| F-15.18.11 | AWS CDK Open-Source Service Stacks | R-15.18.11   |
-| F-15.18.12 | 1-Click AWS Marketplace Deployment | R-15.18.12   |
-| F-15.18.13 | Service Admin Dashboard            | R-15.18.13   |
-| F-15.18.14 | Scaling Profiles                   | R-15.18.14   |
-| F-15.18.15 | Self-Hosted Build Cache Service    | R-15.18.15   |
-| F-15.18.16 | Self-Hosted Collaboration Service  | R-15.18.16   |
-| F-15.18.17 | Self-Hosted Matchmaking Service    | R-15.18.17   |
-| F-15.18.18 | Self-Hosted Asset Store Service    | R-15.18.18   |
-| F-15.18.19 | Health Monitoring Stack            | R-15.18.19   |
-| F-15.18.20 | Multi-Region Deployment            | R-15.18.20   |
+| ID | Feature |
+| ------------ | ------------------------------------ |
+| F-15.18.11 | AWS CDK Open-Source Service Stacks |
+| F-15.18.12 | 1-Click AWS Marketplace Deployment |
+| F-15.18.13 | Service Admin Dashboard |
+| F-15.18.14 | Scaling Profiles |
+| F-15.18.15 | Self-Hosted Build Cache Service |
+| F-15.18.16 | Self-Hosted Collaboration Service |
+| F-15.18.17 | Self-Hosted Matchmaking Service |
+| F-15.18.18 | Self-Hosted Asset Store Service |
+| F-15.18.19 | Health Monitoring Stack |
+| F-15.18.20 | Multi-Region Deployment |
 
 1. **F-15.18.11** — TypeScript CDK stacks deploying all Harmonius services using exclusively
    open-source dependencies. Each stack provisions the open-source service (PostgreSQL,

@@ -2,10 +2,10 @@
 
 ## Terrain Sculpting
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-15.6.1 | Terrain Sculpting Brushes | R-15.6.1     |
-| F-15.6.2 | Terrain Erosion           | R-15.6.2     |
+| ID | Feature |
+| ---------- | --------------------------- |
+| F-15.6.1 | Terrain Sculpting Brushes |
+| F-15.6.2 | Terrain Erosion |
 
 1. **F-15.6.1** — Provides a suite of sculpting brushes for shaping terrain heightmaps directly in
    the viewport: raise, lower, smooth, flatten, erode, and noise. Brushes support configurable
@@ -23,10 +23,10 @@
 
 ## Terrain Painting and Water
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-15.6.3 | Terrain Material Painting | R-15.6.3     |
-| F-15.6.4 | Water Body Placement      | R-15.6.4     |
+| ID | Feature |
+| ---------- | --------------------------- |
+| F-15.6.3 | Terrain Material Painting |
+| F-15.6.4 | Water Body Placement |
 
 1. **F-15.6.3** — Paints material layers (grass, rock, dirt, sand, snow) onto terrain tiles with
    per-layer weight maps. Supports height-based and slope-based automatic painting rules, triplanar
@@ -43,10 +43,10 @@
 
 ## Vegetation and Lighting
 
-| ID       | Feature                                             | Requirements |
-|----------|-----------------------------------------------------|--------------|
-| F-15.6.5 | Vegetation Painting with Density Rules              | R-15.6.5     |
-| F-15.6.6 | Lighting Setup (Light Probes and Reflection Probes) | R-15.6.6     |
+| ID | Feature |
+| ---------- | ----------------------------------------------------- |
+| F-15.6.5 | Vegetation Painting with Density Rules |
+| F-15.6.6 | Lighting Setup (Light Probes and Reflection Probes) |
 
 1. **F-15.6.5** — Paints vegetation instances across terrain using density brushes with per-species
    placement rules. Rules define slope limits, altitude bands, proximity exclusion radii, clustering
@@ -63,10 +63,10 @@
 
 ## Navigation and World Partition
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-15.6.7 | Navmesh Preview               | R-15.6.7     |
-| F-15.6.8 | World Partition Visualization | R-15.6.8     |
+| ID | Feature |
+| ---------- | ------------------------------- |
+| F-15.6.7 | Navmesh Preview |
+| F-15.6.8 | World Partition Visualization |
 
 1. **F-15.6.7** — Renders the navigation mesh as a translucent overlay in the viewport with
    color-coded walkable areas, slope limits, and agent radius offsets. Supports real-time navmesh
@@ -84,12 +84,12 @@
 
 ## Voxel Terrain Editing
 
-| ID        | Feature                       | Requirements |
-|-----------|-------------------------------|--------------|
-| F-15.6.9  | Voxel Sculpting Tools         | R-15.6.9     |
-| F-15.6.10 | Destruction Authoring         | R-15.6.10    |
-| F-15.6.11 | Voxel-Heightmap Hybrid Editor | R-15.6.11    |
-| F-15.6.12 | SDF Brush Library             | R-15.6.12    |
+| ID | Feature |
+| ----------- | ------------------------------- |
+| F-15.6.9 | Voxel Sculpting Tools |
+| F-15.6.10 | Destruction Authoring |
+| F-15.6.11 | Voxel-Heightmap Hybrid Editor |
+| F-15.6.12 | SDF Brush Library |
 
 1. **F-15.6.9** — SDF-based sculpting brushes for editing voxel terrain volumes (F-3.2.9) directly
    in the editor viewport. Brush operations include add (deposit material), subtract (excavate),

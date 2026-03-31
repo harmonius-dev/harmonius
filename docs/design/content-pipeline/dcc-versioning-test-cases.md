@@ -190,7 +190,7 @@ Companion test cases for [dcc-versioning.md](dcc-versioning.md).
 1. **#1** — Begin session; submit mesh; cancel
    - **Expected:** No file written; session cleaned up
 
-### TC-12.6.2.1 Live Link Connect and Disconnect
+### TC-12.6.2.1 DCC Bridge Connect and Disconnect
 
 | # | Requirement |
 |---|-------------|
@@ -202,16 +202,16 @@ Companion test cases for [dcc-versioning.md](dcc-versioning.md).
 2. **#2** — Disconnect client
    - **Expected:** Session cleaned up; no resource leaks
 
-### TC-12.6.2.2 Live Link Delta Roundtrip
+### TC-12.6.2.2 DCC Bridge Delta Roundtrip
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-12.6.2    |
 
-1. **#1** — Encode mesh delta; send over live link; decode
+1. **#1** — Encode mesh delta; send over DCC Bridge; decode
    - **Expected:** Decoded data matches original delta
 
-### TC-12.6.2.3 Live Link Camera Sync
+### TC-12.6.2.3 DCC Bridge Camera Sync
 
 | # | Requirement |
 |---|-------------|
@@ -280,7 +280,7 @@ Companion test cases for [dcc-versioning.md](dcc-versioning.md).
 |---|-------------|
 | 1 | R-12.7.1    |
 
-1. **#1** — Mark texture T1 changed (T1->material M1->prefab P1)
+1. **#1** — Mark texture T1 changed (T1->material M1->entity template P1)
    - **Expected:** M1 and P1 invalidated
 
 ### TC-12.7.2.5 Binary Diff Copy and Insert
@@ -348,14 +348,14 @@ Companion test cases for [dcc-versioning.md](dcc-versioning.md).
 1. **#1** — Export Bezier animation curves from Maya
    - **Expected:** Tangent data matches source within 0.001 tolerance
 
-### TC-12.6.8.I1 Blender Collection Prefab
+### TC-12.6.8.I1 Blender Collection Entity Template
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-12.6.8    |
 
 1. **#1** — Export Blender collections (3 nested levels)
-   - **Expected:** Engine prefab hierarchy matches collection nesting
+   - **Expected:** Engine entity template hierarchy matches collection nesting
 
 ### TC-12.6.9.I1 Blender BSDF Conversion
 
@@ -384,13 +384,13 @@ Companion test cases for [dcc-versioning.md](dcc-versioning.md).
 1. **#1** — Import .sbsar; change exposed parameter in engine
    - **Expected:** Textures regenerate with new parameter value
 
-### TC-12.6.2.I1 Live Link Latency Under 2s
+### TC-12.6.2.I1 DCC Bridge Latency Under 2s
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-12.6.2    |
 
-1. **#1** — Modify mesh in mock DCC client; push via live link
+1. **#1** — Modify mesh in mock DCC client; push via DCC Bridge
    - **Expected:** Engine viewport updates within 2 s
 
 ### TC-12.6.22.I1 Git LFS Lock Multi-User
@@ -488,11 +488,11 @@ Companion test cases for [dcc-versioning.md](dcc-versioning.md).
 |---|----------|--------|--------|-------------|
 | 1 | Binary diff of two 10 MB asset versions | Wall time | < 50 ms | R-12.7.2 |
 
-### TC-12.6.2.B1 Live Link Delta Encode
+### TC-12.6.2.B1 DCC Bridge Delta Encode
 
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
-| 1 | Encode mesh delta for live link | Wall time | < 1 ms | R-12.6.2 |
+| 1 | Encode mesh delta for DCC Bridge | Wall time | < 1 ms | R-12.6.2 |
 
 ### TC-12.6.1.B1 SDK Mesh Submit 100K Vertices
 

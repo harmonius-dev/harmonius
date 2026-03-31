@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/audio/](../../features/audio/), [requirements/audio/](../../requirements/audio/), and
-> [user-stories/audio/](../../user-stories/audio/). The table below traces design elements to those
+> [features/audio/](../../features/), [requirements/audio/](../../requirements/), and
+> [user-stories/audio/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 ### DSP & Effects (5.3)
@@ -2208,7 +2208,7 @@ simultaneously control:
 | Platform | API | Notes |
 |----------|-----|-------|
 | Windows | WASAPI | `IAudioCaptureClient` via `windows-rs` |
-| macOS | CoreAudio / AVAudioEngine | Via Swift wrappers through C ABI |
+| macOS | CoreAudio / AVAudioEngine | Via Swift wrappers through swift-bridge |
 | Linux | PipeWire / ALSA | PipeWire preferred; ALSA fallback |
 | iOS | AVAudioSession | Platform-native; uses system AEC |
 | Android | AAudio / OpenSL ES | Platform-native; uses system AEC |

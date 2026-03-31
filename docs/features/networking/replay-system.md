@@ -1,11 +1,11 @@
-# 8.6 — Replay System
+# 8.6 -- Replay System
 
 ## Recording
 
-| ID      | Feature                                   | Requirements |
-|---------|-------------------------------------------|--------------|
-| F-8.6.1 | State Recording with Snapshots and Deltas | R-8.6.1      |
-| F-8.6.2 | Deterministic Playback                    | R-8.6.2      |
+| ID      | Feature                                   |
+|---------|-------------------------------------------|
+| F-8.6.1 | State Recording with Snapshots and Deltas |
+| F-8.6.2 | Deterministic Playback                    |
 
 1. **F-8.6.1** — Record gameplay state as periodic full snapshots interleaved with per-tick delta
    streams, producing compact replay files that capture all networked state changes. Full snapshots
@@ -26,9 +26,9 @@
 
 ## Playback Control
 
-| ID      | Feature                             | Requirements |
-|---------|-------------------------------------|--------------|
-| F-8.6.3 | Seek, Fast-Forward, and Slow Motion | R-8.6.3      |
+| ID      | Feature                             |
+|---------|-------------------------------------|
+| F-8.6.3 | Seek, Fast-Forward, and Slow Motion |
 
 1. **F-8.6.3** — Allow the viewer to seek to any point in the replay by loading the nearest snapshot
    keyframe and replaying deltas forward, fast-forward at configurable speed multipliers (2x, 4x,
@@ -41,10 +41,10 @@
 
 ## Spectating
 
-| ID      | Feature                           | Requirements |
-|---------|-----------------------------------|--------------|
-| F-8.6.4 | Live Spectator Mode               | R-8.6.4      |
-| F-8.6.5 | Kill Cam and Highlight Extraction | R-8.6.5      |
+| ID      | Feature                           |
+|---------|-----------------------------------|
+| F-8.6.4 | Live Spectator Mode               |
+| F-8.6.5 | Kill Cam and Highlight Extraction |
 
 1. **F-8.6.4** — Allow designated clients to observe an in-progress game session with a configurable
    delay (e.g., 30 seconds to prevent ghosting in competitive play). Spectators receive the full

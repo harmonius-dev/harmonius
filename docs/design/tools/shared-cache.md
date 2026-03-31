@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature   | Requirement |
 |-----------|-------------|
@@ -997,7 +996,7 @@ Domain tags prevent collisions across entry types:
 
 | Platform | HTTP Stack | Notes |
 |----------|------------|-------|
-| macOS | NSURLSession | Via Swift wrapper through C ABI |
+| macOS | NSURLSession | Via Swift wrapper through swift-bridge |
 | Windows | WinHTTP | Via `windows-rs` crate |
 | Linux | libcurl | Via `curl` crate |
 

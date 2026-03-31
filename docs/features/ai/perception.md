@@ -9,7 +9,6 @@ falloff. Performs a line-of-sight raycast against the physics scene to confirm v
 optional trace channel so glass blocks some NPCs but not others. Supports per-archetype tuning
 (eagle-eyed sniper vs. short-sighted merchant).
 
-- **Requirements:** R-7.6.1
 - **Dependencies:** None
 - **Platform notes:** Raycasts use the server-side physics representation
 
@@ -20,7 +19,6 @@ attenuated by distance and an occlusion factor from intervening geometry. Louder
 further and are detected with higher confidence, enabling NPCs to distinguish between a whisper
 nearby and an explosion far away.
 
-- **Requirements:** R-7.6.2
 - **Dependencies:** None
 - **Platform notes:** Occlusion queries use simplified server-side collision, not the audio engine
 
@@ -30,7 +28,6 @@ Instantly registers the direction and magnitude of incoming damage as a high-pri
 event, bypassing range and LOS checks. Ensures that an NPC always reacts to being attacked
 regardless of whether the attacker is within sight or hearing range.
 
-- **Requirements:** R-7.6.3
 - **Dependencies:** None
 - **Platform notes:** Lightweight event-driven check; runs identically on all platforms.
 
@@ -41,7 +38,6 @@ friendly). Perception filters allow NPCs to ignore friendly stimuli or escalate 
 Faction relationships are read from a shared affinity table that gameplay systems can modify at
 runtime (reputation changes, betrayals).
 
-- **Requirements:** R-7.6.4
 - **Dependencies:** F-7.6.1, F-7.6.2
 - **Platform notes:** Lightweight table lookup; runs identically on all platforms.
 
@@ -53,7 +49,6 @@ Provides a global stimulus registry where gameplay systems broadcast perception 
 position, visual flash, scent trail). Each stimulus carries a type, intensity, location, radius, and
 TTL. The perception system queries the registry spatially and expires stale entries automatically.
 
-- **Requirements:** R-7.6.5
 - **Dependencies:** None
 - **Platform notes:** Mobile caps active stimuli to 256; desktop to 2048. Mobile uses shorter
   default TTLs to keep the registry compact.
@@ -65,7 +60,6 @@ seen enemy has high certainty while a sound heard 10 seconds ago fades to a vagu
 position." NPCs with better memory archetypes retain stimuli longer, supporting varied AI
 personalities.
 
-- **Requirements:** R-7.6.6
 - **Dependencies:** F-7.6.5
 - **Platform notes:** Mobile uses faster decay rates and shorter maximum memory retention to reduce
   per-agent memory-list size.
@@ -77,7 +71,6 @@ vision) through a trait interface. Each sense declares a processing cost, and th
 scheduler allocates a per-tick budget, evaluating high-priority senses first and deferring
 low-priority ones to subsequent ticks when the budget is exhausted.
 
-- **Requirements:** R-7.6.7
 - **Dependencies:** F-7.6.5
 - **Platform notes:** Mobile per-tick perception budget is 0.25 ms vs. 1 ms on desktop. Low-priority
   custom senses may tick every few seconds on mobile.
@@ -97,7 +90,6 @@ rain/water. Trail persistence is configurable per scent type: blood trails last 
 scent fades in minutes, smoke dissipates in seconds. Scent data is stored in a spatial grid
 (separate from the main BVH) optimized for density queries.
 
-- **Requirements:** R-7.6.8
 - **Dependencies:** F-7.6.5 (Stimulus Registry), F-4.7.5 (Wind System), F-1.9.4 (Spatial Query)
 - **Platform notes:** Scent grid resolution scales with platform tier for performance.
 
@@ -114,7 +106,6 @@ as decals (F-11.2.5) to both players and AI. AI with a `TrackingSense` component
 evidence and infers: direction of travel (from footprint orientation), recency (from timestamp),
 entity type (from footprint size/shape), and injury state (from blood evidence).
 
-- **Requirements:** R-7.6.9
 - **Dependencies:** F-7.6.5 (Stimulus Registry), F-4.1.8 (Character Controller), F-4.2.9 (Physics
   Materials), F-11.2.5 (Footprint Decals)
 - **Platform notes:** Evidence entity count is capped per chunk. Mobile uses lower caps.
@@ -134,7 +125,6 @@ investigation — the first to investigate a stimulus claims it, others continue
 investigator calls for backup. Investigation paths use the navigation system (F-7.1.1) and avoid
 revisiting already-searched locations.
 
-- **Requirements:** R-7.6.10
 - **Dependencies:** F-7.6.8 (Smell), F-7.6.9 (Evidence), F-7.6.6 (Memory Decay), F-13.18.2 (AI Alert
   States), F-7.1.1 (NavMesh), F-7.3.1 (Behavior Trees)
 - **Platform notes:** Mobile uses simplified investigation: skips scent/footprint following, uses
@@ -156,7 +146,6 @@ stimulus refresh (F-7.6.6). When confidence reaches zero, the tracker transition
 (F-7.8.5). Pack tracking allows multiple AI to share tracking data — one agent's sighting updates
 all pack members' estimated position.
 
-- **Requirements:** R-7.6.11
 - **Dependencies:** F-7.6.1 (Sight), F-7.6.2 (Hearing), F-7.6.8 (Smell), F-7.6.9 (Evidence), F-7.6.6
   (Memory Decay), F-7.8.5 (Search Patterns)
 - **Platform notes:** Mobile limits to sight + hearing tracking only; scent/evidence/ predictive

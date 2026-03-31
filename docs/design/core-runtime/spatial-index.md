@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/core-runtime/](../../features/core-runtime/),
-> [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
-> elements to those definitions.
+> [features/core-runtime/](../../features/), [requirements/core-runtime/](../../requirements/), and
+> [user-stories/core-runtime/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Acceleration Structures (F-1.9.1–3 / R-1.9.1–3)
 
@@ -2121,8 +2120,8 @@ through F-1.9.9) explicitly trace dependencies to physics, rendering, networking
 cohesion gap is the relationship between the spatial index and the scene hierarchy (F-1.2): the BVH
 indexes individual entities flat, with no awareness of parent-child grouping. For hierarchy-aware
 culling (cull a parent and skip all children), a BVH node-to-subtree mapping would improve cohesion
-with the scene module and reduce redundant traversal during frustum culling of deeply nested prefab
-instances.
+with the scene module and reduce redundant traversal during frustum culling of deeply nested entity
+template instances.
 
 ## Open Questions
 

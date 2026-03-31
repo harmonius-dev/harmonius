@@ -24,20 +24,20 @@
 1. **`Handle<T>` + `HandleMap<T>`** — ecs.md (Entity), memory-async-io.md (Handle), spatial-index.md
    (BvhHandle)
    - **Features Served:** F-1.1.11, F-1.7.4, F-1.7.5, F-1.9.1
-2. **`UniformGrid<T>`** — perception.md (ScentGrid), steering-crowds.md (DensityGrid),
-   genre-specific.md (FogGrid, TacticalGrid)
+2. **`UniformGrid<T>`** — perception.md (ScentGrid), steering-crowds.md (DensityGrid), simulation.md
+   (FogGrid, TacticalGrid)
    - **Features Served:** F-7.6, F-7.7, F-13.20, F-13.26
 3. **`Curve<T>`** — databases.md (NumericCurve), camera.md (Spline), navigation.md (PathSmooth),
-   weapons.md (RecoilCurve), state-machine.md (BlendCurve), behavior.md (ResponseCurve)
+   abilities-combat.md (RecoilCurve), state-machine.md (BlendCurve), behavior.md (ResponseCurve)
    - **Features Served:** F-13.7, F-13.25, F-7.1, F-13.16, F-9.4, F-7.3
 4. **`SpringDamper<T>`** — first-person.md (WeaponSpring, CameraSpring, SwaySpring), procedural.md
    (SpringBone), cloth-hair.md (CardHairSpring), constraints.md (SpringParams)
    - **Features Served:** F-9.6, F-9.3, F-9.5, F-4.3
-5. **`StatModifier` + `StatAggregator`** — abilities-combat.md, weapons.md, character.md,
-   progression-social.md, databases.md
+5. **`StatModifier` + `StatAggregator`** — abilities-combat.md, meters-resources.md, progression.md,
+   databases.md
    - **Features Served:** F-13.10, F-13.16, F-13.8, F-13.12, F-13.7
-6. **`ConditionExpr`** — quest-dialogue.md (PrerequisiteExpr), progression-social.md
-   (Prerequisites), monetization.md (ChallengeConditions)
+6. **`ConditionExpr`** — quest-dialogue.md (PrerequisiteExpr), progression.md (Prerequisites,
+   ChallengeConditions)
    - **Features Served:** F-13.6, F-13.12, F-13.23
 7. **`FrameBudget`** — behavior.md (AiBudget), perception.md (PerceptionBudget), steering-crowds.md
    (LOD scheduler), destruction.md (ActivationBudget)
@@ -62,15 +62,14 @@
 | `GraphCompiler`           | F-15.3, F-11.6, F-15.8            |
 | `VirtualResourceStreamer` | F-3.1, F-12.5, F-3.2              |
 
-1. **`ConditionalGraph<N, E>`** — quest-dialogue.md (QuestGraph), progression-social.md
-   (TalentTree), abilities-combat.md (ComboChain), quest-dialogue.md (DialogueTree)
-2. **`DecayingEntry<T>`** — perception.md (PerceptionMemory), npc-simulation.md (DeedMemory,
-   Gossip), abilities-combat.md (ThreatTable)
-3. **`ConnectivityAnalyzer`** — destruction.md (StructuralAnalysis), building-survival.md
-   (IntegrityCheck)
-4. **`TaggedLookupTable<K, V>`** — weapons.md (ImpactResponse), abilities-combat.md (TagRules),
-   databases.md (LootTable), npc-simulation.md (BarkTable)
-5. **`LiveOpsResource<T>`** — monetization.md (BattlePass, Store, Challenges, LoginCalendar)
+1. **`ConditionalGraph<N, E>`** — quest-dialogue.md (QuestGraph), progression.md (TalentTree),
+   abilities-combat.md (ComboChain), quest-dialogue.md (DialogueTree)
+2. **`DecayingEntry<T>`** — perception.md (PerceptionMemory, DeedMemory, Gossip),
+   abilities-combat.md (ThreatTable)
+3. **`ConnectivityAnalyzer`** — destruction.md (StructuralAnalysis), simulation.md (IntegrityCheck)
+4. **`TaggedLookupTable<K, V>`** — abilities-combat.md (ImpactResponse, TagRules), databases.md
+   (LootTable), simulation.md (BarkTable)
+5. **`LiveOpsResource<T>`** — progression.md (BattlePass, Store, Challenges, LoginCalendar)
 6. **`GraphCompiler`** — material-animation.md (MaterialGraph), effect-graph.md (EffectGraph),
    logic-graph.md (ShaderGraph)
 7. **`VirtualResourceStreamer`** — meshlets.md (MeshletStreamer), streaming.md (VirtualTexture),
@@ -1396,7 +1395,7 @@ BFS/DFS traversal from anchor entities over connection components for structural
 Given a set of anchor entities and a neighbor function, determines which entities remain connected
 to at least one anchor. Disconnected clusters are returned for destruction or detachment.
 
-Shared by destruction (structural analysis after fracture) and building-survival (integrity checks
+Shared by destruction (structural analysis after fracture) and simulation (building integrity checks
 after damage).
 
 ```rust
@@ -1742,7 +1741,7 @@ Shared primitives are consumed at different points in the frame lifecycle:
    - **macOS:** Metal feedback, GCD I/O
    - **Linux:** Vulkan feedback, io_uring
 5. **`GraphCompiler`** — DXC native
-   - **macOS:** DXC + MSC via C ABI
+   - **macOS:** DXC via C API + MSC via swift-bridge
    - **Linux:** DXC via C ABI
 6. **`LiveOpsResource<T>`** — IOCP sockets
    - **macOS:** GCD sockets

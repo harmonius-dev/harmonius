@@ -37,11 +37,11 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
   version policy for io_uring. Consider a phased approach: IOCP first (best documented), then
   io_uring, then GCD.
 
-### T-2. GCD Fibers via C ABI
+### T-2. GCD Fibers via swift-bridge
 
 - **File:** `platform/threading.md`, `constraints.md`
 - **Design element:** macOS fibers implemented via GCD dispatch queues and blocks, accessed through
-  C ABI wrappers
+  swift-bridge
 - **Risk:** GCD dispatch blocks are not true cooperative fibers. They are fire-and-forget work items
   that cannot be suspended mid-execution and resumed on a different thread. The design's
   `FiberYielder::yield_now()` semantics require saving and restoring execution context, which GCD
@@ -57,7 +57,7 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 ### T-3. Custom Windowing System (No Winit)
 
 - **File:** `platform/windowing.md`, `constraints.md`
-- **Design element:** Platform-native windowing via Win32, NSWindow (Swift C ABI), xcb, and Wayland
+- **Design element:** Platform-native windowing via Win32, NSWindow (swift-bridge), xcb, and Wayland
 - **Risk:** The windowing design requires implementing: window lifecycle, fullscreen modes, DPI
   scaling, HDR output, VSync/presentation modes, display enumeration, and multi-monitor support on
   four backends (Win32, Cocoa, X11, Wayland). Wayland is particularly complex due to its compositor
@@ -70,21 +70,19 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
   (`wp_fractional_scale_v1`) is still unstable in some compositors. Budget 3-6 months for windowing
   alone.
 
-### T-4. Metal Backend via Swift-to-C-to-Bindgen
+### T-4. Metal Backend via swift-bridge
 
 - **File:** `rendering/gpu-abstraction.md`
-- **Design element:** Metal backend accessed via Swift wrappers through C ABI (F-2.1.4)
-- **Risk:** The FFI chain is: Rust -> C ABI -> C++ -> Swift. C ABI does not natively support
-  Swift; the C++ layer must bridge between C ABI and Swift. Swift interop with C++ (Swift/C++
-  interoperability) was stabilized in Swift 5.9 but has limitations: no support for Swift generics
-  in C++, limited enum bridging, and no async/await bridging. Every Metal API call traverses three
-  language boundaries.
-- **Likelihood:** High
-- **Impact:** High
-- **Mitigation:** Consider using Metal's C API (`MTLDevice`, etc. via Objective-C runtime functions)
-  accessed through bindgen rather than Swift. The `metal-rs` or `objc2-metal` crates provide direct
-  Objective-C FFI without the Swift intermediate layer. Alternatively, use a thin Objective-C++
-  bridge instead of Swift.
+- **Design element:** Metal backend accessed via Swift through swift-bridge (F-2.1.4)
+- **Risk:** swift-bridge generates direct Rust-Swift bindings without a C intermediate layer. The
+  main residual risks are: swift-bridge does not yet cover every Swift type (e.g., some generics,
+  complex enums), and async/await bridging requires manual shims. These are manageable with targeted
+  wrapper types on the Swift side.
+- **Likelihood:** Low
+- **Impact:** Medium
+- **Mitigation:** Use swift-bridge for all Metal API bindings. For any Swift types not yet supported
+  by swift-bridge, write thin Swift wrapper structs that expose supported types. Pin swift-bridge to
+  a known-good version and track upstream releases.
 
 ### T-5. GJK/EPA/SAT Physics from Scratch
 
@@ -264,21 +262,19 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
   - **QUIC:** `quinn` with `AsyncUdpSocket` trait implemented on the IoReactor.
   - **REST server:** Custom HTTP server on IoReactor using raw TCP with HTTP/1.1 parsing.
 
-### R-2. C ABI Limitations for GCD Callbacks
+### R-2. GCD Callback Integration via swift-bridge
 
 - **File:** `platform/threading.md`, all macOS platform paths
-- **Design element:** GCD Dispatch IO and dispatch blocks accessed through C ABI wrappers
-- **Risk:** C ABI does not support C++ lambdas, std::function, or function pointers as callback
-  parameters. GCD's core API pattern is `dispatch_async(queue, block)` where `block` is an
-  Objective-C block (not a C++ lambda). The C ABI wrappers must capture Rust state in dispatch blocks,
-  which requires converting Rust function pointers to C-compatible callbacks. This is feasible but
-  complex and error-prone. C ABI also does not support Objective-C blocks directly.
-- **Likelihood:** High
-- **Impact:** High
-- **Mitigation:** Use the `block2` crate for creating Objective-C blocks from Rust closures,
-  bypassing the C++ layer entirely. Alternatively, define a C callback interface (function pointer +
-  void* context) in the C++ wrapper that C ABI can bridge, and use `dispatch_async_f` (the
-  function-pointer variant of dispatch_async) instead of block-based dispatch.
+- **Design element:** GCD Dispatch IO and dispatch blocks accessed through swift-bridge
+- **Risk:** swift-bridge handles the Rust-Swift boundary directly. GCD's core API pattern is
+  `dispatch_async(queue, block)` where `block` is a Swift closure. swift-bridge must bridge Rust
+  closures to Swift closures for GCD callbacks. This is supported but requires careful lifetime
+  management for captured state.
+- **Likelihood:** Medium
+- **Impact:** Medium
+- **Mitigation:** Define thin Swift async wrappers around GCD dispatch calls that bridge to Rust
+  futures via swift-bridge. Use `dispatch_async_f` (function-pointer variant) as fallback for any
+  patterns swift-bridge cannot directly express.
 
 ### R-3. bevy_reflect-Style Reflection from Scratch
 
@@ -376,12 +372,12 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 ### R-9. HLSL Shader Pipeline via DXC + MSC
 
 - **File:** `constraints.md`, `rendering/gpu-abstraction.md`
-- **Design element:** HLSL compiled by DXC (C++ via C ABI) to DXIL/SPIR-V, then Metal Shader
-  Converter (C++ via C ABI) for MSL
-- **Risk:** DXC's C++ API is complex (COM-based on Windows, dxcompiler shared library on other
-  platforms). Wrapping DXC's COM interfaces through C ABI requires careful handling of reference
-  counting and memory management. Metal Shader Converter is an Apple tool with limited documentation
-  for programmatic use.
+- **Design element:** HLSL compiled by DXC (C API) to DXIL/SPIR-V, then Metal Shader Converter (via
+  swift-bridge) for MSL
+- **Risk:** DXC's API is complex (COM-based on Windows, dxcompiler shared library on other
+  platforms). Wrapping DXC's COM interfaces requires careful handling of reference counting and
+  memory management. Metal Shader Converter is an Apple tool with limited documentation for
+  programmatic use.
 - **Likelihood:** Medium
 - **Impact:** Medium
 - **Mitigation:** Use DXC's command-line interface for offline compilation (during asset processing)
@@ -676,8 +672,8 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 - **File:** `rendering/advanced.md`
 - **Design element:** NRD as the default denoiser for ray-traced effects
 - **Risk:** NRD is proprietary NVIDIA software with license restrictions. It is not available on
-  crates.io and requires direct integration of the NRD SDK (C++ library). Integration via C ABI
-  adds FFI complexity. NRD only runs on NVIDIA GPUs; AMD and Intel GPUs need a different denoiser.
+  crates.io and requires direct integration of the NRD SDK (C++ library). Integration via C ABI adds
+  FFI complexity. NRD only runs on NVIDIA GPUs; AMD and Intel GPUs need a different denoiser.
 - **Likelihood:** High
 - **Impact:** High
 - **Mitigation:** Implement SVGF (spatiotemporal variance-guided filtering) as a vendor-neutral
@@ -703,9 +699,9 @@ Audit date: 2026-03-15. Covers all 87 design documents across 15 domains and 7 w
 - **File:** `rendering/environment-character.md`
 - **Design element:** Heterogeneous volumes via OpenVDB with volumetric BSDF (F-2.7.7)
 - **Risk:** OpenVDB is a large C++ library (700K+ lines) with dependencies on Boost, TBB, blosc, and
-  zlib. Integrating it via C ABI would require wrapping a significant API surface. The design
-  notes: "OpenVDB is a large C++ library" and suggests a minimal reader. Even a minimal VDB reader
-  must handle the sparse grid traversal and compression formats.
+  zlib. Integrating it via C ABI would require wrapping a significant API surface. The design notes:
+  "OpenVDB is a large C++ library" and suggests a minimal reader. Even a minimal VDB reader must
+  handle the sparse grid traversal and compression formats.
 - **Likelihood:** Medium
 - **Impact:** Medium
 - **Mitigation:** Implement a minimal VDB file reader in pure Rust (the VDB file format is
@@ -792,7 +788,7 @@ These require immediate attention before implementation begins.
 | 3 | 1,381 features scope (S-1) | Scale | High | Critical |
 | 4 | Shared BVH contention model (I-1) | Integration | High | Critical |
 | 5 | Custom runtime = limited ecosystem (R-1) | Rust Ecosystem | High | Critical |
-| 6 | Metal FFI chain depth (T-4) | Technical | High | High |
+| 6 | Metal swift-bridge coverage (T-4) | Technical | Low | Medium |
 | 7 | Scoped async tasks + borrow checker (R-4) | Rust Ecosystem | High | High |
 
 ---
@@ -814,8 +810,8 @@ These require immediate attention before implementation begins.
 4. **Define the MVP feature set.** Reduce from 1,381 features to 200-300 for the first deliverable.
    Cut genre-specific features, MMO infrastructure, and advanced rendering techniques.
 
-5. **Simplify the Metal FFI path.** Evaluate `objc2-metal` or direct Objective-C runtime bindings
-   instead of the Swift intermediate layer.
+5. **Validate swift-bridge coverage.** Prototype Metal device creation and command buffer submission
+   through swift-bridge to confirm type coverage is sufficient.
 
 ### Design Revisions Needed
 

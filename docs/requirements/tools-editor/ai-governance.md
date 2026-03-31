@@ -1,105 +1,56 @@
-# R-15.7 -- AI Governance & Provenance Requirements
+# R-15.7 -- AI Governance and Provenance Requirements
 
-## Provenance
+## Requirements
 
-| ID       | Derived From                                             |
-|----------|----------------------------------------------------------|
-| R-15.7.1 | [F-15.7.1](../../features/tools-editor/ai-governance.md) |
-| R-15.7.2 | [F-15.7.2](../../features/tools-editor/ai-governance.md) |
+1. **R-15.7.1** — The engine **SHALL** attach persistent provenance tags (AI system ID, model
+   version, timestamp, prompt hash) to every AI-generated or AI-modified asset, surviving all
+   pipeline stages.
+   - **Rationale:** Provenance tracking is required for IP auditing and regulatory compliance.
+   - **Verification:** Generate an asset via AI, cook and package it, and verify the provenance tag
+     is present in the packaged output.
 
-1. **R-15.7.1** — The engine **SHALL** tag every AI-generated or AI-modified asset with a persistent
-   provenance record containing the AI system identifier, model version, timestamp, and prompt hash,
-   surviving all pipeline stages (import, cook, packaging).
-   - **Rationale:** AI content origin must be traceable for compliance, licensing, and disclosure
+2. **R-15.7.2** — The engine **SHALL** track human modification status at coarse granularity (vertex
+   group, tile, node) using compact bitmasks under 1 KB per asset.
+   - **Rationale:** Modification tracking determines when AI content has been fully replaced by
+     human work.
+   - **Verification:** Modify 50% of an AI-generated mesh, verify the bitmask reports the correct
+     modified percentage.
+
+3. **R-15.7.3** — The engine **SHALL** provide a global toggle that disables all generative AI
+   features while leaving deterministic AI systems unaffected.
+   - **Rationale:** Studios may need to operate without generative AI for policy or legal reasons.
+   - **Verification:** Disable the toggle, verify AI content generation UI is hidden and APIs return
+     errors, while pathfinding and behavior trees still function.
+
+4. **R-15.7.4** — The engine **SHALL** provide an independent toggle for AI editor assistance that
+   operates separately from the generative AI toggle.
+   - **Rationale:** Fine-grained control lets studios enable voice control without enabling content
+     generation.
+   - **Verification:** Enable assistance, disable generation, and verify voice commands work but
+     content generation is unavailable.
+
+5. **R-15.7.5** — The engine **SHALL** support remote administration of AI toggles and provenance
+   policies via an authenticated API with Ed25519-signed policy documents.
+   - **Rationale:** Enterprise environments require centralized policy management.
+   - **Verification:** Push a signed policy update and verify all connected editors apply it. Push
+     an unsigned policy and verify it is rejected.
+
+6. **R-15.7.6** — The engine **SHALL** maintain an append-only, hash-chained audit log for all AI
+   generation events, replicable to a central server.
+   - **Rationale:** Hash-chained logs ensure tamper-evident compliance records.
+   - **Verification:** Generate 10 assets, verify the audit log contains 10 entries with valid hash
+     chains.
+
+7. **R-15.7.7** — The engine **SHALL** provide a configurable review workflow for AI-generated
+   assets with visual diff and auto-approval thresholds.
+   - **Rationale:** Mandatory review ensures AI content quality; auto-approval reduces overhead for
+     heavily edited assets.
+   - **Verification:** Submit an AI asset with 90% human modification and verify auto-approval when
+     threshold is set to 80%.
+
+8. **R-15.7.8** — The engine **SHALL** preserve provenance metadata in packaged builds with a
+   minimal footprint (flags and identifiers only), queryable via runtime APIs.
+   - **Rationale:** Shipped builds may need to display AI content labels per platform or regulatory
      requirements.
-   - **Verification:** Integration test: generate an asset via AI, import, cook, and package it.
-     Verify the provenance tag is present and correct at each stage.
-2. **R-15.7.2** — The engine **SHALL** track human modifications to AI-generated assets at coarse
-   granularity (per vertex group, per tile, per node) using compact bitmasks under 1 KB per asset,
-   removing the provenance tag only when all AI-generated regions have been fully replaced.
-   - **Rationale:** Distinguishing AI from human content is required for review workflows and
-     compliance.
-   - **Verification:** Unit test: modify specific regions, verify bitmask reports them as
-     human-modified. Replace all regions and verify provenance tag is removed.
-
-## Feature Toggles
-
-| ID       | Derived From                                             |
-|----------|----------------------------------------------------------|
-| R-15.7.3 | [F-15.7.3](../../features/tools-editor/ai-governance.md) |
-| R-15.7.4 | [F-15.7.4](../../features/tools-editor/ai-governance.md) |
-
-1. **R-15.7.3** — The engine **SHALL** provide a global toggle disabling all generative AI features,
-   hiding their UI and returning errors from their APIs, while leaving deterministic AI
-   (pathfinding, behavior trees, GOAP) unaffected.
-   - **Rationale:** Studios must be able to comply with AI-content policies while retaining gameplay
-     AI.
-   - **Verification:** Unit test: disable the toggle, verify all generative AI UI is hidden and APIs
-     return errors. Verify pathfinding and behavior trees still function.
-2. **R-15.7.4** — The engine **SHALL** provide an independent toggle for AI editor assistance (voice
-   control, agent editing, recommendations) operating separately from the generative AI content
-   toggle, with all four combinations functional.
-   - **Rationale:** Fine-grained control lets studios enable assistance without content generation
-     or vice versa.
-   - **Verification:** Unit test: verify all four toggle combinations activate exactly the correct
-     feature sets.
-
-## Enterprise Administration
-
-| ID       | Derived From                                             |
-|----------|----------------------------------------------------------|
-| R-15.7.5 | [F-15.7.5](../../features/tools-editor/ai-governance.md) |
-
-1. **R-15.7.5** — The engine **SHALL** support remote AI policy configuration via an authenticated
-   admin API with Ed25519-signed policy documents transmitted over TLS 1.3, enabling per-team AI
-   feature restrictions pushed to all editor instances.
-   - **Rationale:** Enterprise environments require centralized AI policy enforcement across all
-     seats.
-   - **Verification:** Unit test: push a policy with an invalid signature and verify the editor
-     rejects it.
-
-## Audit
-
-| ID       | Derived From                                             |
-|----------|----------------------------------------------------------|
-| R-15.7.6 | [F-15.7.6](../../features/tools-editor/ai-governance.md) |
-
-1. **R-15.7.6** — The engine **SHALL** maintain an append-only, hash-chained audit log of all AI
-   generation events, replicable to a central server, where tampering with any entry is detectable
-   via hash chain validation.
-   - **Rationale:** Tamper-evident audit logs are required for enterprise compliance and legal
-     review.
-   - **Verification:** Unit test: modify an audit entry and verify the hash chain validation detects
-     tampering.
-
-## Review Workflow
-
-| ID       | Derived From                                             |
-|----------|----------------------------------------------------------|
-| R-15.7.7 | [F-15.7.7](../../features/tools-editor/ai-governance.md) |
-
-1. **R-15.7.7** — The engine **SHALL** route AI-tagged assets through a configurable review workflow
-   with approve, reject, and request-changes actions, visual diff showing AI vs human regions, and
-   auto-approval above a configurable human modification threshold.
-   - **Rationale:** Quality control of AI content requires formal review before production use.
-   - **Verification:** Unit test: verify auto-approval triggers at the configured threshold.
-
-## Packaged Builds
-
-| ID       | Derived From                                             |
-|----------|----------------------------------------------------------|
-| R-15.7.8 | [F-15.7.8](../../features/tools-editor/ai-governance.md) |
-
-1. **R-15.7.8** — The engine **SHALL** include provenance tags in shipped builds queryable at
-   runtime via a public API, with minimal metadata footprint (flags and IDs only).
-   - **Rationale:** Runtime AI disclosure labels require provenance data in shipped builds.
-   - **Verification:** Integration test: package a build and verify the runtime API returns correct
-     provenance for AI-generated assets.
-
----
-
-## User Story Traceability
-
-User stories for this domain are maintained in
-[user-stories/tools-editor/ai-governance.md](../../user-stories/tools-editor/ai-governance.md).
-Requirements in this document are derived from those user stories.
+   - **Verification:** Package a build, query provenance at runtime, and verify the correct AI flag
+     is returned.

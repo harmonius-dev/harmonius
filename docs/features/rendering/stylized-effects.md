@@ -2,10 +2,10 @@
 
 ## Outline Effects
 
-| ID       | Feature                     | Requirements |
-|----------|-----------------------------|--------------|
-| F-2.11.1 | 2D and 3D Outline Rendering | R-2.11.1     |
-| F-2.11.2 | Highlight and Glow Effect   | R-2.11.2     |
+| ID       | Feature                     |
+|----------|-----------------------------|
+| F-2.11.1 | 2D and 3D Outline Rendering |
+| F-2.11.2 | Highlight and Glow Effect   |
 
 1. **F-2.11.1** — Per-object outline rendering using a multi-technique approach. Screen-space edge
    detection (Sobel/Roberts on depth and normal buffers) produces clean outlines at any resolution.
@@ -34,9 +34,9 @@
 
 ## Toon and Stylized Shading
 
-| ID       | Feature               | Requirements |
-|----------|-----------------------|--------------|
-| F-2.11.3 | Advanced Toon Shading | R-2.11.3     |
+| ID       | Feature               |
+|----------|-----------------------|
+| F-2.11.3 | Advanced Toon Shading |
 
 1. **F-2.11.3** — A configurable cel-shading pipeline that replaces or augments PBR lighting with
    stylized rendering. Lighting is quantized into configurable band counts with artist-controlled
@@ -53,10 +53,10 @@
 
 ## Gameplay Visibility Effects
 
-| ID       | Feature                                    | Requirements |
-|----------|--------------------------------------------|--------------|
-| F-2.11.4 | Cut-Through Visibility and Roof Fading     | R-2.11.4     |
-| F-2.11.5 | X-Ray and See-Through Silhouette Rendering | R-2.11.5     |
+| ID       | Feature                                    |
+|----------|--------------------------------------------|
+| F-2.11.4 | Cut-Through Visibility and Roof Fading     |
+| F-2.11.5 | X-Ray and See-Through Silhouette Rendering |
 
 1. **F-2.11.4** — Automatic or manual fading, dissolving, or removing of occluding geometry (roofs,
    ceilings, canopy, upper floors) when the camera or player character moves beneath them. The

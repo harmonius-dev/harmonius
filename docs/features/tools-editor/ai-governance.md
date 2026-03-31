@@ -2,10 +2,10 @@
 
 ## Content Tagging
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-15.7.1 | AI Content Provenance Tagging | R-15.7.1     |
-| F-15.7.2 | Human Modification Tracking   | R-15.7.2     |
+| ID | Feature |
+| ---------- | ------------------------------- |
+| F-15.7.1 | AI Content Provenance Tagging |
+| F-15.7.2 | Human Modification Tracking |
 
 1. **F-15.7.1** — Every asset produced or modified by a generative AI or LLM system receives a
    persistent provenance tag recording the AI system identifier, model version, timestamp, and a
@@ -28,10 +28,10 @@
 
 ## Feature Toggles
 
-| ID       | Feature                      | Requirements |
-|----------|------------------------------|--------------|
-| F-15.7.3 | Generative AI Feature Toggle | R-15.7.3     |
-| F-15.7.4 | AI Assistance Toggle         | R-15.7.4     |
+| ID | Feature |
+| ---------- | ------------------------------ |
+| F-15.7.3 | Generative AI Feature Toggle |
+| F-15.7.4 | AI Assistance Toggle |
 
 1. **F-15.7.3** — Provides a global engine setting that disables all generative AI and LLM-based
    features. When disabled, AI content search (F-12.3.8), AI categorization (F-12.3.7), AI-driven
@@ -53,9 +53,9 @@
 
 ## Enterprise Administration
 
-| ID       | Feature                          | Requirements |
-|----------|----------------------------------|--------------|
-| F-15.7.5 | Enterprise Remote Administration | R-15.7.5     |
+| ID | Feature |
+| ---------- | ---------------------------------- |
+| F-15.7.5 | Enterprise Remote Administration |
 
 1. **F-15.7.5** — Enables remote configuration of AI feature toggles and provenance policies via an
    authenticated admin API. Enterprise administrators can push policy updates to all editor
@@ -69,11 +69,11 @@
 
 ## Audit and Compliance
 
-| ID       | Feature                                | Requirements |
-|----------|----------------------------------------|--------------|
-| F-15.7.6 | AI Content Audit Trail                 | R-15.7.6     |
-| F-15.7.7 | AI Content Review Workflow             | R-15.7.7     |
-| F-15.7.8 | Provenance Metadata in Packaged Builds | R-15.7.8     |
+| ID | Feature |
+| ---------- | ---------------------------------------- |
+| F-15.7.6 | AI Content Audit Trail |
+| F-15.7.7 | AI Content Review Workflow |
+| F-15.7.8 | Provenance Metadata in Packaged Builds |
 
 1. **F-15.7.6** — Maintains an append-only audit log that records every AI content generation event:
    the asset produced, the AI system and model version used, generation parameters and prompt hash,

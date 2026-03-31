@@ -387,13 +387,13 @@ Companion test cases for [specialized-editors.md](specialized-editors.md).
 1. **#1** — Entity C child of A, `reparent(C, B)`
    - **Expected:** C now child of B, undo moves back to A
 
-#### TC-15.SE.38 Entity Prefab Override Revert
+#### TC-15.SE.38 Entity Template Override Revert
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-15.2.1    |
 
-1. **#1** — Prefab hp=100, instance hp=200, `revert_override("hp")`
+1. **#1** — Entity template hp=100, instance hp=200, `revert_override("hp")`
    - **Expected:** Instance hp=100, override removed
 
 #### TC-15.SE.39 Entity Inspector Custom Editor Dispatch
@@ -414,23 +414,23 @@ Companion test cases for [specialized-editors.md](specialized-editors.md).
 1. **#1** — 100 entities, 3 named "Light*", `search("Light")`
    - **Expected:** Returns 3 matching entities
 
-#### TC-15.SE.41 Prefab Apply to Source
+#### TC-15.SE.41 Entity Template Apply to Source
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-15.2.1    |
 
-1. **#1** — Instance with hp override, `apply_to_prefab()`
-   - **Expected:** Prefab asset updated, all instances reflect new value
+1. **#1** — Instance with hp override, `apply_to_template()`
+   - **Expected:** Entity template asset updated, all instances reflect new value
 
-#### TC-15.SE.42 Prefab Revert All
+#### TC-15.SE.42 Entity Template Revert All
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-15.2.1    |
 
 1. **#1** — Instance with 3 overrides, `revert_all()`
-   - **Expected:** All overrides removed, instance matches prefab
+   - **Expected:** All overrides removed, instance matches entity template
 
 ## Integration Tests
 

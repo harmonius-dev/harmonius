@@ -1,101 +1,46 @@
 # R-15.2 -- Level Editor Requirements
 
-## Entity Placement
+## Requirements
 
-| ID       | Derived From                                            |
-|----------|---------------------------------------------------------|
-| R-15.2.1 | [F-15.2.1](../../features/tools-editor/level-editor.md) |
+1. **R-15.2.1** — The engine **SHALL** support entity placement via drag-and-drop with grid,
+   surface, and vertex snapping, integrated with undo/redo and multi-selection.
+   - **Rationale:** Fast, precise placement is the most frequent level design operation.
+   - **Verification:** Drag an entity onto terrain with surface snap enabled and verify it lands on
+     the surface.
 
-1. **R-15.2.1** — The editor **SHALL** support drag-and-drop entity placement from the asset browser
-   with grid, surface, and vertex snapping modes, where surface snapping projects entities onto
-   terrain normals and vertex snapping aligns to the nearest mesh vertex.
-   - **Rationale:** Fast, precise placement is fundamental to level design; multiple snap modes
-     accommodate different alignment needs.
-   - **Verification:** Unit test: place an entity at (1.3, 0, 2.7) with grid snap 1.0 and verify it
-     snaps to (1, 0, 3). Raycast onto sloped terrain and verify surface normal alignment.
+2. **R-15.2.2** — The engine **SHALL** support Entity Template hierarchies with nesting, where
+   changes to a parent template propagate to all instances unless overridden.
+   - **Rationale:** Compositional templates reduce duplication across large worlds.
+   - **Verification:** Modify a parent template property and verify all non-overridden instances
+     update.
 
-## Prefab System
+3. **R-15.2.3** — The engine **SHALL** allow per-property overrides on Entity Template instances
+   while preserving the template link, with visual indicators in the inspector.
+   - **Rationale:** Instance variation is essential for open-world levels with thousands of shared
+     templates.
+   - **Verification:** Override a property, verify the inspector marks it bold, then revert and
+     confirm the original value restores.
 
-| ID       | Derived From                                            |
-|----------|---------------------------------------------------------|
-| R-15.2.2 | [F-15.2.2](../../features/tools-editor/level-editor.md) |
-| R-15.2.3 | [F-15.2.3](../../features/tools-editor/level-editor.md) |
+4. **R-15.2.4** — The engine **SHALL** provide additive and subtractive CSG primitives with boolean
+   operations and conversion to static meshes.
+   - **Rationale:** CSG brushes accelerate blockout and prototyping before final art is available.
+   - **Verification:** Create additive and subtractive brushes, perform a boolean operation, and
+     convert the result to a static mesh.
 
-1. **R-15.2.2** — The editor **SHALL** support reusable entity hierarchies as prefab assets with
-   arbitrary nesting depth, where changes to a parent prefab propagate to all instances unless
-   overridden.
-   - **Rationale:** Compositional design (villages from houses from furniture) requires nested
-     prefabs with automatic propagation.
-   - **Verification:** Integration test: create a 3-level nested prefab, instantiate it, modify the
-     innermost prefab, and verify all instances reflect the change.
-2. **R-15.2.3** — The editor **SHALL** allow per-instance property overrides on prefab instances
-   with visual indicators for overridden properties, per-property revert to source, and apply-back
-   to source prefab.
-   - **Rationale:** Localized variation of shared prefabs is essential for world diversity without
-     breaking the prefab link.
-   - **Verification:** Unit test: set an override, verify the value differs. Revert, verify it
-     matches source. Apply to source, verify all instances receive the new value.
+5. **R-15.2.5** — The engine **SHALL** provide Bezier and Catmull-Rom spline editing with tangent
+   handles, per-point width and roll, and mesh/entity distribution along splines.
+   - **Rationale:** Splines define roads, rivers, fences, and rail paths in open-world environments.
+   - **Verification:** Create a spline, distribute meshes along it with 2 m spacing, and verify
+     uniform placement.
 
-## Brush and CSG
+6. **R-15.2.6** — The engine **SHALL** support terrain material layer painting with configurable
+   brush shape, size, falloff, and auto-painting rules based on height and slope.
+   - **Rationale:** Material painting controls visual quality of terrain surfaces.
+   - **Verification:** Paint a material layer on a slope, enable slope-based auto-paint, and verify
+     correct layer assignment.
 
-| ID       | Derived From                                            |
-|----------|---------------------------------------------------------|
-| R-15.2.4 | [F-15.2.4](../../features/tools-editor/level-editor.md) |
-
-1. **R-15.2.4** — The editor **SHALL** provide additive and subtractive CSG primitives (box,
-   cylinder, sphere, stairs, arch) with boolean operations producing watertight meshes, and
-   conversion of brush geometry to static mesh assets.
-   - **Rationale:** Rapid blockout is critical for level prototyping; conversion to static mesh
-     supports the blockout-to-art workflow.
-   - **Verification:** Unit test: combine two boxes with additive boolean, verify watertight mesh
-     output. Subtract a cylinder from a box, verify hole geometry.
-
-## Splines
-
-| ID       | Derived From                                            |
-|----------|---------------------------------------------------------|
-| R-15.2.5 | [F-15.2.5](../../features/tools-editor/level-editor.md) |
-
-1. **R-15.2.5** — The editor **SHALL** support Bezier and Catmull-Rom spline editing with tangent
-   handles, per-point width and roll parameters, automatic C1 smoothing, and entity distribution
-   along splines with configurable spacing and randomization.
-   - **Rationale:** Roads, rivers, fences, and rail paths require smooth parametric curves with
-     entity placement.
-   - **Verification:** Unit test: create a Bezier spline and verify C1 continuity at control points.
-     Distribute 10 entities along a spline and verify spacing.
-
-## Landscape Painting
-
-| ID       | Derived From                                            |
-|----------|---------------------------------------------------------|
-| R-15.2.6 | [F-15.2.6](../../features/tools-editor/level-editor.md) |
-
-1. **R-15.2.6** — The editor **SHALL** support terrain material layer painting with configurable
-   brush shapes, sizes, and falloff curves, height-based and slope-based auto-painting rules, and
-   real-time preview at full material quality.
-   - **Rationale:** Terrain texturing must be visual and immediate; auto-paint rules accelerate
-     large-world coverage.
-   - **Verification:** Unit test: apply a slope-based rule to test terrain and verify correct layer
-     assignment. Verify weight maps sum to 1.0 per texel.
-
-## Foliage
-
-| ID       | Derived From                                            |
-|----------|---------------------------------------------------------|
-| R-15.2.7 | [F-15.2.7](../../features/tools-editor/level-editor.md) |
-
-1. **R-15.2.7** — The editor **SHALL** support foliage painting with density brushes,
-   per-foliage-type slope and altitude limits, exclusion zones, random scale and rotation variation,
-   and spatial grid storage for streaming.
-   - **Rationale:** Interactive vegetation placement with ecological rules produces natural-looking
-     environments efficiently.
-   - **Verification:** Unit test: paint foliage with a 30-degree slope limit and verify none appear
-     on steeper slopes. Add an exclusion zone and verify no foliage inside.
-
----
-
-## User Story Traceability
-
-User stories for this domain are maintained in
-[user-stories/tools-editor/level-editor.md](../../user-stories/tools-editor/level-editor.md).
-Requirements in this document are derived from those user stories.
+7. **R-15.2.7** — The engine **SHALL** support foliage instance painting with density brushes and
+   per-type rules for slope, altitude, exclusion zones, and random scale/rotation.
+   - **Rationale:** Procedural placement rules produce organic vegetation distributions efficiently.
+   - **Verification:** Paint foliage with a slope limit of 30 degrees and verify no instances appear
+     on steeper surfaces.

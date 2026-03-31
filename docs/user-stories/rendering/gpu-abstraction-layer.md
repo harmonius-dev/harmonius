@@ -2,143 +2,143 @@
 
 ## Stories
 
-| ID          | Persona                 | Features | Requirements |
-|-------------|-------------------------|----------|--------------|
-| US-2.1.1.1  | engine developer (P-26) |          |              |
-| US-2.1.1.2  | engine tester (P-27)    |          |              |
-| US-2.1.2.1  | engine developer (P-26) |          |              |
-| US-2.1.2.2  | engine tester (P-27)    |          |              |
-| US-2.1.3.1  | engine developer (P-26) |          |              |
-| US-2.1.3.2  | engine tester (P-27)    |          |              |
-| US-2.1.4.1  | engine developer (P-26) |          |              |
-| US-2.1.4.2  | engine tester (P-27)    |          |              |
-| US-2.1.5.1  | engine developer (P-26) |          |              |
-| US-2.1.5.2  | engine tester (P-27)    |          |              |
-| US-2.1.6.1  | engine developer (P-26) |          |              |
-| US-2.1.6.2  | engine tester (P-27)    |          |              |
-| US-2.1.7.1  | engine developer (P-26) |          |              |
-| US-2.1.7.2  | engine tester (P-27)    |          |              |
-| US-2.1.8.1  | engine developer (P-26) |          |              |
-| US-2.1.8.2  | engine tester (P-27)    |          |              |
-| US-2.1.9.1  | engine developer (P-26) |          |              |
-| US-2.1.9.2  | engine tester (P-27)    |          |              |
-| US-2.1.10.1 | engine developer (P-26) |          |              |
-| US-2.1.10.2 | engine tester (P-27)    |          |              |
-| US-2.1.11.1 | engine developer (P-26) |          |              |
-| US-2.1.11.2 | engine tester (P-27)    |          |              |
-| US-2.1.12.1 | technical artist (P-13) |          |              |
-| US-2.1.12.2 | engine tester (P-27)    |          |              |
-| US-2.1.12.3 | engine developer (P-26) |          |              |
-| US-2.1.13.1 | technical artist (P-13) |          |              |
-| US-2.1.13.2 | engine developer (P-26) |          |              |
-| US-2.1.13.3 | engine tester (P-27)    |          |              |
-| US-2.1.14.1 | engine developer (P-26) |          |              |
-| US-2.1.14.2 | engine developer (P-26) |          |              |
-| US-2.1.14.3 | engine tester (P-27)    |          |              |
-| US-2.1.14.4 | QA tester (P-19)        |          |              |
+| ID          | Persona                      |
+|-------------|------------------------------|
+| US-2.1.1.1  | engine developer (P-26)      |
+| US-2.1.1.2  | engine developer (P-26)      |
+| US-2.1.2.1  | engine developer (P-26)      |
+| US-2.1.2.2  | engine developer (P-26)      |
+| US-2.1.3.1  | engine developer (P-26)      |
+| US-2.1.3.2  | technical artist (P-13)      |
+| US-2.1.4.1  | engine developer (P-26)      |
+| US-2.1.4.2  | engine developer (P-26)      |
+| US-2.1.5.1  | engine developer (P-26)      |
+| US-2.1.5.2  | engine developer (P-26)      |
+| US-2.1.6.1  | engine developer (P-26)      |
+| US-2.1.6.2  | engine developer (P-26)      |
+| US-2.1.7.1  | engine developer (P-26)      |
+| US-2.1.7.2  | engine developer (P-26)      |
+| US-2.1.8.1  | engine developer (P-26)      |
+| US-2.1.8.2  | game developer (P-15)        |
+| US-2.1.9.1  | engine developer (P-26)      |
+| US-2.1.9.2  | engine developer (P-26)      |
+| US-2.1.10.1 | engine developer (P-26)      |
+| US-2.1.10.2 | engine developer (P-26)      |
+| US-2.1.11.1 | engine developer (P-26)      |
+| US-2.1.11.2 | technical artist (P-13)      |
+| US-2.1.12.1 | technical artist (P-13)      |
+| US-2.1.12.2 | engine developer (P-26)      |
+| US-2.1.13.1 | engine developer (P-26)      |
+| US-2.1.13.2 | technical artist (P-13)      |
+| US-2.1.14.1 | engine developer (P-26)      |
+| US-2.1.14.2 | engine developer (P-26)      |
+| US-2.1.14.3 | game developer (P-15)        |
 
-1. **US-2.1.1.1** — I want a unified GPU backend trait with associated types for device, command
-   buffer, pipeline state, and resource handles using static dispatch via generics
-   - **Acceptance:** I can write rendering code once without vtable overhead or backend-specific
-     branching
-2. **US-2.1.1.2** — I want to run the full rendering test suite on each backend and diff the output
-   images
-   - **Acceptance:** I can confirm all three backends produce identical results from the same
-     trait-based rendering code
-3. **US-2.1.2.1** — I want a trait-based command buffer abstraction supporting graphics, compute,
-   and copy operations with type-safe resource binding
-   - **Acceptance:** I can encode rendering work independently and submit ordered batches without
-     unsafe casts
-4. **US-2.1.2.2** — I want to trace command buffer submission and verify that Metal uses
-   MTLCommandBuffer, D3D12 uses ID3D12GraphicsCommandList, and Vulkan uses VkCommandBuffer
-   - **Acceptance:** the abstraction maps correctly to native APIs
-5. **US-2.1.3.1** — I want pipeline state objects pre-validated at creation time covering shaders,
-   vertex layout, blend state, and depth-stencil configuration
-   - **Acceptance:** command buffer encoding has zero runtime validation cost
-6. **US-2.1.3.2** — I want to confirm that pipeline state caches are warmed at load time on
-   tile-based mobile GPUs to avoid hitching during gameplay
-   - **Acceptance:** PSO creation does not cause frame drops on mobile
-7. **US-2.1.4.1** — I want the Metal GPU backend exposed as a Swift library with @_cdecl
-   C-compatible functions consumed by Rust through `extern "C"` declarations
-   - **Acceptance:** Metal functionality is available without Objective-C or C++ in the FFI boundary
-8. **US-2.1.4.2** — I want to confirm that the Metal backend compiles only on macOS and iOS targets
-   and is excluded from Windows and Linux builds
-   - **Acceptance:** platform gating is correct
-9. **US-2.1.5.1** — I want the D3D12 backend implemented in pure Rust using `windows-rs` COM
-   bindings with safe wrappers managing COM reference counting
-   - **Acceptance:** D3D12 is accessed without C++ dependencies
-10. **US-2.1.5.2** — I want to confirm that the D3D12 backend compiles only on Windows targets and
-    is excluded from macOS and Linux builds
-    - **Acceptance:** platform gating is correct
-11. **US-2.1.6.1** — I want a Vulkan backend using `ash` with RAII lifetime management and
-    validation layers enabled in debug builds
-    - **Acceptance:** runtime Vulkan errors are caught during development
-12. **US-2.1.6.2** — I want to confirm that the Vulkan loader is discovered at runtime on Windows
-    and Linux, and that MoltenVK is never used on macOS
-    - **Acceptance:** Vulkan initialization follows the specified platform strategy
-13. **US-2.1.7.1** — I want a GPU heap sub-allocator that carves typed buffer and texture regions
-    from pre-allocated memory blocks
-    - **Acceptance:** thousands of per-draw constant uploads use offset-based binding from a handful
-      of OS allocations
-14. **US-2.1.7.2** — I want to verify that sub-allocations respect 256-byte alignment on D3D12,
-    variable alignment on Vulkan, and page alignment on Metal
-    - **Acceptance:** GPU memory access is correctly aligned on each backend
-15. **US-2.1.8.1** — I want CPU-side shadow state tracking to filter redundant pipeline, binding,
-    and render target transitions before encoding
-    - **Acceptance:** driver overhead is minimized during high-frequency draw submission
-16. **US-2.1.8.2** — I want to measure draw submission cost with and without state tracking on
-    mobile (where per-change overhead is higher) and desktop
-    - **Acceptance:** I can confirm the state tracker provides measurable improvement on all
-      platforms
-17. **US-2.1.9.1** — I want automatic barrier batching, merging, and split barrier insertion within
-    command buffers
-    - **Acceptance:** consecutive transitions are coalesced and GPU pipeline stalls are reduced
-18. **US-2.1.9.2** — I want to confirm that barrier optimization is a no-op on Metal where the
-    driver handles hazard tracking, while D3D12 and Vulkan emit explicit barriers
-    - **Acceptance:** per-backend barrier behavior is correct
-19. **US-2.1.10.1** — I want work graph support where GPU nodes dispatch work to subsequent nodes
-    without CPU involvement
-    - **Acceptance:** GPU-driven rendering pipelines avoid per-dispatch CPU latency
-20. **US-2.1.10.2** — I want to verify that work graphs use native D3D12 API on Windows and
-    compute-based emulation via indirect dispatch chains on Vulkan and Metal
-    - **Acceptance:** the feature works consistently across all backends
-21. **US-2.1.11.1** — I want a cross-backend feature emulation layer that selects emulated paths at
-    device creation time based on capability queries
-    - **Acceptance:** mesh shaders, work graphs, and enhanced barriers work on all backends without
-      runtime branching
-22. **US-2.1.11.2** — I want to run on Vulkan drivers that lack mesh shader support and verify that
-    the emulation path produces correct output matching native mesh shader results
-    - **Acceptance:** emulated features are visually identical to native
-23. **US-2.1.12.1** — I want per-pass GPU timestamps and pipeline statistics visible in the editor's
-    GPU profiler
-    - **Acceptance:** I can identify which rendering passes are most expensive and optimize art
-      content accordingly
-24. **US-2.1.12.2** — I want to confirm that timestamp queries use MTLCounterSampleBuffer on Metal,
-    ID3D12QueryHeap on D3D12, and vkCmdWriteTimestamp on Vulkan
-    - **Acceptance:** GPU profiling data is accurate on each platform
-25. **US-2.1.12.3** — I want GPU timestamp query results read back one frame after submission rather
-    than the same frame
-    - **Acceptance:** profiling does not introduce GPU stalls or pipeline bubbles
-26. **US-2.1.13.1** — I want CPU work graph emulation via indirect dispatch so that GPU-driven
-    effects (particle culling, mesh LOD selection, indirect draws) produce identical results on
-    Metal and Vulkan as on D3D12
-    - **Acceptance:** I author effects once and they work everywhere
-27. **US-2.1.13.2** — I want emulated work graph nodes to appear as `TaskNode` entries in the
-    unified game loop graph
-    - **Acceptance:** work-graph-style GPU scheduling is scheduled alongside CPU work without a
-      separate dispatch path
-28. **US-2.1.13.3** — I want tests that execute a work graph on D3D12 natively and on Metal/Vulkan
-    via emulation, comparing output within floating-point tolerance
-    - **Acceptance:** cross-backend correctness is verified in CI
-29. **US-2.1.14.1** — I want all GPU resources referenced through generational `Handle<T>` indices
-    that detect use-after-free at runtime
-    - **Acceptance:** memory bugs from stale resource references are impossible in the public API
-30. **US-2.1.14.2** — I want no raw GPU pointers (device addresses, mapped memory pointers) to
-    appear in any public API type
-    - **Acceptance:** the entire rendering interface is memory-safe by construction
-31. **US-2.1.14.3** — I want compile tests that attempt to pass a `Handle<Buffer>` where
-    `Handle<Texture>` is expected and assert the code fails to compile
-    - **Acceptance:** handle type safety is verified in CI
-32. **US-2.1.14.4** — I want runtime detection of stale GPU handles (generation mismatch after
-    resource free) with a structured error rather than undefined behavior
-    - **Acceptance:** use-after-free bugs are caught immediately during testing
+1. **US-2.1.1.1** — **As a** engine developer (P-26), **I want** a unified GPU backend trait with
+   associated types and static dispatch via generics, **so that** I can write rendering code once
+   without backend-specific branching.
+
+2. **US-2.1.1.2** — **As a** engine developer (P-26), **I want** the backend trait to eliminate
+   vtable overhead at every call site, **so that** the abstraction layer costs nothing compared to
+   raw API calls.
+
+3. **US-2.1.2.1** — **As a** engine developer (P-26), **I want** a trait-based command buffer
+   abstraction supporting graphics, compute, and copy operations, **so that** I can encode rendering
+   work independently of the underlying API.
+
+4. **US-2.1.2.2** — **As a** engine developer (P-26), **I want** type-safe resource binding on
+   command buffers, **so that** mismatched resource types are caught at compile time rather than at
+   runtime.
+
+5. **US-2.1.3.1** — **As a** engine developer (P-26), **I want** pipeline state objects
+   pre-validated at creation time, **so that** command buffer encoding incurs zero validation
+   overhead during frame submission.
+
+6. **US-2.1.3.2** — **As a** technical artist (P-13), **I want** pipeline state caches warmed at
+   load time on mobile, **so that** shader variant hitches do not occur during gameplay on
+   tile-based GPUs.
+
+7. **US-2.1.4.1** — **As a** engine developer (P-26), **I want** a Metal backend implemented in
+   Swift with swift-bridge FFI, **so that** I get first-class Metal API access without Objective-C
+   in the boundary.
+
+8. **US-2.1.4.2** — **As a** engine developer (P-26), **I want** the Metal backend compiled only on
+   macOS and iOS targets, **so that** Windows and Linux builds exclude platform-irrelevant code.
+
+9. **US-2.1.5.1** — **As a** engine developer (P-26), **I want** a D3D12 backend in pure Rust using
+   COM bindings, **so that** the Windows rendering path has no C++ dependency.
+
+10. **US-2.1.5.2** — **As a** engine developer (P-26), **I want** safe Rust wrappers managing COM
+    reference counting, **so that** GPU resource leaks from incorrect AddRef/Release are impossible.
+
+11. **US-2.1.6.1** — **As a** engine developer (P-26), **I want** a Vulkan backend using ash with
+    RAII lifetime management, **so that** all Vulkan handles are destroyed before instance
+    destruction.
+
+12. **US-2.1.6.2** — **As a** engine developer (P-26), **I want** validation layers enabled
+    automatically in debug builds, **so that** Vulkan API misuse is caught during development.
+
+13. **US-2.1.7.1** — **As a** engine developer (P-26), **I want** a GPU heap sub-allocator that
+    carves regions from pre-allocated memory blocks, **so that** thousands of per-draw uploads use
+    offset binding from few OS allocations.
+
+14. **US-2.1.7.2** — **As a** engine developer (P-26), **I want** sub-allocations to respect
+    per-backend alignment requirements automatically, **so that** I do not need to track alignment
+    constraints manually per platform.
+
+15. **US-2.1.8.1** — **As a** engine developer (P-26), **I want** CPU-side shadow state tracking to
+    filter redundant pipeline and binding transitions, **so that** driver overhead is minimized
+    during high-frequency draws.
+
+16. **US-2.1.8.2** — **As a** game developer (P-15), **I want** the state tracker to work
+    transparently behind the command buffer API, **so that** I do not need to manually deduplicate
+    state changes in gameplay code.
+
+17. **US-2.1.9.1** — **As a** engine developer (P-26), **I want** automatic barrier batching and
+    merging within command buffers, **so that** consecutive transitions on the same resource produce
+    a single barrier call.
+
+18. **US-2.1.9.2** — **As a** engine developer (P-26), **I want** split barriers inserted when
+    transitions can overlap with independent work, **so that** GPU pipeline stalls are reduced.
+
+19. **US-2.1.10.1** — **As a** engine developer (P-26), **I want** GPU work graph support enabling
+    GPU-driven dispatch without CPU round-trips, **so that** culling and LOD pipelines run entirely
+    on the GPU.
+
+20. **US-2.1.10.2** — **As a** engine developer (P-26), **I want** compute-based work graph
+    emulation on backends lacking native support, **so that** GPU-driven pipelines work consistently
+    across Metal, Vulkan, and D3D12.
+
+21. **US-2.1.11.1** — **As a** engine developer (P-26), **I want** a feature emulation layer that
+    selects emulated paths at device creation time, **so that** the hot path contains no runtime
+    capability branches.
+
+22. **US-2.1.11.2** — **As a** technical artist (P-13), **I want** mesh shaders to work on older
+    hardware via emulation, **so that** my meshlet-based assets render correctly regardless of GPU
+    generation.
+
+23. **US-2.1.12.1** — **As a** technical artist (P-13), **I want** per-pass GPU timestamps visible
+    in the editor profiler, **so that** I can identify which rendering passes are most expensive and
+    optimize content.
+
+24. **US-2.1.12.2** — **As a** engine developer (P-26), **I want** timestamp query results read back
+    one frame later, **so that** profiling does not introduce GPU stalls or pipeline bubbles.
+
+25. **US-2.1.13.1** — **As a** engine developer (P-26), **I want** CPU work graph emulation nodes to
+    appear as task graph entries in the unified game loop, **so that** GPU-driven scheduling
+    integrates with CPU work.
+
+26. **US-2.1.13.2** — **As a** technical artist (P-13), **I want** GPU-driven effects to produce
+    identical results on all backends, **so that** I can author effects once and trust they work
+    everywhere.
+
+27. **US-2.1.14.1** — **As a** engine developer (P-26), **I want** all GPU resources referenced
+    through generational Handle indices, **so that** use-after-free bugs are detected at runtime
+    instead of causing undefined behavior.
+
+28. **US-2.1.14.2** — **As a** engine developer (P-26), **I want** no raw GPU pointers exposed in
+    any public API type, **so that** the rendering interface is memory-safe by construction.
+
+29. **US-2.1.14.3** — **As a** game developer (P-15), **I want** type-safe handles that prevent
+    passing a buffer handle where a texture handle is expected, **so that** resource type mismatches
+    are caught at compile time.

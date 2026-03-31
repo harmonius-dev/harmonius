@@ -9,7 +9,6 @@ alignment (steer toward average heading), and cohesion (steer toward average pos
 tunable per crowd archetype to produce varied group behaviors — tight military columns, loose
 wandering herds, or scattered panicked civilians.
 
-- **Requirements:** R-7.7.1
 - **Dependencies:** F-7.2.3
 - **Platform notes:** Neighbor query radius reduced on mobile (8 m vs. 16 m desktop) to lower
   per-agent cost. Flock sizes limited by crowd count budget (see F-7.7.4).
@@ -23,7 +22,6 @@ stores a direction vector pointing along the cheapest path to the goal. Thousand
 sample the field directly instead of running individual A* queries, enabling mass movement at
 constant per-agent cost.
 
-- **Requirements:** R-7.7.2
 - **Dependencies:** F-7.1.1
 - **Platform notes:** Mobile uses coarser flow field resolution (2 m cells vs. 1 m on desktop) and
   limits concurrent active flow fields to 4.
@@ -35,21 +33,19 @@ Tiles flow fields to match the world streaming grid and caches recently computed
 grid. Multiple goals share cached fields when their regions overlap, reducing recomputation in city
 districts with many points of interest.
 
-- **Requirements:** R-7.7.3
 - **Dependencies:** F-7.7.2, F-7.1.2
 - **Platform notes:** Mobile cache holds fewer entries (8 vs. 32 on desktop) to limit memory;
   eviction is more aggressive under memory pressure.
 
 ## Mass Simulation
 
-### F-7.7.4 Mass Entity Simulation
+### F-7.7.4 Batch Processor Simulation
 
 Processes crowd NPCs as lightweight entities with minimal per-agent state (position, velocity,
 archetype ID, flow field sample). Avoids full behavior tree evaluation by driving movement entirely
 from flow fields and flocking forces. Supports tens of thousands of ambient city inhabitants on the
 server with a bounded CPU footprint.
 
-- **Requirements:** R-7.7.4
 - **Dependencies:** F-7.7.1, F-7.7.2
 - **Platform notes:** Crowd count scales by platform: mobile 100, Switch 500, console 2000, desktop
   10,000+. Mobile uses wider despawn radius to keep active count low.
@@ -61,7 +57,6 @@ High-LOD agents run full behavior trees and per-tick perception; mid-LOD agents 
 frequency; low-LOD agents use flow-field-only movement. A global budget scheduler distributes
 available CPU time across tiers to maintain a stable frame rate.
 
-- **Requirements:** R-7.7.5
 - **Dependencies:** F-7.3.1, F-7.7.4
 - **Platform notes:** Mobile high-LOD radius is 20 m vs. 60 m on desktop. Mobile runs fewer agents
   at high LOD (8 vs. 64). LOD tier thresholds are platform-configurable.
@@ -73,7 +68,6 @@ pileups at chokepoints, event locations, and spawn areas. When density exceeds t
 overflow agents are redirected to alternative routes or despawned if they are ambient crowd
 entities, maintaining both simulation plausibility and server performance.
 
-- **Requirements:** R-7.7.6
 - **Dependencies:** F-7.7.4, F-7.2.1
 - **Platform notes:** Mobile enforces lower per-cell density caps (4 vs. 16 on desktop) and despawns
   overflow agents more aggressively to stay within crowd budget.
@@ -95,7 +89,6 @@ information — share at next social interaction). NPCs at different AI LOD tier
 knowledge events but may respond with reduced urgency (low-LOD agents acknowledge but don't change
 behavior until promoted to high-LOD).
 
-- **Requirements:** R-7.7.7
 - **Dependencies:** F-7.6.4 (Faction Awareness), F-7.6.6 (Memory Decay), F-7.6.10 (Investigation),
   F-7.7.5 (AI LOD)
 - **Platform notes:** Mobile limits broadcast radius to 15 m (vs. 50 m desktop) and caps event
@@ -115,7 +108,6 @@ flight: individuals that fall too far behind accelerate to rejoin. After the thr
 group reassembles at a rally point or returns to the pre-alarm formation over a configurable
 calm-down period.
 
-- **Requirements:** R-7.7.8
 - **Dependencies:** F-7.7.1 (Flocking), F-7.6.5 (Stimulus Registry), F-7.2.5 (Formation Movement)
 - **Platform notes:** Mobile limits group size to 8 members; desktop supports 32+. Alarm propagation
   uses instant-uniform on mobile (skips wave delay) for simplicity.
@@ -134,7 +126,6 @@ relationship overrides allow specific NPCs to deviate from faction defaults (a f
 otherwise hostile faction). Relationship determines: engagement rules, communication willingness,
 trade availability, and quest offering.
 
-- **Requirements:** R-7.7.9
 - **Dependencies:** F-7.6.4 (Faction Awareness), F-13.12.5 (Reputation), F-7.3.1 (Behavior Trees)
 - **Platform notes:** Lightweight data lookup; runs identically on all platforms.
 
@@ -153,7 +144,6 @@ indicators. AI archetypes configure threat behavior: **berserker** (attack highe
 **tactical** (attack lowest HP target), **protector** (attack whoever is hitting allies), **coward**
 (flee from highest threat source).
 
-- **Requirements:** R-7.7.10
 - **Dependencies:** F-13.10.1 (Ability Definition), F-7.3.1 (Behavior Trees), F-7.6.4 (Faction
   Awareness), F-10.3.4 (Nameplates)
 - **Platform notes:** Primarily server-side. Mobile clients display threat UI but do not compute
@@ -173,7 +163,6 @@ prey using scent trails (F-7.6.8), footprints (F-7.6.9), and visual evidence (di
 blood). Hunting success rate is configurable per predator-prey pair for ecological balance (F-3.6.38
 ecosystem simulation).
 
-- **Requirements:** R-7.7.11
 - **Dependencies:** F-7.6.8 (Smell), F-7.6.9 (Evidence), F-7.6.11 (Multi-Sense Tracking), F-7.7.8
   (Shared Awareness), F-7.8.2 (Flanking), F-3.6.38 (Ecosystem Simulation)
 - **Platform notes:** Mobile uses simplified hunting: sight-only tracking, no pack coordination, no

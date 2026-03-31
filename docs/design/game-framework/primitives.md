@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/game-framework/](../../features/game-framework/),
-> [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
-> elements to those definitions.
+> [features/game-framework/](../../features/), [requirements/game-framework/](../../requirements/),
+> and [user-stories/game-framework/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 | Feature   | Requirement | User Stories                 |
 |-----------|-------------|------------------------------|
@@ -1347,7 +1346,7 @@ pub struct ChildTemplate {
     pub local_transform: Transform,
 }
 
-/// Entity template (prefab). Authored in the
+/// Entity template. Authored in the
 /// visual editor. Stored as a serialized asset.
 #[derive(Clone, Debug, Reflect)]
 pub struct EntityTemplate {

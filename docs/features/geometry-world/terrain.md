@@ -2,9 +2,9 @@
 
 ## Heightfield Terrain
 
-| ID      | Feature                                       | Requirements |
-|---------|-----------------------------------------------|--------------|
-| F-3.2.1 | Heightfield Terrain with Tile-Based Streaming | R-3.2.1      |
+| ID      | Feature |
+|---------|----------------------------------------------- |
+| F-3.2.1 | Heightfield Terrain with Tile-Based Streaming |
 
 1. **F-3.2.1** — The terrain system uses a tile-based heightfield as its core representation. Each
    tile stores a 16-bit or 32-bit height grid at configurable resolution, plus metadata for material
@@ -15,9 +15,9 @@
 
 ## Virtual Texturing
 
-| ID      | Feature                 | Requirements |
-|---------|-------------------------|--------------|
-| F-3.2.2 | Virtual Texture Clipmap | R-3.2.2      |
+| ID      | Feature |
+|---------|------------------------- |
+| F-3.2.2 | Virtual Texture Clipmap |
 
 1. **F-3.2.2** — Terrain surface materials use a virtual texture clipmap centered on the camera. The
    clipmap maintains nested resolution rings so near-camera terrain has full material detail while
@@ -30,9 +30,9 @@
 
 ## Terrain LOD
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-3.2.3 | CDLOD / Geometry Clipmap LOD | R-3.2.3      |
+| ID      | Feature |
+|---------|------------------------------ |
+| F-3.2.3 | CDLOD / Geometry Clipmap LOD |
 
 1. **F-3.2.3** — Terrain meshes use a clipmap-based LOD scheme (CDLOD) where nested rectangular
    rings of decreasing vertex density surround the camera. Morphing zones at ring boundaries
@@ -45,10 +45,10 @@
 
 ## Terrain Holes and Materials
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-3.2.4 | Terrain Hole Masking       | R-3.2.4      |
-| F-3.2.5 | Splatmap Material Blending | R-3.2.5      |
+| ID      | Feature |
+|---------|---------------------------- |
+| F-3.2.4 | Terrain Hole Masking |
+| F-3.2.5 | Splatmap Material Blending |
 
 1. **F-3.2.4** — Per-tile bitmask layers mark terrain regions as holes, allowing caves, tunnels,
    building entrances, and dungeon transitions to punch through the heightfield. Hole masks are
@@ -69,9 +69,9 @@
 
 ## Terrain Collision
 
-| ID      | Feature                   | Requirements |
-|---------|---------------------------|--------------|
-| F-3.2.6 | Terrain Physics Collision | R-3.2.6      |
+| ID      | Feature |
+|---------|--------------------------- |
+| F-3.2.6 | Terrain Physics Collision |
 
 1. **F-3.2.6** — A dedicated terrain collision representation derived from the heightfield that
    supports efficient ray and shape queries. The collision mesh mirrors the streaming tile grid and
@@ -84,9 +84,9 @@
 
 ## Large World Coordinates
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-3.2.7 | Large World Coordinate Support | R-3.2.7      |
+| ID      | Feature |
+|---------|-------------------------------- |
+| F-3.2.7 | Large World Coordinate Support |
 
 1. **F-3.2.7** — All world-space positions use 64-bit floating-point coordinates with
    camera-relative rendering. Before GPU submission, positions are rebased to a camera-origin
@@ -98,9 +98,9 @@
 
 ## Indoor Environments
 
-| ID      | Feature                                   | Requirements |
-|---------|-------------------------------------------|--------------|
-| F-3.2.8 | Indoor Environments and Portal Visibility | R-3.2.8      |
+| ID      | Feature |
+|---------|------------------------------------------- |
+| F-3.2.8 | Indoor Environments and Portal Visibility |
 
 1. **F-3.2.8** — Room-based rendering for interior environments (dungeons, buildings, space
    stations). Each room is a sealed convex or near-convex volume with portal openings (doors,
@@ -117,14 +117,14 @@
 
 ## Voxel Terrain
 
-| ID       | Feature                               | Requirements |
-|----------|---------------------------------------|--------------|
-| F-3.2.9  | Voxel Volume Representation           | R-3.2.9      |
-| F-3.2.10 | Hybrid Heightmap-Voxel Terrain        | R-3.2.10     |
-| F-3.2.11 | Planetary-Scale Voxel Sphere          | R-3.2.11     |
-| F-3.2.12 | Voxel Meshing Pipeline                | R-3.2.12     |
-| F-3.2.13 | Runtime Voxel Editing and Deformation | R-3.2.13     |
-| F-3.2.14 | Voxel LOD and Streaming               | R-3.2.14     |
+| ID       | Feature |
+|----------|--------------------------------------- |
+| F-3.2.9  | Voxel Volume Representation |
+| F-3.2.10 | Hybrid Heightmap-Voxel Terrain |
+| F-3.2.11 | Planetary-Scale Voxel Sphere |
+| F-3.2.12 | Voxel Meshing Pipeline |
+| F-3.2.13 | Runtime Voxel Editing and Deformation |
+| F-3.2.14 | Voxel LOD and Streaming |
 
 1. **F-3.2.9** — A sparse voxel volume representation for terrain that supports arbitrary 3D
    geometry: caves, overhangs, arches, tunnels, floating islands, and underground spaces that

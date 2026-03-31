@@ -2,10 +2,10 @@
 
 ## Installation and Updates
 
-| ID        | Feature                    | Requirements |
-|-----------|----------------------------|--------------|
-| F-15.15.1 | Engine Version Management  | R-15.15.1    |
-| F-15.15.2 | Automatic Project Upgrades | R-15.15.2    |
+| ID | Feature |
+| ----------- | ---------------------------- |
+| F-15.15.1 | Engine Version Management |
+| F-15.15.2 | Automatic Project Upgrades |
 
 1. **F-15.15.1** — A standalone launcher application for installing, updating, and managing multiple
    engine versions side-by-side. Displays available engine versions with release notes, downloads
@@ -28,10 +28,10 @@
 
 ## Project Management
 
-| ID        | Feature                             | Requirements |
-|-----------|-------------------------------------|--------------|
-| F-15.15.3 | Project Browser and Creation Wizard | R-15.15.3    |
-| F-15.15.4 | Project File Format and Association | R-15.15.4    |
+| ID | Feature |
+| ----------- | ------------------------------------- |
+| F-15.15.3 | Project Browser and Creation Wizard |
+| F-15.15.4 | Project File Format and Association |
 
 1. **F-15.15.3** — The launcher's home screen displays recent projects with thumbnails,
    last-modified dates, engine version, and team members. A creation wizard guides new project
@@ -51,10 +51,10 @@
 
 ## Account and Preferences
 
-| ID        | Feature                                       | Requirements |
-|-----------|-----------------------------------------------|--------------|
-| F-15.15.5 | Cross-Game Preferences and Account Management | R-15.15.5    |
-| F-15.15.6 | Collaboration Setup Wizard                    | R-15.15.6    |
+| ID | Feature |
+| ----------- | ----------------------------------------------- |
+| F-15.15.5 | Cross-Game Preferences and Account Management |
+| F-15.15.6 | Collaboration Setup Wizard |
 
 1. **F-15.15.5** — Global preferences that apply across all projects: editor theme, keybindings,
    viewport defaults, recent project list, and telemetry opt-in. Account management supports linking

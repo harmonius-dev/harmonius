@@ -76,8 +76,8 @@ Companion test cases for [gpu-abstraction.md](gpu-abstraction.md).
 |---|-------------|
 | 1 | R-2.1.4     |
 
-1. **#1** — Metal FFI boundary signatures
-   - **Expected:** Only C-compatible signatures, no Objective-C selectors
+1. **#1** — Metal FFI boundary uses swift-bridge
+   - **Expected:** Only swift-bridge generated bindings, no manual C or Objective-C selectors
 
 ### TC-2.1.5.1 D3D12 No C++
 

@@ -2,11 +2,11 @@
 
 ## Compiled Asset Caching
 
-| ID        | Feature                          | Requirements |
-|-----------|----------------------------------|--------------|
-| F-15.11.1 | Centralized Compiled Asset Cache | R-15.11.1    |
-| F-15.11.2 | Shader Compilation Cache         | R-15.11.2    |
-| F-15.11.3 | Logic Graph Compilation Cache    | R-15.11.3    |
+| ID | Feature |
+| ----------- | ---------------------------------- |
+| F-15.11.1 | Centralized Compiled Asset Cache |
+| F-15.11.2 | Shader Compilation Cache |
+| F-15.11.3 | Logic Graph Compilation Cache |
 
 1. **F-15.11.1** — A web service that stores compiled and processed assets keyed by content hash — a
    combination of source content, build settings, and tool version. When any developer builds an
@@ -34,9 +34,9 @@
 
 ## Onboarding
 
-| ID        | Feature                               | Requirements |
-|-----------|---------------------------------------|--------------|
-| F-15.11.4 | New Developer Onboarding Acceleration | R-15.11.4    |
+| ID | Feature |
+| ----------- | --------------------------------------- |
+| F-15.11.4 | New Developer Onboarding Acceleration |
 
 1. **F-15.11.4** — A fresh repository clone followed by the first editor launch fetches all compiled
    assets, shaders, and graph bytecode from the shared cache instead of building from source.
@@ -47,9 +47,9 @@
 
 ## Cache Lifecycle
 
-| ID        | Feature                                   | Requirements |
-|-----------|-------------------------------------------|--------------|
-| F-15.11.5 | Cache Invalidation and Garbage Collection | R-15.11.5    |
+| ID | Feature |
+| ----------- | ------------------------------------------- |
+| F-15.11.5 | Cache Invalidation and Garbage Collection |
 
 1. **F-15.11.5** — Cache entries are invalidated when the build tool version changes or the source
    content hash no longer matches any active branch. Garbage collection runs on a configurable
@@ -61,9 +61,9 @@
 
 ## Transport and Storage
 
-| ID        | Feature                     | Requirements |
-|-----------|-----------------------------|--------------|
-| F-15.11.6 | Cache Transport and Storage | R-15.11.6    |
+| ID | Feature |
+| ----------- | ----------------------------- |
+| F-15.11.6 | Cache Transport and Storage |
 
 1. **F-15.11.6** — The cache service supports multiple storage backends: local filesystem for small
    teams, S3, GCS, or Azure Blob Storage for cloud deployments, and on-premise HTTP servers for
@@ -76,9 +76,9 @@
 
 ## CI/CD Integration
 
-| ID        | Feature                | Requirements |
-|-----------|------------------------|--------------|
-| F-15.11.7 | CI/CD Cache Population | R-15.11.7    |
+| ID | Feature |
+| ----------- | ------------------------ |
+| F-15.11.7 | CI/CD Cache Population |
 
 1. **F-15.11.7** — CI build pipelines automatically populate the shared cache as part of their build
    process. Every CI build produces cache entries for all target platforms, ensuring developers
@@ -91,9 +91,9 @@
 
 ## Monitoring
 
-| ID        | Feature                          | Requirements |
-|-----------|----------------------------------|--------------|
-| F-15.11.8 | Cache Hit Metrics and Monitoring | R-15.11.8    |
+| ID | Feature |
+| ----------- | ---------------------------------- |
+| F-15.11.8 | Cache Hit Metrics and Monitoring |
 
 1. **F-15.11.8** — A monitoring dashboard displays cache hit rate, miss rate, storage usage,
    download bandwidth, and per-asset build time savings. Alerts fire when the cache hit rate drops

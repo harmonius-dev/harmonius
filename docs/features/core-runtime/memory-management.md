@@ -2,10 +2,10 @@
 
 ## Arena Allocators
 
-| ID      | Feature                                      | Requirements |
-|---------|----------------------------------------------|--------------|
-| F-1.7.1 | Per-Frame Arena Allocator                    | R-1.7.1      |
-| F-1.7.2 | Scoped Arena Allocator with Nested Lifetimes | R-1.7.2      |
+| ID      | Feature                                     |
+|---------|----------------------------------------------|
+| F-1.7.1 | Per-Frame Arena Allocator                   |
+| F-1.7.2 | Scoped Arena Allocator with Nested Lifetimes|
 
 1. **F-1.7.1** — Provide a bump allocator that hands out memory from a pre-allocated contiguous
    block and resets to zero cost at frame boundaries. Per-frame arenas are used for transient
@@ -22,9 +22,9 @@
 
 ## Pool Allocators
 
-| ID      | Feature              | Requirements |
-|---------|----------------------|--------------|
-| F-1.7.3 | Typed Pool Allocator | R-1.7.3      |
+| ID      | Feature             |
+|---------|----------------------|
+| F-1.7.3 | Typed Pool Allocator|
 
 1. **F-1.7.3** — Provide a fixed-size block pool allocator that manages objects of a single type.
    Free blocks are tracked via an intrusive free list, yielding O(1) allocation and deallocation
@@ -36,10 +36,10 @@
 
 ## Resource Handles
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-1.7.4 | Generational Index Handles | R-1.7.4      |
-| F-1.7.5 | Slot Map Container         | R-1.7.5      |
+| ID      | Feature                   |
+|---------|----------------------------|
+| F-1.7.4 | Generational Index Handles|
+| F-1.7.5 | Slot Map Container        |
 
 1. **F-1.7.4** — Use generational indices — a packed index paired with a generation counter — as
    opaque handles to resources, assets, and entities. On deallocation the generation is incremented,
@@ -55,9 +55,9 @@
 
 ## Memory Budgets
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-1.7.6 | Per-Subsystem Memory Budgets | R-1.7.6      |
+| ID      | Feature                     |
+|---------|------------------------------|
+| F-1.7.6 | Per-Subsystem Memory Budgets|
 
 1. **F-1.7.6** — Assign configurable memory budgets to engine subsystems (ECS storage, asset cache,
    GPU upload heaps, scratch allocators). Each subsystem draws from its budget through a quota-aware
@@ -72,10 +72,10 @@
 
 ## Profiling Hooks
 
-| ID      | Feature                               | Requirements |
-|---------|---------------------------------------|--------------|
-| F-1.7.7 | Memory Profiling and Telemetry Hooks  | R-1.7.7      |
-| F-1.7.8 | Allocation Tagging and Categorization | R-1.7.8      |
+| ID      | Feature                              |
+|---------|---------------------------------------|
+| F-1.7.7 | Memory Profiling and Telemetry Hooks |
+| F-1.7.8 | Allocation Tagging and Categorization|
 
 1. **F-1.7.7** — Instrument all allocators with optional profiling hooks that record allocation
    count, byte count, peak usage, and allocation call sites. Hooks are compiled out in release
@@ -92,9 +92,9 @@
 
 ## Numeric Types
 
-| ID      | Feature                           | Requirements |
-|---------|-----------------------------------|--------------|
-| F-1.7.9 | Arbitrary Precision Numeric Types | R-1.7.9      |
+| ID      | Feature                          |
+|---------|-----------------------------------|
+| F-1.7.9 | Arbitrary Precision Numeric Types|
 
 1. **F-1.7.9** — Arbitrary precision integer and floating-point types for values beyond 64-bit
    range. The integer type supports 128-bit, 256-bit, or unlimited precision for cosmic distances,

@@ -2,82 +2,57 @@
 
 ## World State
 
-| ID      | Derived From                         |
-|---------|--------------------------------------|
-| R-7.5.1 | [F-7.5.1](../../features/ai/goap.md) |
-
-1. **R-7.5.1** — The engine **SHALL** model AI-relevant world state as a fixed-size bitset of named
-   boolean and integer properties, with copy, compare, and diff operations completing in O(1) time
-   regardless of property count.
-   - **Rationale:** The GOAP planner copies and compares world states thousands of times per search;
-     O(1) bitset operations keep planning cost bounded.
-   - **Verification:** Create a world state with 64 properties. Benchmark copy, compare, and diff
-     operations and verify each completes in constant time. Double the property count to 128 and
-     verify operation time does not increase.
+1. **R-7.5.1** -- The engine **SHALL** model AI-relevant world state as a fixed-size bitset of named
+   boolean and integer properties with O(1) copy, compare, and diff operations.
+   - **Rationale:** Compact trivially-copyable world states enable fast forward-search planning for
+     thousands of NPCs without heap allocation.
+   - **Verification:** Encode boolean and integer properties and verify lossless round-trip. Diff
+     two states and verify all changed properties are identified. Benchmark copy and diff for 1000+
+     concurrent agents.
 
 ## Planner
 
-| ID      | Derived From                         |
-|---------|--------------------------------------|
-| R-7.5.2 | [F-7.5.2](../../features/ai/goap.md) |
-| R-7.5.3 | [F-7.5.3](../../features/ai/goap.md) |
+1. **R-7.5.2** -- The engine **SHALL** perform A* forward search from the current world state toward
+   a goal state over the action space, finding minimal-cost action sequences within a per-tick
+   iteration cap.
+   - **Rationale:** A* over actions produces optimal plans; the iteration cap prevents planning from
+     exceeding the per-tick AI budget.
+   - **Verification:** Verify the planner finds the lowest-cost sequence for reference scenarios.
+     Verify graceful no-plan return when the goal is unreachable. Benchmark plans per tick across
+     platforms.
 
-1. **R-7.5.2** — The engine **SHALL** perform A* search over the action space from the current world
-   state toward a goal state, finding a minimal-cost sequence of actions that satisfies the goal
-   preconditions.
-   - **Rationale:** Forward search enables NPCs to compose multi-step plans dynamically, producing
-     intelligent behavior without hand-authored action sequences.
-   - **Verification:** Define 5 actions with varying costs that can satisfy a goal. Verify the
-     planner returns the cheapest valid sequence. Define an alternative 2-action sequence with lower
-     total cost and verify the planner prefers it. Verify the planner returns failure when no valid
-     sequence exists.
-2. **R-7.5.3** — The engine **SHALL** define per-action preconditions (world state properties that
-   must hold before execution) and effects (world state modifications applied upon completion), with
-   a cost value per action used by the planner for plan optimization.
-   - **Rationale:** Preconditions and effects are the formal mechanism by which the planner reasons
-     about action applicability and chaining.
-   - **Verification:** Define an action with precondition "has_weapon = true." Verify the planner
-     only considers it when has_weapon is true in the current state. Verify the action's effects
-     modify the world state correctly after execution. Verify lower-cost actions are preferred when
-     multiple actions achieve the same effect.
+2. **R-7.5.3** -- The engine **SHALL** define each GOAP action with world-state preconditions,
+   effects stored as deltas, and a numeric cost, with per-archetype action registration.
+   - **Rationale:** Precondition-effect pairs drive the planner's search; per-archetype action sets
+     produce personality-specific plans.
+   - **Verification:** Verify an action cannot execute when preconditions are unmet. Verify
+     executing an action applies its effects correctly. Verify total plan cost equals the sum of
+     constituent action costs.
 
 ## Plan Management
 
-| ID      | Derived From                         |
-|---------|--------------------------------------|
-| R-7.5.4 | [F-7.5.4](../../features/ai/goap.md) |
-| R-7.5.5 | [F-7.5.5](../../features/ai/goap.md) |
-| R-7.5.6 | [F-7.5.6](../../features/ai/goap.md) |
+1. **R-7.5.4** -- The engine **SHALL** cache computed plans keyed by goal and initial state hash,
+   with invalidation on action registry changes or TTL expiration.
+   - **Rationale:** Plan caching eliminates redundant search for identical planning requests across
+     multiple NPCs of the same archetype.
+   - **Verification:** Verify a cache hit returns a plan identical to fresh search. Modify the
+     action registry and verify affected cache entries are invalidated. Benchmark throughput with
+     and without caching.
 
-1. **R-7.5.4** — The engine **SHALL** cache computed plans keyed by (goal, initial-state-hash),
-   reusing cached plans for identical requests across multiple agents of the same archetype, with
-   cache invalidation on action set changes or TTL expiration.
-   - **Rationale:** NPCs of the same archetype with the same goal and state should not each pay the
-     full A* search cost; caching amortizes planning across the population.
-   - **Verification:** Issue 10 identical planning requests (same goal, same state hash) and verify
-     only 1 A* search executes. Modify the action set and verify the cache is invalidated. Verify a
-     cached plan expires after the configured TTL.
-2. **R-7.5.5** — The engine **SHALL** trigger replanning when an executing action's preconditions
-   become invalid, when the active goal changes, or when a high-priority blackboard event fires,
-   with a configurable cooldown that limits replanning frequency to prevent thrashing.
-   - **Rationale:** Plans become stale when the world changes; replanning ensures agents adapt,
-     while the cooldown prevents wasting CPU on rapid re-searches during volatile situations.
-   - **Verification:** Invalidate an executing action's precondition and verify replanning occurs
-     within 1 tick. Trigger 5 replan events within the cooldown period and verify only 1 replan
-     executes. Verify a goal change triggers immediate replan regardless of cooldown.
-3. **R-7.5.6** — The engine **SHALL** maintain a scored list of goals per agent with dynamic
-   priorities, where the highest-priority unsatisfied goal drives the planner, and a higher-priority
-   goal emerging causes immediate replan within one tick.
-   - **Rationale:** Agents must switch goals when circumstances change (e.g., abandoning combat to
-     flee when near death) without waiting for the current plan to complete.
-   - **Verification:** Assign 3 goals with priorities 0.3, 0.6, and 0.9. Verify the planner targets
-     the 0.9-priority goal. Satisfy that goal and verify the planner switches to the 0.6-priority
-     goal. Introduce a new goal with priority 1.0 and verify replan occurs within 1 tick.
+2. **R-7.5.5** -- The engine **SHALL** monitor executing plans for invalidation conditions and
+   trigger partial or full replan with a configurable cooldown, where high-priority events bypass
+   the cooldown.
+   - **Rationale:** Plans become stale when world state changes; replanning with a cooldown prevents
+     thrashing while critical events demand immediate response.
+   - **Verification:** Verify a plan is invalidated when preconditions no longer hold. Verify the
+     cooldown prevents multiple replans within the window. Verify high-priority events bypass the
+     cooldown.
 
----
-
-## User Story Traceability
-
-User stories for this domain are maintained in
-[user-stories/ai/goap.md](../../user-stories/ai/goap.md). Requirements in this document are derived
-from those user stories.
+3. **R-7.5.6** -- The engine **SHALL** maintain a scored goal list per agent with dynamic
+   priorities, planning for the highest-priority unsatisfied goal and replanning when a
+   higher-priority goal emerges.
+   - **Rationale:** NPCs need to switch between goals like patrol, combat, and survival based on
+     changing context.
+   - **Verification:** Verify the planner always plans for the highest-priority unsatisfied goal.
+     Verify a satisfied goal is skipped. Verify changing a blackboard value updates priorities and
+     triggers a goal switch.

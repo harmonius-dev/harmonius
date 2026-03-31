@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/animation/](../../features/animation/),
-> [requirements/animation/](../../requirements/animation/), and
-> [user-stories/animation/](../../user-stories/animation/). The table below traces design elements
-> to those definitions.
+> [features/animation/](../../features/), [requirements/animation/](../../requirements/), and
+> [user-stories/animation/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement | User Stories                                   |
 |---------|-------------|------------------------------------------------|

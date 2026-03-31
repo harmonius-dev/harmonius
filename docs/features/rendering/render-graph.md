@@ -2,10 +2,10 @@
 
 ## Pass Declaration
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-2.2.1 | Declarative Pass Registration | R-2.2.1      |
-| F-2.2.2 | Capability Gating             | R-2.2.2      |
+| ID      | Feature                       |
+|---------|-------------------------------|
+| F-2.2.1 | Declarative Pass Registration |
+| F-2.2.2 | Capability Gating             |
 
 1. **F-2.2.1** — Passes are declared as structs implementing a pass trait, specifying their resource
    reads, writes, and queue requirements. The graph compiler discovers the full dependency topology
@@ -21,10 +21,10 @@
 
 ## Resource Management
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-2.2.3 | Transient Resource Declaration | R-2.2.3      |
-| F-2.2.4 | Resource Aliasing              | R-2.2.4      |
+| ID      | Feature                        |
+|---------|--------------------------------|
+| F-2.2.3 | Transient Resource Declaration |
+| F-2.2.4 | Resource Aliasing              |
 
 1. **F-2.2.3** — Passes declare virtual resource handles with format, dimensions, and usage flags.
    The graph compiler maps virtual handles to physical allocations, allowing resources that do not
@@ -43,9 +43,9 @@
 
 ## Barriers and Synchronization
 
-| ID      | Feature                     | Requirements |
-|---------|-----------------------------|--------------|
-| F-2.2.5 | Automatic Barrier Insertion | R-2.2.5      |
+| ID      | Feature                     |
+|---------|-----------------------------|
+| F-2.2.5 | Automatic Barrier Insertion |
 
 1. **F-2.2.5** — The graph compiler analyzes resource read/write sets across passes and inserts the
    minimal set of barriers required for correct execution. Barriers are placed at the latest
@@ -56,11 +56,11 @@
 
 ## Queue Assignment and Scheduling
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-2.2.6 | Multi-Queue Scheduling             | R-2.2.6      |
-| F-2.2.7 | Pass Ordering and Topological Sort | R-2.2.7      |
-| F-2.2.8 | Budget Culling                     | R-2.2.8      |
+| ID      | Feature                            |
+|---------|------------------------------------|
+| F-2.2.6 | Multi-Queue Scheduling             |
+| F-2.2.7 | Pass Ordering and Topological Sort |
+| F-2.2.8 | Budget Culling                     |
 
 1. **F-2.2.6** — The compiler assigns passes to graphics, compute, and copy queues based on declared
    workload type and dependency constraints. Cross-queue synchronization fences are inserted
@@ -83,11 +83,11 @@
 
 ## Execution
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-2.2.9  | Multi-View Execution      | R-2.2.9      |
-| F-2.2.10 | Parallel Command Encoding | R-2.2.10     |
-| F-2.2.11 | Streaming Integration     | R-2.2.11     |
+| ID       | Feature                   |
+|----------|---------------------------|
+| F-2.2.9  | Multi-View Execution      |
+| F-2.2.10 | Parallel Command Encoding |
+| F-2.2.11 | Streaming Integration     |
 
 1. **F-2.2.9** — A single logical render graph is instantiated multiple times with per-view
    parameter overrides for split-screen, VR stereo, shadow cascades, and reflection probe renders.
@@ -113,10 +113,10 @@
 
 ## Graph Compilation and Diagnostics
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-2.2.12 | Graph Compilation and Caching | R-2.2.12     |
-| F-2.2.13 | Render Graph Diagnostics      | R-2.2.13     |
+| ID       | Feature                       |
+|----------|-------------------------------|
+| F-2.2.12 | Graph Compilation and Caching |
+| F-2.2.13 | Render Graph Diagnostics      |
 
 1. **F-2.2.12** — The full render graph is compiled once when the pass set or device capabilities
    change. The compiled graph encodes barrier placement, resource aliasing, queue assignment, and
@@ -134,10 +134,10 @@
 
 ## Unified Game Loop Integration
 
-| ID       | Feature                          | Requirements |
-|----------|----------------------------------|--------------|
-| F-2.2.14 | Render Graph as Task Graph Phase | R-2.2.14     |
-| F-2.2.15 | Safe GPU Command Encoding        | R-2.2.15     |
+| ID       | Feature                          |
+|----------|----------------------------------|
+| F-2.2.14 | Render Graph as Task Graph Phase |
+| F-2.2.15 | Safe GPU Command Encoding        |
 
 1. **F-2.2.14** — Render passes compile into `TaskNode` entries within the unified game loop graph
    (F-14.3.14). The render graph compiler emits nodes that the parent `TaskGraph` schedules

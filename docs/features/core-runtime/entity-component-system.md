@@ -2,11 +2,11 @@
 
 ## Storage
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-1.1.1 | Archetype-Based Dense Storage    | R-1.1.1      |
-| F-1.1.2 | Sparse Component Storage         | R-1.1.2      |
-| F-1.1.3 | Archetype Graph and Edge Caching | R-1.1.3      |
+| ID      | Feature                         |
+|---------|----------------------------------|
+| F-1.1.1 | Archetype-Based Dense Storage   |
+| F-1.1.2 | Sparse Component Storage        |
+| F-1.1.3 | Archetype Graph and Edge Caching|
 
 1. **F-1.1.1** — Store components in contiguous, cache-friendly archetype tables where each unique
    combination of component types defines an archetype. Components within an archetype use
@@ -31,15 +31,15 @@
 
 ## Components
 
-| ID       | Feature                                   | Requirements |
-|----------|-------------------------------------------|--------------|
-| F-1.1.4  | Static and Dynamic Component Registration | R-1.1.4      |
-| F-1.1.5  | Tag Components (Zero-Size)                | R-1.1.5      |
-| F-1.1.6  | Shared Components                         | R-1.1.6      |
-| F-1.1.7  | Buffer Components (Dynamic Arrays)        | R-1.1.7      |
-| F-1.1.8  | Enableable Components                     | R-1.1.8      |
-| F-1.1.9  | Component Hooks                           | R-1.1.9      |
-| F-1.1.10 | Component Bundles and Required Components | R-1.1.10     |
+| ID       | Feature                                  |
+|----------|-------------------------------------------|
+| F-1.1.4  | Static and Dynamic Component Registration|
+| F-1.1.5  | Tag Components (Zero-Size)               |
+| F-1.1.6  | Shared Components                        |
+| F-1.1.7  | Buffer Components (Dynamic Arrays)       |
+| F-1.1.8  | Enableable Components                    |
+| F-1.1.9  | Component Hooks                          |
+| F-1.1.10 | Component Bundles and Required Components|
 
 1. **F-1.1.4** — Support both compile-time (derive macro) and runtime component registration. Static
    registration enables zero-cost access patterns and monomorphized queries. Dynamic registration
@@ -82,11 +82,11 @@
 
 ## Entities
 
-| ID       | Feature                                     | Requirements |
-|----------|---------------------------------------------|--------------|
-| F-1.1.11 | Entity Lifecycle with Generational Indices  | R-1.1.11     |
-| F-1.1.12 | Cleanup Components and Deferred Destruction | R-1.1.12     |
-| F-1.1.13 | Entity Names and Path Lookup                | R-1.1.13     |
+| ID       | Feature                                    |
+|----------|---------------------------------------------|
+| F-1.1.11 | Entity Lifecycle with Generational Indices |
+| F-1.1.12 | Cleanup Components and Deferred Destruction|
+| F-1.1.13 | Entity Names and Path Lookup               |
 
 1. **F-1.1.11** — Use generational indices as entity identifiers — a 32-bit index plus a 32-bit
    generation counter. Stale references are detected without indirection through a free list.
@@ -107,11 +107,11 @@
 
 ## Relationships and Hierarchies
 
-| ID       | Feature                         | Requirements |
-|----------|---------------------------------|--------------|
-| F-1.1.14 | Entity Relationships (Pairs)    | R-1.1.14     |
-| F-1.1.15 | Relationship Properties         | R-1.1.15     |
-| F-1.1.16 | Built-In Parent-Child Hierarchy | R-1.1.16     |
+| ID       | Feature                        |
+|----------|---------------------------------|
+| F-1.1.14 | Entity Relationships (Pairs)   |
+| F-1.1.15 | Relationship Properties        |
+| F-1.1.16 | Built-In Parent-Child Hierarchy|
 
 1. **F-1.1.14** — Encode relationships as pairs of two entities — (Relationship, Target) — packed
    into a single 64-bit component ID. Adding `(Likes, Apple)` to an entity is equivalent to adding a
@@ -132,12 +132,12 @@
 
 ## Queries
 
-| ID       | Feature                              | Requirements |
-|----------|--------------------------------------|--------------|
-| F-1.1.17 | Composable Archetype Queries         | R-1.1.17     |
-| F-1.1.18 | Query Sorting and Grouping           | R-1.1.18     |
-| F-1.1.19 | Query Variables and Pattern Matching | R-1.1.19     |
-| F-1.1.20 | Automatic Parallel Iteration         | R-1.1.20     |
+| ID       | Feature                             |
+|----------|--------------------------------------|
+| F-1.1.17 | Composable Archetype Queries        |
+| F-1.1.18 | Query Sorting and Grouping          |
+| F-1.1.19 | Query Variables and Pattern Matching|
+| F-1.1.20 | Automatic Parallel Iteration        |
 
 1. **F-1.1.17** — Filter archetypes by `With<T>` (required), `Without<T>` (excluded), `Option<T>`
    (optional), `Changed<T>` (mutated since last tick), `Added<T>` (newly added). Queries are cached
@@ -165,9 +165,9 @@
 
 ## Aspects
 
-| ID       | Feature           | Requirements |
-|----------|-------------------|--------------|
-| F-1.1.21 | Component Aspects | R-1.1.21     |
+| ID       | Feature          |
+|----------|-------------------|
+| F-1.1.21 | Component Aspects|
 
 1. **F-1.1.21** — Group a subset of an entity's components into a named accessor struct — e.g.,
    `PhysicsAspect` groups `RigidBody`, `Velocity`, `Mass`, `Transform`. Aspects are used in queries
@@ -177,9 +177,9 @@
 
 ## Change Detection
 
-| ID       | Feature                     | Requirements |
-|----------|-----------------------------|--------------|
-| F-1.1.22 | Tick-Based Change Detection | R-1.1.22     |
+| ID       | Feature                    |
+|----------|-----------------------------|
+| F-1.1.22 | Tick-Based Change Detection|
 
 1. **F-1.1.22** — Track per-component mutation using a tick counter bumped on each mutable access.
    Change detection operates at chunk granularity — if any entity's component in a chunk was
@@ -190,10 +190,10 @@
 
 ## Resources and Singletons
 
-| ID       | Feature            | Requirements |
-|----------|--------------------|--------------|
-| F-1.1.23 | World Resources    | R-1.1.23     |
-| F-1.1.24 | Non-Send Resources | R-1.1.24     |
+| ID       | Feature           |
+|----------|--------------------|
+| F-1.1.23 | World Resources   |
+| F-1.1.24 | Non-Send Resources|
 
 1. **F-1.1.23** — Typed singletons stored in the world — one instance per type. Accessed via
    `Res<T>` (shared) and `ResMut<T>` (exclusive) system parameters. Resources participate in the
@@ -207,13 +207,13 @@
 
 ## System Scheduling
 
-| ID       | Feature                                        | Requirements |
-|----------|------------------------------------------------|--------------|
-| F-1.1.25 | Dependency Resolution and Topological Ordering | R-1.1.25     |
-| F-1.1.26 | System Groups and Phases                       | R-1.1.26     |
-| F-1.1.27 | System Run Criteria and Conditions             | R-1.1.27     |
-| F-1.1.28 | Ambiguity Detection                            | R-1.1.28     |
-| F-1.1.29 | Exclusive Systems                              | R-1.1.29     |
+| ID       | Feature                                       |
+|----------|------------------------------------------------|
+| F-1.1.25 | Dependency Resolution and Topological Ordering|
+| F-1.1.26 | System Groups and Phases                      |
+| F-1.1.27 | System Run Criteria and Conditions            |
+| F-1.1.28 | Ambiguity Detection                           |
+| F-1.1.29 | Exclusive Systems                             |
 
 1. **F-1.1.25** — Automatically resolve system execution order from declared read/write access sets.
    Build a DAG of system dependencies and produce a topological ordering that maximizes parallelism
@@ -243,10 +243,10 @@
 
 ## Observers
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-1.1.30 | Event-Triggered Observers | R-1.1.30     |
-| F-1.1.31 | Custom Entity Events      | R-1.1.31     |
+| ID       | Feature                  |
+|----------|---------------------------|
+| F-1.1.30 | Event-Triggered Observers|
+| F-1.1.31 | Custom Entity Events     |
 
 1. **F-1.1.30** — Register callbacks that fire when specific events occur on entities matching a
    query. Built-in events: `OnAdd`, `OnRemove`, `OnSet`, `OnTableCreate`, `OnTableEmpty`. Observers
@@ -261,10 +261,10 @@
 
 ## Command Buffers
 
-| ID       | Feature                                         | Requirements |
-|----------|-------------------------------------------------|--------------|
-| F-1.1.32 | Deferred Structural Changes via Command Buffers | R-1.1.32     |
-| F-1.1.33 | Parallel Command Recording                      | R-1.1.33     |
+| ID       | Feature                                        |
+|----------|-------------------------------------------------|
+| F-1.1.32 | Deferred Structural Changes via Command Buffers|
+| F-1.1.33 | Parallel Command Recording                     |
 
 1. **F-1.1.32** — Per-system command buffers record entity spawn, despawn, and component add/remove
    operations. Commands are applied in deterministic order at designated sync points, eliminating
@@ -279,10 +279,10 @@
 
 ## Worlds
 
-| ID       | Feature                         | Requirements |
-|----------|---------------------------------|--------------|
-| F-1.1.34 | Multiple World Support          | R-1.1.34     |
-| F-1.1.35 | Entity Migration Between Worlds | R-1.1.35     |
+| ID       | Feature                        |
+|----------|---------------------------------|
+| F-1.1.34 | Multiple World Support         |
+| F-1.1.35 | Entity Migration Between Worlds|
 
 1. **F-1.1.34** — Support multiple independent ECS worlds within a single process. Each world owns
    its own archetype storage, entity allocator, and resource map. Worlds are tagged with flags
@@ -299,10 +299,10 @@
 
 ## Prefabs and Prototypes
 
-| ID       | Feature                            | Requirements |
-|----------|------------------------------------|--------------|
-| F-1.1.36 | Prefab Entities with Inheritance   | R-1.1.36     |
-| F-1.1.37 | Prefab Children and Nested Prefabs | R-1.1.37     |
+| ID       | Feature                           |
+|----------|------------------------------------|
+| F-1.1.36 | Prefab Entities with Inheritance  |
+| F-1.1.37 | Prefab Children and Nested Prefabs|
 
 1. **F-1.1.36** — Entities marked with a `Prefab` tag serve as templates. Instances are created via
    an `IsA` relationship that inherits components from the prefab — shared components are stored
@@ -318,9 +318,9 @@
 
 ## State Machines
 
-| ID       | Feature                      | Requirements |
-|----------|------------------------------|--------------|
-| F-1.1.38 | ECS-Integrated State Machine | R-1.1.38     |
+| ID       | Feature                     |
+|----------|------------------------------|
+| F-1.1.38 | ECS-Integrated State Machine|
 
 1. **F-1.1.38** — Typed state components with `OnEnter`, `OnExit`, and `OnTransition` observer
    hooks. States are components — transitioning replaces one state component with another,

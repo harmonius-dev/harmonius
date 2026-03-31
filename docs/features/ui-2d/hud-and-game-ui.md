@@ -10,7 +10,6 @@ coding by resource type, animated drain/fill, predicted damage overlays (showing
 before it applies), and absorb shield overlays. Must render efficiently for raid frames displaying
 40+ player bars simultaneously.
 
-- **Requirements:** R-10.3.1
 - **Dependencies:** F-10.1.1, F-10.1.6
 - **Platform notes:** None
 
@@ -22,7 +21,6 @@ effect name, description, source, and remaining duration. The system must handle
 (30+ effects in MMO raids) with priority-based filtering and grouping (player buffs, raid buffs,
 debuffs, dispellable effects).
 
-- **Requirements:** R-10.3.2
 - **Dependencies:** F-10.1.1, F-10.2.6, F-10.1.6
 - **Platform notes:** None
 
@@ -33,7 +31,6 @@ radial cooldown sweeps, charge counts, range/usability tinting, and keybind labe
 action bar pages, stance/form-conditional bars, and macro icons. Cooldown indicators must be
 frame-accurate with the game simulation to avoid abilities appearing ready before they are.
 
-- **Requirements:** R-10.3.3
 - **Dependencies:** F-10.1.1, F-10.1.6, F-10.2.7
 - **Platform notes:** None
 
@@ -47,7 +44,6 @@ cast bar. Must scale to hundreds of visible nameplates in MMO cities and battleg
 LOD-based culling (distance fade, importance-based filtering), occlusion culling against terrain,
 and overlap avoidance to prevent stacking.
 
-- **Requirements:** R-10.3.4
 - **Dependencies:** F-10.1.1, F-10.3.1, F-10.4.1
 - **Platform notes:** Mobile caps visible nameplates lower (50 vs 200 on desktop) with more
   aggressive distance culling to stay within widget and draw call budgets.
@@ -60,7 +56,6 @@ arcing, sticky), merge repeated hits into cumulative totals, and color-code by d
 (physical, fire, frost, etc.). Must handle burst scenarios with dozens of simultaneous damage events
 without visual clutter.
 
-- **Requirements:** R-10.3.5
 - **Dependencies:** F-10.1.2, F-10.3.4, F-10.4.2
 - **Platform notes:** None
 
@@ -73,7 +68,6 @@ party members, NPCs, quest objectives, resource nodes, and points of interest. T
 supports zoom, pan, fog-of-war, zone boundaries, waypoint placement, flight path overlays, and
 dungeon floor plans. Both map views must update marker positions in real time for moving entities.
 
-- **Requirements:** R-10.3.6
 - **Dependencies:** F-10.1.1, F-10.4.4
 - **Platform notes:** None
 
@@ -85,7 +79,6 @@ directional compass indicators, and distance displays for tracked objectives. Th
 handle complex MMO quest structures: multi-step chains, branching objectives, daily/weekly resets,
 and group quest shared progress.
 
-- **Requirements:** R-10.3.7
 - **Dependencies:** F-10.1.1, F-10.1.6, F-10.3.6
 - **Platform notes:** None
 
@@ -99,7 +92,6 @@ name and item links, and inline icon/emoji support. Moderation features include 
 spam throttling, ignore lists, and report functionality. Must handle high message throughput in MMO
 cities where hundreds of players chat simultaneously.
 
-- **Requirements:** R-10.3.8
 - **Dependencies:** F-10.2.1, F-10.2.2, F-10.2.5, F-10.1.6
 - **Platform notes:** None
 
@@ -113,7 +105,6 @@ Supports multiple container types: player bags, bank tabs, guild bank, vendor bu
 windows, trade windows, and mail attachments. All container views share the same grid widget with
 context-specific behavior.
 
-- **Requirements:** R-10.3.9
 - **Dependencies:** F-10.1.1, F-10.2.7, F-10.2.5, F-10.2.6
 - **Platform notes:** None
 
@@ -131,7 +122,6 @@ compass supports both 2D (top-down) and 3D (first/third-person) camera modes. Co
 strip, arc, minimal dot) is configurable per project. On mobile, the compass can be replaced with or
 augmented by edge-of-screen directional arrows (off-screen indicators) for tracked objectives.
 
-- **Requirements:** R-10.3.10
 - **Dependencies:** F-10.1.1 (Widget Tree), F-10.3.7 (Quest Tracker), F-6.2.1 (Input Actions)
 - **Platform notes:** Mobile uses simplified compass with fewer markers to avoid clutter.
 
@@ -146,7 +136,6 @@ overlap avoidance. The system works with both 3D perspectives and 2D top-down ca
 visibility is controlled per-marker (some objectives show only on the compass, others show
 off-screen arrows, both, or neither).
 
-- **Requirements:** R-10.3.11
 - **Dependencies:** F-10.3.10 (Compass), F-10.3.7 (Quest Tracker), F-2.10.4 (View Setup)
 - **Platform notes:** None
 
@@ -165,7 +154,6 @@ explores, revealing terrain progressively (integrating with fog of war F-13.20.1
 minimap is rendered to a texture that the minimap widget (F-10.3.6) displays with rotation, zoom,
 and icon overlay.
 
-- **Requirements:** R-10.3.12
 - **Dependencies:** F-10.3.6 (Minimap Widget), F-3.2.1 (Terrain), F-13.20.1 (Fog of War), F-3.6.15
   (Road Network)
 - **Platform notes:** Minimap texture resolution scales with platform (256x256 mobile, 512x512
@@ -185,7 +173,6 @@ world map renders on a globe with zoom-to-surface transitions. Map data is gener
 procedural generation output (F-3.6.x) and cached as tiled image pyramids for efficient zoom
 rendering.
 
-- **Requirements:** R-10.3.13
 - **Dependencies:** F-10.3.6 (Minimap Widget), F-3.6.36 (Factions), F-3.6.35 (Cities), F-13.20.1
   (Fog of War), F-13.24.5 (Fast Travel)
 - **Platform notes:** Mobile uses lower-resolution tiled image pyramids and fewer zoom levels to
@@ -206,7 +193,6 @@ generated map entirely for areas requiring maximum artistic control. The map ren
 blends static artistic layers with dynamic data layers (player position, quest markers, fog of war)
 so artistic maps remain functional.
 
-- **Requirements:** R-10.3.14
 - **Dependencies:** F-10.3.13 (World Map), F-10.4.4 (UI Atlas), F-2.9.1 (Post-Processing)
 - **Platform notes:** None
 
@@ -226,7 +212,6 @@ The quest tracker (F-10.3.7) drives marker visibility — tracking a quest shows
 untracking hides them. Markers support clustering at zoom levels where individual icons would
 overlap.
 
-- **Requirements:** R-10.3.15
 - **Dependencies:** F-10.3.6 (Minimap), F-10.3.10 (Compass), F-10.3.7 (Quest Tracker), F-13.6.1
   (Quest System), F-3.6.40 (Creature Placement)
 - **Platform notes:** Marker count is capped per view to maintain performance. Mobile shows fewer

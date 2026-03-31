@@ -2,9 +2,9 @@
 
 ## Entity Editing
 
-| ID        | Feature       | Requirements |
-|-----------|---------------|--------------|
-| F-15.21.1 | Entity Editor | R-15.21.1    |
+| ID | Feature |
+| ----------- | --------------- |
+| F-15.21.1 | Entity Editor |
 
 1. **F-15.21.1** — An inspector panel for viewing and editing entity components. Displays all
    components attached to the selected entity with type-appropriate property widgets. Supports
@@ -16,11 +16,11 @@
 
 ## Graph Editors
 
-| ID        | Feature                | Requirements |
-|-----------|------------------------|--------------|
-| F-15.21.2 | Animation Graph Editor | R-15.21.2    |
-| F-15.21.3 | Behavior Tree Editor   | R-15.21.3    |
-| F-15.21.4 | State Machine Editor   | R-15.21.4    |
+| ID | Feature |
+| ----------- | ------------------------ |
+| F-15.21.2 | Animation Graph Editor |
+| F-15.21.3 | Behavior Tree Editor |
+| F-15.21.4 | State Machine Editor |
 
 1. **F-15.21.2** — A visual graph editor for animation blending, transitions, and state machines.
    Nodes represent animation clips, blend nodes, IK targets, and procedural generators. Edges define
@@ -45,13 +45,13 @@
 
 ## Data Table Editors
 
-| ID        | Feature               | Requirements |
-|-----------|-----------------------|--------------|
-| F-15.21.5 | Quest Editor          | R-15.21.5    |
-| F-15.21.6 | Loot Table Editor     | R-15.21.6    |
-| F-15.21.7 | Ability Ledger        | R-15.21.7    |
-| F-15.21.8 | Equipment Stat Tables | R-15.21.8    |
-| F-15.21.9 | Price Ledger          | R-15.21.9    |
+| ID | Feature |
+| ----------- | ----------------------- |
+| F-15.21.5 | Quest Editor |
+| F-15.21.6 | Loot Table Editor |
+| F-15.21.7 | Ability Ledger |
+| F-15.21.8 | Equipment Stat Tables |
+| F-15.21.9 | Price Ledger |
 
 1. **F-15.21.5** — A visual quest graph editor for authoring quest chains with objectives,
    prerequisites, branching paths, and rewards. Each quest node displays its objectives, completion
@@ -90,11 +90,11 @@
 
 ## Visual Graph Editors
 
-| ID         | Feature                    | Requirements |
-|------------|----------------------------|--------------|
-| F-15.21.10 | Visual Effect Graph Editor | R-15.21.10   |
-| F-15.21.11 | Material Graph Editor      | R-15.21.11   |
-| F-15.21.12 | Custom Logic Graph Nodes   | R-15.21.12   |
+| ID | Feature |
+| ------------ | ---------------------------- |
+| F-15.21.10 | Visual Effect Graph Editor |
+| F-15.21.11 | Material Graph Editor |
+| F-15.21.12 | Custom Logic Graph Nodes |
 
 1. **F-15.21.10** — A node-based VFX authoring editor that wraps the existing effect graph system
    (F-11.6.1). Provides specialized nodes for particle emission, force fields, collision, rendering,

@@ -1,150 +1,64 @@
 # R-15.9 -- AI Editor Assistant Requirements
 
-## Voice Interaction
+## Requirements
 
-| ID        | Derived From                                             |
-|-----------|----------------------------------------------------------|
-| R-15.9.1a | [F-15.9.1a](../../features/tools-editor/ai-assistant.md) |
-| R-15.9.1b | [F-15.9.1b](../../features/tools-editor/ai-assistant.md) |
-| R-15.9.1c | [F-15.9.1c](../../features/tools-editor/ai-assistant.md) |
+1. **R-15.9.1** — The engine **SHALL** capture voice input via platform-native audio APIs, process
+   it through a configurable STT backend, and translate transcribed commands into editor tool
+   invocations via an LLM agent with conversational context.
+   - **Rationale:** Voice interaction enables hands-free editing for viewport-focused workflows.
+   - **Verification:** Issue a voice command to place a light, follow up with "rotate it 10
+     degrees," and verify the correct object is modified.
 
-1. **R-15.9.1a** — The editor **SHALL** capture live voice input via platform-native audio APIs (TCC
-   on macOS, WASAPI on Windows, PipeWire on Linux) and process it through a configurable local or
-   remote STT backend, streaming transcription results with word-level timestamps.
-   - **Rationale:** Voice input requires platform-native microphone access and configurable privacy
-     tradeoffs.
-   - **Verification:** Integration test: speak a known command and verify transcription accuracy for
-     common editor commands.
-2. **R-15.9.1b** — The editor **SHALL** translate natural language voice commands into structured
-   editor tool invocations via an LLM agent, maintaining conversational context so follow-up
-   commands reference the previously created or selected object.
-   - **Rationale:** Natural language interaction removes the need for memorized command syntax.
-   - **Verification:** Unit test: issue a creation command followed by "rotate it 10 degrees" and
-     verify the follow-up resolves to the previously created object.
-3. **R-15.9.1c** — The editor **SHALL** support push-to-talk and always-listening voice activation
-   modes, configurable per user in editor preferences, with push-to-talk activating the microphone
-   only while the configured key is held.
-   - **Rationale:** Different work environments require different activation modes.
-   - **Verification:** Unit test: verify push-to-talk captures audio only while the key is held and
-     stops on release.
+2. **R-15.9.2** — The engine **SHALL** expose every user-facing editor feature as a tool definition
+   accessible to the AI assistant, with all assistant actions participating in the undo/redo stack.
+   - **Rationale:** Complete tool coverage ensures the assistant has no capability gaps versus
+     manual interaction.
+   - **Verification:** Invoke an assistant tool action and verify it appears in the undo stack.
 
-## Tool Interface
-
-| ID       | Derived From                                            |
-|----------|---------------------------------------------------------|
-| R-15.9.2 | [F-15.9.2](../../features/tools-editor/ai-assistant.md) |
-| R-15.9.3 | [F-15.9.3](../../features/tools-editor/ai-assistant.md) |
-
-1. **R-15.9.2** — The editor **SHALL** expose every user-facing feature as a tool definition with
-   parameter schemas and validation, enabling the AI assistant to invoke any editor feature with all
-   actions participating in the undo/redo stack.
-   - **Rationale:** Complete tool coverage ensures the assistant has no capability gaps vs manual
-     interaction.
-   - **Verification:** Unit test: verify every plugin API feature has a corresponding tool
-     definition. Invoke a tool via the assistant and verify it appears in the undo stack.
-2. **R-15.9.3** — The editor **SHALL** enable the AI assistant to manipulate visual elements
-   (material colors, graph nodes, splines, terrain heightmaps, entity transforms) using the same
-   input-action APIs as mouse/keyboard, ensuring identical validation, snapping, and constraint
-   behavior.
+3. **R-15.9.3** — The engine **SHALL** enable the AI assistant to manipulate visual elements
+   (material colors, graph nodes, splines, terrain, entities) using the same input-action APIs as
+   manual input.
    - **Rationale:** API parity ensures assistant operations behave identically to manual operations.
-   - **Verification:** Unit test: perform a terrain paint via the assistant and verify it matches
-     equivalent manual paint output.
+   - **Verification:** Paint terrain via assistant and verify the result matches equivalent manual
+     brush strokes.
 
-## Recommendations
+4. **R-15.9.4** — The engine **SHALL** display shortcut tooltips when users perform actions via
+   menus, shown at most once per shortcut per session with platform-appropriate modifier keys.
+   - **Rationale:** Progressive discovery improves productivity without being intrusive.
+   - **Verification:** Trigger a shortcutable action via menu twice and verify the tooltip appears
+     only once.
 
-| ID       | Derived From                                            |
-|----------|---------------------------------------------------------|
-| R-15.9.4 | [F-15.9.4](../../features/tools-editor/ai-assistant.md) |
-| R-15.9.5 | [F-15.9.5](../../features/tools-editor/ai-assistant.md) |
+5. **R-15.9.5** — The engine **SHALL** provide step-by-step visual overlays for help queries,
+   highlighting target UI elements and fading after the guided action completes.
+   - **Rationale:** Visual guidance is more effective than text for spatial editor workflows.
+   - **Verification:** Rearrange panels and verify overlay positions match the correct widgets.
 
-1. **R-15.9.4** — The editor **SHALL** display shortcut tooltips when users perform actions via
-   menus that have keyboard shortcuts, shown at most once per shortcut per session, with
-   platform-appropriate modifier keys (Cmd/Ctrl).
-   - **Rationale:** Progressive shortcut discovery improves long-term productivity without being
-     intrusive.
-   - **Verification:** Unit test: trigger a shortcutable action via menu twice and verify the
-     tooltip appears only on the first occurrence.
-2. **R-15.9.5** — The editor **SHALL** provide step-by-step visual overlays for "how do I" queries,
-   highlighting target UI elements with a pulse and fading after the guided action is completed,
-   with overlay positions correct regardless of panel layout.
-   - **Rationale:** Visual guidance is more effective than text-only help for spatial editor
-     workflows.
-   - **Verification:** Unit test: rearrange panels and verify overlay positions match the correct
-     widgets.
+6. **R-15.9.6** — The engine **SHALL** provide a headless editor API with UI automation primitives,
+   support for concurrent isolated AI agents, and CI/CD pipeline integration.
+   - **Rationale:** Headless automation enables unattended content generation and testing in CI.
+   - **Verification:** Run two concurrent agents and verify each has a fully isolated undo stack and
+     selection state.
 
-## Automation
+7. **R-15.9.7** — The engine **SHALL** capture screenshots and screen recordings using platform APIs
+   (ScreenCaptureKit, DXGI, PipeWire), feeding captures into the AI visual pipeline.
+   - **Rationale:** Visual context enables the assistant to diagnose material and lighting issues
+     from screenshots.
+   - **Verification:** Capture a screenshot and verify dimensions match the configured resolution.
 
-| ID        | Derived From                                             |
-|-----------|----------------------------------------------------------|
-| R-15.9.6a | [F-15.9.6a](../../features/tools-editor/ai-assistant.md) |
-| R-15.9.6b | [F-15.9.6b](../../features/tools-editor/ai-assistant.md) |
-| R-15.9.6c | [F-15.9.6c](../../features/tools-editor/ai-assistant.md) |
+8. **R-15.9.8** — The engine **SHALL** expose a UI accessibility tree with widget types, labels,
+   values, and hierarchy via platform-native APIs, with queries completing within 5 ms.
+   - **Rationale:** Structured UI state enables fast intent resolution without pixel analysis.
+   - **Verification:** Query the accessibility tree and verify completion within 5 ms.
 
-1. **R-15.9.6a** — The editor **SHALL** provide a headless API mirroring the UI interaction model
-   for automation, with low-level UI primitives for widget interaction and a GPU context via EGL or
-   headless Metal for CI servers without a display.
-   - **Rationale:** CI pipelines require headless editor automation for content generation and
-     testing.
-   - **Verification:** Integration test: run a headless operation and verify it produces identical
-     results to the interactive workflow.
-2. **R-15.9.6b** — The editor **SHALL** support multiple concurrent AI agents with isolated contexts
-   and independent undo stacks, with programmatic lifecycle management (create, run, terminate).
-   - **Rationale:** Parallel agent workflows require isolation to prevent cross-contamination.
-   - **Verification:** Unit test: run two agents concurrently and verify each has a fully isolated
-     command context.
-3. **R-15.9.6c** — The editor **SHALL** support agents running in CI pipelines for content
-   generation and regression testing, with build triggers and result reporting as headless API
-   operations.
-   - **Rationale:** Automated content production and testing must integrate into CI/CD workflows.
-   - **Verification:** Integration test: run a CI pipeline agent and verify it produces artifacts
-     and reports results.
+9. **R-15.9.9** — The engine **SHALL** combine voice, screenshots, accessibility tree, and
+   conversation history for multi-modal intent resolution, with structured data taking precedence.
+   - **Rationale:** Ambiguous commands require spatial and selection context for correct resolution.
+   - **Verification:** Issue an ambiguous command and verify it resolves using the current selection
+     context.
 
-## Capture and Analysis
-
-| ID       | Derived From                                            |
-|----------|---------------------------------------------------------|
-| R-15.9.7 | [F-15.9.7](../../features/tools-editor/ai-assistant.md) |
-| R-15.9.8 | [F-15.9.8](../../features/tools-editor/ai-assistant.md) |
-| R-15.9.9 | [F-15.9.9](../../features/tools-editor/ai-assistant.md) |
-
-1. **R-15.9.7** — The editor **SHALL** capture viewport screenshots and screen recordings using
-   platform-specific APIs (ScreenCaptureKit, DXGI, PipeWire), feeding captures into the AI visual
-   understanding pipeline.
-   - **Rationale:** Visual context enables the assistant to diagnose lighting and material issues.
-   - **Verification:** Unit test: capture a screenshot and verify dimensions match configured
-     settings.
-2. **R-15.9.8** — The editor **SHALL** expose a UI accessibility tree with widget types, labels,
-   values, and hierarchy via platform-native APIs (NSAccessibility, UIA, AT-SPI2), with tree queries
-   completing within 5 ms.
-   - **Rationale:** The assistant needs structured UI state for intent resolution without pixel
-     analysis.
-   - **Verification:** Benchmark: query the accessibility tree and verify completion within 5 ms.
-     Verify the tree reflects current selection and panel state.
-3. **R-15.9.9** — The editor **SHALL** combine voice, screenshots, and selection state for intent
-   resolution, with structured data taking precedence over pixel analysis, and a unified context
-   window for the LLM agent.
-   - **Rationale:** Ambiguous voice commands require spatial and selection context for correct
-     resolution.
-   - **Verification:** Unit test: issue an ambiguous voice command and verify it resolves correctly
-     using the current selection context.
-
-## Administration
-
-| ID        | Derived From                                             |
-|-----------|----------------------------------------------------------|
-| R-15.9.10 | [F-15.9.10](../../features/tools-editor/ai-assistant.md) |
-
-1. **R-15.9.10** — The engine **SHALL** support per-user and per-team voice control enable/disable,
-   tool invocation allowlists and blocklists, usage quotas and rate limits, configurable AI provider
-   and model selection, and a separate audit trail for assistant interactions.
-   - **Rationale:** Enterprise environments require granular control over AI assistance access and
-     cost.
-   - **Verification:** Unit test: block a tool invocation and verify the assistant rejects it.
-
----
-
-## User Story Traceability
-
-User stories for this domain are maintained in
-[user-stories/tools-editor/ai-assistant.md](../../user-stories/tools-editor/ai-assistant.md).
-Requirements in this document are derived from those user stories.
+10. **R-15.9.10** — The engine **SHALL** support per-user tool invocation allowlists, usage quotas,
+    rate limits, configurable AI provider selection, and a separate audit trail for assistant
+    interactions.
+    - **Rationale:** Enterprise environments require granular control over AI assistance access and
+      cost.
+    - **Verification:** Block a tool invocation via allowlist and verify the assistant rejects it.

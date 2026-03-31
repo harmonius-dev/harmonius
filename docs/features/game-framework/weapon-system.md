@@ -2,13 +2,13 @@
 
 ## Fire Modes and Ammunition
 
-| ID         | Feature                          | Requirements |
-|------------|----------------------------------|--------------|
-| F-13.16.1  | Weapon Fire Mode System          | R-13.16.1    |
-| F-13.16.2a | Magazine and Ammo Management     | R-13.16.2a   |
-| F-13.16.2b | Reload Mechanics                 | R-13.16.2b   |
-| F-13.16.2c | Ammo Type System                 | R-13.16.2c   |
-| F-13.16.3  | Recoil Pattern and Weapon Spread | R-13.16.3    |
+| ID         | Feature                          |
+|------------|----------------------------------|
+| F-13.16.1  | Weapon Fire Mode System          |
+| F-13.16.2a | Magazine and Ammo Management     |
+| F-13.16.2b | Reload Mechanics                 |
+| F-13.16.2c | Ammo Type System                 |
+| F-13.16.3  | Recoil Pattern and Weapon Spread |
 
 1. **F-13.16.1** — Per-weapon configurable fire modes: semi-automatic (one shot per trigger press),
    burst (N rounds per press with configurable delay between rounds), and full-automatic (continuous
@@ -49,12 +49,12 @@
 
 ## Ballistics
 
-| ID         | Feature                          | Requirements |
-|------------|----------------------------------|--------------|
-| F-13.16.4a | Projectile Drop and Travel Time  | R-13.16.4a   |
-| F-13.16.4b | Wind Deflection                  | R-13.16.4b   |
-| F-13.16.4c | Surface Penetration and Ricochet | R-13.16.4c   |
-| F-13.16.4d | Weapon Zeroing                   | R-13.16.4d   |
+| ID         | Feature                          |
+|------------|----------------------------------|
+| F-13.16.4a | Projectile Drop and Travel Time  |
+| F-13.16.4b | Wind Deflection                  |
+| F-13.16.4c | Surface Penetration and Ricochet |
+| F-13.16.4d | Weapon Zeroing                   |
 
 1. **F-13.16.4a** — Projectile physics for gravity-based bullet drop and finite travel time. Each
    ammo type defines mass, muzzle velocity, and aerodynamic drag coefficient. Projectiles follow a
@@ -87,11 +87,11 @@
 
 ## Weapon Customization
 
-| ID         | Feature                       | Requirements |
-|------------|-------------------------------|--------------|
-| F-13.16.5a | Attachment Slot Model         | R-13.16.5a   |
-| F-13.16.5b | Attachment Visual Integration | R-13.16.5b   |
-| F-13.16.5c | Attachment Customization UI   | R-13.16.5c   |
+| ID         | Feature                       |
+|------------|-------------------------------|
+| F-13.16.5a | Attachment Slot Model         |
+| F-13.16.5b | Attachment Visual Integration |
+| F-13.16.5c | Attachment Customization UI   |
 
 1. **F-13.16.5a** — Data-driven slot system for weapon modification. Weapons define named attachment
    slots (optic, barrel, muzzle, grip, stock, magazine, rail accessory). Each slot specifies a
@@ -118,12 +118,12 @@
 
 ## Surface Response
 
-| ID         | Feature                 | Requirements |
-|------------|-------------------------|--------------|
-| F-13.16.6a | Surface Type Tag System | R-13.16.6a   |
-| F-13.16.6b | Impact VFX Response     | R-13.16.6b   |
-| F-13.16.6c | Impact Audio Response   | R-13.16.6c   |
-| F-13.16.6d | Impact Decal Response   | R-13.16.6d   |
+| ID         | Feature                 |
+|------------|-------------------------|
+| F-13.16.6a | Surface Type Tag System |
+| F-13.16.6b | Impact VFX Response     |
+| F-13.16.6c | Impact Audio Response   |
+| F-13.16.6d | Impact Decal Response   |
 
 1. **F-13.16.6a** — Physics material classification for impact response dispatch. Physics materials
    (F-4.2.9) carry a surface type tag enum (metal, wood, concrete, dirt, glass, water, flesh, and
@@ -156,12 +156,12 @@
 
 ## Projectile Archetypes and Interactions
 
-| ID         | Feature                | Requirements |
-|------------|------------------------|--------------|
-| F-13.16.7  | Projectile Archetypes  | R-13.16.7    |
-| F-13.16.8  | Explosive Projectiles  | R-13.16.8    |
-| F-13.16.9  | Projectile Lifetime    | R-13.16.9    |
-| F-13.16.10 | Projectile Interaction | R-13.16.10   |
+| ID         | Feature                |
+|------------|------------------------|
+| F-13.16.7  | Projectile Archetypes  |
+| F-13.16.8  | Explosive Projectiles  |
+| F-13.16.9  | Projectile Lifetime    |
+| F-13.16.10 | Projectile Interaction |
 
 1. **F-13.16.7** — Named projectile categories with preset physics profiles and visual behaviors.
    Bullet: hitscan or very fast linear travel, minimal drop, tracer VFX. Missile: homing toward a

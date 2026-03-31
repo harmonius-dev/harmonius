@@ -2,10 +2,10 @@
 
 ## 3D Positioning
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-5.2.1 | 3D Sound Positioning and Doppler | R-5.2.1      |
-| F-5.2.2 | Distance Attenuation Curves      | R-5.2.2      |
+| ID      | Feature                          |
+|---------|----------------------------------|
+| F-5.2.1 | 3D Sound Positioning and Doppler |
+| F-5.2.2 | Distance Attenuation Curves      |
 
 1. **F-5.2.1** — Position sound sources in world space and resolve per-listener panning, distance
    gain, and Doppler pitch shift every audio frame. The system interpolates source and listener
@@ -24,10 +24,10 @@
 
 ## Binaural and Ambisonics
 
-| ID      | Feature                          | Requirements |
-|---------|----------------------------------|--------------|
-| F-5.2.3 | HRTF Binaural Rendering          | R-5.2.3      |
-| F-5.2.4 | Ambisonics Encoding and Decoding | R-5.2.4      |
+| ID      | Feature                          |
+|---------|----------------------------------|
+| F-5.2.3 | HRTF Binaural Rendering          |
+| F-5.2.4 | Ambisonics Encoding and Decoding |
 
 1. **F-5.2.3** — Render spatialized audio through head-related transfer functions for headphone
    output, providing accurate elevation and front-back cues. HRTF datasets are loaded as swappable
@@ -46,10 +46,10 @@
 
 ## Occlusion and Propagation
 
-| ID      | Feature                                | Requirements |
-|---------|----------------------------------------|--------------|
-| F-5.2.5 | Occlusion and Obstruction Filtering    | R-5.2.5      |
-| F-5.2.6 | Sound Propagation via Portals and Rays | R-5.2.6      |
+| ID      | Feature                                |
+|---------|----------------------------------------|
+| F-5.2.5 | Occlusion and Obstruction Filtering    |
+| F-5.2.6 | Sound Propagation via Portals and Rays |
 
 1. **F-5.2.5** — Attenuate and low-pass filter sounds whose direct path to the listener is blocked
    by geometry (occlusion) or partially blocked (obstruction). Occlusion queries ray-cast against
@@ -70,9 +70,9 @@
 
 ## Reverb and Reflections
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-5.2.7 | Reverb Zones and Early Reflections | R-5.2.7      |
+| ID      | Feature                            |
+|---------|------------------------------------|
+| F-5.2.7 | Reverb Zones and Early Reflections |
 
 1. **F-5.2.7** — Define axis-aligned or convex reverb volumes that apply late reverberation and
    early reflection patterns to sounds playing within or propagating through them. Zones blend

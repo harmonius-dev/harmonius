@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Graph-Based Editors
 
@@ -54,7 +53,7 @@
 
 1. **F-15.1.4** — Entity selection and hierarchy
 2. **F-15.1.8** — Plugin-driven component inspectors
-3. **F-15.2.1** — Prefab overrides display
+3. **F-15.2.1** — Entity template overrides display
 
 ### Cross-Cutting Dependencies
 
@@ -172,7 +171,7 @@ classDiagram
         +Entity entity
         +Vec~ComponentPanel~ component_panels
         +HierarchyTree hierarchy
-        +PrefabOverrideDisplay overrides
+        +TemplateOverrideDisplay overrides
         +add_component(type_id) Result
         +remove_component(type_id) Result
         +reparent(new_parent) Result
@@ -194,17 +193,17 @@ classDiagram
         +drag_reparent(entity, new_parent)
     }
 
-    class PrefabOverrideDisplay {
-        +AssetId prefab
+    class TemplateOverrideDisplay {
+        +AssetId template
         +Vec~PropertyOverride~ overrides
         +revert_override(path) Result
         +revert_all() Result
-        +apply_to_prefab() Result
+        +apply_to_template() Result
     }
 
     class PropertyOverride {
         +PropertyPath path
-        +DynamicValue prefab_value
+        +DynamicValue template_value
         +DynamicValue instance_value
     }
 
@@ -259,8 +258,8 @@ classDiagram
     ColumnDef --> ColumnType
     EntityEditor *-- ComponentPanel
     EntityEditor *-- HierarchyTree
-    EntityEditor *-- PrefabOverrideDisplay
-    PrefabOverrideDisplay *-- PropertyOverride
+    EntityEditor *-- TemplateOverrideDisplay
+    TemplateOverrideDisplay *-- PropertyOverride
 
     AnimGraphEditor --> GraphEditorWidget
     BehaviorTreeEditor --> GraphEditorWidget
@@ -346,7 +345,7 @@ harmonius_editor/
 │   ├── table_widget.rs       # TableEditorWidget —
 │   │                         # shared table framework
 │   ├── entity_editor.rs      # EntityEditor — component
-│   │                         # list, hierarchy, prefabs
+│   │                         # list, hierarchy, templates
 │   ├── graph/
 │   │   ├── anim_graph.rs     # AnimGraphEditor — blend,
 │   │   │                     # additive, IK, state
@@ -1062,13 +1061,13 @@ impl PriceLedger {
 
 ```rust
 /// The entity editor provides component
-/// inspection, hierarchy management, and prefab
-/// override display.
+/// inspection, hierarchy management, and entity
+/// template override display.
 pub struct EntityEditor {
     entity: Entity,
     component_panels: Vec<ComponentPanel>,
     hierarchy: HierarchyTree,
-    overrides: Option<PrefabOverrideDisplay>,
+    overrides: Option<TemplateOverrideDisplay>,
 }
 
 /// A panel for a single component on the entity.
@@ -1086,18 +1085,18 @@ pub struct HierarchyTree {
     expanded: Vec<Entity>,
 }
 
-/// Display of prefab property overrides on an
-/// entity instance.
-pub struct PrefabOverrideDisplay {
-    pub prefab: AssetId,
+/// Display of entity template property overrides on
+/// an entity instance.
+pub struct TemplateOverrideDisplay {
+    pub template: AssetId,
     pub overrides: Vec<PropertyOverride>,
 }
 
-/// A single property override on a prefab
+/// A single property override on an entity template
 /// instance.
 pub struct PropertyOverride {
     pub path: PropertyPath,
-    pub prefab_value: DynamicValue,
+    pub template_value: DynamicValue,
     pub instance_value: DynamicValue,
 }
 
@@ -1166,7 +1165,7 @@ impl HierarchyTree {
     ) -> Vec<Entity>;
 }
 
-impl PrefabOverrideDisplay {
+impl TemplateOverrideDisplay {
     /// Revert a single property override.
     pub fn revert_override(
         &mut self,
@@ -1183,8 +1182,8 @@ impl PrefabOverrideDisplay {
     ) -> Result<(), CommandError>;
 
     /// Apply instance overrides back to the
-    /// source prefab asset.
-    pub fn apply_to_prefab(
+    /// source entity template asset.
+    pub fn apply_to_template(
         &mut self,
         world: &mut World,
     ) -> Result<(), AssetError>;
@@ -1282,5 +1281,5 @@ Test cases are in the companion file
 4. **Cross-editor references.** A quest node may reference a loot table. Should cross-editor
    references be clickable links that open the referenced editor?
 
-5. **Prefab override diff display.** Should prefab overrides show a visual diff (red/green
-   highlighting) or a side-by-side comparison panel?
+5. **Entity template override diff display.** Should entity template overrides show a visual diff
+   (red/green highlighting) or a side-by-side comparison panel?

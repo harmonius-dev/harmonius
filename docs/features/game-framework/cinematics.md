@@ -1,44 +1,45 @@
 # 13.5 — Cinematics
 
-## Sequencer
+## Cinematics Editor
 
-| ID       | Feature                | Requirements |
-|----------|------------------------|--------------|
-| F-13.5.1 | Sequencer and Timeline | R-13.5.1     |
-| F-13.5.2 | Cutscene Camera System | R-13.5.2     |
+| ID       | Feature                |
+|----------|------------------------|
+| F-13.5.1 | Cinematics Editor and Timeline |
+| F-13.5.2 | Cutscene Camera System |
 
 1. **F-13.5.1** — A multi-track timeline system for authoring and playing back cinematics. Each
    track controls a specific aspect: camera, actor animation, audio, VFX, lighting overrides,
    gameplay triggers, and UI overlays. Tracks contain keyframed clips with configurable easing
-   curves. The sequencer evaluates all active tracks each frame and produces deterministic output
-   regardless of framerate. Supports nested sub-sequences for reusable cinematic building blocks.
+   curves. The cinematics editor evaluates all active tracks each frame and produces deterministic
+   output regardless of framerate. Supports nested sub-sequences for reusable cinematic building
+   blocks.
    - **Deps:** F-1.5.1 (Typed Event Channels), F-9.4.1 (Animation State Graph)
 2. **F-13.5.2** — Provides cinematic camera modes that override the gameplay camera: fixed shot,
    tracking shot (follow target with offset), orbit, dolly zoom, and handheld shake. Cameras blend
    between modes using configurable transition curves. Supports depth-of-field overrides, focal
    target tracking, and aspect ratio changes (letterboxing) per shot. Camera cuts and transitions
-   are driven by the sequencer timeline.
+   are driven by the cinematics editor timeline.
    - **Deps:** F-13.5.1
 
 ## Camera Motion
 
-| ID       | Feature                  | Requirements |
-|----------|--------------------------|--------------|
-| F-13.5.3 | Camera Rails and Splines | R-13.5.3     |
+| ID       | Feature                  |
+|----------|--------------------------|
+| F-13.5.3 | Camera Rails and Splines |
 
 1. **F-13.5.3** — Defines camera paths as Catmull-Rom or Bezier splines placed in the world. The
    camera follows the spline with configurable speed, acceleration, and look-at targets. Spline
-   segments can be triggered by sequencer events, player proximity, or script commands. Supports
-   branching paths where the active branch is selected by gameplay conditions (e.g., different
-   camera angles depending on which boss phase is active).
+   segments can be triggered by cinematics editor events, player proximity, or script commands.
+   Supports branching paths where the active branch is selected by gameplay conditions (e.g.,
+   different camera angles depending on which boss phase is active).
    - **Deps:** F-13.5.2
 
 ## Actor Integration
 
-| ID       | Feature                                | Requirements |
-|----------|----------------------------------------|--------------|
-| F-13.5.4 | Actor Animation Blending in Cinematics | R-13.5.4     |
-| F-13.5.5 | Dialogue Triggers and Subtitles        | R-13.5.5     |
+| ID       | Feature                                |
+|----------|----------------------------------------|
+| F-13.5.4 | Actor Animation Blending in Cinematics |
+| F-13.5.5 | Dialogue Triggers and Subtitles        |
 
 1. **F-13.5.4** — Blends NPC and player character animations from their gameplay state machine into
    cinematic-driven poses when a cutscene begins, and back again when it ends. Blend-in and
@@ -55,12 +56,12 @@
 
 ## Player Control
 
-| ID        | Feature                            | Requirements |
-|-----------|------------------------------------|--------------|
-| F-13.5.6a | Cutscene Skip System               | R-13.5.6a    |
-| F-13.5.6b | Cutscene Playback Speed            | R-13.5.6b    |
-| F-13.5.6c | Cutscene Pause                     | R-13.5.6c    |
-| F-13.5.7  | Letterboxing and Cinematic Framing | R-13.5.7     |
+| ID        | Feature                            |
+|-----------|------------------------------------|
+| F-13.5.6a | Cutscene Skip System               |
+| F-13.5.6b | Cutscene Playback Speed            |
+| F-13.5.6c | Cutscene Pause                     |
+| F-13.5.7  | Letterboxing and Cinematic Framing |
 
 1. **F-13.5.6a** — Allows players to skip cutscenes entirely, jumping to an end-state that applies
    all gameplay side effects (quest updates, item grants, phase transitions) without desynchronizing

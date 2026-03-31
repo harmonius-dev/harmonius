@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/ai/](../../features/ai/), [requirements/ai/](../../requirements/ai/), and
-> [user-stories/ai/](../../user-stories/ai/). The table below traces design elements to those
+> [features/ai/](../../features/), [requirements/ai/](../../requirements/), and
+> [user-stories/ai/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 | Feature  | Requirement | User Stories                |

@@ -2,21 +2,21 @@
 
 ## Plugin System
 
-| ID        | Feature                        | Requirements |
-|-----------|--------------------------------|--------------|
-| F-15.20.1 | Plugin Architecture            | R-15.20.1    |
-| F-15.20.2 | Custom Component Editors       | R-15.20.2    |
-| F-15.20.3 | In-Engine Feature Editors      | R-15.20.3    |
-| F-15.20.4 | Plugin Hot-Reload              | R-15.20.4    |
-| F-15.20.5 | Plugin Dependency Management   | R-15.20.5    |
-| F-15.20.6 | Plugin Marketplace Integration | R-15.20.6    |
+| ID | Feature |
+| ----------- | -------------------------------- |
+| F-15.20.1 | Plugin Architecture |
+| F-15.20.2 | Custom Component Editors |
+| F-15.20.3 | In-Engine Feature Editors |
+| F-15.20.4 | Plugin Hot-Reload |
+| F-15.20.5 | Plugin Dependency Management |
+| F-15.20.6 | Plugin Marketplace Integration |
 
 1. **F-15.20.1** — A stable ABI plugin system for extending the editor with custom panels,
    inspectors, gizmos, importers, and toolbar actions. Plugins are compiled as dynamic libraries
-   with a versioned C ABI boundary exposed through Rust wrapper types. The plugin host discovers
-   plugins in designated directories, validates ABI compatibility, and loads them into the editor
-   process. Plugins access editor functionality through a capability-based API that grants access
-   only to requested subsystems. via `LoadLibrary`. On Linux, `.so` via `dlopen`.
+   with a versioned stable ABI boundary exposed through Rust wrapper types. The plugin host
+   discovers plugins in designated directories, validates ABI compatibility, and loads them into the
+   editor process. Plugins access editor functionality through a capability-based API that grants
+   access only to requested subsystems. via `LoadLibrary`. On Linux, `.so` via `dlopen`.
    - **Deps:** F-15.1.8, F-1.6.1
    - **Platform:** On macOS, plugins are `.dylib` bundles loaded via `dlopen`. On Windows, `.dll`
 2. **F-15.20.2** — Plugins can register custom editor widgets for their own component types. When an
@@ -56,12 +56,12 @@
 
 ## No-Code Plugin Authoring
 
-| ID         | Feature                        | Requirements |
-|------------|--------------------------------|--------------|
-| F-15.20.7  | No-Code Editor Plugin Creation | R-15.20.7    |
-| F-15.20.8  | Plugin Logic Graphs            | R-15.20.8    |
-| F-15.20.9  | Plugin UI Authoring            | R-15.20.9    |
-| F-15.20.10 | Plugin Hot Module Reload       | R-15.20.10   |
+| ID | Feature |
+| ------------ | -------------------------------- |
+| F-15.20.7 | No-Code Editor Plugin Creation |
+| F-15.20.8 | Plugin Logic Graphs |
+| F-15.20.9 | Plugin UI Authoring |
+| F-15.20.10 | Plugin Hot Module Reload |
 
 1. **F-15.20.7** — Create editor plugins entirely using the engine's visual authoring tools — logic
    graphs (F-15.8.1), the UI editor (F-15.9.1), and custom inspector graphs — without writing any

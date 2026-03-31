@@ -1,13 +1,13 @@
-# 8.8 — Anti-Cheat and Security
+# 8.8 -- Anti-Cheat and Security
 
 ## Client Integrity
 
-| ID      | Feature                                   | Requirements |
-|---------|-------------------------------------------|--------------|
-| F-8.8.1 | Server-Side Cheat Detection               | R-8.8.1      |
-| F-8.8.2 | Client Integrity Verification             | R-8.8.2      |
-| F-8.8.3 | Behavioral Analysis and Anomaly Detection | R-8.8.3      |
-| F-8.8.4 | Economy Exploit Prevention                | R-8.8.4      |
+| ID      | Feature                                   |
+|---------|-------------------------------------------|
+| F-8.8.1 | Server-Side Cheat Detection               |
+| F-8.8.2 | Client Integrity Verification             |
+| F-8.8.3 | Behavioral Analysis and Anomaly Detection |
+| F-8.8.4 | Economy Exploit Prevention                |
 
 1. **F-8.8.1** — Server-authoritative validation of all client actions. The server independently
    simulates movement, ability usage, damage, and economy transactions, comparing client-reported
@@ -24,7 +24,7 @@
    client responds with hashed snapshots of code segments and critical data structures. Responses
    are validated against known-good hashes for the client's reported build version. Failure triggers
    escalation through the same severity pipeline as gameplay cheat detection. The system is designed
-   to raise the difficulty of tampering, not to be unbreakable — server-side validation (F-8.8.1)
+   to raise the difficulty of tampering, not to be unbreakable -- server-side validation (F-8.8.1)
    remains the primary defense.
    - **Deps:** F-8.1.5 (Encryption)
    - **Platform:** Platform-specific integrity APIs are used where available (GameGuard on
@@ -45,15 +45,15 @@
    are within bounds, drop rates match server-side loot tables). Double-spend prevention using
    transaction sequencing. Automated detection of gold farming patterns (repetitive behavior, bulk
    transfers to mule accounts). Rate limiting on high-value transactions with escalating delays.
-   - **Deps:** F-8.8.1, F-13.9.1 (Inventory Containers)
+   - **Deps:** F-8.8.1
    - **Platform:** Server-side validation; platform-agnostic. All client platforms submit economy
      operations through the same validated RPC path.
 
 ## Session Security
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-8.8.5 | Rate Limiting and Abuse Prevention | R-8.8.5      |
+| ID      | Feature                            |
+|---------|------------------------------------|
+| F-8.8.5 | Rate Limiting and Abuse Prevention |
 
 1. **F-8.8.5** — Per-connection and per-account rate limiting on all RPC calls, state updates, and
    resource requests. Each RPC type has a configurable budget (calls per second), cooldown, and

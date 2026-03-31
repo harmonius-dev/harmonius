@@ -1,11 +1,11 @@
 # 9.6 — First-Person Animation
 
-| ID      | Feature                               | Requirements |
-|---------|---------------------------------------|--------------|
-| F-9.6.1 | First-Person Camera Controller        | R-9.6.1      |
-| F-9.6.2 | Procedural Weapon Sway and Bob        | R-9.6.2      |
-| F-9.6.3 | Procedural Recoil and ADS Animation   | R-9.6.3      |
-| F-9.6.4 | Weapon Equip, Inspect, and Dual Wield | R-9.6.4      |
+| ID      | Feature                               |
+|---------|---------------------------------------|
+| F-9.6.1 | First-Person Camera Controller        |
+| F-9.6.2 | Procedural Weapon Sway and Bob        |
+| F-9.6.3 | Procedural Recoil and ADS Animation   |
+| F-9.6.4 | Weapon Equip, Inspect, and Dual Wield |
 
 1. **F-9.6.1** — Specialized camera system for first-person games with head-bob synchronized to
    locomotion speed, landing impact proportional to fall distance, procedural lean/peek, and camera

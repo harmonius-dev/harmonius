@@ -2,11 +2,11 @@
 
 ## Batching and Geometry
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-10.4.1 | Batched Quad Rendering    | R-10.4.1     |
-| F-10.4.2 | SDF Text Rendering        | R-10.4.2     |
-| F-10.4.3 | Vector Graphics Rendering | R-10.4.3     |
+| ID       | Feature                  |
+|----------|--------------------------- |
+| F-10.4.1 | Batched Quad Rendering   |
+| F-10.4.2 | SDF Text Rendering       |
+| F-10.4.3 | Vector Graphics Rendering|
 
 1. **F-10.4.1** — Render UI elements as batched textured quads submitted through the engine's mesh
    shader pipeline. Quads sharing the same texture atlas page and blend state are merged into single
@@ -32,10 +32,10 @@
 
 ## Texture and Atlas Management
 
-| ID       | Feature                           | Requirements |
-|----------|-----------------------------------|--------------|
-| F-10.4.4 | UI Atlas and Nine-Slice Rendering | R-10.4.4     |
-| F-10.4.5 | Render-to-Texture for 3D-in-UI    | R-10.4.5     |
+| ID       | Feature                          |
+|----------|----------------------------------- |
+| F-10.4.4 | UI Atlas and Nine-Slice Rendering|
+| F-10.4.5 | Render-to-Texture for 3D-in-UI   |
 
 1. **F-10.4.4** — Pack UI textures (icons, panel backgrounds, button states, borders) into
    runtime-managed atlases to minimize texture binds and maximize batching. Nine-slice (9-patch)
@@ -56,10 +56,10 @@
 
 ## Compositing
 
-| ID       | Feature                         | Requirements |
-|----------|---------------------------------|--------------|
-| F-10.4.6 | World-Space and Diegetic UI     | R-10.4.6     |
-| F-10.4.7 | Anti-Aliased Edges and Clipping | R-10.4.7     |
+| ID       | Feature                        |
+|----------|--------------------------------- |
+| F-10.4.6 | World-Space and Diegetic UI    |
+| F-10.4.7 | Anti-Aliased Edges and Clipping|
 
 1. **F-10.4.6** — Render UI elements as textured quads placed in the 3D world, subject to
    perspective, lighting, and depth testing. Supports diegetic UI (in-world screens, holographic

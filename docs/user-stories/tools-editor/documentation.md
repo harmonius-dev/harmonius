@@ -1,148 +1,66 @@
-# User Stories: Documentation and Learning
+# User Stories -- 15.19 Documentation and Learning
 
-## F-15.19.1 Auto-Generated API Reference
+## Stories
 
-| ID           | Persona                 | Features | Requirements |
-|--------------|-------------------------|----------|--------------|
-| US-15.19.1.1 | developer (P-15)        |          |              |
-| US-15.19.1.2 | designer (P-5)          |          |              |
-| US-15.19.1.3 | engine developer (P-26) |          |              |
-| US-15.19.1.4 | engine tester (P-27)    |          |              |
+| ID           | Persona                    |
+|--------------|----------------------------|
+| US-15.19.1.1 | engine developer (P-26)    |
+| US-15.19.1.2 | extension developer (P-25) |
+| US-15.19.2.1 | game designer (P-5)        |
+| US-15.19.2.2 | extension developer (P-25) |
+| US-15.19.3.1 | game designer (P-5)        |
+| US-15.19.3.2 | level designer (P-6)       |
+| US-15.19.4.1 | game designer (P-5)        |
+| US-15.19.4.2 | technical artist (P-13)    |
+| US-15.19.5.1 | game designer (P-5)        |
+| US-15.19.5.2 | localization specialist (P-18) |
+| US-15.19.6.1 | game designer (P-5)        |
+| US-15.19.6.2 | level designer (P-6)       |
+| US-15.19.7.1 | engine developer (P-26)    |
+| US-15.19.7.2 | build engineer (P-16)      |
 
-1. **US-15.19.1.1** — to search an auto-generated API reference covering every public type, trait,
-   function, and method with descriptions, parameter types, examples, and cross-references
-   - **Acceptance:** I can integrate with the engine API without reading source code
-2. **US-15.19.1.2** — to click "?" on any inspector property or node type to open the relevant API
-   reference page in the editor's help panel
-   - **Acceptance:** I can understand each setting without leaving my workspace
-3. **US-15.19.1.3** — the API reference generated as a searchable static website via rustdoc and
-   published alongside each engine release
-   - **Acceptance:** documentation stays current with the codebase
-4. **US-15.19.1.4** — the CI build to fail if any public API lacks a doc comment
-   - **Acceptance:** documentation coverage stays at 100%
+1. **US-15.19.1.1** — **As a** engine developer (P-26), **I want** auto-generated API reference from
+   Rust doc comments published as a searchable static site, **so that** documentation stays in sync
+   with code.
 
-## F-15.19.2 Logic Graph Node Documentation
+2. **US-15.19.1.2** — **As a** extension developer (P-25), **I want** in-editor help that opens the
+   relevant API page when clicking "?" on any property, **so that** I find documentation
+   contextually.
 
-| ID           | Persona                 | Features | Requirements |
-|--------------|-------------------------|----------|--------------|
-| US-15.19.2.1 | designer (P-5)          |          |              |
-| US-15.19.2.2 | tech artist (P-13)      |          |              |
-| US-15.19.2.3 | modder (P-24)           |          |              |
-| US-15.19.2.4 | engine developer (P-26) |          |              |
+3. **US-15.19.2.1** — **As a** game designer (P-5), **I want** every logic graph node to include
+   inline documentation with port descriptions, examples, and related nodes, **so that** I
+   understand nodes while editing.
 
-1. **US-15.19.2.1** — to hover over any node in the graph editor and see its description,
-   input/output port descriptions with types and valid ranges, and usage examples
-   - **Acceptance:** I can understand node behavior without consulting external documentation
-2. **US-15.19.2.2** — a dedicated documentation panel showing full node docs including performance
-   notes and "see also" links when a node is selected
-   - **Acceptance:** I can evaluate node suitability for performance-sensitive graphs
-3. **US-15.19.2.3** — node documentation accessible in the mod SDK graph editor
-   - **Acceptance:** I can build mod logic without access to engine source code or external docs
-4. **US-15.19.2.4** — custom nodes to inherit a documentation template that prompts the author to
-   fill in descriptions for each port
-   - **Acceptance:** user-authored nodes maintain consistent documentation quality
+4. **US-15.19.2.2** — **As a** extension developer (P-25), **I want** custom nodes to inherit a
+   documentation template, **so that** my published nodes have consistent descriptions.
 
-## F-15.19.3 Interactive In-Editor Tutorials
+5. **US-15.19.3.1** — **As a** game designer (P-5), **I want** step-by-step in-editor tutorials with
+   spotlight overlays, **so that** I learn features by doing.
 
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-15.19.3.1 | designer (P-5)       |          |              |
-| US-15.19.3.2 | artist (P-8)         |          |              |
-| US-15.19.3.3 | modder (P-24)        |          |              |
-| US-15.19.3.4 | engine tester (P-27) |          |              |
+6. **US-15.19.3.2** — **As a** level designer (P-6), **I want** community-created tutorials
+   distributed via the asset store, **so that** learning resources grow with the community.
 
-1. **US-15.19.3.1** — an interactive "Getting Started" tutorial that highlights UI elements with
-   spotlight overlays and waits for me to complete each step
-   - **Acceptance:** I can learn the editor workflow through hands-on practice
-2. **US-15.19.3.2** — a "Create a Material" tutorial category teaching me to import assets, build
-   material graphs, and light a scene
-   - **Acceptance:** I can become productive in the art pipeline quickly
-3. **US-15.19.3.3** — tutorials authored as data assets using the logic graph system
-   - **Acceptance:** community-created tutorials can be distributed via the asset store
-4. **US-15.19.3.4** — to run each interactive tutorial from start to finish and verify it completes
-   without errors
-   - **Acceptance:** new users have a reliable onboarding experience on every release
+7. **US-15.19.4.1** — **As a** game designer (P-5), **I want** an embedded video player for tutorial
+   videos with chapter links to editor actions, **so that** I follow along without leaving the
+   editor.
 
-## F-15.19.4 Video Tutorial Integration
+8. **US-15.19.4.2** — **As a** technical artist (P-13), **I want** a curated video library organized
+   by topic and difficulty, **so that** I find relevant videos quickly.
 
-| ID           | Persona                 | Features | Requirements |
-|--------------|-------------------------|----------|--------------|
-| US-15.19.4.1 | artist (P-8)            |          |              |
-| US-15.19.4.2 | designer (P-5)          |          |              |
-| US-15.19.4.3 | creative director (P-2) |          |              |
-| US-15.19.4.4 | engine tester (P-27)    |          |              |
+9. **US-15.19.5.1** — **As a** game designer (P-5), **I want** contextual help on every panel,
+   field, and button via hover tooltips and F1, **so that** I get instant explanations.
 
-1. **US-15.19.4.1** — an embedded video player docked alongside the viewport that plays tutorial
-   videos without leaving the editor
-   - **Acceptance:** I can follow along step-by-step
-2. **US-15.19.4.2** — chapter timestamps in videos that optionally open the relevant editor panel or
-   tool on click
-   - **Acceptance:** I can jump directly to the section I need
-3. **US-15.19.4.3** — a curated video library accessible from the Help menu organized by topic and
-   difficulty
-   - **Acceptance:** the team has quick access to relevant training content
-4. **US-15.19.4.4** — to verify that previously watched videos are cached locally for offline
-   playback
-   - **Acceptance:** tutorials are accessible without internet
+10. **US-15.19.5.2** — **As a** localization specialist (P-18), **I want** help content stored as
+    localized string assets, **so that** documentation is available in all supported languages.
 
-## F-15.19.5 Contextual Help and Tooltip System
+11. **US-15.19.6.1** — **As a** game designer (P-5), **I want** sample projects demonstrating engine
+    capabilities across genres, **so that** I learn by examining working examples.
 
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-15.19.5.1 | designer (P-5)       |          |              |
-| US-15.19.5.2 | artist (P-8)         |          |              |
-| US-15.19.5.3 | developer (P-15)     |          |              |
-| US-15.19.5.4 | engine tester (P-27) |          |              |
+12. **US-15.19.6.2** — **As a** level designer (P-6), **I want** annotated logic graphs in sample
+    projects explaining design decisions, **so that** I understand the reasoning behind patterns.
 
-1. **US-15.19.5.1** — to hover over any inspector property and see a tooltip with its description,
-   type, valid range, default value, and keyboard shortcut
-   - **Acceptance:** I understand each setting without external documentation
-2. **US-15.19.5.2** — a "What's This?" mode where clicking any UI element shows its documentation
-   - **Acceptance:** I can learn the purpose of unfamiliar tools quickly
-3. **US-15.19.5.3** — tooltips to include links to the full documentation page and relevant tutorial
-   - **Acceptance:** I can dive deeper when the tooltip alone is insufficient
-4. **US-15.19.5.4** — to verify that help content is stored as localized string assets and displays
-   correctly in all supported languages
-   - **Acceptance:** non-English users receive accurate contextual help
+13. **US-15.19.7.1** — **As a** engine developer (P-26), **I want** code examples tested in CI so
+    they never go stale, **so that** documentation is always accurate.
 
-## F-15.19.6 Sample Projects and Template Library
-
-| ID           | Persona              | Features | Requirements |
-|--------------|----------------------|----------|--------------|
-| US-15.19.6.1 | designer (P-5)       |          |              |
-| US-15.19.6.2 | artist (P-8)         |          |              |
-| US-15.19.6.3 | modder (P-24)        |          |              |
-| US-15.19.6.4 | engine tester (P-27) |          |              |
-
-1. **US-15.19.6.1** — to browse genre sample projects (FPS, RPG, RTS, platformer, racing, VR,
-   survival, action/adventure) from the project creation wizard
-   - **Acceptance:** I can start with pre-built gameplay systems and focus on my unique mechanics
-2. **US-15.19.6.2** — sample projects to include organized asset structures with explanatory
-   comments
-   - **Acceptance:** I can learn production asset organization from working examples
-3. **US-15.19.6.3** — sample projects downloadable from the asset store
-   - **Acceptance:** I can learn engine capabilities outside the project creation wizard
-4. **US-15.19.6.4** — to verify that every sample project produces a playable build on all target
-   platforms
-   - **Acceptance:** samples are always functional
-
-## F-15.19.7 Inline Code Examples in Documentation
-
-| ID           | Persona                 | Features | Requirements |
-|--------------|-------------------------|----------|--------------|
-| US-15.19.7.1 | developer (P-15)        |          |              |
-| US-15.19.7.2 | designer (P-5)          |          |              |
-| US-15.19.7.3 | engine developer (P-26) |          |              |
-| US-15.19.7.4 | engine tester (P-27)    |          |              |
-
-1. **US-15.19.7.1** — every API doc page to include runnable Rust code examples guaranteed to
-   compile against the current engine version
-   - **Acceptance:** I can copy and adapt working code
-2. **US-15.19.7.2** — visual examples (logic graph screenshots with before/after screenshots)
-   alongside code examples
-   - **Acceptance:** no-code users also have reference material
-3. **US-15.19.7.3** — examples versioned alongside engine source and updated by the project upgrade
-   system
-   - **Acceptance:** documentation never references deprecated APIs
-4. **US-15.19.7.4** — all doc-test code examples extracted and compiled automatically in CI
-   - **Acceptance:** stale examples are caught immediately and never reach users
+14. **US-15.19.7.2** — **As a** build engineer (P-16), **I want** CI to fail if a documentation
+    example does not compile, **so that** stale examples are caught before release.

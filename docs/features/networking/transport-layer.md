@@ -1,11 +1,11 @@
-# 8.1 — Transport Layer
+# 8.1 -- Transport Layer
 
 ## Connection Management
 
-| ID      | Feature                                 | Requirements |
-|---------|-----------------------------------------|--------------|
-| F-8.1.1 | Connection Handshake and Authentication | R-8.1.1      |
-| F-8.1.2 | Connection Lifecycle Management         | R-8.1.2      |
+| ID      | Feature                                 |
+|---------|-----------------------------------------|
+| F-8.1.1 | Connection Handshake and Authentication |
+| F-8.1.2 | Connection Lifecycle Management         |
 
 1. **F-8.1.1** — Establish secure client-server connections using a multi-phase handshake that
    authenticates player identity via session tokens before allowing any gameplay traffic. The
@@ -23,10 +23,10 @@
 
 ## Channel Architecture
 
-| ID      | Feature                           | Requirements |
-|---------|-----------------------------------|--------------|
-| F-8.1.3 | Reliable Ordered Channel          | R-8.1.3      |
-| F-8.1.4 | Unreliable and Unordered Channels | R-8.1.4      |
+| ID      | Feature                           |
+|---------|-----------------------------------|
+| F-8.1.3 | Reliable Ordered Channel          |
+| F-8.1.4 | Unreliable and Unordered Channels |
 
 1. **F-8.1.3** — Provide a TCP-like reliable ordered delivery channel over UDP with selective
    acknowledgment (SACK), configurable retransmission timers, and congestion-aware send windows.
@@ -41,9 +41,9 @@
 
 ## Security
 
-| ID      | Feature         | Requirements |
-|---------|-----------------|--------------|
-| F-8.1.5 | DTLS Encryption | R-8.1.5      |
+| ID      | Feature         |
+|---------|-----------------|
+| F-8.1.5 | DTLS Encryption |
 
 1. **F-8.1.5** — Encrypt all UDP traffic using DTLS 1.3 to prevent packet sniffing and tampering.
    Encryption must be mandatory for all gameplay channels, with hardware-accelerated AES-GCM on
@@ -57,10 +57,10 @@
 
 ## Packet Management
 
-| ID      | Feature                                             | Requirements |
-|---------|-----------------------------------------------------|--------------|
-| F-8.1.6 | Packet Fragmentation, Reassembly, and MTU Discovery | R-8.1.6      |
-| F-8.1.7 | Bandwidth Estimation and Congestion Control         | R-8.1.7      |
+| ID      | Feature                                             |
+|---------|-----------------------------------------------------|
+| F-8.1.6 | Packet Fragmentation, Reassembly, and MTU Discovery |
+| F-8.1.7 | Bandwidth Estimation and Congestion Control         |
 
 1. **F-8.1.6** — Automatically fragment outbound packets that exceed the path MTU and reassemble
    them on the receiving end with timeout-based fragment expiration. Perform path MTU discovery at
@@ -81,9 +81,9 @@
 
 ## Diagnostics
 
-| ID      | Feature                                    | Requirements |
-|---------|--------------------------------------------|--------------|
-| F-8.1.8 | Network Diagnostics and Quality Indicators | R-8.1.8      |
+| ID      | Feature                                    |
+|---------|--------------------------------------------|
+| F-8.1.8 | Network Diagnostics and Quality Indicators |
 
 1. **F-8.1.8** — Real-time network quality metrics exposed to both the engine and the player-facing
    UI. Tracks round-trip time (RTT), packet loss percentage, jitter, bandwidth utilization, and

@@ -2,18 +2,18 @@
 
 ## Social Simulation
 
-| ID         | Feature                              | Requirements |
-|------------|--------------------------------------|--------------|
-| F-13.19.1  | NPC Relationship and Affinity System | R-13.19.1    |
-| F-13.19.2  | NPC Personality and Emotion Model    | R-13.19.2    |
-| F-13.19.3a | NPC Deed Memory                      | R-13.19.3a   |
-| F-13.19.3b | Gossip Propagation Network           | R-13.19.3b   |
-| F-13.19.3c | Emergent Reputation Aggregation      | R-13.19.3c   |
-| F-13.19.4a | Schedule Data Model                  | R-13.19.4a   |
-| F-13.19.4b | Schedule Execution                   | R-13.19.4b   |
-| F-13.19.4c | Schedule-Gated Interactions          | R-13.19.4c   |
-| F-13.19.5  | Ambient Bark System                  | R-13.19.5    |
-| F-13.19.6  | Threat and Aggro Table System        | R-13.19.6    |
+| ID         | Feature                              |
+|------------|--------------------------------------|
+| F-13.19.1  | NPC Relationship and Affinity System |
+| F-13.19.2  | NPC Personality and Emotion Model    |
+| F-13.19.3a | NPC Deed Memory                      |
+| F-13.19.3b | Gossip Propagation Network           |
+| F-13.19.3c | Emergent Reputation Aggregation      |
+| F-13.19.4a | Schedule Data Model                  |
+| F-13.19.4b | Schedule Execution                   |
+| F-13.19.4c | Schedule-Gated Interactions          |
+| F-13.19.5  | Ambient Bark System                  |
+| F-13.19.6  | Threat and Aggro Table System        |
 
 1. **F-13.19.1** — Per-NPC relationship tracking with numeric affinity values (friendship, romance,
    trust, fear) affected by player actions. Giving gifts modifies affinity based on NPC-specific
@@ -87,14 +87,14 @@
 
 ## NPC Social Interactions
 
-| ID         | Feature                               | Requirements |
-|------------|---------------------------------------|--------------|
-| F-13.19.7  | NPC-to-NPC Conversation System        | R-13.19.7    |
-| F-13.19.8  | NPC Independent Memory System         | R-13.19.8    |
-| F-13.19.9  | NPC Environmental Interaction         | R-13.19.9    |
-| F-13.19.10 | Social-Cue Player Search              | R-13.19.10   |
-| F-13.19.11 | Quest and Story State NPC Awareness   | R-13.19.11   |
-| F-13.19.12 | Player-Witnessed NPC Social Behaviors | R-13.19.12   |
+| ID         | Feature                               |
+|------------|---------------------------------------|
+| F-13.19.7  | NPC-to-NPC Conversation System        |
+| F-13.19.8  | NPC Independent Memory System         |
+| F-13.19.9  | NPC Environmental Interaction         |
+| F-13.19.10 | Social-Cue Player Search              |
+| F-13.19.11 | Quest and Story State NPC Awareness   |
+| F-13.19.12 | Player-Witnessed NPC Social Behaviors |
 
 1. **F-13.19.7** — NPCs autonomously engage in conversations with other NPCs they encounter during
    their daily routines (F-13.19.4). Conversations are triggered by proximity, shared faction,

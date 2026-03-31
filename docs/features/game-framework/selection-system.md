@@ -2,10 +2,10 @@
 
 ## Picking
 
-| ID        | Feature                 | Requirements |
-|-----------|-------------------------|--------------|
-| F-13.11.1 | 3D World Picking        | R-13.11.1    |
-| F-13.11.2 | 2D Screen-Space Picking | R-13.11.2    |
+| ID        | Feature                 |
+|-----------|-------------------------|
+| F-13.11.1 | 3D World Picking        |
+| F-13.11.2 | 2D Screen-Space Picking |
 
 1. **F-13.11.1** — Cast rays from the camera through screen-space coordinates to identify entities
    in the 3D world. The picking system uses the shared spatial index (F-1.9.4) for broadphase
@@ -32,13 +32,13 @@
 
 ## Selection State
 
-| ID         | Feature                          | Requirements |
-|------------|----------------------------------|--------------|
-| F-13.11.3  | Selection State Management       | R-13.11.3    |
-| F-13.11.4a | RTS Selection Preset             | R-13.11.4a   |
-| F-13.11.4b | RPG Selection Preset             | R-13.11.4b   |
-| F-13.11.4c | Action Selection Preset          | R-13.11.4c   |
-| F-13.11.4d | Builder/Sandbox Selection Preset | R-13.11.4d   |
+| ID         | Feature                          |
+|------------|----------------------------------|
+| F-13.11.3  | Selection State Management       |
+| F-13.11.4a | RTS Selection Preset             |
+| F-13.11.4b | RPG Selection Preset             |
+| F-13.11.4c | Action Selection Preset          |
+| F-13.11.4d | Builder/Sandbox Selection Preset |
 
 1. **F-13.11.3** — A centralized selection system implemented as ECS resources and components. Each
    player controller maintains a `SelectionSet` resource — an ordered collection of entity
@@ -76,13 +76,13 @@
 
 ## Selection Groups
 
-| ID         | Feature                     | Requirements |
-|------------|-----------------------------|--------------|
-| F-13.11.5  | Runtime Selection Groups    | R-13.11.5    |
-| F-13.11.6a | Basic Command Dispatch      | R-13.11.6a   |
-| F-13.11.6b | Formation Movement          | R-13.11.6b   |
-| F-13.11.6c | Split and Subgroup Commands | R-13.11.6c   |
-| F-13.11.6d | Command History and Undo    | R-13.11.6d   |
+| ID         | Feature                     |
+|------------|-----------------------------|
+| F-13.11.5  | Runtime Selection Groups    |
+| F-13.11.6a | Basic Command Dispatch      |
+| F-13.11.6b | Formation Movement          |
+| F-13.11.6c | Split and Subgroup Commands |
+| F-13.11.6d | Command History and Undo    |
 
 1. **F-13.11.5** — Named, persistent groups of entities that players create and modify at runtime.
    Groups are stored as ECS resources containing entity reference lists with a group name, icon, and
@@ -119,10 +119,10 @@
 
 ## Selection Visuals
 
-| ID        | Feature                                  | Requirements |
-|-----------|------------------------------------------|--------------|
-| F-13.11.7 | 2D Selection Box (Marquee Select)        | R-13.11.7    |
-| F-13.11.8 | Selection Indicators and Visual Feedback | R-13.11.8    |
+| ID        | Feature                                  |
+|-----------|------------------------------------------|
+| F-13.11.7 | 2D Selection Box (Marquee Select)        |
+| F-13.11.8 | Selection Indicators and Visual Feedback |
 
 1. **F-13.11.7** — Click-and-drag rectangle selection in screen space. The selection box is rendered
    as a semi-transparent filled rectangle with a solid border, using the UI rendering system

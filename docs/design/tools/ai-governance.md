@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### AI Governance (R-15.7)
 
@@ -1798,7 +1797,7 @@ When the editor lacks connectivity to the admin policy server:
 | Platform | Transport | Notes |
 |----------|-----------|-------|
 | Windows | IOCP | HTTPS via async I/O through `IoReactor`. TLS 1.3 via `rustls`. |
-| macOS | GCD | Dispatch IO for async HTTPS. TLS 1.3 via `rustls`. C ABI wrappers. |
+| macOS | GCD | Dispatch IO for async HTTPS. TLS 1.3 via `rustls`. swift-bridge. |
 | Linux | io_uring | Async HTTPS through `IoReactor`. TLS 1.3 via `rustls`. Kernel 5.1+. |
 
 **Note:** Text-to-speech uses the shared platform TTS service also used by the accessibility system
@@ -1865,7 +1864,7 @@ Linux).
 | `blake3` | Fast hashing (provenance, audit chain) | Fastest general-purpose hash |
 | `aes-gcm` | API key encryption at rest | AEAD for secrets storage |
 | `serde_json` | JSON serialization for LLM API | Standard ecosystem crate |
-| (hand-written `extern "C"`) | Swift @_cdecl function declarations | Matches Swift C ABI |
+| `swift-bridge` | Swift function bindings | Direct Rust-Swift FFI |
 | `smallvec` | Inline-allocated small vectors | Tool call argument lists |
 
 ## Test Plan
@@ -2357,7 +2356,7 @@ impl KeychainReader {
 | Windows  | wincred            |
 | Linux    | libsecret          |
 
-1. **macOS** — C ABI bridge to `SecItemCopyMatching`, `SecItemAdd`, `SecItemDelete`
+1. **macOS** — swift-bridge to `SecItemCopyMatching`, `SecItemAdd`, `SecItemDelete`
    - **Notes:** Keychain items tagged with `kSecAttrService = "com.harmonius.ai"`
 2. **Windows** — `CredReadW`, `CredWriteW`, `CredDeleteW` via FFI
    - **Notes:** Credentials stored under `harmonius/ai/{provider_id}` target

@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/rendering/](../../features/rendering/),
-> [requirements/rendering/](../../requirements/rendering/), and
-> [user-stories/rendering/](../../user-stories/rendering/). The table below traces design elements
-> to those definitions.
+> [features/rendering/](../../features/), [requirements/rendering/](../../requirements/), and
+> [user-stories/rendering/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Acceleration Structures (F-2.5.1 / R-2.5.1)
 
@@ -1747,7 +1746,7 @@ History is fully reset on:
 1. **RT pipeline** — Metal RT (M3+/A17+)
    - **Notes:** `MTLAccelerationStructure`, `MTLIntersectionFunctionTable`
 2. **BLAS build** — `MTLPrimitiveAccelerationStructureDescriptor`
-   - **Notes:** Swift wrapper via `@_cdecl` + `extern "C"`
+   - **Notes:** Swift wrapper via swift-bridge
 3. **TLAS build** — `MTLInstanceAccelerationStructureDescriptor`
    - **Notes:** Instance buffer as MTLBuffer
 4. **Dispatch rays** — `useResource:usage:stages:` + intersection
@@ -2004,10 +2003,10 @@ fewer GI paths with robust transitions would reduce risk.
 
 A unified path tracing pipeline (F-2.5.9) with tiered bounce counts could replace the separate RT
 reflections (F-2.5.2), RT indirect lighting (F-2.5.3), and RT AO passes with a single configurable
-path tracer. Lumen in Unreal Engine 5 takes this approach with software + hardware ray tracing. We
-chose separate passes because each can be independently budget-culled via the render graph (F-2.2.8)
-and individually disabled per platform tier. The separate-pass approach gives finer control at the
-cost of more shader permutations and a more complex render graph topology.
+path tracer. Dynamic GI in Unreal Engine 5 takes this approach with software + hardware ray tracing.
+We chose separate passes because each can be independently budget-culled via the render graph
+(F-2.2.8) and individually disabled per platform tier. The separate-pass approach gives finer
+control at the cost of more shader permutations and a more complex render graph topology.
 
 **Q4. Does this design solve all customer problems?**
 

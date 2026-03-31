@@ -117,7 +117,7 @@ discipline.
 
 - **Role:** Creates character models — player characters, NPCs, creatures, equipment
 - **Goals:** High-fidelity characters within poly/texture budgets, seamless cloth/hair preview,
-  modular equipment system, morph target workflow, MetaHuman-level quality
+  modular equipment system, morph target workflow, Character Creator-level quality
 - **Pain points:** Cloth/hair simulation instability, character LOD artifacts, equipment clipping,
   morph target authoring complexity, slow mesh merging
 - **Engine touchpoints:** DCC plugins (ZBrush, Maya, Marvelous Designer), character customization
@@ -203,8 +203,8 @@ discipline.
   comprehensive test coverage, clear API boundaries between subsystems, documentation that stays in
   sync with code
 - **Pain points:** Cross-platform debugging (Metal vs Vulkan vs D3D12), unsafe FFI boundaries
-  (C ABI, `extern "C"`), ECS scheduling complexity, performance regressions from seemingly small
-  changes, maintaining backward compatibility for plugins
+  (swift-bridge, FFI layers), ECS scheduling complexity, performance regressions from seemingly
+  small changes, maintaining backward compatibility for plugins
 - **Engine touchpoints:** All source code, GPU backend implementations, ECS internals, render graph
   compiler, physics solver, asset pipeline, platform abstraction layers, CI/CD pipeline, profiler,
   test framework

@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/core-runtime/](../../features/core-runtime/),
-> [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
-> elements to those definitions.
+> [features/core-runtime/](../../features/), [requirements/core-runtime/](../../requirements/), and
+> [user-stories/core-runtime/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement         |
 |----------|---------------------|
@@ -84,8 +83,8 @@
 33. **F-1.1.33** — Parallel command recording with sort keys
 34. **F-1.1.34** — Multiple independent worlds
 35. **F-1.1.35** — Entity migration between worlds
-36. **F-1.1.36** — Prefab entities with inheritance
-37. **F-1.1.37** — Prefab children and nested prefabs
+36. **F-1.1.36** — Entity template entities with inheritance
+37. **F-1.1.37** — Entity template children and nested entity templates
 38. **F-1.1.38** — ECS-integrated state machine
 
 ## Overview
@@ -106,8 +105,8 @@ Key architectural choices:
    components.
 4. **Generational entity indices** (32-bit index + 32-bit generation) for O(1) allocation,
    deallocation, and stale-reference detection.
-5. **Relationship pairs** encoded as 64-bit component IDs for hierarchies, prefabs, and graph-based
-   data modeling.
+5. **Relationship pairs** encoded as 64-bit component IDs for hierarchies, entity templates, and
+   graph-based data modeling.
 6. **Tick-based change detection** at chunk granularity for reactive patterns like dirty-flag
    propagation and network delta compression.
 7. **Automatic system scheduling** via dependency analysis on declared access sets, producing a
@@ -269,8 +268,8 @@ harmonius_ecs/
 │   ├── migration.rs   # entity migration between
 │   │                  # worlds
 │   └── change.rs      # ChangeTick, ChangeDetector
-├── prefab/
-│   ├── prefab.rs      # Prefab tag, IsA
+├── entity_template/
+│   ├── template.rs    # EntityTemplate tag, IsA
 │   │                  # relationship
 │   ├── instance.rs    # instantiation, overrides
 │   └── slot.rs        # SlotRef, named child
@@ -2226,41 +2225,41 @@ pub enum MigrationError {
 }
 ```
 
-### Prefabs
+### Entity Templates
 
 ```rust
-/// Marker tag for prefab template entities.
-pub struct Prefab;
+/// Marker tag for entity template entities.
+pub struct EntityTemplate;
 
 /// Relationship: "this entity is an instance of
-/// that prefab." Inherits components from the
-/// prefab. Unwritten components fall through to
-/// the prefab's values. Writing to an inherited
-/// component creates a local override
+/// that entity template." Inherits components from
+/// the template. Unwritten components fall through
+/// to the template's values. Writing to an
+/// inherited component creates a local override
 /// (copy-on-write).
 pub struct IsA;
 
 impl World {
-    /// Instantiate a prefab. Creates a new entity
-    /// with an IsA relationship to the prefab.
-    /// Inherited components are shared (not
+    /// Instantiate an entity template. Creates a new
+    /// entity with an IsA relationship to the
+    /// template. Inherited components are shared (not
     /// copied) until overridden.
-    pub fn instantiate_prefab(
+    pub fn instantiate_template(
         &mut self,
-        prefab: Entity,
+        template: Entity,
     ) -> Entity;
 
-    /// Instantiate a prefab with its child
+    /// Instantiate an entity template with its child
     /// hierarchy. All children are recursively
     /// instantiated.
-    pub fn instantiate_prefab_hierarchy(
+    pub fn instantiate_template_hierarchy(
         &mut self,
-        prefab: Entity,
+        template: Entity,
     ) -> Entity;
 }
 
 /// Named access to a specific child in an
-/// instantiated prefab hierarchy.
+/// instantiated entity template hierarchy.
 pub struct SlotRef {
     pub name: &'static str,
 }
@@ -2820,8 +2819,8 @@ lookups. This avoids hash overhead in the inner loop.
 | `test_multiple_worlds_isolation`      | R-1.1.34  |
 | `test_entity_migration`               | R-1.1.35  |
 | `test_migration_missing_type_error`   | R-1.1.35a |
-| `test_prefab_inheritance`             | R-1.1.36  |
-| `test_nested_prefab`                  | R-1.1.37  |
+| `test_template_inheritance`           | R-1.1.36  |
+| `test_nested_template`                | R-1.1.37  |
 | `test_state_transition_observers`     | R-1.1.38  |
 
 1. **`test_entity_allocate_deallocate`** — Allocate entity, deallocate, verify generation
@@ -2916,10 +2915,10 @@ lookups. This avoids hash overhead in the inner loop.
     world. Verify all data intact, no collisions.
 49. **`test_migration_missing_type_error`** — Migrate entity with unregistered component type.
     Verify diagnostic error with type name.
-50. **`test_prefab_inheritance`** — Create prefab with 3 components. Instantiate 100 instances.
-    Verify sharing. Override one, verify copy-on-write.
-51. **`test_nested_prefab`** — Create nested prefab. Instantiate 10 outer instances. Modify inner.
-    Verify propagation.
+50. **`test_template_inheritance`** — Create entity template with 3 components. Instantiate 100
+    instances. Verify sharing. Override one, verify copy-on-write.
+51. **`test_nested_template`** — Create nested entity template. Instantiate 10 outer instances.
+    Modify inner. Verify propagation.
 52. **`test_state_transition_observers`** — Transition from Menu to Playing. Verify OnExit(Menu) and
     OnEnter(Playing) fire. Verify in_state(Playing) criterion works.
 
@@ -2992,9 +2991,10 @@ the entire chunk dirty. For components with mixed hot/cold access patterns this 
 downstream systems like network delta compression and spatial index updates. The archetype explosion
 problem is another weakness: games with many unique component combinations (e.g., hundreds of status
 effects) can create thousands of archetypes, degrading cache locality and query cache invalidation
-time. The prefab inheritance model (F-1.1.36) with copy-on-write semantics adds complexity to the
-query path since inherited components must be resolved through IsA chains. Adding per-entity change
-bitmasks, archetype coalescing heuristics, and lazy prefab resolution would improve these areas.
+time. The entity template inheritance model (F-1.1.36) with copy-on-write semantics adds complexity
+to the query path since inherited components must be resolved through IsA chains. Adding per-entity
+change bitmasks, archetype coalescing heuristics, and lazy template resolution would improve these
+areas.
 
 **Q3. Is there a better approach?** If we are not taking it, why not?
 
@@ -3011,12 +3011,12 @@ user stories? What are they? How would adding them improve the engine? What kind
 enable?
 
 The design covers the core ECS needs for most game genres but is light on editor-side undo/redo
-integration. User stories US-1.1.49 and US-1.1.50 reference prefab editing, but there is no explicit
-undo stack that snapshots component state before mutations. This gap affects designers (P-5) editing
-entity templates. Additionally, there is no streaming archetype paging feature for worlds exceeding
-available RAM, which would be needed for truly massive persistent MMO worlds beyond the 4M entity
-limit (R-1.1.11a). Adding entity streaming and undo integration would enable open-world MMOs and
-improve the editor workflow for all game genres.
+integration. User stories US-1.1.49 and US-1.1.50 reference entity template editing, but there is no
+explicit undo stack that snapshots component state before mutations. This gap affects designers
+(P-5) editing entity templates. Additionally, there is no streaming archetype paging feature for
+worlds exceeding available RAM, which would be needed for truly massive persistent MMO worlds beyond
+the 4M entity limit (R-1.1.11a). Adding entity streaming and undo integration would enable
+open-world MMOs and improve the editor workflow for all game genres.
 
 **Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
 modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
@@ -3054,10 +3054,10 @@ I/O subsystems.
    (e.g., complex material descriptors) may have expensive equality checks. Should we require
    `Hash + Eq` on shared components, or use a content-addressed approach?
 
-6. **Prefab override granularity** -- Copy-on-write overrides currently operate at the
-   whole-component level. A field-level override system (like Unity's prefab property overrides)
-   would be more memory efficient but significantly more complex. Is component-level granularity
-   sufficient?
+6. **Entity template override granularity** -- Copy-on-write overrides currently operate at the
+   whole-component level. A field-level override system (like Unity's entity template property
+   overrides) would be more memory efficient but significantly more complex. Is component-level
+   granularity sufficient?
 
 7. **Dynamic component performance parity** -- Runtime- registered dynamic components use
    type-erased paths that may be slower than statically-registered components. What is the

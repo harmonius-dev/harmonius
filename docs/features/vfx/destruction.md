@@ -2,11 +2,11 @@
 
 ## Debris and Fragments
 
-| ID       | Feature                      | Requirements |
-|----------|------------------------------|--------------|
-| F-11.5.1 | Debris Spawning              | R-11.5.1     |
-| F-11.5.2 | Dust Clouds and Smoke Plumes | R-11.5.2     |
-| F-11.5.3 | Sparks and Embers            | R-11.5.3     |
+| ID       | Feature                      |
+|----------|------------------------------|
+| F-11.5.1 | Debris Spawning              |
+| F-11.5.2 | Dust Clouds and Smoke Plumes |
+| F-11.5.3 | Sparks and Embers            |
 
 1. **F-11.5.1** — Event-driven debris particle and mesh fragment emission triggered by destruction
    events. Debris meshes are produced by the physics fracture system (F-4.6.1). Debris type, count,
@@ -36,10 +36,10 @@
 
 ## Surface Damage
 
-| ID       | Feature                      | Requirements |
-|----------|------------------------------|--------------|
-| F-11.5.4 | Structural Cracking Overlays | R-11.5.4     |
-| F-11.5.5 | Persistent Scorch Marks      | R-11.5.5     |
+| ID       | Feature                      |
+|----------|------------------------------|
+| F-11.5.4 | Structural Cracking Overlays |
+| F-11.5.5 | Persistent Scorch Marks      |
 
 1. **F-11.5.4** — Animated crack decals that spread outward from impact points over time,
    visualizing the physics stress propagation system (F-4.6.5). Crack patterns are generated from
@@ -60,10 +60,10 @@
 
 ## Explosive and Fire Effects
 
-| ID       | Feature                  | Requirements |
-|----------|--------------------------|--------------|
-| F-11.5.6 | Explosion Shockwaves     | R-11.5.6     |
-| F-11.5.7 | Fire Propagation Visuals | R-11.5.7     |
+| ID       | Feature                  |
+|----------|--------------------------|
+| F-11.5.6 | Explosion Shockwaves     |
+| F-11.5.7 | Fire Propagation Visuals |
 
 1. **F-11.5.6** — Expanding spherical distortion wave rendered as a screen-space refraction ring
    that propagates outward from the detonation point. The shockwave displaces the color buffer
@@ -84,12 +84,12 @@
 
 ## Voxel and SDF Integration
 
-| ID        | Feature                       | Requirements |
-|-----------|-------------------------------|--------------|
-| F-11.5.8  | Voxel Destruction VFX         | R-11.5.8     |
-| F-11.5.9  | SDF-Driven Particle Collision | R-11.5.9     |
-| F-11.5.10 | Debris Material Matching      | R-11.5.10    |
-| F-11.5.11 | Destruction Audio-VFX Sync    | R-11.5.11    |
+| ID        | Feature                       |
+|-----------|-------------------------------|
+| F-11.5.8  | Voxel Destruction VFX         |
+| F-11.5.9  | SDF-Driven Particle Collision |
+| F-11.5.10 | Debris Material Matching      |
+| F-11.5.11 | Destruction Audio-VFX Sync    |
 
 1. **F-11.5.8** — Particle emission triggered by voxel edit operations (dig, blast, sculpt) via the
    `VoxelVfxSystem`. When the voxel volume (F-3.2.13) is modified, the system reads the voxel

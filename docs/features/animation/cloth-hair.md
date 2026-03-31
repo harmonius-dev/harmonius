@@ -2,9 +2,9 @@
 
 ## Cloth Simulation (GPU)
 
-| ID      | Feature              | Requirements |
-|---------|----------------------|--------------|
-| F-9.5.1 | GPU Cloth Simulation | R-9.5.1      |
+| ID      | Feature              |
+|---------|----------------------|
+| F-9.5.1 | GPU Cloth Simulation |
 
 1. **F-9.5.1** — Position-based dynamics cloth simulation running entirely on GPU compute with
    distance, bending, and self-collision constraints. Cloth meshes are driven by wind forces,
@@ -19,9 +19,9 @@
 
 ## Strand-Based Hair
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-9.5.2 | Strand-Based Hair Simulation | R-9.5.2      |
+| ID      | Feature                      |
+|---------|------------------------------|
+| F-9.5.2 | Strand-Based Hair Simulation |
 
 1. **F-9.5.2** — Physics-based strand simulation using guide curves that drive interpolated render
    strands via skinning weights. Each guide strand is simulated as a chain of particles with
@@ -35,9 +35,9 @@
 
 ## Card-Based Hair
 
-| ID      | Feature                   | Requirements |
-|---------|---------------------------|--------------|
-| F-9.5.3 | Card-Based Hair Rendering | R-9.5.3      |
+| ID      | Feature                   |
+|---------|---------------------------|
+| F-9.5.3 | Card-Based Hair Rendering |
 
 1. **F-9.5.3** — Renders hair as textured polygon strips (cards) with alpha-tested or alpha-blended
    transparency and anisotropic specular shading. Cards are attached to the skeleton and driven by
@@ -49,9 +49,9 @@
 
 ## Hair LOD System
 
-| ID      | Feature         | Requirements |
-|---------|-----------------|--------------|
-| F-9.5.4 | Hair LOD System | R-9.5.4      |
+| ID      | Feature         |
+|---------|-----------------|
+| F-9.5.4 | Hair LOD System |
 
 1. **F-9.5.4** — Transitions hair representation between strand-based simulation, simplified strand
    clusters, and card-based rendering based on camera distance and screen coverage. LOD transitions
@@ -63,9 +63,9 @@
 
 ## Cloth-Body Interaction
 
-| ID      | Feature                | Requirements |
-|---------|------------------------|--------------|
-| F-9.5.5 | Cloth-Body Interaction | R-9.5.5      |
+| ID      | Feature                |
+|---------|------------------------|
+| F-9.5.5 | Cloth-Body Interaction |
 
 1. **F-9.5.5** — Resolves collisions between simulated cloth panels and the character's body using
    capsule and convex hull proxies attached to skeleton bones. Supports friction and sticking
@@ -77,9 +77,9 @@
 
 ## Hair Wind Response
 
-| ID      | Feature            | Requirements |
-|---------|--------------------|--------------|
-| F-9.5.6 | Hair Wind Response | R-9.5.6      |
+| ID      | Feature            |
+|---------|--------------------|
+| F-9.5.6 | Hair Wind Response |
 
 1. **F-9.5.6** — Applies directional and turbulent wind forces to both strand-based and card-based
    hair systems. Wind is sampled from the shared wind field texture generated from `WindSource` ECS

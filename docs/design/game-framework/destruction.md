@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/game-framework/](../../features/game-framework/),
-> [requirements/game-framework/](../../requirements/game-framework/), and
-> [user-stories/game-framework/](../../user-stories/game-framework/). The table below traces design
-> elements to those definitions.
+> [features/game-framework/](../../features/), [requirements/game-framework/](../../requirements/),
+> and [user-stories/game-framework/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 | Feature | Requirement |
 |---------|-------------|
@@ -475,8 +474,8 @@ impl System for FractureActivationSystem {
 /// `ConnectivityAnalyzer` (see
 /// [shared-primitives.md](../core-runtime/shared-primitives.md)).
 /// The building system (see
-/// [building-survival.md](building-survival.md))
-/// shares this analyzer for structural integrity.
+/// [simulation.md](simulation.md)) shares this
+/// analyzer for structural integrity.
 pub struct StructuralAnalysisSystem;
 
 impl System for StructuralAnalysisSystem {
@@ -871,9 +870,9 @@ An alternative to pre-computed Voronoi fracture is a real-time Boolean mesh cutt
 by Teardown and some tech demos). This produces impact-location-dependent fracture with no
 pre-authored assets. However, real-time mesh cutting requires runtime convex decomposition, texture
 UV recalculation, and collider regeneration -- each of which is expensive and non-deterministic. The
-pre-computed approach is standard in AAA games (Unreal's Chaos Destruction, Havok Destruction)
-because it guarantees consistent performance budgets. The trade-off is that repeated destruction of
-the same object always produces identical fragments, which can look repetitive.
+pre-computed approach is standard in AAA games (Unreal's Fracture System, Havok Destruction) because
+it guarantees consistent performance budgets. The trade-off is that repeated destruction of the same
+object always produces identical fragments, which can look repetitive.
 
 **Q4. Does this design solve all customer problems?**
 

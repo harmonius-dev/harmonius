@@ -2,11 +2,11 @@
 
 ## Entity Placement
 
-| ID       | Feature                           | Requirements |
-|----------|-----------------------------------|--------------|
-| F-15.2.1 | Entity Placement and Snapping     | R-15.2.1     |
-| F-15.2.2 | Prefab System with Nested Prefabs | R-15.2.2     |
-| F-15.2.3 | Prefab Instance Overrides         | R-15.2.3     |
+| ID | Feature |
+| ---------- | ----------------------------------- |
+| F-15.2.1 | Entity Placement and Snapping |
+| F-15.2.2 | Prefab System with Nested Prefabs |
+| F-15.2.3 | Prefab Instance Overrides |
 
 1. **F-15.2.1** — Places entities into the world via drag-and-drop from the asset browser or
    duplication of existing entities. Supports grid snapping with configurable cell size, surface
@@ -30,10 +30,10 @@
 
 ## Brush and Shape Tools
 
-| ID       | Feature             | Requirements |
-|----------|---------------------|--------------|
-| F-15.2.4 | Brush and CSG Tools | R-15.2.4     |
-| F-15.2.5 | Spline Editing      | R-15.2.5     |
+| ID | Feature |
+| ---------- | --------------------- |
+| F-15.2.4 | Brush and CSG Tools |
+| F-15.2.5 | Spline Editing |
 
 1. **F-15.2.4** — Provides additive and subtractive CSG primitives (box, cylinder, sphere, stairs,
    arch) for rapid blockout and prototyping. Boolean operations between brushes produce editable
@@ -50,10 +50,10 @@
 
 ## Painting
 
-| ID       | Feature            | Requirements |
-|----------|--------------------|--------------|
-| F-15.2.6 | Landscape Painting | R-15.2.6     |
-| F-15.2.7 | Foliage Painting   | R-15.2.7     |
+| ID | Feature |
+| ---------- | -------------------- |
+| F-15.2.6 | Landscape Painting |
+| F-15.2.7 | Foliage Painting |
 
 1. **F-15.2.6** — Paints terrain material layers directly in the viewport using configurable brush
    shapes, sizes, and falloff curves. Supports blending up to the material layer limit per tile,

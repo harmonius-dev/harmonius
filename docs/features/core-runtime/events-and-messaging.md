@@ -2,10 +2,10 @@
 
 ## Typed Event Channels
 
-| ID      | Feature                                            | Requirements |
-|---------|----------------------------------------------------|--------------|
-| F-1.5.1 | Typed Double-Buffered Event Channels               | R-1.5.1      |
-| F-1.5.2 | Persistent Event Streams with Cursor-Based Reading | R-1.5.2      |
+| ID      | Feature                                           |
+|---------|----------------------------------------------------|
+| F-1.5.1 | Typed Double-Buffered Event Channels              |
+| F-1.5.2 | Persistent Event Streams with Cursor-Based Reading|
 
 1. **F-1.5.1** — Provide strongly-typed event channels where producers write events into a back
    buffer and consumers read from a front buffer. Buffers are swapped at frame boundaries so that
@@ -24,9 +24,9 @@
 
 ## Observer Pattern
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-1.5.3 | Component Lifecycle Observers | R-1.5.3      |
+| ID      | Feature                      |
+|---------|-------------------------------|
+| F-1.5.3 | Component Lifecycle Observers|
 
 1. **F-1.5.3** — Register observer callbacks that fire when specific components are added, removed,
    or mutated on any entity. Observers are invoked during command buffer application at sync points,
@@ -38,9 +38,9 @@
 
 ## Deferred Command Buffers
 
-| ID      | Feature                  | Requirements |
-|---------|--------------------------|--------------|
-| F-1.5.4 | Deferred Command Buffers | R-1.5.4      |
+| ID      | Feature                 |
+|---------|--------------------------|
+| F-1.5.4 | Deferred Command Buffers|
 
 1. **F-1.5.4** — Provide per-system command buffers that record world-mutating operations (spawn,
    despawn, insert component, remove component, send event) for deferred execution. Commands are
@@ -52,9 +52,9 @@
 
 ## Reactive Queries
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-1.5.5 | Reactive Query Notifications | R-1.5.5      |
+| ID      | Feature                     |
+|---------|------------------------------|
+| F-1.5.5 | Reactive Query Notifications|
 
 1. **F-1.5.5** — Allow queries to subscribe to archetype-level change notifications so that systems
    are only scheduled when their query results may have changed. If no entities matching a query
@@ -64,10 +64,10 @@
 
 ## Inter-System Communication
 
-| ID      | Feature                                    | Requirements |
-|---------|--------------------------------------------|--------------|
-| F-1.5.6 | Typed Singleton Resources for Shared State | R-1.5.6      |
-| F-1.5.7 | Cross-World Event Bridges                  | R-1.5.7      |
+| ID      | Feature                                   |
+|---------|--------------------------------------------|
+| F-1.5.6 | Typed Singleton Resources for Shared State|
+| F-1.5.7 | Cross-World Event Bridges                 |
 
 1. **F-1.5.6** — Expose globally-unique typed resources (singletons) within each ECS world that
    systems can read or write through the standard access-declaration mechanism. Resources

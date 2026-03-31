@@ -2,18 +2,18 @@
 
 ## Features
 
-| ID       | Feature                                       | Requirements |
-|----------|-----------------------------------------------|--------------|
-| F-2.7.1  | Procedural Sky (Bruneton/Hillaire Atmosphere) | R-2.7.1      |
-| F-2.7.2  | Ray-Marched Volumetric Fog (Froxels)          | R-2.7.2      |
-| F-2.7.3  | Procedural Volumetric Clouds                  | R-2.7.3      |
-| F-2.7.4  | God Rays                                      | R-2.7.4      |
-| F-2.7.5  | Distance and Height Fog                       | R-2.7.5      |
-| F-2.7.6  | Water Simulation (FFT Ocean)                  | R-2.7.6      |
-| F-2.7.7  | Heterogeneous Volumes (OpenVDB)               | R-2.7.7      |
-| F-2.7.8  | Voxel-Based Volumetric Clouds                 | R-2.7.8      |
-| F-2.7.9  | Art-Directable Breaking Waves                 | R-2.7.9      |
-| F-2.7.10 | Weather System                                | R-2.7.10     |
+| ID       | Feature                                       |
+|----------|-----------------------------------------------|
+| F-2.7.1  | Procedural Sky (Bruneton/Hillaire Atmosphere) |
+| F-2.7.2  | Ray-Marched Volumetric Fog (Froxels)          |
+| F-2.7.3  | Procedural Volumetric Clouds                  |
+| F-2.7.4  | God Rays                                      |
+| F-2.7.5  | Distance and Height Fog                       |
+| F-2.7.6  | Water Simulation (FFT Ocean)                  |
+| F-2.7.7  | Heterogeneous Volumes (OpenVDB)               |
+| F-2.7.8  | Voxel-Based Volumetric Clouds                 |
+| F-2.7.9  | Art-Directable Breaking Waves                 |
+| F-2.7.10 | Weather System                                |
 
 1. **F-2.7.1** — Physically-based sky rendering using precomputed atmosphere LUTs (transmittance,
    multi-scattering, sky view, aerial perspective). Supports time-of-day transitions with sun

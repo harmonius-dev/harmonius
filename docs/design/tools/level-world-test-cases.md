@@ -37,25 +37,25 @@ Companion test cases for [level-world.md](level-world.md).
 1. **#1** — Snap to vertex at `[5.0, 3.0, 7.0]`
    - **Expected:** Snapped position within epsilon `1e-5` of `[5.0, 3.0, 7.0]`
 
-### TC-15.2.2.1 Prefab Instantiate
+### TC-15.2.2.1 Entity Template Instantiate
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-15.2.2    |
 
-1. **#1** — Instantiate 3-level nested prefab (root -> child -> grandchild)
+1. **#1** — Instantiate 3-level nested entity template (root -> child -> grandchild)
    - **Expected:** All 3 entities spawned with correct parent-child hierarchy
 
-### TC-15.2.2.2 Prefab Propagation
+### TC-15.2.2.2 Entity Template Propagation
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-15.2.2    |
 | 2 | R-15.2.2    |
 
-1. **#1** — Modify source prefab `hp: 100 -> 200`, instance without override
+1. **#1** — Modify source entity template `hp: 100 -> 200`, instance without override
    - **Expected:** Instance `hp == 200`
-2. **#2** — Modify source prefab `hp: 100 -> 200`, instance with `hp` overridden to 50
+2. **#2** — Modify source entity template `hp: 100 -> 200`, instance with `hp` overridden to 50
    - **Expected:** Instance `hp == 50` (override preserved)
 
 ### TC-15.2.3.1 Override Set Revert
@@ -77,7 +77,7 @@ Companion test cases for [level-world.md](level-world.md).
 | 1 | R-15.2.3    |
 
 1. **#1** — Override `hp = 150`, `apply_to_source(path)`
-   - **Expected:** Source prefab `hp == 150`, all non-overridden instances update to 150
+   - **Expected:** Source entity template `hp == 150`, all non-overridden instances update to 150
 
 ### TC-15.2.4.1 CSG Boolean Additive
 
@@ -279,14 +279,14 @@ Companion test cases for [level-world.md](level-world.md).
 2. **#2** — Redo after undo
    - **Expected:** Entity restored at same position
 
-### TC-15.2.2.I1 Prefab Save Load Round Trip
+### TC-15.2.2.I1 Entity Template Save Load Round Trip
 
 | # | Requirement |
 |---|-------------|
 | 1 | R-15.2.2    |
 
-1. **#1** — Create nested prefab, save to disk, load
-   - **Expected:** Loaded prefab structure identical to saved
+1. **#1** — Create nested entity template, save to disk, load
+   - **Expected:** Loaded entity template structure identical to saved
 
 ### TC-15.2.4.I1 CSG Render Collision
 
@@ -341,11 +341,11 @@ Companion test cases for [level-world.md](level-world.md).
 |---|----------|--------|--------|-------------|
 | 1 | Release-to-visible for single entity placement | Latency | < 1 ms | R-15.2.1 |
 
-### TC-15.2.2.B1 Prefab Propagation
+### TC-15.2.2.B1 Entity Template Propagation
 
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
-| 1 | Propagate source change to 1000 prefab instances | Duration | < 16 ms | R-15.2.2 |
+| 1 | Propagate source change to 1000 entity template instances | Duration | < 16 ms | R-15.2.2 |
 
 ### TC-15.2.4.B1 CSG Boolean Operation
 

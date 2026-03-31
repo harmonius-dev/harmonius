@@ -1,89 +1,70 @@
 # User Stories -- 9.2 Morph Targets
 
-## F-9.2.1
+## Blend Shapes and Correctives
 
-| ID         | Persona                 | Features | Requirements |
-|------------|-------------------------|----------|--------------|
-| US-9.2.1.1 | engine developer (P-26) | F-9.2.1  | R-9.2.1      |
-| US-9.2.1.2 | character artist (P-9)  | F-9.2.1  | R-9.2.1      |
-| US-9.2.1.3 | engine tester (P-27)    | F-9.2.1  | R-9.2.1      |
+| ID          | Persona                    |
+|-------------|----------------------------|
+| US-9.2.1.1  | engine developer (P-26)    |
+| US-9.2.1.2  | character animator (P-11)  |
+| US-9.2.2.1  | rigger (P-10)              |
+| US-9.2.2.2  | character animator (P-11)  |
 
-1. **US-9.2.1.1** — I want GPU compute accumulation of weighted morph target deltas (position and
-   normal offsets) with sparse delta storage
-   - **Acceptance:** arbitrary active targets per mesh are evaluated with minimal memory bandwidth
-2. **US-9.2.1.2** — I want assign morph targets to face meshes and drive them with weight sliders in
-   the editor
-   - **Acceptance:** I can create unique facial features (nose width, jaw shape, cheekbone height)
-     for character customization
-3. **US-9.2.1.3** — I want verify that mobile supports 8-16 active morph targets per mesh, Switch
-   16-32, and desktop 64+
-   - **Acceptance:** morph target count respects per-platform GPU budgets
+1. **US-9.2.1.1** -- **As an** engine developer (P-26), **I want** GPU compute shaders that
+   accumulate weighted morph target deltas with sparse storage, **so that** blend shapes are applied
+   before skeletal skinning with minimal memory bandwidth.
 
-## F-9.2.2
+2. **US-9.2.1.2** -- **As a** character animator (P-11), **I want** to blend an arbitrary number of
+   morph targets per mesh with adjustable weights, **so that** character customization combines
+   multiple shape variations smoothly.
 
-| ID         | Persona                | Features | Requirements |
-|------------|------------------------|----------|--------------|
-| US-9.2.2.1 | character artist (P-9) | F-9.2.2  | R-9.2.2      |
-| US-9.2.2.2 | engine tester (P-27)   | F-9.2.2  | R-9.2.2      |
+3. **US-9.2.2.1** -- **As a** rigger (P-10), **I want** corrective blend shapes driven by joint
+   angles to activate automatically, **so that** deformation artifacts at extreme poses are fixed
+   without manual intervention.
 
-1. **US-9.2.2.1** — I want corrective blend shapes that auto-activate from joint angle combination
-   rules (elbow bend past 120 degrees)
-   - **Acceptance:** extreme poses look correct without manual per-frame intervention
-2. **US-9.2.2.2** — I want verify that corrective blend shapes are disabled on mobile for non-hero
-   characters under budget pressure
-   - **Acceptance:** base skinning quality is acceptable when correctives are skipped
+4. **US-9.2.2.2** -- **As a** character animator (P-11), **I want** to author corrective shapes as
+   difference-from-expected deltas with combination rules, **so that** corrections trigger at
+   precise joint angle thresholds.
 
-## F-9.2.3
+## Facial Animation
 
-| ID         | Persona                   | Features | Requirements |
-|------------|---------------------------|----------|--------------|
-| US-9.2.3.1 | character animator (P-11) | F-9.2.3  | R-9.2.3      |
-| US-9.2.3.2 | game designer (P-5)       | F-9.2.3  | R-9.2.3      |
-| US-9.2.3.3 | engine tester (P-27)      | F-9.2.3  | R-9.2.3      |
+| ID          | Persona                    |
+|-------------|----------------------------|
+| US-9.2.3.1  | character animator (P-11)  |
+| US-9.2.3.2  | character animator (P-11)  |
+| US-9.2.3.3  | engine developer (P-26)    |
 
-1. **US-9.2.3.1** — I want a facial animation system with standardized action units compatible with
-   performance capture
-   - **Acceptance:** captured facial performances map directly to in-engine blend shapes without
-     manual retargeting
-2. **US-9.2.3.2** — I want real-time facial animation supporting hundreds of visible NPC faces with
-   unique expressions
-   - **Acceptance:** city environments feel alive with diverse, emoting characters
-3. **US-9.2.3.3** — I want verify that mobile supports 16-24 face action units and desktop supports
-   52+ (ARKit-compatible)
-   - **Acceptance:** facial expression fidelity scales with platform capability
+1. **US-9.2.3.1** -- **As a** character animator (P-11), **I want** facial blend shapes driven
+   through standardized face action units, **so that** performance capture data maps directly to
+   in-engine facial animation.
 
-## F-9.2.4
+2. **US-9.2.3.2** -- **As a** character animator (P-11), **I want** both curve-driven keyframe
+   animation and real-time parameter input for lip sync, **so that** facial animation supports both
+   cinematic and runtime-driven expressions.
 
-| ID         | Persona                  | Features | Requirements |
-|------------|--------------------------|----------|--------------|
-| US-9.2.4.1 | environment artist (P-8) | F-9.2.4  | R-9.2.4      |
-| US-9.2.4.2 | game developer (P-15)    | F-9.2.4  | R-9.2.4      |
-| US-9.2.4.3 | engine tester (P-27)     | F-9.2.4  | R-9.2.4      |
+3. **US-9.2.3.3** -- **As an** engine developer (P-26), **I want** facial blend shapes to scale per
+   platform tier with distant NPCs disabling facial animation on mobile, **so that** hundreds of
+   visible characters are animated within budget.
 
-1. **US-9.2.4.1** — I want bake complex deformations (tentacles, fluid surfaces, foliage sway) into
-   vertex animation textures sampled in the vertex shader
-   - **Acceptance:** decorative animations play with zero CPU cost
-2. **US-9.2.4.2** — I want distant crowd characters to use VAT playback instead of full skeletal
-   evaluation
-   - **Acceptance:** animation cost for far characters drops to a single texture sample per vertex
-3. **US-9.2.4.3** — I want verify that mobile uses half-resolution VAT textures and desktop uses
-   full resolution
-   - **Acceptance:** VAT memory scales with platform capability
+## Per-Vertex Animation and Streaming
 
-## F-9.2.5
+| ID          | Persona                    |
+|-------------|----------------------------|
+| US-9.2.4.1  | technical artist (P-13)    |
+| US-9.2.4.2  | engine developer (P-26)    |
+| US-9.2.5.1  | engine developer (P-26)    |
+| US-9.2.5.2  | technical artist (P-13)    |
 
-| ID         | Persona                 | Features | Requirements |
-|------------|-------------------------|----------|--------------|
-| US-9.2.5.1 | game developer (P-15)   | F-9.2.5  | R-9.2.5      |
-| US-9.2.5.2 | engine tester (P-27)    | F-9.2.5  | R-9.2.5      |
-| US-9.2.5.3 | engine developer (P-26) | F-9.2.5  | R-9.2.5      |
+1. **US-9.2.4.1** -- **As a** technical artist (P-13), **I want** to bake complex deformations into
+   vertex animation textures sampled in the vertex shader, **so that** fluid surfaces, tentacles,
+   and foliage sway play back with zero CPU cost.
 
-1. **US-9.2.5.1** — I want async I/O morph target streaming that loads delta buffers only for
-   currently visible characters and evicts unused targets via LRU
-   - **Acceptance:** MMO-scale character customization fits in GPU memory
-2. **US-9.2.5.2** — I want fill morph target memory and verify that LRU eviction correctly unloads
-   the least recently used targets and reloads them on demand
-   - **Acceptance:** streaming never causes allocation failures
-3. **US-9.2.5.3** — I want confirm that morph target streaming uses IOCP on Windows, GCD on macOS,
-   and io_uring on Linux
-   - **Acceptance:** streaming uses the specified platform-native async I/O path
+2. **US-9.2.4.2** -- **As an** engine developer (P-26), **I want** VAT playback to be GPU-only with
+   each animation frame stored as a texel row, **so that** playback is lightweight on all platforms.
+
+3. **US-9.2.5.1** -- **As an** engine developer (P-26), **I want** morph target delta buffers
+   streamed from disk on demand using async I/O with LRU eviction, **so that** only targets needed
+   for visible characters consume memory.
+
+4. **US-9.2.5.2** -- **As a** technical artist (P-13), **I want** morph target streaming to support
+   MMO-scale character customization, **so that** hundreds of unique characters load their shape
+   data without exceeding memory budgets.

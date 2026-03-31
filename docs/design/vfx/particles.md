@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/vfx/](../../features/vfx/), [requirements/vfx/](../../requirements/vfx/), and
-> [user-stories/vfx/](../../user-stories/vfx/). The table below traces design elements to those
+> [features/vfx/](../../features/), [requirements/vfx/](../../requirements/), and
+> [user-stories/vfx/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 | Feature  | Requirement | User Stories                          |
@@ -1823,7 +1823,7 @@ compiles them:
 
 1. **HLSL source** authored per-module.
 2. **DXC** compiles HLSL to DXIL (D3D12) and SPIR-V (Vulkan) via C ABI.
-3. **Metal Shader Converter** transpiles DXIL to MSL (Metal) via C ABI.
+3. **Metal Shader Converter** transpiles DXIL to MSL (Metal) via swift-bridge.
 4. Effect graph compiler generates specialized HLSL by concatenating selected module functions into
    a single entry point.
 

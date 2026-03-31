@@ -2,65 +2,29 @@
 
 ## Visual Logic
 
-| ID       | Derived From                                           |
-|----------|--------------------------------------------------------|
-| R-13.4.1 | [F-13.4.1](../../features/game-framework/scripting.md) |
-| R-13.4.2 | [F-13.4.2](../../features/game-framework/scripting.md) |
-| R-13.4.3 | [F-13.4.3](../../features/game-framework/scripting.md) |
+1. **R-13.4.1** — The engine **SHALL** provide gameplay-specific logic graph integration points for
+   ECS world access (entities, components, resources), gameplay event emission/handling, ability
+   activation, state machine transitions, and AI blackboard read/write, with all gameplay scripting
+   authored through the visual logic graph system and no text-based scripting language.
+   - **Rationale:** Visual-only scripting enforces the no-code philosophy while providing full ECS
+     integration.
+   - **Verification:** Create a logic graph that reads a Health component, checks a threshold, and
+     emits a "low health" event. Attach to an entity and verify it executes in the ECS schedule.
+     Verify no text-based scripting API is exposed.
 
-1. **R-13.4.1** — The engine **SHALL** author all gameplay scripting through the universal logic
-   graph system with gameplay-specific integration points (ECS world state access, gameplay event
-   emission/handling, ability activation, state machine transitions, AI blackboard read/write),
-   where gameplay graphs attach to entities as components and execute in the ECS system schedule,
-   with no text-based scripting language provided.
-   - **Rationale:** Visual-only gameplay scripting ensures the no-code engine principle, enabling
-     designers to author all logic through graphs without programming expertise.
-   - **Verification:** Integration test: create a gameplay logic graph that reads an ECS component,
-     emits a gameplay event, and triggers a state machine transition. Attach it to an entity and
-     verify it executes correctly within the ECS schedule. Verify no text-based scripting API is
-     exposed to end users.
-2. **R-13.4.2** — The engine **SHALL** provide visual debugging of gameplay logic graphs with ECS
+2. **R-13.4.2** — The engine **SHALL** support visual debugging of gameplay logic graphs with ECS
    query result inspection, component value watch expressions, event flow visualization, per-entity
-   graph instance state comparison, simulation-pausing breakpoints with continued editor
-   interaction, and remote debugging over the network to a running game instance.
-   - **Rationale:** Visual debugging tools are essential for a no-code engine, enabling designers to
-     diagnose and fix gameplay logic without text-based debugging skills.
-   - **Verification:** Integration test: set a breakpoint in a gameplay logic graph, trigger it, and
-     verify the game simulation pauses while the editor remains interactive. Inspect ECS query
-     results and component values through the debugger UI. Connect remotely to a running game
-     instance and verify breakpoints and inspection work over the network.
-3. **R-13.4.3** — The engine **SHALL** apply gameplay logic graph changes made in the editor to a
-   running game session without restarting, by detecting graph asset changes, recompiling affected
-   graphs through the shared build cache, and patching running instances with new bytecode while
-   preserving persistent state (local variables, coroutine positions) when the variable layout is
-   compatible.
-   - **Rationale:** Hot reload enables rapid iteration on gameplay logic without restarting the game
-     session, dramatically reducing designer iteration time.
-   - **Verification:** Integration test: run a game session with a gameplay logic graph, modify the
-     graph in the editor, and verify the change takes effect in the running session within 1 second
-     without restart. Verify local variable values persist across a compatible reload. Modify the
-     variable layout incompatibly and verify the graph instance restarts cleanly with a warning.
+   graph state comparison, and remote debugging over the network.
+   - **Rationale:** Visual debugging enables designers to diagnose logic without code knowledge;
+     remote debugging supports deployed builds.
+   - **Verification:** Set a breakpoint in a logic graph. Trigger it and verify game pauses with
+     correct component values displayed. Connect a remote debugger to a running instance and verify
+     graph state is visible.
 
-## Non-Functional Requirements
-
-| ID         | Derived From |
-|------------|--------------|
-| R-13.4.NF1 | F-13.4.1     |
-| R-13.4.NF2 | F-13.4.3     |
-
-1. **R-13.4.NF1** — The engine **SHALL** execute all active gameplay logic graphs within a combined
-   budget of 4 ms per frame at 60 fps, supporting at least 1,000 concurrently active graph instances
-   (one per active entity with gameplay logic).
-   - **Rationale:** Gameplay logic competes with physics, rendering, and AI for frame budget;
-     exceeding 4 ms causes frame drops or forces other systems to shed work.
-   - **Verification:** Spawn 1,000 entities each running a representative gameplay logic graph (10
-     nodes, 2 ECS queries, 1 event emission). Measure total graph execution time per frame and
-     verify it stays under 4 ms at 60 fps.
-2. **R-13.4.NF2** — The engine **SHALL** detect, recompile, and patch a modified gameplay logic
-   graph within 1 second of the file change, measured from editor save to running instance executing
-   the new bytecode.
-   - **Rationale:** Turnaround times exceeding 1 second break the designer's interactive iteration
-     flow and reduce the value of hot reload over full restarts.
-   - **Verification:** Modify a gameplay logic graph with 50 nodes in the editor. Measure time from
-     save to the running game instance executing the patched graph. Verify the turnaround is under 1
-     second across 20 consecutive reload cycles.
+3. **R-13.4.3** — The engine **SHALL** support hot reload of gameplay logic graphs with changes
+   applied immediately without game restart, preserving persistent state (local variables, coroutine
+   positions) across reloads when layout is compatible, with clean restart on incompatible changes.
+   - **Rationale:** Immediate hot reload enables rapid iteration; state preservation avoids replay.
+   - **Verification:** Modify a graph while the game runs. Verify the change is visible within 1
+     second. Verify local variables retain their values. Make an incompatible change and verify the
+     graph restarts with a warning.

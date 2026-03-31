@@ -12,7 +12,6 @@ without rebuilding the entire tree. This SwiftUI-inspired approach gives the per
 retained-mode with the simplicity of declarative authoring. Artists and designers iterate on UI in
 the visual editor; the framework handles efficient updates.
 
-- **Requirements:** R-10.1.1
 - **Dependencies:** None
 - **Platform notes:** None
 
@@ -25,7 +24,6 @@ once and instantiated wherever needed with different bindings. Templates support
 injected by the consumer). The asset is edited exclusively through the visual UI editor; no text
 editing required (no-code philosophy).
 
-- **Requirements:** R-10.1.2
 - **Dependencies:** F-10.1.1, F-12.7.1 (Binary Asset Format)
 - **Platform notes:** None
 
@@ -37,7 +35,6 @@ view or is dismissed, it returns to the pool rather than being deallocated, and 
 data when needed. Critical for MMO scenarios where hundreds of nameplates, chat messages, and
 inventory cells are created and destroyed per second.
 
-- **Requirements:** R-10.1.3
 - **Dependencies:** F-10.1.1
 - **Platform notes:** Mobile enforces a lower active widget budget (200 vs 500 on desktop).
   Aggressive pooling and recycling are critical on memory-constrained devices.
@@ -51,7 +48,6 @@ handles one-dimensional flows (toolbars, action bars, chat input rows) while gri
 two-dimensional arrangements (inventory grids, talent trees, auction house result tables). Both
 support gap, alignment, justification, wrapping, and min/max size constraints.
 
-- **Requirements:** R-10.1.4
 - **Dependencies:** F-10.1.1
 - **Platform notes:** None
 
@@ -63,7 +59,6 @@ relative to screen edges, other widgets, or world-space attachment points. Ancho
 relationships between widget properties (e.g., "this widget's left edge equals that widget's right
 edge plus 8px"), enabling adaptive layouts across resolutions.
 
-- **Requirements:** R-10.1.5
 - **Dependencies:** F-10.1.1
 - **Platform notes:** None
 
@@ -76,7 +71,6 @@ through a cascading style system inspired by CSS. Styles can be defined in exter
 swapped at runtime to support light/dark modes, faction-specific skins, and seasonal event themes.
 Selectors match widgets by type, ID, class, and state (hovered, pressed, focused, disabled).
 
-- **Requirements:** R-10.1.6
 - **Dependencies:** F-10.1.1
 - **Platform notes:** None
 
@@ -90,7 +84,6 @@ automatically when the underlying data changes. Bindings support one-way (model 
 stats, inventory contents, quest progress, and buff durations change continuously and must be
 reflected in real time without manual polling.
 
-- **Requirements:** R-10.1.7
 - **Dependencies:** F-10.1.1
 - **Platform notes:** None
 
@@ -104,7 +97,6 @@ system must handle complex MMO UI navigation scenarios: cycling through action b
 nested menus (settings, guild management), and switching between multiple open panels (inventory,
 character sheet, map) without losing context.
 
-- **Requirements:** R-10.1.8
 - **Dependencies:** F-10.1.1
 - **Platform notes:** Gamepad navigation uses platform input APIs; see domain 6 (Input).
 
@@ -118,7 +110,6 @@ length across languages. Support right-to-left (RTL) layout mirroring for Arabic
 MMO-scale localization requires handling thousands of string keys, pluralization rules, gendered
 text, and number/date/currency formatting per locale.
 
-- **Requirements:** R-10.1.9
 - **Dependencies:** F-10.1.1, F-10.1.4
 - **Platform notes:** None
 
@@ -132,7 +123,6 @@ World-space panels support all layout modes, styling, and data binding. Used for
 (in-game computer screens, holographic displays, shop kiosks) and VR menus that float in 3D space.
 Panel resolution and physical size are configurable per instance.
 
-- **Requirements:** R-10.1.10
 - **Dependencies:** F-10.1.1, F-10.4.6 (World-Space UI)
 - **Platform notes:** VR controller ray input uses the input action system (F-6.2).
 
@@ -144,7 +134,6 @@ gestures. The widget tree's focus and navigation system (F-10.1.8) adapts to the
 UI panels curve slightly toward the viewer for readability. Text size auto-scales based on panel
 distance to maintain legibility. Comfort settings clamp panel positions to avoid neck strain.
 
-- **Requirements:** R-10.1.11
 - **Dependencies:** F-10.1.10, F-10.1.8 (Focus System)
 - **Platform notes:** OpenXR hand tracking and controller APIs.
 
@@ -157,7 +146,6 @@ the tree, and reordered children are moved without destroy/recreate. The diffing
 O(n) for common cases (keyed lists) and avoids layout recalculation for subtrees with unchanged
 geometry. This ensures 60fps UI updates even with hundreds of bound widgets changing simultaneously.
 
-- **Requirements:** R-10.1.12
 - **Dependencies:** F-10.1.1, F-10.1.7 (Data Binding)
 - **Platform notes:** None
 
@@ -175,7 +163,6 @@ animations that smoothly blend to a new target when retriggered mid-flight. The 
 runs independently of the game's animation system (domain 9), operating directly on widget tree
 properties.
 
-- **Requirements:** R-10.1.13
 - **Dependencies:** F-10.1.1 (Widget Tree), F-10.1.12 (Tree Diffing)
 - **Platform notes:** None
 
@@ -190,7 +177,6 @@ Sounds reference audio assets played through a dedicated UI mixer bus (F-5.1.3) 
 scheduling. Audio feedback respects accessibility settings — can be disabled globally, individually
 per sound type, or replaced with haptic feedback (F-6.4.1) on supported platforms.
 
-- **Requirements:** R-10.1.14
 - **Dependencies:** F-10.1.1 (Widget Tree), F-5.1.3 (Mixer Bus Graph), F-5.1.7 (Audio Formats)
 - **Platform notes:** On mobile, UI sounds use low-latency audio paths (AudioToolbox on iOS,
   SoundPool on Android) to avoid mixer bus scheduling delay.

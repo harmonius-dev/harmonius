@@ -2,14 +2,14 @@
 
 ## Content Plugins
 
-| ID       | Feature                     | Requirements |
-|----------|-----------------------------|--------------|
-| F-12.7.1 | Content Plugin System       | R-12.7.1     |
-| F-12.7.2 | Content Plugin Manifest     | R-12.7.2     |
-| F-12.7.3 | Content Plugin Hot Reload   | R-12.7.3     |
-| F-12.7.4 | Content Plugin Sandboxing   | R-12.7.4     |
-| F-12.7.5 | Content Plugin Packaging    | R-12.7.5     |
-| F-12.7.6 | Content Plugin Dependencies | R-12.7.6     |
+| ID       | Feature                     |
+|----------|-----------------------------|
+| F-12.7.1 | Content Plugin System       |
+| F-12.7.2 | Content Plugin Manifest     |
+| F-12.7.3 | Content Plugin Hot Reload   |
+| F-12.7.4 | Content Plugin Sandboxing   |
+| F-12.7.5 | Content Plugin Packaging    |
+| F-12.7.6 | Content Plugin Dependencies |
 
 1. **F-12.7.1** — A content plugin is a self-contained package of assets, logic graphs, components,
    and data that extends game functionality without native Rust code. Content plugins are loaded by

@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/geometry-world/](../../features/geometry-world/),
-> [requirements/geometry-world/](../../requirements/geometry-world/), and
-> [user-stories/geometry-world/](../../user-stories/geometry-world/). The table below traces design
-> elements to those definitions.
+> [features/geometry-world/](../../features/), [requirements/geometry-world/](../../requirements/),
+> and [user-stories/geometry-world/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 ### Heightfield Terrain (F-3.2.1–8 / R-3.2.1–8)
 
@@ -1767,7 +1766,7 @@ layer. No `std::fs` calls.
 
 1. **Windows** — `ReadFile` + `OVERLAPPED` for tile reads. Large tiles use scatter-gather for header
    + data separation.
-2. **macOS** — `dispatch_io_read` via C ABI. Tile reads routed to controlled dispatch queue,
+2. **macOS** — `dispatch_io_read` via swift-bridge. Tile reads routed to controlled dispatch queue,
    drained at reactor poll point.
 3. **Linux** — `io_uring_prep_read` for tile data. Registered buffers for frequently-loaded tile
    sizes.

@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/platform/](../../features/platform/),
-> [requirements/platform/](../../requirements/platform/), and
-> [user-stories/platform/](../../user-stories/platform/). The table below traces design elements to
-> those definitions.
+> [features/platform/](../../features/), [requirements/platform/](../../requirements/), and
+> [user-stories/platform/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature  | Requirement |
 |----------|-------------|
@@ -36,7 +35,7 @@ windowing code behind `cfg`-gated backend modules, ensuring that gameplay, UI, a
 never branch on platform.
 
 The subsystem uses direct platform-native APIs for window creation and event polling on each target:
-Win32 `CreateWindowEx` via `windows-rs` on Windows, `NSWindow` via Swift `@_cdecl` C ABI wrappers on
+Win32 `CreateWindowEx` via `windows-rs` on Windows, `NSWindow` via Swift through swift-bridge on
 macOS, and X11 via `x11rb` / Wayland via `wayland-client` on Linux. This gives us full control over
 HDR metadata negotiation, advanced VSync control, and auxiliary window management without
 third-party abstraction layers. All asynchronous abstractions use `async`/`await` — no callbacks.
@@ -77,7 +76,7 @@ graph TD
     end
 
     subgraph "platform::macos"
-        NS[NSWindow via Swift C ABI]
+        NS[NSWindow via swift-bridge]
         CG[CGDisplayCopyDisplayMode]
         ML[CAMetalLayer]
     end
@@ -131,7 +130,7 @@ harmonius_platform/
     ├── windows/
     │   └── window.rs    # Win32 CreateWindowEx, DXGI swapchain, WM_DPICHANGED
     ├── macos/
-    │   └── window.rs    # NSWindow via Swift C ABI, CAMetalLayer, backingScaleFactor
+    │   └── window.rs    # NSWindow via swift-bridge, CAMetalLayer, backingScaleFactor
     └── linux/
         └── window.rs    # x11rb / wayland-client, xrandr, wl_output, wp_fractional_scale_v1
 ```
@@ -1126,17 +1125,17 @@ The windowing subsystem is responsible for:
 | Platform      | API                            |
 |---------------|--------------------------------|
 | Windows       | `CreateWindowEx`               |
-| macOS         | `NSWindow` via Swift C ABI     |
-| iOS           | `UIWindow` via Swift C ABI     |
+| macOS         | `NSWindow` via swift-bridge     |
+| iOS           | `UIWindow` via swift-bridge     |
 | Linux X11     | `x11rb` (`CreateWindowAux`)    |
 | Linux Wayland | `wayland-client`               |
 
 1. **Windows** — COM initialized via `CoInitializeEx`. Window class registered with
    `RegisterClassExW`. Uses `windows-rs` for FFI.
 2. **macOS** — `NSApplication` must be initialized on the OS main thread. `NSWindow` created with
-   `initWithContentRect:styleMask:`. Swift wrappers expose C ABI via `@_cdecl`.
+   `initWithContentRect:styleMask:`. Swift wrappers exposed via swift-bridge.
 3. **iOS** — `UIApplicationMain` owns the OS main thread. `UIWindow` and `UIViewController` created
-   on the OS main thread via Swift C ABI wrappers. Input events (touch, accelerometer, keyboard)
+   on the OS main thread via swift-bridge wrappers. Input events (touch, accelerometer, keyboard)
    arrive on the OS main thread via UIKit and are forwarded to the game loop thread through a
    lock-free SPSC queue. The game loop runs on a dedicated thread, not the UIKit main thread.
 4. **Linux X11** — Connection opened via `x11rb::connect`. Window created via `CreateWindowAux`.
@@ -1221,7 +1220,7 @@ The windowing subsystem is responsible for:
 
 | Platform | Window API                      |
 |----------|---------------------------------|
-| iOS      | `UIWindow` via Swift C ABI      |
+| iOS      | `UIWindow` via swift-bridge      |
 | Android  | `ANativeWindow` via `ndk` crate |
 | Consoles | Platform SDK                    |
 
@@ -1408,7 +1407,7 @@ handling that prevents the DPI bugs common in engines using raw pixel values.
    platform-native implementations provide full control over HDR metadata, advanced DXGI swapchain
    flags, `wp_fractional_scale_v1` on Wayland, and all presentation modes without fighting a
    third-party abstraction layer. Platform backends: Win32 `CreateWindowEx` via `windows-rs`,
-   `NSWindow` via Swift `@_cdecl` C ABI wrappers, X11 via `x11rb` and Wayland via `wayland-client`.
+   `NSWindow` via Swift through swift-bridge, X11 via `x11rb` and Wayland via `wayland-client`.
 
 2. **Auxiliary window management** — The API supports creating multiple windows (primary + auxiliary
    for debug overlays, chat pop-outs, streaming dashboards). Open questions:

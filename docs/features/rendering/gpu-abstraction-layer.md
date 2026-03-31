@@ -2,11 +2,11 @@
 
 ## Backend Trait Interface
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-2.1.1 | GPU Backend Trait          | R-2.1.1      |
-| F-2.1.2 | Command Buffer Abstraction | R-2.1.2      |
-| F-2.1.3 | Pipeline State Abstraction | R-2.1.3      |
+| ID      | Feature                    |
+|---------|----------------------------|
+| F-2.1.1 | GPU Backend Trait          |
+| F-2.1.2 | Command Buffer Abstraction |
+| F-2.1.3 | Pipeline State Abstraction |
 
 1. **F-2.1.1** — Defines the top-level Rust trait that all GPU backends implement, using associated
    types for device, command buffer, pipeline state, and resource handles. Static dispatch via
@@ -27,35 +27,34 @@
 
 ## Metal Backend
 
-| ID      | Feature                               | Requirements |
-|---------|---------------------------------------|--------------|
-| F-2.1.4 | Metal Backend (Swift @_cdecl) | R-2.1.4      |
+| ID      | Feature                               |
+|---------|---------------------------------------|
+| F-2.1.4 | Metal Backend (swift-bridge) |
 
-1. **F-2.1.4** — Metal GPU backend implemented as a Swift library exposing a C-compatible API
-   surface via `@_cdecl` functions. Rust declares matching `extern "C"` signatures, wrapping the raw
-   bindings in safe Rust types that implement the backend trait.
+1. **F-2.1.4** — Metal GPU backend implemented as a Swift library with Rust interop via
+   swift-bridge. Swift types and functions are exposed directly to Rust through swift-bridge
+   generated bindings, wrapping them in safe Rust types that implement the backend trait.
    - **Deps:** F-2.1.1
    - **Platform:** macOS and iOS only. Requires Swift toolchain for the Metal wrapper library. No
-     Objective-C or C++ in the FFI boundary.
+     Objective-C in the FFI boundary.
 
 ## D3D12 Backend
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-2.1.5 | D3D12 Backend (COM-to-Bindgen) | R-2.1.5      |
+| ID      | Feature                        |
+|---------|--------------------------------|
+| F-2.1.5 | D3D12 Backend (COM-to-Bindgen) |
 
-1. **F-2.1.5** — Direct3D 12 backend in pure Rust using `windows-rs` COM bindings.
-   Safe Rust wrappers manage COM reference counting and provide typed interfaces for device, command
-   list, and resource creation that satisfy the backend trait.
+1. **F-2.1.5** — Direct3D 12 backend in pure Rust using `windows-rs` COM bindings. Safe Rust
+   wrappers manage COM reference counting and provide typed interfaces for device, command list, and
+   resource creation that satisfy the backend trait.
    - **Deps:** F-2.1.1
-   - **Platform:** Windows only. Uses C-compatible COM headers directly — no C++ or windows-rs
-     dependency.
+   - **Platform:** Windows only. Uses C-compatible COM headers directly — no windows-rs dependency.
 
 ## Vulkan Backend
 
-| ID      | Feature                       | Requirements |
-|---------|-------------------------------|--------------|
-| F-2.1.6 | Vulkan Backend (ash)          | R-2.1.6      |
+| ID      | Feature                       |
+|---------|-------------------------------|
+| F-2.1.6 | Vulkan Backend (ash)          |
 
 1. **F-2.1.6** — Vulkan backend using `ash` (thin Vulkan bindings). Safe Rust wrappers encapsulate
    instance, device, and queue lifetime management with RAII semantics. Validation layer integration
@@ -66,14 +65,14 @@
 
 ## GPU Runtime
 
-| ID       | Feature                               | Requirements |
-|----------|---------------------------------------|--------------|
-| F-2.1.7  | Memory Sub-Allocation                 | R-2.1.7      |
-| F-2.1.8  | GPU State Tracking                    | R-2.1.8      |
-| F-2.1.9  | Barrier Optimization                  | R-2.1.9      |
-| F-2.1.10 | Work Graph Support                    | R-2.1.10     |
-| F-2.1.11 | Cross-Backend Feature Emulation       | R-2.1.11     |
-| F-2.1.12 | GPU Performance Queries and Profiling | R-2.1.12     |
+| ID       | Feature                               |
+|----------|---------------------------------------|
+| F-2.1.7  | Memory Sub-Allocation                 |
+| F-2.1.8  | GPU State Tracking                    |
+| F-2.1.9  | Barrier Optimization                  |
+| F-2.1.10 | Work Graph Support                    |
+| F-2.1.11 | Cross-Backend Feature Emulation       |
+| F-2.1.12 | GPU Performance Queries and Profiling |
 
 1. **F-2.1.7** — GPU heap sub-allocator that carves typed buffer and texture regions from large
    pre-allocated memory blocks. Reduces the number of OS-level allocations from thousands to a
@@ -118,10 +117,10 @@
 
 ## Unified Game Loop Integration
 
-| ID       | Feature                   | Requirements |
-|----------|---------------------------|--------------|
-| F-2.1.13 | CPU Work Graph Emulation  | R-2.1.13     |
-| F-2.1.14 | Safe GPU Resource Handles | R-2.1.14     |
+| ID       | Feature                   |
+|----------|---------------------------|
+| F-2.1.13 | CPU Work Graph Emulation  |
+| F-2.1.14 | Safe GPU Resource Handles |
 
 1. **F-2.1.13** — CPU-side emulation of D3D12 work graphs via indirect dispatch chains in the task
    graph. Producer nodes enqueue work items into intermediate buffers; consumer nodes read from

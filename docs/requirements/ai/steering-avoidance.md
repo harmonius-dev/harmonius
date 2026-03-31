@@ -1,84 +1,53 @@
-# R-7.2 -- Steering & Avoidance Requirements
+# R-7.2 -- Steering and Avoidance Requirements
 
 ## Local Avoidance
 
-| ID      | Derived From                                       |
-|---------|----------------------------------------------------|
-| R-7.2.1 | [F-7.2.1](../../features/ai/steering-avoidance.md) |
-| R-7.2.2 | [F-7.2.2](../../features/ai/steering-avoidance.md) |
+1. **R-7.2.1** -- The engine **SHALL** implement Optimal Reciprocal Collision Avoidance so agents
+   navigate dense areas without overlapping, producing deadlock-free crowd flow.
+   - **Rationale:** ORCA provides mathematically guaranteed collision-free velocities for large
+     agent counts in confined spaces.
+   - **Verification:** Spawn 200+ agents in a confined area and verify no two agents overlap. Send
+     two groups through a narrow passage from opposite directions and verify deadlock-free
+     resolution.
 
-1. **R-7.2.1** — The engine **SHALL** implement Optimal Reciprocal Collision Avoidance so that
-   agents compute deadlock-free velocities in dense areas, producing smooth crowd flow with zero
-   agent overlap at chokepoints.
-   - **Rationale:** Dense crowd scenarios (city streets, battle melees) require collision avoidance
-     that scales to hundreds of agents without deadlocks or interpenetration.
-   - **Verification:** Spawn 200 agents at a chokepoint with opposing destinations. Verify zero
-     agent overlap throughout the simulation. Verify all agents reach their destinations without
-     deadlock. Verify per-agent avoidance computation completes within the configured tick budget.
-2. **R-7.2.2** — The engine **SHALL** cast short-range feeler rays against static geometry to steer
-   agents away from walls, pillars, and terrain edges, operating as a correction layer after ORCA
-   and maintaining at least agent-radius clearance from all static surfaces.
-   - **Rationale:** ORCA handles agent-agent avoidance but not static geometry; feeler rays prevent
-     agents from clipping into walls and terrain features.
-   - **Verification:** Navigate an agent along a wall and verify it maintains at least agent-radius
-     distance from the surface at all times. Navigate through a pillar field and verify no collision
-     with any static geometry.
+2. **R-7.2.2** -- The engine **SHALL** cast short-range feeler rays against static geometry as a
+   correction layer after ORCA, handling walls and terrain edges not represented as agents.
+   - **Rationale:** ORCA handles agent-agent avoidance but not agent-geometry; feeler rays fill this
+     gap.
+   - **Verification:** Send agents through corridors and verify no clipping through walls. Verify
+     low-LOD agents skip obstacle avoidance as designed.
 
 ## Steering Behaviors
 
-| ID      | Derived From                                       |
-|---------|----------------------------------------------------|
-| R-7.2.3 | [F-7.2.3](../../features/ai/steering-avoidance.md) |
-| R-7.2.4 | [F-7.2.4](../../features/ai/steering-avoidance.md) |
+1. **R-7.2.3** -- The engine **SHALL** provide seek, flee, arrive, wander, pursuit, and evade as
+   composable steering force functions, each returning a force vector.
+   - **Rationale:** Composable steering primitives enable rich movement behavior through combination
+     rather than per-scenario coding.
+   - **Verification:** Verify arrive brings agents to a stop within tolerance. Verify pursuit
+     intercepts a linearly moving target faster than naive seek. Verify wander keeps agents within a
+     configurable area.
 
-1. **R-7.2.3** — The engine **SHALL** provide composable steering primitives for seek, flee, arrive
-   (with configurable deceleration radius), wander (constrained random heading), pursuit (predictive
-   interception), and evade (predictive escape), each returning a steering force vector.
-   - **Rationale:** Steering primitives are the building blocks for all AI movement; composability
-     enables complex behaviors from simple, testable units.
-   - **Verification:** Test arrive: verify the agent decelerates and stops within 0.1 m of the
-     destination. Test pursuit: verify the agent intercepts a moving target rather than chasing its
-     current position. Test wander: verify the agent's heading changes over time but stays within
-     the configured wander constraint.
-2. **R-7.2.4** — The engine **SHALL** combine multiple active steering behaviors per agent using
-   either weighted blending or a priority pipeline that allocates remaining steering magnitude to
-   lower-priority layers, preventing conflicting forces from producing zero net movement.
-   - **Rationale:** Agents simultaneously pursuing and avoiding obstacles need a blending strategy
-     that prevents stalling when forces cancel out.
-   - **Verification:** Activate simultaneous pursuit and obstacle avoidance behaviors. Verify the
-     agent continues moving (non-zero velocity) when forces partially conflict. Verify
-     higher-priority avoidance is fully satisfied before lower-priority pursuit receives remaining
-     magnitude.
+2. **R-7.2.4** -- The engine **SHALL** combine multiple active steering behaviors using either
+   weighted-sum blending or a priority pipeline that allocates remaining magnitude to lower-priority
+   layers.
+   - **Rationale:** Conflicting forces must be resolved without cancellation; priority blending
+     ensures high-priority behaviors are satisfied first.
+   - **Verification:** Verify priority blending prevents conflicting forces from canceling out.
+     Verify weighted blending with known inputs produces the expected weighted sum vector.
 
 ## Formation and Group Movement
 
-| ID      | Derived From                                       |
-|---------|----------------------------------------------------|
-| R-7.2.5 | [F-7.2.5](../../features/ai/steering-avoidance.md) |
-| R-7.2.6 | [F-7.2.6](../../features/ai/steering-avoidance.md) |
+1. **R-7.2.5** -- The engine **SHALL** assign agents to slots in parameterized formation shapes with
+   automatic spacing adjustment when terrain narrows and slot reassignment when members are lost.
+   - **Rationale:** Military and escort formations require structured group movement that adapts to
+     geometry and casualties.
+   - **Verification:** Verify formation spacing matches configured values within tolerance. Test a
+     formation through a narrow passage and verify spacing adjusts without clipping. Remove members
+     and verify remaining agents reassign to valid slots.
 
-1. **R-7.2.5** — The engine **SHALL** assign agents to slots in parameterized formation shapes
-   (line, wedge, column, circle) with a leader driving the group along the path and followers
-   maintaining offsets via arrival steering, automatically adjusting spacing when terrain narrows.
-   - **Rationale:** Tactical games require squads to maintain recognizable formations during
-     movement while adapting to environmental constraints.
-   - **Verification:** Move a 6-agent wedge formation through open terrain and verify all agents
-     maintain their offsets within 0.5 m tolerance. Move the formation through a narrow corridor and
-     verify spacing compresses automatically without agents overlapping. Verify formation re-expands
-     after exiting the narrow terrain.
-2. **R-7.2.6** — The engine **SHALL** coordinate steering across named groups so members share a
-   common velocity goal, using a lightweight centroid and heading tracker to apply cohesion and
-   alignment corrections that prevent group fragmentation during turns.
-   - **Rationale:** Groups of NPCs (patrols, herds, squads) must stay together during navigation
-     without the overhead of full flocking simulation.
-   - **Verification:** Create a 10-agent group and navigate it through a sharp turn. Verify the
-     group's bounding radius does not exceed 1.5x its initial radius during the turn. Verify all
-     agents remain within communication range of the group centroid throughout the maneuver.
-
----
-
-## User Story Traceability
-
-User stories for this domain are maintained in
-[user-stories/ai/steering-avoidance.md](../../user-stories/ai/steering-avoidance.md). Requirements
-in this document are derived from those user stories.
+2. **R-7.2.6** -- The engine **SHALL** coordinate steering across named groups using a shared
+   velocity goal with cohesion and alignment corrections.
+   - **Rationale:** Groups must maintain cohesion during turns without the full computational cost
+     of crowd simulation flocking.
+   - **Verification:** Navigate a group through turns and verify cohesion within a configurable
+     radius. Verify all members converge to a shared velocity goal within a bounded time.

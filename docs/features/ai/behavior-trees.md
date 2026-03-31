@@ -9,7 +9,6 @@ failure), Selector (runs children in order, succeeds on first success), Parallel
 concurrently with configurable success/failure policies), and Leaf (executes a single action or
 condition check). These composites form the structural backbone of all NPC behavior.
 
-- **Requirements:** R-7.3.1
 - **Dependencies:** None
 - **Platform notes:** Mobile ticks behavior trees at reduced frequency (5-10 Hz vs. 20-30 Hz on
   desktop) via the AI LOD system (F-7.7.5) to fit within CPU budget.
@@ -21,7 +20,6 @@ until failure), Succeeder (always returns success), Rate Limiter (throttles tick
 Cooldown (blocks re-entry for a duration). Decorators enable reusable behavior patterns without
 duplicating subtrees.
 
-- **Requirements:** R-7.3.2
 - **Dependencies:** F-7.3.1
 - **Platform notes:** Rate Limiter decorators are especially useful on mobile to throttle expensive
   subtrees independently of the global tick rate.
@@ -33,7 +31,6 @@ self-abort (re-checks own conditions), lower-priority abort (interrupts siblings
 combined. Critical for responsive raid-boss AI that must immediately react to phase transitions or
 threat changes.
 
-- **Requirements:** R-7.3.3
 - **Dependencies:** F-7.3.1
 - **Platform notes:** Abort re-evaluation frequency tied to BT tick rate; mobile agents react slower
   due to reduced tick rate but remain functionally correct.
@@ -47,7 +44,6 @@ nodes. Supports scoped keys (self, group, global) so squad members can share tac
 threat targets or rally points. Observers can register for change notifications to trigger
 conditional aborts.
 
-- **Requirements:** R-7.3.4
 - **Dependencies:** None
 - **Platform notes:** Per-agent memory footprint matters on mobile. Mobile limits blackboard key
   count per agent and uses compact storage for value types.
@@ -61,7 +57,6 @@ runtime. Supports hot-reload during development so designers can iterate on NPC 
 restarting the server. Trees reference node types by registered name, enabling project-specific leaf
 nodes.
 
-- **Requirements:** R-7.3.5
 - **Dependencies:** F-7.3.1, F-7.3.4
 - **Platform notes:** Hot-reload is development-only; stripped from shipping builds on all
   platforms. Mobile ships pre-compiled binary tree assets for faster loading.
@@ -72,7 +67,6 @@ A node type that references another behavior tree asset by handle, expanding it 
 or executing it as a nested scope. Enables modular authoring where common patterns (patrol, flee to
 safety, call for help) are defined once and reused across many NPC archetypes.
 
-- **Requirements:** R-7.3.6
 - **Dependencies:** F-7.3.5
 - **Platform notes:** Mobile may use simplified subtree variants (fewer branches) loaded via
   platform-specific asset variants to reduce tree depth and tick cost.
@@ -86,6 +80,5 @@ selected agent. An optional editor overlay renders the tree structure with color
 (running, success, failure) and live blackboard contents to accelerate behavior authoring and
 debugging.
 
-- **Requirements:** R-7.3.7
 - **Dependencies:** F-7.3.1, F-7.3.4
 - **Platform notes:** Visualization overlay is editor-only; trace log is available in all builds

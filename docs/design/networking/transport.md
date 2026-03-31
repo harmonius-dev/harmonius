@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/networking/](../../features/networking/),
-> [requirements/networking/](../../requirements/networking/), and
-> [user-stories/networking/](../../user-stories/networking/). The table below traces design elements
-> to those definitions.
+> [features/networking/](../../features/), [requirements/networking/](../../requirements/), and
+> [user-stories/networking/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 | Feature | Requirement         | User Story          |
 |---------|---------------------|---------------------|
@@ -1502,7 +1501,7 @@ pub enum DtlsContext {
     /// Windows: Schannel via windows-rs.
     #[cfg(target_os = "windows")]
     Schannel(SchannelContext),
-    /// macOS: Security.framework via C ABI.
+    /// macOS: Security.framework via swift-bridge.
     #[cfg(target_os = "macos")]
     SecureTransport(SecureTransportContext),
     /// Linux: rustls (pure Rust, no OpenSSL
@@ -1874,7 +1873,7 @@ for id in expired {
 | Linux    | rustls             |
 
 1. **Windows** — Via `windows-rs`. Hardware AES-NI. FIPS-compliant.
-2. **macOS** — Via C ABI wrappers. Hardware AES acceleration on Apple Silicon.
+2. **macOS** — Via swift-bridge. Hardware AES acceleration on Apple Silicon.
 3. **Linux** — Pure Rust. Uses `ring` crate for AES-GCM. Hardware AES-NI on x86_64.
 
 ### Platform Defaults
@@ -1897,7 +1896,7 @@ for id in expired {
 | `rustls` | DTLS on Linux | Pure Rust TLS, no C dependencies, actively maintained |
 | `ring` | AES-GCM, HMAC-SHA256 | Used by rustls; hardware AES-NI support |
 | `windows-rs` | Schannel, Winsock2 overlapped I/O | Zero-cost FFI to Windows APIs |
-| (hand-written `extern "C"`) | Security.framework Swift declarations | Matches Swift C ABI |
+| `swift-bridge` | Security.framework Swift bindings | Direct Rust-Swift FFI |
 | `smallvec` | Inline-allocated small vectors | Fragment lists, timeout batches |
 
 ## Safety Invariants
@@ -2099,8 +2098,8 @@ threading design's controlled-poll architecture. The DTLS backend uses platform-
 (Schannel, Security.framework, rustls) selected via `cfg`, consistent with the platform abstraction
 pattern used in windowing and threading. The `NetStatsResource` is an ECS resource read by gameplay
 systems, following the same resource pattern as other subsystems. Proposed dependencies (`rustls`,
-`ring`, `windows-rs`, `libloading`, `smallvec`) are all low-level libraries already used or approved in
-other designs.
+`ring`, `windows-rs`, `libloading`, `smallvec`) are all low-level libraries already used or approved
+in other designs.
 
 ## Open Questions
 

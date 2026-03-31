@@ -1,86 +1,50 @@
 # R-15.4 -- Animation Editor Requirements
 
-## Timeline
+## Requirements
 
-| ID       | Derived From                                                |
-|----------|-------------------------------------------------------------|
-| R-15.4.1 | [F-15.4.1](../../features/tools-editor/animation-editor.md) |
-| R-15.4.2 | [F-15.4.2](../../features/tools-editor/animation-editor.md) |
+1. **R-15.4.1** — The engine **SHALL** provide a multi-track animation timeline with keyframe
+   editing, playback controls, scrubbing, and color-coded channels for transform and custom
+   properties.
+   - **Rationale:** A timeline is the fundamental tool for reviewing and editing keyframed animation
+     data.
+   - **Verification:** Create keyframes on three channels, scrub the timeline, and verify the
+     preview updates in real time.
 
-1. **R-15.4.1** — The editor **SHALL** provide a multi-track timeline for animation clips with
-   color-coded tracks per property type, playback controls with scrubbing and frame stepping,
-   keyframe move/copy, and frame boundary snapping.
-   - **Rationale:** Frame-accurate keyframe editing is essential for animation authoring.
-   - **Verification:** Benchmark: scrub a 300-bone animation and verify the viewport stays above 30
-     FPS.
-2. **R-15.4.2** — The editor **SHALL** provide a curve editor with Bezier and Hermite tangent modes,
-   per-channel visibility toggles, tangent manipulation handles, auto-tangent computation, curve
-   presets (ease-in, ease-out, linear, stepped), and box selection for multi-curve batch editing.
-   - **Rationale:** Precise interpolation control is critical for polished animation quality.
-   - **Verification:** Unit test: apply each curve preset and verify the interpolation profile
-     matches the expected mathematical function within epsilon.
+2. **R-15.4.2** — The engine **SHALL** provide a curve editor with Bezier and Hermite tangent modes,
+   auto-tangent computation, preset curves, and multi-curve batch editing.
+   - **Rationale:** Precise curve control determines animation quality and timing feel.
+   - **Verification:** Apply an ease-in preset, verify the tangent handles match the expected curve
+     shape.
 
-## Skeleton and Preview
+3. **R-15.4.3** — The engine **SHALL** render a skeleton viewer with selectable bones, constraint
+   visualization, IK chain highlights, and multiple display modes.
+   - **Rationale:** Rig inspection is required for debugging skeletal issues and retargeting setup.
+   - **Verification:** Select a bone and verify its IK chain and constraints highlight in the
+     viewer.
 
-| ID       | Derived From                                                |
-|----------|-------------------------------------------------------------|
-| R-15.4.3 | [F-15.4.3](../../features/tools-editor/animation-editor.md) |
-| R-15.4.4 | [F-15.4.4](../../features/tools-editor/animation-editor.md) |
+4. **R-15.4.4** — The engine **SHALL** provide an animation preview viewport with configurable
+   ground plane, lighting, orbit camera, and debug overlays for velocity, contacts, and bone trails.
+   - **Rationale:** Preview with debug data enables diagnosing foot sliding and animation-gameplay
+     desync.
+   - **Verification:** Play an animation and verify velocity vectors render on each bone in the
+     overlay.
 
-1. **R-15.4.3** — The editor **SHALL** display a 3D bone visualization overlaid on the mesh with
-   selectable bones that highlight children and IK chains, togglable display modes (octahedral,
-   stick, axes), and multi-skeleton overlay for comparison.
-   - **Rationale:** Skeleton visualization is required for rigging verification, IK setup, and
-     retargeting.
-   - **Verification:** Unit test: select a bone and verify the correct child chain is highlighted.
-2. **R-15.4.4** — The editor **SHALL** provide a dedicated animation preview viewport with
-   configurable ground plane, adjustable lighting, camera orbit, blend result preview, root motion
-   trajectory visualization, and debug overlays for velocity vectors and bone trails.
-   - **Rationale:** Evaluating animation in isolation from the scene with debug overlays accelerates
-     authoring.
-   - **Verification:** Unit test: play a root motion animation and verify the trajectory
-     visualization matches expected travel distance within tolerance.
+5. **R-15.4.5** — The engine **SHALL** provide a 1D/2D blend space editor with real-time blended
+   output preview and drag-based sample repositioning.
+   - **Rationale:** Blend spaces control locomotion quality; real-time preview enables fast tuning.
+   - **Verification:** Move the blend crosshair between two samples and verify the preview shows
+     interpolated output.
 
-## Blend and State Authoring
+6. **R-15.4.6** — The engine **SHALL** provide a visual state machine editor with state nodes,
+   transition edges with condition expressions, and active-state highlighting during preview.
+   - **Rationale:** State machines are the primary way designers author animation logic without
+     code.
+   - **Verification:** Create a two-state machine, trigger a transition, and verify the editor
+     highlights the active state.
 
-| ID       | Derived From                                                |
-|----------|-------------------------------------------------------------|
-| R-15.4.5 | [F-15.4.5](../../features/tools-editor/animation-editor.md) |
-| R-15.4.6 | [F-15.4.6](../../features/tools-editor/animation-editor.md) |
-
-1. **R-15.4.5** — The editor **SHALL** provide 1D and 2D blend space editors with drag-based sample
-   repositioning, interpolation region visualization, and real-time blended output preview via a
-   parameter-space crosshair.
-   - **Rationale:** Visual blend space authoring is required for no-code locomotion tuning.
-   - **Verification:** Unit test: position the crosshair at center of a 2D blend space and verify
-     equal blend of corner samples.
-2. **R-15.4.6** — The editor **SHALL** provide a visual node-graph editor for animation state
-   machines with states representing clips or blend spaces, configurable transition blend durations
-   and conditions, active-state highlighting during preview, and interruption rules for
-   mid-transition overrides.
-   - **Rationale:** No-code animation state machine authoring is essential for the no-code engine
-     constraint.
-   - **Verification:** Unit test: set a transition condition, trigger it, and verify the state
-     change occurs at the correct parameter value.
-
-## Retargeting
-
-| ID       | Derived From                                                |
-|----------|-------------------------------------------------------------|
-| R-15.4.7 | [F-15.4.7](../../features/tools-editor/animation-editor.md) |
-
-1. **R-15.4.7** — The editor **SHALL** provide a side-by-side skeleton comparison view with
-   bone-pair assignment, limb length ratio adjustment, and real-time retargeted animation preview
-   across humanoid, creature, and mount rigs.
-   - **Rationale:** Sharing animation libraries across rigs saves production time; real-time preview
-     catches issues before commit.
-   - **Verification:** Unit test: retarget a walk animation and verify foot contact positions are
-     preserved within configurable tolerance.
-
----
-
-## User Story Traceability
-
-User stories for this domain are maintained in
-[user-stories/tools-editor/animation-editor.md](../../user-stories/tools-editor/animation-editor.md).
-Requirements in this document are derived from those user stories.
+7. **R-15.4.7** — The engine **SHALL** provide a retargeting setup editor with side-by-side skeleton
+   comparison, bone-pair assignment, limb length ratio adjustment, and real-time retargeted preview.
+   - **Rationale:** Retargeting enables sharing animation libraries across differently proportioned
+     rigs.
+   - **Verification:** Retarget a walk animation to a differently proportioned skeleton and verify
+     foot contact positions are correct.

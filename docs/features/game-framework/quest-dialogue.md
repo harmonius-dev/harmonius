@@ -2,11 +2,11 @@
 
 ## Quest Graph
 
-| ID       | Feature                        | Requirements |
-|----------|--------------------------------|--------------|
-| F-13.6.1 | Quest Graph System             | R-13.6.1     |
-| F-13.6.2 | Quest Prerequisites and Gating | R-13.6.2     |
-| F-13.6.3 | Quest Tracking and Journal     | R-13.6.3     |
+| ID       | Feature                        |
+|----------|--------------------------------|
+| F-13.6.1 | Quest Graph System             |
+| F-13.6.2 | Quest Prerequisites and Gating |
+| F-13.6.3 | Quest Tracking and Journal     |
 
 1. **F-13.6.1** — Represents quests as directed acyclic graphs of objectives, prerequisites, and
    branching paths. Each quest node defines an objective type (kill, collect, escort, interact,
@@ -30,12 +30,12 @@
 
 ## Dialogue System
 
-| ID        | Feature                                  | Requirements |
-|-----------|------------------------------------------|--------------|
-| F-13.6.4  | Dialogue Tree System                     | R-13.6.4     |
-| F-13.6.5a | Conversation Camera and Framing          | R-13.6.5a    |
-| F-13.6.5b | Conversation Gameplay State              | R-13.6.5b    |
-| F-13.6.5c | Conversation Interruption and Resumption | R-13.6.5c    |
+| ID        | Feature                                  |
+|-----------|------------------------------------------|
+| F-13.6.4  | Dialogue Tree System                     |
+| F-13.6.5a | Conversation Camera and Framing          |
+| F-13.6.5b | Conversation Gameplay State              |
+| F-13.6.5c | Conversation Interruption and Resumption |
 
 1. **F-13.6.4** — Authors branching dialogues as tree structures with NPC lines, player response
    options, and conditional branches. Conditions on branches can check quest state, faction
@@ -62,11 +62,11 @@
 
 ## Rewards and Economy
 
-| ID        | Feature                         | Requirements |
-|-----------|---------------------------------|--------------|
-| F-13.6.6  | Quest Rewards and Economy Hooks | R-13.6.6     |
-| F-13.6.7a | Server-Driven World Events      | R-13.6.7a    |
-| F-13.6.7b | Quest Phasing System            | R-13.6.7b    |
+| ID        | Feature                         |
+|-----------|---------------------------------|
+| F-13.6.6  | Quest Rewards and Economy Hooks |
+| F-13.6.7a | Server-Driven World Events      |
+| F-13.6.7b | Quest Phasing System            |
 
 1. **F-13.6.6** — Defines per-quest reward tables: experience points, currency, items (fixed or
    choice-of-N), reputation, achievement credit, and unlocks (recipes, mounts, titles). Reward
@@ -80,7 +80,7 @@
    and broadcast zone state changes to all connected clients simultaneously.
    - **Deps:** F-13.6.1, F-8.7.1 (World Sharding)
 3. **F-13.6.7b** — Shows different versions of a zone to players at different quest stages (e.g., a
-   town before and after destruction). Phasing integrates with the level streaming sub-level system
+   town before and after destruction). Phasing integrates with the zone streaming sub-level system
    to swap geometry, NPCs, and interactables per player's quest progress without affecting other
    players in the same zone. Phase mappings are authored as data assets per quest node.
    - **Deps:** F-13.6.1, F-13.2.4 (Sub-Level Composition)

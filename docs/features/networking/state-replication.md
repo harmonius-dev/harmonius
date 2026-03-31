@@ -1,11 +1,11 @@
-# 8.2 — State Replication
+# 8.2 -- State Replication
 
 ## Property Replication
 
-| ID      | Feature                                      | Requirements |
-|---------|----------------------------------------------|--------------|
-| F-8.2.1 | Delta-Compressed Property Replication        | R-8.2.1      |
-| F-8.2.2 | Component Replication with Schema Versioning | R-8.2.2      |
+| ID      | Feature                                      |
+|---------|----------------------------------------------|
+| F-8.2.1 | Delta-Compressed Property Replication        |
+| F-8.2.2 | Component Replication with Schema Versioning |
 
 1. **F-8.2.1** — Replicate entity component properties from server to clients by transmitting only
    the fields that changed since each client's last acknowledged state. Delta compression uses
@@ -18,17 +18,17 @@
 2. **F-8.2.2** — Replicate entire ECS components as atomic units with schema versioning so that
    clients running slightly different build versions can still decode replicated data. Component
    schemas are registered at startup and negotiated during connection handshake, enabling rolling
-   server updates without kicking all players — critical for live-service MMO operations.
+   server updates without kicking all players -- critical for live-service MMO operations.
    - **Deps:** F-8.2.1, F-8.1.1
    - **Platform:** Mobile clients may run older app versions due to app store update delays; schema
      versioning is critical for mobile cross-version compatibility.
 
 ## Relevancy and Filtering
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-8.2.3 | Area-of-Interest Filtering         | R-8.2.3      |
-| F-8.2.4 | Conditional and Tiered Replication | R-8.2.4      |
+| ID      | Feature                            |
+|---------|------------------------------------|
+| F-8.2.3 | Area-of-Interest Filtering         |
+| F-8.2.4 | Conditional and Tiered Replication |
 
 1. **F-8.2.3** — Limit replication to entities within each client's area of interest (AOI), defined
    by spatial proximity, visibility, and game-specific rules (e.g., always replicate party members,
@@ -47,10 +47,10 @@
 
 ## Bandwidth Management
 
-| ID      | Feature                                     | Requirements |
-|---------|---------------------------------------------|--------------|
-| F-8.2.5 | Priority Scheduling and Bandwidth Budgeting | R-8.2.5      |
-| F-8.2.6 | Entity Dormancy                             | R-8.2.6      |
+| ID      | Feature                                     |
+|---------|---------------------------------------------|
+| F-8.2.5 | Priority Scheduling and Bandwidth Budgeting |
+| F-8.2.6 | Entity Dormancy                             |
 
 1. **F-8.2.5** — Assign replication priority to each entity based on relevancy score, entity type,
    and staleness, then allocate the per-connection bandwidth budget to maximize gameplay quality.

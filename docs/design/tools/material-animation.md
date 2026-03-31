@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/tools-editor/](../../features/tools-editor/),
-> [requirements/tools-editor/](../../requirements/tools-editor/), and
-> [user-stories/tools-editor/](../../user-stories/tools-editor/). The table below traces design
-> elements to those definitions.
+> [features/tools-editor/](../../features/), [requirements/tools-editor/](../../requirements/), and
+> [user-stories/tools-editor/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Material Editor (15.3)
 
@@ -1416,8 +1415,8 @@ pub enum StateMachineError {
 | Preview viewport | Render graph compute | Render graph compute | Render graph compute |
 | Asset I/O | IOCP via IoReactor | GCD Dispatch IO | io_uring |
 
-All shader compilation uses DXC accessed through C ABI. The material compiler is
-platform-agnostic; only the final bytecode format varies by target.
+All shader compilation uses DXC accessed through C ABI. The material compiler is platform-agnostic;
+only the final bytecode format varies by target.
 
 ## Test Plan
 
@@ -1519,10 +1518,10 @@ shared framework.
 **Q1. What is the biggest constraint limiting this design?**
 
 The HLSL-only shader IL constraint means all material graphs must compile through DXC and Metal
-Shader Converter via C ABI FFI. This creates a hard dependency on two external tools for
-every shader change. Lifting this would allow direct SPIR-V emission or native Metal shader
-generation. The best solution would be a custom IR that targets SPIR-V, DXIL, and MSL directly
-without DXC. The impact is removing the FFI chain for shader compilation, but building a
+Shader Converter (DXC via C API, MSC via swift-bridge). This creates a hard dependency on two
+external tools for every shader change. Lifting this would allow direct SPIR-V emission or native
+Metal shader generation. The best solution would be a custom IR that targets SPIR-V, DXIL, and MSL
+directly without DXC. The impact is removing the FFI chain for shader compilation, but building a
 production-quality shader compiler is a massive undertaking.
 
 **Q2. How can this design be improved?**
@@ -1554,10 +1553,10 @@ material preview would serve mobile developers and action game animators.
 
 Both editors are deeply cohesive: materials compile through the shared `GraphCompiler` framework,
 animation state machines use the logic graph runtime (F-15.8.7), and preview viewports render
-through the standard render graph. The `MaterialInstance` override pattern mirrors the prefab
-`OverrideMap` (F-15.2.3). The animation timeline integrates with the profiler for per-bone timing.
-One minor inconsistency is that `MaterialLibrary` has its own search and tagging system separate
-from the asset browser (F-15.1), which could be unified.
+through the standard render graph. The `MaterialInstance` override pattern mirrors the entity
+template `OverrideMap` (F-15.2.3). The animation timeline integrates with the profiler for per-bone
+timing. One minor inconsistency is that `MaterialLibrary` has its own search and tagging system
+separate from the asset browser (F-15.1), which could be unified.
 
 ## Open Questions
 

@@ -2,10 +2,10 @@
 
 ## Joint Types
 
-| ID      | Feature              | Requirements |
-|---------|----------------------|--------------|
-| F-4.3.1 | Core Joint Types     | R-4.3.1      |
-| F-4.3.2 | Advanced Joint Types | R-4.3.2      |
+| ID      | Feature |
+|---------|---------------------- |
+| F-4.3.1 | Core Joint Types |
+| F-4.3.2 | Advanced Joint Types |
 
 1. **F-4.3.1** — Each joint is an ECS entity carrying a `Joint` component that stores entity
    references to the two connected body entities, plus a `JointType` component selecting one of:
@@ -23,10 +23,10 @@
 
 ## Motors and Limits
 
-| ID      | Feature                 | Requirements |
-|---------|-------------------------|--------------|
-| F-4.3.3 | Joint Motors and Limits | R-4.3.3      |
-| F-4.3.4 | Breakable Joints        | R-4.3.4      |
+| ID      | Feature |
+|---------|------------------------- |
+| F-4.3.3 | Joint Motors and Limits |
+| F-4.3.4 | Breakable Joints |
 
 1. **F-4.3.3** — Attach optional `JointMotor` and `JointLimits` components to any joint entity.
    `JointMotor` specifies a target position or velocity with a configurable maximum force per axis.
@@ -45,10 +45,10 @@
 
 ## Ragdolls and Chains
 
-| ID      | Feature                | Requirements |
-|---------|------------------------|--------------|
-| F-4.3.5 | Ragdoll Configuration  | R-4.3.5      |
-| F-4.3.6 | Joint Chains and Ropes | R-4.3.6      |
+| ID      | Feature |
+|---------|------------------------ |
+| F-4.3.5 | Ragdoll Configuration |
+| F-4.3.6 | Joint Chains and Ropes |
 
 1. **F-4.3.5** — A ragdoll is a bundle of joint entities whose `Joint` components reference skeleton
    bone entities carrying `RigidBody`, `Collider`, and `Transform` components. A `RagdollDef` asset
@@ -73,9 +73,9 @@
 
 ## Solvers
 
-| ID      | Feature            | Requirements |
-|---------|--------------------|--------------|
-| F-4.3.7 | Constraint Solvers | R-4.3.7      |
+| ID      | Feature |
+|---------|-------------------- |
+| F-4.3.7 | Constraint Solvers |
 
 1. **F-4.3.7** — The `ConstraintSolverSystem` implements sequential impulse (SI) and Temporal
    Gauss-Seidel (TGS) solvers selectable via a `SolverConfig` ECS resource that also controls
@@ -92,10 +92,10 @@
 
 ## Limb Severance
 
-| ID      | Feature                              | Requirements |
-|---------|--------------------------------------|--------------|
-| F-4.3.8 | Limb Severance and Joint Destruction | R-4.3.8      |
-| F-4.3.9 | Prosthetic and Limb Replacement      | R-4.3.9      |
+| ID      | Feature |
+|---------|-------------------------------------- |
+| F-4.3.8 | Limb Severance and Joint Destruction |
+| F-4.3.9 | Prosthetic and Limb Replacement |
 
 1. **F-4.3.8** — Runtime destruction of skeletal joint connections, detaching limbs, tails, wings,
    heads, and appendages from a parent skeleton. When a joint's accumulated damage exceeds its

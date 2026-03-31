@@ -2,9 +2,9 @@
 
 ## Broadphase
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-4.2.1 | Broadphase Acceleration Structures | R-4.2.1      |
+| ID      | Feature |
+|---------|------------------------------------ |
+| F-4.2.1 | Broadphase Acceleration Structures |
 
 1. **F-4.2.1** — Cull collision pairs using the shared spatial index (F-1.9.1) rather than a
    physics-private acceleration structure. The `BroadphaseQuerySystem` reads the shared BVH ECS
@@ -19,9 +19,9 @@
 
 ## Narrowphase
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-4.2.2 | Narrowphase Contact Generation | R-4.2.2      |
+| ID      | Feature |
+|---------|-------------------------------- |
+| F-4.2.2 | Narrowphase Contact Generation |
 
 1. **F-4.2.2** — Generate precise contact points and penetration depths using GJK (distance), EPA
    (penetration), and SAT (feature-based contacts) algorithms. The `NarrowphaseSystem` reads
@@ -36,11 +36,11 @@
 
 ## Collision Shapes
 
-| ID      | Feature                               | Requirements |
-|---------|---------------------------------------|--------------|
-| F-4.2.3 | Primitive and Convex Collision Shapes | R-4.2.3      |
-| F-4.2.4 | Triangle Mesh and Heightfield Shapes  | R-4.2.4      |
-| F-4.2.5 | Compound Shapes                       | R-4.2.5      |
+| ID      | Feature |
+|---------|--------------------------------------- |
+| F-4.2.3 | Primitive and Convex Collision Shapes |
+| F-4.2.4 | Triangle Mesh and Heightfield Shapes |
+| F-4.2.5 | Compound Shapes |
 
 1. **F-4.2.3** — Support box, sphere, capsule, and convex hull shapes via the `Collider` ECS
    component, which holds a `ColliderShape` enum (`Box`, `Sphere`, `Capsule`, `ConvexHull`). Convex
@@ -71,10 +71,10 @@
 
 ## Filtering
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-4.2.6 | Collision Filtering and Layers | R-4.2.6      |
-| F-4.2.7 | Collision Events               | R-4.2.7      |
+| ID      | Feature |
+|---------|-------------------------------- |
+| F-4.2.6 | Collision Filtering and Layers |
+| F-4.2.7 | Collision Events |
 
 1. **F-4.2.6** — Filter collisions using the `CollisionLayers` ECS component, which defines layer
    membership (a bitset of layers the entity belongs to) and a collision mask (a bitset of layers
@@ -93,9 +93,9 @@
 
 ## Triggers
 
-| ID      | Feature         | Requirements |
-|---------|-----------------|--------------|
-| F-4.2.8 | Trigger Volumes | R-4.2.8      |
+| ID      | Feature |
+|---------|----------------- |
+| F-4.2.8 | Trigger Volumes |
 
 1. **F-4.2.8** — Non-physical collision shapes that detect overlap without generating contact
    responses. Trigger volumes are ECS entities with a `TriggerVolume` component and a
@@ -112,9 +112,9 @@
 
 ## Materials
 
-| ID      | Feature                 | Requirements |
-|---------|-------------------------|--------------|
-| F-4.2.9 | Physics Material Assets | R-4.2.9      |
+| ID      | Feature |
+|---------|------------------------- |
+| F-4.2.9 | Physics Material Assets |
 
 1. **F-4.2.9** — A `PhysicsMaterial` asset type defining surface physical properties: static
    friction, dynamic friction, restitution (bounciness), density, and surface type tag (metal, wood,

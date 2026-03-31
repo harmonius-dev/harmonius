@@ -2,11 +2,11 @@
 
 ## IK Solvers
 
-| ID      | Feature            | Requirements |
-|---------|--------------------|--------------|
-| F-9.3.1 | Two-Bone IK Solver | R-9.3.1      |
-| F-9.3.2 | CCD IK Solver      | R-9.3.2      |
-| F-9.3.3 | FABRIK IK Solver   | R-9.3.3      |
+| ID      | Feature            |
+|---------|--------------------|
+| F-9.3.1 | Two-Bone IK Solver |
+| F-9.3.2 | CCD IK Solver      |
+| F-9.3.3 | FABRIK IK Solver   |
 
 1. **F-9.3.1** — Solves two-bone IK chains analytically using the law of cosines. Supports pole
    vector targets to control elbow and knee orientation. Runs on the GPU as a post-process pass over
@@ -28,9 +28,9 @@
 
 ## Ragdoll Simulation
 
-| ID      | Feature                            | Requirements |
-|---------|------------------------------------|--------------|
-| F-9.3.4 | Ragdoll Physics (Partial and Full) | R-9.3.4      |
+| ID      | Feature                            |
+|---------|------------------------------------|
+| F-9.3.4 | Ragdoll Physics (Partial and Full) |
 
 1. **F-9.3.4** — Position-based dynamics ragdoll simulation on async compute with capsule and sphere
    collision primitives. Supports full ragdoll and partial ragdoll with per-bone blend weights.
@@ -42,9 +42,9 @@
 
 ## Look-At and Aim Constraints
 
-| ID      | Feature                     | Requirements |
-|---------|-----------------------------|--------------|
-| F-9.3.5 | Look-At and Aim Constraints | R-9.3.5      |
+| ID      | Feature                     |
+|---------|-----------------------------|
+| F-9.3.5 | Look-At and Aim Constraints |
 
 1. **F-9.3.5** — Procedurally rotates head and spine bones to track a world-space target with
    configurable angle limits and blend weights. Aim constraints orient weapon-holding arms toward a
@@ -55,9 +55,9 @@
 
 ## Motion Matching
 
-| ID      | Feature         | Requirements |
-|---------|-----------------|--------------|
-| F-9.3.6 | Motion Matching | R-9.3.6      |
+| ID      | Feature         |
+|---------|-----------------|
+| F-9.3.6 | Motion Matching |
 
 1. **F-9.3.6** — Data-driven animation selection that searches a pose database for the best
    continuation of the current pose given a desired trajectory. Replaces hand-authored state machine
@@ -69,9 +69,9 @@
 
 ## Foot Placement and Procedural Locomotion
 
-| ID      | Feature                                  | Requirements |
-|---------|------------------------------------------|--------------|
-| F-9.3.7 | Foot Placement and Procedural Locomotion | R-9.3.7      |
+| ID      | Feature                                  |
+|---------|------------------------------------------|
+| F-9.3.7 | Foot Placement and Procedural Locomotion |
 
 1. **F-9.3.7** — Raycasts from foot bone positions to the ground surface and adjusts leg IK targets
    to plant feet on uneven terrain, stairs, and slopes. Pelvis height is adjusted to maintain
@@ -83,9 +83,9 @@
 
 ## Multi-Skeleton Procedural Locomotion
 
-| ID      | Feature                              | Requirements |
-|---------|--------------------------------------|--------------|
-| F-9.3.8 | Multi-Skeleton Procedural Locomotion | R-9.3.8      |
+| ID      | Feature                              |
+|---------|--------------------------------------|
+| F-9.3.8 | Multi-Skeleton Procedural Locomotion |
 
 1. **F-9.3.8** — Procedural locomotion that adapts to arbitrary skeleton topologies (biped,
    quadruped, hexapod, centaur, serpentine, custom). Each skeleton defines a locomotion profile
@@ -97,9 +97,9 @@
 
 ## Physics-Based Locomotion
 
-| ID      | Feature                  | Requirements |
-|---------|--------------------------|--------------|
-| F-9.3.9 | Physics-Based Locomotion | R-9.3.9      |
+| ID      | Feature                  |
+|---------|--------------------------|
+| F-9.3.9 | Physics-Based Locomotion |
 
 1. **F-9.3.9** — Locomotion driven by physical forces rather than root motion. Each limb applies
    torques and ground reaction forces through the physics system (F-4.1.1). Configurable muscle
@@ -111,9 +111,9 @@
 
 ## Procedural Attachment and Dismemberment
 
-| ID       | Feature                                 | Requirements |
-|----------|-----------------------------------------|--------------|
-| F-9.3.10 | Procedural Attachment and Dismemberment | R-9.3.10     |
+| ID       | Feature                                 |
+|----------|-----------------------------------------|
+| F-9.3.10 | Procedural Attachment and Dismemberment |
 
 1. **F-9.3.10** — Runtime attachment and removal of skeletal sub-hierarchies (monster heads, tails,
    wings, weapon holsters, armor plates). Socket-based attachment points. Dismemberment severs a
@@ -125,9 +125,9 @@
 
 ## Locomotion Diagnostics and Visualization
 
-| ID       | Feature                                  | Requirements |
-|----------|------------------------------------------|--------------|
-| F-9.3.11 | Locomotion Diagnostics and Visualization | R-9.3.11     |
+| ID       | Feature                                  |
+|----------|------------------------------------------|
+| F-9.3.11 | Locomotion Diagnostics and Visualization |
 
 1. **F-9.3.11** — Debug visualization overlay for procedural locomotion: foot placement targets, IK
    chain solve states, ground contact normals, gait phase diagrams, balance center-of-mass

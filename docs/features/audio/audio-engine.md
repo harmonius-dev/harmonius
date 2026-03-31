@@ -2,10 +2,10 @@
 
 ## Sound Sources
 
-| ID      | Feature                | Requirements |
-|---------|------------------------|--------------|
-| F-5.1.1 | Sound Source Component | R-5.1.1      |
-| F-5.1.2 | Listener Component     | R-5.1.2      |
+| ID      | Feature                |
+|---------|------------------------|
+| F-5.1.1 | Sound Source Component |
+| F-5.1.2 | Listener Component     |
 
 1. **F-5.1.1** — Attach point, line, and area sound emitters to entities via an ECS component, each
    carrying gain, pitch, looping, and attenuation references. Lightweight component essential for
@@ -21,9 +21,9 @@
 
 ## Mixer Bus Hierarchy
 
-| ID      | Feature                      | Requirements |
-|---------|------------------------------|--------------|
-| F-5.1.3 | Hierarchical Mixer Bus Graph | R-5.1.3      |
+| ID      | Feature                      |
+|---------|------------------------------|
+| F-5.1.3 | Hierarchical Mixer Bus Graph |
 
 1. **F-5.1.3** — DAG of mixer buses (master, music, SFX, ambient, voice, UI) with gain, mute, solo,
    and insert effect chains. Child buses inherit parent gain. Buses can be added or rewired at
@@ -33,9 +33,9 @@
 
 ## Voice Management
 
-| ID      | Feature                              | Requirements |
-|---------|--------------------------------------|--------------|
-| F-5.1.4 | Voice Management and Priority System | R-5.1.4      |
+| ID      | Feature                              |
+|---------|--------------------------------------|
+| F-5.1.4 | Voice Management and Priority System |
 
 1. **F-5.1.4** — Fixed pool of voices with priority-based allocation, virtualization, and stealing.
    Each source declares a priority class and audibility score from distance and occlusion.
@@ -46,10 +46,10 @@
 
 ## Playback
 
-| ID      | Feature                    | Requirements |
-|---------|----------------------------|--------------|
-| F-5.1.5 | Streaming Playback         | R-5.1.5      |
-| F-5.1.6 | Sample-Accurate Scheduling | R-5.1.6      |
+| ID      | Feature                    |
+|---------|----------------------------|
+| F-5.1.5 | Streaming Playback         |
+| F-5.1.6 | Sample-Accurate Scheduling |
 
 1. **F-5.1.5** — Stream long-duration audio (music, ambience, dialogue) from disk in ring-buffer
    chunks using platform-native async I/O. Prefetch hinting begins streaming before playback,
@@ -65,9 +65,9 @@
 
 ## Formats and Codecs
 
-| ID      | Feature                        | Requirements |
-|---------|--------------------------------|--------------|
-| F-5.1.7 | Audio Format and Codec Support | R-5.1.7      |
+| ID      | Feature                        |
+|---------|--------------------------------|
+| F-5.1.7 | Audio Format and Codec Support |
 
 1. **F-5.1.7** — Decode PCM (WAV), Vorbis, Opus, and FLAC at load or stream time, with an extensible
    codec registry. Opus for voice chat, Vorbis for legacy assets, FLAC for lossless reference audio.

@@ -2,10 +2,10 @@
 
 ## Timeline and Curves
 
-| ID       | Feature            | Requirements |
-|----------|--------------------|--------------|
-| F-15.4.1 | Animation Timeline | R-15.4.1     |
-| F-15.4.2 | Curve Editor       | R-15.4.2     |
+| ID | Feature |
+| ---------- | -------------------- |
+| F-15.4.1 | Animation Timeline |
+| F-15.4.2 | Curve Editor |
 
 1. **F-15.4.1** — Provides a multi-track timeline for viewing and editing animation clips. Tracks
    display keyframes for translation, rotation, scale, and custom properties with color-coded
@@ -22,10 +22,10 @@
 
 ## Skeleton and Preview
 
-| ID       | Feature           | Requirements |
-|----------|-------------------|--------------|
-| F-15.4.3 | Skeleton Viewer   | R-15.4.3     |
-| F-15.4.4 | Animation Preview | R-15.4.4     |
+| ID | Feature |
+| ---------- | ------------------- |
+| F-15.4.3 | Skeleton Viewer |
+| F-15.4.4 | Animation Preview |
 
 1. **F-15.4.3** — Renders the skeleton hierarchy as a 3D bone visualization overlaid on the mesh.
    Bones are selectable, and selected bones highlight their children, associated constraints, and IK
@@ -42,11 +42,11 @@
 
 ## Blend and State Authoring
 
-| ID       | Feature              | Requirements |
-|----------|----------------------|--------------|
-| F-15.4.5 | Blend Space Editor   | R-15.4.5     |
-| F-15.4.6 | State Machine Editor | R-15.4.6     |
-| F-15.4.7 | Retargeting Setup    | R-15.4.7     |
+| ID | Feature |
+| ---------- | ---------------------- |
+| F-15.4.5 | Blend Space Editor |
+| F-15.4.6 | State Machine Editor |
+| F-15.4.7 | Retargeting Setup |
 
 1. **F-15.4.5** — Provides a 1D or 2D blend space editor where animation clips are placed at
    parameter-space positions (e.g., speed vs. direction). The editor shows interpolation regions,

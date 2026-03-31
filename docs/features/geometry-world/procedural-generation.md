@@ -2,16 +2,16 @@
 
 ## PCG Graph System
 
-| ID      | Feature                                         | Requirements |
-|---------|-------------------------------------------------|--------------|
-| F-3.6.1 | Node-Based Procedural Content Graph             | R-3.6.1      |
-| F-3.6.2 | Point Generation Nodes                          | R-3.6.2      |
-| F-3.6.3 | Point Filtering and Transformation              | R-3.6.3      |
-| F-3.6.4 | Mesh and Instance Spawning from Points          | R-3.6.4      |
-| F-3.6.5 | Deterministic Seeding                           | R-3.6.5      |
-| F-3.6.6 | Point Attributes and Metadata                   | R-3.6.6      |
-| F-3.6.7 | Point Set Operations                            | R-3.6.7      |
-| F-3.6.8 | Graph Control Flow (Loops, Branches, Subgraphs) | R-3.6.8      |
+| ID      | Feature |
+|---------|------------------------------------------------- |
+| F-3.6.1 | Node-Based Procedural Content Graph |
+| F-3.6.2 | Point Generation Nodes |
+| F-3.6.3 | Point Filtering and Transformation |
+| F-3.6.4 | Mesh and Instance Spawning from Points |
+| F-3.6.5 | Deterministic Seeding |
+| F-3.6.6 | Point Attributes and Metadata |
+| F-3.6.7 | Point Set Operations |
+| F-3.6.8 | Graph Control Flow (Loops, Branches, Subgraphs) |
 
 1. **F-3.6.1** — A visual node graph for authoring procedural generation rules. Nodes produce,
    filter, transform, and consume point sets, meshes, and metadata. Subgraphs encapsulate reusable
@@ -78,11 +78,11 @@
 
 ## Terrain Stamps
 
-| ID       | Feature                              | Requirements |
-|----------|--------------------------------------|--------------|
-| F-3.6.9  | Non-Destructive Terrain Stamp System | R-3.6.9      |
-| F-3.6.10 | Terrain Texture Stamps               | R-3.6.10     |
-| F-3.6.11 | Biome Distribution System            | R-3.6.11     |
+| ID       | Feature |
+|----------|-------------------------------------- |
+| F-3.6.9  | Non-Destructive Terrain Stamp System |
+| F-3.6.10 | Terrain Texture Stamps |
+| F-3.6.11 | Biome Distribution System |
 
 1. **F-3.6.9** — Layer-based terrain modification using stamp operations applied in order. Each
    stamp modifies height, texture, or vegetation within a bounded region with configurable blend
@@ -111,10 +111,10 @@
 
 ## Vegetation Placement
 
-| ID       | Feature                           | Requirements |
-|----------|-----------------------------------|--------------|
-| F-3.6.12 | Rule-Based Vegetation Placement   | R-3.6.12     |
-| F-3.6.13 | Vegetation Clearing Along Splines | R-3.6.13     |
+| ID       | Feature |
+|----------|----------------------------------- |
+| F-3.6.12 | Rule-Based Vegetation Placement |
+| F-3.6.13 | Vegetation Clearing Along Splines |
 
 1. **F-3.6.12** — Scatter vegetation instances using per-species rules: density, slope range,
    altitude band, preferred biome, inter-species dependencies (underbrush near trees), exclusion
@@ -134,12 +134,12 @@
 
 ## Procedural Roads and Paths
 
-| ID       | Feature                          | Requirements |
-|----------|----------------------------------|--------------|
-| F-3.6.14 | Spline-Based Road Generation     | R-3.6.14     |
-| F-3.6.15 | Road Network Generation          | R-3.6.15     |
-| F-3.6.16 | Spline SDF Optimization          | R-3.6.16     |
-| F-3.6.17 | Road Intersections and Junctions | R-3.6.17     |
+| ID       | Feature |
+|----------|---------------------------------- |
+| F-3.6.14 | Spline-Based Road Generation |
+| F-3.6.15 | Road Network Generation |
+| F-3.6.16 | Spline SDF Optimization |
+| F-3.6.17 | Road Intersections and Junctions |
 
 1. **F-3.6.14** — Create roads, paths, trails, sidewalks, and highways as spline entities. Road
    geometry is extruded along the spline with configurable width, banking, lane count, curb height,
@@ -175,10 +175,10 @@
 
 ## Building Generation
 
-| ID       | Feature                          | Requirements |
-|----------|----------------------------------|--------------|
-| F-3.6.18 | Shape Grammar Building Generator | R-3.6.18     |
-| F-3.6.19 | Modular Building Assembly        | R-3.6.19     |
+| ID       | Feature |
+|----------|---------------------------------- |
+| F-3.6.18 | Shape Grammar Building Generator |
+| F-3.6.19 | Modular Building Assembly |
 
 1. **F-3.6.18** — Generate building facades using hierarchical split grammars. A building mass is
    split into floors, floors into tiles, tiles into facade elements (windows, doors, balconies,
@@ -199,11 +199,11 @@
 
 ## Wave Function Collapse
 
-| ID       | Feature                 | Requirements |
-|----------|-------------------------|--------------|
-| F-3.6.20 | 2D Tile-Based WFC       | R-3.6.20     |
-| F-3.6.21 | 3D Voxel WFC            | R-3.6.21     |
-| F-3.6.22 | WFC Constraint Painting | R-3.6.22     |
+| ID       | Feature |
+|----------|------------------------- |
+| F-3.6.20 | 2D Tile-Based WFC |
+| F-3.6.21 | 3D Voxel WFC |
+| F-3.6.22 | WFC Constraint Painting |
 
 1. **F-3.6.20** — Generate 2D tile layouts (dungeons, floor plans, puzzle levels, city blocks) using
    Wave Function Collapse. Each cell in a 2D grid starts in superposition. The algorithm observes
@@ -231,12 +231,12 @@
 
 ## General-Purpose Modular Assembly
 
-| ID       | Feature                                   | Requirements |
-|----------|-------------------------------------------|--------------|
-| F-3.6.23 | Socket-Based Modular Assembly Engine      | R-3.6.23     |
-| F-3.6.24 | Procedural Object Generation Rules        | R-3.6.24     |
-| F-3.6.25 | Houdini Engine Procedural Object Pipeline | R-3.6.25     |
-| F-3.6.26 | Hierarchical Modular Composition          | R-3.6.26     |
+| ID       | Feature |
+|----------|------------------------------------------- |
+| F-3.6.23 | Socket-Based Modular Assembly Engine |
+| F-3.6.24 | Procedural Object Generation Rules |
+| F-3.6.25 | Houdini Engine Procedural Object Pipeline |
+| F-3.6.26 | Hierarchical Modular Composition |
 
 1. **F-3.6.23** — A general-purpose system for assembling complex objects from modular pieces via
    socket connections. Any asset can define named sockets (attach points with position, rotation,
@@ -274,10 +274,10 @@
 
 ## Authoring Workflow
 
-| ID       | Feature                            | Requirements |
-|----------|------------------------------------|--------------|
-| F-3.6.27 | Interactive PCG Authoring Tools    | R-3.6.27     |
-| F-3.6.28 | Artist-Guided Constraint Authoring | R-3.6.28     |
+| ID       | Feature |
+|----------|------------------------------------ |
+| F-3.6.27 | Interactive PCG Authoring Tools |
+| F-3.6.28 | Artist-Guided Constraint Authoring |
 
 1. **F-3.6.27** — Editor tools for artists to drive PCG interactively: spline drawing (roads,
    rivers, fences), point painting (scatter props by brushing), volume dragging (define generation
@@ -297,10 +297,10 @@
 
 ## AI-Driven Generation
 
-| ID       | Feature                        | Requirements |
-|----------|--------------------------------|--------------|
-| F-3.6.29 | AI-Driven Content Generation   | R-3.6.29     |
-| F-3.6.30 | Constraint Satisfaction Solver | R-3.6.30     |
+| ID       | Feature |
+|----------|-------------------------------- |
+| F-3.6.29 | AI-Driven Content Generation |
+| F-3.6.30 | Constraint Satisfaction Solver |
 
 1. **F-3.6.29** — An AI agent interface that drives PCG graphs programmatically. AI systems (trained
    models or rule engines) set PCG graph parameters, place constraints, select style presets, and
@@ -322,11 +322,11 @@
 
 ## Runtime Generation
 
-| ID       | Feature                                   | Requirements |
-|----------|-------------------------------------------|--------------|
-| F-3.6.31 | Runtime Chunk-Based Procedural Generation | R-3.6.31     |
-| F-3.6.32 | GPU Compute Procedural Generation         | R-3.6.32     |
-| F-3.6.33 | Noise Function Library                    | R-3.6.33     |
+| ID       | Feature |
+|----------|------------------------------------------- |
+| F-3.6.31 | Runtime Chunk-Based Procedural Generation |
+| F-3.6.32 | GPU Compute Procedural Generation |
+| F-3.6.33 | Noise Function Library |
 
 1. **F-3.6.31** — Generate world content at runtime as the player moves through the world. The world
    is divided into fixed-size chunks; chunks generate on background threads (F-14.3.3) when they
@@ -355,23 +355,23 @@
 
 ## Planet-Scale Generation
 
-| ID       | Feature                                       | Requirements |
-|----------|-----------------------------------------------|--------------|
-| F-3.6.34 | Planetary Terrain Generation                  | R-3.6.34     |
-| F-3.6.35 | City and Settlement Generation                | R-3.6.35     |
-| F-3.6.36 | Faction and Civilization Generation           | R-3.6.36     |
-| F-3.6.37 | Procedural Quest Generation                   | R-3.6.37     |
-| F-3.6.38 | Dynamic Ecosystem Simulation                  | R-3.6.38     |
-| F-3.6.39 | Civilization Time-Scale Simulation            | R-3.6.39     |
-| F-3.6.40 | Procedural Enemy and Creature Placement       | R-3.6.40     |
-| F-3.6.41 | Procedural Loot and Economy Distribution      | R-3.6.41     |
-| F-3.6.42 | Plate Tectonics and Geological Simulation     | R-3.6.42     |
-| F-3.6.43 | Climate and Atmospheric Simulation            | R-3.6.43     |
-| F-3.6.44 | Biome Classification and Distribution         | R-3.6.44     |
-| F-3.6.45 | Hydrological System and Water Body Generation | R-3.6.45     |
-| F-3.6.46 | Geological Landform Generation                | R-3.6.46     |
-| F-3.6.47 | Earth Import and GIS Data Integration         | R-3.6.47     |
-| F-3.6.48 | Configurable Planet Parameters                | R-3.6.48     |
+| ID       | Feature |
+|----------|----------------------------------------------- |
+| F-3.6.34 | Planetary Terrain Generation |
+| F-3.6.35 | City and Settlement Generation |
+| F-3.6.36 | Faction and Civilization Generation |
+| F-3.6.37 | Procedural Quest Generation |
+| F-3.6.38 | Dynamic Ecosystem Simulation |
+| F-3.6.39 | Civilization Time-Scale Simulation |
+| F-3.6.40 | Procedural Enemy and Creature Placement |
+| F-3.6.41 | Procedural Loot and Economy Distribution |
+| F-3.6.42 | Plate Tectonics and Geological Simulation |
+| F-3.6.43 | Climate and Atmospheric Simulation |
+| F-3.6.44 | Biome Classification and Distribution |
+| F-3.6.45 | Hydrological System and Water Body Generation |
+| F-3.6.46 | Geological Landform Generation |
+| F-3.6.47 | Earth Import and GIS Data Integration |
+| F-3.6.48 | Configurable Planet Parameters |
 
 1. **F-3.6.34** — Generate entire planet surfaces with continental landmasses, ocean basins,
    mountain ranges, river networks, and climate zones. The generator operates on a spherical
@@ -575,14 +575,14 @@
 
 ## Stellar and Planetary Formation
 
-| ID       | Feature                                         | Requirements |
-|----------|-------------------------------------------------|--------------|
-| F-3.6.49 | Star System Generation and Stellar Lifecycle    | R-3.6.49     |
-| F-3.6.50 | Protoplanetary Disk and Accretion Simulation    | R-3.6.50     |
-| F-3.6.51 | Planetary Collision and Giant Impact Simulation | R-3.6.51     |
-| F-3.6.52 | Gas Giant and Non-Terrestrial Planet Generation | R-3.6.52     |
-| F-3.6.53 | Moon and Ring System Generation                 | R-3.6.53     |
-| F-3.6.54 | Automatic Planet Type Classification            | R-3.6.54     |
+| ID       | Feature |
+|----------|------------------------------------------------- |
+| F-3.6.49 | Star System Generation and Stellar Lifecycle |
+| F-3.6.50 | Protoplanetary Disk and Accretion Simulation |
+| F-3.6.51 | Planetary Collision and Giant Impact Simulation |
+| F-3.6.52 | Gas Giant and Non-Terrestrial Planet Generation |
+| F-3.6.53 | Moon and Ring System Generation |
+| F-3.6.54 | Automatic Planet Type Classification |
 
 1. **F-3.6.49** — Generate entire star systems from nebula-to-main-sequence using astrophysical
    models. The generator simulates: stellar nucleosynthesis classification (O, B, A, F, G, K, M
@@ -680,14 +680,14 @@
 
 ## Cosmological and Galactic Simulation
 
-| ID       | Feature                                    | Requirements |
-|----------|--------------------------------------------|--------------|
-| F-3.6.55 | Galaxy Structure Generation                | R-3.6.55     |
-| F-3.6.56 | Supermassive Black Hole and Galactic Core  | R-3.6.56     |
-| F-3.6.57 | Dark Matter Halo and Large-Scale Structure | R-3.6.57     |
-| F-3.6.58 | Stellar Collision and Merger Simulation    | R-3.6.58     |
-| F-3.6.59 | Black Hole Formation and Collision         | R-3.6.59     |
-| F-3.6.60 | Universe Generation Pipeline               | R-3.6.60     |
+| ID       | Feature |
+|----------|-------------------------------------------- |
+| F-3.6.55 | Galaxy Structure Generation |
+| F-3.6.56 | Supermassive Black Hole and Galactic Core |
+| F-3.6.57 | Dark Matter Halo and Large-Scale Structure |
+| F-3.6.58 | Stellar Collision and Merger Simulation |
+| F-3.6.59 | Black Hole Formation and Collision |
+| F-3.6.60 | Universe Generation Pipeline |
 
 1. **F-3.6.55** — Generate galaxies with physically-motivated structure: spiral (density wave arms),
    elliptical, irregular, lenticular, and dwarf types. Star density, metallicity, and age vary with
@@ -736,9 +736,9 @@
 
 ## Planetary Composition and Resources
 
-| ID       | Feature                                        | Requirements |
-|----------|------------------------------------------------|--------------|
-| F-3.6.61 | Planetary Mineralogy and Resource Distribution | R-3.6.61     |
+| ID       | Feature |
+|----------|------------------------------------------------ |
+| F-3.6.61 | Planetary Mineralogy and Resource Distribution |
 
 1. **F-3.6.61** — Generate per-planet mineral and resource compositions based on the physical
    formation history from the accretion simulation (F-3.6.50), stellar metallicity (F-3.6.49), and
@@ -766,11 +766,11 @@
 
 ## Universe Infrastructure
 
-| ID       | Feature                                      | Requirements |
-|----------|----------------------------------------------|--------------|
-| F-3.6.62 | Server-Side Universe Generation and Sharding | R-3.6.62     |
-| F-3.6.63 | Sparse Cosmic Data Storage                   | R-3.6.63     |
-| F-3.6.64 | On-Demand Hierarchical Detail Resolution     | R-3.6.64     |
+| ID       | Feature |
+|----------|---------------------------------------------- |
+| F-3.6.62 | Server-Side Universe Generation and Sharding |
+| F-3.6.63 | Sparse Cosmic Data Storage |
+| F-3.6.64 | On-Demand Hierarchical Detail Resolution |
 
 1. **F-3.6.62** — Universe generation runs on a server cluster, storing results in a shared
    database. Game servers request pre-generated data for their spatial shard rather than

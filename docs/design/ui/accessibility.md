@@ -3,8 +3,8 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/ui-2d/](../../features/ui-2d/), [requirements/ui-2d/](../../requirements/ui-2d/), and
-> [user-stories/ui-2d/](../../user-stories/ui-2d/). The table below traces design elements to those
+> [features/ui-2d/](../../features/), [requirements/ui-2d/](../../requirements/), and
+> [user-stories/ui-2d/](../../user-stories/). The table below traces design elements to those
 > definitions.
 
 | Feature  | Requirement | User Story                         |
@@ -626,7 +626,7 @@ impl ScreenReaderBridge {
 // via cfg:
 //
 // #[cfg(target_os = "macos")]
-//   -> NSAccessibility via Swift wrappers / C ABI
+//   -> NSAccessibility via swift-bridge
 //
 // #[cfg(target_os = "windows")]
 //   -> UI Automation via windows-rs
@@ -1129,7 +1129,7 @@ impl TextToSpeech {
 // Platform backends:
 //
 // #[cfg(target_os = "macos")]
-//   -> AVSpeechSynthesizer via Swift / C ABI
+//   -> AVSpeechSynthesizer via swift-bridge
 //
 // #[cfg(target_os = "windows")]
 //   -> SAPI / OneCore via windows-rs
@@ -1388,7 +1388,7 @@ When `HighContrastSettings.enabled` is true:
 | Platform | API | Access Method |
 |----------|-----|---------------|
 | Windows | `GetDpiForWindow` | windows-rs |
-| macOS | `NSWindow.backingScaleFactor` | Swift / C ABI |
+| macOS | `NSWindow.backingScaleFactor` | swift-bridge |
 | Linux (X11) | `Xft.dpi` resource | x11rb |
 | Linux (Wayland) | `wl_output.scale` | wayland-client |
 
@@ -1398,7 +1398,7 @@ When `HighContrastSettings.enabled` is true:
 
 | Platform | API             | Access                  |
 |----------|-----------------|-------------------------|
-| macOS    | NSAccessibility | Swift wrappers / C ABI |
+| macOS    | NSAccessibility | swift-bridge            |
 | Windows  | UI Automation   | windows-rs             |
 | Linux    | AT-SPI          | D-Bus via zbus crate    |
 
@@ -1410,7 +1410,7 @@ When `HighContrastSettings.enabled` is true:
 
 | Platform | API | Access | Notes |
 |----------|-----|--------|-------|
-| macOS | AVSpeechSynthesizer | Swift wrappers / C ABI | AVFoundation; async speech callbacks |
+| macOS | AVSpeechSynthesizer | swift-bridge | AVFoundation; async speech via swift-bridge |
 | Windows | SAPI / OneCore | windows-rs | COM-based; OneCore for modern voices |
 | Linux | Speech Dispatcher | Rust crate | spd_say / spd_set_voice |
 
@@ -1435,7 +1435,7 @@ When `HighContrastSettings.enabled` is true:
 |-------|---------|---------------|
 | `zbus` | D-Bus IPC for AT-SPI on Linux | Pure Rust async D-Bus client |
 | `windows-rs` | UI Automation, SAPI COM | Zero-cost Win32 FFI |
-| (hand-written `extern "C"`) | macOS NSAccessibility, AVSpeechSynthesizer | Consumes Swift @_cdecl C ABI |
+| `swift-bridge` | macOS NSAccessibility, AVSpeechSynthesizer | Direct Rust-Swift FFI |
 
 ## Test Plan
 

@@ -7,8 +7,7 @@ Language-specific coding standards for the Harmonius engine.
 | Standard | Language | Scope |
 |----------|----------|-------|
 | [Rust](rust.md) | Rust | Primary engine language |
-| [Swift](swift.md) | Swift | macOS platform (C ABI) |
-| [TypeScript](typescript.md) | TypeScript | Tooling, editor, build |
+| [Swift](swift.md) | Swift | macOS/iOS (swift-bridge) |
 | [Python](python.md) | Python | Scripts and tools (ruff) |
 | [HLSL](hlsl.md) | HLSL | Shader IL (DXC pipeline) |
 | [Markdown](markdown.md) | Markdown | Documentation (rumdl) |

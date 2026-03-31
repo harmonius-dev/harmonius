@@ -1,124 +1,53 @@
-# R-15.23 -- Cloud AI Backend Integration Requirements
+# R-15.23 -- Cloud AI Backend Requirements
 
-## Provider Abstraction
+## Requirements
 
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-15.23.1 | [F-15.23.1](../../features/tools-editor/ai-cloud-backend.md) |
+1. **R-15.23.1** — The engine **SHALL** provide a pluggable AI provider trait with built-in Claude,
+   Copilot, and Cursor adapters and plugin API support for custom adapters.
+   - **Rationale:** Provider abstraction avoids vendor lock-in.
+   - **Verification:** Register a custom adapter and verify it handles authentication and requests.
 
-1. **R-15.23.1** — The engine **SHALL** provide a pluggable backend trait for AI services with
-   built-in adapters for Claude (Anthropic), Copilot (GitHub), and Cursor, and support for
-   third-party adapters via the plugin API (F-13.1.10).
-   - **Rationale:** Studios use different AI providers; a trait-based abstraction avoids lock-in and
-     enables custom integrations.
-   - **Verification:** Unit test: register a custom adapter via the plugin API and verify it handles
-     authentication, request formatting, and response parsing.
+2. **R-15.23.2** — The engine **SHALL** store AI credentials in the platform-native encrypted
+   keychain, load them into memory at startup only, and transmit them only to the chosen provider
+   endpoint.
+   - **Rationale:** Credential security is non-negotiable; keys must never touch disk or third
+     parties.
+   - **Verification:** Verify the key is loaded from keychain, capture network traffic, and confirm
+     only the configured provider receives it.
 
-## Customer Authentication
+3. **R-15.23.3** — The engine **SHALL** provide context-aware AI graph node suggestions (not text
+   code) displayed as ghost nodes with accept/dismiss controls.
+   - **Rationale:** The no-code constraint requires AI to operate within the visual graph paradigm.
+   - **Verification:** Trigger a suggestion and verify it is a graph node placement, not text code.
 
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-15.23.2 | [F-15.23.2](../../features/tools-editor/ai-cloud-backend.md) |
+4. **R-15.23.4** — The engine **SHALL** support AI content generation for textures, meshes, levels,
+   and dialogue, imported through the standard asset pipeline with automatic provenance tagging.
+   - **Rationale:** Pipeline integration ensures AI content follows the same processing as manual
+     assets.
+   - **Verification:** Generate a texture, verify it imports through the pipeline with a provenance
+     tag.
 
-1. **R-15.23.2** — The engine **SHALL** store all AI API keys and OAuth tokens exclusively in the
-   platform-native encrypted credential store (Keychain on macOS, Credential Manager on Windows,
-   libsecret on Linux), load them only into memory at editor startup, and never transmit credentials
-   to any server other than the customer's chosen AI provider endpoint.
-   - **Rationale:** Customer credentials must be protected at rest and in transit; no engine
-     telemetry or intermediary server may touch them.
-   - **Verification:** Integration test: store a key in the platform keychain, restart the editor,
-     verify the key is loaded from the keychain and only sent to the configured provider endpoint.
+5. **R-15.23.5** — The engine **SHALL** provide a persistent per-project chat panel with token usage
+   display, rich content responses, and context injection integration.
+   - **Rationale:** A chat panel provides on-demand AI assistance without context switching.
+   - **Verification:** Send a message, restart the editor, and verify conversation history is
+     restored.
 
-## AI Code Assistant
+6. **R-15.23.6** — The engine **SHALL** support per-project AI provider selection with model,
+   temperature, and token limit configuration, a cost tracking dashboard, and provider switching
+   that preserves conversation context.
+   - **Rationale:** Studios need cost visibility and flexibility to compare providers.
+   - **Verification:** Switch providers and verify conversation context converts to the new format.
 
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-15.23.3 | [F-15.23.3](../../features/tools-editor/ai-cloud-backend.md) |
+7. **R-15.23.7** — The engine **SHALL** function fully without any AI provider configured, degrading
+   AI features gracefully, with optional local inference on platform GPU compute.
+   - **Rationale:** AI must be optional; local fallback serves offline and cost-conscious studios.
+   - **Verification:** Start the editor with no API key and verify all non-AI features work
+     normally.
 
-1. **R-15.23.3** — The engine **SHALL** provide context-aware AI suggestions in the editor that
-   understand project structure, ECS components, and visual graph nodes, suggesting graph nodes and
-   wiring (not text code) to respect the no-code constraint.
-   - **Rationale:** The no-code engine requires AI assistance to operate within visual graph
-     paradigms, not traditional code completion.
-   - **Verification:** Unit test: open a logic graph, trigger AI suggestion, verify the response
-     contains graph node suggestions (not text code).
-
-## AI Content Assistant
-
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-15.23.4 | [F-15.23.4](../../features/tools-editor/ai-cloud-backend.md) |
-
-1. **R-15.23.4** — The engine **SHALL** support AI-powered content creation for textures, meshes,
-   levels, dialogue, and quests via cloud inference, importing results through the standard asset
-   pipeline (F-12.1.1) with automatic provenance tagging (F-15.7.1).
-   - **Rationale:** AI content generation accelerates production; pipeline integration and
-     provenance tagging ensure governance compliance.
-   - **Verification:** Integration test: generate a texture via AI, verify it imports through the
-     asset pipeline with a provenance tag attached.
-
-## AI Chat Panel
-
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-15.23.5 | [F-15.23.5](../../features/tools-editor/ai-cloud-backend.md) |
-
-1. **R-15.23.5** — The engine **SHALL** provide a persistent per-project chat panel in the editor
-   with conversation history surviving editor restarts, token usage display, rich content rendering,
-   and context injection integration (F-15.23.8).
-   - **Rationale:** A persistent chat interface lets users ask questions, debug issues, and get
-     suggestions without losing context across sessions.
-   - **Verification:** Integration test: send a chat message, restart the editor, verify
-     conversation history is restored and token usage is displayed.
-
-## AI Provider Settings
-
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-15.23.6 | [F-15.23.6](../../features/tools-editor/ai-cloud-backend.md) |
-
-1. **R-15.23.6** — The engine **SHALL** provide per-project AI provider selection with configurable
-   model, temperature, and token limits, a cost tracking dashboard (per session, per day, cumulative
-   per project), and provider switching that preserves conversation context.
-   - **Rationale:** Studios need cost visibility and the ability to switch providers without losing
-     work context.
-   - **Verification:** Unit test: switch providers mid-conversation, verify history is converted to
-     the new provider's format. Verify cost tracking updates after each request.
-
-## Offline / Local AI Fallback
-
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-15.23.7 | [F-15.23.7](../../features/tools-editor/ai-cloud-backend.md) |
-
-1. **R-15.23.7** — The engine **SHALL** function fully without any AI provider configured, degrading
-   AI features gracefully rather than producing errors, and **SHALL** support optional local
-   inference models for basic assistance when cloud APIs are unreachable.
-   - **Rationale:** The engine must never require cloud AI to operate; local fallback serves
-     air-gapped and cost-conscious studios.
-   - **Verification:** Unit test: start editor with no API key configured, verify all non-AI
-     features work and AI features show graceful degradation UI. Integration test: disconnect
-     network, verify local model provides basic suggestions.
-
-## AI Context Injection
-
-| ID        | Derived From                                                 |
-|-----------|--------------------------------------------------------------|
-| R-15.23.8 | [F-15.23.8](../../features/tools-editor/ai-cloud-backend.md) |
-
-1. **R-15.23.8** — The engine **SHALL** automatically provide project context (selected entities,
-   current graph, recent undo history, error logs, asset metadata) to AI prompts with per-session
-   per-category user consent, and **SHALL** display a preview of exactly what will be sent before
-   each request.
-   - **Rationale:** Project-aware prompts improve AI response quality; consent and preview ensure
-     users control what data leaves their machine.
-   - **Verification:** Unit test: enable entity context, verify the context preview shows selected
-     entity data. Disable entity context, verify entity data is excluded from the preview.
-
----
-
-## User Story Traceability
-
-User stories for this domain are maintained in
-[user-stories/tools-editor/ai-cloud-backend.md](../../user-stories/tools-editor/ai-cloud-backend.md).
-Requirements in this document are derived from those user stories.
+8. **R-15.23.8** — The engine **SHALL** auto-inject project context (entities, graphs, undo history,
+   error logs) into AI prompts with per-session per-category consent and a preview showing exactly
+   what will be sent.
+   - **Rationale:** Context injection improves AI quality; consent and preview protect user data.
+   - **Verification:** Enable entity context, verify the preview shows selected entities; disable it
+     and verify exclusion.

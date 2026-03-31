@@ -2,10 +2,10 @@
 
 ## Local Avoidance
 
-| ID      | Feature                              | Requirements |
-|---------|--------------------------------------|--------------|
-| F-7.2.1 | RVO/ORCA Local Avoidance             | R-7.2.1      |
-| F-7.2.2 | Obstacle Avoidance (Static Geometry) | R-7.2.2      |
+| ID      | Feature                              |
+|---------|--------------------------------------|
+| F-7.2.1 | RVO/ORCA Local Avoidance             |
+| F-7.2.2 | Obstacle Avoidance (Static Geometry) |
 
 1. **F-7.2.1** — Implements Optimal Reciprocal Collision Avoidance so thousands of agents navigate
    dense areas without overlapping. Each agent computes a velocity that lies outside the combined
@@ -23,10 +23,10 @@
 
 ## Steering Behaviors
 
-| ID      | Feature                               | Requirements |
-|---------|---------------------------------------|--------------|
-| F-7.2.3 | Core Steering Behaviors               | R-7.2.3      |
-| F-7.2.4 | Steering Behavior Blending & Priority | R-7.2.4      |
+| ID      | Feature                               |
+|---------|---------------------------------------|
+| F-7.2.3 | Core Steering Behaviors               |
+| F-7.2.4 | Steering Behavior Blending & Priority |
 
 1. **F-7.2.3** — Provides a library of composable steering primitives: seek, flee, arrive (with
    deceleration radius), wander (constrained random heading), pursuit (predictive interception), and
@@ -43,10 +43,10 @@
 
 ## Formation & Group Movement
 
-| ID      | Feature                   | Requirements |
-|---------|---------------------------|--------------|
-| F-7.2.5 | Formation Movement        | R-7.2.5      |
-| F-7.2.6 | Group Steering & Cohesion | R-7.2.6      |
+| ID      | Feature                   |
+|---------|---------------------------|
+| F-7.2.5 | Formation Movement        |
+| F-7.2.6 | Group Steering & Cohesion |
 
 1. **F-7.2.5** — Assigns agents to slots in a parameterized formation shape (line, wedge, column,
    circle, custom). A formation leader drives the group along the path while followers maintain

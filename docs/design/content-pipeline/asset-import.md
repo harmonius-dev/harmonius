@@ -3,10 +3,10 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/content-pipeline/](../../features/content-pipeline/),
-> [requirements/content-pipeline/](../../requirements/content-pipeline/), and
-> [user-stories/content-pipeline/](../../user-stories/content-pipeline/). The table below traces
-> design elements to those definitions.
+> [features/content-pipeline/](../../features/),
+> [requirements/content-pipeline/](../../requirements/), and
+> [user-stories/content-pipeline/](../../user-stories/). The table below traces design elements to
+> those definitions.
 
 ### Asset Import
 
@@ -104,7 +104,7 @@ graph TD
 
     subgraph "harmonius_content::dcc"
         SDK[PluginSdk]
-        LL[LiveLink]
+        LL[DccBridge]
         HOU[HoudiniBridge]
         MAY[MayaBridge]
         BLE[BlenderBridge]
@@ -170,7 +170,7 @@ harmonius_content/
 │   └── id.rs            # AssetId, ContentHash
 └── dcc/
     ├── sdk.rs           # Plugin SDK host side
-    ├── live_link.rs     # LiveLink connection
+    ├── dcc_bridge.rs     # DccBridge connection
     ├── houdini.rs       # Houdini Engine bridge
     ├── maya.rs          # Maya bridge
     └── blender.rs       # Blender bridge
@@ -225,7 +225,7 @@ graph LR
 
     subgraph "Engine Import"
         NI[NativeImporter]
-        LL[LiveLink]
+        LL[DccBridge]
     end
 
     HOU --> API
@@ -244,7 +244,7 @@ intermediate formats (FBX, glTF, USD) are used. The SDK provides a C API with Py
 bindings that DCC tools call to submit meshes, skeletons, animations, materials, textures, and scene
 hierarchies.
 
-Transport uses either a local TCP socket (for LiveLink real-time push) or shared memory (for batch
+Transport uses either a local TCP socket (for DccBridge real-time push) or shared memory (for batch
 export). The engine side receives native binary payloads and feeds them directly into the
 `NativeImporter`.
 
@@ -471,7 +471,7 @@ pub enum AssetType {
     Material,
     Audio,
     Scene,
-    Prefab,
+    EntityTemplate,
     ShaderGraph,
     LogicGraph,
     UiLayout,
@@ -1633,7 +1633,7 @@ is used anywhere in the import or database subsystems.
 | Platform | I/O Backend | Import Usage |
 |----------|-------------|--------------|
 | Windows | IOCP | Overlapped reads for source files, CAS blob writes |
-| macOS | GCD Dispatch IO | `dispatch_io_read` / `dispatch_io_write` via C ABI wrappers and C ABI |
+| macOS | GCD Dispatch IO | `dispatch_io_read` / `dispatch_io_write` via swift-bridge |
 | Linux | io_uring | `IORING_OP_READ` / `IORING_OP_WRITE` SQEs for all file operations |
 
 ### CAS Storage

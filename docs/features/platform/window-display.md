@@ -11,9 +11,9 @@
    consistent behavior across platforms. The engine maintains a primary game window and supports
    additional auxiliary windows for debug overlays, chat pop-outs, and streaming dashboards common
    in MMO workflows.
-   - **Platform:** Windows uses `CreateWindowEx` with COM wrappers via C ABI; macOS uses `NSWindow`
-     via Swift C ABI wrappers; Linux uses `xcb_create_window` (X11) or
-     `wl_compositor_create_surface` (Wayland) via standard C FFI.
+   - **Platform:** Windows uses `CreateWindowEx` with COM wrappers; macOS uses `NSWindow` via Swift
+     swift-bridge bindings; Linux uses `xcb_create_window` (X11) or `wl_compositor_create_surface`
+     (Wayland) via standard C FFI.
 2. **F-14.1.2** — Switch between exclusive fullscreen, borderless fullscreen (desktop composition),
    and windowed modes at runtime without losing GPU device context. Borderless fullscreen is the
    default for MMO players who frequently alt-tab to browsers, Discord, or streaming tools.

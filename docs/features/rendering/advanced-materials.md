@@ -2,10 +2,10 @@
 
 ## Transparency and Refraction
 
-| ID       | Feature                                 | Requirements |
-|----------|-----------------------------------------|--------------|
-| F-2.12.1 | Transparent Glass and Crystal Rendering | R-2.12.1     |
-| F-2.12.2 | Ocean Reflection and Refraction         | R-2.12.2     |
+| ID       | Feature                                 |
+|----------|-----------------------------------------|
+| F-2.12.1 | Transparent Glass and Crystal Rendering |
+| F-2.12.2 | Ocean Reflection and Refraction         |
 
 1. **F-2.12.1** — Physically-based rendering of transparent, translucent, and refractive materials —
    glass windows, crystal objects, gemstones, ice, and liquids in containers. The system supports
@@ -34,10 +34,10 @@
 
 ## Surface Detail
 
-| ID       | Feature                              | Requirements |
-|----------|--------------------------------------|--------------|
-| F-2.12.3 | Emission Maps and Emissive Materials | R-2.12.3     |
-| F-2.12.4 | Heightmap Tessellation and Parallax  | R-2.12.4     |
+| ID       | Feature                              |
+|----------|--------------------------------------|
+| F-2.12.3 | Emission Maps and Emissive Materials |
+| F-2.12.4 | Heightmap Tessellation and Parallax  |
 
 1. **F-2.12.3** — Per-pixel emissive contribution controlled by an emission map (texture) and an
    emission intensity scalar. Emissive surfaces contribute directly to the lighting buffer,
@@ -65,12 +65,12 @@
 
 ## Material Types
 
-| ID       | Feature                                   | Requirements |
-|----------|-------------------------------------------|--------------|
-| F-2.12.5 | Fabric and Cloth Materials                | R-2.12.5     |
-| F-2.12.6 | Metal, Wood, Stone, and Natural Materials | R-2.12.6     |
-| F-2.12.7 | Rubber, Wax, and Soft Surface Materials   | R-2.12.7     |
-| F-2.12.8 | Clearcoat and Multi-Layer Materials       | R-2.12.8     |
+| ID       | Feature                                   |
+|----------|-------------------------------------------|
+| F-2.12.5 | Fabric and Cloth Materials                |
+| F-2.12.6 | Metal, Wood, Stone, and Natural Materials |
+| F-2.12.7 | Rubber, Wax, and Soft Surface Materials   |
+| F-2.12.8 | Clearcoat and Multi-Layer Materials       |
 
 1. **F-2.12.5** — Specialized shading models for woven and knitted fabrics. Fabric materials use a
    sheen BRDF layer (Charlie/Ashikhmin) for the soft, fuzzy highlight characteristic of velvet,
@@ -126,9 +126,9 @@
 
 ## Custom Materials
 
-| ID       | Feature                      | Requirements |
-|----------|------------------------------|--------------|
-| F-2.12.9 | Fully Custom Material Graphs | R-2.12.9     |
+| ID       | Feature                      |
+|----------|------------------------------|
+| F-2.12.9 | Fully Custom Material Graphs |
 
 1. **F-2.12.9** — Materials authored entirely through the visual shader graph editor (F-15.8.5) with
    access to all rendering inputs (surface attributes, lighting data, scene depth, camera vectors,

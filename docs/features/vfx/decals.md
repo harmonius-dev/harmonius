@@ -2,10 +2,10 @@
 
 ## Projection and Rendering
 
-| ID       | Feature                       | Requirements |
-|----------|-------------------------------|--------------|
-| F-11.2.1 | Deferred and Projected Decals | R-11.2.1     |
-| F-11.2.2 | Mesh Decals                   | R-11.2.2     |
+| ID       | Feature                       |
+|----------|-------------------------------|
+| F-11.2.1 | Deferred and Projected Decals |
+| F-11.2.2 | Mesh Decals                   |
 
 1. **F-11.2.1** — Screen-space deferred decals rendered by rasterizing an oriented bounding box and
    sampling the G-buffer depth to reconstruct world position. Each decal modifies albedo, normal,
@@ -23,10 +23,10 @@
 
 ## Management and Performance
 
-| ID       | Feature                                 | Requirements |
-|----------|-----------------------------------------|--------------|
-| F-11.2.3 | Decal Atlasing and Batching             | R-11.2.3     |
-| F-11.2.4 | Decal Priority, Layering, and Lifecycle | R-11.2.4     |
+| ID       | Feature                                 |
+|----------|-----------------------------------------|
+| F-11.2.3 | Decal Atlasing and Batching             |
+| F-11.2.4 | Decal Priority, Layering, and Lifecycle |
 
 1. **F-11.2.3** — Runtime decal texture atlas that packs decal textures into shared atlas pages to
    minimize texture binds and reduce draw call overhead. Decals sharing an atlas page are batched
@@ -47,10 +47,10 @@
 
 ## Gameplay Decals
 
-| ID       | Feature                    | Requirements |
-|----------|----------------------------|--------------|
-| F-11.2.5 | Blood and Damage Decals    | R-11.2.5     |
-| F-11.2.6 | Footprints and Tire Tracks | R-11.2.6     |
+| ID       | Feature                    |
+|----------|----------------------------|
+| F-11.2.5 | Blood and Damage Decals    |
+| F-11.2.6 | Footprints and Tire Tracks |
 
 1. **F-11.2.5** — Procedural damage decals spawned from hit events with variation driven by weapon
    type, impact angle, and surface material. Blood splatter uses velocity-directed projection and

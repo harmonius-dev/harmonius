@@ -2,10 +2,10 @@
 
 ## GPU Particle Simulation
 
-| ID       | Feature                            | Requirements |
-|----------|------------------------------------|--------------|
-| F-11.1.1 | Compute Shader Particle Simulation | R-11.1.1     |
-| F-11.1.2 | Particle Simulation Modules        | R-11.1.2     |
+| ID       | Feature                            |
+|----------|------------------------------------|
+| F-11.1.1 | Compute Shader Particle Simulation |
+| F-11.1.2 | Particle Simulation Modules        |
 
 1. **F-11.1.1** — GPU-driven particle simulation using compute shaders to update millions of
    particles per frame. Each emitter defines a spawn shape (point, sphere, box, cone, mesh surface,
@@ -27,10 +27,10 @@
 
 ## Rendering
 
-| ID       | Feature                                   | Requirements |
-|----------|-------------------------------------------|--------------|
-| F-11.1.3 | Particle Rendering Modes                  | R-11.1.3     |
-| F-11.1.4 | Particle LOD, Sorting, and Budget Culling | R-11.1.4     |
+| ID       | Feature                                   |
+|----------|-------------------------------------------|
+| F-11.1.3 | Particle Rendering Modes                  |
+| F-11.1.4 | Particle LOD, Sorting, and Budget Culling |
 
 1. **F-11.1.3** — Three rendering modes driven by particle state. Sprites use camera-facing
    billboards with atlas flipbook animation, blend modes (additive, alpha, premultiplied), and
@@ -52,11 +52,11 @@
 
 ## Advanced Features
 
-| ID       | Feature                 | Requirements |
-|----------|-------------------------|--------------|
-| F-11.1.5 | Sub-Emitters and Events | R-11.1.5     |
-| F-11.1.6 | Particle Light Emission | R-11.1.6     |
-| F-11.1.7 | GPU Fluid Simulation    | R-11.1.7     |
+| ID       | Feature                 |
+|----------|-------------------------|
+| F-11.1.5 | Sub-Emitters and Events |
+| F-11.1.6 | Particle Light Emission |
+| F-11.1.7 | GPU Fluid Simulation    |
 
 1. **F-11.1.5** — Event-driven child emitter spawning triggered by particle lifecycle events: birth,
    death, collision, or manual trigger. Sub-emitters inherit parent particle transforms and

@@ -3,10 +3,9 @@
 ## Requirements Trace
 
 > **Canonical sources:** Features, requirements, and user stories are defined in
-> [features/core-runtime/](../../features/core-runtime/),
-> [requirements/core-runtime/](../../requirements/core-runtime/), and
-> [user-stories/core-runtime/](../../user-stories/core-runtime/). The table below traces design
-> elements to those definitions.
+> [features/core-runtime/](../../features/), [requirements/core-runtime/](../../requirements/), and
+> [user-stories/core-runtime/](../../user-stories/). The table below traces design elements to those
+> definitions.
 
 ### Reflection (F-1.3 / R-1.3)
 
@@ -1976,7 +1975,7 @@ Serialization follows one of three paths depending on the requested format.
    `[...]` or `{key: value}`.
 3. Round-trip fidelity is guaranteed: parsing the output reproduces the original value bit-exactly.
 
-**Mixed path (scenes, prefabs, assets):**
+**Mixed path (scenes, entity templates, assets):**
 
 1. `MixedFormatWriter` walks the `Reflect` tree.
 2. For each field, checks `FieldAttributes::binary`.
