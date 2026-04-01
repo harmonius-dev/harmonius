@@ -35,10 +35,10 @@ Key principles:
 
 - **Lock-free instrumentation.** All recording paths use per-thread ring buffers with atomic
   operations. No mutexes in the hot path.
-- **100% ECS-based.** Profiler state (frame captures, snapshots, overlays) is stored as ECS
-  components on profiler entities. Visualization systems query these components.
-- **Controlled I/O.** Remote streaming and CSV export use the `IoReactor` async I/O path. No stdlib
-  file I/O.
+- **ECS-primary (~90%)-based.** Profiler state (frame captures, snapshots, overlays) is stored as
+  ECS components on profiler entities. Visualization systems query these components.
+- **Controlled I/O.** Remote streaming and CSV export use the `Tokio runtime` async I/O path. No
+  stdlib file I/O.
 - **Static dispatch.** Platform-specific backends are selected at compile time via `cfg` attributes.
   No trait objects for instrumentation.
 - **< 1% overhead.** All instrumentation paths are designed for sub-microsecond per-event cost. The
@@ -86,7 +86,7 @@ graph TD
         ECS[ECS World]
         TP[ThreadPool]
         RG[Render Graph]
-        IO[IoReactor]
+        IO[Tokio runtime]
         NET[Networking]
     end
 
@@ -251,7 +251,7 @@ sequenceDiagram
 sequenceDiagram
     participant E as Editor
     participant RC as RemoteClient
-    participant NET as TCP via IoReactor
+    participant NET as TCP via Tokio runtime
     participant RS as RemoteServer
     participant FC as FrameCollector
 
@@ -981,7 +981,7 @@ impl StatOverlays {
     pub async fn start_csv_recording(
         &mut self,
         path: &str,
-        reactor: &IoReactor,
+        reactor: &Tokio runtime,
     );
 
     /// Stop CSV recording and flush to disk.
@@ -1009,7 +1009,7 @@ impl RemoteServer {
     /// Start listening for editor connections.
     pub async fn start(
         &mut self,
-        reactor: &IoReactor,
+        reactor: &Tokio runtime,
     );
 
     /// Stop the server.
@@ -1051,7 +1051,7 @@ impl RemoteClient {
         &mut self,
         host: &str,
         port: u16,
-        reactor: &IoReactor,
+        reactor: &Tokio runtime,
     ) -> Result<(), RemoteError>;
 
     /// Disconnect from the remote target.
@@ -1203,8 +1203,8 @@ pub enum DecodeError {
 1. The target runs a `RemoteServer` that listens on a TCP port.
 2. The editor's `RemoteClient` connects to the target.
 3. Each frame, the server encodes the `FrameCapture` with `BinaryProtocol::encode()` (varint
-   compressed) and writes it via `IoReactor::write()`.
-4. The client reads and decodes frame data via `IoReactor::read()`.
+   compressed) and writes it via `Tokio runtime::write()`.
+4. The client reads and decodes frame data via `Tokio runtime::read()`.
 5. All viewer widgets display remote data identically to local data.
 6. `CaptureGranularity` controls how much data is sent to keep bandwidth under 10 Mbps.
 
@@ -1217,7 +1217,7 @@ pub enum DecodeError {
 | Stack capture     | `backtrace` (libunwind)      | `backtrace` (libunwind)               |
 | GPU timestamps    | Metal timestamp queries      | Vulkan timestamp queries              |
 | Vendor counters   | Metal GPU counters API       | Vulkan pipeline statistics            |
-| Remote transport  | TCP via GCD                  | TCP via io_uring                      |
+| Remote transport  | Tokio TCP                    | Tokio TCP                             |
 | Signpost compat   | `os_signpost_emit_with_type` | N/A                                   |
 
 1. **CPU timestamps** — `rdtsc` via inline asm or `QueryPerformanceCounter`
@@ -1225,7 +1225,7 @@ pub enum DecodeError {
 3. **Stack capture** — `CaptureStackBackTrace`
 4. **GPU timestamps** — D3D12 timestamp queries
 5. **Vendor counters** — AMD AGS, NVIDIA NVAPI
-6. **Remote transport** — TCP via IOCP
+6. **Remote transport** — Tokio TCP
 
 All timestamps are normalized to nanoseconds using per-platform frequency calibration. TSC frequency
 is read once at startup via `cpuid` (x86) or `mach_timebase_info` (Apple Silicon).
@@ -1388,10 +1388,10 @@ shipping on mobile platforms where performance budgets are tight.
 
 The profiler integrates directly with the ECS scheduler for system timing, the render graph for GPU
 pass timing, the networking layer for bandwidth tracking, and the VFX system for particle budgets.
-All remote I/O uses `IoReactor`. Platform backends are selected via `cfg` attributes, matching the
-engine's platform abstraction pattern. The `profile_scope!` macro is designed to be zero-cost when
-profiling is compiled out, aligning with the static dispatch preference. No significant cohesion
-gaps exist.
+All remote I/O uses `Tokio runtime`. Platform backends are selected via `cfg` attributes, matching
+the engine's platform abstraction pattern. The `profile_scope!` macro is designed to be zero-cost
+when profiling is compiled out, aligning with the static dispatch preference. No significant
+cohesion gaps exist.
 
 ## Open Questions
 

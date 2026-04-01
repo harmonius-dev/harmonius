@@ -71,7 +71,7 @@ domain in the engine.
   order. Identical inputs produce identical outputs.
 - **Topological plugin initialization.** Declared dependencies drive load order. No implicit
   ordering from registration call sequence.
-- **100% ECS-based.** Events, resources, and observers are all ECS primitives. No parallel data
+- **ECS-primary (~90%)-based.** Events, resources, and observers are all ECS primitives. No parallel data
   stores.
 
 ## Architecture

@@ -79,7 +79,8 @@
    asynchronously via the transfer queue, enabling virtually unlimited world geometry in seamless
    open-world and MMO environments.
    - **Deps:** F-3.1.1
-   - **Platform:** Uses platform-native async I/O (IOCP on Windows, GCD on macOS, io_uring on Linux)
+   - **Platform:** Tokio handles platform I/O internally (IOCP on Windows, kqueue on macOS, epoll on
+     Linux).
 
 ## Visibility Buffer
 

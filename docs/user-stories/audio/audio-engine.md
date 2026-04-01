@@ -122,9 +122,8 @@
     before playback triggers, **so that** cinematic cues and zone transitions start with zero
     audible latency.
 
-23. **US-5.1.5.3** — **As a** engine developer (P-26), **I want** streaming to use platform-native
-    async I/O (IOCP, GCD, io_uring) with peak memory under 256 KiB per stream, **so that** I/O is
-    optimal and memory-bounded.
+23. **US-5.1.5.3** — **As a** engine developer (P-26), **I want** streaming to use Tokio async I/O
+    with peak memory under 256 KiB per stream, **so that** I/O is optimal and memory-bounded.
 
 24. **US-5.1.5.4** — **As a** game designer (P-5), **I want** to configure prefetch timing and ring
     buffer sizes per platform in the editor, **so that** streaming behavior adapts to device

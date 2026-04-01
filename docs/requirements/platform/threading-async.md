@@ -41,23 +41,21 @@
 
 ## Async Runtime
 
-5. **R-14.3.5** — The engine **SHALL** bridge the task graph job system with platform-native async
-   I/O (IOCP on Windows, GCD on macOS, io_uring on Linux) so that file reads, network operations,
-   and GPU readbacks complete without blocking worker threads, with completions dispatched as
-   job-system continuations.
+5. **R-14.3.5** — The engine **SHALL** bridge the task graph job system with the Tokio
+   `current_thread` runtime so that file reads, network operations, and GPU readbacks complete
+   without blocking worker threads, with completions dispatched as job-system continuations.
    - **Rationale:** Blocking a worker thread on I/O wastes a core and can stall the frame.
      Integrating completions as jobs maintains unified scheduling.
-   - **Verification:** Integration test per platform: submit a 10 MB async file read; assert
-     completion fires as a job continuation without blocking. Assert no worker thread parks waiting
-     for I/O.
+   - **Verification:** Integration test: submit a 10 MB Tokio async file read; assert completion
+     fires as a job continuation without blocking. Assert no worker thread parks waiting for I/O.
 
-6. **R-14.3.6** — The engine **SHALL** provide an I/O reactor that processes completions only when
-   explicitly polled. Completions **SHALL NOT** be delivered asynchronously by the OS. The poll
-   **SHALL** be non-blocking (zero timeout).
+6. **R-14.3.6** — The engine **SHALL** provide a Tokio `current_thread` runtime that processes
+   completions only when explicitly polled via `runtime.poll()`. Completions **SHALL NOT** be
+   delivered asynchronously by the OS. The poll **SHALL** be non-blocking (zero timeout).
    - **Rationale:** Controlled polling gives the game loop deterministic timing over when
      completions wake async tasks, preventing mid-frame interference from OS-scheduled callbacks.
    - **Verification:** Unit test: submit 10 async reads, advance to completion, assert no futures
-     woken until `reactor.poll()`. Assert `poll()` with no pending completions returns in under 1
+     woken until `runtime.poll()`. Assert `poll()` with no pending completions returns in under 1
      us.
 
 7. **R-14.3.7** — All asynchronous operations **SHALL** use Rust's `async`/`await`. Callbacks
@@ -95,14 +93,14 @@
       execution. Register async handler with mock I/O `.await`, assert it runs on thread pool
       worker. Run under ThreadSanitizer.
 
-11. **R-14.3.12** — On macOS, GCD `dispatch_io` callbacks **SHALL** be routed to a serial dispatch
-    queue drained synchronously at the reactor poll point. The engine **SHALL** control when
-    Dispatch callbacks execute.
+11. **R-14.3.12** — On macOS, GCD dispatch blocks for fiber scheduling and Metal GPU command buffer
+    completion handlers **SHALL** be routed to a serial dispatch queue drained synchronously at the
+    game loop poll point. The engine **SHALL** control when GCD callbacks execute.
     - **Rationale:** GCD normally delivers callbacks on arbitrary threads. Routing to a serial queue
-      and draining at `poll()` ensures deterministic processing matching IOCP and io_uring models.
-    - **Verification:** Integration test (macOS): submit 10 async reads, assert no futures woken
-      until `poll()`. Assert all callbacks execute within `poll()` call stack. Assert serial (not
-      concurrent) execution.
+      and draining at the poll point ensures deterministic processing aligned with the game loop.
+    - **Verification:** Integration test (macOS): submit fiber resume and Metal command buffer
+      completion via GCD, assert no callbacks fire until the poll point. Assert all callbacks
+      execute within the poll call stack. Assert serial (not concurrent) execution.
 
 12. **R-14.3.13** — The engine **SHALL** provide `next_frame` as an async operation that yields the
     task until the next frame's reactor poll point.

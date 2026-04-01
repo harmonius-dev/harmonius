@@ -62,16 +62,16 @@
 ## Platform I/O Backends
 
 11. **US-14.6.11** — **As an** engine developer (P-26), **I want** all filesystem operations
-    implemented through IOCP on Windows, dispatch_io on macOS, and io_uring on Linux with zero Rust
-    stdlib file I/O, **so that** I/O performance is optimal and consistent with project guidelines.
+    implemented through Tokio async I/O with zero Rust stdlib file I/O, **so that** I/O performance
+    is optimal and consistent with project guidelines.
 12. **US-14.6.12** — **As an** engine developer (P-26), **I want** threaded POSIX fallback paths for
-    io_uring operations that require kernel 6.6+, **so that** the engine runs on any Linux kernel
-    5.1+ without requiring an epoll fallback.
+    Tokio operations that require newer kernel features, **so that** the engine runs on any
+    supported Linux kernel.
 
 ## DevOps
 
 13. **US-14.6.13** — **As a** DevOps engineer (P-16), **I want** the minimum Linux kernel
-    requirement to be 5.1 with io_uring used exclusively for all async I/O, **so that** CI
+    requirement to be documented with Tokio used exclusively for all async I/O, **so that** CI
     environments can be standardized on a single async I/O backend.
 
 ## Engine Tester -- Validation

@@ -470,8 +470,8 @@ threading, error handling, determinism, and other concerns that no single domain
 | R-X.15.2 | Crash dump reliability |
 
 1. **R-X.15.1** — The engine **SHALL** achieve at least 80% of raw sequential disk bandwidth through
-   the platform-native async I/O layer on all supported platforms. GPU direct storage **SHALL**
-   achieve at least 3 GB/s throughput on NVMe hardware where supported.
+   the Tokio async I/O layer on all supported platforms. GPU direct storage **SHALL** achieve at
+   least 3 GB/s throughput on NVMe hardware where supported.
    - **Rationale:** Streaming open-world content requires saturating storage bandwidth. Inefficient
      I/O causes texture pop-in and mesh LOD delays.
    - **Verification:** Benchmark per platform: sequential read 1 GB via async I/O and verify

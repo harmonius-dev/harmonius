@@ -22,8 +22,8 @@
 | US-12.5.4 | engine developer (P-26)    |
 
 1. **US-12.5.3** — **As an** engine developer (P-26), **I want** all asset reads performed through
-   platform-native async I/O with direct I/O bypassing the CPU page cache, **so that** asset loading
-   never blocks worker threads.
+   Tokio async I/O with direct I/O bypassing the CPU page cache, **so that** asset loading never
+   blocks worker threads.
 2. **US-12.5.4** — **As an** engine developer (P-26), **I want** file-to-GPU DMA that transfers
    compressed data from SSD directly into GPU memory with compute shader decompression, **so that**
    bulk asset transfers bypass CPU involvement.

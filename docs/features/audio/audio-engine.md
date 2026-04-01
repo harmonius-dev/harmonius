@@ -52,10 +52,11 @@
 | F-5.1.6 | Sample-Accurate Scheduling |
 
 1. **F-5.1.5** — Stream long-duration audio (music, ambience, dialogue) from disk in ring-buffer
-   chunks using platform-native async I/O. Prefetch hinting begins streaming before playback,
-   eliminating startup latency for cinematic cues and zone transitions.
+   chunks using Tokio async I/O. Prefetch hinting begins streaming before playback, eliminating
+   startup latency for cinematic cues and zone transitions.
    - **Deps:** F-5.1.1
-   - **Platform:** Uses IOCP on Windows, GCD async I/O on macOS, io_uring on Linux.
+   - **Platform:** Tokio handles platform I/O internally (IOCP on Windows, kqueue on macOS, epoll on
+     Linux).
 2. **F-5.1.6** — Schedule sound start, stop, and parameter changes at precise sample offsets within
    the audio buffer, enabling tight synchronization between layered loops, musical cues, and
    gameplay events. Lock-free SPSC command queue between game thread and audio thread.

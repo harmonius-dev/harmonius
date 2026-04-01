@@ -12,8 +12,8 @@
    stalling the game thread. Supports priority ordering so that geometry and collision stream before
    props and decoration, minimizing pop-in for fast-moving players in open world zones.
    - **Deps:** F-1.1.10 (Multiple Worlds), F-12.3.1 (Asset Streaming)
-   - **Platform:** Uses platform-native async I/O (IOCP on Windows, GCD on macOS, io_uring on Linux)
-     for non-blocking level data reads.
+   - **Platform:** Tokio handles platform I/O internally (IOCP on Windows, kqueue on macOS, epoll on
+     Linux) for non-blocking level data reads.
 
 ## World Partitioning
 

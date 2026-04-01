@@ -48,7 +48,7 @@
 ## On-Demand Page Streaming
 
 6. **R-3.1.6** -- The engine **SHALL** organize meshlet data into fixed-size pages streamed from
-   disk on demand via platform-native async I/O, prioritized by screen-space contribution.
+   disk on demand via Tokio async I/O, prioritized by screen-space contribution.
    - **Rationale:** Page streaming enables virtually unlimited world geometry.
    - **Verification:** Load a scene exceeding VRAM. Assert pages stream without render stalls.
      Assert highest priority pages load first.

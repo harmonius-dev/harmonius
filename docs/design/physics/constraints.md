@@ -38,7 +38,7 @@ no separate physics world.
 
 Key principles:
 
-1. **100% ECS-based.** Joint entities carry `Joint`, `JointType`, and optional `JointMotor`,
+1. **ECS-primary (~90%)-based.** Joint entities carry `Joint`, `JointType`, and optional `JointMotor`,
    `JointLimits`, `BreakForce`, and `WarmStartData` components. The solver queries these directly.
 2. **Island-parallel solving.** The `IslandBuilder` partitions the constraint graph into independent
    islands. Each island is solved on a separate worker thread via the task graph.

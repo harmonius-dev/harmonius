@@ -765,7 +765,7 @@ Companion test cases for [shared-primitives.md](shared-primitives.md).
 1. **#1** — Base=100, ability Flat(+20), item Percent(0.25), buff Override(none)
    - **Expected:** evaluate = (100+20)*1.25 = 150
 
-### TC-12.5.I1 Virtual Streamer Plus IoReactor
+### TC-12.5.I1 Virtual Streamer Plus Tokio runtime
 
 | # | Requirement |
 |---|-------------|

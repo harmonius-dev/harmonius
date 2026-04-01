@@ -63,9 +63,9 @@ split into two modules:
    formations).
 2. **`harmonius_ai::crowd`** -- mass simulation (flocking, flow fields, LOD, density management).
 
-Both modules are 100% ECS-based. All data lives as components; all logic runs as systems. The shared
-spatial index (BVH + grid) handles every neighbor query, ray cast, and density count -- no separate
-data structures.
+Both modules are ECS-primary (~90%)-based. All data lives as components; all logic runs as systems.
+The shared spatial index (BVH + grid) handles every neighbor query, ray cast, and density count --
+no separate data structures.
 
 The steering pipeline runs per-frame for high-LOD agents and at reduced frequency for mid-LOD
 agents. Low-LOD agents skip steering entirely and sample flow fields directly. A global budget
@@ -1869,10 +1869,10 @@ This path is optional. The CPU path is always available as fallback on all platf
 | Mobile   |
 
 1. **Windows** — SIMD via `std::arch::x86_64` for batch steering math. GPU crowds via D3D12 compute.
-2. **macOS** — SIMD via `std::arch::aarch64` (NEON). GPU crowds via Metal compute. GCD scoped tasks
-   for parallel flocking batches.
-3. **Linux** — SIMD via `std::arch::x86_64`. GPU crowds via Vulkan compute. io_uring not relevant
-   (CPU-bound subsystem).
+2. **macOS** — SIMD via `std::arch::aarch64` (NEON). GPU crowds via Metal compute. Thread pool
+   scoped tasks for parallel flocking batches.
+3. **Linux** — SIMD via `std::arch::x86_64`. GPU crowds via Vulkan compute. CPU-bound subsystem, no
+   async I/O.
 4. **Mobile** — Smallest budgets. GPU crowd path disabled. Aggressive LOD and despawn.
 
 ---
@@ -1995,9 +1995,9 @@ The "no frameworks, only libraries" constraint and the prohibition on third-part
 (constraints.md) most limit the GPU crowd simulation path. The optional compute shader pipeline for
 5,000+ agents requires manual GPU buffer management, dispatch, and readback without any GPU compute
 framework. If we lifted this constraint, we could use a GPU compute library like `wgpu` with its
-built-in buffer management. Additionally, the "100% ECS" constraint means even lightweight crowd
-agents must be full ECS entities with component storage overhead, limiting the absolute crowd count.
-A custom particle-like system outside ECS could handle 100,000+ agents but would violate the
+built-in buffer management. Additionally, the "ECS-primary (~90%)" constraint means even lightweight
+crowd agents must be full ECS entities with component storage overhead, limiting the absolute crowd
+count. A custom particle-like system outside ECS could handle 100,000+ agents but would violate the
 architectural constraint that all simulation data lives as components.
 
 **Q2. How can this design be improved?**

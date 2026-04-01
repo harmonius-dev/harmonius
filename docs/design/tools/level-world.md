@@ -58,14 +58,14 @@ raycasting and streaming.
 
 Key principles:
 
-- **100% ECS-based.** Every placed entity, terrain tile, foliage instance, and probe is an ECS
-  entity with components. No parallel data stores.
+- **ECS-primary (~90%)-based.** Every placed entity, terrain tile, foliage instance, and probe is an
+  ECS entity with components. No parallel data stores.
 - **No-code authoring.** All operations are visual interactions in the viewport. No scripting
   required.
 - **Shared spatial index.** Placement raycasts, foliage queries, navmesh generation, and partition
   budgets all query the same BVH/octree.
 - **Async streaming.** Terrain sculpting, heightmap I/O, and foliage storage use platform-native
-  async I/O via the `IoReactor`.
+  async I/O via the `Tokio runtime`.
 - **Multi-user editing.** Cell-based locking enables concurrent editing of disjoint world regions by
   multiple artists.
 
@@ -235,7 +235,7 @@ sequenceDiagram
     participant U as User
     participant TS as TerrainSculptor
     participant GPU as GPU Compute
-    participant IO as IoReactor
+    participant IO as Tokio runtime
     participant ECS as ECS World
 
     U->>TS: paint with brush
@@ -485,7 +485,7 @@ impl TemplateManager {
     pub async fn load(
         &self,
         id: AssetId,
-        reactor: &IoReactor,
+        reactor: &Tokio runtime,
     ) -> Result<TemplateAsset, AssetError>;
 
     /// Instantiate an entity template into the ECS world.
@@ -761,7 +761,7 @@ pub enum FalloffCurve {
 pub struct TerrainSculptor { /* ... */ }
 
 impl TerrainSculptor {
-    pub fn new(reactor: IoReactor) -> Self;
+    pub fn new(reactor: Tokio runtime) -> Self;
 
     /// Apply a sculpt stroke at the given world
     /// position. Loads affected tiles via async I/O,
@@ -1292,10 +1292,10 @@ impl UndoHistory {
 
 1. User paints with a sculpt brush.
 2. `TerrainSculptor` computes the set of affected tile coordinates.
-3. Unloaded tiles are fetched via `IoReactor::read()` (async, non-blocking).
+3. Unloaded tiles are fetched via `Tokio runtime::read()` (async, non-blocking).
 4. The brush kernel runs on loaded tile data (GPU compute for erosion, CPU for simple brushes).
 5. Modified tiles are marked dirty.
-6. On brush release, dirty tiles are flushed to disk via `IoReactor::write()`.
+6. On brush release, dirty tiles are flushed to disk via `Tokio runtime::write()`.
 7. Peak memory is bounded by loading only the affected tile window.
 
 ### World Grid Multi-User
@@ -1310,13 +1310,13 @@ impl UndoHistory {
 
 | Feature | Windows | macOS | Linux |
 |---------|---------|-------|-------|
-| Heightmap I/O | IOCP async read/write | GCD Dispatch IO | io_uring |
+| Heightmap I/O | Tokio (IOCP) | Tokio (kqueue) | Tokio (epoll) |
 | GPU erosion | D3D12 compute dispatch | Metal compute | Vulkan compute |
 | Stack capture (undo debug) | `CaptureStackBackTrace` | `backtrace` | `backtrace` |
-| Multi-user transport | TCP via IOCP | TCP via GCD | TCP via io_uring |
+| Multi-user transport | Tokio TCP | Tokio TCP | Tokio TCP |
 | Spatial index raycast | Shared BVH (all platforms) | Shared BVH | Shared BVH |
 
-All platform I/O uses the `IoReactor` controlled drain at the frame poll point. No stdlib file I/O.
+All platform I/O uses the `Tokio runtime` controlled drain at the frame poll point. No stdlib file I/O.
 
 ## Test Plan
 
@@ -1426,22 +1426,22 @@ All platform I/O uses the `IoReactor` controlled drain at the frame poll point. 
 
 **Q1. What is the biggest constraint limiting this design?**
 
-The 100% ECS-based constraint means every foliage instance, terrain tile, and probe must be a full
-ECS entity with components. For a dense forest with 500k foliage instances, this creates enormous
-entity pressure on the archetype storage and spatial index. Lifting this would allow a dedicated
-instanced foliage buffer separate from ECS. The best solution would be a hybrid where foliage
-patches are single ECS entities containing instance buffers internally. The impact of removing the
-constraint is reduced entity count by orders of magnitude, but foliage would no longer participate
-in generic ECS queries.
+The ECS-primary (~90%)-based constraint means every foliage instance, terrain tile, and probe must
+be a full ECS entity with components. For a dense forest with 500k foliage instances, this creates
+enormous entity pressure on the archetype storage and spatial index. Lifting this would allow a
+dedicated instanced foliage buffer separate from ECS. The best solution would be a hybrid where
+foliage patches are single ECS entities containing instance buffers internally. The impact of
+removing the constraint is reduced entity count by orders of magnitude, but foliage would no longer
+participate in generic ECS queries.
 
 **Q2. How can this design be improved?**
 
 The `MultiUserSession` (F-15.6.8) uses cell-level locking, which is too coarse for large cells and
-too fine for small ones. The `TerrainSculptor` streams tiles via `IoReactor` but does not prefetch
-adjacent tiles, causing latency spikes when the brush crosses tile boundaries. The `CsgProcessor`
-(F-15.2.4) lacks UV mapping on boolean results, making CSG geometry unusable without manual UV
-assignment. Adaptive lock granularity, tile prefetching, and automatic UV projection would address
-these weaknesses.
+too fine for small ones. The `TerrainSculptor` streams tiles via `Tokio runtime` but does not
+prefetch adjacent tiles, causing latency spikes when the brush crosses tile boundaries. The
+`CsgProcessor` (F-15.2.4) lacks UV mapping on boolean results, making CSG geometry unusable without
+manual UV assignment. Adaptive lock granularity, tile prefetching, and automatic UV projection would
+address these weaknesses.
 
 **Q3. Is there a better approach?**
 
@@ -1462,11 +1462,10 @@ would directly benefit RTS, RPG, and open-world genres.
 **Q5. Is this design cohesive with the overall engine?**
 
 The level editor is deeply cohesive with the engine -- placement uses the shared spatial index,
-terrain I/O uses `IoReactor`, entity templates use the reflection system, and all tools operate on
-the live ECS world. The `OverrideMap` for entity template instances (F-15.2.3) mirrors the material
-instance override pattern (F-15.3.5), creating a consistent authoring mental model. The multi-user
-session integrates with the collaboration subsystem (F-15.12) for CRDT sync. No significant cohesion
-gaps exist.
+terrain I/O uses `Tokio runtime`, entity templates use the reflection system, and all tools operate
+on the live ECS world. The `OverrideMap` for entity template instances (F-15.2.3) mirrors the
+material instance override pattern (F-15.3.5), creating a consistent authoring mental model. The
+multi-user gaps exist.
 
 ## Open Questions
 

@@ -48,7 +48,7 @@
 2. **F-9.2.2** — Corrective blend shapes driven by joint angle rules
 3. **F-9.2.3** — Facial animation via standardized action units
 4. **F-9.2.4** — Per-vertex animation textures with zero CPU cost
-5. **F-9.2.5** — Morph target streaming via platform-native async I/O
+5. **F-9.2.5** — Morph target streaming via Tokio async I/O
 
 ### Cross-Cutting Dependencies
 
@@ -81,8 +81,8 @@ Key design principles:
 1. **Shared definitions, lightweight instances.** A `StateGraph` is an immutable asset shared by
    thousands of entities. Each entity owns only a `StateInstance` with per-entity state (current
    node, elapsed time, parameter values). Instance memory is under 1 KB.
-2. **100% ECS-based.** All animation state lives as components. All evaluation runs as systems. No
-   separate animation world or manager object.
+2. **ECS-primary (~90%)-based.** All animation state lives as components. All evaluation runs as
+   systems. No separate animation world or manager object.
 3. **No-code authoring.** State graphs, blend spaces, transition rules, and morph target assignments
    are authored entirely in the visual animation editor. Parameters are bound from logic graphs.
 4. **GPU-side morph evaluation.** Morph target deltas are accumulated via compute shaders with
@@ -141,7 +141,7 @@ graph TD
 
     subgraph th["harmonius_platform::threading"]
         TP[ThreadPool]
-        RE[IoReactor]
+        RE[Tokio runtime]
     end
 
     subgraph gpu["GPU Compute"]
@@ -1373,7 +1373,7 @@ impl VatPlayback {
 
 ```rust
 /// Manages on-demand streaming of morph target
-/// delta buffers via platform-native async I/O.
+/// delta buffers via Tokio async I/O.
 pub struct MorphStreamManager {
     /// LRU cache of resident morph target sets.
     cache: LruCache<AssetId, GpuBufferHandle>,
@@ -1398,7 +1398,7 @@ impl MorphStreamManager {
     pub fn request(
         &mut self,
         asset_id: AssetId,
-        reactor: &IoReactor,
+        reactor: &Tokio runtime,
     ) -> MorphLoadStatus;
 
     /// Called each frame to process completed
@@ -1681,7 +1681,7 @@ pub fn stream_morph_targets(
         &MorphTargets,
         With<Visible>,
     >,
-    reactor: Res<IoReactor>,
+    reactor: Res<Tokio runtime>,
 ) {
     // Request morph sets for visible entities.
     // Process completed loads.
@@ -1979,7 +1979,7 @@ sequenceDiagram
     participant VS as VisibilitySystem
     participant SS as StreamMorphSystem
     participant SM as MorphStreamManager
-    participant RE as IoReactor
+    participant RE as Tokio runtime
     participant OS as Platform I/O
     participant GPU as GPU Buffer
 
@@ -2070,9 +2070,9 @@ fn compose_layers(
 
 | Platform | I/O Backend | API |
 |----------|-------------|-----|
-| Windows | IOCP | `CreateIoCompletionPort` via `windows-rs` |
-| macOS | GCD Dispatch IO | swift-bridge wrappers |
-| Linux | io_uring | `io_uring` crate |
+| Windows | Tokio (IOCP) | `tokio` |
+| macOS | Tokio (kqueue) | `tokio` |
+| Linux | Tokio (epoll) | `tokio` |
 
 ### Per-Tier Scaling
 
@@ -2268,8 +2268,8 @@ Blend curves use the shared `Curve<T>` type (see
 14. **`test_vat_half_res_mobile`** — Verify mobile uses half-resolution VAT textures.
 15. **`test_corrective_disabled_mobile_nonhero`** — Verify corrective shapes disabled on mobile for
     non-hero characters.
-16. **`test_platform_async_io_backend`** — Verify IOCP on Windows, GCD on macOS, io_uring on Linux
-    for morph streaming.
+16. **`test_platform_async_io_backend`** — Verify Tokio async I/O on all platforms for morph
+    streaming.
 
 ### Benchmarks
 
@@ -2309,8 +2309,8 @@ affect overlapping bone groups (Open Question 7). Blend space triangulation (F-9
 pre-computed Delaunay, but the algorithm choice (standard vs constrained) is unresolved (Open
 Question 1). The AI animation integration (F-9.4.10) relies on logic graphs to bridge behavior trees
 with animation state, adding an indirection layer that increases coupling with the AI subsystem.
-Morph target streaming (F-9.2.5) depends on the IoReactor but latency targets under 100 ms may be
-tight on mobile storage.
+Morph target streaming (F-9.2.5) depends on the Tokio runtime but latency targets under 100 ms may
+be tight on mobile storage.
 
 **Q3. Is there a better approach?** If we are not taking it, why not?
 

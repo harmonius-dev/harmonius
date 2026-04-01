@@ -45,7 +45,7 @@
 | F-1.8.8 | R-1.8.8, R-1.8.8a |
 | F-1.8.9 | R-1.8.9           |
 
-1. **F-1.8.1** — Platform I/O backend abstraction (IOCP, GCD, io_uring)
+1. **F-1.8.1** — Tokio-based async I/O abstraction
 2. **F-1.8.2** — Completion-based proactor model
 3. **F-1.8.3** — Async file I/O with explicit byte offsets
 4. **F-1.8.4** — Async network socket I/O (TCP/UDP)
@@ -53,7 +53,7 @@
 6. **F-1.8.6** — Scatter-gather and vectored I/O
 7. **F-1.8.7** — I/O priority and deadline scheduling
 8. **F-1.8.8** — Cooperative I/O cancellation via tokens
-9. **F-1.8.9** — Registered buffer pools for zero-copy transfers
+9. **F-1.8.9** — I/O buffer management
 
 ## Overview
 
@@ -64,10 +64,11 @@ Together they form the allocation and I/O foundation consumed by every other dom
 generational handles for safe indirect references, a slot map container for cache-friendly
 iteration, per-subsystem memory budgets, and allocation profiling/tagging.
 
-**Async I/O** wraps the `IoReactor` defined in [platform/threading.md](../platform/threading.md)
-with a higher-level `AsyncIo` trait, adding priority scheduling, cancellation tokens, a virtual file
-system (VFS) for path resolution, and typed operation interfaces for files, sockets, and audio
-streams. All I/O uses `async`/`await`. No Rust stdlib file I/O is permitted.
+**Async I/O** wraps a Tokio `current_thread` runtime with a higher-level `AsyncIo` facade, adding
+cancellation tokens (via `tokio_util::sync::CancellationToken`), a virtual file system (VFS) for
+path resolution, and typed operation interfaces for files, sockets, and audio streams. Tokio handles
+platform-specific I/O internally. All I/O uses `async`/`await` with `'static` futures. No Rust
+stdlib file I/O is permitted.
 
 ### Interop Contracts Defined Here
 
@@ -75,7 +76,7 @@ streams. All I/O uses `async`/`await`. No Rust stdlib file I/O is permitted.
 |----------|-------------|
 | Allocator types (`FrameArena`, `PoolAllocator`) | All domains |
 | `Handle<T>` / `HandleMap<T>` / `SlotMap<T>` | All domains (ECS, assets, rendering) |
-| `AsyncIo` trait (wraps `IoReactor`) | Content Pipeline, Platform, Networking |
+| `AsyncIo` facade (wraps Tokio runtime) | Content Pipeline, Platform, Networking |
 | `VirtualFileSystem` | Content Pipeline, Save System |
 | `MemoryBudget` / `MemoryTracker` | All domains |
 
@@ -103,14 +104,12 @@ graph TD
         NIO[NetOps]
         AIO[AudioOps]
         VIO[VectoredIo]
-        PS[PriorityScheduler]
         CT[CancelToken]
     end
 
-    subgraph "harmonius_platform::threading"
-        RE[IoReactor]
-        BP[BufferPool]
-        BS[BufferSlot]
+    subgraph "tokio"
+        TR[tokio current_thread Runtime]
+        TU[tokio_util CancellationToken]
     end
 
     SA -->|child of| FA
@@ -120,17 +119,14 @@ graph TD
     MB -->|reports to| MT
     AT -->|tags| MT
 
-    AI -->|wraps| RE
-    AI -->|borrows| BP
+    AI -->|wraps| TR
     FIO -->|uses| AI
     NIO -->|uses| AI
     AIO -->|uses| AI
     VIO -->|uses| AI
-    PS -->|reorders| AI
+    CT -->|wraps| TU
     CT -->|cancels via| AI
     VFS -->|resolves to| FIO
-
-    GH -.->|used by| BP
 ```
 
 ### File Layout
@@ -147,7 +143,8 @@ harmonius_core/
 │   ├── tag.rs            # AllocationTag, SubsystemId
 │   └── precision.rs      # BigInt, BigFloat
 └── async_io/
-    ├── io.rs             # AsyncIo, IoSlice
+    ├── io.rs             # AsyncIo (wraps Tokio
+    │                     # current_thread)
     ├── vfs.rs            # VirtualFileSystem,
     │                     # MountPoint, VfsHandle
     ├── file.rs           # FileOps (read, write,
@@ -157,9 +154,9 @@ harmonius_core/
     │                     # hints)
     ├── vectored.rs       # VectoredIo
     │                     # (scatter-gather)
-    ├── priority.rs       # PriorityScheduler,
-    │                     # IoPriority
-    ├── cancel.rs         # CancelToken
+    ├── cancel.rs         # CancelToken (wraps
+    │                     # tokio_util
+    │                     # CancellationToken)
     └── error.rs          # IoError
 ```
 
@@ -297,14 +294,13 @@ classDiagram
 ```mermaid
 classDiagram
     class AsyncIo {
-        -reactor IoReactor ref
-        -scheduler PriorityScheduler
-        -buffer_pool BufferPool ref
-        +new(reactor, pool) AsyncIo
-        +read(handle, offset, len, pri) Future
-        +write(handle, data, offset, pri) Future
+        -runtime tokio Runtime
+        +new() AsyncIo
+        +poll()
+        +read(handle, offset, len) Future
+        +write(handle, data, offset) Future
         +cancel(token)
-        +poll() u32
+        +block_on(future) T
     }
 
     class VirtualFileSystem {
@@ -317,22 +313,14 @@ classDiagram
         +exists(path) Future
     }
 
-    class PriorityScheduler {
-        -queues VecDeque~PendingOp~
-        +submit(op, priority)
-        +drain_to(reactor, max_batch)
-        +pending_count() u32
-    }
-
     class CancelToken {
-        -id u64
-        -cancelled AtomicBool
+        -inner CancellationToken
         +new() CancelToken
+        +child() CancelToken
         +cancel()
         +is_cancelled() bool
     }
 
-    AsyncIo --> PriorityScheduler : owns
     AsyncIo --> CancelToken : accepts
     VirtualFileSystem --> AsyncIo : wraps
 ```
@@ -369,33 +357,21 @@ sequenceDiagram
     participant S as ECS System
     participant VFS as VirtualFileSystem
     participant AIO as AsyncIo
-    participant PS as PriorityScheduler
-    participant RE as IoReactor
-    participant OS as Platform Backend
-    participant BP as BufferPool
+    participant TK as Tokio Runtime
 
     S->>VFS: read(path, 0, 4096).await
     VFS->>VFS: resolve mount point
-    VFS->>AIO: read(raw_handle, 0, 4096, Normal)
-    AIO->>BP: acquire()
-    BP-->>AIO: BufferSlot
-    AIO->>PS: submit(ReadOp, Normal)
+    VFS->>AIO: read(raw_handle, 0, 4096)
+    AIO->>TK: spawn 'static read future
 
     Note over S: Future yields, worker runs other tasks
 
-    Note over RE: Main loop calls reactor.poll()
-    RE->>PS: drain_to(reactor, batch_size)
-    PS->>RE: submit platform read
-    RE->>OS: platform async read
+    Note over TK: Tokio polls platform I/O internally
+    TK->>TK: platform async read completes
 
-    Note over OS: Kernel completes read
-
-    Note over RE: Next reactor.poll()
-    RE->>OS: drain completions
-    OS-->>RE: completion event
-    RE->>AIO: wake Future with IoSlice
-    AIO-->>VFS: IoSlice
-    VFS-->>S: IoSlice (zero-copy buffer)
+    TK-->>AIO: wake future with data
+    AIO-->>VFS: Vec of u8
+    VFS-->>S: read result
 ```
 
 ## API Design
@@ -830,37 +806,13 @@ impl MemoryTracker {
 }
 ```
 
-### AsyncIo Trait
+### AsyncIo Facade
 
-The `AsyncIo` layer wraps the `IoReactor` from [platform/threading.md](../platform/threading.md)
-with priority scheduling, cancellation, and typed operation interfaces. It is the sole I/O path for
-all engine subsystems.
+The `AsyncIo` layer wraps a Tokio `current_thread` runtime with cancellation and typed operation
+interfaces. Tokio manages task scheduling and platform I/O internally. It is the sole I/O path for
+all engine subsystems. All spawned futures must be `'static`.
 
 ```rust
-/// I/O priority levels.
-#[derive(
-    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord,
-)]
-pub enum IoPriority {
-    /// Audio buffers, frame-critical assets.
-    Critical,
-    /// Default: most asset loads, saves.
-    Normal,
-    /// Prefetch, telemetry, log flushing.
-    Background,
-}
-
-/// Result of an I/O read operation. Contains a
-/// zero-copy BufferSlot from the registered pool.
-pub struct IoSlice {
-    pub buffer: BufferSlot,
-    pub bytes_transferred: u32,
-}
-
-impl IoSlice {
-    pub fn as_slice(&self) -> &[u8];
-}
-
 /// Platform-agnostic I/O errors.
 pub enum IoError {
     NotFound,
@@ -874,20 +826,37 @@ pub enum IoError {
     Platform { code: i32 },
 }
 
-/// The engine's async I/O facade. Wraps IoReactor.
-/// All I/O operations in the engine route through
-/// this layer.
+/// The engine's async I/O facade. Wraps a Tokio
+/// `current_thread` runtime. All I/O operations in
+/// the engine route through this layer.
 pub struct AsyncIo {
-    reactor: *const IoReactor,
-    scheduler: PriorityScheduler,
-    buffer_pool: *const BufferPool,
+    runtime: tokio::runtime::Runtime,
 }
 
 impl AsyncIo {
-    pub fn new(
-        reactor: &IoReactor,
-        buffer_pool: &BufferPool,
-    ) -> Self;
+    /// Build a Tokio `current_thread` runtime.
+    pub fn new() -> Result<Self, IoError>;
+
+    /// Non-blocking I/O poll. Drains ready I/O
+    /// completions, runs woken futures until they
+    /// yield, then returns immediately.
+    pub fn poll(&self);
+
+    /// Drive I/O until `future` completes. Blocks
+    /// the calling thread.
+    pub fn block_on<F: Future + 'static>(
+        &self,
+        future: F,
+    ) -> F::Output;
+
+    /// Spawn a `'static` future on the runtime.
+    pub fn spawn<F>(
+        &self,
+        future: F,
+    ) -> tokio::task::JoinHandle<F::Output>
+    where
+        F: Future + Send + 'static,
+        F::Output: Send + 'static;
 
     /// Async file read at explicit byte offset.
     pub async fn read(
@@ -895,16 +864,14 @@ impl AsyncIo {
         handle: RawHandle,
         offset: u64,
         len: u32,
-        priority: IoPriority,
-    ) -> Result<IoSlice, IoError>;
+    ) -> Result<Vec<u8>, IoError>;
 
     /// Async file write at explicit byte offset.
     pub async fn write(
         &self,
         handle: RawHandle,
-        data: &[u8],
+        data: Vec<u8>,
         offset: u64,
-        priority: IoPriority,
     ) -> Result<u32, IoError>;
 
     /// Scatter-gather read into multiple buffers.
@@ -912,16 +879,14 @@ impl AsyncIo {
         &self,
         handle: RawHandle,
         ops: &[(u64, u32)],
-        priority: IoPriority,
-    ) -> Vec<Result<IoSlice, IoError>>;
+    ) -> Vec<Result<Vec<u8>, IoError>>;
 
     /// Scatter-gather write from multiple buffers.
     pub async fn write_vectored(
         &self,
         handle: RawHandle,
-        bufs: &[&[u8]],
+        bufs: Vec<Vec<u8>>,
         offset: u64,
-        priority: IoPriority,
     ) -> Result<u32, IoError>;
 
     /// Async TCP accept.
@@ -940,76 +905,34 @@ impl AsyncIo {
     pub async fn send(
         &self,
         handle: RawHandle,
-        data: &[u8],
-        priority: IoPriority,
+        data: Vec<u8>,
     ) -> Result<u32, IoError>;
 
     /// Async TCP/UDP receive.
     pub async fn recv(
         &self,
         handle: RawHandle,
-        priority: IoPriority,
-    ) -> Result<IoSlice, IoError>;
+    ) -> Result<Vec<u8>, IoError>;
 
     /// Async UDP sendto.
     pub async fn sendto(
         &self,
         handle: RawHandle,
-        data: &[u8],
+        data: Vec<u8>,
         addr: SocketAddr,
-        priority: IoPriority,
     ) -> Result<u32, IoError>;
 
     /// Async UDP recvfrom.
     pub async fn recvfrom(
         &self,
         handle: RawHandle,
-        priority: IoPriority,
-    ) -> Result<(IoSlice, SocketAddr), IoError>;
+    ) -> Result<(Vec<u8>, SocketAddr), IoError>;
 
     /// Cancel an in-flight operation.
     pub fn cancel(
         &self,
         token: &CancelToken,
     );
-
-    /// Delegates to `IoReactor::poll()`.
-    pub fn poll(&self) -> u32;
-}
-```
-
-### Priority Scheduler
-
-```rust
-/// Reorders I/O submissions by priority. Critical
-/// operations are drained before normal and
-/// background. Within a priority level, FIFO order.
-pub struct PriorityScheduler {
-    critical: VecDeque<PendingOp>,
-    normal: VecDeque<PendingOp>,
-    background: VecDeque<PendingOp>,
-}
-
-impl PriorityScheduler {
-    pub fn new() -> Self;
-
-    /// Enqueue an operation at the given priority.
-    pub fn submit(
-        &mut self,
-        op: PendingOp,
-        priority: IoPriority,
-    );
-
-    /// Drain up to `max_batch` operations to the
-    /// reactor, prioritizing critical > normal >
-    /// background.
-    pub fn drain_to(
-        &mut self,
-        reactor: &IoReactor,
-        max_batch: u32,
-    ) -> u32;
-
-    pub fn pending_count(&self) -> u32;
 }
 ```
 
@@ -1017,21 +940,30 @@ impl PriorityScheduler {
 
 ```rust
 /// Cooperative cancellation for in-flight I/O.
-/// The completion always fires (with IoError::Cancelled
-/// if the cancellation beat the OS completion).
+/// Wraps `tokio_util::sync::CancellationToken`.
+/// The completion always fires (with
+/// `IoError::Cancelled` if cancelled before the
+/// underlying operation completed).
 pub struct CancelToken {
-    id: u64,
-    cancelled: AtomicBool,
+    inner: tokio_util::sync::CancellationToken,
 }
 
 impl CancelToken {
     pub fn new() -> Self;
+
+    /// Create a child token. Cancelling the parent
+    /// also cancels all children.
+    pub fn child(&self) -> Self;
 
     /// Request cancellation.
     pub fn cancel(&self);
 
     /// Check if cancellation was requested.
     pub fn is_cancelled(&self) -> bool;
+
+    /// Returns a future that completes when the
+    /// token is cancelled.
+    pub async fn cancelled(&self);
 }
 ```
 
@@ -1089,13 +1021,13 @@ impl VirtualFileSystem {
         handle: &VfsHandle,
         offset: u64,
         len: u32,
-    ) -> Result<IoSlice, IoError>;
+    ) -> Result<Vec<u8>, IoError>;
 
     /// Async write to an opened file.
     pub async fn write(
         &self,
         handle: &VfsHandle,
-        data: &[u8],
+        data: Vec<u8>,
         offset: u64,
     ) -> Result<u32, IoError>;
 
@@ -1161,32 +1093,33 @@ impl BigFloat {
 
 ### Frame Lifecycle with Memory and I/O
 
-The game loop owns the `IoReactor`, `FrameArena`, and `AsyncIo`. Each frame proceeds as:
+The game loop owns the `FrameArena` and `AsyncIo`. The `AsyncIo` wraps a Tokio `current_thread`
+runtime. Each frame proceeds as:
 
 ```rust
 loop {
     // 1. Reset frame arena (zero cost)
     frame_arena.reset();
 
-    // 2. Poll I/O reactor: harvest completions
+    // 2. Non-blocking I/O poll: drain completions
     async_io.poll();
 
     // 3. Build and run ECS systems
     let graph = ecs.build_frame_graph();
-    pool.execute_graph(graph).await;
+    async_io.block_on(pool.execute_graph(graph));
     // Systems allocate transient data from
     // frame_arena. Async systems submit I/O
-    // through async_io and yield at .await
-    // points.
+    // through async_io.spawn() with 'static
+    // futures and yield at .await points.
 
-    // 4. Mid-frame poll (reduces I/O latency)
+    // 4. Mid-frame I/O poll (optional)
     async_io.poll();
 
     // 5. Render submission
     renderer.submit_commands();
 
-    // 6. GPU sync (async, no CPU spin)
-    renderer.present().await;
+    // 6. GPU sync (blocks until present)
+    async_io.block_on(renderer.present());
 }
 ```
 
@@ -1224,12 +1157,10 @@ When multiple mounts overlap, the VFS resolves paths by mount priority (highest 
 ### I/O Cancellation Flow
 
 1. Caller creates `CancelToken` and passes it when submitting I/O
-2. To cancel, caller calls `token.cancel()` which sets an atomic bool
-3. The `AsyncIo` layer passes the cancellation to the platform backend (`CancelIoEx` /
-   `dispatch_io_close` / `io_uring_prep_cancel`)
-4. The completion **always** fires: either with the original result (if the OS completed before
-   cancellation) or with `IoError::Cancelled`
-5. The buffer is returned to the pool in either case
+2. I/O futures use `tokio::select!` to race `token.cancelled()` against the operation
+3. To cancel, caller calls `token.cancel()`
+4. Child tokens are also cancelled automatically
+5. The result is either the original data (if completed before cancellation) or `IoError::Cancelled`
 
 ## Platform Considerations
 
@@ -1242,29 +1173,14 @@ When multiple mounts overlap, the VFS resolves paths by mount priority (highest 
 | Linux    | `mmap` / `munmap`              |
 
 1. **Windows** — `MEM_RESERVE` + `MEM_COMMIT` for commit-on-demand pool growth
-2. **macOS** — `MAP_ANON` for arena backing; GCD-compatible
+2. **macOS** — `MAP_ANON` for arena backing
 3. **Linux** — `MAP_ANON
 
-### I/O Backend Mapping
+### I/O Backend
 
-AsyncIo delegates to the `IoReactor` from [platform/threading.md](../platform/threading.md). Each
-platform backend is selected at compile time via `cfg` attributes with zero dynamic dispatch.
-
-| Operation | Windows (IOCP) | macOS (GCD) | Linux (io_uring) |
-|-----------|---------------|-------------|-----------------|
-| File read | `ReadFile` + `OVERLAPPED` | `dispatch_io_read` via swift-bridge | `io_uring_prep_read` |
-| File write | `WriteFile` + `OVERLAPPED` | `dispatch_io_write` via swift-bridge | `io_uring_prep_write` |
-| Vectored read | `ReadFileScatter` | `dispatch_data` composites | `io_uring_prep_readv` |
-| Vectored write | `WriteFileGather` | `dispatch_data` composites | `io_uring_prep_writev` |
-| TCP accept | `AcceptEx` | `dispatch_source` READ | `io_uring_prep_accept` |
-| TCP send | `WSASend` + overlapped | `dispatch_source` WRITE | `io_uring_prep_send` |
-| TCP recv | `WSARecv` + overlapped | `dispatch_source` READ | `io_uring_prep_recv` |
-| UDP sendto | `WSASendTo` + overlapped | `dispatch_source` WRITE | `io_uring_prep_sendmsg` |
-| UDP recvfrom | `WSARecvFrom` + overlapped | `dispatch_source` READ | `io_uring_prep_recvmsg` |
-| Cancel | `CancelIoEx` | `dispatch_io_close(STOP)` | `io_uring_prep_cancel` |
-| Buffer reg | `SetFileIoOverlappedRange` | `dispatch_data_create` | `io_uring_register_buffers` |
-| Priority | Thread pool priority | QoS classes | `ioprio_set` |
-| Audio I/O | WASAPI event-driven + IOCP | CoreAudio + `dispatch_io` | ALSA + io_uring periods |
+AsyncIo delegates all platform I/O to Tokio. Tokio selects the optimal platform backend internally
+(IOCP on Windows, kqueue on macOS, epoll/io_uring on Linux). The engine does not manage platform I/O
+primitives directly.
 
 ### Memory Budget Defaults
 
@@ -1288,10 +1204,10 @@ platform backend is selected at compile time via `cfg` attributes with zero dyna
 
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
-| `blake3` | BLAKE3 content hashing for VFS metadata | Fast, SIMD-optimized, pure Rust |
-| `windows-rs` | Win32 `VirtualAlloc`, IOCP, `CancelIoEx` | Zero-cost FFI to Win32 APIs |
-| `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
-| `swift-bridge` | Swift function bindings | Direct Rust-Swift FFI |
+| `blake3` | BLAKE3 content hashing | Fast, SIMD, pure Rust |
+| `tokio` | Async runtime | Mature, single-threaded mode |
+| `tokio-util` | CancellationToken | Cooperative cancellation |
+| `windows-rs` | Win32 `VirtualAlloc` | Zero-cost FFI to Win32 |
 
 Note: `crossbeam-deque`, `crossbeam-utils`, and `smallvec` are already approved in
 [platform/threading.md](../platform/threading.md).
@@ -1324,11 +1240,11 @@ pattern). Without ABA protection, concurrent alloc/dealloc silently corrupts the
 the slot is freed. Implementation must tie `PoolSlot<T>` to the allocator's lifetime, or use
 generational indices (like `Handle<T>`) with runtime validation.
 
-### AsyncIo Raw Pointers (Critical)
+### AsyncIo Tokio Runtime Ownership (Critical)
 
-`AsyncIo` stores `reactor: *const IoReactor` as a raw pointer. If `IoReactor` is dropped while
-`AsyncIo` exists, all operations are use-after-free. Store `&'a IoReactor` with lifetime parameter,
-making `AsyncIo<'a>` a borrowing struct. Raw pointers are not justified here.
+`AsyncIo` owns the Tokio `current_thread` runtime. The runtime must not be dropped while spawned
+tasks are still running. `AsyncIo::drop` must shut down the runtime gracefully, allowing pending
+tasks to complete or be cancelled.
 
 ### ScopedArena Child Lifetimes (High)
 
@@ -1399,23 +1315,22 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 
 ### Unit Tests — Async I/O
 
-| Test                               | Req      |
-|------------------------------------|----------|
-| `test_async_read_data_integrity`   | R-1.8.3  |
-| `test_no_std_fs_calls`             | R-1.8.3  |
-| `test_completion_typed_result`     | R-1.8.2  |
-| `test_completion_latency_p99`      | R-1.8.2a |
-| `test_vectored_write_integrity`    | R-1.8.6  |
-| `test_vectored_syscall_reduction`  | R-1.8.6  |
-| `test_priority_ordering`           | R-1.8.7  |
-| `test_cancel_fires_completion`     | R-1.8.8  |
-| `test_cancel_1000_no_leaks`        | R-1.8.8a |
-| `test_buffer_pool_backpressure`    | R-1.8.9  |
-| `test_buffer_pool_reclaim`         | R-1.8.9  |
-| `test_reactor_nothing_before_poll` | R-1.8.1  |
+| Test                              | Req      |
+|-----------------------------------|----------|
+| `test_async_read_data_integrity`  | R-1.8.3  |
+| `test_no_std_fs_calls`            | R-1.8.3  |
+| `test_completion_typed_result`    | R-1.8.2  |
+| `test_completion_latency_p99`     | R-1.8.2a |
+| `test_vectored_write_integrity`   | R-1.8.6  |
+| `test_vectored_syscall_reduction` | R-1.8.6  |
+| `test_cancel_fires_completion`    | R-1.8.8  |
+| `test_cancel_child_token`         | R-1.8.8  |
+| `test_cancel_1000_no_leaks`       | R-1.8.8a |
+| `test_tokio_runtime_init`         | R-1.8.1  |
+| `test_static_future_spawn`        | R-1.8.1  |
 
-1. **`test_async_read_data_integrity`** — Write 4 MB at explicit offsets from 4 tasks. Read back.
-   Verify integrity.
+1. **`test_async_read_data_integrity`** — Write 4 MB at explicit offsets from 4 `'static` tasks.
+   Read back. Verify integrity.
 2. **`test_no_std_fs_calls`** — Static analysis: verify no `std::fs` or `std::io::Read/Write` in
    codebase.
 3. **`test_completion_typed_result`** — Submit 1 MB write. Verify completion carries correct byte
@@ -1426,17 +1341,16 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
    Read back, verify concatenation.
 6. **`test_vectored_syscall_reduction`** — Benchmark vectored vs. individual writes. Verify >= 30%
    syscall reduction.
-7. **`test_priority_ordering`** — Submit 100 background reads then 1 critical. Verify critical
-   completes before 90% of background.
-8. **`test_cancel_fires_completion`** — Submit 100 MB read, cancel within 1 ms. Verify
-   `IoError::Cancelled` fires. Verify no buffer leak.
+7. **`test_cancel_fires_completion`** — Submit 100 MB read, cancel within 1 ms. Verify
+   `IoError::Cancelled` fires.
+8. **`test_cancel_child_token`** — Create parent and child tokens. Cancel parent. Verify child is
+   also cancelled.
 9. **`test_cancel_1000_no_leaks`** — Submit 1,000 ops, cancel all. Verify all complete within 10 ms.
-   Verify no buffer/handle leaks.
-10. **`test_buffer_pool_backpressure`** — Register 64 buffers. Submit 128 reads. Verify pool handles
-    backpressure (queuing).
-11. **`test_buffer_pool_reclaim`** — After completions, verify all buffers reclaimed to free list.
-12. **`test_reactor_nothing_before_poll`** — Submit I/O. Verify no future wakes until `poll()`
-    called.
+   Verify no handle leaks.
+10. **`test_tokio_runtime_init`** — Create `current_thread` runtime. Verify it initializes and shuts
+    down cleanly.
+11. **`test_static_future_spawn`** — Spawn a `'static` future. Verify it completes and returns the
+    expected value.
 
 ### Integration Tests
 
@@ -1451,7 +1365,8 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 | `test_vfs_blake3_hash`          | -       |
 | `test_budget_24h_server`        | R-1.7.6 |
 
-1. **`test_backend_per_platform`** — Same test suite passes on Windows, macOS, Linux via CI.
+1. **`test_backend_per_platform`** — Same test suite passes on Windows, macOS, Linux via CI (Tokio
+   handles platform differences).
 2. **`test_tcp_connect_accept_1mb`** — Async connect/accept, send 1 MB, verify receipt.
 3. **`test_udp_1000_datagrams`** — Send 1,000 datagrams. Verify delivery count.
 4. **`test_concurrent_tcp_500`** — 500 concurrent TCP connections. No handle leaks.
@@ -1467,13 +1382,11 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 |-----------|--------|--------|
 | Arena alloc throughput | > 100M allocs/sec | US-1.7.2 |
 | Arena reset | < 1 us | US-1.7.1 |
-| Pool alloc/dealloc | O(1), < 50 ns each | US-1.7.5 |
+| Pool alloc/dealloc | O(1), < 50 ns | US-1.7.5 |
 | Handle validation | O(1), < 10 ns | US-1.7.7 |
-| SlotMap dense iteration 10k | < 50 us | US-1.7.8 |
-| Registered buffer I/O throughput | >= 80% raw disk bandwidth | US-1.8.19 |
-| Reactor poll (100 completions) | < 50 us | R-14.3.5 |
-| Priority critical vs. background | Critical < 2x background latency under load | US-1.8.16 |
-| Vectored write vs. individual | >= 30% fewer syscalls | US-1.8.14 |
+| SlotMap dense iter 10k | < 50 us | US-1.7.8 |
+| Tokio file I/O throughput | >= 80% raw disk | US-1.8.19 |
+| Vectored vs. individual | >= 30% fewer syscalls | US-1.8.14 |
 
 ## Design Q & A
 
@@ -1481,38 +1394,29 @@ dangling. `alloc` must return references bounded by the scope's `'parent` lifeti
 constraint? What is the best possible solution imaginable without those constraints? What is the
 impact of removing them?
 
-The ban on all third-party async runtimes and Rust stdlib file I/O is the most limiting constraint.
-Every I/O operation must route through the custom IoReactor built on platform-native primitives
-(IOCP, GCD, io_uring). Lifting this would allow using tokio or async-std, which provide mature,
-battle-tested I/O with ecosystem support for HTTP, gRPC, and database drivers. The best possible
-solution without this constraint would leverage tokio's io_uring backend on Linux and IOCP backend
-on Windows with minimal custom code. However, removing the constraint sacrifices the controlled
-poll-point model (R-1.8.2) that ensures I/O completions never fire asynchronously into the game
-loop. Third-party runtimes own their own threads and wake patterns, making frame-pacing
-unpredictable.
+The `'static` future requirement is the most limiting constraint. All spawned futures must own their
+data, preventing zero-cost borrows across await points. Lifting this would allow scoped borrows in
+async tasks, reducing clones and allocations. However, `'static` futures are required by Tokio's
+`spawn` and simplify reasoning about task lifetimes. The trade-off is acceptable given Tokio's
+maturity and ecosystem support.
 
 **Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
 trade-offs are we making?
 
-The three-platform I/O backend (F-1.8.1) requires maintaining parallel implementations of
-substantial complexity. GCD's dispatch_io semantics differ significantly from io_uring's submission
-queue model, making behavioral parity difficult to achieve and test. The scoped async limitation
-(CPU-only for borrowed tasks) is a usability concern: developers must remember which tasks can
-borrow and which require 'static. Memory budgets (F-1.7.6) with eviction policies add runtime
-overhead to every allocation path. The priority scheduling (F-1.8.7) relies on platform-specific QoS
-mechanisms that behave differently across OSes. Adding a comprehensive platform abstraction test
-suite, clearer lifetime annotations in the API, and a priority simulation layer for testing would
+Using Tokio `current_thread` removes the complexity of maintaining three platform I/O backends, but
+couples the engine to Tokio's release cycle and API stability. Memory budgets (F-1.7.6) with
+eviction policies add runtime overhead to every allocation path. The `current_thread` runtime is
+single- threaded, which simplifies reasoning but limits I/O parallelism to one OS thread. Adding
+integration tests across all target platforms and clearer lifetime annotations in the API would
 mitigate these weaknesses.
 
 **Q3. Is there a better approach?** If we are not taking it, why not?
 
-Using a readiness-based model (epoll/kqueue) with user-space buffering is simpler to implement and
-has wider platform support, including older Linux kernels that lack io_uring. We are not taking this
-approach because all three target platforms natively support completion-based I/O (R-1.8.2), and the
-readiness model requires extra copies and retry loops that add latency. The completion model
-delivers data directly into registered buffers (F-1.8.9) with zero intermediate copies, which is
-critical for the >= 500 MB/s serialization throughput target (R-1.4.1a). The minimum kernel version
-requirement (Linux 5.1+) is acceptable for a new engine targeting modern hardware.
+A custom IoReactor built directly on platform-native primitives (IOCP, GCD, io_uring) would give
+finer control over poll points and buffer registration. We chose Tokio instead because it is
+battle-tested, has a large ecosystem (HTTP, gRPC, database drivers), and eliminates maintaining
+three separate platform backends. Tokio's `current_thread` mode gives us control over when I/O is
+polled via `block_on`, which is sufficient for frame pacing.
 
 **Q4. Does this design solve all customer problems?** Are there missing features, requirements, or
 user stories? What are they? How would adding them improve the engine? What kinds of games does it
@@ -1522,22 +1426,20 @@ The design covers file, network, and audio I/O but lacks explicit memory-mapped 
 beyond zero-copy deserialization (F-1.4.2). User story US-1.8.7 references asset loading but there
 is no streaming virtual memory feature for texture and mesh data that exceeds physical RAM. For
 open-world games with hundreds of GB of terrain data, a virtual memory streaming layer integrated
-with the IoReactor would enable seamless world traversal. The arbitrary precision numerics (F-1.7.9)
-also lack user stories for integration with the spatial index (F-1.9) for cosmic-scale worlds.
-Adding virtual memory streaming and large-world coordinate integration would expand support for
-space games and planetary-scale simulations.
+with the AsyncIo facade would enable seamless world traversal. The arbitrary precision numerics
+(F-1.7.9) also lack user stories for integration with the spatial index (F-1.9) for cosmic-scale
+worlds. Adding virtual memory streaming and large-world coordinate integration would expand support
+for space games and planetary-scale simulations.
 
 **Q5. Is this design cohesive with the overall engine?** Does it fit? Does it differ from other
 modules, and why? How could we make it more cohesive? How can we improve it to meet engine goals?
 
 Memory management and async I/O are foundational layers that all other modules depend on, giving
 them strong structural cohesion. The generational handle design (F-1.7.4) is shared across ECS
-entities (F-1.1.11), spatial index (F-1.9.1), and buffer pools (F-1.8.9), which is well unified via
-the shared primitives module. One gap is between the per-frame arena (F-1.7.1) and the async I/O
-buffer pool (F-1.8.9): arenas reset at frame boundaries but I/O buffers may outlive frames when
-operations span multiple ticks. The current design handles this by keeping I/O buffers in separate
-pool allocators, but a clearer ownership protocol between frame arenas and I/O completion lifetimes
-would improve safety and documentation.
+entities (F-1.1.11) and spatial index (F-1.9.1), unified via the shared primitives module. Since
+Tokio manages its own I/O buffers internally, the gap between frame arenas and I/O buffer lifetimes
+is no longer a concern. All async tasks use `'static` futures, making ownership clear and avoiding
+lifetime entanglement between the frame arena and I/O completions.
 
 ## Open Questions
 
@@ -1563,6 +1465,6 @@ would improve safety and documentation.
    for large files) or lazily on first `metadata()` call? Lazy is better for hot paths but
    complicates the API.
 
-7. **Audio I/O integration depth** — The current design routes audio I/O through `AsyncIo`. Should
-   audio have a completely separate I/O path (dedicated thread with deadline scheduling) to
-   guarantee sub-10 ms latency even under I/O saturation?
+7. **Audio I/O integration depth** — The current design routes audio I/O through `AsyncIo` backed by
+   Tokio. Should audio have a completely separate I/O path (dedicated thread with deadline
+   scheduling) to guarantee sub-10 ms latency even under I/O saturation?

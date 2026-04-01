@@ -24,35 +24,33 @@
 ## Overview
 
 The threading subsystem is the execution backbone of the Harmonius engine. It provides a
-work-stealing thread pool, a DAG-based task graph, a non-blocking I/O reactor, lightweight fibers,
-and async-aware synchronization primitives. All asynchronous abstractions — I/O, GPU
-synchronization, long waits, and frame-boundary yields — use Rust's `async`/`await`. No callbacks.
+work-stealing thread pool, a DAG-based task graph, a Tokio `current_thread` I/O runtime, lightweight
+fibers, and async-aware synchronization primitives. All asynchronous abstractions -- I/O, GPU
+synchronization, long waits, and frame-boundary yields -- use Rust's `async`/`await`. No callbacks.
 Synchronous blocking is only permitted for sub-microsecond critical sections.
 
-The game loop runs on a **dedicated game loop thread** and owns a **reactor** — the single point
-where I/O completions are harvested from the OS. Each frame, the loop calls `reactor.poll()` at a
-defined point, draining platform completion queues (IOCP on Windows, controlled GCD dispatch drain
-on macOS/iOS, io_uring on Linux). This wakes any async tasks whose I/O has finished, which are then
-resumed on worker threads. The engine controls exactly when callbacks fire — never the OS
-asynchronously.
+The game loop runs on a **dedicated game loop thread** and owns a Tokio `current_thread` runtime.
+Each frame, the loop calls `runtime.poll()` at frame boundaries to drain ready I/O completions and
+wake async tasks. `poll()` is non-blocking -- it processes whatever is ready and returns
+immediately. Tokio handles all platform I/O (epoll on Linux, kqueue on macOS, IOCP on Windows)
+through a single unified abstraction. `block_on()` is reserved for operations that must complete
+before proceeding (GPU present, task graph execution). `poll()` and `block_on()` are the only points
+where I/O futures make progress.
 
 On platforms where the OS owns thread 0 (iOS, Android), the game loop thread is a dedicated thread
 separate from the OS main thread. The OS main thread handles platform UI events (UIKit, Activity
 lifecycle) and forwards them to the game loop thread via a lock-free SPSC queue. On desktop
 platforms (macOS, Windows, Linux), the game loop thread is typically thread 0. This distinction is
-transparent to engine code — the `IoReactor` enforces single-caller access on whichever thread runs
-the game loop, regardless of whether it is the OS main thread.
+transparent to engine code — the Tokio `current_thread` runtime is thread-local and only accessible
+from the game loop thread.
 
 The thread pool supports scoped execution (like `std::thread::scope`) so tasks can borrow from the
-calling frame without `'static` or `Arc` overhead. Fibers remain available for deep-call-stack
-workloads (recursive procedural generation, pathfinding) that cannot be expressed as async state
-machines. On macOS, fibers are implemented using GCD dispatch queues and blocks. Event handlers
-support both synchronous and asynchronous variants. All platform-specific code is selected via `cfg`
-attributes — no trait objects, no dynamic dispatch.
-
-Metal uses Dispatch for command buffer completion handlers, making GCD integration a hard
-requirement on macOS. The threading subsystem leverages this shared dependency for both fiber
-scheduling and async I/O.
+calling frame without `'static` or `Arc` overhead. All async I/O tasks use `'static` futures with
+`Arc` for shared state. Fibers remain available for deep-call-stack workloads (recursive procedural
+generation, pathfinding) that cannot be expressed as async state machines. On macOS, fibers use
+async/await coroutines -- yield points become `.await` points. Event handlers support both
+synchronous and asynchronous variants. All platform-specific code is selected via `cfg` attributes
+-- no trait objects, no dynamic dispatch.
 
 ## Architecture
 
@@ -64,7 +62,7 @@ graph TD
         CT[CoreTopology]
         TP[ThreadPool]
         TG[TaskGraph]
-        RE[IoReactor]
+        TK["Tokio current_thread"]
         FB[FiberPool]
         BP[BufferPool]
         SY[Async Sync Primitives]
@@ -72,27 +70,24 @@ graph TD
 
     subgraph "platform::windows"
         WT[Win32 Threads]
-        WI[IOCP]
         WF[CreateFiber]
     end
 
     subgraph "platform::macos"
         MT[pthread + QoS]
-        MG[GCD Controlled Drain]
-        MF[GCD Dispatch Queues]
+        MF[Async/Await Coroutines]
     end
 
     subgraph "platform::linux"
         LT[pthread + affinity]
-        LU[io_uring]
         LF[Assembly Context Switch]
     end
 
     CT --> TP
     TP --> TG
     TP --> FB
-    RE --> BP
-    TP --> RE
+    TK --> BP
+    TP --> TK
 
     TP -.->|"cfg(windows)"| WT
     TP -.->|"cfg(macos)"| MT
@@ -100,9 +95,6 @@ graph TD
     FB -.->|"cfg(windows)"| WF
     FB -.->|"cfg(macos)"| MF
     FB -.->|"cfg(linux)"| LF
-    RE -.->|"cfg(windows)"| WI
-    RE -.->|"cfg(macos)"| MG
-    RE -.->|"cfg(linux)"| LU
 ```
 
 ```text
@@ -114,7 +106,7 @@ harmonius_platform/
 │   ├── task.rs          # ErasedTask, inline closure
 │   │                    # storage
 │   ├── graph.rs         # TaskGraphBuilder, TaskGraph
-│   ├── reactor.rs       # IoReactor, frame poll point
+│   ├── io.rs            # Tokio current_thread wrapper
 │   ├── fiber.rs         # FiberPool, FiberYielder
 │   ├── sync.rs          # AsyncMutex, AsyncRwLock,
 │   │                    # AsyncBarrier
@@ -125,48 +117,43 @@ harmonius_platform/
     ├── windows/
     │   ├── threads.rs   # CreateThread,
     │   │                # SetThreadAffinityMask
-    │   ├── iocp.rs      # IOCP reactor backend
     │   └── fibers.rs    # CreateFiber,
     │                    # SwitchToFiber
     ├── macos/
     │   ├── threads.rs   # pthread_create,
     │   │                # QoS classes
-    │   ├── gcd.rs       # dispatch_io, controlled
-    │   │                # queue drain
-    │   └── fibers.rs    # GCD dispatch queues
-    │                    # and blocks
+    │   └── fibers.rs    # async/await coroutines
     └── linux/
         ├── threads.rs   # pthread_create,
         │                # pthread_setaffinity_np
-        ├── io_uring.rs  # io_uring reactor backend
         └── fibers.rs    # setjmp/longjmp assembly
                          # context switch
 ```
 
-### Frame Loop and Reactor Poll Point
+### Frame Loop and Tokio Poll Point
 
 ```mermaid
 sequenceDiagram
     participant ML as Game Loop Thread
-    participant RE as IoReactor
+    participant TK as Tokio Runtime
     participant ECS as ECS Scheduler
     participant TP as ThreadPool
     participant W as Workers
     participant GPU as GPU
 
     loop Every Frame
-        ML->>RE: poll() — drain completions
-        Note over RE: Wakes async tasks whose I/O finished
-        RE->>TP: re-enqueue woken tasks
+        ML->>TK: poll()
+        Note over TK: Drains ready I/O, wakes futures
+        TK->>TP: re-enqueue woken tasks
 
         ML->>ECS: build_frame_graph()
         ECS->>TP: execute_graph(graph)
         TP->>W: dispatch ready tasks
         W->>W: execute systems in parallel
-        Note over W: Async tasks may submit I/O (futures yield)
+        Note over W: Async tasks yield at .await
         W-->>TP: all tasks complete
 
-        ML->>RE: poll() — mid-frame drain
+        ML->>TK: poll()
         ML->>GPU: submit_commands()
         ML->>GPU: present().await
         Note over GPU: Async GPU sync, no CPU spin
@@ -177,35 +164,34 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant T as Async Task (on Worker)
-    participant RE as IoReactor
-    participant OS as Platform Backend
+    participant T as Async Task
+    participant TK as Tokio Runtime
+    participant OS as Kernel
 
-    T->>RE: read(handle, offset, len).await
-    RE->>OS: submit async read
+    T->>TK: tokio::fs::read(path).await
+    TK->>OS: submit async read
     Note over T: Future yields, worker runs other tasks
 
     Note over OS: Kernel completes read
 
-    Note over RE: Main loop calls reactor.poll()
-    RE->>OS: drain completions (non-blocking)
-    OS-->>RE: completion event
-    RE->>RE: wake the waiting Future
-    Note over T: Worker resumes async task from .await
+    Note over TK: poll() drives reactor
+    TK->>OS: poll readiness (epoll/kqueue/IOCP)
+    OS-->>TK: completion event
+    TK->>TK: wake the waiting Future
+    Note over T: Task resumes from .await
 ```
 
 ### Core Data Structures
 
 ```mermaid
 classDiagram
-    class IoReactor {
-        -backend PlatformReactorBackend
-        -wakers HashMap~IoToken, Waker~
+    class TokioRuntime {
+        -runtime tokio..runtime..Runtime
         -buffer_pool BufferPool
-        +new() IoReactor
-        +poll() u32
-        +read(handle, offset, len) Future~IoResult~
-        +write(handle, data, offset) Future~u32~
+        +new() TokioRuntime
+        +poll()
+        +block_on~F~(future) F..Output
+        +spawn~F~(future) JoinHandle
     }
 
     class ThreadPool {
@@ -258,10 +244,10 @@ classDiagram
     ThreadPool --> CoreTopology
     ThreadPool *-- Worker
     ThreadPool --> FiberPool
-    ThreadPool --> IoReactor
+    ThreadPool --> TokioRuntime
     TaskGraphBuilder ..> TaskGraph : builds
     TaskGraph *-- TaskNode
-    IoReactor --> BufferPool
+    TokioRuntime --> BufferPool
 ```
 
 ### Work-Stealing Algorithm
@@ -372,23 +358,16 @@ pub struct Scope<'scope> { /* ... */ }
 
 impl<'scope> Scope<'scope> {
     /// Spawn a scoped task that may borrow data
-    /// with lifetime 'scope.
+    /// with lifetime 'scope. Scoped tasks are
+    /// synchronous only -- async I/O tasks use
+    /// `'static` futures with `Arc` via the Tokio
+    /// runtime instead.
     pub fn spawn<F, R>(
         &self,
         f: F,
     ) -> ScopedJoinHandle<'scope, R>
     where
         F: FnOnce() -> R + Send + 'scope,
-        R: Send + 'scope;
-
-    /// Spawn a scoped async task.
-    pub fn spawn_async<F, Fut, R>(
-        &self,
-        f: F,
-    ) -> ScopedJoinHandle<'scope, R>
-    where
-        F: FnOnce() -> Fut + Send + 'scope,
-        Fut: Future<Output = R> + Send + 'scope,
         R: Send + 'scope;
 }
 
@@ -686,7 +665,7 @@ impl CompiledFrame {
         &self,
         world: &mut World,
         pool: &ThreadPool,
-        reactor: &mut IoReactor,
+        io: &GameIoRuntime,
     );
 }
 ```
@@ -798,71 +777,57 @@ impl TaskGraphBuilder {
 pub struct TaskGraph { /* ... */ }
 ```
 
-### I/O Reactor
+### Tokio I/O Runtime
 
-The reactor is the engine's controlled I/O event loop. It wraps the platform completion source and
-processes events only when explicitly polled. The engine decides when completions are harvested —
-never the OS asynchronously.
+The game loop owns a Tokio `current_thread` runtime. All async I/O (filesystem, networking, timers)
+is driven through Tokio. The engine calls `runtime.poll()` at frame boundaries to drain ready
+completions without blocking. `block_on()` is used only when a future must complete before
+proceeding. Tokio handles platform differences internally (epoll on Linux, kqueue on macOS, IOCP on
+Windows).
 
 ```rust
-/// The I/O reactor. Owned by the game loop thread.
-/// All I/O completions flow through this single
-/// controlled drain point.
-pub struct IoReactor { /* ... */ }
+/// Wraps a Tokio current_thread runtime for
+/// controlled I/O processing at frame boundaries.
+/// Owned by the game loop thread.
+pub struct GameIoRuntime { /* ... */ }
 
-impl IoReactor {
-    /// Create a new IoReactor. Records the current
-    /// thread as the game loop thread for
-    /// single-caller enforcement.
+impl GameIoRuntime {
+    /// Create a new Tokio current_thread runtime.
+    /// Must be called from the game loop thread.
     pub fn new() -> Self;
 
-    /// Poll for completed I/O events
-    /// (non-blocking). Drains the platform
-    /// completion queue and wakes all Futures
-    /// whose operations finished. Must be called
-    /// from the game loop thread (debug-asserted).
-    /// Returns the number of completions processed.
-    pub fn poll(&self) -> u32;
+    /// Non-blocking I/O poll. Drains ready I/O
+    /// completions, runs woken futures until they
+    /// yield, then returns immediately. Does not
+    /// wait for new events. Called at frame
+    /// boundaries and mid-frame poll points.
+    pub fn poll(&self);
 
-    /// Submit an async read. The returned Future
-    /// resolves after a future call to `poll()`
-    /// detects the OS completion.
-    pub async fn read(
+    /// Drive I/O futures until `future` completes.
+    /// Blocks the calling thread. Use for operations
+    /// that must finish before proceeding (GPU
+    /// present, shutdown, task graph execution).
+    pub fn block_on<F: Future>(
         &self,
-        handle: RawHandle,
-        offset: u64,
-        len: u32,
-    ) -> Result<IoResult, IoError>;
+        future: F,
+    ) -> F::Output;
 
-    /// Submit an async write.
-    pub async fn write(
+    /// Spawn a `'static` async I/O task onto the
+    /// Tokio runtime. The task makes progress when
+    /// `poll()` or `block_on()` is called.
+    pub fn spawn<F>(
         &self,
-        handle: RawHandle,
-        data: &[u8],
-        offset: u64,
-    ) -> Result<u32, IoError>;
-
-    /// Submit multiple reads concurrently.
-    /// Resolves when all complete (across one or
-    /// more poll cycles).
-    pub async fn read_batch(
-        &self,
-        ops: &[(RawHandle, u64, u32)],
-    ) -> Vec<Result<IoResult, IoError>>;
+        future: F,
+    ) -> tokio::task::JoinHandle<F::Output>
+    where
+        F: Future + Send + 'static,
+        F::Output: Send + 'static;
 
     /// Async wait for the next frame boundary.
     /// Coroutines use this to spread work across
     /// frames.
     pub async fn next_frame(&self);
 }
-
-/// Platform-native file/socket handle.
-#[cfg(target_os = "windows")]
-pub type RawHandle =
-    std::os::windows::io::RawHandle;
-#[cfg(unix)]
-pub type RawHandle =
-    std::os::unix::io::RawFd;
 
 pub struct IoResult {
     pub bytes_transferred: u32,
@@ -1087,59 +1052,57 @@ pub enum FiberError {
 
 ## Data Flow
 
-### Frame Lifecycle with Reactor
+### Frame Lifecycle with Tokio Runtime
 
-The game loop runs on the dedicated game loop thread and owns the `IoReactor`. It calls `poll()` at
-defined points. This is the only path through which I/O completions enter the engine. The OS never
-fires callbacks asynchronously — we control exactly when completions are processed.
+The game loop runs on the dedicated game loop thread and owns the `GameIoRuntime` (Tokio
+`current_thread`). It calls `poll()` at frame boundaries for non-blocking I/O draining, and
+`block_on()` for operations that must complete. These are the only paths through which I/O futures
+make progress. The OS never fires callbacks asynchronously -- we control exactly when completions
+are processed.
 
 On desktop (macOS, Windows, Linux), the game loop thread is typically thread 0. On mobile (iOS,
-Android), the game loop thread is a dedicated thread separate from the OS main thread — the OS main
+Android), the game loop thread is a dedicated thread separate from the OS main thread -- the OS main
 thread runs the platform UI event loop (UIKit `CFRunLoop`, Android `Looper`) and forwards input
 events to the game loop thread via a lock-free SPSC queue.
 
 ```rust
 // Simplified game loop (runs on game loop thread)
+let rt = GameIoRuntime::new();
 loop {
-    // ---- Frame poll point: harvest I/O ----
-    reactor.poll();
+    // ---- Non-blocking I/O poll at frame start ----
+    rt.poll();
 
     // ---- Build and run ECS systems ----
     let graph = ecs.build_frame_graph();
-    pool.execute_graph(graph).await;
+    rt.block_on(pool.execute_graph(graph));
 
-    // Async systems that submitted I/O will
-    // yield at .await points. Their I/O completes
-    // in the OS but futures are not woken until
-    // the next reactor.poll() call.
-
-    // ---- Mid-frame poll (optional) ----
-    reactor.poll();
+    // ---- Mid-frame I/O poll (optional) ----
+    rt.poll();
 
     // ---- Render submission ----
     renderer.submit_commands();
 
     // ---- GPU sync is async: no CPU spin ----
-    renderer.present().await;
+    rt.block_on(renderer.present());
 }
 ```
 
 **"Wait for next frame" is async:** A coroutine that needs to spread work across frames calls
-`reactor.next_frame().await`. This yields the task; it resumes at the next frame's poll point.
+`io_runtime.next_frame().await`. This yields the task; it resumes at the next `poll()` call.
 
 ### I/O Completion Pipeline
 
-1. An async task calls `reactor.read(handle, offset, len).await`.
-2. The reactor submits the operation to the platform backend (IOCP overlapped read, GCD
-   `dispatch_io_read` routed to a controlled queue, or io_uring SQE).
-3. The future yields. The worker thread returns to the work-stealing loop.
+1. An async task calls `tokio::fs::read(path).await`.
+2. Tokio registers the operation with the platform I/O driver (epoll on Linux, kqueue on macOS, IOCP
+   on Windows).
+3. The future yields. The worker returns to the work-stealing loop.
 4. The OS kernel completes the read asynchronously.
-5. At the next `reactor.poll()` call (frame poll point), the reactor drains the platform completion
-   queue and wakes the future.
+5. At the next `runtime.poll()` call (frame boundary), Tokio polls the I/O driver and wakes the
+   future.
 6. The woken task is re-enqueued on the thread pool. A worker resumes it from the `.await`.
 
-No worker thread ever blocks on I/O. The reactor poll is non-blocking (zero timeout). Multiple poll
-points per frame can reduce I/O response latency below one frame.
+No worker thread ever blocks on I/O. `poll()` and `block_on()` are the only points where I/O futures
+make progress. Multiple `poll()` calls per frame reduce I/O latency below one frame.
 
 ### Scoped Execution
 
@@ -1180,7 +1143,7 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 | Priority | `SetThreadPriority` | `THREAD_PRIORITY_HIGHEST` / `_LOWEST` |
 | Hybrid detect | `cpuid` leaf 0x1A | Intel Thread Director (Alder Lake+) |
 | Fibers | `CreateFiber` / `SwitchToFiber` | Native OS fiber support |
-| I/O reactor | IOCP | `GetQueuedCompletionStatusEx` with timeout=0 at poll point |
+| I/O | Tokio (IOCP) | Tokio `current_thread` drives IOCP internally |
 
 ### macOS
 
@@ -1190,17 +1153,17 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 | Affinity      | QoS classes                         |
 | Priority      | QoS: `USER_INTERACTIVE` / `UTILITY` |
 | Hybrid detect | `sysctl hw.nperflevels`             |
-| Fibers        | GCD dispatch queues                 |
-| I/O reactor   | GCD controlled drain                |
+| Fibers        | Async/await coroutines              |
+| I/O           | Tokio (kqueue)                      |
 
-1. **Threads** — Via libc crate
-2. **Affinity** — `pthread_set_qos_class_self_np` (no direct core pinning)
-3. **Priority** — macOS schedules P/E via QoS
-4. **Hybrid detect** — Apple Silicon P/E core counts
-5. **Fibers** — `dispatch_async` submits blocks to queues; `dispatch_group` tracks completion. No
-   custom assembly.
-6. **I/O reactor** — Dispatch IO accessed through swift-bridge. Async results routed to a serial
-   dispatch queue; drained synchronously at poll point via `dispatch_sync`.
+1. **Threads** -- Via libc crate
+2. **Affinity** -- `pthread_set_qos_class_self_np` (no direct core pinning)
+3. **Priority** -- macOS schedules P/E via QoS
+4. **Hybrid detect** -- Apple Silicon P/E core counts
+5. **Fibers** -- Async/await coroutines. Yield points become `.await` points. No GCD dispatch
+   blocks, no custom assembly.
+6. **I/O** -- Tokio `current_thread` using kqueue internally. All I/O driven by `runtime.poll()` at
+   frame boundaries.
 
 ### Linux
 
@@ -1211,34 +1174,33 @@ For deep-recursion workloads only (not for I/O — use async for I/O):
 | Priority      | `sched_setscheduler`           |
 | Hybrid detect | `/sys/devices/system/cpu/`     |
 | Fibers        | Custom assembly context switch |
-| I/O reactor   | io_uring                       |
+| I/O           | Tokio (epoll)                  |
 
-1. **Threads** — Via libc crate
-2. **Affinity** — CPU set bitmask
-3. **Priority** — `SCHED_OTHER` + nice
-4. **Hybrid detect** — `cpuid` 0x1A or sysfs
-5. **Fibers** — `setjmp`/`longjmp` with explicit stack
-6. **I/O reactor** — `io_uring_peek_cqe` / batch CQE drain at poll point. Requires kernel 5.1+. fd
-   readiness polling via `IORING_OP_POLL_ADD`.
+1. **Threads** -- Via libc crate
+2. **Affinity** -- CPU set bitmask
+3. **Priority** -- `SCHED_OTHER` + nice
+4. **Hybrid detect** -- `cpuid` 0x1A or sysfs
+5. **Fibers** -- `setjmp`/`longjmp` with explicit stack
+6. **I/O** -- Tokio `current_thread` using epoll internally. All I/O driven by `runtime.poll()` at
+   frame boundaries.
 
 ### Mobile and Console Platforms
 
-| Platform | Thread Pool             | I/O Backend                         |
-|----------|-------------------------|-------------------------------------|
-| iOS      | GCD (shared with macOS) | Dispatch IO                         |
-| Android  | std thread pool         | io_uring                            |
-| Consoles | Platform thread API     | Platform async I/O                  |
+| Platform | Thread Pool         | I/O Backend        |
+|----------|---------------------|--------------------|
+| iOS      | Custom (shared)     | Tokio (kqueue)     |
+| Android  | std thread pool     | Tokio (epoll)      |
+| Consoles | Platform thread API | Platform async I/O |
 
-1. **iOS** — Same swift-bridge wrappers as macOS. QoS classes for thermal throttling. UIKit owns the
-   OS main thread (`UIApplicationMain` / `CFRunLoop`), so the game loop runs on a dedicated game
-   loop thread. Input events (touch, accelerometer, keyboard) arrive on the OS main thread via UIKit
-   and are forwarded to the game loop thread through a lock-free SPSC queue. The render thread
-   presents independently via Metal when frames are ready. This is the standard pattern used by
-   Unreal, Unity, and Godot on iOS.
-2. **Android** — Thread affinity respects big.LITTLE core topology. The game loop runs on a
+1. **iOS** -- QoS classes for thermal throttling. UIKit owns the OS main thread (`UIApplicationMain`
+   / `CFRunLoop`), so the game loop runs on a dedicated game loop thread. Input events (touch,
+   accelerometer, keyboard) arrive on the OS main thread via UIKit and are forwarded to the game
+   loop thread through a lock-free SPSC queue. The render thread presents independently via Metal
+   when frames are ready.
+2. **Android** -- Thread affinity respects big.LITTLE core topology. The game loop runs on a
    dedicated thread, separate from the `NativeActivity` main thread. Input events are forwarded via
    the same SPSC queue pattern as iOS.
-3. **Consoles** — Vendor-specific thread affinity and priority. NDA APIs.
+3. **Consoles** -- Vendor-specific thread affinity and priority. NDA APIs.
 
 On all mobile and console platforms, the game loop thread is distinct from the OS main thread.
 Desktop platforms (macOS, Windows, Linux) may run the game loop on thread 0.
@@ -1259,61 +1221,37 @@ a platform-specific scaling factor.
 
 | Crate | Purpose | Justification |
 |-------|---------|---------------|
-| `crossbeam-deque` | Chase-Lev work-stealing deque | Industry-standard; used by rayon and others |
+| `crossbeam-deque` | Chase-Lev deque | Industry-standard; used by rayon |
 | `crossbeam-utils` | `CachePadded`, `Backoff` | Prevents false sharing on atomics |
-| `windows-rs` | Win32 API bindings | Zero-cost FFI to IOCP, threads, fibers |
-| `io-uring` | Linux io_uring bindings | Safe Rust wrapper around liburing |
-| `swift-bridge` | Rust-Swift bindings (macOS GCD) | Direct Rust-Swift FFI without C layer |
-| `smallvec` | Inline-allocated small vectors | Task node dependent lists |
+| `tokio` | Async I/O runtime | `current_thread` for all I/O |
+| `windows-rs` | Win32 API bindings | Zero-cost FFI to threads, fibers |
+| `smallvec` | Inline small vectors | Task node dependent lists |
 
 ## Safety Invariants
 
-### Scoped Async Task Cancellation (High)
+### Tokio Runtime Single-Threaded Access (Medium)
 
-`Scope::spawn_async` spawns futures bounded by `'scope`. If a future is pending (awaiting I/O) when
-the scope joins, it must be cancelled. Cancellation of a future with in-flight I/O leaves a
-completion event targeting a dead waker. Implementation must register a tombstone in the `IoReactor`
-so completions for cancelled futures are silently discarded. Document that scoped async tasks should
-avoid holding I/O in flight at scope exit.
-
-### GCD Controlled Drain Latency (Medium)
-
-`dispatch_sync` on the serial drain queue blocks the calling thread. If a Metal command buffer
-completion handler takes > 1 ms, this blocks the game loop thread. Use a manual drain loop with
-`dispatch_semaphore_wait` (zero timeout) for non-blocking drain. Document that completion handlers
-must be lightweight (< 100 us).
-
-### IoReactor Single-Threaded Access (Medium)
-
-`IoReactor::poll(&self)` mutates internal waker maps via interior mutability. Enforce single-caller
-via `debug_assert!` that the calling thread is the game loop thread (not necessarily the OS main
-thread — on iOS and Android, the game loop thread is a dedicated thread separate from thread 0).
-Consider `poll(&mut self)` to make this statically enforced. Store the game loop thread ID at
-`IoReactor::new()` time and assert against it.
+The `GameIoRuntime` wraps a Tokio `current_thread` runtime, which is inherently single-threaded.
+Only the game loop thread may call `poll()` or `block_on()`. Enforce via `debug_assert!` that the
+calling thread matches the thread that created the runtime (not necessarily the OS main thread -- on
+iOS and Android, the game loop thread is a dedicated thread separate from thread 0). Store the game
+loop thread ID at `GameIoRuntime::new()` time and assert against it.
 
 ## Feasibility Notes
 
-### Custom IoReactor Complexity (Critical Risk)
+### Tokio `current_thread` Latency (Medium Risk)
 
-Building async I/O from scratch on 3 platforms (IOCP, GCD Dispatch IO, io_uring) is a
-multi-person-year effort. **Mitigation:** Prototype the GCD controlled drain pattern on macOS first,
-as it is the least standard. Validate that `dispatch_sync` drain timing meets the < 1 ms budget.
-Consider using `mio` as a thin platform abstraction if the custom approach proves too complex.
+Tokio's `current_thread` runtime polls I/O only inside `poll()` or `block_on()`. If the game loop
+has long CPU-bound phases between `poll()` calls, I/O latency increases. **Mitigation:** Insert
+additional `poll()` calls at mid-frame points to reduce worst-case I/O latency. Profile to find the
+optimal number of poll points per frame.
 
-### GCD Fibers (Critical Risk)
+### macOS Fiber Coroutines (Medium Risk)
 
-GCD dispatch blocks are fire-and-forget — they cannot be suspended and resumed mid-execution like
-true fibers. `FiberYielder::yield_now()` is not directly implementable with GCD blocks.
-**Mitigation:** Replace GCD fibers with async/await coroutines on macOS. Yield points become
-`.await` points. This aligns with the project's async-first constraint and eliminates the need for
-fiber suspension.
-
-### Scoped Async Borrow Safety (High Risk)
-
-`Scope::spawn_async` borrowing from the calling scope without `'static` conflicts with Rust's future
-model (futures are `'static` by default for executor flexibility). Implementation requires `unsafe`
-lifetime erasure. **Mitigation:** Limit scoped async to CPU-only tasks (no I/O). Require `'static`
-for async tasks that involve I/O. This matches Rayon's scope model.
+macOS fibers use async/await coroutines instead of OS-level context switching. Yield points become
+`.await` points. This aligns with the async-first constraint but means deep-recursion workloads on
+macOS must be refactored into iterative async state machines. **Mitigation:** Provide a
+`FiberIterator` helper that converts recursive algorithms into iterative `.await` loops.
 
 ## Test Plan
 
@@ -1328,38 +1266,40 @@ for async tasks that involve I/O. This matches Rayon's scope model.
 | `test_graph_cycle_detection`           | R-14.3.3 |
 | `test_fiber_suspend_resume`            | R-14.3.4 |
 | `test_fiber_guard_page`                | R-14.3.4 |
-| `test_async_task_io`                   | R-14.3.5 |
-| `test_reactor_poll_drains`             | R-14.3.5 |
+| `test_tokio_async_io`                  | R-14.3.5 |
+| `test_poll_drives_io`                 | R-14.3.5 |
 | `test_async_mutex_no_block`            | R-14.3.5 |
 
-1. **`test_work_stealing_10k_jobs`** — Enqueue 10,000 jobs, verify all complete. Run under
+1. **`test_work_stealing_10k_jobs`** -- Enqueue 10,000 jobs, verify all complete. Run under
    ThreadSanitizer.
-2. **`test_worker_count_matches_perf_cores`** — On hybrid CPU, assert workers = perf core count.
-3. **`test_graph_fan_out_fan_in`** — 1 root -> 4 parallel -> 1 join. Verify correct result.
-4. **`test_graph_nested_subgraph`** — Sub-graph completes before parent continuation.
-5. **`test_graph_cycle_detection`** — Cycle in graph -> `CycleDetected` error.
-6. **`test_fiber_suspend_resume`** — Fiber suspends, resumes on different worker.
-7. **`test_fiber_guard_page`** — 64 KiB fiber stack overflow -> guard page fault.
-8. **`test_async_task_io`** — Async task `.await`s I/O read; verify data, no worker blocks.
-9. **`test_reactor_poll_drains`** — Submit I/O, verify nothing wakes until poll() called.
-10. **`test_async_mutex_no_block`** — Contended async mutex yields worker, does not block.
+2. **`test_worker_count_matches_perf_cores`** -- On hybrid CPU, assert workers = perf core count.
+3. **`test_graph_fan_out_fan_in`** -- 1 root -> 4 parallel -> 1 join. Verify correct result.
+4. **`test_graph_nested_subgraph`** -- Sub-graph completes before parent continuation.
+5. **`test_graph_cycle_detection`** -- Cycle in graph -> `CycleDetected` error.
+6. **`test_fiber_suspend_resume`** -- Fiber suspends, resumes on different worker.
+7. **`test_fiber_guard_page`** -- 64 KiB fiber stack overflow -> guard page fault.
+8. **`test_tokio_async_io`** -- Async task `.await`s `tokio::fs::read`; verify data, no worker
+   blocks.
+9. **`test_poll_drives_io`** -- Spawn I/O task, verify it only completes after `poll()` is called.
+10. **`test_async_mutex_no_block`** -- Contended async mutex yields worker, does not block.
 
 ### Integration Tests
 
 | Test                         | Req      |
 |------------------------------|----------|
 | `test_affinity_per_platform` | R-14.3.2 |
-| `test_async_read_10mb`       | R-14.3.5 |
+| `test_tokio_read_10mb`       | R-14.3.5 |
 | `test_utilization_imbalance` | R-14.3.1 |
 | `test_fiber_cross_thread`    | R-14.3.4 |
-| `test_gcd_controlled_drain`  | R-14.3.5 |
+| `test_tokio_frame_boundary`  | R-14.3.5 |
 
-1. **`test_affinity_per_platform`** — Verify game loop thread on perf core, background on efficiency
-   core.
-2. **`test_async_read_10mb`** — 10 MB async read, no worker blocks, data integrity check.
-3. **`test_utilization_imbalance`** — Imbalanced graph, assert >= 80% utilization.
-4. **`test_fiber_cross_thread`** — Fiber suspended on worker N resumes on worker M.
-5. **`test_gcd_controlled_drain`** — macOS: verify GCD callbacks only fire during poll().
+1. **`test_affinity_per_platform`** -- Verify game loop thread on perf core, background on
+   efficiency core.
+2. **`test_tokio_read_10mb`** -- 10 MB async read via Tokio, no worker blocks, data integrity check.
+3. **`test_utilization_imbalance`** -- Imbalanced graph, assert >= 80% utilization.
+4. **`test_fiber_cross_thread`** -- Fiber suspended on worker N resumes on worker M.
+5. **`test_tokio_frame_boundary`** -- Verify I/O futures only make progress inside `poll()` or
+   `block_on()` calls.
 
 ### Benchmarks
 
@@ -1368,7 +1308,7 @@ for async tasks that involve I/O. This matches Rayon's scope model.
 | Job dispatch overhead | < 1 us per dispatch | US-14.3.11 |
 | Work-stealing utilization | >= 80% across workers | R-14.3.1 |
 | Fiber context switch | < 500 ns | US-14.3.9 |
-| Reactor poll (100 completions) | < 50 us | US-14.3.10 |
+| Tokio poll (100 completions) | < 50 us | US-14.3.10 |
 | AsyncMutex contended lock | < 1 us (yield, not spin) | - |
 | I/O throughput | >= 80% raw disk bandwidth | US-14.6.11 |
 
@@ -1376,32 +1316,26 @@ for async tasks that involve I/O. This matches Rayon's scope model.
 
 **Q1. What is the biggest constraint limiting this design?**
 
-The GCD-only constraint on macOS for fibers and async I/O (no custom assembly, no ucontext) is the
-most limiting. GCD dispatch blocks are fire-and-forget and cannot be suspended mid-execution, making
-true fiber semantics impossible as noted in the GCD Fibers feasibility note. Lifting this would
-allow assembly-based context switching on macOS (like Linux), giving uniform fiber behavior across
-all platforms. The best unconstrained solution would be a single portable fiber implementation using
-setjmp/longjmp with explicit stacks on all POSIX platforms. The impact of removing GCD fibers:
-simpler code, but loss of macOS scheduler integration and QoS class propagation that GCD provides.
+The macOS fiber model is the most limiting. macOS fibers use async/await coroutines instead of
+OS-level context switching, so deep-recursion workloads must be refactored into iterative async
+state machines. Lifting this would allow assembly-based context switching on macOS (like Linux),
+giving uniform fiber behavior across all platforms.
 
 **Q2. How can this design be improved?**
 
-The reactor poll frequency is a critical tuning parameter (open question 3). A single poll per frame
+The `poll()` frequency is a critical tuning parameter (open question 3). A single `poll()` per frame
 adds up to 16 ms I/O latency at 60 fps, which is unacceptable for networking. The design supports
-multiple polls per frame but does not specify the optimal count or placement. An adaptive poll
-strategy that inserts extra polls when I/O-heavy systems are active would balance latency against
-overhead. The scoped async task cancellation safety invariant is complex and error-prone;
-restricting scoped async to CPU-only tasks (as proposed) significantly limits its utility for I/O
-workloads.
+multiple `poll()` calls per frame but does not specify the optimal count or placement. An adaptive
+strategy that inserts extra `poll()` calls when I/O-heavy systems are active would balance latency
+against overhead.
 
 **Q3. Is there a better approach?**
 
 Using Rayon for the work-stealing thread pool would provide a battle-tested implementation with
 excellent steal heuristics. We are not using it because Rayon's scope model does not integrate with
 async/await (Rayon tasks are synchronous closures, not futures). Building a custom pool lets us
-unify sync tasks, async tasks, and fiber yield points under a single scheduling model. The
-alternative of running Rayon for CPU work alongside the IoReactor for async work would create two
-separate scheduling domains that cannot share workers or priorities, reducing overall utilization.
+unify sync tasks, async tasks, and fiber yield points under a single scheduling model. Tokio handles
+all async I/O, so the custom pool focuses purely on CPU compute scheduling.
 
 **Q4. Does this design solve all customer problems?**
 
@@ -1409,34 +1343,31 @@ US-14.3.12 requests configurable fiber stack sizes per workload category, but th
 provides a single `FiberConfig::stack_size` (open question 5). Missing: fiber stack usage profiling
 to help developers choose appropriate sizes. Missing: a mechanism for tasks to report their progress
 (0-100%) for loading screen UIs. Adding progress reporting would enable loading bars for asset
-streaming, procedural generation, and world loading -- critical UX for all game genres, especially
-open-world and MMO titles (US-14.3.20).
+streaming, procedural generation, and world loading (US-14.3.20).
 
 **Q5. Is this design cohesive with the overall engine?**
 
-The threading subsystem is the execution backbone referenced by every other design. The IoReactor's
-controlled poll model is used consistently by networking (transport, replication), platform I/O
-(filesystem, clipboard), and database access (MMO persistence). The work-stealing pool with scoped
-execution matches the physics and rendering designs' parallel iteration patterns. The
-`AsyncMutex`/`AsyncRwLock` primitives replace `std::sync` locks engine-wide, enforcing the
-sub-microsecond blocking constraint. Platform selection via `cfg` attributes (IOCP/GCD/io_uring) is
-the same pattern used in windowing and transport. All proposed dependencies (`crossbeam-deque`,
-`io-uring`, `windows-rs`, `libloading`) are low-level libraries consistent with the no-frameworks
+The threading subsystem is the execution backbone referenced by every other design. Tokio's
+`current_thread` runtime provides uniform I/O across all platforms, used consistently by networking
+(transport, replication), platform I/O (filesystem, clipboard), and database access (MMO
+persistence). The work-stealing pool with scoped execution matches the physics and rendering
+designs' parallel iteration patterns. `AsyncMutex`/`AsyncRwLock` replace `std::sync` locks
+engine-wide, enforcing the sub-microsecond blocking constraint. All proposed dependencies
+(`crossbeam-deque`, `tokio`, `windows-rs`) are low-level libraries consistent with the no-frameworks
 guideline.
 
 ## Open Questions
 
-1. **Work-stealing victim selection** — Randomized vs round-robin. Randomized avoids contention
+1. **Work-stealing victim selection** -- Randomized vs round-robin. Randomized avoids contention
    patterns but may increase steal latency.
-2. **Task inline storage** — Size of inline buffer for `ErasedTask` before heap fallback (64 bytes =
-   cache line, 128 bytes = more coverage).
-3. **Reactor poll frequency** — One poll per frame adds up to 16 ms I/O latency at 60 fps. Multiple
-   polls per frame reduce latency but add overhead. Optimal poll count depends on workload.
-4. **Minimum Linux kernel version** — io_uring requires kernel 5.1+. Advanced features like fixed
-   buffers and registered files require 5.6+. The minimum supported kernel version determines which
-   io_uring features can be assumed present.
-5. **Fiber stack size categories** — Single size (64 KiB) vs per-workload categories (64/256 KiB/1
+2. **Task inline storage** -- Size of inline buffer for `ErasedTask` before heap fallback (64 bytes
+   = cache line, 128 bytes = more coverage).
+3. **`poll()` frequency** -- One `poll()` per frame adds up to 16 ms I/O latency at 60 fps. Multiple
+   calls per frame reduce latency but add overhead. Optimal count depends on workload.
+4. **Fiber stack size categories** -- Single size (64 KiB) vs per-workload categories (64/256 KiB/1
    MiB). US-14.3.12 requests configurability.
-6. **GPU fence async integration** — GPU present/fence wait should also go through the reactor. Need
-   to define how GPU completion events (Vulkan timeline semaphores, Metal command buffer completion
-   handlers, D3D12 fence) integrate with the reactor poll.
+5. **GPU fence async integration** -- GPU present/fence wait should go through the Tokio runtime.
+   Need to define how GPU completion events (Vulkan timeline semaphores, Metal command buffer
+   completion handlers, D3D12 fence) integrate with Tokio's I/O driver.
+6. **Tokio feature flags** -- Determine minimal Tokio feature set (`rt`, `io-util`, `fs`, `net`,
+   `time`) to minimize binary size and compile time.

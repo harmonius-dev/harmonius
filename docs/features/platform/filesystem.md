@@ -17,32 +17,29 @@
    resolve on the I/O thread pool without blocking game threads. No Rust stdlib file I/O is used
    anywhere in the engine.
    - **Deps:** F-1.8.1, F-1.8.3
-   - **Platform:** Windows uses `CreateFileW` with `FILE_FLAG_OVERLAPPED` for IOCP integration;
-     macOS uses `dispatch_io_create` / `dispatch_io_read` / `dispatch_io_write`; Linux uses
-     `io_uring` `IORING_OP_READ` / `IORING_OP_WRITE`.
+   - **Platform:** All file I/O goes through tokio::fs. Tokio handles platform dispatch internally
+     (IOCP on Windows, kqueue on macOS, epoll on Linux).
 2. **F-14.6.2** — Create and delete files and directories asynchronously. Directory creation
    supports recursive mkdir. File deletion supports both immediate unlink and deferred-to-close
    semantics for files that may still have open handles. Batch deletion accepts a list of paths and
    issues all unlink operations concurrently.
    - **Deps:** F-1.8.1
-   - **Platform:** Windows uses `CreateDirectoryW` / `DeleteFileW` / `RemoveDirectoryW`; macOS uses
-     GCD-dispatched POSIX `mkdir` / `unlink` / `rmdir`; Linux uses io_uring `IORING_OP_MKDIRAT` /
-     `IORING_OP_UNLINKAT`.
+   - **Platform:** All directory and file deletion goes through tokio::fs. Tokio handles platform
+     dispatch internally.
 3. **F-14.6.3** — Query file size, timestamps, permissions, and type (file, directory, symlink)
    without blocking. Batch stat accepts multiple paths and issues all queries concurrently,
    returning results as they complete. Used by the asset database for change detection and by the
    hot-reload watcher for initial directory scans.
    - **Deps:** F-1.8.1
-   - **Platform:** Windows uses `GetFileInformationByHandleEx`; macOS uses GCD-dispatched `fstatat`;
-     Linux uses io_uring `IORING_OP_STATX`.
+   - **Platform:** File metadata queries go through tokio::fs. Tokio handles platform dispatch
+     internally.
 4. **F-14.6.4** — List directory contents asynchronously, yielding entries incrementally as they are
    read from the OS. Supports recursive traversal with configurable depth limits and glob-pattern
    filtering. Returns entry name, type, and basic metadata per entry without requiring a separate
    stat call where the OS provides it inline.
    - **Deps:** F-1.8.1
-   - **Platform:** Windows uses `FindFirstFileExW` / `FindNextFileW` dispatched on I/O threads;
-     macOS uses GCD-dispatched `fdopendir` / `readdir`; Linux uses `io_uring` `IORING_OP_GETDENTS`
-     (kernel 6.6+) with fallback to threaded `getdents64`.
+   - **Platform:** Directory listing goes through tokio::fs. Tokio handles platform dispatch
+     internally.
 
 ## File Watching
 
@@ -58,7 +55,7 @@
    - **Deps:** F-1.8.1, F-1.5.1
    - **Platform:** Windows uses `ReadDirectoryChangesExW` with IOCP completion; macOS uses
      `dispatch_source_create(DISPATCH_SOURCE_TYPE_VNODE, ...)` or FSEvents for recursive watches;
-     Linux uses `inotify_add_watch` with io_uring for async event reads.
+     Linux uses `inotify_add_watch` with Tokio for async event reads.
 2. **F-14.6.6** — Detect whether a watched file's content has actually changed by comparing content
    hashes (BLAKE3) before and after a filesystem event. Filters out false positives from
    metadata-only changes (touch, permission flip) and duplicate events from editors that write via

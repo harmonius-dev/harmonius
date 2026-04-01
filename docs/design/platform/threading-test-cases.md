@@ -85,7 +85,7 @@ Companion test cases for [threading.md](threading.md).
 |---|-------------|
 | 1 | R-14.3.5    |
 
-1. **#1** — Async task `.await`s `IoReactor::read()` on test file
+1. **#1** — Async task `.await`s `tokio::fs::read()` on test file
    - **Expected:** Correct data returned, no worker thread blocks
 
 ### TC-14.3.5.2 Reactor Poll Drains
@@ -129,7 +129,7 @@ Companion test cases for [threading.md](threading.md).
 |---|-------------|
 | 1 | R-14.3.5    |
 
-1. **#1** — Async read 10 MB file via IoReactor
+1. **#1** — Async read 10 MB file via Tokio
    - **Expected:** No worker blocks, data integrity verified
 
 ### TC-14.3.1.I1 Utilization Imbalance
@@ -156,7 +156,7 @@ Companion test cases for [threading.md](threading.md).
 |---|-------------|
 | 1 | R-14.3.5    |
 
-1. **#1** — macOS: submit GCD I/O, verify no callback before `poll()`
+1. **#1** — macOS: submit Tokio I/O, verify no callback before `poll()`
    - **Expected:** Callbacks fire only during `poll()`
 
 ## Benchmarks
@@ -195,4 +195,4 @@ Companion test cases for [threading.md](threading.md).
 
 | # | Scenario | Metric | Target | Requirement |
 |---|----------|--------|--------|-------------|
-| 1 | Async sequential read 1 GB via IoReactor | Throughput | >= 80% raw disk bandwidth | R-14.3.5 |
+| 1 | Async sequential read 1 GB via Tokio | Throughput | >= 80% raw disk bandwidth | R-14.3.5 |

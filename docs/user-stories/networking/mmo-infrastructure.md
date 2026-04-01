@@ -41,8 +41,8 @@
 | US-8.7.8 | player (P-23)           |
 
 1. **US-8.7.6** — **As an** engine developer (P-26), **I want** async database access for all
-   persistent world state (characters, inventories, guilds, quests) using platform-native I/O (IOCP,
-   GCD, io_uring), **so that** database writes never block the game simulation tick.
+   persistent world state (characters, inventories, guilds, quests) using Tokio async I/O,
+   **so that** database writes never block the game simulation tick.
 2. **US-8.7.7** — **As an** engine developer (P-26), **I want** transactional writes for trades,
    mail with attachments, and auction settlements, **so that** economy operations are atomic and
    cannot leave the game state inconsistent due to partial failures.

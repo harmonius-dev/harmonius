@@ -51,7 +51,7 @@
 | Events | F-1.5.1 | `NavMeshInvalidation` event dispatch |
 | Thread pool | F-14.3.1 | Scoped parallel task execution |
 | Task graph | F-14.3.3 | DAG-based background work |
-| IoReactor | F-14.3.5 | Async tile streaming I/O |
+| Tokio runtime | F-14.3.5 | Async tile streaming I/O |
 | Destruction system | F-4.6.3 | Fracture event emission |
 | Gizmo system | F-15.1.4 | Debug overlay rendering |
 | Reflection | F-1.3.1 | `Reflect` derive for serialization |
@@ -65,8 +65,8 @@ them into streamable tiles, and answers path queries using A* search with funnel
 
 The design follows four principles:
 
-1. **100% ECS-based.** All navigation data lives as components and resources. No separate navigation
-   world or parallel data store.
+1. **ECS-primary (~90%)-based.** All navigation data lives as components and resources. No separate
+   navigation world or parallel data store.
 2. **Shared spatial index.** Obstacle queries, tile lookups, and agent proximity checks all go
    through the shared BVH (F-1.9.1).
 3. **Async and non-blocking.** Pathfinding queries batch across frames using scoped parallel tasks.
@@ -128,7 +128,7 @@ graph TD
     subgraph plat["harmonius_platform"]
         TP[ThreadPool]
         TG[TaskGraph]
-        IO[IoReactor]
+        IO[Tokio runtime]
     end
 
     NMG --> NMT
@@ -1373,7 +1373,7 @@ pub fn rebuild_system(
 /// active agent positions.
 pub fn tile_streaming_system(
     mut tile_map: ResMut<NavMeshTileMap>,
-    reactor: Res<IoReactor>,
+    reactor: Res<Tokio runtime>,
     agents: Query<
         &GlobalTransform,
         With<NavMeshAgent>,
@@ -1463,7 +1463,7 @@ pub fn navmesh_debug_system(
 
 1. The `tile_streaming_system` runs each frame.
 2. It computes the set of tile coordinates within `preload_radius` of any active `NavMeshAgent`.
-3. Tiles entering the radius are loaded via async I/O through the `IoReactor`.
+3. Tiles entering the radius are loaded via async I/O through the `Tokio runtime`.
 4. Tiles leaving the radius (and not referenced by any agent's corridor) are unloaded from the
    `NavMeshTileMap`.
 5. The `ClusterGraph` is updated for any newly loaded or unloaded tiles.
@@ -1763,14 +1763,14 @@ default path is async-friendly stack-local search state.
 
 **Q1. What is the biggest constraint limiting this design?**
 
-The "no C++ stdlib file I/O" constraint and the custom `IoReactor` requirement (constraints.md)
+The "no C++ stdlib file I/O" constraint and the custom `Tokio runtime` requirement (constraints.md)
 impose the biggest limitation on NavMesh tile streaming (F-7.1.2) and background generation
-(F-7.1.9). Tile data must be loaded via platform-native async I/O (GCD Dispatch IO on macOS, IOCP on
-Windows, io_uring on Linux) rather than simple `std::fs::read`. If we lifted this constraint, tile
-streaming would be trivially implemented with blocking reads on worker threads. With it, we must
-integrate the tile loader with the `IoReactor` poll point, which adds complexity to the atomic tile
-swap procedure and forces background generation to use `'static` cloned data since scoped async
-tasks cannot perform I/O (per constraints.md).
+(F-7.1.9). Tile data must be loaded via Tokio async I/O (Tokio (kqueue) on macOS, Tokio (IOCP) on
+Windows, Tokio (epoll) on Linux) rather than simple `std::fs::read`. If we lifted this constraint,
+tile streaming would be trivially implemented with blocking reads on worker threads. With it, we
+must integrate the tile loader with the `Tokio runtime` poll point, which adds complexity to the
+atomic tile swap procedure and forces background generation to use `'static` futures with `Arc` for
+shared data (per constraints.md).
 
 **Q2. How can this design be improved?**
 
@@ -1788,11 +1788,11 @@ hitting the 256 MB hard cap (R-7.NFR.7).
 An alternative to Recast-style voxelization is a constraint-based NavMesh built from BSP/CSG
 geometry, which avoids the lossy heightfield rasterization step entirely. We are not taking this
 approach because voxelization handles arbitrary triangle soup from any DCC tool (Houdini, Maya,
-Blender per the DCC plugin constraint), whereas BSP-based approaches require structured geometry
-input. Another alternative is sparse voxel octrees instead of uniform heightfields, which would
-reduce memory for large open areas with sparse geometry. This merits evaluation during the
-voxelization library decision (Open Question 1), but adds implementation complexity for the initial
-prototype.
+Blender per the standard format importer constraint), whereas BSP-based approaches require
+structured geometry input. Another alternative is sparse voxel octrees instead of uniform
+heightfields, which would reduce memory for large open areas with sparse geometry. This merits
+evaluation during the voxelization library decision (Open Question 1), but adds implementation
+complexity for the initial prototype.
 
 **Q4. Does this design solve all customer problems?**
 
@@ -1810,7 +1810,7 @@ The navigation system integrates tightly with the ECS architecture through `Path
 `PathResult`, `NavMeshAgent`, and `NavMeshObstacle` components, and `NavMeshTileMap` as an ECS
 resource. It uses the shared spatial index (BVH/octree per constraints.md) for obstacle queries and
 the thread pool for parallel pathfinding via `pool.scope()` with borrowed access. The tile streaming
-system uses the `IoReactor` for async tile loading, aligning with the platform I/O backend
+system uses the `Tokio runtime` for async tile loading, aligning with the platform I/O backend
 constraint. The destruction integration (F-7.1.10) connects cleanly to the physics fracture system
 via ECS events. The design is one of the most cohesive AI subsystems because pathfinding is a
 well-bounded problem with clear data flow boundaries.

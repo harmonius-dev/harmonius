@@ -83,7 +83,8 @@ store is a general engine pattern shared with perception, NPC simulation, and qu
 
 Key design principles:
 
-1. **100% ECS** -- all AI state as components, all logic as systems. No parallel data stores.
+1. **ECS-primary (~90%)** -- all AI state as components, all logic as systems. No parallel data
+   stores.
 2. **Static dispatch** -- enum-based node types, no vtables.
 3. **Data-driven** -- BT trees, utility curves, and GOAP actions are all data assets.
 4. **Budgeted** -- time-slicing ensures AI never exceeds its per-frame CPU allocation.
@@ -2643,13 +2644,14 @@ pool.scope(|scope| {
 
 **Q1. What is the biggest constraint limiting this design?**
 
-The 100% ECS constraint (from constraints.md) forces all behavior tree state, blackboard data, and
-plan caches to live as ECS components and resources. This prevents object-oriented patterns like
-inheritance hierarchies for BT nodes. If we lifted the ECS constraint, we could use heap-allocated
-tree structures with pointer-based traversal, which would simplify subtree nesting (F-7.3.6) and
-reduce the per-agent memory overhead of flattening trees into component arrays. The static dispatch
-constraint also means custom leaf nodes (F-7.3.1) use function pointers rather than trait objects,
-limiting runtime extensibility in a no-code engine where all behaviors must be engine-provided.
+The ECS-primary (~90%) constraint (from constraints.md) forces all behavior tree state, blackboard
+data, and plan caches to live as ECS components and resources. This prevents object-oriented
+patterns like inheritance hierarchies for BT nodes. If we lifted the ECS constraint, we could use
+heap-allocated tree structures with pointer-based traversal, which would simplify subtree nesting
+(F-7.3.6) and reduce the per-agent memory overhead of flattening trees into component arrays. The
+static dispatch constraint also means custom leaf nodes (F-7.3.1) use function pointers rather than
+trait objects, limiting runtime extensibility in a no-code engine where all behaviors must be
+engine-provided.
 
 **Q2. How can this design be improved?**
 
@@ -2684,12 +2686,11 @@ archetypes for RPGs and open-world games.
 
 The design aligns well with the ECS architecture by storing all AI state as components
 (`BtInstance`, `Blackboard`, `GoapAgent`, `UtilityAgent`) and running logic as systems. It uses the
-shared `ThreadPool` for parallel evaluation and respects the custom `IoReactor` by avoiding async
-I/O in the AI tick path. The `AiBudget` integrates with the LOD system (F-7.7.5) from the
+shared `ThreadPool` for parallel evaluation and respects the custom `Tokio runtime` by avoiding
+async I/O in the AI tick path. The `AiBudget` integrates with the LOD system (F-7.7.5) from the
 steering-crowds design. One area of divergence is the hot-reload mechanism for BT assets (F-7.3.5),
 which must coordinate with the content pipeline and asset system -- this integration is not yet
-defined and could conflict with the platform-native async I/O model if file watching uses
-OS-specific APIs.
+defined and could conflict with the Tokio async I/O model if file watching uses OS-specific APIs.
 
 ## Open Questions
 

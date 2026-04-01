@@ -381,11 +381,11 @@ Companion test cases for [memory-async-io.md](memory-async-io.md).
 | 3 | R-1.8.1     |
 
 1. **#1** — Run full test suite on Windows
-   - **Expected:** All tests pass (IOCP backend)
+   - **Expected:** All tests pass (Tokio IOCP)
 2. **#2** — Run full test suite on macOS
-   - **Expected:** All tests pass (GCD backend)
+   - **Expected:** All tests pass (Tokio kqueue)
 3. **#3** — Run full test suite on Linux
-   - **Expected:** All tests pass (io_uring backend)
+   - **Expected:** All tests pass (Tokio epoll)
 
 ### TC-1.8.4.I1 TCP Connect Accept 1MB
 

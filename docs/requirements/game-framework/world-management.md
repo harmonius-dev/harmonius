@@ -3,8 +3,8 @@
 ## Level Streaming
 
 1. **R-13.2.1** -- The engine **SHALL** load and unload sub-levels asynchronously based on proximity
-   with configurable radii, hysteresis, and priority ordering, using platform-native async I/O (IOCP
-   on Windows, GCD on macOS, io_uring on Linux) with no blocking calls.
+   with configurable radii, hysteresis, and priority ordering, using Tokio async I/O with no
+   blocking calls.
    - **Rationale:** Non-blocking async I/O ensures streaming never stalls the game thread on any
      platform.
    - **Verification:** Cross a stream boundary and verify no frame spike. Verify geometry and

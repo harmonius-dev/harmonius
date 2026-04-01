@@ -157,7 +157,7 @@ The system has four layers:
 4. **Runtime Streaming** -- chunk-based generation on background threads and GPU compute, with
    deterministic seeding for reproducible infinite worlds.
 
-All PCG state is 100% ECS-based. Graphs, nodes, seeds, chunks, and outputs are components.
+All PCG state is ECS-primary (~90%)-based. Graphs, nodes, seeds, chunks, and outputs are components.
 Evaluation, streaming, and spawning are systems. No separate procedural world exists outside the
 ECS.
 
@@ -1727,9 +1727,9 @@ world_seed
 
 | Platform | I/O                           | Concurrency               |
 |----------|-------------------------------|---------------------------|
-| Windows  | IOCP for async chunk load     | Thread pool, scoped tasks |
-| macOS    | GCD / Dispatch IO             | GCD dispatch queues       |
-| Linux    | io_uring for async chunk load | Thread pool, scoped tasks |
+| Windows  | Tokio (IOCP)                  | Thread pool, scoped tasks |
+| macOS    | Tokio (kqueue)                | Thread pool, scoped tasks |
+| Linux    | Tokio (epoll)                 | Thread pool, scoped tasks |
 
 1. **Windows** — D3D12 compute shaders via DXC
 2. **macOS** — Metal compute shaders (HLSL via Metal Shader Converter)

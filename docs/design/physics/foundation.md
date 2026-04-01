@@ -79,7 +79,7 @@
 
 ## Overview
 
-The physics foundation is 100% ECS-based. There is no separate physics world, no PhysX-style scene,
+The physics foundation is ECS-primary (~90%)-based. There is no separate physics world, no PhysX-style scene,
 and no parallel data store. All physics state lives as ECS components. All simulation logic runs as
 ECS systems. The shared BVH spatial index serves as the broadphase -- physics does not maintain its
 own acceleration structure.

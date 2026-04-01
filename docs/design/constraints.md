@@ -8,9 +8,9 @@ engine.
 | Constraint | Detail |
 |------------|--------|
 | Primary language | Rust (stable only — no nightly features) |
-| Windows APIs | `windows-rs` for all Windows APIs (Win32, COM, D3D12, DXC) |
+| Windows APIs | `windows-rs` for all Windows APIs (Win32, COM, D3D12) |
 | Apple APIs | Swift via `swift-bridge`; generates Rust ↔ Swift bindings |
-| Linux APIs | Rust crates (`ash`, `x11rb`, `wayland-client`, `io-uring`) |
+| Linux APIs | Rust crates (`ash`, `x11rb`, `wayland-client`) |
 | Swift build | SwiftPM for libraries; XcodeGen + xcodebuild for app packaging |
 | Swift interop | `swift-bridge` for all Rust ↔ Swift FFI (macOS/iOS only) |
 | No C/C++ source | No `.c`, `.cpp`, `.h` files anywhere in the project |
@@ -26,74 +26,57 @@ engine.
 | Direct3D 12 | Rust | `windows-rs` COM bindings |
 | Metal | Swift | `swift-bridge` generated bindings |
 | Vulkan | Rust | `ash` (thin Vulkan bindings) |
-| DXC (Windows) | Rust | `windows-rs` COM (`IDxcCompiler3`) |
-| DXC (Linux) | Rust | `ash` / `libloading` for dxcompiler.so |
-| Metal Shader Converter | Swift | `swift-bridge` generated bindings |
-| Win32 / IOCP | Rust | `windows-rs` |
-| GCD / Dispatch IO | Swift | `swift-bridge` generated bindings |
+| DXC | CLI | `dxc` subprocess (offline + hot-reload) |
+| Metal Shader Converter | CLI | `metal-shaderconverter` subprocess |
+| Win32 | Rust | `windows-rs` |
 | NSWindow / AppKit | Swift | `swift-bridge` generated bindings |
 | X11 | Rust | `x11rb` |
 | Wayland | Rust | `wayland-client` |
-| io_uring | Rust | `io-uring` |
 
 ## Shader Pipeline
 
 | Constraint | Detail |
 |------------|--------|
 | Shader IL | HLSL is the sole shader intermediate language |
-| HLSL → DXIL/SPIR-V | DXC via `windows-rs` COM (Windows) or `libloading` (Linux) |
-| DXIL → MSL | Metal Shader Converter via Swift (`swift-bridge`) |
+| HLSL → DXIL/SPIR-V | `dxc` CLI invoked as subprocess |
+| DXIL → MSL | `metal-shaderconverter` CLI invoked as subprocess |
+
+No embedded DXC or Metal Shader Converter libraries. All shader compilation is offline (asset
+processing time) or via subprocess calls for hot-reload.
 
 ## Async and Concurrency
 
 - **async/await everywhere.** All asynchronous abstractions (I/O, GPU sync, long waits,
   frame-boundary yields) use Rust's `async`/`await`. No callbacks.
-- **No Rust stdlib file I/O.** All file operations use platform-native async I/O: IOCP on Windows,
-  Dispatch IO (GCD) on macOS, io_uring on Linux.
-- **Dedicated game loop thread.** The game loop runs on a dedicated thread that owns the
-  `IoReactor`. On desktop (macOS, Windows, Linux) this is typically thread 0. On mobile (iOS,
-  Android) and consoles, the game loop thread is separate from the OS main thread. Platform UI
-  events (UIKit, Activity lifecycle) arrive on the OS main thread and are forwarded to the game loop
-  thread via a lock-free SPSC queue.
-- **Controlled reactor poll point.** The game loop owns an `IoReactor`. I/O completions are
-  processed only when explicitly polled — the OS never fires callbacks asynchronously.
+- **Tokio `current_thread` runtime.** The game loop thread owns a Tokio `current_thread` runtime.
+  All futures (file I/O, network, timers) are polled only when the game loop explicitly calls
+  `runtime.poll()` (non-blocking drain) or `runtime.block_on()` (blocking wait). No I/O handlers
+  fire at arbitrary times.
+- **Dedicated game loop thread.** The game loop runs on a dedicated thread that owns the Tokio
+  runtime. On desktop (macOS, Windows, Linux) this is typically thread 0. On mobile (iOS, Android)
+  the game loop thread is separate from the OS main thread. Platform UI events (UIKit, Activity
+  lifecycle) arrive on the OS main thread and are forwarded to the game loop thread via a lock-free
+  SPSC queue.
+- **Controlled poll point.** I/O completions are delivered only when the game loop polls the Tokio
+  runtime — the OS never fires callbacks asynchronously into game logic.
+- **File I/O via Tokio.** `tokio::fs` provides async file operations backed by an internal thread
+  pool. Results are delivered to the game loop thread at the next poll point.
+- **Network I/O via Tokio.** `tokio::net` provides async TCP/UDP. Tokio internally uses epoll
+  (Linux), kqueue (macOS), or IOCP (Windows). Engine code does not interact with these directly.
 - **Synchronous blocking only for sub-microsecond critical sections.** Even 1 ms of blocking has
   significant performance impact. Use `AsyncMutex`/`AsyncRwLock` for any contended lock.
-- **Scoped execution.** Thread pool supports scoped tasks that borrow from the calling scope without
-  `'static` or `Arc` overhead.
-- **Scoped async limitation.** Scoped async tasks (`Scope::spawn_async`) that borrow from the
-  calling scope must be CPU-only (no I/O in flight). Tasks requiring I/O must use `'static` futures.
-  This avoids unsafe lifetime erasure and aligns with Rust's future model.
+- **All async tasks use `'static` futures.** Shared data is passed via `Arc`. Scoped synchronous
+  tasks (thread pool `scope()`) remain available for data-parallel CPU work.
 - **Event handlers support both sync and async variants.** Async handlers are dispatched as tasks on
   the thread pool.
 
-## Platform I/O Backends
-
-| Platform | I/O Backend       |
-|----------|-------------------|
-| Windows  | IOCP              |
-| macOS    | GCD / Dispatch IO |
-| iOS      | GCD / Dispatch IO |
-| Linux    | io_uring          |
-| Android  | io_uring          |
-
-1. **Windows** — `CreateIoCompletionPort`, `GetQueuedCompletionStatusEx` via `windows-rs`
-2. **macOS** — Accessed through Swift wrappers via `swift-bridge`. Async Swift functions bridge to
-   Rust futures. Controlled drain at poll point.
-3. **iOS** — Same `swift-bridge` wrappers and GCD backend as macOS. Game loop runs on a dedicated
-   thread, not the UIKit main thread.
-4. **Linux** — Minimum kernel 5.1+. `IORING_OP_POLL_ADD` for fd readiness. No epoll.
-5. **Android** — io_uring. No epoll fallback.
-
 ## macOS and Apple Platforms
 
-- **GCD is the concurrency primitive on Apple platforms.** Fibers, async I/O, and cooperative
-  scheduling all use GCD dispatch queues and blocks. Shared across macOS and iOS.
-- **Metal uses Dispatch.** Command buffer completion handlers are dispatch blocks. GCD integration
-  is a hard requirement for GPU synchronization.
-- **All GCD/Dispatch IO accessed through Swift via `swift-bridge`.** Swift async functions wrap GCD
-  operations and bridge to Rust futures automatically. No manual `@_cdecl` or `extern "C"`
-  declarations.
+- **Tokio handles all I/O on Apple platforms.** No GCD or Dispatch IO for file or network I/O. Tokio
+  internally uses kqueue for socket readiness and a thread pool for file operations.
+- **Metal GPU sync via `MTLSharedEvent`.** GPU completion is detected by polling
+  `MTLSharedEvent.signaledValue` at the frame boundary poll point. No GCD dispatch blocks needed for
+  GPU synchronization.
 - **Metal via Swift.** Metal is accessed directly from Swift, with `swift-bridge` generating the
   Rust ↔ Swift bindings. No metal-cpp, no objc2-metal, no manual C ABI.
 - **iOS: UIKit owns the OS main thread.** `UIApplicationMain` runs the `CFRunLoop` on thread 0. The
@@ -110,12 +93,17 @@ engine.
   - `dyn FnOnce` / `dyn Fn` — command buffer closures
   - `dyn Plugin` — cold initialization path only
   - `dyn` in editor/tool paths (not game runtime)
-- **100% ECS-based.** All simulation data lives as components, all logic as systems. No separate
-  physics world or other parallel data stores.
-  - **Exception: audio runtime.** The audio mixer, voice pool, and DSP chain run on a dedicated
-    real-time thread with < 0.5 ms latency budget. ECS components (`AudioSource`, `AudioListener`)
-    bridge game state to the audio runtime via a lock-free SPSC command queue. The audio thread owns
-    its own mix buffers and effect chains.
+- **ECS-primary (~90%).** All simulation data lives as components, all gameplay logic as systems.
+  Exceptions:
+  - **Audio runtime.** Dedicated real-time thread with < 0.5 ms latency budget. ECS components
+    (`AudioSource`, `AudioListener`) bridge game state via lock-free SPSC command queue.
+  - **GPU resource management.** Descriptor heaps, command allocators, and swap chains are managed
+    internally by the rendering backend.
+  - **Windowing and platform event loops.** OS event loops are not ECS systems but forward events
+    into ECS.
+  - **Shader compilation pipeline.** CLI subprocess invocations are not ECS systems.
+  - **Asset processing internals.** Import and processing pipelines manage internal state but expose
+    results as ECS components.
 - **Shared spatial index.** A single BVH/octree is shared across physics, rendering, networking, AI,
   audio, and gameplay.
 - **Dependency injection.** Components receive dependencies through constructors or method
@@ -161,19 +149,16 @@ engine.
 
 ## Async Runtime Policy
 
-All processes -- engine, editor, tool servers, and cloud services -- use the custom `IoReactor`
-built on platform-native I/O primitives (IOCP on Windows, GCD/Dispatch IO on macOS, io_uring on
-Linux). There is no third-party async runtime anywhere in the project.
+Tokio `current_thread` is the sole async runtime for all processes: engine, editor, tool servers,
+and cloud services. The game loop thread owns the runtime and polls it explicitly at frame
+boundaries.
 
-- **No third-party runtimes.** No external async runtimes in any binary. No crates that depend on or
-  assume a third-party async runtime.
-- **HTTP:** Platform-native HTTP clients (NSURLSession on macOS, WinHTTP on Windows, libcurl on
-  Linux) wrapped via the `IoReactor`.
-- **WebSocket:** The `tungstenite` crate (non-async, no runtime dependency) with manual I/O
-  integration via `IoReactor`.
-- **Database:** Platform-native async socket I/O via `IoReactor` with a custom PostgreSQL wire
-  protocol client, or synchronous database clients on dedicated I/O threads.
-- **QUIC:** The `quinn` crate with its `AsyncUdpSocket` trait implemented on the `IoReactor` (quinn
-  supports custom runtimes).
-- **REST APIs:** Custom HTTP server built on the `IoReactor` using raw TCP accept/read/write with
-  HTTP/1.1 parsing, or a minimal HTTP library without runtime dependencies.
+- **Full Tokio ecosystem.** Crates that depend on Tokio (reqwest, sqlx, quinn, tokio-tungstenite,
+  hyper, axum) are permitted.
+- **HTTP:** `reqwest` or `hyper` for HTTP clients; `axum` for HTTP servers.
+- **WebSocket:** `tokio-tungstenite` for async WebSocket.
+- **Database:** `sqlx` with Tokio for PostgreSQL.
+- **QUIC:** `quinn` with the `tokio` feature for QUIC transport.
+- **No unsafe minimization.** Do not use `unsafe` methods or functions unless absolutely necessary.
+  When a performant, safe alternative exists, use it instead. Unsafe is still allowed where
+  necessary (graphics APIs, FFI, ECS internals). Use `bytemuck`/`zerocopy` for zero-copy safety.

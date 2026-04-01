@@ -100,7 +100,7 @@
    (Docker/Kubernetes). WebSocket transport for real-time sync; REST API for session management and
    administration.
    - **Deps:** F-15.12.3, F-1.8.4 (Async Network I/O)
-   - **Platform:** Service stack: Rust (IoReactor), PostgreSQL for relational data (sessions,
+   - **Platform:** Service stack: Rust (Tokio runtime), PostgreSQL for relational data (sessions,
 2. **F-15.12.8** — Each asset type defines a CRDT document schema mapping its structure to mergeable
    CRDT types. Scene hierarchies use a tree CRDT (entity add/remove/reparent). Logic graphs use an
    operation log CRDT (node add/remove/connect/disconnect). Data tables use a map CRDT (per-row,

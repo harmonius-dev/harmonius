@@ -9,18 +9,15 @@
 | US-1.8.3 | engine developer (P-26) |
 | US-1.8.4 | engine tester (P-27)    |
 
-1. **US-1.8.1** — **As an** engine developer (P-26), **I want** a trait-based abstraction over
-   platform-native async I/O resolved at compile time with static dispatch, **so that** every I/O
-   operation uses native async primitives without dynamic dispatch overhead.
-2. **US-1.8.2** — **As an** engine developer (P-26), **I want** a Windows I/O backend wrapping IOCP
-   via windows-rs, **so that** Windows I/O uses native completion ports for maximum async
-   performance.
-3. **US-1.8.3** — **As an** engine developer (P-26), **I want** a macOS I/O backend wrapping Grand
-   Central Dispatch via swift-bridge bindings, **so that** macOS I/O uses native GCD for async
-   operations.
-4. **US-1.8.4** — **As an** engine tester (P-27), **I want** to run the same I/O test suite against
-   IOCP, GCD, and io_uring backends, **so that** I can verify behavioral equivalence across all
-   platforms.
+1. **US-1.8.1** — **As an** engine developer (P-26), **I want** a Tokio-based async I/O facade,
+   **so that** every I/O operation uses a single portable runtime without platform-specific dispatch
+   overhead.
+2. **US-1.8.2** — **As an** engine developer (P-26), **I want** Tokio async I/O on Windows (IOCP
+   internally), **so that** Windows I/O uses native completion ports through Tokio.
+3. **US-1.8.3** — **As an** engine developer (P-26), **I want** Tokio async I/O on macOS (kqueue
+   internally), **so that** macOS I/O uses the native kqueue mechanism through Tokio.
+4. **US-1.8.4** — **As an** engine tester (P-27), **I want** to run the same I/O test suite on all
+   platforms via Tokio, **so that** I can verify behavioral equivalence across all platforms.
 
 ## Completion Model
 

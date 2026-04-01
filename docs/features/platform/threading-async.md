@@ -55,7 +55,7 @@
 | ID        | Feature                                       | Requirements       |
 |-----------|-----------------------------------------------|--------------------|
 | F-14.3.5  | Platform Async I/O Integration                | R-14.3.5           |
-| F-14.3.6  | IoReactor with Controlled Frame Poll Point    | R-14.3.5           |
+| F-14.3.6  | Tokio Runtime with Controlled Frame Poll Point | R-14.3.5           |
 | F-14.3.7  | Async/Await for All Asynchronous Abstractions | R-14.3.5, R-14.3.3 |
 | F-14.3.8  | Scoped Task Execution                         | R-14.3.1, R-14.3.3 |
 | F-14.3.9  | Async Synchronization Primitives              | R-14.3.5           |
@@ -63,32 +63,29 @@
 | F-14.3.12 | GCD Controlled Dispatch Drain on macOS        | R-14.3.5           |
 | F-14.3.13 | Wait for Next Frame as Async Operation        | R-14.3.5, R-14.3.4 |
 
-1. **F-14.3.5** — Bridge the engine's async task system with platform-native async I/O primitives so
+1. **F-14.3.5** — Bridge the engine's async task system with the Tokio `current_thread` runtime so
    that file reads, network operations, and GPU readbacks complete without blocking worker threads.
    Completion events are dispatched as jobs in the task graph, maintaining a unified scheduling
    model.
    - **Deps:** F-14.3.3, F-1.8.1
-   - **Platform:** Windows uses I/O completion ports (`CreateIoCompletionPort`,
-     `GetQueuedCompletionStatusEx`); macOS uses Grand Central Dispatch (`dispatch_io_create`,
-     `dispatch_io_read`); Linux uses `io_uring` (`io_uring_submit`, `io_uring_wait_cqe_nr`). Each
-     backend wraps completions into job-system continuations via a thin platform adapter layer
-     exposed through swift-bridge on macOS and C FFI on other platforms.
-2. **F-14.3.6** — The game loop owns an `IoReactor` instance that wraps the platform completion
-   source and drains I/O completions only when explicitly polled via `reactor.poll()`. The OS never
-   fires callbacks asynchronously. The engine decides exactly when completions are harvested, giving
-   deterministic control over when async tasks resume. Multiple poll points per frame are supported
-   to reduce I/O response latency below one full frame interval.
+   - **Platform:** Tokio handles platform I/O internally (IOCP on Windows, kqueue on macOS, epoll on
+     Linux). The engine uses `tokio::fs` for file I/O and `tokio::net` for network I/O.
+2. **F-14.3.6** — The game loop owns a Tokio `current_thread` runtime that drives async I/O and
+   drains completions only when explicitly polled via `runtime.poll()`. The OS never fires callbacks
+   asynchronously. The engine decides exactly when completions are harvested, giving deterministic
+   control over when async tasks resume. `poll()` is non-blocking — it drains ready events and
+   returns immediately. Multiple poll points per frame are supported to reduce I/O response latency
+   below one full frame interval.
    - **Deps:** F-14.3.5, F-14.3.1
-   - **Platform:** Windows drains IOCP via `GetQueuedCompletionStatusEx` with timeout=0; macOS
-     drains a serial GCD dispatch queue synchronously via `dispatch_sync`; Linux drains io_uring
-     CQEs via `io_uring_peek_cqe` with timeout=0. All backends are non-blocking at the poll point.
+   - **Platform:** All platforms: Tokio `current_thread` runtime is polled via `poll()` which drives
+     the I/O event loop for one non-blocking iteration.
 3. **F-14.3.7** — All I/O operations, GPU synchronization, long waits, and frame-boundary yields use
    Rust's `async`/`await`. No callbacks. Futures yield at `.await` points, freeing worker threads to
    execute other tasks. Synchronous blocking is only permitted for sub-microsecond critical sections
    where the cost of async overhead would exceed the wait time.
    - **Deps:** F-14.3.5, F-14.3.6
    - **Platform:** None. Rust's `async`/`await` compiles to state machines with no platform-specific
-     behavior. The platform-specific layer is in the reactor backends that wake futures.
+     behavior. The platform-specific layer is in the Tokio runtime that wakes futures.
 4. **F-14.3.8** — The thread pool supports scoped execution modeled after `std::thread::scope`,
    where spawned tasks may borrow data from the calling scope without requiring `'static` lifetimes
    or `Arc` wrapping. All scoped tasks are joined before the scope exits, guaranteeing that borrowed
@@ -112,29 +109,27 @@
    unified `EventDispatcher` manages subscriptions for both handler types.
    - **Deps:** F-14.3.1, F-14.3.7
    - **Platform:** None. Event dispatch is platform-agnostic. Async handlers use the same thread
-     pool and reactor infrastructure as all other async tasks.
-7. **F-14.3.12** — On macOS, GCD I/O completion callbacks and fiber dispatch blocks are routed to a
-   dedicated serial dispatch queue rather than firing on arbitrary threads. At the reactor poll
-   point, the engine drains this queue synchronously via `dispatch_sync`, executing all pending
-   callbacks on the calling thread in a controlled manner. This ensures the engine controls exactly
-   when GCD callbacks execute, preventing asynchronous callback firing that would violate the
-   reactor's deterministic poll model. Fibers on macOS (F-14.3.4) also go through GCD dispatch
-   queues, unifying I/O completions and fiber resumption under a single controlled dispatch
-   mechanism. Metal uses Dispatch for command buffer completion handlers, making GCD integration
-   essential for GPU synchronization as well.
-   - **Deps:** F-14.3.5, F-14.3.6, F-14.3.4
-   - **Platform:** macOS only. Uses `dispatch_queue_create` for the serial queue,
-     `dispatch_io_create` and `dispatch_io_read` for async I/O, and `dispatch_sync` on the serial
-     queue at the poll point to drain completions. GCD/Dispatch IO is accessed through swift-bridge.
-     No direct core pinning; thread scheduling is delegated to macOS via QoS classes.
+     pool and Tokio runtime as all other async tasks.
+7. **F-14.3.12** — On macOS, GCD is used exclusively for fiber scheduling (F-14.3.4) and Metal
+   command buffer completion handlers — NOT for file or network I/O, which Tokio handles (F-14.3.5).
+   Fiber dispatch blocks and Metal completion callbacks are routed to a dedicated serial dispatch
+   queue. At the frame poll point, the engine drains this queue synchronously via `dispatch_sync`,
+   executing all pending callbacks on the calling thread in a controlled manner. This ensures the
+   engine controls exactly when GCD callbacks execute, preventing asynchronous callback firing that
+   would violate the deterministic poll model.
+   - **Deps:** F-14.3.6, F-14.3.4
+   - **Platform:** macOS only. Uses `dispatch_queue_create` for the serial queue and `dispatch_sync`
+     at the poll point to drain fiber resumption and Metal completion handlers. GCD/Dispatch is
+     accessed through swift-bridge. No direct core pinning; thread scheduling is delegated to macOS
+     via QoS classes.
 8. **F-14.3.13** — Coroutines and async tasks that need to spread work across multiple frames call
-   `reactor.next_frame().await`. This yields the task; the reactor resumes it at the next frame's
+   `runtime.next_frame().await`. This yields the task; the runtime resumes it at the next frame's
    poll point. This replaces manual state tracking and frame counters with a natural async
    suspension point, enabling long-running operations like procedural generation, streaming, and
    multi-frame asset processing to be written as sequential async code.
    - **Deps:** F-14.3.6, F-14.3.7
-   - **Platform:** None. Frame-boundary yield is managed entirely by the reactor's internal waker
-     list. The reactor wakes all `next_frame` waiters at the start of each `poll()` call before
+   - **Platform:** None. Frame-boundary yield is managed entirely by the runtime's internal waker
+     list. The runtime wakes all `next_frame` waiters at the start of each `poll()` call before
      draining platform completions.
 
 ## Game Loop Graph

@@ -8,10 +8,11 @@
 
 1. **F-3.2.1** — The terrain system uses a tile-based heightfield as its core representation. Each
    tile stores a 16-bit or 32-bit height grid at configurable resolution, plus metadata for material
-   layers, holes, and physics. Tiles stream in and out based on camera proximity via platform-native
-   async I/O. A residency manager tracks loaded, loading, and evicted tiles with placeholder low-LOD
+   layers, holes, and physics. Tiles stream in and out based on camera proximity via Tokio async
+   I/O. A residency manager tracks loaded, loading, and evicted tiles with placeholder low-LOD
    fallbacks, ensuring seamless transitions during MMO zone traversal.
-   - **Platform:** Uses platform-native async I/O (IOCP on Windows, GCD on macOS, io_uring on Linux)
+   - **Platform:** Tokio handles platform I/O internally (IOCP on Windows, kqueue on macOS, epoll on
+     Linux).
 
 ## Virtual Texturing
 

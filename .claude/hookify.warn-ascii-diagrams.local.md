@@ -12,7 +12,7 @@ conditions:
 action: warn
 ---
 
-**ASCII diagram detected in Markdown.**
+# ASCII diagram detected in Markdown
 
 Never create ASCII diagrams. Use Mermaid diagrams instead and render them with MCP to verify
 correctness.

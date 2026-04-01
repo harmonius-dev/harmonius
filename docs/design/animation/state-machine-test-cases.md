@@ -525,11 +525,11 @@ Companion test cases for [state-machine.md](state-machine.md).
 | 3 | US-9.2.5.3  |
 
 1. **#1** — Windows, morph streaming I/O
-   - **Expected:** Uses IOCP backend
+   - **Expected:** Uses Tokio (IOCP)
 2. **#2** — macOS, morph streaming I/O
-   - **Expected:** Uses GCD backend
+   - **Expected:** Uses Tokio (kqueue)
 3. **#3** — Linux, morph streaming I/O
-   - **Expected:** Uses io_uring backend
+   - **Expected:** Uses Tokio (epoll)
 
 ## Benchmarks
 

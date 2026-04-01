@@ -13,15 +13,14 @@
 
 ## Async Asset Loading
 
-2. **R-12.5.2** — The engine **SHALL** perform all asset file reads through platform-native async
-   I/O APIs (IOCP on Windows, GCD dispatch_io on macOS, io_uring on Linux) with direct I/O bypassing
-   the CPU page cache, using zero standard library file I/O in the asset loading path. Builds on the
-   core async I/O abstraction defined in F-1.8.1.
-   - **Rationale:** Platform-native async I/O provides the highest throughput and most predictable
-     latency by avoiding kernel page cache pollution and thread blocking.
-   - **Verification:** Load a 100 MB asset via async I/O per platform; verify completion via native
-     mechanism; verify no std::fs calls via static analysis; benchmark at 80%+ of raw sequential
-     disk bandwidth.
+2. **R-12.5.2** — The engine **SHALL** perform all asset file reads through Tokio async I/O with
+   direct I/O bypassing the CPU page cache, using zero standard library file I/O in the asset
+   loading path. Builds on the core async I/O abstraction defined in F-1.8.1.
+   - **Rationale:** Tokio async I/O provides the highest throughput and most predictable latency by
+     avoiding kernel page cache pollution and thread blocking.
+   - **Verification:** Load a 100 MB asset via async I/O per platform; verify completion via Tokio;
+     verify no std::fs calls via static analysis; benchmark at 80%+ of raw sequential disk
+     bandwidth.
 3. **R-12.5.3** — The engine **SHALL** transfer compressed asset data from SSD directly into GPU
    memory via file-to-GPU DMA (DirectStorage on Windows, Metal I/O on macOS), with a compute shader
    decompressing in place, bypassing CPU for bulk transfers.

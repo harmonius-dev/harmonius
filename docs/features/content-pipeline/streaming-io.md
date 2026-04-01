@@ -18,16 +18,15 @@
 | F-12.5.2 | Platform-Native Async I/O |
 | F-12.5.3 | GPU Direct Storage        |
 
-1. **F-12.5.2** — Asynchronous file reads using each platform's highest-throughput I/O API: I/O
-   completion ports on Windows, Grand Central Dispatch (dispatch_io) on macOS, and io_uring on
-   Linux. All reads bypass the CPU page cache via direct I/O for predictable latency. No standard
-   library file I/O is used anywhere in the engine. Builds on the core async I/O abstraction defined
-   in F-1.8.1. Operations) platform module behind a unified async I/O trait.
+1. **F-12.5.2** — Asynchronous file reads using Tokio async I/O (IOCP on Windows, kqueue on macOS,
+   epoll on Linux internally). All reads bypass the CPU page cache via direct I/O for predictable
+   latency. No standard library file I/O is used anywhere in the engine. Builds on the core async
+   I/O abstraction defined in F-1.8.1 behind a unified async I/O trait.
    - **Deps:** F-12.5.1, F-1.8.1 (Platform I/O Backend Abstraction), F-1.8.3 (Async File I/O
-   - **Platform:** IOCP on Windows, GCD on macOS, io_uring on Linux. Each backend is a separate
+   - **Platform:** Tokio handles platform I/O internally.
 2. **F-12.5.3** — File-to-GPU DMA that transfers compressed asset data from SSD directly into GPU
    memory, where a compute shader decompresses it in place. Bypasses CPU involvement entirely for
-   bulk asset transfers, saturating NVMe bandwidth for open-world streaming. io_uring with CPU-side
+   bulk asset transfers, saturating NVMe bandwidth for open-world streaming. Tokio with CPU-side
    staging.
    - **Deps:** F-12.5.2
    - **Platform:** Uses DirectStorage on Windows, Metal I/O on macOS. Linux falls back to

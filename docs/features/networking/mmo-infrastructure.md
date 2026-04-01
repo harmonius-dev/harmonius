@@ -64,8 +64,7 @@
    must handle sustained write throughput of tens of thousands of transactions per second across the
    server fleet.
    - **Deps:** F-8.7.1
-   - **Platform:** Database access uses platform-native async I/O (IOCP on Windows, GCD on macOS,
-     io_uring on Linux) per project guidelines.
+   - **Platform:** Database access uses Tokio async I/O per project guidelines.
 2. **F-8.7.6** — Monitor server process CPU, memory, network utilization, and player count in real
    time, and automatically provision or deprovision server processes to match demand. Load balancing
    distributes new player connections and zone assignments to the least-loaded eligible servers.

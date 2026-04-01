@@ -40,16 +40,23 @@ Key architectural choices:
 1. **Compiled, not interpreted.** Visual graphs are compiled to a typed bytecode (`GraphProgram`) by
    the editor's graph compiler. The runtime never parses or interprets graph topology at execution
    time.
-2. **100% ECS-based.** Compiled graphs attach to entities as `GraphInstance` components. A
-   `GraphExecutionSystem` runs in the ECS schedule like any other system.
+2. **ECS-primary (~90%).** Compiled graphs attach to entities as `GraphInstance` components. A
+   `GraphExecutionSystem` runs in the ECS schedule like any other system. A small fraction of
+   runtime logic (shader compilation, asset I/O callbacks) may run outside the ECS schedule.
 3. **Static dispatch.** All node operations resolve to typed function pointers at compile time. No
    vtables, no dynamic dispatch in the hot path.
 4. **Sandboxed.** User graphs cannot perform unsafe operations, raw memory access, or unbounded
    loops. All ECS access goes through validated accessor opcodes.
 5. **Coroutine support.** Multi-frame sequences (boss phases, timed objectives) use async yield
-   points that suspend and resume across frames via the `IoReactor`.
+   points that suspend and resume across frames via the `Tokio runtime`.
 6. **Hot reload.** The runtime patches running graph instances with recompiled bytecode while
    preserving compatible state.
+
+> **Authoring model.** The visual logic graph editor uses a Game Maker style keyboard-first
+> workflow: hotkey to open a type-to-search palette, Enter to place and auto-connect nodes, arrow
+> keys to navigate between nodes, and sequential action lists with implicit execution flow. See the
+> Keyboard-First Interaction Model section in [visual-editors.md](../tools/visual-editors.md) for
+> details.
 
 ### Crate Structure
 
@@ -115,7 +122,7 @@ graph TD
     subgraph harmonius_threading
         TP[ThreadPool]
         TG[TaskGraph]
-        RE[IoReactor]
+        RE[Tokio runtime]
     end
 
     subgraph harmonius_events
@@ -1396,7 +1403,7 @@ underlying subsystems (ECS, threading, I/O reactor).
 | Concern | Approach | Notes |
 |---------|----------|-------|
 | Bytecode format | Little-endian, fixed-size opcodes | Matches all target platforms |
-| Coroutine yields | Delegates to `IoReactor.next_frame()` | Platform-native async under the hood |
+| Coroutine yields | Delegates to `Tokio runtime.next_frame()` | Platform-native async under the hood |
 | Parallel execution | ECS scheduler + ThreadPool | Automatic via declared access sets |
 | Debug transport | TCP socket for remote debug | Platform-native socket API |
 | Hot reload file watch | Delegates to `FileWatcher` | IOCP / FSEvents / inotify |
@@ -1597,7 +1604,7 @@ improving quality for all game genres.
 The scripting runtime is deeply integrated with the ECS architecture. `GraphInstance` is a standard
 ECS component, `GraphExecutionSystem` runs in the normal system schedule, and all ECS access goes
 through typed accessor opcodes that respect system ordering. The compiler shares the build cache
-(F-15.11.3) with the asset pipeline. The coroutine model yields through the IoReactor, consistent
+(F-15.11.3) with the asset pipeline. The coroutine model yields through the Tokio runtime, consistent
 with the engine's async/await everywhere policy. One area of divergence is the bytecode format --
 `GraphProgram` uses a custom instruction set rather than a standard format like WebAssembly. Using
 Wasm would enable third-party tooling but adds a runtime dependency and may conflict with the no-

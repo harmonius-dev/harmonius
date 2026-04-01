@@ -49,7 +49,7 @@
 
 6. **R-13.3.6** — The engine **SHALL** compress (LZ4/Zstd), encrypt (AES-256-GCM), and checksum
    (CRC-32) all save data through an async I/O pipeline using atomic rename for consistency, with
-   platform-native async I/O (IOCP, GCD, io_uring).
+   Tokio async I/O.
    - **Rationale:** Compression reduces size; encryption prevents tampering; atomic rename
      guarantees consistency even on crash.
    - **Verification:** Save and verify the file is compressed and encrypted. Corrupt a byte and

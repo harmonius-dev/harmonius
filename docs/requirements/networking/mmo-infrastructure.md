@@ -50,7 +50,7 @@
      non-blocking and transactional to prevent data corruption.
    - **Verification:** Integration test: perform 10,000 concurrent saves without blocking the tick.
      Execute a trade and verify atomicity by simulating a crash mid-transaction. Benchmark sustained
-     write throughput above 10,000 TPS. Verify platform-native async I/O (IOCP, GCD, io_uring).
+     write throughput above 10,000 TPS. Verify Tokio async I/O.
 2. **R-8.7.6** — The engine **SHALL** monitor server process CPU, memory, network utilization, and
    player count in real time, automatically provisioning or deprovisioning server processes to match
    demand, reacting to surges within seconds and draining before termination.

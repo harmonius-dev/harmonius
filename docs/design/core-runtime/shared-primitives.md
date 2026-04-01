@@ -1476,7 +1476,7 @@ impl<K: Eq + Hash, V> TaggedLookupTable<K, V> {
 
 Server-polled resource with version comparison and delta fetch for live operations content.
 Periodically polls a server endpoint, compares the remote version against the local version, and
-fetches only the delta if a newer version exists. All I/O uses `async`/`await` via `IoReactor`.
+fetches only the delta if a newer version exists. All I/O uses `async`/`await` via `Tokio runtime`.
 
 Used by battle pass definitions, store catalogs, challenge rotations, and login calendars.
 
@@ -1511,7 +1511,7 @@ impl<T: DeserializeOwned> LiveOpsResource<T> {
         poll_interval_secs: u32,
     ) -> Self;
 
-    /// Polls the server for updates. Async via IoReactor.
+    /// Polls the server for updates. Async via Tokio runtime.
     /// Compares remote version, fetches delta if newer.
     pub async fn poll(&mut self) -> PollResult<T>;
 
@@ -1601,7 +1601,7 @@ pub enum CompileTarget {
 #### 17. `VirtualResourceStreamer`
 
 GPU-feedback-driven page streaming for virtual resources. Reads a GPU feedback buffer to determine
-which pages are requested, prioritizes them, issues async I/O loads via `IoReactor`, tracks page
+which pages are requested, prioritizes them, issues async I/O loads via `Tokio runtime`, tracks page
 residency, and evicts least- recently-used pages when memory is full.
 
 Shared by meshlet streaming, virtual texturing, and terrain tile streaming.
@@ -1613,7 +1613,7 @@ flowchart LR
     GPU[GPU Rendering] -->|Feedback Buffer| RB[Readback]
     RB --> AN[Analyze Requests]
     AN --> PQ[Priority Queue]
-    PQ --> IO["Async I/O (IoReactor)"]
+    PQ --> IO["Async I/O (Tokio runtime)"]
     IO --> CACHE[Page Cache]
     CACHE --> UPLOAD[GPU Upload]
     UPLOAD --> GPU
@@ -1734,24 +1734,24 @@ Shared primitives are consumed at different points in the frame lifecycle:
 2. **`UniformGrid<T>` GPU upload** — D3D12 buffer
    - **macOS:** Metal buffer via GCD
    - **Linux:** Vulkan buffer
-3. **`CompressionCodec`** — IOCP-based async compress
-   - **macOS:** GCD Dispatch IO
-   - **Linux:** io_uring SQE
-4. **`VirtualResourceStreamer`** — D3D12 feedback, IOCP I/O
-   - **macOS:** Metal feedback, GCD I/O
-   - **Linux:** Vulkan feedback, io_uring
+3. **`CompressionCodec`** — Tokio-based async compress
+   - **macOS:** Tokio (kqueue)
+   - **Linux:** Tokio (epoll)
+4. **`VirtualResourceStreamer`** — D3D12 feedback, Tokio I/O
+   - **macOS:** Metal feedback, Tokio (kqueue)
+   - **Linux:** Vulkan feedback, Tokio (epoll)
 5. **`GraphCompiler`** — DXC native
    - **macOS:** DXC via C API + MSC via swift-bridge
    - **Linux:** DXC via C ABI
-6. **`LiveOpsResource<T>`** — IOCP sockets
-   - **macOS:** GCD sockets
-   - **Linux:** io_uring sockets
+6. **`LiveOpsResource<T>`** — Tokio sockets
+   - **macOS:** Tokio (kqueue)
+   - **Linux:** Tokio (epoll)
 7. **`PlatformTier`** — Desktop / HighEnd
    - **macOS:** Mobile / Desktop
    - **Linux:** Desktop / HighEnd
 
-All async operations route through `IoReactor` as defined in `platform/threading.md`. No Rust stdlib
-file I/O.
+All async operations route through `Tokio runtime` as defined in `platform/threading.md`. No Rust
+stdlib file I/O.
 
 ---
 
@@ -1830,7 +1830,8 @@ file I/O.
    contents match.
 3. **Stat pipeline end-to-end:** Attach modifiers from multiple sources (ability, item, buff),
    verify final value matches manual calculation.
-4. **Virtual streamer + IoReactor:** Load pages via platform I/O backend, verify residency tracking.
+4. **Virtual streamer + Tokio runtime:** Load pages via platform I/O backend, verify residency
+   tracking.
 
 ---
 

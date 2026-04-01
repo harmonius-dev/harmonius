@@ -55,13 +55,12 @@
    thread. For MMO, cloud save coordinates with the authoritative server database to reconcile
    offline progression.
    - **Deps:** F-13.3.4, F-14.5.5 (Platform Cloud Storage)
-   - **Platform:** Each platform requires its own SDK integration. Uses platform-native async I/O
-     (IOCP on Windows, GCD on macOS, io_uring on Linux) for file transfers.
+   - **Platform:** Each platform requires its own SDK integration. Uses Tokio async I/O for file
+     transfers.
 2. **F-13.3.6** — All save reads and writes flow through an async I/O pipeline that compresses (LZ4
    for speed, Zstd for size on cloud uploads), encrypts (AES-256-GCM to prevent tampering), and
    checksums (CRC-32 for corruption detection) save data. Write operations use atomic rename to
    guarantee that a save file is always in a consistent state even if the process crashes mid-write.
    The pipeline supports priority ordering so autosaves yield to explicit user saves.
    - **Deps:** F-13.3.1
-   - **Platform:** Uses platform-native async I/O (IOCP on Windows, GCD on macOS, io_uring on Linux)
-     per project guidelines. No standard library file I/O.
+   - **Platform:** Uses Tokio async I/O per project guidelines. No standard library file I/O.

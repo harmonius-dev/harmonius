@@ -1598,7 +1598,7 @@ enable?
 The design covers F-9.1.1 through F-9.1.10 and all user stories. A gap is animation streaming --
 loading clips asynchronously as characters enter the scene. The compression feature (F-9.1.7)
 reduces memory but does not address streaming from disk during gameplay. Adding async clip streaming
-via the IoReactor would enable open-world games with thousands of unique animations loaded on
+via the Tokio runtime would enable open-world games with thousands of unique animations loaded on
 demand. Another gap is animation mirroring (reflecting a clip across the skeleton's symmetry plane),
 which would halve locomotion clip storage for symmetric characters and benefit fighting games and
 RPGs with symmetrical movesets.

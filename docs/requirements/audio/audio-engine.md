@@ -77,13 +77,12 @@
 ## Streaming Playback
 
 8. **R-5.1.5** — The engine **SHALL** stream long-duration audio from disk in ring-buffer chunks
-   using platform-native async I/O (IOCP on Windows, GCD Dispatch IO on macOS, io_uring on Linux).
-   The engine **SHALL NOT** use C++ stdlib file I/O. Peak memory per stream **SHALL NOT** exceed 256
-   KiB.
-   - **Rationale:** Holding entire files in memory is infeasible for large asset libraries.
-     Platform-native async I/O avoids blocking the audio thread.
+   using Tokio async I/O. The engine **SHALL NOT** use C++ stdlib file I/O. Peak memory per stream
+   **SHALL NOT** exceed 256 KiB.
+   - **Rationale:** Holding entire files in memory is infeasible for large asset libraries. Tokio
+     async I/O avoids blocking the audio thread.
    - **Verification:** Integration test: stream a 5-minute file and assert peak memory stays below
-     256 KiB per stream. Verify platform-native API usage via instrumentation.
+     256 KiB per stream. Verify Tokio async I/O usage via instrumentation.
 
 9. **R-5.1.5a** — The engine **SHALL** support prefetch hints that begin streaming audio before
    playback is triggered. Prefetch at least 500 ms before playback **SHALL** reduce startup latency

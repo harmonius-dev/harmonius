@@ -3,10 +3,9 @@
 ## Async File Operations
 
 1. **R-14.6.1** — The engine **SHALL** perform all file open, read, and write operations through the
-   platform async I/O layer (IOCP on Windows, GCD on macOS, io_uring on Linux), supporting
-   sequential reads, random-access reads with explicit offsets, and buffered/unbuffered write modes,
-   returning futures that resolve on the I/O thread pool without blocking game threads. No Rust
-   standard library file I/O **SHALL** be used anywhere.
+   Tokio async I/O layer, supporting sequential reads, random-access reads with explicit offsets,
+   and buffered/unbuffered write modes, returning futures that resolve on the I/O thread pool
+   without blocking game threads. No Rust standard library file I/O **SHALL** be used anywhere.
    - **Rationale:** Platform-native async I/O avoids blocking game threads and enables concurrent
      reads at different offsets. Banning stdlib I/O ensures a single consistent I/O path.
    - **Verification:** Integration test per platform: write 4 MB in 1 MB chunks at explicit offsets
@@ -102,10 +101,9 @@
 
 ## Linux Kernel Compatibility
 
-11. **R-14.6.11** — The engine **SHALL** use io_uring exclusively for all async I/O on Linux, with
-    threaded POSIX fallback for operations requiring kernel 6.6+ (e.g., `IORING_OP_GETDENTS`). The
-    minimum Linux kernel **SHALL** be 5.1.
-    - **Rationale:** io_uring provides the highest performance I/O model on Linux. Threaded fallback
-      ensures compatibility with older kernels without requiring an epoll fallback path.
-    - **Verification:** Integration test on kernel 5.1: enumerate a directory and verify the
-      threaded fallback is used. On kernel 6.6+, verify `IORING_OP_GETDENTS` is used.
+11. **R-14.6.11** — The engine **SHALL** use Tokio for all async I/O on Linux, with threaded
+    fallback for older kernels.
+    - **Rationale:** Tokio provides a mature, well-tested async I/O runtime using epoll on Linux.
+      Threaded fallback ensures compatibility with older kernels.
+    - **Verification:** Integration test: enumerate a directory via Tokio and verify async
+      completion. Verify no `std::fs` calls exist on any platform.

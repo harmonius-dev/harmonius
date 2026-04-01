@@ -17,8 +17,7 @@ domain or complexity level.
 4. **ECS-first:** All simulation data lives as components, all logic as systems.
 5. **Shared spatial index:** Single BVH/octree shared across physics, rendering, networking, AI,
    gameplay.
-6. **Platform-native async I/O:** No stdlib file I/O — IOCP on Windows, GCD on macOS, io_uring on
-   Linux.
+6. **Platform-native async I/O:** No stdlib file I/O — all I/O via Tokio `current_thread` runtime.
 
 ---
 

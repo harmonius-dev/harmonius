@@ -59,13 +59,15 @@ Primary engine language for all Harmonius systems. Rust stable only — no night
 
 These rules derive from [constraints.md](../design/constraints.md):
 
-1. **No stdlib file I/O** — use platform-native async I/O (IOCP, GCD, io_uring) via `IoReactor`
-2. **No tokio or external async runtimes** — all async via custom `IoReactor` on platform primitives
+1. **No stdlib file I/O** — use `tokio::fs` for file I/O and `tokio::net` for network I/O via the
+   Tokio `current_thread` runtime
+2. **Tokio `current_thread` is the sole async runtime** — all async I/O via Tokio (see
+   constraints.md)
 3. **No winit** — custom platform-native windowing
 4. **Static dispatch preferred** — no `dyn` unless justified (see constraints.md for exceptions)
 5. **100% ECS-based** — all simulation data as components, all logic as systems
 6. **No C++** — no C++ source anywhere; Windows via `windows-rs`, Apple via Swift (`swift-bridge`)
-7. **`windows-rs` for Windows** — all D3D12, DXC, Win32, IOCP, DXGI via `windows-rs` COM
+7. **`windows-rs` for Windows** — all D3D12, DXC, Win32, DXGI via `windows-rs` COM
 8. **`unsafe` requires `// SAFETY:` comment** — explain the invariant being upheld
 9. **`Result<T, E>` everywhere** — no `.unwrap()` in library code; `?` propagation preferred
 10. **No `Arc`, `Rc`, `Cell`, `RefCell`** — use owned values, generational indices, or scoped

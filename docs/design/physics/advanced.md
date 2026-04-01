@@ -113,7 +113,7 @@ This document covers five advanced physics subsystems built on top of the core r
 1. **Spatial queries** -- ray cast, shape cast, overlap, closest point, batch queries. All traverse
    the shared BVH (F-1.9.1) and filter via `QueryFilter`.
 2. **Vehicle physics** -- wheel suspension, Pacejka tire friction, drivetrain, stability, tracked
-   and hover vehicles. All 100% ECS with no separate vehicle world.
+   and hover vehicles. All ECS-primary (~90%) with no separate vehicle world.
 3. **Destruction and fracture** -- Voronoi fracture, runtime splitting, progressive damage,
    structural collapse, debris lifecycle. Fragments are ECS entities.
 4. **Soft body and cloth** -- XPBD solver, GPU cloth, self-collision, wind, tearing, LOD. Particle
@@ -121,9 +121,9 @@ This document covers five advanced physics subsystems built on top of the core r
 5. **Fluid simulation** -- SPH, FLIP/PIC, Eulerian grid, surface reconstruction, buoyancy.
    GPU-accelerated with two-way rigid body coupling.
 
-All subsystems are 100% ECS-based: simulation data lives as components, all logic as systems, no
-parallel data stores. The shared BVH is the single spatial acceleration structure used across
-physics, rendering, AI, and networking.
+All subsystems are ECS-primary (~90%)-based: simulation data lives as components, all logic as
+systems, no parallel data stores. The shared BVH is the single spatial acceleration structure used
+across physics, rendering, AI, and networking.
 
 ## Architecture
 
@@ -1699,7 +1699,7 @@ Each physics tick, vehicle systems execute in order:
 **Linux:**
 
 - GPU compute via Vulkan compute shaders (HLSL compiled to SPIR-V by DXC).
-- io_uring for any async data loading of fracture assets or fluid initialization data.
+- Tokio for async data loading of fracture assets or fluid initialization data.
 
 ## Test Plan
 
@@ -1916,7 +1916,7 @@ Destruction events (fracture activation, fragment spawning) are replicated as re
 
 **Q1. What is the biggest constraint limiting this design?**
 
-The 100% ECS constraint is the biggest limitation for advanced physics. Fluid simulation
+The ECS-primary (~90%) constraint is the biggest limitation for advanced physics. Fluid simulation
 (F-4.8.1--7) naturally uses particle buffers and grid data structures that map poorly to archetypal
 ECS storage. Storing millions of SPH particles as individual entities with components would
 overwhelm the ECS allocator and fragment archetype tables. The design works around this by storing

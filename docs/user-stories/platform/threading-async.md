@@ -77,18 +77,19 @@
 12. **US-14.3.12** — **As an** engine developer (P-26), **I want** thread affinity and OS-level
     priority control to pin main and render threads to performance cores and background I/O to
     efficiency cores, **so that** game-critical work is never preempted by background tasks.
-13. **US-14.3.13** — **As an** engine developer (P-26), **I want** platform async I/O completions
-    (IOCP, GCD, io_uring) dispatched as job-system continuations, **so that** I/O integrates with
-    the unified task scheduler without blocking workers.
+13. **US-14.3.13** — **As an** engine developer (P-26), **I want** Tokio async I/O completions
+    dispatched as job-system continuations, **so that** I/O integrates with the unified task
+    scheduler without blocking workers.
 14. **US-14.3.14** — **As an** engine developer (P-26), **I want** automatic detection of
     performance and efficiency cores at startup, **so that** thread pool sizing and affinity are
     configured correctly on hybrid architectures.
 15. **US-14.3.15** — **As an** engine developer (P-26), **I want** I/O completions processed only at
     a defined reactor poll point in the game loop, **so that** I/O events never cause mid-frame
     latency spikes.
-16. **US-14.3.16** — **As an** engine developer (P-26), **I want** GCD `dispatch_io` callbacks
-    drained at a controlled point in the frame loop on macOS, **so that** macOS I/O completion
-    timing is deterministic and does not interrupt frame work.
+16. **US-14.3.16** — **As an** engine developer (P-26), **I want** GCD dispatch blocks for fiber
+    scheduling and Metal GPU sync routed to a serial queue and drained at a controlled poll point,
+    **so that** macOS fiber and GPU completion timing is deterministic and does not interrupt frame
+    work.
 17. **US-14.3.17** — **As an** engine developer (P-26), **I want** a safe game loop graph that
     validates access patterns and dependencies at compile time, **so that** scheduling bugs (data
     races, deadlocks) are caught before the game runs.

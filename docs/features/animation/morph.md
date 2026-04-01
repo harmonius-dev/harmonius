@@ -64,4 +64,5 @@
    only the targets needed for currently visible characters. Evicts unused targets under memory
    pressure with an LRU policy. Critical for MMO-scale character customization.
    - **Deps:** F-9.2.1
-   - **Platform:** Uses IOCP on Windows, GCD on macOS, io_uring on Linux.
+   - **Platform:** Tokio handles platform I/O internally (IOCP on Windows, kqueue on macOS, epoll on
+     Linux).

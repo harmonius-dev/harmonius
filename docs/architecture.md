@@ -2,10 +2,11 @@
 
 ## Engine Overview
 
-Harmonius is a cross-platform game engine written in Rust (stable) with `swift-bridge` FFI to Apple
-platform backends (macOS/iOS). It targets Metal 4, Direct3D 12, and Vulkan 1.4 with mesh shaders and
-ray tracing as minimum requirements. All simulation runs through a 100% ECS architecture with no
-separate data stores.
+Harmonius is a cross-platform no-code game engine written in Rust (stable) with `swift-bridge` FFI
+to Apple platform backends (macOS/iOS). It targets Metal 4, Direct3D 12, and Vulkan 1.4 with mesh
+shaders and ray tracing as minimum requirements. All simulation runs through a 100% ECS architecture
+with no separate data stores. Users build all gameplay by composing generic primitives in visual
+editors — no code required.
 
 See [design/constraints.md](design/constraints.md) for the full constraint set.
 
@@ -15,8 +16,23 @@ Click any node to jump to its module reference.
 
 ```mermaid
 graph TB
-    subgraph "Game Framework Layer"
+    subgraph "Application Layer"
+        TOOLS[Tools / Editor]
         GF[Game Framework]
+    end
+
+    subgraph "Simulation Layer"
+        SIM_G[Grids / Volumes]
+        SIM_SA[Spatial Awareness]
+        SIM_TL[Timelines]
+        SIM_EL[Event Logs]
+    end
+
+    subgraph "Data Systems Layer"
+        DS_DG[Directed Graphs]
+        DS_DT[Data Tables]
+        DS_AE[Attributes / Effects]
+        DS_CS[Containers / Slots]
     end
 
     subgraph "Domain Systems"
@@ -34,11 +50,11 @@ graph TB
     subgraph "Infrastructure"
         RENDER[Rendering]
         CP[Content Pipeline]
-        TOOLS[Tools / Editor]
     end
 
     subgraph "Core Runtime"
         ECS[ECS]
+        LOOP[Game Loop]
         SCENE[Scene / Transforms]
         REFLECT[Reflection / Serialization]
         EVENTS[Events / Plugins]
@@ -48,15 +64,26 @@ graph TB
     end
 
     subgraph "Platform"
-        PLAT[Platform Abstraction]
+        PLAT[Platform Services]
         WIN[Windowing]
-        THREAD[Threading / IoReactor]
+        THREAD[Threading / Tokio Runtime]
     end
 
-    GF --> AI & ANIM & AUDIO
-    GF --> GEO & VFX & UI
-    GF --> NET & INPUT & PHYS
-    AI --> ECS & SPATIAL
+    TOOLS --> GF & RENDER & REFLECT & EVENTS & UI
+    GF --> DS_DG & DS_DT & DS_AE & DS_CS
+    GF --> SIM_G & SIM_SA & SIM_TL & SIM_EL
+    GF --> AI & ANIM & AUDIO & PHYS
+
+    DS_DG --> ECS & PRIMS
+    DS_DT --> ECS & REFLECT
+    DS_AE --> ECS & PRIMS
+    DS_CS --> ECS & PRIMS
+    SIM_G --> ECS & SPATIAL
+    SIM_SA --> ECS & SPATIAL
+    SIM_TL --> ECS & EVENTS
+    SIM_EL --> ECS & EVENTS
+
+    AI --> ECS & SPATIAL & SIM_SA
     ANIM --> ECS & SCENE
     AUDIO --> ECS & SPATIAL & THREAD
     GEO --> ECS & SPATIAL & RENDER
@@ -65,9 +92,11 @@ graph TB
     NET --> ECS & REFLECT & MEM
     INPUT --> ECS & EVENTS & PLAT
     PHYS --> ECS & SPATIAL
+
     RENDER --> ECS & SCENE & SPATIAL & MEM
     CP --> REFLECT & MEM
-    TOOLS --> ECS & RENDER & REFLECT & EVENTS & UI
+
+    LOOP --> ECS & THREAD
     ECS --> MEM & THREAD
     SCENE --> ECS
     REFLECT --> ECS
@@ -91,6 +120,7 @@ graph TB
     click CP "#content-pipeline"
     click TOOLS "#tools--editor"
     click ECS "#core-runtime"
+    click LOOP "#core-runtime"
     click SCENE "#core-runtime"
     click REFLECT "#core-runtime"
     click EVENTS "#core-runtime"
@@ -100,35 +130,207 @@ graph TB
     click PLAT "#platform"
     click WIN "#platform"
     click THREAD "#platform"
+    click DS_DG "#data-systems"
+    click DS_DT "#data-systems"
+    click DS_AE "#data-systems"
+    click DS_CS "#data-systems"
+    click SIM_G "#simulation"
+    click SIM_SA "#simulation"
+    click SIM_TL "#simulation"
+    click SIM_EL "#simulation"
 ```
 
 ## Layered Architecture
 
-| Layer            |
-|------------------|
-| 5 — Application  |
-| 4 — Domain       |
-| 3 — Mid-Level    |
-| 2 — Pipeline     |
-| 1 — Core Runtime |
-| 0 — Platform     |
+| Layer | Description |
+|-------|-------------|
+| 5 — Application | Game Framework, Tools / Editor |
+| 4 — Simulation | Grids, Spatial Awareness, Timelines, Events |
+| 3 — Data Systems | Graphs, Tables, Attributes, Containers |
+| 2 — Domain | AI, Animation, Audio, Networking, VFX |
+| 1 — Mid-Level | Physics, Rendering, Geometry, UI, Input |
+| 0.5 — Pipeline | Content Pipeline |
+| 0 — Foundation | Core Runtime, Platform |
 
 1. **5 — Application** — [Game Framework](#game-framework), [Tools / Editor](#tools--editor)
-2. **4 — Domain** — [AI](#ai), [Animation](#animation), [Audio](#audio), [Networking](#networking),
+2. **4 — Simulation** — [Simulation](#simulation) (Grids, Spatial Awareness, Timelines, Event Logs)
+3. **3 — Data Systems** — [Data Systems](#data-systems) (Directed Graphs, Data Tables, Attributes /
+   Effects, Containers / Slots)
+4. **2 — Domain** — [AI](#ai), [Animation](#animation), [Audio](#audio), [Networking](#networking),
    [VFX](#vfx)
-3. **3 — Mid-Level** — [Physics](#physics), [Rendering](#rendering), [Geometry](#geometry),
+5. **1 — Mid-Level** — [Physics](#physics), [Rendering](#rendering), [Geometry](#geometry),
    [UI](#ui), [Input](#input)
-4. **2 — Pipeline** — [Content Pipeline](#content-pipeline)
-5. **1 — Core Runtime** — [Core Runtime](#core-runtime) (ECS, Scene, Reflection, Events, Memory,
-   Spatial Index, Shared Primitives)
-6. **0 — Platform** — [Platform](#platform) (Windowing, Threading / IoReactor, Platform Abstraction)
+6. **0.5 — Pipeline** —
+   [Content Pipeline](#content-pipeline)
+7. **0 — Foundation** — [Core Runtime](#core-runtime),
+   [Platform](#platform)
+
+---
+
+## Dedicated Thread Model
+
+Four thread roles with clear ownership boundaries.
+
+```mermaid
+flowchart LR
+    subgraph MT["Main Thread"]
+        ME[OS Event Loop]
+        MI[Window / Input Events]
+    end
+
+    subgraph GLT["Game Loop Thread"]
+        GL[Simulation Phases 1-8]
+        RF[Build RenderFrame]
+    end
+
+    subgraph RT["Render Thread"]
+        RC[Cull / Sort / Record]
+        RS[GPU Submit / Present]
+    end
+
+    subgraph WT["Worker Pool"]
+        W1[Worker 1]
+        W2[Worker 2]
+        WN[Worker N]
+    end
+
+    MT -->|SPSC queue| GLT
+    GLT -->|triple buffer| RT
+    GLT -.->|task fan-out| WT
+    RT -.->|task fan-out| WT
+```
+
+**Main thread** — owns the OS event loop. Pumps window events, raw input, and platform UI (UIKit on
+iOS, Activity on Android). Forwards to game loop thread via lock-free SPSC queue. On iOS/Android the
+OS mandates this thread; on desktop it is still cleanly separated.
+
+**Game loop thread** — simulation driver. Runs all gameplay phases sequentially. Produces an
+immutable `RenderFrame` snapshot each tick. Submits to render thread via triple buffer. Fans out to
+worker threads for data-parallel work.
+
+**Render thread** — GPU command buffer recording and submission. Consumes `RenderFrame` from triple
+buffer. Executes the render graph, records command buffers, presents. Pipelined: renders frame N
+while game loop computes frame N+1. Owns swapchain and presentation timing.
+
+**Worker threads** — work-stealing pool sized to performance cores. Short scoped tasks that borrow
+from the calling frame. Used by game loop (physics broadphase, AI queries) and render thread
+(visibility culling, draw sorting).
+
+### Frame Pipelining
+
+```mermaid
+gantt
+    title Frame Pipeline (2 frames shown)
+    dateFormat X
+    axisFormat %s
+
+    section Main
+    Events N     :m1, 0, 2
+    Events N+1   :m2, 2, 4
+    Events N+2   :m3, 4, 6
+
+    section Game Loop
+    Sim Frame N     :g1, 0, 3
+    Sim Frame N+1   :g2, 3, 6
+
+    section Render
+    Render Frame N-1 :r0, 0, 3
+    Render Frame N   :r1, 3, 6
+```
+
+The game loop and render thread overlap by one frame. `RenderFrame` is an immutable snapshot
+(transforms, draw lists, camera, lights, VFX state) consumed without synchronization. Triple
+buffering ensures the game loop never stalls waiting for the render thread.
+
+---
+
+## Game Loop Phases
+
+Within the game loop thread, each frame executes these phases sequentially. Worker threads provide
+parallelism *within* each phase via task graph fan-out. Full design in
+[game-loop.md](design/core-runtime/game-loop.md).
+
+```mermaid
+flowchart TD
+    P1[Phase 1: Input Processing] --> P2[Phase 2: Network Receive]
+    P2 --> P3[Phase 3: Simulation Tick]
+    P3 --> P4[Phase 4: AI Update]
+    P4 --> P5[Phase 5: Physics Step]
+    P5 --> P6[Phase 6: Animation Update]
+    P6 --> P7[Phase 7: Frame Snapshot]
+    P7 --> P8[Phase 8: Frame End]
+    P8 -->|next frame| P1
+
+    P1 -.- I1[/"input/"/]
+    P2 -.- I2[/"networking/"/]
+    P3 -.- I3[/"data-systems/ simulation/ scripting"/]
+    P4 -.- I4[/"ai/ spatial-awareness"/]
+    P5 -.- I5[/"physics/ spatial-index"/]
+    P6 -.- I6[/"animation/"/]
+    P7 -.- I7[/"camera vfx/ ui/ audio/"/]
+    P8 -.- I8[/"save-system core-runtime/"/]
+```
+
+| Phase | Timestep | Description |
+|-------|----------|-------------|
+| 1 Input | Variable | Drain SPSC, map actions |
+| 2 Network | Variable | Packets, remote state, RPCs |
+| 3 Simulation | Fixed | Graphs, effects, grids, timelines |
+| 4 AI | Fixed | Awareness, BT/GOAP, nav, steering |
+| 5 Physics | Fixed | Broadphase, solve, destruction |
+| 6 Animation | Variable | State machines, IK, cloth, hair |
+| 7 Snapshot | Variable | Build RenderFrame, audio mix |
+| 8 Frame End | Variable | Save, Tokio poll, stats |
+
+### Render Thread Steps
+
+```mermaid
+flowchart LR
+    R1[Acquire RenderFrame] --> R2[Visibility Culling]
+    R2 --> R3[Draw Call Sorting]
+    R3 --> R4[Render Graph Execute]
+    R4 --> R5[GPU Submit]
+    R5 --> R6[Present]
+```
+
+---
+
+## Composition Model
+
+Game features are not built as dedicated systems. Instead, users compose generic primitives from the
+Data Systems and Simulation layers in visual editors to create any gameplay.
+
+| Feature | Graphs | Tables | Attr | Cond | Ctr | TL | Grid | Spa | Log |
+|---------|:------:|:------:|:----:|:----:|:---:|:--:|:----:|:---:|:---:|
+| Quests | X | X | | X | | | | | |
+| Dialogue | X | | | X | | X | | | |
+| Talents | X | X | X | X | | | | | |
+| Abilities | | X | X | X | | | | X | |
+| Inventory | | X | | | X | | | | |
+| Equipment | | X | X | | X | | | | |
+| Crafting | | X | | X | X | | | | |
+| Combat | | | X | | | | | X | |
+| Stealth | | | X | X | | | X | X | |
+| Fog of war | | | | | | | X | X | |
+| NPC sched | | X | | X | | X | | | |
+| NPC memory | | | | | | | | | X |
+| Factions | | | X | X | | | | | |
+| Battle pass | X | X | X | | | | | | |
+| Achievements | | X | | X | | | | | |
+| Building | | X | | X | X | | | | |
+| Cinematics | | | | | | X | | | |
+| Destruction | | | X | | | | | X | |
+
+**Legend:** Graphs = Directed Graphs, Tables = Data Tables, Attr = Attributes / Effects, Cond =
+Condition Expressions, Ctr = Containers / Slots, TL = Timelines, Grid = Grids / Volumes, Spa =
+Spatial Awareness, Log = Event Logs.
 
 ---
 
 ## Module Reference
 
-Each module lists all design documents, test case companions, feature specs, requirements, and user
-stories. Click any link to navigate to that artifact.
+Each module lists design documents, test case companions, feature specs, requirements, and user
+stories.
 
 ---
 
@@ -140,34 +342,18 @@ Platform abstraction for windowing, threading, async I/O, OS integration, and pl
 graph TB
     subgraph "Platform"
         W[Windowing]
-        T[Threading]
-        OS[OS Integration]
-        SV[Services / Storage]
+        T[Threading / Tokio Runtime]
+        PS[Platform Services]
     end
-
-    click W "#platform"
-    click T "#platform"
-    click OS "#platform"
-    click SV "#platform"
 ```
 
 #### Design Documents
 
-| Design                                                     |
-|------------------------------------------------------------|
-| [windowing.md](design/platform/windowing.md)               |
-| [threading.md](design/platform/threading.md)               |
-| [os-integration.md](design/platform/os-integration.md)     |
-| [services-storage.md](design/platform/services-storage.md) |
-
-1. **[windowing.md](design/platform/windowing.md)** —
-   [windowing-test-cases.md](design/platform/windowing-test-cases.md)
-2. **[threading.md](design/platform/threading.md)** —
-   [threading-test-cases.md](design/platform/threading-test-cases.md)
-3. **[os-integration.md](design/platform/os-integration.md)** —
-   [os-integration-test-cases.md](design/platform/os-integration-test-cases.md)
-4. **[services-storage.md](design/platform/services-storage.md)** —
-   [services-storage-test-cases.md](design/platform/services-storage-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [windowing.md](design/platform/windowing.md) | [windowing-test-cases.md](design/platform/windowing-test-cases.md) |
+| [threading.md](design/platform/threading.md) | [threading-test-cases.md](design/platform/threading-test-cases.md) |
+| [platform-services.md](design/platform/platform-services.md) | [platform-services-test-cases.md](design/platform/platform-services-test-cases.md) |
 
 #### Features
 
@@ -179,6 +365,7 @@ graph TB
 | [filesystem.md](features/platform/filesystem.md) |
 | [crash-reporting.md](features/platform/crash-reporting.md) |
 | [platform-services.md](features/platform/platform-services.md) |
+| [sdk-integration.md](features/platform/sdk-integration.md) |
 
 #### Requirements
 
@@ -190,6 +377,7 @@ graph TB
 | [filesystem.md](requirements/platform/filesystem.md) |
 | [crash-reporting.md](requirements/platform/crash-reporting.md) |
 | [platform-services.md](requirements/platform/platform-services.md) |
+| [sdk-integration.md](requirements/platform/sdk-integration.md) |
 
 #### User Stories
 
@@ -201,18 +389,20 @@ graph TB
 | [filesystem.md](user-stories/platform/filesystem.md) |
 | [crash-reporting.md](user-stories/platform/crash-reporting.md) |
 | [platform-services.md](user-stories/platform/platform-services.md) |
+| [sdk-integration.md](user-stories/platform/sdk-integration.md) |
 
 ---
 
 ### Core Runtime
 
-ECS, scene hierarchy, reflection, events, memory management, async I/O, spatial indexing, and shared
-engine-wide primitives.
+ECS, game loop, scene hierarchy, reflection, events, memory, async I/O, spatial indexing, and shared
+primitives.
 
 ```mermaid
 graph TB
     subgraph "Core Runtime"
         E[ECS]
+        GL[Game Loop]
         SC[Scene / Transforms]
         RF[Reflection / Serialization]
         EV[Events / Plugins]
@@ -220,42 +410,20 @@ graph TB
         SI[Spatial Index]
         SP[Shared Primitives]
     end
-
-    click E "#core-runtime"
-    click SC "#core-runtime"
-    click RF "#core-runtime"
-    click EV "#core-runtime"
-    click MA "#core-runtime"
-    click SI "#core-runtime"
-    click SP "#core-runtime"
 ```
 
 #### Design Documents
 
-| Design                                                                         |
-|--------------------------------------------------------------------------------|
-| [ecs.md](design/core-runtime/ecs.md)                                           |
-| [scene-transforms.md](design/core-runtime/scene-transforms.md)                 |
-| [reflection-serialization.md](design/core-runtime/reflection-serialization.md) |
-| [events-plugins.md](design/core-runtime/events-plugins.md)                     |
-| [memory-async-io.md](design/core-runtime/memory-async-io.md)                   |
-| [spatial-index.md](design/core-runtime/spatial-index.md)                       |
-| [shared-primitives.md](design/core-runtime/shared-primitives.md)               |
-
-1. **[ecs.md](design/core-runtime/ecs.md)** —
-   [ecs-test-cases.md](design/core-runtime/ecs-test-cases.md)
-2. **[scene-transforms.md](design/core-runtime/scene-transforms.md)** —
-   [scene-transforms-test-cases.md](design/core-runtime/scene-transforms-test-cases.md)
-3. **[reflection-serialization.md](design/core-runtime/reflection-serialization.md)** —
-   [reflection-serialization-test-cases.md](design/core-runtime/reflection-serialization-test-cases.md)
-4. **[events-plugins.md](design/core-runtime/events-plugins.md)** —
-   [events-plugins-test-cases.md](design/core-runtime/events-plugins-test-cases.md)
-5. **[memory-async-io.md](design/core-runtime/memory-async-io.md)** —
-   [memory-async-io-test-cases.md](design/core-runtime/memory-async-io-test-cases.md)
-6. **[spatial-index.md](design/core-runtime/spatial-index.md)** —
-   [spatial-index-test-cases.md](design/core-runtime/spatial-index-test-cases.md)
-7. **[shared-primitives.md](design/core-runtime/shared-primitives.md)** —
-   [shared-primitives-test-cases.md](design/core-runtime/shared-primitives-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [ecs.md](design/core-runtime/ecs.md) | [ecs-test-cases.md](design/core-runtime/ecs-test-cases.md) |
+| [game-loop.md](design/core-runtime/game-loop.md) | [game-loop-test-cases.md](design/core-runtime/game-loop-test-cases.md) |
+| [scene-transforms.md](design/core-runtime/scene-transforms.md) | [scene-transforms-test-cases.md](design/core-runtime/scene-transforms-test-cases.md) |
+| [reflection-serialization.md](design/core-runtime/reflection-serialization.md) | [reflection-serialization-test-cases.md](design/core-runtime/reflection-serialization-test-cases.md) |
+| [events-plugins.md](design/core-runtime/events-plugins.md) | [events-plugins-test-cases.md](design/core-runtime/events-plugins-test-cases.md) |
+| [memory-async-io.md](design/core-runtime/memory-async-io.md) | [memory-async-io-test-cases.md](design/core-runtime/memory-async-io-test-cases.md) |
+| [spatial-index.md](design/core-runtime/spatial-index.md) | [spatial-index-test-cases.md](design/core-runtime/spatial-index-test-cases.md) |
+| [shared-primitives.md](design/core-runtime/shared-primitives.md) | [shared-primitives-test-cases.md](design/core-runtime/shared-primitives-test-cases.md) |
 
 #### Features
 
@@ -301,40 +469,233 @@ graph TB
 
 ---
 
-### Rendering
+### Data Systems
 
-GPU abstraction, render graph, core rendering, lighting, post-processing, ray tracing,
-environment/character rendering, and stylized materials.
+Generic composable primitives for all gameplay data. Users wire these together in visual editors to
+build quests, abilities, inventories, progression, and any other gameplay.
+
+```mermaid
+graph TB
+    subgraph "Data Systems"
+        DG[Directed Graphs]
+        DT[Data Tables]
+        AE[Attributes / Effects]
+        CS[Containers / Slots]
+    end
+
+    DG --> ECS[ECS] & PR[Shared Primitives]
+    DT --> ECS & RF[Reflection]
+    AE --> ECS & PR
+    CS --> ECS & PR
+```
 
 #### Design Documents
 
-| Design                                                                |
-|-----------------------------------------------------------------------|
-| [gpu-abstraction.md](design/rendering/gpu-abstraction.md)             |
-| [render-graph.md](design/rendering/render-graph.md)                   |
-| [core-rendering.md](design/rendering/core-rendering.md)               |
-| [lighting.md](design/rendering/lighting.md)                           |
-| [post-processing.md](design/rendering/post-processing.md)             |
-| [advanced.md](design/rendering/advanced.md)                           |
-| [environment-character.md](design/rendering/environment-character.md) |
-| [stylized-materials.md](design/rendering/stylized-materials.md)       |
+| Design | Test Cases |
+|--------|------------|
+| [directed-graphs.md](design/data-systems/directed-graphs.md) | [directed-graphs-test-cases.md](design/data-systems/directed-graphs-test-cases.md) |
+| [data-tables.md](design/data-systems/data-tables.md) | [data-tables-test-cases.md](design/data-systems/data-tables-test-cases.md) |
+| [attributes-effects.md](design/data-systems/attributes-effects.md) | [attributes-effects-test-cases.md](design/data-systems/attributes-effects-test-cases.md) |
+| [containers-slots.md](design/data-systems/containers-slots.md) | [containers-slots-test-cases.md](design/data-systems/containers-slots-test-cases.md) |
 
-1. **[gpu-abstraction.md](design/rendering/gpu-abstraction.md)** —
-   [gpu-abstraction-test-cases.md](design/rendering/gpu-abstraction-test-cases.md)
-2. **[render-graph.md](design/rendering/render-graph.md)** —
-   [render-graph-test-cases.md](design/rendering/render-graph-test-cases.md)
-3. **[core-rendering.md](design/rendering/core-rendering.md)** —
-   [core-rendering-test-cases.md](design/rendering/core-rendering-test-cases.md)
-4. **[lighting.md](design/rendering/lighting.md)** —
-   [lighting-test-cases.md](design/rendering/lighting-test-cases.md)
-5. **[post-processing.md](design/rendering/post-processing.md)** —
-   [post-processing-test-cases.md](design/rendering/post-processing-test-cases.md)
-6. **[advanced.md](design/rendering/advanced.md)** —
-   [advanced-test-cases.md](design/rendering/advanced-test-cases.md)
-7. **[environment-character.md](design/rendering/environment-character.md)** —
-   [environment-character-test-cases.md](design/rendering/environment-character-test-cases.md)
-8. **[stylized-materials.md](design/rendering/stylized-materials.md)** —
-   [stylized-materials-test-cases.md](design/rendering/stylized-materials-test-cases.md)
+#### Features
+
+| Feature |
+|---------|
+| [gameplay-primitives.md](features/game-framework/gameplay-primitives.md) |
+| [gameplay-databases.md](features/game-framework/gameplay-databases.md) |
+| [abilities.md](features/game-framework/abilities.md) |
+| [inventory.md](features/game-framework/inventory.md) |
+| [weapon-system.md](features/game-framework/weapon-system.md) |
+| [quest-dialogue.md](features/game-framework/quest-dialogue.md) |
+| [progression.md](features/game-framework/progression.md) |
+| [building-survival.md](features/game-framework/building-survival.md) |
+| [block-voxel.md](features/game-framework/block-voxel.md) |
+| [character-customization.md](features/game-framework/character-customization.md) |
+| [pets-mounts.md](features/game-framework/pets-mounts.md) |
+| [monetization.md](features/game-framework/monetization.md) |
+| [turn-based.md](features/game-framework/turn-based.md) |
+| [minigames.md](features/game-framework/minigames.md) |
+| [racing.md](features/game-framework/racing.md) |
+
+#### Requirements
+
+| Requirement |
+|-------------|
+| [gameplay-primitives.md](requirements/game-framework/gameplay-primitives.md) |
+| [gameplay-databases.md](requirements/game-framework/gameplay-databases.md) |
+| [abilities.md](requirements/game-framework/abilities.md) |
+| [inventory.md](requirements/game-framework/inventory.md) |
+| [weapon-system.md](requirements/game-framework/weapon-system.md) |
+| [quest-dialogue.md](requirements/game-framework/quest-dialogue.md) |
+| [progression.md](requirements/game-framework/progression.md) |
+| [building-survival.md](requirements/game-framework/building-survival.md) |
+| [block-voxel.md](requirements/game-framework/block-voxel.md) |
+| [character-customization.md](requirements/game-framework/character-customization.md) |
+| [pets-mounts.md](requirements/game-framework/pets-mounts.md) |
+| [monetization.md](requirements/game-framework/monetization.md) |
+| [turn-based.md](requirements/game-framework/turn-based.md) |
+| [minigames.md](requirements/game-framework/minigames.md) |
+| [racing.md](requirements/game-framework/racing.md) |
+
+#### User Stories
+
+| User Story |
+|------------|
+| [gameplay-primitives.md](user-stories/game-framework/gameplay-primitives.md) |
+| [gameplay-databases.md](user-stories/game-framework/gameplay-databases.md) |
+| [abilities.md](user-stories/game-framework/abilities.md) |
+| [inventory.md](user-stories/game-framework/inventory.md) |
+| [weapon-system.md](user-stories/game-framework/weapon-system.md) |
+| [quest-dialogue.md](user-stories/game-framework/quest-dialogue.md) |
+| [progression.md](user-stories/game-framework/progression.md) |
+| [building-survival.md](user-stories/game-framework/building-survival.md) |
+| [block-voxel.md](user-stories/game-framework/block-voxel.md) |
+| [character-customization.md](user-stories/game-framework/character-customization.md) |
+| [pets-mounts.md](user-stories/game-framework/pets-mounts.md) |
+| [monetization.md](user-stories/game-framework/monetization.md) |
+| [turn-based.md](user-stories/game-framework/turn-based.md) |
+| [minigames.md](user-stories/game-framework/minigames.md) |
+| [racing.md](user-stories/game-framework/racing.md) |
+
+---
+
+### Simulation
+
+Generic simulation primitives for world state: spatial grids, awareness systems, timelines, and
+event memory.
+
+```mermaid
+graph TB
+    subgraph "Simulation"
+        GV[Grids / Volumes]
+        SA[Spatial Awareness]
+        TL[Timelines]
+        EL[Event Logs]
+    end
+
+    GV --> ECS[ECS] & SI[Spatial Index]
+    SA --> ECS & SI
+    TL --> ECS & EV[Events]
+    EL --> ECS & EV
+```
+
+#### Design Documents
+
+| Design | Test Cases |
+|--------|------------|
+| [grids-volumes.md](design/simulation/grids-volumes.md) | [grids-volumes-test-cases.md](design/simulation/grids-volumes-test-cases.md) |
+| [spatial-awareness.md](design/simulation/spatial-awareness.md) | [spatial-awareness-test-cases.md](design/simulation/spatial-awareness-test-cases.md) |
+| [timelines.md](design/simulation/timelines.md) | [timelines-test-cases.md](design/simulation/timelines-test-cases.md) |
+| [event-logs.md](design/simulation/event-logs.md) | [event-logs-test-cases.md](design/simulation/event-logs-test-cases.md) |
+
+#### Features
+
+| Feature |
+|---------|
+| [npc-simulation.md](features/game-framework/npc-simulation.md) |
+| [fog-of-war.md](features/game-framework/fog-of-war.md) |
+| [stealth-cover.md](features/game-framework/stealth-cover.md) |
+| [perception.md](features/ai/perception.md) |
+| [selection-system.md](features/game-framework/selection-system.md) |
+| [cinematics.md](features/game-framework/cinematics.md) |
+| [social.md](features/game-framework/social.md) |
+
+#### Requirements
+
+| Requirement |
+|-------------|
+| [npc-simulation.md](requirements/game-framework/npc-simulation.md) |
+| [fog-of-war.md](requirements/game-framework/fog-of-war.md) |
+| [stealth-cover.md](requirements/game-framework/stealth-cover.md) |
+| [perception.md](requirements/ai/perception.md) |
+| [selection-system.md](requirements/game-framework/selection-system.md) |
+| [cinematics.md](requirements/game-framework/cinematics.md) |
+| [social.md](requirements/game-framework/social.md) |
+
+#### User Stories
+
+| User Story |
+|------------|
+| [npc-simulation.md](user-stories/game-framework/npc-simulation.md) |
+| [fog-of-war.md](user-stories/game-framework/fog-of-war.md) |
+| [stealth-cover.md](user-stories/game-framework/stealth-cover.md) |
+| [perception.md](user-stories/ai/perception.md) |
+| [selection-system.md](user-stories/game-framework/selection-system.md) |
+| [cinematics.md](user-stories/game-framework/cinematics.md) |
+| [social.md](user-stories/game-framework/social.md) |
+
+---
+
+### Game Framework
+
+Camera system, save/load persistence, and visual scripting runtime. All other gameplay is composed
+from Data Systems and Simulation primitives.
+
+```mermaid
+graph TB
+    subgraph "Game Framework"
+        CAM[Camera]
+        SAV[Save System]
+        SCR[Scripting]
+    end
+```
+
+#### Design Documents
+
+| Design | Test Cases |
+|--------|------------|
+| [camera.md](design/game-framework/camera.md) | [camera-test-cases.md](design/game-framework/camera-test-cases.md) |
+| [save-system.md](design/game-framework/save-system.md) | [save-system-test-cases.md](design/game-framework/save-system-test-cases.md) |
+| [scripting.md](design/game-framework/scripting.md) | [scripting-test-cases.md](design/game-framework/scripting-test-cases.md) |
+
+#### Features
+
+| Feature |
+|---------|
+| [camera-system.md](features/game-framework/camera-system.md) |
+| [save-system.md](features/game-framework/save-system.md) |
+| [scripting.md](features/game-framework/scripting.md) |
+| [traversal-interaction.md](features/game-framework/traversal-interaction.md) |
+| [game-modes-misc.md](features/game-framework/game-modes-misc.md) |
+| [world-management.md](features/game-framework/world-management.md) |
+
+#### Requirements
+
+| Requirement |
+|-------------|
+| [camera-system.md](requirements/game-framework/camera-system.md) |
+| [save-system.md](requirements/game-framework/save-system.md) |
+| [scripting.md](requirements/game-framework/scripting.md) |
+| [traversal-interaction.md](requirements/game-framework/traversal-interaction.md) |
+| [game-modes-misc.md](requirements/game-framework/game-modes-misc.md) |
+| [world-management.md](requirements/game-framework/world-management.md) |
+
+#### User Stories
+
+| User Story |
+|------------|
+| [camera-system.md](user-stories/game-framework/camera-system.md) |
+| [save-system.md](user-stories/game-framework/save-system.md) |
+| [scripting.md](user-stories/game-framework/scripting.md) |
+| [traversal-interaction.md](user-stories/game-framework/traversal-interaction.md) |
+| [game-modes-misc.md](user-stories/game-framework/game-modes-misc.md) |
+| [world-management.md](user-stories/game-framework/world-management.md) |
+
+---
+
+### Rendering
+
+GPU abstraction, render graph, core rendering, lighting, post-processing, and material models.
+
+#### Design Documents
+
+| Design | Test Cases |
+|--------|------------|
+| [render-pipeline.md](design/rendering/render-pipeline.md) | [render-pipeline-test-cases.md](design/rendering/render-pipeline-test-cases.md) |
+| [rendering-core.md](design/rendering/rendering-core.md) | [rendering-core-test-cases.md](design/rendering/rendering-core-test-cases.md) |
+| [render-effects.md](design/rendering/render-effects.md) | [render-effects-test-cases.md](design/rendering/render-effects-test-cases.md) |
+| [render-styles.md](design/rendering/render-styles.md) | [render-styles-test-cases.md](design/rendering/render-styles-test-cases.md) |
 
 #### Features
 
@@ -395,24 +756,10 @@ Asset import, processing, streaming, hot reload, DCC plugins, and asset versioni
 
 #### Design Documents
 
-| Design                                                         |
-|----------------------------------------------------------------|
-| [asset-import.md](design/content-pipeline/asset-import.md)     |
-| [processing.md](design/content-pipeline/processing.md)         |
-| [streaming.md](design/content-pipeline/streaming.md)           |
-| [hot-reload.md](design/content-pipeline/hot-reload.md)         |
-| [dcc-versioning.md](design/content-pipeline/dcc-versioning.md) |
-
-1. **[asset-import.md](design/content-pipeline/asset-import.md)** —
-   [asset-import-test-cases.md](design/content-pipeline/asset-import-test-cases.md)
-2. **[processing.md](design/content-pipeline/processing.md)** —
-   [processing-test-cases.md](design/content-pipeline/processing-test-cases.md)
-3. **[streaming.md](design/content-pipeline/streaming.md)** —
-   [streaming-test-cases.md](design/content-pipeline/streaming-test-cases.md)
-4. **[hot-reload.md](design/content-pipeline/hot-reload.md)** —
-   [hot-reload-test-cases.md](design/content-pipeline/hot-reload-test-cases.md)
-5. **[dcc-versioning.md](design/content-pipeline/dcc-versioning.md)** —
-   [dcc-versioning-test-cases.md](design/content-pipeline/dcc-versioning-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [asset-pipeline.md](design/content-pipeline/asset-pipeline.md) | [asset-pipeline-test-cases.md](design/content-pipeline/asset-pipeline-test-cases.md) |
+| [asset-processing.md](design/content-pipeline/asset-processing.md) | [asset-processing-test-cases.md](design/content-pipeline/asset-processing-test-cases.md) |
 
 #### Features
 
@@ -454,23 +801,15 @@ Asset import, processing, streaming, hot reload, DCC plugins, and asset versioni
 
 ### Physics
 
-Rigid body dynamics, collision detection, constraints, spatial queries, vehicles, destruction, soft
-body, and fluids.
+Rigid body dynamics, collision, constraints, destruction, soft body, fluids, and vehicles.
 
 #### Design Documents
 
-| Design                                          |
-|-------------------------------------------------|
-| [foundation.md](design/physics/foundation.md)   |
-| [constraints.md](design/physics/constraints.md) |
-| [advanced.md](design/physics/advanced.md)       |
-
-1. **[foundation.md](design/physics/foundation.md)** —
-   [foundation-test-cases.md](design/physics/foundation-test-cases.md)
-2. **[constraints.md](design/physics/constraints.md)** —
-   [constraints-test-cases.md](design/physics/constraints-test-cases.md)
-3. **[advanced.md](design/physics/advanced.md)** —
-   [advanced-test-cases.md](design/physics/advanced-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [foundation.md](design/physics/foundation.md) | [foundation-test-cases.md](design/physics/foundation-test-cases.md) |
+| [constraints.md](design/physics/constraints.md) | [constraints-test-cases.md](design/physics/constraints-test-cases.md) |
+| [advanced.md](design/physics/advanced.md) | [advanced-test-cases.md](design/physics/advanced-test-cases.md) |
 
 #### Features
 
@@ -515,19 +854,13 @@ body, and fluids.
 
 ### Input
 
-Device abstraction, action mapping, gesture recognition, haptics, and VR input.
+Device abstraction, action mapping, gestures, haptics, and VR input.
 
 #### Design Documents
 
-| Design                                                  |
-|---------------------------------------------------------|
-| [devices-actions.md](design/input/devices-actions.md)   |
-| [gestures-haptics.md](design/input/gestures-haptics.md) |
-
-1. **[devices-actions.md](design/input/devices-actions.md)** —
-   [devices-actions-test-cases.md](design/input/devices-actions-test-cases.md)
-2. **[gestures-haptics.md](design/input/gestures-haptics.md)** —
-   [gestures-haptics-test-cases.md](design/input/gestures-haptics-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [input.md](design/input/input.md) | [input-test-cases.md](design/input/input-test-cases.md) |
 
 #### Features
 
@@ -563,19 +896,13 @@ Device abstraction, action mapping, gesture recognition, haptics, and VR input.
 
 ### Audio
 
-Audio engine, spatial audio, DSP effects, adaptive music, and voice chat.
+Audio engine, spatial audio, DSP effects, and adaptive music.
 
 #### Design Documents
 
-| Design                                    |
-|-------------------------------------------|
-| [engine.md](design/audio/engine.md)       |
-| [dsp-music.md](design/audio/dsp-music.md) |
-
-1. **[engine.md](design/audio/engine.md)** —
-   [engine-test-cases.md](design/audio/engine-test-cases.md)
-2. **[dsp-music.md](design/audio/dsp-music.md)** —
-   [dsp-music-test-cases.md](design/audio/dsp-music-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [audio.md](design/audio/audio.md) | [audio-test-cases.md](design/audio/audio-test-cases.md) |
 
 #### Features
 
@@ -611,29 +938,15 @@ Audio engine, spatial audio, DSP effects, adaptive music, and voice chat.
 
 ### Animation
 
-Skeletal animation, state machines, blend spaces, procedural animation, IK, cloth/hair, and
-first-person animation.
+Skeletal animation, state machines, procedural animation (IK, cloth, hair, springs, first-person).
 
 #### Design Documents
 
-| Design                                                |
-|-------------------------------------------------------|
-| [skeletal.md](design/animation/skeletal.md)           |
-| [state-machine.md](design/animation/state-machine.md) |
-| [procedural.md](design/animation/procedural.md)       |
-| [cloth-hair.md](design/animation/cloth-hair.md)       |
-| [first-person.md](design/animation/first-person.md)   |
-
-1. **[skeletal.md](design/animation/skeletal.md)** —
-   [skeletal-test-cases.md](design/animation/skeletal-test-cases.md)
-2. **[state-machine.md](design/animation/state-machine.md)** —
-   [state-machine-test-cases.md](design/animation/state-machine-test-cases.md)
-3. **[procedural.md](design/animation/procedural.md)** —
-   [procedural-test-cases.md](design/animation/procedural-test-cases.md)
-4. **[cloth-hair.md](design/animation/cloth-hair.md)** —
-   [cloth-hair-test-cases.md](design/animation/cloth-hair-test-cases.md)
-5. **[first-person.md](design/animation/first-person.md)** —
-   [first-person-test-cases.md](design/animation/first-person-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [skeletal.md](design/animation/skeletal.md) | [skeletal-test-cases.md](design/animation/skeletal-test-cases.md) |
+| [state-machine.md](design/animation/state-machine.md) | [state-machine-test-cases.md](design/animation/state-machine-test-cases.md) |
+| [procedural.md](design/animation/procedural.md) | [procedural-test-cases.md](design/animation/procedural-test-cases.md) |
 
 #### Features
 
@@ -645,6 +958,7 @@ first-person animation.
 | [procedural.md](features/animation/procedural.md) |
 | [cloth-hair.md](features/animation/cloth-hair.md) |
 | [first-person.md](features/animation/first-person.md) |
+| [motion-matching.md](features/animation/motion-matching.md) |
 
 #### Requirements
 
@@ -656,6 +970,7 @@ first-person animation.
 | [procedural.md](requirements/animation/procedural.md) |
 | [cloth-hair.md](requirements/animation/cloth-hair.md) |
 | [first-person.md](requirements/animation/first-person.md) |
+| [motion-matching.md](requirements/animation/motion-matching.md) |
 
 #### User Stories
 
@@ -667,97 +982,74 @@ first-person animation.
 | [procedural.md](user-stories/animation/procedural.md) |
 | [cloth-hair.md](user-stories/animation/cloth-hair.md) |
 | [first-person.md](user-stories/animation/first-person.md) |
+| [motion-matching.md](user-stories/animation/motion-matching.md) |
 
 ---
 
 ### AI
 
-Navigation, behavior trees, utility AI, GOAP, perception, steering, and crowd simulation.
+Behavior trees, utility AI, GOAP, navigation, pathfinding, steering, and crowd simulation.
 
 #### Design Documents
 
-| Design                                             |
-|----------------------------------------------------|
-| [navigation.md](design/ai/navigation.md)           |
-| [behavior.md](design/ai/behavior.md)               |
-| [perception.md](design/ai/perception.md)           |
-| [steering-crowds.md](design/ai/steering-crowds.md) |
-
-1. **[navigation.md](design/ai/navigation.md)** —
-   [navigation-test-cases.md](design/ai/navigation-test-cases.md)
-2. **[behavior.md](design/ai/behavior.md)** —
-   [behavior-test-cases.md](design/ai/behavior-test-cases.md)
-3. **[perception.md](design/ai/perception.md)** —
-   [perception-test-cases.md](design/ai/perception-test-cases.md)
-4. **[steering-crowds.md](design/ai/steering-crowds.md)** —
-   [steering-crowds-test-cases.md](design/ai/steering-crowds-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [behavior.md](design/ai/behavior.md) | [behavior-test-cases.md](design/ai/behavior-test-cases.md) |
+| [navigation.md](design/ai/navigation.md) | [navigation-test-cases.md](design/ai/navigation-test-cases.md) |
+| [steering-crowds.md](design/ai/steering-crowds.md) | [steering-crowds-test-cases.md](design/ai/steering-crowds-test-cases.md) |
 
 #### Features
 
 | Feature |
 |---------|
-| [navigation.md](features/ai/navigation.md) |
 | [behavior-trees.md](features/ai/behavior-trees.md) |
 | [utility-ai.md](features/ai/utility-ai.md) |
 | [goap.md](features/ai/goap.md) |
-| [perception.md](features/ai/perception.md) |
+| [navigation.md](features/ai/navigation.md) |
 | [steering-avoidance.md](features/ai/steering-avoidance.md) |
 | [crowd-simulation.md](features/ai/crowd-simulation.md) |
 | [tactical-combat.md](features/ai/tactical-combat.md) |
+| [perception.md](features/ai/perception.md) |
 
 #### Requirements
 
 | Requirement |
 |-------------|
-| [navigation.md](requirements/ai/navigation.md) |
 | [behavior-trees.md](requirements/ai/behavior-trees.md) |
 | [utility-ai.md](requirements/ai/utility-ai.md) |
 | [goap.md](requirements/ai/goap.md) |
-| [perception.md](requirements/ai/perception.md) |
+| [navigation.md](requirements/ai/navigation.md) |
 | [steering-avoidance.md](requirements/ai/steering-avoidance.md) |
 | [crowd-simulation.md](requirements/ai/crowd-simulation.md) |
 | [tactical-combat.md](requirements/ai/tactical-combat.md) |
+| [perception.md](requirements/ai/perception.md) |
 
 #### User Stories
 
 | User Story |
 |------------|
-| [navigation.md](user-stories/ai/navigation.md) |
 | [behavior-trees.md](user-stories/ai/behavior-trees.md) |
 | [utility-ai.md](user-stories/ai/utility-ai.md) |
 | [goap.md](user-stories/ai/goap.md) |
-| [perception.md](user-stories/ai/perception.md) |
+| [navigation.md](user-stories/ai/navigation.md) |
 | [steering-avoidance.md](user-stories/ai/steering-avoidance.md) |
 | [crowd-simulation.md](user-stories/ai/crowd-simulation.md) |
 | [tactical-combat.md](user-stories/ai/tactical-combat.md) |
-| [non-functional.md](user-stories/networking/non-functional.md) |
+| [perception.md](user-stories/ai/perception.md) |
 
 ---
 
 ### Networking
 
-Transport layer, state replication, prediction/rollback, sessions, replay, MMO infrastructure, and
-anti-cheat.
+Transport, state replication, sessions, replay, voice chat, server infrastructure, and anti-cheat.
 
 #### Design Documents
 
-| Design                                                     |
-|------------------------------------------------------------|
-| [transport.md](design/networking/transport.md)             |
-| [replication.md](design/networking/replication.md)         |
-| [sessions-replay.md](design/networking/sessions-replay.md) |
-| [mmo.md](design/networking/mmo.md)                         |
-| [anti-cheat.md](design/networking/anti-cheat.md)           |
-
-1. **[transport.md](design/networking/transport.md)** —
-   [transport-test-cases.md](design/networking/transport-test-cases.md)
-2. **[replication.md](design/networking/replication.md)** —
-   [replication-test-cases.md](design/networking/replication-test-cases.md)
-3. **[sessions-replay.md](design/networking/sessions-replay.md)** —
-   [sessions-replay-test-cases.md](design/networking/sessions-replay-test-cases.md)
-4. **[mmo.md](design/networking/mmo.md)** — [mmo-test-cases.md](design/networking/mmo-test-cases.md)
-5. **[anti-cheat.md](design/networking/anti-cheat.md)** —
-   [anti-cheat-test-cases.md](design/networking/anti-cheat-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [network-transport.md](design/networking/network-transport.md) | [network-transport-test-cases.md](design/networking/network-transport-test-cases.md) |
+| [network-services.md](design/networking/network-services.md) | [network-services-test-cases.md](design/networking/network-services-test-cases.md) |
+| [network-infrastructure.md](design/networking/network-infrastructure.md) | [network-infrastructure-test-cases.md](design/networking/network-infrastructure-test-cases.md) |
 
 #### Features
 
@@ -769,6 +1061,7 @@ anti-cheat.
 | [remote-procedure-calls.md](features/networking/remote-procedure-calls.md) |
 | [session-management.md](features/networking/session-management.md) |
 | [replay-system.md](features/networking/replay-system.md) |
+| [communication.md](features/networking/communication.md) |
 | [mmo-infrastructure.md](features/networking/mmo-infrastructure.md) |
 | [anti-cheat.md](features/networking/anti-cheat.md) |
 
@@ -782,6 +1075,7 @@ anti-cheat.
 | [remote-procedure-calls.md](requirements/networking/remote-procedure-calls.md) |
 | [session-management.md](requirements/networking/session-management.md) |
 | [replay-system.md](requirements/networking/replay-system.md) |
+| [communication.md](requirements/networking/communication.md) |
 | [mmo-infrastructure.md](requirements/networking/mmo-infrastructure.md) |
 | [anti-cheat.md](requirements/networking/anti-cheat.md) |
 
@@ -795,6 +1089,7 @@ anti-cheat.
 | [remote-procedure-calls.md](user-stories/networking/remote-procedure-calls.md) |
 | [session-management.md](user-stories/networking/session-management.md) |
 | [replay-system.md](user-stories/networking/replay-system.md) |
+| [communication.md](user-stories/networking/communication.md) |
 | [mmo-infrastructure.md](user-stories/networking/mmo-infrastructure.md) |
 | [anti-cheat.md](user-stories/networking/anti-cheat.md) |
 
@@ -802,82 +1097,106 @@ anti-cheat.
 
 ### Geometry
 
-Meshlet pipeline, terrain, foliage, water, sky, and procedural generation.
+World geometry, terrain, meshlets, environment rendering, and procedural generation.
 
 #### Design Documents
 
-| Design                                                               |
-|----------------------------------------------------------------------|
-| [meshlets.md](design/geometry/meshlets.md)                           |
-| [terrain.md](design/geometry/terrain.md)                             |
-| [environment.md](design/geometry/environment.md)                     |
-| [procedural-generation.md](design/geometry/procedural-generation.md) |
-
-1. **[meshlets.md](design/geometry/meshlets.md)** —
-   [meshlets-test-cases.md](design/geometry/meshlets-test-cases.md)
-2. **[terrain.md](design/geometry/terrain.md)** —
-   [terrain-test-cases.md](design/geometry/terrain-test-cases.md)
-3. **[environment.md](design/geometry/environment.md)** —
-   [environment-test-cases.md](design/geometry/environment-test-cases.md)
-4. **[procedural-generation.md](design/geometry/procedural-generation.md)** —
-   [procedural-generation-test-cases.md](design/geometry/procedural-generation-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [world-geometry.md](design/geometry/world-geometry.md) | [world-geometry-test-cases.md](design/geometry/world-geometry-test-cases.md) |
+| [procedural-generation.md](design/geometry/procedural-generation.md) | [procedural-generation-test-cases.md](design/geometry/procedural-generation-test-cases.md) |
 
 #### Features
 
 | Feature |
 |---------|
-| [meshlet-pipeline.md](features/geometry-world/meshlet-pipeline.md) |
 | [terrain.md](features/geometry-world/terrain.md) |
 | [foliage.md](features/geometry-world/foliage.md) |
 | [water.md](features/geometry-world/water.md) |
 | [sky-atmosphere.md](features/geometry-world/sky-atmosphere.md) |
+| [meshlet-pipeline.md](features/geometry-world/meshlet-pipeline.md) |
 | [procedural-generation.md](features/geometry-world/procedural-generation.md) |
 
 #### Requirements
 
 | Requirement |
 |-------------|
-| [meshlet-pipeline.md](requirements/geometry-world/meshlet-pipeline.md) |
 | [terrain.md](requirements/geometry-world/terrain.md) |
 | [foliage.md](requirements/geometry-world/foliage.md) |
 | [water.md](requirements/geometry-world/water.md) |
 | [sky-atmosphere.md](requirements/geometry-world/sky-atmosphere.md) |
+| [meshlet-pipeline.md](requirements/geometry-world/meshlet-pipeline.md) |
 | [procedural-generation.md](requirements/geometry-world/procedural-generation.md) |
 
 #### User Stories
 
 | User Story |
 |------------|
-| [meshlet-pipeline.md](user-stories/geometry-world/meshlet-pipeline.md) |
 | [terrain.md](user-stories/geometry-world/terrain.md) |
 | [foliage.md](user-stories/geometry-world/foliage.md) |
 | [water.md](user-stories/geometry-world/water.md) |
 | [sky-atmosphere.md](user-stories/geometry-world/sky-atmosphere.md) |
+| [meshlet-pipeline.md](user-stories/geometry-world/meshlet-pipeline.md) |
 | [procedural-generation.md](user-stories/geometry-world/procedural-generation.md) |
+
+---
+
+### VFX
+
+Particle systems, effect graphs, decals, screen effects, and weather.
+
+#### Design Documents
+
+| Design | Test Cases |
+|--------|------------|
+| [particles.md](design/vfx/particles.md) | [particles-test-cases.md](design/vfx/particles-test-cases.md) |
+| [effects.md](design/vfx/effects.md) | [effects-test-cases.md](design/vfx/effects-test-cases.md) |
+
+#### Features
+
+| Feature |
+|---------|
+| [particles.md](features/vfx/particles.md) |
+| [effect-graph.md](features/vfx/effect-graph.md) |
+| [decals.md](features/vfx/decals.md) |
+| [screen-effects.md](features/vfx/screen-effects.md) |
+| [weather-environmental.md](features/vfx/weather-environmental.md) |
+| [destruction.md](features/vfx/destruction.md) |
+
+#### Requirements
+
+| Requirement |
+|-------------|
+| [particles.md](requirements/vfx/particles.md) |
+| [effect-graph.md](requirements/vfx/effect-graph.md) |
+| [decals.md](requirements/vfx/decals.md) |
+| [screen-effects.md](requirements/vfx/screen-effects.md) |
+| [weather-environmental.md](requirements/vfx/weather-environmental.md) |
+| [destruction.md](requirements/vfx/destruction.md) |
+
+#### User Stories
+
+| User Story |
+|------------|
+| [particles.md](user-stories/vfx/particles.md) |
+| [effect-graph.md](user-stories/vfx/effect-graph.md) |
+| [decals.md](user-stories/vfx/decals.md) |
+| [screen-effects.md](user-stories/vfx/screen-effects.md) |
+| [weather-environmental.md](user-stories/vfx/weather-environmental.md) |
+| [destruction.md](user-stories/vfx/destruction.md) |
 
 ---
 
 ### UI
 
-Widget framework, common widgets, HUD, game UI, 2D games (sprites, tilemaps), and accessibility.
+Widget framework, HUD, 2D games, and accessibility.
 
 #### Design Documents
 
-| Design                                               |
-|------------------------------------------------------|
-| [widget-framework.md](design/ui/widget-framework.md) |
-| [hud-widgets.md](design/ui/hud-widgets.md)           |
-| [2d-games.md](design/ui/2d-games.md)                 |
-| [accessibility.md](design/ui/accessibility.md)       |
-
-1. **[widget-framework.md](design/ui/widget-framework.md)** —
-   [widget-framework-test-cases.md](design/ui/widget-framework-test-cases.md)
-2. **[hud-widgets.md](design/ui/hud-widgets.md)** —
-   [hud-widgets-test-cases.md](design/ui/hud-widgets-test-cases.md)
-3. **[2d-games.md](design/ui/2d-games.md)** —
-   [2d-games-test-cases.md](design/ui/2d-games-test-cases.md)
-4. **[accessibility.md](design/ui/accessibility.md)** —
-   [accessibility-test-cases.md](design/ui/accessibility-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [ui-framework.md](design/ui/ui-framework.md) | [ui-framework-test-cases.md](design/ui/ui-framework-test-cases.md) |
+| [ui-specialized.md](design/ui/ui-specialized.md) | [ui-specialized-test-cases.md](design/ui/ui-specialized-test-cases.md) |
 
 #### Features
 
@@ -914,270 +1233,29 @@ Widget framework, common widgets, HUD, game UI, 2D games (sprites, tilemaps), an
 
 ---
 
-### VFX
-
-GPU particles, decals, screen effects, weather, destruction VFX, and node-based effect graph editor.
-
-#### Design Documents
-
-| Design                                        |
-|-----------------------------------------------|
-| [particles.md](design/vfx/particles.md)       |
-| [effects.md](design/vfx/effects.md)           |
-| [effect-graph.md](design/vfx/effect-graph.md) |
-
-1. **[particles.md](design/vfx/particles.md)** —
-   [particles-test-cases.md](design/vfx/particles-test-cases.md)
-2. **[effects.md](design/vfx/effects.md)** —
-   [effects-test-cases.md](design/vfx/effects-test-cases.md)
-3. **[effect-graph.md](design/vfx/effect-graph.md)** —
-   [effect-graph-test-cases.md](design/vfx/effect-graph-test-cases.md)
-
-#### Features
-
-| Feature |
-|---------|
-| [particles.md](features/vfx/particles.md) |
-| [decals.md](features/vfx/decals.md) |
-| [screen-effects.md](features/vfx/screen-effects.md) |
-| [weather-environmental.md](features/vfx/weather-environmental.md) |
-| [destruction.md](features/vfx/destruction.md) |
-| [effect-graph.md](features/vfx/effect-graph.md) |
-
-#### Requirements
-
-| Requirement |
-|-------------|
-| [particles.md](requirements/vfx/particles.md) |
-| [decals.md](requirements/vfx/decals.md) |
-| [screen-effects.md](requirements/vfx/screen-effects.md) |
-| [weather-environmental.md](requirements/vfx/weather-environmental.md) |
-| [destruction.md](requirements/vfx/destruction.md) |
-| [effect-graph.md](requirements/vfx/effect-graph.md) |
-
-#### User Stories
-
-| User Story |
-|------------|
-| [particles.md](user-stories/vfx/particles.md) |
-| [decals.md](user-stories/vfx/decals.md) |
-| [screen-effects.md](user-stories/vfx/screen-effects.md) |
-| [weather-environmental.md](user-stories/vfx/weather-environmental.md) |
-| [destruction.md](user-stories/vfx/destruction.md) |
-| [effect-graph.md](user-stories/vfx/effect-graph.md) |
-
----
-
-### Game Framework
-
-Gameplay primitives, save/load, cinematics, scripting, quests, dialogue, databases, abilities,
-combat, containers, meters, selection, perception, progression, simulation, destruction, and camera.
-
-#### Design Documents
-
-| Design                                                               |
-|----------------------------------------------------------------------|
-| [primitives.md](design/game-framework/primitives.md)                     |
-| [save-cinematics.md](design/game-framework/save-cinematics.md)           |
-| [scripting.md](design/game-framework/scripting.md)                       |
-| [quest-dialogue.md](design/game-framework/quest-dialogue.md)             |
-| [databases.md](design/game-framework/databases.md)                       |
-| [abilities-combat.md](design/game-framework/abilities-combat.md)         |
-| [containers-sockets.md](design/game-framework/containers-sockets.md)     |
-| [meters-resources.md](design/game-framework/meters-resources.md)         |
-| [selection.md](design/game-framework/selection.md)                       |
-| [perception.md](design/game-framework/perception.md)                     |
-| [progression.md](design/game-framework/progression.md)                   |
-| [simulation.md](design/game-framework/simulation.md)                     |
-| [destruction.md](design/game-framework/destruction.md)                   |
-| [camera.md](design/game-framework/camera.md)                             |
-
-1. **[primitives.md](design/game-framework/primitives.md)** —
-   [primitives-test-cases.md](design/game-framework/primitives-test-cases.md)
-2. **[save-cinematics.md](design/game-framework/save-cinematics.md)** —
-   [save-cinematics-test-cases.md](design/game-framework/save-cinematics-test-cases.md)
-3. **[scripting.md](design/game-framework/scripting.md)** —
-   [scripting-test-cases.md](design/game-framework/scripting-test-cases.md)
-4. **[quest-dialogue.md](design/game-framework/quest-dialogue.md)** —
-   [quest-dialogue-test-cases.md](design/game-framework/quest-dialogue-test-cases.md)
-5. **[databases.md](design/game-framework/databases.md)** —
-   [databases-test-cases.md](design/game-framework/databases-test-cases.md)
-6. **[abilities-combat.md](design/game-framework/abilities-combat.md)** —
-   [abilities-combat-test-cases.md](design/game-framework/abilities-combat-test-cases.md)
-7. **[containers-sockets.md](design/game-framework/containers-sockets.md)** — inventory, equipment,
-   and socket systems
-8. **[meters-resources.md](design/game-framework/meters-resources.md)** — meters, attributes, and
-   resource tracking
-9. **[selection.md](design/game-framework/selection.md)** —
-   [selection-test-cases.md](design/game-framework/selection-test-cases.md)
-10. **[perception.md](design/game-framework/perception.md)** — awareness, senses, and scored
-    evaluation
-11. **[progression.md](design/game-framework/progression.md)** — progression graphs and live-ops
-    rewards
-12. **[simulation.md](design/game-framework/simulation.md)** — schedules, routines, and world
-    simulation
-13. **[destruction.md](design/game-framework/destruction.md)** —
-    [destruction-test-cases.md](design/game-framework/destruction-test-cases.md)
-14. **[camera.md](design/game-framework/camera.md)** —
-    [camera-test-cases.md](design/game-framework/camera-test-cases.md)
-
-#### Features
-
-| Feature |
-|---------|
-| [gameplay-primitives.md](features/game-framework/gameplay-primitives.md) |
-| [save-system.md](features/game-framework/save-system.md) |
-| [cinematics.md](features/game-framework/cinematics.md) |
-| [scripting.md](features/game-framework/scripting.md) |
-| [quest-dialogue.md](features/game-framework/quest-dialogue.md) |
-| [gameplay-databases.md](features/game-framework/gameplay-databases.md) |
-| [abilities.md](features/game-framework/abilities.md) |
-| [character-customization.md](features/game-framework/character-customization.md) |
-| [inventory.md](features/game-framework/inventory.md) |
-| [weapon-system.md](features/game-framework/weapon-system.md) |
-| [selection-system.md](features/game-framework/selection-system.md) |
-| [npc-simulation.md](features/game-framework/npc-simulation.md) |
-| [progression.md](features/game-framework/progression.md) |
-| [social.md](features/game-framework/social.md) |
-| [building-survival.md](features/game-framework/building-survival.md) |
-| [fog-of-war.md](features/game-framework/fog-of-war.md) |
-| [turn-based.md](features/game-framework/turn-based.md) |
-| [minigames.md](features/game-framework/minigames.md) |
-| [racing.md](features/game-framework/racing.md) |
-| [block-voxel.md](features/game-framework/block-voxel.md) |
-| [pets-mounts.md](features/game-framework/pets-mounts.md) |
-| [monetization.md](features/game-framework/monetization.md) |
-| [camera-system.md](features/game-framework/camera-system.md) |
-| [traversal-interaction.md](features/game-framework/traversal-interaction.md) |
-| [stealth-cover.md](features/game-framework/stealth-cover.md) |
-| [game-modes-misc.md](features/game-framework/game-modes-misc.md) |
-| [world-management.md](features/game-framework/world-management.md) |
-
-#### Requirements
-
-| Requirement |
-|-------------|
-| [gameplay-primitives.md](requirements/game-framework/gameplay-primitives.md) |
-| [save-system.md](requirements/game-framework/save-system.md) |
-| [cinematics.md](requirements/game-framework/cinematics.md) |
-| [scripting.md](requirements/game-framework/scripting.md) |
-| [quest-dialogue.md](requirements/game-framework/quest-dialogue.md) |
-| [gameplay-databases.md](requirements/game-framework/gameplay-databases.md) |
-| [abilities.md](requirements/game-framework/abilities.md) |
-| [character-customization.md](requirements/game-framework/character-customization.md) |
-| [inventory.md](requirements/game-framework/inventory.md) |
-| [weapon-system.md](requirements/game-framework/weapon-system.md) |
-| [selection-system.md](requirements/game-framework/selection-system.md) |
-| [npc-simulation.md](requirements/game-framework/npc-simulation.md) |
-| [progression.md](requirements/game-framework/progression.md) |
-| [social.md](requirements/game-framework/social.md) |
-| [building-survival.md](requirements/game-framework/building-survival.md) |
-| [fog-of-war.md](requirements/game-framework/fog-of-war.md) |
-| [turn-based.md](requirements/game-framework/turn-based.md) |
-| [minigames.md](requirements/game-framework/minigames.md) |
-| [racing.md](requirements/game-framework/racing.md) |
-| [block-voxel.md](requirements/game-framework/block-voxel.md) |
-| [pets-mounts.md](requirements/game-framework/pets-mounts.md) |
-| [monetization.md](requirements/game-framework/monetization.md) |
-| [camera-system.md](requirements/game-framework/camera-system.md) |
-| [traversal-interaction.md](requirements/game-framework/traversal-interaction.md) |
-| [stealth-cover.md](requirements/game-framework/stealth-cover.md) |
-| [game-modes-misc.md](requirements/game-framework/game-modes-misc.md) |
-| [world-management.md](requirements/game-framework/world-management.md) |
-
-#### User Stories
-
-| User Story |
-|------------|
-| [gameplay-primitives.md](user-stories/game-framework/gameplay-primitives.md) |
-| [save-system.md](user-stories/game-framework/save-system.md) |
-| [cinematics.md](user-stories/game-framework/cinematics.md) |
-| [scripting.md](user-stories/game-framework/scripting.md) |
-| [quest-dialogue.md](user-stories/game-framework/quest-dialogue.md) |
-| [gameplay-databases.md](user-stories/game-framework/gameplay-databases.md) |
-| [abilities.md](user-stories/game-framework/abilities.md) |
-| [character-customization.md](user-stories/game-framework/character-customization.md) |
-| [inventory.md](user-stories/game-framework/inventory.md) |
-| [weapon-system.md](user-stories/game-framework/weapon-system.md) |
-| [selection-system.md](user-stories/game-framework/selection-system.md) |
-| [npc-simulation.md](user-stories/game-framework/npc-simulation.md) |
-| [progression.md](user-stories/game-framework/progression.md) |
-| [social.md](user-stories/game-framework/social.md) |
-| [building-survival.md](user-stories/game-framework/building-survival.md) |
-| [fog-of-war.md](user-stories/game-framework/fog-of-war.md) |
-| [turn-based.md](user-stories/game-framework/turn-based.md) |
-| [minigames.md](user-stories/game-framework/minigames.md) |
-| [racing.md](user-stories/game-framework/racing.md) |
-| [block-voxel.md](user-stories/game-framework/block-voxel.md) |
-| [pets-mounts.md](user-stories/game-framework/pets-mounts.md) |
-| [monetization.md](user-stories/game-framework/monetization.md) |
-| [camera-system.md](user-stories/game-framework/camera-system.md) |
-| [traversal-interaction.md](user-stories/game-framework/traversal-interaction.md) |
-| [stealth-cover.md](user-stories/game-framework/stealth-cover.md) |
-| [game-modes-misc.md](user-stories/game-framework/game-modes-misc.md) |
-| [world-management.md](user-stories/game-framework/world-management.md) |
-
----
-
 ### Tools / Editor
 
-Editor framework, level editor, material/animation editors, logic graph, profiler, version control,
-collaboration, shared cache, AI governance, deployment, launcher, server infrastructure, asset
-store, and localization/docs.
+Editor framework, visual editors, level/world editor, profiler, team collaboration, build/deploy,
+and content services.
 
 #### Design Documents
 
-| Design                                                            |
-|-------------------------------------------------------------------|
-| [editor-framework.md](design/tools/editor-framework.md)           |
-| [level-world.md](design/tools/level-world.md)                     |
-| [material-animation.md](design/tools/material-animation.md)       |
-| [logic-graph.md](design/tools/logic-graph.md)                     |
-| [profiler.md](design/tools/profiler.md)                           |
-| [version-control.md](design/tools/version-control.md)             |
-| [collaboration.md](design/tools/collaboration.md)                 |
-| [shared-cache.md](design/tools/shared-cache.md)                   |
-| [ai-governance.md](design/tools/ai-governance.md)                 |
-| [deployment.md](design/tools/deployment.md)                       |
-| [launcher.md](design/tools/launcher.md)                           |
-| [server-infrastructure.md](design/tools/server-infrastructure.md) |
-| [asset-store.md](design/tools/asset-store.md)                     |
-| [localization-docs.md](design/tools/localization-docs.md)         |
-
-1. **[editor-framework.md](design/tools/editor-framework.md)** —
-   [editor-framework-test-cases.md](design/tools/editor-framework-test-cases.md)
-2. **[level-world.md](design/tools/level-world.md)** —
-   [level-world-test-cases.md](design/tools/level-world-test-cases.md)
-3. **[material-animation.md](design/tools/material-animation.md)** —
-   [material-animation-test-cases.md](design/tools/material-animation-test-cases.md)
-4. **[logic-graph.md](design/tools/logic-graph.md)** —
-   [logic-graph-test-cases.md](design/tools/logic-graph-test-cases.md)
-5. **[profiler.md](design/tools/profiler.md)** —
-   [profiler-test-cases.md](design/tools/profiler-test-cases.md)
-6. **[version-control.md](design/tools/version-control.md)** —
-   [version-control-test-cases.md](design/tools/version-control-test-cases.md)
-7. **[collaboration.md](design/tools/collaboration.md)** —
-   [collaboration-test-cases.md](design/tools/collaboration-test-cases.md)
-8. **[shared-cache.md](design/tools/shared-cache.md)** —
-   [shared-cache-test-cases.md](design/tools/shared-cache-test-cases.md)
-9. **[ai-governance.md](design/tools/ai-governance.md)** —
-   [ai-governance-test-cases.md](design/tools/ai-governance-test-cases.md)
-10. **[deployment.md](design/tools/deployment.md)** —
-    [deployment-test-cases.md](design/tools/deployment-test-cases.md)
-11. **[launcher.md](design/tools/launcher.md)** —
-    [launcher-test-cases.md](design/tools/launcher-test-cases.md)
-12. **[server-infrastructure.md](design/tools/server-infrastructure.md)** —
-    [server-infrastructure-test-cases.md](design/tools/server-infrastructure-test-cases.md)
-13. **[asset-store.md](design/tools/asset-store.md)** —
-    [asset-store-test-cases.md](design/tools/asset-store-test-cases.md)
-14. **[localization-docs.md](design/tools/localization-docs.md)** —
-    [localization-docs-test-cases.md](design/tools/localization-docs-test-cases.md)
+| Design | Test Cases |
+|--------|------------|
+| [editor-core.md](design/tools/editor-core.md) | [editor-core-test-cases.md](design/tools/editor-core-test-cases.md) |
+| [visual-editors.md](design/tools/visual-editors.md) | [visual-editors-test-cases.md](design/tools/visual-editors-test-cases.md) |
+| [level-world.md](design/tools/level-world.md) | [level-world-test-cases.md](design/tools/level-world-test-cases.md) |
+| [profiler.md](design/tools/profiler.md) | [profiler-test-cases.md](design/tools/profiler-test-cases.md) |
+| [team-tools.md](design/tools/team-tools.md) | [team-tools-test-cases.md](design/tools/team-tools-test-cases.md) |
+| [build-deploy.md](design/tools/build-deploy.md) | [build-deploy-test-cases.md](design/tools/build-deploy-test-cases.md) |
+| [content-services.md](design/tools/content-services.md) | [content-services-test-cases.md](design/tools/content-services-test-cases.md) |
 
 #### Features
 
 | Feature |
 |---------|
 | [editor-framework.md](features/tools-editor/editor-framework.md) |
+| [editor-plugins.md](features/tools-editor/editor-plugins.md) |
 | [level-editor.md](features/tools-editor/level-editor.md) |
 | [world-building.md](features/tools-editor/world-building.md) |
 | [material-editor.md](features/tools-editor/material-editor.md) |
@@ -1185,23 +1263,26 @@ store, and localization/docs.
 | [logic-graph.md](features/tools-editor/logic-graph.md) |
 | [profiling-tools.md](features/tools-editor/profiling-tools.md) |
 | [version-control.md](features/tools-editor/version-control.md) |
-| [remote-editing.md](features/tools-editor/remote-editing.md) |
 | [shared-cache.md](features/tools-editor/shared-cache.md) |
 | [ai-governance.md](features/tools-editor/ai-governance.md) |
 | [ai-assistant.md](features/tools-editor/ai-assistant.md) |
 | [deployment.md](features/tools-editor/deployment.md) |
-| [mod-support.md](features/tools-editor/mod-support.md) |
 | [launcher.md](features/tools-editor/launcher.md) |
-| [server-infrastructure.md](features/tools-editor/server-infrastructure.md) |
 | [asset-store.md](features/tools-editor/asset-store.md) |
+| [server-infrastructure.md](features/tools-editor/server-infrastructure.md) |
 | [localization-editor.md](features/tools-editor/localization-editor.md) |
 | [documentation.md](features/tools-editor/documentation.md) |
+| [mod-support.md](features/tools-editor/mod-support.md) |
+| [vr-editor.md](features/tools-editor/vr-editor.md) |
+| [remote-editing.md](features/tools-editor/remote-editing.md) |
+| [specialized-editors.md](features/tools-editor/specialized-editors.md) |
 
 #### Requirements
 
 | Requirement |
 |-------------|
 | [editor-framework.md](requirements/tools-editor/editor-framework.md) |
+| [editor-plugins.md](requirements/tools-editor/editor-plugins.md) |
 | [level-editor.md](requirements/tools-editor/level-editor.md) |
 | [world-building.md](requirements/tools-editor/world-building.md) |
 | [material-editor.md](requirements/tools-editor/material-editor.md) |
@@ -1209,23 +1290,26 @@ store, and localization/docs.
 | [logic-graph.md](requirements/tools-editor/logic-graph.md) |
 | [profiling-tools.md](requirements/tools-editor/profiling-tools.md) |
 | [version-control.md](requirements/tools-editor/version-control.md) |
-| [remote-editing.md](requirements/tools-editor/remote-editing.md) |
 | [shared-cache.md](requirements/tools-editor/shared-cache.md) |
 | [ai-governance.md](requirements/tools-editor/ai-governance.md) |
 | [ai-assistant.md](requirements/tools-editor/ai-assistant.md) |
 | [deployment.md](requirements/tools-editor/deployment.md) |
-| [mod-support.md](requirements/tools-editor/mod-support.md) |
 | [launcher.md](requirements/tools-editor/launcher.md) |
-| [server-infrastructure.md](requirements/tools-editor/server-infrastructure.md) |
 | [asset-store.md](requirements/tools-editor/asset-store.md) |
+| [server-infrastructure.md](requirements/tools-editor/server-infrastructure.md) |
 | [localization-editor.md](requirements/tools-editor/localization-editor.md) |
 | [documentation.md](requirements/tools-editor/documentation.md) |
+| [mod-support.md](requirements/tools-editor/mod-support.md) |
+| [vr-editor.md](requirements/tools-editor/vr-editor.md) |
+| [remote-editing.md](requirements/tools-editor/remote-editing.md) |
+| [specialized-editors.md](requirements/tools-editor/specialized-editors.md) |
 
 #### User Stories
 
 | User Story |
 |------------|
 | [editor-framework.md](user-stories/tools-editor/editor-framework.md) |
+| [editor-plugins.md](user-stories/tools-editor/editor-plugins.md) |
 | [level-editor.md](user-stories/tools-editor/level-editor.md) |
 | [world-building.md](user-stories/tools-editor/world-building.md) |
 | [material-editor.md](user-stories/tools-editor/material-editor.md) |
@@ -1233,91 +1317,32 @@ store, and localization/docs.
 | [logic-graph.md](user-stories/tools-editor/logic-graph.md) |
 | [profiling-tools.md](user-stories/tools-editor/profiling-tools.md) |
 | [version-control.md](user-stories/tools-editor/version-control.md) |
-| [remote-editing.md](user-stories/tools-editor/remote-editing.md) |
 | [shared-cache.md](user-stories/tools-editor/shared-cache.md) |
 | [ai-governance.md](user-stories/tools-editor/ai-governance.md) |
 | [ai-assistant.md](user-stories/tools-editor/ai-assistant.md) |
 | [deployment.md](user-stories/tools-editor/deployment.md) |
-| [mod-support.md](user-stories/tools-editor/mod-support.md) |
 | [launcher.md](user-stories/tools-editor/launcher.md) |
-| [server-infrastructure.md](user-stories/tools-editor/server-infrastructure.md) |
 | [asset-store.md](user-stories/tools-editor/asset-store.md) |
+| [server-infrastructure.md](user-stories/tools-editor/server-infrastructure.md) |
 | [localization-editor.md](user-stories/tools-editor/localization-editor.md) |
 | [documentation.md](user-stories/tools-editor/documentation.md) |
+| [mod-support.md](user-stories/tools-editor/mod-support.md) |
+| [vr-editor.md](user-stories/tools-editor/vr-editor.md) |
+| [remote-editing.md](user-stories/tools-editor/remote-editing.md) |
+| [specialized-editors.md](user-stories/tools-editor/specialized-editors.md) |
 
 ---
 
-## Frame Data Flow
-
-A single frame follows this pipeline from input poll through GPU present. All phases run on the
-dedicated game loop thread (which owns the `IoReactor`) and the work-stealing thread pool. On
-desktop (macOS, Windows, Linux) the game loop thread is typically thread 0. On mobile (iOS, Android)
-it is a dedicated thread separate from the OS main thread — platform UI events are forwarded via a
-lock-free SPSC queue. The render thread presents independently.
-
-```mermaid
-flowchart LR
-    A[Poll IoReactor] --> B[Process Input]
-    B --> C[Fixed Update Loop]
-    C --> D[Physics Substeps]
-    D --> E[AI / Navigation]
-    E --> F[Game Systems]
-    F --> G[Animation Update]
-    G --> H[Transform Propagation]
-    H --> I[Spatial Index Rebuild]
-    I --> J[Render Extract]
-    J --> K[Render Prepare]
-    K --> L[GPU Submit]
-    L --> M[Present Frame]
-    M --> A
-
-    click A "#platform"
-    click B "#input"
-    click C "#core-runtime"
-    click D "#physics"
-    click E "#ai"
-    click F "#game-framework"
-    click G "#animation"
-    click H "#core-runtime"
-    click I "#core-runtime"
-    click J "#rendering"
-    click K "#rendering"
-    click L "#rendering"
-    click M "#platform"
-```
-
-Key phases:
-
-1. **Poll IoReactor** — drain platform I/O completions at the controlled poll point
-2. **Process Input** — map device events to actions
-3. **Fixed Update** — deterministic timestep loop with accumulator
-4. **Physics Substeps** — broadphase, narrowphase, island solve, CCD per substep
-5. **AI / Navigation** — behavior trees, steering, pathfinding under frame budget
-6. **Game Systems** — abilities, quests, NPC simulation
-7. **Animation** — skeletal, procedural IK, cloth/hair
-8. **Transform Propagation** — dirty-flag hierarchy traversal
-9. **Spatial Index Rebuild** — incremental BVH update
-10. **Render Extract** — copy visible ECS data to render world (double-buffered)
-11. **Render Prepare** — sort draw calls, build GPU command buffers
-12. **GPU Submit** — submit command buffers to graphics API
-13. **Present** — swap chain present
-
 ## Cross-Subsystem Interaction Sequences
 
-The diagrams below show how data flows across subsystem boundaries during key engine operations. Use
-these as a reference when modifying any subsystem that participates in a cross-cutting pipeline.
-
 ### Physics to Rendering Pipeline
-
-This sequence traces a physics body from integration through GPU present. It is relevant when
-debugging visual lag or transform desync after physics steps.
 
 ```mermaid
 sequenceDiagram
     participant PS as PhysicsSystem
     participant TP as TransformPropagation
-    participant RE as RenderExtraction
-    participant RG as RenderGraph
+    participant GL as GameLoopThread
+    participant RT as RenderThread
     participant GPU as GPU
 
     PS->>PS: Integrate velocities + solve
@@ -1325,24 +1350,16 @@ sequenceDiagram
     Note over PS,TP: LocalTransform components
 
     TP->>TP: Dirty-flag hierarchy walk
-    TP->>RE: GlobalTransform + Visibility
-    Note over TP,RE: Double-buffered snapshot
+    GL->>GL: Build RenderFrame snapshot
+    Note over GL: Transforms + draw lists
 
-    RE->>RE: Copy mesh handles + materials
-    RE->>RG: ExtractedView, ExtractedMesh
-    Note over RE,RG: Per-view draw lists
-
-    RG->>RG: Topological sort passes
-    RG->>GPU: Encode command buffers
-    Note over RG,GPU: Depth, GBuffer, Lighting
-
+    GL->>RT: Submit via triple buffer
+    RT->>RT: Cull + sort + record
+    RT->>GPU: Encode command buffers
     GPU->>GPU: Execute + present
 ```
 
-### ECS Change Detection to Spatial Update
-
-This sequence shows how a single `Transform` write fans out to every dependent cache. It is relevant
-when adding new consumers of spatial data.
+### ECS Change to Spatial Update
 
 ```mermaid
 sequenceDiagram
@@ -1354,58 +1371,40 @@ sequenceDiagram
 
     W->>W: System writes Transform
     W->>CD: Tick stamp on archetype column
-    Note over W,CD: Changed(Transform) filter
 
     CD->>SI: Entity ID + new AABB
     Note over CD,SI: Incremental BVH update
 
     SI->>PB: Updated leaf nodes
-    Note over SI,PB: Broadphase pair cache
-
     PB->>PB: Revalidate overlap pairs
 
     SI->>RC: Invalidate frustum cache
-    Note over SI,RC: Per-view visibility sets
-
     RC->>RC: Mark views dirty
 ```
 
 ### Audio Streaming Pipeline
 
-This sequence shows the async handoff between game thread, IoReactor, and real-time audio callback.
-It is relevant when tuning streaming latency or buffer sizes.
-
 ```mermaid
 sequenceDiagram
     participant GT as GameThread
-    participant IO as IoReactor
+    participant IO as Tokio Runtime
     participant DC as Decoder
     participant RB as RingBuffer
     participant AT as AudioThread
     participant OD as OutputDevice
 
-    GT->>IO: Submit async read (asset handle)
-    Note over GT,IO: Platform I/O dispatch
-
+    GT->>IO: Submit async read
     IO-->>DC: I/O completion + raw bytes
-    Note over IO,DC: Opus / Vorbis / PCM
-
     DC->>DC: Decode compressed frames
     DC->>RB: Write PCM samples
     Note over DC,RB: Lock-free SPSC ring
 
     AT->>RB: Read PCM samples
-    Note over AT,RB: Callback-driven pull
-
-    AT->>AT: Spatial mix (HRTF + attenuation)
+    AT->>AT: Spatial mix (HRTF)
     AT->>OD: Submit mixed buffer
-    Note over AT,OD: Platform audio API
 ```
 
-### Entity Lifecycle Across Network Authority
-
-This sequence shows a networked entity from server spawn through client proxy cleanup. It is
-relevant when working on replication, authority transfer, or tombstone expiry.
+### Networked Entity Lifecycle
 
 ```mermaid
 sequenceDiagram
@@ -1413,101 +1412,83 @@ sequenceDiagram
     participant NT as NetworkTransport
     participant CP as ClientProxy
 
-    SA->>SA: Spawn entity + attach components
-    SA->>NT: Replicate (entity, components)
-    Note over SA,NT: Serialized via Reflection
-
+    SA->>SA: Spawn entity + components
+    SA->>NT: Replicate via Reflection
     NT->>CP: Reliable channel deliver
-    CP->>CP: Spawn local proxy entity
-    CP->>CP: Apply replicated state
-    Note over CP: Predicted components diverge
+    CP->>CP: Spawn local proxy
 
-    SA->>SA: Authority transfer request
     SA->>NT: AuthTransfer(entity, new_owner)
     NT->>CP: Authority granted
     CP->>CP: Promote proxy to authority
 
-    SA->>SA: Destroy authoritative entity
     SA->>NT: Tombstone(entity, timestamp)
-    NT->>CP: Receive tombstone
-    CP->>CP: Destroy proxy entity
-    CP->>CP: Hold tombstone until TTL expiry
-    Note over CP: Prevents stale reorder spawn
+    NT->>CP: Destroy proxy + hold tombstone
 ```
+
+---
 
 ## Platform Abstraction
 
 ```mermaid
 graph TB
     subgraph "Engine"
-        REACTOR[IoReactor]
+        TOKIO[Tokio Runtime]
         WINDOW[Window Manager]
-        GPU[GPU Abstraction]
+        GPUHAL[GPU Abstraction]
     end
 
     subgraph "macOS"
-        GCD[GCD / Dispatch IO]
+        KQUEUE[Tokio kqueue]
         NSWIN[NSWindow via Swift]
         METAL[Metal 4]
     end
 
     subgraph "Windows"
-        IOCP[IOCP]
+        WIOCP[Tokio IOCP]
         WIN32[Win32 CreateWindowEx]
         D3D12[Direct3D 12]
     end
 
     subgraph "Linux"
-        URING[io_uring]
+        EPOLL[Tokio epoll]
         XCB[xcb / Wayland]
         VK[Vulkan 1.4]
     end
 
-    REACTOR --> GCD & IOCP & URING
+    TOKIO --> KQUEUE & WIOCP & EPOLL
     WINDOW --> NSWIN & WIN32 & XCB
-    GPU --> METAL & D3D12 & VK
-
-    click REACTOR "#platform"
-    click WINDOW "#platform"
-    click GPU "#rendering"
+    GPUHAL --> METAL & D3D12 & VK
 ```
 
 | Platform | Async I/O | Windowing | Graphics | FFI |
 |----------|-----------|-----------|----------|-----|
-| macOS | GCD / Dispatch IO | NSWindow (swift-bridge) | Metal 4 | swift-bridge |
-| Windows | IOCP | Win32 (windows-rs) | Direct3D 12 | windows-rs |
-| Linux | io_uring | x11rb / wayland-client | Vulkan 1.4 (ash) | Rust crates |
-| iOS | GCD / Dispatch IO | UIWindow (swift-bridge) | Metal 4 | swift-bridge |
-| Android | io_uring | ndk crate | Vulkan 1.4 (ash) | Rust crates |
-| Consoles | Platform SDK | Platform SDK | Platform SDK | Platform SDK |
+| macOS | Tokio (kqueue) | NSWindow (swift-bridge) | Metal 4 | swift-bridge |
+| Windows | Tokio (IOCP) | Win32 (windows-rs) | D3D12 | windows-rs |
+| Linux | Tokio (epoll) | x11rb / wayland | Vulkan 1.4 | ash |
+| iOS | Tokio (kqueue) | UIWindow (swift-bridge) | Metal 4 | swift-bridge |
+| Android | Tokio (epoll) | ndk crate | Vulkan 1.4 | ash |
 
-On iOS, Android, and consoles the game loop runs on a dedicated thread — not the OS main thread. The
-OS main thread handles platform UI events (UIKit, Activity lifecycle) and forwards them to the game
-loop thread via a lock-free SPSC queue.
+---
 
-## Design Wave Structure
+## Design Summary
 
-```mermaid
-graph LR
-    W0[Wave 0\nPlatform\n3 docs] --> W1[Wave 1\nCore Runtime\n7 docs]
-    W1 --> W2[Wave 2\nInfrastructure\n9 docs]
-    W2 --> W3[Wave 3\nIntermediate\n12 docs]
-    W3 --> W4[Wave 4\nIntegration\n18 docs]
-    W4 --> W5[Wave 5\nAdvanced\n20 docs]
-    W5 --> W6[Wave 6\nCapstone\n18 docs]
-
-    click W0 "#platform"
-    click W1 "#core-runtime"
-```
-
-## Supported Platforms
-
-| OS | Graphics API | Async I/O | Status |
-|----|-------------|-----------|--------|
-| macOS | Metal 4 | GCD / Dispatch IO | Design complete |
-| Windows | Direct3D 12 | IOCP | Design complete |
-| Linux | Vulkan 1.4 | io_uring | Design complete |
-| iOS | Metal 4 | GCD / Dispatch IO | Design complete |
-| Android | Vulkan 1.4 | io_uring | Design complete |
-| Nintendo Switch | Platform SDK | Platform SDK | Planned |
-| Xbox | Direct3D 12 | Platform SDK | Planned |
+| Directory | Design Files |
+|-----------|------------:|
+| core-runtime | 8 |
+| data-systems | 4 |
+| simulation | 4 |
+| game-framework | 3 |
+| ai | 3 |
+| animation | 3 |
+| audio | 1 |
+| content-pipeline | 2 |
+| geometry | 2 |
+| input | 1 |
+| networking | 3 |
+| physics | 3 |
+| platform | 3 |
+| rendering | 4 |
+| tools | 7 |
+| ui | 2 |
+| vfx | 2 |
+| **Total** | **42** |

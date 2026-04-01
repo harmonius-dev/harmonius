@@ -14,9 +14,8 @@
 1. **US-13.2.1.1** -- **As a** game designer (P-5), **I want** to set per-zone load and unload radii
    with hysteresis margins and priority ordering, **so that** sub-levels stream smoothly.
 
-2. **US-13.2.1.2** -- **As a** game developer (P-15), **I want** level streaming to use
-   platform-native async I/O (IOCP, GCD, io_uring) with no blocking calls, **so that** streaming
-   never stalls the game thread.
+2. **US-13.2.1.2** -- **As a** game developer (P-15), **I want** level streaming to use Tokio async
+   I/O with no blocking calls, **so that** streaming never stalls the game thread.
 
 3. **US-13.2.1.3** -- [game-specific] **As a** player (P-23), **I want** to move through the open
    world without visible loading screens or stalls, **so that** exploration feels continuous.

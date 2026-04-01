@@ -2327,7 +2327,7 @@ reused across frames until the system set changes.
 ```mermaid
 sequenceDiagram
     participant ML as Main Loop
-    participant RE as IoReactor
+    participant RE as Tokio Runtime
     participant CF as CompiledFrame
     participant TP as ThreadPool
     participant W as Workers
@@ -2467,9 +2467,9 @@ let frame = graph.compile(&world, &pool)?;
 // --- Frame Execution (reuses CompiledFrame) ---
 
 loop {
-    reactor.poll();
+    runtime.poll();
     frame.execute(
-        &mut world, &pool, &mut reactor,
+        &mut world, &pool, &mut runtime,
     );
 }
 ```
@@ -2627,8 +2627,8 @@ let frame = graph.compile(&world, &pool)?;
 
 // Per-frame execution
 loop {
-    reactor.poll();
-    frame.execute(&mut world, &pool, &mut reactor);
+    runtime.poll();
+    frame.execute(&mut world, &pool, &mut runtime);
 }
 ```
 
@@ -2974,14 +2974,18 @@ lookups. This avoids hash overhead in the inner loop.
 constraint? What is the best possible solution imaginable without those constraints? What is the
 impact of removing them?
 
-The "100% ECS-based" constraint (no separate data stores) is the single largest limiting factor.
-Physics engines like PhysX and Havok maintain independent broadphase and solver structures that can
-be highly optimized in isolation. Lifting this constraint would allow dedicated physics memory
-layouts (SIMD-friendly solver bodies), separate spatial indices tuned per subsystem, and
-vendor-optimized collision pipelines. The impact of removing it, however, would be data duplication
-across subsystems, synchronization bugs between parallel stores, and higher memory footprint at MMO
-scale. The ECS-only approach trades peak per-subsystem performance for global consistency and
-reduced complexity.
+The "ECS-primary (~90%)" constraint is the single largest limiting factor. Most engine data lives in
+the ECS, but explicit exceptions exist for subsystems where a dedicated data store is essential: the
+audio runtime (real-time mixer thread), GPU resource management (descriptor heaps, buffer pools),
+windowing (platform-native handles), the shader pipeline (compilation caches), and asset processing
+internals (import scratch buffers). Physics engines like PhysX and Havok maintain independent
+broadphase and solver structures that can be highly optimized in isolation. Relaxing the constraint
+further would allow dedicated physics memory layouts (SIMD-friendly solver bodies), separate spatial
+indices tuned per subsystem, and vendor-optimized collision pipelines. The impact of removing it
+entirely, however, would be data duplication across subsystems, synchronization bugs between
+parallel stores, and higher memory footprint at MMO scale. The ECS-primary approach trades peak
+per-subsystem performance for global consistency and reduced complexity while carving out narrow
+exceptions where a non-ECS store is strictly necessary.
 
 **Q2. How can this design be improved?** Where is it weak? What potential issues will arise? What
 trade-offs are we making?
@@ -3024,11 +3028,11 @@ modules, and why? How could we make it more cohesive? How can we improve it to m
 The ECS design is the backbone and other modules (scene hierarchy F-1.2, spatial index F-1.9, events
 F-1.5) depend heavily on it. It aligns well with the engine constraints: static dispatch via
 generics, no singletons, composition over inheritance. One cohesion gap is between the ECS command
-buffer model (F-1.1.32) and the async I/O reactor (F-1.8): command buffers are synchronous and
-frame-scoped while I/O completions arrive asynchronously. Bridging these requires explicit
-integration where I/O completions are batched into command buffers at poll points. Making the
-command buffer API aware of async completion tokens would improve cohesion between the ECS and async
-I/O subsystems.
+buffer model (F-1.1.32) and Tokio async I/O (F-1.8): command buffers are synchronous and
+frame-scoped while I/O completions arrive when the game loop polls the Tokio runtime. Bridging these
+requires batching I/O completions into command buffers at the frame poll point. Making the command
+buffer API aware of async completion tokens would improve cohesion between the ECS and async I/O
+subsystems.
 
 ## Open Questions
 

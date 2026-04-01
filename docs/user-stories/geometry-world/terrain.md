@@ -12,9 +12,8 @@
 1. **US-3.2.1.1** -- **As a** level designer (P-6), **I want** terrain tiles to stream in and out
    based on camera proximity with low-LOD fallbacks, **so that** I can traverse the open world
    without loading screens.
-2. **US-3.2.1.2** -- **As a** engine developer (P-26), **I want** tile streaming to use
-   platform-native async I/O (IOCP, GCD, io_uring), **so that** I/O performance matches each
-   platform's capability.
+2. **US-3.2.1.2** -- **As a** engine developer (P-26), **I want** tile streaming to use Tokio async
+   I/O, **so that** I/O performance matches each platform's capability.
 3. **US-3.2.1.3** -- **As a** environment artist (P-8), **I want** each tile to store a 16-bit or
    32-bit height grid with metadata for materials and holes, **so that** terrain has sufficient
    vertical precision.
