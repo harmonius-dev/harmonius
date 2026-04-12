@@ -735,6 +735,160 @@ Companion test cases for [platform-services.md](platform-services.md).
    - **Expected:** File contains valid TOML with all
    set values, no partial writes
 
+### TC-14.2.2.1 File Dialog Non Blocking
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.2.2    |
+| 2 | R-14.2.2    |
+
+1. **#1** -- Open file dialog from main thread, verify game loop continues rendering while dialog
+   open
+   - **Expected:** Frame times during dialog within 10% of baseline
+2. **#2** -- User selects file, callback fires with path
+   - **Expected:** Returned path exists and is canonical
+
+<!-- THIN: design section lacks detail -->
+### TC-14.4.3.1 Crash Aggregation By Stack Signature
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.4.3    |
+| 2 | R-14.4.3    |
+
+1. **#1** -- Submit 10 crash reports with identical top-5 stack frames
+   - **Expected:** Aggregator returns single signature group with count=10
+2. **#2** -- Submit crash with different top frame
+   - **Expected:** New signature group created, prior count unchanged
+
+<!-- THIN: design section lacks detail -->
+### TC-14.5.4.1 Voice Party Bridge Vivox Fallback
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.5.4    |
+| 2 | R-14.5.4    |
+
+1. **#1** -- Platform with native party API (PlayStation), start voice
+   - **Expected:** Bridge uses native platform party channel
+2. **#2** -- Platform without native party API, start voice
+   - **Expected:** Bridge falls back to Vivox, call succeeds
+
+<!-- THIN: design section lacks detail -->
+### TC-14.5.7.1 Console Certification Checklist
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.5.7    |
+| 2 | R-14.5.7    |
+
+1. **#1** -- Run certification validator against cooked build, all requirements satisfied
+   - **Expected:** Report shows 0 failures
+2. **#2** -- Omit required save-data size declaration
+   - **Expected:** Report flags missing item, fails with specific error code
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.1.1 Server-Side Console Build Request
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.1    |
+
+1. **#1** -- Editor submits PS5 build request with project+branch to build server
+   - **Expected:** Build job enqueued server-side, status=Queued returned to client
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.2.1 Build Server Build Completes And Artifacts
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.2    |
+
+1. **#1** -- Build job completes, query status
+   - **Expected:** Status=Succeeded, artifact URL returned, artifact signature matches server record
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.3.1 SDK Isolation Cross Project
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.3    |
+
+1. **#1** -- Project A submits build with SDK credentials; Project B queries same credentials via
+   API
+   - **Expected:** Project B receives `AccessDenied`, no credential leak
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.4.1 SDK Isolation Per Team Access Control
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.4    |
+
+1. **#1** -- Team X queries Team Y's build artifacts
+   - **Expected:** Access denied, audit log records attempt
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.5.1 Shared Build Server Queue Priority
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.5    |
+
+1. **#1** -- Enqueue routine build then certification build
+   - **Expected:** Certification build starts first, routine build remains queued
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.6.1 Shared Server Cross Platform Parallel
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.6    |
+
+1. **#1** -- Submit PS5, Xbox, and Switch builds concurrently
+   - **Expected:** Each routed to platform-specific SDK container, builds proceed in parallel
+     without interference
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.7.1 Remote Console Deploy To Dev Kit
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.7    |
+
+1. **#1** -- Deploy completed build from artifact store to registered dev kit at known IP
+   - **Expected:** Dev kit reports build installed, kit state=Ready
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.8.1 Remote Deploy Streaming Log Output
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.8    |
+
+1. **#1** -- Launch build on dev kit, stream stdout/stderr back to editor
+   - **Expected:** Log lines arrive within 1s of emission, ordering preserved
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.9.1 Console Build Artifacts Signed
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.9    |
+
+1. **#1** -- Complete console build, inspect artifact signing
+   - **Expected:** Artifact signed with platform-specific signing key, cert matches expected issuer
+
+<!-- THIN: design section lacks detail -->
+### TC-14.8.10.1 Build Artifact Retention Policy
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.8.10   |
+
+1. **#1** -- Create build, wait past retention period
+   - **Expected:** Build artifact automatically pruned, query returns `NotFound`
+
 ## Integration Tests
 
 ### TC-14.6.1.I1 Async File 10 MB Read
@@ -891,6 +1045,206 @@ Companion test cases for [platform-services.md](platform-services.md).
 1. **#1** -- Resolve paths with platform-specific separators (`\` on Windows, `/` on Unix)
    - **Expected:** Both produce equivalent
    `CanonicalPath` values
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.1.I2 US Achievement Unlock End To End
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.1  |
+
+1. **#1** -- Player completes goal; game calls `achievements.unlock("first_win")`; backend online
+   - **Expected:** Unlock request dispatched, backend ACK received, ECS event emitted
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.2.I1 US Leaderboard Submit And Query
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.2  |
+
+1. **#1** -- Submit player score, then query top 10 entries including the submitted row
+   - **Expected:** Query result contains submitted score at correct rank
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.3.I1 US Rich Presence Set
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.3  |
+
+1. **#1** -- Game calls `presence.set("In match — 3v3")`; throttle allows; backend updated
+   - **Expected:** Presence string visible via backend query within 15 s
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.4.I1 US Voice Party Bridge
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.4  |
+
+1. **#1** -- Two players join a platform party; voice bridge routes audio; Vivox fallback disabled
+   - **Expected:** Both players hear each other via platform voice; no Vivox channel allocated
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.5.I2 US Cloud Storage Round Trip
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.5  |
+
+1. **#1** -- Save 1 MB save file to cloud slot `"slot0"`; load from slot on a second device
+   - **Expected:** Byte-identical data returned from load; no conflict flagged
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.6.I1 US Entitlement DLC Check
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.6  |
+
+1. **#1** -- Query ownership of DLC `"pack_alpha"` for an account that owns it
+   - **Expected:** `is_owned == true`, entitlement record cached for 60 s
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.10.I2 US Console Certification Run
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.10 |
+
+1. **#1** -- Run console certification checklist on a dummy title; report pass/fail per item
+   - **Expected:** All required items executed, report JSON written, zero crashes
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.17.I1 US Preferences TOML Load Save
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.17 |
+
+1. **#1** -- Save preferences to TOML, edit one key, reload and assert round-trip preserved
+   - **Expected:** All original keys present with expected values, edited key persisted
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.20.I1 US Player Cache Hit Miss
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.20 |
+
+1. **#1** -- Populate player cache with 100 entries, lookup 50 hits and 50 misses
+   - **Expected:** Hit/miss stats match expected ratio, eviction not triggered at 10 GB cap
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.21.I1 US Player Cache LRU Eviction
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.21 |
+
+1. **#1** -- Fill player cache to 10 GB, insert one more entry, verify LRU entry evicted
+   - **Expected:** Oldest entry removed, new entry present, total size within cap
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.22.I1 US Developer Cache BLAKE3 Key
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.22 |
+
+1. **#1** -- Store asset under BLAKE3 content hash, retrieve by same hash
+   - **Expected:** Bytes match, hash collisions with different content are impossible
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.23.I1 US Developer Cache 3 Tier
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.23 |
+
+1. **#1** -- Miss local, miss peer, hit remote; verify each tier queried in order
+   - **Expected:** Result returned from remote tier, local tier populated on success
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.24.I1 US PSO Cache Warm Load
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.24 |
+
+1. **#1** -- Preload 200 PSO entries at startup, compile shader using cached PSO
+   - **Expected:** Zero compile time (cache hit), frame boots with PSOs ready
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.27.I1 US Temp File Allocate Drop
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.27 |
+
+1. **#1** -- Allocate temp file via RAII guard, drop guard, verify file removed
+   - **Expected:** File absent after drop, no leaked handle
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.5.28.I1 US Temp File Orphan Cleanup
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.5.28 |
+
+1. **#1** -- Create temp files, simulate crash leaving orphans, restart and run cleanup
+   - **Expected:** All orphaned temp files removed on init, logs count matches orphan count
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.6.11.I1 US Filesystem Canonical Path
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.6.11 |
+
+1. **#1** -- Convert platform path with `..` and symlinks to canonical form; compare cross-OS
+   - **Expected:** Canonical form stable across platforms, no traversal beyond root
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.8.1.I1 US SDK Server Build Request
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.8.1  |
+
+1. **#1** -- Developer submits console build request; server compiles and returns artifact URL
+   - **Expected:** Build completes, artifact URL returned, signed per certification rules
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.8.4.I1 US SDK Isolation Per Team
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.8.4  |
+
+1. **#1** -- Team A and Team B both build same console target; assert no cross-access
+   - **Expected:** Team A cannot read Team B artifacts, ACL enforced at server
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.8.8.I1 US SDK Proprietary Isolation
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.8.8  |
+
+1. **#1** -- Build uses proprietary SDK that must not be copied into client binary
+   - **Expected:** SDK binary present on server only, client artifact strips SDK symbols
+
+<!-- THIN: user story referenced only via F-table -->
+### TC-14.8.10.I1 US SDK Artifact Retention
+
+| # | User Story |
+|---|------------|
+| 1 | US-14.8.10 |
+
+1. **#1** -- Build produces artifact; retention policy keeps last 10 builds per branch
+   - **Expected:** 11th build evicts oldest; retention log records action
 
 ## Benchmarks
 
