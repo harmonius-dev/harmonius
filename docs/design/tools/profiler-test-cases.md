@@ -348,6 +348,46 @@ Companion test cases for [profiler.md](profiler.md).
 1. **#1** — Enable all overlays on Windows, macOS, Linux
    - **Expected:** all overlays render correctly on each platform
 
+### TC-15.5.1.I5 CPU event capture end-to-end
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.5.1   |
+
+1. **#1** — Enable CPU profiler, run a 60-frame workload with instrumented scopes, stop, export.
+   - **Expected:** Export contains all scope events with thread id, parent id, and start/end
+     timestamps; no events dropped under instrumentation budget.
+
+### TC-15.5.3.I1 Allocation recording with call stacks
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.5.3   |
+
+1. **#1** — Record allocations for a 10 s workload; snapshot start and end.
+   - **Expected:** Snapshot diff shows each allocation with stack depth >= 8 frames; totals match
+     the test harness's counter.
+
+### TC-15.5.4.I1 Leak detection across snapshots
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.5.4   |
+
+1. **#1** — Leak 1000 known allocations between snapshot A and snapshot B; run leak diff.
+   - **Expected:** Report lists exactly the leaked allocations with correct sizes; CI exit code
+     non-zero.
+
+### TC-15.5.7.I3 Remote capture session
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-15.5.7   |
+
+1. **#1** — Connect remote profiler client to running game; capture a 5 s session over the wire.
+   - **Expected:** Client receives complete frame timeline; data fidelity matches local capture;
+     bandwidth within budget.
+
 ## Benchmarks
 
 ### TC-15.5.1.B1 CpuScope Overhead
