@@ -328,6 +328,42 @@ Companion test cases for [scene-transforms.md](scene-transforms.md).
 1. **#1** — Attempt to serialize cyclic hierarchy
    - **Expected:** `CyclicHierarchy` error returned
 
+### TC-1.1.28.1 Transform Propagation Run Criteria Ordering
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.1.28    |
+| 2 | R-1.1.28    |
+
+1. **#1** — Schedule transform propagation with `after(hierarchy_apply)` run criterion
+   - **Expected:** Propagation system runs strictly after hierarchy command application
+2. **#2** — Record system execution order over 100 frames
+   - **Expected:** Hierarchy apply precedes propagation every frame, zero inversions
+
+### TC-1.2.7.1 Delegate To Shared BVH Resource
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.2.7     |
+| 2 | R-1.2.7     |
+
+1. **#1** — Query scene for entities in AABB via `world.spatial_query_aabb(aabb)`
+   - **Expected:** Call resolves through shared `BvhResource` (verified via resource borrow log)
+2. **#2** — Swap `BvhResource` with instrumented fake and re-run query
+   - **Expected:** Fake records the query, scene module does not maintain its own index
+
+### TC-1.9.1.1 Single BVH ECS Resource Uniqueness
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-1.9.1     |
+| 2 | R-1.9.1     |
+
+1. **#1** — Inspect world after startup
+   - **Expected:** Exactly one `BvhResource` instance registered
+2. **#2** — Run propagation, physics, and rendering extract in sequence
+   - **Expected:** All three subsystems borrow the same `BvhResource` handle
+
 ## Integration Tests
 
 ### TC-1.2.4.I1 Parallel Propagation Correctness
@@ -386,6 +422,170 @@ Companion test cases for [scene-transforms.md](scene-transforms.md).
    - **Expected:** Hierarchy preserved
 2. **#2** — Verify overrides
    - **Expected:** Entity template overrides intact
+
+### TC-1.2.1.I3 Game Developer Builds Scene Hierarchy Via ECS
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.1    |
+| 2 | US-1.2.1    |
+
+1. **#1** — Game developer spawns a vehicle root with 6 child wheel entities using
+   `Commands::spawn_with_children`
+   - **Expected:** Six `Parent` components and one `Children` component created via ECS API
+2. **#2** — Query `Children(vehicle)` after command flush
+   - **Expected:** All six wheels returned in insertion order, accessible through standard ECS
+     queries
+
+### TC-1.2.2.I1 Engine Developer Traverses Hierarchy Allocation Free
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.2    |
+| 2 | US-1.2.2    |
+
+1. **#1** — Build 1K-entity tree (depth 10) and run `traverse_dfs` and `traverse_bfs` closures
+   - **Expected:** Both visit every entity exactly once
+2. **#2** — Wrap calls in allocation counter (bumpalo probe or `#[global_allocator]` counter)
+   - **Expected:** Zero heap allocations recorded during traversal
+
+### TC-1.2.3.I1 Engine Tester Benchmarks Traversal Over 10K Hierarchy
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.3    |
+| 2 | US-1.2.3    |
+
+1. **#1** — Construct 10,000-entity hierarchy with branching factor 4 and invoke criterion bench
+   over DFS traversal
+   - **Expected:** Benchmark harness runs and records samples, producing a stable timing report
+2. **#2** — Re-run benchmark five times on same fixture
+   - **Expected:** Sample variance < 5 %, confirming benchmark is deterministic for CI tracking
+
+### TC-1.2.4.I3 Cascade Despawn From Parent Deletion
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.4    |
+| 2 | US-1.2.4    |
+
+1. **#1** — Game developer calls `world.despawn(parent)` on a 3-level vehicle (chassis → wheels →
+   bolts)
+   - **Expected:** Parent, all children, and all grand-children removed in one command flush
+2. **#2** — Query world for any entity referencing the despawned parent
+   - **Expected:** Zero entities remain, no dangling `Parent` components
+
+### TC-1.2.5.I1 Zero Orphans After Parent Delete
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.5    |
+| 2 | US-1.2.5    |
+
+1. **#1** — Engine tester deletes parent entity in 5-level chain and runs post-condition sweep
+   - **Expected:** Sweep query `Q<&Parent>` yields no entity whose parent is dead
+2. **#2** — Re-run sweep after next frame's command flush
+   - **Expected:** Still zero orphans, confirming deterministic cascade
+
+### TC-1.2.6.I2 Engine Developer Reads Propagated World Transforms
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.6    |
+| 2 | US-1.2.6    |
+
+1. **#1** — Engine developer writes a physics system that reads `&GlobalTransform` after propagation
+   phase
+   - **Expected:** Read returns world-space matrix computed that frame by the propagation system
+2. **#2** — Mutate parent `Transform`, re-run propagation, re-read child `GlobalTransform`
+   - **Expected:** Child world position reflects parent's new local transform within the same frame
+
+### TC-1.2.7.I1 Tester Verifies Propagation Matches Reference
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.7    |
+| 2 | US-1.2.7    |
+
+1. **#1** — Engine tester runs propagation on 10K-entity fixture and captures all `GlobalTransform`
+   values
+   - **Expected:** Every value matches a naive serial recursive reference implementation bit-exact
+2. **#2** — Re-run with randomised parallel scheduling seed
+   - **Expected:** Results remain bit-identical across seeds, confirming determinism
+
+### TC-1.2.8.I1 Propagation Skips Clean Subtrees
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.8    |
+| 2 | US-1.2.8    |
+
+1. **#1** — Engine developer instruments propagation with per-entity recompute counter and runs one
+   frame with only 1 % of transforms dirty
+   - **Expected:** Recompute counter ≤ 1 % of entities plus their descendants
+2. **#2** — Same fixture with zero dirty transforms
+   - **Expected:** Counter records zero recomputations
+
+### TC-1.2.9.I1 Benchmark Propagation Across Hierarchy Depths
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.9    |
+| 2 | US-1.2.9    |
+
+1. **#1** — Engine tester runs criterion bench on 1M entities with depths 1, 10, 50, 100
+   - **Expected:** Four bench samples produced, each reporting mean time under perf budget
+2. **#2** — Compare depth-1 and depth-100 sample distributions
+   - **Expected:** Both complete within the R-1.2.4a 1 ms budget for 2M entities
+
+### TC-1.2.10.I1 Spatial Acceleration For Broadphase
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.10   |
+| 2 | US-1.2.10   |
+
+1. **#1** — Engine developer inserts 10K entities into BVH and queries for overlap pairs
+   - **Expected:** All overlapping pairs returned; broadphase uses BVH not brute-force O(n²) scan
+2. **#2** — Compare results to brute-force pair list
+   - **Expected:** Set equality, zero missed or extra pairs
+
+### TC-1.2.11.I1 Game Developer Uses Spatial Query API
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.11   |
+| 2 | US-1.2.11   |
+
+1. **#1** — Game developer calls `world.spatial_query_point(p)` for explosion damage
+   - **Expected:** Returns all entity handles whose AABB contains `p`
+2. **#2** — Game developer calls `world.spatial_query_aabb(area)` for trigger volume
+   - **Expected:** Returns all entity handles whose AABB intersects `area`
+
+### TC-1.2.12.I1 Technical Artist Views Local And World Transforms In Editor
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.12   |
+| 2 | US-1.2.12   |
+
+1. **#1** — Technical artist selects an entity in editor inspector and inspects Transform panel
+   - **Expected:** Panel shows local T/R/S and world T/R/S side by side in real time
+2. **#2** — Artist drags local translation field
+   - **Expected:** Local value updates immediately, world value updates after propagation each frame
+
+<!-- THIN: design section lacks detail -->
+### TC-1.2.13.I1 Editor Transform Widgets Match Entity State
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-1.2.13   |
+| 2 | US-1.2.13   |
+
+1. **#1** — Editor inspector binds Transform widget to selected entity
+   - **Expected:** Widget values match entity's `Transform` component on every selection change
+2. **#2** — External system mutates the entity's `Transform` while selected
+   - **Expected:** Widget refreshes on next frame to reflect the new values
 
 ## Benchmarks
 
