@@ -115,6 +115,19 @@ Companion test cases for [windowing.md](windowing.md).
 1. **#1** — `FrameRateCap::Capped(30)` vs `FrameRateCap::Uncapped`
    - **Expected:** Distinct values, not equal
 
+### TC-14.1.9.1 Event Channel Auto Size Capacity
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-14.1.9    |
+| 2 | R-14.1.9    |
+
+1. **#1** — Push events at slow rate (10/s) for 1 s into bounded channel
+   - **Expected:** Channel capacity remains at minimum baseline (e.g., 64), no resize
+2. **#2** — Push burst of 10,000 events in 16 ms (rapid resize storm)
+   - **Expected:** Auto-size grows capacity to absorb burst without dropping events; later decays
+     back toward baseline when rate falls
+
 ## Integration Tests
 
 ### TC-14.1.1.I1 Window Lifecycle
@@ -266,6 +279,55 @@ Companion test cases for [windowing.md](windowing.md).
 
 1. **#1** — Call `enable_hdr()` on SDR-only display
    - **Expected:** Returns `HdrError::DisplayNotHdrCapable`
+
+<!-- THIN: design section lacks detail -->
+### TC-14.1.2.I3 US Fullscreen Mode Switching
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-14.1.2  |
+
+1. **#1** — User toggles between Windowed, BorderlessFullscreen, ExclusiveFullscreen via API
+   - **Expected:** Each transition succeeds, swapchain reconfigured, window state matches request
+2. **#2** — Drag window to second monitor, switch to fullscreen
+   - **Expected:** Fullscreen claims target monitor, no device loss
+
+<!-- THIN: design section lacks detail -->
+### TC-14.1.7.I1 US Window Creation And Event Throughput
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-14.1.7  |
+
+1. **#1** — Create native window via `Window::new(WindowConfig::default())`
+   - **Expected:** Window appears, latency < 50 ms wall time
+2. **#2** — Generate 10,000 input events in one frame, drain channel
+   - **Expected:** All 10,000 events delivered without drop within frame budget
+
+<!-- THIN: design section lacks detail -->
+### TC-14.1.8.I1 US Always On Top Overlay Window
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-14.1.8  |
+
+1. **#1** — Create auxiliary always-on-top transparent window via
+   `WindowConfig { always_on_top: true, transparent: true, .. }`
+   - **Expected:** Window stays above other apps, transparent regions click-through
+2. **#2** — Render an FPS counter into the overlay
+   - **Expected:** Visible above the primary window without stealing focus
+
+<!-- THIN: design section lacks detail -->
+### TC-14.1.13.I1 US Console Presentation Path
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-14.1.13 |
+
+1. **#1** — On a console build target, initialize platform presentation controller
+   - **Expected:** Platform-specific flip queue path selected, swapchain valid
+2. **#2** — Submit a frame, query present completion
+   - **Expected:** Present succeeds within VSync budget, no validation errors
 
 ## Benchmarks
 
