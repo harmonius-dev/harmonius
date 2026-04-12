@@ -30,6 +30,23 @@ Test case IDs use `TC-13.7.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-13.7.12.3  | `test_binding_2d_entity`      | R-13.7.12 |
 | TC-13.7.14.1  | `test_validation_full`        | R-13.7.14 |
 | TC-13.7.14.2  | `test_asset_ref_broken`       | R-13.7.14 |
+| TC-13.10.1.1  | `test_ability_row_load`       | R-13.10.1 |
+| TC-13.12.1a.1 | `test_race_row_load`          | R-13.12.1a |
+| TC-13.12.1b.1 | `test_class_row_load`         | R-13.12.1b |
+| TC-13.12.1c.1 | `test_multiclass_row_load`    | R-13.12.1c |
+| TC-13.12.1d.1 | `test_prestige_row_load`      | R-13.12.1d |
+| TC-16.3.1.1   | `test_column_types_all`       | R-16.3.1  |
+| TC-16.3.2.1   | `test_load_time_validation`   | R-16.3.2  |
+| TC-16.3.3.1   | `test_row_ref_zero_copy`      | R-16.3.3  |
+| TC-16.3.4.1   | `test_proto_chain_cycle_det`  | R-16.3.4  |
+| TC-16.3.5.1   | `test_fk_other_table`         | R-16.3.5  |
+| TC-16.3.6.1   | `test_join_query_cross_table` | R-16.3.6  |
+| TC-16.3.7.1   | `test_hash_btree_indices`     | R-16.3.7  |
+| TC-16.3.8.1   | `test_locale_string_fallback` | R-16.3.8  |
+| TC-16.3.9.1   | `test_ecs_bind_from_row`      | R-16.3.9  |
+| TC-16.3.10.1  | `test_formula_column_native`  | R-16.3.10 |
+| TC-16.3.11.1  | `test_hot_reload_10k_time`    | R-16.3.11 |
+| TC-16.3.12.1  | `test_full_load_1m_time`      | R-16.3.12 |
 
 1. **TC-13.7.1.1** `test_schema_type_validation` — Schema with I32 column; insert matching value
    (pass), then mismatched String value (fail). Assert error names the column.
@@ -144,6 +161,105 @@ Test case IDs use `TC-13.7.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Input: `Value::AssetRef(handle_to_missing_asset)`
     - Expected: `ValidationError { severity: Warning, .. }`
 
+23. **TC-13.10.1.1** `test_ability_row_load` — Load an `Ability` table row and spawn an entity bound
+    to it. Assert the entity's ability component fields match row values.
+    - Input: `Ability` table with row id=1 (name="Fireball", damage=50, cooldown=3.0); entity with
+      `DatabaseRow { table: ability, row: 1 }`
+    - Expected: entity has Ability component with name="Fireball", damage=50, cooldown=3.0
+
+24. **TC-13.12.1a.1** `test_race_row_load` — Load a `Race` table row into an RPG character entity.
+    Assert stat modifiers from the row are applied on spawn.
+    - Input: `Race` table row id=1 (str_mod=+2, dex_mod=0); entity bound via `DatabaseRow`
+    - Expected: character entity has `RaceMods { str: 2, dex: 0 }`
+
+25. **TC-13.12.1b.1** `test_class_row_load` — Load a `Class` table row. Assert base HP and per-level
+    HP from the row are present on the bound entity.
+    - Input: `Class` row (name="Fighter", base_hp=10, hp_per_level=6); bound entity
+    - Expected: entity has `ClassData { base_hp: 10, hp_per_level: 6 }`
+
+26. **TC-13.12.1c.1** `test_multiclass_row_load` — Load a multi-class combo row referencing two
+    class rows via FK array column. Assert both class FKs resolve to their rows.
+    - Input: `MultiClass` row with `classes = [fighter_ref, wizard_ref]`
+    - Expected: `resolve_foreign_key` on each FK returns the correct class row
+
+27. **TC-13.12.1d.1** `test_prestige_row_load` — Load a prestige/rebirth definition row with
+    unlock_level and bonus fields. Assert values match after load.
+    - Input: `Prestige` row (unlock_level=10, bonus_xp_mult=2.0)
+    - Expected: `get(row_id)` returns row with those exact values
+
+28. **TC-16.3.1.1** `test_column_types_all` — Create a schema containing one column of every
+    `ColumnType` variant (Bool, I32, I64, F32, F64, String, Enum, ForeignKey, AssetRef, EntityRef,
+    Array). Insert a row with correctly-typed values for each column.
+    - Input: 11-column schema + `Row { values }` with one `Value` per variant (Bool, I32, I64, F32,
+      F64, String, Enum, ForeignKey, AssetRef, EntityRef, Array)
+    - Expected: `schema.validate_row(&row) == Ok(())`; `row.values.len() == 11`
+
+29. **TC-16.3.2.1** `test_load_time_validation` — Load a table file that contains a row failing FK
+    integrity, a row failing range, and a row failing a custom rule. Assert validation runs at load
+    time and returns three distinct errors with `table`, `row`, `column` populated.
+    - Input: RON file with three deliberate violations; `import_table` then `validate_table`
+    - Expected: `Vec<ValidationError>` of length 3, one per violation type, no table inserted into
+      registry
+
+30. **TC-16.3.3.1** `test_row_ref_zero_copy` — Insert a table as an ECS resource; obtain a `RowRef`;
+    call `registry.resolve_foreign_key(&row_ref)`. Assert the returned reference points into the
+    same allocation as the stored row (zero copy).
+    - Input: `TableRegistry` with one table; `RowRef { table: T, row: RowId(1) }`
+    - Expected: `ptr::eq(resolve_foreign_key(rr).unwrap(), table.get(RowId(1)).unwrap())` is true
+
+31. **TC-16.3.4.1** `test_proto_chain_cycle_det` — Build a row inheritance chain A → B → C → A and
+    call `detect_cycle(&table, A)`. Assert the cycle path is returned (not `None`).
+    - Input: rows A, B, C with parents forming a 3-cycle
+    - Expected: `detect_cycle` returns `Some(path)` where
+      `path.contains(&A) && path.contains(&B) && path.contains(&C)`
+
+32. **TC-16.3.5.1** `test_fk_other_table` — Create table A with a `ForeignKey(B)` column; row in A
+    references row 5 in table B. Assert `resolve_foreign_key` returns row 5 of table B.
+    - Input: two tables A and B in registry; A row has
+      `Value::ForeignKey(RowRef { table: B, row: RowId(5) })`
+    - Expected: `registry.resolve_foreign_key(&rr)` returns `Some(&b_row_5)`
+
+33. **TC-16.3.6.1** `test_join_query_cross_table` — Build `Items` and `Materials` tables joined on
+    an FK column. Run `join_query(items, material_id_col, materials, None, &arena)`. Assert each
+    returned `JoinRow` pairs the correct left/right rows.
+    - Input: 5 items each with a `material_id` FK; 3 materials
+    - Expected: result length == 5; every
+      `JoinRow.right.id == row that JoinRow.left.material_id references`
+
+34. **TC-16.3.7.1** `test_hash_btree_indices` — Build a table with two indexed columns: one Hash
+    (string), one BTree (i32). Assert exact lookup on the Hash column and range lookup on the BTree
+    column return the expected row sets.
+    - Input: 1k rows; Hash lookup for `"alpha"`; BTree range `[10, 20]`
+    - Expected: Hash returns exactly the rows with `name == "alpha"`; BTree returns exactly the rows
+      whose indexed i32 is in `[10, 20]`
+
+35. **TC-16.3.8.1** `test_locale_string_fallback` — Localized string column with active locale
+    `fr-CA` missing, `fr` present. Assert `get_resolved` returns the `fr` value.
+    - Input: base `"sword"`, `fr` overlay `"épée"`, `fr-CA` overlay absent, active locale `fr-CA`
+    - Expected: `get_resolved(row, col) == Value::String("épée".into())`
+
+36. **TC-16.3.9.1** `test_ecs_bind_from_row` — Spawn an entity with a `DatabaseRow` referencing a
+    row in a table bound to a codegen'd ECS component type. Assert the component fields match the
+    row values after `DatabaseBindingSystem::bind_entity`.
+    - Input: `ItemRow { name, damage }` row; entity `DatabaseRow { table: items, row: 1 }`
+    - Expected: entity has `Item { name, damage }` matching the row exactly
+
+37. **TC-16.3.10.1** `test_formula_column_native` — Define a formula column
+    `dps = damage * attack_speed` that is codegen'd into the middleman .dylib. Load the table; call
+    the codegen'd formula function for a row.
+    - Input: row `damage=10, attack_speed=2.5`; formula function `formula_item_dps`
+    - Expected: returned value is `25.0`; no bytecode VM used; function is a direct dylib symbol
+
+38. **TC-16.3.11.1** `test_hot_reload_10k_time` — Hot reload a 10,000-row table end-to-end
+    (file-watch event, I/O, validate, swap, rebind). Assert wall time is under 500 ms.
+    - Input: 10k-row table, file modified on disk
+    - Expected: `TableReloaded` event observed within 500 ms of the file write
+
+39. **TC-16.3.12.1** `test_full_load_1m_time` — Initial load 1,000,000 rows across multiple tables
+    and run `validate_all`. Assert total wall time is under 2 s.
+    - Input: 50 RON files totalling 1M rows
+    - Expected: load + validate completes in under 2 s; all tables in registry
+
 ## Integration Tests
 
 | ID           | Name                       | Req        |
@@ -156,6 +272,18 @@ Test case IDs use `TC-13.7.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-13.7.I.6  | `test_formula_bake_time`   | F-13.7.1   |
 | TC-13.7.I.7  | `test_formula_runtime`     | F-13.7.1   |
 | TC-13.7.I.8  | `test_asset_ref_streaming` | R-13.7.12  |
+| TC-16.3.1.I1 | `test_author_typed_schema` | US-16.3.1  |
+| TC-16.3.2.I1 | `test_author_load_valid`   | US-16.3.2  |
+| TC-16.3.3.I1 | `test_author_immut_query`  | US-16.3.3  |
+| TC-16.3.4.I1 | `test_author_proto_chain`  | US-16.3.4  |
+| TC-16.3.5.I1 | `test_author_fk_column`    | US-16.3.5  |
+| TC-16.3.6.I1 | `test_author_cross_join`   | US-16.3.6  |
+| TC-16.3.7.I1 | `test_author_index_query`  | US-16.3.7  |
+| TC-16.3.8.I1 | `test_author_locale_col`   | US-16.3.8  |
+| TC-16.3.9.I1 | `test_author_ecs_bind`     | US-16.3.9  |
+| TC-16.3.10.I1 | `test_author_formula_col` | US-16.3.10 |
+| TC-16.3.11.I1 | `test_author_hot_reload`  | US-16.3.11 |
+| TC-16.3.12.I1 | `test_author_full_load`   | US-16.3.12 |
 
 1. **TC-13.7.I.1** `test_load_50_tables` — Load 50 tables totalling 1M rows. Assert total load +
    validate time < 2 s on reference hardware.
@@ -197,6 +325,81 @@ Test case IDs use `TC-13.7.Z.N` format. Every row links to a specific R-X.Y.Z or
    marker removed and component bound once asset finishes loading.
    - Input: entity spawned before asset is ready
    - Expected: `has_component::<PendingAsset>()` initially true; false after asset ready
+
+9. **TC-16.3.1.I1** `test_author_typed_schema` (US-16.3.1) — As a game designer, author a table
+   schema in the Visual Table Editor with one column per supported `ColumnType`; save, then reopen.
+   Assert all columns and types persist round-trip.
+   - Input: editor schema draft with 11 columns (Bool..Array); save to RON
+   - Expected: reloaded schema `column_count() == 11`; each column type matches the authored value
+
+10. **TC-16.3.2.I1** `test_author_load_valid` (US-16.3.2) — As a designer, attempt to load a table
+    with deliberately invalid data; assert the editor shows the three validation errors and blocks
+    save until they are fixed.
+    - Input: authored row with out-of-range value, broken FK, and wrong type
+    - Expected: validation panel lists 3 errors; save rejected; after corrections, load and save
+      succeed
+
+11. **TC-16.3.3.I1** `test_author_immut_query` (US-16.3.3) — As a gameplay engineer, obtain a
+    `RowRef` from a query and read the referenced row from a system without mutating it. Run the
+    same query twice and assert identical results (no mutation side-effect).
+    - Input: system reading `RowRef` resolved through `TableRegistry`
+    - Expected: second query returns the same row instance; `table.version()` unchanged
+
+12. **TC-16.3.4.I1** `test_author_proto_chain` (US-16.3.4) — As a designer, build
+    `Item > Weapon > Sword > FireSword` inheritance chain in the Prototype Editor; assert that
+    `FireSword` inherits `Item` properties and overrides only the deltas.
+    - Input: 4-level chain with overrides at each level
+    - Expected: `flatten_row(fire_sword)` returns the resolved row with correct inherited and
+      overridden values
+
+13. **TC-16.3.5.I1** `test_author_fk_column` (US-16.3.5) — As a designer, add a `ForeignKey(Items)`
+    column to a `LootDrop` table via the editor; pick a row from `Items` in the dropdown. Assert the
+    FK is saved and resolves at runtime.
+    - Input: editor-authored FK cell referencing `Items` row 5
+    - Expected: saved table round-trips; `resolve_foreign_key` returns the `Items` row 5
+
+14. **TC-16.3.6.I1** `test_author_cross_join` (US-16.3.6) — As a designer, issue a cross-table join
+    query in the editor joining `Items` and `Recipes` on `item_id`. Assert the result view shows one
+    row per matching pair.
+    - Input: 10 items, 15 recipes
+    - Expected: join query UI displays 15 rows with fields from both tables
+
+15. **TC-16.3.7.I1** `test_author_index_query` (US-16.3.7) — As a designer, mark a column
+    `indexed: true` with type Hash; run an exact lookup in the editor. Mark another column BTree;
+    run a range query. Assert both return the expected rows.
+    - Input: 1k-row table with two indexed columns
+    - Expected: hash lookup returns exact match set; btree range returns the range set
+
+16. **TC-16.3.8.I1** `test_author_locale_col` (US-16.3.8) — As a localization designer, author a
+    `localized: true` string column; add overlays for `en-US`, `fr`, and `ja`; switch active locale
+    in the editor and assert the displayed value updates.
+    - Input: base `"sword"`; overlays `"Sword"`, `"épée"`, `"剣"`
+    - Expected: editor displays the correct localized value for each active locale
+
+17. **TC-16.3.9.I1** `test_author_ecs_bind` (US-16.3.9) — As a gameplay engineer, spawn entities
+    from an `Items` table via `DatabaseRow`. Assert each spawned entity has codegen'd `Item`
+    components populated directly from row values.
+    - Input: 50 item rows; 50 entities with `DatabaseRow` referencing them
+    - Expected: all 50 entities have `Item` components matching their respective rows
+
+18. **TC-16.3.10.I1** `test_author_formula_col` (US-16.3.10) — As a designer, author a formula
+    column `dps = damage * attack_speed` using the Visual Logic Graph. Assert the formula codegens
+    to a native Rust function and returns the correct value.
+    - Input: formula graph with two input nodes and a multiply node
+    - Expected: middleman .dylib contains `formula_<table>_dps`; evaluation returns
+      `damage * attack_speed`
+
+19. **TC-16.3.11.I1** `test_author_hot_reload` (US-16.3.11) — As a designer, save changes to a
+    10,000-row table while the game is running. Assert the game sees the change within 500 ms via
+    `TableReloaded`.
+    - Input: running game, 10k-row table, designer edits and saves
+    - Expected: `TableReloaded` event within 500 ms; live entities reflect the new data
+
+20. **TC-16.3.12.I1** `test_author_full_load` (US-16.3.12) — As a designer, cold-start the game with
+    1,000,000 rows across 50 tables. Assert the initial full load and validation complete within 2
+    s.
+    - Input: 50 baked rkyv tables totalling 1M rows
+    - Expected: engine startup to "all tables loaded" under 2 s
 
 ## Benchmarks
 
