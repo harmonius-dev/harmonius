@@ -531,6 +531,67 @@ Companion test cases for [state-machine.md](state-machine.md).
 3. **#3** — Linux, morph streaming I/O
    - **Expected:** Uses Tokio (epoll)
 
+### TC-9.4.3.I1 Sub State Machine Reuse
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.4.3.1  |
+| 2 | US-9.4.3.2  |
+
+1. **#1** — As a character animator, define one "attack" sub-state machine and reuse it across two
+   character archetypes
+   - **Expected:** Both archetypes resolve the sub-SM by ID; state graph is instantiated per owner;
+     changes to the shared definition propagate to both archetypes
+2. **#2** — As a technical artist, nest sub-SMs hierarchically (combat → melee → slash)
+   - **Expected:** Evaluation order is outer-to-inner; inner state exit propagates to outer
+     transitions
+
+### TC-9.4.5.I1 Parameter Driven Transitions
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.4.5.1  |
+| 2 | US-9.4.5.2  |
+
+1. **#1** — As a character animator, set `speed > 4.0` via named parameter. Assert state transitions
+   from `walk` to `run` within one frame
+   - **Expected:** `set_param("speed", 5.0)` triggers transition immediately; condition expression
+     `speed > 4.0` evaluates true
+2. **#2** — As an engine developer, fire a trigger parameter `jump`. Assert the transition fires
+   exactly once and the trigger auto-resets
+   - **Expected:** one `Jump` state entry per `trigger("jump")` call; subsequent evaluation returns
+     `false` until next trigger
+
+### TC-9.4.6.I1 Sync Group Walk Run Phase
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.4.6.1  |
+| 2 | US-9.4.6.2  |
+
+1. **#1** — As a character animator, place walk and run clips in one sync group; blend weight 0.5
+   during transition. Assert foot-contact markers align across both clips
+   - **Expected:** normalized phase of walk == normalized phase of run within 1e-3 each frame;
+     foot-contact timing error < 1 frame
+2. **#2** — As an engine developer, verify sync-group advance uses normalized time, not real time
+   - **Expected:** when walk is 1.2× real-time and run is 0.8× real-time, both still share a
+     normalized phase
+
+### TC-9.4.9.I1 Aim Offset With IK
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.4.9.1  |
+| 2 | US-9.4.9.2  |
+
+1. **#1** — As a character animator, apply an aim-offset additive layer driven by pitch (-30..+30
+   deg) and yaw (-45..+45 deg) on top of a locomotion clip
+   - **Expected:** upper-body bone rotations interpolate smoothly across the grid; lower body
+     unaffected (delta < 0.001 units)
+2. **#2** — As an engine developer, combine aim-offset output with hand IK for weapon alignment
+   - **Expected:** weapon muzzle forward vector aligned within 2 degrees of aim target after IK
+     pass; no oscillation across frames
+
 ## Benchmarks
 
 ### TC-9.4.1.B1 State Graph Evaluation

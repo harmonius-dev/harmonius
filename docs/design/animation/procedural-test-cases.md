@@ -388,6 +388,148 @@ Companion test cases for [procedural.md](procedural.md).
 1. **#1** — Toggle debug vis off for entity A, on for entity B
    - **Expected:** Entity A: zero overlays, Entity B: overlays present
 
+### TC-9.3.6.1 Motion Matching Best Pose
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.3.6     |
+| 2 | R-9.3.6     |
+
+1. **#1** — Pose database with 1,000 poses, query trajectory (3 future samples), search top-1
+   - **Expected:** Returned pose index minimizes the weighted trajectory + pose-vector distance
+     across all 1,000 candidates
+2. **#2** — Same database, weighted feature vector with velocity weight 0.5, position weight 1.0
+   - **Expected:** Returned index matches an offline brute-force search within 1e-4 distance
+
+### TC-9.5.1.1 GPU Cloth PBD Distance Constraint
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.5.1     |
+| 2 | R-9.5.1     |
+
+1. **#1** — 32×32 particle cloth pinned on top row, 60 substeps of gravity, distance constraints
+   only
+   - **Expected:** Vertical edge lengths stay within 1% of rest length after step; bottom row hangs
+     under gravity
+2. **#2** — Same cloth, 100 steps with bending constraints
+   - **Expected:** No constraint residual > 1e-3 after last step; no NaN in particle positions
+
+### TC-9.5.2.1 Strand Hair Guide Curve Sim
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.5.2     |
+| 2 | R-9.5.2     |
+
+1. **#1** — Guide curve of 16 points, stretch + bending constraints, 60 steps under gravity
+   - **Expected:** Segment lengths stay within 2% of rest; tip deflection < 0.5 × length
+2. **#2** — Same curve with wind vector (1, 0, 0) of 5 m/s
+   - **Expected:** Steady-state tip displacement biased in +X direction
+
+### TC-9.5.3.1 Card Hair Anisotropic Shading
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.5.3     |
+| 2 | R-9.5.3     |
+
+1. **#1** — Hair cards rendered with anisotropic specular (Kajiya-Kay), alpha-blended
+   - **Expected:** Per-pixel specular direction perpendicular to tangent; no z-fight; alpha sorts
+     correctly
+2. **#2** — Hair cards rendered in alpha-test mode
+   - **Expected:** No semi-transparent fringes; card edges exact
+
+### TC-9.5.4.1 Hair LOD Transitions
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.5.4     |
+| 2 | R-9.5.4     |
+| 3 | R-9.5.4     |
+
+1. **#1** — LOD 0 strand representation, camera 2 m
+   - **Expected:** Renders strands, strand count equals source
+2. **#2** — Camera 10 m — transition to cluster
+   - **Expected:** Active LOD == `Cluster`; strand count reduced to cluster count
+3. **#3** — Camera 50 m — transition to shell
+   - **Expected:** Active LOD == `Shell`; shell mesh drawn
+
+### TC-9.5.5.1 Cloth-Body Capsule Collision
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.5.5     |
+| 2 | R-9.5.5     |
+
+1. **#1** — Cloth patch falling onto a capsule proxy of the body
+   - **Expected:** No particle penetrates capsule by more than 1% of capsule radius after solve
+2. **#2** — Cloth patch draped over a convex hull proxy
+   - **Expected:** Contact points lie on hull surface; zero inside-hull particles
+
+### TC-9.5.6.1 Hair Wind Field Response
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.5.6     |
+| 2 | R-9.5.6     |
+
+1. **#1** — Shared wind field sample (2, 0, 0) m/s at hair root
+   - **Expected:** Average tip displacement along +X; magnitude monotonic with wind strength
+2. **#2** — Turbulent wind (sinusoidal in time)
+   - **Expected:** Tip oscillates in phase with wind; no resonance blow-up
+
+### TC-9.6.1.1 First-Person Head Bob Spring
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.6.1     |
+| 2 | R-9.6.1     |
+
+1. **#1** — Walk at 1.5 m/s, `head_bob.amplitude = 3 cm`, 60 frames
+   - **Expected:** Camera vertical position oscillates with amplitude within ±5% of 3 cm
+2. **#2** — Land from 3 m drop
+   - **Expected:** Landing spring triggers; camera Y dips then recovers within 0.3 s
+
+### TC-9.6.2.1 Weapon Sway and Sprint Tilt
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.6.2     |
+| 2 | R-9.6.2     |
+
+1. **#1** — Mouse delta (10, 0) applied, weapon sway stiffness = 30, damping = 4
+   - **Expected:** Viewmodel rotates opposite to mouse delta; oscillation damps within 0.5 s
+2. **#2** — Sprint state active, sprint tilt angle = 15 degrees
+   - **Expected:** Viewmodel tilts 15 ± 1 degrees on the Z axis while sprinting
+
+### TC-9.6.3.1 Recoil Pattern Spring
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.6.3     |
+| 2 | R-9.6.3     |
+
+1. **#1** — Fire 10 rounds with recoil pattern `[(0, 1), (0.5, 1.1), ...]`
+   - **Expected:** Viewmodel kick matches pattern samples within 2%; spring returns toward rest
+     between shots
+2. **#2** — ADS active
+   - **Expected:** Recoil magnitude scaled by `ads.recoil_scale`; camera sway minimized
+
+### TC-9.6.4.1 Equip Inspect Dual Wield
+
+| # | Requirement |
+|---|-------------|
+| 1 | R-9.6.4     |
+| 2 | R-9.6.4     |
+
+1. **#1** — Equip sequence triggered
+   - **Expected:** Viewmodel animates from `stow_pose` to `idle_pose` over configured duration; no
+     discontinuity
+2. **#2** — Dual-wield, independent per-hand spring systems
+   - **Expected:** Left-hand and right-hand springs integrate independently; no cross-talk in
+     positions or forces
+
 ## Integration Tests
 
 ### TC-9.3.1.I1 Pipeline Order
@@ -461,6 +603,206 @@ Companion test cases for [procedural.md](procedural.md).
 
 1. **#1** — Sever wing at runtime
    - **Expected:** Ragdoll spawns for detached part, locomotion adapts
+
+### TC-9.3.6.I1 Motion Matching Continuation
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.3.6.1  |
+| 2 | US-9.3.6.2  |
+
+1. **#1** — As an engine developer, play a character with a 1,000-pose motion-matching database;
+   change desired trajectory mid-stride
+   - **Expected:** Next selected clip is a pose whose outgoing trajectory best matches the new
+     desired trajectory; feature-vector distance minimal across the DB
+2. **#2** — As a character animator, tune weighted feature vector (velocity, bone positions); re-run
+   match
+   - **Expected:** Selected pose shifts in response to weights, no crashes, result stable across 5
+     ticks
+
+### TC-9.3.9.I2 Physics Locomotion Stumble
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.3.9.1  |
+| 2 | US-9.3.9.2  |
+
+1. **#1** — As an engine developer, apply PID balance to a biped on level ground for 120 frames
+   - **Expected:** Torso upright within 2 degrees; no oscillation exceeding 1 degree
+2. **#2** — Apply a 500 N·s lateral impulse to the torso
+   - **Expected:** Stumble detected within 3 frames; PID drives recovery within 60 frames
+
+### TC-9.3.10.I2 Dismember Locomotion Adapts
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.3.10.1 |
+| 2 | US-9.3.10.3 |
+
+1. **#1** — As a game developer, sever a quadruped's front-right leg at runtime
+   - **Expected:** Detached segment becomes a ragdoll entity with physics; parent skeleton loses the
+     subtree via ECS commands
+2. **#2** — Continue locomotion after severance
+   - **Expected:** Gait switches to three-legged pattern; character continues forward without
+     falling
+
+### TC-9.3.11.I1 Debug Vis Toggles
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.3.11.1 |
+| 2 | US-9.3.11.3 |
+
+1. **#1** — As a game developer, enable foot-target debug vis on entity A, disable on entity B
+   - **Expected:** DebugDraw contains entity A markers; no markers for entity B
+2. **#2** — Ship build with debug vis compiled out
+   - **Expected:** `locomotion_diagnostics_system` and `LocomotionDebugVis` absent from binary;
+     runtime toggle is a no-op
+
+### TC-9.5.1.I1 Cloth Garment End to End
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.5.1.1  |
+| 2 | US-9.5.1.2  |
+| 3 | US-9.5.1.3  |
+
+1. **#1** — As an engine developer, attach a GPU PBD cloth garment to a moving character for 300
+   frames
+   - **Expected:** Cloth follows character, constraint residual < 1e-3, no particle explosion
+2. **#2** — Character strikes a pose introducing self-intersection
+   - **Expected:** Self-collision constraints resolve intersections; no flip-through
+3. **#3** — Configure per-tier iteration count in `PlatformTier::Low`
+   - **Expected:** Lower iteration count applied; cloth still stable
+
+### TC-9.5.2.I1 Strand Hair Simulation
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.5.2.1  |
+| 2 | US-9.5.2.2  |
+| 3 | US-9.5.2.3  |
+
+1. **#1** — As an engine developer, simulate 50 strand-hair guide curves with stretch and bending
+   for 120 frames
+   - **Expected:** Strands remain within 2% of rest length; no NaN; tips hang naturally
+2. **#2** — As a character animator, tune stiffness and damping
+   - **Expected:** Higher stiffness reduces tip deflection; changes take effect without reload
+3. **#3** — As a tools user, inspect per-strand debug overlay
+   - **Expected:** Overlay draws guide curves; toggles off in ship builds
+
+### TC-9.5.3.I1 Card Hair Rendering Pipeline
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.5.3.1  |
+| 2 | US-9.5.3.2  |
+
+1. **#1** — As a character artist, render a character with card-hair asset using anisotropic
+   specular
+   - **Expected:** Kajiya-Kay specular direction perpendicular to card tangent; no sorting artifacts
+2. **#2** — Switch the same asset to alpha-test mode
+   - **Expected:** No semi-transparent fringes; card edges sharp
+
+### TC-9.5.4.I1 Hair LOD Cascade
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.5.4.1  |
+| 2 | US-9.5.4.2  |
+
+1. **#1** — As an engine developer, push the camera from 2 m to 80 m past a hair asset
+   - **Expected:** LOD transitions strand → cluster → card → shell at configured distances; no
+     visible pop
+2. **#2** — As a character artist, author per-LOD overrides
+   - **Expected:** Overrides honored; per-LOD shading parameters take effect at matching distances
+
+### TC-9.5.5.I1 Cloth Body Collision End to End
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.5.5.1  |
+| 2 | US-9.5.5.2  |
+
+1. **#1** — As an engine developer, simulate cloth against body capsule and convex hull proxies for
+   240 frames
+   - **Expected:** Particles never penetrate proxies beyond 1% tolerance; contact points on proxy
+     surfaces
+2. **#2** — As a character animator, adjust collision friction
+   - **Expected:** Cloth slides faster at low friction, grips at high friction; change takes effect
+     without rebuild
+
+### TC-9.5.6.I1 Hair Wind Field Integration
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.5.6.1  |
+| 2 | US-9.5.6.2  |
+| 3 | US-9.5.6.3  |
+
+1. **#1** — As an engine developer, apply a shared wind field of 5 m/s along +X to strand + card
+   hair
+   - **Expected:** Both representations bend in +X; magnitude scales with wind strength
+2. **#2** — As a VFX artist, toggle turbulent mode
+   - **Expected:** Hair responds with non-uniform sub-oscillation; no blow-up
+3. **#3** — As a tools user, inspect wind-field debug overlay
+   - **Expected:** Overlay shows direction and magnitude at hair sample points
+
+### TC-9.6.1.I1 First Person Camera Full
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.6.1.1  |
+| 2 | US-9.6.1.2  |
+| 3 | US-9.6.1.3  |
+
+1. **#1** — As a player, move at 1.5 m/s for 5 s
+   - **Expected:** Head bob oscillates at configured amplitude; camera FOV matches viewmodel FOV
+     setting
+2. **#2** — Land from 3 m drop
+   - **Expected:** Landing spring triggered; lean/peek dampens within 0.5 s
+3. **#3** — As an engine developer, toggle separate viewmodel FOV
+   - **Expected:** Viewmodel FOV differs from world FOV by configured delta, without clipping
+
+### TC-9.6.2.I1 Weapon Sway Bob Tilt
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.6.2.1  |
+| 2 | US-9.6.2.2  |
+| 3 | US-9.6.2.3  |
+
+1. **#1** — As a player, pan camera while walking
+   - **Expected:** Viewmodel sways opposite to pan, bobs with locomotion, damps within 0.5 s
+2. **#2** — Sprint for 2 s
+   - **Expected:** Sprint tilt angle applied; returns to neutral on sprint end
+3. **#3** — As a weapon designer, change per-weapon spring stiffness
+   - **Expected:** Sway profile shifts without relaunching
+
+### TC-9.6.3.I1 Recoil and ADS
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.6.3.1  |
+| 2 | US-9.6.3.3  |
+
+1. **#1** — As a player, fire 30 rounds without ADS
+   - **Expected:** Recoil follows weapon pattern data; spring recenters between bursts
+2. **#2** — Enter ADS and fire same 30 rounds
+   - **Expected:** Recoil magnitude scaled down by `ads.recoil_scale`; reticle stays closer to
+     center
+
+### TC-9.6.4.I1 Equip Holster Dual Wield
+
+| # | Requirement |
+|---|-------------|
+| 1 | US-9.6.4.1  |
+| 2 | US-9.6.4.4  |
+
+1. **#1** — As a player, equip then holster a weapon
+   - **Expected:** Equip/holster sequences play with smooth spring transitions; no clipping
+2. **#2** — Dual wield two pistols, inspect one
+   - **Expected:** Inspection plays on the active hand only; other hand spring remains undisturbed
 
 ## Benchmarks
 
