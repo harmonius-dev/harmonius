@@ -32,6 +32,11 @@ Test case IDs use `TC-8.7.Y.N` format. Every row links to a specific R-X.Y.Z or 
 | TC-8.7.17.1   | `test_overlap_co_simulation`          | R-8.7.17  |
 | TC-8.7.18.1   | `test_instance_lockout_timer`         | R-8.7.18  |
 | TC-8.7.19.1   | `test_canary_rollback_on_breach`      | R-8.7.19  |
+| TC-8.8.1.1    | `test_server_side_movement_bound`     | R-8.8.1   |
+| TC-8.8.2.1    | `test_client_integrity_hash`          | R-8.8.2   |
+| TC-8.8.3.1    | `test_behavior_zscore_anomaly`        | R-8.8.3   |
+| TC-8.8.4.1    | `test_economy_double_spend_blocked`   | R-8.8.4   |
+| TC-8.8.5.1    | `test_rpc_rate_limit_budget`          | R-8.8.5   |
 
 1. **TC-8.7.1.1** `test_shard_assign_player` — Create a `ShardManager` with 3 shards and assign a
    character. Assert the assignment is recorded against exactly one shard and lookup returns the
@@ -177,6 +182,38 @@ Test case IDs use `TC-8.7.Y.N` format. Every row links to a specific R-X.Y.Z or 
     - Input: canary at `traffic: 10%`, `error_rate: 5%` (threshold 1%)
     - Expected: `RolloutAction::Rollback { revision: prev }` emitted; canary pods drained and
       replaced with the previous revision
+
+25. **TC-8.8.1.1** `test_server_side_movement_bound` — Client reports a position delta exceeding the
+    maximum physically possible given the server-simulated velocity. Assert the server rejects the
+    update and logs a `CheatDetected { kind: Movement }` event.
+    - Input: server velocity cap 10 m/s, client reports 50 m jump in 1 s
+    - Expected: position snap-back to server state, violation score incremented, event emitted
+
+26. **TC-8.8.2.1** `test_client_integrity_hash` — Client reports a memory-region hash that does not
+    match the expected signed baseline. Assert the server flags the session with
+    `CheatDetected { kind: Integrity }` and escalates to the configured action.
+    - Input: expected hash `H_ref`, client report `H_tampered`
+    - Expected: mismatch detected, action `Kick` (or configured tier) emitted, event logged
+
+27. **TC-8.8.3.1** `test_behavior_zscore_anomaly` — Player's per-minute headshot rate exceeds
+    population Z-score threshold. Assert the anomaly detector emits a `BehaviorAnomaly` event with
+    the computed Z-score.
+    - Input: population mean 5/min, stddev 1/min, player 12/min over 5 minute window
+    - Expected: `BehaviorAnomaly { metric: "headshots_per_min", z: _ > 3.0 }` emitted, player
+      flagged for review
+
+28. **TC-8.8.4.1** `test_economy_double_spend_blocked` — Player submits two trade RPCs referencing
+    the same inventory item ID within one tick. Assert the second rejects with
+    `EconomyError::DoubleSpend` and no item duplication occurs.
+    - Input: item id `42`, trade 1 to player B, trade 2 to player C same tick
+    - Expected: trade 1 commits, trade 2 returns `Err(EconomyError::DoubleSpend)`, inventory
+      snapshot shows 1 copy of item 42
+
+29. **TC-8.8.5.1** `test_rpc_rate_limit_budget` — Player invokes a rate-limited RPC at 2× the
+    configured budget. Assert excess calls are rejected with `RpcError::RateLimit` and the budget
+    refills on the configured cadence.
+    - Input: `CastAbility` budget 10/s, 20 invocations in 1 s
+    - Expected: 10 executed, 10 rejected with `RateLimit`; budget resets after 1 s window
 
 ## Integration Tests
 
