@@ -60,3 +60,13 @@
    - **Rationale:** Latency reduction ensures frame gen does not increase perceived input lag.
    - **Verification:** Measure end-to-end latency with and without Reflex. Verify at least 30%
      reduction. Verify frame rate is not affected.
+
+## SMAA
+
+9. **R-2.6.9** — The engine **SHALL** provide SMAA as a multi-pass spatial anti-aliasing technique
+   with configurable quality presets, serving as an intermediate option between FXAA and TAA.
+   - **Rationale:** SMAA offers higher edge quality than FXAA without temporal history dependency,
+     filling a gap between lightweight and temporal AA.
+   - **Verification:** Enable SMAA. Verify edge detection, blending weight, and neighborhood
+     blending passes execute. Compare edge quality against FXAA and verify measurable improvement on
+     aliased geometry.

@@ -79,3 +79,21 @@
      systems and the animation state machine.
    - **Verification:** Set a blackboard variable from a behavior tree and verify the animation state
      transitions. Query remaining clip time and verify the value matches expected playback position.
+
+## Non-Functional Requirements
+
+1. **R-9.4.NF1** -- The engine **SHALL** evaluate 1000 state graph instances within 1 ms CPU time.
+   - **Rationale:** State machine evaluation must scale to MMO-scale character counts.
+   - **Verification:** Evaluate 1000 graph instances. Assert total CPU time stays within 1 ms.
+
+2. **R-9.4.NF2** -- The engine **SHALL** use under 1 KB of per-instance memory for state graph
+   instances.
+   - **Rationale:** Lightweight instances enable thousands of animated entities without memory
+     pressure.
+   - **Verification:** Measure per-instance memory. Assert it stays under 1 KB.
+
+3. **R-9.4.NF3** -- The engine **SHALL** maintain foot sliding below 1 cm during sync-group
+   transitions.
+   - **Rationale:** Visible foot skating breaks locomotion quality during state transitions.
+   - **Verification:** Transition between walk and run with sync markers. Measure foot position
+     delta. Assert sliding stays below 1 cm.

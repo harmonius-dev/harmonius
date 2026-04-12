@@ -328,3 +328,31 @@
    support complex game state logic (menu, loading, gameplay, paused, cinematic). Systems declare
    run criteria gated on active state.
    - **Deps:** F-1.1.30 (Observers), F-1.1.27 (Run Criteria)
+
+## AoSoA Tiled Storage
+
+| ID       | Feature                          |
+|----------|----------------------------------|
+| F-1.1.39 | AoSoA SIMD-Width Tiled Storage  |
+
+1. **F-1.1.39** — Store component data within archetype chunks using AoSoA (Array of Structures of
+   Arrays) tiled layout where each tile contains N consecutive elements matching the platform SIMD
+   width (4 for SSE/NEON, 8 for AVX2). SIMD iteration maps lanes directly to consecutive entities
+   within a tile, eliminating gather/scatter overhead. Tiles are packed contiguously within chunks,
+   preserving cache locality while enabling vectorized processing.
+   - **Deps:** F-1.1.1 (Archetype Storage)
+   - **Platform:** Mobile (NEON): tile width 4. Desktop (SSE4.2): tile width 4. Desktop (AVX2): tile
+     width 8. Tile width is detected at startup via CPUID/feature flags.
+
+## Compiled Query Plans
+
+| ID       | Feature                                |
+|----------|----------------------------------------|
+| F-1.1.40 | Compiled Query Plans with Bloom Filters|
+
+1. **F-1.1.40** — Compile query plans at QueryState construction time. Each plan includes a bloom
+   filter for fast archetype rejection, pre-resolved column offsets into archetype tables, prefetch
+   hints for upcoming chunks, and branchless change detection. Plans are incrementally updated when
+   new archetypes are created, avoiding full recompilation. Monomorphized iterators are generated
+   per query signature for zero-overhead iteration.
+   - **Deps:** F-1.1.17 (Composable Archetype Queries), F-1.1.1 (Archetype Storage)

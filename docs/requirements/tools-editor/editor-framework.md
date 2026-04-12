@@ -62,3 +62,61 @@
    - **Rationale:** VR editing lets designers experience levels at true player scale.
    - **Verification:** Enter VR mode, place an entity with motion controllers, exit VR, and verify
      the entity appears on the desktop viewport.
+
+10. **R-15.1.10** — The engine **SHALL** implement a non-linear undo tree where branching edits
+    preserve all history branches, with LCA-based navigation to reach any historical state.
+    - **Rationale:** A linear undo stack permanently loses branches; a tree preserves all approaches
+      for recovery.
+    - **Verification:** Make edits A-B-C, undo to A, make edits D-E, then navigate back to state C
+      and verify data integrity.
+
+11. **R-15.1.11** — The engine **SHALL** isolate editor state in a separate ECS world synchronized
+    with the game world via an EventBridge, preventing editor state from leaking into game builds.
+    - **Rationale:** Editor-only state (selection, gizmos, undo) must never appear in shipped game
+      data.
+    - **Verification:** Run a game build and verify no editor-only components or entities are
+      present in the ECS world.
+
+12. **R-15.1.12** — The engine **SHALL** support editor extension via logic graphs for custom
+    panels, gizmos, inspectors, importers, validation rules, and automation scripts.
+    - **Rationale:** Logic graph-based extension uses the same no-code system as gameplay authoring.
+    - **Verification:** Author a logic graph that adds a custom inspector widget and verify it
+      appears when the target component is selected.
+
+13. **R-15.1.13** — The engine **SHALL** skip UI render passes when no widget is dirty and no input
+    occurred, and shall repaint only dirty widget regions for partial redraw.
+    - **Rationale:** Dirty-based rendering minimizes CPU and GPU usage when the editor is idle.
+    - **Verification:** Leave the editor idle for 5 seconds and verify zero UI render passes occur.
+      Modify one widget and verify only its region repaints.
+
+14. **R-15.1.14** — The engine **SHALL** generate a screen-space occlusion mask from opaque UI
+    panels and skip 3D rendering of fully covered viewport pixels.
+    - **Rationale:** Rendering behind opaque panels wastes GPU cycles.
+    - **Verification:** Cover 50% of the viewport with opaque panels and verify GPU tile work drops
+      proportionally.
+
+15. **R-15.1.15** — The engine **SHALL** support frosted-glass transparent panels with configurable
+    Gaussian or Kawase background blur at reduced resolution.
+    - **Rationale:** Transparent blur panels provide visual context while maintaining readability.
+    - **Verification:** Enable a frosted-glass panel and verify the background blurs at the
+      configured resolution without artifacts.
+
+16. **R-15.1.16** — The engine **SHALL** support multi-monitor layouts with per-monitor DPI scaling,
+    floating panel snap-to-edge, and independent dock trees when panels span monitors.
+    - **Rationale:** Multi-monitor setups are standard for professional content creation workflows.
+    - **Verification:** Float a panel onto a second monitor with different DPI and verify correct
+      scaling and snap behavior.
+
+17. **R-15.1.17** — The engine **SHALL** provide predefined workflow layout profiles for common
+    editing tasks (animation, level design, VFX, logic graph, 2D, debug, review) and support custom
+    user-defined layouts.
+    - **Rationale:** Predefined layouts reduce setup time for common workflows.
+    - **Verification:** Switch to the animation layout profile and verify all animation-related
+      panels are arranged correctly.
+
+18. **R-15.1.18** — The engine **SHALL** reduce editor rendering to event-driven mode when the
+    editor is unfocused or idle, consuming minimal CPU and GPU power.
+    - **Rationale:** Idle power reduction extends laptop battery life and reduces fan noise during
+      breaks.
+    - **Verification:** Unfocus the editor, measure CPU and GPU usage, and verify both drop to
+      near-zero within 2 seconds.

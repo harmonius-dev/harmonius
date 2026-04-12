@@ -83,3 +83,13 @@
    - **Verification:** Compute distance at 10M light-years on all platforms; verify bit-identical
      results. Verify sub-meter resolution at 1e26 scale. Verify conversions to f32/f64 are
      deterministic across platforms.
+
+## Per-Worker-Thread Arenas
+
+1. **R-1.7.11** — The engine **SHALL** provide one FrameArena per job system worker thread, indexed
+   by worker index, with no atomics on the allocation hot path.
+   - **Rationale:** Per-thread arenas eliminate atomic contention on the allocation fast path,
+     ensuring bump allocation scales linearly with worker count.
+   - **Verification:** Allocate from per-thread arenas on 8 worker threads concurrently; verify no
+     atomic instructions on hot path (inspect assembly). Verify each arena is independent and resets
+     correctly at frame boundary.

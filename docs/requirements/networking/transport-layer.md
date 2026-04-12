@@ -103,3 +103,10 @@
    - **Verification:** Benchmark encryption throughput on hardware with AES-NI and verify at least 1
      Gbps. Measure software fallback and verify at least 100 Mbps. Measure CPU overhead and verify
      below 5%.
+3. **R-8.1.11** — The engine **SHALL** use platform-native DTLS implementations (Schannel on
+   Windows, Security.framework on macOS, rustls on Linux) selected via cfg-gated static dispatch.
+   - **Rationale:** Platform-native TLS libraries provide hardware acceleration, FIPS compliance,
+     and OS-managed certificate stores without bundling a third-party TLS implementation.
+   - **Verification:** Integration test per platform: establish a DTLS connection and verify the
+     platform-native library is used. Verify hardware-accelerated AES-GCM on platforms with AES-NI
+     or Apple Silicon. Verify cfg gating excludes other backends at compile time.

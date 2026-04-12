@@ -111,3 +111,13 @@
       accessibility setting.
     - **Verification:** Click a button. Assert expected audio dispatched to UI mixer bus. Disable UI
       sounds. Assert no audio dispatched.
+
+## Spring Animation
+
+15. **R-10.1.13a** — The engine **SHALL** support spring-physics-based animation for widget
+    properties with configurable stiffness, damping, and mass.
+    - **Rationale:** Spring animations provide natural motion with overshoot and settle behavior
+      that keyframed curves cannot easily replicate.
+    - **Verification:** Animate a widget position with spring physics. Assert overshoot occurs with
+      low damping. Assert critically damped spring settles without overshoot. Assert mass affects
+      oscillation frequency.

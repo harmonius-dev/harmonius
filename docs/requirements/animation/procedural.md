@@ -39,6 +39,16 @@
    - **Verification:** Set a look-at target and verify head and spine rotate toward it. Verify angle
      limits are respected. Verify blending with base animation produces no discontinuities.
 
+## Motion Matching
+
+1. **R-9.3.6** -- The engine **SHALL** search a pre-built pose database for the best continuation of
+   the current pose given a desired trajectory, using weighted feature distance metrics.
+   - **Rationale:** Motion matching produces fluid locomotion from mocap data without hand-authored
+     state machine transitions.
+   - **Verification:** Query a motion database with a known pose and trajectory. Verify the selected
+     frame minimizes the weighted distance metric. Verify matching runs CPU-side with GPU-evaluated
+     blending.
+
 ## Foot Placement and Locomotion
 
 1. **R-9.3.7** -- The engine **SHALL** raycast from foot bone positions to the ground and adjust leg
@@ -78,3 +88,21 @@
      state and physical forces.
    - **Verification:** Enable the overlay and verify all listed elements are visible. Verify the
      overlay is absent from shipping builds.
+
+## Non-Functional Requirements
+
+1. **R-9.3.NF1** -- The engine **SHALL** solve 500 two-bone IK chains within 0.5 ms GPU time.
+   - **Rationale:** IK must scale to large character counts without exceeding animation frame
+     budget.
+   - **Verification:** Benchmark 500 two-bone chains. Assert GPU time stays within 0.5 ms.
+
+2. **R-9.3.NF2** -- The engine **SHALL** evaluate foot placement for 100 characters within 0.3 ms
+   CPU time.
+   - **Rationale:** Foot placement raycasts and IK must stay within CPU budget for MMO-scale scenes.
+   - **Verification:** Benchmark 100 characters with foot placement. Assert CPU time stays within
+     0.3 ms.
+
+3. **R-9.3.NF3** -- The engine **SHALL** simulate GPU cloth PBD for 1000 vertices within 0.5 ms GPU
+   time on desktop.
+   - **Rationale:** Cloth simulation must share GPU budget with skinning and rendering.
+   - **Verification:** Benchmark a 1000-vertex cloth panel. Assert GPU time stays within 0.5 ms.

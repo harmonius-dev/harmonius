@@ -103,3 +103,16 @@
     - **Rationale:** Streaming and compression make planetary voxel worlds feasible.
     - **Verification:** Load a planetary world. Assert memory stays within budget. Assert
       compression exceeds 10:1.
+
+## Non-Functional Requirements
+
+15. **R-3.2.NF1** -- The engine **SHALL** decode a 257x257 LZ4-compressed heightfield tile within 1
+    ms CPU time.
+    - **Rationale:** Tile decode must not stall terrain streaming during fast camera movement.
+    - **Verification:** Benchmark tile decode. Assert completion within 1 ms.
+
+16. **R-3.2.NF2** -- The engine **SHALL** mesh a 16x16x16 voxel chunk within 5 ms CPU time using any
+    supported meshing algorithm.
+    - **Rationale:** Interactive voxel editing requires sub-frame mesh regeneration.
+    - **Verification:** Modify a voxel and trigger re-mesh. Assert mesh regeneration completes
+      within 5 ms.

@@ -73,3 +73,13 @@
    - **Verification:** Run automated contrast checker on all text. Assert ratios. Tab through every
      element. Assert visible focus indicator in logical order. Trigger time-limited interaction.
      Assert timeout is adjustable.
+
+## Reduced Motion
+
+8. **R-10.6.8** — The engine **SHALL** provide reduced motion settings suppressing animations,
+   parallax, and camera shake with configurable animation speed scaling.
+   - **Rationale:** Players with vestibular conditions experience discomfort from excessive motion;
+     reduced motion is a distinct accessibility need from high contrast and scaling.
+   - **Verification:** Enable reduced motion. Assert UI animations are suppressed. Assert parallax
+     layers scroll at uniform rate. Assert camera shake is disabled. Set animation scale to 0.5.
+     Assert animations play at half speed.

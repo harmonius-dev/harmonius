@@ -6,6 +6,7 @@
 |-------------|----------------------------|
 | US-9.4.1.1  | character animator (P-11)  |
 | US-9.4.1.2  | engine developer (P-26)    |
+| US-9.4.1.3  | engine developer (P-26)    |
 | US-9.4.2.1  | character animator (P-11)  |
 | US-9.4.2.2  | character animator (P-11)  |
 | US-9.4.3.1  | character animator (P-11)  |
@@ -18,19 +19,22 @@
 2. **US-9.4.1.2** -- **As an** engine developer (P-26), **I want** per-character graph instances to
    share graph definitions, **so that** memory overhead is minimized across many animated entities.
 
-3. **US-9.4.2.1** -- **As a** character animator (P-11), **I want** transitions with configurable
+3. **US-9.4.1.3** -- **As an** engine developer (P-26), **I want** per-instance state memory under 1
+   KB, **so that** 1000 animated entities evaluate their state graphs within 1 ms.
+
+4. **US-9.4.2.1** -- **As a** character animator (P-11), **I want** transitions with configurable
    blend duration, blend curve, and per-bone blend profiles, **so that** state changes look natural
    and polished.
 
-4. **US-9.4.2.2** -- **As a** character animator (P-11), **I want** sync markers in clips that align
+5. **US-9.4.2.2** -- **As a** character animator (P-11), **I want** sync markers in clips that align
    footfalls across source and destination states during transitions, **so that** foot contact
    timing is preserved.
 
-5. **US-9.4.3.1** -- **As a** character animator (P-11), **I want** to encapsulate related states
+6. **US-9.4.3.1** -- **As a** character animator (P-11), **I want** to encapsulate related states
    into reusable sub-state machines, **so that** complex behaviors are modular and shareable across
    character archetypes.
 
-6. **US-9.4.3.2** -- **As a** technical artist (P-13), **I want** sub-state machines composable
+7. **US-9.4.3.2** -- **As a** technical artist (P-13), **I want** sub-state machines composable
    hierarchically, **so that** I can build layered animation systems from reusable building blocks.
 
 ## Layers, Variables, and Sync
@@ -39,9 +43,11 @@
 |-------------|----------------------------|
 | US-9.4.4.1  | character animator (P-11)  |
 | US-9.4.4.2  | engine developer (P-26)    |
+| US-9.4.4.3  | game developer (P-15)      |
 | US-9.4.5.1  | character animator (P-11)  |
 | US-9.4.5.2  | engine developer (P-26)    |
 | US-9.4.6.1  | character animator (P-11)  |
+| US-9.4.6.2  | engine developer (P-26)    |
 
 1. **US-9.4.4.1** -- **As a** character animator (P-11), **I want** to run multiple state machine
    instances in parallel on separate layers with per-bone masks and blend modes, **so that**
@@ -57,9 +63,22 @@
 4. **US-9.4.5.2** -- **As an** engine developer (P-26), **I want** trigger parameters that
    auto-reset after consumption, **so that** one-shot events like jump or attack fire exactly once.
 
-5. **US-9.4.6.1** -- **As a** character animator (P-11), **I want** sync groups that keep walk and
+5. **US-9.4.4.3** -- **As a** game developer (P-15), **I want** to fade a layer weight to zero at
+   runtime, **so that** disabled layers have no effect on the final pose.
+
+6. **US-9.4.5.1** -- **As a** character animator (P-11), **I want** named parameters that gameplay
+   code sets to drive state transitions via boolean expressions, **so that** animation responds to
+   game state changes.
+
+7. **US-9.4.5.2** -- **As an** engine developer (P-26), **I want** trigger parameters that
+   auto-reset after consumption, **so that** one-shot events like jump or attack fire exactly once.
+
+8. **US-9.4.6.1** -- **As a** character animator (P-11), **I want** sync groups that keep walk and
    run cycles phase-synchronized regardless of playback rates, **so that** locomotion blends
    maintain consistent foot contact timing.
+
+9. **US-9.4.6.2** -- **As an** engine developer (P-26), **I want** sync groups to advance all member
+   clips by normalized time, **so that** foot contact markers align at all blend weights.
 
 ## Montages, Blend Spaces, and Integration
 
@@ -67,11 +86,15 @@
 |--------------|----------------------------|
 | US-9.4.7.1   | character animator (P-11)  |
 | US-9.4.7.2   | engine developer (P-26)    |
+| US-9.4.7.3   | game developer (P-15)      |
 | US-9.4.8.1   | character animator (P-11)  |
 | US-9.4.8.2   | technical artist (P-13)    |
+| US-9.4.8.3   | engine developer (P-26)    |
 | US-9.4.9.1   | character animator (P-11)  |
+| US-9.4.9.2   | engine developer (P-26)    |
 | US-9.4.10.1  | engine developer (P-26)    |
 | US-9.4.10.2  | technical artist (P-13)    |
+| US-9.4.10.3  | game developer (P-15)      |
 
 1. **US-9.4.7.1** -- **As a** character animator (P-11), **I want** animation montages that
    temporarily override state machine output on specific bone groups, **so that** emotes, combat
@@ -97,6 +120,30 @@
    to trigger animation state transitions through the Logic Graph system (F-15.8.4), **so that** AI
    agents drive animation from blackboard variables.
 
-7. **US-9.4.10.2** -- **As a** technical artist (P-13), **I want** query APIs for current state,
-   remaining clip time, root motion displacement, and montage status, **so that** gameplay systems
-   synchronize with animation progress.
+7. **US-9.4.7.3** -- **As a** game developer (P-15), **I want** montage blend-out to return control
+   to the state machine smoothly, **so that** one-shot animations end without visible pops or
+   discontinuities.
+
+8. **US-9.4.8.3** -- **As an** engine developer (P-26), **I want** blend space triangulation
+   pre-computed at asset import time, **so that** runtime evaluation requires only barycentric
+   weight lookup without per-frame triangulation.
+
+9. **US-9.4.9.1** -- **As a** character animator (P-11), **I want** additive aim offset layers
+   parameterized by pitch and yaw, **so that** weapon aiming produces smooth bone rotations on top
+   of locomotion.
+
+10. **US-9.4.9.2** -- **As an** engine developer (P-26), **I want** aim offsets integrated with the
+IK system for precise weapon alignment, **so that** the weapon muzzle tracks the aim point
+accurately.
+
+11. **US-9.4.10.1** -- **As an** engine developer (P-26), **I want** behavior trees and GOAP
+    planners
+to trigger animation state transitions through the Logic Graph system, **so that** AI agents drive
+animation from blackboard variables.
+
+12. **US-9.4.10.2** -- **As a** technical artist (P-13), **I want** query APIs for current state,
+remaining clip time, root motion displacement, and montage status, **so that** gameplay systems
+synchronize with animation progress.
+
+13. **US-9.4.10.3** -- **As a** game developer (P-15), **I want** 500 AI agents evaluating animation
+    state machines within 2 ms, **so that** large NPC crowds animate within budget.

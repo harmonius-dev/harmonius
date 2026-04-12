@@ -97,3 +97,13 @@
       coupling.
     - **Verification:** Trigger destruction and verify audio and VFX fire within the same frame.
       Increase fragment count and verify audio complexity scales proportionally.
+
+## Fire Damage
+
+12. **R-11.5.7a** — The engine **SHALL** apply fire DPS to entities overlapping the fire propagation
+    map, with damage scaled by fuel type and coverage.
+    - **Rationale:** Fire must deal damage proportional to exposure for gameplay consequences beyond
+      visual effects.
+    - **Verification:** Place an entity in a fire zone with wood fuel type. Assert DPS matches the
+      configured rate. Move the entity to partial coverage. Assert damage scales proportionally.
+      Place on stone. Assert reduced or zero damage.

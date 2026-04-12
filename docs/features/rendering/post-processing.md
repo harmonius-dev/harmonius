@@ -18,6 +18,9 @@
 | F-2.9.12 | Panini Projection                 |
 | F-2.9.13 | Screen-Space Cavity and Curvature |
 | F-2.9.14 | Post-Process Graph Editor         |
+| F-2.9.15 | Post-Process Volume Blending      |
+| F-2.9.16 | Quality Tier Adaptation           |
+| F-2.9.17 | Dolby Vision HDR Output           |
 
 1. **F-2.9.1** — Bright-source glow simulating camera lens diffraction and scattering. A threshold
    pass extracts pixels above a luminance cutoff, followed by a multi-pass Gaussian or dual-kawase

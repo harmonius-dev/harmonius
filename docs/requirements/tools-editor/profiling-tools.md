@@ -46,3 +46,81 @@
      editor on the target.
    - **Verification:** Connect to a remote instance, capture a CPU timeline, and verify the data
      matches a local capture.
+
+8. **R-15.5.8** — The engine **SHALL** track per-ECS-system execution time with the system name,
+   showing system bottlenecks in the CPU timeline.
+   - **Rationale:** ECS system profiling is critical for identifying gameplay logic bottlenecks.
+   - **Verification:** Run a scene with 20 systems, verify each system appears with its name and
+     timing in the CPU timeline.
+
+9. **R-15.5.9** — The engine **SHALL** track per-thread arena watermarks and reset counts, reporting
+   excessive arena usage.
+   - **Rationale:** Arena allocators can waste memory if watermarks grow unbounded.
+   - **Verification:** Trigger a large allocation in a per-thread arena and verify the profiler
+     reports the watermark increase.
+
+10. **R-15.5.10** — The engine **SHALL** report GPU VRAM usage broken down by resource type
+    (textures, buffers, render targets) with a live treemap visualization.
+    - **Rationale:** VRAM breakdown identifies which resource types consume the most memory for
+      targeted optimization.
+    - **Verification:** Load a scene with known texture and buffer sizes and verify the VRAM treemap
+      matches expected allocations.
+
+11. **R-15.5.11** — The engine **SHALL** profile physics subsystem timing (broadphase, narrowphase,
+    solver) and display per-step metrics.
+    - **Rationale:** Physics is often a frame-time bottleneck; per-phase timing reveals which phase
+      to optimize.
+    - **Verification:** Run a physics-heavy scene and verify broadphase, narrowphase, and solver
+      timings appear as separate entries.
+
+12. **R-15.5.12** — The engine **SHALL** profile audio subsystem timing (callback duration, active
+    voice count, buffer underruns).
+    - **Rationale:** Audio callback overruns cause audible glitches that are hard to diagnose
+      without dedicated profiling.
+    - **Verification:** Play 64 simultaneous voices, verify the profiler shows callback duration and
+      voice count.
+
+13. **R-15.5.13** — The engine **SHALL** profile asset streaming performance (load queue depth,
+    cache hit rate, I/O bandwidth).
+    - **Rationale:** Streaming bottlenecks cause visible pop-in and hitches during traversal.
+    - **Verification:** Stream assets during camera movement and verify the profiler shows queue
+      depth, hit rate, and bandwidth.
+
+14. **R-15.5.14** — The engine **SHALL** profile VFX subsystem metrics (active particle count, GPU
+    compute dispatch time).
+    - **Rationale:** VFX can silently consume GPU budget; dedicated metrics enable targeted particle
+      budget enforcement.
+    - **Verification:** Spawn a particle system with 10,000 particles and verify the profiler shows
+      the correct count and dispatch time.
+
+15. **R-15.5.15** — The engine **SHALL** profile UI subsystem timing (layout pass duration, paint
+    pass duration, widget count).
+    - **Rationale:** Complex UI hierarchies can become frame-time bottlenecks without dedicated
+      profiling.
+    - **Verification:** Open a panel with 500 widgets and verify layout and paint pass durations
+      appear in the profiler.
+
+16. **R-15.5.16** — The engine **SHALL** support side-by-side frame comparison in the CPU timeline
+    to identify performance regressions.
+    - **Rationale:** Comparing frames reveals timing regressions that absolute numbers miss.
+    - **Verification:** Capture two frames, enable comparison mode, and verify differing zones are
+      highlighted.
+
+17. **R-15.5.17** — The engine **SHALL** profile job system utilization (worker busy/idle ratio,
+    work-steal count, queue depth).
+    - **Rationale:** Job system profiling reveals load imbalance and scheduling inefficiency.
+    - **Verification:** Run a parallel workload across 8 workers and verify per-worker busy/idle
+      ratios and steal counts are displayed.
+
+18. **R-15.5.18** — The engine **SHALL** profile network latency (RTT histogram, jitter, packet loss
+    rate, retransmit count).
+    - **Rationale:** Latency profiling complements bandwidth profiling for multiplayer optimization.
+    - **Verification:** Introduce artificial latency and verify the RTT histogram and jitter metrics
+      update correctly.
+
+19. **R-15.5.19** — The engine **SHALL** support user-defined profiler zones from logic graphs, with
+    zone names registered at codegen time and stable across hot-reloads.
+    - **Rationale:** User-defined zones enable designers to profile their own logic without engine
+      modifications.
+    - **Verification:** Add a profiler zone node in a logic graph, compile, and verify the zone
+      appears in the CPU timeline with the correct name.

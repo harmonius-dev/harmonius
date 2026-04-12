@@ -52,3 +52,17 @@
    - **Rationale:** Multi-provider support avoids vendor lock-in for hosting.
    - **Verification:** Connect to each provider, create a PR, and verify status updates appear in
      the editor.
+
+9. **R-15.10.9** — The engine **SHALL** provide a visual binary conflict resolution UI that reads
+   base/ours/theirs via codegen'd type descriptors, shows per-property structural diffs, and allows
+   ours/theirs/manual resolution per field.
+   - **Rationale:** Binary assets cannot be merged with text tools; per-property resolution
+     preserves intent from both sides.
+   - **Verification:** Create conflicting edits to a binary mesh asset on two branches, merge, and
+     verify the per-property UI shows diffs with pick options.
+
+10. **R-15.10.10** — The engine **SHALL** pause editor interaction during merge conflict resolution,
+    presenting a modal UI until all conflicts are resolved.
+    - **Rationale:** Editing during merge resolution can corrupt intermediate state.
+    - **Verification:** Trigger a merge conflict, verify the editor blocks all non-resolution
+      interactions, resolve all conflicts, and verify the editor resumes normal operation.

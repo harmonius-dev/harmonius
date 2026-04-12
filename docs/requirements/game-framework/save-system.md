@@ -55,3 +55,55 @@
    - **Verification:** Save and verify the file is compressed and encrypted. Corrupt a byte and
      verify the checksum detects it. Kill the process mid-write and verify the previous save is
      intact via atomic rename.
+
+7. **R-13.3.7** — The engine **SHALL** snapshot procedural asset blobs (terrain modifications,
+   generated textures) alongside entity component state in the save archive.
+   - **Rationale:** Procedural modifications are part of game state and must persist across
+     save/load cycles.
+   - **Verification:** Modify terrain procedurally, save, load, and verify the terrain matches the
+     saved modification.
+
+8. **R-13.3.8** — The engine **SHALL** track schema versions per-component type in the save header,
+   migrating only changed components on load.
+   - **Rationale:** Per-component versioning avoids migrating unchanged data and enables independent
+     component evolution.
+   - **Verification:** Change one component's schema, save with the old schema, load, and verify
+     only that component migrates while others load directly.
+
+9. **R-13.3.9** — The engine **SHALL** support save migration transforms including split component,
+   merge components, reparent entity, create/delete entity, cross-component field move, and data
+   table rekeying.
+   - **Rationale:** Complex schema evolution (splitting components, reparenting entities) requires
+     rich migration primitives beyond add/remove/rename.
+   - **Verification:** Register a split-component migration, save with the old schema, load, and
+     verify the component is split into two with correct field values.
+
+10. **R-13.3.10** — The engine **SHALL** support save context filtering (character, world, instance,
+    settings) allowing selective serialization of entity subsets.
+    - **Rationale:** Different save contexts (character vs. world) enable separate save files for
+      different game state domains.
+    - **Verification:** Tag entities with character and world contexts, save with character context
+      only, and verify world entities are excluded.
+
+11. **R-13.3.11** — The engine **SHALL** emit typed events for all save lifecycle stages (start,
+    complete, fail) including cloud sync and conflict events, enabling UI feedback and game logic
+    hooks.
+    - **Rationale:** Save lifecycle events enable loading screens, progress bars, and conflict
+      resolution UI.
+    - **Verification:** Register an event listener, trigger a save, and verify SaveStarted and
+      SaveComplete events fire in order.
+
+12. **R-13.3.12** — The engine **SHALL** store rich per-slot metadata including character class,
+    party composition, quest progress summary, death count, currency, completion percentage,
+    difficulty, and extensible custom fields.
+    - **Rationale:** Rich metadata enables informed save slot selection without loading full game
+      state.
+    - **Verification:** Save with custom metadata fields, read slot metadata without loading the
+      save, and verify all fields are present.
+
+13. **R-13.3.13** — The engine **SHALL** support cloud save sync with Nintendo cloud storage and
+    Google Play Games cloud saves in addition to Steam, iCloud, PlayStation, and Xbox platforms.
+    - **Rationale:** Nintendo Switch and Android are target platforms that require their own cloud
+      save integration.
+    - **Verification:** Save on a Nintendo Switch, sync to cloud, load on a second device, and
+      verify state matches.

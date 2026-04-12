@@ -110,3 +110,18 @@
     - **Rationale:** Camera lag makes aiming and navigation feel unresponsive.
     - **Verification:** Measure input-to-camera-update latency across 100 frames and verify all
       within 16.67 ms.
+
+## VR and Split-Screen
+
+13. **R-13.25.11** — The engine **SHALL** provide a VR camera brain that integrates OpenXR head
+    pose, stereo rendering, eye tracking input, and foveated rendering maps.
+    - **Rationale:** VR requires a specialized camera pipeline that is distinct from flat-screen
+      rendering.
+    - **Verification:** Launch a VR session, verify stereo rendering matches head pose, and confirm
+      eye tracking drives the foveation map.
+
+14. **R-13.25.12** — The engine **SHALL** support split-screen rendering with multiple independent
+    camera brains using channel masks and render layer filtering.
+    - **Rationale:** Local multiplayer and co-op games require independent camera views per player.
+    - **Verification:** Set up 2-player split-screen, assign independent camera brains with
+      different channel masks, and verify each player sees only their own HUD and camera view.

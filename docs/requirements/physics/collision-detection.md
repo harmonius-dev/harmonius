@@ -60,3 +60,23 @@
    - **Rationale:** Data-driven materials decouple surface properties from code.
    - **Verification:** Create two materials. Collide. Assert combined friction matches the
      configured combine mode.
+
+## Non-Functional Requirements
+
+10. **R-4.2.NF1** -- The engine **SHALL** complete broadphase for 50,000 AABBs within 1 ms on
+    minimum-spec hardware.
+    - **Rationale:** Broadphase must not dominate the physics frame budget in dense scenes.
+    - **Verification:** Populate 50K entities with random extents. Assert broadphase completes
+      within 1 ms.
+
+11. **R-4.2.NF2** -- The engine **SHALL** complete narrowphase for 10,000 primitive pairs within 2
+    ms on minimum-spec hardware.
+    - **Rationale:** Narrowphase must scale to large contact counts without exceeding frame budget.
+    - **Verification:** Benchmark 10K overlapping primitive pairs. Assert narrowphase completes
+      within 2 ms.
+
+12. **R-4.2.NF3** -- The engine **SHALL** deliver collision events in the same frame they are
+    detected with zero latency.
+    - **Rationale:** Same-frame delivery prevents desync between physics and gameplay feedback.
+    - **Verification:** Move two spheres into contact. Assert CollisionStarted fires the same frame
+      contact is detected.

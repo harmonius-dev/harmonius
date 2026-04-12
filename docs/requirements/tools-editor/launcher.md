@@ -40,3 +40,10 @@
    - **Rationale:** Guided setup reduces collaboration infrastructure complexity.
    - **Verification:** Run the wizard, verify all services connect, and confirm a new team member
      inherits the setup.
+
+7. **R-15.15.7** — The engine **SHALL** support automatic update checking and delta-based updates
+   using WinSparkle (Windows), Sparkle (macOS), and AppImage delta (Linux).
+   - **Rationale:** Automatic updates keep developers on the latest stable version without manual
+     downloads.
+   - **Verification:** Publish a new engine version, verify the launcher detects the update and
+     applies the delta patch correctly on each platform.

@@ -83,3 +83,32 @@
    real player load. capture granularity to limit bandwidth to under 10 Mbps.
    - **Deps:** F-15.5.1, F-15.5.2, F-15.5.3, F-15.5.5
    - **Platform:** Requires a low-overhead binary protocol; data is streamed with configurable
+
+## Subsystem Profilers
+
+| ID | Feature |
+| ---------- | ----------------------------------------------------- |
+| F-15.5.8 | Per-Subsystem Profiler Trackers |
+| F-15.5.9 | Side-by-Side Frame Comparison |
+| F-15.5.10 | Logic Graph-Defined Profiler Zones |
+
+1. **F-15.5.8** — Dedicated profiler trackers for all major engine subsystems: ECS system timing
+   (per-system name), physics (broadphase/narrowphase/solver), audio (callback duration, voice
+   count, underruns), asset streaming (queue depth, cache hit rate, I/O bandwidth), VFX (particle
+   count, GPU dispatch time), UI (layout/paint pass duration, widget count), job system (worker
+   busy/idle ratio, steal count, queue depth), and arena memory (per-thread watermarks, reset
+   counts). Each tracker integrates into the CPU timeline and memory profiler views.
+   - **Deps:** F-15.5.1, F-15.5.3
+   - **Platform:** All platforms. Remote profiling streams subsystem data.
+2. **F-15.5.9** — Side-by-side frame comparison in the CPU timeline. Select two captured frames and
+   view them aligned vertically with matching zone names. Zones with timing differences exceeding a
+   configurable threshold are highlighted. Enables quick identification of performance regressions
+   between frames, builds, or code changes.
+   - **Deps:** F-15.5.1
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+3. **F-15.5.10** — User-defined profiler zones created from logic graph nodes. A dedicated "Profiler
+   Zone" node wraps a subgraph region and registers a named zone at codegen time. Zone names are
+   stable across hot-reloads. User zones appear alongside engine zones in the CPU timeline with a
+   distinct color category.
+   - **Deps:** F-15.5.1, F-15.8.4 (Gameplay Logic Graphs)
+   - **Platform:** All platforms. Zones are compiled into native code.

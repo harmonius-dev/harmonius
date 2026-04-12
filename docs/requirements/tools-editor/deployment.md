@@ -52,3 +52,45 @@
    - **Rationale:** Clear documentation prevents build configuration errors.
    - **Verification:** Verify the matrix documentation matches actual build capabilities by
      triggering each combination.
+
+10. **R-15.14.10** — The engine **SHALL** compile codegen'd Rust source into a middleman .dylib for
+    development hot-reload and a statically linked binary with LTO for shipping builds, using
+    platform-specific linkers (MSVC link.exe, ld64, lld, platform SDK linker).
+    - **Rationale:** Hot-reload accelerates iteration; LTO with static linking optimizes shipping
+      builds.
+    - **Verification:** Modify a codegen'd type, trigger hot-reload, and verify the change takes
+      effect without restart. Build a shipping binary and verify LTO is applied.
+
+11. **R-15.14.11** — The engine **SHALL** compile HLSL shaders offline via DXC and
+    metal-shaderconverter CLI to DXIL, SPIR-V, and MSL IR with parallel variant compilation via the
+    job system and per-platform variant caching keyed by BLAKE3(source + flags + tool version +
+    platform).
+    - **Rationale:** Offline shader compilation eliminates runtime stalls and enables per-platform
+      optimization.
+    - **Verification:** Compile a shader with 4 variants across 3 platforms and verify all 12
+      outputs are cached and valid.
+
+12. **R-15.14.12** — The engine **SHALL** package baked assets in rkyv-archived bundle files that
+    are mmap-readable at runtime without deserialization, with BLAKE3 content integrity.
+    - **Rationale:** Zero-copy mmap access eliminates deserialization cost at load time.
+    - **Verification:** Bake an asset bundle, mmap it, and verify access without deserialization.
+      Corrupt a byte and verify integrity check fails.
+
+13. **R-15.14.13** — The engine **SHALL** ship baked assets as separate bundle files alongside the
+    executable, reserving include_bytes! for inline data under 64 KB.
+    - **Rationale:** Large assets in binaries inflate executable size and waste memory.
+    - **Verification:** Build a shipping package and verify no asset over 64 KB is embedded in the
+      binary.
+
+14. **R-15.14.14** — The engine **SHALL** bake platform-specific asset variants (BC7/ASTC textures,
+    DXIL/SPIR-V/MSL shaders, Opus/AAC/ADPCM audio, full/reduced meshlets) via parallel per-asset
+    cooking using the job system.
+    - **Rationale:** Per-platform variants ensure optimal format on each target.
+    - **Verification:** Bake a texture for Windows (BC7) and iOS (ASTC) and verify both are valid
+      for their platform.
+
+15. **R-15.14.15** — The engine **SHALL** support SteamOS as a build target with Steam Deck verified
+    packaging and controller-first UI validation.
+    - **Rationale:** SteamOS is a distinct platform with controller-first constraints.
+    - **Verification:** Build for SteamOS, run on Steam Deck, and verify controller navigation works
+      without mouse input.

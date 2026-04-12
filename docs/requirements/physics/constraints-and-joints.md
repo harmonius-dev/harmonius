@@ -48,3 +48,32 @@
    - **Rationale:** Limb replacement enables prosthetic gameplay and regrowth mechanics.
    - **Verification:** Attach a prosthetic. Assert joint constraints re-establish. Assert locomotion
      profile updates.
+
+9. **R-4.3.9** -- The engine **SHALL** cache accumulated impulses from the previous substep in
+   WarmStartData components and apply them at the start of each solve pass to accelerate
+   convergence.
+   - **Rationale:** Warm starting reduces the iteration count needed for stable stacking and complex
+     joint chains.
+   - **Verification:** Stack 10 boxes with and without warm starting. Assert warm-started solve
+     converges in fewer iterations. Assert WarmStartData persists across substeps.
+
+## Non-Functional Requirements
+
+10. **R-4.3.NF1** -- The engine **SHALL** achieve constraint solver throughput of at least 5000 rows
+    per millisecond, solving 500 joints within 4 ms.
+    - **Rationale:** Joint-heavy scenes (ragdolls, vehicles, chains) must stay within the physics
+      frame budget.
+    - **Verification:** Benchmark 500 joints across mixed types. Assert total solve time stays
+      within 4 ms.
+
+11. **R-4.3.NF2** -- The engine **SHALL** activate a ragdoll from animation within 0.5 ms per
+    ragdoll, supporting 8 simultaneous activations per frame.
+    - **Rationale:** Mass-casualty events must not cause frame hitches.
+    - **Verification:** Activate 8 ragdolls in a single frame. Assert per-ragdoll activation cost
+      stays within 0.5 ms.
+
+12. **R-4.3.NF3** -- The engine **SHALL** maintain chain stability for 32-segment chains over 60
+    seconds with positional drift below 1 mm.
+    - **Rationale:** Visible chain stretching breaks immersion for ropes, cables, and bridges.
+    - **Verification:** Simulate a 32-segment chain under gravity for 60 s. Assert endpoint drift
+      stays below 1 mm.

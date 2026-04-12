@@ -68,3 +68,25 @@
    optional integrations (e.g., physics, audio, networking) from core engine code without
    compile-time feature flags.
    - **Deps:** F-1.6.1, F-1.6.3
+
+## Middleman .dylib Architecture
+
+| ID      | Feature                              |
+|---------|--------------------------------------|
+| F-1.6.8 | Middleman .dylib Codegen Architecture|
+| F-1.6.9 | Static LTO Linking for Shipping Builds|
+
+1. **F-1.6.8** — Organize all codegen'd types (components, events, systems, serialization code) into
+   a single middleman .dylib. The engine binary loads the middleman at startup. Plugin .dylibs link
+   against the middleman for shared type layouts. During hot reload, the middleman is recompiled and
+   swapped, ensuring all plugins see consistent type layouts. This three-layer architecture (engine
+   binary, middleman .dylib, plugin .dylibs) is the foundation for safe hot reload.
+   - **Deps:** F-1.6.5 (Hot Reload), F-1.6.6 (ABI Stability)
+   - **Platform:** Uses dlopen/dlclose on POSIX and LoadLibrary/FreeLibrary on Windows. The
+     middleman .dylib path is configurable.
+2. **F-1.6.9** — In shipping builds, all plugin code is statically linked into the engine binary
+   with LTO (Link-Time Optimization) enabled. No .dylib files are distributed with released games.
+   Static linking eliminates dynamic dispatch overhead, enables cross-module inlining, and reduces
+   the attack surface by removing loadable code paths.
+   - **Deps:** F-1.6.8
+   - **Platform:** LTO mode: thin LTO for faster builds during development, fat LTO for shipping.

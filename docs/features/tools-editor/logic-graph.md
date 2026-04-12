@@ -189,3 +189,60 @@
    node location in each graph for one-click navigation.
    - **Deps:** F-15.8.1, F-15.8.10, F-12.5.1 (Asset Database)
    - **Platform:** Desktop only. Not available on mobile or console runtime.
+
+## Keyboard-First Editing and Organization
+
+| ID | Feature |
+| ----------- | -------------------------------------------------- |
+| F-15.8.15 | Keyboard-First Graph Editing |
+| F-15.8.16 | Visual Macro Group Containers |
+| F-15.8.17 | Shared Graph Editor Framework |
+| F-15.8.18 | Extract Selection to Reusable Subgraph |
+
+1. **F-15.8.15** — A keyboard-first graph editing workflow where Tab opens a fuzzy search palette
+   for node placement, arrow keys navigate between nodes, and placed nodes auto-connect to the
+   previously selected output pin. Sequential node lists display actions in implicit execution order
+   without visible wires. Bulk operations (select all of type, disconnect all, align) are accessible
+   via keyboard shortcuts.
+   - **Deps:** F-15.8.1, F-15.8.10 (Node Library)
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+2. **F-15.8.16** — Visual macro group containers that draw colored boundary boxes around sets of
+   nodes for organizational grouping. Groups are named, colored, and expand/collapse to show or hide
+   their contents. Collapsed groups display a summary of inputs and outputs. Groups can be promoted
+   to reusable subgraph assets via extract-to-subgraph (F-15.8.18).
+   - **Deps:** F-15.8.1
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+3. **F-15.8.17** — A shared graph editor framework providing the pannable/zoomable canvas, typed pin
+   connection system, node widget rendering, minimap, edge interaction (click, drag, reroute), and
+   selection model used by all domain-specific graph editors (logic, material, VFX, animation,
+   audio, quest, dialogue, render graph, behavior tree, state machine, tool graph, custom). Domain
+   editors extend the framework with specialized node types and preview infrastructure.
+   - **Deps:** F-15.1.1 (Dockable Panel Layout)
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+4. **F-15.8.18** — Extracts a selected set of nodes into a new reusable subgraph asset. External
+   connections to the selection become input/output pins on a new SubgraphCall node that replaces
+   the selection. Pin names are inferred from connected node labels. The extracted subgraph is saved
+   as an asset and appears in the node library for reuse across the project.
+   - **Deps:** F-15.8.1, F-15.8.10
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+
+## 2D and Data Table Support
+
+| ID | Feature |
+| ----------- | ----------------------------------------------- |
+| F-15.8.19 | 2D-Specific Nodes in Graph Editors |
+| F-15.8.20 | Generic Data Table Editor Widget |
+
+1. **F-15.8.19** — 2D-specific nodes in all visual editors that appear contextually when the graph
+   targets a 2D scene. Includes 2D animation timeline nodes (sprite frame sequences, flip-book), 2D
+   material nodes (sprite tinting, palette swap), 2D physics/spatial query nodes (overlap circle,
+   raycast 2D), and 2D blend spaces. 3D-only nodes are hidden when the graph context is 2D.
+   - **Deps:** F-15.8.1, F-10.5.1 (2D Rendering)
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+2. **F-15.8.20** — A reusable table editor widget for authoring game data tables (loot tables,
+   ability stats, equipment stats, economy data). Supports typed columns (int, float, string, enum,
+   asset reference), inline cell editing, column sort, row filter, and formula cells that compute
+   values from other columns. Tables are saved as data assets and referenced by gameplay logic
+   graphs.
+   - **Deps:** F-15.1.1, F-15.8.4
+   - **Platform:** Desktop only. Not available on mobile or console runtime.

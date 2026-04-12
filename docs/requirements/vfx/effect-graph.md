@@ -50,3 +50,42 @@
    - **Verification:** Spawn at near and far distances and verify far uses fewer particles. Exceed
      the budget and verify lower-priority scaled down while higher-priority retained. Confirm GPU
      time stays within ceiling.
+
+## Force Fields
+
+6. **R-11.6.6** — The engine **SHALL** provide ForceField components with configurable shape, force
+   type (radial, vortex, directional, drag), strength, and falloff that influence particle
+   simulation and debris trajectories.
+   - **Rationale:** Force fields provide reusable spatial forces for VFX without per-emitter custom
+     logic.
+   - **Verification:** Place a radial force field. Spawn particles within range. Assert particles
+     accelerate away from center. Test each force type and assert correct directional behavior.
+     Verify falloff reduces force at distance.
+
+## Audio and Volumetric Output
+
+7. **R-11.6.7** — The engine **SHALL** support audio emission from effect graph output nodes,
+   triggering spatial audio events on particle spawn, death, and collision.
+   - **Rationale:** Synchronized audio feedback from particle events creates cohesive audiovisual
+     effects without manual audio scripting.
+   - **Verification:** Configure an effect graph with AudioEmit output on collision. Trigger a
+     particle collision. Assert a spatial audio event fires at the collision position within the
+     same frame.
+
+8. **R-11.6.8** — The engine **SHALL** support volumetric density output from effect graph nodes,
+   injecting density and color into the froxel grid for volumetric smoke rendering.
+   - **Rationale:** Froxel grid injection enables particle-driven volumetric smoke without separate
+     volume rendering systems.
+   - **Verification:** Configure an effect graph with VolumetricDensity output. Spawn particles.
+     Assert density values appear in the froxel grid at particle positions. Verify volumetric
+     rendering shows smoke.
+
+## Physics-VFX Bridge
+
+9. **R-11.6.9** — The engine **SHALL** bridge physics collision and fracture events to VFX systems
+   via a dedicated bridge system running after the physics step.
+   - **Rationale:** A dedicated bridge decouples physics and VFX while ensuring VFX react to physics
+     events within the same frame.
+   - **Verification:** Trigger a physics collision. Assert the bridge system spawns the configured
+     VFX within the same frame. Trigger a fracture event. Assert debris VFX spawn at fracture
+     positions.

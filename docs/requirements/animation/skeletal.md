@@ -77,3 +77,19 @@
      scenes.
    - **Verification:** Place a character at LOD 2 distance and verify reduced bone set. Verify a
      hero character with LOD bias maintains full quality at the same distance.
+
+## Non-Functional Requirements
+
+1. **R-9.1.NF1** -- The engine **SHALL** batch-evaluate 1000 skeleton instances in a single GPU
+   compute dispatch with total frame time under 2 ms.
+   - **Rationale:** Instanced evaluation must scale to MMO-scale crowds without per-instance CPU
+     overhead.
+   - **Verification:** Spawn 1000 instances. Assert dispatch count is 1. Assert frame time under 2
+     ms.
+
+2. **R-9.1.NF2** -- The engine **SHALL** achieve 10:1 or greater compression on humanoid animation
+   clips with positional error per joint below the perceptual threshold.
+   - **Rationale:** Compressed clips reduce memory and streaming bandwidth without visible quality
+     loss.
+   - **Verification:** Compress and decompress a reference clip. Assert ratio exceeds 10:1. Assert
+     per-joint error below 0.001 units.

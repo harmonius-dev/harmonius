@@ -71,3 +71,62 @@
      and AoE.
    - **Verification:** Populate scene with 10,000 entities; perform sphere overlap with With<Enemy>
      filter; verify only enemies within sphere returned. Verify ray hits sorted by distance.
+
+## 2D Transforms
+
+1. **R-1.2.9** — The engine **SHALL** provide 2D transform components (Transform2D,
+   GlobalTransform2D, PreviousGlobalTransform2D) using Vec2 position, f32 rotation, Vec2 scale, with
+   Mat3 propagation through the hierarchy.
+   - **Rationale:** 2D and 2.5D games need efficient 2D math without the overhead of unused 3D
+     transform components.
+   - **Verification:** Build a 3-level 2D hierarchy; propagate; verify GlobalTransform2D matches
+     manual Mat3 composition. Verify no 3D transform components are required.
+
+## Previous-Frame Transforms
+
+1. **R-1.2.10** — The engine **SHALL** store the previous frame's GlobalTransform for each entity,
+   copying current to previous before each propagation pass, enabling render interpolation between
+   fixed-timestep positions.
+   - **Rationale:** Fixed-timestep simulation produces discrete positions; previous-frame storage
+     enables smooth interpolation for rendering at variable frame rates.
+   - **Verification:** Run simulation at 30 Hz with rendering at 60 Hz; verify
+     PreviousGlobalTransform contains frame N-1 values during frame N propagation. Verify copy
+     occurs before propagation, not after.
+
+## Interpolated Transforms
+
+1. **R-1.2.11** — The engine **SHALL** compute interpolated transforms as lerp(previous, current,
+   alpha) during the Frame Snapshot phase for smooth rendering between fixed-timestep simulation
+   ticks.
+   - **Rationale:** Interpolation eliminates visual stutter when the render rate differs from the
+     simulation rate.
+   - **Verification:** Simulate at 30 Hz, render at 60 Hz; verify interpolated position at alpha=0.5
+     is midpoint between previous and current. Verify alpha=0.0 matches previous and alpha=1.0
+     matches current.
+
+## Hierarchical Scene Spawning
+
+1. **R-1.2.12** — The engine **SHALL** support spawning a scene as children of a specified parent
+   entity, with all root entities in the scene becoming children of the parent.
+   - **Rationale:** Scene composition requires attaching spawned content to existing hierarchy nodes
+     for equipment, vehicle passengers, and UI panels.
+   - **Verification:** Spawn a 5-entity scene as children of an existing parent; verify all scene
+     roots are children of the parent. Verify transforms propagate through the attachment point.
+
+## Scene Instance Tracking
+
+1. **R-1.2.13** — The engine **SHALL** track each spawned scene instance with an opaque
+   SceneInstanceId, enabling bulk despawn of all entities from a single scene spawn.
+   - **Rationale:** Unloading a streamed zone or removing a spawned prefab requires despawning all
+     entities from that instance without affecting other entities.
+   - **Verification:** Spawn a scene twice; despawn one instance by SceneInstanceId; verify only
+     that instance's entities are removed and the other instance is intact.
+
+## Ordered Child Insertion
+
+1. **R-1.2.14** — The engine **SHALL** support inserting a child at a specific index in the parent's
+   children list for ordered siblings in UI and editor.
+   - **Rationale:** UI widget ordering and editor entity lists require deterministic sibling order
+     with insertion at arbitrary positions.
+   - **Verification:** Insert children A, B, C; insert D at index 1; verify order is A, D, B, C.
+     Verify parent's children list reflects the insertion index.

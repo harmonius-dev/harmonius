@@ -87,3 +87,67 @@
     variables, and references with rename refactoring that propagates to all referencing graphs.
     - **Rationale:** Refactoring across many graphs must be safe and automated.
     - **Verification:** Rename a custom node type and verify all 10 referencing graphs update.
+
+15. **R-15.8.15** — The engine **SHALL** provide a keyboard-first graph editing workflow with hotkey
+    search palette, arrow-key node navigation, auto-connect on placement, and sequential node lists
+    with implicit execution flow.
+    - **Rationale:** Keyboard-first interaction is faster than mouse wiring for experienced users.
+    - **Verification:** Press Tab, search for a node, place it, and verify it auto-connects to the
+      previously selected output pin.
+
+16. **R-15.8.16** — The engine **SHALL** provide visual macro group containers that draw colored
+    boundary boxes around sets of nodes, supporting expand/collapse, named groups, and promotion to
+    reusable subgraph assets.
+    - **Rationale:** Visual grouping organizes complex graphs without changing execution semantics.
+    - **Verification:** Select 5 nodes, create a macro group, collapse it, expand it, and verify all
+      connections remain intact.
+
+17. **R-15.8.17** — The engine **SHALL** provide a shared graph editor framework (pannable/ zoomable
+    canvas, typed pin connections, node widgets, minimap, edge interaction) reused by all
+    domain-specific graph editors.
+    - **Rationale:** A shared framework ensures consistent UX across all 12+ graph editor types and
+      reduces maintenance.
+    - **Verification:** Open the logic graph, material graph, and animation graph editors and verify
+      identical pan, zoom, and connection behavior.
+
+18. **R-15.8.18** — The engine **SHALL** incrementally recompile only the affected subgraph on each
+    graph edit, with full recompilation only when structural changes affect the entry point.
+    - **Rationale:** Incremental compilation keeps edit-to-test latency low for large graphs.
+    - **Verification:** Edit a leaf node in a 200-node graph and verify recompilation completes in
+      under 100 ms.
+
+19. **R-15.8.19** — The engine **SHALL** provide inline suggested fixes for graph validation errors,
+    including auto-inserting cast nodes and connecting default values.
+    - **Rationale:** Suggested fixes accelerate error resolution for designers unfamiliar with type
+      system details.
+    - **Verification:** Connect mismatched pin types and verify the editor offers an auto-insert
+      cast node fix that resolves the error.
+
+20. **R-15.8.20** — The engine **SHALL** provide 2D-specific nodes in all visual editors (2D
+    animation timeline, 2D material nodes, 2D physics/spatial query nodes, 2D blend spaces) that
+    appear contextually when the graph targets a 2D scene.
+    - **Rationale:** 2D games require specialized nodes that differ from their 3D counterparts.
+    - **Verification:** Create a graph targeting a 2D scene and verify 2D-specific nodes appear in
+      the palette while 3D-only nodes are hidden.
+
+21. **R-15.8.21** — The engine **SHALL** render a minimap overview of the graph canvas with
+    click-to-navigate and viewport highlight.
+    - **Rationale:** Large graphs require spatial overview for navigation without excessive
+      scrolling.
+    - **Verification:** Open a 100-node graph, click a region on the minimap, and verify the canvas
+      scrolls to that location.
+
+22. **R-15.8.22** — The engine **SHALL** support extracting a selected set of nodes into a reusable
+    subgraph asset, replacing the selection with a single subgraph call node with auto-created
+    input/output pins.
+    - **Rationale:** Extract-to-subgraph is the primary refactoring tool for graph complexity
+      management.
+    - **Verification:** Select 10 nodes with external connections, extract to subgraph, and verify
+      the call node has correct pins and execution matches.
+
+23. **R-15.8.23** — The engine **SHALL** provide a reusable table editor widget with typed columns,
+    inline editing, sort, filter, and formula support for game data tables.
+    - **Rationale:** Many game systems (loot, abilities, equipment, economy) share tabular data
+      editing needs.
+    - **Verification:** Create a data table with 5 typed columns, sort by a numeric column, filter
+      by a string column, and verify formula cells compute correctly.

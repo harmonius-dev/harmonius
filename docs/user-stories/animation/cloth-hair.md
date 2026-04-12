@@ -26,6 +26,7 @@
 |-------------|----------------------------|
 | US-9.5.2.1  | character animator (P-11)  |
 | US-9.5.2.2  | engine developer (P-26)    |
+| US-9.5.2.3  | technical artist (P-13)    |
 | US-9.5.3.1  | character animator (P-11)  |
 | US-9.5.3.2  | technical artist (P-13)    |
 | US-9.5.4.1  | engine developer (P-26)    |
@@ -39,19 +40,23 @@
    desktop with card-based fallback on lower tiers, **so that** each platform uses the most
    appropriate hair method.
 
-3. **US-9.5.3.1** -- **As a** character animator (P-11), **I want** card-based hair rendering with
+3. **US-9.5.2.3** -- **As a** technical artist (P-13), **I want** to configure guide strand count
+   and simulation parameters per character, **so that** hair fidelity matches character importance
+   and platform budget.
+
+4. **US-9.5.3.1** -- **As a** character animator (P-11), **I want** card-based hair rendering with
    alpha-tested transparency and anisotropic specular shading, **so that** NPC hair looks convincing
    at medium distances and on lower platforms.
 
-4. **US-9.5.3.2** -- **As a** technical artist (P-13), **I want** to configure card count and spring
+5. **US-9.5.3.2** -- **As a** technical artist (P-13), **I want** to configure card count and spring
    physics parameters per character, **so that** hair appearance and cost are tunable per platform
    and character importance.
 
-5. **US-9.5.4.1** -- **As an** engine developer (P-26), **I want** a hair LOD system that
+6. **US-9.5.4.1** -- **As an** engine developer (P-26), **I want** a hair LOD system that
    transitions between strand, cluster, card, and shell representations based on camera distance,
    **so that** hundreds of visible characters have hair within budget.
 
-6. **US-9.5.4.2** -- **As a** technical artist (P-13), **I want** temporal blending on LOD
+7. **US-9.5.4.2** -- **As a** technical artist (P-13), **I want** temporal blending on LOD
    transitions, **so that** hair LOD changes do not pop visibly.
 
 ## Cloth-Body and Wind
@@ -62,6 +67,7 @@
 | US-9.5.5.2  | engine developer (P-26)    |
 | US-9.5.6.1  | character animator (P-11)  |
 | US-9.5.6.2  | engine developer (P-26)    |
+| US-9.5.6.3  | technical artist (P-13)    |
 
 1. **US-9.5.5.1** -- **As a** rigger (P-10), **I want** cloth-body collision resolved using capsule
    and convex hull proxies attached to skeleton bones, **so that** cloth does not pass through limbs
@@ -77,3 +83,7 @@
 4. **US-9.5.6.2** -- **As an** engine developer (P-26), **I want** per-particle aerodynamic drag on
    desktop strand simulation with simplified spring displacement on mobile card hair, **so that**
    wind response is present on all platforms.
+
+5. **US-9.5.6.3** -- **As a** technical artist (P-13), **I want** per-strand wind response
+   parameters (drag coefficient, turbulence scale) tunable per character, **so that** hair wind
+   behavior matches the character's hair style and weight.

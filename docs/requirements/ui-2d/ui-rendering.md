@@ -53,3 +53,14 @@
      scroll views.
    - **Verification:** Render rounded rect, circle, and vector path at 100%, 200%, 300%. Assert
      smooth edges. Assert child partially outside scroll view is clipped.
+
+## UI Render Graph Integration
+
+8. **R-10.4.8** — The engine **SHALL** integrate UI rendering into the render graph as named passes
+   ordered relative to the 3D pipeline (world-space after opaque, screen-space after tonemapping,
+   post-process UI last).
+   - **Rationale:** Correct pass ordering ensures world-space UI participates in lighting while
+     screen-space UI renders over the final composited image.
+   - **Verification:** Render a scene with world-space and screen-space UI. Assert world-space UI
+     appears after the opaque pass via GPU capture. Assert screen-space UI renders after
+     tonemapping. Assert post-process UI is the final pass.

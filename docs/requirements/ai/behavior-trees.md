@@ -68,3 +68,78 @@
    - **Verification:** Select an agent and verify the trace log records every node visited with
      correct return status. Verify the editor overlay shows matching color-coded states and live
      blackboard values.
+
+## Standard Blackboard Keys
+
+1. **R-7.3.4a** -- The engine **SHALL** provide a standard library of named blackboard keys for
+   perception, navigation, combat, and state data, serving as the canonical interface between AI
+   subsystems.
+   - **Rationale:** Standard keys (target, threat_level, last_seen, destination, path_status,
+     health, ammo, ai_state) prevent ad-hoc naming and ensure AI subsystems interoperate.
+   - **Verification:** Access standard keys from BT, Utility, and GOAP systems. Verify all
+     subsystems read and write the same key namespace.
+
+## AI State Machines and Cross-System Composition
+
+1. **R-7.9.1** -- The engine **SHALL** provide per-entity AI state machines with
+   visual-editor-authored states, each state mapped to a BT, Utility, or GOAP decision system, and
+   condition-based transitions evaluated from blackboard values with ECS events on state change.
+   - **Rationale:** Lifecycle state machines (Idle, Alert, Combat, Flee, Dead) select which decision
+     system runs per state, enabling layered AI behavior without monolithic trees.
+   - **Verification:** Define a 4-state machine. Trigger a transition condition and verify the
+     active decision system switches within one tick. Verify a StateChanged ECS event fires on each
+     transition.
+
+2. **R-7.9.2** -- The engine **SHALL** support composing BT, Utility AI, GOAP, and AI state machines
+   where BT leaf nodes delegate to Utility scoring or GOAP planning, and state machine states select
+   the active decision system.
+   - **Rationale:** Cross-system composition lets designers combine structured behavior with fuzzy
+     scoring and goal-oriented planning within a single NPC.
+   - **Verification:** Create a BT with a leaf that delegates to Utility scoring. Verify the leaf
+     returns the highest-scoring action. Create a state machine state that activates GOAP and verify
+     a plan is produced.
+
+3. **R-7.9.3** -- The engine **SHALL** provide built-in BT leaf nodes for navigation (MoveTo,
+   FollowPath, FleeFrom, FindCover, Patrol) that write NavMeshAgent destinations and read path
+   status from blackboard keys.
+   - **Rationale:** Navigation leaf nodes bridge behavior trees and the navigation system without
+     requiring custom leaf code per project.
+   - **Verification:** Add a MoveTo leaf with a target position. Verify the agent navigates to the
+     target. Add a FleeFrom leaf and verify the agent moves away from the threat position.
+
+4. **R-7.9.4** -- The engine **SHALL** provide AI-to-animation integration where leaf nodes write
+   AnimationParams components and read animation query state for condition evaluation.
+   - **Rationale:** AI must drive animation (speed, direction, triggers) and read animation state
+     (remaining time, current state) for coordinated behavior.
+   - **Verification:** Set a speed parameter from a BT leaf and verify the animation system reflects
+     the change. Query animation remaining time from a condition node and verify correct evaluation.
+
+5. **R-7.9.5** -- The engine **SHALL** provide a scoped LeafContext for BT leaf node evaluation
+   containing references to blackboard, perception, animation params, animation query, nav agent,
+   physics queries, spatial index, and transform with no raw World access.
+   - **Rationale:** Scoped access prevents leaf nodes from making arbitrary ECS queries, enforcing a
+     safe and predictable evaluation environment.
+   - **Verification:** Implement a leaf node using LeafContext. Verify all referenced subsystems are
+     accessible. Verify raw World access is not available through the context.
+
+6. **R-7.9.6** -- The engine **SHALL** fire typed ECS events (StateChanged, TargetAcquired,
+   TargetLost, PlanStarted, PlanCompleted, PlanFailed, ActionStarted, ActionCompleted) from AI
+   systems so gameplay systems can observe AI decisions.
+   - **Rationale:** AI events enable gameplay systems to react to NPC decisions (alert sounds, UI
+     indicators) without polling AI state.
+   - **Verification:** Register an observer on TargetAcquired. Trigger AI target acquisition and
+     verify the event fires with correct entity and target data.
+
+7. **R-7.9.7** -- The engine **SHALL** provide a configurable per-frame AI CPU budget split across
+   BT, Utility, and GOAP systems with round-robin carry-over for deferred agents.
+   - **Rationale:** A shared budget prevents any single AI system from monopolizing CPU time, and
+     carry-over ensures deferred agents are evaluated in subsequent frames.
+   - **Verification:** Configure a budget and run 200 agents. Verify total AI evaluation stays
+     within budget. Verify deferred agents are processed in the next frame via round-robin.
+
+8. **R-7.9.8** -- The engine **SHALL** compile visually authored AI behavior (BT, Utility AI, GOAP,
+   AI state machines) to static Rust code in the middleman .dylib via codegen.
+   - **Rationale:** Codegen eliminates interpreter overhead and enables compiler optimizations on AI
+     decision logic.
+   - **Verification:** Author a BT in the visual editor. Compile via codegen and verify the
+     generated Rust code produces identical behavior to the interpreted version.

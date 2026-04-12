@@ -57,3 +57,30 @@
     - **Rationale:** Multi-store support and license tracking serve diverse team needs.
     - **Verification:** Register a custom store plugin and verify it appears as a tab in the asset
       browser.
+
+11. **R-15.17.11** — The engine **SHALL** communicate with marketplace servers via platform-native
+    QUIC with rkyv-serialized payloads, not HTTP/HTTPS.
+    - **Rationale:** QUIC with binary payloads reduces latency and overhead compared to REST/JSON
+      over HTTP.
+    - **Verification:** Capture marketplace traffic and verify all payloads use QUIC with rkyv
+      encoding and no HTTP fallback.
+
+12. **R-15.17.12** — The engine **SHALL** support self-hosted private marketplace instances using
+    the same OSS codebase with OAuth or API token authentication.
+    - **Rationale:** Studios need private asset sharing without exposing proprietary content on the
+      public marketplace.
+    - **Verification:** Deploy a private instance, authenticate with OAuth, publish an asset, and
+      verify it is not visible on the public marketplace.
+
+13. **R-15.17.13** — The engine **SHALL** check all installed marketplace packages for available
+    updates and provide one-click bulk update.
+    - **Rationale:** Outdated packages cause compatibility issues; bulk update reduces maintenance
+      burden.
+    - **Verification:** Install a package, publish a newer version, and verify the editor shows an
+      update notification with a working bulk-update action.
+
+14. **R-15.17.14** — The engine **SHALL** generate a per-project license compliance report for all
+    installed marketplace packages and warn on incompatible license combinations.
+    - **Rationale:** License compliance is a legal obligation that must be tracked automatically.
+    - **Verification:** Install a GPL-licensed package in a proprietary project and verify the
+      compliance report flags the incompatibility.

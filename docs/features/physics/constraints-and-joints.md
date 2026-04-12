@@ -127,3 +127,33 @@
    the character equipment system (F-13.9.6).
    - **Deps:** F-4.3.8, F-9.3.10 (Attachment), F-9.3.8 (Multi-Skeleton Locomotion), F-13.9.6
      (Equipment Binding)
+
+## Warm Starting and LOD
+
+| ID       | Feature |
+|----------|------------------------------- |
+| F-4.3.10 | Warm Starting Cache |
+| F-4.3.11 | Ragdoll LOD |
+| F-4.3.12 | Chain Verlet Fallback |
+
+1. **F-4.3.10** — The `WarmStartSystem` caches accumulated impulses from the previous substep in
+   `WarmStartData` components on joint entities. At the start of each solve pass the cached impulses
+   are applied scaled by a configurable warm-start factor, accelerating convergence and reducing the
+   iteration count needed for stable stacking and complex joint configurations.
+   - **Deps:** F-4.3.7, F-4.3.1
+   - **Platform:** Warm starting enabled on all platforms. Warm-start factor tunable per platform
+     tier (higher on desktop for better convergence).
+2. **F-4.3.11** — The `RagdollLodSystem` queries active ragdolls and adjusts simulation fidelity
+   based on camera distance and platform tier. Nearby ragdolls run full joint solve; mid-distance
+   ragdolls use reduced bone counts; distant ragdolls are replaced with animation-driven blend at
+   zero physics cost. Platform bone count caps enforce budget.
+   - **Deps:** F-4.3.5, F-9.3.4 (Ragdoll Blend)
+   - **Platform:** Mobile: max 4 ragdolls, 8 bones each. Switch: max 8 ragdolls, 12 bones. Desktop:
+     max 32 ragdolls, 20 bones. High-end PC: max 128 ragdolls with full skeleton.
+3. **F-4.3.12** — The `VerletFallbackSystem` simulates distant chains using simplified Verlet
+   integration without collision, replacing the full constraint solver. Chains beyond a configurable
+   distance threshold skip joint solve entirely and use position-based Verlet with distance
+   constraints only.
+   - **Deps:** F-4.3.6
+   - **Platform:** Verlet fallback distance: mobile 10 m, Switch 20 m, desktop 50 m. High-end PC:
+     100 m.

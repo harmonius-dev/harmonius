@@ -98,3 +98,50 @@
    immediately visible on the desktop monitor. Controllers) editor rendering pipeline.
    - **Deps:** F-15.1.1 (Editor Framework), F-6.5.1 (HMD Tracking), F-6.5.2 (Motion
    - **Platform:** Requires OpenXR-compatible headset. Desktop mirror view uses the existing
+
+## Advanced Undo and Editor Architecture
+
+| ID | Feature |
+| ----------- | ------------------------------------------------ |
+| F-15.1.10 | Non-Linear Undo Tree |
+| F-15.1.11 | Editor/Game World Isolation with EventBridge |
+| F-15.1.12 | Logic Graph-Based Editor Extensions |
+
+1. **F-15.1.10** — Implements a non-linear undo tree where branching edits preserve all history
+   branches instead of discarding them. Users navigate the tree to reach any historical state via
+   LCA-based path computation. A visual undo history panel shows the tree structure with branch
+   labels and timestamps. Branches can be named for later recovery.
+   - **Deps:** F-15.1.3 (Undo/Redo)
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+2. **F-15.1.11** — Isolates editor state in a separate ECS world synchronized with the game world
+   via an EventBridge. Editor-only entities (selection outlines, gizmo handles, undo metadata) exist
+   only in the editor world and are never serialized into game builds. The EventBridge forwards
+   transform, hierarchy, and component changes bidirectionally between worlds.
+   - **Deps:** F-1.1.1 (ECS), F-15.1.3 (Undo/Redo)
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+3. **F-15.1.12** — Extends the editor via logic graphs for custom panels, gizmos, inspectors,
+   importers, validation rules, and automation scripts. Extension graphs use the same authoring
+   system as gameplay logic (F-15.8.4) with additional editor-specific node types for UI
+   construction, asset manipulation, and tool invocation.
+   - **Deps:** F-15.8.4 (Gameplay Logic Graphs), F-15.1.8 (Plugin API)
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+
+## Multi-Monitor and Workflow Layouts
+
+| ID | Feature |
+| ----------- | ----------------------------------------- |
+| F-15.1.13 | Multi-Monitor Layout with Per-Monitor DPI |
+| F-15.1.14 | Predefined and Custom Workflow Layouts |
+
+1. **F-15.1.13** — Supports multi-monitor layouts where floating panels snap to monitor edges and
+   each monitor maintains an independent dock tree. Per-monitor DPI scaling ensures crisp rendering
+   on mixed-DPI setups (e.g., Retina + external 1080p). Panel positions persist per-monitor
+   configuration across sessions.
+   - **Deps:** F-15.1.1 (Dockable Panel Layout)
+   - **Platform:** macOS, Windows, Linux. Per-monitor DPI via platform display APIs.
+2. **F-15.1.14** — Provides predefined workflow layout profiles: Default, Animation, Level Design,
+   VFX, Logic Graph, 2D, Debug, and Review. Each profile arranges panels for the target workflow.
+   Users create and save custom layouts. Layout switching is instant via a toolbar dropdown or
+   keyboard shortcut.
+   - **Deps:** F-15.1.1 (Dockable Panel Layout), F-15.1.7 (Preferences)
+   - **Platform:** Desktop only. Not available on mobile or console runtime.

@@ -161,3 +161,25 @@
    deferred upload.
    - **Deps:** F-15.7.3, F-15.7.4, F-15.7.5, F-15.7.6
    - **Platform:** Usage quota enforcement requires connectivity to the admin policy server.
+
+## Credential and Cost Management
+
+| ID | Feature |
+| ----------- | ------------------------------------------------ |
+| F-15.9.11 | Platform-Native Keychain for LLM API Keys |
+| F-15.9.12 | Rate Limiting and Cost Budget for LLM Requests |
+
+1. **F-15.9.11** — Stores LLM provider API keys in the platform-native keychain (macOS Keychain,
+   Windows Credential Manager, Linux Secret Service). Keys are never written to config files,
+   project directories, or version control. The keychain integration supports read, store, and
+   delete operations with per-provider key entries. Keys are accessed at request time and never held
+   in memory longer than the request duration.
+   - **Deps:** F-15.15.5 (Account Management)
+   - **Platform:** macOS Keychain, Windows Credential Manager, Linux Secret Service.
+2. **F-15.9.12** — Enforces per-user rate limits (requests per minute) and optional cost budgets
+   (tokens per day, dollars per month) on LLM API requests. When a limit is reached, subsequent
+   requests are rejected with a descriptive message. Budget tracking aggregates token usage across
+   all LLM-backed features (assistant, content generation). Administrators configure limits via the
+   governance policy (F-15.7.5).
+   - **Deps:** F-15.9.10, F-15.7.5 (AI Governance Policy)
+   - **Platform:** Budget tracking requires periodic sync with the admin server.

@@ -76,3 +76,32 @@
     - **Rationale:** Diverse brush shapes accelerate sculpting workflows.
     - **Verification:** Create a custom brush, save it, and verify it appears in the brush palette
       for all team members.
+
+13. **R-15.6.13** — The engine **SHALL** support concurrent multi-user world editing with cell-based
+    locking, where each user locks cells before editing and changes sync to all connected users on
+    release.
+    - **Rationale:** Large worlds require parallel editing by multiple designers without file-level
+      conflicts.
+    - **Verification:** Have two users lock different cells, edit simultaneously, release locks, and
+      verify both changes are visible to both users.
+
+14. **R-15.6.14** — The engine **SHALL** validate placed vegetation instances against biome rules
+    and report placement violations.
+    - **Rationale:** Validation catches accidental placements that violate biome constraints after
+      manual adjustments.
+    - **Verification:** Place a tree outside its permitted altitude band and verify the validator
+      reports the violation.
+
+15. **R-15.6.15** — The engine **SHALL** provide an interactive pathfinding test tool in the
+    viewport with start/goal markers displaying the computed path.
+    - **Rationale:** Designers need to verify AI navigation without running the full game
+      simulation.
+    - **Verification:** Place start and goal markers, trigger pathfinding, and verify the displayed
+      path avoids obstacles correctly.
+
+16. **R-15.6.16** — The engine **SHALL** support 2D world partitioning with grid-based streaming and
+    parallax background layer placement.
+    - **Rationale:** 2D games require streaming and layered backgrounds that differ from 3D world
+      partition approaches.
+    - **Verification:** Create a 2D world with 4 grid cells and 3 parallax layers, stream in/out
+      cells, and verify parallax scrolling.

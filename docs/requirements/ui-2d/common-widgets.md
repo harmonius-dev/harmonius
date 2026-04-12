@@ -69,3 +69,34 @@
      indication.
    - **Verification:** Set bar to 0%, 50%, 100%. Assert fill matches proportion. Animate 0% to 100%
      over 60 frames. Assert smooth interpolation.
+
+## Tab Bar and Tree View
+
+9. **R-10.2.9** — The engine **SHALL** provide tab bar and tree view widgets with keyboard
+   navigation, drag-to-reorder tabs, and collapsible tree node expand/collapse.
+   - **Rationale:** Tab bars organize multi-panel UIs (inventory, skills, quests); tree views
+     display hierarchical data (scene graphs, file browsers).
+   - **Verification:** Create a tab bar with 5 tabs. Navigate with keyboard arrows. Drag to reorder.
+     Assert order persists. Create a tree view with 3 levels. Expand and collapse nodes with
+     keyboard. Assert correct visibility.
+
+## Color Picker
+
+10. **R-10.2.10** — The engine **SHALL** provide a color picker widget with hue/saturation wheel,
+    brightness slider, hex/RGB input, and eyedropper.
+    - **Rationale:** Character customization, material editing, and theme authoring require a
+      full-featured color selection interface.
+    - **Verification:** Open the color picker. Select a color via the wheel. Assert hex and RGB
+      inputs update. Enter a hex value. Assert wheel position updates. Use the eyedropper on a known
+      pixel. Assert correct color sampled.
+
+## Drag-and-Drop State Machine
+
+11. **R-10.2.7a** — The engine **SHALL** manage drag-and-drop via a state machine tracking pending,
+    dragging, valid target, invalid target, drop, and cancel states with configurable threshold
+    distance.
+    - **Rationale:** A state machine ensures correct drag-and-drop behavior across complex
+      multi-panel UI with clear state transitions.
+    - **Verification:** Begin a drag below threshold distance. Assert state remains pending. Exceed
+      threshold. Assert state transitions to dragging. Hover over valid target. Assert valid-target
+      state. Drop. Assert drop state fires. Press escape during drag. Assert cancel state fires.

@@ -61,3 +61,20 @@
      G-buffer.
    - **Verification:** Render a scene with millions of unique materials. Assert only visible pixels
      are shaded. Assert bandwidth is lower than an equivalent G-buffer.
+
+## Non-Functional Requirements
+
+8. **R-3.1.NF1** -- The engine **SHALL** cull 100,000 meshlet instances within 1 ms GPU time.
+   - **Rationale:** GPU culling must complete before rasterization begins each frame.
+   - **Verification:** Benchmark 100K instances. Assert cull pass completes within 1 ms.
+
+9. **R-3.1.NF2** -- The engine **SHALL** rasterize 1 million surviving meshlet triangles within 4 ms
+   GPU time at 1080p.
+   - **Rationale:** Rasterization is the primary GPU cost after culling.
+   - **Verification:** Benchmark 1M triangles at 1080p. Assert raster time stays within 4 ms.
+
+10. **R-3.1.NF3** -- The engine **SHALL** evaluate materials for all visible pixels within 2 ms GPU
+    time at 1080p.
+    - **Rationale:** Deferred material evaluation must stay within the shading budget.
+    - **Verification:** Benchmark visibility buffer material pass at 1080p. Assert time stays within
+      2 ms.

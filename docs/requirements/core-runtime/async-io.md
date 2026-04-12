@@ -130,3 +130,43 @@
    - **Verification:** Allocate 64 buffers from the pool; submit 128 reads (exceeding pool); verify
      backpressure handling. Verify buffers reclaimed after future resolution. Benchmark at least 20%
      throughput improvement vs. per-operation allocation.
+
+## Virtual File System
+
+1. **R-1.8.15** — The engine **SHALL** provide a virtual file system resolving virtual paths to
+   physical locations via priority-ordered mount points, supporting asset directory, archive, and
+   mod overlay mounts.
+   - **Rationale:** A VFS decouples asset paths from physical storage, enabling mod overlays and DLC
+     content to transparently override base assets without changing paths.
+   - **Verification:** Mount base directory at priority 0 and mod directory at priority 1; request a
+     file present in both; verify mod version returned. Request a file only in base; verify base
+     version returned. Unmount mod; verify base version returned for all files.
+
+## GPU DMA Asset Loading
+
+1. **R-1.8.16** — The engine **SHALL** support GPU DMA asset loading bypassing CPU memory where the
+   platform supports it (DirectStorage on Windows, Metal I/O on Apple), with CPU staging buffer
+   fallback on Linux.
+   - **Rationale:** GPU DMA eliminates CPU memory bandwidth consumption for large texture and mesh
+     loads, reducing load times and freeing CPU memory for simulation.
+   - **Verification:** Load a 256 MB texture via GPU DMA on Windows; verify no CPU staging buffer
+     allocated. Verify Linux fallback uses CPU staging. Verify loaded data matches reference.
+
+## File Metadata
+
+1. **R-1.8.17** — The engine **SHALL** provide async file metadata queries returning size,
+   modification time, and BLAKE3 content hash.
+   - **Rationale:** Content-addressable metadata enables incremental builds, cache validation, and
+     deduplication without reading full file contents.
+   - **Verification:** Query metadata for a known file; verify size and modification time match OS
+     values. Verify BLAKE3 hash matches independent computation. Modify file; verify hash changes.
+
+## I/O Concurrency Limits
+
+1. **R-1.8.18** — The engine **SHALL** limit the number of concurrent in-flight I/O operations per
+   platform tier, applying backpressure when the limit is reached.
+   - **Rationale:** Unbounded I/O concurrency exhausts OS resources and degrades throughput;
+     per-tier limits match hardware capabilities.
+   - **Verification:** Set limit to 32 (Mobile tier); submit 64 operations; verify only 32 are
+     in-flight and remaining are queued. Verify queued operations complete as in-flight operations
+     finish. Verify Desktop tier allows higher concurrency.

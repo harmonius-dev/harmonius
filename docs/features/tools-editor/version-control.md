@@ -115,3 +115,18 @@
    URL.
    - **Deps:** F-15.10.1, F-15.12.14 (PR Review in Editor)
    - **Platform:** GitHub uses REST v3 + GraphQL v4 APIs. GitLab uses REST v4 API. Bitbucket uses
+
+## Binary Conflict Resolution
+
+| ID | Feature |
+| ----------- | ---------------------------------------------- |
+| F-15.10.9 | Visual Per-Property Binary Conflict Resolution |
+
+1. **F-15.10.9** — A visual binary conflict resolution UI for non-textual assets. When a merge
+   produces a binary conflict, the resolver reads base, ours, and theirs versions using codegen'd
+   type descriptors and displays a per-property structural diff. Each conflicting field offers
+   ours/theirs/manual resolution. Non-conflicting fields are auto-resolved. The resolver integrates
+   with the modal merge UI (R-15.10.10) and produces a merged asset that is committed to the
+   repository.
+   - **Deps:** F-15.10.3 (Asset-Aware Merge), F-15.10.1
+   - **Platform:** Desktop only. Not available on mobile or console runtime.

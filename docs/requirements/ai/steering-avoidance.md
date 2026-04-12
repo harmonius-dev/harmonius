@@ -51,3 +51,22 @@
      of crowd simulation flocking.
    - **Verification:** Navigate a group through turns and verify cohesion within a configurable
      radius. Verify all members converge to a shared velocity goal within a bounded time.
+
+## Formation Shapes
+
+1. **R-7.2.5a** -- The engine **SHALL** provide configurable formation shapes (line, column, wedge,
+   circle, custom) with parameterized slot spacing and automatic adaptation to terrain width.
+   - **Rationale:** Predefined and custom formation shapes cover tactical arrangements without
+     requiring per-shape code.
+   - **Verification:** Configure a wedge formation and verify slot positions match the shape
+     definition. Move through a narrow passage and verify spacing adapts. Define a custom shape and
+     verify agents occupy the authored slot offsets.
+
+## Steering Integration
+
+1. **R-7.2.7** -- The engine **SHALL** integrate steering forces into velocity and position updates
+   after blending, with clamping to max_speed and max_force per agent.
+   - **Rationale:** A dedicated integration step ensures blended forces produce bounded velocity and
+     position changes, preventing agents from exceeding configured limits.
+   - **Verification:** Apply a force exceeding max_force and verify it is clamped. Verify resulting
+     velocity does not exceed max_speed. Verify position updates match velocity * dt.

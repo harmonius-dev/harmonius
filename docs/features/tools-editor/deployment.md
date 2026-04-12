@@ -114,3 +114,32 @@
    - **Deps:** F-15.24.1 (Cloud Build Service), F-15.24.3 (Cross-Platform Shader Compilation),
      F-15.24.6 (Local Development Mode), F-12.2.9 (DXC and MSC Pipeline)
    - **Platform:** Metal Shader Converter is macOS-only. Console SDKs require licensed workers.
+
+## Compilation Pipeline
+
+| ID | Feature |
+| ------------ | --------------------------------------------------- |
+| F-15.14.10 | Middleman .dylib Compilation Pipeline |
+| F-15.14.11 | Offline HLSL Shader Baking Pipeline |
+| F-15.14.12 | CLI Build Interface for CI/CD |
+
+1. **F-15.14.10** — Compiles codegen'd Rust source into a middleman .dylib for development
+   hot-reload and a statically linked binary with LTO for shipping builds. The development profile
+   uses incremental compilation for fast iteration. The shipping profile uses LTO, dead code
+   elimination, and platform-specific linkers (MSVC link.exe on Windows, ld64 on macOS, lld on
+   Linux). Hot-reload detects changes to the middleman .dylib and swaps it without restarting the
+   editor or game.
+   - **Deps:** F-15.8.12 (Graph Compilation), F-15.11.1 (Shared Build Cache)
+   - **Platform:** Requires bundled rustc. Platform-specific linkers per target OS.
+2. **F-15.14.11** — Compiles HLSL shaders offline via DXC and metal-shaderconverter CLI to DXIL,
+   SPIR-V, and MSL IR. Generates all permutation variants from a shader feature matrix. Compilation
+   runs in parallel via the job system. Results are cached per-platform keyed by BLAKE3(source +
+   flags + tool version + platform). Shader errors map back to the originating graph node.
+   - **Deps:** F-15.8.5b (Shader Graph to HLSL), F-15.11.2 (Shader Cache)
+   - **Platform:** DXC on Windows/Linux, metal-shaderconverter on macOS.
+3. **F-15.14.12** — A CLI interface (`harmonius build`, `harmonius test`, `harmonius validate`,
+   `harmonius package`) for headless build operations in CI/CD pipelines. All commands return
+   structured JSON exit status for pipeline integration. Supports all build configurations and
+   target platforms available in the editor UI.
+   - **Deps:** F-15.14.1 (Platform Build Packaging), F-15.14.3 (Certification)
+   - **Platform:** Runs on all host platforms. Console targets require SDK access.

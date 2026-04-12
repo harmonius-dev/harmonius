@@ -65,3 +65,39 @@
    - **Verification:** Run fluid sims for fire, smoke, and liquid. Confirm advection, emission,
      absorption, and scattering are plausible. Verify grid resolution decreases at greater LOD
      distances without visible artifacts.
+
+## Warm-Up and Budget
+
+8. **R-11.1.8** — The engine **SHALL** pre-simulate particle emitters on spawn for a configurable
+   warm-up duration, so that effects appear in a steady state rather than empty.
+   - **Rationale:** Fire, smoke, and ambient effects must appear already burning or flowing when
+     spawned, not start from zero particles.
+   - **Verification:** Spawn an emitter with 2-second warm-up. Assert particle count at frame 0
+     matches approximately 2 seconds of emission. Assert visual output matches a reference emitter
+     that has been running for 2 seconds.
+
+9. **R-11.1.4a** — The engine **SHALL** allocate particle budget based on per-emitter priority,
+   preserving higher-priority emitters when the global cap is reached.
+   - **Rationale:** Gameplay-critical effects (player abilities, hazards) must survive budget
+     pressure while ambient effects are culled first.
+   - **Verification:** Set global budget to 1000 particles. Spawn a high-priority emitter (500
+     particles) and two low-priority emitters (400 each). Assert high-priority emitter retains all
+     500. Assert low-priority emitters are reduced to fit within remaining budget.
+
+## Flipbook and Billboard
+
+10. **R-11.1.3a** — The engine **SHALL** support flipbook atlas animation on sprite particles with
+    configurable grid dimensions, frame rate, and loop modes (loop, clamp, ping-pong).
+    - **Rationale:** Flipbook animation provides hand-authored sprite sequences for fire, smoke, and
+      explosion particles at low GPU cost.
+    - **Verification:** Configure a 4x4 flipbook at 30 FPS in each loop mode. Assert correct frame
+      sequencing. Assert ping-pong reverses at final frame. Assert clamp holds on last frame.
+
+## Distance-Based Emission
+
+11. **R-11.1.1a** — The engine **SHALL** support distance-based particle emission rate (particles
+    per unit of emitter world-space movement) for trail effects.
+    - **Rationale:** Distance-based emission ensures consistent trail density regardless of frame
+      rate or emitter speed.
+    - **Verification:** Move an emitter at varying speeds. Assert particle spacing remains constant
+      per unit distance. Assert zero emission when the emitter is stationary.

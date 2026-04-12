@@ -136,3 +136,25 @@
    sculpting.
    - **Deps:** F-15.6.9, F-3.2.9
    - **Platform:** Desktop only. Not available on mobile or console runtime.
+
+## Multi-User and Pathfinding
+
+| ID | Feature |
+| ----------- | --------------------------------------------------- |
+| F-15.6.13 | Multi-User Cell-Based Locking for World Editing |
+| F-15.6.14 | Interactive Navmesh Pathfinding Test Tool |
+
+1. **F-15.6.13** — Enables concurrent multi-user world editing with cell-based locking. Each user
+   locks one or more world cells before editing. Changes are applied locally and synced to all
+   connected users when the lock is released. Lock ownership is displayed in the World Grid overlay
+   (F-15.6.8) with per-user color coding. Conflict-free editing is guaranteed by the locking
+   protocol.
+   - **Deps:** F-15.6.8, F-15.10.5 (Collaborative Presence)
+   - **Platform:** Desktop only. Requires collaboration server connectivity.
+2. **F-15.6.14** — An interactive pathfinding test tool in the viewport. The user places start and
+   goal markers, triggers pathfinding computation, and the resulting path is displayed as a colored
+   overlay on the navmesh. Path cost and distance are shown in a tooltip. Multiple test paths can be
+   active simultaneously for comparison. Supports per-agent-type path testing with different radius
+   and height parameters.
+   - **Deps:** F-15.6.7, F-11.1.1 (Navigation)
+   - **Platform:** Desktop only. Not available on mobile or console runtime.

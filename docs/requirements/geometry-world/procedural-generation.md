@@ -98,3 +98,43 @@
       feasible.
     - **Verification:** Request a sector from the server. Assert it returns cached data. Assert
       memory stays within budget. Assert LOD tiers resolve on demand.
+
+## Authoring and AI Generation
+
+14. **R-3.6.14** -- The engine **SHALL** provide interactive PCG authoring tools for spline drawing,
+    point painting, volume dragging, and socket wiring with real-time preview in the editor.
+    - **Rationale:** Visual authoring tools let artists drive generation without code or graph
+      editing.
+    - **Verification:** Draw a road spline. Assert terrain deforms and vegetation clears in real
+      time. Assert no graph editing is required.
+
+15. **R-3.6.15** -- The engine **SHALL** support artist-guided constraint authoring where placed
+    landmarks and zone boundaries are fixed inputs to PCG graphs that fill the surroundings
+    procedurally.
+    - **Rationale:** Combining hand-crafted hero content with procedural population balances quality
+      with scale.
+    - **Verification:** Place a landmark constraint. Run generation. Assert the landmark is
+      preserved and surroundings are populated procedurally.
+
+16. **R-3.6.16** -- The engine **SHALL** expose an AI agent interface that drives PCG graphs
+    programmatically, supporting iterative generation with quality evaluation against objective
+    functions.
+    - **Rationale:** AI-driven generation enables automated content quality optimization for large
+      worlds.
+    - **Verification:** Connect an AI evaluator. Assert it sets parameters, generates a candidate,
+      evaluates quality, and iterates until thresholds are met.
+
+## GIS and Mineralogy
+
+17. **R-3.6.17** -- The engine **SHALL** import real-world elevation data (SRTM, ASTER) and
+    geographic data (OpenStreetMap) with WGS84/UTM reprojection to world-space coordinates.
+    - **Rationale:** GIS import enables real-world terrain and road data to seed procedural worlds.
+    - **Verification:** Import SRTM heightmap data. Assert terrain matches real-world elevation.
+      Import OSM roads. Assert road splines align with imported data.
+
+18. **R-3.6.18** -- The engine **SHALL** generate planetary mineralogy and resource distributions
+    driven by geological simulation results and configurable rarity curves.
+    - **Rationale:** Geologically-motivated resources provide gameplay depth for mining and
+      crafting.
+    - **Verification:** Generate a planet. Assert mineral deposits correlate with geological
+      features. Assert rarity curves produce expected distribution.

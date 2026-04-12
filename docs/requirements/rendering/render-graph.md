@@ -96,3 +96,12 @@
     - **Rationale:** Compile-time lifetime enforcement eliminates dangling command buffer bugs.
     - **Verification:** Attempt to use a command buffer outside its encoding scope. Verify compile
       failure.
+
+## Resource Aliasing
+
+14. **R-2.2.3a** — The engine **SHALL** alias transient render graph resources via
+    interference-graph coloring, achieving at least 40% VRAM savings over non-aliased allocation.
+    - **Rationale:** Graph-coloring-based aliasing maximizes memory reuse for transient resources
+      whose lifetimes do not overlap.
+    - **Verification:** Compile a render graph with 10 transient resources. Measure VRAM
+      consumption. Assert at least 40% savings compared to individual allocations.

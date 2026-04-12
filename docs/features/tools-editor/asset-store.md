@@ -258,6 +258,27 @@
     (F-15.7.7) for mandatory review of AI-generated assets before production use.
     - **Deps:** F-15.7.1, F-15.7.6, F-15.7.7
 
+## Private Marketplace and Update Management
+
+| ID | Feature |
+| ------------ | ----------------------------------------------- |
+| F-15.17.29 | Self-Hosted Private Marketplace |
+| F-15.17.30 | Installed Package Update Checking and Bulk Update |
+
+1. **F-15.17.29** — Deploy a self-hosted private marketplace instance using the same open-source
+   codebase as the public marketplace. Private instances support team-only access via OAuth or API
+   token authentication, custom asset catalogs, and internal publisher accounts. Private marketplace
+   assets are invisible to the public store. The deployment uses the same Kubernetes infrastructure
+   as other engine services.
+   - **Deps:** F-15.17.1, F-15.12.7 (Cloud Service)
+   - **Platform:** Self-hosted via Helm chart on any Kubernetes cluster.
+2. **F-15.17.30** — The editor checks all installed marketplace packages for available updates on
+   launch and on demand. An update panel lists outdated packages with current and available version
+   numbers, changelog summaries, and compatibility status. A one-click "Update All" action downloads
+   and installs all updates with dependency resolution. Individual packages can be pinned to skip
+   updates.
+   - **Deps:** F-15.17.2, F-15.17.12 (Asset Versioning)
+
 ## Feature Summary
 
 | ID | Feature |

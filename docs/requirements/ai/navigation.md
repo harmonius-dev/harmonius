@@ -125,3 +125,32 @@
      geometry.
    - **Verification:** Enable the debug overlay and verify all listed elements are visible and
      color-coded. Verify the overlay is absent from a shipping build.
+
+## NavMesh Surface Raycasting
+
+1. **R-7.1.16** -- The engine **SHALL** support raycasting along the NavMesh surface within tiles
+   for path validation and redundant turn removal.
+   - **Rationale:** Surface raycasts enable path post-processing to eliminate unnecessary waypoints
+     and validate line-of-sight between path segments on the mesh.
+   - **Verification:** Cast a ray between two points on the same tile and verify the hit point lies
+     on a valid NavMesh polygon. Use surface raycasts during path smoothing and verify redundant
+     turns are removed.
+
+## Stale Tile Fallback
+
+1. **R-7.1.17** -- The engine **SHALL** serve stale NavMesh tile data as fallback during background
+   tile rebuilds so agents continue navigating with degraded but functional paths.
+   - **Rationale:** Agents must not freeze during tile rebuilds; stale data provides continuity
+     until the new tile is ready.
+   - **Verification:** Trigger a tile rebuild and verify agents with corridors through the pending
+     tile continue navigating on stale data. Verify the stale tile is replaced atomically when the
+     rebuild completes.
+
+## Per-Query Polygon Filters
+
+1. **R-7.1.18** -- The engine **SHALL** support per-query polygon flag filters (include and exclude
+   bitmasks) enabling agent-specific traversal restrictions.
+   - **Rationale:** Flag-based filtering lets different agent types exclude specific polygon classes
+     (water, lava, faction zones) without separate NavMesh layers.
+   - **Verification:** Mark polygons with a water flag. Query with water excluded and verify the
+     path avoids water polygons. Query with water included and verify the path crosses them.

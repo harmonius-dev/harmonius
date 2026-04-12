@@ -104,3 +104,83 @@
      scale without impacting gameplay.
    - **Verification:** Benchmark: execute 10,000 concurrent character saves per second. Verify no
      tick blocked. Measure p99 write latency and verify below 10 ms.
+
+## Kubernetes Operator
+
+4. **R-8.7.12** — The engine **SHALL** provide a Kubernetes-native operator that manages game server
+   pod lifecycle, auto-scaling, rolling updates with player migration, and automatic rollback based
+   on game-specific health metrics.
+   - **Rationale:** Game server fleet management requires game-aware orchestration beyond standard
+     K8s deployments; a custom operator encodes fleet scaling and migration logic.
+   - **Verification:** Integration test: deploy a GameServer CRD on a test cluster. Verify pods
+     scale with player load. Trigger a health metric breach and verify automatic rollback within 60
+     seconds.
+
+## Unified Database
+
+5. **R-8.7.13** — The engine **SHALL** use TiKV as the sole persistence backend for all server-side
+   storage, supporting key-value, ordered range scans, multi-key transactions, TTL keys, and atomic
+   increments.
+   - **Rationale:** A single database backend eliminates operational complexity of running
+     PostgreSQL, Redis, and DynamoDB; TiKV provides transactional KV with horizontal scaling.
+   - **Verification:** Integration test: perform multi-key transactions across player data,
+     leaderboards, and sessions. Verify range scans return ordered results. Verify TTL keys expire
+     within 1 second of their deadline.
+6. **R-8.7.14** — The engine **SHALL** ship Helm charts deploying a full OSS infrastructure stack
+   (TiKV, Garage, Pingora, Vector, Prometheus, Grafana, Loki) on any Kubernetes cluster without
+   vendor lock-in.
+   - **Rationale:** Self-hosted OSS infrastructure gives operators full control and avoids cloud
+     vendor lock-in for all storage, CDN, and observability needs.
+   - **Verification:** Deploy Helm charts on a vanilla K8s cluster. Verify all services reach ready
+     state. Run a smoke test writing data through each service.
+
+## CDN and Observability
+
+7. **R-8.7.15** — The engine **SHALL** provide a self-hosted CDN layer using Pingora edge pods with
+   HTTP/3+QUIC asset delivery, disk-backed cache, and configurable per-asset-type TTL.
+   - **Rationale:** Self-hosted CDN avoids per-GB egress fees and gives full control over cache
+     invalidation and asset delivery performance.
+   - **Verification:** Integration test: request an asset through the edge pod. Verify cache hit on
+     second request. Verify HTTP/3 negotiation. Verify TTL expiration triggers re-fetch.
+8. **R-8.7.16** — The engine **SHALL** expose server metrics (tick time, player count, CPU) via
+   Prometheus, structured logs via Vector, and dashboards via Grafana, with configurable alerting on
+   game-specific thresholds.
+   - **Rationale:** Observability is essential for operating live-service game servers at scale;
+     game-specific thresholds detect gameplay-impacting issues before players report them.
+   - **Verification:** Integration test: run a game server and verify metrics appear in Prometheus.
+     Verify logs reach Loki via Vector. Configure an alert on tick time exceeding 50 ms and verify
+     it fires.
+
+## Boundary Co-Simulation
+
+9. **R-8.7.17** — The engine **SHALL** co-simulate entities within a configurable boundary overlap
+   width on both adjacent zone servers, replicating overlap entities at a configurable sync interval
+   and rendering them as ghost entities on the neighbor server.
+   - **Rationale:** Co-simulation ensures entities near zone edges are visible and interactive from
+     both sides, preventing pop-in and enabling combat across zone boundaries.
+   - **Verification:** Integration test: place an entity in the overlap region. Verify both servers
+     simulate it. Modify state on the authoritative server and verify the ghost updates within the
+     sync interval.
+
+## Instance Management
+
+10. **R-8.7.18** — The engine **SHALL** manage instanced zone copies with configurable difficulty
+    tiers, lockout timers, group-scoped state isolation, and automated lifecycle (create on demand,
+    destroy when empty).
+    - **Rationale:** Dungeons, raids, and battlegrounds require isolated instances with
+      parameterized difficulty and time- limited access to prevent farming and ensure group-scoped
+      progression.
+    - **Verification:** Integration test: create a Heroic dungeon instance for a group. Verify
+      isolated state. Verify lockout timer prevents re-entry. Verify instance destruction after the
+      last player leaves.
+
+## Deployment Strategies
+
+11. **R-8.7.19** — The engine K8s operator **SHALL** support rolling update, canary, and blue-green
+    deployment strategies with configurable drain policies, game-metric validation gates, and
+    automatic rollback on threshold breach.
+    - **Rationale:** Game server deployments must avoid disrupting active sessions; canary
+      deployments validate game health before full rollout.
+    - **Verification:** Integration test: deploy a canary with a 10% traffic split. Inject a bad
+      metric and verify automatic rollback. Deploy a rolling update and verify zero player
+      disconnections during the rollout.

@@ -80,3 +80,30 @@
       authoring.
     - **Verification:** Create a 5-node graph. Verify it compiles and runs. Verify output matches a
       manually coded equivalent.
+
+## Post-Process Volumes and Quality Tiers
+
+12. **R-2.9.12** — The engine **SHALL** blend post-process parameters from overlapping
+    PostProcessVolume entities using priority-weighted interpolation with configurable shapes
+    (global, box, sphere) and blend distances.
+    - **Rationale:** Smooth transitions between areas with different post-process settings require
+      volume blending by priority and proximity.
+    - **Verification:** Place two overlapping volumes with different bloom thresholds. Move the
+      camera between them. Verify smooth parameter interpolation proportional to blend distance and
+      priority.
+
+13. **R-2.9.13** — The engine **SHALL** select per-effect quality parameters based on a global
+    platform quality tier (Mobile, Switch, Desktop, HighEnd) without runtime branching in the hot
+    path.
+    - **Rationale:** Quality tier selection at initialization avoids per-frame capability checks
+      while ensuring effects scale across hardware.
+    - **Verification:** Set quality tier to Mobile. Verify bloom uses dual-kawase and DOF is
+      disabled. Switch to HighEnd. Verify full quality. Assert no runtime branches in shader hot
+      paths.
+
+14. **R-2.9.14** — The engine **SHALL** support Dolby Vision HDR output with dynamic metadata on
+    compatible displays.
+    - **Rationale:** Dolby Vision provides scene-by-scene tone mapping metadata beyond static HDR10,
+      improving HDR quality on supported hardware.
+    - **Verification:** Enable Dolby Vision output on a compatible display. Verify dynamic metadata
+      is written per frame. Verify correct tone mapping compared to HDR10 reference.

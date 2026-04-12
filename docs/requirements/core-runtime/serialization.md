@@ -112,3 +112,34 @@
    - **Verification:** Define struct with #[binary(compress = "lz4")] Vec<u8> and regular String.
      Serialize in mixed mode; verify text contains string inline and $binary ref for bytes. Verify
      companion contains LZ4 data. Deserialize; verify both fields match original.
+
+## Git-Friendly Text Format
+
+1. **R-1.4.13** — The engine **SHALL** serialize scene data in a custom git-friendly text format
+   with deterministic sorted output, line-based diffing, stable entity IDs, and flat structure
+   enabling conflict-free git merges.
+   - **Rationale:** Scene files are the most frequently edited assets in version control; a format
+     designed for line-based diffing and conflict-free merges eliminates manual merge resolution.
+   - **Verification:** Serialize a 100-entity scene; verify output is deterministically sorted. Add
+     an entity in one branch and modify another in a second branch; merge; verify no conflicts.
+     Verify round-trip fidelity for all component types.
+
+## Codegen-Produced Serialization
+
+1. **R-1.4.14** — The engine codegen pipeline **SHALL** generate TextSerialize and TextDeserialize
+   implementations for every component and resource type, requiring no runtime reflection.
+   - **Rationale:** Static codegen eliminates runtime reflection overhead and ensures all types are
+     serializable without manual trait implementations.
+   - **Verification:** Define 10 component types; run codegen; verify TextSerialize and
+     TextDeserialize impls are generated for all 10. Serialize and deserialize each; verify
+     round-trip fidelity. Verify no reflection calls at runtime.
+
+## Codegen Migration Values
+
+1. **R-1.4.15** — The engine **SHALL** use codegen-produced MigrationValue types for schema
+   migration, replacing runtime reflection-based DynamicValue.
+   - **Rationale:** Codegen-produced migration types are type-safe and avoid the overhead and
+     fragility of runtime reflection-based dynamic values.
+   - **Verification:** Define a type at v1 and v2 with a field rename; run codegen; verify
+     MigrationValue type is generated. Migrate v1 data to v2; verify renamed field is preserved.
+     Verify no DynamicValue or reflection calls during migration.

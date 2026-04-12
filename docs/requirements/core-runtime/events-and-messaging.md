@@ -75,3 +75,42 @@
    - **Verification:** Create two worlds with bridge for ChatMessage. Send in world A; verify
      appears in B. Send unsubscribed event; verify absent in B. Configure filter blocking private
      messages; verify filtered.
+
+## Event Flood Detection
+
+1. **R-1.5.10** — The engine **SHALL** emit a diagnostic warning when the number of events written
+   to a single channel in one frame exceeds a configurable flood threshold.
+   - **Rationale:** Runaway event production can exhaust memory and degrade frame times; early
+     detection enables debugging before the system degrades.
+   - **Verification:** Set flood threshold to 1,000; write 1,001 events; verify diagnostic warning
+     emitted naming the event type and count. Write 999; verify no warning.
+
+## Entity Event Propagation
+
+1. **R-1.5.11** — The engine **SHALL** propagate entity events through the hierarchy in two phases:
+   capture (root-to-target) and bubble (target-to-root), with the ability to stop propagation at any
+   point.
+   - **Rationale:** DOM-style capture/bubble propagation enables parent widgets to intercept child
+     events and leaf entities to prevent parent handling when appropriate.
+   - **Verification:** Emit event at a leaf 4 levels deep; verify capture observers fire root to
+     leaf, then bubble observers fire leaf to root. Call stop_propagation at depth 2; verify no
+     further observers fire.
+
+## Stream Overflow Detection
+
+1. **R-1.5.12** — Each persistent stream cursor **SHALL** detect when it has fallen behind the ring
+   buffer and events were lost, reporting the overflow condition to the reader.
+   - **Rationale:** Slow consumers must know when they have missed events to avoid processing a
+     partial or inconsistent event sequence.
+   - **Verification:** Create a stream with 100-event ring buffer; write 200 events without reading;
+     advance cursor; verify has_overflowed() returns true with count of lost events.
+
+## Command Buffer Event Recording
+
+1. **R-1.5.13** — The engine **SHALL** allow command buffers to record event send operations that
+   are flushed into the event channel back buffer at sync points alongside structural changes.
+   - **Rationale:** Systems that spawn entities and emit events in the same command sequence need
+     both operations applied atomically at the sync point.
+   - **Verification:** Record spawn + send_event in one command buffer; flush at sync point; verify
+     entity exists and event is in the back buffer. Verify event is visible to readers in the next
+     frame.

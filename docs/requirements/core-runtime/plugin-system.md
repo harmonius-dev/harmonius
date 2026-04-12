@@ -63,3 +63,23 @@
      feature flags.
    - **Verification:** Register plugin with "physics" v1.2. Query "physics"; verify v1.2 returned.
      Query "audio"; verify not-available. Branch on presence; verify correct branch executes.
+
+## Middleman .dylib Architecture
+
+1. **R-1.6.9** — The engine **SHALL** organize codegen'd types into a single middleman .dylib
+   containing all shared component types, events, systems, and serialization code, loaded by the
+   engine binary at startup and swapped during hot reload.
+   - **Rationale:** A single middleman .dylib ensures all plugins share the same type layouts and
+     serialization code, preventing ABI mismatches during hot reload.
+   - **Verification:** Build middleman .dylib with 10 component types; verify engine loads it at
+     startup. Hot-reload with updated types; verify swap completes and all type layouts match.
+
+## Static Linking for Shipping
+
+1. **R-1.6.10** — Shipping builds **SHALL** statically link all plugin code with LTO; no .dylib
+   files **SHALL** be distributed with released games.
+   - **Rationale:** Static linking with LTO eliminates dynamic dispatch overhead and reduces attack
+     surface in shipping builds.
+   - **Verification:** Build a shipping binary with 5 plugins; verify no .dylib files in output
+     directory. Verify LTO is enabled in the build profile. Benchmark startup time vs dynamic
+     loading; verify faster.

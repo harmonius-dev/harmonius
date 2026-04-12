@@ -128,3 +128,96 @@
    - **Verification:** Chaos test: kill a process during peak load. Verify replacement provisioned
      within 30 seconds. Verify affected players migrated. Initiate rolling restart and verify zero
      disconnections.
+
+## Leaderboard Service
+
+5. **R-8.5.14** — The engine **SHALL** provide a self-hosted leaderboard service supporting multiple
+   boards per game, per-board reset schedules, global and friend-filtered queries, and server-side
+   score validation before submission.
+   - **Rationale:** Self-hosted leaderboards avoid platform rate limits and provide cross-platform
+     unified rankings with server-side anti-cheat validation.
+   - **Verification:** Integration test: submit scores to daily and all-time boards. Query global
+     and friend-filtered results. Verify reset clears the daily board. Submit an invalid score and
+     verify rejection.
+
+## Achievement Service
+
+6. **R-8.5.15** — The engine **SHALL** provide a server-side achievement service supporting
+   progress-based and boolean achievements, persisted to TiKV, with automatic sync to platform SDK
+   achievement systems.
+   - **Rationale:** Server-side tracking prevents client-side achievement manipulation and provides
+     a single source of truth that syncs to each platform's trophy/achievement system.
+   - **Verification:** Integration test: increment a progress-based achievement across sessions.
+     Verify persistence in TiKV. Verify platform SDK sync on unlock. Verify boolean achievement
+     unlocks correctly.
+
+## Cloud Save Service
+
+7. **R-8.5.16** — The engine **SHALL** provide a self-hosted cloud save service with per-player
+   storage slots, configurable quota, last-write-wins or merge-callback conflict resolution, and
+   rkyv serialization.
+   - **Rationale:** Self-hosted cloud saves work across all platforms without relying on
+     platform-specific cloud storage, enabling cross-platform save continuity.
+   - **Verification:** Integration test: save and load player data across two devices. Verify
+     conflict resolution with concurrent writes. Verify quota enforcement rejects oversized saves.
+
+## Telemetry Service
+
+8. **R-8.5.17** — The engine **SHALL** provide a telemetry service for fire-and-forget event
+   submission with buffered batching, player session tracking, and GDPR opt-out with data deletion
+   API.
+   - **Rationale:** Telemetry enables data-driven balancing and retention analysis; GDPR compliance
+     is legally required for EU players.
+   - **Verification:** Integration test: submit 10,000 events and verify batched delivery. Verify
+     session tracking records login and playtime. Opt out and verify data deletion API removes all
+     player telemetry.
+
+## Matchmaking Extensions
+
+9. **R-8.5.18** — The engine matchmaker **SHALL** support backfill requests to replace players who
+   leave mid-match, searching the queue for skill-compatible replacements within a configurable wait
+   window.
+   - **Rationale:** Backfill prevents permanent team disadvantage when a player leaves, improving
+     match quality for remaining participants.
+   - **Verification:** Integration test: remove a player mid-match. Verify backfill request is
+     issued. Verify a replacement is matched within the configured wait window. Verify the
+     replacement's skill rating is within the allowed range.
+10. **R-8.5.19** — The engine **SHALL** detect match abandonment, apply escalating penalties
+    (cooldown, rating penalty, temporary ban) tracked per rolling window, with a reconnect grace
+    period and team vote exemption.
+    - **Rationale:** Escalating penalties deter repeat abandonment while the grace period and team
+      vote exemption prevent punishing legitimate disconnects and consensual departures.
+    - **Verification:** Integration test: abandon 3 matches in a rolling window. Verify escalating
+      penalties applied. Reconnect within the grace period and verify no penalty. Trigger a team
+      vote exemption and verify no penalty.
+11. **R-8.5.20** — The engine **SHALL** track per-player skill ratings with Glicko-2, supporting
+    rating decay on inactivity, placement matches with wide deviation, per-game-mode ratings, soft
+    season resets, and display rank tier mapping.
+    - **Rationale:** Extended Glicko-2 with decay, placement, and seasons provides accurate skill
+      estimation across all game modes and time periods.
+    - **Verification:** Integration test: complete 10 placement matches and verify wide deviation
+      narrows. Verify per-mode ratings are independent. Verify season reset softens deviation.
+      Verify display rank maps correctly from rating.
+12. **R-8.5.21** — The engine **SHALL** provide a PlatformAdapter trait with cfg-gated static
+    dispatch bridging engine session services to each platform SDK for authentication, achievements,
+    friends, voice, and store integration.
+    - **Rationale:** A unified adapter isolates platform-specific API differences behind a single
+      trait, preventing platform branching in game code.
+    - **Verification:** Integration test per platform: authenticate via the adapter. Verify
+      achievement unlock, friends list query, and store entitlement check route to the correct
+      platform SDK.
+13. **R-8.5.22** — The engine **SHALL** provide a StoreService abstraction for querying products,
+    initiating purchases, and verifying entitlements across platform stores, with overlay detection
+    that pauses game input while the platform overlay is active.
+    - **Rationale:** A unified store abstraction enables in-game purchasing without platform
+      branching; overlay detection prevents accidental input during purchase flows.
+    - **Verification:** Integration test: query products, initiate a purchase, and verify
+      entitlement after completion. Activate the platform overlay and verify game input is paused.
+14. **R-8.5.23** — The engine matchmaker **SHALL** support multiple queue types (casual,
+    competitive, raid with role-based filling, custom) and a leaver queue penalty pool for players
+    with high abandon rates.
+    - **Rationale:** Different game modes require different matching rules; a leaver queue isolates
+      chronic abandoners from the general population.
+    - **Verification:** Integration test: enqueue players into casual, competitive, and raid queues.
+      Verify role-based filling for raid. Verify a player with high abandon rate is routed to the
+      leaver queue.

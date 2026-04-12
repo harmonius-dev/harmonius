@@ -67,3 +67,24 @@
    streaming, and the painter previews LOD transitions in real time.
    - **Deps:** F-3.3.1, F-15.2.1
    - **Platform:** Desktop only. Not available on mobile or console runtime.
+
+## Templates and 2D Editing
+
+| ID | Feature |
+| ---------- | ---------------------------------------------------- |
+| F-15.2.8 | Create Entity Template from Viewport Selection |
+| F-15.2.9 | 2D Tilemap Editing with Auto-Tiling and Grid Support |
+
+1. **F-15.2.8** — Selects a group of placed entities in the viewport and saves them as a reusable
+   entity template asset. The template captures relative positions, rotations, scales, and component
+   data. Stamping the template places a new instance group with the same arrangement. Templates
+   integrate with the undo stack and the template hierarchy (F-15.2.2).
+   - **Deps:** F-15.2.1, F-15.2.2, F-15.1.3
+   - **Platform:** Desktop only. Not available on mobile or console runtime.
+2. **F-15.2.9** — 2D entity placement with XY-plane snapping, Z-order management, tilemap editing
+   with auto-tiling rules (edges, corners, inner tiles), and isometric/hex grid placement modes. The
+   tile palette displays available tile assets with drag-to-paint workflow. Auto-tiling
+   automatically selects the correct tile variant based on neighboring tiles. Supports rectangular,
+   isometric, and hex grid geometries.
+   - **Deps:** F-15.2.1, F-15.1.3, F-10.5.1 (2D Rendering)
+   - **Platform:** Desktop only. Not available on mobile or console runtime.

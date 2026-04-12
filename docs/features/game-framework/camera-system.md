@@ -404,3 +404,25 @@
    - **Platform:** Mobile limits PiP to one viewport at quarter resolution. Desktop supports
      multiple PiP viewports at configurable resolution. racing (rear mirror), stealth (security
      cam), and spectator modes.
+
+## VR and Split-Screen
+
+| ID         | Feature                                        |
+|------------|------------------------------------------------|
+| F-13.25.41 | VR Camera Brain with XR Head Pose              |
+| F-13.25.42 | Split-Screen with Independent Camera Brains    |
+
+1. **F-13.25.41** — A VR camera brain that integrates OpenXR head pose tracking, stereo rendering
+   output, eye tracking input for foveation maps, and VR-specific comfort settings (vignette on
+   rotation, snap/smooth turn). The VR brain replaces the standard brain's single-view output with a
+   stereo pair. FOV is driven by the HMD optics rather than camera parameters. Supports foveated
+   rendering maps derived from eye tracking data when available.
+   - **Deps:** F-13.25.2, F-6.5.1 (HMD Tracking), F-6.5.3 (Eye Tracking)
+   - **Platform:** Requires OpenXR-compatible headset. Eye tracking optional.
+2. **F-13.25.42** — Split-screen rendering with multiple independent camera brains, each reading
+   from a different channel mask. Each brain drives an independent viewport with its own virtual
+   camera selection, blending, and post-processing. Render layer filtering ensures per-player HUD
+   elements are visible only in the correct viewport. Supports 2, 3, and 4-player split
+   configurations with configurable viewport layout (horizontal, vertical, quadrant).
+   - **Deps:** F-13.25.2, F-2.10.5 (Multi-View Rendering)
+   - **Platform:** Desktop and console. Mobile not supported.

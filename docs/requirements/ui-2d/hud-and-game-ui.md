@@ -107,3 +107,13 @@
     - **Rationale:** Consistent markers across views give reliable spatial awareness.
     - **Verification:** Track quest. Assert markers on minimap, compass, and world map. Untrack.
       Assert markers disappear from all. Zoom out. Assert clustering activates.
+
+## Nameplate Culling Pipeline
+
+16. **R-10.3.4a** — The engine **SHALL** cull nameplates via a staged pipeline of distance,
+    occlusion, priority, budget, and overlap avoidance before screen projection.
+    - **Rationale:** A multi-stage pipeline ensures only the most relevant nameplates render in
+      crowded scenes without overlap or budget overflow.
+    - **Verification:** Spawn 300 nameplates. Assert distance cull removes far nameplates. Assert
+      occlusion cull removes terrain-blocked nameplates. Assert budget cap limits visible count.
+      Assert no two visible nameplates overlap by more than 10% area.

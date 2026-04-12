@@ -61,3 +61,12 @@
    - **Verification:** Transition from clear to rain. Verify clouds, fog density, precipitation, and
      material wetness update over the configured period. Verify puddles appear on horizontal
      surfaces.
+
+## Breaking Waves
+
+9. **R-2.7.9** — The engine **SHALL** render art-directable breaking waves using Coons-surface
+   deformation driven by guide curves.
+   - **Rationale:** Guide-curve-driven breaking waves give artists full control over shoreline wave
+     shape and timing beyond the base FFT ocean simulation.
+   - **Verification:** Define 3 guide curves. Verify waves follow the curves with Coons-surface
+     interpolation. Verify deformation textures produce correct vertex output.

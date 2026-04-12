@@ -117,3 +117,34 @@
       pacing.
     - **Verification:** Measure sub-allocation latency. Measure state tracker memory per command
       buffer.
+
+## Descriptor Binding
+
+16. **R-2.1.16** — The engine **SHALL** organize descriptor bindings into four frequency groups
+    (per-frame, per-pass, per-material, per-draw) mapped to backend-native descriptor mechanisms.
+    - **Rationale:** Frequency-based binding minimizes redundant descriptor updates by grouping
+      bindings that change at the same rate.
+    - **Verification:** Profile a 1000-draw scene. Assert per-frame descriptors are bound once,
+      per-pass descriptors once per pass, and per-material descriptors once per material change.
+      Verify correct backend mapping on Metal, D3D12, and Vulkan.
+
+## Shader Compilation
+
+17. **R-2.1.17** — The engine **SHALL** compile HLSL shaders to DXIL, SPIR-V, and metallib via dxc
+    and metal-shaderconverter CLI subprocesses during asset processing, with no runtime shader
+    compilation in shipping builds.
+    - **Rationale:** Offline compilation eliminates shader hitches in shipping builds and ensures
+      deterministic shader output.
+    - **Verification:** Build shaders for all three targets. Assert no runtime compilation calls in
+      a shipping build. Assert each target produces valid bytecode accepted by the respective
+      backend.
+
+## Error Handling
+
+18. **R-2.1.18** — The engine **SHALL** return structured error types for all GPU and render graph
+    operations, including device creation, resource allocation, pipeline creation, and graph
+    compilation failures.
+    - **Rationale:** Structured errors enable programmatic error handling and clear diagnostics
+      without panicking on recoverable GPU failures.
+    - **Verification:** Trigger each error condition (out of memory, invalid format, cycle in
+      graph). Assert a typed error variant is returned. Assert no panics on recoverable errors.

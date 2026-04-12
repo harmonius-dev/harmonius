@@ -39,3 +39,10 @@
    build when an example does not compile against the current engine version.
    - **Rationale:** Stale documentation is worse than no documentation.
    - **Verification:** Break an example intentionally and verify the CI build fails.
+
+8. **R-15.19.8** — The engine **SHALL** store generated API documentation keyed by engine version
+   with navigation between versions.
+   - **Rationale:** Teams on older engine versions need documentation matching their version, not
+     just the latest.
+   - **Verification:** Generate docs for versions 1.0 and 1.1, navigate to a type page, switch
+     versions, and verify the content reflects the selected version.

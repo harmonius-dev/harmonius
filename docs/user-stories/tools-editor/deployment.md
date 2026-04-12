@@ -22,6 +22,8 @@
 | US-15.14.8.2 | game designer (P-5)        |
 | US-15.14.9.1 | build engineer (P-16)      |
 | US-15.14.9.2 | engine developer (P-26)    |
+| US-15.14.10.1 | build engineer (P-16)     |
+| US-15.14.11.1 | engine developer (P-26)   |
 
 1. **US-15.14.1.1** — **As a** build engineer (P-16), **I want** packaging into platform-native
    formats (macOS .app, Windows .exe, Linux AppImage, iOS IPA, Android APK/AAB), **so that** builds
@@ -82,3 +84,10 @@
 
 18. **US-15.14.9.2** — **As a** engine developer (P-26), **I want** the cloud build service to
     handle all targets from any host OS, **so that** no developer needs every toolchain locally.
+
+19. **US-15.14.10.1** — **As a** build engineer (P-16), **I want** to trigger platform builds via a
+    CLI command, **so that** I can integrate engine builds into my CI/CD pipeline.
+
+20. **US-15.14.11.1** — **As a** engine developer (P-26), **I want** all compiled shaders prefetched
+    from the shared cache on first launch after clone, **so that** I avoid a multi-hour initial
+    shader compilation.

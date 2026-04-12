@@ -84,3 +84,92 @@
    - **Verification:** 100 AI agents with sight cones and 500 targets; verify sight cone returns
      only entities within angular and distance bounds. Verify AoE sphere returns all entities within
      radius, none outside.
+
+## 2D Spatial Index
+
+1. **R-1.9.12** — The engine **SHALL** provide a 2D BVH variant using Aabb2D leaf nodes for 2D/2.5D
+   games, implementing the same SpatialQuery trait as the 3D BVH for generic consumer code.
+   - **Rationale:** 2D games benefit from a BVH that operates on 2D primitives, avoiding the
+     overhead of a third axis in all intersection tests.
+   - **Verification:** Insert 100,000 2D entities; perform ray cast, overlap, and nearest-neighbor
+     queries; verify results match brute-force reference. Verify SpatialQuery trait is identical to
+     3D BVH.
+2. **R-1.9.13** — The engine **SHALL** provide a 2D axis-aligned bounding box (Aabb2D) with area,
+   merge, point containment, ray intersection, and circle intersection operations.
+   - **Rationale:** 2D AABB is the leaf primitive for the 2D BVH and 2D overlap queries; it must
+     support the same operation set as 3D AABB.
+   - **Verification:** Construct Aabb2D from min/max; verify area calculation. Merge two AABBs;
+     verify enclosing bounds. Test point containment, ray hit, and circle overlap against known
+     geometry.
+
+## BVH Configuration
+
+1. **R-1.9.14** — The engine **SHALL** expose BVH construction parameters (SAH bin count, traversal
+   cost ratio, fat AABB margin, rebuild quality threshold) as configurable values per platform tier.
+   - **Rationale:** Different platforms have different memory and CPU budgets; per-tier BVH
+     parameters enable quality/cost tradeoffs.
+   - **Verification:** Set SAH bins to 8 vs 32; verify build produces different tree shapes. Set fat
+     margin to 0 vs 0.1; verify refit frequency differs. Verify each platform tier has distinct
+     default values.
+
+## Fattened AABBs
+
+1. **R-1.9.15** — The engine **SHALL** maintain fattened AABBs per BVH leaf so that entities moving
+   within the fat margin require no tree modification, reducing refit cost for jittering entities.
+   - **Rationale:** Fattened AABBs absorb small movements (jitter, idle animations) without
+     triggering costly tree updates, significantly reducing refit work for mostly-stationary scenes.
+   - **Verification:** Move an entity within the fat margin 100 times; verify zero BVH node
+     modifications. Move beyond margin; verify refit triggers. Benchmark jittering 10,000 entities;
+     verify update cost under 0.5 ms.
+
+## Double-Buffered BVH Rebuild
+
+1. **R-1.9.16** — The engine **SHALL** perform BVH full rebuilds on a background worker thread into
+   a shadow buffer, swapping the result into the active BVH at frame boundary without blocking
+   queries.
+   - **Rationale:** Full rebuilds restore optimal SAH quality but are too expensive for the main
+     frame budget; background rebuilding hides the cost.
+   - **Verification:** Trigger a full rebuild with 1M entities; verify queries continue against the
+     active BVH during rebuild. Verify swap occurs at frame boundary. Verify SAH quality improves
+     after swap.
+
+## Any-Hit Ray Test
+
+1. **R-1.9.17** — The engine **SHALL** provide an any-hit ray test returning bool that stops at the
+   first intersection, more efficient than nearest-hit ray cast for line-of-sight checks.
+   - **Rationale:** Line-of-sight and occlusion checks only need to know if anything is hit, not
+     which entity is nearest; early termination reduces traversal cost.
+   - **Verification:** Cast ray through 1,000 entities; verify any-hit returns true and terminates
+     before visiting all nodes. Benchmark any-hit vs nearest-hit; verify at least 2x faster for
+     dense scenes.
+
+## Spatial Layer Masks
+
+1. **R-1.9.18** — The engine **SHALL** provide a 32-bit spatial layer mask with 8 built-in layers
+   (physics, rendering, navigation, network, AI, audio, gameplay, trigger) and 24 user-definable
+   layers, filtering all spatial queries by layer intersection.
+   - **Rationale:** Layer masks enable subsystems to query only relevant entities without
+     post-filtering, reducing query cost for multi-purpose spatial indices.
+   - **Verification:** Assign entities to physics and rendering layers; query with physics-only
+     mask; verify rendering-only entities excluded. Define a custom layer; assign and query; verify
+     correct filtering.
+
+## Multiple Bounding Volume Types
+
+1. **R-1.9.19** — The engine **SHALL** support multiple bounding volume types (AABB, sphere, OBB) as
+   ECS components, converting to AABB for BVH storage.
+   - **Rationale:** Different entity shapes are best approximated by different bounding volumes;
+     conversion to AABB for BVH storage maintains a uniform tree structure.
+   - **Verification:** Attach sphere bounding volume to an entity; verify BVH stores its enclosing
+     AABB. Attach OBB; verify enclosing AABB. Query via BVH; verify correct broad-phase results for
+     each volume type.
+
+## Multi-View Batch Frustum Culling
+
+1. **R-1.9.20** — The engine **SHALL** support batch frustum culling for multiple views (main
+   camera, shadow cascades, reflection probes) in a single parallel dispatch.
+   - **Rationale:** Culling each view separately repeats tree traversal; batch dispatch amortizes
+     traversal cost across all views.
+   - **Verification:** Submit 6 frustum queries (1 main + 4 shadow cascades + 1 reflection probe) as
+     a batch; verify all results correct. Benchmark batch vs sequential; verify at least 2x faster
+     for 1M entities.

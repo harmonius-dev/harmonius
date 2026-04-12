@@ -308,3 +308,26 @@
    - **Verification:** Define states Menu, Playing, Paused. Transition Menu to Playing; verify
      OnExit(Menu) and OnEnter(Playing) fire. Verify system with in_state(Playing) runs during
      Playing, not during Menu.
+
+## AoSoA Tiled Storage
+
+1. **R-1.1.40** — The engine **SHALL** store component data within archetype chunks using AoSoA
+   tiled layout where tile width matches the platform SIMD width (4 for SSE/NEON, 8 for AVX2),
+   enabling gather-free SIMD iteration.
+   - **Rationale:** AoSoA tiling maps SIMD lanes directly to consecutive entities, eliminating
+     gather/scatter overhead that degrades vectorized iteration throughput.
+   - **Verification:** Iterate 1M entities with a 4-component SIMD kernel; verify no gather
+     instructions emitted (inspect assembly). Benchmark AoSoA vs plain SoA; verify at least 1.5x
+     throughput improvement on AVX2.
+
+## Compiled Query Plans
+
+1. **R-1.1.41** — The engine **SHALL** compile query plans at QueryState construction time with
+   bloom filter archetype rejection, pre-resolved column offsets, and prefetch hints, incrementally
+   updating plans when new archetypes are created.
+   - **Rationale:** Compiled query plans eliminate per-iteration archetype matching overhead and
+     enable cache prefetch scheduling for large entity populations.
+   - **Verification:** Construct a query over 1,000 archetypes; verify bloom filter rejects
+     non-matching archetypes without iterating. Add a new archetype; verify incremental plan update
+     without full recompilation. Benchmark compiled vs uncompiled query; verify at least 2x
+     throughput improvement.

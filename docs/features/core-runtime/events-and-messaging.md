@@ -82,3 +82,17 @@
    instanced zones, lobby worlds, and the overworld run as separate ECS worlds but must exchange
    gameplay events.
    - **Deps:** F-1.5.1, F-1.1.34 (Multiple World Support)
+
+## Entity Event Propagation
+
+| ID      | Feature                                |
+|---------|----------------------------------------|
+| F-1.5.8 | Capture and Bubble Event Propagation  |
+
+1. **F-1.5.8** — Propagate entity events through the hierarchy in two phases: capture
+   (root-to-target) and bubble (target-to-root). During capture, observers fire from the root down
+   to the target entity. During bubble, observers fire from the target back up to the root.
+   Propagation can be stopped at any point via stop_propagation() on the propagation context. This
+   enables DOM-style event handling where parent widgets intercept child events during capture or
+   handle them during bubble.
+   - **Deps:** F-1.1.31 (Custom Entity Events), F-1.1.16 (Parent-Child Hierarchy)

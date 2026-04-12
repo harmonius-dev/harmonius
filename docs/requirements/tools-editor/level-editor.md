@@ -44,3 +44,24 @@
    - **Rationale:** Procedural placement rules produce organic vegetation distributions efficiently.
    - **Verification:** Paint foliage with a slope limit of 30 degrees and verify no instances appear
      on steeper surfaces.
+
+8. **R-15.2.8** — The engine **SHALL** support entity duplication from the current selection with
+   offset placement and undo support.
+   - **Rationale:** Duplication is one of the most frequent level editing operations and must be
+     fast and reversible.
+   - **Verification:** Select three entities, duplicate them, verify offset placement, undo, and
+     confirm the duplicates are removed.
+
+9. **R-15.2.9** — The engine **SHALL** allow creating a reusable entity template from a selection of
+   existing entities in the viewport.
+   - **Rationale:** Templates from selections enable rapid pattern reuse without pre-planning the
+     template hierarchy.
+   - **Verification:** Select a group of entities, create a template, stamp it elsewhere, and verify
+     it matches the original arrangement.
+
+10. **R-15.2.10** — The engine **SHALL** support 2D entity placement with XY-plane snapping and
+    Z-order, tilemap editing with auto-tiling rules, and isometric/hex grid placement modes.
+    - **Rationale:** 2D and 2.5D games require dedicated placement modes that differ from 3D
+      workflows.
+    - **Verification:** Place tiles on an isometric grid with auto-tiling and verify correct tile
+      selection at edges and corners.

@@ -105,3 +105,17 @@
    (F-3.2.7), and sparse cosmic storage (F-3.6.63).
    - **Deps:** F-1.7.1 (Frame Arena Allocator)
    - **Platform:** Arbitrary precision is CPU-only. GPU uses camera-relative f32.
+
+## Per-Worker-Thread Arenas
+
+| ID       | Feature                           |
+|----------|-----------------------------------|
+| F-1.7.10 | Per-Worker-Thread Arena Allocation|
+
+1. **F-1.7.10** — Provide one FrameArena per job system worker thread, indexed by the worker's
+   thread-local index. Each arena is owned exclusively by its worker thread, requiring no atomics on
+   the allocation hot path. Arenas reset at frame boundaries alongside the global frame arena. This
+   ensures bump allocation scales linearly with worker count without contention.
+   - **Deps:** F-1.7.1 (Per-Frame Arena Allocator)
+   - **Platform:** Mobile: 2 worker arenas, 2 MB each. Switch: 2 worker arenas, 4 MB each. Desktop:
+     (cores - 2) worker arenas, 8 MB each default. Arena size is configurable per platform tier.

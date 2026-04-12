@@ -62,3 +62,24 @@
     - **Rationale:** Enterprise environments require granular control over AI assistance access and
       cost.
     - **Verification:** Block a tool invocation via allowlist and verify the assistant rejects it.
+
+11. **R-15.9.11** — The engine **SHALL** store LLM provider API keys in the platform-native keychain
+    (macOS Keychain, Windows Credential Manager, Linux Secret Service), never in config files or
+    memory at rest.
+    - **Rationale:** API keys are sensitive credentials that must not leak via version control or
+      file system access.
+    - **Verification:** Store a key, verify it is absent from config files and project directories,
+      and confirm retrieval via the keychain API.
+
+12. **R-15.9.12** — The engine **SHALL** enforce per-user rate limits and optional cost budgets on
+    LLM API requests, rejecting requests that exceed configured limits.
+    - **Rationale:** Uncontrolled LLM usage can generate unexpected costs for teams.
+    - **Verification:** Set a rate limit of 10 requests per minute, issue 11 requests, and verify
+      the 11th is rejected with an appropriate message.
+
+13. **R-15.9.13** — The engine **SHALL** route LLM requests directly from the editor to the
+    customer's provider endpoint via QUIC, with no Harmonius-operated server in the request path.
+    - **Rationale:** Direct routing ensures customer data never passes through third-party
+      infrastructure.
+    - **Verification:** Capture network traffic during an LLM request and verify no
+      Harmonius-operated endpoint appears in the path.

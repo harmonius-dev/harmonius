@@ -62,3 +62,31 @@
     - **Rationale:** Raw terrain contacts cause vibration on triangle edges and seams.
     - **Verification:** Walk over rough terrain. Assert no vibration. Assert smoothing half-life is
       configurable.
+
+## Non-Functional Requirements
+
+11. **R-4.1.NF1** -- The engine **SHALL** simulate 2000 active rigid bodies with 4 substeps within 4
+    ms on minimum-spec hardware.
+    - **Rationale:** Frame budget headroom is required for gameplay, rendering, and audio.
+    - **Verification:** Benchmark 2000 active bodies with 4 substeps. Assert total physics time
+      stays within 4 ms on min-spec hardware.
+
+12. **R-4.1.NF2** -- The engine **SHALL** use at most 256 bytes per active rigid body excluding
+    collider shape data.
+    - **Rationale:** Memory-efficient components maximize the number of active bodies per cache
+      line.
+    - **Verification:** Profile memory layout. Assert RigidBody + Velocity + AngularVelocity + Mass
+      - Inertia + ExternalForce + ExternalTorque fits within 256 bytes.
+
+13. **R-4.1.NF3** -- The engine **SHALL** produce bit-identical simulation results across Windows,
+    macOS, and Linux for the same entity ordering and timestep.
+    - **Rationale:** Cross-platform determinism is required for server-authoritative netcode and
+      replay systems.
+    - **Verification:** Run a 1000-step scenario on all three platforms. Assert bit-identical
+      output.
+
+14. **R-4.1.NF4** -- The engine **SHALL** evaluate a single character controller within 0.1 ms,
+    supporting 200 simultaneous controllers.
+    - **Rationale:** MMO-scale character counts require sub-millisecond per-controller cost.
+    - **Verification:** Benchmark 200 character controllers on varied terrain. Assert per-controller
+      cost stays within 0.1 ms.

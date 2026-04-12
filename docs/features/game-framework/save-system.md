@@ -64,3 +64,35 @@
    The pipeline supports priority ordering so autosaves yield to explicit user saves.
    - **Deps:** F-13.3.1
    - **Platform:** Uses Tokio async I/O per project guidelines. No standard library file I/O.
+
+## Advanced Save Features
+
+| ID       | Feature                                             |
+|----------|-----------------------------------------------------|
+| F-13.3.7 | Procedural Asset Blob Snapshots in Save Archives    |
+| F-13.3.8 | Per-Component Schema Versioning with Migrations     |
+| F-13.3.9 | Save Context Filtering for Entity Subsets           |
+| F-13.3.10 | Typed Save Lifecycle Events                        |
+
+1. **F-13.3.7** — Snapshots procedural asset blobs (terrain modifications, runtime-generated
+   textures, voxel edits) alongside entity component state in the save archive. Procedural blobs are
+   stored as offset-referenced entries in the archive, loaded on demand when the owning entity is
+   deserialized. Blob data is compressed independently for efficient partial loading.
+   - **Deps:** F-13.3.1, F-13.3.6 (Async I/O Pipeline)
+2. **F-13.3.8** — Tracks schema versions per-component type in the save header rather than a single
+   global version. On load, only components whose schema version differs from the current version
+   are migrated. Supports advanced migration transforms: split component, merge components, reparent
+   entity, create/delete entity, cross-component field move, and data table rekeying. Migrations are
+   registered as ordered transform lists per component type.
+   - **Deps:** F-13.3.2, F-1.3.3 (Property System)
+3. **F-13.3.9** — Filters which entities are serialized based on save context tags (character,
+   world, instance, settings). Each entity is tagged with one or more contexts. A save operation
+   specifies which contexts to include, enabling separate save files for character data vs. world
+   state. Context tags are assigned via the inspector or logic graphs.
+   - **Deps:** F-13.3.1, F-1.1.1 (ECS)
+4. **F-13.3.10** — Emits typed ECS events for all save lifecycle stages: SaveStarted, SaveComplete,
+   SaveFailed, LoadStarted, LoadComplete, LoadFailed, CloudSyncStarted, CloudSyncComplete, and
+   CloudConflict. Events carry metadata (slot ID, context, duration). Gameplay systems and UI
+   subscribe to these events for loading screens, progress bars, error dialogs, and conflict
+   resolution flows.
+   - **Deps:** F-13.3.1, F-1.5.1 (Typed Event Channels)

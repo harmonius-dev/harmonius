@@ -66,3 +66,14 @@
    - **Verification:** Submerge camera and verify caustics, depth fog with red attenuation before
      blue, and bubbles. Cross the surface and confirm refraction distortion. Verify god rays from
      surface direction.
+
+## Wind Field
+
+8. **R-11.4.8** — The engine **SHALL** provide a shared GPU wind field texture updated per-frame
+   from WindZone volumes, consumed by weather particles, fire propagation, vegetation, and debris
+   systems.
+   - **Rationale:** A shared wind field ensures all wind-affected systems respond consistently to
+     the same wind data without redundant computation.
+   - **Verification:** Place a WindZone volume. Verify the GPU wind field texture updates. Verify
+     weather particles, fire propagation, and vegetation all sample the same wind field with
+     coherent motion.

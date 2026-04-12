@@ -168,3 +168,61 @@
     - **Rationale:** Flexible composition enables mixed-media scenes with correct occlusion.
     - **Verification:** Compose sprite, mesh, tilemap, particle, and vector layers at interleaved
       depths. Assert correct occlusion and blending.
+
+## Pixel-Perfect and Interpolation
+
+25. **R-10.5.9a** — The engine **SHALL** provide a pixel-perfect camera mode that snaps Camera2D to
+    integer pixel boundaries and applies integer upscaling on high-DPI displays.
+    - **Rationale:** Pixel art games require crisp rendering without sub-pixel blurring on Retina
+      and high-DPI screens.
+    - **Verification:** Enable pixel-perfect mode on a 2x DPI display. Assert all sprites align to
+      integer pixel boundaries. Assert no sub-pixel blurring.
+
+26. **R-10.5.10a** — The engine **SHALL** interpolate Transform2D between previous and current
+    physics positions for rendering when the physics fixed-step rate differs from the frame rate.
+    - **Rationale:** Without interpolation, objects stutter when physics and render rates diverge.
+    - **Verification:** Run physics at 50 Hz and rendering at 60 Hz. Assert smooth visual motion
+      with no stutter or jitter.
+
+## GPU Buffer Strategy
+
+27. **R-10.5.1a** — The engine **SHALL** use ring-buffered GPU instance buffers for sprite, tilemap,
+    and particle data to avoid CPU/GPU synchronization stalls.
+    - **Rationale:** Ring buffering prevents the CPU from waiting on GPU consumption of the previous
+      frame's data.
+    - **Verification:** Profile a 10000-sprite scene with 3 frames in flight. Assert zero CPU/GPU
+      sync stalls per frame.
+
+28. **R-10.5.1b** — The engine **SHALL** allocate 2D hot-path scratch data (sprite lists, sort
+    buffers, draw commands, physics manifolds) from per-thread arenas reset at frame boundaries.
+    - **Rationale:** Arena allocation avoids per-frame heap allocation overhead in
+      performance-critical 2D paths.
+    - **Verification:** Profile a 10000-sprite frame. Assert zero heap allocations from hot-path
+      systems after initial warm-up.
+
+## Platform GPU Upload
+
+29. **R-10.5.6a** — The engine **SHALL** upload tilemap chunk GPU buffers via DirectStorage
+    (Windows) and Metal I/O (Apple) for reduced CPU overhead on chunk streaming.
+    - **Rationale:** Platform-native GPU upload paths bypass CPU copies for faster tilemap chunk
+      loading.
+    - **Verification:** Stream 16 tilemap chunks. Assert GPU upload uses DirectStorage on Windows
+      and Metal I/O on Apple. Assert no CPU staging copies.
+
+## Viewport Composition
+
+30. **R-10.5.22a** — The engine **SHALL** composite 2D and 3D render views via a configurable
+    ViewportStack with back-to-front layer ordering.
+    - **Rationale:** Games mixing 2D and 3D need deterministic composition order (3D scene, 2D
+      world, 2D HUD, 2D debug overlay).
+    - **Verification:** Configure a 4-layer ViewportStack. Assert layers composite in declared
+      order. Assert HUD renders above world content.
+
+## Shadow Caster
+
+31. **R-10.5.14a** — The engine **SHALL** provide a ShadowCaster2D component with configurable
+    occluder vertices and self-shadow control, independent of the Light2D component.
+    - **Rationale:** Separating shadow casters from lights enables occluders on non-light-emitting
+      geometry and per-entity self-shadow toggles.
+    - **Verification:** Add ShadowCaster2D to an entity without Light2D. Assert shadows cast from
+      that entity. Toggle self-shadow flag and assert correct behavior.
