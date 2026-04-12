@@ -36,6 +36,10 @@ Test case IDs use `TC-16.4.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-16.4.9.1   | `test_dead_node_elimination`          | R-16.4.9  |
 | TC-16.4.9.2   | `test_transitive_reduction`           | R-16.4.9  |
 | TC-16.4.10.1  | `test_multi_graph_parallel_edges`     | R-16.4.10 |
+| TC-13.6.1.1   | `test_quest_dag_typed_objectives`     | R-13.6.1  |
+| TC-13.6.4.1   | `test_dialogue_tree_conditions`       | R-13.6.4  |
+| TC-13.10.1.1  | `test_ability_composition_graph`      | R-13.10.1 |
+| TC-13.12.2a.1 | `test_talent_tree_prereq`             | R-13.12.2a |
 
 1. **TC-16.4.1.1** `test_graph_construct_nodes_edges` — Construct a graph with 10 nodes and 15
    directed edges. Assert reported counts.
@@ -178,6 +182,31 @@ Test case IDs use `TC-16.4.Z.N` format. Every row links to a specific R-X.Y.Z or
     - Expected: `out_edges(A).count() == 2`; both edges have distinct `EdgeHandle` values; payloads
       preserved
 
+29. **TC-13.6.1.1** `test_quest_dag_typed_objectives` — Build a quest DAG with three typed
+    objectives (KillCount, ReachLocation, CollectItem). Traverse from start; assert each objective
+    node is visited in dependency order.
+    - Input: `DirectedGraph<QuestObjective, EdgeData>` with 3 typed nodes and edges encoding
+      prerequisites
+    - Expected: `toposort()` yields objectives in the declared order; each carries its typed payload
+
+30. **TC-13.6.4.1** `test_dialogue_tree_conditions` — Build a dialogue tree with branches guarded by
+    `ConditionExpr` nodes. Evaluate from root with two different contexts. Assert different terminal
+    dialogue lines are reached.
+    - Input: `ConditionalGraph` with branch guarded by `HasFlag("met_wizard")`
+    - Expected: context with flag true visits branch A; without flag visits branch B
+
+31. **TC-13.10.1.1** `test_ability_composition_graph` — Compose an ability from a directed graph of
+    effect nodes: `Cast -> ApplyBurn -> Explode`. Traverse the graph and assert the effect
+    application order matches the graph order.
+    - Input: 3-node effect graph with linear edges
+    - Expected: execution order `[Cast, ApplyBurn, Explode]`; each effect fires once
+
+32. **TC-13.12.2a.1** `test_talent_tree_prereq` — Build a talent tree as a DAG with prerequisite
+    edges. Attempt to unlock a talent whose prerequisites are not met; assert rejection. Unlock
+    prerequisites; assert the target unlock succeeds.
+    - Input: talent tree with edge `T1 -> T2`; T1 locked
+    - Expected: unlock(T2) fails with PrereqMissing; after unlock(T1), unlock(T2) succeeds
+
 ## Integration Tests
 
 | ID            | Name                              | Req        |
@@ -189,6 +218,17 @@ Test case IDs use `TC-16.4.Z.N` format. Every row links to a specific R-X.Y.Z or
 | TC-16.4.I.5   | `test_indicator_despawn_on_leave` | R-16.4.11  |
 | TC-16.4.I.6   | `test_graph_hot_reload`           | R-16.4.1   |
 | TC-16.4.I.7   | `test_graph_serialization`        | R-16.4.1   |
+| TC-16.4.1.I1  | `test_author_directed_graph`      | US-16.4.1  |
+| TC-16.4.2.I1  | `test_author_cycle_detect`        | US-16.4.2  |
+| TC-16.4.3.I1  | `test_author_topo_sort`           | US-16.4.3  |
+| TC-16.4.4.I1  | `test_author_conditional_graph`   | US-16.4.4  |
+| TC-16.4.5.I1  | `test_author_ordered_siblings`    | US-16.4.5  |
+| TC-16.4.6.I1  | `test_author_weighted_shortest`   | US-16.4.6  |
+| TC-16.4.7.I1  | `test_author_bfs_dfs_traversal`   | US-16.4.7  |
+| TC-16.4.8.I1  | `test_author_tree_ops`            | US-16.4.8  |
+| TC-16.4.9.I1  | `test_author_dead_node_prune`     | US-16.4.9  |
+| TC-16.4.10.I1 | `test_author_multi_graph`         | US-16.4.10 |
+| TC-16.4.11.I1 | `test_author_indicator_events`    | US-16.4.11 |
 
 1. **TC-16.4.I.1** `test_quest_graph_traversal` — Build a `ConditionalGraph` quest with branching
    gates on player level. Walk from start to end with two contexts (level too low, level high
@@ -231,6 +271,60 @@ Test case IDs use `TC-16.4.Z.N` format. Every row links to a specific R-X.Y.Z or
    - Input: graph with 100 nodes and 250 edges with non-trivial payloads
    - Expected: deserialized graph equal to original (same node payloads, same edge payloads, same
      adjacency); `node_count`/`edge_count` match
+
+8. **TC-16.4.1.I1** `test_author_directed_graph` (US-16.4.1) — As a designer, author a
+   `DirectedGraph<QuestNode, ChoiceEdge>` in the visual editor. Save and reload. Assert node and
+   edge payloads and handles round-trip.
+   - Input: editor-authored graph with 10 nodes and 15 edges
+   - Expected: reload yields identical graph structure and payloads
+9. **TC-16.4.2.I1** `test_author_cycle_detect` (US-16.4.2) — As a designer, attempt to author an
+   edge that creates a cycle. Assert the editor rejects the change and reports the cycle path.
+   - Input: DAG `A -> B -> C`; attempt to add `C -> A`
+   - Expected: editor shows CycleDetected error with `[A, B, C]`; edge not added
+10. **TC-16.4.3.I1** `test_author_topo_sort` (US-16.4.3) — As a developer, toposort a 100-node DAG
+    and use the result to order system execution. Assert output is a valid linear extension and
+    deterministic across runs.
+    - Input: 100-node DAG
+    - Expected: two toposort calls return identical ordering
+11. **TC-16.4.4.I1** `test_author_conditional_graph` (US-16.4.4) — As a designer, author a
+    `ConditionalGraph` with guards. Traverse with two contexts; assert the correct branches are
+    taken.
+    - Input: graph with guard `HasFlag("vip")`
+    - Expected: vip context visits branch A; non-vip visits branch B
+12. **TC-16.4.5.I1** `test_author_ordered_siblings` (US-16.4.5) — As a UI designer, author an
+    `OrderedGraph` and reorder sibling nodes via drag-and-drop. Assert the order is persisted.
+    - Input: three siblings in order [A, B, C]; reorder to [C, A, B]
+    - Expected: `children(parent) == [C, A, B]`; persists on reload
+13. **TC-16.4.6.I1** `test_author_weighted_shortest` (US-16.4.6) — As a quest designer, query the
+    shortest path between two nodes in a weighted graph. Assert the lowest-cost path is returned.
+    - Input: 10-node weighted graph; query shortest_path(A, J)
+    - Expected: returned path has lowest total cost among all A→J paths
+14. **TC-16.4.7.I1** `test_author_bfs_dfs_traversal` (US-16.4.7) — As a developer, iterate a graph
+    via BFS and DFS pre/post-order. Assert each traversal visits every reachable node exactly once
+    and in the documented order.
+    - Input: 4-level graph
+    - Expected: BFS yields level-by-level; DFS-preorder and DFS-postorder yield documented orders
+15. **TC-16.4.8.I1** `test_author_tree_ops` (US-16.4.8) — As a designer, apply tree operations
+    (root, leaves, LCA) on an `OrderedGraph` configured as a tree. Assert each operation returns the
+    documented result.
+    - Input: tree with 10 nodes
+    - Expected: root returns R; leaves returns the correct leaf set; LCA returns the correct
+      ancestor
+16. **TC-16.4.9.I1** `test_author_dead_node_prune` (US-16.4.9) — As a developer, prune a graph of
+    unreachable nodes. Assert only reachable nodes remain and transitive reduction removes redundant
+    edges.
+    - Input: 10-node graph with 2 unreachable nodes + a redundant edge
+    - Expected: after prune, 8 nodes remain; transitive reduction removes the redundant edge
+17. **TC-16.4.10.I1** `test_author_multi_graph` (US-16.4.10) — As a dialogue designer, create a
+    multi-graph with parallel edges between the same node pair. Assert all parallel edges are
+    addressable and preserved.
+    - Input: 3 parallel edges A→B with distinct payloads
+    - Expected: `out_edges(A)` yields 3 distinct edge handles with the correct payloads
+18. **TC-16.4.11.I1** `test_author_indicator_events` (US-16.4.11) — As a quest designer, bind a node
+    to an indicator marker prefab. Transition the node to Active and then Completed. Assert one
+    spawn and one despawn event are emitted.
+    - Input: node with indicator; two transitions
+    - Expected: `IndicatorSpawned` fires on Active; `IndicatorDespawned` fires on Completed
 
 ## Benchmarks
 
